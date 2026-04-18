@@ -58,7 +58,7 @@ public class SsfPendingEventStore {
     /**
      * Enqueues a SET for asynchronous push delivery in the
      * {@link SsfPendingEventStatus#HELD HELD} state — used when the
-     * owning stream is in SSF §8.2 {@code paused} status. The drainer
+     * owning stream is in the SSF {@code paused} status. The drainer
      * skips HELD rows; {@link #releaseHeldForClient(String)} flips them
      * to {@link SsfPendingEventStatus#PENDING PENDING} when the stream
      * is resumed.
@@ -382,6 +382,60 @@ public class SsfPendingEventStore {
             log.debugf("SSF outbox released %d held rows for client %s", released, clientId);
         }
         return released;
+    }
+
+    /**
+     * Bulk-transitions all {@link SsfPendingEventStatus#PENDING PENDING}
+     * rows for the given receiver client to
+     * {@link SsfPendingEventStatus#HELD HELD}. Invoked from
+     * {@code StreamService.updateStreamStatus} when a stream leaves
+     * {@code enabled} (transitions to {@code paused} or {@code disabled})
+     * so events already queued before the transition stop being delivered
+     * — symmetric to {@link #releaseHeldForClient(String)}.
+     *
+     * @return the number of rows that transitioned PENDING → HELD.
+     */
+    public int holdPendingForClient(String clientId) {
+        Objects.requireNonNull(clientId, "clientId");
+        int held = getEntityManager()
+                .createNamedQuery("SsfPendingEvent.holdPendingForClient")
+                .setParameter("held", SsfPendingEventStatus.HELD)
+                .setParameter("pending", SsfPendingEventStatus.PENDING)
+                .setParameter("clientId", clientId)
+                .executeUpdate();
+        if (held > 0) {
+            log.debugf("SSF outbox held %d pending rows for client %s", held, clientId);
+        }
+        return held;
+    }
+
+    /**
+     * Drops every undelivered ({@link SsfPendingEventStatus#PENDING PENDING}
+     * or {@link SsfPendingEventStatus#HELD HELD}) row for the receiver.
+     * Invoked from {@code StreamService.updateStreamStatus} when a stream
+     * transitions to {@code disabled} — the SSF spec forbids both
+     * transmission and holding for disabled streams, so the in-flight
+     * backlog must be discarded rather than parked.
+     *
+     * <p>{@link SsfPendingEventStatus#DELIVERED DELIVERED} rows are kept
+     * for {@code jti}-dedup coverage and
+     * {@link SsfPendingEventStatus#DEAD_LETTER DEAD_LETTER} rows are kept
+     * for post-failure audit; only the in-flight backlog is purged.
+     *
+     * @return the number of rows that were deleted.
+     */
+    public int deleteUndeliveredForClient(String clientId) {
+        Objects.requireNonNull(clientId, "clientId");
+        int deleted = getEntityManager()
+                .createNamedQuery("SsfPendingEvent.deleteUndeliveredForClient")
+                .setParameter("clientId", clientId)
+                .setParameter("statuses",
+                        java.util.List.of(SsfPendingEventStatus.PENDING, SsfPendingEventStatus.HELD))
+                .executeUpdate();
+        if (deleted > 0) {
+            log.debugf("SSF outbox discarded %d undelivered rows for client %s", deleted, clientId);
+        }
+        return deleted;
     }
 
     public void recordFailure(SsfPendingEventEntity entity, Instant nextAttemptAt, String lastError) {

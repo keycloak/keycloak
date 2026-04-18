@@ -67,13 +67,25 @@ import jakarta.persistence.UniqueConstraint;
                         columnList = "REALM_ID,STATUS")
         })
 @NamedQueries({
+        // ORDER BY (nextAttemptAt, createdAt, jti): the createdAt
+        // tiebreaker matters when many rows are due at the same
+        // instant — most importantly after releaseHeldForClient flips
+        // every HELD row's nextAttemptAt to a single Instant.now() on
+        // resume-from-pause, but also for same-millisecond enqueues.
+        // The SSF spec requires that successive events affecting the
+        // same Subject Principal be transmitted in time-of-generation
+        // order; sorting by createdAt within a single drainer batch
+        // satisfies this on a single node. The jti tiebreak yields a
+        // total order for repeatable queries. Cross-node strict order
+        // is NOT guaranteed because the SKIP LOCKED claim splits
+        // batches across drainers.
         @NamedQuery(
                 name = "SsfPendingEvent.findDueForPush",
                 query = "SELECT e FROM SsfPendingEventEntity e"
                         + " WHERE e.status = :status"
                         + "   AND e.deliveryMethod = :deliveryMethod"
                         + "   AND e.nextAttemptAt <= :now"
-                        + " ORDER BY e.nextAttemptAt ASC"),
+                        + " ORDER BY e.nextAttemptAt ASC, e.createdAt ASC, e.jti ASC"),
         @NamedQuery(
                 name = "SsfPendingEvent.findByClientAndJti",
                 query = "SELECT e FROM SsfPendingEventEntity e"
@@ -141,6 +153,31 @@ import jakarta.persistence.UniqueConstraint;
                         + "     e.nextAttemptAt = :now"
                         + " WHERE e.clientId = :clientId"
                         + "   AND e.status = :held"),
+        // Enter-pause hook: bulk-flips every PENDING row for the
+        // receiver to HELD when the stream transitions enabled →
+        // paused. Symmetric to releaseHeldForClient so events already
+        // queued before the pause stop draining / serving in line with
+        // the new status, instead of leaking through the in-flight
+        // backlog. NOT used on enabled → disabled — see
+        // deleteUndeliveredForClient (the SSF spec says a disabled
+        // stream "will not hold any events for later transmission").
+        @NamedQuery(
+                name = "SsfPendingEvent.holdPendingForClient",
+                query = "UPDATE SsfPendingEventEntity e"
+                        + " SET e.status = :held"
+                        + " WHERE e.clientId = :clientId"
+                        + "   AND e.status = :pending"),
+        // Enter-disabled hook: drops every undelivered row for the
+        // receiver — both PENDING and HELD. The SSF spec says a
+        // disabled stream MUST NOT transmit events AND MUST NOT hold
+        // any for later transmission, so we cannot leak the backlog
+        // into a future re-enable. DELIVERED rows are kept for jti
+        // dedup; DEAD_LETTER rows are kept for post-failure audit.
+        @NamedQuery(
+                name = "SsfPendingEvent.deleteUndeliveredForClient",
+                query = "DELETE FROM SsfPendingEventEntity e"
+                        + " WHERE e.clientId = :clientId"
+                        + "   AND e.status IN :statuses"),
         // Per-receiver TTL housekeeping pre-scan: enumerates the
         // (realmId, clientId) pairs that own at least one
         // non-DELIVERED row, so the drainer's per-client purge loop

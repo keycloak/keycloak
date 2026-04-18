@@ -76,7 +76,7 @@ public class SecurityEventTokenDispatcher {
         StreamStatusValue status = stream.getStatus();
 
         if (status == StreamStatusValue.disabled) {
-            // SSF §8.2: disabled streams drop events outright.
+            // SSF: disabled streams drop events outright.
             log.debugf("Dropping event for disabled stream. clientId=%s streamId=%s jti=%s",
                     stream.getClientClientId(), stream.getStreamId(), eventToken.getJti());
             return;
@@ -94,7 +94,7 @@ public class SecurityEventTokenDispatcher {
         }
 
         if (status == StreamStatusValue.paused) {
-            // SSF §8.2: paused streams hold events; they're released when
+            // SSF: paused streams hold events; they're released when
             // the stream is resumed (status returns to enabled).
             holdEvent(eventToken, stream);
             return;
