@@ -64,6 +64,16 @@ import type { FormFields, SaveOptions } from "./ClientDetails";
 const FALLBACK_DEFAULT_SUPPORTED_EVENTS =
   "CaepCredentialChange,CaepSessionRevoked";
 
+// SSF spec delivery method URIs (RFC 8935 / RFC 8936). Kept as
+// constants so the admin UI doesn't litter the literal strings across
+// every comparison and stream-create body builder.
+const DELIVERY_METHOD_PUSH_URI = "urn:ietf:rfc:8935";
+const DELIVERY_METHOD_POLL_URI = "urn:ietf:rfc:8936";
+
+const isPollDeliveryMethod = (method: string | undefined): boolean =>
+  method === DELIVERY_METHOD_POLL_URI ||
+  method === "https://schemas.openid.net/secevent/risc/delivery-method/poll";
+
 const noop = () => {
   // no-op handler for the read-only Events Delivered KeycloakSelect
 };
@@ -156,6 +166,9 @@ export const SsfTab = ({ save, client, activeTab }: SsfTabProps) => {
   // surrounding react-hook-form context is bound to the client
   // representation's attributes, not to stream-create parameters.
   const [createStreamAudience, setCreateStreamAudience] = useState("");
+  const [createStreamMethod, setCreateStreamMethod] = useState<"PUSH" | "POLL">(
+    "PUSH",
+  );
   const [createStreamEndpointUrl, setCreateStreamEndpointUrl] = useState("");
   const [createStreamAuthHeader, setCreateStreamAuthHeader] = useState("");
   const [createStreamEvents, setCreateStreamEvents] = useState<string[]>([]);
@@ -385,13 +398,17 @@ export const SsfTab = ({ save, client, activeTab }: SsfTabProps) => {
     setCreateStreamAuthHeader("");
     setCreateStreamEvents([]);
     setCreateStreamDescription("");
+    setCreateStreamMethod("PUSH");
   };
 
   const submitCreateStream = async () => {
     if (!client.id) {
       return;
     }
-    if (!createStreamEndpointUrl.trim()) {
+    // PUSH requires the receiver to supply its own endpoint URL; POLL
+    // doesn't (the transmitter generates the URL itself per SSF §6.1.2
+    // and writes it back on the response).
+    if (createStreamMethod === "PUSH" && !createStreamEndpointUrl.trim()) {
       addError(
         "ssfCreateStreamError",
         new Error(t("ssfCreateStreamEndpointUrlRequired")),
@@ -404,16 +421,19 @@ export const SsfTab = ({ save, client, activeTab }: SsfTabProps) => {
       // canonical URIs by the transmitter at create time — the admin UI
       // shows/stores aliases because that's what the admin picks from
       // availableSupportedEvents, and the backend accepts either form.
-      const body: Record<string, unknown> = {
-        delivery: {
-          method: "urn:ietf:rfc:8935",
-          endpoint_url: createStreamEndpointUrl.trim(),
-        },
+      const delivery: Record<string, unknown> = {
+        method:
+          createStreamMethod === "POLL"
+            ? DELIVERY_METHOD_POLL_URI
+            : DELIVERY_METHOD_PUSH_URI,
       };
-      if (createStreamAuthHeader.trim()) {
-        (body.delivery as Record<string, unknown>).authorization_header =
-          createStreamAuthHeader.trim();
+      if (createStreamMethod === "PUSH") {
+        delivery.endpoint_url = createStreamEndpointUrl.trim();
+        if (createStreamAuthHeader.trim()) {
+          delivery.authorization_header = createStreamAuthHeader.trim();
+        }
       }
+      const body: Record<string, unknown> = { delivery };
       if (createStreamAudience.trim()) {
         body.aud = [createStreamAudience.trim()];
       }
@@ -1132,67 +1152,79 @@ export const SsfTab = ({ save, client, activeTab }: SsfTabProps) => {
                       />
                     }
                   >
-                    <TextInput
+                    <select
                       id="ssfCreateStreamDeliveryMethod"
                       data-testid="ssfCreateStreamDeliveryMethod"
-                      readOnlyVariant="default"
-                      value={t("ssfDelivery.PUSH")}
-                    />
-                  </FormGroup>
-                  <FormGroup
-                    label={t("ssfCreateStreamEndpointUrl")}
-                    fieldId="ssfCreateStreamEndpointUrl"
-                    isRequired
-                    labelIcon={
-                      <HelpItem
-                        helpText={t("ssfCreateStreamEndpointUrlHelp")}
-                        fieldLabelId="ssfCreateStreamEndpointUrl"
-                      />
-                    }
-                  >
-                    <TextInput
-                      id="ssfCreateStreamEndpointUrl"
-                      data-testid="ssfCreateStreamEndpointUrl"
-                      isRequired
-                      value={createStreamEndpointUrl}
-                      onChange={(_e, value) =>
-                        setCreateStreamEndpointUrl(value)
+                      className="pf-v5-c-form-control"
+                      value={createStreamMethod}
+                      onChange={(e) =>
+                        setCreateStreamMethod(
+                          e.target.value === "POLL" ? "POLL" : "PUSH",
+                        )
                       }
-                    />
+                    >
+                      <option value="PUSH">{t("ssfDelivery.PUSH")}</option>
+                      <option value="POLL">{t("ssfDelivery.POLL")}</option>
+                    </select>
                   </FormGroup>
-                  <FormGroup
-                    label={t("ssfStreamPushAuthHeader")}
-                    fieldId="ssfCreateStreamAuthHeader"
-                    labelIcon={
-                      <HelpItem
-                        helpText={t("ssfStreamPushAuthHeaderHelp")}
-                        fieldLabelId="ssfStreamPushAuthHeader"
-                      />
-                    }
-                  >
-                    <InputGroup>
-                      <InputGroupItem isFill>
-                        <PasswordInput
-                          id="ssfCreateStreamAuthHeader"
-                          data-testid="ssfCreateStreamAuthHeader"
-                          value={createStreamAuthHeader}
-                          onChange={(event) =>
-                            setCreateStreamAuthHeader(
-                              (event.target as HTMLInputElement).value,
-                            )
+                  {createStreamMethod === "PUSH" && (
+                    <>
+                      <FormGroup
+                        label={t("ssfCreateStreamEndpointUrl")}
+                        fieldId="ssfCreateStreamEndpointUrl"
+                        isRequired
+                        labelIcon={
+                          <HelpItem
+                            helpText={t("ssfCreateStreamEndpointUrlHelp")}
+                            fieldLabelId="ssfCreateStreamEndpointUrl"
+                          />
+                        }
+                      >
+                        <TextInput
+                          id="ssfCreateStreamEndpointUrl"
+                          data-testid="ssfCreateStreamEndpointUrl"
+                          isRequired
+                          value={createStreamEndpointUrl}
+                          onChange={(_e, value) =>
+                            setCreateStreamEndpointUrl(value)
                           }
                         />
-                      </InputGroupItem>
-                      <InputGroupItem>
-                        <CopyToClipboardButton
-                          id="ssfCreateStreamAuthHeader"
-                          text={createStreamAuthHeader}
-                          label="ssfStreamPushAuthHeader"
-                          variant="control"
-                        />
-                      </InputGroupItem>
-                    </InputGroup>
-                  </FormGroup>
+                      </FormGroup>
+                      <FormGroup
+                        label={t("ssfStreamPushAuthHeader")}
+                        fieldId="ssfCreateStreamAuthHeader"
+                        labelIcon={
+                          <HelpItem
+                            helpText={t("ssfStreamPushAuthHeaderHelp")}
+                            fieldLabelId="ssfStreamPushAuthHeader"
+                          />
+                        }
+                      >
+                        <InputGroup>
+                          <InputGroupItem isFill>
+                            <PasswordInput
+                              id="ssfCreateStreamAuthHeader"
+                              data-testid="ssfCreateStreamAuthHeader"
+                              value={createStreamAuthHeader}
+                              onChange={(event) =>
+                                setCreateStreamAuthHeader(
+                                  (event.target as HTMLInputElement).value,
+                                )
+                              }
+                            />
+                          </InputGroupItem>
+                          <InputGroupItem>
+                            <CopyToClipboardButton
+                              id="ssfCreateStreamAuthHeader"
+                              text={createStreamAuthHeader}
+                              label="ssfStreamPushAuthHeader"
+                              variant="control"
+                            />
+                          </InputGroupItem>
+                        </InputGroup>
+                      </FormGroup>
+                    </>
+                  )}
                   <FormGroup
                     label={t("ssfCreateStreamEventsRequested")}
                     fieldId="ssfCreateStreamEventsRequested"
@@ -1406,54 +1438,84 @@ export const SsfTab = ({ save, client, activeTab }: SsfTabProps) => {
               </FormGroup>
               {clientStream.delivery?.endpoint_url && (
                 <FormGroup
-                  label={t("ssfStreamPushEndpointUrl")}
-                  fieldId="ssfStreamPushEndpointUrl"
-                  labelIcon={
-                    <HelpItem
-                      helpText={t("ssfStreamPushEndpointUrlHelp")}
-                      fieldLabelId="ssfStreamPushEndpointUrl"
-                    />
+                  label={
+                    isPollDeliveryMethod(clientStream.delivery.method)
+                      ? t("ssfStreamPollEndpointUrl")
+                      : t("ssfStreamPushEndpointUrl")
                   }
-                >
-                  <TextInput
-                    id="ssfStreamPushEndpointUrl"
-                    data-testid="ssfStreamPushEndpointUrl"
-                    readOnlyVariant="default"
-                    value={clientStream.delivery.endpoint_url}
-                  />
-                </FormGroup>
-              )}
-              {clientStream.delivery?.endpoint_url && (
-                <FormGroup
-                  label={t("ssfStreamPushAuthHeader")}
-                  fieldId="ssfStreamPushAuthHeader"
+                  fieldId="ssfStreamEndpointUrl"
                   labelIcon={
                     <HelpItem
-                      helpText={t("ssfStreamPushAuthHeaderHelp")}
-                      fieldLabelId="ssfStreamPushAuthHeader"
+                      helpText={
+                        isPollDeliveryMethod(clientStream.delivery.method)
+                          ? t("ssfStreamPollEndpointUrlHelp")
+                          : t("ssfStreamPushEndpointUrlHelp")
+                      }
+                      fieldLabelId="ssfStreamEndpointUrl"
                     />
                   }
                 >
                   <InputGroup>
                     <InputGroupItem isFill>
-                      <PasswordInput
-                        id="ssfStreamPushAuthHeader"
-                        data-testid="ssfStreamPushAuthHeader"
-                        readOnly
-                        value={clientStream.delivery.authorization_header ?? ""}
+                      <TextInput
+                        id="ssfStreamEndpointUrl"
+                        data-testid="ssfStreamEndpointUrl"
+                        readOnlyVariant="default"
+                        value={clientStream.delivery.endpoint_url}
                       />
                     </InputGroupItem>
                     <InputGroupItem>
                       <CopyToClipboardButton
-                        id="ssfStreamPushAuthHeader"
-                        text={clientStream.delivery.authorization_header ?? ""}
-                        label="ssfStreamPushAuthHeader"
+                        id="ssfStreamEndpointUrl"
+                        text={clientStream.delivery.endpoint_url}
+                        label="ssfStreamEndpointUrl"
                         variant="control"
                       />
                     </InputGroupItem>
                   </InputGroup>
                 </FormGroup>
               )}
+              {/* Push auth header is irrelevant for POLL — receivers
+                  authenticate themselves with their own bearer token to
+                  call the transmitter-hosted poll endpoint, and the
+                  transmitter doesn't store an outbound auth header for
+                  POLL streams. */}
+              {clientStream.delivery?.endpoint_url &&
+                !isPollDeliveryMethod(clientStream.delivery.method) && (
+                  <FormGroup
+                    label={t("ssfStreamPushAuthHeader")}
+                    fieldId="ssfStreamPushAuthHeader"
+                    labelIcon={
+                      <HelpItem
+                        helpText={t("ssfStreamPushAuthHeaderHelp")}
+                        fieldLabelId="ssfStreamPushAuthHeader"
+                      />
+                    }
+                  >
+                    <InputGroup>
+                      <InputGroupItem isFill>
+                        <PasswordInput
+                          id="ssfStreamPushAuthHeader"
+                          data-testid="ssfStreamPushAuthHeader"
+                          readOnly
+                          value={
+                            clientStream.delivery.authorization_header ?? ""
+                          }
+                        />
+                      </InputGroupItem>
+                      <InputGroupItem>
+                        <CopyToClipboardButton
+                          id="ssfStreamPushAuthHeader"
+                          text={
+                            clientStream.delivery.authorization_header ?? ""
+                          }
+                          label="ssfStreamPushAuthHeader"
+                          variant="control"
+                        />
+                      </InputGroupItem>
+                    </InputGroup>
+                  </FormGroup>
+                )}
               <SelectControl
                 name={convertAttributeNameToForm<FormFields>(
                   "attributes.ssf.status",
@@ -1586,40 +1648,44 @@ export const SsfTab = ({ save, client, activeTab }: SsfTabProps) => {
                 }}
                 options={[
                   { key: "PUSH", value: t("ssfDelivery.PUSH") },
-                  // PULL delivery is not yet supported
-                  // { key: "PULL", value: t("ssfDelivery.PULL") },
+                  { key: "POLL", value: t("ssfDelivery.POLL") },
                 ]}
               />
-              {(ssfDelivery === "PUSH" || !ssfDelivery) && (
-                <>
-                  <NumberControl
-                    name={convertAttributeNameToForm<FormFields>(
-                      "attributes.ssf.pushEndpointConnectTimeoutMillis",
-                    )}
-                    label={t("ssfPushEndpointConnectTimeout")}
-                    labelIcon={t("ssfPushEndpointConnectTimeoutHelp")}
-                    controller={{
-                      defaultValue: defaultPushConnectTimeoutMillis,
-                      rules: {
-                        min: 0,
-                      },
-                    }}
-                  />
-                  <NumberControl
-                    name={convertAttributeNameToForm<FormFields>(
-                      "attributes.ssf.pushEndpointSocketTimeoutMillis",
-                    )}
-                    label={t("ssfPushEndpointSocketTimeout")}
-                    labelIcon={t("ssfPushEndpointSocketTimeoutHelp")}
-                    controller={{
-                      defaultValue: defaultPushSocketTimeoutMillis,
-                      rules: {
-                        min: 0,
-                      },
-                    }}
-                  />
-                </>
-              )}
+              {/* Push timeouts only apply when Keycloak makes outbound
+                  HTTP push requests. POLL is inbound (receivers call
+                  the transmitter), so the timeout knobs have no effect
+                  and we hide them to avoid suggesting otherwise. */}
+              {(ssfDelivery === "PUSH" || !ssfDelivery) &&
+                !isPollDeliveryMethod(clientStream.delivery?.method) && (
+                  <>
+                    <NumberControl
+                      name={convertAttributeNameToForm<FormFields>(
+                        "attributes.ssf.pushEndpointConnectTimeoutMillis",
+                      )}
+                      label={t("ssfPushEndpointConnectTimeout")}
+                      labelIcon={t("ssfPushEndpointConnectTimeoutHelp")}
+                      controller={{
+                        defaultValue: defaultPushConnectTimeoutMillis,
+                        rules: {
+                          min: 0,
+                        },
+                      }}
+                    />
+                    <NumberControl
+                      name={convertAttributeNameToForm<FormFields>(
+                        "attributes.ssf.pushEndpointSocketTimeoutMillis",
+                      )}
+                      label={t("ssfPushEndpointSocketTimeout")}
+                      labelIcon={t("ssfPushEndpointSocketTimeoutHelp")}
+                      controller={{
+                        defaultValue: defaultPushSocketTimeoutMillis,
+                        rules: {
+                          min: 0,
+                        },
+                      }}
+                    />
+                  </>
+                )}
               <ActionGroup>
                 <Button
                   variant="secondary"

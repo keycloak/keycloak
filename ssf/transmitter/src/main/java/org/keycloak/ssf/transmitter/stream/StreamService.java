@@ -7,6 +7,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 
 import org.keycloak.common.util.Time;
 import org.keycloak.http.HttpRequest;
@@ -24,8 +25,10 @@ import org.keycloak.ssf.transmitter.SsfTransmitterProvider;
 import org.keycloak.ssf.transmitter.event.SsfSignatureAlgorithms;
 import org.keycloak.ssf.transmitter.event.SsfUserSubjectFormats;
 import org.keycloak.ssf.transmitter.metadata.TransmitterMetadataService;
+import org.keycloak.ssf.transmitter.outbox.SsfPendingEventStore;
 import org.keycloak.ssf.transmitter.stream.storage.SsfStreamStore;
 import org.keycloak.ssf.transmitter.stream.storage.client.ClientStreamStore;
+import org.keycloak.ssf.transmitter.support.SsfTransmitterUrls;
 import org.keycloak.utils.KeycloakSessionUtil;
 
 import org.jboss.logging.Logger;
@@ -59,10 +62,13 @@ public class StreamService {
 
     protected final TransmitterMetadataService transmitterService;
 
-    public StreamService(KeycloakSession session, SsfStreamStore streamStore, TransmitterMetadataService transmitterService) {
+    protected final Function<KeycloakSession, SsfPendingEventStore> pendingSsfEventStoreFactory;
+
+    public StreamService(KeycloakSession session, SsfStreamStore streamStore, TransmitterMetadataService transmitterService, Function<KeycloakSession, SsfPendingEventStore> pendingSsfEventStoreFactory) {
         this.session = session;
         this.streamStore = streamStore;
         this.transmitterService = transmitterService;
+        this.pendingSsfEventStoreFactory = pendingSsfEventStoreFactory;
     }
 
     /**
@@ -140,6 +146,12 @@ public class StreamService {
         // ignored for SSE_CAEP (Apple echoes it from discovery, so overwriting
         // is a no-op in practice).
         streamConfig.setIssuer(transmitterService.getTransmitterMetadata().getIssuer());
+
+        // For poll delivery, the endpoint_url is transmitter-owned per
+        // SSF §6.1.2. Now that stream_id is assigned, build the URL
+        // and overwrite whatever the receiver supplied (or didn't
+        // supply) on input.
+        finalizePollEndpointUrlIfApplicable(streamConfig, receiverClient);
 
         streamConfig.setAudience(createAudience(input, streamConfig, receiverClient));
 
@@ -421,6 +433,16 @@ public class StreamService {
             throw new SsfException("Invalid stream configuration: missing delivery method");
         }
 
+        // Reject the legacy RISC variants up front when SSE CAEP support
+        // is disabled — keeps the accepted surface aligned with what's
+        // advertised in delivery_methods_supported.
+        boolean sseCaepEnabled = session.getProvider(SsfTransmitterProvider.class).getConfig().isSseCaepEnabled();
+        if (!sseCaepEnabled
+                && (Ssf.DELIVERY_METHOD_RISC_PUSH_URI.equals(delivery.getMethod())
+                    || Ssf.DELIVERY_METHOD_RISC_POLL_URI.equals(delivery.getMethod()))) {
+            throw new SsfException("Invalid stream configuration: SSE CAEP delivery methods are disabled on this transmitter");
+        }
+
         switch (delivery.getMethod()) {
             case Ssf.DELIVERY_METHOD_PUSH_URI, Ssf.DELIVERY_METHOD_RISC_PUSH_URI -> {
                 if (delivery.getEndpointUrl() == null) {
@@ -428,12 +450,14 @@ public class StreamService {
                 }
             }
             case Ssf.DELIVERY_METHOD_POLL_URI, Ssf.DELIVERY_METHOD_RISC_POLL_URI -> {
-                if (delivery.getEndpointUrl() != null) {
-                    if (!delivery.getEndpointUrl().startsWith(transmitterService.getTransmitterMetadata().getIssuer())) {
-                        throw new SsfException("Invalid stream configuration: delivery endpoint poll URL is defined by transmitter");
-                    }
-                }
-                throw new SsfException("Invalid stream configuration: unsupported delivery method");
+                // Poll endpoint_url is owned by the transmitter per SSF
+                // §6.1.2 ("This is specified by the Transmitter") — any
+                // receiver-supplied value is ignored on input and
+                // overwritten with the transmitter-generated URL after
+                // stream_id is assigned (see finalizePollEndpointUrl in
+                // the create path). We accept the field on input rather
+                // than rejecting it so receivers that echo back a
+                // previously-saved stream config don't get a 400.
             }
             default -> throw new SsfException("Invalid stream configuration: unsupported delivery method");
         }
@@ -678,6 +702,33 @@ public class StreamService {
      * means "use the transmitter-wide default", which the dispatcher
      * resolves via {@link SsfSignatureAlgorithms#resolveForStream}.
      */
+    /**
+     * For POLL streams, derives the transmitter-owned poll endpoint URL
+     * from the realm issuer, the receiver's OAuth {@code clientId} and
+     * the freshly-assigned {@code stream_id}, and writes it into
+     * {@link StreamDeliveryConfig#setEndpointUrl}. Per SSF §6.1.2 the
+     * poll endpoint URL is "specified by the Transmitter" — anything the
+     * receiver provided on input is overwritten here. No-op for PUSH
+     * streams where the receiver-supplied URL is the actual delivery
+     * target.
+     */
+    protected void finalizePollEndpointUrlIfApplicable(StreamConfig streamConfig, ClientModel receiverClient) {
+        StreamDeliveryConfig delivery = streamConfig.getDelivery();
+        if (delivery == null || delivery.getMethod() == null) {
+            return;
+        }
+        String method = delivery.getMethod();
+        if (!Ssf.DELIVERY_METHOD_POLL_URI.equals(method)
+                && !Ssf.DELIVERY_METHOD_RISC_POLL_URI.equals(method)) {
+            return;
+        }
+        String pollUrl = SsfTransmitterUrls.getPollEndpointUrl(
+                transmitterService.getTransmitterMetadata().getIssuer(),
+                receiverClient.getClientId(),
+                streamConfig.getStreamId());
+        delivery.setEndpointUrl(pollUrl);
+    }
+
     protected void applySignatureAlgorithmFromClient(StreamConfig streamConfig, ClientModel receiverClient) {
         String signatureAlgorithm = receiverClient.getAttribute(ClientStreamStore.SSF_STREAM_SIGNATURE_ALGORITHM_KEY);
         if (signatureAlgorithm == null || signatureAlgorithm.isBlank()) {
@@ -731,6 +782,24 @@ public class StreamService {
         }
 
         streamStore.deleteStream(streamId);
+
+        // Cascade-purge any outstanding outbox rows for this receiver
+        // client. PUSH rows would eventually reach DEAD_LETTER on their
+        // own (and the dead-letter retention purge would clean them up
+        // later), but POLL rows have no consumer once the stream is
+        // gone — they'd sit forever. Scoped on clientId rather than
+        // streamId because we run with one stream per client; if the
+        // receiver re-creates a stream immediately the new
+        // (clientId, jti) inserts are fresh, so over-deleting can't
+        // strand a legitimate row.
+        String clientId = existingStream.getClientId();
+        if (clientId != null) {
+            SsfPendingEventStore pendingEventStore = pendingSsfEventStoreFactory.apply(session);
+            int purged = (int) pendingEventStore.deleteByClient(clientId);
+            if (purged > 0) {
+                log.debugf("Stream delete cascade: purged %d outbox rows for client %s", purged, clientId);
+            }
+        }
 
         log.debugf("Stream deleted. realm=%s client=%s streamId=%s",
                 session.getContext().getRealm().getName(), session.getContext().getClient().getClientId(), streamId);

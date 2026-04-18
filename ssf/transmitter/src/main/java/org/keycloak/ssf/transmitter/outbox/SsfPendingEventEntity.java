@@ -82,6 +82,29 @@ import jakarta.persistence.UniqueConstraint;
                 name = "SsfPendingEvent.countByClientAndStatus",
                 query = "SELECT COUNT(e) FROM SsfPendingEventEntity e"
                         + " WHERE e.clientId = :clientId AND e.status = :status"),
+        // Poll endpoint read query: returns the next batch of PENDING POLL
+        // rows for the requesting receiver, FIFO by createdAt with a jti
+        // tiebreak so concurrent enqueues that hit the same millisecond
+        // produce a stable order.
+        @NamedQuery(
+                name = "SsfPendingEvent.findPendingForReceiverPoll",
+                query = "SELECT e FROM SsfPendingEventEntity e"
+                        + " WHERE e.clientId = :clientId"
+                        + "   AND e.deliveryMethod = :deliveryMethod"
+                        + "   AND e.status = :status"
+                        + " ORDER BY e.createdAt ASC, e.jti ASC"),
+        // Per-(client, jti) ack lookup. Scoped on clientId AND jti so a
+        // receiver can never ack another receiver's row even if it
+        // managed to guess the jti. Used by both the ack and NACK
+        // (setErrs) paths — the only difference between them is the
+        // terminal status the matched rows are transitioned to.
+        @NamedQuery(
+                name = "SsfPendingEvent.findPendingForReceiverAck",
+                query = "SELECT e FROM SsfPendingEventEntity e"
+                        + " WHERE e.clientId = :clientId"
+                        + "   AND e.jti IN :jtis"
+                        + "   AND e.deliveryMethod = :deliveryMethod"
+                        + "   AND e.status = :status"),
         @NamedQuery(
                 name = "SsfPendingEvent.deletePurgedDelivered",
                 query = "DELETE FROM SsfPendingEventEntity e"
@@ -98,7 +121,15 @@ import jakarta.persistence.UniqueConstraint;
         @NamedQuery(
                 name = "SsfPendingEvent.deleteByRealm",
                 query = "DELETE FROM SsfPendingEventEntity e"
-                        + " WHERE e.realmId = :realmId")
+                        + " WHERE e.realmId = :realmId"),
+        // Stream-delete cascade for POLL rows: PUSH rows would eventually
+        // reach DEAD_LETTER on their own, but POLL rows can sit forever
+        // with no consumer once the stream is gone, so the stream/client-
+        // delete path explicitly purges them.
+        @NamedQuery(
+                name = "SsfPendingEvent.deleteByClient",
+                query = "DELETE FROM SsfPendingEventEntity e"
+                        + " WHERE e.clientId = :clientId")
 })
 public class SsfPendingEventEntity {
 

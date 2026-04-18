@@ -1,8 +1,12 @@
 package org.keycloak.ssf.transmitter.outbox;
 
 import java.time.Instant;
+import java.util.Collection;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.UUID;
 
 import jakarta.persistence.EntityManager;
@@ -32,7 +36,7 @@ public class SsfPendingEventStore {
     }
 
     /**
-     * Enqueues a SET for asynchronous delivery. Idempotent on
+     * Enqueues a SET for asynchronous push delivery. Idempotent on
      * {@code (clientId, jti)} — if a row already exists for that pair
      * (e.g. the same event is re-dispatched after a partial failure)
      * the existing row is kept and this call is a no-op, so retry
@@ -47,10 +51,47 @@ public class SsfPendingEventStore {
                                      String jti,
                                      String eventType,
                                      String encodedSet) {
+        return enqueuePending(realmId, clientId, streamId, jti, eventType, encodedSet,
+                SsfPendingEventEntity.DELIVERY_METHOD_PUSH);
+    }
+
+    /**
+     * Enqueues a SET for poll-based delivery. Same dedup semantics as
+     * {@link #enqueuePendingPush} — one row per {@code (clientId, jti)}.
+     * The row sits in {@code PENDING} until the receiver acks it via
+     * the poll endpoint or the stream is deleted.
+     *
+     * @return the enqueued row id, or the pre-existing row id if the
+     *         insert was deduped.
+     */
+    public String enqueuePendingPoll(String realmId,
+                                     String clientId,
+                                     String streamId,
+                                     String jti,
+                                     String eventType,
+                                     String encodedSet) {
+        return enqueuePending(realmId, clientId, streamId, jti, eventType, encodedSet,
+                SsfPendingEventEntity.DELIVERY_METHOD_POLL);
+    }
+
+    /**
+     * Shared insert path used by both delivery methods. Differences
+     * between PUSH and POLL boil down to the {@code deliveryMethod}
+     * column — the drainer query filters on it for PUSH, the poll
+     * read query filters on it for POLL.
+     */
+    protected String enqueuePending(String realmId,
+                                    String clientId,
+                                    String streamId,
+                                    String jti,
+                                    String eventType,
+                                    String encodedSet,
+                                    String deliveryMethod) {
         Objects.requireNonNull(realmId, "realmId");
         Objects.requireNonNull(clientId, "clientId");
         Objects.requireNonNull(jti, "jti");
         Objects.requireNonNull(encodedSet, "encodedSet");
+        Objects.requireNonNull(deliveryMethod, "deliveryMethod");
 
         EntityManager em = getEntityManager();
 
@@ -60,8 +101,8 @@ public class SsfPendingEventStore {
         // common no-op path.
         SsfPendingEventEntity existing = findByClientAndJti(em, clientId, jti);
         if (existing != null) {
-            log.debugf("SSF outbox enqueue deduplicated. realmId=%s clientId=%s jti=%s existingId=%s status=%s",
-                    existing.getRealmId(), clientId, jti, existing.getId(), existing.getStatus());
+            log.debugf("SSF outbox enqueue deduplicated. realmId=%s clientId=%s jti=%s existingId=%s status=%s deliveryMethod=%s",
+                    existing.getRealmId(), clientId, jti, existing.getId(), existing.getStatus(), existing.getDeliveryMethod());
             return existing.getId();
         }
 
@@ -74,17 +115,19 @@ public class SsfPendingEventStore {
         entity.setJti(jti);
         entity.setEventType(eventType);
         entity.setEncodedSet(encodedSet);
-        entity.setDeliveryMethod(SsfPendingEventEntity.DELIVERY_METHOD_PUSH);
+        entity.setDeliveryMethod(deliveryMethod);
         entity.setStatus(SsfPendingEventStatus.PENDING);
         entity.setAttempts(0);
-        // Schedule the first attempt immediately — the drainer picks it
-        // up on its next tick.
+        // PUSH path: the drainer picks it up on its next tick.
+        // POLL path: nextAttemptAt is unused but the column is NOT NULL,
+        //            so we still set it to now() — keeps the schema
+        //            constraint satisfied without a nullable migration.
         entity.setNextAttemptAt(now);
         entity.setCreatedAt(now);
 
         em.persist(entity);
-        log.debugf("SSF outbox enqueued. id=%s realmId=%s clientId=%s streamId=%s jti=%s eventType=%s",
-                entity.getId(), realmId, clientId, streamId, jti, eventType);
+        log.debugf("SSF outbox enqueued. id=%s realmId=%s clientId=%s streamId=%s jti=%s eventType=%s deliveryMethod=%s",
+                entity.getId(), realmId, clientId, streamId, jti, eventType, deliveryMethod);
         return entity.getId();
     }
 
@@ -125,6 +168,156 @@ public class SsfPendingEventStore {
         entity.setDeliveredAt(Instant.now());
         entity.setLastError(null);
         getEntityManager().merge(entity);
+    }
+
+    /**
+     * Fetches the next batch of {@code PENDING} POLL rows for the given
+     * receiver client, FIFO by {@code createdAt}. Locked with
+     * {@code UPGRADE_SKIPLOCKED} so concurrent poll requests for the
+     * same receiver (e.g. multiple receiver pods polling with the same
+     * credentials) walk disjoint row sets within the same DB
+     * transaction instead of returning duplicates. Caller MUST issue
+     * the ack within the same transaction or release the locks by
+     * letting the transaction commit/rollback.
+     */
+    public List<SsfPendingEventEntity> lockPendingForReceiverPoll(String clientId, int limit) {
+        Objects.requireNonNull(clientId, "clientId");
+        TypedQuery<SsfPendingEventEntity> q = getEntityManager()
+                .createNamedQuery("SsfPendingEvent.findPendingForReceiverPoll", SsfPendingEventEntity.class)
+                .setParameter("clientId", clientId)
+                .setParameter("deliveryMethod", SsfPendingEventEntity.DELIVERY_METHOD_POLL)
+                .setParameter("status", SsfPendingEventStatus.PENDING)
+                .setMaxResults(limit);
+        // Same Hibernate hook the PUSH drainer uses — see lockDueForPush
+        // for the SKIP LOCKED rationale.
+        q.unwrap(SelectionQuery.class).setHibernateLockMode(LockMode.UPGRADE_SKIPLOCKED);
+        return q.getResultList();
+    }
+
+    /**
+     * Counts {@code (clientId, deliveryMethod, status)} triples. Used by
+     * the poll endpoint to decide whether to set {@code moreAvailable=true}
+     * after returning a batch shorter than the read query's limit.
+     */
+    public long countByClientStatusAndMethod(String clientId, SsfPendingEventStatus status, String deliveryMethod) {
+        Objects.requireNonNull(clientId, "clientId");
+        Objects.requireNonNull(status, "status");
+        Objects.requireNonNull(deliveryMethod, "deliveryMethod");
+        // Inline JPQL — countByClientAndStatus already exists for
+        // status-only counts; this variant filters on deliveryMethod
+        // too so a mixed PUSH+POLL receiver (theoretical) doesn't get
+        // a misleading moreAvailable flag.
+        return getEntityManager().createQuery(
+                        "SELECT COUNT(e) FROM SsfPendingEventEntity e"
+                                + " WHERE e.clientId = :clientId"
+                                + "   AND e.status = :status"
+                                + "   AND e.deliveryMethod = :deliveryMethod",
+                        Long.class)
+                .setParameter("clientId", clientId)
+                .setParameter("status", status)
+                .setParameter("deliveryMethod", deliveryMethod)
+                .getSingleResult();
+    }
+
+    /**
+     * Acks the given JTIs for the receiver client by transitioning
+     * matching {@code PENDING} POLL rows to {@code DELIVERED}.
+     * Idempotent and silently scoped: jtis the receiver doesn't own
+     * (different client) and jtis already in {@code DELIVERED} simply
+     * don't appear in the lookup result, so no error and no leakage of
+     * row existence to the caller.
+     *
+     * @return the set of jtis that were transitioned to DELIVERED.
+     */
+    public Set<String> ackPendingForReceiver(String clientId, Collection<String> jtis) {
+        Objects.requireNonNull(clientId, "clientId");
+        if (jtis == null || jtis.isEmpty()) {
+            return Set.of();
+        }
+        List<SsfPendingEventEntity> rows = getEntityManager()
+                .createNamedQuery("SsfPendingEvent.findPendingForReceiverAck", SsfPendingEventEntity.class)
+                .setParameter("clientId", clientId)
+                .setParameter("jtis", jtis)
+                .setParameter("deliveryMethod", SsfPendingEventEntity.DELIVERY_METHOD_POLL)
+                .setParameter("status", SsfPendingEventStatus.PENDING)
+                .getResultList();
+
+        if (rows.isEmpty()) {
+            return Set.of();
+        }
+        Set<String> acked = new LinkedHashSet<>(rows.size());
+        for (SsfPendingEventEntity row : rows) {
+            markDelivered(row);
+            acked.add(row.getJti());
+        }
+        log.debugf("SSF outbox poll ack. clientId=%s ackedCount=%d ackedJtis=%s",
+                clientId, acked.size(), acked);
+        return acked;
+    }
+
+    /**
+     * Receiver-driven NACK for poll-delivered rows. Each entry of
+     * {@code errorByJti} matches a {@code PENDING} POLL row owned by
+     * the calling client; matched rows transition to
+     * {@link SsfPendingEventStatus#DEAD_LETTER DEAD_LETTER} with the
+     * receiver-supplied error message recorded in {@code last_error}.
+     *
+     * <p>For POLL rows, DEAD_LETTER is reached only via this explicit
+     * NACK path — there is no transmitter-side retry-exhaustion
+     * counter to bump. Idempotent and silently scoped: jtis the caller
+     * doesn't own (different client) and jtis already terminal don't
+     * appear in the lookup result.
+     *
+     * @return the set of jtis that were transitioned to DEAD_LETTER.
+     */
+    public Set<String> nackPendingForReceiver(String clientId,
+                                              Map<String, String> errorByJti) {
+        Objects.requireNonNull(clientId, "clientId");
+        if (errorByJti == null || errorByJti.isEmpty()) {
+            return Set.of();
+        }
+        List<SsfPendingEventEntity> rows = getEntityManager()
+                .createNamedQuery("SsfPendingEvent.findPendingForReceiverAck", SsfPendingEventEntity.class)
+                .setParameter("clientId", clientId)
+                .setParameter("jtis", errorByJti.keySet())
+                .setParameter("deliveryMethod", SsfPendingEventEntity.DELIVERY_METHOD_POLL)
+                .setParameter("status", SsfPendingEventStatus.PENDING)
+                .getResultList();
+
+        if (rows.isEmpty()) {
+            return Set.of();
+        }
+        Set<String> nacked = new LinkedHashSet<>(rows.size());
+        for (SsfPendingEventEntity row : rows) {
+            String error = errorByJti.get(row.getJti());
+            markDeadLetter(row, error);
+            nacked.add(row.getJti());
+        }
+        log.debugf("SSF outbox poll NACK. clientId=%s nackedCount=%d nackedJtis=%s",
+                clientId, nacked.size(), nacked);
+        return nacked;
+    }
+
+    /**
+     * Cascade for stream/client delete. Removes every outbox row owned
+     * by the given receiver client regardless of status. PUSH rows
+     * eventually reach DEAD_LETTER on their own and could be left to
+     * the dead-letter retention purge, but POLL rows have no consumer
+     * once the stream is gone — explicit cascade keeps both paths
+     * consistent.
+     *
+     * @return the number of rows deleted.
+     */
+    public int deleteByClient(String clientId) {
+        Objects.requireNonNull(clientId, "clientId");
+        int deleted = getEntityManager()
+                .createNamedQuery("SsfPendingEvent.deleteByClient")
+                .setParameter("clientId", clientId)
+                .executeUpdate();
+        if (deleted > 0) {
+            log.debugf("SSF outbox purged %d rows for client %s", deleted, clientId);
+        }
+        return deleted;
     }
 
     public void recordFailure(SsfPendingEventEntity entity, Instant nextAttemptAt, String lastError) {

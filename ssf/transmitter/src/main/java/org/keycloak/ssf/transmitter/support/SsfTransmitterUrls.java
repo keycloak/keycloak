@@ -32,4 +32,18 @@ public final class SsfTransmitterUrls {
     public static String getRemoveSubjectEndpointUrl(String issuerUrl) {
         return getSsfTransmitterBasePath(issuerUrl) + "/subjects/remove";
     }
+
+    /**
+     * Builds the poll endpoint URL for a given receiver client and
+     * stream id. The transmitter writes this URL into
+     * {@code delivery.endpoint_url} of the stream-create response per
+     * SSF §6.1.2 (the spec mandates the transmitter — not the
+     * receiver — owns this URL for poll delivery).
+     */
+    public static String getPollEndpointUrl(String issuerUrl, String clientId, String streamId) {
+        return getSsfTransmitterBasePath(issuerUrl)
+                + "/receivers/" + clientId
+                + "/streams/" + streamId
+                + "/poll";
+    }
 }
