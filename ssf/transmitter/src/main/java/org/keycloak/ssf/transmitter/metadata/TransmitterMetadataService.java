@@ -2,6 +2,7 @@ package org.keycloak.ssf.transmitter.metadata;
 
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -60,14 +61,7 @@ public class TransmitterMetadataService {
 
         metadata.setIssuer(issuerUrl);
         metadata.setJwksUri(createJwksUri(issuerUrl));
-        metadata.setDeliveryMethodSupported(Set.of( //
-                // PUSH
-                Ssf.DELIVERY_METHOD_PUSH_URI,
-                // RISC PUSH URL for apple business manager
-                Ssf.DELIVERY_METHOD_RISC_PUSH_URI
-                // POLL
-                // "urn:ietf:rfc:8936",
-        ));
+        metadata.setDeliveryMethodSupported(createDeliveryMethods());
 
         // Stream management endpoints
         metadata.setConfigurationEndpoint(SsfTransmitterUrls.getStreamsEndpointUrl(issuerUrl));
@@ -85,6 +79,27 @@ public class TransmitterMetadataService {
         metadata.setDefaultSubjects(transmitterConfig.getDefaultSubjects().name());
 
         return metadata;
+    }
+
+    protected Set<String> createDeliveryMethods() {
+        // Spec-standard SSF 1.0 delivery methods are always advertised.
+        // The RISC variants (Apple Business Manager / Apple School
+        // Manager interop) are gated on the sse-caep-enabled SPI flag
+        // so deployments that don't integrate with Apple-style
+        // receivers can keep the advertised surface to the
+        // spec-standard URIs only.
+        Set<String> deliveryMethods = new LinkedHashSet<>();
+        // PUSH (RFC 8935)
+        deliveryMethods.add(Ssf.DELIVERY_METHOD_PUSH_URI);
+        // POLL (RFC 8936)
+        deliveryMethods.add(Ssf.DELIVERY_METHOD_POLL_URI);
+        if (transmitterConfig.isSseCaepEnabled()) {
+            // Legacy RISC PUSH URI (Apple Business Manager)
+            deliveryMethods.add(Ssf.DELIVERY_METHOD_RISC_PUSH_URI);
+            // Legacy RISC POLL URI
+            deliveryMethods.add(Ssf.DELIVERY_METHOD_RISC_POLL_URI);
+        }
+        return deliveryMethods;
     }
 
     protected String createJwksUri(String issuerUrl) {

@@ -31,7 +31,6 @@ import org.keycloak.ssf.transmitter.admin.SsfConfigRepresentation;
 import org.keycloak.ssf.transmitter.admin.SsfEmitEventRequest;
 import org.keycloak.ssf.transmitter.admin.SsfEmitEventResponse;
 import org.keycloak.ssf.transmitter.emit.EmitEventResult;
-import org.keycloak.ssf.transmitter.emit.EmitEventStatus;
 import org.keycloak.ssf.transmitter.stream.DuplicateStreamConfigException;
 import org.keycloak.ssf.transmitter.stream.StreamConfig;
 import org.keycloak.ssf.transmitter.stream.StreamConfigInputRepresentation;
@@ -356,9 +355,22 @@ public class SsfAdminResource {
 
         auth.clients().requireManage(client);
 
-        boolean deleted = transmitter.streamStore().deleteStreamForClient(client);
-        if (!deleted) {
+        // Look up the stream first so we can route through
+        // streamService.deleteStream(streamId), which runs the
+        // cascade-purge of pending outbox rows for this client. Going
+        // straight to streamStore.deleteStreamForClient would bypass
+        // the cascade and leave POLL rows orphaned.
+        StreamConfig existingStream = transmitter.streamStore().getStreamForClient(client);
+        if (existingStream == null) {
             throw new NotFoundException("No SSF stream registered for client");
+        }
+
+        boolean deleted = transmitter.streamService().deleteStream(existingStream.getStreamId());
+        if (!deleted) {
+            // Stream existed at lookup time but was deleted concurrently
+            // — treat as idempotent-success rather than a 404 race.
+            log.debugf("Admin stream delete found the stream gone between lookup and delete. clientId=%s streamId=%s",
+                    client.getClientId(), existingStream.getStreamId());
         }
 
         return Response.noContent().build();

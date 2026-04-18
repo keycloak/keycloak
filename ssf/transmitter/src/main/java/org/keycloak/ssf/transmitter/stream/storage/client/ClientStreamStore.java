@@ -188,17 +188,26 @@ public class ClientStreamStore implements SsfStreamStore {
 
     @Override
     public StreamConfig getStream(String streamId) {
-        ClientModel client = session.getContext().getClient();
+        if (streamId == null) {
+            return null;
+        }
+        // Look up the owning client via the SSF_STREAM_ID_KEY index so
+        // the call works regardless of session.getContext().getClient()
+        // — required by the admin-initiated stream delete path which
+        // runs with the admin client in session context, not the
+        // receiver. The receiver-initiated path (where session.client
+        // IS the receiver) finds the same client via the index.
+        ClientModel client = findClientByStreamId(streamId, session.getContext().getRealm()).orElse(null);
+        if (client == null) {
+            return null;
+        }
         StreamConfig streamConfig = extractStreamConfig(client);
-
         if (streamConfig == null || !streamId.equals(streamConfig.getStreamId())) {
             return null;
         }
-
-        if (!Boolean.parseBoolean(client.getAttribute("ssf.enabled"))) {
+        if (!Boolean.parseBoolean(client.getAttribute(SSF_ENABLED_KEY))) {
             return null;
         }
-
         return streamConfig;
     }
 
@@ -247,7 +256,19 @@ public class ClientStreamStore implements SsfStreamStore {
 
     @Override
     public void deleteStream(String streamId) {
-        ClientModel client = session.getContext().getClient();
+        // Look up the owning client from the stream id rather than
+        // pulling it from session context — this method is invoked from
+        // both receiver-driven flows (where session.getContext().getClient()
+        // is the receiver) and admin-driven flows (where it's the admin
+        // client). Searching by SSF_STREAM_ID_KEY makes the call
+        // self-contained and safe regardless of caller context.
+        if (streamId == null) {
+            return;
+        }
+        ClientModel client = findClientByStreamId(streamId, session.getContext().getRealm()).orElse(null);
+        if (client == null) {
+            return;
+        }
         deleteStreamConfig(client, streamId);
     }
 

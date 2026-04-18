@@ -3,6 +3,7 @@ package org.keycloak.ssf.transmitter;
 import java.time.Duration;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Function;
 
 import org.keycloak.Config;
 import org.keycloak.common.Profile;
@@ -98,7 +99,8 @@ public class DefaultSsfTransmitterProviderFactory implements SsfTransmitterProvi
         var verificationService = createVerificationService(session, streamStore, mapper, dispatcher);
         var transmitterMetadataService = createTransmitterMetadataService(session, transmitterConfig);
         var subjectManagementService = createSubjectManagementService(session);
-        return createTransmitter(session, transmitterMetadataService, verificationService, subjectManagementService, mapper, dispatcher, transmitterConfig, streamStore);
+        return createTransmitter(session, transmitterMetadataService, verificationService, subjectManagementService,
+                mapper, dispatcher, transmitterConfig, streamStore, this::createSsfPendingEventStore);
     }
 
     protected SsfTransmitterProvider createTransmitter(KeycloakSession session,
@@ -108,10 +110,12 @@ public class DefaultSsfTransmitterProviderFactory implements SsfTransmitterProvi
                                                        SecurityEventTokenMapper mapper,
                                                        SecurityEventTokenDispatcher dispatcher,
                                                        SsfTransmitterConfig transmitterConfig,
-                                                       ClientStreamStore streamStore) {
+                                                       ClientStreamStore streamStore,
+                                                       Function<KeycloakSession, SsfPendingEventStore> pendingSsfEventStoreFactory) {
+
         return new DefaultSsfTransmitterProvider(session, transmitterMetadataService, verificationService, mapper,
                 dispatcher, transmitterConfig, configuredDefaultSupportedEventAliases, streamStore,
-                subjectManagementService);
+                subjectManagementService, pendingSsfEventStoreFactory);
     }
 
     protected SubjectManagementService createSubjectManagementService(KeycloakSession session) {
@@ -258,6 +262,12 @@ public class DefaultSsfTransmitterProviderFactory implements SsfTransmitterProvi
                 .type("boolean")
                 .helpText("Whether the /subjects:add and /subjects:remove endpoints are exposed. When false, the endpoints are not registered and the transmitter metadata omits them. Subject subscriptions can still be managed via admin-curated ssf.notify.<clientId> attributes.")
                 .defaultValue(SsfTransmitterConfig.DEFAULT_SUBJECT_MANAGEMENT_ENABLED)
+                .add()
+                .property()
+                .name(SsfTransmitterConfig.CONFIG_SSE_CAEP_ENABLED)
+                .type("boolean")
+                .helpText("Whether the legacy SSE CAEP (Apple Business Manager / Apple School Manager) profile is exposed. When true (default), the transmitter advertises the RISC PUSH and RISC POLL URIs in delivery_methods_supported and accepts them on stream-create. When false, only the standard SSF 1.0 RFC 8935 push and RFC 8936 poll delivery methods are advertised.")
+                .defaultValue(SsfTransmitterConfig.DEFAULT_SSE_CAEP_ENABLED)
                 .add()
                 .build();
     }

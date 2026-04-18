@@ -51,4 +51,17 @@ public class SsfTransmitterResource {
         }
         return transmitter.subjectManagementResource();
     }
+
+    /**
+     * RFC 8936 polling endpoint per SSF §6.1.2. Sub-resource locator —
+     * the stream-id and client-id path parameters are consumed by
+     * {@link SsfStreamPollResource#poll}. The receiver-facing URL shape
+     * is {@code /ssf/transmitter/receivers/{clientId}/streams/{streamId}/poll},
+     * matching the {@code delivery.endpoint_url} the transmitter writes
+     * back into the stream-create response.
+     */
+    @Path("/receivers/{clientId}/streams/{streamId}/poll")
+    public SsfStreamPollResource getStreamPollEndpoint() {
+        return new SsfStreamPollResource(session);
+    }
 }

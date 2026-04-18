@@ -3,8 +3,6 @@ package org.keycloak.ssf.transmitter.emit;
 import java.util.Map;
 import java.util.function.Supplier;
 
-import org.jboss.logging.Logger;
-
 import org.keycloak.common.Profile;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
@@ -29,6 +27,8 @@ import org.keycloak.ssf.transmitter.event.SecurityEventTokenMapper;
 import org.keycloak.ssf.transmitter.stream.StreamConfig;
 import org.keycloak.ssf.transmitter.subject.SsfNotifyAttributes;
 import org.keycloak.util.JsonSerialization;
+
+import org.jboss.logging.Logger;
 
 /**
  * Pushes synthetic SSF events injected by a trusted IAM management

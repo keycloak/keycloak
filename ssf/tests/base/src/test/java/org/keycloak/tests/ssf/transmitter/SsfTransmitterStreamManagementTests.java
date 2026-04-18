@@ -17,6 +17,7 @@ import org.keycloak.ssf.Ssf;
 import org.keycloak.ssf.event.caep.CaepCredentialChange;
 import org.keycloak.ssf.event.caep.CaepSessionRevoked;
 import org.keycloak.ssf.transmitter.SsfScopes;
+import org.keycloak.ssf.transmitter.admin.SsfClientStreamRepresentation;
 import org.keycloak.ssf.transmitter.stream.StreamConfig;
 import org.keycloak.ssf.transmitter.stream.StreamConfigInputRepresentation;
 import org.keycloak.ssf.transmitter.stream.StreamConfigUpdateRepresentation;
@@ -322,15 +323,16 @@ public class SsfTransmitterStreamManagementTests {
         StreamConfigUpdateRepresentation request = buildPushStreamRequest(Set.of(CaepCredentialChange.TYPE));
 
         String streamId;
-        Integer originalCreatedAt;
         Set<String> originalAudience;
         try (SimpleHttpResponse response = postStream(token, request)) {
             Assertions.assertEquals(201, response.getStatus());
             StreamConfig created = response.asJson(StreamConfig.class);
             streamId = created.getStreamId();
-            originalCreatedAt = created.getCreatedAt();
             originalAudience = created.getAudience();
         }
+        // kc_created_at is admin-only and not on the receiver-facing wire;
+        // read it through the admin endpoint so we can assert it didn't move.
+        Integer originalCreatedAt = fetchAdminStreamRepresentation(RECEIVER_RW).getCreatedAt();
 
         Map<String, Object> body = new LinkedHashMap<>();
         body.put("stream_id", streamId);
@@ -356,13 +358,13 @@ public class SsfTransmitterStreamManagementTests {
                 .asResponse()) {
             Assertions.assertEquals(200, response.getStatus());
             StreamConfig fetched = response.asJson(StreamConfig.class);
-            Assertions.assertEquals(originalCreatedAt, fetched.getCreatedAt(),
-                    "kc_created_at must not be altered by a rejected PATCH");
             Assertions.assertEquals(originalAudience, fetched.getAudience(),
                     "aud must not be altered by a rejected PATCH");
             Assertions.assertNotEquals("attempted take-over", fetched.getDescription(),
                     "a rejected PATCH must not leave partial writes behind");
         }
+        Assertions.assertEquals(originalCreatedAt, fetchAdminStreamRepresentation(RECEIVER_RW).getCreatedAt(),
+                "kc_created_at must not be altered by a rejected PATCH");
     }
 
     @Test
@@ -370,22 +372,24 @@ public class SsfTransmitterStreamManagementTests {
 
         // Regression for the timestamp plumbing: create stamps both
         // kc_created_at and kc_updated_at, update preserves kc_created_at
-        // and refreshes kc_updated_at.
+        // and refreshes kc_updated_at. Both fields are admin-only and not
+        // surfaced on the receiver-facing wire — we read them through the
+        // admin /ssf/clients/{uuid}/stream endpoint instead.
         String token = obtainManageToken(RECEIVER_RW, RECEIVER_RW_SECRET);
         StreamConfigUpdateRepresentation request = buildPushStreamRequest(Set.of(CaepCredentialChange.TYPE));
 
-        Integer originalCreatedAt;
         String streamId;
         try (SimpleHttpResponse response = postStream(token, request)) {
             Assertions.assertEquals(201, response.getStatus());
-            StreamConfig created = response.asJson(StreamConfig.class);
-            streamId = created.getStreamId();
-            originalCreatedAt = created.getCreatedAt();
-            Assertions.assertNotNull(originalCreatedAt,
-                    "create must stamp kc_created_at");
-            Assertions.assertNotNull(created.getUpdatedAt(),
-                    "create must stamp kc_updated_at");
+            streamId = response.asJson(StreamConfig.class).getStreamId();
         }
+
+        SsfClientStreamRepresentation afterCreate = fetchAdminStreamRepresentation(RECEIVER_RW);
+        Integer originalCreatedAt = afterCreate.getCreatedAt();
+        Assertions.assertNotNull(originalCreatedAt,
+                "create must stamp kc_created_at");
+        Assertions.assertNotNull(afterCreate.getUpdatedAt(),
+                "create must stamp kc_updated_at");
 
         StreamConfigUpdateRepresentation patch = new StreamConfigUpdateRepresentation();
         patch.setStreamId(streamId);
@@ -393,12 +397,13 @@ public class SsfTransmitterStreamManagementTests {
 
         try (SimpleHttpResponse response = patchStream(token, patch)) {
             Assertions.assertEquals(200, response.getStatus());
-            StreamConfig updated = response.asJson(StreamConfig.class);
-            Assertions.assertEquals(originalCreatedAt, updated.getCreatedAt(),
-                    "kc_created_at must not change across updates");
-            Assertions.assertNotNull(updated.getUpdatedAt(),
-                    "kc_updated_at must remain set after a PATCH");
         }
+
+        SsfClientStreamRepresentation afterPatch = fetchAdminStreamRepresentation(RECEIVER_RW);
+        Assertions.assertEquals(originalCreatedAt, afterPatch.getCreatedAt(),
+                "kc_created_at must not change across updates");
+        Assertions.assertNotNull(afterPatch.getUpdatedAt(),
+                "kc_updated_at must remain set after a PATCH");
     }
 
     @Test
@@ -414,17 +419,17 @@ public class SsfTransmitterStreamManagementTests {
         StreamConfigUpdateRepresentation request = buildPushStreamRequest(Set.of(CaepCredentialChange.TYPE));
 
         String streamId;
-        Integer originalCreatedAt;
         Set<String> originalAudience;
         String originalIssuer;
         try (SimpleHttpResponse response = postStream(token, request)) {
             Assertions.assertEquals(201, response.getStatus());
             StreamConfig created = response.asJson(StreamConfig.class);
             streamId = created.getStreamId();
-            originalCreatedAt = created.getCreatedAt();
             originalAudience = created.getAudience();
             originalIssuer = created.getIssuer();
         }
+        // kc_created_at lives on the admin representation only.
+        Integer originalCreatedAt = fetchAdminStreamRepresentation(RECEIVER_RW).getCreatedAt();
 
         // Hand-built raw body so we can smuggle fields Jackson would never
         // write from a StreamConfigUpdateRepresentation instance.
@@ -457,11 +462,11 @@ public class SsfTransmitterStreamManagementTests {
                     "iss must not be altered by a rejected PUT");
             Assertions.assertEquals(originalAudience, fetched.getAudience(),
                     "aud must not be altered by a rejected PUT");
-            Assertions.assertEquals(originalCreatedAt, fetched.getCreatedAt(),
-                    "kc_created_at must not be altered by a rejected PUT");
             Assertions.assertNotEquals("attempted take-over", fetched.getDescription(),
                     "a rejected PUT must not leave partial writes behind");
         }
+        Assertions.assertEquals(originalCreatedAt, fetchAdminStreamRepresentation(RECEIVER_RW).getCreatedAt(),
+                "kc_created_at must not be altered by a rejected PUT");
     }
 
     @Test
@@ -865,6 +870,28 @@ public class SsfTransmitterStreamManagementTests {
                 .asResponse()) {
             // 204 means deleted, 404 means nothing to delete — both are fine.
         } catch (IOException ignored) {
+        }
+    }
+
+    /**
+     * Fetches the current admin representation of the receiver client's stream
+     * via {@code GET /admin/realms/{realm}/ssf/clients/{clientUuid}/stream}.
+     * Used by tests that need to read admin-only fields (kc_created_at,
+     * kc_updated_at, kc_status_reason) — these are intentionally not exposed
+     * on the receiver-facing {@code StreamConfig} wire shape.
+     */
+    protected SsfClientStreamRepresentation fetchAdminStreamRepresentation(String clientId) throws IOException {
+        ClientRepresentation client = findClientByClientId(clientId);
+        Assertions.assertNotNull(client, () -> "expected client '" + clientId + "' to exist");
+        String adminStreamUrl = keycloakUrls.getAdmin() + "/realms/" + realm.getName()
+                + "/ssf/clients/" + client.getId() + "/stream";
+        try (SimpleHttpResponse response = http.doGet(adminStreamUrl)
+                .auth(adminClient.tokenManager().getAccessTokenString())
+                .acceptJson()
+                .asResponse()) {
+            Assertions.assertEquals(200, response.getStatus(),
+                    "admin GET stream should succeed for client " + clientId);
+            return response.asJson(SsfClientStreamRepresentation.class);
         }
     }
 

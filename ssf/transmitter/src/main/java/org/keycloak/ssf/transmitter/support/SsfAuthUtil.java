@@ -6,8 +6,6 @@ import java.util.regex.Pattern;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Response;
 
-import org.jboss.logging.Logger;
-
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.representations.AccessToken;
@@ -16,6 +14,8 @@ import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.ssf.Ssf;
 import org.keycloak.ssf.transmitter.stream.storage.client.ClientStreamStore;
 import org.keycloak.utils.KeycloakSessionUtil;
+
+import org.jboss.logging.Logger;
 
 public class SsfAuthUtil {
 

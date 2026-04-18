@@ -2,6 +2,7 @@ package org.keycloak.ssf.transmitter;
 
 import java.util.LinkedHashSet;
 import java.util.Set;
+import java.util.function.Function;
 
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.ssf.Ssf;
@@ -10,6 +11,7 @@ import org.keycloak.ssf.transmitter.delivery.SecurityEventTokenDispatcher;
 import org.keycloak.ssf.transmitter.emit.EventEmitterService;
 import org.keycloak.ssf.transmitter.event.SecurityEventTokenMapper;
 import org.keycloak.ssf.transmitter.metadata.TransmitterMetadataService;
+import org.keycloak.ssf.transmitter.outbox.SsfPendingEventStore;
 import org.keycloak.ssf.transmitter.resources.SsfStreamManagementResource;
 import org.keycloak.ssf.transmitter.resources.SsfStreamStatusResource;
 import org.keycloak.ssf.transmitter.resources.SsfStreamVerificationResource;
@@ -46,6 +48,8 @@ public class DefaultSsfTransmitterProvider implements SsfTransmitterProvider {
 
     protected final SubjectManagementService subjectManagementService;
 
+    protected final Function<KeycloakSession, SsfPendingEventStore> pendingSsfEventStoreFactory;
+
     public DefaultSsfTransmitterProvider(KeycloakSession session,
                                          TransmitterMetadataService transmitterMetadataService,
                                          StreamVerificationService verificationService,
@@ -54,7 +58,7 @@ public class DefaultSsfTransmitterProvider implements SsfTransmitterProvider {
                                          SsfTransmitterConfig transmitterConfig,
                                          Set<String> configuredDefaultSupportedEventAliases,
                                          ClientStreamStore streamStore,
-                                         SubjectManagementService subjectManagementService) {
+                                         SubjectManagementService subjectManagementService, Function<KeycloakSession, SsfPendingEventStore> pendingSsfEventStoreFactory) {
         this.session = session;
         this.transmitterService = transmitterMetadataService;
         this.verificationService = verificationService;
@@ -64,6 +68,7 @@ public class DefaultSsfTransmitterProvider implements SsfTransmitterProvider {
         this.configuredDefaultSupportedEventAliases = configuredDefaultSupportedEventAliases;
         this.streamStore = streamStore;
         this.subjectManagementService = subjectManagementService;
+        this.pendingSsfEventStoreFactory = pendingSsfEventStoreFactory;
     }
 
     @Override
@@ -86,11 +91,6 @@ public class DefaultSsfTransmitterProvider implements SsfTransmitterProvider {
         return securityEventTokenDispatcher;
     }
 
-    @Override
-    public StreamService streamService() {
-        return new StreamService(session, streamStore(), transmitterService);
-    }
-
     public ClientStreamStore streamStore() {
         return streamStore;
     }
@@ -98,6 +98,15 @@ public class DefaultSsfTransmitterProvider implements SsfTransmitterProvider {
     @Override
     public SubjectManagementService subjectManagementService() {
         return subjectManagementService;
+    }
+
+    @Override
+    public StreamService streamService() {
+        // SsfPendingEventStore::new matches Function<KeycloakSession,
+        // SsfPendingEventStore> — the StreamService needs a factory so
+        // stream-delete can cascade-purge pending outbox rows for both
+        // PUSH and POLL streams.
+        return new StreamService(session, streamStore(), metadataService(), pendingSsfEventStoreFactory);
     }
 
     @Override
@@ -117,12 +126,12 @@ public class DefaultSsfTransmitterProvider implements SsfTransmitterProvider {
 
     @Override
     public SsfStreamVerificationResource streamVerificationResource() {
-        return new SsfStreamVerificationResource(session, verificationService, transmitterConfig, streamStore());
+        return new SsfStreamVerificationResource(session, verificationService(), transmitterConfig, streamStore());
     }
 
     @Override
     public SsfSubjectManagementResource subjectManagementResource() {
-        return new SsfSubjectManagementResource(session, new SubjectManagementService(session), false);
+        return new SsfSubjectManagementResource(session, subjectManagementService(), false);
     }
 
     @Override

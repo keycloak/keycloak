@@ -30,6 +30,8 @@ public class SsfTransmitterConfig {
 
     public static final String CONFIG_SUBJECT_MANAGEMENT_ENABLED = "subject-management-enabled";
 
+    public static final String CONFIG_SSE_CAEP_ENABLED = "sse-caep-enabled";
+
     /**
      * Default connect timeout (in milliseconds) for delivering SSF events via
      * HTTP push to a receiver's push endpoint.
@@ -94,6 +96,18 @@ public class SsfTransmitterConfig {
      */
     public static final boolean DEFAULT_SUBJECT_MANAGEMENT_ENABLED = true;
 
+    /**
+     * Default for the SSE CAEP (legacy Apple Business Manager / Apple
+     * School Manager) profile flag. {@code true} advertises the legacy
+     * RISC PUSH and RISC POLL URIs ({@code https://schemas.openid.net/secevent/risc/delivery-method/{push,poll}})
+     * in the transmitter metadata and accepts them on stream-create.
+     * Set to {@code false} to expose only the standard SSF 1.0 RFC 8935
+     * push and RFC 8936 poll delivery methods — useful for deployments
+     * that don't integrate with Apple-style receivers and want to keep
+     * the advertised surface to the spec-standard URIs only.
+     */
+    public static final boolean DEFAULT_SSE_CAEP_ENABLED = true;
+
     private final int pushEndpointConnectTimeoutMillis;
 
     private final int pushEndpointSocketTimeoutMillis;
@@ -110,6 +124,8 @@ public class SsfTransmitterConfig {
 
     private final boolean subjectManagementEnabled;
 
+    private final boolean sseCaepEnabled;
+
     public SsfTransmitterConfig(int pushEndpointConnectTimeoutMillis,
                                 int pushEndpointSocketTimeoutMillis,
                                 int transmitterInitiatedVerificationDelayMillis,
@@ -117,7 +133,8 @@ public class SsfTransmitterConfig {
                                 String signatureAlgorithm,
                                 String userSubjectFormat,
                                 DefaultSubjects defaultSubjects,
-                                boolean subjectManagementEnabled) {
+                                boolean subjectManagementEnabled,
+                                boolean sseCaepEnabled) {
         this.pushEndpointConnectTimeoutMillis = pushEndpointConnectTimeoutMillis;
         this.pushEndpointSocketTimeoutMillis = pushEndpointSocketTimeoutMillis;
         this.transmitterInitiatedVerificationDelayMillis = transmitterInitiatedVerificationDelayMillis;
@@ -126,6 +143,7 @@ public class SsfTransmitterConfig {
         this.userSubjectFormat = userSubjectFormat;
         this.defaultSubjects = defaultSubjects;
         this.subjectManagementEnabled = subjectManagementEnabled;
+        this.sseCaepEnabled = sseCaepEnabled;
     }
 
     /**
@@ -150,7 +168,9 @@ public class SsfTransmitterConfig {
                 DefaultSubjects.parseOrDefault(config.get(CONFIG_DEFAULT_SUBJECTS),
                         DEFAULT_DEFAULT_SUBJECTS),
                 config.getBoolean(CONFIG_SUBJECT_MANAGEMENT_ENABLED,
-                        DEFAULT_SUBJECT_MANAGEMENT_ENABLED));
+                        DEFAULT_SUBJECT_MANAGEMENT_ENABLED),
+                config.getBoolean(CONFIG_SSE_CAEP_ENABLED,
+                        DEFAULT_SSE_CAEP_ENABLED));
     }
 
     /**
@@ -167,7 +187,8 @@ public class SsfTransmitterConfig {
                 DEFAULT_SIGNATURE_ALGORITHM,
                 DEFAULT_USER_SUBJECT_FORMAT,
                 DEFAULT_DEFAULT_SUBJECTS,
-                DEFAULT_SUBJECT_MANAGEMENT_ENABLED);
+                DEFAULT_SUBJECT_MANAGEMENT_ENABLED,
+                DEFAULT_SSE_CAEP_ENABLED);
     }
 
     /**
@@ -248,5 +269,19 @@ public class SsfTransmitterConfig {
      */
     public boolean isSubjectManagementEnabled() {
         return subjectManagementEnabled;
+    }
+
+    /**
+     * Whether the legacy SSE CAEP profile (Apple Business Manager /
+     * Apple School Manager interop) is exposed. When {@code true}
+     * (default), the transmitter advertises the RISC PUSH and RISC POLL
+     * URIs in {@code delivery_methods_supported} and accepts them on
+     * {@code POST /streams}. When {@code false}, only the spec-standard
+     * SSF 1.0 RFC 8935 push and RFC 8936 poll URIs are advertised /
+     * accepted — useful for deployments that don't integrate with
+     * Apple-style receivers.
+     */
+    public boolean isSseCaepEnabled() {
+        return sseCaepEnabled;
     }
 }

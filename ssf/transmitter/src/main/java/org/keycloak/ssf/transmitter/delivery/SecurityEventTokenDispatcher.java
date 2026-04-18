@@ -74,15 +74,15 @@ public class SecurityEventTokenDispatcher {
         }
 
         if (!isStreamEnabled(stream)) {
-            log.debugf("Skipping event delivery for stream because of unsupported stream status. streamId=%s jti=%s status=%s",
-                    stream.getStreamId(), eventToken.getJti(), stream.getStatus());
+            log.debugf("Skipping event delivery for stream because of unsupported stream status. clientId=%s streamId=%s jti=%s status=%s",
+                    stream.getClientClientId(), stream.getStreamId(), eventToken.getJti(), stream.getStatus());
             return;
         }
 
         // Check if the stream is interested in this event type
         if (isEventEnabledForStream(eventToken, stream)){
-            log.debugf("Skipping event delivery for stream because of unsupported event. streamId=%s jti=%s events=%s",
-                    stream.getStreamId(), eventToken.getJti(), eventToken.getEvents());
+            log.debugf("Skipping event delivery for stream because of unsupported event. clientId=%s streamId=%s jti=%s events=%s",
+                    stream.getClientClientId(), stream.getStreamId(), eventToken.getJti(), eventToken.getEvents());
             return;
         }
 
@@ -173,8 +173,8 @@ public class SecurityEventTokenDispatcher {
                     String signatureAlgorithm = SsfSignatureAlgorithms.resolveForStream(stream, transmitterConfig);
                     String encodedEvent = securityEventTokenEncoder.encode(narrowedEventToken, signatureAlgorithm);
 
-                    log.debugf("Delivering event to stream via %s. streamId=%s jti=%s async=%s",
-                            deliveryMethod.name(), stream.getStreamId(), eventToken.getJti(), async);
+                    log.debugf("Delivering event to stream via %s. clientId=%s streamId=%s jti=%s async=%s",
+                            deliveryMethod.name(), stream.getClientClientId(), stream.getStreamId(), eventToken.getJti(), async);
 
                     if (async) {
                         // Outbox row records the full, unnarrowed eventToken:
@@ -192,13 +192,36 @@ public class SecurityEventTokenDispatcher {
                     }
                     return pushDeliveryService.deliverEvent(stream, narrowedEventToken, encodedEvent);
                 } catch (Exception e) {
-                    log.errorf(e, "Error delivering event via PUSH to stream %s", stream.getStreamId());
+                    log.errorf(e, "Error delivering event via PUSH to stream. clientId=%s streamId=%s"
+                            ,stream.getClientClientId(), stream.getStreamId());
                     return false;
                 }
             }
             case POLL, RISC_POLL -> {
-                log.warnf("Poll delivery not supported for %s", stream.getStreamId());
-                return false;
+                try {
+                    // Poll path mirrors the async PUSH branch: narrow per
+                    // stream profile, sign once, persist the encoded SET
+                    // into the outbox. The poll endpoint reads + acks
+                    // these rows on the receiver's schedule — there is no
+                    // drainer that pushes them out. The `async` flag is
+                    // ignored: poll has no synchronous-delivery option
+                    // because there is nobody to push to until the
+                    // receiver shows up.
+                    SecurityEventToken narrowedEventToken = getNarrowedEventToken(eventToken, stream);
+
+                    String signatureAlgorithm = SsfSignatureAlgorithms.resolveForStream(stream, transmitterConfig);
+                    String encodedEvent = securityEventTokenEncoder.encode(narrowedEventToken, signatureAlgorithm);
+
+                    log.debugf("Enqueuing event for poll delivery. clientId=%s streamId=%s jti=%s"
+                            ,stream.getClientClientId(), stream.getStreamId(), eventToken.getJti());
+
+                    enqueueForPoll(stream, eventToken, encodedEvent);
+                    return true;
+                } catch (Exception e) {
+                    log.errorf(e, "Error enqueuing event for POLL delivery to stream. clientId=%s streamId=%s"
+                            ,stream.getClientClientId(), stream.getStreamId());
+                    return false;
+                }
             }
         }
         return false;
@@ -233,6 +256,30 @@ public class SecurityEventTokenDispatcher {
 
         var pendingEventStore = pendingSsfEventStoreFactory.apply(session);
         pendingEventStore.enqueuePendingPush(realmId, clientId, streamId, jti, eventType, encodedEvent);
+    }
+
+    /**
+     * Persists a signed SET to the outbox tagged for poll delivery. The
+     * receiver pulls it via the poll endpoint
+     * ({@code POST /ssf/transmitter/receivers/{clientId}/streams/{stream_id}/poll})
+     * and acks it; no drainer task touches POLL rows.
+     */
+    protected void enqueueForPoll(StreamConfig stream,
+                                  SsfSecurityEventToken eventToken,
+                                  String encodedEvent) {
+        String realmId = session.getContext().getRealm().getId();
+        String clientId = stream.getClientId();
+        String streamId = stream.getStreamId();
+        String jti = eventToken.getJti();
+        String eventType = getEventType(eventToken);
+        if (eventType == null) {
+            // EVENT_TYPE is NOT NULL in the schema — guard against
+            // malformed tokens for the same reason deliverEventAsync does.
+            eventType = "<unknown>";
+        }
+
+        var pendingEventStore = pendingSsfEventStoreFactory.apply(session);
+        pendingEventStore.enqueuePendingPoll(realmId, clientId, streamId, jti, eventType, encodedEvent);
     }
 
     protected SecurityEventToken getNarrowedEventToken(SsfSecurityEventToken eventToken, StreamConfig stream) {

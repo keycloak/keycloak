@@ -110,16 +110,40 @@ public class StreamConfig {
     @JsonProperty("default_subjects")
     protected DefaultSubjects defaultSubjects;
 
-    @JsonProperty("kc_status")
+    /**
+     * Stream status. Tracked internally and surfaced to receivers via the
+     * dedicated SSF {@code /streams/status} endpoint (SSF §8.1.5) — never
+     * serialized as part of the {@code StreamConfig} wire shape returned
+     * from {@code POST/GET/PATCH/PUT /streams}. {@code WRITE_ONLY} so
+     * pre-refactor blobs that still carry {@code kc_status} are read
+     * back during the legacy storage migration.
+     */
+    @JsonProperty(value = "kc_status", access = JsonProperty.Access.WRITE_ONLY)
     protected StreamStatusValue status;
 
-    @JsonProperty("kc_status_reason")
+    /**
+     * Free-text status reason. Admin-only — the admin UI surfaces this via
+     * {@link org.keycloak.ssf.transmitter.admin.SsfClientStreamRepresentation};
+     * receivers see it through {@code /streams/status}. Same {@code WRITE_ONLY}
+     * pattern as {@link #status} so legacy blobs still migrate cleanly.
+     */
+    @JsonProperty(value = "kc_status_reason", access = JsonProperty.Access.WRITE_ONLY)
     protected String statusReason;
 
-    @JsonProperty("kc_created_at")
+    /**
+     * Stream creation timestamp (epoch seconds). Admin/audit field, surfaced
+     * to operators via the admin UI — not part of the SSF spec and never
+     * leaked on the receiver-facing wire. {@code WRITE_ONLY} so legacy
+     * blobs still hydrate this on read.
+     */
+    @JsonProperty(value = "kc_created_at", access = JsonProperty.Access.WRITE_ONLY)
     protected Integer createdAt;
 
-    @JsonProperty("kc_updated_at")
+    /**
+     * Last update timestamp (epoch seconds). Same admin/audit role as
+     * {@link #createdAt}; same {@code WRITE_ONLY} treatment.
+     */
+    @JsonProperty(value = "kc_updated_at", access = JsonProperty.Access.WRITE_ONLY)
     protected Integer updatedAt;
 
     /**
