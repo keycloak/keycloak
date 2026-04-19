@@ -6,6 +6,7 @@ import java.util.Set;
 import java.util.function.Supplier;
 
 import org.keycloak.Config;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.ProviderFactory;
 
@@ -71,6 +72,25 @@ public interface SsfEventProviderFactory extends ProviderFactory<SsfEventProvide
     @Override
     default void close() {
         // no-op
+    }
+
+    /**
+     * Most factories registered through this SPI exist only to contribute
+     * events to the shared {@link SsfEventRegistry} via
+     * {@link #getContributedEventFactories()} — they don't supply a per-
+     * session {@link SsfEventProvider} instance because callers resolve
+     * {@code SsfEventProvider} through the configured default factory
+     * (id {@code "default"}, shipped as {@code DefaultSsfEventProviderFactory}).
+     *
+     * <p>The default implementation returns {@code null} so contribution-
+     * only extensions can keep their factory class to {@code getId()} +
+     * {@code isSupported()} + the {@code getContributedEventFactories()}
+     * map. Override only when your factory is intended to replace the
+     * default provider entirely.
+     */
+    @Override
+    default SsfEventProvider create(KeycloakSession session) {
+        return null;
     }
 
     /**
