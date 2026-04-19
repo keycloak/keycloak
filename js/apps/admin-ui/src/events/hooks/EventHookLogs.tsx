@@ -21,7 +21,6 @@ import {
   Form,
   FormGroup,
   Label,
-  Popover,
   SelectOption,
   Spinner,
   Switch,
@@ -32,7 +31,6 @@ import {
   CheckCircleIcon,
   ExclamationCircleIcon,
   InfoCircleIcon,
-  WarningTriangleIcon,
 } from "@patternfly/react-icons";
 import { Table, Tbody, Td, Th, Thead, Tr } from "@patternfly/react-table";
 import { pickBy } from "lodash-es";
@@ -127,7 +125,7 @@ const SourceEventLink = ({
   const label = sourceEventLabel(record) || record.id || "-";
 
   if (!record.sourceType) {
-    return <>{label}</>;
+    return label;
   }
 
   return record.test ? (
@@ -170,7 +168,7 @@ const MessageStatusLabel = ({ status }: { status?: string }) => {
   const { t } = useTranslation();
 
   if (!status) {
-    return <></>;
+    return null;
   }
 
   switch (status) {
@@ -198,7 +196,7 @@ const MessageStatusLabel = ({ status }: { status?: string }) => {
         </Label>
       );
     default:
-      return <>{t(status)}</>;
+      return t(status);
   }
 };
 
@@ -349,23 +347,42 @@ export const EventHookLogs = () => {
   const search = searchParams.get("search") || "";
   const executionId = searchParams.get("executionId") || "";
   const messageId = searchParams.get("messageId") || "";
-  const defaultValues: EventHookLogSearchForm = {
-    sourceType,
-    targetType,
-    targetId,
-    event,
-    client,
-    user,
-    ipAddress,
-    resourceType,
-    resourcePath,
-    status,
-    messageStatus,
-    dateFrom,
-    dateTo,
-    search,
-    executionId,
-  };
+  const defaultValues = useMemo<EventHookLogSearchForm>(
+    () => ({
+      sourceType,
+      targetType,
+      targetId,
+      event,
+      client,
+      user,
+      ipAddress,
+      resourceType,
+      resourcePath,
+      status,
+      messageStatus,
+      dateFrom,
+      dateTo,
+      search,
+      executionId,
+    }),
+    [
+      client,
+      dateFrom,
+      dateTo,
+      event,
+      executionId,
+      ipAddress,
+      messageStatus,
+      resourcePath,
+      resourceType,
+      search,
+      sourceType,
+      status,
+      targetId,
+      targetType,
+      user,
+    ],
+  );
   const filterLabels: Record<keyof EventHookLogSearchForm, string> = {
     sourceType: t("eventHookSourceTypeFilter"),
     targetType: t("eventHookTargetTypeFilter"),
@@ -407,27 +424,10 @@ export const EventHookLogs = () => {
 
   useEffect(() => {
     reset(defaultValues);
-  }, [
-    reset,
-    sourceType,
-    targetId,
-    targetType,
-    event,
-    client,
-    user,
-    ipAddress,
-    resourceType,
-    resourcePath,
-    status,
-    messageStatus,
-    dateFrom,
-    dateTo,
-    search,
-    executionId,
-  ]);
+  }, [defaultValues, reset]);
 
   useEffect(() => {
-    adminClient.eventHooks.findTargets({ realm }).then(setTargets);
+    void adminClient.eventHooks.findTargets({ realm }).then(setTargets);
   }, [adminClient, realm]);
 
   useEffect(() => {
@@ -905,30 +905,30 @@ export const EventHookLogs = () => {
     const filteredExecutionIds =
       status || dateFrom || dateTo || messageId
         ? new Set(
-          (
-            await adminClient.eventHooks.findLogs({
-              realm,
-              messageId: messageId || undefined,
-              targetId: targetId || undefined,
-              targetType: targetType || undefined,
-              sourceType: sourceType || undefined,
-              event: event || undefined,
-              client: client || undefined,
-              user: user || undefined,
-              ipAddress: ipAddress || undefined,
-              resourceType: resourceType || undefined,
-              resourcePath: resourcePath || undefined,
-              status: status || undefined,
-              messageStatus: messageStatus || undefined,
-              dateFrom: dateFrom || undefined,
-              dateTo: dateTo || undefined,
-              executionId: executionId || undefined,
-              search: search || undefined,
-            })
+            (
+              await adminClient.eventHooks.findLogs({
+                realm,
+                messageId: messageId || undefined,
+                targetId: targetId || undefined,
+                targetType: targetType || undefined,
+                sourceType: sourceType || undefined,
+                event: event || undefined,
+                client: client || undefined,
+                user: user || undefined,
+                ipAddress: ipAddress || undefined,
+                resourceType: resourceType || undefined,
+                resourcePath: resourcePath || undefined,
+                status: status || undefined,
+                messageStatus: messageStatus || undefined,
+                dateFrom: dateFrom || undefined,
+                dateTo: dateTo || undefined,
+                executionId: executionId || undefined,
+                search: search || undefined,
+              })
+            )
+              .map((log) => log.executionId)
+              .filter((value): value is string => Boolean(value)),
           )
-            .map((log) => log.executionId)
-            .filter((value): value is string => Boolean(value)),
-        )
         : undefined;
 
     const targetNames = new Map(

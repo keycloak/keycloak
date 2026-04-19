@@ -1,14 +1,14 @@
 import type { AppRouteObject } from "../routes";
 import {
-    EventsRoute,
-    EventsRouteWithSubTab,
-    EventsRouteWithTab,
+  EventsRoute,
+  EventsRouteWithSubTab,
+  EventsRouteWithTab,
 } from "./routes/Events";
 
 const routes: AppRouteObject[] = [
-    EventsRoute,
-    EventsRouteWithTab,
-    EventsRouteWithSubTab,
+  EventsRoute,
+  EventsRouteWithTab,
+  EventsRouteWithSubTab,
 ];
 
 export default routes;

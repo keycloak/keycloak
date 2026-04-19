@@ -69,6 +69,28 @@ public class EmailEventHookTargetProviderTest {
     }
 
     @Test
+    public void shouldRenderFrontendDefaultTemplatesWithoutResolvedUserOrDetails() throws Exception {
+        RecordingDispatcher dispatcher = new RecordingDispatcher();
+        KeycloakSession session = session(
+            realm("realm-1", "demo", Map.of("host", "smtp.example.org", "from", "noreply@example.org")),
+            null);
+        EmailEventHookTargetProvider provider = new EmailEventHookTargetProvider(session, dispatcher);
+
+        EventHookDeliveryResult result = provider.deliver(target(Map.of(
+                "recipientTemplate", "ops@example.org",
+                "subjectTemplate", "<#if event??>${event.eventType!event.operationType!\"UNKNOWN\"} for ${(user.username)!(event.userId!\"unknown user\")}<#else>${events?size} grouped events</#if>",
+                "textBodyTemplate", "<#if event??>Event ${event.eventType!event.operationType!\"UNKNOWN\"} for ${(user.username)!(event.userId!\"unknown user\")}<#else>${events?size} events were grouped for delivery.</#if>",
+                "htmlBodyTemplate", "<#if event??><p><strong>${event.eventType!event.operationType!\"UNKNOWN\"}</strong> for ${(user.username)!(event.userId!\"unknown user\")}</p><#else><p>${events?size} events were grouped for delivery.</p></#if>"
+        )), message("evt-1", null, Map.of("eventId", "evt-1", "eventType", "LOGIN")));
+
+        assertTrue(result.isSuccess());
+        assertEquals("ops@example.org", dispatcher.recipient);
+        assertEquals("LOGIN for unknown user", dispatcher.subject);
+        assertTrue(dispatcher.textBody.contains("LOGIN for unknown user"));
+        assertTrue(dispatcher.htmlBody.contains("LOGIN"));
+    }
+
+    @Test
     public void shouldReturnParseFailedWhenTemplateRendersEmptyRecipient() throws Exception {
         RecordingDispatcher dispatcher = new RecordingDispatcher();
         KeycloakSession session = session(

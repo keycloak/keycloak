@@ -20,9 +20,7 @@ type EventHookTargetsParams = {
   targetId?: string;
 };
 
-export const toEventHookLogs = (
-  params: EventHookLogsParams,
-): Partial<Path> => {
+export const toEventHookLogs = (params: EventHookLogsParams): Partial<Path> => {
   const searchParams = new URLSearchParams();
 
   Object.entries({

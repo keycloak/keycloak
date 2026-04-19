@@ -3,6 +3,7 @@ import type EventHookTargetRepresentation from "@keycloak/keycloak-admin-client/
 import {
   HelpItem,
   KeycloakSelect,
+  TextAreaControl,
   TextControl,
   useAlerts,
   useEnvironment,
@@ -45,6 +46,53 @@ const DEFAULT_MAX_EVENTS_PER_BATCH = 1000;
 const DEFAULT_AGGREGATION_TIMEOUT_MS = 5000;
 const DEFAULT_MAX_ATTEMPTS = 5;
 const DEFAULT_RETRY_DELAY_MS = 5000;
+const DEFAULT_EMAIL_RECIPIENT_TEMPLATE = '${(user.email)!""}';
+const DEFAULT_EMAIL_LOCALE_TEMPLATE_PLACEHOLDER =
+  '${(event.details.locale)!"en"}';
+const DEFAULT_EMAIL_SUBJECT_TEMPLATE = [
+  "<#if event??>",
+  '${event.eventType!event.operationType!"UNKNOWN"} for ${(user.username)!(event.userId!"unknown user")}',
+  "<#else>",
+  "${events?size} grouped events",
+  "</#if>",
+].join("\n");
+const DEFAULT_EMAIL_TEXT_TEMPLATE = [
+  "<#if event??>",
+  'Event ${event.eventType!event.operationType!"UNKNOWN"} for ${(user.username)!(event.userId!"unknown user")}',
+  "",
+  "<#if event.details?? && event.details?size gt 0>",
+  "Details:",
+  "<#list event.details?keys as key>",
+  "- ${key}: ${event.details[key]}",
+  "</#list>",
+  "</#if>",
+  "<#else>",
+  "${events?size} events were grouped for delivery.",
+  "",
+  "<#list events as currentEvent>",
+  '- ${currentEvent.eventType!currentEvent.operationType!"UNKNOWN"} for ${currentEvent.userId!"unknown user"}',
+  "</#list>",
+  "</#if>",
+].join("\n");
+const DEFAULT_EMAIL_HTML_TEMPLATE = [
+  "<#if event??>",
+  '<p><strong>${event.eventType!event.operationType!"UNKNOWN"}</strong> for ${(user.username)!(event.userId!"unknown user")}</p>',
+  "<#if event.details?? && event.details?size gt 0>",
+  "<ul>",
+  "  <#list event.details?keys as key>",
+  "    <li><strong>${key}:</strong> ${event.details[key]}</li>",
+  "  </#list>",
+  "</ul>",
+  "</#if>",
+  "<#else>",
+  "<p>${events?size} events were grouped for delivery.</p>",
+  "<ul>",
+  "  <#list events as currentEvent>",
+  '    <li>${currentEvent.eventType!currentEvent.operationType!"UNKNOWN"} for ${currentEvent.userId!"unknown user"}</li>',
+  "  </#list>",
+  "</ul>",
+  "</#if>",
+].join("\n");
 const baseEventFilterProperty = {
   name: "events",
   label: "eventHookTargetEvents",
@@ -114,12 +162,14 @@ export const EventHookTargetDialog = ({
   const targetName = watch("name");
   const enabled = watch("enabled");
   const selectedType = watch("type");
-  const selectedTestExampleId = watch("testExampleId");
   const selectedProvider = useMemo(
     () => providers.find(({ id }) => id === selectedType),
     [providers, selectedType],
   );
-  const configMetadata = selectedProvider?.configMetadata || [];
+  const configMetadata = useMemo(
+    () => selectedProvider?.configMetadata ?? [],
+    [selectedProvider],
+  );
   const eventFilterOptions = useMemo(
     () => [
       "*",
@@ -291,7 +341,7 @@ export const EventHookTargetDialog = ({
   useEffect(() => {
     setCustomBodyMappingExpanded(
       typeof customBodyMappingTemplate === "string" &&
-      customBodyMappingTemplate.trim().length > 0,
+        customBodyMappingTemplate.trim().length > 0,
     );
   }, [customBodyMappingTemplate]);
 
@@ -406,6 +456,61 @@ export const EventHookTargetDialog = ({
     return property ? (
       <DynamicComponents stringify properties={[property]} />
     ) : null;
+  };
+
+  const renderEmailTextField = (
+    name: string,
+    placeholder?: string,
+    defaultValue?: string,
+  ) => {
+    const property = metadataByName[name];
+
+    if (!property?.name || !property?.label) {
+      return null;
+    }
+
+    return (
+      <TextControl
+        name={`config.${property.name}`}
+        label={t(property.label)}
+        helperText={property.helpText ? t(property.helpText) : undefined}
+        placeholder={placeholder}
+        defaultValue={defaultValue}
+        rules={property.required ? { required: t("required") } : undefined}
+      />
+    );
+  };
+
+  const renderEmailTextAreaField = (
+    name: string,
+    rows: number,
+    placeholder?: string,
+    defaultValue?: string,
+  ) => {
+    const property = metadataByName[name];
+
+    if (!property?.name || !property?.label) {
+      return null;
+    }
+
+    return (
+      <>
+        <TextAreaControl
+          name={`config.${property.name}`}
+          label={t(property.label)}
+          placeholder={placeholder}
+          defaultValue={defaultValue}
+          rules={property.required ? { required: t("required") } : undefined}
+          resizeOrientation="vertical"
+          rows={rows}
+        />
+        {property.helpText && (
+          <div className="pf-v5-u-font-size-sm pf-v5-u-color-200 pf-v5-u-mt-xs pf-v5-u-mb-md">
+            {t(property.helpText)}
+          </div>
+        )}
+      </>
+    );
   };
 
   // Shared settings blocks used across multiple target types.
@@ -574,7 +679,8 @@ export const EventHookTargetDialog = ({
             }}
           />
         </FormGroup>
-        {isCustomBodyMappingEnabled && renderConfigField("customBodyMappingTemplate")}
+        {isCustomBodyMappingEnabled &&
+          renderConfigField("customBodyMappingTemplate")}
       </>
     );
   };
@@ -658,12 +764,27 @@ export const EventHookTargetDialog = ({
       >
         {t("eventHookTargetEmailUsesRealmConfig")}
       </Alert>
+      <div className="pf-v5-u-mb-md">
+        <div className="pf-v5-u-font-size-lg pf-v5-u-font-weight-bold pf-v5-u-mb-sm">
+          {t("eventHookTargetEmailRoutingSection")}
+        </div>
+        <div className="pf-v5-u-font-size-sm pf-v5-u-color-200 pf-v5-u-mb-md">
+          {t("eventHookTargetEmailRoutingSectionHelp")}
+        </div>
+      </div>
       <Grid hasGutter>
         <GridItem lg={8} sm={12}>
-          {renderConfigField("recipientTemplate")}
+          {renderEmailTextField(
+            "recipientTemplate",
+            DEFAULT_EMAIL_RECIPIENT_TEMPLATE,
+            DEFAULT_EMAIL_RECIPIENT_TEMPLATE,
+          )}
         </GridItem>
         <GridItem lg={4} sm={12}>
-          {renderConfigField("localeTemplate")}
+          {renderEmailTextField(
+            "localeTemplate",
+            DEFAULT_EMAIL_LOCALE_TEMPLATE_PLACEHOLDER,
+          )}
         </GridItem>
       </Grid>
       <Alert
@@ -682,7 +803,20 @@ export const EventHookTargetDialog = ({
       >
         {t("eventHookTargetEmailLocalization")}
       </Alert>
-      {renderConfigField("subjectTemplate")}
+      <div className="pf-v5-u-mt-lg pf-v5-u-mb-md">
+        <div className="pf-v5-u-font-size-lg pf-v5-u-font-weight-bold pf-v5-u-mb-sm">
+          {t("eventHookTargetEmailSubjectSection")}
+        </div>
+        <div className="pf-v5-u-font-size-sm pf-v5-u-color-200 pf-v5-u-mb-md">
+          {t("eventHookTargetEmailSubjectSectionHelp")}
+        </div>
+      </div>
+      {renderEmailTextAreaField(
+        "subjectTemplate",
+        3,
+        DEFAULT_EMAIL_SUBJECT_TEMPLATE,
+        DEFAULT_EMAIL_SUBJECT_TEMPLATE,
+      )}
       <Alert
         isInline
         variant="info"
@@ -691,14 +825,36 @@ export const EventHookTargetDialog = ({
       >
         {t("eventHookTargetEmailTemplateHint")}
       </Alert>
-      <Grid hasGutter>
-        <GridItem lg={6} sm={12}>
-          {renderConfigField("textBodyTemplate")}
-        </GridItem>
-        <GridItem lg={6} sm={12}>
-          {renderConfigField("htmlBodyTemplate")}
-        </GridItem>
-      </Grid>
+      <div className="pf-v5-u-mt-lg pf-v5-u-mb-md">
+        <div className="pf-v5-u-font-size-lg pf-v5-u-font-weight-bold pf-v5-u-mb-sm">
+          {t("eventHookTargetEmailBodiesSection")}
+        </div>
+        <div className="pf-v5-u-font-size-sm pf-v5-u-color-200 pf-v5-u-mb-md">
+          {t("eventHookTargetEmailBodiesSectionHelp")}
+        </div>
+      </div>
+      <div className="pf-v5-u-mb-lg">
+        <div className="pf-v5-u-font-size-md pf-v5-u-font-weight-bold pf-v5-u-mb-sm">
+          {t("eventHookTargetEmailTextEditorTitle")}
+        </div>
+        {renderEmailTextAreaField(
+          "textBodyTemplate",
+          14,
+          DEFAULT_EMAIL_TEXT_TEMPLATE,
+          DEFAULT_EMAIL_TEXT_TEMPLATE,
+        )}
+      </div>
+      <div>
+        <div className="pf-v5-u-font-size-md pf-v5-u-font-weight-bold pf-v5-u-mb-sm">
+          {t("eventHookTargetEmailHtmlEditorTitle")}
+        </div>
+        {renderEmailTextAreaField(
+          "htmlBodyTemplate",
+          16,
+          DEFAULT_EMAIL_HTML_TEMPLATE,
+          DEFAULT_EMAIL_HTML_TEMPLATE,
+        )}
+      </div>
     </>
   );
 
@@ -741,7 +897,10 @@ export const EventHookTargetDialog = ({
             />
           }
         >
-          <ClipboardCopy id="event-hook-target-pull-test-url-preview" isReadOnly>
+          <ClipboardCopy
+            id="event-hook-target-pull-test-url-preview"
+            isReadOnly
+          >
             {pullTestPreviewUrl}
           </ClipboardCopy>
         </FormGroup>
@@ -815,26 +974,36 @@ export const EventHookTargetDialog = ({
                               name: targetName,
                               type: value as string,
                               config: {
+                                ...(provider?.id === "email"
+                                  ? {
+                                      subjectTemplate:
+                                        DEFAULT_EMAIL_SUBJECT_TEMPLATE,
+                                      textBodyTemplate:
+                                        DEFAULT_EMAIL_TEXT_TEMPLATE,
+                                      htmlBodyTemplate:
+                                        DEFAULT_EMAIL_HTML_TEMPLATE,
+                                    }
+                                  : {}),
                                 ...(provider?.supportsBatch
                                   ? {
-                                    deliveryMode: "SINGLE",
-                                    maxEventsPerBatch:
-                                      DEFAULT_MAX_EVENTS_PER_BATCH,
-                                  }
+                                      deliveryMode: "SINGLE",
+                                      maxEventsPerBatch:
+                                        DEFAULT_MAX_EVENTS_PER_BATCH,
+                                    }
                                   : {}),
                                 ...(provider?.supportsAggregation
                                   ? {
-                                    aggregationTimeoutMs:
-                                      DEFAULT_AGGREGATION_TIMEOUT_MS,
-                                  }
+                                      aggregationTimeoutMs:
+                                        DEFAULT_AGGREGATION_TIMEOUT_MS,
+                                    }
                                   : {}),
                                 ...(provider?.supportsRetry === false
                                   ? {}
                                   : {
-                                    retryEnabled: true,
-                                    maxAttempts: DEFAULT_MAX_ATTEMPTS,
-                                    retryDelayMs: DEFAULT_RETRY_DELAY_MS,
-                                  }),
+                                      retryEnabled: true,
+                                      maxAttempts: DEFAULT_MAX_ATTEMPTS,
+                                      retryDelayMs: DEFAULT_RETRY_DELAY_MS,
+                                    }),
                               },
                             });
                           } else {

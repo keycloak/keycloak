@@ -262,6 +262,13 @@ public class EventHooksResourceTargetEndpointTest {
                 Object endpoint = new EventHooksResource(session, null, null).getTargetEndpoint("target-1", "consume");
                 EventHookPullRepresentation representation = (EventHookPullRepresentation) ((PullEventHookTargetEndpointResource) endpoint).consumeGet(headers);
 
+                assertTrue(representation.getEvent() instanceof Map<?, ?>);
+                assertTrue(((Map<?, ?>) representation.getEvent()).get("representation") instanceof Map<?, ?>);
+                assertEquals("user-1", ((Map<?, ?>) ((Map<?, ?>) representation.getEvent()).get("representation")).get("id"));
+                assertTrue(representation.getEntry().getData() instanceof Map<?, ?>);
+                assertTrue(((Map<?, ?>) representation.getEntry().getData()).get("representation") instanceof Map<?, ?>);
+        }
+
         @Test
         public void shouldRenderCustomPullBodyMapping() {
                                 RecordingStoreProvider store = new RecordingStoreProvider();
@@ -276,7 +283,7 @@ public class EventHooksResourceTargetEndpointTest {
                 target.setSettings(Map.of(
                         "pullSecret", "top-secret",
                         "deliveryMode", "SINGLE",
-                        "customBodyMappingTemplate", "{\"event\": ${event}, \"messageId\": ${entry.messageId?json_string}, \"hasMoreEvents\": ${hasMoreEvents}}"
+                        "customBodyMappingTemplate", "{\"eventType\": \"${payload.event?json_string}\", \"messageId\": \"${entry.messageId?json_string}\", \"hasMoreEvents\": ${hasMoreEvents}}"
                 ));
 
                 EventHookMessageModel message = new EventHookMessageModel();
@@ -297,7 +304,7 @@ public class EventHooksResourceTargetEndpointTest {
                 Object response = ((PullEventHookTargetEndpointResource) endpoint).consumeGet(headers);
 
                 assertTrue(response instanceof Map<?, ?>);
-                assertEquals("LOGIN", ((Map<?, ?>) ((Map<?, ?>) response).get("event")).get("event"));
+                assertEquals("LOGIN", ((Map<?, ?>) response).get("eventType"));
                 assertEquals("msg-1", ((Map<?, ?>) response).get("messageId"));
                 assertEquals(Boolean.TRUE, ((Map<?, ?>) response).get("hasMoreEvents"));
                 assertEquals(EventHookMessageStatus.SUCCESS, store.updatedMessage.getStatus());
@@ -343,13 +350,6 @@ public class EventHooksResourceTargetEndpointTest {
                         assertEquals("PARSE_FAILED", store.createdLog.getStatusCode());
                         assertEquals(EventHookMessageStatus.PARSE_FAILED, store.createdLog.getMessageStatus());
                 }
-        }
-
-                assertTrue(representation.getEvent() instanceof Map<?, ?>);
-                assertTrue(((Map<?, ?>) representation.getEvent()).get("representation") instanceof Map<?, ?>);
-                assertEquals("user-1", ((Map<?, ?>) ((Map<?, ?>) representation.getEvent()).get("representation")).get("id"));
-                assertTrue(representation.getEntry().getData() instanceof Map<?, ?>);
-                assertTrue(((Map<?, ?>) representation.getEntry().getData()).get("representation") instanceof Map<?, ?>);
         }
 
         @Test(expected = NotAuthorizedException.class)

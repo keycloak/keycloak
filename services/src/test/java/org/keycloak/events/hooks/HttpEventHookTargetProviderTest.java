@@ -103,7 +103,7 @@ public class HttpEventHookTargetProviderTest {
         try (CloseableHttpClient client = HttpClients.createDefault()) {
             HttpEventHookTargetProvider provider = new HttpEventHookTargetProvider(null, SimpleHttp.create(client));
             EventHookDeliveryResult result = provider.deliver(target(handler.url(), Map.of(
-                    "customBodyMappingTemplate", "{\"customEventId\": ${eventId?json_string}, \"details\": ${details}, \"event\": ${event}}"
+                    "customBodyMappingTemplate", "{\"customEventId\": \"${eventId?json_string}\", \"details\": ${details}, \"event\": ${event}}"
             )), message("evt-custom", Map.of(
                     "eventId", "evt-custom",
                     "details", Map.of("clientId", "security-admin-console")
