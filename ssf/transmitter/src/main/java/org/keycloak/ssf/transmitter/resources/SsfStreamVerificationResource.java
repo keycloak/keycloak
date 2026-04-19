@@ -13,6 +13,7 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.ssf.transmitter.SsfTransmitterConfig;
+import org.keycloak.ssf.transmitter.metrics.SsfMetricsBinder;
 import org.keycloak.ssf.transmitter.stream.StreamVerificationRequest;
 import org.keycloak.ssf.transmitter.stream.StreamVerificationService;
 import org.keycloak.ssf.transmitter.stream.storage.client.ClientStreamStore;
@@ -41,12 +42,16 @@ public class SsfStreamVerificationResource {
 
     protected final ClientStreamStore clientStreamStore;
 
+    protected final SsfMetricsBinder metricsBinder;
+
     public SsfStreamVerificationResource(KeycloakSession session, StreamVerificationService verificationService,
-                                         SsfTransmitterConfig transmitterConfig, ClientStreamStore clientStreamStore) {
+                                         SsfTransmitterConfig transmitterConfig, ClientStreamStore clientStreamStore,
+                                         SsfMetricsBinder metricsBinder) {
         this.session = session;
         this.verificationService = verificationService;
         this.transmitterConfig = transmitterConfig;
         this.clientStreamStore = clientStreamStore;
+        this.metricsBinder = metricsBinder;
     }
 
     /**
@@ -101,9 +106,22 @@ public class SsfStreamVerificationResource {
                         .build();
             }
 
-            checkMinVerificationInterval(client);
+            try {
+                checkMinVerificationInterval(client);
+            } catch (WebApplicationException rateLimited) {
+                if (rateLimited.getResponse() != null
+                        && rateLimited.getResponse().getStatus() == Response.Status.TOO_MANY_REQUESTS.getStatusCode()) {
+                    metricsBinder.recordVerification(currentRealmName(),
+                            client.getClientId(),
+                            SsfMetricsBinder.VerificationInitiator.RECEIVER,
+                            SsfMetricsBinder.VerificationOutcome.RATE_LIMITED,
+                            null);
+                }
+                throw rateLimited;
+            }
 
-            boolean success = verificationService.triggerVerification(verificationRequest);
+            boolean success = verificationService.triggerVerification(verificationRequest,
+                    SsfMetricsBinder.VerificationInitiator.RECEIVER);
 
             if (!success) {
                 return Response.status(Response.Status.BAD_REQUEST)
@@ -122,6 +140,14 @@ public class SsfStreamVerificationResource {
         } catch (Exception e) {
             log.error("Error triggering verification", e);
             return Response.serverError().build();
+        }
+    }
+
+    protected String currentRealmName() {
+        try {
+            return session.getContext().getRealm().getName();
+        } catch (RuntimeException e) {
+            return null;
         }
     }
 

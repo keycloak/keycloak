@@ -140,7 +140,7 @@ public class DefaultSsfTransmitterProviderFactory implements SsfTransmitterProvi
     }
 
     protected StreamVerificationService createVerificationService(KeycloakSession session, ClientStreamStore streamStore, SecurityEventTokenMapper mapper, SecurityEventTokenDispatcher dispatcher) {
-        return new StreamVerificationService(session, streamStore, mapper, dispatcher);
+        return new StreamVerificationService(session, streamStore, mapper, dispatcher, metricsBinder);
     }
 
     protected ClientStreamStore createClientStreamStore(KeycloakSession session) {

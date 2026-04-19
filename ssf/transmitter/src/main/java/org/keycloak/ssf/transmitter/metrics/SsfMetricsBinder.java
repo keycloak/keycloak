@@ -74,10 +74,12 @@ public class SsfMetricsBinder {
     public static final String METER_POLL_ACK = PREFIX + "poll.ack";
     public static final String METER_POLL_NACK = PREFIX + "poll.nack";
     public static final String METER_DRAINER_TICK = PREFIX + "drainer.tick";
+    public static final String METER_VERIFICATION_REQUESTS = PREFIX + "verification.requests";
 
     // Timers ----------------------------------------------------------------
     public static final String METER_PUSH_DELIVERY_DURATION = PREFIX + "push.delivery.duration";
     public static final String METER_DRAINER_TICK_DURATION = PREFIX + "drainer.tick.duration";
+    public static final String METER_VERIFICATION_DURATION = PREFIX + "verification.duration";
 
     // Gauges ----------------------------------------------------------------
     public static final String METER_OUTBOX_DEPTH = PREFIX + "outbox.depth";
@@ -140,6 +142,58 @@ public class SsfMetricsBinder {
     }
 
     /**
+     * Who triggered a verification dispatch. Lets operators slice
+     * {@code verification.requests} by entry point so a spike in
+     * {@code initiator="receiver"} (over-polling) is distinguishable
+     * from {@code initiator="transmitter"} (post-create auto-fire) or
+     * {@code initiator="admin"} (UI / REST).
+     */
+    public enum VerificationInitiator {
+        RECEIVER("receiver"),
+        ADMIN("admin"),
+        TRANSMITTER("transmitter");
+
+        private final String label;
+
+        VerificationInitiator(String label) {
+            this.label = label;
+        }
+
+        public String label() {
+            return label;
+        }
+    }
+
+    /**
+     * Outcome of a verification request:
+     * <ul>
+     *     <li>{@code delivered} — receiver accepted the verification SET.</li>
+     *     <li>{@code failed} — sync push to the receiver failed
+     *         (network error, non-2xx, or the receiver-side stream
+     *         lookup turned up empty).</li>
+     *     <li>{@code rate_limited} — request rejected with 429 because
+     *         the receiver-side {@code min_verification_interval} has
+     *         not yet elapsed. Only fires on the receiver-initiated
+     *         path.</li>
+     * </ul>
+     */
+    public enum VerificationOutcome {
+        DELIVERED("delivered"),
+        FAILED("failed"),
+        RATE_LIMITED("rate_limited");
+
+        private final String label;
+
+        VerificationOutcome(String label) {
+            this.label = label;
+        }
+
+        public String label() {
+            return label;
+        }
+    }
+
+    /**
      * NOOP binder used when metrics are disabled or Micrometer is
      * unavailable. Every method is a no-op, including the snapshot
      * update — so hot-path callers can invoke the binder without
@@ -172,6 +226,13 @@ public class SsfMetricsBinder {
 
         @Override
         public void recordDrainerTick(DrainerOutcome outcome, Duration took) {
+        }
+
+        @Override
+        public void recordVerification(String realmName, String clientId,
+                                       VerificationInitiator initiator,
+                                       VerificationOutcome outcome,
+                                       Duration took) {
         }
 
         @Override
@@ -287,6 +348,36 @@ public class SsfMetricsBinder {
                 .description("Total SSF outbox drainer tick duration.")
                 .register(registry)
                 .record(took);
+    }
+
+    /**
+     * Records one verification dispatch. {@code took} is allowed to be
+     * {@code null} for outcomes where there is no measured duration —
+     * notably {@link VerificationOutcome#RATE_LIMITED}, which is rejected
+     * before any HTTP push happens.
+     */
+    public void recordVerification(String realmName,
+                                   String clientId,
+                                   VerificationInitiator initiator,
+                                   VerificationOutcome outcome,
+                                   Duration took) {
+        counter(METER_VERIFICATION_REQUESTS,
+                "realm", safe(realmName),
+                "client_id", safe(clientId),
+                "initiator", initiator.label(),
+                "outcome", outcome.label())
+                .increment();
+        if (took != null) {
+            Timer.builder(METER_VERIFICATION_DURATION)
+                    .description("Verification dispatch duration (sync push to receiver).")
+                    .tags(Tags.of(
+                            Tag.of("realm", safe(realmName)),
+                            Tag.of("client_id", safe(clientId)),
+                            Tag.of("initiator", initiator.label()),
+                            Tag.of("outcome", outcome.label())))
+                    .register(registry)
+                    .record(took);
+        }
     }
 
     /**

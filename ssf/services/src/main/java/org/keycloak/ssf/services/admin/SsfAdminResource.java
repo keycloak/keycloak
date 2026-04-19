@@ -41,6 +41,7 @@ import org.keycloak.ssf.transmitter.admin.SsfPendingEventRepresentation;
 import org.keycloak.ssf.transmitter.delivery.SseCaepEventConverter;
 import org.keycloak.ssf.transmitter.emit.EmitEventResult;
 import org.keycloak.ssf.transmitter.emit.EmitEventStatus;
+import org.keycloak.ssf.transmitter.metrics.SsfMetricsBinder;
 import org.keycloak.ssf.transmitter.outbox.SsfPendingEventEntity;
 import org.keycloak.ssf.transmitter.outbox.SsfPendingEventStore;
 import org.keycloak.ssf.transmitter.stream.DuplicateStreamConfigException;
@@ -339,7 +340,8 @@ public class SsfAdminResource {
         // include a state nonce — only receiver-initiated requests may set
         // one — so we leave the state null here.
 
-        boolean triggered = transmitter.verificationService().triggerVerification(verificationRequest);
+        boolean triggered = transmitter.verificationService().triggerVerification(verificationRequest,
+                SsfMetricsBinder.VerificationInitiator.ADMIN);
         if (!triggered) {
             throw new NotFoundException("No SSF stream registered for client");
         }
