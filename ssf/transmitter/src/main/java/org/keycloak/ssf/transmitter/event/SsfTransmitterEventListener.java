@@ -90,10 +90,40 @@ public class SsfTransmitterEventListener implements EventListenerProvider {
                 log.debugf("Could not generate SSF Security Event Token for User Event. id=%s", event.getId());
                 continue;
             }
+            if (isManualOnlyForStream(securityEventToken, stream)) {
+                log.debugf("Skipping native auto-emit — event type is in stream's manualOnlyEvents set. "
+                                + "streamId=%s clientId=%s jti=%s",
+                        stream.getStreamId(), stream.getClientClientId(), securityEventToken.getJti());
+                continue;
+            }
             log.debugf("Generated SSF Security Event Token for User Event. jti=%s", securityEventToken.getJti());
             streamTokens.add(Map.entry(securityEventToken, stream));
         }
         return streamTokens;
+    }
+
+    /**
+     * Returns {@code true} when the receiver has marked the event type
+     * as manual-only ({@code ssf.manualOnlyEvents} contains it). The
+     * native event listener honours the gate; the synthetic-emit
+     * endpoint deliberately does not — its whole purpose is to fire
+     * exactly these events on demand.
+     */
+    protected boolean isManualOnlyForStream(SsfSecurityEventToken token, StreamConfig stream) {
+        var manualOnly = stream.getManualOnlyEvents();
+        if (manualOnly == null || manualOnly.isEmpty()) {
+            return false;
+        }
+        var events = token.getEvents();
+        if (events == null || events.isEmpty()) {
+            return false;
+        }
+        for (String eventType : events.keySet()) {
+            if (manualOnly.contains(eventType)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     protected void dispatchSecurityEventToken(SsfSecurityEventToken securityEventToken, SsfTransmitterProvider transmitter, StreamConfig stream) {

@@ -43,6 +43,30 @@ public class ClientStreamStore implements SsfStreamStore {
     public static final String SSF_LAST_VERIFIED_AT_KEY = "ssf.lastVerifiedAt";
     public static final String SSF_STREAM_AUDIENCE_KEY = "ssf.streamAudience";
     public static final String SSF_STREAM_SUPPORTED_EVENTS_KEY = "ssf.supportedEvents";
+
+    /**
+     * Subset of {@link #SSF_STREAM_SUPPORTED_EVENTS_KEY} that the
+     * native event listener will <em>not</em> auto-emit for this
+     * receiver. The event types stay in the supported set (so a
+     * receiver can still accept them on the wire and an admin can
+     * still fire them) but Keycloak's automatic mapping in
+     * {@link org.keycloak.ssf.transmitter.event.SsfTransmitterEventListener}
+     * skips them — they only flow through the synthetic-emit endpoint.
+     *
+     * <p>Use case: an SSF receiver advertises {@code CaepSessionRevoked}
+     * (Apple School Manager devices need to honour it when fired) but
+     * the operator doesn't want every Keycloak-side application logout
+     * to translate to a device-level revoke. Adding {@code CaepSessionRevoked}
+     * here disables auto-emit while keeping the synthetic-emit path
+     * available for the events that should actually trigger a revoke
+     * (e.g. an admin-issued logout via a custom integration that calls
+     * the emit endpoint).
+     *
+     * <p>Stored as a comma-separated alias list, same shape as
+     * {@link #SSF_STREAM_SUPPORTED_EVENTS_KEY}. Empty/absent =
+     * everything supported is auto-emitted (current default behaviour).
+     */
+    public static final String SSF_MANUAL_ONLY_EVENTS_KEY = "ssf.manualOnlyEvents";
     public static final String SSF_PUSH_ENDPOINT_CONNECT_TIMEOUT_MILLIS_KEY = "ssf.pushEndpointConnectTimeoutMillis";
     public static final String SSF_PUSH_ENDPOINT_SOCKET_TIMEOUT_MILLIS_KEY = "ssf.pushEndpointSocketTimeoutMillis";
     public static final String SSF_STREAM_SIGNATURE_ALGORITHM_KEY = "ssf.signatureAlgorithm";
@@ -178,7 +202,6 @@ public class ClientStreamStore implements SsfStreamStore {
     public void saveStream(StreamConfig streamConfig) {
         ClientModel client = session.getContext().getClient();
         storeStreamConfig(client, streamConfig);
-
     }
 
     @Override
@@ -501,6 +524,29 @@ public class ClientStreamStore implements SsfStreamStore {
         Integer clientSubjectRemovalGrace = parseIntAttribute(client, SSF_SUBJECT_REMOVAL_GRACE_SECONDS_KEY);
         if (clientSubjectRemovalGrace != null) {
             streamConfig.setSubjectRemovalGraceSeconds(clientSubjectRemovalGrace);
+        }
+
+        // Per-receiver auto-emit blocklist. Aliases are resolved to
+        // canonical event-type URIs through the registry so the
+        // listener-side comparison can match against the URI it gets
+        // off the SET. Unknown aliases are silently dropped — same
+        // forgiveness pattern as supportedEvents above.
+        String manualOnly = client.getAttribute(SSF_MANUAL_ONLY_EVENTS_KEY);
+        if (manualOnly != null && !manualOnly.isBlank()) {
+            SsfEventRegistry registry = Ssf.events().getRegistry();
+            Set<String> resolved = new TreeSet<>();
+            for (String candidate : SsfEventRegistry.parseEventTypeAliases(manualOnly)) {
+                String eventType = registry.resolveEventTypeForAlias(candidate);
+                if (eventType == null && registry.getEventClassByType(candidate).isPresent()) {
+                    eventType = candidate;
+                }
+                if (eventType != null) {
+                    resolved.add(eventType);
+                }
+            }
+            if (!resolved.isEmpty()) {
+                streamConfig.setManualOnlyEvents(resolved);
+            }
         }
     }
 
