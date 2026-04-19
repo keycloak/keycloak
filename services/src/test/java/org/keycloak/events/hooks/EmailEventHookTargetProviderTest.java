@@ -7,7 +7,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 
-import org.junit.Test;
 import org.keycloak.email.EmailException;
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
@@ -15,6 +14,8 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.ThemeManager;
 import org.keycloak.models.UserModel;
 import org.keycloak.theme.Theme;
+
+import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;

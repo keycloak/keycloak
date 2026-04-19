@@ -8,8 +8,9 @@ import java.sql.Statement;
 import java.util.List;
 import java.util.Map;
 
-import org.junit.Test;
 import org.keycloak.util.JsonSerialization;
+
+import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;

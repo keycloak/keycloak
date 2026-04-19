@@ -8,9 +8,11 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
+
+import org.keycloak.http.simple.SimpleHttp;
+import org.keycloak.util.JsonSerialization;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.sun.net.httpserver.HttpExchange;
@@ -20,8 +22,6 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.junit.After;
 import org.junit.Test;
-import org.keycloak.http.simple.SimpleHttp;
-import org.keycloak.util.JsonSerialization;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;

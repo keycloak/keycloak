@@ -30,12 +30,14 @@ import org.keycloak.util.JsonSerialization;
 
 import freemarker.cache.StringTemplateLoader;
 import freemarker.ext.util.WrapperTemplateModel;
+import freemarker.template.AdapterTemplateModel;
 import freemarker.template.Configuration;
 import freemarker.template.ObjectWrapper;
 import freemarker.template.SimpleCollection;
 import freemarker.template.Template;
 import freemarker.template.TemplateBooleanModel;
 import freemarker.template.TemplateCollectionModel;
+import freemarker.template.TemplateExceptionHandler;
 import freemarker.template.TemplateHashModelEx2;
 import freemarker.template.TemplateModel;
 import freemarker.template.TemplateModelException;
@@ -43,8 +45,6 @@ import freemarker.template.TemplateModelIterator;
 import freemarker.template.TemplateNumberModel;
 import freemarker.template.TemplateScalarModel;
 import freemarker.template.TemplateSequenceModel;
-import freemarker.template.TemplateExceptionHandler;
-import freemarker.template.AdapterTemplateModel;
 
 final class EventHookBodyMappingSupport {
 

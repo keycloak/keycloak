@@ -3,11 +3,12 @@ package org.keycloak.events.hooks;
 import java.util.List;
 import java.util.Map;
 
-import org.junit.Test;
 import org.keycloak.events.Event;
 import org.keycloak.events.EventType;
 import org.keycloak.events.admin.AdminEvent;
 import org.keycloak.events.admin.OperationType;
+
+import org.junit.Test;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;

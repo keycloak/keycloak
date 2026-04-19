@@ -4,7 +4,6 @@ import type {
   PartialImportResponse,
   PartialImportResult,
 } from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
-import type EventHookTargetRepresentation from "@keycloak/keycloak-admin-client/lib/defs/eventHookTargetRepresentation";
 import type RoleRepresentation from "@keycloak/keycloak-admin-client/lib/defs/roleRepresentation";
 import { KeycloakSelect } from "@keycloak/keycloak-ui-shared";
 import {
@@ -104,7 +103,10 @@ export const PartialImportDialog = (props: PartialImportProps) => {
   useEffect(() => {
     setImportInProgress(false);
     setImportResponse(undefined);
-    resetInputState();
+    setImportedFile(undefined);
+    setTargetRealm({});
+    setCollisionOption("FAIL");
+    setResourcesToImport(INITIAL_RESOURCES);
   }, [props.open]);
 
   const handleFileChange = (value: ImportedMultiRealm) => {
@@ -259,9 +261,14 @@ export const PartialImportDialog = (props: PartialImportProps) => {
     if (resourcesToImport["clients"])
       jsonToImport.clients = targetRealm.clients;
     if (resourcesToImport["realmRoles"] || resourcesToImport["clientRoles"]) {
-      jsonToImport.roles = targetRealm.roles;
-      if (!resourcesToImport["realmRoles"]) delete jsonToImport.roles?.realm;
-      if (!resourcesToImport["clientRoles"]) delete jsonToImport.roles?.client;
+      jsonToImport.roles = {
+        ...(resourcesToImport["realmRoles"] && targetRealm.roles?.realm
+          ? { realm: targetRealm.roles.realm }
+          : {}),
+        ...(resourcesToImport["clientRoles"] && targetRealm.roles?.client
+          ? { client: targetRealm.roles.client }
+          : {}),
+      };
     }
     return jsonToImport;
   };

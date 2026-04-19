@@ -46,13 +46,13 @@ import org.keycloak.events.hooks.EventHookMessageModel;
 import org.keycloak.events.hooks.EventHookMessageStatus;
 import org.keycloak.events.hooks.EventHookPayloadNormalizer;
 import org.keycloak.events.hooks.EventHookStoreProvider;
-import org.keycloak.events.hooks.EventHookTestExample;
-import org.keycloak.events.hooks.EventHookTestExamples;
 import org.keycloak.events.hooks.EventHookTargetModel;
 import org.keycloak.events.hooks.EventHookTargetProvider;
 import org.keycloak.events.hooks.EventHookTargetProviderFactory;
 import org.keycloak.events.hooks.EventHookTargetRepresentationUtil;
 import org.keycloak.events.hooks.EventHookTargetStatus;
+import org.keycloak.events.hooks.EventHookTestExample;
+import org.keycloak.events.hooks.EventHookTestExamples;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.provider.ProviderConfigProperty;
@@ -65,9 +65,8 @@ import org.keycloak.representations.idm.EventHookTargetRepresentation;
 import org.keycloak.representations.idm.EventHookTestExampleRepresentation;
 import org.keycloak.representations.idm.EventHookTestResultRepresentation;
 import org.keycloak.services.ErrorResponse;
-import org.keycloak.services.util.DateUtil;
 import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
-import org.keycloak.util.JsonSerialization;
+import org.keycloak.services.util.DateUtil;
 
 import static org.keycloak.common.util.Time.currentTimeMillis;
 

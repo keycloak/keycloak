@@ -18,7 +18,6 @@
 package org.keycloak.events.hooks;
 
 import java.io.IOException;
-import java.time.Instant;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;

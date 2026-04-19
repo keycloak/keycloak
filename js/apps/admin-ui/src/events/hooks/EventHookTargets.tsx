@@ -6,7 +6,6 @@ import {
 } from "@keycloak/keycloak-ui-shared";
 import type EventHookProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/eventHookProviderRepresentation";
 import type EventHookTargetRepresentation from "@keycloak/keycloak-admin-client/lib/defs/eventHookTargetRepresentation";
-import type EventHookTestResultRepresentation from "@keycloak/keycloak-admin-client/lib/defs/eventHookTestResultRepresentation";
 import {
   Alert,
   AlertVariant,
@@ -145,7 +144,13 @@ export const EventHookTargets = () => {
       return;
     }
 
-    openEditDialog(target);
+    if (isUnknownTargetType(target)) {
+      notifyUnknownTargetType(target);
+      return;
+    }
+
+    setSelectedTarget(target);
+    setDialogOpen(true);
   }, [dialogOpen, targetId, targets]);
 
   const openTestDialog = (target: EventHookTargetRepresentation) => {
@@ -179,26 +184,23 @@ export const EventHookTargets = () => {
     },
   });
 
-  const targetActions = useMemo(
-    () => (target: EventHookTargetRepresentation) => [
-      {
-        title: t("edit"),
-        onClick: () => openEditDialog(target),
-      } as Action<EventHookTargetRepresentation>,
-      {
-        title: t("test"),
-        onClick: () => openTestDialog(target),
-      } as Action<EventHookTargetRepresentation>,
-      {
-        title: t("delete"),
-        onClick: () => {
-          setSelectedTarget(target);
-          toggleDeleteDialog();
-        },
-      } as Action<EventHookTargetRepresentation>,
-    ],
-    [t, toggleDeleteDialog],
-  );
+  const targetActions = (target: EventHookTargetRepresentation) => [
+    {
+      title: t("edit"),
+      onClick: () => openEditDialog(target),
+    } as Action<EventHookTargetRepresentation>,
+    {
+      title: t("test"),
+      onClick: () => openTestDialog(target),
+    } as Action<EventHookTargetRepresentation>,
+    {
+      title: t("delete"),
+      onClick: () => {
+        setSelectedTarget(target);
+        toggleDeleteDialog();
+      },
+    } as Action<EventHookTargetRepresentation>,
+  ];
 
   const toggleEnabled = async (target: EventHookTargetRepresentation) => {
     if (isUnknownTargetType(target)) {

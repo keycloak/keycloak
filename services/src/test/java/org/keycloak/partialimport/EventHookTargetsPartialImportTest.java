@@ -6,7 +6,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
-import org.junit.Test;
 import org.keycloak.events.hooks.EventHookStoreProvider;
 import org.keycloak.events.hooks.EventHookTargetModel;
 import org.keycloak.events.hooks.EventHookTargetProvider;
@@ -16,6 +15,8 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.idm.EventHookTargetRepresentation;
 import org.keycloak.representations.idm.PartialImportRepresentation;
+
+import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;

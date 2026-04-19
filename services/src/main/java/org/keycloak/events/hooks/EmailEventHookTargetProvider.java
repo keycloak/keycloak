@@ -30,7 +30,6 @@ import java.util.Properties;
 import jakarta.enterprise.context.ContextNotActiveException;
 
 import org.keycloak.email.EmailException;
-import org.keycloak.email.EmailTemplateProvider;
 import org.keycloak.email.freemarker.FreeMarkerEmailTemplateProvider;
 import org.keycloak.email.freemarker.beans.ProfileBean;
 import org.keycloak.forms.login.freemarker.model.UrlBean;
@@ -40,7 +39,6 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.theme.FreeMarkerException;
 import org.keycloak.theme.Theme;
-import org.keycloak.theme.freemarker.FreeMarkerProvider;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

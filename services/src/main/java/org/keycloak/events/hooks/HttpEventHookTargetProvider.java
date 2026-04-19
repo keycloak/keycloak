@@ -26,18 +26,18 @@ import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 
-import org.apache.http.client.config.RequestConfig;
-import org.apache.http.entity.ContentType;
-import org.apache.http.entity.StringEntity;
 import org.keycloak.http.simple.SimpleHttp;
 import org.keycloak.http.simple.SimpleHttpRequest;
 import org.keycloak.http.simple.SimpleHttpResponse;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.util.JsonSerialization;
+
+import org.apache.http.client.config.RequestConfig;
+import org.apache.http.entity.ContentType;
+import org.apache.http.entity.StringEntity;
 
 public class HttpEventHookTargetProvider implements EventHookTargetProvider {
 

@@ -35,7 +35,6 @@ import jakarta.ws.rs.core.MediaType;
 
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.util.JsonSerialization;
 
 import static org.keycloak.common.util.Time.currentTimeMillis;
 

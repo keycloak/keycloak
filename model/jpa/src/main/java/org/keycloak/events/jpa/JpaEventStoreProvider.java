@@ -39,7 +39,6 @@ import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.hooks.EventHookSourceType;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.events.hooks.jpa.EventHookMessageEntity;
 import org.keycloak.models.jpa.entities.RealmAttributeEntity;
 import org.keycloak.models.jpa.entities.RealmAttributes;
 import org.keycloak.models.jpa.entities.RealmEntity;

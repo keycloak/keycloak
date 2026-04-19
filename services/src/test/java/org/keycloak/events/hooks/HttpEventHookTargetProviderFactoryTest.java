@@ -8,19 +8,20 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 
+import org.keycloak.http.simple.SimpleHttp;
+import org.keycloak.models.RealmModel;
+import org.keycloak.provider.ProviderConfigProperty;
+
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.junit.Test;
-import org.keycloak.http.simple.SimpleHttp;
-import org.keycloak.models.RealmModel;
-import org.keycloak.provider.ProviderConfigProperty;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 public class HttpEventHookTargetProviderFactoryTest {
 

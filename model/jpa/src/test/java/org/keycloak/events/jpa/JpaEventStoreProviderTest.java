@@ -9,9 +9,10 @@ import java.util.Map;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.Query;
 
-import org.junit.Test;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+
+import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 
