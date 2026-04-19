@@ -234,6 +234,19 @@ public class StreamConfig {
     @JsonIgnore
     protected Integer subjectRemovalGraceSeconds;
 
+    /**
+     * Subset of {@link #eventsSupported} that the native Keycloak event
+     * listener will <em>not</em> auto-emit for this receiver — those
+     * events still ship over the wire when explicitly fired through
+     * the synthetic-emit endpoint, but Keycloak's automatic mapping
+     * skips them. Stores resolved event-type URIs (canonical form),
+     * not aliases. Empty/null = current default behaviour (every
+     * supported event auto-emits). Populated from the receiver
+     * client's {@code ssf.manualOnlyEvents} attribute.
+     */
+    @JsonIgnore
+    protected Set<String> manualOnlyEvents;
+
     public StreamConfig() {
     }
 
@@ -276,6 +289,7 @@ public class StreamConfig {
         this.signatureAlgorithm = other.signatureAlgorithm;
         this.userSubjectFormat = other.userSubjectFormat;
         this.subjectRemovalGraceSeconds = other.subjectRemovalGraceSeconds;
+        this.manualOnlyEvents = other.manualOnlyEvents == null ? null : new HashSet<>(other.manualOnlyEvents);
     }
 
     public String getStreamId() {
@@ -476,5 +490,13 @@ public class StreamConfig {
 
     public void setSubjectRemovalGraceSeconds(Integer subjectRemovalGraceSeconds) {
         this.subjectRemovalGraceSeconds = subjectRemovalGraceSeconds;
+    }
+
+    public Set<String> getManualOnlyEvents() {
+        return manualOnlyEvents;
+    }
+
+    public void setManualOnlyEvents(Set<String> manualOnlyEvents) {
+        this.manualOnlyEvents = manualOnlyEvents;
     }
 }

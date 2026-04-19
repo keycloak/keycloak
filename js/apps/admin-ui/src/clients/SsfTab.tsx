@@ -207,6 +207,7 @@ export const SsfTab = ({ save, client, activeTab }: SsfTabProps) => {
     null,
   );
   const [supportedEventsOpen, setSupportedEventsOpen] = useState(false);
+  const [manualOnlyEventsOpen, setManualOnlyEventsOpen] = useState(false);
   const [streamFetchKey, setStreamFetchKey] = useState(0);
   const [configFetchKey, setConfigFetchKey] = useState(0);
 
@@ -871,6 +872,14 @@ export const SsfTab = ({ save, client, activeTab }: SsfTabProps) => {
     convertAttributeNameToForm<FormFields>("attributes.ssf.allowEmitEvents"),
   );
 
+  // Drive the manual-only multi-select options off the live value of
+  // supportedEvents so adding / removing a supported event immediately
+  // adjusts what the operator can mark manual-only. No standalone
+  // registry list — the manual-only set is a strict subset.
+  const ssfSupportedEvents = watch(
+    convertAttributeNameToForm<FormFields>("attributes.ssf.supportedEvents"),
+  );
+
   const resetFields = (names: string[]) => {
     for (const name of names) {
       setValue(
@@ -885,6 +894,7 @@ export const SsfTab = ({ save, client, activeTab }: SsfTabProps) => {
       "ssf.description",
       "ssf.streamAudience",
       "ssf.supportedEvents",
+      "ssf.manualOnlyEvents",
       "ssf.profile",
       "ssf.userSubjectFormat",
       "ssf.defaultSubjects",
@@ -1338,6 +1348,63 @@ export const SsfTab = ({ save, client, activeTab }: SsfTabProps) => {
                                 {t("ssfNativelyEmittedBadge")}
                               </Label>
                             )}
+                          </SelectOption>
+                        ))}
+                      </KeycloakSelect>
+                    );
+                  }}
+                />
+              </FormGroup>
+              <FormGroup
+                label={t("ssfManualOnlyEvents")}
+                fieldId="ssfManualOnlyEvents"
+                labelIcon={
+                  <HelpItem
+                    helpText={t("ssfManualOnlyEventsHelp")}
+                    fieldLabelId="ssfManualOnlyEvents"
+                  />
+                }
+              >
+                <Controller
+                  name={convertAttributeNameToForm<FormFields>(
+                    "attributes.ssf.manualOnlyEvents",
+                  )}
+                  control={control}
+                  defaultValue=""
+                  render={({ field }) => {
+                    const supportedEvents =
+                      splitSupportedEvents(ssfSupportedEvents);
+                    const selected = splitSupportedEvents(field.value).filter(
+                      (e) => supportedEvents.includes(e),
+                    );
+                    return (
+                      <KeycloakSelect
+                        toggleId="ssfManualOnlyEvents"
+                        data-testid="ssfManualOnlyEvents"
+                        variant={SelectVariant.typeaheadMulti}
+                        chipGroupProps={{
+                          numChips: 5,
+                          expandedText: t("hide"),
+                          collapsedText: t("showRemaining"),
+                        }}
+                        typeAheadAriaLabel={t("ssfManualOnlyEvents")}
+                        onToggle={setManualOnlyEventsOpen}
+                        isOpen={manualOnlyEventsOpen}
+                        selections={selected}
+                        onSelect={(value) => {
+                          const option = value.toString();
+                          if (!option) return;
+                          const next = selected.includes(option)
+                            ? selected.filter((s) => s !== option)
+                            : [...selected, option];
+                          field.onChange(next.join(","));
+                        }}
+                        onClear={() => field.onChange("")}
+                        isDisabled={supportedEvents.length === 0}
+                      >
+                        {supportedEvents.map((event) => (
+                          <SelectOption key={event} value={event}>
+                            {event}
                           </SelectOption>
                         ))}
                       </KeycloakSelect>
