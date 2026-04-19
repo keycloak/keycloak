@@ -8,9 +8,11 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.ssf.Ssf;
 import org.keycloak.ssf.event.SsfEventRegistry;
 import org.keycloak.ssf.transmitter.delivery.SecurityEventTokenDispatcher;
+import org.keycloak.ssf.transmitter.delivery.poll.PollDeliveryService;
 import org.keycloak.ssf.transmitter.emit.EventEmitterService;
 import org.keycloak.ssf.transmitter.event.SecurityEventTokenMapper;
 import org.keycloak.ssf.transmitter.metadata.TransmitterMetadataService;
+import org.keycloak.ssf.transmitter.metrics.SsfMetricsBinder;
 import org.keycloak.ssf.transmitter.outbox.SsfPendingEventStore;
 import org.keycloak.ssf.transmitter.resources.SsfStreamManagementResource;
 import org.keycloak.ssf.transmitter.resources.SsfStreamStatusResource;
@@ -50,6 +52,10 @@ public class DefaultSsfTransmitterProvider implements SsfTransmitterProvider {
 
     protected final Function<KeycloakSession, SsfPendingEventStore> pendingSsfEventStoreFactory;
 
+    protected final SsfMetricsBinder metricsBinder;
+
+    protected final PollDeliveryService pollDeliveryService;
+
     public DefaultSsfTransmitterProvider(KeycloakSession session,
                                          TransmitterMetadataService transmitterMetadataService,
                                          StreamVerificationService verificationService,
@@ -58,7 +64,10 @@ public class DefaultSsfTransmitterProvider implements SsfTransmitterProvider {
                                          SsfTransmitterConfig transmitterConfig,
                                          Set<String> configuredDefaultSupportedEventAliases,
                                          ClientStreamStore streamStore,
-                                         SubjectManagementService subjectManagementService, Function<KeycloakSession, SsfPendingEventStore> pendingSsfEventStoreFactory) {
+                                         SubjectManagementService subjectManagementService,
+                                         Function<KeycloakSession, SsfPendingEventStore> pendingSsfEventStoreFactory,
+                                         SsfMetricsBinder metricsBinder,
+                                         PollDeliveryService pollDeliveryService) {
         this.session = session;
         this.transmitterService = transmitterMetadataService;
         this.verificationService = verificationService;
@@ -69,6 +78,8 @@ public class DefaultSsfTransmitterProvider implements SsfTransmitterProvider {
         this.streamStore = streamStore;
         this.subjectManagementService = subjectManagementService;
         this.pendingSsfEventStoreFactory = pendingSsfEventStoreFactory;
+        this.metricsBinder = metricsBinder == null ? SsfMetricsBinder.NOOP : metricsBinder;
+        this.pollDeliveryService = pollDeliveryService;
     }
 
     @Override
@@ -111,7 +122,12 @@ public class DefaultSsfTransmitterProvider implements SsfTransmitterProvider {
 
     @Override
     public EventEmitterService eventEmitterService() {
-        return new EventEmitterService(session, this);
+        return new EventEmitterService(session, streamStore(), securityEventTokenMapper(), securityEventTokenDispatcher());
+    }
+
+    @Override
+    public PollDeliveryService pollDeliveryService() {
+        return pollDeliveryService;
     }
 
     @Override
@@ -185,5 +201,10 @@ public class DefaultSsfTransmitterProvider implements SsfTransmitterProvider {
     @Override
     public SsfTransmitterConfig getConfig() {
         return transmitterConfig;
+    }
+
+    @Override
+    public SsfMetricsBinder metrics() {
+        return metricsBinder;
     }
 }

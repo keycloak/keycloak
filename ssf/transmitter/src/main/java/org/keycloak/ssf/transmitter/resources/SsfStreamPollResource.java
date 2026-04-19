@@ -15,6 +15,7 @@ import org.keycloak.ssf.transmitter.delivery.poll.PollErrorRepresentation;
 import org.keycloak.ssf.transmitter.delivery.poll.PollRequest;
 import org.keycloak.ssf.transmitter.delivery.poll.PollResponse;
 import org.keycloak.ssf.transmitter.stream.StreamConfig;
+import org.keycloak.ssf.transmitter.stream.storage.SsfStreamStore;
 import org.keycloak.ssf.transmitter.stream.storage.client.ClientStreamStore;
 import org.keycloak.ssf.transmitter.support.SsfAuthUtil;
 
@@ -55,8 +56,14 @@ public class SsfStreamPollResource {
 
     protected final KeycloakSession session;
 
-    public SsfStreamPollResource(KeycloakSession session) {
+    protected final SsfStreamStore streamStore;
+
+    protected final PollDeliveryService pollDeliveryService;
+
+    public SsfStreamPollResource(KeycloakSession session, SsfStreamStore streamStore, PollDeliveryService pollDeliveryService) {
         this.session = session;
+        this.streamStore = streamStore;
+        this.pollDeliveryService = pollDeliveryService;
     }
 
     @POST
@@ -135,7 +142,7 @@ public class SsfStreamPollResource {
                     + " entries — split into multiple polls");
         }
 
-        PollResponse response = new PollDeliveryService(session).poll(callerClient, body);
+        PollResponse response = pollDeliveryService.poll(callerClient, body);
         return Response.ok(response).build();
     }
 
@@ -146,9 +153,7 @@ public class SsfStreamPollResource {
     }
 
     protected StreamConfig lookupStream(ClientModel callerClient) {
-        return session.getProvider(org.keycloak.ssf.transmitter.SsfTransmitterProvider.class)
-                .streamStore()
-                .getStreamForClient(callerClient);
+        return streamStore.getStreamForClient(callerClient);
     }
 
     protected Response streamNotFound() {

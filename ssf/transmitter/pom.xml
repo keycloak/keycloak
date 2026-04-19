@@ -68,6 +68,18 @@
             <groupId>org.jboss.logging</groupId>
             <artifactId>jboss-logging</artifactId>
         </dependency>
+        <!--
+            Micrometer for the SSF transmitter metrics binder (outbox
+            depth gauges, dispatcher + drainer + poll counters / timers).
+            Provided scope: Keycloak's Quarkus runtime already ships
+            Micrometer, so we only need it on the compile / test
+            classpath, not bundled in the SSF artifact.
+        -->
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-core</artifactId>
+            <scope>provided</scope>
+        </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>

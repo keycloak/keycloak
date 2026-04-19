@@ -6,9 +6,11 @@ import org.keycloak.provider.Provider;
 import org.keycloak.ssf.event.SsfEventProviderFactory;
 import org.keycloak.ssf.event.SsfEventRegistry;
 import org.keycloak.ssf.transmitter.delivery.SecurityEventTokenDispatcher;
+import org.keycloak.ssf.transmitter.delivery.poll.PollDeliveryService;
 import org.keycloak.ssf.transmitter.emit.EventEmitterService;
 import org.keycloak.ssf.transmitter.event.SecurityEventTokenMapper;
 import org.keycloak.ssf.transmitter.metadata.TransmitterMetadataService;
+import org.keycloak.ssf.transmitter.metrics.SsfMetricsBinder;
 import org.keycloak.ssf.transmitter.resources.SsfStreamManagementResource;
 import org.keycloak.ssf.transmitter.resources.SsfStreamStatusResource;
 import org.keycloak.ssf.transmitter.resources.SsfStreamVerificationResource;
@@ -102,6 +104,12 @@ public interface SsfTransmitterProvider extends Provider {
     StreamService streamService();
 
     /**
+     * Returns the service for handling poll requests.
+     * @return
+     */
+    PollDeliveryService pollDeliveryService();
+
+    /**
      * Returns the JAX-RS sub-resource for querying and updating stream status.
      *
      * @return the stream status endpoint
@@ -164,4 +172,14 @@ public interface SsfTransmitterProvider extends Provider {
      * timeouts and the transmitter-initiated verification delay.
      */
     SsfTransmitterConfig getConfig();
+
+    /**
+     * Returns the shared Prometheus metrics binder for the SSF
+     * transmitter. Hot paths that weren't constructed with a direct
+     * binder reference (in particular the poll endpoint, which is
+     * constructed per request) resolve it through this accessor.
+     * Always non-null — returns
+     * {@link SsfMetricsBinder#NOOP} when metrics are disabled.
+     */
+    SsfMetricsBinder metrics();
 }

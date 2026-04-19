@@ -3,6 +3,7 @@ package org.keycloak.ssf.transmitter.delivery;
 import java.util.function.Function;
 
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.ssf.Ssf;
 import org.keycloak.ssf.SsfProfile;
 import org.keycloak.ssf.event.token.SecurityEventToken;
 import org.keycloak.ssf.event.token.SseCaepSecurityEventToken;
@@ -13,6 +14,7 @@ import org.keycloak.ssf.transmitter.SsfTransmitterConfig;
 import org.keycloak.ssf.transmitter.delivery.push.PushDeliveryService;
 import org.keycloak.ssf.transmitter.event.SecurityEventTokenEncoder;
 import org.keycloak.ssf.transmitter.event.SsfSignatureAlgorithms;
+import org.keycloak.ssf.transmitter.metrics.SsfMetricsBinder;
 import org.keycloak.ssf.transmitter.outbox.SsfPendingEventStore;
 import org.keycloak.ssf.transmitter.stream.StreamConfig;
 import org.keycloak.ssf.transmitter.subject.SubjectSubscriptionFilter;
@@ -37,17 +39,30 @@ public class SecurityEventTokenDispatcher {
 
     protected final SubjectSubscriptionFilter subjectSubscriptionFilter;
 
+    protected final SsfMetricsBinder metricsBinder;
+
     public SecurityEventTokenDispatcher(KeycloakSession session,
                                         SecurityEventTokenEncoder securityEventTokenEncoder,
                                         PushDeliveryService pushDeliveryService,
                                         SsfTransmitterConfig transmitterConfig,
                                         Function<KeycloakSession, SsfPendingEventStore> pendingSsfEventStoreFactory) {
+        this(session, securityEventTokenEncoder, pushDeliveryService, transmitterConfig, pendingSsfEventStoreFactory,
+                SsfMetricsBinder.NOOP);
+    }
+
+    public SecurityEventTokenDispatcher(KeycloakSession session,
+                                        SecurityEventTokenEncoder securityEventTokenEncoder,
+                                        PushDeliveryService pushDeliveryService,
+                                        SsfTransmitterConfig transmitterConfig,
+                                        Function<KeycloakSession, SsfPendingEventStore> pendingSsfEventStoreFactory,
+                                        SsfMetricsBinder metricsBinder) {
         this.session = session;
         this.securityEventTokenEncoder = securityEventTokenEncoder;
         this.pushDeliveryService = pushDeliveryService;
         this.transmitterConfig = transmitterConfig;
         this.pendingSsfEventStoreFactory = pendingSsfEventStoreFactory;
         this.subjectSubscriptionFilter = createSubjectSubscriptionFilter();
+        this.metricsBinder = metricsBinder == null ? SsfMetricsBinder.NOOP : metricsBinder;
     }
 
     protected SubjectSubscriptionFilter createSubjectSubscriptionFilter() {
@@ -79,6 +94,8 @@ public class SecurityEventTokenDispatcher {
             // SSF: disabled streams drop events outright.
             log.debugf("Dropping event for disabled stream. clientId=%s streamId=%s jti=%s",
                     stream.getClientClientId(), stream.getStreamId(), eventToken.getJti());
+            metricsBinder.recordSuppressed(currentRealmName(), stream.getClientClientId(),
+                    SsfMetricsBinder.SuppressReason.STATUS_DISABLED);
             return;
         }
 
@@ -86,21 +103,57 @@ public class SecurityEventTokenDispatcher {
         if (isEventEnabledForStream(eventToken, stream)){
             log.debugf("Skipping event delivery for stream because of unsupported event. clientId=%s streamId=%s jti=%s events=%s",
                     stream.getClientClientId(), stream.getStreamId(), eventToken.getJti(), eventToken.getEvents());
+            metricsBinder.recordSuppressed(currentRealmName(), stream.getClientClientId(),
+                    SsfMetricsBinder.SuppressReason.EVENT_NOT_REQUESTED);
             return;
         }
 
         if (!shouldDispatchForSubject(eventToken, stream)) {
+            metricsBinder.recordSuppressed(currentRealmName(), stream.getClientClientId(),
+                    SsfMetricsBinder.SuppressReason.SUBJECT_GATE);
             return;
         }
 
         if (status == StreamStatusValue.paused) {
             // SSF: paused streams hold events; they're released when
             // the stream is resumed (status returns to enabled).
+            metricsBinder.recordSuppressed(currentRealmName(), stream.getClientClientId(),
+                    SsfMetricsBinder.SuppressReason.STATUS_PAUSED_HELD);
             holdEvent(eventToken, stream);
             return;
         }
 
         deliverEvent(eventToken, stream);
+    }
+
+    /**
+     * Safe accessor for the current realm <em>name</em> — used as the
+     * {@code realm} metric label so operators see {@code realm="ssf-poc"}
+     * rather than the opaque realm UUID. During dispatch the session
+     * always carries a realm context, but we guard against a malformed
+     * call path poisoning the metrics labels with a null.
+     */
+    protected String currentRealmName() {
+        try {
+            return session.getContext().getRealm().getName();
+        } catch (RuntimeException e) {
+            return null;
+        }
+    }
+
+    /**
+     * Resolves the receiver-friendly event alias (e.g.
+     * {@code CaepCredentialChange}) for the full event type URI. Falls
+     * back to the URI when the event type isn't registered — keeps
+     * unknown / custom event types observable on the metrics side
+     * without losing the increment.
+     */
+    protected String resolveEventAlias(String eventType) {
+        if (eventType == null) {
+            return null;
+        }
+        String alias = Ssf.events().getRegistry().resolveAliasForEventType(eventType);
+        return alias != null ? alias : eventType;
     }
 
     /**
@@ -168,6 +221,12 @@ public class SecurityEventTokenDispatcher {
                 case POLL, RISC_POLL ->
                         pendingEventStore.enqueueHeldPoll(realmId, clientId, streamId, jti, eventType, encodedEvent);
             }
+
+            // HELD is a distinct outcome from normal delivery — we
+            // already counted it under SuppressReason.STATUS_PAUSED_HELD
+            // on the dispatch gate. No additional enqueued counter bump
+            // here so the two signals ("would have fired but paused"
+            // vs "actually enqueued for wire delivery") stay separable.
 
             log.debugf("Held event for paused stream. clientId=%s streamId=%s jti=%s deliveryMethod=%s",
                     stream.getClientClientId(), streamId, jti, deliveryMethod.name());
@@ -308,6 +367,8 @@ public class SecurityEventTokenDispatcher {
 
         var pendingEventStore = pendingSsfEventStoreFactory.apply(session);
         pendingEventStore.enqueuePendingPush(realmId, clientId, streamId, jti, eventType, encodedEvent);
+        metricsBinder.recordEnqueued(currentRealmName(), stream.getClientClientId(), "PUSH",
+                resolveEventAlias(eventType));
     }
 
     /**
@@ -332,6 +393,8 @@ public class SecurityEventTokenDispatcher {
 
         var pendingEventStore = pendingSsfEventStoreFactory.apply(session);
         pendingEventStore.enqueuePendingPoll(realmId, clientId, streamId, jti, eventType, encodedEvent);
+        metricsBinder.recordEnqueued(currentRealmName(), stream.getClientClientId(), "POLL",
+                resolveEventAlias(eventType));
     }
 
     protected SecurityEventToken getNarrowedEventToken(SsfSecurityEventToken eventToken, StreamConfig stream) {

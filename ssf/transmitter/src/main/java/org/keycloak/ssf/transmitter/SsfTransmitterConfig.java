@@ -38,6 +38,15 @@ public class SsfTransmitterConfig {
     public static final String CONFIG_CRITICAL_SUBJECT_MEMBERS = "critical-subject-members";
 
     /**
+     * Toggles the SSF Prometheus metrics binder. When {@code false}
+     * the factory installs a no-op binder and the dispatcher / drainer /
+     * poll endpoint skip every meter call — useful for operators who
+     * don't want SSF label series in their metrics store, or for
+     * debugging a suspected Micrometer issue.
+     */
+    public static final String CONFIG_METRICS_ENABLED = "metrics-enabled";
+
+    /**
      * Default connect timeout (in milliseconds) for delivering SSF events via
      * HTTP push to a receiver's push endpoint.
      */
@@ -127,6 +136,14 @@ public class SsfTransmitterConfig {
      */
     public static final Set<String> DEFAULT_CRITICAL_SUBJECT_MEMBERS = Set.of("user");
 
+    /**
+     * Default for {@link #isMetricsEnabled()}. Metrics are on by default
+     * so operators get useful defaults without extra SPI configuration;
+     * impact is bounded (in-memory counters on hot paths, one grouped
+     * aggregate per drainer tick for outbox depth).
+     */
+    public static final boolean DEFAULT_METRICS_ENABLED = true;
+
     private final int pushEndpointConnectTimeoutMillis;
 
     private final int pushEndpointSocketTimeoutMillis;
@@ -147,6 +164,8 @@ public class SsfTransmitterConfig {
 
     private final Set<String> criticalSubjectMembers;
 
+    private final boolean metricsEnabled;
+
     public SsfTransmitterConfig(int pushEndpointConnectTimeoutMillis,
                                 int pushEndpointSocketTimeoutMillis,
                                 int transmitterInitiatedVerificationDelayMillis,
@@ -156,7 +175,8 @@ public class SsfTransmitterConfig {
                                 DefaultSubjects defaultSubjects,
                                 boolean subjectManagementEnabled,
                                 boolean sseCaepEnabled,
-                                Set<String> criticalSubjectMembers) {
+                                Set<String> criticalSubjectMembers,
+                                boolean metricsEnabled) {
         this.pushEndpointConnectTimeoutMillis = pushEndpointConnectTimeoutMillis;
         this.pushEndpointSocketTimeoutMillis = pushEndpointSocketTimeoutMillis;
         this.transmitterInitiatedVerificationDelayMillis = transmitterInitiatedVerificationDelayMillis;
@@ -167,6 +187,7 @@ public class SsfTransmitterConfig {
         this.subjectManagementEnabled = subjectManagementEnabled;
         this.sseCaepEnabled = sseCaepEnabled;
         this.criticalSubjectMembers = criticalSubjectMembers;
+        this.metricsEnabled = metricsEnabled;
     }
 
     /**
@@ -194,7 +215,9 @@ public class SsfTransmitterConfig {
                         DEFAULT_SUBJECT_MANAGEMENT_ENABLED),
                 config.getBoolean(CONFIG_SSE_CAEP_ENABLED,
                         DEFAULT_SSE_CAEP_ENABLED),
-                parseCriticalSubjectMembers(config.get(CONFIG_CRITICAL_SUBJECT_MEMBERS)));
+                parseCriticalSubjectMembers(config.get(CONFIG_CRITICAL_SUBJECT_MEMBERS)),
+                config.getBoolean(CONFIG_METRICS_ENABLED,
+                        DEFAULT_METRICS_ENABLED));
     }
 
     /**
@@ -234,7 +257,8 @@ public class SsfTransmitterConfig {
                 DEFAULT_DEFAULT_SUBJECTS,
                 DEFAULT_SUBJECT_MANAGEMENT_ENABLED,
                 DEFAULT_SSE_CAEP_ENABLED,
-                DEFAULT_CRITICAL_SUBJECT_MEMBERS);
+                DEFAULT_CRITICAL_SUBJECT_MEMBERS,
+                DEFAULT_METRICS_ENABLED);
     }
 
     /**
@@ -340,5 +364,14 @@ public class SsfTransmitterConfig {
      */
     public Set<String> getCriticalSubjectMembers() {
         return criticalSubjectMembers;
+    }
+
+    /**
+     * Whether the SSF Prometheus metrics binder is installed. When
+     * {@code false} every meter call is a no-op — see
+     * {@link org.keycloak.ssf.transmitter.metrics.SsfMetricsBinder}.
+     */
+    public boolean isMetricsEnabled() {
+        return metricsEnabled;
     }
 }

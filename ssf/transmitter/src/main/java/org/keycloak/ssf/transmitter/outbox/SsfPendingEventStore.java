@@ -2,6 +2,8 @@ package org.keycloak.ssf.transmitter.outbox;
 
 import java.time.Instant;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -467,6 +469,48 @@ public class SsfPendingEventStore {
                     migrated, clientId, newDeliveryMethod);
         }
         return migrated;
+    }
+
+    /**
+     * Grouped outbox-depth aggregate feeding the Prometheus
+     * outbox-depth gauges. Returns one entry per {@code (realmId,
+     * status)} pair — callers typically filter to PENDING, HELD, and
+     * DEAD_LETTER and ignore DELIVERED. Called once per drainer tick
+     * so the metrics binder's cached snapshot stays fresh; scrapes
+     * never hit the database.
+     *
+     * <p>Uses a plain read-only {@code COUNT} backed by
+     * {@code IDX_SSF_PENDING_REALM (REALM_ID, STATUS)}; no row locks
+     * are requested so the aggregate doesn't interact with the
+     * drainer's {@code FOR UPDATE SKIP LOCKED} claims.
+     *
+     * @return map keyed by {@code (realmId, status)} → row count.
+     *         Empty when the table is empty.
+     */
+    public Map<RealmStatusKey, Long> countByRealmAndStatus() {
+        @SuppressWarnings("unchecked")
+        List<Object[]> rows = getEntityManager()
+                .createNamedQuery("SsfPendingEvent.countByRealmAndStatus")
+                .getResultList();
+        if (rows.isEmpty()) {
+            return Collections.emptyMap();
+        }
+        Map<RealmStatusKey, Long> result = new HashMap<>(rows.size());
+        for (Object[] row : rows) {
+            String realmId = (String) row[0];
+            SsfPendingEventStatus status = (SsfPendingEventStatus) row[1];
+            Long count = (Long) row[2];
+            result.put(new RealmStatusKey(realmId, status), count);
+        }
+        return result;
+    }
+
+    /**
+     * Compound key for {@link #countByRealmAndStatus}. Stable wire
+     * contract consumed by {@code SsfMetricsBinder} — adding fields
+     * here needs a coordinated update on the metrics side.
+     */
+    public record RealmStatusKey(String realmId, SsfPendingEventStatus status) {
     }
 
     public void recordFailure(SsfPendingEventEntity entity, Instant nextAttemptAt, String lastError) {

@@ -200,6 +200,18 @@ import jakarta.persistence.UniqueConstraint;
                 name = "SsfPendingEvent.findRealmClientPairsForPurgeScan",
                 query = "SELECT DISTINCT e.realmId, e.clientId FROM SsfPendingEventEntity e"
                         + " WHERE e.status <> :delivered"),
+        // Grouped outbox-depth aggregate for the Prometheus
+        // metrics binder. Runs at the end of each drainer tick
+        // and populates the cached depth snapshot that the
+        // outbox-depth gauges read from — scrapes pay no DB cost.
+        // Covered by the existing IDX_SSF_PENDING_REALM (REALM_ID,
+        // STATUS) index so the aggregate stays cheap even for
+        // large tables. Plain COUNT takes no row locks, so the
+        // drainer's FOR UPDATE SKIP LOCKED claims don't interact.
+        @NamedQuery(
+                name = "SsfPendingEvent.countByRealmAndStatus",
+                query = "SELECT e.realmId, e.status, COUNT(e) FROM SsfPendingEventEntity e"
+                        + " GROUP BY e.realmId, e.status"),
         // Per-receiver TTL purge: drops every non-DELIVERED row for the
         // client whose createdAt predates the receiver-specific cutoff
         // derived from ssf.maxEventAgeSeconds.
