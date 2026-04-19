@@ -21,10 +21,10 @@ import org.keycloak.ssf.subject.ComplexSubjectId;
 import org.keycloak.ssf.subject.OpaqueSubjectId;
 import org.keycloak.ssf.subject.SubjectId;
 import org.keycloak.ssf.subject.SubjectUserLookup;
-import org.keycloak.ssf.transmitter.SsfTransmitterProvider;
 import org.keycloak.ssf.transmitter.delivery.SecurityEventTokenDispatcher;
 import org.keycloak.ssf.transmitter.event.SecurityEventTokenMapper;
 import org.keycloak.ssf.transmitter.stream.StreamConfig;
+import org.keycloak.ssf.transmitter.stream.storage.client.ClientStreamStore;
 import org.keycloak.ssf.transmitter.subject.SsfNotifyAttributes;
 import org.keycloak.util.JsonSerialization;
 
@@ -53,11 +53,20 @@ public class EventEmitterService {
 
     protected final KeycloakSession session;
 
-    protected final SsfTransmitterProvider transmitter;
+    protected final ClientStreamStore streamStore;
 
-    public EventEmitterService(KeycloakSession session, SsfTransmitterProvider transmitter) {
+    protected final SecurityEventTokenMapper eventTokenMapper;
+
+    protected final SecurityEventTokenDispatcher eventTokenDispatcher;
+
+    public EventEmitterService(KeycloakSession session,
+                               ClientStreamStore streamStore,
+                               SecurityEventTokenMapper eventTokenMapper,
+                               SecurityEventTokenDispatcher eventTokenDispatcher) {
         this.session = session;
-        this.transmitter = transmitter;
+        this.streamStore = streamStore;
+        this.eventTokenMapper = eventTokenMapper;
+        this.eventTokenDispatcher = eventTokenDispatcher;
     }
 
     /**
@@ -116,7 +125,7 @@ public class EventEmitterService {
         }
 
         // 3. Receiver must have a registered SSF stream.
-        StreamConfig stream = transmitter.streamStore().getStreamForClient(receiverClient);
+        StreamConfig stream = streamStore.getStreamForClient(receiverClient);
         if (stream == null) {
             return EmitEventResult.dropped(EmitEventStatus.STREAM_NOT_FOUND);
         }
@@ -162,17 +171,15 @@ public class EventEmitterService {
 
         // 6. Build the SET (sub_id verbatim from the emitter) and hand
         //    off to the existing dispatcher.
-        SecurityEventTokenMapper mapper = transmitter.securityEventTokenMapper();
-        SsfSecurityEventToken token = mapper.generateSyntheticEvent(stream, eventTypeUri, eventPayload, subjectId);
+        SsfSecurityEventToken token = eventTokenMapper.generateSyntheticEvent(stream, eventTypeUri, eventPayload, subjectId);
         if (token == null) {
             return EmitEventResult.dropped(EmitEventStatus.INVALID_REQUEST);
         }
 
-        SecurityEventTokenDispatcher dispatcher = transmitter.securityEventTokenDispatcher();
         // Filters above mirror what dispatcher.dispatchEvent would run,
         // so deliverEvent is the right entry point — same async outbox
         // path native events take, no double filtering.
-        dispatcher.deliverEvent(token, stream);
+        eventTokenDispatcher.deliverEvent(token, stream);
 
         log.debugf("SSF synthetic event dispatched. receiverClientId=%s streamId=%s eventType=%s jti=%s",
                 receiverClient.getClientId(), stream.getStreamId(), eventTypeUri, token.getJti());

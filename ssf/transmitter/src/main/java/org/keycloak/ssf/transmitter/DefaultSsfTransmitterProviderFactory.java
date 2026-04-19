@@ -19,10 +19,12 @@ import org.keycloak.services.scheduled.ScheduledTaskRunner;
 import org.keycloak.ssf.event.SsfEventProviderFactory;
 import org.keycloak.ssf.event.SsfEventRegistry;
 import org.keycloak.ssf.transmitter.delivery.SecurityEventTokenDispatcher;
+import org.keycloak.ssf.transmitter.delivery.poll.PollDeliveryService;
 import org.keycloak.ssf.transmitter.delivery.push.PushDeliveryService;
 import org.keycloak.ssf.transmitter.event.SecurityEventTokenEncoder;
 import org.keycloak.ssf.transmitter.event.SecurityEventTokenMapper;
 import org.keycloak.ssf.transmitter.metadata.TransmitterMetadataService;
+import org.keycloak.ssf.transmitter.metrics.SsfMetricsBinder;
 import org.keycloak.ssf.transmitter.outbox.SsfPendingEventStore;
 import org.keycloak.ssf.transmitter.outbox.SsfPushOutboxBackoff;
 import org.keycloak.ssf.transmitter.outbox.SsfPushOutboxDrainerTask;
@@ -83,6 +85,15 @@ public class DefaultSsfTransmitterProviderFactory implements SsfTransmitterProvi
 
     protected long outboxDeadLetterRetentionMillis = DEFAULT_OUTBOX_DEAD_LETTER_RETENTION_MILLIS;
 
+    /**
+     * Shared metrics binder — constructed once at factory init time and
+     * reused across every session-scoped dispatcher, the long-lived
+     * drainer task, and any on-demand lookups (poll endpoint).
+     * Defaults to {@link SsfMetricsBinder#NOOP} until
+     * {@link #init(Config.Scope)} decides whether metrics are enabled.
+     */
+    protected SsfMetricsBinder metricsBinder = SsfMetricsBinder.NOOP;
+
     @Override
     public String getId() {
         return "default";
@@ -99,8 +110,9 @@ public class DefaultSsfTransmitterProviderFactory implements SsfTransmitterProvi
         var verificationService = createVerificationService(session, streamStore, mapper, dispatcher);
         var transmitterMetadataService = createTransmitterMetadataService(session, transmitterConfig);
         var subjectManagementService = createSubjectManagementService(session);
+        var pollDeliveryService = createPollDeliveryService(session, transmitterConfig);
         return createTransmitter(session, transmitterMetadataService, verificationService, subjectManagementService,
-                mapper, dispatcher, transmitterConfig, streamStore, this::createSsfPendingEventStore);
+                mapper, dispatcher, transmitterConfig, streamStore, this::createSsfPendingEventStore, pollDeliveryService);
     }
 
     protected SsfTransmitterProvider createTransmitter(KeycloakSession session,
@@ -111,11 +123,12 @@ public class DefaultSsfTransmitterProviderFactory implements SsfTransmitterProvi
                                                        SecurityEventTokenDispatcher dispatcher,
                                                        SsfTransmitterConfig transmitterConfig,
                                                        ClientStreamStore streamStore,
-                                                       Function<KeycloakSession, SsfPendingEventStore> pendingSsfEventStoreFactory) {
+                                                       Function<KeycloakSession, SsfPendingEventStore> pendingSsfEventStoreFactory,
+                                                       PollDeliveryService pollDeliveryService) {
 
         return new DefaultSsfTransmitterProvider(session, transmitterMetadataService, verificationService, mapper,
                 dispatcher, transmitterConfig, configuredDefaultSupportedEventAliases, streamStore,
-                subjectManagementService, pendingSsfEventStoreFactory);
+                subjectManagementService, pendingSsfEventStoreFactory, metricsBinder, pollDeliveryService);
     }
 
     protected SubjectManagementService createSubjectManagementService(KeycloakSession session) {
@@ -135,7 +148,7 @@ public class DefaultSsfTransmitterProviderFactory implements SsfTransmitterProvi
     }
 
     protected SecurityEventTokenDispatcher createSecurityEventTokenDispatcher(KeycloakSession session, SecurityEventTokenEncoder encoder, PushDeliveryService pushDelivery, SsfTransmitterConfig transmitterConfig) {
-        return new SecurityEventTokenDispatcher(session, encoder, pushDelivery, transmitterConfig, this::createSsfPendingEventStore);
+        return new SecurityEventTokenDispatcher(session, encoder, pushDelivery, transmitterConfig, this::createSsfPendingEventStore, metricsBinder);
     }
 
     protected PushDeliveryService createPushDeliveryService(KeycloakSession session, SsfTransmitterConfig transmitterConfig) {
@@ -148,6 +161,10 @@ public class DefaultSsfTransmitterProviderFactory implements SsfTransmitterProvi
 
     protected SecurityEventTokenMapper createSecurityEventTokenMapper(KeycloakSession session, SsfTransmitterConfig transmitterConfig) {
         return new SecurityEventTokenMapper(session, transmitterConfig, this::createSsfIssuerUrl);
+    }
+
+    protected PollDeliveryService createPollDeliveryService(KeycloakSession session, SsfTransmitterConfig transmitterConfig) {
+        return new PollDeliveryService(session, createSsfPendingEventStore(session), metricsBinder);
     }
 
     @Override
@@ -171,6 +188,51 @@ public class DefaultSsfTransmitterProviderFactory implements SsfTransmitterProvi
         String retentionStr = config.get(CONFIG_OUTBOX_DEAD_LETTER_RETENTION);
         if (retentionStr != null) {
             this.outboxDeadLetterRetentionMillis = SsfUtil.parseDurationMillis(retentionStr, DEFAULT_OUTBOX_DEAD_LETTER_RETENTION_MILLIS);
+        }
+
+        // Metrics binder lifecycle. Two gates combine:
+        //   1. SSF-level metrics-enabled SPI knob — lets an operator
+        //      opt out of SSF meters specifically (e.g. to avoid label
+        //      cardinality they don't want in their Prometheus).
+        //   2. Micrometer classpath availability — keeps SSF functional
+        //      on custom distributions that strip Micrometer.
+        //
+        // Note: we deliberately do NOT pre-check
+        // Metrics.globalRegistry.getRegistries().isEmpty() here —
+        // the SPI init() runs early in Quarkus boot, before the
+        // Micrometer extension wires the Prometheus / OTLP registries
+        // into the global composite. A pre-flight check at this point
+        // would always see an empty composite and permanently install
+        // NOOP even when --metrics-enabled=true. The Keycloak-global
+        // gate is the /metrics endpoint itself: if the operator
+        // disabled metrics, our in-memory increments land in an empty
+        // composite and harmlessly do nothing.
+        this.metricsBinder = resolveMetricsBinder(transmitterConfig);
+    }
+
+    /**
+     * Picks the real {@link SsfMetricsBinder} or {@link SsfMetricsBinder#NOOP}
+     * based on the SSF-level toggle + Micrometer classpath availability.
+     * Runs at {@code init()} time, so the chosen binder lives for the
+     * duration of the factory.
+     */
+    protected SsfMetricsBinder resolveMetricsBinder(SsfTransmitterConfig transmitterConfig) {
+        if (!transmitterConfig.isMetricsEnabled()) {
+            log.infof("SSF metrics disabled by SPI config (%s=false) — installing NOOP binder",
+                    SsfTransmitterConfig.CONFIG_METRICS_ENABLED);
+            return SsfMetricsBinder.NOOP;
+        }
+        try {
+            SsfMetricsBinder binder = new SsfMetricsBinder();
+            log.infof("SSF metrics binder installed; meters under prefix %s",
+                    SsfMetricsBinder.METER_OUTBOX_DEPTH.substring(0,
+                            SsfMetricsBinder.METER_OUTBOX_DEPTH.indexOf("outbox")));
+            return binder;
+        } catch (LinkageError micrometerUnavailable) {
+            // Covers NoClassDefFoundError + all other linkage errors.
+            log.warnf(micrometerUnavailable,
+                    "Micrometer not available on classpath — SSF metrics disabled");
+            return SsfMetricsBinder.NOOP;
         }
     }
 
@@ -269,6 +331,12 @@ public class DefaultSsfTransmitterProviderFactory implements SsfTransmitterProvi
                 .helpText("Whether the legacy SSE CAEP (Apple Business Manager / Apple School Manager) profile is exposed. When true (default), the transmitter advertises the RISC PUSH and RISC POLL URIs in delivery_methods_supported and accepts them on stream-create. When false, only the standard SSF 1.0 RFC 8935 push and RFC 8936 poll delivery methods are advertised.")
                 .defaultValue(SsfTransmitterConfig.DEFAULT_SSE_CAEP_ENABLED)
                 .add()
+                .property()
+                .name(SsfTransmitterConfig.CONFIG_METRICS_ENABLED)
+                .type("boolean")
+                .helpText("Whether the SSF Prometheus metrics binder is installed. When true (default), the dispatcher, push drainer and poll endpoint record per-realm / per-receiver counters and timers plus per-(realm, status) outbox depth gauges refreshed once per drainer tick. Set to false to disable all SSF meters — hot-path calls then become branch-predicted no-ops.")
+                .defaultValue(SsfTransmitterConfig.DEFAULT_METRICS_ENABLED)
+                .add()
                 .build();
     }
 
@@ -338,7 +406,8 @@ public class DefaultSsfTransmitterProviderFactory implements SsfTransmitterProvi
                 : null;
 
         return new SsfPushOutboxDrainerTask(outboxDrainerBatchSize, backoff, deadLetterRetention,
-                this::createSsfPendingEventStore, getTransmitterConfig(), this::createPushDeliveryService);
+                this::createSsfPendingEventStore, getTransmitterConfig(), this::createPushDeliveryService,
+                metricsBinder);
     }
 
     /**

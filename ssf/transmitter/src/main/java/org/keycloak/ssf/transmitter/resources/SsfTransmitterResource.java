@@ -62,6 +62,6 @@ public class SsfTransmitterResource {
      */
     @Path("/receivers/{clientId}/streams/{streamId}/poll")
     public SsfStreamPollResource getStreamPollEndpoint() {
-        return new SsfStreamPollResource(session);
+        return new SsfStreamPollResource(session, transmitter.streamStore(), transmitter.pollDeliveryService());
     }
 }

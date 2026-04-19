@@ -6,6 +6,7 @@ import java.util.Map;
 
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.ssf.transmitter.metrics.SsfMetricsBinder;
 import org.keycloak.ssf.transmitter.outbox.SsfPendingEventEntity;
 import org.keycloak.ssf.transmitter.outbox.SsfPendingEventStatus;
 import org.keycloak.ssf.transmitter.outbox.SsfPendingEventStore;
@@ -49,15 +50,14 @@ public class PollDeliveryService {
 
     protected final KeycloakSession session;
 
-    protected final SsfPendingEventStore store;
+    protected final SsfPendingEventStore pendingEventStore;
 
-    public PollDeliveryService(KeycloakSession session) {
-        this(session, new SsfPendingEventStore(session));
-    }
+    protected final SsfMetricsBinder metricsBinder;
 
-    public PollDeliveryService(KeycloakSession session, SsfPendingEventStore store) {
+    public PollDeliveryService(KeycloakSession session, SsfPendingEventStore pendingEventStore, SsfMetricsBinder metricsBinder) {
         this.session = session;
-        this.store = store;
+        this.pendingEventStore = pendingEventStore;
+        this.metricsBinder = metricsBinder;
     }
 
     /**
@@ -69,6 +69,8 @@ public class PollDeliveryService {
     public PollResponse poll(ClientModel receiverClient, PollRequest request) {
 
         int maxEvents = clampMaxEvents(request.getMaxEvents());
+        String realmName = currentRealmName();
+        String labelClientId = receiverClient.getClientId();
 
         // 1. Ack first. The receiver's natural pattern is "ack what I
         //    got last time, fetch the next batch", so processing the ack
@@ -76,7 +78,8 @@ public class PollDeliveryService {
         //    inside one request.
         List<String> ack = request.getAck();
         if (ack != null && !ack.isEmpty()) {
-            store.ackPendingForReceiver(receiverClient.getId(), ack);
+            pendingEventStore.ackPendingForReceiver(receiverClient.getId(), ack);
+            metricsBinder.recordPollAck(realmName, labelClientId, ack.size());
         }
 
         // 2. Then NACK (setErrs). Receiver-reported errors transition
@@ -87,13 +90,15 @@ public class PollDeliveryService {
         Map<String, Map<String, Object>> setErrs = request.getSetErrs();
         Map<String, String> errorByJti = toErrorMessages(setErrs);
         if (!errorByJti.isEmpty()) {
-            store.nackPendingForReceiver(receiverClient.getId(), errorByJti);
+            pendingEventStore.nackPendingForReceiver(receiverClient.getId(), errorByJti);
+            metricsBinder.recordPollNack(realmName, labelClientId, errorByJti.size());
         }
 
         // 3. Read the next batch — UPGRADE_SKIPLOCKED so concurrent
         //    pollers (e.g. multiple receiver pods on the same OAuth
         //    credentials) walk disjoint rows.
-        List<SsfPendingEventEntity> rows = store.lockPendingForReceiverPoll(receiverClient.getId(), maxEvents);
+        List<SsfPendingEventEntity> rows = pendingEventStore.lockPendingForReceiverPoll(receiverClient.getId(), maxEvents);
+        metricsBinder.recordPollServed(realmName, labelClientId, rows.size());
 
         Map<String, String> sets = new LinkedHashMap<>(rows.size());
         for (SsfPendingEventEntity row : rows) {
@@ -106,7 +111,7 @@ public class PollDeliveryService {
         //    more available than what we just locked.
         boolean moreAvailable = false;
         if (rows.size() == maxEvents) {
-            long pending = store.countByClientStatusAndMethod(
+            long pending = pendingEventStore.countByClientStatusAndMethod(
                     receiverClient.getId(),
                     SsfPendingEventStatus.PENDING,
                     SsfPendingEventEntity.DELIVERY_METHOD_POLL);
@@ -163,6 +168,19 @@ public class PollDeliveryService {
             sb.append(" description=").append(description);
         }
         return sb.toString();
+    }
+
+    /**
+     * Safe accessor for the current realm <em>name</em> — used as the
+     * {@code realm} metric label so dashboards show {@code realm="ssf-poc"}
+     * rather than the opaque realm UUID.
+     */
+    protected String currentRealmName() {
+        try {
+            return session.getContext().getRealm().getName();
+        } catch (RuntimeException e) {
+            return null;
+        }
     }
 
     protected int clampMaxEvents(Integer requested) {

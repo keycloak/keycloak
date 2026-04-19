@@ -2,7 +2,9 @@ package org.keycloak.ssf.transmitter.outbox;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
@@ -16,6 +18,7 @@ import org.keycloak.ssf.stream.StreamStatusValue;
 import org.keycloak.ssf.transmitter.SsfTransmitterConfig;
 import org.keycloak.ssf.transmitter.SsfTransmitterProvider;
 import org.keycloak.ssf.transmitter.delivery.push.PushDeliveryService;
+import org.keycloak.ssf.transmitter.metrics.SsfMetricsBinder;
 import org.keycloak.ssf.transmitter.stream.StreamConfig;
 import org.keycloak.ssf.transmitter.stream.storage.client.ClientStreamStore;
 import org.keycloak.timer.ScheduledTask;
@@ -73,18 +76,32 @@ public class SsfPushOutboxDrainerTask implements ScheduledTask {
 
     protected final BiFunction<KeycloakSession, SsfTransmitterConfig, PushDeliveryService> pushDeliveryServiceFactory;
 
+    protected final SsfMetricsBinder metricsBinder;
+
     public SsfPushOutboxDrainerTask(int batchSize,
                                     SsfPushOutboxBackoff backoff,
                                     Duration deadLetterRetention,
                                     Function<KeycloakSession, SsfPendingEventStore> pendingSsfEventStoreFactory,
                                     SsfTransmitterConfig transmitterConfig,
                                     BiFunction<KeycloakSession, SsfTransmitterConfig, PushDeliveryService> pushDeliveryServiceFactory) {
+        this(batchSize, backoff, deadLetterRetention, pendingSsfEventStoreFactory, transmitterConfig,
+                pushDeliveryServiceFactory, SsfMetricsBinder.NOOP);
+    }
+
+    public SsfPushOutboxDrainerTask(int batchSize,
+                                    SsfPushOutboxBackoff backoff,
+                                    Duration deadLetterRetention,
+                                    Function<KeycloakSession, SsfPendingEventStore> pendingSsfEventStoreFactory,
+                                    SsfTransmitterConfig transmitterConfig,
+                                    BiFunction<KeycloakSession, SsfTransmitterConfig, PushDeliveryService> pushDeliveryServiceFactory,
+                                    SsfMetricsBinder metricsBinder) {
         this.batchSize = batchSize;
         this.backoff = backoff;
         this.deadLetterRetention = deadLetterRetention;
         this.pendingSsfEventStoreFactory = pendingSsfEventStoreFactory;
         this.transmitterConfig = transmitterConfig;
         this.pushDeliveryServiceFactory = pushDeliveryServiceFactory;
+        this.metricsBinder = metricsBinder == null ? SsfMetricsBinder.NOOP : metricsBinder;
     }
 
     @Override
@@ -93,6 +110,8 @@ public class SsfPushOutboxDrainerTask implements ScheduledTask {
         // provider — the session isn't otherwise threaded through.
         KeycloakSession previous = KeycloakSessionUtil.getKeycloakSession();
         KeycloakSessionUtil.setKeycloakSession(session);
+        Instant tickStart = Instant.now();
+        SsfMetricsBinder.DrainerOutcome tickOutcome = SsfMetricsBinder.DrainerOutcome.OK;
         try {
             SsfPendingEventStore store = pendingSsfEventStoreFactory.apply(session);
             drain(session, store);
@@ -105,8 +124,67 @@ public class SsfPushOutboxDrainerTask implements ScheduledTask {
             // SSF 1.0 §8.1.1: auto-pause streams whose receiver has
             // been idle beyond the configured inactivity_timeout.
             pauseInactiveStreams(session);
+            // Refresh the outbox-depth gauge snapshot at the end of
+            // the tick — gauges are lagged by at most one tick, which
+            // is acceptable for "backlog growing" alerting and
+            // sidesteps per-scrape COUNT(*) cost.
+            refreshOutboxDepthSnapshot(session, store);
+        } catch (RuntimeException e) {
+            tickOutcome = SsfMetricsBinder.DrainerOutcome.ERROR;
+            throw e;
         } finally {
+            try {
+                metricsBinder.recordDrainerTick(tickOutcome, Duration.between(tickStart, Instant.now()));
+            } catch (RuntimeException metricEx) {
+                // Never let a meter write propagate out of the drainer.
+                log.debugf(metricEx, "Failed to record drainer tick metric");
+            }
             KeycloakSessionUtil.setKeycloakSession(previous);
+        }
+    }
+
+    /**
+     * Copies the store's grouped {@code (realm, status)} count into
+     * the metrics binder's cached snapshot. Called at the end of the
+     * drainer tick so the outbox-depth gauges stay roughly in sync
+     * with the database without any per-scrape query work.
+     *
+     * <p>Translates each row's {@code realmId} (UUID stored on the
+     * outbox row) into the realm <em>name</em> for the metric label,
+     * matching the convention the dispatcher / poll service follow.
+     * If a realm no longer exists (rows present but realm-removed
+     * cascade hasn't run yet), the realmId is used verbatim so the
+     * data point isn't silently lost.
+     */
+    protected void refreshOutboxDepthSnapshot(KeycloakSession session, SsfPendingEventStore store) {
+        try {
+            Map<SsfPendingEventStore.RealmStatusKey, Long> raw = store.countByRealmAndStatus();
+            if (raw.isEmpty()) {
+                metricsBinder.updateOutboxDepthSnapshot(java.util.Collections.emptyMap());
+                return;
+            }
+            // Resolve each realmId once — the snapshot may carry many
+            // rows per realm.
+            Map<String, String> realmNameById = new HashMap<>();
+            Map<SsfMetricsBinder.RealmStatus, Long> translated = new HashMap<>(raw.size());
+            for (Map.Entry<SsfPendingEventStore.RealmStatusKey, Long> entry : raw.entrySet()) {
+                String realmId = entry.getKey().realmId();
+                String realmLabel = realmNameById.computeIfAbsent(realmId, id -> {
+                    try {
+                        RealmModel realm = session.realms().getRealm(id);
+                        return realm != null ? realm.getName() : id;
+                    } catch (RuntimeException e) {
+                        return id;
+                    }
+                });
+                translated.put(new SsfMetricsBinder.RealmStatus(realmLabel, entry.getKey().status()),
+                        entry.getValue());
+            }
+            metricsBinder.updateOutboxDepthSnapshot(translated);
+        } catch (RuntimeException e) {
+            // Depth gauges are a nice-to-have — never let the aggregate
+            // failure mode break the actual drainer work.
+            log.debugf(e, "Failed to refresh SSF outbox depth snapshot");
         }
     }
 
@@ -123,6 +201,7 @@ public class SsfPushOutboxDrainerTask implements ScheduledTask {
     }
 
     protected void processPendingEvent(KeycloakSession session, SsfPendingEventStore store, SsfPendingEventEntity row) {
+        Instant rowStart = Instant.now();
         // Resolve the realm + receiver client the row targets. The row
         // may outlive the client (e.g. admin deleted the client while a
         // push was pending) — treat that as a terminal failure so the
@@ -132,14 +211,21 @@ public class SsfPushOutboxDrainerTask implements ScheduledTask {
             log.warnf("SSF outbox row references unknown realm — dead-lettering. id=%s realmId=%s jti=%s",
                     row.getId(), row.getRealmId(), row.getJti());
             store.markDeadLetter(row, "realm no longer exists: " + row.getRealmId());
+            // Realm is gone — fall back to the realmId for the label so
+            // operators can still see the orphaned-row signal in metrics.
+            metricsBinder.recordPushDelivery(row.getRealmId(), row.getClientId(),
+                    SsfMetricsBinder.PushOutcome.ORPHANED, Duration.between(rowStart, Instant.now()));
             return;
         }
+        String realmLabel = realm.getName();
 
         ClientModel receiverClient = realm.getClientById(row.getClientId());
         if (receiverClient == null) {
             log.warnf("SSF outbox row references unknown client — dead-lettering. id=%s clientId=%s jti=%s",
                     row.getId(), row.getClientId(), row.getJti());
             store.markDeadLetter(row, "client no longer exists: " + row.getClientId());
+            metricsBinder.recordPushDelivery(realmLabel, row.getClientId(),
+                    SsfMetricsBinder.PushOutcome.ORPHANED, Duration.between(rowStart, Instant.now()));
             return;
         }
 
@@ -161,6 +247,8 @@ public class SsfPushOutboxDrainerTask implements ScheduledTask {
                     row.getId(), row.getClientId(), row.getStreamId(),
                     stream == null ? "<none>" : stream.getStreamId());
             store.markDeadLetter(row, "stream no longer exists: " + row.getStreamId());
+            metricsBinder.recordPushDelivery(realmLabel, receiverClient.getClientId(),
+                    SsfMetricsBinder.PushOutcome.ORPHANED, Duration.between(rowStart, Instant.now()));
             return;
         }
 
@@ -169,6 +257,8 @@ public class SsfPushOutboxDrainerTask implements ScheduledTask {
             log.debugf("SSF outbox delivered. id=%s clientId=%s streamId=%s jti=%s attempts=%d",
                     row.getId(), row.getClientId(), row.getStreamId(), row.getJti(), row.getAttempts() + 1);
             store.markDelivered(row);
+            metricsBinder.recordPushDelivery(realmLabel, receiverClient.getClientId(),
+                    SsfMetricsBinder.PushOutcome.DELIVERED, Duration.between(rowStart, Instant.now()));
             return;
         }
 
@@ -178,12 +268,16 @@ public class SsfPushOutboxDrainerTask implements ScheduledTask {
             log.warnf("SSF outbox dead-lettered after %d attempts. id=%s clientId=%s streamId=%s jti=%s",
                     nextAttempts, row.getId(), row.getClientId(), row.getStreamId(), row.getJti());
             store.markDeadLetter(row, lastError);
+            metricsBinder.recordPushDelivery(realmLabel, receiverClient.getClientId(),
+                    SsfMetricsBinder.PushOutcome.DEAD_LETTER, Duration.between(rowStart, Instant.now()));
             return;
         }
         Instant nextAttemptAt = backoff.computeNextAttemptAt(Instant.now(), nextAttempts);
         log.debugf("SSF outbox scheduling retry. id=%s attempts=%d nextAttemptAt=%s",
                 row.getId(), nextAttempts, nextAttemptAt);
         store.recordFailure(row, nextAttemptAt, lastError);
+        metricsBinder.recordPushDelivery(realmLabel, receiverClient.getClientId(),
+                SsfMetricsBinder.PushOutcome.RETRY, Duration.between(rowStart, Instant.now()));
     }
 
     /**
