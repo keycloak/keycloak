@@ -75,7 +75,11 @@ public class PushDeliveryService {
     protected boolean deliverEvent(String endpointUrl, String authorizationHeader, SecurityEventToken eventToken, String encodedEventToken, StreamConfig stream) {
         try {
 
-            log.debugf("Delivering event jti=%s to %s. EventToken=%s", eventToken.getJti(), endpointUrl, encodedEventToken);
+            if (log.isTraceEnabled()) {
+                log.tracef("Delivering event jti=%s to %s. EventToken=%s", eventToken.getJti(), endpointUrl, encodedEventToken);
+            } else {
+                log.debugf("Delivering event jti=%s to %s.", eventToken.getJti(), endpointUrl);
+            }
 
             try (var response = createSimpleHttp(endpointUrl, authorizationHeader, stream)
                     .header(HttpHeaders.CONTENT_TYPE, Ssf.APPLICATION_SECEVENT_JWT_TYPE)
