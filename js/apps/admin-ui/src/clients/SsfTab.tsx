@@ -107,6 +107,7 @@ const splitSupportedEvents = (value: unknown): string[] => {
 type SsfConfig = {
   defaultSupportedEvents?: string[];
   availableSupportedEvents?: string[];
+  nativelyEmittedEvents?: string[];
   defaultPushEndpointConnectTimeoutMillis?: number;
   defaultPushEndpointSocketTimeoutMillis?: number;
   defaultUserSubjectFormat?: string;
@@ -192,6 +193,9 @@ export const SsfTab = ({ save, client, activeTab }: SsfTabProps) => {
   const [availableSupportedEvents, setAvailableSupportedEvents] = useState<
     string[]
   >([]);
+  const [nativelyEmittedEvents, setNativelyEmittedEvents] = useState<string[]>(
+    [],
+  );
   const [defaultPushConnectTimeoutMillis, setDefaultPushConnectTimeoutMillis] =
     useState<number>(FALLBACK_DEFAULT_PUSH_CONNECT_TIMEOUT_MILLIS);
   const [defaultPushSocketTimeoutMillis, setDefaultPushSocketTimeoutMillis] =
@@ -724,6 +728,10 @@ export const SsfTab = ({ save, client, activeTab }: SsfTabProps) => {
     (config) => {
       if (config?.availableSupportedEvents) {
         setAvailableSupportedEvents(config.availableSupportedEvents);
+      }
+
+      if (config?.nativelyEmittedEvents) {
+        setNativelyEmittedEvents(config.nativelyEmittedEvents);
       }
 
       if (typeof config?.defaultPushEndpointConnectTimeoutMillis === "number") {
@@ -1306,6 +1314,15 @@ export const SsfTab = ({ save, client, activeTab }: SsfTabProps) => {
                         {availableSupportedEvents.map((event) => (
                           <SelectOption key={event} value={event}>
                             {event}
+                            {nativelyEmittedEvents.includes(event) && (
+                              <Label
+                                color="blue"
+                                isCompact
+                                className="pf-v5-u-ml-sm"
+                              >
+                                {t("ssfNativelyEmittedBadge")}
+                              </Label>
+                            )}
                           </SelectOption>
                         ))}
                       </KeycloakSelect>
@@ -1564,6 +1581,15 @@ export const SsfTab = ({ save, client, activeTab }: SsfTabProps) => {
                         {availableSupportedEvents.map((event) => (
                           <SelectOption key={event} value={event}>
                             {event}
+                            {nativelyEmittedEvents.includes(event) && (
+                              <Label
+                                color="blue"
+                                isCompact
+                                className="pf-v5-u-ml-sm"
+                              >
+                                {t("ssfNativelyEmittedBadge")}
+                              </Label>
+                            )}
                           </SelectOption>
                         ))}
                       </KeycloakSelect>
@@ -2338,6 +2364,9 @@ export const SsfTab = ({ save, client, activeTab }: SsfTabProps) => {
                     {availableSupportedEvents.map((eventType) => (
                       <option key={eventType} value={eventType}>
                         {eventType}
+                        {nativelyEmittedEvents.includes(eventType)
+                          ? ` (${t("ssfNativelyEmittedBadge")})`
+                          : ""}
                       </option>
                     ))}
                   </select>

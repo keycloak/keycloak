@@ -27,7 +27,6 @@ import org.keycloak.ssf.transmitter.stream.StreamDeliveryConfig;
 import org.keycloak.ssf.transmitter.stream.StreamVerificationConfig;
 import org.keycloak.ssf.transmitter.stream.VerificationTrigger;
 import org.keycloak.ssf.transmitter.stream.storage.SsfStreamStore;
-import org.keycloak.ssf.transmitter.support.SsfUtil;
 import org.keycloak.util.JsonSerialization;
 
 import org.jboss.logging.Logger;
@@ -666,7 +665,7 @@ public class ClientStreamStore implements SsfStreamStore {
         // each candidate (alias or URI) to its canonical event type URI and
         // drop any candidates the transmitter does not know about.
         Set<String> supportedEvents = new TreeSet<>();
-        Set<String> supportedEventCandidates = SsfUtil.parseEventTypeAliases(supportedEventsAttribute);
+        Set<String> supportedEventCandidates = SsfEventRegistry.parseEventTypeAliases(supportedEventsAttribute);
         for (String supportedEventCandidate : supportedEventCandidates) {
 
             String eventType = registry.resolveEventTypeForAlias(supportedEventCandidate);

@@ -10,11 +10,8 @@ import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.organization.OrganizationProvider;
-import org.keycloak.ssf.Ssf;
 import org.keycloak.ssf.event.SsfEvent;
 import org.keycloak.ssf.event.SsfEventRegistry;
-import org.keycloak.ssf.event.stream.SsfStreamUpdatedEvent;
-import org.keycloak.ssf.event.stream.SsfStreamVerificationEvent;
 import org.keycloak.ssf.event.token.SsfSecurityEventToken;
 import org.keycloak.ssf.metadata.DefaultSubjects;
 import org.keycloak.ssf.subject.ComplexSubjectId;
@@ -236,8 +233,11 @@ public class EventEmitterService {
     }
 
     protected boolean isStreamEvent(String eventTypeUri) {
-        return SsfStreamVerificationEvent.TYPE.equals(eventTypeUri)
-                || SsfStreamUpdatedEvent.TYPE.equals(eventTypeUri);
+        // Single source of truth for the protocol-internal lifecycle
+        // event list — shared with SsfEventRegistry#getReceiverRequestableEventTypes
+        // so the admin UI's "available supported events" list and
+        // this gate can never drift apart.
+        return SsfEventRegistry.STREAM_LIFECYCLE_EVENT_TYPES.contains(eventTypeUri);
     }
 
     /**
@@ -326,7 +326,7 @@ public class EventEmitterService {
         // transmitter uses internally — keeps the emitter independent of
         // any future provider-level registry getter.
         try {
-            return Ssf.events().getRegistry();
+            return SsfEventRegistry.of(session);
         } catch (Exception e) {
             log.warn("SSF event registry not available", e);
             return null;

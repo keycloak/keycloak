@@ -20,6 +20,15 @@ public class SsfConfigRepresentation {
 
     private Set<String> availableSupportedEvents;
 
+    /**
+     * Subset of {@link #availableSupportedEvents} that the transmitter
+     * fires natively from Keycloak event listeners. Used by the admin
+     * UI as a "natively emitted" badge — events outside this set are
+     * still selectable but only fire when an external system uses the
+     * synthetic emit endpoint or a custom mapper is shipped.
+     */
+    private Set<String> nativelyEmittedEvents;
+
     private Integer defaultPushEndpointConnectTimeoutMillis;
 
     private Integer defaultPushEndpointSocketTimeoutMillis;
@@ -40,6 +49,14 @@ public class SsfConfigRepresentation {
 
     public void setAvailableSupportedEvents(Set<String> availableSupportedEvents) {
         this.availableSupportedEvents = availableSupportedEvents;
+    }
+
+    public Set<String> getNativelyEmittedEvents() {
+        return nativelyEmittedEvents;
+    }
+
+    public void setNativelyEmittedEvents(Set<String> nativelyEmittedEvents) {
+        this.nativelyEmittedEvents = nativelyEmittedEvents;
     }
 
     public Integer getDefaultPushEndpointConnectTimeoutMillis() {

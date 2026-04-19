@@ -3,7 +3,6 @@ package org.keycloak.ssf.transmitter;
 import java.time.Duration;
 import java.util.List;
 import java.util.Set;
-import java.util.function.Function;
 
 import org.keycloak.Config;
 import org.keycloak.common.Profile;
@@ -36,7 +35,7 @@ import org.keycloak.timer.TimerProvider;
 
 import org.jboss.logging.Logger;
 
-public class DefaultSsfTransmitterProviderFactory implements SsfTransmitterProviderFactory {
+public class DefaultSsfTransmitterProviderFactory implements SsfTransmitterProviderFactory, SsfTransmitterServiceBuilder {
 
     private static final Logger log = Logger.getLogger(DefaultSsfTransmitterProviderFactory.class);
 
@@ -94,6 +93,25 @@ public class DefaultSsfTransmitterProviderFactory implements SsfTransmitterProvi
      */
     protected SsfMetricsBinder metricsBinder = SsfMetricsBinder.NOOP;
 
+    /**
+     * Factory-scoped context bundle. Built in {@link #init} from the
+     * resolved {@link #transmitterConfig}, {@link #metricsBinder},
+     * and method references on this factory. Re-used across every
+     * per-session {@link DefaultSsfTransmitterProvider} instance — the
+     * provider's two-arg constructor takes only {@code (session, ctx)}.
+     */
+    protected SsfTransmitterContext context;
+
+    /**
+     * Cascade-purges outbox rows when a realm is removed. REALM_ID is not
+     * a foreign key on the SSF_PENDING_EVENT table (the table is
+     * plugin-contributed via JpaEntityProvider, so it can't declare FKs
+     * into core Keycloak tables), so the cleanup is handled explicitly
+     * in-transaction with the realm delete.
+     */
+    protected ProviderEventListener outboxRealmRemovedPurgeListener;
+
+
     @Override
     public String getId() {
         return "default";
@@ -101,70 +119,73 @@ public class DefaultSsfTransmitterProviderFactory implements SsfTransmitterProvi
 
     @Override
     public SsfTransmitterProvider create(KeycloakSession session) {
-        var transmitterConfig = getTransmitterConfig();
-        var mapper = createSecurityEventTokenMapper(session, transmitterConfig);
-        var encoder = createSecurityEventTokenEncoder(session);
-        var pushDelivery = createPushDeliveryService(session, transmitterConfig);
-        var dispatcher = createSecurityEventTokenDispatcher(session, encoder, pushDelivery, transmitterConfig);
-        var streamStore = createClientStreamStore(session);
-        var verificationService = createVerificationService(session, streamStore, mapper, dispatcher);
-        var transmitterMetadataService = createTransmitterMetadataService(session, transmitterConfig);
-        var subjectManagementService = createSubjectManagementService(session);
-        var pollDeliveryService = createPollDeliveryService(session, transmitterConfig);
-        return createTransmitter(session, transmitterMetadataService, verificationService, subjectManagementService,
-                mapper, dispatcher, transmitterConfig, streamStore, this::createSsfPendingEventStore, pollDeliveryService);
+        return new DefaultSsfTransmitterProvider(session, context);
     }
 
-    protected SsfTransmitterProvider createTransmitter(KeycloakSession session,
-                                                       TransmitterMetadataService transmitterMetadataService,
-                                                       StreamVerificationService verificationService,
-                                                       SubjectManagementService subjectManagementService,
-                                                       SecurityEventTokenMapper mapper,
-                                                       SecurityEventTokenDispatcher dispatcher,
-                                                       SsfTransmitterConfig transmitterConfig,
-                                                       ClientStreamStore streamStore,
-                                                       Function<KeycloakSession, SsfPendingEventStore> pendingSsfEventStoreFactory,
-                                                       PollDeliveryService pollDeliveryService) {
+    // -- SsfTransmitterServiceBuilder ------------------------------------
+    //
+    // Leaf services: built directly from (session, ctx). Subclasses
+    // override one method instead of touching the rest of the wiring.
 
-        return new DefaultSsfTransmitterProvider(session, transmitterMetadataService, verificationService, mapper,
-                dispatcher, transmitterConfig, configuredDefaultSupportedEventAliases, streamStore,
-                subjectManagementService, pendingSsfEventStoreFactory, metricsBinder, pollDeliveryService);
-    }
-
-    protected SubjectManagementService createSubjectManagementService(KeycloakSession session) {
-        return new SubjectManagementService(session);
-    }
-
-    protected TransmitterMetadataService createTransmitterMetadataService(KeycloakSession session, SsfTransmitterConfig transmitterConfig) {
-        return new TransmitterMetadataService(session, this::createSsfIssuerUrl, transmitterConfig);
-    }
-
-    protected StreamVerificationService createVerificationService(KeycloakSession session, ClientStreamStore streamStore, SecurityEventTokenMapper mapper, SecurityEventTokenDispatcher dispatcher) {
-        return new StreamVerificationService(session, streamStore, mapper, dispatcher, metricsBinder);
-    }
-
-    protected ClientStreamStore createClientStreamStore(KeycloakSession session) {
-        return new ClientStreamStore(session);
-    }
-
-    protected SecurityEventTokenDispatcher createSecurityEventTokenDispatcher(KeycloakSession session, SecurityEventTokenEncoder encoder, PushDeliveryService pushDelivery, SsfTransmitterConfig transmitterConfig) {
-        return new SecurityEventTokenDispatcher(session, encoder, pushDelivery, transmitterConfig, this::createSsfPendingEventStore, metricsBinder);
-    }
-
-    protected PushDeliveryService createPushDeliveryService(KeycloakSession session, SsfTransmitterConfig transmitterConfig) {
-        return new PushDeliveryService(session, transmitterConfig);
-    }
-
-    protected SecurityEventTokenEncoder createSecurityEventTokenEncoder(KeycloakSession session) {
+    @Override
+    public SecurityEventTokenEncoder createEncoder(KeycloakSession session, SsfTransmitterContext ctx) {
         return new SecurityEventTokenEncoder(session);
     }
 
-    protected SecurityEventTokenMapper createSecurityEventTokenMapper(KeycloakSession session, SsfTransmitterConfig transmitterConfig) {
-        return new SecurityEventTokenMapper(session, transmitterConfig, this::createSsfIssuerUrl);
+    @Override
+    public SecurityEventTokenMapper createMapper(KeycloakSession session, SsfTransmitterContext ctx) {
+        return new SecurityEventTokenMapper(session, ctx.config(), ctx.issuerUrlFactory());
     }
 
-    protected PollDeliveryService createPollDeliveryService(KeycloakSession session, SsfTransmitterConfig transmitterConfig) {
-        return new PollDeliveryService(session, createSsfPendingEventStore(session), metricsBinder);
+    @Override
+    public PushDeliveryService createPushDelivery(KeycloakSession session, SsfTransmitterContext ctx) {
+        return new PushDeliveryService(session, ctx.config());
+    }
+
+    @Override
+    public ClientStreamStore createStreamStore(KeycloakSession session, SsfTransmitterContext ctx) {
+        return new ClientStreamStore(session);
+    }
+
+    @Override
+    public TransmitterMetadataService createMetadataService(KeycloakSession session, SsfTransmitterContext ctx) {
+        return new TransmitterMetadataService(session, ctx.issuerUrlFactory(), ctx.config());
+    }
+
+    @Override
+    public SubjectManagementService createSubjectManagement(KeycloakSession session, SsfTransmitterContext ctx) {
+        return new SubjectManagementService(session);
+    }
+
+    // Composite services: pull cached deps off the provider so we
+    // share the same encoder / push delivery / mapper instances the
+    // rest of the request uses.
+
+    @Override
+    public SecurityEventTokenDispatcher createDispatcher(SsfTransmitterProvider provider) {
+        SsfTransmitterContext ctx = provider.context();
+        return new SecurityEventTokenDispatcher(provider.session(),
+                provider.securityEventTokenEncoder(),
+                provider.pushDeliveryService(),
+                ctx.config(),
+                ctx.pendingEventStoreFactory(),
+                ctx.metrics());
+    }
+
+    @Override
+    public StreamVerificationService createVerification(SsfTransmitterProvider provider) {
+        return new StreamVerificationService(provider.session(),
+                provider.streamStore(),
+                provider.securityEventTokenMapper(),
+                provider.securityEventTokenDispatcher(),
+                provider.metrics());
+    }
+
+    @Override
+    public PollDeliveryService createPollDelivery(SsfTransmitterProvider provider) {
+        return new PollDeliveryService(provider.session(),
+                provider.context().pendingEventStore(provider.session()),
+                provider.metrics());
     }
 
     @Override
@@ -208,6 +229,23 @@ public class DefaultSsfTransmitterProviderFactory implements SsfTransmitterProvi
         // disabled metrics, our in-memory increments land in an empty
         // composite and harmlessly do nothing.
         this.metricsBinder = resolveMetricsBinder(transmitterConfig);
+
+        this.outboxRealmRemovedPurgeListener = createProviderEventListener();
+
+        // Build the factory-scoped context bundle. From here on
+        // every per-session DefaultSsfTransmitterProvider takes only
+        // (session, ctx) as constructor args.
+        this.context = createTransmitterContext();
+    }
+
+    protected SsfTransmitterContext createTransmitterContext() {
+        return new SsfTransmitterContext(
+                this.transmitterConfig,
+                this.configuredDefaultSupportedEventAliases,
+                this.metricsBinder,
+                this::createPendingEventStore,
+                this::createSsfIssuerUrl,
+                this);
     }
 
     /**
@@ -240,9 +278,19 @@ public class DefaultSsfTransmitterProviderFactory implements SsfTransmitterProvi
         return new SsfTransmitterConfig(config);
     }
 
-    @Override
-    public SsfTransmitterConfig getTransmitterConfig() {
-        return transmitterConfig;
+
+    /**
+     * Session-scoped factory for the outbox DAO. Extension point for
+     * deployments that want to plug in a custom {@link SsfPendingEventStore}
+     * subclass (e.g. for instrumentation or schema overrides) — the
+     * default is {@code SsfPendingEventStore::new}.
+     */
+    protected SsfPendingEventStore createPendingEventStore(KeycloakSession session) {
+        return new SsfPendingEventStore(session);
+    }
+
+    protected String createSsfIssuerUrl(KeycloakSession session) {
+        return SsfUtil.getIssuerUrl(session);
     }
 
     @Override
@@ -363,7 +411,7 @@ public class DefaultSsfTransmitterProviderFactory implements SsfTransmitterProvi
     }
 
     protected Set<String> parseSupportedEvents(String supportedEventsString) {
-        return SsfUtil.parseEventTypeAliases(supportedEventsString);
+        return SsfEventRegistry.parseEventTypeAliases(supportedEventsString);
     }
 
     @Override
@@ -411,56 +459,39 @@ public class DefaultSsfTransmitterProviderFactory implements SsfTransmitterProvi
                 ? Duration.ofMillis(outboxDeadLetterRetentionMillis)
                 : null;
 
+        // Drainer constructs a fresh PushDeliveryService per row via
+        // the same SsfTransmitterServiceBuilder#createPushDelivery
+        // factory method the per-session provider uses, so a custom
+        // subclass that overrides it (e.g. for instrumentation or
+        // tweaked timeouts) automatically applies to outbox push
+        // delivery too.
         return new SsfPushOutboxDrainerTask(outboxDrainerBatchSize, backoff, deadLetterRetention,
-                this::createSsfPendingEventStore, getTransmitterConfig(), this::createPushDeliveryService,
+                this::createPendingEventStore, this.context,
+                this::createPushDelivery,
                 metricsBinder);
     }
 
-    /**
-     * Cascade-purges outbox rows when a realm is removed. REALM_ID is not
-     * a foreign key on the SSF_PENDING_EVENT table (the table is
-     * plugin-contributed via JpaEntityProvider, so it can't declare FKs
-     * into core Keycloak tables), so the cleanup is handled explicitly
-     * in-transaction with the realm delete.
-     */
-    private final ProviderEventListener outboxRealmRemovedPurgeListener = new ProviderEventListener() {
-        @Override
-        public void onEvent(ProviderEvent event) {
-            if (event instanceof RealmModel.RealmRemovedEvent ev) {
-                try {
-                    createSsfPendingEventStore(ev.getKeycloakSession())
-                            .deleteByRealm(ev.getRealm().getId());
-                } catch (RuntimeException e) {
-                    // Don't block realm removal on outbox cleanup failures —
-                    // orphaned rows are harmless (the drainer dead-letters
-                    // them once it can't resolve the realm) and we don't
-                    // want to leave the realm half-deleted.
-                    log.warnf(e, "SSF outbox realm-removed cleanup failed for realm %s",
-                            ev.getRealm().getId());
+
+    protected ProviderEventListener createProviderEventListener() {
+        return new ProviderEventListener() {
+            @Override
+            public void onEvent(ProviderEvent event) {
+                if (event instanceof RealmModel.RealmRemovedEvent ev) {
+                    try {
+                        createPendingEventStore(ev.getKeycloakSession())
+                                .deleteByRealm(ev.getRealm().getId());
+                    } catch (RuntimeException e) {
+                        // Don't block realm removal on outbox cleanup failures —
+                        // orphaned rows are harmless (the drainer dead-letters
+                        // them once it can't resolve the realm) and we don't
+                        // want to leave the realm half-deleted.
+                        log.warnf(e, "SSF outbox realm-removed cleanup failed for realm %s",
+                                ev.getRealm().getId());
+                    }
                 }
             }
-        }
-    };
-
-    /**
-     * Session-scoped factory for the outbox DAO. Extension point for
-     * deployments that want to plug in a custom {@link SsfPendingEventStore}
-     * subclass (e.g. for instrumentation or schema overrides) — the
-     * default is {@code SsfPendingEventStore::new}.
-     */
-    protected SsfPendingEventStore createSsfPendingEventStore(KeycloakSession session) {
-        return new SsfPendingEventStore(session);
+        };
     }
-
-    protected String createSsfIssuerUrl(KeycloakSession session) {
-        return SsfUtil.getIssuerUrl(session);
-    }
-
-    @Override
-    public void close() {
-        // NOOP
-    }
-
 
     @Override
     public boolean isSupported(Config.Scope config) {

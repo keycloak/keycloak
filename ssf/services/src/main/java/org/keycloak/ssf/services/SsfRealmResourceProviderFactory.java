@@ -12,14 +12,8 @@ import org.keycloak.ssf.Ssf;
 
 public class SsfRealmResourceProviderFactory implements RealmResourceProviderFactory, EnvironmentDependentProviderFactory {
 
-    // Shared instance is safe here because SsfRealmResourceProvider is stateless.
-    // Do not add mutable fields to SsfRealmResourceProvider without changing this to per-request creation.
-    private static final SsfRealmResourceProvider INSTANCE = new SsfRealmResourceProvider();
-
     /**
      * The SSF endpoints are available under {@code $KC_ISSUER_URL/ssf}.
-     *
-     * @return
      */
     @Override
     public String getId() {
@@ -33,7 +27,7 @@ public class SsfRealmResourceProviderFactory implements RealmResourceProviderFac
             return null;
         }
 
-        return INSTANCE;
+        return new SsfRealmResourceProvider(session);
     }
 
     @Override

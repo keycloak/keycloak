@@ -2,12 +2,15 @@ package org.keycloak.ssf.transmitter;
 
 import java.util.Set;
 
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.provider.Provider;
 import org.keycloak.ssf.event.SsfEventProviderFactory;
 import org.keycloak.ssf.event.SsfEventRegistry;
 import org.keycloak.ssf.transmitter.delivery.SecurityEventTokenDispatcher;
 import org.keycloak.ssf.transmitter.delivery.poll.PollDeliveryService;
+import org.keycloak.ssf.transmitter.delivery.push.PushDeliveryService;
 import org.keycloak.ssf.transmitter.emit.EventEmitterService;
+import org.keycloak.ssf.transmitter.event.SecurityEventTokenEncoder;
 import org.keycloak.ssf.transmitter.event.SecurityEventTokenMapper;
 import org.keycloak.ssf.transmitter.metadata.TransmitterMetadataService;
 import org.keycloak.ssf.transmitter.metrics.SsfMetricsBinder;
@@ -65,6 +68,19 @@ public interface SsfTransmitterProvider extends Provider {
      * @return the security event token dispatcher
      */
     SecurityEventTokenDispatcher securityEventTokenDispatcher();
+
+    /**
+     * Returns the JWS encoder used to sign outgoing Security Event Tokens.
+     * Cached per session — composite service builders pull this via the
+     * provider so they share one encoder instance with the dispatcher.
+     */
+    SecurityEventTokenEncoder securityEventTokenEncoder();
+
+    /**
+     * Returns the HTTP push delivery service. Cached per session for
+     * the same reason as {@link #securityEventTokenEncoder}.
+     */
+    PushDeliveryService pushDeliveryService();
 
     /**
      * Returns the service responsible for managing subjects (users, clients, etc.)
@@ -156,14 +172,28 @@ public interface SsfTransmitterProvider extends Provider {
     String resolveAliasForEventType(String eventType);
 
     /**
-     * Returns the set of SSF event aliases that the transmitter can actually
-     * emit, i.e. the aliases corresponding to every event type declared in
-     * {@link SsfEventProviderFactory#getEmittableEventTypes()}.
-     * Used by the admin UI to render a selectable list of supported events for
-     * a receiver client — excluding events only contributed for inbound
-     * parsing on the receiver side.
+     * Aliases of every event type a receiver can legitimately
+     * <em>request</em> via {@code events_requested} on stream-create —
+     * the full registry minus the protocol-internal lifecycle events
+     * (verification SET, stream-updated SET) that only the transmitter
+     * may produce. Drives the admin UI's "available supported events"
+     * multi-select. Includes event types Keycloak doesn't fire from
+     * native event listeners but that an external system may emit
+     * via the synthetic emit endpoint or a custom mapper.
      */
-    Set<String> getEmittableEventAliases();
+    Set<String> getAvailableEventAliases();
+
+    /**
+     * Aliases of the subset of {@link #getAvailableEventAliases()}
+     * that some registered {@link SsfEventProviderFactory} declares
+     * as <em>natively emitted</em> (i.e. the events Keycloak fires
+     * automatically from native event listeners — credential change,
+     * session revoked, etc.). Used by the admin UI as a "natively
+     * emitted" badge, not as a delivery gate. Synthetic emit can fire
+     * any event in {@link #getAvailableEventAliases()}, including
+     * ones outside this set.
+     */
+    Set<String> getNativelyEmittedEventAliases();
 
     /**
      * Returns the immutable transmitter-wide configuration snapshot that is
@@ -182,4 +212,22 @@ public interface SsfTransmitterProvider extends Provider {
      * {@link SsfMetricsBinder#NOOP} when metrics are disabled.
      */
     SsfMetricsBinder metrics();
+
+    /**
+     * Returns the {@link KeycloakSession} this provider instance is
+     * scoped to. Exposed on the interface so composite service
+     * builders (e.g.
+     * {@link SsfTransmitterServiceBuilder#createDispatcher}) can wire
+     * the session into the services they construct without
+     * downcasting to the default provider implementation.
+     */
+    KeycloakSession session();
+
+    /**
+     * Returns the factory-scoped {@link SsfTransmitterContext}
+     * shared across every per-session provider instance. Carries the
+     * long-lived configuration, the metrics binder, the pending-event
+     * store factory, and the issuer-URL factory.
+     */
+    SsfTransmitterContext context();
 }

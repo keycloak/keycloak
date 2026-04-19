@@ -15,7 +15,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.ssf.event.token.SsfSecurityEventToken;
 import org.keycloak.ssf.stream.StreamStatus;
 import org.keycloak.ssf.stream.StreamStatusValue;
-import org.keycloak.ssf.transmitter.SsfTransmitterConfig;
+import org.keycloak.ssf.transmitter.SsfTransmitterContext;
 import org.keycloak.ssf.transmitter.SsfTransmitterProvider;
 import org.keycloak.ssf.transmitter.delivery.push.PushDeliveryService;
 import org.keycloak.ssf.transmitter.metrics.SsfMetricsBinder;
@@ -72,9 +72,24 @@ public class SsfPushOutboxDrainerTask implements ScheduledTask {
      */
     protected final Function<KeycloakSession, SsfPendingEventStore> pendingSsfEventStoreFactory;
 
-    protected final SsfTransmitterConfig transmitterConfig;
+    /**
+     * Factory-scoped transmitter context — carries the transmitter
+     * config + shared collaborators the drainer needs to hand off to
+     * the per-row push service factory. Replaces the prior pair of
+     * (config, BiFunction&lt;session, config, push&gt;) constructor
+     * args so the drainer stays in sync with the
+     * {@link SsfTransmitterContext} model the rest of the transmitter
+     * uses.
+     */
+    protected final SsfTransmitterContext context;
 
-    protected final BiFunction<KeycloakSession, SsfTransmitterConfig, PushDeliveryService> pushDeliveryServiceFactory;
+    /**
+     * Constructs a fresh {@link PushDeliveryService} per outbox row.
+     * Method-reference target is normally
+     * {@code DefaultSsfTransmitterProviderFactory#createPushDelivery},
+     * which sources the timeouts from the supplied context.
+     */
+    protected final BiFunction<KeycloakSession, SsfTransmitterContext, PushDeliveryService> pushDeliveryServiceFactory;
 
     protected final SsfMetricsBinder metricsBinder;
 
@@ -82,32 +97,25 @@ public class SsfPushOutboxDrainerTask implements ScheduledTask {
                                     SsfPushOutboxBackoff backoff,
                                     Duration deadLetterRetention,
                                     Function<KeycloakSession, SsfPendingEventStore> pendingSsfEventStoreFactory,
-                                    SsfTransmitterConfig transmitterConfig,
-                                    BiFunction<KeycloakSession, SsfTransmitterConfig, PushDeliveryService> pushDeliveryServiceFactory) {
-        this(batchSize, backoff, deadLetterRetention, pendingSsfEventStoreFactory, transmitterConfig,
-                pushDeliveryServiceFactory, SsfMetricsBinder.NOOP);
-    }
-
-    public SsfPushOutboxDrainerTask(int batchSize,
-                                    SsfPushOutboxBackoff backoff,
-                                    Duration deadLetterRetention,
-                                    Function<KeycloakSession, SsfPendingEventStore> pendingSsfEventStoreFactory,
-                                    SsfTransmitterConfig transmitterConfig,
-                                    BiFunction<KeycloakSession, SsfTransmitterConfig, PushDeliveryService> pushDeliveryServiceFactory,
+                                    SsfTransmitterContext context,
+                                    BiFunction<KeycloakSession, SsfTransmitterContext, PushDeliveryService> pushDeliveryServiceFactory,
                                     SsfMetricsBinder metricsBinder) {
         this.batchSize = batchSize;
         this.backoff = backoff;
         this.deadLetterRetention = deadLetterRetention;
         this.pendingSsfEventStoreFactory = pendingSsfEventStoreFactory;
-        this.transmitterConfig = transmitterConfig;
+        this.context = context;
         this.pushDeliveryServiceFactory = pushDeliveryServiceFactory;
         this.metricsBinder = metricsBinder == null ? SsfMetricsBinder.NOOP : metricsBinder;
     }
 
     @Override
     public void run(KeycloakSession session) {
-        // KeycloakSessionUtil is how SsfTransmitter.current() finds its
-        // provider — the session isn't otherwise threaded through.
+        // Publish the drainer's KeycloakSession into the thread-local
+        // so collaborators that haven't been refactored to take an
+        // explicit session parameter (Ssf.events(), SsfAuthUtil)
+        // still resolve correctly during the tick. Restored in the
+        // finally block below.
         KeycloakSession previous = KeycloakSessionUtil.getKeycloakSession();
         KeycloakSessionUtil.setKeycloakSession(session);
         Instant tickStart = Instant.now();
@@ -294,7 +302,7 @@ public class SsfPushOutboxDrainerTask implements ScheduledTask {
                                      StreamConfig stream,
                                      SsfPendingEventEntity row) {
 
-        PushDeliveryService push = pushDeliveryServiceFactory.apply(session, transmitterConfig);
+        PushDeliveryService push = pushDeliveryServiceFactory.apply(session, context);
         SsfSecurityEventToken stub = new SsfSecurityEventToken();
         stub.setJti(row.getJti());
         try {

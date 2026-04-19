@@ -5,5 +5,9 @@ import org.keycloak.provider.ProviderFactory;
 
 public interface SsfTransmitterProviderFactory extends ProviderFactory<SsfTransmitterProvider>, EnvironmentDependentProviderFactory {
 
-    SsfTransmitterConfig getTransmitterConfig();
+    @Override
+    default void close() {
+        // NOOP
+    }
+
 }

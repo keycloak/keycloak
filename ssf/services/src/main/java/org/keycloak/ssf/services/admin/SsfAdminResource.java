@@ -89,24 +89,32 @@ public class SsfAdminResource {
 
     protected final SsfTransmitterProvider transmitter;
 
-    protected final SubjectManagementService subjectManagementService;
-
-    protected final SsfStreamStore streamStore;
-
-    public SsfAdminResource(KeycloakSession session, 
-                            RealmModel realm, 
-                            AdminPermissionEvaluator auth, 
-                            AdminEventBuilder adminEvent, 
-                            SsfTransmitterProvider transmitter, 
-                            SubjectManagementService subjectManagementService, 
-                            SsfStreamStore streamStore) {
+    public SsfAdminResource(KeycloakSession session,
+                            RealmModel realm,
+                            AdminPermissionEvaluator auth,
+                            AdminEventBuilder adminEvent,
+                            SsfTransmitterProvider transmitter) {
         this.session = session;
         this.realm = realm;
         this.auth = auth;
         this.adminEvent = adminEvent;
         this.transmitter = transmitter;
-        this.subjectManagementService = subjectManagementService;
-        this.streamStore = streamStore;
+    }
+
+    /**
+     * Convenience accessor — pulls the lazily-built subject management
+     * service off the per-session transmitter provider. Older revisions
+     * of this class held the service as a constructor-injected field;
+     * the lazy-on-provider model keeps the constructor lean and means
+     * a request that never touches subject management doesn't pay for
+     * building it.
+     */
+    protected SubjectManagementService subjectManagementService() {
+        return transmitter.subjectManagementService();
+    }
+
+    protected SsfStreamStore streamStore() {
+        return transmitter.streamStore();
     }
 
     /**
@@ -137,13 +145,16 @@ public class SsfAdminResource {
         SsfTransmitterConfig transmitterConfig = transmitter.getConfig();
 
         SsfConfigRepresentation config = new SsfConfigRepresentation();
-        // Both fields are exposed as aliases so the admin UI can render a
-        // human-readable selection list and pre-select the defaults against
-        // the same option values. Both are filtered to events the transmitter
-        // can actually emit — events contributed purely for inbound parsing
-        // on the receiver side are intentionally excluded.
+        // All fields are exposed as aliases so the admin UI can render a
+        // human-readable selection list and pre-select defaults against the
+        // same option values. availableSupportedEvents covers everything a
+        // receiver may legitimately request (registry minus stream-internal
+        // lifecycle events); nativelyEmittedEvents is the informational
+        // subset Keycloak fires from native event listeners — used purely
+        // to badge entries in the UI, not as a delivery gate.
         config.setDefaultSupportedEvents(toEventAliases(transmitter, transmitter.getDefaultSupportedEvents()));
-        config.setAvailableSupportedEvents(transmitter.getEmittableEventAliases());
+        config.setAvailableSupportedEvents(transmitter.getAvailableEventAliases());
+        config.setNativelyEmittedEvents(transmitter.getNativelyEmittedEventAliases());
         config.setDefaultPushEndpointConnectTimeoutMillis(
                 transmitterConfig.getPushEndpointConnectTimeoutMillis());
         config.setDefaultPushEndpointSocketTimeoutMillis(
@@ -185,7 +196,7 @@ public class SsfAdminResource {
             throw new NotFoundException("Client not found");
         }
 
-        StreamConfig streamConfig = streamStore.getStreamForClient(client);
+        StreamConfig streamConfig = streamStore().getStreamForClient(client);
         if (streamConfig == null) {
             throw new NotFoundException("No SSF stream registered for client");
         }
@@ -329,7 +340,7 @@ public class SsfAdminResource {
 
         auth.clients().requireManage(client);
 
-        StreamConfig streamConfig = streamStore.getStreamForClient(client);
+        StreamConfig streamConfig = streamStore().getStreamForClient(client);
         if (streamConfig == null) {
             throw new NotFoundException("No SSF stream registered for client");
         }
@@ -390,7 +401,7 @@ public class SsfAdminResource {
         // cascade-purge of pending outbox rows for this client. Going
         // straight to streamStore.deleteStreamForClient would bypass
         // the cascade and leave POLL rows orphaned.
-        StreamConfig existingStream = streamStore.getStreamForClient(client);
+        StreamConfig existingStream = streamStore().getStreamForClient(client);
         if (existingStream == null) {
             throw new NotFoundException("No SSF stream registered for client");
         }
@@ -448,7 +459,7 @@ public class SsfAdminResource {
 
 
         // svc takes the internal UUID, not the OAuth clientId.
-        AdminSubjectResult result = subjectManagementService.addSubjectByAdmin(client.getId(), request.getType(), request.getValue());
+        AdminSubjectResult result = subjectManagementService().addSubjectByAdmin(client.getId(), request.getType(), request.getValue());
 
         if (result.result() == SubjectManagementResult.OK) {
             return Response.ok(new SsfAdminSubjectResponse("added", result.entityType(), result.entityId())).build();
@@ -499,7 +510,7 @@ public class SsfAdminResource {
                     .build();
         }
 
-        AdminSubjectResult result = subjectManagementService.removeSubjectByAdmin(client.getId(), request.getType(), request.getValue());
+        AdminSubjectResult result = subjectManagementService().removeSubjectByAdmin(client.getId(), request.getType(), request.getValue());
 
         if (result.result() == SubjectManagementResult.OK) {
             return Response.noContent().build();
@@ -551,7 +562,7 @@ public class SsfAdminResource {
                     .build();
         }
 
-        AdminSubjectResult result = subjectManagementService.ignoreSubjectByAdmin(client.getId(), request.getType(), request.getValue());
+        AdminSubjectResult result = subjectManagementService().ignoreSubjectByAdmin(client.getId(), request.getType(), request.getValue());
 
         if (result.result() == SubjectManagementResult.OK) {
             return Response.ok(new SsfAdminSubjectResponse("ignored", result.entityType(), result.entityId())).build();
@@ -721,12 +732,12 @@ public class SsfAdminResource {
         //    genuinely need a verbatim subject are unaffected.
         SubjectId subjectId = request.getSubjectId();
         if (subjectId == null && adminCaller) {
-            StreamConfig stream = streamStore.getStreamForClient(receiverClient);
+            StreamConfig stream = streamStore().getStreamForClient(receiverClient);
             if (stream == null) {
                 throw new NotFoundException("No SSF stream registered for client");
             }
             try {
-                subjectId = subjectManagementService.resolveSubjectForEmit(stream, request.getSubjectType(), request.getSubjectValue());
+                subjectId = subjectManagementService().resolveSubjectForEmit(stream, request.getSubjectType(), request.getSubjectValue());
             } catch (SsfException e) {
                 log.debugf(e, "Admin emit subject resolution failed");
                 return Response.status(Response.Status.BAD_REQUEST)
