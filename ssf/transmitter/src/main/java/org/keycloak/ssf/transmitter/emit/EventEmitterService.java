@@ -10,7 +10,9 @@ import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.organization.OrganizationProvider;
+import org.keycloak.ssf.SsfException;
 import org.keycloak.ssf.event.SsfEvent;
+import org.keycloak.ssf.transmitter.SsfTransmitter;
 import org.keycloak.ssf.event.SsfEventRegistry;
 import org.keycloak.ssf.event.token.SsfSecurityEventToken;
 import org.keycloak.ssf.metadata.DefaultSubjects;
@@ -95,6 +97,17 @@ public class EventEmitterService {
 
         if (receiverClient == null) {
             return EmitEventResult.dropped(EmitEventStatus.STREAM_NOT_FOUND);
+        }
+        // Programmatic callers can pass any ClientModel they hold —
+        // guard early so an extension that picks the wrong client gets
+        // a clear error instead of a misleading STREAM_NOT_FOUND once
+        // the stream lookup later returns null. The REST emit path
+        // routes through the same gate, so a request targeting a
+        // non-SSF client surfaces this as a 500 with the message —
+        // intentional: the caller's configuration is wrong.
+        if (!isSsfReceiverClient(receiverClient)) {
+            throw new SsfException("Client '" + receiverClient.getClientId()
+                    + "' is not an SSF Receiver");
         }
         if (eventTypeAliasOrUri == null || eventTypeAliasOrUri.isBlank()) {
             return EmitEventResult.dropped(EmitEventStatus.INVALID_REQUEST);
@@ -234,6 +247,13 @@ public class EventEmitterService {
             org = orgProvider.getById(opaque.getId());
         }
         return org;
+    }
+
+    protected boolean isSsfReceiverClient(ClientModel client) {
+        // Delegates to the public helper so anyone (REST callers,
+        // extensions, tests) shares one definition of "is this client
+        // an SSF Receiver."
+        return SsfTransmitter.isReceiverClient(client);
     }
 
     protected boolean isStreamEvent(String eventTypeUri) {
