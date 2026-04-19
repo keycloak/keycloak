@@ -220,6 +220,20 @@ public class StreamConfig {
     @JsonIgnore
     protected String userSubjectFormat;
 
+    /**
+     * Per-receiver override of the SSF §9.3 subject-removal grace
+     * window (seconds). Populated from the receiver client's
+     * {@code ssf.subjectRemovalGraceSeconds} attribute when the
+     * stream is loaded; {@code null} means "fall through to the
+     * transmitter-wide default from
+     * {@link org.keycloak.ssf.transmitter.SsfTransmitterConfig#getSubjectRemovalGraceSeconds()
+     * SsfTransmitterConfig}". {@code 0} explicitly opts this receiver
+     * out of the grace window even when the transmitter default is
+     * positive.
+     */
+    @JsonIgnore
+    protected Integer subjectRemovalGraceSeconds;
+
     public StreamConfig() {
     }
 
@@ -261,6 +275,7 @@ public class StreamConfig {
         this.pushEndpointSocketTimeoutMillis = other.pushEndpointSocketTimeoutMillis;
         this.signatureAlgorithm = other.signatureAlgorithm;
         this.userSubjectFormat = other.userSubjectFormat;
+        this.subjectRemovalGraceSeconds = other.subjectRemovalGraceSeconds;
     }
 
     public String getStreamId() {
@@ -453,5 +468,13 @@ public class StreamConfig {
 
     public void setUserSubjectFormat(String userSubjectFormat) {
         this.userSubjectFormat = userSubjectFormat;
+    }
+
+    public Integer getSubjectRemovalGraceSeconds() {
+        return subjectRemovalGraceSeconds;
+    }
+
+    public void setSubjectRemovalGraceSeconds(Integer subjectRemovalGraceSeconds) {
+        this.subjectRemovalGraceSeconds = subjectRemovalGraceSeconds;
     }
 }

@@ -36,16 +36,19 @@ public class SsfTransmitterResource {
         return transmitter.streamVerificationResource();
     }
 
-    @Path("/subjects/add")
-    public SsfSubjectManagementResource getAddSubjectEndpoint() {
-        if (!transmitter.getConfig().isSubjectManagementEnabled()) {
-            throw new NotFoundException();
-        }
-        return transmitter.subjectManagementResource();
-    }
-
-    @Path("/subjects/remove")
-    public SsfSubjectManagementResource getRemoveSubjectEndpoint() {
+    /**
+     * Single sub-resource locator covering both
+     * {@code /subjects/add} and {@code /subjects/remove}. The two
+     * actions are disambiguated by per-method {@code @Path("add")} /
+     * {@code @Path("remove")} on
+     * {@link SsfSubjectManagementResource}. Splitting the locator
+     * (returning the same sub-resource from {@code /subjects/add}
+     * AND {@code /subjects/remove}) used to confuse JAX-RS — both
+     * paths would route to whichever {@code @POST} method got picked
+     * first.
+     */
+    @Path("/subjects")
+    public SsfSubjectManagementResource getSubjectManagementEndpoint() {
         if (!transmitter.getConfig().isSubjectManagementEnabled()) {
             throw new NotFoundException();
         }

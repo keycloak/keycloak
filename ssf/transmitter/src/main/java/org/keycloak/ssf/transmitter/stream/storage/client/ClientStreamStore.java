@@ -53,6 +53,14 @@ public class ClientStreamStore implements SsfStreamStore {
     public static final String SSF_REQUIRE_SERVICE_ACCOUNT_KEY = "ssf.requireServiceAccount";
     public static final String SSF_REQUIRED_ROLE_KEY = "ssf.requiredRole";
     public static final String SSF_MIN_VERIFICATION_INTERVAL_KEY = "ssf.minVerificationInterval";
+    /**
+     * Per-receiver override of the SSF §9.3 grace window. Positive
+     * value = receiver-driven {@code subjects/remove} keeps delivering
+     * for that many seconds; {@code 0} = take effect immediately;
+     * unset = fall back to the transmitter-wide
+     * {@code subject-removal-grace-seconds} SPI default.
+     */
+    public static final String SSF_SUBJECT_REMOVAL_GRACE_SECONDS_KEY = "ssf.subjectRemovalGraceSeconds";
     public static final String SSF_ALLOW_EMIT_EVENTS_KEY = "ssf.allowEmitEvents";
     public static final String SSF_EMIT_EVENTS_ROLE_KEY = "ssf.emitEventsRole";
 
@@ -487,6 +495,13 @@ public class ClientStreamStore implements SsfStreamStore {
         Integer clientInactivityTimeout = parseIntAttribute(client, SSF_INACTIVITY_TIMEOUT_SECONDS_KEY);
         if (clientInactivityTimeout != null) {
             streamConfig.setInactivityTimeout(clientInactivityTimeout);
+        }
+        // SSF §9.3 per-receiver grace override. Stored as the raw
+        // integer; the dispatcher's filter prefers this over the
+        // transmitter-wide default. Null = inherit transmitter default.
+        Integer clientSubjectRemovalGrace = parseIntAttribute(client, SSF_SUBJECT_REMOVAL_GRACE_SECONDS_KEY);
+        if (clientSubjectRemovalGrace != null) {
+            streamConfig.setSubjectRemovalGraceSeconds(clientSubjectRemovalGrace);
         }
     }
 
