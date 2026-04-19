@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.keycloak.common.util.Time;
 import org.keycloak.ssf.transmitter.outbox.SsfPendingEventStatus;
 
 import io.micrometer.core.instrument.Counter;
@@ -83,6 +84,19 @@ public class SsfMetricsBinder {
 
     // Gauges ----------------------------------------------------------------
     public static final String METER_OUTBOX_DEPTH = PREFIX + "outbox.depth";
+
+    /**
+     * Epoch-second timestamp of the most recent drainer tick attempt.
+     * Lets operators alert on
+     * {@code time() - keycloak_ssf_drainer_tick_last_at_seconds > 120}
+     * for a stalled drainer — complements
+     * {@link #METER_DRAINER_TICK} (counter-rate based) with an absolute
+     * "how long ago" answer in a single gauge query. Exposed as `0`
+     * before the first tick so a freshly-started server doesn't register
+     * as instantly stalled — alerting rules should ignore the value
+     * until it's been observed non-zero at least once.
+     */
+    public static final String METER_DRAINER_TICK_LAST_AT = PREFIX + "drainer.tick.last_at_seconds";
 
     /**
      * Dispatcher outcome classifications used as the {@code reason}
@@ -258,12 +272,42 @@ public class SsfMetricsBinder {
      */
     private final ConcurrentHashMap<RealmStatus, Boolean> registeredDepthGauges = new ConcurrentHashMap<>();
 
+    /**
+     * Epoch-second timestamp of the most recent drainer tick. Stamped
+     * from {@link #recordDrainerTick}; read by the
+     * {@link #METER_DRAINER_TICK_LAST_AT} gauge bound in the
+     * constructor. {@code volatile} because the drainer tick runs on a
+     * scheduler thread while scrapes run on HTTP worker threads.
+     */
+    private volatile long drainerTickLastAtEpochSeconds = 0L;
+
     public SsfMetricsBinder() {
         this(Metrics.globalRegistry);
     }
 
     public SsfMetricsBinder(MeterRegistry registry) {
         this.registry = registry;
+        registerDrainerLastTickGauge();
+    }
+
+    /**
+     * Single, label-free gauge — bound eagerly in the constructor so
+     * scrapes can read it immediately. The supplier reads the volatile
+     * field, so the gauge always reflects the most recent stamp.
+     */
+    private void registerDrainerLastTickGauge() {
+        try {
+            Gauge.builder(METER_DRAINER_TICK_LAST_AT, this, b -> b.drainerTickLastAtEpochSeconds)
+                    .description("Epoch-second of the most recent SSF outbox drainer tick. "
+                            + "Operators alert on time() - this > N to detect a stalled drainer. "
+                            + "Reports 0 before the first tick.")
+                    .baseUnit("seconds")
+                    .register(registry);
+        } catch (RuntimeException e) {
+            // Same swallow pattern as the per-receiver depth gauges:
+            // metrics are best-effort, never break drainer behaviour.
+            log.warnf(e, "Failed to register %s gauge", METER_DRAINER_TICK_LAST_AT);
+        }
     }
 
     // private constructor only used by NOOP to skip registry wiring.
@@ -348,6 +392,13 @@ public class SsfMetricsBinder {
                 .description("Total SSF outbox drainer tick duration.")
                 .register(registry)
                 .record(took);
+        // Stamped on every tick (ok or error) so a failing-but-still-
+        // ticking drainer reports a fresh timestamp; a *stuck* drainer
+        // that never returns is the only thing that lets the gauge fall
+        // behind. Time.currentTime() (epoch seconds, wall clock) is the
+        // Keycloak-wide convention and is directly comparable to
+        // Prometheus' time().
+        drainerTickLastAtEpochSeconds = Time.currentTime();
     }
 
     /**
