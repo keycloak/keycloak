@@ -20,6 +20,7 @@ import org.keycloak.ssf.transmitter.resources.SsfSubjectManagementResource;
 import org.keycloak.ssf.transmitter.stream.StreamService;
 import org.keycloak.ssf.transmitter.stream.StreamVerificationService;
 import org.keycloak.ssf.transmitter.stream.storage.client.ClientStreamStore;
+import org.keycloak.ssf.transmitter.subject.SsfSubjectInclusionResolver;
 import org.keycloak.ssf.transmitter.subject.SubjectManagementService;
 
 /**
@@ -56,6 +57,7 @@ public class DefaultSsfTransmitterProvider implements SsfTransmitterProvider {
     private TransmitterMetadataService metadata;
     private StreamVerificationService verification;
     private SubjectManagementService subjectMgmt;
+    private SsfSubjectInclusionResolver subjectInclusionResolver;
     private PollDeliveryService pollDelivery;
 
     public DefaultSsfTransmitterProvider(KeycloakSession session, SsfTransmitterContext context) {
@@ -121,6 +123,14 @@ public class DefaultSsfTransmitterProvider implements SsfTransmitterProvider {
         return subjectMgmt;
     }
 
+    @Override
+    public SsfSubjectInclusionResolver subjectInclusionResolver() {
+        if (subjectInclusionResolver == null) {
+            subjectInclusionResolver = context.services().createSubjectInclusionResolver(session, context);
+        }
+        return subjectInclusionResolver;
+    }
+
     // -- composite services (build via SsfTransmitterServiceBuilder) -----
 
     @Override
@@ -157,7 +167,8 @@ public class DefaultSsfTransmitterProvider implements SsfTransmitterProvider {
 
     @Override
     public EventEmitterService eventEmitterService() {
-        return new EventEmitterService(session, streamStore(), securityEventTokenMapper(), securityEventTokenDispatcher());
+        return new EventEmitterService(session, streamStore(), securityEventTokenMapper(),
+                securityEventTokenDispatcher(), subjectInclusionResolver());
     }
 
     @Override
