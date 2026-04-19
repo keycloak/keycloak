@@ -49,11 +49,17 @@ public class SubjectManagementService {
 
     protected SubjectManagementResult registerSubjectForNotification(String callerClientId, SubjectResolution resolution) {
         if (resolution instanceof SubjectResolution.User u) {
+            // Re-adding wins over any prior receiver-driven removal —
+            // clear the SSF §9.3 tombstone so the dispatcher uses the
+            // fresh include marker instead of falling through to a
+            // stale grace-window check.
+            SsfNotifyAttributes.clearRemovedAtForUser(u.user(), callerClientId);
             SsfNotifyAttributes.setForUser(u.user(), callerClientId);
             log.debugf("SSF subject added. clientId=%s userId=%s", callerClientId, u.user().getId());
             return SubjectManagementResult.OK;
         }
         if (resolution instanceof SubjectResolution.Organization o) {
+            SsfNotifyAttributes.clearRemovedAtForOrganization(o.organization(), callerClientId);
             SsfNotifyAttributes.setForOrganization(o.organization(), callerClientId);
             log.debugf("SSF subject added. clientId=%s orgId=%s", callerClientId, o.organization().getId());
             return SubjectManagementResult.OK;
@@ -74,16 +80,24 @@ public class SubjectManagementService {
         String clientClientId = resolveClientClientId(callerClientId);
         SubjectResolution resolution = resolveSubject(request.getSubject());
 
-        return unregisterSubjectForNotification(clientClientId, resolution);
+        // Receiver-driven path: stamp the SSF §9.3 tombstone so the
+        // dispatcher can honor a configured grace window. Admin-driven
+        // removes go through removeSubjectByAdmin and skip the stamp.
+        return unregisterSubjectForNotification(clientClientId, resolution, true);
     }
 
     protected SubjectManagementResult excludeSubjectFromNotification(String callerClientId, SubjectResolution resolution) {
         if (resolution instanceof SubjectResolution.User u) {
+            // Explicit exclusion is an admin-trusted action — no grace
+            // window. Clear any prior receiver-driven tombstone so the
+            // exclude marker takes effect immediately.
+            SsfNotifyAttributes.clearRemovedAtForUser(u.user(), callerClientId);
             SsfNotifyAttributes.excludeForUser(u.user(), callerClientId);
             log.debugf("SSF subject excluded. clientId=%s userId=%s", callerClientId, u.user().getId());
             return SubjectManagementResult.OK;
         }
         if (resolution instanceof SubjectResolution.Organization o) {
+            SsfNotifyAttributes.clearRemovedAtForOrganization(o.organization(), callerClientId);
             SsfNotifyAttributes.excludeForOrganization(o.organization(), callerClientId);
             log.debugf("SSF subject excluded. clientId=%s orgId=%s", callerClientId, o.organization().getId());
             return SubjectManagementResult.OK;
@@ -94,15 +108,33 @@ public class SubjectManagementService {
         return SubjectManagementResult.FORMAT_UNSUPPORTED;
     }
 
-    protected SubjectManagementResult unregisterSubjectForNotification(String callerClientId, SubjectResolution resolution) {
+    /**
+     * Clears the include / exclude marker for the resolved subject and,
+     * when {@code applyTombstone} is true, stamps the SSF §9.3 grace
+     * tombstone so the dispatcher can keep delivering events for the
+     * configured grace window. Tombstone is intentionally skipped on
+     * admin-driven removes — operator actions are trusted and take
+     * effect immediately. Receivers cannot opt out: enabling the grace
+     * via SPI means accepting that legitimate churn-removes also get
+     * the grace tail.
+     */
+    protected SubjectManagementResult unregisterSubjectForNotification(String callerClientId, SubjectResolution resolution, boolean applyTombstone) {
         if (resolution instanceof SubjectResolution.User u) {
+            if (applyTombstone) {
+                SsfNotifyAttributes.stampRemovedAtForUser(u.user(), callerClientId);
+            }
             SsfNotifyAttributes.clearForUser(u.user(), callerClientId);
-            log.debugf("SSF subject removed. clientId=%s userId=%s", callerClientId, u.user().getId());
+            log.debugf("SSF subject removed. clientId=%s userId=%s tombstone=%s",
+                    callerClientId, u.user().getId(), applyTombstone);
             return SubjectManagementResult.OK;
         }
         if (resolution instanceof SubjectResolution.Organization o) {
+            if (applyTombstone) {
+                SsfNotifyAttributes.stampRemovedAtForOrganization(o.organization(), callerClientId);
+            }
             SsfNotifyAttributes.clearForOrganization(o.organization(), callerClientId);
-            log.debugf("SSF subject removed. clientId=%s orgId=%s", callerClientId, o.organization().getId());
+            log.debugf("SSF subject removed. clientId=%s orgId=%s tombstone=%s",
+                    callerClientId, o.organization().getId(), applyTombstone);
             return SubjectManagementResult.OK;
         }
         if (resolution instanceof SubjectResolution.NotFound) {
@@ -154,7 +186,11 @@ public class SubjectManagementService {
     public AdminSubjectResult removeSubjectByAdmin(String clientId, String type, String value) {
         String clientClientId = resolveClientClientId(clientId);
         SubjectResolution resolution = resolveByAdminType(type, value);
-        SubjectManagementResult result = unregisterSubjectForNotification(clientClientId, resolution);
+        // Admin-driven removes deliberately skip the SSF §9.3 grace
+        // tombstone — operator actions are trusted and take effect
+        // immediately. Compromised-receiver protection only applies to
+        // the receiver-driven remove path.
+        SubjectManagementResult result = unregisterSubjectForNotification(clientClientId, resolution, false);
         return toAdminResult(result, resolution);
     }
 

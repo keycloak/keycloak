@@ -47,6 +47,21 @@ public class SsfTransmitterConfig {
     public static final String CONFIG_METRICS_ENABLED = "metrics-enabled";
 
     /**
+     * Grace period (seconds) during which the dispatcher continues to
+     * deliver events for a subject after a <em>receiver-driven</em>
+     * {@code POST /streams/subjects/remove} fired. Defends against the
+     * SSF 1.0 §9.3 "Malicious Subject Removal" scenario where a
+     * compromised receiver bearer token silences events for a target
+     * subject during an attack window. Admin-driven removals
+     * deliberately skip the tombstone — operator actions are trusted
+     * and take effect immediately. Default {@code 0} disables the
+     * grace window entirely (current behavior preserved); set to a
+     * positive value (e.g. 3600 for one hour) to enable the
+     * spec-recommended protection.
+     */
+    public static final String CONFIG_SUBJECT_REMOVAL_GRACE_SECONDS = "subject-removal-grace-seconds";
+
+    /**
      * Default connect timeout (in milliseconds) for delivering SSF events via
      * HTTP push to a receiver's push endpoint.
      */
@@ -144,6 +159,14 @@ public class SsfTransmitterConfig {
      */
     public static final boolean DEFAULT_METRICS_ENABLED = true;
 
+    /**
+     * Default for {@link #getSubjectRemovalGraceSeconds()}.
+     * {@code 0} keeps existing behavior — receiver-driven removes take
+     * effect immediately. Operators who want the SSF §9.3 protection
+     * set this to a positive value explicitly.
+     */
+    public static final int DEFAULT_SUBJECT_REMOVAL_GRACE_SECONDS = 0;
+
     private final int pushEndpointConnectTimeoutMillis;
 
     private final int pushEndpointSocketTimeoutMillis;
@@ -166,6 +189,8 @@ public class SsfTransmitterConfig {
 
     private final boolean metricsEnabled;
 
+    private final int subjectRemovalGraceSeconds;
+
     public SsfTransmitterConfig(int pushEndpointConnectTimeoutMillis,
                                 int pushEndpointSocketTimeoutMillis,
                                 int transmitterInitiatedVerificationDelayMillis,
@@ -176,7 +201,8 @@ public class SsfTransmitterConfig {
                                 boolean subjectManagementEnabled,
                                 boolean sseCaepEnabled,
                                 Set<String> criticalSubjectMembers,
-                                boolean metricsEnabled) {
+                                boolean metricsEnabled,
+                                int subjectRemovalGraceSeconds) {
         this.pushEndpointConnectTimeoutMillis = pushEndpointConnectTimeoutMillis;
         this.pushEndpointSocketTimeoutMillis = pushEndpointSocketTimeoutMillis;
         this.transmitterInitiatedVerificationDelayMillis = transmitterInitiatedVerificationDelayMillis;
@@ -188,6 +214,7 @@ public class SsfTransmitterConfig {
         this.sseCaepEnabled = sseCaepEnabled;
         this.criticalSubjectMembers = criticalSubjectMembers;
         this.metricsEnabled = metricsEnabled;
+        this.subjectRemovalGraceSeconds = Math.max(0, subjectRemovalGraceSeconds);
     }
 
     /**
@@ -217,7 +244,9 @@ public class SsfTransmitterConfig {
                         DEFAULT_SSE_CAEP_ENABLED),
                 parseCriticalSubjectMembers(config.get(CONFIG_CRITICAL_SUBJECT_MEMBERS)),
                 config.getBoolean(CONFIG_METRICS_ENABLED,
-                        DEFAULT_METRICS_ENABLED));
+                        DEFAULT_METRICS_ENABLED),
+                config.getInt(CONFIG_SUBJECT_REMOVAL_GRACE_SECONDS,
+                        DEFAULT_SUBJECT_REMOVAL_GRACE_SECONDS));
     }
 
     /**
@@ -258,7 +287,8 @@ public class SsfTransmitterConfig {
                 DEFAULT_SUBJECT_MANAGEMENT_ENABLED,
                 DEFAULT_SSE_CAEP_ENABLED,
                 DEFAULT_CRITICAL_SUBJECT_MEMBERS,
-                DEFAULT_METRICS_ENABLED);
+                DEFAULT_METRICS_ENABLED,
+                DEFAULT_SUBJECT_REMOVAL_GRACE_SECONDS);
     }
 
     /**
@@ -373,5 +403,18 @@ public class SsfTransmitterConfig {
      */
     public boolean isMetricsEnabled() {
         return metricsEnabled;
+    }
+
+    /**
+     * Grace window (seconds) during which the dispatcher continues to
+     * deliver events for a subject after a receiver-driven
+     * {@code POST /streams/subjects/remove}. {@code 0} disables the
+     * grace and current-behavior takes effect — receiver removes are
+     * applied immediately. See
+     * {@link #CONFIG_SUBJECT_REMOVAL_GRACE_SECONDS} for the SSF §9.3
+     * rationale.
+     */
+    public int getSubjectRemovalGraceSeconds() {
+        return subjectRemovalGraceSeconds;
     }
 }

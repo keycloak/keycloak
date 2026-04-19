@@ -25,6 +25,13 @@ public class SecurityEventTokenDispatcher {
 
     private static final Logger log = Logger.getLogger(SecurityEventTokenDispatcher.class);
 
+    /**
+     * Fallback filter used when no transmitter config is available
+     * (e.g. legacy / test subclasses constructing the dispatcher
+     * directly). Builds a filter with the §9.3 grace disabled — the
+     * factory path replaces this in {@link #createSubjectSubscriptionFilter()}
+     * with a config-aware instance.
+     */
     protected static final SubjectSubscriptionFilter DEFAULT_SUBJECT_SUBSCRIPTION_FILTER = new SubjectSubscriptionFilter();
 
     protected final KeycloakSession session;
@@ -66,7 +73,10 @@ public class SecurityEventTokenDispatcher {
     }
 
     protected SubjectSubscriptionFilter createSubjectSubscriptionFilter() {
-        return DEFAULT_SUBJECT_SUBSCRIPTION_FILTER;
+        if (transmitterConfig == null) {
+            return DEFAULT_SUBJECT_SUBSCRIPTION_FILTER;
+        }
+        return new SubjectSubscriptionFilter(transmitterConfig.getSubjectRemovalGraceSeconds());
     }
 
     /**

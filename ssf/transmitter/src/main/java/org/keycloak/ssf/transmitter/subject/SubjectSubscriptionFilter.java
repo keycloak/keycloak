@@ -2,6 +2,7 @@ package org.keycloak.ssf.transmitter.subject;
 
 
 import org.keycloak.common.Profile;
+import org.keycloak.common.util.Time;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
@@ -38,7 +39,22 @@ public class SubjectSubscriptionFilter {
 
     private static final Logger log = Logger.getLogger(SubjectSubscriptionFilter.class);
 
-    public SubjectSubscriptionFilter() {}
+    /**
+     * Grace window (seconds) during which a recently-removed subject
+     * still receives events on a {@link DefaultSubjects#NONE} stream.
+     * Defends against the SSF 1.0 §9.3 "Malicious Subject Removal"
+     * scenario. {@code 0} disables the grace check (current behavior
+     * preserved when the SPI knob is unset).
+     */
+    protected final long subjectRemovalGraceSeconds;
+
+    public SubjectSubscriptionFilter() {
+        this(0L);
+    }
+
+    public SubjectSubscriptionFilter(long subjectRemovalGraceSeconds) {
+        this.subjectRemovalGraceSeconds = Math.max(0L, subjectRemovalGraceSeconds);
+    }
 
     /**
      * Returns {@code true} if the event should be delivered to the given
@@ -96,10 +112,69 @@ public class SubjectSubscriptionFilter {
             return true;
         }
 
+        // SSF §9.3 grace window — receiver-driven removes leave a
+        // tombstone; while we're inside the configured grace, keep
+        // delivering events for the subject so a compromised receiver
+        // can't silently silence events for a target. Effective grace
+        // is the per-receiver override (ssf.subjectRemovalGraceSeconds
+        // client attribute) when set, otherwise the transmitter-wide
+        // default this filter was constructed with. Zero disables.
+        long effectiveGrace = effectiveGraceSeconds(stream);
+        if (effectiveGrace > 0
+                && isWithinRemovalGrace(user, receiverClientId, session, effectiveGrace)) {
+            log.debugf("SSF subject filter: delivering inside removal grace window (default_subjects=NONE). "
+                            + "streamId=%s clientId=%s userId=%s jti=%s graceSeconds=%d",
+                    stream.getStreamId(), receiverClientId,
+                    user.getId(), eventToken.getJti(), effectiveGrace);
+            return true;
+        }
+
         log.debugf("SSF subject filter: skipping event — user has no notification preference (default_subjects=NONE). "
                         + "streamId=%s clientId=%s userId=%s jti=%s",
                 stream.getStreamId(), receiverClientId,
                 user.getId(), eventToken.getJti());
+        return false;
+    }
+
+    /**
+     * Resolves the effective grace window for a stream — prefers the
+     * per-receiver override
+     * ({@code ssf.subjectRemovalGraceSeconds} client attribute,
+     * surfaced on {@link StreamConfig#getSubjectRemovalGraceSeconds()})
+     * when set, otherwise falls back to the transmitter-wide default
+     * this filter was constructed with.
+     */
+    protected long effectiveGraceSeconds(StreamConfig stream) {
+        Integer perReceiver = stream != null ? stream.getSubjectRemovalGraceSeconds() : null;
+        if (perReceiver != null) {
+            return Math.max(0L, perReceiver.longValue());
+        }
+        return subjectRemovalGraceSeconds;
+    }
+
+    /**
+     * Returns {@code true} when the user (or any of the user's
+     * organizations) was removed via a receiver-driven {@code
+     * /subjects/remove} call within the last
+     * {@code graceSeconds} seconds.
+     */
+    protected boolean isWithinRemovalGrace(UserModel user, String receiverClientId, KeycloakSession session, long graceSeconds) {
+        long now = Time.currentTime();
+        Long userTombstone = SsfNotifyAttributes.getRemovedAtForUser(user, receiverClientId);
+        if (userTombstone != null && now - userTombstone < graceSeconds) {
+            return true;
+        }
+        if (Profile.isFeatureEnabled(Profile.Feature.ORGANIZATION)) {
+            OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
+            if (orgProvider != null) {
+                return orgProvider.getByMember(user)
+                        .anyMatch(org -> {
+                            Long orgTombstone = SsfNotifyAttributes.getRemovedAtForOrganization(org, receiverClientId);
+                            return orgTombstone != null
+                                    && now - orgTombstone < graceSeconds;
+                        });
+            }
+        }
         return false;
     }
 

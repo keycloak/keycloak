@@ -337,6 +337,12 @@ public class DefaultSsfTransmitterProviderFactory implements SsfTransmitterProvi
                 .helpText("Whether the SSF Prometheus metrics binder is installed. When true (default), the dispatcher, push drainer and poll endpoint record per-realm / per-receiver counters and timers plus per-(realm, status) outbox depth gauges refreshed once per drainer tick. Set to false to disable all SSF meters — hot-path calls then become branch-predicted no-ops.")
                 .defaultValue(SsfTransmitterConfig.DEFAULT_METRICS_ENABLED)
                 .add()
+                .property()
+                .name(SsfTransmitterConfig.CONFIG_SUBJECT_REMOVAL_GRACE_SECONDS)
+                .type("int")
+                .helpText("Grace window (seconds) during which the dispatcher continues delivering events for a subject after a receiver-driven /streams/subjects/remove call (SSF 1.0 §9.3 'Malicious Subject Removal' defense). Admin-driven removes always take effect immediately. Default 0 disables the grace entirely. Enabling means accepting that legitimate churn-removes (receiver dropping users that left their service) also get the grace tail.")
+                .defaultValue(SsfTransmitterConfig.DEFAULT_SUBJECT_REMOVAL_GRACE_SECONDS)
+                .add()
                 .build();
     }
 

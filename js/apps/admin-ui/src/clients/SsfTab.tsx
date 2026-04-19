@@ -892,6 +892,7 @@ export const SsfTab = ({ save, client, activeTab }: SsfTabProps) => {
       "ssf.pushEndpointSocketTimeoutMillis",
       "ssf.maxEventAgeSeconds",
       "ssf.inactivityTimeoutSeconds",
+      "ssf.subjectRemovalGraceSeconds",
     ]);
 
   const saveActionGroup = (testIdPrefix: string) => (
@@ -1147,6 +1148,32 @@ export const SsfTab = ({ save, client, activeTab }: SsfTabProps) => {
                       value={field.value!}
                       onChange={field.onChange}
                       units={["minute", "hour", "day"]}
+                    />
+                  )}
+                />
+              </FormGroup>
+              <FormGroup
+                label={t("ssfSubjectRemovalGrace")}
+                fieldId="ssfSubjectRemovalGrace"
+                labelIcon={
+                  <HelpItem
+                    helpText={t("ssfSubjectRemovalGraceHelp")}
+                    fieldLabelId="ssfSubjectRemovalGrace"
+                  />
+                }
+              >
+                <Controller
+                  name={convertAttributeNameToForm<FormFields>(
+                    "attributes.ssf.subjectRemovalGraceSeconds",
+                  )}
+                  defaultValue=""
+                  control={control}
+                  render={({ field }) => (
+                    <TimeSelector
+                      data-testid="ssfSubjectRemovalGrace"
+                      value={field.value!}
+                      onChange={field.onChange}
+                      units={["second", "minute", "hour", "day"]}
                     />
                   )}
                 />

@@ -2,6 +2,7 @@ package org.keycloak.ssf.transmitter.resources;
 
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
@@ -38,7 +39,9 @@ public class SsfSubjectManagementResource {
     private static final Logger log = Logger.getLogger(SsfSubjectManagementResource.class);
 
     protected final KeycloakSession session;
+
     protected final SubjectManagementService subjectManagementService;
+
     protected final boolean verbose;
 
     public SsfSubjectManagementResource(KeycloakSession session,
@@ -53,6 +56,7 @@ public class SsfSubjectManagementResource {
      * Adds a subject to the caller's stream (SSF §8.1.3.2).
      */
     @POST
+    @Path("/add")
     @NoCache
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
@@ -87,11 +91,15 @@ public class SsfSubjectManagementResource {
     }
 
     protected Response toAddResponse(SubjectManagementResult result) {
+        // 200 OK per SSF §8.1.3.2. We include an explicit empty JSON
+        // entity so the response carries a Content-Type header —
+        // Keycloak's DefaultSecurityHeadersProvider rejects 2xx
+        // responses with no media type as a 500 internal error.
         if (result == SubjectManagementResult.OK) {
-            return Response.ok().build();
+            return okEmptyJson();
         }
         if (!verbose) {
-            return Response.ok().build();
+            return okEmptyJson();
         }
         return switch (result) {
             case STREAM_NOT_FOUND -> Response.status(Response.Status.NOT_FOUND)
@@ -103,16 +111,28 @@ public class SsfSubjectManagementResource {
             case FORMAT_UNSUPPORTED -> Response.status(Response.Status.BAD_REQUEST)
                     .entity(new SsfErrorRepresentation("invalid_request", "unsupported subject format"))
                     .build();
-            default -> Response.ok().build();
+            default -> okEmptyJson();
         };
+    }
+
+    /**
+     * 200 OK with an explicit empty JSON object body. Required because
+     * Keycloak's response-header filter rejects 2xx responses without
+     * a media type. The empty object is a valid JSON value receivers
+     * can parse without special-casing.
+     */
+    protected Response okEmptyJson() {
+        return Response.ok("{}", MediaType.APPLICATION_JSON_TYPE).build();
     }
 
     /**
      * Removes a subject from the caller's stream (SSF §8.1.3.3).
      */
     @POST
+    @Path("/remove")
     @NoCache
     @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Ssf.Tags.TRANSMITTER)
     @Operation(
             summary = "Remove subject from stream",
