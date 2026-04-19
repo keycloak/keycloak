@@ -1,4 +1,4 @@
-import type EventHookProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/EventHookProviderRepresentation";
+import type EventHookProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/eventHookProviderRepresentation";
 import type EventHookTargetRepresentation from "@keycloak/keycloak-admin-client/lib/defs/eventHookTargetRepresentation";
 import {
   HelpItem,
