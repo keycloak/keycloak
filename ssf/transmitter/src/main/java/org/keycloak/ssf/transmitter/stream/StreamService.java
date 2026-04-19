@@ -1,7 +1,9 @@
 package org.keycloak.ssf.transmitter.stream;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
@@ -27,6 +29,7 @@ import org.keycloak.ssf.transmitter.SsfTransmitterProvider;
 import org.keycloak.ssf.transmitter.event.SsfSignatureAlgorithms;
 import org.keycloak.ssf.transmitter.event.SsfUserSubjectFormats;
 import org.keycloak.ssf.transmitter.metadata.TransmitterMetadataService;
+import org.keycloak.ssf.transmitter.metrics.SsfMetricsBinder;
 import org.keycloak.ssf.transmitter.outbox.SsfPendingEventEntity;
 import org.keycloak.ssf.transmitter.outbox.SsfPendingEventStore;
 import org.keycloak.ssf.transmitter.stream.storage.SsfStreamStore;
@@ -66,13 +69,22 @@ public class StreamService {
 
     protected final TransmitterMetadataService transmitterService;
 
+    protected final StreamVerificationService streamVerificationService;
+
     protected final Function<KeycloakSession, SsfPendingEventStore> pendingSsfEventStoreFactory;
 
-    public StreamService(KeycloakSession session, SsfTransmitterProvider transmitterProvider, SsfStreamStore streamStore, TransmitterMetadataService transmitterService, Function<KeycloakSession, SsfPendingEventStore> pendingSsfEventStoreFactory) {
+    public StreamService(KeycloakSession session,
+                         SsfTransmitterProvider transmitterProvider,
+                         SsfStreamStore streamStore,
+                         TransmitterMetadataService transmitterService,
+                         StreamVerificationService streamVerificationService,
+                         Function<KeycloakSession,
+                         SsfPendingEventStore> pendingSsfEventStoreFactory) {
         this.session = session;
         this.transmitterProvider = transmitterProvider;
         this.streamStore = streamStore;
         this.transmitterService = transmitterService;
+        this.streamVerificationService = streamVerificationService;
         this.pendingSsfEventStoreFactory = pendingSsfEventStoreFactory;
     }
 
@@ -173,7 +185,7 @@ public class StreamService {
         streamConfig.setCreatedAt(now);
         streamConfig.setUpdatedAt(now);
 
-        streamConfig.setMinVerificationInterval(session.getProvider(SsfTransmitterProvider.class).getConfig().getMinVerificationIntervalSeconds());
+        streamConfig.setMinVerificationInterval(transmitterProvider.getConfig().getMinVerificationIntervalSeconds());
 
         applySignatureAlgorithmFromClient(streamConfig, receiverClient);
         applyUserSubjectFormatFromClient(streamConfig, receiverClient);
@@ -258,7 +270,7 @@ public class StreamService {
         if (profile == SsfProfile.SSE_CAEP) {
             return;
         }
-        List<String> offending = new java.util.ArrayList<>(3);
+        List<String> offending = new ArrayList<>(3);
         if (input.getIssuer() != null) {
             offending.add("iss");
         }
@@ -337,8 +349,7 @@ public class StreamService {
         // https://openid.github.io/sharedsignals/openid-sharedsignals-framework-1_0.html#section-8.1.4.2-5
         // verificationRequest.setState(UUID.randomUUID().toString());
 
-        SsfTransmitterProvider provider = session.getProvider(SsfTransmitterProvider.class);
-        TransmitterMetadata transmitterMetadata = provider.metadataService().getTransmitterMetadata();
+        TransmitterMetadata transmitterMetadata = transmitterProvider.metadataService().getTransmitterMetadata();
 
         log.debugf("Scheduling Verification request after stream creation for stream %s", streamConfig.getStreamId());
 
@@ -382,7 +393,8 @@ public class StreamService {
 
     protected boolean triggerTransmitterInitiatedStreamVerification(StreamConfig streamConfig, KeycloakSession subSession, StreamVerificationRequest verificationRequest) {
         var ssfProvider = subSession.getProvider(SsfTransmitterProvider.class);
-        return ssfProvider.verificationService().triggerVerification(verificationRequest);
+        return ssfProvider.verificationService().triggerVerification(verificationRequest,
+                SsfMetricsBinder.VerificationInitiator.TRANSMITTER);
     }
 
     /**
@@ -441,7 +453,7 @@ public class StreamService {
         // Reject the legacy RISC variants up front when SSE CAEP support
         // is disabled — keeps the accepted surface aligned with what's
         // advertised in delivery_methods_supported.
-        boolean sseCaepEnabled = session.getProvider(SsfTransmitterProvider.class).getConfig().isSseCaepEnabled();
+        boolean sseCaepEnabled = transmitterProvider.getConfig().isSseCaepEnabled();
         if (!sseCaepEnabled
                 && (Ssf.DELIVERY_METHOD_RISC_PUSH_URI.equals(delivery.getMethod())
                     || Ssf.DELIVERY_METHOD_RISC_POLL_URI.equals(delivery.getMethod()))) {
@@ -517,13 +529,13 @@ public class StreamService {
                         + MAX_DELIVERY_AUTHORIZATION_HEADER_LENGTH + " characters");
             }
 
-            java.util.Map<String, Object> additionalParameters = delivery.getAdditionalParameters();
+            Map<String, Object> additionalParameters = delivery.getAdditionalParameters();
             if (additionalParameters != null) {
                 if (additionalParameters.size() > MAX_DELIVERY_ADDITIONAL_PARAMETERS_COUNT) {
                     throw new SsfException("Invalid stream configuration: delivery.additional_parameters exceeds "
                             + MAX_DELIVERY_ADDITIONAL_PARAMETERS_COUNT + " entries");
                 }
-                for (java.util.Map.Entry<String, Object> entry : additionalParameters.entrySet()) {
+                for (Map.Entry<String, Object> entry : additionalParameters.entrySet()) {
                     if (entry.getKey() != null && entry.getKey().length() > MAX_DELIVERY_ADDITIONAL_PARAMETER_KEY_LENGTH) {
                         throw new SsfException("Invalid stream configuration: delivery.additional_parameters key exceeds "
                                 + MAX_DELIVERY_ADDITIONAL_PARAMETER_KEY_LENGTH + " characters");

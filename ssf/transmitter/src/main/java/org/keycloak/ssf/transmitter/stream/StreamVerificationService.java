@@ -1,9 +1,13 @@
 package org.keycloak.ssf.transmitter.stream;
 
+import java.time.Duration;
+import java.time.Instant;
+
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.ssf.event.token.SsfSecurityEventToken;
 import org.keycloak.ssf.transmitter.delivery.SecurityEventTokenDispatcher;
 import org.keycloak.ssf.transmitter.event.SecurityEventTokenMapper;
+import org.keycloak.ssf.transmitter.metrics.SsfMetricsBinder;
 import org.keycloak.ssf.transmitter.stream.storage.SsfStreamStore;
 
 import org.jboss.logging.Logger;
@@ -23,13 +27,30 @@ public class StreamVerificationService {
 
     protected final SecurityEventTokenDispatcher dispatcher;
 
+    protected final SsfMetricsBinder metricsBinder;
+
     public StreamVerificationService(KeycloakSession session, SsfStreamStore streamStore,
                                      SecurityEventTokenMapper mapper,
-                                     SecurityEventTokenDispatcher dispatcher) {
+                                     SecurityEventTokenDispatcher dispatcher,
+                                     SsfMetricsBinder metricsBinder) {
         this.session = session;
         this.streamStore = streamStore;
         this.mapper = mapper;
         this.dispatcher = dispatcher;
+        this.metricsBinder = metricsBinder == null ? SsfMetricsBinder.NOOP : metricsBinder;
+    }
+
+    /**
+     * Back-compat overload defaulting the {@code initiator} label to
+     * {@link SsfMetricsBinder.VerificationInitiator#RECEIVER receiver}.
+     * Prefer {@link #triggerVerification(StreamVerificationRequest,
+     * SsfMetricsBinder.VerificationInitiator)} so the metrics
+     * {@code initiator} label correctly distinguishes admin /
+     * transmitter-initiated dispatches.
+     */
+    public boolean triggerVerification(StreamVerificationRequest verificationRequest) {
+        return triggerVerification(verificationRequest,
+                SsfMetricsBinder.VerificationInitiator.RECEIVER);
     }
 
     /**
@@ -44,14 +65,22 @@ public class StreamVerificationService {
      * verification" timestamp regardless of which caller triggered it.
      *
      * @param verificationRequest The verification request
+     * @param initiator           Which entry point invoked this dispatch — used
+     *                            as the {@code initiator} label on
+     *                            {@code keycloak.ssf.verification.requests}.
      * @return true if the verification was triggered, false if the stream was not found
      */
-    public boolean triggerVerification(StreamVerificationRequest verificationRequest) {
+    public boolean triggerVerification(StreamVerificationRequest verificationRequest,
+                                       SsfMetricsBinder.VerificationInitiator initiator) {
         String streamId = verificationRequest.getStreamId();
         StreamConfig stream = streamStore.findStreamById(streamId);
 
         if (stream == null) {
             log.warnf("Stream not found for verification. streamId=%s", streamId);
+            // Record the FAILED outcome with whatever realm/client we
+            // can observe — the stream is gone so client_id is unknown.
+            metricsBinder.recordVerification(currentRealmName(), "unknown",
+                    initiator, SsfMetricsBinder.VerificationOutcome.FAILED, null);
             return false;
         }
 
@@ -65,7 +94,9 @@ public class StreamVerificationService {
         // caller wants to know the receiver's actual response — async
         // would mean reporting "OK" before the push has even started.
         SsfSecurityEventToken verificationEventToken = mapper.generateVerificationEvent(stream, verificationRequest.getState());
+        Instant dispatchStart = Instant.now();
         boolean delivered = dispatcher.deliverEventSync(verificationEventToken, stream);
+        Duration took = Duration.between(dispatchStart, Instant.now());
 
         // Record the dispatch timestamp on the receiver client so the admin
         // UI's "last verified" field and the rate-limit check see the same
@@ -76,6 +107,12 @@ public class StreamVerificationService {
         // separately via the boolean return.
         streamStore.recordStreamVerification(streamId);
 
+        SsfMetricsBinder.VerificationOutcome outcome = delivered
+                ? SsfMetricsBinder.VerificationOutcome.DELIVERED
+                : SsfMetricsBinder.VerificationOutcome.FAILED;
+        metricsBinder.recordVerification(currentRealmName(),
+                stream.getClientClientId(), initiator, outcome, took);
+
         if (delivered) {
             log.debugf("Delivered verification event for stream %s", streamId);
         } else {
@@ -83,5 +120,18 @@ public class StreamVerificationService {
         }
 
         return delivered;
+    }
+
+    /**
+     * Safe accessor for the current realm name — used as the
+     * {@code realm} metric label so dashboards see {@code realm="ssf-poc"}
+     * rather than the opaque realm UUID.
+     */
+    protected String currentRealmName() {
+        try {
+            return session.getContext().getRealm().getName();
+        } catch (RuntimeException e) {
+            return null;
+        }
     }
 }
