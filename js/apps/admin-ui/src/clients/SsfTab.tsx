@@ -8,6 +8,7 @@ import {
   PasswordInput,
   SelectControl,
   SelectVariant,
+  TextAreaControl,
   TextControl,
   useAlerts,
   useFetch,
@@ -881,6 +882,7 @@ export const SsfTab = ({ save, client, activeTab }: SsfTabProps) => {
 
   const reset = () =>
     resetFields([
+      "ssf.description",
       "ssf.streamAudience",
       "ssf.supportedEvents",
       "ssf.profile",
@@ -1004,6 +1006,19 @@ export const SsfTab = ({ save, client, activeTab }: SsfTabProps) => {
                   { key: "SSF_1_0", value: t("ssfProfile.SSF_1_0") },
                   { key: "SSE_CAEP", value: t("ssfProfile.SSE_CAEP") },
                 ]}
+              />
+              <TextAreaControl
+                name={convertAttributeNameToForm<FormFields>(
+                  "attributes.ssf.description",
+                )}
+                label={t("ssfDescription")}
+                labelIcon={t("ssfDescriptionHelp")}
+                rules={{
+                  maxLength: {
+                    value: 255,
+                    message: t("maxLength", { length: 255 }),
+                  },
+                }}
               />
               <TextControl
                 name={convertAttributeNameToForm<FormFields>(
