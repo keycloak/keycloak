@@ -9,6 +9,7 @@ import org.keycloak.ssf.transmitter.event.SecurityEventTokenMapper;
 import org.keycloak.ssf.transmitter.metadata.TransmitterMetadataService;
 import org.keycloak.ssf.transmitter.stream.StreamVerificationService;
 import org.keycloak.ssf.transmitter.stream.storage.client.ClientStreamStore;
+import org.keycloak.ssf.transmitter.subject.SsfSubjectInclusionResolver;
 import org.keycloak.ssf.transmitter.subject.SubjectManagementService;
 
 /**
@@ -53,6 +54,8 @@ public interface SsfTransmitterServiceBuilder {
     TransmitterMetadataService createMetadataService(KeycloakSession session, SsfTransmitterContext ctx);
 
     SubjectManagementService createSubjectManagement(KeycloakSession session, SsfTransmitterContext ctx);
+
+    SsfSubjectInclusionResolver createSubjectInclusionResolver(KeycloakSession session, SsfTransmitterContext ctx);
 
     SecurityEventTokenDispatcher createDispatcher(SsfTransmitterProvider provider);
 

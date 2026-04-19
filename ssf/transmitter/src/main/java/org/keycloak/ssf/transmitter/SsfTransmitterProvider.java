@@ -21,6 +21,7 @@ import org.keycloak.ssf.transmitter.resources.SsfSubjectManagementResource;
 import org.keycloak.ssf.transmitter.stream.StreamService;
 import org.keycloak.ssf.transmitter.stream.StreamVerificationService;
 import org.keycloak.ssf.transmitter.stream.storage.SsfStreamStore;
+import org.keycloak.ssf.transmitter.subject.SsfSubjectInclusionResolver;
 import org.keycloak.ssf.transmitter.subject.SubjectManagementService;
 
 /**
@@ -89,6 +90,21 @@ public interface SsfTransmitterProvider extends Provider {
      * @return the subject management service
      */
     SubjectManagementService subjectManagementService();
+
+    /**
+     * Returns the read-side gate that decides whether a user / org
+     * counts as a subscribed subject for a given receiver. Drives the
+     * dispatcher's subject-selection filter and the synthetic-emit
+     * dispatchability check. Default implementation reads the
+     * {@code ssf.notify.<receiverClientId>} attribute via
+     * {@link org.keycloak.ssf.transmitter.subject.SsfNotifyAttributes};
+     * extensions plug additional inclusion sources (group attributes,
+     * roles, external policy services) by overriding either this
+     * accessor on a custom {@link SsfTransmitterProvider} subclass or
+     * {@link SsfTransmitterServiceBuilder#createSubjectInclusionResolver}
+     * on a custom service builder.
+     */
+    SsfSubjectInclusionResolver subjectInclusionResolver();
 
     /**
      * Returns the service that pushes synthetic SSF events injected by

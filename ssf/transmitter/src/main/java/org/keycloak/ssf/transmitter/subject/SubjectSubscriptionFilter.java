@@ -48,12 +48,29 @@ public class SubjectSubscriptionFilter {
      */
     protected final long subjectRemovalGraceSeconds;
 
+    /**
+     * Pluggable include / exclude predicate. Default delegates to
+     * {@link SsfNotifyAttributes}; extensions plug in custom logic
+     * (group attribute lookups, role-based opt-ins) via the
+     * transmitter provider's
+     * {@link org.keycloak.ssf.transmitter.SsfTransmitterProvider#subjectInclusionResolver}.
+     */
+    protected final SsfSubjectInclusionResolver subjectInclusionResolver;
+
     public SubjectSubscriptionFilter() {
-        this(0L);
+        this(0L, new DefaultSsfSubjectInclusionResolver());
     }
 
     public SubjectSubscriptionFilter(long subjectRemovalGraceSeconds) {
+        this(subjectRemovalGraceSeconds, new DefaultSsfSubjectInclusionResolver());
+    }
+
+    public SubjectSubscriptionFilter(long subjectRemovalGraceSeconds,
+                                     SsfSubjectInclusionResolver subjectInclusionResolver) {
         this.subjectRemovalGraceSeconds = Math.max(0L, subjectRemovalGraceSeconds);
+        this.subjectInclusionResolver = subjectInclusionResolver != null
+                ? subjectInclusionResolver
+                : new DefaultSsfSubjectInclusionResolver();
     }
 
     /**
@@ -104,7 +121,7 @@ public class SubjectSubscriptionFilter {
         }
 
         // NONE mode: deliver only when explicitly included.
-        if (SsfNotifyAttributes.isUserNotified(user, receiverClientId)) {
+        if (subjectInclusionResolver.isUserNotified(session, user, receiverClientId)) {
             return true;
         }
 
@@ -224,24 +241,26 @@ public class SubjectSubscriptionFilter {
 
     /**
      * Checks if the user (or any of the user's organizations) is
-     * explicitly excluded via {@code ssf.notify.<clientId>=false}.
+     * explicitly excluded via the
+     * {@link #subjectInclusionResolver}.
      */
     protected boolean isExcluded(UserModel user, String receiverClientId, KeycloakSession session) {
-        if (SsfNotifyAttributes.isUserExcluded(user, receiverClientId)) {
+        if (subjectInclusionResolver.isUserExcluded(session, user, receiverClientId)) {
             return true;
         }
         if (Profile.isFeatureEnabled(Profile.Feature.ORGANIZATION)) {
             OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
             if (orgProvider != null) {
                 return orgProvider.getByMember(user)
-                        .anyMatch(org -> SsfNotifyAttributes.isOrganizationExcluded(org, receiverClientId));
+                        .anyMatch(org -> subjectInclusionResolver.isOrganizationExcluded(session, org, receiverClientId));
             }
         }
         return false;
     }
 
     /**
-     * Checks if any of the user's organizations is explicitly notified.
+     * Checks if any of the user's organizations is explicitly notified
+     * per the {@link #subjectInclusionResolver}.
      */
     protected boolean isOrganizationNotified(UserModel user, String receiverClientId, KeycloakSession session) {
         if (!Profile.isFeatureEnabled(Profile.Feature.ORGANIZATION)) {
@@ -252,6 +271,6 @@ public class SubjectSubscriptionFilter {
             return false;
         }
         return orgProvider.getByMember(user)
-                .anyMatch(org -> SsfNotifyAttributes.isOrganizationNotified(org, receiverClientId));
+                .anyMatch(org -> subjectInclusionResolver.isOrganizationNotified(session, org, receiverClientId));
     }
 }

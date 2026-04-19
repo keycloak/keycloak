@@ -17,6 +17,7 @@ import org.keycloak.ssf.transmitter.event.SsfSignatureAlgorithms;
 import org.keycloak.ssf.transmitter.metrics.SsfMetricsBinder;
 import org.keycloak.ssf.transmitter.outbox.SsfPendingEventStore;
 import org.keycloak.ssf.transmitter.stream.StreamConfig;
+import org.keycloak.ssf.transmitter.subject.SsfSubjectInclusionResolver;
 import org.keycloak.ssf.transmitter.subject.SubjectSubscriptionFilter;
 
 import org.jboss.logging.Logger;
@@ -48,13 +49,15 @@ public class SecurityEventTokenDispatcher {
 
     protected final SsfMetricsBinder metricsBinder;
 
+    protected final SsfSubjectInclusionResolver subjectInclusionResolver;
+
     public SecurityEventTokenDispatcher(KeycloakSession session,
                                         SecurityEventTokenEncoder securityEventTokenEncoder,
                                         PushDeliveryService pushDeliveryService,
                                         SsfTransmitterConfig transmitterConfig,
                                         Function<KeycloakSession, SsfPendingEventStore> pendingSsfEventStoreFactory) {
         this(session, securityEventTokenEncoder, pushDeliveryService, transmitterConfig, pendingSsfEventStoreFactory,
-                SsfMetricsBinder.NOOP);
+                SsfMetricsBinder.NOOP, null);
     }
 
     public SecurityEventTokenDispatcher(KeycloakSession session,
@@ -63,11 +66,23 @@ public class SecurityEventTokenDispatcher {
                                         SsfTransmitterConfig transmitterConfig,
                                         Function<KeycloakSession, SsfPendingEventStore> pendingSsfEventStoreFactory,
                                         SsfMetricsBinder metricsBinder) {
+        this(session, securityEventTokenEncoder, pushDeliveryService, transmitterConfig, pendingSsfEventStoreFactory,
+                metricsBinder, null);
+    }
+
+    public SecurityEventTokenDispatcher(KeycloakSession session,
+                                        SecurityEventTokenEncoder securityEventTokenEncoder,
+                                        PushDeliveryService pushDeliveryService,
+                                        SsfTransmitterConfig transmitterConfig,
+                                        Function<KeycloakSession, SsfPendingEventStore> pendingSsfEventStoreFactory,
+                                        SsfMetricsBinder metricsBinder,
+                                        SsfSubjectInclusionResolver subjectInclusionResolver) {
         this.session = session;
         this.securityEventTokenEncoder = securityEventTokenEncoder;
         this.pushDeliveryService = pushDeliveryService;
         this.transmitterConfig = transmitterConfig;
         this.pendingSsfEventStoreFactory = pendingSsfEventStoreFactory;
+        this.subjectInclusionResolver = subjectInclusionResolver;
         this.subjectSubscriptionFilter = createSubjectSubscriptionFilter();
         this.metricsBinder = metricsBinder == null ? SsfMetricsBinder.NOOP : metricsBinder;
     }
@@ -76,7 +91,8 @@ public class SecurityEventTokenDispatcher {
         if (transmitterConfig == null) {
             return DEFAULT_SUBJECT_SUBSCRIPTION_FILTER;
         }
-        return new SubjectSubscriptionFilter(transmitterConfig.getSubjectRemovalGraceSeconds());
+        return new SubjectSubscriptionFilter(transmitterConfig.getSubjectRemovalGraceSeconds(),
+                subjectInclusionResolver);
     }
 
     /**

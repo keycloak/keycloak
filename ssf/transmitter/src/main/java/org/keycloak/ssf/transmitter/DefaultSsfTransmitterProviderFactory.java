@@ -29,6 +29,8 @@ import org.keycloak.ssf.transmitter.outbox.SsfPushOutboxBackoff;
 import org.keycloak.ssf.transmitter.outbox.SsfPushOutboxDrainerTask;
 import org.keycloak.ssf.transmitter.stream.StreamVerificationService;
 import org.keycloak.ssf.transmitter.stream.storage.client.ClientStreamStore;
+import org.keycloak.ssf.transmitter.subject.DefaultSsfSubjectInclusionResolver;
+import org.keycloak.ssf.transmitter.subject.SsfSubjectInclusionResolver;
 import org.keycloak.ssf.transmitter.subject.SubjectManagementService;
 import org.keycloak.ssf.transmitter.support.SsfUtil;
 import org.keycloak.timer.TimerProvider;
@@ -157,6 +159,11 @@ public class DefaultSsfTransmitterProviderFactory implements SsfTransmitterProvi
         return new SubjectManagementService(session);
     }
 
+    @Override
+    public SsfSubjectInclusionResolver createSubjectInclusionResolver(KeycloakSession session, SsfTransmitterContext ctx) {
+        return new DefaultSsfSubjectInclusionResolver();
+    }
+
     // Composite services: pull cached deps off the provider so we
     // share the same encoder / push delivery / mapper instances the
     // rest of the request uses.
@@ -169,7 +176,8 @@ public class DefaultSsfTransmitterProviderFactory implements SsfTransmitterProvi
                 provider.pushDeliveryService(),
                 ctx.config(),
                 ctx.pendingEventStoreFactory(),
-                ctx.metrics());
+                ctx.metrics(),
+                provider.subjectInclusionResolver());
     }
 
     @Override

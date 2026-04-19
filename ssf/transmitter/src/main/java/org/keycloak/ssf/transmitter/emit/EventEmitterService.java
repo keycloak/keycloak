@@ -22,7 +22,7 @@ import org.keycloak.ssf.transmitter.delivery.SecurityEventTokenDispatcher;
 import org.keycloak.ssf.transmitter.event.SecurityEventTokenMapper;
 import org.keycloak.ssf.transmitter.stream.StreamConfig;
 import org.keycloak.ssf.transmitter.stream.storage.client.ClientStreamStore;
-import org.keycloak.ssf.transmitter.subject.SsfNotifyAttributes;
+import org.keycloak.ssf.transmitter.subject.SsfSubjectInclusionResolver;
 import org.keycloak.util.JsonSerialization;
 
 import org.jboss.logging.Logger;
@@ -56,14 +56,18 @@ public class EventEmitterService {
 
     protected final SecurityEventTokenDispatcher eventTokenDispatcher;
 
+    protected final SsfSubjectInclusionResolver subjectInclusionResolver;
+
     public EventEmitterService(KeycloakSession session,
                                ClientStreamStore streamStore,
                                SecurityEventTokenMapper eventTokenMapper,
-                               SecurityEventTokenDispatcher eventTokenDispatcher) {
+                               SecurityEventTokenDispatcher eventTokenDispatcher,
+                               SsfSubjectInclusionResolver subjectInclusionResolver) {
         this.session = session;
         this.streamStore = streamStore;
         this.eventTokenMapper = eventTokenMapper;
         this.eventTokenDispatcher = eventTokenDispatcher;
+        this.subjectInclusionResolver = subjectInclusionResolver;
     }
 
     /**
@@ -260,16 +264,16 @@ public class EventEmitterService {
 
         if (defaultSubjects == DefaultSubjects.ALL) {
             boolean userExcluded = resolved.user() != null
-                    && SsfNotifyAttributes.isUserExcluded(resolved.user(), receiverClientId);
+                    && subjectInclusionResolver.isUserExcluded(session, resolved.user(), receiverClientId);
             boolean orgExcluded = resolved.organization() != null
-                    && SsfNotifyAttributes.isOrganizationExcluded(resolved.organization(), receiverClientId);
+                    && subjectInclusionResolver.isOrganizationExcluded(session, resolved.organization(), receiverClientId);
             return !userExcluded && !orgExcluded;
         }
 
         boolean userNotified = resolved.user() != null
-                && SsfNotifyAttributes.isUserNotified(resolved.user(), receiverClientId);
+                && subjectInclusionResolver.isUserNotified(session, resolved.user(), receiverClientId);
         boolean orgNotified = resolved.organization() != null
-                && SsfNotifyAttributes.isOrganizationNotified(resolved.organization(), receiverClientId);
+                && subjectInclusionResolver.isOrganizationNotified(session, resolved.organization(), receiverClientId);
         return userNotified || orgNotified;
     }
 

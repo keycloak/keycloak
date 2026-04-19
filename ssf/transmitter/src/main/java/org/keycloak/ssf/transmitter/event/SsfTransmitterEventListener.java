@@ -144,11 +144,25 @@ public class SsfTransmitterEventListener implements EventListenerProvider {
             return;
         }
 
-        if (!SsfNotifyAttributes.isUserNotified(user, client.getClientId())) {
-            SsfNotifyAttributes.setForUser(user, client.getClientId());
+        // Read through the pluggable inclusion resolver so an extension
+        // that already considers the user notified (e.g. via a group
+        // attribute or an external policy) doesn't get redundant
+        // attribute writes layered on top. The write side stays on the
+        // canonical user attribute via SsfNotifyAttributes.setForUser.
+        SsfTransmitterProvider transmitter = session.getProvider(SsfTransmitterProvider.class);
+        if (!isUserNotified(transmitter, user, client)) {
+            markAsNotified(user, client);
             log.debugf("SSF auto-notify on login: tagged user %s for receiver client %s",
                     user.getId(), client.getClientId());
         }
+    }
+
+    protected void markAsNotified(UserModel user, ClientModel client) {
+        SsfNotifyAttributes.setForUser(user, client.getClientId());
+    }
+
+    protected boolean isUserNotified(SsfTransmitterProvider transmitter, UserModel user, ClientModel client) {
+        return transmitter.subjectInclusionResolver().isUserNotified(session, user, client.getClientId());
     }
 
     protected boolean shouldIgnoreEvent(Event event) {
@@ -164,6 +178,10 @@ public class SsfTransmitterEventListener implements EventListenerProvider {
 
     @Override
     public void onEvent(AdminEvent adminEvent, boolean includeRepresentation) {
+
+        if (shouldIgnoreEvent(adminEvent)) {
+            return;
+        }
 
         SsfTransmitterProvider transmitter = session.getProvider(SsfTransmitterProvider.class);
         if (transmitter == null) {
@@ -187,6 +205,10 @@ public class SsfTransmitterEventListener implements EventListenerProvider {
             return;
         }
         dispatchSecurityEventTokens(streamTokens, transmitter);
+    }
+
+    protected boolean shouldIgnoreEvent(AdminEvent adminEvent) {
+        return false;
     }
 
     protected void dispatchSecurityEventTokens(List<Map.Entry<SsfSecurityEventToken, StreamConfig>> streamTokens, SsfTransmitterProvider transmitter) {
