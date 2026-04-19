@@ -94,6 +94,7 @@ public class KcAdmV2Cmd extends BaseGlobalOptionsCmd {
         configCmd.getCommandSpec().removeSubcommand("credentials");
         configCmd.addSubcommand("credentials", new CommandLine(new KcAdmV2ConfigCredentialsCmd(cacheDir)));
         configCmd.addSubcommand("openapi", new CommandLine(new KcAdmV2ConfigOpenApiCmd(cacheDir)));
+        configCmd.addSubcommand("editor", new CommandLine(new KcAdmV2ConfigEditorCmd()));
         cli.addSubcommand(configCmd);
         KcAdmV2CommandDescriptor descriptor = loadDescriptor();
         KcAdmV2CommandBuilder.addCommands(cli, descriptor);

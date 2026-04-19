@@ -62,7 +62,7 @@ public class KcAdmV2HelpTest {
         CommandLine clientCli = cli.getSubcommands().get("client");
 
         String help = clientCli.getUsageMessage();
-        for (String cmd : List.of("list", "create", "get", "patch", "apply", "delete")) {
+        for (String cmd : List.of("list", "create", "get", "patch", "apply", "delete", "edit")) {
             assertTrue("Client help should list '" + cmd + "'", help.contains(cmd));
         }
     }
@@ -387,6 +387,44 @@ public class KcAdmV2HelpTest {
         int exitCode = cli.execute("client", "patch", "oidc", "--help");
         assertEquals("--help on variant leaf with required ID should exit with 0, err: " + err, 0, exitCode);
         assertTrue("should show help with --client-id option", out.toString().contains("--client-id"));
+    }
+
+    @Test
+    public void testEditHelpMentionsEditorConfiguration() {
+        String help = getSubcommandHelp("client", "edit");
+        assertTrue("edit help should mention KC_CLI_EDITOR env var", help.contains("KC_CLI_EDITOR"));
+        assertTrue("edit help should mention config editor command", help.contains("config editor"));
+        assertTrue("edit help should show <id> parameter", help.contains("<id>"));
+    }
+
+    @Test
+    public void testEditHasNoFileOrFieldOptions() {
+        String help = getSubcommandHelp("client", "edit");
+        assertFalse("edit should not have --file option", help.contains("--file"));
+        assertFalse("edit should not have -f option", help.contains("-f"));
+        assertFalse("edit should not have --client-id option", help.contains("--client-id"));
+    }
+
+    @Test
+    public void testEditHasConnectionAndOutputOptions() {
+        String help = getSubcommandHelp("client", "edit");
+        assertTrue("edit should have --config", help.contains("--config"));
+        assertTrue("edit should have --realm", help.contains("--realm"));
+        assertTrue("edit should have Output options", help.contains("Output options:"));
+    }
+
+    @Test
+    public void testConfigEditorHelpShowsUsage() {
+        CommandLine cli = createCli();
+        StringWriter out = new StringWriter();
+        cli.setOut(new PrintWriter(out));
+        cli.setErr(new PrintWriter(new StringWriter()));
+
+        int exitCode = cli.execute("config", "editor", "--help");
+        assertEquals("--help on config editor should exit with 0", 0, exitCode);
+        String help = out.toString();
+        assertTrue("should show editor parameter: " + help, help.contains("<editor>"));
+        assertTrue("should show --config option: " + help, help.contains("--config"));
     }
 
     @Test
