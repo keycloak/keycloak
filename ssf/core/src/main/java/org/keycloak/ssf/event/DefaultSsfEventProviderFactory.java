@@ -121,18 +121,8 @@ public class DefaultSsfEventProviderFactory implements SsfEventProviderFactory, 
     }
 
     @Override
-    public void init(Config.Scope config) {
-        // no-op
-    }
-
-    @Override
     public void postInit(KeycloakSessionFactory factory) {
         this.registry = SsfEventProviderFactory.buildRegistry(factory);
-    }
-
-    @Override
-    public void close() {
-        // no-op
     }
 
     @Override

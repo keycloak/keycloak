@@ -2,8 +2,6 @@ package org.keycloak.ssf.transmitter.support;
 
 import java.time.Duration;
 import java.util.Map;
-import java.util.Set;
-import java.util.stream.Stream;
 
 import org.keycloak.Config;
 import org.keycloak.models.KeycloakContext;
@@ -56,10 +54,6 @@ public class SsfUtil {
             baseUrl += "/";
         }
         return baseUrl + "realms/" + realmName;
-    }
-
-    public static Set<String> parseEventTypeAliases(String eventAliases) {
-        return Set.copyOf(Stream.of(eventAliases.split(",")).map(String::trim).toList());
     }
 
     /**

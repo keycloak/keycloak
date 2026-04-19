@@ -9,6 +9,11 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.Supplier;
+import java.util.stream.Stream;
+
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.ssf.event.stream.SsfStreamUpdatedEvent;
+import org.keycloak.ssf.event.stream.SsfStreamVerificationEvent;
 
 /**
  * Immutable registry of all known SSF event types and their aliases.
@@ -151,15 +156,70 @@ public final class SsfEventRegistry {
     }
 
     /**
-     * Returns the set of event type URIs that the transmitter can
-     * actually emit, as declared by every registered
-     * {@link SsfEventProviderFactory#getEmittableEventTypes()}. This is
-     * the honest "default supported events" set advertised to receivers
-     * that do not configure their own {@code ssf.supportedEvents}
-     * attribute — it excludes events contributed to the registry purely
-     * for inbound parsing on the receiver side.
+     * Stream-internal lifecycle event types (verification SET, stream-updated SET).
+     * The transmitter owns these end-to-end and external callers
+     * (synthetic emit, admin UI) are intentionally not allowed to
+     * forge them — letting an external caller fire a stream-updated
+     * SET would let it spoof transmitter behaviour towards the
+     * receiver. Both the synthetic emit gate and the admin UI's
+     * "available supported events" list filter these out.
+     */
+    public static final Set<String> STREAM_LIFECYCLE_EVENT_TYPES = Set.of(
+            SsfStreamVerificationEvent.TYPE,
+            SsfStreamUpdatedEvent.TYPE);
+
+    /**
+     * Event types a receiver can legitimately request via
+     * {@code events_requested} on stream-create / -update — i.e. the
+     * full registry minus the {@link #STREAM_LIFECYCLE_EVENT_TYPES
+     * protocol-internal lifecycle events} that only the transmitter
+     * may produce. Drives the admin UI's "available supported events"
+     * multi-select so operators can configure receivers to receive
+     * <em>any</em> deliverable type — even events Keycloak doesn't
+     * fire from native event listeners but that an external system
+     * may produce via the synthetic emit endpoint.
+     */
+    public Set<String> getReceiverRequestableEventTypes() {
+        Set<String> known = classByEventType.keySet();
+        if (known.isEmpty()) {
+            return Set.of();
+        }
+        java.util.Set<String> result = new java.util.LinkedHashSet<>(known.size());
+        for (String type : known) {
+            if (!STREAM_LIFECYCLE_EVENT_TYPES.contains(type)) {
+                result.add(type);
+            }
+        }
+        return Collections.unmodifiableSet(result);
+    }
+
+    /**
+     * Returns the subset of {@link #getReceiverRequestableEventTypes()}
+     * that some registered {@link SsfEventProviderFactory} declares as
+     * <em>natively emitted</em> via
+     * {@link SsfEventProviderFactory#getEmittableEventTypes()}.
+     *
+     * <p><b>Not an enforcement gate.</b> The synthetic emit endpoint
+     * can fire any registered (non-lifecycle) event type, including
+     * ones outside this set. The set is purely informational metadata
+     * — used by the admin UI to badge entries with "natively emitted"
+     * so operators understand which event types fire automatically
+     * from Keycloak vs which require the synthetic emit endpoint or
+     * a custom mapper.
      */
     public Set<String> getEmittableEventTypes() {
         return emittableEventTypes;
+    }
+
+    public static Set<String> parseEventTypeAliases(String eventAliases) {
+        return Set.copyOf(Stream.of(eventAliases.split(",")).map(String::trim).toList());
+    }
+
+    public static SsfEventRegistry of(KeycloakSession session) {
+        SsfEventProvider eventsProvider = session.getProvider(SsfEventProvider.class);
+        if (eventsProvider == null) {
+            return null;
+        }
+        return eventsProvider.getRegistry();
     }
 }
