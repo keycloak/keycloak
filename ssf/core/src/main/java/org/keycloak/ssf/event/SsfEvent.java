@@ -142,4 +142,28 @@ public abstract class SsfEvent {
     public void setAlias(String alias) {
         this.alias = alias;
     }
+
+    /**
+     * Verify that this event instance carries the fields the SSF /
+     * CAEP / RISC spec marks as REQUIRED. Called by the synthetic-emit
+     * pipeline after Jackson has materialised the event from the
+     * caller-supplied JSON, so a missing-field mistake is rejected
+     * with a clear error before the SET is signed and dispatched.
+     *
+     * <p>Default implementation is a no-op — most CAEP/RISC events have
+     * no strictly-required fields beyond the subject, which the
+     * pipeline validates separately. Subclasses with mandatory fields
+     * (e.g. {@code CaepCredentialChange.change_type}) override this
+     * to throw {@link SsfEventValidationException} with a message
+     * naming the missing field.
+     *
+     * <p>Native event production (the SSF event listener) builds
+     * instances from typed Keycloak event details that always supply
+     * the required fields, so the hook only matters on the
+     * synthetic-emit path. Custom extension events use this same hook
+     * to enforce their own invariants.
+     */
+    public void validate() {
+        // no-op — overridden by event subclasses that have spec-required fields
+    }
 }

@@ -1,5 +1,7 @@
 package org.keycloak.ssf.event.caep;
 
+import org.keycloak.ssf.event.SsfEventValidationException;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonValue;
 
@@ -22,12 +24,29 @@ public class CaepDeviceComplianceChange extends CaepEvent {
 
     /**
      * The current status that triggered the event.
+     * This MUST be one of the following strings: compliant, not-compliant
      */
     @JsonProperty("current_status")
     protected ComplianceChange currentStatus;
 
     public CaepDeviceComplianceChange() {
         super(TYPE);
+    }
+
+    /**
+     * CAEP §3.3.3: both {@code current_status} and {@code previous_status}
+     * are required so the receiver can compare the transition direction
+     * without relying on its own last-known state.
+     */
+    @Override
+    public void validate() {
+        if (currentStatus == null) {
+            throw new SsfEventValidationException(getAlias(), "current_status");
+        }
+
+        if (previousStatus == null) {
+            throw new SsfEventValidationException(getAlias(), "previous_status");
+        }
     }
 
     public ComplianceChange getPreviousStatus() {

@@ -1,5 +1,7 @@
 package org.keycloak.ssf.event.caep;
 
+import org.keycloak.ssf.event.SsfEventValidationException;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonValue;
 
@@ -42,12 +44,38 @@ public class CaepAssuranceLevelChange extends CaepEvent {
         super(TYPE);
     }
 
+    @Override
+    public void validate() {
+        if (namespace == null || namespace.isBlank()) {
+            throw new SsfEventValidationException(getAlias(), "namespace");
+        }
+        if (currentLevel == null) {
+            throw new SsfEventValidationException(getAlias(), "current_level");
+        }
+    }
+
     public String getNamespace() {
         return namespace;
     }
 
     public void setNamespace(String namespace) {
         this.namespace = namespace;
+    }
+
+    public String getCurrentLevel() {
+        return currentLevel;
+    }
+
+    public void setCurrentLevel(String currentLevel) {
+        this.currentLevel = currentLevel;
+    }
+
+    public String getPreviousLevel() {
+        return previousLevel;
+    }
+
+    public void setPreviousLevel(String previousLevel) {
+        this.previousLevel = previousLevel;
     }
 
     public ChangeDirection getChangeDirection() {

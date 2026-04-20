@@ -1,5 +1,7 @@
 package org.keycloak.ssf.event.caep;
 
+import org.keycloak.ssf.event.SsfEventValidationException;
+
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonValue;
@@ -70,6 +72,24 @@ public class CaepCredentialChange extends CaepEvent {
 
     public CaepCredentialChange() {
         super(TYPE);
+    }
+
+    /**
+     * CAEP Interop §3.3.1: both {@code credential_type} and
+     * {@code change_type} are REQUIRED. We don't enforce the spec's
+     * enumerated value list ({@code password}, {@code pin}, …) — the
+     * spec also allows "any other credential type supported mutually
+     * by the Transmitter and the Receiver", so a runtime gate would
+     * reject legitimate extensions.
+     */
+    @Override
+    public void validate() {
+        if (credentialType == null || credentialType.isBlank()) {
+            throw new SsfEventValidationException(getAlias(), "credential_type");
+        }
+        if (changeType == null) {
+            throw new SsfEventValidationException(getAlias(), "change_type");
+        }
     }
 
     public String getCredentialType() {

@@ -12,14 +12,15 @@ import org.keycloak.models.UserModel;
 import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.ssf.SsfException;
 import org.keycloak.ssf.event.SsfEvent;
-import org.keycloak.ssf.transmitter.SsfTransmitter;
 import org.keycloak.ssf.event.SsfEventRegistry;
+import org.keycloak.ssf.event.SsfEventValidationException;
 import org.keycloak.ssf.event.token.SsfSecurityEventToken;
 import org.keycloak.ssf.metadata.DefaultSubjects;
 import org.keycloak.ssf.subject.ComplexSubjectId;
 import org.keycloak.ssf.subject.OpaqueSubjectId;
 import org.keycloak.ssf.subject.SubjectId;
 import org.keycloak.ssf.subject.SubjectUserLookup;
+import org.keycloak.ssf.transmitter.SsfTransmitter;
 import org.keycloak.ssf.transmitter.delivery.SecurityEventTokenDispatcher;
 import org.keycloak.ssf.transmitter.event.SecurityEventTokenMapper;
 import org.keycloak.ssf.transmitter.stream.StreamConfig;
@@ -181,6 +182,23 @@ public class EventEmitterService {
         if (eventPayload == null) {
             return EmitEventResult.dropped(EmitEventStatus.INVALID_REQUEST,
                     "No registered event class for eventType=" + eventTypeUri);
+        }
+
+        // Per-event spec validation. Default SsfEvent.validate() is a
+        // no-op; CAEP / RISC / custom event subclasses override it to
+        // enforce spec-required fields (e.g. change_type on
+        // CaepCredentialChange). Run after Jackson conversion so the
+        // typed field values are populated by the time we look at them.
+        // The exception's getMessage() composition matches the wire
+        // status enum (invalid_event_data) so callers get one stable
+        // identifier that names both the failure category and the
+        // offending alias.field — they can localise from there.
+        if (eventPayload instanceof SsfEvent typedEvent) {
+            try {
+                typedEvent.validate();
+            } catch (SsfEventValidationException e) {
+                return EmitEventResult.dropped(EmitEventStatus.INVALID_EVENT_DATA, e.getMessage());
+            }
         }
 
         // 6. Build the SET (sub_id verbatim from the emitter) and hand

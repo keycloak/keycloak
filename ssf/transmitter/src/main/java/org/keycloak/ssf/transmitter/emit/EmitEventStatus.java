@@ -37,7 +37,20 @@ public enum EmitEventStatus {
     EVENT_TYPE_NOT_EMITTABLE("event_type_not_emittable"),
 
     /** Payload missing required fields or malformed. */
-    INVALID_REQUEST("invalid_request");
+    INVALID_REQUEST("invalid_request"),
+
+    /**
+     * Event payload deserialised cleanly but the event class' own
+     * {@code validate()} hook rejected it — typically a missing
+     * spec-required field (e.g. {@code change_type} on
+     * {@code CaepCredentialChange}). Distinct from
+     * {@link #INVALID_REQUEST} so admin callers can tell a
+     * malformed-JSON / wrong-type problem from a missing-field
+     * problem. Wire value matches
+     * {@link org.keycloak.ssf.event.SsfEventValidationException#MESSAGE_KEY}
+     * so the i18n key is the same for both layers.
+     */
+    INVALID_EVENT_DATA("invalid_event_data");
 
     private final String wireValue;
 
