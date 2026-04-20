@@ -196,7 +196,7 @@ public class OID4VCKeyAttestationTest extends OID4VCIssuerTestBase {
     }
 
     private static KeyWrapper getECKey(String keyId) {
-        return OID4VCProofTestUtils.newEcSigningKey(keyId);
+        return OID4VCProofTestUtils.createEcKeyPair(keyId);
     }
 
     private static VCIssuanceContext createVCIssuanceContext(KeycloakSession session) {

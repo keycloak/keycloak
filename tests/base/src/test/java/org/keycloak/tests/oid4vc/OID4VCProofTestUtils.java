@@ -1,13 +1,18 @@
 package org.keycloak.tests.oid4vc;
 
+import java.math.BigInteger;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
+import java.security.interfaces.RSAPrivateCrtKey;
+import java.security.interfaces.RSAPublicKey;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
 import org.keycloak.common.util.BouncyIntegration;
-import org.keycloak.common.util.KeyUtils;
 import org.keycloak.crypto.ECDSASignatureSignerContext;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
@@ -20,6 +25,14 @@ import org.keycloak.protocol.oid4vc.model.KeyAttestationJwtBody;
 import org.keycloak.protocol.oid4vc.model.Proofs;
 import org.keycloak.representations.AccessToken;
 
+import org.bouncycastle.asn1.x500.X500Name;
+import org.bouncycastle.cert.X509v3CertificateBuilder;
+import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
+import org.bouncycastle.cert.jcajce.JcaX509v3CertificateBuilder;
+import org.bouncycastle.operator.ContentSigner;
+import org.bouncycastle.operator.OperatorCreationException;
+import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
+
 public final class OID4VCProofTestUtils {
 
     private OID4VCProofTestUtils() {
@@ -30,7 +43,7 @@ public final class OID4VCProofTestUtils {
     }
 
     public static String generateJwtProof(String audience, String nonce) {
-        return generateJwtProof(audience, createEcKeyPair(), nonce);
+        return generateJwtProof(audience, createEcKeyPair("proof-key"), nonce);
     }
 
     public static String generateJwtProof(String audience, KeyWrapper keyWrapper, String nonce) {
@@ -59,7 +72,7 @@ public final class OID4VCProofTestUtils {
             List<String> keyStorage,
             List<String> userAuthentication
     ) {
-        KeyWrapper attestationKey = newEcSigningKey("attestation-key");
+        KeyWrapper attestationKey = createEcKeyPair("attestation-key");
         return generateAttestationProof(attestationKey, nonce, attestedKeys, keyStorage, userAuthentication, null);
     }
 
@@ -87,29 +100,63 @@ public final class OID4VCProofTestUtils {
                 .sign(new ECDSASignatureSignerContext(attestationKey));
     }
 
-    public static KeyWrapper newEcSigningKey(String keyId) {
-        KeyWrapper kw = createEcKeyPair();
-        if (keyId != null && !keyId.isBlank()) {
-            kw.setKid(keyId);
-        }
-        return kw;
-    }
-
-    public static KeyWrapper createEcKeyPair() {
+    public static KeyWrapper createEcKeyPair(String keyId) {
         try {
             KeyPairGenerator kpg = KeyPairGenerator.getInstance("EC", BouncyIntegration.PROVIDER);
             kpg.initialize(256);
             var keyPair = kpg.generateKeyPair();
 
             KeyWrapper kw = new KeyWrapper();
-            kw.setPrivateKey(keyPair.getPrivate());
-            kw.setPublicKey(keyPair.getPublic());
+            kw.setKid(keyId);
             kw.setUse(KeyUse.SIG);
-            kw.setKid(KeyUtils.createKeyId(keyPair.getPublic()));
-            kw.setType("EC");
             kw.setAlgorithm("ES256");
+            kw.setType("EC");
+            kw.setPublicKey(keyPair.getPublic());
+            kw.setPrivateKey(keyPair.getPrivate());
             return kw;
         } catch (NoSuchAlgorithmException | NoSuchProviderException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static KeyWrapper createRsaKeyPair(String keyId) {
+        try {
+            KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA", BouncyIntegration.PROVIDER);
+            kpg.initialize(2048);
+            var keyPair = kpg.generateKeyPair();
+
+            RSAPublicKey pub = (RSAPublicKey) keyPair.getPublic();
+            RSAPrivateCrtKey priv = (RSAPrivateCrtKey) keyPair.getPrivate();
+
+            // Generate self-signed cert
+            X500Name subject = new X500Name("CN=example.com");
+
+            long now = System.currentTimeMillis();
+            BigInteger serial = BigInteger.valueOf(now);
+            Date notBefore = new Date(now);
+            Date notAfter = new Date(now + 3600000); // 1h
+
+            ContentSigner signer = new JcaContentSignerBuilder("SHA256withRSAandMGF1")
+                    .setProvider("BC")
+                    .build(priv);
+            X509v3CertificateBuilder certBuilder = new JcaX509v3CertificateBuilder(
+                    subject, serial, notBefore, notAfter, subject, pub);
+            X509Certificate cert = new JcaX509CertificateConverter()
+                    .setProvider("BC")
+                    .getCertificate(certBuilder.build(signer));
+
+            KeyWrapper kw = new KeyWrapper();
+            kw.setKid(keyId);
+            kw.setUse(KeyUse.SIG);
+            kw.setAlgorithm("PS256");
+            kw.setType("RSA");
+
+            kw.setPublicKey(pub);
+            kw.setPrivateKey(priv);
+            kw.setCertificate(cert);
+            kw.setCertificateChain(List.of(cert));
+            return kw;
+        } catch (NoSuchAlgorithmException | OperatorCreationException | CertificateException | NoSuchProviderException e) {
             throw new RuntimeException(e);
         }
     }

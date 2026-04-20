@@ -14,9 +14,12 @@ import org.keycloak.OID4VCConstants;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
+import org.keycloak.authentication.authenticators.client.AttestationBasedClientAuthenticator.ClientAttestationPoPJwt;
+import org.keycloak.crypto.AsymmetricSignatureSignerContext;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jwk.JWKBuilder;
+import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.protocol.oid4vc.model.CredentialIssuer;
@@ -33,6 +36,8 @@ import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentatio
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testframework.oauth.OAuthClient;
+import org.keycloak.tests.oid4vc.abca.OIDCClientAttester;
+import org.keycloak.tests.oid4vc.abca.OIDCMockClientAttester;
 import org.keycloak.testsuite.util.oauth.AccessTokenRequest;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
@@ -48,12 +53,15 @@ import org.keycloak.testsuite.util.oauth.oid4vc.PreAuthorizedCodeGrantRequest;
 import org.keycloak.util.JsonSerialization;
 
 import static org.keycloak.OAuth2Constants.AUTHORIZATION_DETAILS;
+import static org.keycloak.authentication.authenticators.client.AttestationBasedClientAuthenticator.OAUTH_CLIENT_ATTESTATION_POP_JWT_TYPE;
 import static org.keycloak.constants.OID4VCIConstants.CREDENTIAL_OFFER_CREATE;
 import static org.keycloak.tests.oid4vc.OID4VCIssuerTestBase.TEST_PASSWORD;
 import static org.keycloak.tests.oid4vc.OID4VCIssuerTestBase.VCTestRealmConfig.TEST_REALM_NAME;
+import static org.keycloak.tests.oid4vc.OID4VCProofTestUtils.createRsaKeyPair;
 import static org.keycloak.tests.oid4vc.OID4VCTestContext.ACCESS_TOKEN_RESPONSE_ATTACHMENT_KEY;
 import static org.keycloak.tests.oid4vc.OID4VCTestContext.AUTHORIZATION_SERVER_METADATA_ATTACHMENT_KEY;
 import static org.keycloak.tests.oid4vc.OID4VCTestContext.AttachmentKey;
+import static org.keycloak.tests.oid4vc.OID4VCTestContext.CLIENT_ATTESTER_ATTACHMENT_KEY;
 import static org.keycloak.tests.oid4vc.OID4VCTestContext.CREDENTIALS_OFFER_RESPONSE_ATTACHMENT_KEY;
 import static org.keycloak.tests.oid4vc.OID4VCTestContext.CREDENTIALS_OFFER_URI_RESPONSE_ATTACHMENT_KEY;
 import static org.keycloak.tests.oid4vc.OID4VCTestContext.CREDENTIALS_RESPONSE_ATTACHMENT_KEY;
@@ -162,6 +170,45 @@ public class OID4VCBasicWallet {
         return authServerMetadata;
     }
 
+    public OIDCClientAttester getClientAttester(OID4VCTestContext ctx) {
+        OIDCClientAttester attester = ctx.getAttachment(CLIENT_ATTESTER_ATTACHMENT_KEY);
+        if (attester == null) {
+            var kw = createRsaKeyPair("openid-abca-attester-key");
+            attester = new OIDCMockClientAttester(kw);
+            ctx.putAttachment(CLIENT_ATTESTER_ATTACHMENT_KEY, attester);
+        }
+        return attester;
+    }
+
+    public String buildClientAttestationJWT(OID4VCTestContext ctx, KeyWrapper walletKey) {
+        KeyWrapper pubKeyWrapper = walletKey.cloneKey();
+        pubKeyWrapper.setPrivateKey(null);
+        String clientId = ctx.getClient().getClientId();
+        OIDCClientAttester attester = getClientAttester(ctx);
+        String attestationJwt = attester.attestWalletKey(clientId, pubKeyWrapper);
+        return attestationJwt;
+    }
+
+    public String buildClientAttestationPoPJWT(OID4VCTestContext ctx, KeyWrapper walletKey) {
+        var issuer = getIssuerMetadata(ctx).getCredentialIssuer();
+
+        // Build Client Attestation PoP JWT
+        //
+        String clientId = ctx.getClient().getClientId();
+        ClientAttestationPoPJwt body = new ClientAttestationPoPJwt()
+                .audience(issuer)
+                .issuer(clientId)
+                .issuedNowWithTTL(300) // 5min
+                .randomId();
+
+        String attestationPoPJwt = new JWSBuilder()
+                .type(OAUTH_CLIENT_ATTESTATION_POP_JWT_TYPE)
+                .kid(walletKey.getKid())
+                .jsonContent(body)
+                .sign(new AsymmetricSignatureSignerContext(walletKey));
+        return attestationPoPJwt;
+    }
+
     public Proofs generateAttestationProof(OID4VCTestContext ctx, Consumer<KeyWrapper> attestationKeyConsumer) {
         KeyWrapper attestationKey = getECKeyPair(ctx, "attestationKey");
         KeyWrapper proofKey = getECKeyPair(ctx, "proofKey");
@@ -190,13 +237,31 @@ public class OID4VCBasicWallet {
         return Proofs.create(ProofType.JWT, OID4VCProofTestUtils.generateJwtProof(aud, kw, nonce));
     }
 
+    public KeyWrapper getECKeyPair(OID4VCTestContext ctx) {
+        return getECKeyPair(ctx, null);
+    }
+
     public KeyWrapper getECKeyPair(OID4VCTestContext ctx, String keyId) {
-        String cacheKey = keyId != null ? keyId : ctx.getHolder() + "_key";
+        String cacheKey = keyId != null ? keyId : ctx.getHolder() + "_ec_key";
         AttachmentKey<KeyWrapper> attachmentKey = new AttachmentKey<>(cacheKey, KeyWrapper.class);
         KeyWrapper kw = ctx.getAttachment(attachmentKey);
         if (kw == null) {
-            kw = OID4VCProofTestUtils.createEcKeyPair();
-            if (keyId != null) kw.setKid(keyId);
+            kw = OID4VCProofTestUtils.createEcKeyPair(keyId);
+            ctx.putAttachment(attachmentKey, kw);
+        }
+        return kw;
+    }
+
+    public KeyWrapper getRSAKeyPair(OID4VCTestContext ctx) {
+        return getRSAKeyPair(ctx, null);
+    }
+
+    public KeyWrapper getRSAKeyPair(OID4VCTestContext ctx, String keyId) {
+        String cacheKey = keyId != null ? keyId : ctx.getHolder() + "_rsa_key";
+        AttachmentKey<KeyWrapper> attachmentKey = new AttachmentKey<>(cacheKey, KeyWrapper.class);
+        KeyWrapper kw = ctx.getAttachment(attachmentKey);
+        if (kw == null) {
+            kw = OID4VCProofTestUtils.createRsaKeyPair(keyId);
             ctx.putAttachment(attachmentKey, kw);
         }
         return kw;
