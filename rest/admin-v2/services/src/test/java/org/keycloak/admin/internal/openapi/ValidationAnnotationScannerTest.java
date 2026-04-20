@@ -19,25 +19,35 @@ package org.keycloak.admin.internal.openapi;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.math.BigDecimal;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 
+import jakarta.validation.constraints.Digits;
+import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
 import org.keycloak.representations.admin.v2.validation.ClientSecretNotBlank;
 import org.keycloak.representations.admin.v2.validation.CreateClient;
 import org.keycloak.representations.admin.v2.validation.PatchClient;
 import org.keycloak.representations.admin.v2.validation.PutClient;
 import org.keycloak.representations.admin.v2.validation.UuidUnmodified;
+import org.keycloak.validation.jakarta.ValidationContext;
 
 import org.eclipse.microprofile.openapi.OASFactory;
 import org.eclipse.microprofile.openapi.models.media.Schema;
+import org.hibernate.validator.constraints.Length;
+import org.hibernate.validator.constraints.Range;
 import org.hibernate.validator.constraints.URL;
 import org.jboss.jandex.ClassInfo;
 import org.jboss.jandex.Index;
@@ -55,6 +65,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * <p>
  * Note: Standard Jakarta Validation annotations ({@code @NotBlank}, {@code @Size}, {@code @Pattern}, etc.)
  * are handled by SmallRye OpenAPI's built-in {@code BeanValidationScanner} for schema properties.
+ * {@link ValidationAnnotationScanner} still emits human-readable descriptions for those annotations
+ * (and for Hibernate Validator extras such as {@code @Length} and {@code @Range}), including on
+ * {@link ValidationContext} record components.
  * This scanner only handles:
  * <ul>
  *   <li>Human-readable validation descriptions</li>
@@ -76,6 +89,9 @@ public class ValidationAnnotationScannerTest {
                 TestWithClassLevelConstraint.class,
                 TestWithClassLevelConstraintAndGroups.class,
                 TestWithClassLevelConstraintAndMessage.class,
+                ValidationContext.class,
+                KeycloakSession.class,
+                RealmModel.class,
                 CreateClient.class,
                 PutClient.class,
                 PatchClient.class,
@@ -86,6 +102,11 @@ public class ValidationAnnotationScannerTest {
                 Pattern.class,
                 Min.class,
                 Max.class,
+                Email.class,
+                Positive.class,
+                Digits.class,
+                Length.class,
+                Range.class,
                 URL.class,
                 ClientSecretNotBlank.class,
                 UuidUnmodified.class
@@ -127,6 +148,19 @@ public class ValidationAnnotationScannerTest {
     }
 
     @Test
+    public void applySchemaProperties_notBlankAndUrlOnTypeArgument_setsItemsPatternAndFormat() {
+        ClassInfo classInfo = index.getClassByName(TestRepresentation.class);
+        Schema schema = OASFactory.createSchema();
+        Schema itemsSchema = OASFactory.createSchema();
+        schema.setItems(itemsSchema);
+
+        scanner.applySchemaProperties(classInfo, "notBlankUrlSet", schema);
+
+        assertEquals("\\S", itemsSchema.getPattern());
+        assertEquals("uri", itemsSchema.getFormat());
+    }
+
+    @Test
     public void applySchemaProperties_urlOnTypeArgumentDoesNotOverwriteExistingFormat() {
         ClassInfo classInfo = index.getClassByName(TestRepresentation.class);
         Schema schema = OASFactory.createSchema();
@@ -145,6 +179,19 @@ public class ValidationAnnotationScannerTest {
 
         String description = scanner.buildDescription(classInfo, "notBlankField");
 
+        assertTrue(description.contains("must not be blank"));
+    }
+
+    @Test
+    public void buildDescription_jakartaConstraintWhenConstraintTypeNotIndexed() throws IOException {
+        // Mirrors OpenAPI generation: scanPackages often excludes jakarta.validation from the Jandex index
+        Index sparseIndex = createIndex(OnlyJakartaConstraintOnField.class);
+        ValidationAnnotationScanner sparseScanner = new ValidationAnnotationScanner(sparseIndex);
+        ClassInfo classInfo = sparseIndex.getClassByName(OnlyJakartaConstraintOnField.class);
+
+        String description = sparseScanner.buildDescription(classInfo, "value");
+
+        assertNotNull(description);
         assertTrue(description.contains("must not be blank"));
     }
 
@@ -190,11 +237,100 @@ public class ValidationAnnotationScannerTest {
     }
 
     @Test
+    public void buildDescription_emailConstraint() {
+        ClassInfo classInfo = index.getClassByName(TestRepresentation.class);
+
+        String description = scanner.buildDescription(classInfo, "emailField");
+
+        assertTrue(description.contains("must be a well-formed email address"));
+    }
+
+    @Test
+    public void buildDescription_positiveConstraint() {
+        ClassInfo classInfo = index.getClassByName(TestRepresentation.class);
+
+        String description = scanner.buildDescription(classInfo, "positiveField");
+
+        assertTrue(description.contains("must be greater than 0"));
+    }
+
+    @Test
+    public void buildDescription_lengthConstraint() {
+        ClassInfo classInfo = index.getClassByName(TestRepresentation.class);
+
+        String description = scanner.buildDescription(classInfo, "lengthField");
+
+        assertTrue(description.contains("length must be between 2 and 20"));
+    }
+
+    @Test
+    public void buildDescription_rangeConstraint() {
+        ClassInfo classInfo = index.getClassByName(TestRepresentation.class);
+
+        String description = scanner.buildDescription(classInfo, "rangeField");
+
+        assertTrue(description.contains("must be between 0 and 99"));
+    }
+
+    @Test
+    public void buildDescription_digitsConstraint() {
+        ClassInfo classInfo = index.getClassByName(TestRepresentation.class);
+
+        String description = scanner.buildDescription(classInfo, "digitsField");
+
+        assertTrue(description.contains("5"));
+        assertTrue(description.contains("2"));
+        assertTrue(description.contains("numeric value out of bounds"));
+    }
+
+    @Test
+    public void buildDescription_typeArg_notBlankAndUrl() {
+        ClassInfo classInfo = index.getClassByName(TestRepresentation.class);
+
+        String description = scanner.buildDescription(classInfo, "notBlankUrlSet");
+
+        assertTrue(description.contains("each element"));
+        assertTrue(description.contains("must not be blank"));
+        assertTrue(description.contains("must be a valid URL"));
+    }
+
+    @Test
+    public void buildDescription_validationContext_sessionNotNull() {
+        ClassInfo classInfo = index.getClassByName(ValidationContext.class);
+
+        String description = scanner.buildDescription(classInfo, "session");
+
+        assertNotNull(description);
+        assertTrue(description.contains("must not be null"));
+    }
+
+    @Test
+    public void buildDescription_validationContext_realmNotNull() {
+        ClassInfo classInfo = index.getClassByName(ValidationContext.class);
+
+        String description = scanner.buildDescription(classInfo, "realm");
+
+        assertNotNull(description);
+        assertTrue(description.contains("must not be null"));
+    }
+
+    @Test
     public void buildDescription_urlConstraint() {
         ClassInfo classInfo = index.getClassByName(TestRepresentation.class);
 
         String description = scanner.buildDescription(classInfo, "urlField");
 
+        assertTrue(description.contains("must be a valid URL"));
+    }
+
+    @Test
+    public void buildDescription_urlOnTypeArgument_setOfUrlStrings() {
+        ClassInfo classInfo = index.getClassByName(TestRepresentation.class);
+
+        String description = scanner.buildDescription(classInfo, "urlSet");
+
+        assertNotNull(description);
+        assertTrue(description.contains("each element"));
         assertTrue(description.contains("must be a valid URL"));
     }
 
@@ -319,6 +455,12 @@ public class ValidationAnnotationScannerTest {
     }
 
     @SuppressWarnings("unused")
+    public static class OnlyJakartaConstraintOnField {
+        @NotBlank
+        private String value;
+    }
+
+    @SuppressWarnings("unused")
     public static class TestRepresentation {
         @NotBlank
         private String notBlankField;
@@ -345,6 +487,23 @@ public class ValidationAnnotationScannerTest {
         private String urlField;
 
         private Set<@URL String> urlSet;
+
+        @Email
+        private String emailField;
+
+        @Positive
+        private Integer positiveField;
+
+        @Length(min = 2, max = 20)
+        private String lengthField;
+
+        @Range(min = 0, max = 99)
+        private Integer rangeField;
+
+        @Digits(integer = 5, fraction = 2)
+        private BigDecimal digitsField;
+
+        private Set<@NotBlank @URL String> notBlankUrlSet = new LinkedHashSet<>();
 
         private String noConstraints;
     }

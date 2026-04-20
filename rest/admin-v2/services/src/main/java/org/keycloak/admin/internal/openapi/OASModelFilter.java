@@ -3,6 +3,7 @@ package org.keycloak.admin.internal.openapi;
 
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -10,8 +11,6 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-
-import org.keycloak.OAuth2Constants;
 
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
@@ -228,7 +227,7 @@ public class OASModelFilter implements OASFilter {
         SecurityScheme bearerScheme = OASFactory.createSecurityScheme()
                 .type(SecurityScheme.Type.HTTP)
                 .scheme("bearer")
-                .bearerFormat(OAuth2Constants.JWT)
+                .bearerFormat("JWT")
                 .description("Bearer token authentication using a Keycloak access token");
 
         if (openAPI.getComponents() == null) {
@@ -312,19 +311,79 @@ public class OASModelFilter implements OASFilter {
                                     : classLevelValidation;
                         }
 
-                        // Append validation description if any
+                        // Append validation description if any (strip prior suffix: SmallRye may invoke the filter repeatedly)
                         if (fieldValidation != null) {
+                            fieldValidation = dedupeConstraintPhrases(fieldValidation);
                             String existingDesc = propertySchema.getDescription();
-                            String newDesc = isNullOrEmpty(existingDesc)
+                            String base = stripValidationSuffix(existingDesc);
+                            String newDesc = isNullOrEmpty(base)
                                     ? "Validation: " + fieldValidation
-                                    : existingDesc + ". Validation: " + fieldValidation;
-                            propertySchema.setDescription(newDesc);
+                                    : base + ". Validation: " + fieldValidation;
+                            propertySchema.setDescription(collapseMirroredValidationClause(newDesc));
                             log.debugf("Added validation description to '%s.%s': %s", schemaName, propertyName, fieldValidation);
                         }
                     });
                 }
             }
         });
+    }
+
+    /**
+     * Removes validation clauses previously appended by this filter so repeated OpenAPI filter passes
+     * do not stack duplicate {@code Validation:} text.
+     */
+    private static String stripValidationSuffix(String description) {
+        if (isNullOrEmpty(description)) {
+            return description;
+        }
+        int idx = description.indexOf(". Validation: ");
+        if (idx >= 0) {
+            return description.substring(0, idx);
+        }
+        if (description.startsWith("Validation: ")) {
+            return "";
+        }
+        return description;
+    }
+
+    private static String dedupeConstraintPhrases(String joined) {
+        if (joined == null) {
+            return null;
+        }
+        String[] parts = joined.split("; ");
+        Set<String> seen = new LinkedHashSet<>();
+        for (String part : parts) {
+            String trimmed = part.trim();
+            if (!trimmed.isEmpty()) {
+                seen.add(trimmed);
+            }
+        }
+        return String.join("; ", seen);
+    }
+
+    /**
+     * Collapses {@code X. Validation: X} when {@code X} is repeated verbatim (duplicate filter passes).
+     */
+    private static String collapseMirroredValidationClause(String description) {
+        if (isNullOrEmpty(description)) {
+            return description;
+        }
+        String marker = ". Validation: ";
+        String current = description;
+        while (true) {
+            int i = current.indexOf(marker);
+            if (i <= 0) {
+                break;
+            }
+            String first = current.substring(0, i);
+            String second = current.substring(i + marker.length());
+            if (first.equals(second)) {
+                current = first;
+            } else {
+                break;
+            }
+        }
+        return current;
     }
 
     private String findJsonPropertyDescription(ClassInfo classInfo, String fieldName) {

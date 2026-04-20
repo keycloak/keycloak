@@ -26,6 +26,7 @@ import org.jboss.jandex.DotName;
 import org.jboss.jandex.FieldInfo;
 import org.jboss.jandex.IndexView;
 import org.jboss.jandex.Type;
+import org.jboss.jandex.TypeTarget;
 import org.jboss.logging.Logger;
 
 /**
@@ -40,6 +41,8 @@ import org.jboss.logging.Logger;
  *   <li>Handling custom Keycloak validation annotations</li>
  *   <li>Adding validation group context (e.g., "on create:", "on update:")</li>
  * </ul>
+ * Standard Jakarta and Hibernate Validator constraints are recognized even when their
+ * annotation types are not part of the OpenAPI scanner's Jandex index (only application packages are indexed).
  */
 public class ValidationAnnotationScanner {
 
@@ -50,6 +53,9 @@ public class ValidationAnnotationScanner {
 
     // Hibernate Validator's @URL annotation (for schema property handling - not supported by SmallRye)
     private static final DotName URL = DotName.createSimple(URL.class);
+
+    private static final DotName JAKARTA_NOT_BLANK = DotName.createSimple("jakarta.validation.constraints.NotBlank");
+    private static final DotName JAKARTA_PATTERN = DotName.createSimple("jakarta.validation.constraints.Pattern");
 
     // Validation group package prefix for detecting unknown groups
     private static final String VALIDATION_PACKAGE = "org.keycloak.representations.admin.v2.validation";
@@ -96,8 +102,22 @@ public class ValidationAnnotationScanner {
         if (constraintAnnotations.contains(annotationName)) {
             return true;
         }
+        if (isStandardBeanValidationOrHibernateConstraint(annotationName)) {
+            return true;
+        }
         ClassInfo annotationClass = indexView.getClassByName(annotationName);
         return annotationClass != null && annotationClass.hasAnnotation(CONSTRAINT);
+    }
+
+    /**
+     * True for built-in Jakarta Bean Validation and Hibernate Validator constraint annotations.
+     * The OpenAPI Maven plugin typically indexes only application packages, so these types are
+     * often absent from {@link IndexView} even though they appear on representation fields.
+     */
+    private static boolean isStandardBeanValidationOrHibernateConstraint(DotName name) {
+        String s = name.toString();
+        return s.startsWith("jakarta.validation.constraints.")
+                || s.startsWith("org.hibernate.validator.constraints.");
     }
 
     private String resolveMessage(String messageTemplate, AnnotationInstance annotation) {
@@ -147,8 +167,9 @@ public class ValidationAnnotationScanner {
     }
 
     /**
-     * Applies schema properties for annotations not handled by SmallRye's BeanValidationScanner.
-     * Currently only handles Hibernate Validator's {@code @URL} annotation.
+     * Applies schema properties for constraints that SmallRye's {@code BeanValidationScanner}
+     * misses or applies incompletely: Hibernate Validator's {@code @URL}, and Jakarta
+     * {@code @Pattern}/{@code @NotBlank} on collection element types.
      *
      * @param classInfo the class containing the field
      * @param fieldName the name of the field
@@ -186,8 +207,10 @@ public class ValidationAnnotationScanner {
 
         List<String> constraints = new ArrayList<>();
 
+        // De-duplicate when the compiler emits both declaration and type-use constraint annotations
+        Set<DotName> seenFieldConstraintTypes = new HashSet<>();
         for (AnnotationInstance annotation : field.annotations()) {
-            if (annotation.target().kind() != AnnotationTarget.Kind.FIELD) {
+            if (!isAnnotationOnFieldDeclaration(annotation, field)) {
                 continue;
             }
 
@@ -195,6 +218,9 @@ public class ValidationAnnotationScanner {
 
             // Check if this is a constraint annotation
             if (!isConstraintAnnotation(annotationName)) {
+                continue;
+            }
+            if (!seenFieldConstraintTypes.add(annotationName)) {
                 continue;
             }
 
@@ -205,7 +231,7 @@ public class ValidationAnnotationScanner {
             }
         }
 
-        // Check for type argument annotations (e.g., Set<@NotBlank @URL String>)
+        // Check for type argument annotations (e.g. Set<@URL String>, Set<@NotBlank @URL String>)
         String typeArgConstraints = buildTypeArgumentDescription(field);
         if (typeArgConstraints != null) {
             constraints.add(typeArgConstraints);
@@ -215,8 +241,15 @@ public class ValidationAnnotationScanner {
             return null;
         }
 
+        List<String> deduped = new ArrayList<>();
+        Set<String> seenPhrases = new HashSet<>();
+        for (String phrase : constraints) {
+            if (seenPhrases.add(phrase)) {
+                deduped.add(phrase);
+            }
+        }
         StringJoiner joiner = new StringJoiner("; ");
-        constraints.forEach(joiner::add);
+        deduped.forEach(joiner::add);
         return joiner.toString();
     }
 
@@ -236,9 +269,15 @@ public class ValidationAnnotationScanner {
     }
 
     private String getDefaultMessage(DotName annotationName) {
-        String defaultMessage = getDefault(annotationName, "message").asString();
-        if (defaultMessage != null) {
-            return defaultMessage;
+        AnnotationValue defaultFromIndex = getDefault(annotationName, "message");
+        if (defaultFromIndex != null) {
+            String defaultMessage = defaultFromIndex.asString();
+            if (defaultMessage != null) {
+                return defaultMessage;
+            }
+        }
+        if (isStandardBeanValidationOrHibernateConstraint(annotationName)) {
+            return "{" + annotationName + ".message}";
         }
 
         throw new IllegalStateException("Missing message value for " + annotationName);
@@ -297,8 +336,31 @@ public class ValidationAnnotationScanner {
     }
 
     /**
-     * Applies @URL format to items schema for parameterized types (e.g., Set&lt;@URL String&gt;).
-     * Other type argument annotations are handled by SmallRye's BeanValidationScanner.
+     * True when the annotation applies to this field, including type-use constraints on the field's type
+     * (javac stores {@code @NotBlank String clientId} as a type annotation with enclosing {@code FIELD}).
+     */
+    private static boolean isAnnotationOnFieldDeclaration(AnnotationInstance annotation, FieldInfo field) {
+        AnnotationTarget target = annotation.target();
+        if (target == null) {
+            return false;
+        }
+        if (target.kind() == AnnotationTarget.Kind.FIELD) {
+            return field.equals(target.asField());
+        }
+        if (target.kind() == AnnotationTarget.Kind.TYPE) {
+            TypeTarget typeTarget = target.asType();
+            AnnotationTarget enclosing = typeTarget.enclosingTarget();
+            return enclosing != null
+                    && enclosing.kind() == AnnotationTarget.Kind.FIELD
+                    && field.equals(enclosing.asField());
+        }
+        return false;
+    }
+
+    /**
+     * Applies schema hints for type-use constraints on collection/array element types
+     * (e.g. {@code Set<@NotBlank @URL String>}) where SmallRye's {@code BeanValidationScanner}
+     * often omits {@code items} metadata.
      */
     private void applyTypeArgumentSchemaProperties(FieldInfo field, Schema propertySchema) {
         Type fieldType = field.type();
@@ -317,11 +379,29 @@ public class ValidationAnnotationScanner {
         }
 
         for (Type typeArg : typeArgs) {
+            AnnotationInstance patternAnnotation = null;
+            boolean notBlank = false;
+            boolean url = false;
             for (AnnotationInstance annotation : typeArg.annotations()) {
-                // Only handle @URL - SmallRye handles the rest
-                if (URL.equals(annotation.name()) && itemsSchema.getFormat() == null) {
-                    itemsSchema.setFormat("uri");
+                DotName name = annotation.name();
+                if (JAKARTA_PATTERN.equals(name)) {
+                    patternAnnotation = annotation;
+                } else if (JAKARTA_NOT_BLANK.equals(name)) {
+                    notBlank = true;
+                } else if (URL.equals(name)) {
+                    url = true;
                 }
+            }
+            if (patternAnnotation != null) {
+                AnnotationValue regexp = patternAnnotation.value("regexp");
+                if (regexp != null && itemsSchema.getPattern() == null) {
+                    itemsSchema.setPattern(regexp.asString());
+                }
+            } else if (notBlank && itemsSchema.getPattern() == null) {
+                itemsSchema.setPattern("\\S");
+            }
+            if (url && itemsSchema.getFormat() == null) {
+                itemsSchema.setFormat("uri");
             }
         }
     }
@@ -341,7 +421,17 @@ public class ValidationAnnotationScanner {
 
         for (Type typeArg : typeArgs) {
             for (AnnotationInstance annotation : typeArg.annotations()) {
-                if (!isConstraintAnnotation(annotation.name())) {
+                DotName name = annotation.name();
+                // @URL is always handled explicitly: it must appear in OpenAPI prose even if the
+                // Jandex index does not list the annotation type as @Constraint (thin classpath).
+                if (URL.equals(name)) {
+                    String constraintDesc = buildConstraintDescription(annotation);
+                    if (constraintDesc != null) {
+                        elementConstraints.add(constraintDesc);
+                    }
+                    continue;
+                }
+                if (!isConstraintAnnotation(name)) {
                     continue;
                 }
 
@@ -394,14 +484,14 @@ public class ValidationAnnotationScanner {
     }
 
     private AnnotationInstance getFieldAnnotation(FieldInfo field, DotName annotationName) {
-        AnnotationInstance annotation = field.annotation(annotationName);
-        if (annotation == null) {
-            return null;
+        AnnotationInstance direct = field.annotation(annotationName);
+        if (direct != null && isAnnotationOnFieldDeclaration(direct, field)) {
+            return direct;
         }
-        // Check if the annotation target is the field itself (not a type use)
-        AnnotationTarget target = annotation.target();
-        if (target != null && target.kind() == AnnotationTarget.Kind.FIELD) {
-            return annotation;
+        for (AnnotationInstance annotation : field.annotations()) {
+            if (annotationName.equals(annotation.name()) && isAnnotationOnFieldDeclaration(annotation, field)) {
+                return annotation;
+            }
         }
         return null;
     }
