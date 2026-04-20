@@ -2,6 +2,7 @@ package org.keycloak.tests.ssf.outbox;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.UUID;
 
@@ -193,7 +194,11 @@ public class SsfPendingEventStoreTests {
             Assertions.assertEquals(SsfPendingEventStatus.PENDING, after.getStatus(),
                     "recordFailure keeps the row in PENDING for the next drainer tick");
             Assertions.assertEquals(3, after.getAttempts(), "attempts must be incremented");
-            Assertions.assertEquals(nextAttempt, after.getNextAttemptAt());
+            // Compare at microsecond precision — PostgreSQL's TIMESTAMP
+            // truncates sub-microsecond digits while H2 preserves nanos,
+            // so asserting on the raw Instant is backend-dependent.
+            Assertions.assertEquals(nextAttempt.truncatedTo(ChronoUnit.MICROS),
+                    after.getNextAttemptAt().truncatedTo(ChronoUnit.MICROS));
             Assertions.assertNotNull(after.getLastError());
             Assertions.assertTrue(after.getLastError().length() <= 2048,
                     "lastError must be truncated to the column width");
