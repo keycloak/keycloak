@@ -442,7 +442,7 @@ public class SessionRestServiceTest extends AbstractRestServiceTest {
     }
 
     private void joinSsoSession(String clientId) {
-        oauth.clientId(clientId);
+        oauth.client(clientId);
         oauth.redirectUri(OAuthClient.APP_ROOT + "/auth");
         oauth.openLoginForm();
     }

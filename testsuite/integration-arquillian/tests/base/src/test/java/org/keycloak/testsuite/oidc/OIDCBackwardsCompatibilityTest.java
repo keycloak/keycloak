@@ -80,7 +80,7 @@ public class OIDCBackwardsCompatibilityTest extends AbstractTestRealmKeycloakTes
          * will faile and the clientID will always be "sample-public-client
          * @see AccessTokenTest#testAuthorizationNegotiateHeaderIgnored()
          */
-        oauth.clientId("test-app");
+        oauth.client("test-app", "password");
     }
 
 

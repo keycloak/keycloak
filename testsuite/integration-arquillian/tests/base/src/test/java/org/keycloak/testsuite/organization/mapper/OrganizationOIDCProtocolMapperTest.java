@@ -136,7 +136,7 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
         Assert.assertTrue(orga.members().list(-1, -1).stream().map(UserRepresentation::getId).anyMatch(member.getId()::equals));
         Assert.assertTrue(orgb.members().list(-1, -1).stream().map(UserRepresentation::getId).anyMatch(member.getId()::equals));
 
-        oauth.clientId("test-app");
+        oauth.client("test-app", "password");
 
         // Test multiple specific organization scopes - should return both organizations
         oauth.scope("openid organization:org-a organization:org-b");
@@ -1510,7 +1510,7 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
         testRealm().clients().get(testApp.getId()).addDefaultClientScope(createdId);
         getCleanup().addCleanup(() -> testRealm().clientScopes().get(createdId).remove());
 
-        oauth.clientId("test-app");
+        oauth.client("test-app", "password");
 
         // Test multiple specific organization scopes with custom scope name - should return both organizations
         oauth.scope("openid org:org-a org:org-b");

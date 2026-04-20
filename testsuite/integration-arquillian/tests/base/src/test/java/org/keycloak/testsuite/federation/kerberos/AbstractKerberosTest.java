@@ -196,7 +196,7 @@ public abstract class AbstractKerberosTest extends AbstractAuthTest {
 
     protected AccessTokenResponse assertSuccessfulSpnegoLogin(String clientId, String loginUsername, String expectedUsername, String password) throws Exception {
         events.clear();
-        oauth.clientId(clientId);
+        oauth.client(clientId, "password");
         Response spnegoResponse = spnegoLogin(loginUsername, password);
         Assert.assertEquals(302, spnegoResponse.getStatus());
 

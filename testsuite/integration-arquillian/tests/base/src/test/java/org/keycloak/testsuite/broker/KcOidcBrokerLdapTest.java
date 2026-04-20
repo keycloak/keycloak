@@ -57,7 +57,7 @@ public final class KcOidcBrokerLdapTest extends AbstractInitializedBaseBrokerTes
     @Test
     public void testUpdateProfileOnFirstLogin() {
         updateExecutions(AbstractBrokerTest::enableUpdateProfileOnFirstLogin);
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
         logInWithBroker(bc);
         updateAccountInformationPage.updateAccountInformation(bc.getUserLogin(), bc.getUserEmail(), "f", "l");

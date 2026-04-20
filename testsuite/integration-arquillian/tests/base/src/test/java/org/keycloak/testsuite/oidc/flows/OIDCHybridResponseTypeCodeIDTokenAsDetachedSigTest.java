@@ -43,7 +43,7 @@ public class OIDCHybridResponseTypeCodeIDTokenAsDetachedSigTest extends Abstract
     public void clientConfiguration() {
         clientManagerBuilder().standardFlow(true).implicitFlow(true).updateAttribute(OIDCConfigAttributes.ID_TOKEN_AS_DETACHED_SIGNATURE, Boolean.TRUE.toString());
 
-        oauth.clientId("test-app");
+        oauth.client("test-app", "password");
         oauth.responseType(OIDCResponseType.CODE + " " + OIDCResponseType.ID_TOKEN);
     }
 

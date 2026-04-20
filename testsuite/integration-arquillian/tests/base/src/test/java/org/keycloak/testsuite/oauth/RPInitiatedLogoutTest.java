@@ -1071,7 +1071,7 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
                 .build();
         try (Response response = testRealm().clients().create(clientRep)) {
             String uuid = ApiUtil.getCreatedId(response);
-            oauth.clientId("my-foo-client");
+            oauth.client("my-foo-client", "password");
 
             AccessTokenResponse tokenResponse = loginUser();
 

@@ -477,7 +477,7 @@ public final class KcOidcBrokerTransientSessionsTest extends AbstractAdvancedBro
     public void testSingleSignOn() {
         loginWithBrokerUsingOAuthClient(CustomKcOidcBrokerConfiguration.CONSUMER_ADDITIONAL_BROKER_APP_CLIENT_ID);
 
-        oauth.clientId(CONSUMER_BROKER_APP_CLIENT_ID);
+        oauth.client(CONSUMER_BROKER_APP_CLIENT_ID);
         oauth.openLoginForm();
 
         Assert.assertTrue("Should be logged in", driver.getTitle().endsWith("AUTH_RESPONSE"));
@@ -487,7 +487,7 @@ public final class KcOidcBrokerTransientSessionsTest extends AbstractAdvancedBro
     @Test
     public void testConsents() throws Exception {
         try (var c = ClientAttributeUpdater.forClient(adminClient, bc.consumerRealmName(), CONSUMER_BROKER_APP_CLIENT_ID).setConsentRequired(true).update()) {
-            oauth.clientId(CONSUMER_BROKER_APP_CLIENT_ID);
+            oauth.client(CONSUMER_BROKER_APP_CLIENT_ID);
             oauth.realm(bc.consumerRealmName());
             doLoginSocial(oauth, bc.getIDPAlias(), bc.getUserLogin(), bc.getUserPassword());
 
@@ -519,7 +519,7 @@ public final class KcOidcBrokerTransientSessionsTest extends AbstractAdvancedBro
             assertThat("There should be one client in user session", sessions.get(0).getClients(), aMapWithSize(1));
 
             // Try SSO relogging into the app before revoking consent.
-            oauth.clientId(CONSUMER_BROKER_APP_CLIENT_ID);
+            oauth.client(CONSUMER_BROKER_APP_CLIENT_ID);
             oauth.openLoginForm();
             assertThat("Should be logged in", driver.getTitle(), containsString("AUTH_RESPONSE"));
 
@@ -536,7 +536,7 @@ public final class KcOidcBrokerTransientSessionsTest extends AbstractAdvancedBro
             assertThat("There should be no client in user session", sessions.get(0).getClients(), aMapWithSize(0));
 
             // Try relogging into the app after consent was revoked.
-            oauth.clientId(CONSUMER_BROKER_APP_CLIENT_ID);
+            oauth.client(CONSUMER_BROKER_APP_CLIENT_ID);
             oauth.openLoginForm();
 
             WaitUtils.waitForPageToLoad();

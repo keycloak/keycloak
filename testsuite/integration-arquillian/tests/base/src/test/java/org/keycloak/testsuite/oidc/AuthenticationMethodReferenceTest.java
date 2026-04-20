@@ -184,7 +184,7 @@ public class AuthenticationMethodReferenceTest extends AbstractOIDCScopeTest{
      */
     @Before
     public void configureClient() {
-        oauth.clientId(CLIENT_ID);
+        oauth.client(CLIENT_ID);
     }
 
     /**

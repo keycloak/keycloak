@@ -22,7 +22,7 @@ public abstract class AbstractSamlLoginHintTest extends AbstractInitializedBaseB
         String username = "all-info-set@localhost.com";
         createUser(bc.providerRealmName(), username, "password");
 
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
 
         log.debug("Clicking social " + bc.getIDPAlias());
@@ -46,7 +46,7 @@ public abstract class AbstractSamlLoginHintTest extends AbstractInitializedBaseB
         String username = "all-info-set@localhost.com";
         createUser(bc.providerRealmName(), username, "password", "FirstName");
 
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
 
         log.debug("Clicking social " + bc.getIDPAlias());

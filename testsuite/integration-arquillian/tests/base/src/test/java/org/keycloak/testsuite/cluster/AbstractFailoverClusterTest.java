@@ -103,7 +103,7 @@ public abstract class AbstractFailoverClusterTest extends AbstractClusterTest {
         String userId = AdminApiUtil.createUserWithAdminClient(adminClient.realm("test"), user);
         getCleanup().addUserId(userId);
 
-        oauth.clientId("test-app");
+        oauth.client("test-app", "password");
     }
 
     @After

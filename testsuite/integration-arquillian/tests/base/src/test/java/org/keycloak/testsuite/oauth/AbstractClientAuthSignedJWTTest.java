@@ -266,7 +266,7 @@ public abstract class AbstractClientAuthSignedJWTTest extends AbstractKeycloakTe
             PrivateKey privateKey = keyPair.getPrivate();
 
             // test
-            oauth.clientId("client2");
+            oauth.client("client2");
             oauth.doLogin("test-user@localhost", "password");
 
             String code = oauth.parseLoginResponse().getCode();
@@ -354,7 +354,7 @@ public abstract class AbstractClientAuthSignedJWTTest extends AbstractKeycloakTe
         PrivateKey privateKey = keyPair.getPrivate();
 
         // test
-        oauth.realm("test").clientId(clientId);
+        oauth.realm("test").client(clientId);
         oauth.doLogin("test-user@localhost", "password");
         EventRepresentation loginEvent = events.expectLogin()
                 .client(clientId)
@@ -384,7 +384,7 @@ public abstract class AbstractClientAuthSignedJWTTest extends AbstractKeycloakTe
             PrivateKey privateKey = keyPair.getPrivate();
 
             // test
-            oauth.clientId("client2");
+            oauth.client("client2");
             AccessTokenResponse response = doGrantAccessTokenRequest("test-user@localhost", "password", createSignedRequestToken("client2", getRealmInfoUrl(), privateKey, publicKey, algorithm));
 
             assertEquals(200, response.getStatusCode());
@@ -468,7 +468,7 @@ public abstract class AbstractClientAuthSignedJWTTest extends AbstractKeycloakTe
 
         // Try to login with the new keys
 
-        oauth.clientId(client.getClientId());
+        oauth.client(client.getClientId());
         PrivateKey privateKey = (PrivateKey) keyStore.getKey(keyAlias, keyPassword.toCharArray());
         KeyPair keyPair = new KeyPair(x509Cert.getPublicKey(), privateKey);
 
@@ -679,7 +679,7 @@ public abstract class AbstractClientAuthSignedJWTTest extends AbstractKeycloakTe
             PrivateKey privateKey = keyPair.getPrivate();
 
             // test
-            oauth.clientId("client2");
+            oauth.client("client2");
             oauth.doLogin("test-user@localhost", "password");
             EventRepresentation loginEvent = events.expectLogin()
                     .client("client2")
@@ -713,7 +713,7 @@ public abstract class AbstractClientAuthSignedJWTTest extends AbstractKeycloakTe
             setupJwksUrl(algorithm, clientRepresentation, clientResource);
 
             // test
-            oauth.clientId("client2");
+            oauth.client("client2");
             AccessTokenResponse response = doGrantAccessTokenRequest("test-user@localhost", "password", getClient2SignedJWT());
 
             assertEquals(400, response.getStatusCode());

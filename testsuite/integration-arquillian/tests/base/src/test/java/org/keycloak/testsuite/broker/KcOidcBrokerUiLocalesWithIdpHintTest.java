@@ -42,7 +42,7 @@ public class KcOidcBrokerUiLocalesWithIdpHintTest extends AbstractBrokerTest {
 
     @Override
     protected void loginUser() {
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
 
         driver.navigate().to(driver.getCurrentUrl() + "&ui_locales=hu&kc_idp_hint=kc-oidc-idp");

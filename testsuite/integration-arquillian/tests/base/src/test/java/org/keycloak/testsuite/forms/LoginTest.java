@@ -893,7 +893,7 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
     @Test
     public void loginWithDisabledCookies() {
         String userId = adminClient.realm("test").users().search("test-user@localhost").get(0).getId();
-        oauth.clientId("test-app");
+        oauth.client("test-app", "password");
         oauth.openLoginForm();
 
         driver.manage().deleteAllCookies();
@@ -917,7 +917,7 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
         boolean wasEnabled = clientRepresentation.isEnabled();
 
         try {
-            oauth.clientId("test-app");
+            oauth.client("test-app", "password");
             oauth.openLoginForm();
             loginPage.assertCurrent();
 
@@ -942,12 +942,12 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
 
     @Test
     public void openLoginFormWithDifferentApplication() throws Exception {
-        oauth.clientId("root-url-client");
+        oauth.client("root-url-client");
         oauth.redirectUri(SERVER_ROOT + "/foo/bar/");
         oauth.openLoginForm();
 
         // Login form shown after redirect from app
-        oauth.clientId("test-app");
+        oauth.client("test-app", "password");
         oauth.redirectUri(OAuthClient.APP_ROOT + "/auth");
         oauth.openLoginForm();
 
@@ -1005,7 +1005,7 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
           .setRememberMe(true)
           .update()) {
             // login form shown after redirect from app
-            oauth.clientId("test-app");
+            oauth.client("test-app", "password");
             oauth.redirectUri(OAuthClient.APP_ROOT + "/auth");
             oauth.openLoginForm();
 
@@ -1033,7 +1033,7 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
           .setRememberMe(true)
           .update()) {
             // login form shown after redirect from app
-            oauth.clientId("test-app");
+            oauth.client("test-app", "password");
             oauth.redirectUri(OAuthClient.APP_ROOT + "/auth");
             oauth.openLoginForm();
 

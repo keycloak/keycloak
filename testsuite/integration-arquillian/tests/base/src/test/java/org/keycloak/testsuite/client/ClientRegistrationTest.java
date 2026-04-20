@@ -246,7 +246,7 @@ public class ClientRegistrationTest extends AbstractClientRegistrationTest {
 
         reg.create(myclient);
 
-        oauth.clientId("myclient");
+        oauth.client("myclient");
         String bearerToken = getToken("myclient", "password", "manage-clients", "password");
         assertTrue(oauth.tokenRevocationRequest(bearerToken).accessToken().send().isSuccess());
 

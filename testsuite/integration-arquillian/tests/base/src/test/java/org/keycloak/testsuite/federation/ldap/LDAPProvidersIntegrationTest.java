@@ -502,7 +502,7 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
     @Test
     public void deleteFederationLink() throws Exception {
         // KEYCLOAK-4789: Login in client, which requires consent
-        oauth.clientId("third-party");
+        oauth.client("third-party");
         oauth.openLoginForm();
         loginPage.login("johnkeycloak", "Password1");
 
@@ -532,7 +532,7 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
             LDAPTestUtils.addZipCodeLDAPMapper(ctx.getRealm(), ctx.getLdapModel());
         });
 
-        oauth.clientId("test-app");
+        oauth.client("test-app", "password");
 
         loginLdap();
 

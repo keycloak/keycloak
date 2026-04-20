@@ -63,7 +63,7 @@ public final class KcOidcBrokerFrontendUrlTest extends AbstractBrokerTest {
         updateExecutions(AbstractBrokerTest::disableUpdateProfileOnFirstLogin);
         createUser(bc.consumerRealmName(), "consumer", "password", "FirstName", "LastName", "consumer@localhost.com");
 
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         oauth.realm(bc.consumerRealmName());
         oauth.baseUrl(proxy.getUrl());
         oauth.openLoginForm();

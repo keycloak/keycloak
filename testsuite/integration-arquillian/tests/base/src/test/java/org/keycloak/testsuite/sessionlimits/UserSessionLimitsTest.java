@@ -445,7 +445,7 @@ public class UserSessionLimitsTest extends AbstractTestRealmKeycloakTest {
         try {
             // Login and verify login was successful
             String redirect_uri = oauth.AUTH_SERVER_ROOT + "/realms/test/account";
-            oauth.clientId("account");
+            oauth.client("account");
             oauth.redirectUri(redirect_uri);
             oauth.doLogin("test-user@localhost", "password");
             EventRepresentation loginEvent = events.expectLogin().client("account").detail(Details.REDIRECT_URI, redirect_uri).assertEvent();
@@ -488,7 +488,7 @@ public class UserSessionLimitsTest extends AbstractTestRealmKeycloakTest {
 
             // Login and verify login was successful
             String redirect_uri = oauth.AUTH_SERVER_ROOT + "/realms/test/account";
-            oauth.clientId("account");
+            oauth.client("account");
             oauth.redirectUri(redirect_uri);
             oauth.doLogin("test-user@localhost", "password");
             EventRepresentation loginEvent = events.expectLogin().client("account").detail(Details.REDIRECT_URI, redirect_uri).assertEvent();

@@ -60,7 +60,7 @@ public class KcOidcBrokerPassMaxAgeTest extends AbstractBrokerTest {
         loginUser();
         testSingleLogout();
 
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
 
         loginPage.clickSocial(bc.getIDPAlias());
@@ -102,7 +102,7 @@ public class KcOidcBrokerPassMaxAgeTest extends AbstractBrokerTest {
         loginUser();
         testSingleLogout();
 
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
 
         loginPage.clickSocial(bc.getIDPAlias());

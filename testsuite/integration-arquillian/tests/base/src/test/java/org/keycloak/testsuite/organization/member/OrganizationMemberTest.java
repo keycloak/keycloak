@@ -742,7 +742,7 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
     }
 
     private void loginViaNonOrgIdP(String idpAlias) {
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
 
         assertTrue(loginPage.isPasswordInputPresent());

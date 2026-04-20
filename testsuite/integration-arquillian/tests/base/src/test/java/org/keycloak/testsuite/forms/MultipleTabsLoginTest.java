@@ -120,7 +120,7 @@ public class MultipleTabsLoginTest extends AbstractChangeImportedUserPasswordsTe
         userId = AdminApiUtil.createUserAndResetPasswordWithAdminClient(testRealm(), user, generatePassword("login-test"), true);
         getCleanup().addUserId(userId);
 
-        oauth.clientId("test-app");
+        oauth.client("test-app", "password");
     }
 
     @Rule
@@ -593,7 +593,7 @@ public class MultipleTabsLoginTest extends AbstractChangeImportedUserPasswordsTe
        String tab1Url = driver.getCurrentUrl();
 
        // Go to tab2 and start login with different client "root-url-client"
-       oauth.clientId("root-url-client");
+       oauth.client("root-url-client", "password");
         oauth.redirectUri(redirectUri);
         oauth.openLoginForm();
         loginPage.assertCurrent();
@@ -685,7 +685,7 @@ public class MultipleTabsLoginTest extends AbstractChangeImportedUserPasswordsTe
             testRealm().clients().create(emptyBaseclient);
             getCleanup().addClientUuid(clientUuid);
 
-            oauth.clientId("empty-baseurl-client");
+            oauth.client("empty-baseurl-client", "password");
             oauth.openLoginForm();
             loginPage.assertCurrent();
 
@@ -814,7 +814,7 @@ public class MultipleTabsLoginTest extends AbstractChangeImportedUserPasswordsTe
             getLogger().info("URL in tab1: " + driver.getCurrentUrl());
 
             //open tab 2 with redirect uri 2 and different client
-            oauth.client("root-url-client");
+            oauth.client("root-url-client", "password");
             oauth.redirectUri(redirectUri2);
             tabUtil.newTab(oauth.loginForm().build());
             assertThat(tabUtil.getCountOfTabs(), Matchers.equalTo(2));
@@ -909,7 +909,7 @@ public class MultipleTabsLoginTest extends AbstractChangeImportedUserPasswordsTe
     public void testLogoutDifferentBrowserWithAuthenticationSessionStillPresent() throws Exception {
         try (BrowserTabUtil tabUtil = BrowserTabUtil.getInstanceAndSetEnv(driver)) {
             // start login with the test-app
-            oauth.client("test-app").openLoginForm();
+            oauth.client("test-app", "password").openLoginForm();
             String tab1WindowHandle = tabUtil.getActualWindowHandle();
             loginPage.assertCurrent();
 

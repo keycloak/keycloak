@@ -639,12 +639,12 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         TestOIDCEndpointsApplicationResource oidcClientEndpointsResource = testingClient.testApp().oidcClientEndpoints();
         oidcClientEndpointsResource.setOIDCRequest("test", "test-app", oauth.getRedirectUri(), "10", "some-state", "none");
         String request = oidcClientEndpointsResource.getOIDCRequest();
-        oauth.clientId(null);
+        oauth.client(null);
         oauth.loginForm().request(request).state("some-state").open();
         errorPage.assertCurrent();
 
         // Test that "response_type" mandatory in the query even if set in the "request" object
-        oauth.clientId("test-app");
+        oauth.client("test-app", "password");
         oauth.responseType(null);
         oauth.loginForm().request(request).state("some-state").open();
         appPage.assertCurrent();
@@ -653,13 +653,13 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         Assert.assertEquals("some-state", authorizationEndpointResponse.getState());
 
         // Test that different "client_id" in the query and in the request object is disallowed
-        oauth.clientId("test-app-scope");
+        oauth.client("test-app-scope");
         oauth.responseType(OAuth2Constants.CODE);
         oauth.loginForm().request(request).state("some-state").open();
         errorPage.assertCurrent();
 
         // Test that different "response_type" in the query and in the request object is disallowed
-        oauth.clientId("test-app");
+        oauth.client("test-app", "password");
         oauth.responseType(OAuth2Constants.CODE + " " + OAuth2Constants.ID_TOKEN);
         oauth.loginForm().request(request).state("some-state").open();
         appPage.assertCurrent();
@@ -675,7 +675,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         oidcRequest.put(OIDCLoginProtocol.STATE_PARAM, "request-state");
         String requestObjectString = new JWSBuilder().jsonContent(oidcRequest).none();
 
-        oauth.clientId("test-app");
+        oauth.client("test-app", "password");
         oauth.responseType(OAuth2Constants.CODE);
         AuthorizationEndpointResponse response1 = oauth.loginForm().request(requestObjectString).state("some-state").doLogin("test-user@localhost", "password");
         Assert.assertNotNull(response1.getCode());
@@ -1030,7 +1030,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
             setTimeOffset(20);
 
             oauth.realm("test");
-            oauth.clientId("test-app");
+            oauth.client("test-app", "password");
             String requestUri = TestApplicationResourceUrls.clientRequestUri();
             if (expectedAlgorithm == null || expectedAlgorithm.equals(actualAlgorithm)) {
                 // Check signed request_uri will pass

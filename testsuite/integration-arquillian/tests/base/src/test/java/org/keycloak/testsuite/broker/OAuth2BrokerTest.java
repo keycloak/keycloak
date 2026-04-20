@@ -65,7 +65,7 @@ public final class OAuth2BrokerTest extends AbstractAdvancedBrokerTest {
 
     @Test
     public void testLoginDefaultConfiguration() {
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
         logInWithBroker(bc);
 
@@ -93,7 +93,7 @@ public final class OAuth2BrokerTest extends AbstractAdvancedBrokerTest {
         broker.getConfig().put("fullNameClaim", "name-claim");
         brokerResource.update(broker);
 
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
         logInWithBroker(bc);
 

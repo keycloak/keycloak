@@ -246,7 +246,7 @@ public class MutualTLSClientTest extends AbstractTestRealmKeycloakTest {
       // Call protected endpoint with supplied client.
       try {
           oauth.httpClient().set(closeableHttpClient);
-          return oauth.clientId(clientId)
+          return oauth.client(clientId)
                   .doAccessTokenRequest(code);
       } finally {
           oauth.httpClient().reset();

@@ -57,7 +57,7 @@ public class KcOidcBrokerHiddenIdpHintTest extends AbstractInitializedBaseBroker
 
     @Test
     public void testSuccessfulRedirectToProviderHiddenOnLoginPage() {
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
 
         waitForPage(driver, "sign in to", true);

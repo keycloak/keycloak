@@ -102,7 +102,7 @@ public class KcOidcFirstBrokerLoginTest extends AbstractFirstBrokerLoginTest {
         // create a test user in the provider realm.
         createUser(bc.providerRealmName(), "brucewayne", BrokerTestConstants.USER_PASSWORD, "Bruce", "Wayne", "brucewayne@gotham.com");
 
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
         logInWithIdp(bc.getIDPAlias(), "brucewayne", BrokerTestConstants.USER_PASSWORD);
 
@@ -159,7 +159,7 @@ public class KcOidcFirstBrokerLoginTest extends AbstractFirstBrokerLoginTest {
         String username = "firstandlastname";
         createUser(bc.providerRealmName(), username, BrokerTestConstants.USER_PASSWORD, firstname, lastname, "firstnamelastname@example.org");
 
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
 
         logInWithIdp(bc.getIDPAlias(), username, BrokerTestConstants.USER_PASSWORD);
@@ -187,7 +187,7 @@ public class KcOidcFirstBrokerLoginTest extends AbstractFirstBrokerLoginTest {
             adminClient.realm(bc.providerRealmName()).clients().create(samlClient);
             consumerRealm.identityProviders().create(samlBroker);
 
-            oauth.clientId("broker-app");
+            oauth.client("broker-app");
             loginPage.open(bc.consumerRealmName());
 
             logInWithBroker(samlBrokerConfig);
@@ -195,7 +195,7 @@ public class KcOidcFirstBrokerLoginTest extends AbstractFirstBrokerLoginTest {
             AccountHelper.logout(adminClient.realm(bc.consumerRealmName()), bc.getUserLogin());
             AccountHelper.logout(adminClient.realm(bc.providerRealmName()), bc.getUserLogin());
 
-            oauth.clientId("broker-app");
+            oauth.client("broker-app");
             loginPage.open(bc.consumerRealmName());
 
             logInWithBroker(bc);
@@ -244,7 +244,7 @@ public class KcOidcFirstBrokerLoginTest extends AbstractFirstBrokerLoginTest {
             consumerRealm.identityProviders().create(samlBroker);
             consumerRealm.identityProviders().create(oidcBroker);
 
-            oauth.clientId("broker-app");
+            oauth.client("broker-app");
             loginPage.open(bc.consumerRealmName());
 
             logInWithBroker(samlBrokerConfig);
@@ -252,7 +252,7 @@ public class KcOidcFirstBrokerLoginTest extends AbstractFirstBrokerLoginTest {
             AccountHelper.logout(adminClient.realm(bc.consumerRealmName()), bc.getUserLogin());
             AccountHelper.logout(adminClient.realm(bc.providerRealmName()), bc.getUserLogin());
 
-            oauth.clientId("broker-app");
+            oauth.client("broker-app");
             loginPage.open(bc.consumerRealmName());
 
             logInWithBroker(bc);
@@ -301,7 +301,7 @@ public class KcOidcFirstBrokerLoginTest extends AbstractFirstBrokerLoginTest {
             adminClient.realm(bc.providerRealmName()).clients().create(samlClient);
             consumerRealm.identityProviders().create(samlBroker);
 
-            oauth.clientId("broker-app");
+            oauth.client("broker-app");
             loginPage.open(bc.consumerRealmName());
 
             createUser(bc.getUserLogin());
@@ -347,7 +347,7 @@ public class KcOidcFirstBrokerLoginTest extends AbstractFirstBrokerLoginTest {
             adminClient.realm(bc.providerRealmName()).clients().create(samlClient);
             consumerRealm.identityProviders().create(samlBroker);
 
-            oauth.clientId("broker-app");
+            oauth.client("broker-app");
             loginPage.open(bc.consumerRealmName());
 
             logInWithBroker(samlBrokerConfig);
@@ -356,7 +356,7 @@ public class KcOidcFirstBrokerLoginTest extends AbstractFirstBrokerLoginTest {
             AccountHelper.logout(adminClient.realm(bc.consumerRealmName()), bc.getUserLogin());
             AccountHelper.logout(adminClient.realm(bc.providerRealmName()), bc.getUserLogin());
 
-            oauth.clientId("broker-app");
+            oauth.client("broker-app");
             loginPage.open(bc.consumerRealmName());
 
             logInWithBroker(bc);
@@ -383,7 +383,7 @@ public class KcOidcFirstBrokerLoginTest extends AbstractFirstBrokerLoginTest {
         createUser(bc.providerRealmName(), "no-first-name", "password", null,
                 "LastName", "no-first-name@localhost.com");
 
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
 
         log.debug("Clicking social " + bc.getIDPAlias());
@@ -421,7 +421,7 @@ public class KcOidcFirstBrokerLoginTest extends AbstractFirstBrokerLoginTest {
 
         createUser(bc.providerRealmName(), "idp-cancel-test", "password", "IDP", "Cancel", "idp-cancel@localhost.com");
 
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
 
         loginPage.clickRegister();
@@ -462,7 +462,7 @@ public class KcOidcFirstBrokerLoginTest extends AbstractFirstBrokerLoginTest {
                 + "{\"name\": \"department\", \"displayName\" : \"Department\", " + PERMISSIONS_ALL + ", \"required\":{}}"
                 + "]}");
 
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
 
         logInWithBroker(bc);
@@ -495,7 +495,7 @@ public class KcOidcFirstBrokerLoginTest extends AbstractFirstBrokerLoginTest {
                 + "{\"name\": \"contact\" }"
                 + "]}");
 
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
 
         logInWithBroker(bc);
@@ -536,7 +536,7 @@ public class KcOidcFirstBrokerLoginTest extends AbstractFirstBrokerLoginTest {
                 + "{\"name\": \"email\", " + UserProfileUtil.PERMISSIONS_ALL + "}"
                 + "]}");
 
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
 
         logInWithBroker(bc);
@@ -562,7 +562,7 @@ public class KcOidcFirstBrokerLoginTest extends AbstractFirstBrokerLoginTest {
                 + RegisterWithUserProfileTest.UP_CONFIG_PART_INPUT_TYPES
                 + "]}");
 
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
 
         logInWithBroker(bc);
@@ -584,7 +584,7 @@ public class KcOidcFirstBrokerLoginTest extends AbstractFirstBrokerLoginTest {
                 + "{\"name\": \"department\", " + PERMISSIONS_ADMIN_EDITABLE + ", \"required\":{}}"
                 + "]}");
 
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
 
         logInWithBroker(bc);
@@ -603,7 +603,7 @@ public class KcOidcFirstBrokerLoginTest extends AbstractFirstBrokerLoginTest {
                 + "{\"name\": \"department\", " + PERMISSIONS_ALL + ", \"required\":{}, \"selector\":{\"scopes\":[\"department\"]}}"
                 + "]}");
 
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
 
         logInWithBroker(bc);
@@ -621,7 +621,7 @@ public class KcOidcFirstBrokerLoginTest extends AbstractFirstBrokerLoginTest {
                 + "{\"name\": \"department\", " + PERMISSIONS_ALL + ", \"required\":{}, \"selector\":{\"scopes\":[\"profile\"]}}"
                 + "]}");
 
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
 
         logInWithBroker(bc);
@@ -641,7 +641,7 @@ public class KcOidcFirstBrokerLoginTest extends AbstractFirstBrokerLoginTest {
                 + "{\"name\": \"department\", " + PERMISSIONS_ADMIN_EDITABLE + ", \"required\":{}}"
                 + "]}");
 
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
 
         logInWithBroker(bc);
@@ -665,7 +665,7 @@ public class KcOidcFirstBrokerLoginTest extends AbstractFirstBrokerLoginTest {
                 + "{\"name\": \"department\"," + PERMISSIONS_ALL + ", \"required\":{}, \"selector\":{\"scopes\":[\"profile\"]}}"
                 + "]}");
 
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
 
         logInWithBroker(bc);
@@ -697,7 +697,7 @@ public class KcOidcFirstBrokerLoginTest extends AbstractFirstBrokerLoginTest {
                 + "{\"name\": \"department\"," + PERMISSIONS_ALL + ", \"selector\":{\"scopes\":[\"profile\"]}}"
                 + "]}");
 
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
 
         logInWithBroker(bc);
@@ -726,7 +726,7 @@ public class KcOidcFirstBrokerLoginTest extends AbstractFirstBrokerLoginTest {
                 + "{\"name\": \"department\"," + PERMISSIONS_ALL + ", \"selector\":{\"scopes\":[\"profile\"]}}"
                 + "]}");
 
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
 
         logInWithBroker(bc);
@@ -756,7 +756,7 @@ public class KcOidcFirstBrokerLoginTest extends AbstractFirstBrokerLoginTest {
                 + "{\"name\": \"department\"," + PERMISSIONS_ALL + ", \"required\":{}, \"selector\":{\"scopes\":[\"department\"]}}"
                 + "]}");
 
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
 
         logInWithBroker(bc);
@@ -783,7 +783,7 @@ public class KcOidcFirstBrokerLoginTest extends AbstractFirstBrokerLoginTest {
         idp.update(representation);
         createUser(bc.providerRealmName(), expectedBrokeredUserName, BrokerTestConstants.USER_PASSWORD, "f", "l", "fl@example.org");
 
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
         // the username is stored as lower-case in the provider realm local database
         logInWithIdp(bc.getIDPAlias(), expectedBrokeredUserName.toLowerCase(), BrokerTestConstants.USER_PASSWORD);
@@ -809,7 +809,7 @@ public class KcOidcFirstBrokerLoginTest extends AbstractFirstBrokerLoginTest {
         idp.update(representation);
         createUser(bc.providerRealmName(), expectedBrokeredUserName, BrokerTestConstants.USER_PASSWORD, "f", "l", "fl@example.org");
 
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
         // the username is stored as lower-case in the provider realm local database
         logInWithIdp(bc.getIDPAlias(), expectedBrokeredUserName.toLowerCase(), BrokerTestConstants.USER_PASSWORD);
@@ -854,7 +854,7 @@ public class KcOidcFirstBrokerLoginTest extends AbstractFirstBrokerLoginTest {
         realm.users().create(brokerUser).close();
 
         // link the account
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         oauth.realm(bc.consumerRealmName());
         oauth.openLoginForm();
         logInWithBroker(bc);
@@ -902,7 +902,7 @@ public class KcOidcFirstBrokerLoginTest extends AbstractFirstBrokerLoginTest {
                 + "]}";
         setUserProfileConfiguration(userProfileConfig);
 
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
 
         logInWithBroker(bc);

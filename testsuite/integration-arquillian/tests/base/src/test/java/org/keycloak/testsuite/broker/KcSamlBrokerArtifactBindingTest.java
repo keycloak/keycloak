@@ -156,7 +156,7 @@ public final class KcSamlBrokerArtifactBindingTest extends AbstractInitializedBa
 
     private void login(boolean success) {
         // login using artifact binding
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
         logInWithBroker(bc);
 

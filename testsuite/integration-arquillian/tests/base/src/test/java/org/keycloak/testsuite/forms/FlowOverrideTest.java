@@ -201,7 +201,7 @@ public class FlowOverrideTest extends AbstractFlowTest {
 
     @Test
     public void testWithClientBrowserOverride() throws Exception {
-        oauth.clientId(TEST_APP_FLOW);
+        oauth.client(TEST_APP_FLOW);
         oauth.openLoginForm();
 
         Assert.assertEquals("PushTheButton", driver.getTitle());
@@ -239,7 +239,7 @@ public class FlowOverrideTest extends AbstractFlowTest {
     }
 
     private void testNoOverrideBrowser(String clientId) {
-        oauth.clientId(clientId);
+        oauth.client(clientId);
         oauth.openLoginForm();
 
         loginPage.assertCurrent();

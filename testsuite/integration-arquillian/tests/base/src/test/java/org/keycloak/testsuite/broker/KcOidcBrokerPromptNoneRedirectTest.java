@@ -71,7 +71,7 @@ public class KcOidcBrokerPromptNoneRedirectTest extends AbstractInitializedBaseB
         /* now send an auth request to the consumer realm including both the kc_idp_hint (to identify the default provider) and prompt=none.
            The presence of the default provider should cause the request with prompt=none to be propagated to the idp instead of resulting
            in a login required error because the user is not yet authenticated in the consumer realm. */
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
 
         waitForPage(driver, "sign in to", true);
@@ -88,7 +88,7 @@ public class KcOidcBrokerPromptNoneRedirectTest extends AbstractInitializedBaseB
         AccountHelper.logout(adminClient.realm(bc.consumerRealmName()), bc.getUserLogin());
         AccountHelper.logout(adminClient.realm(bc.providerRealmName()), bc.getUserLogin());
 
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
         waitForPage(driver, "sign in to", true);
         url = driver.getCurrentUrl() + "&prompt=none";
@@ -107,7 +107,7 @@ public class KcOidcBrokerPromptNoneRedirectTest extends AbstractInitializedBaseB
         /* try sending an auth request to the consumer realm with prompt=none. As we have no user authenticated in both
            the consumer realm and the IDP, the IDP should return an error=login_required to the broker and the broker must
            in turn return the same error to the client. */
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
         waitForPage(driver, "sign in to", true);
         String url = driver.getCurrentUrl() + "&prompt=none&kc_idp_hint=" + bc.getIDPAlias();
@@ -210,7 +210,7 @@ public class KcOidcBrokerPromptNoneRedirectTest extends AbstractInitializedBaseB
         authenticateDirectlyInIDP();
 
         /* send an auth request to the consumer realm with prompt=none and a default provider. */
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
 
         waitForPage(driver, "sign in to", true);
@@ -223,7 +223,7 @@ public class KcOidcBrokerPromptNoneRedirectTest extends AbstractInitializedBaseB
      * Authenticates the broker user directly in the IDP to establish a valid authenticated session there.
      */
     protected void authenticateDirectlyInIDP() {
-        oauth.clientId("account");
+        oauth.client("account");
         oauth.redirectUri(getAccountUrl(getProviderRoot(), bc.providerRealmName()));
         loginPage.open(bc.providerRealmName());
 

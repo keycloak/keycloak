@@ -228,14 +228,14 @@ public abstract class AbstractBaseBrokerTest extends AbstractKeycloakTest {
     }
 
     protected void logInAsUserInIDP(String clientId) {
-        oauth.clientId(clientId);
+        oauth.client(clientId);
         loginPage.open(bc.consumerRealmName());
         logInWithBroker(bc);
     }
 
     // We are re-authenticating to the IDP. Hence it is assumed that "username" field is not visible on the login form on the IDP side
     protected void logInAsUserInIDPWithReAuthenticate() {
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
 
         waitForPage(driver, "sign in to", true);

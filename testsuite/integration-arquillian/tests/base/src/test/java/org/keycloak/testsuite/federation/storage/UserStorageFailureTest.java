@@ -252,7 +252,7 @@ public class UserStorageFailureTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     public void testKeycloak5926() {
-        oauth.clientId("test-app");
+        oauth.client("test-app", "password");
         oauth.redirectUri(OAuthClient.APP_AUTH_ROOT);
 
         // make sure local copy is deleted

@@ -407,7 +407,7 @@ public class OID4VCIssuerEndpointEncryptionTest extends OID4VCIssuerEndpointTest
                     authDetail.setCredentialConfigurationId(credConfigId);
                     authDetail.setLocations(List.of(credentialIssuer.getCredentialIssuer()));
 
-                    oauth.clientId(testClientId).openid(false).scope(scopeName);
+                    oauth.client(testClientId).openid(false).scope(scopeName);
                     String authCode = getAuthorizationCode(oauth, client, "john", scopeName);
                     AccessTokenResponse tokenResponse = getBearerToken(oauth, authCode, authDetail);
                     return tokenResponse.getAccessToken();

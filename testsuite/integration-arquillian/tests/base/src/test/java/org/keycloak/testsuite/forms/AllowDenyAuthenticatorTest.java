@@ -340,7 +340,7 @@ public class AllowDenyAuthenticatorTest extends AbstractChangeImportedUserPasswo
         configureDirectGrantFlowWithDenyAccess(flowAlias, new HashMap<>());
 
         try {
-            oauth.clientId(clientId);
+            oauth.client(clientId, "password");
             AccessTokenResponse response = oauth.doPasswordGrantRequest(user, getPassword("test-user@localhost"));
             assertEquals(401, response.getStatusCode());
             assertEquals("Access denied", response.getError());

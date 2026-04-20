@@ -101,7 +101,7 @@ public class KcOidcFirstBrokerLoginDetectExistingUserTest extends AbstractInitia
         String username = "firstandlastname";
         createUser(bc.providerRealmName(), username, BrokerTestConstants.USER_PASSWORD, firstname, lastname, "firstnamelastname@example.org");
 
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
 
         logInWithIdp(bc.getIDPAlias(), username, BrokerTestConstants.USER_PASSWORD);
@@ -122,7 +122,7 @@ public class KcOidcFirstBrokerLoginDetectExistingUserTest extends AbstractInitia
         createUser(bc.providerRealmName(), username, BrokerTestConstants.USER_PASSWORD, firstname, lastname, email);
         createUser(bc.consumerRealmName(), username, "THIS PASSWORD IS USELESS", null, null, email);
 
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
 
         logInWithIdp(bc.getIDPAlias(), username, BrokerTestConstants.USER_PASSWORD);

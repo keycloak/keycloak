@@ -85,7 +85,7 @@ public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
     public void testEmptyUserNameValidation() {
         createOrganization();
 
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
         Assert.assertFalse(loginPage.isPasswordInputPresent());
         loginPage.loginUsername("");
@@ -110,7 +110,7 @@ public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
         UserRepresentation member = addMember(organization, "contractor@contractor.org");
 
         // first try to access login page
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
         Assert.assertFalse(loginPage.isPasswordInputPresent());
         Assert.assertFalse(loginPage.isSocialButtonPresent(bc.getIDPAlias()));
@@ -141,7 +141,7 @@ public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
         OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
         UserRepresentation member = addMember(organization);
 
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
         loginPage.loginUsername(member.getEmail());
         loginPage.login(memberPassword);
@@ -171,7 +171,7 @@ public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
             OrganizationResource organization = testRealm().organizations().get(org.getId());
             UserRepresentation member = addMember(organization);
             organization.members().member(member.getId()).delete().close();
-            oauth.clientId("broker-app");
+            oauth.client("broker-app");
             loginPage.open(bc.consumerRealmName());
             loginPage.loginUsername(member.getEmail());
             // user is not a member of any organization
@@ -179,7 +179,7 @@ public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
 
             organization.members().addMember(member.getId()).close();
             OrganizationRepresentation orgB = createOrganization("org-b");
-            oauth.clientId("broker-app");
+            oauth.client("broker-app");
             oauth.scope("organization:org-b");
             loginPage.open(bc.consumerRealmName());
             loginPage.loginUsername(member.getEmail());
@@ -188,7 +188,7 @@ public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
             errorPage.assertTryAnotherWayLinkAvailability(false);
 
             organization.members().member(member.getId()).delete().close();
-            oauth.clientId("broker-app");
+            oauth.client("broker-app");
             oauth.scope("organization:*");
             loginPage.open(bc.consumerRealmName());
             loginPage.loginUsername(member.getEmail());
@@ -197,7 +197,7 @@ public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
 
             organization.members().addMember(member.getId()).close();
             testRealm().organizations().get(orgB.getId()).members().addMember(member.getId()).close();
-            oauth.clientId("broker-app");
+            oauth.client("broker-app");
             oauth.scope("organization");
             loginPage.open(bc.consumerRealmName());
             loginPage.loginUsername(member.getEmail());
@@ -218,7 +218,7 @@ public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
         UserRepresentation member = addMember(organizationResource);
 
         // login hint populates the username field
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         String expectedUsername = URLEncoder.encode(member.getEmail(), StandardCharsets.UTF_8);
         oauth.realm(bc.consumerRealmName());
         oauth.loginForm().loginHint(expectedUsername).open();
@@ -252,7 +252,7 @@ public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
         }
 
         // user with a unique username can authenticate to his account using a unique username
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         oauth.realm(bc.consumerRealmName());
         oauth.loginForm().open();
         loginPage.loginUsername(member.getUsername());
