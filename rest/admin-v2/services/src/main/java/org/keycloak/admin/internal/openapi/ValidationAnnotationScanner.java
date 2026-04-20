@@ -236,16 +236,24 @@ public class ValidationAnnotationScanner {
     }
 
     private String getDefaultMessage(DotName annotationName) {
+        String defaultMessage = getDefault(annotationName, "message").asString();
+        if (defaultMessage != null) {
+            return defaultMessage;
+        }
+
+        throw new IllegalStateException("Missing message value for " + annotationName);
+    }
+
+    private AnnotationValue getDefault(DotName annotationName, String fieldName) {
         // Try to get the default value from the annotation class definition
         ClassInfo annotationClass = indexView.getClassByName(annotationName);
         if (annotationClass != null) {
-            var messageMethod = annotationClass.method("message");
+            var messageMethod = annotationClass.method(fieldName);
             if (messageMethod != null && messageMethod.defaultValue() != null) {
-                return messageMethod.defaultValue().asString();
+                return messageMethod.defaultValue();
             }
         }
-        // Fall back to standard message key format
-        return "{" + annotationName.toString() + ".message}";
+        return null;
     }
 
     /**
@@ -271,22 +279,17 @@ public class ValidationAnnotationScanner {
             }
 
             String context = getGroupContext(annotation);
-            AnnotationValue messageValue = annotation.value("message");
-            String messageTemplate = messageValue != null ? messageValue.asString() : getDefaultMessage(annotation.name());
-            String message = resolveMessage(messageTemplate, annotation);
-
-            if (message == null) {
-                message = annotation.name().withoutPackagePrefix();
-            }
+            String message = buildConstraintDescription(annotation);
 
             AnnotationValue affectedField = annotation.value("affectedFieldNames");
-            String affectedFieldName = annotation.name().withoutPackagePrefix();
-            if (affectedField != null) {
-                for (String affected : affectedField.asStringArray()) {
-                    fieldDescriptions.put(affected, context + message);
-                }
-            } else {
-                fieldDescriptions.put(affectedFieldName, context + message);
+            String[] affectedFields = affectedField != null ? affectedField.asStringArray() : getDefault(annotation.name(), "affectedFieldNames").asStringArray();
+
+            if (affectedFields == null) {
+                throw new IllegalStateException("Missing affectedFieldNames value for " + annotation.name());
+            }
+
+            for (String affected : affectedFields) {
+                fieldDescriptions.put(affected, context + message);
             }
         }
 
