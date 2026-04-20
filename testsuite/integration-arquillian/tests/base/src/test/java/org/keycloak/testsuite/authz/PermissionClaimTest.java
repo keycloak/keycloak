@@ -245,7 +245,7 @@ public class PermissionClaimTest extends AbstractAuthzTest {
         updatePermission.addPolicy(claimCPolicy.getName());
 
         try (Response response = authorization.permissions().scope().create(updatePermission)) {
-            updatePermission = response.readEntity(ScopePermissionRepresentation.class);
+            updatePermission.setId(response.readEntity(ScopePermissionRepresentation.class).getId());
         }
 
         AuthzClient authzClient = getAuthzClient();
@@ -320,7 +320,7 @@ public class PermissionClaimTest extends AbstractAuthzTest {
         updatePermission.addPolicy(claimCPolicy.getName());
 
         try (Response response = authorization.permissions().resource().create(updatePermission)) {
-            updatePermission = response.readEntity(ResourcePermissionRepresentation.class);
+            updatePermission.setId(response.readEntity(ResourcePermissionRepresentation.class).getId());
         }
 
         AuthzClient authzClient = getAuthzClient();
@@ -381,7 +381,7 @@ public class PermissionClaimTest extends AbstractAuthzTest {
         resourceInstancePermission.addPolicy(claimCPolicy.getName());
 
         try (Response response1 = authorization.permissions().resource().create(resourceInstancePermission)) {
-            resourceInstancePermission = response1.readEntity(ResourcePermissionRepresentation.class);
+            resourceInstancePermission.setId(response1.readEntity(ResourcePermissionRepresentation.class).getId());
         }
 
         response = authzClient.authorization("marta", "password").authorize(request);

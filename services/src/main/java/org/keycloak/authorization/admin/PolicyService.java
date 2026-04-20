@@ -127,14 +127,13 @@ public class PolicyService {
             this.auth.realm().requireManageAuthorization(resourceServer);
         }
 
-        AbstractPolicyRepresentation representation = doCreateRepresentation(payload);
-        Policy policy = create(representation);
+        AbstractPolicyRepresentation requestRepresentation = doCreateRepresentation(payload);
+        Policy policy = create(requestRepresentation);
+        AbstractPolicyRepresentation createdRepresentation = toRepresentation(policy, null, authorization);
 
-        representation.setId(policy.getId());
+        audit(createdRepresentation, createdRepresentation.getId(), OperationType.CREATE, authorization.getKeycloakSession());
 
-        audit(representation, representation.getId(), OperationType.CREATE, authorization.getKeycloakSession());
-
-        return Response.status(Status.CREATED).entity(representation).build();
+        return Response.status(Status.CREATED).entity(createdRepresentation).build();
     }
 
     protected AbstractPolicyRepresentation doCreateRepresentation(String payload) {

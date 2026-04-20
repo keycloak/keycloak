@@ -31,6 +31,7 @@ import org.keycloak.representations.idm.authorization.ResourcePermissionRepresen
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 
 /**
@@ -158,6 +159,9 @@ public class ResourcePermissionManagementTest extends AbstractPolicyManagementTe
         ResourcePermissionsResource permissions = authorization.permissions().resource();
         try (Response response = permissions.create(representation)) {
             ResourcePermissionRepresentation created = response.readEntity(ResourcePermissionRepresentation.class);
+            assertNull(created.getResources());
+            assertNull(created.getScopes());
+            assertNull(created.getPolicies());
             ResourcePermissionResource permission = permissions.findById(created.getId());
             assertRepresentation(representation, permission);
         }
