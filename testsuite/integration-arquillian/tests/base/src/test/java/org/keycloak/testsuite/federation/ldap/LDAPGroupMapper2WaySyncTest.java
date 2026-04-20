@@ -81,6 +81,13 @@ public class LDAPGroupMapper2WaySyncTest extends AbstractLDAPTest {
 
             // Add some groups for testing into Keycloak
             removeAllModelGroups(appRealm);
+        });
+
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            RealmModel appRealm = ctx.getRealm();
+
+            String descriptionAttrName = LDAPTestUtils.getGroupDescriptionLDAPAttrName(ctx.getLdapProvider());
 
             GroupModel group1 = appRealm.createGroup("group1");
             group1.setSingleAttribute(descriptionAttrName, "group1 - description1");
@@ -118,11 +125,20 @@ public class LDAPGroupMapper2WaySyncTest extends AbstractLDAPTest {
             LDAPTestContext ctx = LDAPTestContext.init(session);
             RealmModel realm = ctx.getRealm();
 
+            // Switch to IMPORT mode to prevent LDAP deletion during KC group cleanup
+            ComponentModel mapperModel = LDAPTestUtils.getSubcomponentByName(realm, ctx.getLdapModel(), "groupsMapper");
+            LDAPTestUtils.updateConfigOptions(mapperModel, GroupMapperConfig.MODE, LDAPGroupMapperMode.IMPORT.toString());
+            realm.updateComponent(mapperModel);
+
             // Delete all KC groups now
             removeAllModelGroups(realm);
             Assert.assertNull(KeycloakModelUtils.findGroupByPath(session, realm, "/group1"));
             Assert.assertNull(KeycloakModelUtils.findGroupByPath(session, realm, "/group11"));
             Assert.assertNull(KeycloakModelUtils.findGroupByPath(session, realm, "/group2"));
+
+            // Restore LDAP_ONLY mode
+            LDAPTestUtils.updateConfigOptions(mapperModel, GroupMapperConfig.MODE, LDAPGroupMapperMode.LDAP_ONLY.toString());
+            realm.updateComponent(mapperModel);
         });
 
 
@@ -186,11 +202,20 @@ public class LDAPGroupMapper2WaySyncTest extends AbstractLDAPTest {
             LDAPTestContext ctx = LDAPTestContext.init(session);
             RealmModel realm = ctx.getRealm();
 
+            // Switch to IMPORT mode to prevent LDAP deletion during KC group cleanup
+            ComponentModel mapperModel = LDAPTestUtils.getSubcomponentByName(realm, ctx.getLdapModel(), "groupsMapper");
+            LDAPTestUtils.updateConfigOptions(mapperModel, GroupMapperConfig.MODE, LDAPGroupMapperMode.IMPORT.toString());
+            realm.updateComponent(mapperModel);
+
             // Delete all KC groups now
             removeAllModelGroups(realm);
             Assert.assertNull(KeycloakModelUtils.findGroupByPath(session, realm, "/group1"));
             Assert.assertNull(KeycloakModelUtils.findGroupByPath(session, realm, "/group11"));
             Assert.assertNull(KeycloakModelUtils.findGroupByPath(session, realm, "/group2"));
+
+            // Restore LDAP_ONLY mode
+            LDAPTestUtils.updateConfigOptions(mapperModel, GroupMapperConfig.MODE, LDAPGroupMapperMode.LDAP_ONLY.toString());
+            realm.updateComponent(mapperModel);
         });
 
 
@@ -225,6 +250,91 @@ public class LDAPGroupMapper2WaySyncTest extends AbstractLDAPTest {
         });
     }
 
+
+    @Test
+    public void test03_deleteGroupPropagatesToLDAP() throws Exception {
+        // First sync KC groups to LDAP
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            RealmModel realm = ctx.getRealm();
+
+            ComponentModel mapperModel = LDAPTestUtils.getSubcomponentByName(realm, ctx.getLdapModel(), "groupsMapper");
+            LDAPTestUtils.updateConfigOptions(mapperModel, GroupMapperConfig.PRESERVE_GROUP_INHERITANCE, "false");
+            realm.updateComponent(mapperModel);
+
+            // Sync from Keycloak into LDAP
+            SynchronizationResult syncResult = new GroupLDAPStorageMapperFactory().create(session, mapperModel).syncDataFromKeycloakToFederationProvider(realm);
+            LDAPTestAsserts.assertSyncEquals(syncResult, 4, 0, 0, 0);
+        });
+
+        // Verify groups exist in LDAP, then delete one from KC and verify it's gone from LDAP
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            RealmModel realm = ctx.getRealm();
+
+            ComponentModel mapperModel = LDAPTestUtils.getSubcomponentByName(realm, ctx.getLdapModel(), "groupsMapper");
+            LDAPStorageProvider ldapProvider = LDAPTestUtils.getLdapProvider(session, ctx.getLdapModel());
+
+            // Verify groups exist in LDAP
+            Assert.assertNotNull(LDAPTestUtils.getGroupMapper(mapperModel, ldapProvider, realm).loadLDAPGroupByName("group1"));
+            Assert.assertNotNull(LDAPTestUtils.getGroupMapper(mapperModel, ldapProvider, realm).loadLDAPGroupByName("group2"));
+
+            // Delete group2 from KC
+            GroupModel kcGroup2 = KeycloakModelUtils.findGroupByPath(session, realm, "/group2");
+            Assert.assertNotNull(kcGroup2);
+            realm.removeGroup(kcGroup2);
+
+            // Verify group2 is gone from LDAP
+            Assert.assertNull(LDAPTestUtils.getGroupMapper(mapperModel, ldapProvider, realm).loadLDAPGroupByName("group2"));
+
+            // Verify remaining groups still exist in LDAP
+            Assert.assertNotNull(LDAPTestUtils.getGroupMapper(mapperModel, ldapProvider, realm).loadLDAPGroupByName("group1"));
+            Assert.assertNotNull(LDAPTestUtils.getGroupMapper(mapperModel, ldapProvider, realm).loadLDAPGroupByName("group11"));
+            Assert.assertNotNull(LDAPTestUtils.getGroupMapper(mapperModel, ldapProvider, realm).loadLDAPGroupByName("group12"));
+        });
+    }
+
+    @Test
+    public void test04_deleteGroupInReadOnlyModeDoesNotPropagateToLDAP() throws Exception {
+        // First sync KC groups to LDAP in LDAP_ONLY mode
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            RealmModel realm = ctx.getRealm();
+
+            ComponentModel mapperModel = LDAPTestUtils.getSubcomponentByName(realm, ctx.getLdapModel(), "groupsMapper");
+            LDAPTestUtils.updateConfigOptions(mapperModel, GroupMapperConfig.PRESERVE_GROUP_INHERITANCE, "false");
+            realm.updateComponent(mapperModel);
+
+            // Sync from Keycloak into LDAP
+            SynchronizationResult syncResult = new GroupLDAPStorageMapperFactory().create(session, mapperModel).syncDataFromKeycloakToFederationProvider(realm);
+            LDAPTestAsserts.assertSyncEquals(syncResult, 4, 0, 0, 0);
+        });
+
+        // Switch to READ_ONLY mode, delete a group from KC, verify it still exists in LDAP
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            RealmModel realm = ctx.getRealm();
+
+            String descriptionAttrName = LDAPTestUtils.getGroupDescriptionLDAPAttrName(ctx.getLdapProvider());
+
+            // Switch mapper to READ_ONLY
+            LDAPTestUtils.addOrUpdateGroupMapper(realm, ctx.getLdapModel(), LDAPGroupMapperMode.READ_ONLY, descriptionAttrName);
+
+            ComponentModel mapperModel = LDAPTestUtils.getSubcomponentByName(realm, ctx.getLdapModel(), "groupsMapper");
+            LDAPStorageProvider ldapProvider = LDAPTestUtils.getLdapProvider(session, ctx.getLdapModel());
+
+            // Verify group2 exists in LDAP
+            Assert.assertNotNull(LDAPTestUtils.getGroupMapper(mapperModel, ldapProvider, realm).loadLDAPGroupByName("group2"));
+
+            // Delete group2 from KC
+            GroupModel kcGroup2 = KeycloakModelUtils.findGroupByPath(session, realm, "/group2");
+            Assert.assertNotNull(kcGroup2);
+            realm.removeGroup(kcGroup2);
+
+            // Verify group2 still exists in LDAP (READ_ONLY mode should not propagate deletion)
+            Assert.assertNotNull(LDAPTestUtils.getGroupMapper(mapperModel, ldapProvider, realm).loadLDAPGroupByName("group2"));
+        });
+    }
 
     private static void removeAllModelGroups(RealmModel appRealm) {
         appRealm.getTopLevelGroupsStream().forEach(appRealm::removeGroup);

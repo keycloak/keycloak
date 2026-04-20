@@ -94,12 +94,25 @@ public class LDAPGroupMapperSyncWithGroupsPathTest extends AbstractLDAPTest {
             LDAPTestContext ctx = LDAPTestContext.init(session);
             RealmModel realm = ctx.getRealm();
 
+            // Remove all LDAP groups first so preRemove finds nothing in LDAP
+            LDAPTestUtils.removeAllLDAPGroups(session, realm, ctx.getLdapModel(), "groupsMapper");
+
             GroupModel groupsPathGroup = KeycloakModelUtils.findGroupByPath(session, realm, LDAP_GROUPS_PATH);
-            
+
             // Subgroup stream needs to be collected, because otherwise we can end up with finding group with id that is
             // already removed
             groupsPathGroup.getSubGroupsStream().collect(Collectors.toSet())
                     .forEach(realm::removeGroup);
+
+            // Recreate LDAP groups for testing
+            String descriptionAttrName = LDAPTestUtils.getGroupDescriptionLDAPAttrName(ctx.getLdapProvider());
+
+            LDAPObject group1 = LDAPTestUtils.createLDAPGroup(session, realm, ctx.getLdapModel(), "group1", descriptionAttrName, "group1 - description");
+            LDAPObject group11 = LDAPTestUtils.createLDAPGroup(session, realm, ctx.getLdapModel(), "group11");
+            LDAPObject group12 = LDAPTestUtils.createLDAPGroup(session, realm, ctx.getLdapModel(), "group12", descriptionAttrName, "group12 - description");
+
+            LDAPUtils.addMember(ctx.getLdapProvider(), MembershipType.DN, LDAPConstants.MEMBER, "not-used", group1, group11);
+            LDAPUtils.addMember(ctx.getLdapProvider(), MembershipType.DN, LDAPConstants.MEMBER, "not-used", group1, group12);
         });
     }
 

@@ -622,6 +622,27 @@ public class GroupLDAPStorageMapper extends AbstractLDAPStorageMapper implements
         LDAPUtils.addMember(ldapProvider, config.getMembershipTypeLdapAttribute(), config.getMembershipLdapAttribute(), membershipUserLdapAttrName, ldapGroup, ldapUser);
     }
 
+    public void deleteGroupFromLDAP(RealmModel realm, GroupModel group) {
+        if (config.getMode() != LDAPGroupMapperMode.LDAP_ONLY) {
+            return;
+        }
+
+        if (!isGroupInGroupPath(realm, group)) {
+            return;
+        }
+
+        String groupName = group.getName();
+        LDAPObject ldapGroup = loadLDAPGroupByName(groupName);
+
+        if (ldapGroup == null) {
+            logger.debugf("Group '%s' not found in LDAP. Skipping LDAP deletion.", groupName);
+            return;
+        }
+
+        logger.debugf("Deleting group '%s' from LDAP (DN: %s)", groupName, ldapGroup.getDn());
+        ldapProvider.getLdapIdentityStore().remove(ldapGroup);
+    }
+
     public void deleteGroupMappingInLDAP(LDAPObject ldapUser, LDAPObject ldapGroup) {
         String membershipUserLdapAttrName = getMembershipUserLdapAttribute();
         LDAPUtils.deleteMember(ldapProvider, config.getMembershipTypeLdapAttribute(), config.getMembershipLdapAttribute(), membershipUserLdapAttrName, ldapGroup, ldapUser);
