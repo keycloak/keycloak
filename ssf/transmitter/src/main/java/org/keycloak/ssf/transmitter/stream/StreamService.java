@@ -203,7 +203,23 @@ public class StreamService {
             scheduleTransmitterInitiatedAsyncStreamVerification(streamConfig, streamVerificationConfig, session);
         }
 
-        return streamConfig;
+        return resolveStreamForResponse(streamConfig);
+    }
+
+    /**
+     * Reads the stream back through the store so the response carries
+     * the overlays that {@code applyReceiverAttributeOverlays} layers
+     * on top of the persisted per-stream state — e.g. the client-level
+     * {@code ssf.minVerificationInterval} override, {@code ssf.inactivityTimeoutSeconds},
+     * and the signature-algorithm / user-subject-format attributes.
+     * The in-memory draft we just saved does not carry those; without
+     * this re-read the receiver's POST/PATCH/PUT response would show
+     * the transmitter defaults even when the admin has pinned different
+     * values on the receiver client.
+     */
+    protected StreamConfig resolveStreamForResponse(StreamConfig savedDraft) {
+        StreamConfig resolved = streamStore.getStream(savedDraft.getStreamId());
+        return resolved != null ? resolved : savedDraft;
     }
 
     /**
@@ -662,7 +678,7 @@ public class StreamService {
         log.debugf("Stream updated. realm=%s client=%s streamId=%s",
                 session.getContext().getRealm().getName(), session.getContext().getClient().getClientId(), streamUpdate.getStreamId());
 
-        return draft;
+        return resolveStreamForResponse(draft);
     }
 
     /**
@@ -729,7 +745,7 @@ public class StreamService {
         log.debugf("Stream replaced. realm=%s client=%s streamId=%s",
                 session.getContext().getRealm().getName(), session.getContext().getClient().getClientId(), streamUpdate.getStreamId());
 
-        return draft;
+        return resolveStreamForResponse(draft);
     }
 
     /**
