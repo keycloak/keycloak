@@ -100,7 +100,7 @@ public class SsfStreamManagementResource {
                     .entity(new SsfErrorRepresentation("stream_error", e.getMessage()))
                     .build();
         } catch (Exception e) {
-            log.debugf(e, "Error creating stream: %s", e.getMessage());
+            log.errorf(e, "Error creating stream");
             return Response.serverError()
                     .entity(new SsfErrorRepresentation("stream_error", "Failed to create stream"))
                     .build();
