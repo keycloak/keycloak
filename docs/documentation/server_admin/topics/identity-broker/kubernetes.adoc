@@ -1,18 +1,9 @@
-ifeval::[{project_community}==true]
-
 [[_identity_broker_kubernetes]]
 === Kubernetes identity providers
 
-:tech_feature_name: Kubernetes service accounts trust relationship provider
-:tech_feature_id: kubernetes
-include::../../topics/templates/techpreview.adoc[]
-
-:tech_feature_name: Authenticate clients based on assertions issued by an identity provider
-:tech_feature_id: client-auth-federated
-include::../../topics/templates/techpreview.adoc[]
-
 A Kubernetes identity provider supports authenticating clients with Kubernetes service account tokens.
-It depends on the preview feature `client-auth-federated`.
+
+This feature can be enabled and disabled with the feature `kubernetes-service-accounts` which is enabled by default. It depends on the feature `client-auth-federated` which is enabled by default as well.
 
 The default issuer URL for a Kubernetes cluster is `\https://kubernetes.default.svc.cluster.local`. You can discover
 this value by decoding a service account token to retrieve the value of the `iss` claim.
@@ -117,5 +108,3 @@ curl -k https://example.com:8443/realms/<realm>/protocol/openid-connect/token \
 ----
 
 NOTE: While the service account functionality is helpful to test that the setup is working, disabled this feature after the test if it is not needed for the client to follow the least-privileges security best practice.
-
-endif::[]
