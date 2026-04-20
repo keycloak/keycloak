@@ -24,6 +24,7 @@ import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testframework.events.Events;
+import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.mail.MailServer;
 import org.keycloak.testframework.mail.annotations.InjectMailServer;
 import org.keycloak.testframework.oauth.OAuthClient;
@@ -36,6 +37,7 @@ import org.keycloak.testframework.remote.timeoffset.TimeOffSet;
 import org.keycloak.testframework.ui.annotations.InjectPage;
 import org.keycloak.testframework.ui.annotations.InjectWebDriver;
 import org.keycloak.testframework.ui.page.LoginPage;
+import org.keycloak.testframework.ui.page.LoginPasswordResetPage;
 import org.keycloak.testframework.ui.page.LoginPasswordUpdatePage;
 import org.keycloak.testframework.ui.page.RegisterPage;
 import org.keycloak.testframework.ui.page.VerifyEmailPage;
@@ -60,13 +62,13 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 @KeycloakIntegrationTest
 public class RegisterWithEmailVerificationTest {
 
-    @InjectWebDriver
+    @InjectWebDriver(ref = "driver", lifecycle = LifeCycle.CLASS)
     ManagedWebDriver driver;
 
     @InjectRealm(config = RegisterTestRealmConfig.class)
     ManagedRealm realm;
 
-    @InjectOAuthClient
+    @InjectOAuthClient(ref = "oauth", webDriverRef = "driver")
     OAuthClient oauth;
 
     @InjectEvents
@@ -75,20 +77,38 @@ public class RegisterWithEmailVerificationTest {
     @InjectMailServer
     MailServer mailServer;
 
-    @InjectPage
+    @InjectPage(ref = "loginPage", webDriverRef = "driver")
     LoginPage loginPage;
 
-    @InjectPage
+    @InjectPage(ref = "registerPage", webDriverRef = "driver")
     RegisterPage registerPage;
 
-    @InjectPage
+    @InjectPage(ref = "changePasswordPage", webDriverRef = "driver")
     protected LoginPasswordUpdatePage changePasswordPage;
 
-    @InjectPage
+    @InjectPage(ref = "verifyEmailPage", webDriverRef = "driver")
     VerifyEmailPage verifyEmailPage;
 
     @InjectTimeOffSet
     TimeOffSet timeOffSet;
+
+    @InjectWebDriver(ref = "driver2", lifecycle = LifeCycle.CLASS)
+    ManagedWebDriver driver2;
+
+    @InjectOAuthClient(ref = "oauth2", webDriverRef = "driver2")
+    OAuthClient oauth2;
+
+    @InjectPage(ref = "loginPage2", webDriverRef = "driver2")
+    LoginPage loginPage2;
+
+    @InjectPage(ref = "resetPasswordPage2", webDriverRef = "driver2")
+    LoginPasswordResetPage resetPasswordPage2;
+
+    @InjectPage(ref = "verifyEmailPage2", webDriverRef = "driver2")
+    VerifyEmailPage verifyEmailPage2;
+
+    @InjectPage(ref = "changePasswordPage2", webDriverRef = "driver2")
+    protected LoginPasswordUpdatePage changePasswordPage2;
 
     @Test
     public void registerUserSuccessWithEmailVerification() {
@@ -154,6 +174,93 @@ public class RegisterWithEmailVerificationTest {
         });
     }
 
+    @Test
+    public void registerUserSuccessWithEmailVerificationWithForgetPassword() throws Exception {
+        realm.updateWithCleanup((realmm) -> {
+            realmm.verifyEmail(true);
+            realmm.resetPasswordAllowed(true);
+            return realmm;
+        });
+
+        registerUserSuccessWithEmailVerificationWithForgetPasswordImpl();
+    }
+
+    @Test
+    public void registerUserSuccessWithEmailVerificationWithForgetPassword_emailVerifyDefaultAction() throws Exception {
+        realm.updateWithCleanup((realmm) -> {
+            // Don't enable "Verify email" realm switch, but rather switch VERIFY_EMAIL as a default required action
+            AuthenticationManagementResource authMgmt = realm.admin().flows();
+            RequiredActionProviderRepresentation reqAction = authMgmt.getRequiredAction(UserModel.RequiredAction.VERIFY_EMAIL.name());
+            reqAction.setDefaultAction(true);
+            authMgmt.updateRequiredAction(UserModel.RequiredAction.VERIFY_EMAIL.name(), reqAction);
+
+            realmm.resetPasswordAllowed(true);
+            return realmm;
+        });
+
+        registerUserSuccessWithEmailVerificationWithForgetPasswordImpl();
+    }
+
+    // Issue 48206
+    private void registerUserSuccessWithEmailVerificationWithForgetPasswordImpl() throws Exception {
+        oauth.openLoginForm();
+        loginPage.clickRegister();
+        registerPage.assertCurrent();
+
+        // Password not shown initially on the registration page since verify-email is required
+        Assert.assertFalse(registerPage.isPasswordPresent());
+        registerPage.registerWithoutPassword("firstName", "lastName", "john@email.cz", "john");
+        verifyEmailPage.assertCurrent();
+
+        EventRepresentation registerEvent = events.poll();
+        EventAssertion.assertSuccess(registerEvent)
+                .clientId("test-app-oauth")
+                .details(Details.USERNAME, "john")
+                .details(Details.EMAIL, "john@email.cz")
+                .details(Details.REGISTER_METHOD, "form")
+                .type(EventType.REGISTER);
+        String userId = registerEvent.getUserId();
+
+        try {
+            EventRepresentation sendVerifyEmailEvent = events.poll();
+            EventAssertion.assertSuccess(sendVerifyEmailEvent)
+                    .details(Details.EMAIL, "john@email.cz")
+                    .userId(userId)
+                    .type(EventType.SEND_VERIFY_EMAIL);
+
+            // Browser2 - open login, click "Forget password" and fill username
+            oauth2.openLoginForm();
+            loginPage2.resetPassword();
+            resetPasswordPage2.assertCurrent();
+            resetPasswordPage2.changePassword("john@email.cz");
+
+            // Receive the email and click it on browser2
+            MimeMessage message = mailServer.getLastReceivedMessage();
+            String forgetPasswordEmailLink = MailUtils.getPasswordResetEmailLink(message);
+            driver2.open(forgetPasswordEmailLink);
+
+            // Need to verify email now
+            verifyEmailPage2.assertCurrent();
+            message = mailServer.getLastReceivedMessage();
+            String verifyEmailLink = MailUtils.getPasswordResetEmailLink(message);
+            driver2.open(verifyEmailLink);
+
+            // Browser 2 - update password and authenticate
+            changePasswordPage2.assertCurrent();
+            String password = generatePassword();
+            changePasswordPage2.changePassword(password, password);
+
+            String code = oauth2.parseLoginResponse().getCode();
+            assertNotNull(code);
+
+            // Browser 1 - refresh. Should be still on verifyEmail
+            driver.navigate().refresh();
+            loginPage.assertCurrent();
+        } finally {
+            realm.admin().users().delete(userId).close();
+        }
+    }
+
     /**
      * @param receiveEmailFunction Income is userId. Outcome is link to password reset
      * @throws Exception
@@ -170,7 +277,7 @@ public class RegisterWithEmailVerificationTest {
 
         EventRepresentation registerEvent = events.poll();
         EventAssertion.assertSuccess(registerEvent)
-                .clientId("test-app")
+                .clientId("test-app-oauth")
                 .details(Details.USERNAME, "registerUserSuccessWithEmailVerification")
                 .details(Details.EMAIL, "registerUserSuccessWithEmailVerification@email")
                 .details(Details.REGISTER_METHOD, "form")
@@ -221,7 +328,7 @@ public class RegisterWithEmailVerificationTest {
 
             EventRepresentation registerEvent = events.poll();
             EventAssertion.assertSuccess(registerEvent)
-                    .clientId("test-app")
+                    .clientId("test-app-oauth")
                     .details(Details.USERNAME, "registerUserSuccessWithEmailVerification")
                     .details(Details.EMAIL, "registerUserSuccessWithEmailVerification@email")
                     .details(Details.REGISTER_METHOD, "form")
