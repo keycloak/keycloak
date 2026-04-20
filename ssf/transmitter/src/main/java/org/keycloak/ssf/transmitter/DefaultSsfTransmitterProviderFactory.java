@@ -4,9 +4,13 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
+
+import org.jspecify.annotations.NonNull;
 
 import org.keycloak.Config;
 import org.keycloak.common.Profile;
+import org.keycloak.executors.ExecutorsProvider;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
@@ -27,6 +31,7 @@ import org.keycloak.ssf.transmitter.event.SecurityEventTokenEncoder;
 import org.keycloak.ssf.transmitter.event.SecurityEventTokenMapper;
 import org.keycloak.ssf.transmitter.metadata.TransmitterMetadataService;
 import org.keycloak.ssf.transmitter.metrics.SsfMetricsBinder;
+import org.keycloak.ssf.transmitter.outbox.SsfOutboxCleanupTask;
 import org.keycloak.ssf.transmitter.outbox.SsfPendingEventStore;
 import org.keycloak.ssf.transmitter.outbox.SsfPushOutboxBackoff;
 import org.keycloak.ssf.transmitter.outbox.SsfPushOutboxDrainerTask;
@@ -45,6 +50,15 @@ public class DefaultSsfTransmitterProviderFactory implements SsfTransmitterProvi
     private static final Logger log = Logger.getLogger(DefaultSsfTransmitterProviderFactory.class);
 
     public static final String CONFIG_SUPPORTED_EVENTS = "supported-events";
+
+    /**
+     * Name passed to {@link ExecutorsProvider#getExecutor(String)} for
+     * the background outbox cleanup executor the client-/realm-removed
+     * listeners submit to. Kept as a constant so ops teams can surface
+     * the pool in their Quarkus thread-pool configuration if they want
+     * a non-default concurrency / queue-size profile.
+     */
+    public static final String OUTBOX_CLEANUP_EXECUTOR = "ssf-outbox-cleanup";
 
     public static final String CONFIG_OUTBOX_DRAINER_INTERVAL = "outbox-drainer-interval";
 
@@ -108,12 +122,16 @@ public class DefaultSsfTransmitterProviderFactory implements SsfTransmitterProvi
     protected SsfTransmitterContext context;
 
     /**
-     * Handles {@code RealmRemovedEvent} / {@code ClientRemovedEvent} to
-     * cascade-purge outbox rows (REALM_ID / CLIENT_ID are not foreign
-     * keys on SSF_PENDING_EVENT — the table is plugin-contributed via
-     * JpaEntityProvider, so it can't declare FKs into core Keycloak
-     * tables) and {@code ClientUpdatedEvent} to reject saves that would
-     * leave two clients in the same realm sharing an {@code ssf.streamId}
+     * Handles {@code RealmRemovedEvent} / {@code ClientRemovedEvent}
+     * by submitting a background {@link SsfOutboxCleanupTask} that
+     * drains the orphaned outbox rows in short batched transactions
+     * (REALM_ID / CLIENT_ID are not foreign keys on SSF_PENDING_EVENT
+     * — the table is plugin-contributed via JpaEntityProvider, so it
+     * can't declare FKs into core Keycloak tables — and an inline
+     * bulk DELETE would drag the admin's removal transaction into a
+     * timeout for receivers with a large backlog). Also handles
+     * {@code ClientUpdatedEvent} to reject saves that would leave two
+     * clients in the same realm sharing an {@code ssf.streamId}
      * ({@link ModelDuplicateException} propagates out of the event so
      * the admin fixes the duplicate instead of having SSF state
      * silently mutated).
@@ -492,25 +510,11 @@ public class DefaultSsfTransmitterProviderFactory implements SsfTransmitterProvi
             @Override
             public void onEvent(ProviderEvent event) {
                 if (event instanceof RealmModel.RealmRemovedEvent ev) {
-                    try {
-                        createPendingEventStore(ev.getKeycloakSession())
-                                .deleteByRealm(ev.getRealm().getId());
-                    } catch (RuntimeException e) {
-                        // Don't block realm removal on outbox cleanup failures —
-                        // orphaned rows are harmless (the drainer dead-letters
-                        // them once it can't resolve the realm) and we don't
-                        // want to leave the realm half-deleted.
-                        log.warnf(e, "SSF outbox realm-removed cleanup failed for realm %s",
-                                ev.getRealm().getId());
-                    }
+                    submitOutboxCleanup(ev.getKeycloakSession(),
+                            SsfOutboxCleanupTask.Scope.REALM, ev.getRealm().getId());
                 } else if (event instanceof ClientModel.ClientRemovedEvent ev) {
-                    try {
-                        purgeOutboxOnClientRemoved(ev);
-                    } catch (RuntimeException e) {
-                        log.warnf(e, "SSF outbox client-removed cleanup failed for client %s in realm %s",
-                                ev.getClient().getClientId(),
-                                ev.getClient().getRealm() != null ? ev.getClient().getRealm().getId() : "<unknown>");
-                    }
+                    submitOutboxCleanup(ev.getKeycloakSession(),
+                            SsfOutboxCleanupTask.Scope.CLIENT, ev.getClient().getId());
                 } else if (event instanceof ClientModel.ClientUpdatedEvent ev) {
                     // Deliberately does not catch — a ModelDuplicateException
                     // from the validator must propagate so the offending
@@ -522,18 +526,40 @@ public class DefaultSsfTransmitterProviderFactory implements SsfTransmitterProvi
     }
 
     /**
-     * Cascade-deletes outbox rows owned by a removed client. Outbox rows
-     * are keyed by the internal client UUID ({@code stream.getClientId()}),
-     * so without this hook the drainer keeps finding the rows, fails
-     * dispatch because the client is gone, and burns retries until
-     * dead-letter. Extension point for subclasses that need to layer
-     * additional client-removed cleanup (e.g. evict external caches
-     * keyed by the client UUID, emit a custom audit record) on top of
-     * the outbox purge.
+     * Submits a background {@link SsfOutboxCleanupTask} that drains the
+     * outbox rows owned by the removed client or realm in short batched
+     * transactions. Runs on the {@link ExecutorsProvider#getExecutor(String)
+     * ssf-cleanup} executor so the admin's removal transaction can
+     * commit immediately — a receiver with a large queued backlog
+     * would otherwise serialize its entire delete into the synchronous
+     * client-/realm-removal transaction and risk a transaction timeout.
+     *
+     * <p>Fire-and-forget: if the originating node crashes before the
+     * task finishes, the push drainer's missing-resolve fast-path
+     * dead-letters orphan rows on its next tick (see
+     * {@link SsfPushOutboxDrainerTask}), and the dead-letter retention
+     * purge removes them in bounded background batches. The event is
+     * only published on the node that handled the admin request, so
+     * there's no cross-node contention to coordinate.
      */
-    protected void purgeOutboxOnClientRemoved(ClientModel.ClientRemovedEvent ev) {
-        createPendingEventStore(ev.getKeycloakSession())
-                .deleteByClient(ev.getClient().getId());
+    protected void submitOutboxCleanup(KeycloakSession session,
+                                       SsfOutboxCleanupTask.Scope scope,
+                                       String scopeId) {
+        try {
+            ExecutorService executor = session.getProvider(ExecutorsProvider.class)
+                    .getExecutor(OUTBOX_CLEANUP_EXECUTOR);
+            KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
+            executor.execute(createOutboxCleanUpTask(scope, scopeId, sessionFactory));
+        } catch (RuntimeException e) {
+            // Never block the originating admin transaction on
+            // scheduling failures. Orphan rows will be handled by the
+            // push drainer's missing-resolve fast-path.
+            log.warnf(e, "SSF outbox cleanup scheduling failed. scope=%s id=%s", scope, scopeId);
+        }
+    }
+
+    protected SsfOutboxCleanupTask createOutboxCleanUpTask(SsfOutboxCleanupTask.Scope scope, String key, KeycloakSessionFactory sessionFactory) {
+        return new SsfOutboxCleanupTask(sessionFactory, this::createPendingEventStore, scope, key);
     }
 
     /**

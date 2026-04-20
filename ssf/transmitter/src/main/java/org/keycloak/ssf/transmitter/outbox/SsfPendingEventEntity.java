@@ -134,6 +134,23 @@ import jakarta.persistence.UniqueConstraint;
                 name = "SsfPendingEvent.deleteByRealm",
                 query = "DELETE FROM SsfPendingEventEntity e"
                         + " WHERE e.realmId = :realmId"),
+        // Batched-delete primitives for the async client / realm
+        // removal cleanup: the listener submits a background task that
+        // iterates these in short transactions so the admin's removal
+        // transaction commits immediately, and a receiver with a
+        // six-digit outbox backlog doesn't stall realm/client removal.
+        @NamedQuery(
+                name = "SsfPendingEvent.findIdsByClient",
+                query = "SELECT e.id FROM SsfPendingEventEntity e"
+                        + " WHERE e.clientId = :clientId"),
+        @NamedQuery(
+                name = "SsfPendingEvent.findIdsByRealm",
+                query = "SELECT e.id FROM SsfPendingEventEntity e"
+                        + " WHERE e.realmId = :realmId"),
+        @NamedQuery(
+                name = "SsfPendingEvent.deleteByIds",
+                query = "DELETE FROM SsfPendingEventEntity e"
+                        + " WHERE e.id IN :ids"),
         // Stream-delete cascade for POLL rows: PUSH rows would eventually
         // reach DEAD_LETTER on their own, but POLL rows can sit forever
         // with no consumer once the stream is gone, so the stream/client-
