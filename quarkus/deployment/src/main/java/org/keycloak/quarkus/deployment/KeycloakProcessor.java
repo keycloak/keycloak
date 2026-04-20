@@ -311,6 +311,16 @@ class KeycloakProcessor {
     }
 
     @Record(ExecutionTime.STATIC_INIT)
+    @BuildStep
+    @Consume(ConfigBuildItem.class)
+    void filterSourceMapRequests(BuildProducer<FilterBuildItem> filters, KeycloakRecorder recorder) {
+        var filter = recorder.getRejectSourceMapFilter();
+        if (filter != null) {
+            filters.produce(new FilterBuildItem(filter, SecurityHandlerPriorities.CORS + 1));
+        }
+    }
+
+    @Record(ExecutionTime.STATIC_INIT)
     @BuildStep(onlyIf = IsManagementEnabled.class)
     @Consume(ConfigBuildItem.class)
     void configureManagementInterface(BuildProducer<RouteBuildItem> routes,
