@@ -100,7 +100,7 @@ public class TokenEndpointCorsTest extends AbstractKeycloakTest {
     @Test
     public void accessTokenResourceOwnerCorsRequest() throws Exception {
         oauth.realm("test");
-        oauth.clientId("test-app2");
+        oauth.client("test-app2");
         oauth.origin(VALID_CORS_URL);
 
         // Token request

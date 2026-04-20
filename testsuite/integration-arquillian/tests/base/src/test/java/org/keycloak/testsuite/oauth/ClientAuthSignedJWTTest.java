@@ -215,7 +215,7 @@ public class ClientAuthSignedJWTTest extends AbstractClientAuthSignedJWTTest {
 
     @Test
     public void testDirectGrantRequestSuccess() throws Exception {
-        oauth.clientId("client2");
+        oauth.client("client2");
         AccessTokenResponse response = doGrantAccessTokenRequest("test-user@localhost", "password", getClient2SignedJWT());
 
         assertEquals(200, response.getStatusCode());
@@ -249,7 +249,7 @@ public class ClientAuthSignedJWTTest extends AbstractClientAuthSignedJWTTest {
             PrivateKey privateKey = keyPair.getPrivate();
 
             // test
-            oauth.clientId("client2");
+            oauth.client("client2");
             AccessTokenResponse response = doGrantAccessTokenRequest("test-user@localhost", "password", createSignedRequestToken("client2", getRealmInfoUrl(), privateKey, publicKey, signingAlgorithm));
 
             assertEquals(200, response.getStatusCode());
@@ -270,14 +270,14 @@ public class ClientAuthSignedJWTTest extends AbstractClientAuthSignedJWTTest {
             KeyPair keyPair = setupJwksUrl(signingAlgorithm, false, false, null, clientRepresentation, clientResource);
             PublicKey publicKey = keyPair.getPublic();
             PrivateKey privateKey = keyPair.getPrivate();
-            oauth.clientId("client2");
+            oauth.client("client2");
             AccessTokenResponse response = doGrantAccessTokenRequest("test-user@localhost", "password", createSignedRequestToken("client2", getRealmInfoUrl(), privateKey, publicKey, signingAlgorithm));
             assertEquals(200, response.getStatusCode());
 
             // sending a JWS using another RSA based alg (PS256) should work as alg is not specified
             publicKey = keyPair.getPublic();
             privateKey = keyPair.getPrivate();
-            oauth.clientId("client2");
+            oauth.client("client2");
             response = doGrantAccessTokenRequest("test-user@localhost", "password", createSignedRequestToken("client2", getRealmInfoUrl(), privateKey, publicKey, Algorithm.PS256));
             assertEquals(200, response.getStatusCode());
 
@@ -314,7 +314,7 @@ public class ClientAuthSignedJWTTest extends AbstractClientAuthSignedJWTTest {
             PrivateKey privateKey = keyPair.getPrivate();
 
             // test
-            oauth.clientId("client2");
+            oauth.client("client2");
             JsonWebToken clientAuthJwt = createRequestToken("client2", getRealmInfoUrl());
             AccessTokenResponse response = doGrantAccessTokenRequest("test-user@localhost", "password",
                     createSignledRequestToken(privateKey, publicKey, signingAlgorithm, "my-kid", clientAuthJwt));

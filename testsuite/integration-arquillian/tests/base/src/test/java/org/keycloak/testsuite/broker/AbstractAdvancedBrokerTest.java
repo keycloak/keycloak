@@ -178,7 +178,7 @@ public abstract class AbstractAdvancedBrokerTest extends AbstractBrokerTest {
         logoutFromConsumerRealm();
         AccountHelper.logout(adminClient.realm(bc.providerRealmName()), bc.getUserLogin());
 
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
 
         try {
@@ -233,7 +233,7 @@ public abstract class AbstractAdvancedBrokerTest extends AbstractBrokerTest {
                 .get(client.getId())
                 .update(ClientBuilder.edit(client).consentRequired(true).build());
 
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
 
         logInWithBroker(bc);
@@ -273,7 +273,7 @@ public abstract class AbstractAdvancedBrokerTest extends AbstractBrokerTest {
 
         user.update(userRep);
 
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
 
         logInWithBroker(bc);
@@ -387,7 +387,7 @@ public abstract class AbstractAdvancedBrokerTest extends AbstractBrokerTest {
 
         userResource.roles().realmLevel().add(Arrays.asList(userRole, friendlyManagerRole));
 
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
 
         logInAsUserInIDP();
@@ -405,7 +405,7 @@ public abstract class AbstractAdvancedBrokerTest extends AbstractBrokerTest {
     // KEYCLOAK-4016
     @Test
     public void testExpiredCode() {
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
 
         log.debug("Expire all browser cookies");
@@ -430,7 +430,7 @@ public abstract class AbstractAdvancedBrokerTest extends AbstractBrokerTest {
         updateExecutions(AbstractBrokerTest::disableUpdateProfileOnFirstLogin);
         testingClient.server(bc.consumerRealmName()).run(configurePostBrokerLoginWithOTP(bc.getIDPAlias()));
 
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
 
         logInWithBroker(bc);
@@ -446,7 +446,7 @@ public abstract class AbstractAdvancedBrokerTest extends AbstractBrokerTest {
 
         setOtpTimeOffset(TimeBasedOTP.DEFAULT_INTERVAL_SECONDS, totp);
 
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
 
         logInWithBroker(bc);
@@ -459,7 +459,7 @@ public abstract class AbstractAdvancedBrokerTest extends AbstractBrokerTest {
 
         testingClient.server(bc.consumerRealmName()).run(disablePostBrokerLoginFlow(bc.getIDPAlias()));
 
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
 
         logInWithBroker(bc);
@@ -481,7 +481,7 @@ public abstract class AbstractAdvancedBrokerTest extends AbstractBrokerTest {
             adminClient.realm(bc.consumerRealmName()).identityProviders().get(bc.getIDPAlias()).update(idp);
             Time.setOffset(10);
 
-            oauth.clientId("broker-app");
+            oauth.client("broker-app");
             loginPage.open(bc.consumerRealmName());
 
             logInWithBroker(bc);
@@ -491,7 +491,7 @@ public abstract class AbstractAdvancedBrokerTest extends AbstractBrokerTest {
 
             logoutFromConsumerRealm();
 
-            oauth.clientId("broker-app");
+            oauth.client("broker-app");
             loginPage.open(bc.consumerRealmName());
 
             waitForPage(driver, "sign in to", true);
@@ -519,7 +519,7 @@ public abstract class AbstractAdvancedBrokerTest extends AbstractBrokerTest {
 
             createUser(bc.providerRealmName(), "test-user", "password", "FirstName", "LastName", "test-user@localhost.com");
 
-            oauth.clientId("broker-app");
+            oauth.client("broker-app");
             loginPage.open(bc.consumerRealmName());
 
             loginPage.clickSocial(bc.getIDPAlias());
@@ -537,7 +537,7 @@ public abstract class AbstractAdvancedBrokerTest extends AbstractBrokerTest {
 
             createUser(bc.providerRealmName(), "test-user-noemail", "password", "FirstName", "LastName", "test-user-noemail@localhost.com");
 
-            oauth.clientId("broker-app");
+            oauth.client("broker-app");
             loginPage.open(bc.consumerRealmName());
 
             loginPage.clickSocial(bc.getIDPAlias());
@@ -557,7 +557,7 @@ public abstract class AbstractAdvancedBrokerTest extends AbstractBrokerTest {
         logoutFromConsumerRealm();
         AccountHelper.logout(adminClient.realm(bc.providerRealmName()), bc.getUserLogin());
 
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
 
         RealmResource realm = adminClient.realm(bc.consumerRealmName());

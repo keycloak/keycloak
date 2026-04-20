@@ -150,7 +150,7 @@ public abstract class AbstractBrokerTest extends AbstractInitializedBaseBrokerTe
 
         Integer userCount = adminClient.realm(bc.consumerRealmName()).users().count();
 
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
 
         if (isUsingTransientSessions()) {

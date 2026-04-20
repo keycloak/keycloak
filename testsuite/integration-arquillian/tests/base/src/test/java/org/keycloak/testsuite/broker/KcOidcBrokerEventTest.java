@@ -152,7 +152,7 @@ public final class KcOidcBrokerEventTest extends AbstractBrokerTest {
         events.clear();
 
         // navigate to the account url of the consumer realm
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
 
         // Do a wrong login with a user that does not exist
@@ -176,7 +176,7 @@ public final class KcOidcBrokerEventTest extends AbstractBrokerTest {
         RealmResource consumerRealm = adminClient.realm(bc.consumerRealmName());
         UserRepresentation providerUser = providerRealm.users().search(bc.getUserLogin()).iterator().next();
         events.clear();
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
 
         super.loginUser();
@@ -233,7 +233,7 @@ public final class KcOidcBrokerEventTest extends AbstractBrokerTest {
         Integer userCount = adminClient.realm(bc.consumerRealmName()).users().count();
 
         // now do the second login
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
         logInWithBroker(bc);
 

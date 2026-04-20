@@ -74,7 +74,7 @@ public class KcOidcMultipleTabsBrokerTest  extends AbstractInitializedBaseBroker
     public void testAuthenticationExpiredWithMoreBrowserTabs_clickIdpLoginInTab1AfterExpiration() {
         assumeTrue("Since the JS engine in real browser does check the expiration regularly in all tabs, this test only works with HtmlUnit", driver instanceof HtmlUnitDriver);
         try (BrowserTabUtil tabUtil = BrowserTabUtil.getInstanceAndSetEnv(driver)) {
-            oauth.clientId("broker-app");
+            oauth.client("broker-app");
             loginPage.open(bc.consumerRealmName());
             getLogger().infof("URL in tab 1: %s", driver.getCurrentUrl());
 
@@ -114,7 +114,7 @@ public class KcOidcMultipleTabsBrokerTest  extends AbstractInitializedBaseBroker
         assumeTrue("Since the JS engine in real browser does check the expiration regularly in all tabs, this test only works with HtmlUnit", driver instanceof HtmlUnitDriver);
         try (BrowserTabUtil tabUtil = BrowserTabUtil.getInstanceAndSetEnv(driver)) {
             // Open login page in tab1 and click "login with IDP"
-            oauth.clientId("broker-app");
+            oauth.client("broker-app");
             loginPage.open(bc.consumerRealmName());
             loginPage.clickSocial(bc.getIDPAlias());
 
@@ -191,7 +191,7 @@ public class KcOidcMultipleTabsBrokerTest  extends AbstractInitializedBaseBroker
 
         try (BrowserTabUtil tabUtil = BrowserTabUtil.getInstanceAndSetEnv(driver)) {
             // Open login page in tab1 and click "login with IDP"
-            oauth.clientId("broker-app");
+            oauth.client("broker-app");
             loginPage.open(bc.consumerRealmName());
             loginPage.clickSocial(bc.getIDPAlias());
 
@@ -268,7 +268,7 @@ public class KcOidcMultipleTabsBrokerTest  extends AbstractInitializedBaseBroker
                      .update()
         ) {
             // Open login page in tab1 and click "login with IDP"
-            oauth.clientId("broker-app");
+            oauth.client("broker-app");
             loginPage.open(bc.consumerRealmName());
             loginPage.clickSocial(bc.getIDPAlias());
 

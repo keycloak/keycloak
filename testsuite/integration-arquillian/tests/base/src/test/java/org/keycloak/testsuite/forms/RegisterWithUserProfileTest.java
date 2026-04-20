@@ -167,7 +167,7 @@ public class RegisterWithUserProfileTest extends AbstractTestRealmKeycloakTest {
                 + "{\"name\": \"lastName\"," + PERMISSIONS_ALL + ", \"required\":{\"scopes\":[\""+SCOPE_LAST_NAME+"\"]}}"
                 + "]}");
 
-        oauth.scope(SCOPE_LAST_NAME).clientId(client_scope_optional.getClientId()).openLoginForm();
+        oauth.scope(SCOPE_LAST_NAME).client(client_scope_optional.getClientId()).openLoginForm();
 
         loginPage.clickRegister();
         registerPage.assertCurrent();
@@ -193,7 +193,7 @@ public class RegisterWithUserProfileTest extends AbstractTestRealmKeycloakTest {
                 + "{\"name\": \"lastName\"," + PERMISSIONS_ALL + ", \"required\":{\"scopes\":[\""+SCOPE_LAST_NAME+"\"]}}"
                 + "]}");
 
-        oauth.clientId(client_scope_default.getClientId()).openLoginForm();
+        oauth.client(client_scope_default.getClientId()).openLoginForm();
 
         loginPage.clickRegister();
         registerPage.assertCurrent();
@@ -468,7 +468,7 @@ public class RegisterWithUserProfileTest extends AbstractTestRealmKeycloakTest {
                 + "{\"name\": \"department\"," + PERMISSIONS_ALL + ", \"required\":{}, \"selector\":{\"scopes\":[\""+SCOPE_DEPARTMENT+"\"]}}"
                 + "]}");
 
-        oauth.scope(SCOPE_DEPARTMENT).clientId(client_scope_optional.getClientId()).openLoginForm();
+        oauth.scope(SCOPE_DEPARTMENT).client(client_scope_optional.getClientId()).openLoginForm();
         loginPage.clickRegister();
         registerPage.assertCurrent();
 
@@ -497,7 +497,7 @@ public class RegisterWithUserProfileTest extends AbstractTestRealmKeycloakTest {
                 + "{\"name\": \"department\"," + PERMISSIONS_ALL + ", \"selector\":{\"scopes\":[\""+SCOPE_DEPARTMENT+"\"]}}"
                 + "]}");
 
-        oauth.scope(SCOPE_DEPARTMENT).clientId(client_scope_optional.getClientId()).openLoginForm();
+        oauth.scope(SCOPE_DEPARTMENT).client(client_scope_optional.getClientId()).openLoginForm();
         loginPage.clickRegister();
         registerPage.assertCurrent();
 
@@ -523,7 +523,7 @@ public class RegisterWithUserProfileTest extends AbstractTestRealmKeycloakTest {
                 + "{\"name\": \"department\"," + PERMISSIONS_ALL + ", \"selector\":{\"scopes\":[\""+SCOPE_DEPARTMENT+"\"]}}"
                 + "]}");
 
-        oauth.clientId(client_scope_default.getClientId()).openLoginForm();
+        oauth.client(client_scope_default.getClientId()).openLoginForm();
         loginPage.clickRegister();
         registerPage.assertCurrent();
 
@@ -550,7 +550,7 @@ public class RegisterWithUserProfileTest extends AbstractTestRealmKeycloakTest {
                 + "{\"name\": \"department\"," + PERMISSIONS_ALL + ", \"required\":{}, \"selector\":{\"scopes\":[\""+SCOPE_DEPARTMENT+"\"]}}"
                 + "]}");
 
-        oauth.clientId(client_scope_optional.getClientId()).openLoginForm();
+        oauth.client(client_scope_optional.getClientId()).openLoginForm();
         loginPage.clickRegister();
         registerPage.assertCurrent();
 

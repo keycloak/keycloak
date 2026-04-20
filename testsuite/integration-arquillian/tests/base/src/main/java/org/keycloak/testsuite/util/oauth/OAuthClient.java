@@ -88,16 +88,6 @@ public class OAuthClient extends AbstractOAuthClient<OAuthClient> {
         loginPage.login(username, password);
     }
 
-    /**
-     * @deprecated This method is deprecated, use {@link OAuthClient#client(String)} for public clients,
-     * or {@link OAuthClient#client(String, String)} for confidential clients
-     */
-    @Deprecated
-    public OAuthClient clientId(String clientId) {
-        config.clientId(clientId);
-        return this;
-    }
-
     public WebDriver getDriver() {
         return driver;
     }

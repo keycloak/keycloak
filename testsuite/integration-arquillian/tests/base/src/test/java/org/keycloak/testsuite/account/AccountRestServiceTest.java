@@ -1475,7 +1475,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
 
     @Test
     public void listApplicationsWithRootUrl() throws Exception {
-        oauth.clientId("root-url-client");
+        oauth.client("root-url-client", "password");
         AccessTokenResponse tokenResponse = oauth.doPasswordGrantRequest("view-applications-access", "password");
         assertNull(tokenResponse.getErrorDescription());
 
@@ -1973,7 +1973,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
 
     @Test
     public void testAudience() throws Exception {
-        oauth.clientId("custom-audience");
+        oauth.client("custom-audience", "password");
         AccessTokenResponse tokenResponse = oauth.doPasswordGrantRequest("test-user@localhost", "password");
         assertNull(tokenResponse.getErrorDescription());
 

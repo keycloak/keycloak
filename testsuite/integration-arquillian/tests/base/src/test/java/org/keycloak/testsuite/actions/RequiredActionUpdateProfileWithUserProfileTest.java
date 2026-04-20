@@ -456,7 +456,7 @@ public class RequiredActionUpdateProfileWithUserProfileTest extends AbstractTest
                 + "{\"name\": \"department\"," + PERMISSIONS_ALL + ", \"required\":{\"scopes\":[\"" + SCOPE_DEPARTMENT + "\"]}}"
                 + "]}");
 
-        oauth.scope(SCOPE_DEPARTMENT).clientId(client_scope_optional.getClientId()).openLoginForm();
+        oauth.scope(SCOPE_DEPARTMENT).client(client_scope_optional.getClientId()).openLoginForm();
 
         loginPage.assertCurrent();
         loginPage.login(USERNAME1, PASSWORD);
@@ -496,7 +496,7 @@ public class RequiredActionUpdateProfileWithUserProfileTest extends AbstractTest
                 + "{\"name\": \"department\"," + PERMISSIONS_ALL + ", \"required\":{\"scopes\":[\"" + SCOPE_DEPARTMENT + "\"]}}"
                 + "]}");
 
-        oauth.clientId(client_scope_default.getClientId()).openLoginForm();
+        oauth.client(client_scope_default.getClientId()).openLoginForm();
 
         loginPage.assertCurrent();
         loginPage.login(USERNAME1, PASSWORD);
@@ -530,7 +530,7 @@ public class RequiredActionUpdateProfileWithUserProfileTest extends AbstractTest
                 + "{\"name\": \"department\"," + PERMISSIONS_ALL + ", \"required\":{}, \"selector\":{\"scopes\":[\"" + SCOPE_DEPARTMENT + "\"]}}"
                 + "]}");
 
-        oauth.scope(SCOPE_DEPARTMENT).clientId(client_scope_optional.getClientId()).openLoginForm();
+        oauth.scope(SCOPE_DEPARTMENT).client(client_scope_optional.getClientId()).openLoginForm();
 
         loginPage.assertCurrent();
         loginPage.login(USERNAME1, PASSWORD);
@@ -564,7 +564,7 @@ public class RequiredActionUpdateProfileWithUserProfileTest extends AbstractTest
                 + "{\"name\": \"department\"," + PERMISSIONS_ALL + ", \"selector\":{\"scopes\":[\"" + SCOPE_DEPARTMENT + "\"]}}"
                 + "]}");
 
-        oauth.scope(SCOPE_DEPARTMENT).clientId(client_scope_optional.getClientId()).openLoginForm();
+        oauth.scope(SCOPE_DEPARTMENT).client(client_scope_optional.getClientId()).openLoginForm();
 
         loginPage.assertCurrent();
         loginPage.login(USERNAME1, PASSWORD);
@@ -593,7 +593,7 @@ public class RequiredActionUpdateProfileWithUserProfileTest extends AbstractTest
                 + "{\"name\": \"department\"," + PERMISSIONS_ALL + ", \"required\":{}, \"selector\":{\"scopes\":[\"" + SCOPE_DEPARTMENT + "\"]}}"
                 + "]}");
 
-        oauth.clientId(client_scope_optional.getClientId()).openLoginForm();
+        oauth.client(client_scope_optional.getClientId()).openLoginForm();
 
         loginPage.assertCurrent();
         loginPage.login(USERNAME1, PASSWORD);

@@ -42,7 +42,7 @@ public class OIDCBasicResponseTypeCodeTest extends AbstractOIDCResponseTypeTest 
     public void clientConfiguration() {
         clientManagerBuilder().standardFlow(true).implicitFlow(false);
 
-        oauth.clientId("test-app");
+        oauth.client("test-app", "password");
         oauth.responseType(OIDCResponseType.CODE);
     }
 

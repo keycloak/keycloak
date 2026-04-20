@@ -119,7 +119,7 @@ public class CookieTest extends AbstractKeycloakTest {
             HttpContext localContext = new BasicHttpContext();
             localContext.setAttribute(HttpClientContext.COOKIE_STORE, cookieStore);
 
-            HttpGet get = new HttpGet(oauth.clientId("test-app").redirectUri(oauth.APP_AUTH_ROOT).loginForm().build());
+            HttpGet get = new HttpGet(oauth.client("test-app", "password").redirectUri(oauth.APP_AUTH_ROOT).loginForm().build());
             try (CloseableHttpResponse resp = hc.execute(get, localContext)) {
                 final String pageContent = EntityUtils.toString(resp.getEntity());
 
@@ -157,7 +157,7 @@ public class CookieTest extends AbstractKeycloakTest {
             HttpContext localContext = new BasicHttpContext();
             localContext.setAttribute(HttpClientContext.COOKIE_STORE, cookieStore);
 
-            HttpGet get = new HttpGet(oauth.clientId("test-app").redirectUri(oauth.APP_AUTH_ROOT).loginForm().build());
+            HttpGet get = new HttpGet(oauth.client("test-app", "password").redirectUri(oauth.APP_AUTH_ROOT).loginForm().build());
             try (CloseableHttpResponse resp = hc.execute(get, localContext)) {
                 final String pageContent = EntityUtils.toString(resp.getEntity());
 

@@ -81,7 +81,7 @@ public class TestAppHelper {
     }
 
     public boolean login(String username, String password, String realm, String clientId, String idp) {
-        oauth.clientId(clientId);
+        oauth.client(clientId);
         loginPage.open(realm);
         loginPage.clickSocial(idp);
         loginPage.login(username, password);

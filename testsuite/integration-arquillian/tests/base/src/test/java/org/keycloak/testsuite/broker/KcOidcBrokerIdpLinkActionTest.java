@@ -443,7 +443,7 @@ public class KcOidcBrokerIdpLinkActionTest extends AbstractInitializedBaseBroker
 
     private String loginToConsumer() {
         // Login to "consumer" realm with password
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
         loginPage.login("user1", "password");
         appPage.assertCurrent();

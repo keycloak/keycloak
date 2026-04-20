@@ -151,7 +151,7 @@ public class OrganizationThemeTest extends AbstractOrganizationTest {
             getCleanup(bc.consumerRealmName()).addUserId(userId);
         }
         createOrganization("myorg", "myorg.com", "myorg.org");
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
         loginPage.loginUsername("tom");
         Assert.assertTrue(driver.getPageSource().contains("Sign-in to myorg organization"));

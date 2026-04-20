@@ -307,7 +307,7 @@ public abstract class AbstractOrganizationTest extends AbstractAdminTest  {
     }
 
     protected void openIdentityFirstLoginPage(String username, boolean autoIDPRedirect, String idpAlias, boolean isVisible, boolean clickIdp) {
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
         log.debug("Logging in");
         assertTrue(loginPage.isUsernameInputPresent());

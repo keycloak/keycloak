@@ -147,7 +147,7 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
         UserResource userResource = adminClient.realm(bc.providerRealmName()).users().get(userId);
         userResource.roles().realmLevel().add(Collections.singletonList(managerRole));
 
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
         logInAsUserInIDPForFirstTime();
 
@@ -165,7 +165,7 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
 
         userResource.roles().realmLevel().add(Collections.singletonList(userRole));
 
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
 
         logInAsUserInIDP();
@@ -201,7 +201,7 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
             brokerApp.getAttributes().put("validateSignature", Boolean.TRUE.toString());
             clients.get(brokerApp.getId()).update(brokerApp);
 
-            oauth.clientId("broker-app");
+            oauth.client("broker-app");
             loginPage.open(bc.consumerRealmName());
 
             logInWithBroker(bc);
@@ -267,7 +267,7 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
 
         identityProviderResource.addMapper(hardCodedSessionNoteMapper).close();
 
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
 
         loginFetchingUserFromUserEndpoint();
@@ -285,7 +285,7 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
         AccountHelper.logout(adminClient.realm(bc.consumerRealmName()), bc.getUserLogin());
         AccountHelper.logout(adminClient.realm(bc.providerRealmName()), bc.getUserLogin());
 
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
 
         log.debug("Clicking social " + bc.getIDPAlias());
@@ -309,7 +309,7 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
         AccountHelper.logout(adminClient.realm(bc.consumerRealmName()), bc.getUserLogin());
         AccountHelper.logout(adminClient.realm(bc.providerRealmName()), bc.getUserLogin());
 
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
         assertThat(loginPage.isSocialButtonPresent(bc.getIDPAlias()), is(true));
         logInWithBroker(bc);
@@ -348,7 +348,7 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
         AccountHelper.logout(adminClient.realm(bc.consumerRealmName()), bc.getUserLogin());
         AccountHelper.logout(adminClient.realm(bc.providerRealmName()), bc.getUserLogin());
 
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
 
         log.debug("Clicking social " + bc.getIDPAlias());
@@ -427,7 +427,7 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
         idpRep.setTrustEmail(true);
         idpRep.getConfig().put(IdentityProviderModel.SYNC_MODE, IdentityProviderSyncMode.FORCE.name());
         identityProviderResource.update(idpRep);
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
         logInWithBroker(bc);
         waitForPage(driver, "update account information", false);
@@ -480,7 +480,7 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
         idpRep.setTrustEmail(true);
         idpRep.getConfig().put(IdentityProviderModel.SYNC_MODE, IdentityProviderSyncMode.FORCE.name());
         identityProviderResource.update(idpRep);
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
         logInWithBroker(bc);
         waitForPage(driver, "update account information", false);
@@ -510,7 +510,7 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
         idpRep.setTrustEmail(true);
         idpRep.getConfig().put(IdentityProviderModel.SYNC_MODE, IdentityProviderSyncMode.FORCE.name());
         identityProviderResource.update(idpRep);
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
         logInWithBroker(bc);
         waitForPage(driver, "update account information", false);
@@ -540,7 +540,7 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
         idpRep.setTrustEmail(true);
         idpRep.getConfig().put(IdentityProviderModel.SYNC_MODE, IdentityProviderSyncMode.IMPORT.name());
         identityProviderResource.update(idpRep);
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
         logInWithBroker(bc);
         waitForPage(driver, "update account information", false);
@@ -676,7 +676,7 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
                     isForceSync ? IdentityProviderSyncMode.FORCE : IdentityProviderSyncMode.IMPORT, isTrustEmail);
 
             // login to create the user in the consumer realm
-            oauth.clientId("broker-app");
+            oauth.client("broker-app");
             loginPage.open(bc.consumerRealmName());
 
             WaitUtils.waitForPageToLoad();
@@ -722,7 +722,7 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
             providerUserResource.update(providerUser);
 
             // login again to force sync if force mode
-            oauth.clientId("broker-app");
+            oauth.client("broker-app");
             loginPage.open(bc.consumerRealmName());
 
             WaitUtils.waitForPageToLoad();
@@ -773,7 +773,7 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
             updateIdPSyncMode(idProvider, consumerIdentityResource, IdentityProviderSyncMode.FORCE, false);
 
             // login to create the user in the consumer realm
-            oauth.clientId("broker-app");
+            oauth.client("broker-app");
             loginPage.open(bc.consumerRealmName());
 
             WaitUtils.waitForPageToLoad();
@@ -825,7 +825,7 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
             emailClientScope.getProtocolMappers().createMapper(hardcodedEmail).close();
 
             // login again to force sync
-            oauth.clientId("broker-app");
+            oauth.client("broker-app");
             loginPage.open(bc.consumerRealmName());
 
             WaitUtils.waitForPageToLoad();

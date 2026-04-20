@@ -192,7 +192,7 @@ public class AcrAuthFlowTest extends AbstractOIDCScopeTest{
      */
     @Before
     public void setupTest() {
-        oauth.clientId(CLIENT_ID);
+        oauth.client(CLIENT_ID);
         createPasswordFlow();
         createOTPFlow();
 

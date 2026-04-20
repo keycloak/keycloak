@@ -241,7 +241,7 @@ public class EntitlementAPITest extends AbstractAuthzTest {
     @Test
     public void testInvalidRequestWithClaimsFromPublicClient() throws IOException {
         oauth.realm("authz-test");
-        oauth.clientId(PUBLIC_TEST_CLIENT);
+        oauth.client(PUBLIC_TEST_CLIENT);
 
         oauth.doLogin("marta", "password");
 
@@ -268,7 +268,7 @@ public class EntitlementAPITest extends AbstractAuthzTest {
     @Test
     public void testRequestWithoutClaimsFromPublicClient() {
         oauth.realm("authz-test");
-        oauth.clientId(PUBLIC_TEST_CLIENT);
+        oauth.client(PUBLIC_TEST_CLIENT);
 
         oauth.doLogin("marta", "password");
 
@@ -2006,7 +2006,7 @@ public class EntitlementAPITest extends AbstractAuthzTest {
         authorization.permissions().resource().create(permission).close();
 
         oauth.realm("authz-test");
-        oauth.clientId(PUBLIC_TEST_CLIENT);
+        oauth.client(PUBLIC_TEST_CLIENT);
         oauth.doLogin("marta", "password");
 
         // Token request
@@ -2074,7 +2074,7 @@ public class EntitlementAPITest extends AbstractAuthzTest {
 
         oauth.realm("authz-test");
         oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
-        oauth.clientId(PUBLIC_TEST_CLIENT);
+        oauth.client(PUBLIC_TEST_CLIENT);
         oauth.doLogin("offlineuser", "password");
 
         // Token request
@@ -2121,7 +2121,7 @@ public class EntitlementAPITest extends AbstractAuthzTest {
     @Test
     public void testTokenExpirationRenewalWhenIssuingTokens() {
         oauth.realm("authz-test");
-        oauth.clientId(PUBLIC_TEST_CLIENT);
+        oauth.client(PUBLIC_TEST_CLIENT);
         oauth.doLogin("marta", "password");
         String code = oauth.parseLoginResponse().getCode();
         org.keycloak.testsuite.util.oauth.AccessTokenResponse accessTokenResponse = oauth.doAccessTokenRequest(code);

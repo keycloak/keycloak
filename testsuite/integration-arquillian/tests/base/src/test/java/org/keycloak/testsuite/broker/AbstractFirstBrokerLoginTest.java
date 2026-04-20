@@ -89,7 +89,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
     public void testErrorExistingUserWithUpdateProfile() {
         createUser("consumer");
 
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
 
         logInWithBroker(bc);
@@ -115,7 +115,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         updateExecutions(AbstractBrokerTest::disableUpdateProfileOnFirstLogin);
         String existingUser = createUser("consumer");
 
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
 
         logInWithBroker(bc);
@@ -154,7 +154,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         String existingUser = createUser("consumer");
         String anotherUser = createUser("foobar", "foo@bar.baz");
 
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
 
         logInWithBroker(bc);
@@ -194,7 +194,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         updateExecutions(AbstractBrokerTest::disableExistingUser);
         String existingUser = createUser("consumer");
 
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
 
         logInWithBroker(bc);
@@ -228,7 +228,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         try {
             String existingUser = createUser("consumer");
 
-            oauth.clientId("broker-app");
+            oauth.client("broker-app");
             loginPage.open(bc.consumerRealmName());
 
             logInWithBroker(bc);
@@ -272,7 +272,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         updateExecutions(AbstractBrokerTest::disableUpdateProfileOnFirstLogin);
         String existingUser = createUser("consumer");
 
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
 
         logInWithBroker(bc);
@@ -310,7 +310,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         updateExecutions(AbstractBrokerTest::disableExistingUser);
         String existingUser = createUser("consumer");
 
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
 
         logInWithBroker(bc);
@@ -350,7 +350,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
 
         providerUser.update(userResource);
 
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
 
         log.debug("Clicking social " + bc.getIDPAlias());
@@ -424,7 +424,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
 
         providerUser.update(userResource);
 
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
 
         log.debug("Clicking social " + bc.getIDPAlias());
@@ -478,7 +478,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
 
         providerUser.update(userResource);
 
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
 
         logInWithBroker(bc);
@@ -530,7 +530,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         updateExecutions(AbstractBrokerTest::disableExistingUser);
         String existingUser = createUser("consumer");
 
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
 
         logInWithBroker(bc);
@@ -594,7 +594,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
 
         providerUser.update(userResource);
 
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
 
         logInWithBroker(bc);
@@ -655,7 +655,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
 
         updateExecutions(AbstractBrokerTest::disableUpdateProfileOnFirstLogin);
 
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
 
         logInWithBroker(bc);
@@ -674,7 +674,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
 
         updateExecutions(AbstractBrokerTest::enableUpdateProfileOnFirstLogin);
 
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
 
         logInWithBroker(bc);
@@ -698,7 +698,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
     public void testRequiredUpdatedPassword() {
         updateExecutions(AbstractBrokerTest::enableRequirePassword);
 
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
 
         logInWithBroker(bc);
@@ -730,7 +730,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         consumerUser.setEmail(bc.getUserEmail());
         userResource.update(consumerUser);
 
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
 
         logInWithBroker(bc);
@@ -789,7 +789,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         Response response = idpResource.addMapper(hardCodedSessionNoteMapper);
         response.close();
 
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
 
         logInWithBroker(bc);
@@ -815,7 +815,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         realmRep.setRegistrationEmailAsUsername(true);
         realm.update(realmRep);
 
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
 
         logInWithBroker(bc);
@@ -848,7 +848,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         String linkedUserId = createUser("consumer");
 
         //test
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
 
         logInWithBroker(bc);
@@ -893,7 +893,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         final String linkedUserId = createUser(bc.getUserLogin());
 
         //test
-        oauth.config().clientId("broker-app");
+        oauth.config().client("broker-app");
         loginPage.open(bc.consumerRealmName());
 
         logInWithBroker(bc);
@@ -937,7 +937,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         final String linkedUserId = createUser(bc.getUserLogin());
 
         //test
-        oauth.config().clientId("broker-app");
+        oauth.config().client("broker-app");
         loginPage.open(bc.consumerRealmName());
 
         logInWithBroker(bc);
@@ -978,7 +978,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
 
         configureSMTPServer();
 
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
 
         logInWithBroker(bc);
@@ -1011,7 +1011,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         updateExecutions(AbstractBrokerTest::disableUpdateProfileOnFirstLogin);
         createUser(bc.providerRealmName(), "no-email", "password", "FirstName", "LastName", null);
 
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
 
         log.debug("Clicking social " + bc.getIDPAlias());
@@ -1046,7 +1046,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
 
         identityProviderResource.update(idpRep);
 
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
 
         logInWithBroker(bc);
@@ -1082,7 +1082,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
 
         configureSMTPServer();
 
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
 
         logInWithBroker(bc);
@@ -1119,7 +1119,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         userResource.update(consumerUser);
         configureSMTPServer();
 
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
 
         logInWithBroker(bc);
@@ -1164,7 +1164,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         userResource.update(consumerUser);
         configureSMTPServer();
 
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
 
         logInWithBroker(bc);
@@ -1214,7 +1214,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         configureSMTPServer();
 
         // begin login with idp
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
         logInWithBroker(bc);
 
@@ -1253,7 +1253,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         userResource.update(consumerUser);
         configureSMTPServer();
 
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
 
         logInWithBroker(bc);
@@ -1329,7 +1329,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
 
         createUser(bc.providerRealmName(), "no-first-name", "password", null, "LastName", "no-first-name@localhost.com");
 
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
 
         log.debug("Clicking social " + bc.getIDPAlias());
@@ -1383,7 +1383,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
 
         createUser(bc.providerRealmName(), "no-first-name", "password", null, "LastName", "no-first-name@localhost.com");
 
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
 
         log.debug("Clicking social " + bc.getIDPAlias());
@@ -1458,7 +1458,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
 
         createUser(bc.providerRealmName(), "no-first-name", "password", null, "LastName", "no-first-name@localhost.com");
 
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
 
         log.debug("Clicking social " + bc.getIDPAlias());
@@ -1484,7 +1484,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         AccountHelper.logout(adminClient.realm(bc.consumerRealmName()), "no-first-name");
         createUser(bc.providerRealmName(), "no-last-name", "password", "FirstName", null, "no-last-name@localhost.com");
 
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
 
         log.debug("Clicking social " + bc.getIDPAlias());
@@ -1510,7 +1510,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
 
         createUser(bc.providerRealmName(), "no-email", "password", "FirstName", "LastName", null);
 
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
 
         log.debug("Clicking social " + bc.getIDPAlias());
@@ -1540,7 +1540,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         updateExecutions(AbstractBrokerTest::setUpMissingUpdateProfileOnFirstLogin);
         createUser(bc.providerRealmName(), "all-info-set", "password", "FirstName", "LastName", "all-info-set@localhost.com");
 
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
 
         log.debug("Clicking social " + bc.getIDPAlias());
@@ -1566,7 +1566,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
     public void testWithoutUpdateProfile() {
         updateExecutions(AbstractBrokerTest::disableUpdateProfileOnFirstLogin);
 
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
 
         logInWithBroker(bc);
@@ -1587,7 +1587,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
     public void testAutoLinkAccountWithBroker() {
         testingClient.server(bc.consumerRealmName()).run(configureAutoLinkFlow(bc.getIDPAlias()));
 
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
 
         logInWithBroker(bc);

@@ -74,7 +74,7 @@ public class BrowserButtonsTest extends AbstractChangeImportedUserPasswordsTest 
         expectedMessagesCount = 0;
         getCleanup().addUserId(userId);
 
-        oauth.clientId("test-app");
+        oauth.client("test-app", "password");
     }
 
     @Rule
@@ -223,7 +223,7 @@ public class BrowserButtonsTest extends AbstractChangeImportedUserPasswordsTest 
     // KEYCLOAK-4670 - Flow 4
     @Test
     public void consentRefresh() {
-        oauth.clientId("third-party");
+        oauth.client("third-party");
 
         // Login and go through required actions
         oauth.openLoginForm();

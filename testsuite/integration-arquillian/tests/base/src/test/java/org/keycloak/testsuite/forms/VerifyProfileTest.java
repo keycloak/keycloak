@@ -802,7 +802,7 @@ public class VerifyProfileTest extends AbstractChangeImportedUserPasswordsTest {
 
         updateUser(user5Id, "ExistingFirst", "ExistingLast", null);
 
-        oauth.clientId(client_scope_optional.getClientId()).openLoginForm();
+        oauth.client(client_scope_optional.getClientId()).openLoginForm();
 
         loginPage.login("login-test5", getPassword("login-test5"));
 
@@ -825,7 +825,7 @@ public class VerifyProfileTest extends AbstractChangeImportedUserPasswordsTest {
 
         updateUser(user5Id, "ExistingFirst", "ExistingLast", null);
 
-        oauth.scope(SCOPE_DEPARTMENT).clientId(client_scope_optional.getClientId()).openLoginForm();
+        oauth.scope(SCOPE_DEPARTMENT).client(client_scope_optional.getClientId()).openLoginForm();
 
         loginPage.assertCurrent();
         loginPage.login("login-test5", getPassword("login-test5"));
@@ -854,7 +854,7 @@ public class VerifyProfileTest extends AbstractChangeImportedUserPasswordsTest {
 
         updateUser(user5Id, "ExistingFirst", "ExistingLast", null);
 
-        oauth.clientId(client_scope_default.getClientId()).openLoginForm();
+        oauth.client(client_scope_default.getClientId()).openLoginForm();
 
         loginPage.assertCurrent();
         loginPage.login("login-test5", getPassword("login-test5"));
@@ -888,7 +888,7 @@ public class VerifyProfileTest extends AbstractChangeImportedUserPasswordsTest {
 
         updateUser(user5Id, "ExistingFirst", "ExistingLast", "ExistingDepartment");
 
-        oauth.clientId(client_scope_default.getClientId()).openLoginForm();
+        oauth.client(client_scope_default.getClientId()).openLoginForm();
 
         loginPage.assertCurrent();
         loginPage.login("login-test5", getPassword("login-test5"));
@@ -914,7 +914,7 @@ public class VerifyProfileTest extends AbstractChangeImportedUserPasswordsTest {
                 + "{\"name\": \"department\"," + PERMISSIONS_ALL + ", \"required\":{}, \"selector\":{\"scopes\":[\""+SCOPE_DEPARTMENT+"\"]}}"
                 + "]}");
 
-        oauth.clientId(client_scope_optional.getClientId()).openLoginForm();
+        oauth.client(client_scope_optional.getClientId()).openLoginForm();
 
         loginPage.assertCurrent();
         loginPage.login("login-test5", getPassword("login-test5"));
@@ -935,7 +935,7 @@ public class VerifyProfileTest extends AbstractChangeImportedUserPasswordsTest {
                 + "{\"name\": \"department\"," + PERMISSIONS_ALL + ", \"required\":{}, \"selector\":{\"scopes\":[\""+SCOPE_DEPARTMENT+"\"]}}"
                 + "]}");
 
-        oauth.scope(SCOPE_DEPARTMENT).clientId(client_scope_optional.getClientId()).openLoginForm();
+        oauth.scope(SCOPE_DEPARTMENT).client(client_scope_optional.getClientId()).openLoginForm();
 
         loginPage.assertCurrent();
         loginPage.login("login-test5", getPassword("login-test5"));
@@ -965,7 +965,7 @@ public class VerifyProfileTest extends AbstractChangeImportedUserPasswordsTest {
                 + "{\"name\": \"department\"," + PERMISSIONS_ALL + ", \"selector\":{\"scopes\":[\""+SCOPE_DEPARTMENT+"\"]}}"
                 + "]}");
 
-        oauth.scope(SCOPE_DEPARTMENT).clientId(client_scope_optional.getClientId()).openLoginForm();
+        oauth.scope(SCOPE_DEPARTMENT).client(client_scope_optional.getClientId()).openLoginForm();
 
         loginPage.assertCurrent();
         loginPage.login("login-test5", getPassword("login-test5"));
@@ -996,7 +996,7 @@ public class VerifyProfileTest extends AbstractChangeImportedUserPasswordsTest {
                 + "{\"name\": \"department\"," + PERMISSIONS_ALL + ", \"required\":{}, \"selector\":{\"scopes\":[\""+SCOPE_DEPARTMENT+"\"]}}"
                 + "]}");
 
-        oauth.clientId(client_scope_optional.getClientId()).openLoginForm();
+        oauth.client(client_scope_optional.getClientId()).openLoginForm();
 
         loginPage.assertCurrent();
         loginPage.login("login-test5", getPassword("login-test5"));

@@ -285,7 +285,7 @@ public class OrganizationGroupOidcIdpMapperTest extends AbstractOrganizationTest
         // Second login: bypass the org identity-first page (which hides the unlinked IdP) by
         // navigating directly with kc_idp_hint. The IdP still exists in the realm so login succeeds,
         // but the mapper cannot resolve the org group and the user is NOT re-added to it.
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
         driver.navigate().to(driver.getCurrentUrl() + "&kc_idp_hint=" + bc.getIDPAlias());
         loginOrgIdp(bc.getUserLogin(), bc.getUserEmail(), false, true);

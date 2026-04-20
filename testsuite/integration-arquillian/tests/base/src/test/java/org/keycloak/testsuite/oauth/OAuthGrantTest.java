@@ -144,7 +144,7 @@ public class OAuthGrantTest extends AbstractKeycloakTest {
 
     @Test
     public void oauthGrantCancelTest() {
-        oauth.clientId(THIRD_PARTY_APP);
+        oauth.client(THIRD_PARTY_APP);
         oauth.doLogin(DEFAULT_USERNAME, DEFAULT_PASSWORD);
 
         grantPage.assertCurrent();
@@ -165,7 +165,7 @@ public class OAuthGrantTest extends AbstractKeycloakTest {
     @Test
     public void oauthGrantNotShownWhenAlreadyGranted() throws IOException {
         // Grant permissions on grant screen
-        oauth.clientId(THIRD_PARTY_APP);
+        oauth.client(THIRD_PARTY_APP, "password");
         oauth.doLogin(DEFAULT_USERNAME, DEFAULT_PASSWORD);
 
         grantPage.assertCurrent();
@@ -206,7 +206,7 @@ public class OAuthGrantTest extends AbstractKeycloakTest {
     @Test
     public void oauthGrantAddAnotherScope() throws IOException {
         // Grant permissions on grant screen
-        oauth.clientId(THIRD_PARTY_APP);
+        oauth.client(THIRD_PARTY_APP);
         oauth.doLogin(DEFAULT_USERNAME, DEFAULT_PASSWORD);
 
         // Create new clientScope and add to client
@@ -278,7 +278,7 @@ public class OAuthGrantTest extends AbstractKeycloakTest {
         thirdParty.addOptionalClientScope(fooScopeId);
 
         // Assert clientScope not on grant screen when not requested
-        oauth.clientId(THIRD_PARTY_APP);
+        oauth.client(THIRD_PARTY_APP);
         oauth.doLogin(DEFAULT_USERNAME, DEFAULT_PASSWORD);
         grantPage.assertCurrent();
         List<String> grants = grantPage.getDisplayedGrants();
@@ -338,7 +338,7 @@ public class OAuthGrantTest extends AbstractKeycloakTest {
         thirdParty.addOptionalClientScope(dynamicFooScopeId);
 
         // Assert clientScope not on grant screen when not requested
-        oauth.clientId(THIRD_PARTY_APP);
+        oauth.client(THIRD_PARTY_APP, "password");
         oauth.scope("foo-dynamic-scope:withparam");
         oauth.doLogin(DEFAULT_USERNAME, DEFAULT_PASSWORD);
         grantPage.assertCurrent();
@@ -411,7 +411,7 @@ public class OAuthGrantTest extends AbstractKeycloakTest {
         getCleanup().addClientScopeId(fooScopeId);
 
         // Login
-        oauth.clientId(THIRD_PARTY_APP);
+        oauth.client(THIRD_PARTY_APP);
         oauth.doLogin(DEFAULT_USERNAME, DEFAULT_PASSWORD);
         grantPage.assertCurrent();
         grantPage.assertGrants(OAuthGrantPage.EMAIL_CONSENT_TEXT, OAuthGrantPage.PROFILE_CONSENT_TEXT, OAuthGrantPage.ROLES_CONSENT_TEXT, "foo-addr");
@@ -454,7 +454,7 @@ public class OAuthGrantTest extends AbstractKeycloakTest {
 
     @Test
     public void oauthGrantExpiredAuthSession() throws Exception {
-        oauth.clientId(THIRD_PARTY_APP);
+        oauth.client(THIRD_PARTY_APP);
         oauth.doLogin(DEFAULT_USERNAME, DEFAULT_PASSWORD);
 
         grantPage.assertCurrent();
@@ -490,7 +490,7 @@ public class OAuthGrantTest extends AbstractKeycloakTest {
         Assert.assertEquals("2", profileRep.getAttributes().get(ClientScopeModel.GUI_ORDER));
 
         // Display consent screen --- assert email, then profile
-        oauth.clientId(THIRD_PARTY_APP);
+        oauth.client(THIRD_PARTY_APP);
         oauth.doLogin(DEFAULT_USERNAME, DEFAULT_PASSWORD);
 
         grantPage.assertCurrent();
@@ -520,7 +520,7 @@ public class OAuthGrantTest extends AbstractKeycloakTest {
     @Test
     public void oauthGrantUserNotLoggedOutAfterConsentRevoke() throws Exception {
         // Login
-        oauth.clientId(THIRD_PARTY_APP);
+        oauth.client(THIRD_PARTY_APP);
         oauth.doLogin(DEFAULT_USERNAME, DEFAULT_PASSWORD);
 
         // Confirm consent screen

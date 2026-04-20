@@ -163,7 +163,7 @@ public class OIDCScopeTest extends AbstractOIDCScopeTest {
     @Before
     public void clientConfiguration() {
         ClientManager.realm(adminClient.realm("test")).clientId("test-app").directAccessGrant(true);
-        oauth.clientId("test-app");
+        oauth.client("test-app", "password");
         oauth.scope(null);
     }
 
@@ -346,7 +346,7 @@ public class OIDCScopeTest extends AbstractOIDCScopeTest {
         addressScopeRep.getAttributes().put(ClientScopeModel.DISPLAY_ON_CONSENT_SCREEN, "false");
         addressScope.update(addressScopeRep);
 
-        oauth.clientId("third-party");
+        oauth.client("third-party");
         oauth.doLogin("john", "password");
 
         grantPage.assertCurrent();
@@ -411,7 +411,7 @@ public class OIDCScopeTest extends AbstractOIDCScopeTest {
         thirdParty.update(thirdPartyRep);
 
         // Login. Client should be displayed on consent screen
-        oauth.clientId("third-party");
+        oauth.client("third-party");
         oauth.doLogin("john", "password");
 
         grantPage.assertCurrent();
@@ -455,7 +455,7 @@ public class OIDCScopeTest extends AbstractOIDCScopeTest {
         profileScope.update(profileScopeRep);
 
         // Login. ConsentTexts are empty for the client and for the "profile" scope, so it should fallback to name/clientId
-        oauth.clientId("third-party");
+        oauth.client("third-party");
         oauth.doLogin("john", "password");
 
         grantPage.assertCurrent();
@@ -474,7 +474,7 @@ public class OIDCScopeTest extends AbstractOIDCScopeTest {
     @Test
     public void testRefreshTokenWithConsentRequired() {
         // Login with consentRequired
-        oauth.clientId("third-party");
+        oauth.client("third-party");
         oauth.doLogin("john", "password");
 
         grantPage.assertCurrent();

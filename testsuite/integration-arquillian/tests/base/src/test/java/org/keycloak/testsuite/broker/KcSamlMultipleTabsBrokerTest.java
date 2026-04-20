@@ -66,7 +66,7 @@ public class KcSamlMultipleTabsBrokerTest extends AbstractInitializedBaseBrokerT
         assumeTrue("Since the JS engine in real browser does check the expiration regularly in all tabs, this test only works with HtmlUnit", driver instanceof HtmlUnitDriver);
         try (BrowserTabUtil tabUtil = BrowserTabUtil.getInstanceAndSetEnv(driver)) {
             // Open login page in tab1 and click "login with IDP"
-            oauth.clientId("broker-app");
+            oauth.client("broker-app");
             loginPage.open(bc.consumerRealmName());
             loginPage.clickSocial(bc.getIDPAlias());
 
@@ -135,7 +135,7 @@ public class KcSamlMultipleTabsBrokerTest extends AbstractInitializedBaseBrokerT
                      .update()
         ) {
             // Open login page in tab1 and click "login with IDP"
-            oauth.clientId("broker-app");
+            oauth.client("broker-app");
             loginPage.open(bc.consumerRealmName());
             loginPage.clickSocial(bc.getIDPAlias());
 

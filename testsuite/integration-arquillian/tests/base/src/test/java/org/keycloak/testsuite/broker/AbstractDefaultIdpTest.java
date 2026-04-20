@@ -67,7 +67,7 @@ public abstract class AbstractDefaultIdpTest extends AbstractInitializedBaseBrok
         configureFlow(null);
 
         // Navigate to the auth page
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
 
         waitForPage(driver, "sign in to", true);
@@ -85,7 +85,7 @@ public abstract class AbstractDefaultIdpTest extends AbstractInitializedBaseBrok
         createUser(bc.providerRealmName(), username, "password", "FirstName");
 
         // Navigate to the auth page
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         loginPage.open(bc.providerRealmName());
 
         waitForPage(driver, "sign in to", true);
@@ -103,7 +103,7 @@ public abstract class AbstractDefaultIdpTest extends AbstractInitializedBaseBrok
         createUser(bc.providerRealmName(), username, "password", "FirstName");
 
         // Navigate to the auth page
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         oauth.realm(bc.consumerRealmName());
         oauth.openLoginForm();
 

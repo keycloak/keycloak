@@ -75,7 +75,7 @@ public class KcOidcBrokerLogoutFrontChannelTest extends AbstractKcOidcBrokerLogo
             "broker-app",
             getConsumerRoot() + "/auth/realms/" + REALM_CONS_NAME + "/app");
 
-        oauth.clientId("account");
+        oauth.client("account");
         oauth.redirectUri(getConsumerRoot() + "/auth/realms/" + REALM_PROV_NAME + "/account");
         loginPage.open(REALM_PROV_NAME);
 

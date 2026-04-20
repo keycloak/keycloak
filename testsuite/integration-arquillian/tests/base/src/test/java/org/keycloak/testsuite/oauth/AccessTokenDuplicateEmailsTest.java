@@ -51,7 +51,7 @@ public class AccessTokenDuplicateEmailsTest extends AbstractKeycloakTest {
 
     @Before
     public void clientConfiguration() {
-        oauth.clientId("test-app");
+        oauth.client("test-app", "password");
         oauth.realm("test-duplicate-emails");
     }
 

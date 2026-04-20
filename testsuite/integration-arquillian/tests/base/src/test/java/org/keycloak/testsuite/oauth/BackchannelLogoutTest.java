@@ -247,7 +247,7 @@ public class BackchannelLogoutTest extends AbstractNestedBrokerTest {
 
         OAuthClient oauth2 = oauth.newConfig().driver(driver2);
         oauth2.realm(nbc.consumerRealmName())
-                .clientId(OidcBackchannelLogoutBrokerConfiguration.CONSUMER_CLIENT_ID)
+                .client(OidcBackchannelLogoutBrokerConfiguration.CONSUMER_CLIENT_ID)
                 .redirectUri(getAuthServerRoot() + "realms/" + nbc.consumerRealmName() + "/app");
 
         doLoginSocial(oauth2, nbc.getIDPAlias(), nbc.getUserLogin(), nbc.getUserPassword());
@@ -824,7 +824,7 @@ public class BackchannelLogoutTest extends AbstractNestedBrokerTest {
     private OAuthClient loginWithSecondBrowser(String identityProviderDisplayName) {
         OAuthClient oauth2 = oauth.newConfig().driver(driver2);
         oauth2.realm(nbc.consumerRealmName())
-                .clientId(OidcBackchannelLogoutBrokerConfiguration.CONSUMER_CLIENT_ID)
+                .client(OidcBackchannelLogoutBrokerConfiguration.CONSUMER_CLIENT_ID)
                 .redirectUri(getAuthServerRoot() + "realms/" + nbc.consumerRealmName() + "/app");
         doLoginSocial(oauth2, identityProviderDisplayName, nbc.getUserLogin(), nbc.getUserPassword());
         return oauth2;

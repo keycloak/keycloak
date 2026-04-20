@@ -48,7 +48,7 @@ public class KcOidcBrokerParameterForwardTest extends AbstractBrokerTest {
 
     @Override
     protected void loginUser() {
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
 
         String claimsValue = "{\"userinfo\":{\"http://itsme.services/v2/claim/BENationalNumber\":null,\"spaced_value\":\"with space\"}}";

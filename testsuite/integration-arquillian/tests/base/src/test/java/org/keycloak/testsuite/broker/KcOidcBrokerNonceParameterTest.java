@@ -63,7 +63,7 @@ public class KcOidcBrokerNonceParameterTest extends AbstractBrokerTest {
         updateExecutions(AbstractBrokerTest::disableUpdateProfileOnFirstLogin);
 
         oauth.realm(bc.consumerRealmName());
-        oauth.clientId("consumer-client");
+        oauth.client("consumer-client");
 
         AuthorizationEndpointResponse authzResponse = doLoginSocial(oauth, bc.getIDPAlias(), bc.getUserLogin(), bc.getUserPassword(), "123456");
         String code = authzResponse.getCode();
@@ -89,7 +89,7 @@ public class KcOidcBrokerNonceParameterTest extends AbstractBrokerTest {
         idpRes.update(idpRep);
 
         oauth.realm(bc.consumerRealmName());
-        oauth.clientId("consumer-client");
+        oauth.client("consumer-client");
 
         AuthorizationEndpointResponse authzResponse = doLoginSocial(oauth, bc.getIDPAlias(), bc.getUserLogin(), bc.getUserPassword(), null);
         String code = authzResponse.getCode();

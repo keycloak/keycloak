@@ -292,7 +292,7 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
         RealmRepresentation realm = testRealm().toRepresentation();
         realm.setRegistrationAllowed(true);
         testRealm().update(realm);
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         loginPage.open(realm.getRealm());
         loginPage.clickRegister();
         registerPage.assertCurrent();

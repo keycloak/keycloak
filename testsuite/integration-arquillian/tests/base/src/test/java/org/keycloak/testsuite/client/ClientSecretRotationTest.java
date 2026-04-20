@@ -471,7 +471,7 @@ public class ClientSecretRotationTest extends AbstractRestServiceTest {
                         wrapper.getClientSecretExpirationTime())
                         + " | Time: " + Time.toDate(Time.currentTime()));
 
-        oauth.clientId(clientId);
+        oauth.client(clientId);
 
         setTimeOffset(7201);
 

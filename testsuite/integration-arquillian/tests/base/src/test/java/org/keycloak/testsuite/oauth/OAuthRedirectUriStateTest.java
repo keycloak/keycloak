@@ -37,7 +37,7 @@ public class OAuthRedirectUriStateTest extends AbstractTestRealmKeycloakTest {
 
     @Before
     public void clientConfiguration() {
-        oauth.clientId("test-app");
+        oauth.client("test-app", "password");
         oauth.responseType(OIDCResponseType.CODE);
     }
 

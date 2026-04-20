@@ -201,7 +201,7 @@ public class KcOidcFirstBrokerLoginNewAuthTest extends AbstractInitializedBaseBr
         user.update(userRep);
 
         // Login. TOTP will be required at login time.
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
 
         loginPage.login(username, "password");
@@ -219,7 +219,7 @@ public class KcOidcFirstBrokerLoginNewAuthTest extends AbstractInitializedBaseBr
 
     // Login with broker and click "Link account"
     private void loginWithBrokerAndConfirmLinkAccount() {
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
 
         logInWithBroker(bc);

@@ -42,7 +42,7 @@ public class OIDCHybridResponseTypeCodeIDTokenTokenTest extends AbstractOIDCResp
     public void clientConfiguration() {
         clientManagerBuilder().standardFlow(true).implicitFlow(true);
 
-        oauth.clientId("test-app");
+        oauth.client("test-app", "password");
         oauth.responseType(OIDCResponseType.CODE + " " + OIDCResponseType.ID_TOKEN + " "  + OIDCResponseType.TOKEN);
     }
 

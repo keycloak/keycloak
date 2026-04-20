@@ -188,7 +188,7 @@ public class UncaughtErrorPageTest extends AbstractKeycloakTest {
     @Test
     public void errorPageException() {
         oauth.realm("master");
-        oauth.clientId("nosuch");
+        oauth.client("nosuch");
         oauth.openLoginForm();
 
         assertTrue(errorPage.isCurrent());
