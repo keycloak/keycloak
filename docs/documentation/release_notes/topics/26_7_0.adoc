@@ -1,0 +1,12 @@
+// Release notes should contain only headline-worthy new features,
+// assuming that people who migrate will read the upgrading guide anyway.
+
+= Administration
+
+== `manage-account` is now a composite role for account roles
+
+For newly created realms, the `manage-account` client role of the `account` client is now a composite role containing all other account client roles except `delete-account`. Users with `manage-account` automatically inherit permissions like `view-profile`, `view-applications`, `manage-consent`, and `view-groups`.
+
+The `delete-account` role remains excluded from the composite and must be explicitly assigned. However, the `account-console` client in new realms now includes a scope mapping for `delete-account`, so administrators only need to assign the role to users without additional client configuration.
+
+NOTE: Existing realms are not affected and retain their current role structure.

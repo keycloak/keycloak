@@ -492,8 +492,6 @@ public class RealmManager {
             }
             RoleModel manageAccountLinks = accountClient.addRole(AccountRoles.MANAGE_ACCOUNT_LINKS);
             manageAccountLinks.setDescription("${role_" + AccountRoles.MANAGE_ACCOUNT_LINKS + "}");
-            RoleModel manageAccount = accountClient.getRole(AccountRoles.MANAGE_ACCOUNT);
-            manageAccount.addCompositeRole(manageAccountLinks);
             RoleModel viewAppRole = accountClient.addRole(AccountRoles.VIEW_APPLICATIONS);
             viewAppRole.setDescription("${role_" + AccountRoles.VIEW_APPLICATIONS + "}");
             RoleModel viewConsentRole = accountClient.addRole(AccountRoles.VIEW_CONSENT);
@@ -505,6 +503,14 @@ public class RealmManager {
             viewGroups.setDescription("${role_" + AccountRoles.VIEW_GROUPS + "}");
 
             KeycloakModelUtils.setupDeleteAccount(accountClient);
+
+            // manage-account is a composite super role containing all other account client roles
+            RoleModel manageAccount = accountClient.getRole(AccountRoles.MANAGE_ACCOUNT);
+            manageAccount.addCompositeRole(accountClient.getRole(AccountRoles.VIEW_PROFILE));
+            manageAccount.addCompositeRole(manageAccountLinks);
+            manageAccount.addCompositeRole(viewAppRole);
+            manageAccount.addCompositeRole(manageConsentRole);
+            manageAccount.addCompositeRole(viewGroups);
 
             ClientModel accountConsoleClient = realm.getClientByClientId(Constants.ACCOUNT_CONSOLE_CLIENT_ID);
             if (accountConsoleClient == null) {
@@ -523,7 +529,7 @@ public class RealmManager {
                 accountConsoleClient.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
 
                 accountConsoleClient.addScopeMapping(accountClient.getRole(AccountRoles.MANAGE_ACCOUNT));
-                accountConsoleClient.addScopeMapping(accountClient.getRole(AccountRoles.VIEW_GROUPS));
+                accountConsoleClient.addScopeMapping(accountClient.getRole(AccountRoles.DELETE_ACCOUNT));
 
                 ProtocolMapperModel audienceMapper = new ProtocolMapperModel();
                 audienceMapper.setName(OIDCLoginProtocolFactory.AUDIENCE_RESOLVE);
