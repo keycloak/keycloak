@@ -2,12 +2,15 @@ package org.keycloak.ssf.transmitter;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.keycloak.Config;
 import org.keycloak.common.Profile;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
@@ -105,13 +108,17 @@ public class DefaultSsfTransmitterProviderFactory implements SsfTransmitterProvi
     protected SsfTransmitterContext context;
 
     /**
-     * Cascade-purges outbox rows when a realm is removed. REALM_ID is not
-     * a foreign key on the SSF_PENDING_EVENT table (the table is
-     * plugin-contributed via JpaEntityProvider, so it can't declare FKs
-     * into core Keycloak tables), so the cleanup is handled explicitly
-     * in-transaction with the realm delete.
+     * Handles {@code RealmRemovedEvent} / {@code ClientRemovedEvent} to
+     * cascade-purge outbox rows (REALM_ID / CLIENT_ID are not foreign
+     * keys on SSF_PENDING_EVENT — the table is plugin-contributed via
+     * JpaEntityProvider, so it can't declare FKs into core Keycloak
+     * tables) and {@code ClientUpdatedEvent} to reject saves that would
+     * leave two clients in the same realm sharing an {@code ssf.streamId}
+     * ({@link ModelDuplicateException} propagates out of the event so
+     * the admin fixes the duplicate instead of having SSF state
+     * silently mutated).
      */
-    protected ProviderEventListener outboxRealmRemovedPurgeListener;
+    protected ProviderEventListener ssfProviderEventListener;
 
 
     @Override
@@ -238,7 +245,7 @@ public class DefaultSsfTransmitterProviderFactory implements SsfTransmitterProvi
         // composite and harmlessly do nothing.
         this.metricsBinder = resolveMetricsBinder(transmitterConfig);
 
-        this.outboxRealmRemovedPurgeListener = createProviderEventListener();
+        this.ssfProviderEventListener = createProviderEventListener();
 
         // Build the factory-scoped context bundle. From here on
         // every per-session DefaultSsfTransmitterProvider takes only
@@ -425,7 +432,7 @@ public class DefaultSsfTransmitterProviderFactory implements SsfTransmitterProvi
     @Override
     public void postInit(KeycloakSessionFactory factory) {
         scheduleOutboxDrainer(factory);
-        factory.register(outboxRealmRemovedPurgeListener);
+        factory.register(ssfProviderEventListener);
         // NOTE: ssf.notify.<clientId> attributes on users/orgs are NOT
         // cleaned up on client removal. Orphaned attributes are inert —
         // the dispatcher resolves the stream (which requires a live
@@ -496,9 +503,87 @@ public class DefaultSsfTransmitterProviderFactory implements SsfTransmitterProvi
                         log.warnf(e, "SSF outbox realm-removed cleanup failed for realm %s",
                                 ev.getRealm().getId());
                     }
+                } else if (event instanceof ClientModel.ClientRemovedEvent ev) {
+                    try {
+                        purgeOutboxOnClientRemoved(ev);
+                    } catch (RuntimeException e) {
+                        log.warnf(e, "SSF outbox client-removed cleanup failed for client %s in realm %s",
+                                ev.getClient().getClientId(),
+                                ev.getClient().getRealm() != null ? ev.getClient().getRealm().getId() : "<unknown>");
+                    }
+                } else if (event instanceof ClientModel.ClientUpdatedEvent ev) {
+                    // Deliberately does not catch — a ModelDuplicateException
+                    // from the validator must propagate so the offending
+                    // import / update is rolled back with a clear error.
+                    validateImportedStreamId(ev.getKeycloakSession(), ev.getUpdatedClient());
                 }
             }
         };
+    }
+
+    /**
+     * Cascade-deletes outbox rows owned by a removed client. Outbox rows
+     * are keyed by the internal client UUID ({@code stream.getClientId()}),
+     * so without this hook the drainer keeps finding the rows, fails
+     * dispatch because the client is gone, and burns retries until
+     * dead-letter. Extension point for subclasses that need to layer
+     * additional client-removed cleanup (e.g. evict external caches
+     * keyed by the client UUID, emit a custom audit record) on top of
+     * the outbox purge.
+     */
+    protected void purgeOutboxOnClientRemoved(ClientModel.ClientRemovedEvent ev) {
+        createPendingEventStore(ev.getKeycloakSession())
+                .deleteByClient(ev.getClient().getId());
+    }
+
+    /**
+     * Rejects any client save that would leave two clients in the same
+     * realm holding identical {@code ssf.streamId} attributes. Fires
+     * from the {@code ClientUpdatedEvent} hook that
+     * {@link org.keycloak.models.utils.RepresentationToModel#createClient
+     * createClient} and the representation-based update path both
+     * publish after all attributes have been set — which is where a
+     * cloned JSON export would surface the duplicate.
+     *
+     * <p>Throws {@link ModelDuplicateException} on collision so the
+     * offending import/update is rolled back with a clear error
+     * instead of having SSF state silently rewritten. Delete-then-
+     * reimport of the same receiver keeps working because the original
+     * is gone by the time the new one is saved.
+     *
+     * <p>No-op when the attribute is absent or unique in the realm.
+     * Serves as the primary defence against the JSON import/export
+     * collision; the secondary check in
+     * {@link ClientStreamStore#findClientByStreamId} catches anything
+     * that gets past this (e.g. direct DB writes).
+     */
+    protected void validateImportedStreamId(KeycloakSession session, ClientModel client) {
+        if (client == null) {
+            return;
+        }
+        String streamId = client.getAttribute(ClientStreamStore.SSF_STREAM_ID_KEY);
+        if (streamId == null || streamId.isBlank()) {
+            return;
+        }
+        RealmModel realm = client.getRealm();
+        if (realm == null) {
+            return;
+        }
+        // Raise the page size above 1 so a collision is actually
+        // visible — we only need to know whether at least one *other*
+        // client shares the id.
+        boolean duplicate = session.clients()
+                .searchClientsByAttributes(realm, Map.of(ClientStreamStore.SSF_STREAM_ID_KEY, streamId), 0, 2)
+                .map(ClientModel::getId)
+                .anyMatch(id -> !id.equals(client.getId()));
+        if (!duplicate) {
+            return;
+        }
+        throw new ModelDuplicateException(String.format(
+                "SSF stream id '%s' is already in use by another client in realm '%s'. "
+                        + "Two clients cannot share the same ssf.streamId — revise the client "
+                        + "configuration (or delete the colliding receiver before re-importing).",
+                streamId, realm.getName()));
     }
 
     @Override

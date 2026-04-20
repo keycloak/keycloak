@@ -350,9 +350,24 @@ public class ClientStreamStore implements SsfStreamStore {
     }
 
     protected Optional<ClientModel> findClientByStreamId(String streamId, RealmModel realm) {
-        return session.clients()
-                .searchClientsByAttributes(realm, Map.of(SSF_STREAM_ID_KEY, streamId), 0, 1)
-                .findFirst();
+        // Query with page size 2 so a collision is detectable — the
+        // import-time sanitizer in DefaultSsfTransmitterProviderFactory
+        // is the primary defence, but we fail closed here for the
+        // scenarios it can't catch (out-of-band attribute edits,
+        // concurrent imports, etc.) rather than dispatching events to
+        // whichever client the store happens to return first.
+        List<ClientModel> matches = session.clients()
+                .searchClientsByAttributes(realm, Map.of(SSF_STREAM_ID_KEY, streamId), 0, 2)
+                .toList();
+        if (matches.size() > 1) {
+            log.warnf("Refusing to resolve SSF stream — multiple clients hold ssf.streamId=%s in realm=%s. "
+                            + "Matching clientIds: %s. Strip the duplicate via a client update/delete "
+                            + "before dispatch can resume for this stream.",
+                    streamId, realm.getName(),
+                    matches.stream().map(ClientModel::getClientId).toList());
+            return Optional.empty();
+        }
+        return matches.stream().findFirst();
     }
 
     public StreamConfig getStreamForClient(ClientModel client) {
