@@ -3,6 +3,7 @@ package org.keycloak.ssf.transmitter.delivery;
 import java.util.function.Function;
 
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.UserModel;
 import org.keycloak.ssf.Ssf;
 import org.keycloak.ssf.SsfProfile;
 import org.keycloak.ssf.event.token.SecurityEventToken;
@@ -194,6 +195,20 @@ public class SecurityEventTokenDispatcher {
      */
     protected boolean shouldDispatchForSubject(SsfSecurityEventToken eventToken, StreamConfig stream) {
         return subjectSubscriptionFilter.shouldDispatch(eventToken, stream, stream.getClientClientId(), session);
+    }
+
+    /**
+     * Pre-token subject gate callable before the mapper runs. Returns
+     * {@code true} if the user could receive *any* event on this
+     * stream under the current subscription state. Lets the event
+     * listener short-circuit streams whose subject is not subscribed
+     * before paying for {@code toSecurityEvent}. The full token-based
+     * gate still runs inside {@link #dispatchEvent}, so any mismatch
+     * between {@code event.getUserId()} and the final token subject
+     * (complex subjects, impersonation) stays safe.
+     */
+    public boolean shouldDispatchForUser(UserModel user, StreamConfig stream) {
+        return subjectSubscriptionFilter.shouldDispatchForUser(user, stream, stream.getClientClientId(), session);
     }
 
     protected boolean isEventEnabledForStream(SsfSecurityEventToken eventToken, StreamConfig stream) {

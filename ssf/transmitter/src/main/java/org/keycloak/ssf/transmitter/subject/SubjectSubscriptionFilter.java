@@ -82,8 +82,6 @@ public class SubjectSubscriptionFilter {
                                          String receiverClientId,
                                          KeycloakSession session) {
 
-        DefaultSubjects defaultSubjects = stream.getDefaultSubjects();
-
         // Stream management events (verification, stream-updated) are
         // always delivered — they're about the stream itself, not about
         // a specific user subject.
@@ -94,6 +92,34 @@ public class SubjectSubscriptionFilter {
         RealmModel realm = session.getContext().getRealm();
         UserModel user = resolveUserFromEvent(eventToken, session, realm);
 
+        return evaluateSubjectSubscription(user, stream, receiverClientId, session, eventToken.getJti());
+    }
+
+    /**
+     * Pre-token gate used by the native event listener to skip streams
+     * before running the mapper. Takes a pre-resolved user rather than
+     * a token subject — callers that need the token-subject semantics
+     * (complex subjects, stream management events) should use
+     * {@link #shouldDispatch(SsfSecurityEventToken, StreamConfig, String, KeycloakSession)}
+     * instead. The dispatcher-side gate still runs, so a mismatch
+     * between {@code event.getUserId()} and the final token subject
+     * (impersonation, actor-on-behalf) stays safe.
+     */
+    public boolean shouldDispatchForUser(UserModel user,
+                                         StreamConfig stream,
+                                         String receiverClientId,
+                                         KeycloakSession session) {
+        return evaluateSubjectSubscription(user, stream, receiverClientId, session, null);
+    }
+
+    protected boolean evaluateSubjectSubscription(UserModel user,
+                                                  StreamConfig stream,
+                                                  String receiverClientId,
+                                                  KeycloakSession session,
+                                                  String jti) {
+
+        DefaultSubjects defaultSubjects = stream.getDefaultSubjects();
+
         if (user == null) {
             // Event carries a subject but the user couldn't be resolved
             // (deleted, issuer mismatch, unknown format, etc.).
@@ -103,7 +129,7 @@ public class SubjectSubscriptionFilter {
             if (!deliver) {
                 log.debugf("SSF subject filter: skipping event — user subject unresolvable (default_subjects=NONE). "
                                 + "streamId=%s clientId=%s jti=%s",
-                        stream.getStreamId(), receiverClientId, eventToken.getJti());
+                        stream.getStreamId(), receiverClientId, jti);
             }
             return deliver;
         }
@@ -114,7 +140,7 @@ public class SubjectSubscriptionFilter {
                 log.debugf("SSF subject filter: skipping event — user is marked as IGNORED (default_subjects=ALL). "
                                 + "streamId=%s clientId=%s userId=%s jti=%s",
                         stream.getStreamId(), receiverClientId,
-                        user.getId(), eventToken.getJti());
+                        user.getId(), jti);
                 return false;
             }
             return true;
@@ -142,14 +168,14 @@ public class SubjectSubscriptionFilter {
             log.debugf("SSF subject filter: delivering inside removal grace window (default_subjects=NONE). "
                             + "streamId=%s clientId=%s userId=%s jti=%s graceSeconds=%d",
                     stream.getStreamId(), receiverClientId,
-                    user.getId(), eventToken.getJti(), effectiveGrace);
+                    user.getId(), jti, effectiveGrace);
             return true;
         }
 
         log.debugf("SSF subject filter: skipping event — user has no notification preference (default_subjects=NONE). "
                         + "streamId=%s clientId=%s userId=%s jti=%s",
                 stream.getStreamId(), receiverClientId,
-                user.getId(), eventToken.getJti());
+                user.getId(), jti);
         return false;
     }
 

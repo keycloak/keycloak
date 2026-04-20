@@ -79,12 +79,27 @@ public class SsfTransmitterEventListener implements EventListenerProvider {
             return List.of();
         }
 
+        // Resolve the user once for the pre-token subject gate. A null
+        // userId or an unresolvable user bypasses the pre-check and
+        // lets the dispatcher-side gate decide — it has the ALL/NONE
+        // fallback for unresolved subjects and handles complex-subject
+        // cases where the token subject differs from event.getUserId().
+        UserModel eventUser = resolveEventUser(event);
+
         // The top-level canConvert() gate already verified the event type is
         // mappable, so every stream below will attempt a real conversion.
         // Per-stream null results are still handled defensively — e.g. if
         // the user was deleted mid-event and the subject lookup fails.
         var streamTokens = new ArrayList<Map.Entry<SsfSecurityEventToken, StreamConfig>>();
         for (StreamConfig stream : streams) {
+            if (eventUser != null
+                    && !transmitter.securityEventTokenDispatcher().shouldDispatchForUser(eventUser, stream)) {
+                // Subject-gate negative — skip the mapper call entirely.
+                // Avoids building a token for a stream the dispatcher
+                // would just filter out, and keeps logs honest for the
+                // multi-receiver case where only some streams deliver.
+                continue;
+            }
             SsfSecurityEventToken securityEventToken = convertUserEventToSecurityEventToken(event, transmitter, stream);
             if (securityEventToken == null) {
                 log.debugf("Could not generate SSF Security Event Token for User Event. id=%s", event.getId());
@@ -96,10 +111,26 @@ public class SsfTransmitterEventListener implements EventListenerProvider {
                         stream.getStreamId(), stream.getClientClientId(), securityEventToken.getJti());
                 continue;
             }
-            log.debugf("Generated SSF Security Event Token for User Event. jti=%s", securityEventToken.getJti());
+            log.debugf("Generated SSF Security Event Token for User Event. "
+                            + "realm=%s clientId=%s streamId=%s userId=%s eventType=%s jti=%s",
+                    session.getContext().getRealm().getName(),
+                    stream.getClientClientId(), stream.getStreamId(),
+                    event.getUserId(), event.getType(), securityEventToken.getJti());
             streamTokens.add(Map.entry(securityEventToken, stream));
         }
         return streamTokens;
+    }
+
+    protected UserModel resolveEventUser(Event event) {
+        String userId = event.getUserId();
+        if (userId == null) {
+            return null;
+        }
+        RealmModel realm = session.getContext().getRealm();
+        if (realm == null) {
+            return null;
+        }
+        return session.users().getUserById(realm, userId);
     }
 
     /**
@@ -263,7 +294,12 @@ public class SsfTransmitterEventListener implements EventListenerProvider {
                 log.debugf("Could not generate SSF Security Event Token for Admin Event. id=%s", adminEvent.getId());
                 continue;
             }
-            log.debugf("Generated SSF Security Event Token for Admin Event. jti=%s", securityEventToken.getJti());
+            log.debugf("Generated SSF Security Event Token for Admin Event. "
+                            + "realm=%s clientId=%s streamId=%s operationType=%s resourceType=%s resourcePath=%s jti=%s",
+                    session.getContext().getRealm().getName(),
+                    stream.getClientClientId(), stream.getStreamId(),
+                    adminEvent.getOperationType(), adminEvent.getResourceType(),
+                    adminEvent.getResourcePath(), securityEventToken.getJti());
             streamTokens.add(Map.entry(securityEventToken, stream));
         }
         return streamTokens;
