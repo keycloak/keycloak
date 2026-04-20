@@ -17,6 +17,7 @@
 
 package org.keycloak.authentication.requiredactions;
 
+import java.net.URI;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
@@ -97,15 +98,25 @@ public class VerifyEmail implements RequiredActionProvider, RequiredActionFactor
     private void process(RequiredActionContext context, boolean isChallenge) {
         AuthenticationSessionModel authSession = context.getAuthenticationSession();
 
-        // When triggered during registration, make sure to add requiredAction also to the authSession. If email is later verified in different authSession, this authSession should not continue
-        if ("true".equals(context.getAuthenticationSession().getAuthNote(NEW_USER_REGISTERED))) {
-            context.getAuthenticationSession().addRequiredAction(UserModel.RequiredAction.VERIFY_EMAIL);
-        } else {
-            if (context.getUser().isEmailVerified()) {
-                context.success();
-                authSession.removeAuthNote(Constants.VERIFY_EMAIL_KEY);
+        if (context.getUser().isEmailVerified()) {
+            if ("true".equals(context.getAuthenticationSession().getAuthNote(NEW_USER_REGISTERED))) {
+                // If registration of the user happened in this authSession, but email was later verified in different authSession, this authSession should not continue
+                URI redirectToRestartUrl = Urls.realmLoginRestartPage(context.getUriInfo().getBaseUri(), context.getRealm().getName(),
+                        authSession.getClient().getClientId(),
+                        authSession.getTabId(),
+                        AuthenticationProcessor.getClientData(context.getSession(), authSession), false);
+                Response response = Response.status(302).location(redirectToRestartUrl).build();
+                context.challenge(response);
                 return;
             }
+            context.success();
+            authSession.removeAuthNote(Constants.VERIFY_EMAIL_KEY);
+            return;
+        }
+
+        // When triggered during registration, make sure to add requiredAction also to the authSession
+        if ("true".equals(context.getAuthenticationSession().getAuthNote(NEW_USER_REGISTERED))) {
+            context.getAuthenticationSession().addRequiredAction(UserModel.RequiredAction.VERIFY_EMAIL);
         }
 
         String email = context.getUser().getEmail();

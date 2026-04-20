@@ -255,7 +255,7 @@ public class RegisterWithEmailVerificationTest {
 
             // Browser 1 - refresh. Should be still on verifyEmail
             driver.navigate().refresh();
-            verifyEmailPage.assertCurrent();
+            loginPage.assertCurrent();
         } finally {
             realm.admin().users().delete(userId).close();
         }
