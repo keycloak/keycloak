@@ -82,31 +82,6 @@ If disabled, domain names containing non-ASCII characters will be encoded using 
 +
 If the realm is configured to send emails (this SMTP configuration is setup) and *Allow UTF-8* option is disabled, the built-in <<user-profile, user profile>> email validator checks the local part of the address contains only ASCII characters. This way, {project_name} prevents user emails that cannot be notified.
 
-== Verifying a user email address
-
-{project_name} can send a verification email to a user to confirm that the email address they registered is valid and accessible.
-This is useful when onboarding new users or when an administrator wants to ensure a user's email address is correct.
-
-.Prerequisites
-* Email is configured for the realm.
-See <<_email, Configuring email for a realm>>.
-
-.Procedure
-. Click *Users* in the menu.
-. Select the user whose email address you want to verify.
-. Click the *Credentials* tab.
-. Click *Credential Reset* in the top right corner.
-. In the *Credentials Reset* dialog, click the *Reset action* dropdown and select *Verify Email*.
-+
-image::images/user-verify-email-credentials-reset.png[Credentials Reset dialog with Verify Email action selected]
-. Optional: Set the expiry duration in the *Expires In* field.
-. Click *Send Email*.
-+
-{project_name} sends an email to the user containing a link.
-The user must click the link to confirm ownership of the email address.
-
-NOTE: If the user does not receive the verification email, check that the realm's SMTP settings are correctly configured and that the user's email address is valid.
-
 ifeval::[{project_community}==true]
 
 == XOAUTH2 email configuration with third-party vendors
