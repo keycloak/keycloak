@@ -115,7 +115,7 @@ export const ThemeColors = ({
 
   // Recalculate derived colors when any parent color changes
   useEffect(() => {
-    if (!parentColorValues || parentColorValues.length === 0) return;
+    if (parentColorValues.length === 0) return;
 
     // Find which parent colors changed and update their dependents
     parentColors.forEach((parent, index) => {
@@ -326,14 +326,14 @@ export const ThemeColors = ({
               <Tab title={t("loginPagePreview")} eventKey={0}>
                 <LoginPreviewWindow
                   cssVars={{
-                    ...(style?.[theme] || {}),
-                    logoWidth: style?.["logoWidth"],
-                    logoHeight: style?.["logoHeight"],
+                    ...(style[theme] || {}),
+                    logoWidth: style["logoWidth"],
+                    logoHeight: style["logoHeight"],
                   }}
                 />
               </Tab>
               <Tab title={t("adminConsolePreview")} eventKey={1}>
-                <PreviewWindow cssVars={style?.[theme] || {}} />
+                <PreviewWindow cssVars={style[theme] || {}} />
               </Tab>
             </Tabs>
           </FlexItem>

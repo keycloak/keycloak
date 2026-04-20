@@ -40,7 +40,9 @@ export default function PermissionConfigurationDetails() {
   const form = useForm();
   const { handleSubmit, reset } = form;
   const { addAlert, addError } = useAlerts();
-  const [permission, setPermission] = useState<PolicyRepresentation>();
+  const [permission, setPermission] = useState<PolicyRepresentation | null>(
+    permissionId ? null : {},
+  );
   const [providers, setProviders] = useState<PolicyProviderRepresentation[]>();
   const [policies, setPolicies] = useState<PolicyRepresentation[]>();
   const resourceTypes = useSortedResourceTypes({
@@ -213,7 +215,7 @@ export default function PermissionConfigurationDetails() {
     },
   });
 
-  if (!permission) {
+  if (permission === null || !providers) {
     return <KeycloakSpinner />;
   }
 
@@ -221,10 +223,10 @@ export default function PermissionConfigurationDetails() {
     <>
       <DeleteConfirm />
       <ViewHeader
-        titleKey={permissionId ? permission?.name! : t("createPermission")}
+        titleKey={permissionId ? permission.name! : t("createPermission")}
         subKey={
           permissionId
-            ? permission?.description!
+            ? permission.description!
             : t("createPermissionOfType", { resourceType })
         }
         dropdownItems={
@@ -247,7 +249,7 @@ export default function PermissionConfigurationDetails() {
             <NameDescription clientId={permissionClientId} />
             <ScopePicker
               clientId={permissionClientId}
-              resourceTypeScopes={resourceTypeScopes ?? []}
+              resourceTypeScopes={resourceTypeScopes}
             />
             <ResourceType resourceType={resourceType} />
             <AssignedPolicies

@@ -97,7 +97,7 @@ export default function EditUser() {
   const [realmHasOrganizations, setRealmHasOrganizations] = useState(false);
   const isFeatureEnabled = useIsFeatureEnabled();
   const showOrganizations =
-    isFeatureEnabled(Feature.Organizations) && realm?.organizationsEnabled;
+    isFeatureEnabled(Feature.Organizations) && realm.organizationsEnabled;
 
   const toTab = (tab: UserTab) =>
     toUser({
@@ -143,7 +143,7 @@ export default function EditUser() {
       upConfig,
       organizations,
     ]) => {
-      if (!userData || !realm || !attackDetection) {
+      if (!userData || !attackDetection) {
         throw new Error(t("notFound"));
       }
 
@@ -196,16 +196,17 @@ export default function EditUser() {
             (field, params) => {
               if (field.startsWith("attributes.")) {
                 const attributeName = field.substring("attributes.".length);
+                const unmanagedAttrs =
+                  data.unmanagedAttributes as KeyValueType[];
                 let isUnmanagedAttribute = false;
-                (data.unmanagedAttributes as KeyValueType[]).forEach(
-                  (attr, index) => {
-                    if (attr.key === attributeName) {
-                      unmanagedAttributeErrors[index] = params;
-                      someUnmanagedAttributeError = true;
-                      isUnmanagedAttribute = true;
-                    }
-                  },
-                );
+                unmanagedAttrs.forEach((attr, index) => {
+                  if (attr.key === attributeName) {
+                    unmanagedAttributeErrors[index] = params;
+                    someUnmanagedAttributeError = true;
+                    isUnmanagedAttribute = true;
+                  }
+                });
+                // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- mutated in forEach above
                 if (!isUnmanagedAttribute) {
                   form.setError(field, params);
                 }
@@ -215,6 +216,7 @@ export default function EditUser() {
             },
             ((key, param) => t(key as string, param as any)) as TFunction,
           );
+          // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- mutated in callback above
           if (someUnmanagedAttributeError) {
             form.setError(
               "unmanagedAttributes",

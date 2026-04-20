@@ -211,7 +211,7 @@ export const AdvancedTab = ({ save, client }: AdvancedProps) => {
             isHidden:
               (protocol !== PROTOCOL_OIDC && protocol !== PROTOCOL_OID4VC) ||
               !isFeatureEnabled(Feature.OpenId4VCI) ||
-              !realmRepresentation?.verifiableCredentialsEnabled,
+              !realmRepresentation.verifiableCredentialsEnabled,
             panel: (
               <>
                 <Text className="pf-v5-u-pb-lg">
