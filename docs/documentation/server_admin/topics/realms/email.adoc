@@ -16,63 +16,96 @@ image:images/email-tab.png[Email Tab]
 
 .Template
 From::
-  *From* denotes the address used for the *From* SMTP-Header for the emails sent.
+*From* denotes the address used for the *From* SMTP-Header for the emails sent.
 
 From display name::
-  *From display name* allows to configure a user-friendly email address aliases (optional). If not set the plain *From* email address will be displayed in email clients.
+*From display name* allows to configure a user-friendly email address aliases (optional).
+If not set the plain *From* email address will be displayed in email clients.
 
 Reply to::
-  *Reply to* denotes the address used for the *Reply-To* SMTP-Header for the mails sent (optional). If not set the plain *From* email address will be used.
+*Reply to* denotes the address used for the *Reply-To* SMTP-Header for the mails sent (optional).
+If not set the plain *From* email address will be used.
 
 Reply to display name::
-  *Reply to display name* allows to configure a user-friendly email address aliases (optional). If not set the plain *Reply To* email address will be displayed.
+*Reply to display name* allows to configure a user-friendly email address aliases (optional).
+If not set the plain *Reply To* email address will be displayed.
 
 Envelope from::
-  *Envelope from* denotes the https://en.wikipedia.org/wiki/Bounce_address[Bounce Address] used for the *Return-Path* SMTP-Header for the mails sent (optional).
+*Envelope from* denotes the https://en.wikipedia.org/wiki/Bounce_address[Bounce Address] used for the *Return-Path* SMTP-Header for the mails sent (optional).
 
 .Connection & Authentication
 Host::
-  *Host* denotes the SMTP server hostname used for sending emails.
+*Host* denotes the SMTP server hostname used for sending emails.
 
 Port::
-  *Port* denotes the SMTP server port.
+*Port* denotes the SMTP server port.
 
 Encryption::
-  Tick one of these checkboxes to support sending emails for recovering usernames and passwords, especially if the SMTP server is on an external network. You will most likely need to change the *Port* to 465, the default port for SSL/TLS.
+Tick one of these checkboxes to support sending emails for recovering usernames and passwords, especially if the SMTP server is on an external network.
+You will most likely need to change the *Port* to 465, the default port for SSL/TLS.
 
 Authentication::
-  Set this switch to *ON* if your SMTP server requires authentication.
+Set this switch to *ON* if your SMTP server requires authentication.
 
 Username::
-  All authentication-mechanisms require a username.
+All authentication-mechanisms require a username.
 
 Authentication Type::
-  Choose the kind of authentication: 'password' or 'token'.
+Choose the kind of authentication: 'password' or 'token'.
 
 Password::
-  Only needed when *Authentication Type* 'password' is selected.
-  Supply the *Password*. The value of the *Password* field can refer a value from an external <<_vault-administration,vault>>.
+Only needed when *Authentication Type* 'password' is selected.
+Supply the *Password*.
+The value of the *Password* field can refer a value from an external <<_vault-administration,vault>>.
 
 Auth Token URL::
-  Only needed when *Authentication Type* 'token' is selected.
-  Supply the *Auth Token URL* that is used to fetch a token via client credentials grant.
+Only needed when *Authentication Type* 'token' is selected.
+Supply the *Auth Token URL* that is used to fetch a token via client credentials grant.
 
 Auth Token Scope::
-  Only needed when *Authentication Type* 'token' is selected.
-  Supply the *Auth Token Scope* that is used to fetch a token from the *Auth Token URL*.
+Only needed when *Authentication Type* 'token' is selected.
+Supply the *Auth Token Scope* that is used to fetch a token from the *Auth Token URL*.
 
 Auth Token ClientId::
-  Only needed when *Authentication Type* 'token' is selected.
-  Supply the *Auth ClientId* that is used to fetch a token from the *Auth Token URL*.
+Only needed when *Authentication Type* 'token' is selected.
+Supply the *Auth ClientId* that is used to fetch a token from the *Auth Token URL*.
 
 Auth Token Client Secret::
-  Only needed when *Authentication Type* 'token' is selected.
-  Supply the *Auth Client Secret* that authenticates the client to fetch a token from the *Auth Token URL*. The value of the *Auth Client Secret* field can refer a value from an external <<_vault-administration,vault>>.
+Only needed when *Authentication Type* 'token' is selected.
+Supply the *Auth Client Secret* that authenticates the client to fetch a token from the *Auth Token URL*.
+The value of the *Auth Client Secret* field can refer a value from an external <<_vault-administration,vault>>.
 
 Allow UTF-8::
-  Enable to UTF-8-encode email address when sending them to the server. This should only be enabled if the mail server supports UTF-8 via the SMTPUTF8 extension. If disabled, domain names containing non-ASCII characters will be encoded using punycode, and addresses containing non-ASCII characters in the local part of the address will return an error.
+Enable to UTF-8-encode email address when sending them to the server.
+This should only be enabled if the mail server supports UTF-8 via the SMTPUTF8 extension.
+If disabled, domain names containing non-ASCII characters will be encoded using punycode, and addresses containing non-ASCII characters in the local part of the address will return an error.
 +
 If the realm is configured to send emails (this SMTP configuration is setup) and *Allow UTF-8* option is disabled, the built-in <<user-profile, user profile>> email validator checks the local part of the address contains only ASCII characters. This way, {project_name} prevents user emails that cannot be notified.
+
+== Verifying a user email address
+
+{project_name} can send a verification email to a user to confirm that the email address they registered is valid and accessible.
+This is useful when onboarding new users or when an administrator wants to ensure a user's email address is correct.
+
+.Prerequisites
+* Email is configured for the realm.
+See <<_email, Configuring email for a realm>>.
+
+.Procedure
+. Click *Users* in the menu.
+. Select the user whose email address you want to verify.
+. Click the *Credentials* tab.
+. Click *Credential Reset* in the top right corner.
+. In the *Credentials Reset* dialog, click the *Reset action* dropdown and select *Verify Email*.
++
+image::images/user-verify-email-credentials-reset.png[Credentials Reset dialog with Verify Email action selected]
+. Optional: Set the expiry duration in the *Expires In* field.
+. Click *Send Email*.
++
+{project_name} sends an email to the user containing a link.
+The user must click the link to confirm ownership of the email address.
+
+NOTE: If the user does not receive the verification email, check that the realm's SMTP settings are correctly configured and that the user's email address is valid.
 
 ifeval::[{project_community}==true]
 
@@ -135,28 +168,4 @@ This feature is not yet supported by {project_name}, because Google does not all
 XOAUTH2 is not supported by the AWS-SMTP service.
 The AWS-service requires the use of a password.
 
-== Verifying a user email address
-
-{project_name} can send a verification email to a user to confirm that the email address they registered is valid and accessible.
-This is useful when onboarding new users or when an administrator wants to ensure a user's email address is correct.
-
-.Prerequisites
-* Email is configured for the realm.
-See <<_email, Configuring email for a realm>>.
-
-.Procedure
-. Click *Users* in the menu.
-. Select the user whose email address you want to verify.
-. Click the *Credentials* tab.
-. Click *Credential Reset* in the top right corner.
-. In the *Credentials Reset* dialog, click the *Reset action* dropdown and select *Verify Email*.
-+
-image::images/user-verify-email-credentials-reset.png[Credentials Reset dialog with Verify Email action selected]
-. Optional: Set the expiry duration in the *Expires In* field.
-. Click *Send Email*.
-+
-{project_name} sends an email to the user containing a link.
-The user must click the link to confirm ownership of the email address.
-
-NOTE: If the user does not receive the verification email, check that the realm's SMTP settings are correctly configured and that the user's email address is valid.
 endif::[]
