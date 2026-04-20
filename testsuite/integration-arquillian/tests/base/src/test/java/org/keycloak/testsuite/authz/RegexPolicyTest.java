@@ -27,6 +27,7 @@ import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.authorization.client.AuthorizationDeniedException;
 import org.keycloak.authorization.client.AuthzClient;
+import org.keycloak.protocol.ProtocolMapperUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper;
 import org.keycloak.protocol.oidc.mappers.UserAttributeMapper;
@@ -80,6 +81,11 @@ public class RegexPolicyTest extends AbstractAuthzTest {
         claims.put("claim.name", "json-complex");
         ProtocolMapperRepresentation userAttrJsonComplexProtocolMapper = addClaimMapper("userAttrJsonComplex", claims);
 
+        claims.put("user.attribute", "multi-value");
+        claims.put("claim.name", "multi-value");
+        ProtocolMapperRepresentation userAttrMultiValueProtocolMapper = addClaimMapper("userAttrMultiValue", claims);
+        userAttrMultiValueProtocolMapper.getConfig().put(ProtocolMapperUtils.MULTIVALUED, "true");
+
         ProtocolMapperRepresentation userAttributesProtocolMapper = new ProtocolMapperRepresentation();
         userAttributesProtocolMapper.setName("canWriteItems");
         userAttributesProtocolMapper.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
@@ -122,11 +128,14 @@ public class RegexPolicyTest extends AbstractAuthzTest {
             .user(UserBuilder.create().username("context-user").password("password").addAttribute("custom", "foo"))
             .group(GroupBuilder.create().name("ADMIN").singleAttribute("attribute","example").build())
             .user(UserBuilder.create().username("admin").password("password").addGroups("ADMIN"))
+            .user(UserBuilder.create().username("multi-value-user-1").password("password").addAttribute("multi-value", "foo", "bar"))
+            .user(UserBuilder.create().username("multi-value-user-2").password("password").addAttribute("multi-value", "foo", "foobar"))
+            .user(UserBuilder.create().username("multi-value-bad-user").password("password").addAttribute("multi-value", "foo", "baz"))
 
 
             .client(ClientBuilder.create().clientId("resource-server-test").secret("secret").authorizationServicesEnabled(true)
                 .redirectUris("http://localhost/resource-server-test").directAccessGrants()
-                .protocolMapper(userAttrFooProtocolMapper, userAttrBarProtocolMapper, userAttrJsonProtocolMapper, userAttrJsonComplexProtocolMapper,userAttributesProtocolMapper,groupAttributesProtocolMapper))
+                .protocolMapper(userAttrFooProtocolMapper,userAttrBarProtocolMapper,userAttrJsonProtocolMapper,userAttrJsonComplexProtocolMapper,userAttributesProtocolMapper,groupAttributesProtocolMapper,userAttrMultiValueProtocolMapper))
                 .build());
     }
 
@@ -139,6 +148,7 @@ public class RegexPolicyTest extends AbstractAuthzTest {
         createResource("Resource E");
         createResource("Resource ITEM");
         createResource("Resource CONTEXT");
+        createResource("Resource MULTIVALUE");
         ScopeRepresentation scopeRead = new ScopeRepresentation();
         scopeRead.setName("read");
         ScopeRepresentation scopeDelete = new ScopeRepresentation();
@@ -156,6 +166,7 @@ public class RegexPolicyTest extends AbstractAuthzTest {
         createRegexPolicy("Regex user attribute to json-Complex Policy", "customPermissions.canCreateItems", "true");
         createRegexPolicyExtended("attribute-policy","attributes.values","^example$",Logic.POSITIVE);
         createRegexPolicy("Regex context policy", "custom", "^foo$", true);
+        createRegexPolicy("Regex multi value Policy", "multi-value", ".*bar");
 
         createResourcePermission("Resource A Permission", "Resource A", "Regex foo Policy");
         createResourcePermission("Resource B Permission", "Resource B", "Regex bar Policy");
@@ -167,6 +178,7 @@ public class RegexPolicyTest extends AbstractAuthzTest {
         createResourceScopesPermissionExtended("read-permission","service",DecisionStrategy.UNANIMOUS,"read","attribute-policy");
 
         createResourcePermission("Resource CONTEXT Permission", "Resource CONTEXT", "Regex context policy");
+        createResourcePermission("Resource MULTIVALUE Permission", "Resource MULTIVALUE", "Regex multi value Policy");
     }
 
     private void createResource(String name) {
@@ -287,6 +299,34 @@ private void createRegexPolicyExtended(String name, String targetClaim, String p
         AuthorizationResponse response = authzClient.authorization("my-user", "password").authorize(theRequest);
         assertNotNull(response.getToken());
 
+    }
+
+    @Test
+    public void testWithExpectedUserAttributeValueMappedToMultiValuedClaim() {
+        AuthzClient authzClient = getAuthzClient();
+        PermissionRequest request = new PermissionRequest("Resource MULTIVALUE");
+        String ticket = authzClient.protection().permission().create(request).getTicket();
+        AuthorizationRequest theRequest = new AuthorizationRequest(ticket);
+        AuthorizationResponse response = authzClient.authorization("multi-value-user-1", "password").authorize(theRequest);
+        assertNotNull(response.getToken());
+
+        response = authzClient.authorization("multi-value-user-2", "password").authorize(theRequest);
+        assertNotNull(response.getToken());
+    }
+
+    @Test
+    public void testWithoutExpectedUserAttributeValueMappedToMultiValuedClaim() {
+        AuthzClient authzClient = getAuthzClient();
+        PermissionRequest request = new PermissionRequest("Resource MULTIVALUE");
+        String ticket = authzClient.protection().permission().create(request).getTicket();
+        AuthorizationRequest theRequest = new AuthorizationRequest(ticket);
+        try {
+
+            AuthorizationResponse response = authzClient.authorization("multi-value-bad-user", "password").authorize(theRequest);
+            fail("Should fail.");
+        } catch ( AuthorizationDeniedException ignore) {
+
+        }
     }
 
         @Test
