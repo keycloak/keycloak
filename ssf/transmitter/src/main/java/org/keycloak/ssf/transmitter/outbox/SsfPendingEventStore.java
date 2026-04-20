@@ -528,6 +528,54 @@ public class SsfPendingEventStore {
     }
 
     /**
+     * Batched client-scoped delete: removes up to {@code batchSize}
+     * rows owned by the given client per call. Used by the async
+     * cleanup task driven from
+     * {@link org.keycloak.models.ClientModel.ClientRemovedEvent
+     * ClientRemovedEvent} so the admin's client-removal transaction
+     * commits immediately and the outbox drain happens in bounded
+     * follow-up transactions.
+     *
+     * <p>Uses a portable SELECT ids + DELETE WHERE id IN (...) pattern
+     * rather than a vendor-specific DELETE ... LIMIT N. The SELECT is
+     * covered by the {@code (CLIENT_ID, STATUS)} index so the lookup
+     * stays cheap even at large backlog sizes.
+     *
+     * @return the number of rows actually deleted; {@code 0} signals
+     *         the caller to stop looping.
+     */
+    public int deleteBatchByClient(String clientId, int batchSize) {
+        Objects.requireNonNull(clientId, "clientId");
+        return deleteBatch("SsfPendingEvent.findIdsByClient", "clientId", clientId, batchSize);
+    }
+
+    /**
+     * Realm-scoped equivalent of {@link #deleteBatchByClient}. Used by
+     * the async realm-removed cleanup task.
+     */
+    public int deleteBatchByRealm(String realmId, int batchSize) {
+        Objects.requireNonNull(realmId, "realmId");
+        return deleteBatch("SsfPendingEvent.findIdsByRealm", "realmId", realmId, batchSize);
+    }
+
+    protected int deleteBatch(String findIdsQueryName, String paramName, String paramValue, int batchSize) {
+        if (batchSize <= 0) {
+            throw new IllegalArgumentException("batchSize must be positive");
+        }
+        EntityManager em = getEntityManager();
+        List<String> ids = em.createNamedQuery(findIdsQueryName, String.class)
+                .setParameter(paramName, paramValue)
+                .setMaxResults(batchSize)
+                .getResultList();
+        if (ids.isEmpty()) {
+            return 0;
+        }
+        return em.createNamedQuery("SsfPendingEvent.deleteByIds")
+                .setParameter("ids", ids)
+                .executeUpdate();
+    }
+
+    /**
      * Realm-scoped cascade: deletes every outbox row belonging to the
      * given realm regardless of status. Invoked from the
      * {@link org.keycloak.models.RealmModel.RealmRemovedEvent

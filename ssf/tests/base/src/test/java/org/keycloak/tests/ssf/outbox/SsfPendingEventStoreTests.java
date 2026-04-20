@@ -11,6 +11,7 @@ import jakarta.persistence.EntityManager;
 import org.keycloak.common.Profile;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.ssf.transmitter.outbox.SsfOutboxCleanupTask;
 import org.keycloak.ssf.transmitter.outbox.SsfPendingEventEntity;
 import org.keycloak.ssf.transmitter.outbox.SsfPendingEventStatus;
 import org.keycloak.ssf.transmitter.outbox.SsfPendingEventStore;
@@ -413,6 +414,252 @@ public class SsfPendingEventStoreTests {
 
                 Assertions.assertNotNull(findById(session, keeper.getId()),
                         "rows from other realms must not be touched");
+            });
+        } finally {
+            runOnServer.run(session -> new SsfPendingEventStore(session).deleteByRealm(otherRealmId));
+        }
+    }
+
+    @Test
+    public void deleteBatchByClient_stopsAtBatchSizeAndReportsDeletedCount() {
+        final String realmId = testRealmId;
+        runOnServer.run(session -> {
+            Instant now = Instant.now();
+            for (int i = 0; i < 7; i++) {
+                persistRaw(session, realmId, "client-batch", "stream-a", "jti-batch-" + i,
+                        SsfPendingEventStatus.PENDING, 0, now, now);
+            }
+            SsfPendingEventEntity otherClient = persistRaw(session, realmId, "client-other",
+                    "stream-other", "jti-batch-other", SsfPendingEventStatus.PENDING, 0, now, now);
+
+            em(session).flush();
+            em(session).clear();
+
+            SsfPendingEventStore store = new SsfPendingEventStore(session);
+            int firstBatch = store.deleteBatchByClient("client-batch", 3);
+            Assertions.assertEquals(3, firstBatch,
+                    "first batch must delete exactly batchSize rows");
+
+            em(session).flush();
+            em(session).clear();
+
+            int secondBatch = store.deleteBatchByClient("client-batch", 3);
+            Assertions.assertEquals(3, secondBatch);
+
+            em(session).flush();
+            em(session).clear();
+
+            int thirdBatch = store.deleteBatchByClient("client-batch", 3);
+            Assertions.assertEquals(1, thirdBatch,
+                    "final batch must only delete the remaining row");
+
+            em(session).flush();
+            em(session).clear();
+
+            int fourthBatch = store.deleteBatchByClient("client-batch", 3);
+            Assertions.assertEquals(0, fourthBatch,
+                    "once drained the batch must return 0 so the caller can stop");
+
+            Assertions.assertNotNull(findById(session, otherClient.getId()),
+                    "rows for other clients must not be touched by a scoped batch delete");
+        });
+    }
+
+    @Test
+    public void deleteBatchByClient_deletesAcrossAllStatuses() {
+        final String realmId = testRealmId;
+        runOnServer.run(session -> {
+            Instant now = Instant.now();
+            // Async client-removed cleanup is scoped to the client, not a
+            // single status — the rows are obsolete regardless of their
+            // current state (unlike stream-disable, which must preserve
+            // DELIVERED + DEAD_LETTER for audit/dedup).
+            persistRaw(session, realmId, "client-all", "stream-a", "jti-all-pending",
+                    SsfPendingEventStatus.PENDING, 0, now, now);
+            persistRaw(session, realmId, "client-all", "stream-a", "jti-all-held",
+                    SsfPendingEventStatus.HELD, 0, now, now);
+            persistRaw(session, realmId, "client-all", "stream-a", "jti-all-delivered",
+                    SsfPendingEventStatus.DELIVERED, 1, now, now);
+            persistRaw(session, realmId, "client-all", "stream-a", "jti-all-dead",
+                    SsfPendingEventStatus.DEAD_LETTER, 8, now, now);
+
+            em(session).flush();
+            em(session).clear();
+
+            SsfPendingEventStore store = new SsfPendingEventStore(session);
+            int deleted = store.deleteBatchByClient("client-all", 100);
+            Assertions.assertEquals(4, deleted,
+                    "batched delete must remove every row for the client regardless of status");
+        });
+    }
+
+    @Test
+    public void deleteBatchByRealm_respectsBatchSizeAndIsolatesOtherRealms() {
+        final String realmId = testRealmId;
+        final String otherRealmId = UUID.randomUUID().toString();
+        try {
+            runOnServer.run(session -> {
+                Instant now = Instant.now();
+                for (int i = 0; i < 5; i++) {
+                    persistRaw(session, realmId, "c" + (i % 2), "stream-r", "jti-realm-batch-" + i,
+                            SsfPendingEventStatus.PENDING, 0, now, now);
+                }
+                SsfPendingEventEntity keeper = persistRaw(session, otherRealmId, "c-other",
+                        "stream-other", "jti-other-realm", SsfPendingEventStatus.PENDING, 0, now, now);
+
+                em(session).flush();
+                em(session).clear();
+
+                SsfPendingEventStore store = new SsfPendingEventStore(session);
+                int firstBatch = store.deleteBatchByRealm(realmId, 2);
+                Assertions.assertEquals(2, firstBatch);
+
+                em(session).flush();
+                em(session).clear();
+
+                int secondBatch = store.deleteBatchByRealm(realmId, 2);
+                Assertions.assertEquals(2, secondBatch);
+
+                em(session).flush();
+                em(session).clear();
+
+                int thirdBatch = store.deleteBatchByRealm(realmId, 2);
+                Assertions.assertEquals(1, thirdBatch);
+                Assertions.assertEquals(0, store.deleteBatchByRealm(realmId, 2));
+
+                Assertions.assertNotNull(findById(session, keeper.getId()),
+                        "rows from other realms must not be touched");
+            });
+        } finally {
+            runOnServer.run(session -> new SsfPendingEventStore(session).deleteByRealm(otherRealmId));
+        }
+    }
+
+    @Test
+    public void deleteBatchByClient_rejectsNonPositiveBatchSize() {
+
+        runOnServer.run(session -> {
+            SsfPendingEventStore store = new SsfPendingEventStore(session);
+            Assertions.assertThrows(IllegalArgumentException.class,
+                    () -> store.deleteBatchByClient("any", 0),
+                    "batch size 0 must be rejected so caller bugs don't silently loop");
+            Assertions.assertThrows(IllegalArgumentException.class,
+                    () -> store.deleteBatchByClient("any", -1));
+        });
+    }
+
+    @Test
+    public void cleanupTask_drainsAllRowsAcrossMultipleBatches() {
+        final String realmId = testRealmId;
+
+        // Persist in one tx so the rows are visible to the fresh
+        // sessions the cleanup task opens per batch.
+        runOnServer.run(session -> {
+            Instant now = Instant.now();
+            for (int i = 0; i < 12; i++) {
+                persistRaw(session, realmId, "client-task", "stream-t", "jti-task-" + i,
+                        SsfPendingEventStatus.PENDING, 0, now, now);
+            }
+            persistRaw(session, realmId, "client-keeper", "stream-k", "jti-keeper",
+                    SsfPendingEventStatus.PENDING, 0, now, now);
+        });
+
+        // Run the task from a fresh tx; the task itself opens its own
+        // nested sessions via runJobInTransaction for each batch. Uses
+        // a small batchSize so we actually iterate rather than drain
+        // in one shot.
+        runOnServer.run(session -> new SsfOutboxCleanupTask(session.getKeycloakSessionFactory(),
+                SsfPendingEventStore::new,
+                SsfOutboxCleanupTask.Scope.CLIENT,
+                "client-task",
+                5,
+                SsfOutboxCleanupTask.DEFAULT_MAX_BATCHES).run());
+
+        runOnServer.run(session -> {
+            long remaining = em(session)
+                    .createNamedQuery("SsfPendingEvent.countByClientAndStatus", Long.class)
+                    .setParameter("clientId", "client-task")
+                    .setParameter("status", SsfPendingEventStatus.PENDING)
+                    .getSingleResult();
+            Assertions.assertEquals(0, remaining,
+                    "cleanup task must drain all rows for the target client");
+
+            long keeperRows = em(session)
+                    .createNamedQuery("SsfPendingEvent.countByClientAndStatus", Long.class)
+                    .setParameter("clientId", "client-keeper")
+                    .setParameter("status", SsfPendingEventStatus.PENDING)
+                    .getSingleResult();
+            Assertions.assertEquals(1, keeperRows,
+                    "rows for other clients must not be touched by the task");
+        });
+    }
+
+    @Test
+    public void cleanupTask_stopsAtMaxBatchesAndLeavesRemainderToDrainer() {
+        final String realmId = testRealmId;
+
+        runOnServer.run(session -> {
+            Instant now = Instant.now();
+            for (int i = 0; i < 10; i++) {
+                persistRaw(session, realmId, "client-cap", "stream-c", "jti-cap-" + i,
+                        SsfPendingEventStatus.PENDING, 0, now, now);
+            }
+        });
+
+        // maxBatches=2 with batchSize=3 deletes 6 rows, leaves 4 behind.
+        // Verifies the safety cap doesn't spin forever on a runaway backlog.
+        runOnServer.run(session -> new SsfOutboxCleanupTask(session.getKeycloakSessionFactory(),
+                SsfPendingEventStore::new,
+                SsfOutboxCleanupTask.Scope.CLIENT,
+                "client-cap",
+                3,
+                2).run());
+
+        runOnServer.run(session -> {
+            long remaining = em(session)
+                    .createNamedQuery("SsfPendingEvent.countByClientAndStatus", Long.class)
+                    .setParameter("clientId", "client-cap")
+                    .setParameter("status", SsfPendingEventStatus.PENDING)
+                    .getSingleResult();
+            Assertions.assertEquals(4, remaining,
+                    "task must stop after maxBatches × batchSize rows even if more remain");
+        });
+    }
+
+    @Test
+    public void cleanupTask_realmScopeDrainsAcrossAllClients() {
+        final String realmId = testRealmId;
+        final String otherRealmId = UUID.randomUUID().toString();
+        try {
+            runOnServer.run(session -> {
+                Instant now = Instant.now();
+                for (int i = 0; i < 4; i++) {
+                    persistRaw(session, realmId, "c" + (i % 2), "s", "jti-realmdrain-" + i,
+                            SsfPendingEventStatus.PENDING, 0, now, now);
+                }
+                persistRaw(session, otherRealmId, "co", "so", "jti-realmdrain-other",
+                        SsfPendingEventStatus.PENDING, 0, now, now);
+            });
+
+            runOnServer.run(session -> new SsfOutboxCleanupTask(session.getKeycloakSessionFactory(),
+                    SsfPendingEventStore::new,
+                    SsfOutboxCleanupTask.Scope.REALM,
+                    realmId,
+                    10,
+                    SsfOutboxCleanupTask.DEFAULT_MAX_BATCHES).run());
+
+            runOnServer.run(session -> {
+                int remaining = new SsfPendingEventStore(session).deleteBatchByRealm(realmId, 100);
+                Assertions.assertEquals(0, remaining,
+                        "realm-scope task must drain every client's rows in the realm");
+
+                long surviving = em(session)
+                        .createNamedQuery("SsfPendingEvent.countByClientAndStatus", Long.class)
+                        .setParameter("clientId", "co")
+                        .setParameter("status", SsfPendingEventStatus.PENDING)
+                        .getSingleResult();
+                Assertions.assertEquals(1, surviving,
+                        "rows in other realms must survive");
             });
         } finally {
             runOnServer.run(session -> new SsfPendingEventStore(session).deleteByRealm(otherRealmId));
