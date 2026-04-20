@@ -1,4 +1,4 @@
-import { expect, Page } from "@playwright/test";
+import { expect, type Page } from "@playwright/test";
 
 export async function assertModalTitle(page: Page, title: string) {
   await expect(page.getByText(title, { exact: true })).toBeVisible();
@@ -10,6 +10,10 @@ export async function assertModalMessage(page: Page, message: string) {
 
 export async function confirmModal(page: Page) {
   await page.getByTestId("confirm").click();
+}
+
+export async function typeDeleteConfirmation(page: Page, value: string) {
+  await page.getByTestId("delete-confirmation-input").fill(value);
 }
 
 export async function cancelModal(page: Page) {

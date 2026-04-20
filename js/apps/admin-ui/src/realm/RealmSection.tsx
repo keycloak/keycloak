@@ -4,12 +4,16 @@ import {
   AlertVariant,
   Badge,
   Button,
+  ButtonVariant,
   Dropdown,
   DropdownItem,
   DropdownList,
+  Form,
+  FormGroup,
   MenuToggle,
   PageSection,
   Popover,
+  TextInput,
   ToolbarItem,
 } from "@patternfly/react-core";
 import { EllipsisVIcon } from "@patternfly/react-icons";
@@ -18,7 +22,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
 import { useAdminClient } from "../admin-client";
-import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
+import { ConfirmDialogModal } from "../components/confirm-dialog/ConfirmDialog";
 import { ViewHeader } from "../components/view-header/ViewHeader";
 import { fetchAdminUI } from "../context/auth/admin-ui-endpoint";
 import { useRealm } from "../context/realm-context/RealmContext";
@@ -125,6 +129,10 @@ export default function RealmSection() {
 
   const [selected, setSelected] = useState<RealmRow[]>([]);
   const [openNewRealm, setOpenNewRealm] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleteConfirmationText, setDeleteConfirmationText] = useState("");
+  const expectedDeleteText =
+    selected.length > 1 ? "DELETE" : (selected[0]?.name ?? "");
   const [key, setKey] = useState(0);
   const refresh = () => setKey(key + 1);
 
@@ -145,40 +153,72 @@ export default function RealmSection() {
     }
   };
 
-  const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
-    titleKey: t("deleteConfirmRealm", {
-      count: selected.length,
-      name: selected[0]?.name,
-    }),
-    messageKey: "deleteConfirmRealmSetting",
-    continueButtonLabel: "delete",
-    onConfirm: async () => {
-      try {
-        if (selected.filter(({ name }) => name === "master").length > 0) {
-          addAlert(t("cantDeleteMasterRealm"), AlertVariant.warning);
-        }
-        const filtered = selected.filter(({ name }) => name !== "master");
-        if (filtered.length === 0) return;
-        await Promise.all(
-          filtered.map(({ name: realmName }) =>
-            adminClient.realms.del({ realm: realmName }),
-          ),
-        );
-        addAlert(t("deletedSuccessRealmSetting"));
-        if (selected.filter(({ name }) => name === realm).length > 0) {
-          navigate(toRealm({ realm: "master" }));
-        }
-        refresh();
-        setSelected([]);
-      } catch (error) {
-        addError("deleteError", error);
-      }
-    },
-  });
+  const toggleDeleteDialog = () => {
+    setDeleteDialogOpen((open) => !open);
+    setDeleteConfirmationText("");
+  };
 
   return (
     <>
-      <DeleteConfirm />
+      <ConfirmDialogModal
+        titleKey={t("deleteConfirmRealm", {
+          count: selected.length,
+          name: selected[0]?.name,
+        })}
+        continueButtonLabel="delete"
+        continueButtonVariant={ButtonVariant.danger}
+        confirmButtonDisabled={
+          selected.length === 0 || deleteConfirmationText !== expectedDeleteText
+        }
+        onConfirm={async () => {
+          const containsMaster = selected.some(({ name }) => name === "master");
+          const deletableRealms = selected.filter(
+            ({ name }) => name !== "master",
+          );
+
+          try {
+            if (containsMaster) {
+              addAlert(t("cantDeleteMasterRealm"), AlertVariant.warning);
+            }
+            if (deletableRealms.length === 0) return;
+            await Promise.all(
+              deletableRealms.map(({ name: realmName }) =>
+                adminClient.realms.del({ realm: realmName }),
+              ),
+            );
+            addAlert(t("deletedSuccessRealmSetting"));
+            if (selected.some(({ name }) => name === realm)) {
+              navigate(toRealm({ realm: "master" }));
+            }
+            refresh();
+            setSelected([]);
+          } catch (error) {
+            addError("deleteError", error);
+          }
+        }}
+        open={deleteDialogOpen}
+        toggleDialog={toggleDeleteDialog}
+      >
+        <Form>
+          <FormGroup fieldId="realm-delete-confirmation-input">
+            <div className="pf-v5-u-mb-sm">
+              {t("deleteConfirmRealmSetting")}
+            </div>
+            <div className="pf-v5-u-mb-md">
+              {t("typeToConfirm", {
+                expected: expectedDeleteText,
+              })}
+            </div>
+            <TextInput
+              id="realm-delete-confirmation-input"
+              data-testid="delete-confirmation-input"
+              autoFocus
+              value={deleteConfirmationText}
+              onChange={(_, value) => setDeleteConfirmationText(value)}
+            />
+          </FormGroup>
+        </Form>
+      </ConfirmDialogModal>
       {openNewRealm && (
         <NewRealmForm
           onClose={() => {
