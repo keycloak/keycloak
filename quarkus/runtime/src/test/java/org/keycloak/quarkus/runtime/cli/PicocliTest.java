@@ -1981,5 +1981,17 @@ public class PicocliTest extends AbstractConfigurationTest {
         NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev", "--db-pool-max-size=3", "--cache=ispn", "--cache-stack=kubernetes");
         assertNoError(nonRunningPicocli);
     }
+    
+    @Test
+    public void commandSuggestions() {
+        NonRunningPicocli nonRunningPicocli = new NonRunningPicocli() {
+            @Override
+            protected CommandMode getCommandMode() {
+                return CommandMode.UNIX;
+            }
+        };
+        KeycloakMain.main(new String[] {"strt"}, nonRunningPicocli);
+        assertTrue(nonRunningPicocli.getErrString().contains("Did you mean: kc.sh start or kc.sh start-dev or kc.sh bootstrap-admin?"));
+    }
 
 }
