@@ -90,7 +90,7 @@ public class SsfStreamManagementResource {
                     .header(HttpHeaders.CACHE_CONTROL, "no-store")
                     .build();
         } catch (DuplicateStreamConfigException dsce) {
-            log.errorf(dsce, "Error creating stream: Duplicate stream configuration");
+            log.debugf(dsce, "Error creating stream: Duplicate stream configuration");
             return Response.status(Response.Status.CONFLICT)
                     .entity(new SsfErrorRepresentation("stream_error", dsce.getMessage()))
                     .build();
@@ -100,7 +100,7 @@ public class SsfStreamManagementResource {
                     .entity(new SsfErrorRepresentation("stream_error", e.getMessage()))
                     .build();
         } catch (Exception e) {
-            log.errorf(e, "Error creating stream");
+            log.debugf(e, "Error creating stream: %s", e.getMessage());
             return Response.serverError()
                     .entity(new SsfErrorRepresentation("stream_error", "Failed to create stream"))
                     .build();
