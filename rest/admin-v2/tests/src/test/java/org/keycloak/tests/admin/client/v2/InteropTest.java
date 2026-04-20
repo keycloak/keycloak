@@ -23,7 +23,6 @@ import java.util.stream.Collectors;
 
 import jakarta.ws.rs.core.Response;
 
-import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.common.Profile;
 import org.keycloak.representations.admin.v2.BaseClientRepresentation;
@@ -31,8 +30,6 @@ import org.keycloak.representations.admin.v2.OIDCClientRepresentation;
 import org.keycloak.representations.admin.v2.SAMLClientRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
-import org.keycloak.testframework.annotations.InjectAdminClient;
-import org.keycloak.testframework.annotations.InjectHttpClient;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.ManagedRealm;
@@ -41,7 +38,6 @@ import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.tests.admin.mapper.ClientRepresentationComparator;
 
-import org.apache.http.impl.client.CloseableHttpClient;
 import org.junit.jupiter.api.Test;
 
 import static org.keycloak.protocol.saml.SamlConfigAttributes.SAML_ASSERTION_SIGNATURE;
@@ -65,13 +61,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 @KeycloakIntegrationTest(config = InteropTest.ServerConfig.class)
 public class InteropTest extends AbstractClientApiV2Test {
-
-
-    @InjectHttpClient
-    CloseableHttpClient httpClient;
-
-    @InjectAdminClient
-    Keycloak adminClient;
 
     @InjectRealm
     ManagedRealm testRealm;
