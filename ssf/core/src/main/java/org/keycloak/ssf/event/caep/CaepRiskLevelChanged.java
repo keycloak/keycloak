@@ -1,5 +1,7 @@
 package org.keycloak.ssf.event.caep;
 
+import org.keycloak.ssf.event.SsfEventValidationException;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
@@ -40,6 +42,16 @@ public class CaepRiskLevelChanged extends CaepEvent {
 
     public CaepRiskLevelChanged() {
         super(TYPE);
+    }
+
+    @Override
+    public void validate() {
+        if (principal == null || principal.isBlank()) {
+            throw new SsfEventValidationException(getAlias(), "principal");
+        }
+        if (currentLevel == null) {
+            throw new SsfEventValidationException(getAlias(), "current_level");
+        }
     }
 
     public String getRiskReason() {

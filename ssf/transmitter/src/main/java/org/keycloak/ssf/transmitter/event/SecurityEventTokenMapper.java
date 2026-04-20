@@ -18,6 +18,9 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.credential.OTPCredentialModel;
+import org.keycloak.models.credential.PasswordCredentialModel;
+import org.keycloak.models.credential.WebAuthnCredentialModel;
 import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.ssf.SsfException;
 import org.keycloak.ssf.event.InitiatingEntity;
@@ -278,6 +281,32 @@ public class SecurityEventTokenMapper {
     }
 
     protected String narrowCaepCredentialType(String credentialType) {
+
+        // best effort attempt at mapping Keycloak credential types to CAEP credential types
+        // see: https://openid.net/specs/openid-caep-1_0-final.html#section-3.3.1-1
+
+        if (credentialType == null) {
+            return "unknown";
+        }
+
+        if (PasswordCredentialModel.TYPE.equals(credentialType)) {
+            return "password";
+        }
+
+        if (OTPCredentialModel.TYPE.equals(credentialType)) {
+            return "app";
+        }
+
+        if (WebAuthnCredentialModel.TYPE_TWOFACTOR.equals(credentialType)) {
+            // could be fido2-platform or fido2-roaming, assume roaming
+            return "fido2-roaming";
+        }
+
+        if (WebAuthnCredentialModel.TYPE_PASSWORDLESS.equals(credentialType)) {
+            // could be fido2-platform, assume platform
+            return "fido2-platform";
+        }
+
         return credentialType;
     }
 

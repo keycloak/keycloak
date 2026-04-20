@@ -338,7 +338,7 @@ public class SsfTransmitterPushDeliveryTests {
                 "SET should carry a CAEP credential-change event");
         Assertions.assertEquals("delete", credentialChange.path("change_type").asText(),
                 "REMOVE_CREDENTIAL must map to CAEP change_type=delete");
-        Assertions.assertEquals("otp", credentialChange.path("credential_type").asText(),
+        Assertions.assertEquals("app", credentialChange.path("credential_type").asText(),
                 "credential_type should be propagated from the event details");
     }
 

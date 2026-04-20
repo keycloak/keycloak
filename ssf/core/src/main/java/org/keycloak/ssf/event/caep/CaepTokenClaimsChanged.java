@@ -2,6 +2,8 @@ package org.keycloak.ssf.event.caep;
 
 import java.util.Map;
 
+import org.keycloak.ssf.event.SsfEventValidationException;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
@@ -22,6 +24,13 @@ public class CaepTokenClaimsChanged extends CaepEvent {
 
     public CaepTokenClaimsChanged() {
         super(TYPE);
+    }
+
+    @Override
+    public void validate() {
+        if (claims == null || claims.isEmpty()) {
+            throw new SsfEventValidationException(getAlias(), "claims");
+        }
     }
 
     public Map<String, Object> getClaims() {

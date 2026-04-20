@@ -1,5 +1,7 @@
 package org.keycloak.ssf.event.risc;
 
+import org.keycloak.ssf.event.SsfEventValidationException;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
@@ -20,6 +22,13 @@ public class RiscCredentialCompromise extends RiscEvent {
 
     public RiscCredentialCompromise() {
         super(TYPE);
+    }
+
+    @Override
+    public void validate() {
+        if (credentialType == null || credentialType.isBlank()) {
+            throw new SsfEventValidationException(getAlias(), "credential_type");
+        }
     }
 
     public String getCredentialType() {
