@@ -55,9 +55,9 @@ public class OID4VCAuthorizationDetailsTypesSupportedTest extends OID4VCIssuerEn
     }
 
     public void enableOpenID4VC(boolean enabled) {
-        RealmRepresentation realmRep = adminClient.realm(TEST_REALM_NAME).toRepresentation();
+        RealmRepresentation realmRep = managedRealm.admin().toRepresentation();
         realmRep.setVerifiableCredentialsEnabled(enabled);
-        adminClient.realm(TEST_REALM_NAME).update(realmRep);
+        managedRealm.admin().update(realmRep);
     }
 
     @Test

@@ -351,7 +351,7 @@ public class LinkedAccountsRestServiceTest extends AbstractTestRealmKeycloakTest
 	}
 
 	private void runUsingShowInAccountConsoleValue(String identityProviderAlias, String showInAccountConsoleValue, ThrowingRunnable runnable) throws IOException {
-		IdentityProviderResource identityProviderResource = testRealm().identityProviders().get(identityProviderAlias);
+		IdentityProviderResource identityProviderResource = managedRealm.admin().identityProviders().get(identityProviderAlias);
 		IdentityProviderRepresentation representation = identityProviderResource.toRepresentation();
 		String attribute = "showInAccountConsole";
 		String genuineValue = representation.getConfig().get(attribute);

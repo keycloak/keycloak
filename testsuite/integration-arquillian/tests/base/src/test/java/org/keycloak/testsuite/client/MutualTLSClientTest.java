@@ -218,7 +218,7 @@ public class MutualTLSClientTest extends AbstractTestRealmKeycloakTest {
       Supplier<CloseableHttpClient> clientWithProperCertificate = MutualTLSUtils::newCloseableHttpClientWithOBBKeyStoreAndTrustStore;
 
       // Canonical
-      ClientResource client = AdminApiUtil.findClientByClientId(testRealm(), OBB_SUBJECT_DN_CLIENT_ID);
+      ClientResource client = AdminApiUtil.findClientByClientId(managedRealm.admin(), OBB_SUBJECT_DN_CLIENT_ID);
       ClientRepresentation clientRep = client.toRepresentation();
       OIDCAdvancedConfigWrapper config = OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep);
       config.setTlsClientAuthSubjectDn(expectedSubjectDN);

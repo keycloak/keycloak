@@ -388,9 +388,9 @@ public class PasswordHashingTest extends AbstractTestRealmKeycloakTest {
     }
 
     private void setPasswordPolicy(String policy) {
-        RealmRepresentation realmRep = testRealm().toRepresentation();
+        RealmRepresentation realmRep = managedRealm.admin().toRepresentation();
         realmRep.setPasswordPolicy(policy);
-        testRealm().update(realmRep);
+        managedRealm.admin().update(realmRep);
     }
 
     private CredentialModel fetchCredentials(String username) {

@@ -70,34 +70,34 @@ public class ConditionalUserAttributeAuthenticatorTest extends AbstractTestRealm
 
     @Before
     public void configureUserProfile() {
-        UserProfileResource userProfileRes = testRealm().users().userProfile();
+        UserProfileResource userProfileRes = managedRealm.admin().users().userProfile();
         UserProfileUtil.enableUnmanagedAttributes(userProfileRes);
     }
 
     private void createUsers() {
         GroupRepresentation subGroup = GroupBuilder.create().name(SUBGROUP).build();
-        testRealm().groups().add(subGroup);
+        managedRealm.admin().groups().add(subGroup);
         GroupRepresentation approvedGroup = GroupBuilder.create().name(APPROVED_GROUP).subGroups(List.of(subGroup))
             .attributes(Map.of(X_APPROVE_ATTR, List.of(X_APPROVE_ATTR_VALUE)))
             .build();
-        testRealm().groups().add(approvedGroup);
+        managedRealm.admin().groups().add(approvedGroup);
         
         UserRepresentation approved = UserBuilder.create().username(APPROVED_USER).password(PASSWORD)
             .addAttribute(X_APPROVE_ATTR, X_APPROVE_ATTR_VALUE)
             .build();
-        testRealm().users().create(approved);
+        managedRealm.admin().users().create(approved);
 
         UserRepresentation approvedByGroup = UserBuilder.create().username(APPROVED_BY_GROUP_USER).password(PASSWORD)
             .addAttribute(X_APPROVE_ATTR, X_APPROVE_ATTR_VALUE)
             .addGroups(APPROVED_GROUP)
             .build();
-        testRealm().users().create(approvedByGroup);
+        managedRealm.admin().users().create(approvedByGroup);
 
         UserRepresentation approvedBySubgroup = UserBuilder.create().username(APPROVED_BY_SUBGROUP_USER).password(PASSWORD)
             .addAttribute(X_APPROVE_ATTR, X_APPROVE_ATTR_VALUE)
             .addGroups(SUBGROUP)
             .build();
-        testRealm().users().create(approvedBySubgroup);
+        managedRealm.admin().users().create(approvedBySubgroup);
     }
 
     @Test
@@ -113,7 +113,7 @@ public class ConditionalUserAttributeAuthenticatorTest extends AbstractTestRealm
             loginUsernameOnlyPage.assertCurrent();
             loginUsernameOnlyPage.login(user);
     
-            final String testUserId = testRealm().users().search(user).get(0).getId();
+            final String testUserId = managedRealm.admin().users().search(user).get(0).getId();
     
             passwordPage.assertCurrent();
             passwordPage.login(PASSWORD);
@@ -124,7 +124,7 @@ public class ConditionalUserAttributeAuthenticatorTest extends AbstractTestRealm
                     .removeDetail(Details.CONSENT)
                     .assertEvent();
 
-            AccountHelper.logout(testRealm(), user);
+            AccountHelper.logout(managedRealm.admin(), user);
         }
     }
 
@@ -155,7 +155,7 @@ public class ConditionalUserAttributeAuthenticatorTest extends AbstractTestRealm
                     .removeDetail(Details.CONSENT)
                     .assertEvent();
         } finally {
-            revertFlows(testRealm(), flowAlias);
+            revertFlows(managedRealm.admin(), flowAlias);
         }
     }
 

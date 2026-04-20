@@ -13,7 +13,7 @@ public class IdentityProviderThemeConfigTest extends AbstractAdminTest {
 
     @Before
     public void onBefore() {
-        RealmResource realm = testRealm();
+        RealmResource realm = managedRealm.admin();
         RealmRepresentation rep = realm.toRepresentation();
         rep.setLoginTheme("themeconfig");
         realm.update(rep);
@@ -21,7 +21,7 @@ public class IdentityProviderThemeConfigTest extends AbstractAdminTest {
 
     @Test
     public void testIdentityProviderThemeConfigs() {
-        testRealm().identityProviders().create(
+        managedRealm.admin().identityProviders().create(
                 IdentityProviderBuilder.create()
                         .alias("broker")
                         .providerId("oidc")

@@ -130,13 +130,13 @@ public class LDAPAccountRestApiTest extends AbstractLDAPTest {
         // Metadata attributes like LDAP_ID are not present
         Assertions.assertNull(user.getAttributes());
 
-        org.keycloak.representations.idm.UserRepresentation adminRestUserRep = testRealm().users()
+        org.keycloak.representations.idm.UserRepresentation adminRestUserRep = managedRealm.admin().users()
                 .search(user.getUsername()).get(0);
         List<String> origLdapId = adminRestUserRep.getAttributes().get(LDAPConstants.LDAP_ID);
         List<String> origLdapEntryDn = adminRestUserRep.getAttributes().get(LDAPConstants.LDAP_ENTRY_DN);
         Assertions.assertNotNull(origLdapId.get(0));
         Assertions.assertNotNull(origLdapEntryDn.get(0));
-        adminRestUserRep = testRealm().users().get(adminRestUserRep.getId()).toRepresentation();
+        adminRestUserRep = managedRealm.admin().users().get(adminRestUserRep.getId()).toRepresentation();
         origLdapId = adminRestUserRep.getAttributes().get(LDAPConstants.LDAP_ID);
         origLdapEntryDn = adminRestUserRep.getAttributes().get(LDAPConstants.LDAP_ENTRY_DN);
         Assertions.assertNotNull(origLdapId.get(0));
@@ -184,7 +184,7 @@ public class LDAPAccountRestApiTest extends AbstractLDAPTest {
     @Test
     public void testUpdateProfileUnmanagedAttributes() throws IOException {
         // User profile unmanaged attributes supported
-        UserProfileResource userProfileRes = testRealm().users().userProfile();
+        UserProfileResource userProfileRes = managedRealm.admin().users().userProfile();
         UPConfig origConfig = UserProfileUtil.enableUnmanagedAttributes(userProfileRes);
 
         try {
@@ -193,7 +193,7 @@ public class LDAPAccountRestApiTest extends AbstractLDAPTest {
             // Metadata attributes like LDAP_ID are not present
             Assertions.assertNull(user.getAttributes());
 
-            org.keycloak.representations.idm.UserRepresentation adminRestUserRep = testRealm().users()
+            org.keycloak.representations.idm.UserRepresentation adminRestUserRep = managedRealm.admin().users()
                     .search(user.getUsername()).get(0);
             List<String> origLdapId = adminRestUserRep.getAttributes().get(LDAPConstants.LDAP_ID);
             List<String> origLdapEntryDn = adminRestUserRep.getAttributes().get(LDAPConstants.LDAP_ENTRY_DN);
@@ -308,7 +308,7 @@ public class LDAPAccountRestApiTest extends AbstractLDAPTest {
         usernew.setEmail("john@email.org");
         final int i = SimpleHttpDefault.doPost(getAccountUrl(null), httpClient).json(usernew).auth(tokenUtil.getToken()).asStatus();
 
-        org.keycloak.representations.idm.UserRepresentation userRep = testRealm().users()
+        org.keycloak.representations.idm.UserRepresentation userRep = managedRealm.admin().users()
                 .search(usernew.getUsername()).get(0);
 
         // Metadata attributes present in admin REST API
@@ -317,14 +317,14 @@ public class LDAPAccountRestApiTest extends AbstractLDAPTest {
 
         userRep.setAttributes(null);
 
-        testRealm().users().get(userRep.getId()).update(userRep);
+        managedRealm.admin().users().get(userRep.getId()).update(userRep);
         usernew = SimpleHttpDefault.doGet(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).asJson(UserRepresentation.class);
 
         // Metadata attributes still not present in account REST
         Assertions.assertNull(usernew.getAttributes());
 
         // Metadata attributes still present in admin REST API
-        userRep = testRealm().users().search(usernew.getUsername()).get(0);
+        userRep = managedRealm.admin().users().search(usernew.getUsername()).get(0);
         assertTrue(userRep.getAttributes().containsKey(LDAPConstants.LDAP_ID));
         assertTrue(userRep.getAttributes().containsKey(LDAPConstants.LDAP_ENTRY_DN));
     }

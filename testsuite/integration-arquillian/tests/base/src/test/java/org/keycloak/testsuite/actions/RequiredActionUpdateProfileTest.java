@@ -94,7 +94,7 @@ public class RequiredActionUpdateProfileTest extends AbstractChangeImportedUserP
 
     @Before
     public void beforeTest() {
-        AdminApiUtil.removeUserByUsername(testRealm(), "test-user@localhost");
+        AdminApiUtil.removeUserByUsername(managedRealm.admin(), "test-user@localhost");
         UserRepresentation user = UserBuilder.create().enabled(true)
                 .username("test-user@localhost")
                 .email("test-user@localhost")
@@ -102,9 +102,9 @@ public class RequiredActionUpdateProfileTest extends AbstractChangeImportedUserP
                 .lastName("Brady")
                 .emailVerified(true)
                 .requiredAction(UserModel.RequiredAction.UPDATE_PROFILE.name()).build();
-        AdminApiUtil.createUserAndResetPasswordWithAdminClient(testRealm(), user, generatePassword("test-user@localhost"));
+        AdminApiUtil.createUserAndResetPasswordWithAdminClient(managedRealm.admin(), user, generatePassword("test-user@localhost"));
 
-        AdminApiUtil.removeUserByUsername(testRealm(), "john-doh@localhost");
+        AdminApiUtil.removeUserByUsername(managedRealm.admin(), "john-doh@localhost");
         user = UserBuilder.create().enabled(true)
                 .username("john-doh@localhost")
                 .email("john-doh@localhost")
@@ -112,7 +112,7 @@ public class RequiredActionUpdateProfileTest extends AbstractChangeImportedUserP
                 .lastName("Doh")
                 .emailVerified(true)
                 .requiredAction(UserModel.RequiredAction.UPDATE_PROFILE.name()).build();
-        AdminApiUtil.createUserAndResetPasswordWithAdminClient(testRealm(), user, generatePassword("john-doh@localhost"));
+        AdminApiUtil.createUserAndResetPasswordWithAdminClient(managedRealm.admin(), user, generatePassword("john-doh@localhost"));
     }
 
     @Test
@@ -456,7 +456,7 @@ public class RequiredActionUpdateProfileTest extends AbstractChangeImportedUserP
     @Test
     @IgnoreBrowserDriver(HtmlUnitDriver.class) // we can't yet run modern JavaScript using HtmlUnit
     public void testMultivaluedAttributes() {
-        UserProfileResource userProfile = testRealm().users().userProfile();
+        UserProfileResource userProfile = managedRealm.admin().users().userProfile();
         UPConfig configuration = userProfile.getConfiguration();
 
         try {
@@ -492,7 +492,7 @@ public class RequiredActionUpdateProfileTest extends AbstractChangeImportedUserP
 
                 // make sure multiple values are properly rendered
                 userRep.setRequiredActions(List.of(UserModel.RequiredAction.UPDATE_PROFILE.name()));
-                testRealm().users().get(userRep.getId()).update(userRep);
+                managedRealm.admin().users().get(userRep.getId()).update(userRep);
                 oauth.openLoginForm();
                 assertThat(IntStream.range(0, 5).mapToObj(value -> updateProfilePage.getAttribute(attribute + "-" + value)).collect(Collectors.toSet()), Matchers.equalTo(valuesSet));
 
@@ -515,7 +515,7 @@ public class RequiredActionUpdateProfileTest extends AbstractChangeImportedUserP
 
                 // make sure adding/removing within the same context works
                 userRep.setRequiredActions(List.of(UserModel.RequiredAction.UPDATE_PROFILE.name()));
-                testRealm().users().get(userRep.getId()).update(userRep);
+                managedRealm.admin().users().get(userRep.getId()).update(userRep);
                 oauth.openLoginForm();
                 for (String value : values) {
                     String elementId = attribute + "-" + value;
@@ -545,7 +545,7 @@ public class RequiredActionUpdateProfileTest extends AbstractChangeImportedUserP
 
                 // at the end the attribute is set with multiple values
                 userRep.setRequiredActions(List.of(UserModel.RequiredAction.UPDATE_PROFILE.name()));
-                testRealm().users().get(userRep.getId()).update(userRep);
+                managedRealm.admin().users().get(userRep.getId()).update(userRep);
                 oauth.openLoginForm();
                 for (String value : values) {
                     String elementId = attribute + "-" + value;
@@ -557,7 +557,7 @@ public class RequiredActionUpdateProfileTest extends AbstractChangeImportedUserP
                 // restart the update profile flow
                 userRep = ActionUtil.findUserWithAdminClient(adminClient, "john-doh@localhost");
                 userRep.setRequiredActions(List.of(UserModel.RequiredAction.UPDATE_PROFILE.name()));
-                testRealm().users().get(userRep.getId()).update(userRep);
+                managedRealm.admin().users().get(userRep.getId()).update(userRep);
                 oauth.openLoginForm();
             }
 

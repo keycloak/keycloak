@@ -165,8 +165,8 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
     @Override
     public void importTestRealms() {
         super.importTestRealms();
-        userId = testRealm().users().search("login-test", Boolean.TRUE).get(0).getId();
-        user2Id = testRealm().users().search("login-test2", Boolean.TRUE).get(0).getId();
+        userId = managedRealm.admin().users().search("login-test", Boolean.TRUE).get(0).getId();
+        user2Id = managedRealm.admin().users().search("login-test2", Boolean.TRUE).get(0).getId();
     }
 
     @Test
@@ -1065,12 +1065,12 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
             put(ClientScopeModel.DYNAMIC_SCOPE_REGEXP, "dynamic:*");
         }});
         clientScope.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
-        Response response = testRealm().clientScopes().create(clientScope);
+        Response response = managedRealm.admin().clientScopes().create(clientScope);
         String scopeId = ApiUtil.getCreatedId(response);
         getCleanup().addClientScopeId(scopeId);
         response.close();
 
-        ClientResource testApp = AdminApiUtil.findClientByClientId(testRealm(), "test-app");
+        ClientResource testApp = AdminApiUtil.findClientByClientId(managedRealm.admin(), "test-app");
         ClientRepresentation testAppRep = testApp.toRepresentation();
         testApp.update(testAppRep);
         testApp.addOptionalClientScope(scopeId);

@@ -83,9 +83,9 @@ public class OrganizationMemberWithLdapTest extends AbstractOrganizationTest {
             assertThat(testGroup, notNullValue());
         });
 
-        OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
+        OrganizationResource organization = managedRealm.admin().organizations().get(createOrganization().getId());
         OrganizationRepresentation orgRepresentation = organization.toRepresentation();
-        UserRepresentation ldapUser = testRealm().users().searchByUsername("johnkeycloak", true).get(0);
+        UserRepresentation ldapUser = managedRealm.admin().users().searchByUsername("johnkeycloak", true).get(0);
 
         // make the LDAP user join the organization and check it was successful.
         try (Response response = organization.members().addMember(ldapUser.getId())) {

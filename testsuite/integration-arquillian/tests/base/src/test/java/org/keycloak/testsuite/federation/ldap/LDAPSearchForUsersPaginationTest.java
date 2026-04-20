@@ -105,11 +105,11 @@ public class LDAPSearchForUsersPaginationTest extends AbstractLDAPTest {
         //this call should import some users into local database
         //collecting to TreeSet for ordering as users are orderd by username when querying from local database
         @SuppressWarnings("unchecked")
-        LinkedList<String> importedUsers = new LinkedList(adminClient.realm(TEST_REALM_NAME).users().search("*", 0, 5).stream().map(UserRepresentation::getUsername).collect(Collectors.toCollection(TreeSet::new)));
+        LinkedList<String> importedUsers = new LinkedList(managedRealm.admin().users().search("*", 0, 5).stream().map(UserRepresentation::getUsername).collect(Collectors.toCollection(TreeSet::new)));
 
         //this call should ommit first 3 already imported users from local db
         //it should return 2 local(imported) users and 8 users from ldap
-        List<String> search = adminClient.realm(TEST_REALM_NAME).users().search("*", 3, 10).stream().map(UserRepresentation::getUsername).collect(Collectors.toList());
+        List<String> search = managedRealm.admin().users().search("*", 3, 10).stream().map(UserRepresentation::getUsername).collect(Collectors.toList());
 
         assertThat(search, hasSize(10));
         assertThat(search, not(contains(importedUsers.get(0))));
@@ -146,12 +146,12 @@ public class LDAPSearchForUsersPaginationTest extends AbstractLDAPTest {
 
     @Test
     public void testSearchLDAPStreet() {
-        Set<String> usernames = testRealm().users().searchByAttributes("street:\"Acacia Avenue\"")
+        Set<String> usernames = managedRealm.admin().users().searchByAttributes("street:\"Acacia Avenue\"")
                 .stream().map(UserRepresentation::getUsername)
                 .collect(Collectors.toSet());
         Assertions.assertEquals(Set.of("john", "john00", "john01"), usernames);
 
-        usernames = testRealm().users().searchByAttributes(0, 5, true, true, "street:\"Acacia Avenue\"")
+        usernames = managedRealm.admin().users().searchByAttributes(0, 5, true, true, "street:\"Acacia Avenue\"")
                 .stream().map(UserRepresentation::getUsername)
                 .collect(Collectors.toSet());
         Assertions.assertEquals(Set.of("john", "john00", "john01"), usernames);
@@ -159,13 +159,13 @@ public class LDAPSearchForUsersPaginationTest extends AbstractLDAPTest {
 
     @Test
     public void testSearchNonExact() {
-        Set<String> usernames = testRealm().users().searchByEmail("1@email.org", false)
+        Set<String> usernames = managedRealm.admin().users().searchByEmail("1@email.org", false)
                 .stream()
                 .map(UserRepresentation::getUsername)
                 .collect(Collectors.toSet());
         Assertions.assertEquals(Set.of("john01", "john11"), usernames);
 
-        usernames = testRealm().users().searchByEmail("1@email.org", false)
+        usernames = managedRealm.admin().users().searchByEmail("1@email.org", false)
                 .stream()
                 .map(UserRepresentation::getUsername)
                 .collect(Collectors.toSet());
@@ -174,10 +174,10 @@ public class LDAPSearchForUsersPaginationTest extends AbstractLDAPTest {
 
     @Test
     public void testSearchLDAPLdapId() {
-        UserRepresentation john = testRealm().users().search("john", true).stream().findAny().orElse(null);
+        UserRepresentation john = managedRealm.admin().users().search("john", true).stream().findAny().orElse(null);
         Assertions.assertNotNull(john);
         Assertions.assertNotNull(john.firstAttribute(LDAPConstants.LDAP_ID));
-        Set<String> usernames = testRealm().users()
+        Set<String> usernames = managedRealm.admin().users()
                 .searchByAttributes(LDAPConstants.LDAP_ID + ":" + john.firstAttribute(LDAPConstants.LDAP_ID))
                 .stream().map(UserRepresentation::getUsername)
                 .collect(Collectors.toSet());
@@ -186,10 +186,10 @@ public class LDAPSearchForUsersPaginationTest extends AbstractLDAPTest {
 
     @Test
     public void testSearchLDAPLdapEntryDn() {
-        UserRepresentation john = testRealm().users().search("john", true).stream().findAny().orElse(null);
+        UserRepresentation john = managedRealm.admin().users().search("john", true).stream().findAny().orElse(null);
         Assertions.assertNotNull(john);
         Assertions.assertNotNull(john.firstAttribute(LDAPConstants.LDAP_ENTRY_DN));
-        Set<String> usernames = testRealm().users()
+        Set<String> usernames = managedRealm.admin().users()
                 .searchByAttributes(LDAPConstants.LDAP_ENTRY_DN + ":" + john.firstAttribute(LDAPConstants.LDAP_ENTRY_DN))
                 .stream().map(UserRepresentation::getUsername)
                 .collect(Collectors.toSet());
@@ -200,7 +200,7 @@ public class LDAPSearchForUsersPaginationTest extends AbstractLDAPTest {
         setLDAPEnabled(false);
         try {
             // create a local db user with the same email than an a ldap user
-            String userId = ApiUtil.getCreatedId(testRealm().users().create(UserBuilder.create()
+            String userId = ApiUtil.getCreatedId(managedRealm.admin().users().create(UserBuilder.create()
                     .username("jdoe").firstName("John").lastName("Doe")
                     .email("john14@email.org")
                     .build()));
@@ -210,12 +210,12 @@ public class LDAPSearchForUsersPaginationTest extends AbstractLDAPTest {
             setLDAPEnabled(true);
         }
 
-        List<UserRepresentation> search = adminClient.realm(TEST_REALM_NAME).users()
+        List<UserRepresentation> search = managedRealm.admin().users()
                 .search("john14@email.org", null, null)
                 .stream().collect(Collectors.toList());
         Assertions.assertEquals(1, search.size(), "Incorrect users found");
         Assertions.assertEquals("jdoe", search.get(0).getUsername(), "Incorrect User");
-        Assertions.assertTrue(adminClient.realm(TEST_REALM_NAME).users().search("john", true).isEmpty(), "Duplicated user created");
+        Assertions.assertTrue(managedRealm.admin().users().search("john", true).isEmpty(), "Duplicated user created");
     }
 
     @Test
@@ -272,10 +272,10 @@ public class LDAPSearchForUsersPaginationTest extends AbstractLDAPTest {
 
     private void assertLDAPSearchMatchesLocalDB(String searchString) {
         //this call should import some users into local database
-        List<String> importedUsers = adminClient.realm(TEST_REALM_NAME).users().search(searchString, null, null).stream().map(UserRepresentation::getUsername).collect(Collectors.toList());
+        List<String> importedUsers = managedRealm.admin().users().search(searchString, null, null).stream().map(UserRepresentation::getUsername).collect(Collectors.toList());
 
         //this should query local db
-        List<String> search = adminClient.realm(TEST_REALM_NAME).users().search(searchString, null, null).stream().map(UserRepresentation::getUsername).collect(Collectors.toList());
+        List<String> search = managedRealm.admin().users().search(searchString, null, null).stream().map(UserRepresentation::getUsername).collect(Collectors.toList());
 
         assertThat(search, containsInAnyOrder(importedUsers.toArray()));
     }

@@ -601,9 +601,9 @@ public class LDAPGroupMapperTest extends AbstractLDAPTest {
         });
 
         // Revert mappers
-        testRealm().components().component(streetMapperRep.getId()).remove();
+        managedRealm.admin().components().component(streetMapperRep.getId()).remove();
         groupMapperRep.getConfig().putSingle(GroupMapperConfig.USER_ROLES_RETRIEVE_STRATEGY, GroupMapperConfig.LOAD_GROUPS_BY_MEMBER_ATTRIBUTE);
-        testRealm().components().component(groupMapperRep.getId()).update(groupMapperRep);
+        managedRealm.admin().components().component(groupMapperRep.getId()).update(groupMapperRep);
     }
 
     @Test
@@ -638,9 +638,9 @@ public class LDAPGroupMapperTest extends AbstractLDAPTest {
             Assertions.assertTrue(groups.isEmpty());
         });
 
-        testRealm().components().component(streetMapperRep.getId()).remove();
+        managedRealm.admin().components().component(streetMapperRep.getId()).remove();
         groupMapperRep.getConfig().putSingle(GroupMapperConfig.USER_ROLES_RETRIEVE_STRATEGY, GroupMapperConfig.LOAD_GROUPS_BY_MEMBER_ATTRIBUTE);
-        testRealm().components().component(groupMapperRep.getId()).update(groupMapperRep);
+        managedRealm.admin().components().component(groupMapperRep.getId()).update(groupMapperRep);
 
         testingClient.server().run(session -> {
             LDAPTestContext ctx = LDAPTestContext.init(session);
@@ -679,9 +679,9 @@ public class LDAPGroupMapperTest extends AbstractLDAPTest {
             Assertions.assertTrue(groups.isEmpty());
         });
 
-        testRealm().components().component(streetMapperRep.getId()).remove();
+        managedRealm.admin().components().component(streetMapperRep.getId()).remove();
         groupMapperRep.getConfig().putSingle(GroupMapperConfig.USER_ROLES_RETRIEVE_STRATEGY, GroupMapperConfig.LOAD_GROUPS_BY_MEMBER_ATTRIBUTE);
-        testRealm().components().component(groupMapperRep.getId()).update(groupMapperRep);
+        managedRealm.admin().components().component(groupMapperRep.getId()).update(groupMapperRep);
 
         testingClient.server().run(session -> {
             LDAPTestContext ctx = LDAPTestContext.init(session);

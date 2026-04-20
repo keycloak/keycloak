@@ -116,7 +116,7 @@ public class ReAuthenticationTest extends AbstractChangeImportedUserPasswordsTes
     @Test
     public void usernamePasswordFormReauthentication() {
         // Add fake github link to user account
-        UserResource user = AdminApiUtil.findUserByUsernameId(testRealm(), "test-user@localhost");
+        UserResource user = AdminApiUtil.findUserByUsernameId(managedRealm.admin(), "test-user@localhost");
         FederatedIdentityRepresentation fedLink = FederatedIdentityBuilder.create()
                 .identityProvider("github")
                 .userId("123")
@@ -235,7 +235,7 @@ public class ReAuthenticationTest extends AbstractChangeImportedUserPasswordsTes
         Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
         // Revert flows
-        BrowserFlowTest.revertFlows(testRealm(), "browser - identity first");
+        BrowserFlowTest.revertFlows(managedRealm.admin(), "browser - identity first");
     }
 
     // Re-authentication with user form separate to the password form. The username form is shown due the user linked with "github"
@@ -245,7 +245,7 @@ public class ReAuthenticationTest extends AbstractChangeImportedUserPasswordsTes
         setupIdentityFirstFlow();
 
         // Add fake federated link to the user
-        UserResource user = AdminApiUtil.findUserByUsernameId(testRealm(), "test-user@localhost");
+        UserResource user = AdminApiUtil.findUserByUsernameId(managedRealm.admin(), "test-user@localhost");
         FederatedIdentityRepresentation fedLink = FederatedIdentityBuilder.create()
                 .identityProvider("github")
                 .userId("123")
@@ -287,7 +287,7 @@ public class ReAuthenticationTest extends AbstractChangeImportedUserPasswordsTes
 
         // Remove link and flow
         user.removeFederatedIdentity("github");
-        BrowserFlowTest.revertFlows(testRealm(), "browser - identity first");
+        BrowserFlowTest.revertFlows(managedRealm.admin(), "browser - identity first");
     }
 
     @Test
@@ -314,7 +314,7 @@ public class ReAuthenticationTest extends AbstractChangeImportedUserPasswordsTes
 
     @Test
     public void loginAfterExpiredUserSession() {
-        RealmRepresentation rep = testRealm().toRepresentation();
+        RealmRepresentation rep = managedRealm.admin().toRepresentation();
         Integer originalSsoSessionIdleTimeout = rep.getSsoSessionIdleTimeout();
         Integer originalSsoSessionMaxLifespan = rep.getSsoSessionMaxLifespan();
 

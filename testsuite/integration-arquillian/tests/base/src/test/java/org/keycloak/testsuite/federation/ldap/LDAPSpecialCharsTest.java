@@ -193,7 +193,7 @@ public class LDAPSpecialCharsTest extends AbstractLDAPTest {
     @Test
     public void test04_loginWithSpecialCharacterUsingSameUUIDThanUsernameAttribute() {
         // remove users from the ldap to use the new UUID attribute
-        adminClient.realm(TEST_REALM_NAME).userStorage().removeImportedUsers(ldapModelId);
+        managedRealm.admin().userStorage().removeImportedUsers(ldapModelId);
 
         // change the UUID attribute to be the username attribute
         String origUuidAttrName = testingClient.server().fetch(session -> {
@@ -209,7 +209,7 @@ public class LDAPSpecialCharsTest extends AbstractLDAPTest {
 
         try {
             // assert the user is found and UUID is the name
-            List<UserRepresentation> users = adminClient.realm(TEST_REALM_NAME).users().search("jamees,key*cložak)ppp", true);
+            List<UserRepresentation> users = managedRealm.admin().users().search("jamees,key*cložak)ppp", true);
             Assertions.assertEquals(1, users.size(), "User not found");
             UserRepresentation jamees = users.iterator().next();
             Assertions.assertEquals("jamees,key*cložak)ppp", jamees.getUsername(), "Incorrect user");
@@ -226,9 +226,9 @@ public class LDAPSpecialCharsTest extends AbstractLDAPTest {
             Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
         } finally {
             // Revert config changes to be back to previous UUID attribute
-            ComponentRepresentation ldapRep = testRealm().components().component(ldapModelId).toRepresentation();
+            ComponentRepresentation ldapRep = managedRealm.admin().components().component(ldapModelId).toRepresentation();
             ldapRep.getConfig().putSingle(LDAPConstants.UUID_LDAP_ATTRIBUTE, origUuidAttrName);
-            testRealm().components().component(ldapModelId).update(ldapRep);
+            managedRealm.admin().components().component(ldapModelId).update(ldapRep);
         }
     }
 }

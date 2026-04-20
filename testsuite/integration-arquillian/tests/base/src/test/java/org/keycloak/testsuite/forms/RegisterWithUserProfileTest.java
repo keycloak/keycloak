@@ -114,7 +114,7 @@ public class RegisterWithUserProfileTest extends AbstractTestRealmKeycloakTest {
 
     @Before
     public void beforeTest() {
-        UserProfileUtil.setUserProfileConfiguration(testRealm(),null);
+        UserProfileUtil.setUserProfileConfiguration(managedRealm.admin(),null);
     }
 
     @Test
@@ -482,7 +482,7 @@ public class RegisterWithUserProfileTest extends AbstractTestRealmKeycloakTest {
         Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
         Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
 
-        UserRepresentation user = VerifyProfileTest.getUserByUsername(testRealm(),"attributeRequiredAndSelectedByScopeMustBeSet");
+        UserRepresentation user = VerifyProfileTest.getUserByUsername(managedRealm.admin(),"attributeRequiredAndSelectedByScopeMustBeSet");
         assertEquals("FirstAA", user.getFirstName());
         assertEquals("LastAA", user.getLastName());
         assertEquals("DepartmentAA", user.firstAttribute(ATTRIBUTE_DEPARTMENT));
@@ -666,12 +666,12 @@ public class RegisterWithUserProfileTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     public void testEmailNotAllowedButEmailAsUsername() {
-        RealmRepresentation realm = testRealm().toRepresentation();
+        RealmRepresentation realm = managedRealm.admin().toRepresentation();
         realm.setRegistrationEmailAsUsername(true);
-        testRealm().update(realm);
+        managedRealm.admin().update(realm);
         getCleanup().addCleanup(() -> {
             realm.setRegistrationEmailAsUsername(false);
-            testRealm().update(realm);
+            managedRealm.admin().update(realm);
         });
         setUserProfileConfiguration("{\"attributes\": ["
                 + "{\"name\": \"firstName\"," + PERMISSIONS_ALL + ", \"required\": {}},"
@@ -689,9 +689,9 @@ public class RegisterWithUserProfileTest extends AbstractTestRealmKeycloakTest {
         registerPage.registerWithEmailAsUsername("firstName", "lastName", "myusername1@keycloak.org", generatePassword());
 
         assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        UserRepresentation user = testRealm().users().search("myusername1@keycloak.org").get(0);
+        UserRepresentation user = managedRealm.admin().users().search("myusername1@keycloak.org").get(0);
         assertEquals("myusername1@keycloak.org", user.getEmail());
-        UserRepresentation rep = testRealm().users().get(user.getId()).toRepresentation();
+        UserRepresentation rep = managedRealm.admin().users().get(user.getId()).toRepresentation();
         assertEquals("myusername1@keycloak.org", rep.getEmail());
     }
 
@@ -716,10 +716,10 @@ public class RegisterWithUserProfileTest extends AbstractTestRealmKeycloakTest {
     }
 
     private void setUserProfileConfiguration(String configuration) {
-        UserProfileUtil.setUserProfileConfiguration(testRealm(), configuration);
+        UserProfileUtil.setUserProfileConfiguration(managedRealm.admin(), configuration);
     }
 
     private UserRepresentation getUser(String userId) {
-        return testRealm().users().get(userId).toRepresentation();
+        return managedRealm.admin().users().get(userId).toRepresentation();
     }
 }

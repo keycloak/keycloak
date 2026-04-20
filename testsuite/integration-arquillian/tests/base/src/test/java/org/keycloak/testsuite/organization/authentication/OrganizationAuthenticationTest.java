@@ -55,7 +55,7 @@ public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
 
     @Test
     public void testAuthenticateUnmanagedMember() {
-        OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
+        OrganizationResource organization = managedRealm.admin().organizations().get(createOrganization().getId());
         UserRepresentation member = addMember(organization, "contractor@contractor.org");
 
         // first try to log in using only the email
@@ -72,7 +72,7 @@ public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
 
     @Test
     public void testTryLoginWithUsernameNotAnEmail() {
-        testRealm().organizations().get(createOrganization().getId());
+        managedRealm.admin().organizations().get(createOrganization().getId());
 
         openIdentityFirstLoginPage("user", false, null, false, false);
 
@@ -95,7 +95,7 @@ public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
 
     @Test
     public void testDefaultAuthenticationMechanismIfNotOrganizationMember() {
-        testRealm().organizations().get(createOrganization().getId());
+        managedRealm.admin().organizations().get(createOrganization().getId());
 
         openIdentityFirstLoginPage("user@noorg.org", false, null, false, false);
 
@@ -106,7 +106,7 @@ public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
 
     @Test
     public void testAuthenticateUnmanagedMemberWhenProviderDisabled() throws IOException {
-        OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
+        OrganizationResource organization = managedRealm.admin().organizations().get(createOrganization().getId());
         UserRepresentation member = addMember(organization, "contractor@contractor.org");
 
         // first try to access login page
@@ -116,7 +116,7 @@ public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
         Assertions.assertFalse(loginPage.isSocialButtonPresent(bc.getIDPAlias()));
 
         // disable the organization provider
-        try (RealmAttributeUpdater rau = new RealmAttributeUpdater(testRealm())
+        try (RealmAttributeUpdater rau = new RealmAttributeUpdater(managedRealm.admin())
                 .setOrganizationsEnabled(Boolean.FALSE)
                 .update()) {
 
@@ -138,7 +138,7 @@ public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
 
     @Test
     public void testForceReAuthenticationBeforeRequiredAction() {
-        OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
+        OrganizationResource organization = managedRealm.admin().organizations().get(createOrganization().getId());
         UserRepresentation member = addMember(organization);
 
         oauth.client("broker-app");
@@ -168,7 +168,7 @@ public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
 
         try {
             OrganizationRepresentation org = createOrganization();
-            OrganizationResource organization = testRealm().organizations().get(org.getId());
+            OrganizationResource organization = managedRealm.admin().organizations().get(org.getId());
             UserRepresentation member = addMember(organization);
             organization.members().member(member.getId()).delete().close();
             oauth.client("broker-app");
@@ -196,7 +196,7 @@ public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
             assertThat(errorPage.getError(), Matchers.containsString("User is not a member of any organization"));
 
             organization.members().addMember(member.getId()).close();
-            testRealm().organizations().get(orgB.getId()).members().addMember(member.getId()).close();
+            managedRealm.admin().organizations().get(orgB.getId()).members().addMember(member.getId()).close();
             oauth.client("broker-app");
             oauth.scope("organization");
             loginPage.open(bc.consumerRealmName());
@@ -214,7 +214,7 @@ public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
     @Test
     public void testLoginHint() {
         OrganizationRepresentation organization = createOrganization();
-        OrganizationResource organizationResource = testRealm().organizations().get(organization.getId());
+        OrganizationResource organizationResource = managedRealm.admin().organizations().get(organization.getId());
         UserRepresentation member = addMember(organizationResource);
 
         // login hint populates the username field
@@ -231,23 +231,23 @@ public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
 
     @Test
     public void testDuplicateEmailsEnabled() {
-        RealmRepresentation realm = testRealm().toRepresentation();
+        RealmRepresentation realm = managedRealm.admin().toRepresentation();
 
         realm.setDuplicateEmailsAllowed(true);
         realm.setLoginWithEmailAllowed(false);
         realm.setRegistrationEmailAsUsername(false);
 
-        testRealm().update(realm);
+        managedRealm.admin().update(realm);
 
         OrganizationRepresentation organization = createOrganization();
-        OrganizationResource organizationResource = testRealm().organizations().get(organization.getId());
+        OrganizationResource organizationResource = managedRealm.admin().organizations().get(organization.getId());
         UserRepresentation member = addMember(organizationResource);
         UserRepresentation duplicatedUser = UserBuilder.create()
                 .username("duplicated-user")
                 .password("duplicated-user")
                 .email(member.getEmail())
                 .enabled(true).build();
-        try (Response response = testRealm().users().create(duplicatedUser)) {
+        try (Response response = managedRealm.admin().users().create(duplicatedUser)) {
             duplicatedUser.setId(ApiUtil.getCreatedId(response));
         }
 
@@ -259,7 +259,7 @@ public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
         loginPage.clickSignIn();
         loginPage.login(memberPassword);
         appPage.assertCurrent();
-        testRealm().users().get(member.getId()).logout();
+        managedRealm.admin().users().get(member.getId()).logout();
 
         // a different account with the same email can also authenticate using a unique username
         oauth.loginForm().open();
@@ -267,7 +267,7 @@ public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
         loginPage.clickSignIn();
         loginPage.login(duplicatedUser.getUsername());
         appPage.assertCurrent();
-        testRealm().users().get(duplicatedUser.getId()).logout();
+        managedRealm.admin().users().get(duplicatedUser.getId()).logout();
 
         // trying to authenticate with the duplicated user using the email will fail because the username is the email of a different account
         oauth.loginForm().open();
@@ -286,7 +286,7 @@ public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
 
     @Test
     public void testRestartLogin() {
-        testRealm().organizations().get(createOrganization().getId());
+        managedRealm.admin().organizations().get(createOrganization().getId());
 
         openIdentityFirstLoginPage("user@noorg.org", false, null, false, false);
 
@@ -301,7 +301,7 @@ public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
 
     @Test
     public void testAttemptedUsernameKeptAfterPasswordFailures() {
-        testRealm().organizations().get(createOrganization().getId());
+        managedRealm.admin().organizations().get(createOrganization().getId());
 
         openIdentityFirstLoginPage("user@noorg.org", false, null, false, false);
 
@@ -319,20 +319,20 @@ public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
 
     @Test
     public void testHideUsernameKeptAfterPasswordFailuresBruteForceEnabled() {
-        testRealm().organizations().get(createOrganization().getId());
+        managedRealm.admin().organizations().get(createOrganization().getId());
 
-        RealmRepresentation realm = testRealm().toRepresentation();
+        RealmRepresentation realm = managedRealm.admin().toRepresentation();
         realm.setBruteForceProtected(true);
         realm.setBruteForceStrategy(RealmRepresentation.BruteForceStrategy.MULTIPLE);
         realm.setFailureFactor(1);
         realm.setMaxDeltaTimeSeconds(30);
         realm.setMaxFailureWaitSeconds(30);
         realm.setWaitIncrementSeconds(30);
-        testRealm().update(realm);
+        managedRealm.admin().update(realm);
         getCleanup().addCleanup(() -> {
-            RealmRepresentation r = testRealm().toRepresentation();
+            RealmRepresentation r = managedRealm.admin().toRepresentation();
             r.setBruteForceProtected(false);
-            testRealm().update(r);
+            managedRealm.admin().update(r);
         });
 
         String email = "existing-user@" + organizationName + ".org";
@@ -350,7 +350,7 @@ public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
 
         openIdentityFirstLoginPage(email, false, null, false, false);
         realm.setRegistrationEmailAsUsername(true);
-        testRealm().update(realm);
+        managedRealm.admin().update(realm);
         loginPage.login("wrong-password");
         loginPage.assertAttemptedUsernameAvailability(true);
         Assertions.assertFalse(loginPage.isEmailInputPresent());
@@ -363,7 +363,7 @@ public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
 
     @Test
     public void testUsernameExposureWhenEnteringEmail() {
-        OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
+        OrganizationResource organization = managedRealm.admin().organizations().get(createOrganization().getId());
 
         UserRepresentation member = UserBuilder.create()
                 .username("secretusername123")  // Different from email
@@ -374,7 +374,7 @@ public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
                 .password(memberPassword)
                 .build();
         
-        String memberId = AdminApiUtil.createUserAndResetPasswordWithAdminClient(testRealm(), member, memberPassword);
+        String memberId = AdminApiUtil.createUserAndResetPasswordWithAdminClient(managedRealm.admin(), member, memberPassword);
         organization.members().addMember(memberId).close();
         
         // Enter the email address in the login form
@@ -397,7 +397,7 @@ public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
         Assertions.assertTrue(loginPage.isPasswordInputPresent(), "Password input should be present");
         
         // Clean up
-        testRealm().users().get(memberId).remove();
+        managedRealm.admin().users().get(memberId).remove();
     }
 
     private void runOnServer(RunOnServer function) {

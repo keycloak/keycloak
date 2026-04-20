@@ -223,7 +223,7 @@ public abstract class AbstractX509AuthenticationTest extends AbstractTestRealmKe
     }
 
     private void configureUserProfile() {
-        UserProfileResource userProfileResource = testRealm().users().userProfile();
+        UserProfileResource userProfileResource = managedRealm.admin().users().userProfile();
         UPConfig config = userProfileResource.getConfiguration();
         config.addOrReplaceAttribute(createUpAttribute("x509_certificate_identity"));
         config.addOrReplaceAttribute(createUpAttribute("alternative_email"));
@@ -251,10 +251,10 @@ public abstract class AbstractX509AuthenticationTest extends AbstractTestRealmKe
         Assertions.assertNotNull(directGrantFlow);
 
         setBrowserFlow(browserFlow);
-        Assertions.assertEquals(testRealm().toRepresentation().getBrowserFlow(), browserFlow.getAlias());
+        Assertions.assertEquals(managedRealm.admin().toRepresentation().getBrowserFlow(), browserFlow.getAlias());
 
         setDirectGrantFlow(directGrantFlow);
-        Assertions.assertEquals(testRealm().toRepresentation().getDirectGrantFlow(), directGrantFlow.getAlias());
+        Assertions.assertEquals(managedRealm.admin().toRepresentation().getDirectGrantFlow(), directGrantFlow.getAlias());
         Assertions.assertEquals(0, directGrantFlow.getAuthenticationExecutions().size());
 
         // Add X509 cert authenticator to the direct grant flow
@@ -407,20 +407,20 @@ public abstract class AbstractX509AuthenticationTest extends AbstractTestRealmKe
 
     AuthenticationFlowRepresentation copyBrowserFlow() {
 
-        RealmRepresentation realm = testRealm().toRepresentation();
+        RealmRepresentation realm = managedRealm.admin().toRepresentation();
         return copyFlow(realm.getBrowserFlow(), "Copy-of-browser");
     }
 
     void setBrowserFlow(AuthenticationFlowRepresentation flow) {
-        RealmRepresentation realm = testRealm().toRepresentation();
+        RealmRepresentation realm = managedRealm.admin().toRepresentation();
         realm.setBrowserFlow(flow.getAlias());
-        testRealm().update(realm);
+        managedRealm.admin().update(realm);
     }
 
     void setDirectGrantFlow(AuthenticationFlowRepresentation flow) {
-        RealmRepresentation realm = testRealm().toRepresentation();
+        RealmRepresentation realm = managedRealm.admin().toRepresentation();
         realm.setDirectGrantFlow(flow.getAlias());
-        testRealm().update(realm);
+        managedRealm.admin().update(realm);
     }
 
     static AuthenticatorConfigRepresentation newConfig(String alias, Map<String,String> params) {

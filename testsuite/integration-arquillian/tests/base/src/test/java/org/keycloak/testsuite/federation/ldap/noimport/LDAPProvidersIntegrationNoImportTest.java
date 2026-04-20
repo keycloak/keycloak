@@ -76,7 +76,7 @@ public class LDAPProvidersIntegrationNoImportTest extends LDAPProvidersIntegrati
 
     @Before
     public void enableUserProfileUnmanagedAttributes() {
-        UserProfileResource userProfileRes = testRealm().users().userProfile();
+        UserProfileResource userProfileRes = managedRealm.admin().users().userProfile();
         UserProfileUtil.enableUnmanagedAttributes(userProfileRes);
     }
 
@@ -196,7 +196,7 @@ public class LDAPProvidersIntegrationNoImportTest extends LDAPProvidersIntegrati
     @Override
     // Unsynced mode doesn't have much sense in no-import. So it is not allowed at the configuration level
     public void testUnsynced() throws Exception {
-        ComponentResource ldapProviderResource = testRealm().components().component(ldapModelId);
+        ComponentResource ldapProviderResource = managedRealm.admin().components().component(ldapModelId);
         ComponentRepresentation ldapProviderRep = ldapProviderResource.toRepresentation();
         String currentEditMode = ldapProviderRep.getConfig().getFirst(LDAPConstants.EDIT_MODE);
         Assertions.assertEquals(UserStorageProvider.EditMode.WRITABLE.toString(), currentEditMode);
@@ -293,7 +293,7 @@ public class LDAPProvidersIntegrationNoImportTest extends LDAPProvidersIntegrati
         });
 
         firstNameMapperRep.setId(null);
-        Response response = testRealm().components().add(firstNameMapperRep);
+        Response response = managedRealm.admin().components().add(firstNameMapperRep);
         Assertions.assertEquals(201, response.getStatus());
         response.close();
     }
@@ -301,7 +301,7 @@ public class LDAPProvidersIntegrationNoImportTest extends LDAPProvidersIntegrati
     // Tests that attempt to change some user attributes, which are not mapped to LDAP, will fail
     @Test
     public void testImpossibleToChangeNonLDAPMappedAttributes() {
-        UserResource john = AdminApiUtil.findUserByUsernameId(testRealm(), "johnkeycloak");
+        UserResource john = AdminApiUtil.findUserByUsernameId(managedRealm.admin(), "johnkeycloak");
 
         UserRepresentation johnRep = john.toRepresentation();
         String firstNameOrig = johnRep.getFirstName();
@@ -369,7 +369,7 @@ public class LDAPProvidersIntegrationNoImportTest extends LDAPProvidersIntegrati
 
     @Test
     public void testCannotUpdateReadOnlyUserImportDisabled() {
-        UserResource user = AdminApiUtil.findUserByUsernameId(testRealm(), "johnkeycloak");
+        UserResource user = AdminApiUtil.findUserByUsernameId(managedRealm.admin(), "johnkeycloak");
 
         try {
             UserRepresentation rep = user.toRepresentation();

@@ -165,7 +165,7 @@ public class ConditionalCredentialAuthenticatorTest extends AbstractTestRealmKey
     private void configureConditionalCurrentCredentialFlow(Boolean included, String... credentials) {
         // clone the browser flow and add the current credential condition in the 2FA section
 
-        RealmResource realmRes = testRealm();
+        RealmResource realmRes = managedRealm.admin();
         AuthenticationManagementResource authRes = realmRes.flows();
 
         // revert the flows if already changed

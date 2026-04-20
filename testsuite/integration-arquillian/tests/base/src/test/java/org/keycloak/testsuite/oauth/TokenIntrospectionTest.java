@@ -132,7 +132,7 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
 
     @Override
     protected void afterAbstractKeycloakTestRealmImport() {
-        ClientScopesResource clientScopesResource = testRealm().clientScopes();
+        ClientScopesResource clientScopesResource = managedRealm.admin().clientScopes();
         List<ClientScopeRepresentation> clientScopeRepresentations = clientScopesResource.findAll();
         for (ClientScopeRepresentation scope : clientScopeRepresentations) {
             List<ProtocolMapperRepresentation> mappers = scope.getProtocolMappers();

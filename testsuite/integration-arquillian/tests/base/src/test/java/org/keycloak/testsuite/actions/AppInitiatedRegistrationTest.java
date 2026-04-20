@@ -27,7 +27,7 @@ public class AppInitiatedRegistrationTest extends AbstractTestRealmKeycloakTest 
 
     @Before
     public void before() {
-        AdminApiUtil.removeUserByUsername(testRealm(), "test-user@localhost");
+        AdminApiUtil.removeUserByUsername(managedRealm.admin(), "test-user@localhost");
     }
 
     @Test
@@ -42,7 +42,7 @@ public class AppInitiatedRegistrationTest extends AbstractTestRealmKeycloakTest 
 
         appPage.assertCurrent();
 
-        UserRepresentation user = testRealm().users().searchByEmail("test-user@localhost", true).get(0);
+        UserRepresentation user = managedRealm.admin().users().searchByEmail("test-user@localhost", true).get(0);
         // ensure that the locale was set on the user
         Assertions.assertEquals("en", user.getAttributes().get("locale").get(0));
     }

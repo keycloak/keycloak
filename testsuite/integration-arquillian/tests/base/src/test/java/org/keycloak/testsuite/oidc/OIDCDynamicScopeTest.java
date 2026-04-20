@@ -146,7 +146,7 @@ public class OIDCDynamicScopeTest extends OIDCScopeTest {
         getCleanup().addClientScopeId(scopeId);
         response.close();
 
-        ClientResource testApp = AdminApiUtil.findClientByClientId(testRealm(), "test-app");
+        ClientResource testApp = AdminApiUtil.findClientByClientId(managedRealm.admin(), "test-app");
         ClientRepresentation testAppRep = testApp.toRepresentation();
         testApp.update(testAppRep);
         testApp.addOptionalClientScope(scopeId);
@@ -165,13 +165,13 @@ public class OIDCDynamicScopeTest extends OIDCScopeTest {
         getCleanup().addClientScopeId(scopeId);
         response.close();
 
-        List<RoleRepresentation> dynamicScopeRoleList = testRealm().roles().list().stream()
+        List<RoleRepresentation> dynamicScopeRoleList = managedRealm.admin().roles().list().stream()
                 .filter(roleRepresentation -> "dynamic-scope-role".equalsIgnoreCase(roleRepresentation.getName()))
                 .collect(Collectors.toList());
 
-        testRealm().clientScopes().get(scopeId).getScopeMappings().realmLevel().add(dynamicScopeRoleList);
+        managedRealm.admin().clientScopes().get(scopeId).getScopeMappings().realmLevel().add(dynamicScopeRoleList);
 
-        ClientResource testApp = AdminApiUtil.findClientByClientId(testRealm(), "test-app");
+        ClientResource testApp = AdminApiUtil.findClientByClientId(managedRealm.admin(), "test-app");
         ClientRepresentation testAppRep = testApp.toRepresentation();
         testApp.update(testAppRep);
         testApp.addOptionalClientScope(scopeId);
@@ -190,13 +190,13 @@ public class OIDCDynamicScopeTest extends OIDCScopeTest {
         getCleanup().addClientScopeId(scopeId);
         response.close();
 
-        List<RoleRepresentation> dynamicScopeRoleList = testRealm().roles().list().stream()
+        List<RoleRepresentation> dynamicScopeRoleList = managedRealm.admin().roles().list().stream()
                 .filter(roleRepresentation -> "dynamic-scope-role".equalsIgnoreCase(roleRepresentation.getName()))
                 .collect(Collectors.toList());
 
-        testRealm().clientScopes().get(scopeId).getScopeMappings().realmLevel().add(dynamicScopeRoleList);
+        managedRealm.admin().clientScopes().get(scopeId).getScopeMappings().realmLevel().add(dynamicScopeRoleList);
 
-        ClientResource testApp = AdminApiUtil.findClientByClientId(testRealm(), "test-app");
+        ClientResource testApp = AdminApiUtil.findClientByClientId(managedRealm.admin(), "test-app");
         ClientRepresentation testAppRep = testApp.toRepresentation();
         testApp.update(testAppRep);
         testApp.addOptionalClientScope(scopeId);
@@ -218,7 +218,7 @@ public class OIDCDynamicScopeTest extends OIDCScopeTest {
             put(ClientScopeModel.DYNAMIC_SCOPE_REGEXP, String.format("%1s:*", scopeName));
         }});
         clientScope.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
-        return testRealm().clientScopes().create(clientScope);
+        return managedRealm.admin().clientScopes().create(clientScope);
     }
 
     /**
@@ -229,7 +229,7 @@ public class OIDCDynamicScopeTest extends OIDCScopeTest {
      * @param expectedRoles
      */
     private void testLoginAndClientScopesPermissions(String username, String expectedRoleScopes, String... expectedRoles) {
-        String userId = AdminApiUtil.findUserByUsername(testRealm(), username).getId();
+        String userId = AdminApiUtil.findUserByUsername(managedRealm.admin(), username).getId();
 
         oauth.openLoginForm();
         oauth.doLogin(username, "password");

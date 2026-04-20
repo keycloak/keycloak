@@ -92,7 +92,7 @@ public class CustomUpdateProfileTemplateTest extends AbstractTestRealmKeycloakTe
                 .lastName("Brady")
                 .requiredAction(UserModel.RequiredAction.UPDATE_PROFILE.name())
                 .build();
-        Response resp = testRealm().users().create(user);
+        Response resp = managedRealm.admin().users().create(user);
         String userId = ApiUtil.getCreatedId(resp);
         resp.close();
         getCleanup().addUserId(userId);
@@ -115,7 +115,7 @@ public class CustomUpdateProfileTemplateTest extends AbstractTestRealmKeycloakTe
         for (String name : CUSTOM_ATTRIBUTES.keySet()) {
             upConfig.removeAttribute(name);
         }
-        testRealm().users().userProfile().update(upConfig);
+        managedRealm.admin().users().userProfile().update(upConfig);
         testUpdateProfile();
     }
 
@@ -125,7 +125,7 @@ public class CustomUpdateProfileTemplateTest extends AbstractTestRealmKeycloakTe
         for (String name : CUSTOM_ATTRIBUTES.keySet()) {
             upConfig.removeAttribute(name);
         }
-        testRealm().users().userProfile().update(upConfig);
+        managedRealm.admin().users().userProfile().update(upConfig);
         UserRepresentation user = updateProfile();
         assertNull(user.getAttributes());
     }
@@ -135,7 +135,7 @@ public class CustomUpdateProfileTemplateTest extends AbstractTestRealmKeycloakTe
         for (String name : CUSTOM_ATTRIBUTES.keySet()) {
             upConfig.removeAttribute(name);
         }
-        testRealm().users().userProfile().update(upConfig);
+        managedRealm.admin().users().userProfile().update(upConfig);
         UserRepresentation user = updateProfile();
         assertNull(user.getAttributes());
     }
@@ -160,9 +160,9 @@ public class CustomUpdateProfileTemplateTest extends AbstractTestRealmKeycloakTe
     }
 
     protected UserRepresentation getUser(String username) {
-        List<UserRepresentation> users = testRealm().users().search(username);
+        List<UserRepresentation> users = managedRealm.admin().users().search(username);
         assertFalse(users.isEmpty());
-        return testRealm().users().get(users.get(0).getId()).toRepresentation();
+        return managedRealm.admin().users().get(users.get(0).getId()).toRepresentation();
     }
 
     private void navigateToUpdateProfilePage() {
@@ -172,14 +172,14 @@ public class CustomUpdateProfileTemplateTest extends AbstractTestRealmKeycloakTe
     }
 
     private UPConfig updateUserProfileConfiguration() {
-        UPConfig upCOnfig = testRealm().users().userProfile().getConfiguration();
+        UPConfig upCOnfig = managedRealm.admin().users().userProfile().getConfiguration();
         upCOnfig.setUnmanagedAttributePolicy(null);
         upCOnfig.addOrReplaceAttribute(new UPAttribute("street", new UPAttributePermissions(Set.of(ROLE_ADMIN), Set.of(ROLE_USER))));
         upCOnfig.addOrReplaceAttribute(new UPAttribute("locality", new UPAttributePermissions(Set.of(ROLE_ADMIN), Set.of(ROLE_USER))));
         upCOnfig.addOrReplaceAttribute(new UPAttribute("region", new UPAttributePermissions(Set.of(ROLE_ADMIN), Set.of(ROLE_USER))));
         upCOnfig.addOrReplaceAttribute(new UPAttribute("postal_code", new UPAttributePermissions(Set.of(ROLE_ADMIN), Set.of(ROLE_USER))));
         upCOnfig.addOrReplaceAttribute(new UPAttribute("country", new UPAttributePermissions(Set.of(ROLE_ADMIN), Set.of(ROLE_USER))));
-        testRealm().users().userProfile().update(upCOnfig);
+        managedRealm.admin().users().userProfile().update(upCOnfig);
         return upCOnfig;
     }
 }

@@ -70,7 +70,7 @@ public class BrowserButtonsTest extends AbstractChangeImportedUserPasswordsTest 
                 .build();
 
         generatePasswords("login-test");
-        userId = AdminApiUtil.createUserAndResetPasswordWithAdminClient(testRealm(), user, getPassword("login-test"), true);
+        userId = AdminApiUtil.createUserAndResetPasswordWithAdminClient(managedRealm.admin(), user, getPassword("login-test"), true);
         expectedMessagesCount = 0;
         getCleanup().addUserId(userId);
 

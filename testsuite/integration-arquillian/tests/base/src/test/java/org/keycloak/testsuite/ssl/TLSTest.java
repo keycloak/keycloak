@@ -53,10 +53,10 @@ public class TLSTest extends AbstractTestRealmKeycloakTest {
     @Test
     public void testSSLAlwaysRequired() throws Exception {
         // Switch realm SSLRequired to Always
-        RealmRepresentation realmRep = testRealm().toRepresentation();
+        RealmRepresentation realmRep = managedRealm.admin().toRepresentation();
         String origSslRequired = realmRep.getSslRequired();
         realmRep.setSslRequired(SslRequired.ALL.toString());
-        testRealm().update(realmRep);
+        managedRealm.admin().update(realmRep);
 
         // Try access "WellKnown" endpoint unsecured. It should fail
         oauth.baseUrl(AUTH_SERVER_ROOT_WITHOUT_TLS);
@@ -74,7 +74,7 @@ public class TLSTest extends AbstractTestRealmKeycloakTest {
 
         // Revert SSLRequired
         realmRep.setSslRequired(origSslRequired);
-        testRealm().update(realmRep);
+        managedRealm.admin().update(realmRep);
     }
 
 }

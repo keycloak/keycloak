@@ -49,7 +49,7 @@ public class DynamicScopesRARParseTest extends AbstractRARParserTest {
 
     @Test
     public void generatedAuthorizationRequestsShouldMatchDefaultScopes() {
-        ClientResource testApp = AdminApiUtil.findClientByClientId(testRealm(), "test-app");
+        ClientResource testApp = AdminApiUtil.findClientByClientId(managedRealm.admin(), "test-app");
         List<ClientScopeRepresentation> defScopes = testApp.getDefaultClientScopes();
         oauth.openLoginForm();
         oauth.scope("openid");
@@ -80,7 +80,7 @@ public class DynamicScopesRARParseTest extends AbstractRARParserTest {
         getCleanup().addClientScopeId(scopeId);
         response.close();
 
-        ClientResource testApp = AdminApiUtil.findClientByClientId(testRealm(), "test-app");
+        ClientResource testApp = AdminApiUtil.findClientByClientId(managedRealm.admin(), "test-app");
         ClientRepresentation testAppRep = testApp.toRepresentation();
         testApp.update(testAppRep);
         testApp.addDefaultClientScope(scopeId);
@@ -118,7 +118,7 @@ public class DynamicScopesRARParseTest extends AbstractRARParserTest {
         getCleanup().addClientScopeId(scopeId);
         response.close();
 
-        ClientResource testApp = AdminApiUtil.findClientByClientId(testRealm(), "test-app");
+        ClientResource testApp = AdminApiUtil.findClientByClientId(managedRealm.admin(), "test-app");
         ClientRepresentation testAppRep = testApp.toRepresentation();
         testApp.update(testAppRep);
         testApp.addOptionalClientScope(scopeId);
@@ -164,6 +164,6 @@ public class DynamicScopesRARParseTest extends AbstractRARParserTest {
             }});
         }
         clientScope.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
-        return testRealm().clientScopes().create(clientScope);
+        return managedRealm.admin().clientScopes().create(clientScope);
     }
 }

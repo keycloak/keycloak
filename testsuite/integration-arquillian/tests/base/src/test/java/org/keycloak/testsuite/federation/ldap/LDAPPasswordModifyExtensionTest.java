@@ -98,7 +98,7 @@ public class LDAPPasswordModifyExtensionTest extends AbstractLDAPTest  {
 
     @Test
     public void ldapPasswordChangeWithAccountConsole() throws Exception {
-        Assertions.assertTrue(AccountHelper.updatePassword(testRealm(), "johnkeycloak", "New-password1"));
+        Assertions.assertTrue(AccountHelper.updatePassword(managedRealm.admin(), "johnkeycloak", "New-password1"));
 
         oauth.openLoginForm();
         loginPage.login("johnkeycloak", "Bad-password1");
@@ -109,7 +109,7 @@ public class LDAPPasswordModifyExtensionTest extends AbstractLDAPTest  {
         Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
         // Change password back to previous value
-        Assertions.assertTrue(AccountHelper.updatePassword(testRealm(), "johnkeycloak", "Password1"));
+        Assertions.assertTrue(AccountHelper.updatePassword(managedRealm.admin(), "johnkeycloak", "Password1"));
     }
 
     @Test
@@ -121,7 +121,7 @@ public class LDAPPasswordModifyExtensionTest extends AbstractLDAPTest  {
         registerPage.register("firstName", "lastName", "email2@check.cz", "registerUserSuccess2", "Password1", "Password1");
         Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-        UserRepresentation user = AdminApiUtil.findUserByUsername(testRealm(),"registerUserSuccess2");
+        UserRepresentation user = AdminApiUtil.findUserByUsername(managedRealm.admin(),"registerUserSuccess2");
         Assertions.assertNotNull(user);
         assertFederatedUserLink(user);
         Assertions.assertEquals("registerusersuccess2", user.getUsername());

@@ -157,7 +157,7 @@ public class RequiredActionUpdateEmailTestWithVerificationTest extends AbstractR
 	private void updateEmail(boolean logoutOtherSessions) throws Exception {
 		// login using another session
 		configureRequiredActionsToUser("test-user@localhost");
-		UserResource testUser = testRealm().users().get(findUser("test-user@localhost").getId());
+		UserResource testUser = managedRealm.admin().users().get(findUser("test-user@localhost").getId());
 		OAuthClient oauth2 = oauth.newConfig().driver(driver2);
 		oauth2.doLogin("test-user@localhost", "password");
 		EventRepresentation event1 = events.expectLogin().detail(Details.REDIRECT_URI, getAuthServerContextRoot() + "/auth/realms/test/app/auth").assertEvent();
@@ -227,7 +227,7 @@ public class RequiredActionUpdateEmailTestWithVerificationTest extends AbstractR
 		UserRepresentation user = ActionUtil.findUserWithAdminClient(adminClient, "test-user@localhost");
 		user.setEmail("very-new@localhost");
 		user.setEmailVerified(true);
-		testRealm().users().get(user.getId()).update(user);
+		managedRealm.admin().users().get(user.getId()).update(user);
 
 		driver.navigate().to(confirmationLink);
 
@@ -259,12 +259,12 @@ public class RequiredActionUpdateEmailTestWithVerificationTest extends AbstractR
     @Test
     public void testForceEmailVerification() throws MessagingException, IOException {
         // disables verify email at the realm level
-        RealmRepresentation realm = testRealm().toRepresentation();
+        RealmRepresentation realm = managedRealm.admin().toRepresentation();
         realm.setVerifyEmail(false);
-        testRealm().update(realm);
+        managedRealm.admin().update(realm);
 
         // force email verification when updating the email
-        AuthenticationManagementResource authMgt = testRealm().flows();
+        AuthenticationManagementResource authMgt = managedRealm.admin().flows();
         RequiredActionProviderRepresentation requiredAction = authMgt.getRequiredActions().stream()
                 .filter(action -> RequiredAction.UPDATE_EMAIL.name().equals(action.getAlias()))
                 .findAny().get();
@@ -281,7 +281,7 @@ public class RequiredActionUpdateEmailTestWithVerificationTest extends AbstractR
             infoPage.assertCurrent();
         } finally {
             realm.setVerifyEmail(true);
-            testRealm().update(realm);
+            managedRealm.admin().update(realm);
             requiredAction.getConfig().put(UpdateEmail.CONFIG_VERIFY_EMAIL, Boolean.FALSE.toString());
             authMgt.updateRequiredAction(requiredAction.getAlias(), requiredAction);
         }
@@ -290,12 +290,12 @@ public class RequiredActionUpdateEmailTestWithVerificationTest extends AbstractR
     @Test
     public void testForceEmailVerificationWhenUpdatingEmailInUpdateProfileContext() throws MessagingException, IOException {
         // disables verify email at the realm level
-        RealmRepresentation realm = testRealm().toRepresentation();
+        RealmRepresentation realm = managedRealm.admin().toRepresentation();
         realm.setVerifyEmail(false);
-        testRealm().update(realm);
+        managedRealm.admin().update(realm);
 
         // force email verification when updating the email
-        AuthenticationManagementResource authMgt = testRealm().flows();
+        AuthenticationManagementResource authMgt = managedRealm.admin().flows();
         RequiredActionProviderRepresentation requiredAction = authMgt.getRequiredActions().stream()
                 .filter(action -> RequiredAction.UPDATE_EMAIL.name().equals(action.getAlias()))
                 .findAny().get();
@@ -303,10 +303,10 @@ public class RequiredActionUpdateEmailTestWithVerificationTest extends AbstractR
         authMgt.updateRequiredAction(requiredAction.getAlias(), requiredAction);
 
         try {
-            UserRepresentation user = testRealm().users().search("test-user@localhost").get(0);
+            UserRepresentation user = managedRealm.admin().users().search("test-user@localhost").get(0);
             user.setEmail("");
             user.setRequiredActions(List.of(RequiredAction.UPDATE_PROFILE.name()));
-            testRealm().users().get(user.getId()).update(user);
+            managedRealm.admin().users().get(user.getId()).update(user);
 
             oauth.openLoginForm();
             loginPage.login("test-user@localhost", "password");
@@ -316,11 +316,11 @@ public class RequiredActionUpdateEmailTestWithVerificationTest extends AbstractR
             driver.navigate().to(confirmationLink);
             infoPage.assertCurrent();
 
-            user = testRealm().users().search("test-user@localhost").get(0);
+            user = managedRealm.admin().users().search("test-user@localhost").get(0);
             assertEquals("new-email@localhost", user.getEmail());
         } finally {
             realm.setVerifyEmail(true);
-            testRealm().update(realm);
+            managedRealm.admin().update(realm);
             requiredAction.getConfig().put(UpdateEmail.CONFIG_VERIFY_EMAIL, Boolean.FALSE.toString());
             authMgt.updateRequiredAction(requiredAction.getAlias(), requiredAction);
         }
@@ -329,12 +329,12 @@ public class RequiredActionUpdateEmailTestWithVerificationTest extends AbstractR
     @Test
     public void testForceEmailVerificationWhenUpdatingEmailInUpdateProfileContextIfEmailNotConfirmed() throws MessagingException, IOException {
         // disables verify email at the realm level
-        RealmRepresentation realm = testRealm().toRepresentation();
+        RealmRepresentation realm = managedRealm.admin().toRepresentation();
         realm.setVerifyEmail(false);
-        testRealm().update(realm);
+        managedRealm.admin().update(realm);
 
         // force email verification when updating the email
-        AuthenticationManagementResource authMgt = testRealm().flows();
+        AuthenticationManagementResource authMgt = managedRealm.admin().flows();
         RequiredActionProviderRepresentation requiredAction = authMgt.getRequiredActions().stream()
                 .filter(action -> RequiredAction.UPDATE_EMAIL.name().equals(action.getAlias()))
                 .findAny().get();
@@ -342,10 +342,10 @@ public class RequiredActionUpdateEmailTestWithVerificationTest extends AbstractR
         authMgt.updateRequiredAction(requiredAction.getAlias(), requiredAction);
 
         try {
-            UserRepresentation user = testRealm().users().search("test-user@localhost").get(0);
+            UserRepresentation user = managedRealm.admin().users().search("test-user@localhost").get(0);
             user.setEmail("");
             user.setRequiredActions(List.of(RequiredAction.UPDATE_PROFILE.name()));
-            testRealm().users().get(user.getId()).update(user);
+            managedRealm.admin().users().get(user.getId()).update(user);
 
             oauth.openLoginForm();
             loginPage.login("test-user@localhost", "password");
@@ -354,7 +354,7 @@ public class RequiredActionUpdateEmailTestWithVerificationTest extends AbstractR
             String confirmationLink = fetchEmailConfirmationLink("new-email@localhost");
             assertNotNull(confirmationLink);
             // logout to check if update email required action will be executed
-            testRealm().users().get(user.getId()).logout();
+            managedRealm.admin().users().get(user.getId()).logout();
             oauth.openLoginForm();
             loginPage.login("test-user@localhost", "password");
             // user is forced to update the email because it was not yet confirmed
@@ -365,11 +365,11 @@ public class RequiredActionUpdateEmailTestWithVerificationTest extends AbstractR
             driver.navigate().to(confirmationLink);
             infoPage.assertCurrent();
 
-            user = testRealm().users().search("test-user@localhost").get(0);
+            user = managedRealm.admin().users().search("test-user@localhost").get(0);
             assertEquals("new-email@localhost", user.getEmail());
         } finally {
             realm.setVerifyEmail(true);
-            testRealm().update(realm);
+            managedRealm.admin().update(realm);
             requiredAction.getConfig().put(UpdateEmail.CONFIG_VERIFY_EMAIL, Boolean.FALSE.toString());
             authMgt.updateRequiredAction(requiredAction.getAlias(), requiredAction);
         }
@@ -378,7 +378,7 @@ public class RequiredActionUpdateEmailTestWithVerificationTest extends AbstractR
     @Test
     public void testForceEmailVerificationWhenUpdatingEmailInUpdateProfileContextWhenVerifyEmailEnabled() {
         // force email verification when updating the email
-        AuthenticationManagementResource authMgt = testRealm().flows();
+        AuthenticationManagementResource authMgt = managedRealm.admin().flows();
         RequiredActionProviderRepresentation requiredAction = authMgt.getRequiredActions().stream()
                 .filter(action -> RequiredAction.UPDATE_EMAIL.name().equals(action.getAlias()))
                 .findAny().get();
@@ -386,17 +386,17 @@ public class RequiredActionUpdateEmailTestWithVerificationTest extends AbstractR
         authMgt.updateRequiredAction(requiredAction.getAlias(), requiredAction);
 
         try {
-            UserRepresentation user = testRealm().users().search("test-user@localhost").get(0);
+            UserRepresentation user = managedRealm.admin().users().search("test-user@localhost").get(0);
             user.setEmail("");
             user.setRequiredActions(List.of(RequiredAction.UPDATE_PROFILE.name()));
-            testRealm().users().get(user.getId()).update(user);
+            managedRealm.admin().users().get(user.getId()).update(user);
 
             oauth.openLoginForm();
             loginPage.login("test-user@localhost", "password");
             updateProfilePage.assertCurrent();
             updateProfilePage.update("f", "l", "new-email@localhost");
 
-            user = testRealm().users().search("test-user@localhost").get(0);
+            user = managedRealm.admin().users().search("test-user@localhost").get(0);
             assertEquals(1, user.getRequiredActions().size());
             // When UPDATE_EMAIL is configured with forced verification, it takes precedence over VERIFY_EMAIL
             assertEquals(RequiredAction.UPDATE_EMAIL.name(), user.getRequiredActions().get(0));
@@ -419,7 +419,7 @@ public class RequiredActionUpdateEmailTestWithVerificationTest extends AbstractR
 		UserRepresentation otherUser = ActionUtil.findUserWithAdminClient(adminClient, "john-doh@localhost");
 		otherUser.setEmail("new@localhost");
 		otherUser.setEmailVerified(true);
-		testRealm().users().get(otherUser.getId()).update(otherUser);
+		managedRealm.admin().users().get(otherUser.getId()).update(otherUser);
 
 		driver.navigate().to(confirmationLink);
 
@@ -431,13 +431,13 @@ public class RequiredActionUpdateEmailTestWithVerificationTest extends AbstractR
     @Test
     public void testForceEmailVerificationWithUpdateProfileAndExistingEmail() {
         // Save original configuration to restore later
-        RequiredActionConfigRepresentation originalConfig = testRealm().flows().getRequiredActionConfig(UserModel.RequiredAction.UPDATE_EMAIL.name());
+        RequiredActionConfigRepresentation originalConfig = managedRealm.admin().flows().getRequiredActionConfig(UserModel.RequiredAction.UPDATE_EMAIL.name());
 
         try {
             // Configure UPDATE_EMAIL to force email verification
             RequiredActionConfigRepresentation config = new RequiredActionConfigRepresentation();
             config.getConfig().put(UpdateEmail.CONFIG_VERIFY_EMAIL, Boolean.TRUE.toString());
-            testRealm().flows().updateRequiredActionConfig(UserModel.RequiredAction.UPDATE_EMAIL.name(), config);
+            managedRealm.admin().flows().updateRequiredActionConfig(UserModel.RequiredAction.UPDATE_EMAIL.name(), config);
 
             // Create user with UPDATE_PROFILE required action
             UserRepresentation user = UserBuilder.create()
@@ -448,7 +448,7 @@ public class RequiredActionUpdateEmailTestWithVerificationTest extends AbstractR
                     .lastName("Brady")
                     .requiredAction(UserModel.RequiredAction.UPDATE_PROFILE.name())
                     .build();
-            AdminApiUtil.createUserAndResetPasswordWithAdminClient(testRealm(), user, "password");
+            AdminApiUtil.createUserAndResetPasswordWithAdminClient(managedRealm.admin(), user, "password");
 
             // Login and update profile (first and last name only, no email)
             oauth.openLoginForm();
@@ -461,9 +461,9 @@ public class RequiredActionUpdateEmailTestWithVerificationTest extends AbstractR
             }
         } finally {
             // Always restore original configuration
-            testRealm().flows().updateRequiredActionConfig(UserModel.RequiredAction.UPDATE_EMAIL.name(), originalConfig);
+            managedRealm.admin().flows().updateRequiredActionConfig(UserModel.RequiredAction.UPDATE_EMAIL.name(), originalConfig);
             events.clear();
-            AdminApiUtil.removeUserByUsername(testRealm(), "profile-test-user@localhost");
+            AdminApiUtil.removeUserByUsername(managedRealm.admin(), "profile-test-user@localhost");
         }
     }
 
@@ -485,13 +485,13 @@ public class RequiredActionUpdateEmailTestWithVerificationTest extends AbstractR
     @Test
     public void testEmailVerificationPendingMessageOnReAuthentication() throws MessagingException, IOException {
         // Save original configuration to restore later
-        RequiredActionConfigRepresentation originalConfig = testRealm().flows().getRequiredActionConfig(UserModel.RequiredAction.UPDATE_EMAIL.name());
+        RequiredActionConfigRepresentation originalConfig = managedRealm.admin().flows().getRequiredActionConfig(UserModel.RequiredAction.UPDATE_EMAIL.name());
         
         try {
             // Configure UPDATE_EMAIL to force email verification
             RequiredActionConfigRepresentation config = new RequiredActionConfigRepresentation();
             config.getConfig().put(UpdateEmail.CONFIG_VERIFY_EMAIL, Boolean.TRUE.toString());
-            testRealm().flows().updateRequiredActionConfig(UserModel.RequiredAction.UPDATE_EMAIL.name(), config);
+            managedRealm.admin().flows().updateRequiredActionConfig(UserModel.RequiredAction.UPDATE_EMAIL.name(), config);
 
             // Create user with empty email and UPDATE_PROFILE required action
             UserRepresentation user = UserBuilder.create()
@@ -502,7 +502,7 @@ public class RequiredActionUpdateEmailTestWithVerificationTest extends AbstractR
                     .lastName("Doe")
                     .requiredAction(UserModel.RequiredAction.UPDATE_PROFILE.name())
                     .build();
-            AdminApiUtil.createUserAndResetPasswordWithAdminClient(testRealm(), user, "password");
+            AdminApiUtil.createUserAndResetPasswordWithAdminClient(managedRealm.admin(), user, "password");
 
             oauth.openLoginForm();
             loginPage.login("pendinguser", "password");
@@ -510,7 +510,7 @@ public class RequiredActionUpdateEmailTestWithVerificationTest extends AbstractR
             updateProfilePage.update("John", "Doe", "pending@localhost");
 
             // Verification email should be sent and email should be set
-            UserRepresentation updatedUser = testRealm().users().get(findUser("pendinguser").getId()).toRepresentation();
+            UserRepresentation updatedUser = managedRealm.admin().users().get(findUser("pendinguser").getId()).toRepresentation();
             assertNull(updatedUser.getEmail(), "Email should be not set immediately");
 
             assertTrue(updatedUser.getRequiredActions().contains(UserModel.RequiredAction.UPDATE_EMAIL.name()), 
@@ -543,9 +543,9 @@ public class RequiredActionUpdateEmailTestWithVerificationTest extends AbstractR
 
         } finally {
             // Always restore original configuration and clean up
-            testRealm().flows().updateRequiredActionConfig(UserModel.RequiredAction.UPDATE_EMAIL.name(), originalConfig);
+            managedRealm.admin().flows().updateRequiredActionConfig(UserModel.RequiredAction.UPDATE_EMAIL.name(), originalConfig);
             events.clear();
-            AdminApiUtil.removeUserByUsername(testRealm(), "pendinguser");
+            AdminApiUtil.removeUserByUsername(managedRealm.admin(), "pendinguser");
         }
     }
 
@@ -562,7 +562,7 @@ public class RequiredActionUpdateEmailTestWithVerificationTest extends AbstractR
                     .emailVerified(true)
                     .requiredAction(UserModel.RequiredAction.UPDATE_EMAIL.name())
                     .build();
-            AdminApiUtil.createUserAndResetPasswordWithAdminClient(testRealm(), user, "password");
+            AdminApiUtil.createUserAndResetPasswordWithAdminClient(managedRealm.admin(), user, "password");
 
             // Step 1: Login and change email (triggers verification due to realm verification setting)
             oauth.openLoginForm();
@@ -581,7 +581,7 @@ public class RequiredActionUpdateEmailTestWithVerificationTest extends AbstractR
             assertNotNull(confirmationLink, "Should have received verification email");
 
             // Step 2: Logout and login again (should show pending verification message)
-            testRealm().users().get(findUser("realmverifyuser").getId()).logout();
+            managedRealm.admin().users().get(findUser("realmverifyuser").getId()).logout();
             oauth.openLoginForm();
             loginPage.login("realmverifyuser", "password");
 
@@ -599,14 +599,14 @@ public class RequiredActionUpdateEmailTestWithVerificationTest extends AbstractR
         } finally {
             // Clean up
             events.clear();
-            AdminApiUtil.removeUserByUsername(testRealm(), "realmverifyuser");
+            AdminApiUtil.removeUserByUsername(managedRealm.admin(), "realmverifyuser");
         }
     }
 
     @Test
     public void testUpdateProfileWithVerificationWhenEmailIsNotSetAndIsWritable() throws MessagingException, IOException {
         configureRequiredActionsToUser("test-user@localhost", RequiredAction.UPDATE_PROFILE.name());
-        UserResource testUser = testRealm().users().get(findUser("test-user@localhost").getId());
+        UserResource testUser = managedRealm.admin().users().get(findUser("test-user@localhost").getId());
         assertEquals(1, testUser.toRepresentation().getRequiredActions().size());
         UserRepresentation rep = testUser.toRepresentation();
         rep.setEmail("");
@@ -659,7 +659,7 @@ public class RequiredActionUpdateEmailTestWithVerificationTest extends AbstractR
         
         // Admin sets EMAIL_PENDING to empty string (simulating admin UI removal)
         user.singleAttribute(UserModel.EMAIL_PENDING, "");
-        testRealm().users().get(user.getId()).update(user);
+        managedRealm.admin().users().get(user.getId()).update(user);
 
         driver.navigate().to(confirmationLink);
 
@@ -669,7 +669,7 @@ public class RequiredActionUpdateEmailTestWithVerificationTest extends AbstractR
 
     @Test
     public void testUpdateEmailVerificationResendTooFast() throws Exception {
-        UserRepresentation testUser = testRealm().users().search("test-user@localhost").get(0);
+        UserRepresentation testUser = managedRealm.admin().users().search("test-user@localhost").get(0);
         
         oauth.openLoginForm();
         loginPage.login("test-user@localhost", "password");
@@ -683,7 +683,7 @@ public class RequiredActionUpdateEmailTestWithVerificationTest extends AbstractR
                 driver.getPageSource(), containsString("A confirmation email has been sent to newemail@localhost."));
 
         // Logout and login again to get back to update email page for resend
-        testRealm().users().get(testUser.getId()).logout();
+        managedRealm.admin().users().get(testUser.getId()).logout();
         oauth.openLoginForm();
         loginPage.login("test-user@localhost", "password");
         updateEmailPage.assertCurrent();
@@ -702,7 +702,7 @@ public class RequiredActionUpdateEmailTestWithVerificationTest extends AbstractR
             setTimeOffset(40);
             
             // Logout and login again to retry after cooldown
-            testRealm().users().get(testUser.getId()).logout();
+            managedRealm.admin().users().get(testUser.getId()).logout();
             oauth.openLoginForm();
             loginPage.login("test-user@localhost", "password");
             updateEmailPage.assertCurrent();
