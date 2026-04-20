@@ -59,10 +59,10 @@ public class StreamVerificationService {
      * <p>Serves as the single centralized entry point for all verification
      * flows — receiver-initiated (via {@code POST /streams/verify}),
      * admin-initiated (via the SSF admin resource), and transmitter-initiated
-     * automatic post-create dispatch. Stamps
-     * {@code ssf.lastVerifiedAt} on the receiver client after dispatch so
-     * the admin UI and the rate-limit check see a consistent "most recent
-     * verification" timestamp regardless of which caller triggered it.
+     * automatic post-create dispatch. Stamps {@code ssf.lastVerifiedAt}
+     * on the receiver client for the explicit paths (receiver / admin)
+     * only — transmitter-initiated auto-fires are skipped so they do not
+     * consume the {@code min_verification_interval} rate-limit window.
      *
      * @param verificationRequest The verification request
      * @param initiator           Which entry point invoked this dispatch — used
@@ -98,14 +98,18 @@ public class StreamVerificationService {
         boolean delivered = dispatcher.deliverEventSync(verificationEventToken, stream);
         Duration took = Duration.between(dispatchStart, Instant.now());
 
-        // Record the dispatch timestamp on the receiver client so the admin
-        // UI's "last verified" field and the rate-limit check see the same
-        // value regardless of whether the dispatch originated from a
-        // receiver, an admin, or the post-create auto-trigger. We stamp
-        // even on a delivery failure — the rate-limit semantics are
-        // "when did we last attempt this", and the failure detail surfaces
-        // separately via the boolean return.
-        streamStore.recordStreamVerification(streamId);
+        // Record the dispatch timestamp only for explicitly requested
+        // verifications (receiver POST /streams/verify or admin Verify
+        // button). The transmitter-initiated post-create auto-fire is
+        // routine setup, not a user-driven request, so it must not burn
+        // the rate-limit window — otherwise a freshly-created stream
+        // would 429 the receiver's first verify attempt until
+        // min_verification_interval elapses. We still stamp on delivery
+        // failure for the explicit paths because the rate-limit semantics
+        // are "when did we last attempt this".
+        if (initiator != SsfMetricsBinder.VerificationInitiator.TRANSMITTER) {
+            streamStore.recordStreamVerification(streamId);
+        }
 
         SsfMetricsBinder.VerificationOutcome outcome = delivered
                 ? SsfMetricsBinder.VerificationOutcome.DELIVERED
