@@ -183,7 +183,11 @@ public class SsfPendingEventStoreTests {
             em(session).flush();
             em(session).clear();
 
-            Instant nextAttempt = now.plus(Duration.ofMinutes(5));
+            // Truncate to microseconds up front — PostgreSQL TIMESTAMP
+            // stores micros and rounds half-up, while H2 preserves nanos.
+            // Truncating before the write means every backend reads back
+            // the exact same Instant we persisted.
+            Instant nextAttempt = now.plus(Duration.ofMinutes(5)).truncatedTo(ChronoUnit.MICROS);
             String hugeError = "x".repeat(3000);
             new SsfPendingEventStore(session)
                     .recordFailure(findById(session, row.getId()), nextAttempt, hugeError);
@@ -194,11 +198,7 @@ public class SsfPendingEventStoreTests {
             Assertions.assertEquals(SsfPendingEventStatus.PENDING, after.getStatus(),
                     "recordFailure keeps the row in PENDING for the next drainer tick");
             Assertions.assertEquals(3, after.getAttempts(), "attempts must be incremented");
-            // Compare at microsecond precision — PostgreSQL's TIMESTAMP
-            // truncates sub-microsecond digits while H2 preserves nanos,
-            // so asserting on the raw Instant is backend-dependent.
-            Assertions.assertEquals(nextAttempt.truncatedTo(ChronoUnit.MICROS),
-                    after.getNextAttemptAt().truncatedTo(ChronoUnit.MICROS));
+            Assertions.assertEquals(nextAttempt, after.getNextAttemptAt());
             Assertions.assertNotNull(after.getLastError());
             Assertions.assertTrue(after.getLastError().length() <= 2048,
                     "lastError must be truncated to the column width");
