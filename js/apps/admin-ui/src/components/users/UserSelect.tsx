@@ -180,7 +180,7 @@ export const UserSelect = ({
                                 }}
                               >
                                 {
-                                  users.find((u) => u?.id === selection)
+                                  users.find((u) => u.id === selection)
                                     ?.username
                                 }
                               </Chip>
@@ -197,7 +197,7 @@ export const UserSelect = ({
                           setInputValue("");
                           setSearch("");
                           field.onChange([]);
-                          textInputRef?.current?.focus();
+                          textInputRef.current?.focus();
                         }}
                         aria-label="Clear input value"
                       >
@@ -224,7 +224,7 @@ export const UserSelect = ({
                 setInputValue(
                   removed
                     ? ""
-                    : users.find((u) => u?.id === option)?.username || "",
+                    : users.find((u) => u.id === option)?.username || "",
                 );
                 setOpen(false);
               } else {

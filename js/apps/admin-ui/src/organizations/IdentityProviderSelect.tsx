@@ -25,7 +25,6 @@ import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useAdminClient } from "../admin-client";
 import { ComponentProps } from "../components/dynamic/components";
-import { KeycloakSpinner } from "@keycloak/keycloak-ui-shared";
 import useToggle from "../utils/useToggle";
 
 type IdentityProviderSelectProps = Omit<ComponentProps, "convertToName"> & {
@@ -96,9 +95,6 @@ export const IdentityProviderSelect = ({
     return options;
   };
 
-  if (!idps) {
-    return <KeycloakSpinner />;
-  }
   return (
     <FormGroup
       label={t(label!)}
@@ -116,9 +112,7 @@ export const IdentityProviderSelect = ({
         control={control}
         rules={{
           validate: (value: string[]) =>
-            isRequired && value.filter((i) => i !== undefined).length === 0
-              ? t("required")
-              : undefined,
+            isRequired && value.length === 0 ? t("required") : undefined,
         }}
         render={({ field }) => (
           <Select
@@ -185,7 +179,7 @@ export const IdentityProviderSelect = ({
                           setInputValue("");
                           setSearch("");
                           field.onChange([]);
-                          textInputRef?.current?.focus();
+                          textInputRef.current?.focus();
                         }}
                         aria-label={t("clear")}
                       >

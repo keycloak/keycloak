@@ -178,9 +178,9 @@ export const RevocationModal = ({
             autoFocus
             readOnly
             value={
-              realm?.notBefore === 0
+              realm.notBefore === 0
                 ? (t("none") as string)
-                : new Date(realm?.notBefore! * 1000).toString()
+                : new Date(realm.notBefore! * 1000).toString()
             }
             type="text"
             id="not-before"

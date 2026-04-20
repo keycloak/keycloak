@@ -73,10 +73,10 @@ export const AttributesTab = ({ setTableData }: AttributesTabProps) => {
           combinedLocales.map(async (locale) => {
             try {
               const response =
-                await adminClient.realms.getRealmLocalizationTexts({
+                (await adminClient.realms.getRealmLocalizationTexts({
                   realm,
                   selectedLocale: locale,
-                });
+                })) as Record<string, string> | undefined;
 
               if (response) {
                 await adminClient.realms.deleteRealmLocalizationTexts({

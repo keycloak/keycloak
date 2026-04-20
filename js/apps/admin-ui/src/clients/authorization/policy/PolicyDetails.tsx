@@ -82,11 +82,13 @@ export default function PolicyDetails() {
       if (policyId) {
         const result = await Promise.all([
           adminClient.clients.findOnePolicyWithType({
+            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- permissionClientId is undefined when navigating from client authorization tab
             id: permissionClientId ?? id,
             type: policyType!,
             policyId,
           }) as PolicyRepresentation | undefined,
           adminClient.clients.getAssociatedPolicies({
+            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- permissionClientId is undefined when navigating from client authorization tab
             id: permissionClientId ?? id,
             permissionId: policyId,
           }),
@@ -103,6 +105,7 @@ export default function PolicyDetails() {
       }
       if (!isValidComponentType(policyType!)) {
         const providers = await adminClient.clients.listPolicyProviders({
+          // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- permissionClientId is undefined when navigating from client authorization tab
           id: permissionClientId ?? id,
         });
         const provider = providers.find((p) => p.type === policyType);
