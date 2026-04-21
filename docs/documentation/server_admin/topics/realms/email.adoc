@@ -16,61 +16,69 @@ image:images/email-tab.png[Email Tab]
 
 .Template
 From::
-  *From* denotes the address used for the *From* SMTP-Header for the emails sent.
+*From* denotes the address used for the *From* SMTP-Header for the emails sent.
 
 From display name::
-  *From display name* allows to configure a user-friendly email address aliases (optional). If not set the plain *From* email address will be displayed in email clients.
+*From display name* allows to configure a user-friendly email address aliases (optional).
+If not set the plain *From* email address will be displayed in email clients.
 
 Reply to::
-  *Reply to* denotes the address used for the *Reply-To* SMTP-Header for the mails sent (optional). If not set the plain *From* email address will be used.
+*Reply to* denotes the address used for the *Reply-To* SMTP-Header for the mails sent (optional).
+If not set the plain *From* email address will be used.
 
 Reply to display name::
-  *Reply to display name* allows to configure a user-friendly email address aliases (optional). If not set the plain *Reply To* email address will be displayed.
+*Reply to display name* allows to configure a user-friendly email address aliases (optional).
+If not set the plain *Reply To* email address will be displayed.
 
 Envelope from::
-  *Envelope from* denotes the https://en.wikipedia.org/wiki/Bounce_address[Bounce Address] used for the *Return-Path* SMTP-Header for the mails sent (optional).
+*Envelope from* denotes the https://en.wikipedia.org/wiki/Bounce_address[Bounce Address] used for the *Return-Path* SMTP-Header for the mails sent (optional).
 
 .Connection & Authentication
 Host::
-  *Host* denotes the SMTP server hostname used for sending emails.
+*Host* denotes the SMTP server hostname used for sending emails.
 
 Port::
-  *Port* denotes the SMTP server port.
+*Port* denotes the SMTP server port.
 
 Encryption::
-  Tick one of these checkboxes to support sending emails for recovering usernames and passwords, especially if the SMTP server is on an external network. You will most likely need to change the *Port* to 465, the default port for SSL/TLS.
+Tick one of these checkboxes to support sending emails for recovering usernames and passwords, especially if the SMTP server is on an external network.
+You will most likely need to change the *Port* to 465, the default port for SSL/TLS.
 
 Authentication::
-  Set this switch to *ON* if your SMTP server requires authentication.
+Set this switch to *ON* if your SMTP server requires authentication.
 
 Username::
-  All authentication-mechanisms require a username.
+All authentication-mechanisms require a username.
 
 Authentication Type::
-  Choose the kind of authentication: 'password' or 'token'.
+Choose the kind of authentication: 'password' or 'token'.
 
 Password::
-  Only needed when *Authentication Type* 'password' is selected.
-  Supply the *Password*. The value of the *Password* field can refer a value from an external <<_vault-administration,vault>>.
+Only needed when *Authentication Type* 'password' is selected.
+Supply the *Password*.
+The value of the *Password* field can refer a value from an external <<_vault-administration,vault>>.
 
 Auth Token URL::
-  Only needed when *Authentication Type* 'token' is selected.
-  Supply the *Auth Token URL* that is used to fetch a token via client credentials grant.
+Only needed when *Authentication Type* 'token' is selected.
+Supply the *Auth Token URL* that is used to fetch a token via client credentials grant.
 
 Auth Token Scope::
-  Only needed when *Authentication Type* 'token' is selected.
-  Supply the *Auth Token Scope* that is used to fetch a token from the *Auth Token URL*.
+Only needed when *Authentication Type* 'token' is selected.
+Supply the *Auth Token Scope* that is used to fetch a token from the *Auth Token URL*.
 
 Auth Token ClientId::
-  Only needed when *Authentication Type* 'token' is selected.
-  Supply the *Auth ClientId* that is used to fetch a token from the *Auth Token URL*.
+Only needed when *Authentication Type* 'token' is selected.
+Supply the *Auth ClientId* that is used to fetch a token from the *Auth Token URL*.
 
 Auth Token Client Secret::
-  Only needed when *Authentication Type* 'token' is selected.
-  Supply the *Auth Client Secret* that authenticates the client to fetch a token from the *Auth Token URL*. The value of the *Auth Client Secret* field can refer a value from an external <<_vault-administration,vault>>.
+Only needed when *Authentication Type* 'token' is selected.
+Supply the *Auth Client Secret* that authenticates the client to fetch a token from the *Auth Token URL*.
+The value of the *Auth Client Secret* field can refer a value from an external <<_vault-administration,vault>>.
 
 Allow UTF-8::
-  Enable to UTF-8-encode email address when sending them to the server. This should only be enabled if the mail server supports UTF-8 via the SMTPUTF8 extension. If disabled, domain names containing non-ASCII characters will be encoded using punycode, and addresses containing non-ASCII characters in the local part of the address will return an error.
+Enable to UTF-8-encode email address when sending them to the server.
+This should only be enabled if the mail server supports UTF-8 via the SMTPUTF8 extension.
+If disabled, domain names containing non-ASCII characters will be encoded using punycode, and addresses containing non-ASCII characters in the local part of the address will return an error.
 +
 If the realm is configured to send emails (this SMTP configuration is setup) and *Allow UTF-8* option is disabled, the built-in <<user-profile, user profile>> email validator checks the local part of the address contains only ASCII characters. This way, {project_name} prevents user emails that cannot be notified.
 
