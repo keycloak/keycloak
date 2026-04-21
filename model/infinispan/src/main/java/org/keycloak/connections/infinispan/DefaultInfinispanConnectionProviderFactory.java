@@ -31,7 +31,10 @@ import java.util.stream.Collectors;
 import org.keycloak.Config;
 import org.keycloak.cluster.ClusterEvent;
 import org.keycloak.cluster.ClusterProvider;
+import org.keycloak.common.util.DurationConverter;
 import org.keycloak.connections.infinispan.remote.RemoteInfinispanConnectionProvider;
+import org.keycloak.connections.infinispan.shutdown.ShutdownManager;
+import org.keycloak.connections.infinispan.shutdown.TopologyChangeCacheListener;
 import org.keycloak.infinispan.health.ClusterHealth;
 import org.keycloak.infinispan.util.InfinispanUtils;
 import org.keycloak.marshalling.KeycloakIndexSchemaUtil;
@@ -89,6 +92,7 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
 
     private static final ReadWriteLock READ_WRITE_LOCK = new ReentrantReadWriteLock();
     private static final Logger logger = Logger.getLogger(DefaultInfinispanConnectionProviderFactory.class);
+    private static final String SHUTDOWN_TIMEOUT = "shutdownTimeout";
 
     private Config.Scope config;
 
@@ -96,6 +100,7 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
     private volatile RemoteCacheManager remoteCacheManager;
     private volatile InfinispanConnectionProvider connectionProvider;
     private volatile ClusterHealth clusterHealth;
+    private final ShutdownManager shutdownManager = new ShutdownManager();
 
     @Override
     public InfinispanConnectionProvider create(KeycloakSession session) {
@@ -131,6 +136,7 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
     @Override
     public void close() {
         logger.debug("Closing provider");
+        shutdownManager.onShutdown();
         runWithWriteLockOnCacheManager(() -> {
             if (cacheManager != null) {
                 cacheManager.stop();
@@ -173,6 +179,8 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
             var nodeInfo = NodeInfo.of(cacheManager);
             logger.info(nodeInfo.printInfo());
 
+            addShutdownListeners();
+
             this.remoteCacheManager = createRemoteCacheManager(keycloakSession);
             this.connectionProvider = InfinispanUtils.isRemoteInfinispan() ?
                     new RemoteInfinispanConnectionProvider(cacheManager, remoteCacheManager, topologyInfo, nodeInfo) :
@@ -180,6 +188,38 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
 
             clusterHealth = GlobalComponentRegistry.componentOf(cacheManager, ClusterHealth.class);
             return connectionProvider;
+        }
+    }
+
+    private void addShutdownListeners() {
+        var timeout = DurationConverter.parseDuration(config.get(SHUTDOWN_TIMEOUT));
+        if (timeout == null || timeout.isZero() || timeout.isNegative()) {
+            logger.debugf("Skipping shutdown listener, timeout is not valid: %s", timeout);
+            return;
+        }
+        for (var name : CLUSTERED_CACHE_NAMES) {
+            if (!cacheManager.cacheConfigurationExists(name)) {
+                logger.debugf("Cache '%s' not defined; skipping the shutdown listener", name);
+                continue;
+            }
+            var cache = cacheManager.getCache(name);
+            if (cache == null ){
+                logger.debugf("Cache '%s' not defined; skipping the shutdown listener", name);
+                return;
+            }
+            var cacheConfig = cache.getCacheConfiguration();
+            if (!cacheConfig.clustering().cacheMode().isClustered() || cacheConfig.clustering().cacheMode().isReplicated() || cacheConfig.clustering().cacheMode().isInvalidation()) {
+                // local or replicated caches, we don't need to care about the state transfer.
+                logger.debugf("Cache '%s' uses mode '%s' and no data loss risk exists; skipping the shutdown listener", name, cacheConfig.clustering().cacheMode());
+                continue;
+            }
+            if (!cacheConfig.clustering().stateTransfer().fetchInMemoryState()) {
+                // state transfer disabled, we can skip this cache
+                logger.debugf("Cache '%s' has state transfer disabled; skipping the shutdown listener", name);
+                continue;
+            }
+            var listener = TopologyChangeCacheListener.waitForStableTopology(cache, timeout.toMillis());
+            shutdownManager.addListener(listener);
         }
     }
 
