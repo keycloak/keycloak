@@ -467,7 +467,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
         rep.setLoginFlows(Set.of(OIDCClientRepresentation.Flow.SERVICE_ACCOUNT));
         rep.setServiceAccountRoles(Set.of(defaultRealmRoles, "offline_access"));
 
-        try (var response = getClientsApi(adminClient, getRealmName()).createClient(rep)) {
+        try (var response = getClientsApi().createClient(rep)) {
             assertEquals(201, response.getStatus());
             OIDCClientRepresentation created = response.readEntity(OIDCClientRepresentation.class);
             assertThat(created.getServiceAccountRoles(), is(Set.of(defaultRealmRoles, "offline_access")));

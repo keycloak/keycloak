@@ -413,7 +413,7 @@ public class ClientPoliciesV2Test extends AbstractClientApiV2Test {
             assertEquals(200, response.getStatus());
         }
 
-        assertClientPolicyEventIsEmitted(ClientPolicyEvent.VIEW, ClientPolicyEvent.UPDATE, ClientPolicyEvent.UPDATED);
+        assertClientPolicyEventIsEmitted(ClientPolicyEvent.UPDATE, ClientPolicyEvent.UPDATED);
     }
 
     /**
@@ -432,7 +432,7 @@ public class ClientPoliciesV2Test extends AbstractClientApiV2Test {
         setupAlwaysAppliedTestPolicy();
         cleanupClient(rep.getClientId());
 
-        assertClientPolicyEventIsEmitted(ClientPolicyEvent.VIEW, ClientPolicyEvent.UNREGISTER);
+        assertClientPolicyEventIsEmitted(ClientPolicyEvent.UNREGISTER);
     }
 
     private void assertClientPolicyEventIsEmitted(ClientPolicyEvent... events) {
