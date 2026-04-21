@@ -9,6 +9,7 @@ import org.keycloak.events.Event;
 import org.keycloak.events.EventListenerProvider;
 import org.keycloak.events.EventType;
 import org.keycloak.events.admin.AdminEvent;
+import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -21,6 +22,7 @@ import org.keycloak.ssf.transmitter.stream.StreamConfig;
 import org.keycloak.ssf.transmitter.stream.StreamService;
 import org.keycloak.ssf.transmitter.stream.storage.client.ClientStreamStore;
 import org.keycloak.ssf.transmitter.subject.SsfNotifyAttributes;
+import org.keycloak.ssf.transmitter.support.SsfUtil;
 
 import org.jboss.logging.Logger;
 
@@ -280,6 +282,10 @@ public class SsfTransmitterEventListener implements EventListenerProvider {
 
     protected List<Map.Entry<SsfSecurityEventToken, StreamConfig>> generateSecurityEventTokensForAdminEvent(AdminEvent adminEvent, SsfTransmitterProvider transmitter) {
 
+        if (adminEvent.getResourceType() != ResourceType.USER) {
+            return List.of();
+        }
+
         StreamService streamService = transmitter.streamService();
         List<StreamConfig> streams = streamService.findStreamsForSsfReceiverClients();
         if (streams.isEmpty()) {
@@ -287,8 +293,23 @@ public class SsfTransmitterEventListener implements EventListenerProvider {
             return List.of();
         }
 
+        RealmModel realm = session.realms().getRealm(adminEvent.getRealmId());
+        UserModel eventUser = session.users().getUserById(realm, SsfUtil.userIdFromAdminEventPath(adminEvent));
+        if (eventUser == null) {
+            return List.of();
+        }
+
         var streamTokens = new ArrayList<Map.Entry<SsfSecurityEventToken, StreamConfig>>();
         for (StreamConfig stream : streams) {
+
+            if (!transmitter.securityEventTokenDispatcher().shouldDispatchForUser(eventUser, stream)) {
+                // Subject-gate negative — skip the mapper call entirely.
+                // Avoids building a token for a stream the dispatcher
+                // would just filter out, and keeps logs honest for the
+                // multi-receiver case where only some streams deliver.
+                continue;
+            }
+
             SsfSecurityEventToken securityEventToken = convertAdminEventToSecurityEventToken(adminEvent, transmitter, stream);
             if (securityEventToken == null) {
                 log.debugf("Could not generate SSF Security Event Token for Admin Event. id=%s", adminEvent.getId());

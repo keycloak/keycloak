@@ -1,6 +1,7 @@
 package org.keycloak.ssf.transmitter.event;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.function.Function;
@@ -9,10 +10,12 @@ import java.util.regex.Pattern;
 
 import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.common.util.Time;
+import org.keycloak.credential.CredentialModel;
 import org.keycloak.events.Details;
 import org.keycloak.events.Event;
 import org.keycloak.events.EventType;
 import org.keycloak.events.admin.AdminEvent;
+import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OrganizationModel;
@@ -25,6 +28,7 @@ import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.ssf.SsfException;
 import org.keycloak.ssf.event.InitiatingEntity;
 import org.keycloak.ssf.event.caep.CaepCredentialChange;
+import org.keycloak.ssf.event.caep.CaepEvent;
 import org.keycloak.ssf.event.caep.CaepSessionRevoked;
 import org.keycloak.ssf.event.stream.SsfStreamUpdatedEvent;
 import org.keycloak.ssf.event.stream.SsfStreamVerificationEvent;
@@ -37,9 +41,9 @@ import org.keycloak.ssf.subject.OpaqueSubjectId;
 import org.keycloak.ssf.subject.SubjectId;
 import org.keycloak.ssf.transmitter.SsfTransmitterConfig;
 import org.keycloak.ssf.transmitter.stream.StreamConfig;
+import org.keycloak.ssf.transmitter.support.SsfUtil;
 
 import org.jboss.logging.Logger;
-
 
 
 /**
@@ -50,6 +54,10 @@ public class SecurityEventTokenMapper {
     protected static final Logger log = Logger.getLogger(SecurityEventTokenMapper.class);
 
     protected static final Pattern USER_LOGGED_OUT_BY_ADMIN_PATH_PATTERN = Pattern.compile("^users/(.*)/logout$");
+
+    protected static final Pattern USER_RESET_PASSWORD_BY_ADMIN_PATH_PATTERN = Pattern.compile("^users/(.*)/reset-password$");
+
+    protected static final Pattern USER_CREDENTIALS_CHANGED_BY_ADMIN_PATH_PATTERN = Pattern.compile("^users/(.*)/credentials/(.*)$");
 
     /**
      * Issuer URL resolver. Invoked lazily at token-build time rather than
@@ -167,13 +175,15 @@ public class SecurityEventTokenMapper {
      * Generates a session revoked event.
      *
      * @param event
-     * @param sessionId The ID of the revoked session
-     * @param userId    The ID of the user
+     * @param sessionId            The ID of the revoked session
+     * @param userId               The ID of the user
+     * @param eventTokenCustomizer
+     * @param adminEvent
      * @param stream
-     * @param reason    The reason for the revocation
+     * @param reason               The reason for the revocation
      * @return The session revoked event as a SecurityEventToken
      */
-    public SsfSecurityEventToken generateSessionRevokedEvent(Event userEvent, StreamConfig stream, String reason) {
+    public SsfSecurityEventToken generateSessionRevokedEvent(Event userEvent, AdminEvent adminEvent, StreamConfig stream, String reason) {
         try {
 
             String sessionId = userEvent.getSessionId();
@@ -200,6 +210,7 @@ public class SecurityEventTokenMapper {
             // Set events
             Map<String, Object> events = new HashMap<>();
             CaepSessionRevoked sessionRevokedEvent = new CaepSessionRevoked();
+            applyInitiatingEntity(userEvent, adminEvent, sessionRevokedEvent);
 
             if (reason != null) {
                 sessionRevokedEvent.setReasonAdmin(Map.of("en", reason));
@@ -238,6 +249,7 @@ public class SecurityEventTokenMapper {
      * additions and modifications.
      */
     public SsfSecurityEventToken generateCredentialChangeEvent(Event userEvent,
+                                                               AdminEvent adminEvent,
                                                                StreamConfig stream,
                                                                CaepCredentialChange.ChangeType changeType,
                                                                String credentialTypeFallback) {
@@ -251,14 +263,14 @@ public class SecurityEventTokenMapper {
                 credentialType = credentialTypeFallback;
             }
 
-            SsfSecurityEventToken event = newSecurityEventToken(stream);
-            event.setTxn(UUID.randomUUID().toString());
+            SsfSecurityEventToken eventToken = newSecurityEventToken(stream);
+            eventToken.setTxn(UUID.randomUUID().toString());
 
             // Set subject ID — composeUserSubject wraps in a complex
             // subject with a tenant sibling when the configured format
             // carries the +tenant composition suffix; otherwise the
             // bare user subject goes on as before.
-            event.setSubjectId(composeUserSubject(event, userId, stream));
+            eventToken.setSubjectId(composeUserSubject(eventToken, userId, stream));
 
             String caepCredentialType = narrowCaepCredentialType(credentialType);
 
@@ -268,15 +280,23 @@ public class SecurityEventTokenMapper {
             credentialChangeEvent.setChangeType(changeType);
             credentialChangeEvent.setEventTimestamp(Time.currentTime());
             credentialChangeEvent.setCredentialType(caepCredentialType);
-            credentialChangeEvent.setInitiatingEntity(InitiatingEntity.USER);
+            applyInitiatingEntity(userEvent, adminEvent, credentialChangeEvent);
 
             events.put(CaepCredentialChange.TYPE, credentialChangeEvent);
-            event.setEvents(events);
+            eventToken.setEvents(events);
 
-            return event;
+            return eventToken;
         } catch (Exception e) {
             log.error("Error generating credential change event", e);
             return null;
+        }
+    }
+
+    protected void applyInitiatingEntity(Event userEvent, AdminEvent adminEvent, CaepEvent caepEvent) {
+        if (adminEvent != null) {
+            caepEvent.setInitiatingEntity(InitiatingEntity.ADMIN);
+        } else {
+            caepEvent.setInitiatingEntity(InitiatingEntity.USER);
         }
     }
 
@@ -575,10 +595,31 @@ public class SecurityEventTokenMapper {
         if (path == null) {
             return false;
         }
-        return USER_LOGGED_OUT_BY_ADMIN_PATH_PATTERN.matcher(path).matches();
+
+        for (Pattern pattern : supportedAdminPathPatters()) {
+            if (pattern.matcher(path).matches()) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    protected List<Pattern> supportedAdminPathPatters() {
+        return List.of(USER_LOGGED_OUT_BY_ADMIN_PATH_PATTERN,
+                USER_RESET_PASSWORD_BY_ADMIN_PATH_PATTERN,
+                USER_CREDENTIALS_CHANGED_BY_ADMIN_PATH_PATTERN);
+    }
+
+    protected boolean shouldIgnoreEvent(Event event) {
+        return false;
     }
 
     public SsfSecurityEventToken toSecurityEvent(Event event, StreamConfig stream) {
+        return toSecurityEvent(event, null, stream);
+    }
+
+    public SsfSecurityEventToken toSecurityEvent(Event event, AdminEvent adminEvent, StreamConfig stream) {
 
         SsfSecurityEventToken securityEvent = switch (event.getType()) {
 
@@ -589,7 +630,7 @@ public class SecurityEventTokenMapper {
                     yield null;
                 }
 
-                yield generateSessionRevokedEvent(event, stream, "User logout");
+                yield generateSessionRevokedEvent(event, adminEvent, stream, "User logout");
             }
 
             case UPDATE_CREDENTIAL -> {
@@ -605,7 +646,7 @@ public class SecurityEventTokenMapper {
                 // distinguishing detail, so we conservatively report
                 // UPDATE for both. credential_type is read from the
                 // event's Details.CREDENTIAL_TYPE.
-                yield generateCredentialChangeEvent(event, stream,
+                yield generateCredentialChangeEvent(event, adminEvent, stream,
                         CaepCredentialChange.ChangeType.UPDATE, null);
             }
 
@@ -618,7 +659,7 @@ public class SecurityEventTokenMapper {
                 // CAEP change_type=delete: the credential was removed
                 // (required-action DeleteCredentialAction). credential_type
                 // is on the event's Details.
-                yield generateCredentialChangeEvent(event, stream,
+                yield generateCredentialChangeEvent(event, adminEvent, stream,
                         CaepCredentialChange.ChangeType.DELETE, null);
             }
 
@@ -632,7 +673,7 @@ public class SecurityEventTokenMapper {
                 // CAEP change_type=update on the password credential.
                 // Keycloak doesn't set Details.CREDENTIAL_TYPE on this
                 // event, so pass "password" as the fallback.
-                yield generateCredentialChangeEvent(event, stream,
+                yield generateCredentialChangeEvent(event, adminEvent, stream,
                         CaepCredentialChange.ChangeType.UPDATE, "password");
             }
             // Add more event mappings here as needed.
@@ -648,16 +689,12 @@ public class SecurityEventTokenMapper {
                     yield null;
                 }
 
-                yield generateSecurityEventFromEvent(event, stream);
+                yield generateSecurityEventTokenFromEvent(event, stream);
             }
         };
         // Map Keycloak events to SSF events
 
         return securityEvent;
-    }
-
-    protected boolean shouldIgnoreEvent(Event event) {
-        return false;
     }
 
     protected boolean shouldIgnoreCredentialChange(Event event) {
@@ -669,25 +706,75 @@ public class SecurityEventTokenMapper {
         return Details.USER_SESSION_EXPIRED_REASON.equals(reason) || Details.INVALID_USER_SESSION_REMEMBER_ME_REASON.equals(reason);
     }
 
-    protected static SsfSecurityEventToken generateSecurityEventFromEvent(Event event, StreamConfig stream) {
+    protected SsfSecurityEventToken generateSecurityEventTokenFromEvent(Event event, StreamConfig stream) {
         return null;
     }
 
     public SsfSecurityEventToken toSecurityEvent(AdminEvent adminEvent, StreamConfig stream) {
 
+        String userId = SsfUtil.userIdFromAdminEventPath(adminEvent);
+        if (userId == null) {
+            return null;
+        }
+
         String path = adminEvent.getResourcePath();
         Matcher matcher = USER_LOGGED_OUT_BY_ADMIN_PATH_PATTERN.matcher(path);
         if (matcher.matches()) {
-
-            String userId = matcher.group(1);
-            if (userId == null) {
-                return null;
-            }
-
             return generateLogoutEventForAdminLogoutAllUserSessions(userId, adminEvent, stream);
         }
 
+        matcher = USER_RESET_PASSWORD_BY_ADMIN_PATH_PATTERN.matcher(path);
+        if (matcher.matches()) {
+            return generateCredentialChangeEventForAdminAction(userId, adminEvent, stream, CaepCredentialChange.ChangeType.UPDATE, null, "password_reset");
+        }
+
+        matcher = USER_CREDENTIALS_CHANGED_BY_ADMIN_PATH_PATTERN.matcher(path);
+        if (matcher.matches()) {
+            String credentialId = matcher.group(2);
+
+            CaepCredentialChange.ChangeType changeType = CaepCredentialChange.ChangeType.UPDATE;
+            if (adminEvent.getOperationType() == OperationType.DELETE || adminEvent.getOperationType() == OperationType.ACTION) {
+                changeType = CaepCredentialChange.ChangeType.DELETE;
+            }
+
+            return generateCredentialChangeEventForAdminAction(userId, adminEvent, stream, changeType, credentialId, "credential_management");
+        }
+
         return null;
+    }
+
+    protected SsfSecurityEventToken generateCredentialChangeEventForAdminAction(String userId,
+                                                                                AdminEvent adminEvent,
+                                                                                StreamConfig stream,
+                                                                                CaepCredentialChange.ChangeType changeType,
+                                                                                String credentialId,
+                                                                                String reason) {
+
+        Event event = new Event();
+
+        String credentialType = PasswordCredentialModel.TYPE;
+        if (credentialId != null) {
+            RealmModel realm = session.realms().getRealm(adminEvent.getRealmId());
+            UserModel user = session.users().getUserById(realm, userId);
+            CredentialModel storedCredentialById = user.credentialManager().getStoredCredentialById(credentialId);
+            if (storedCredentialById != null) {
+                credentialType = storedCredentialById.getType();
+            }
+        }
+
+        event.setType(EventType.RESET_PASSWORD);
+        event.setUserId(userId);
+        event.setDetails(new HashMap<>());
+        event.getDetails().put("admin", "true");
+        event.getDetails().put(Details.REASON, reason);
+        event.getDetails().put(Details.CREDENTIAL_TYPE, credentialType);
+        event.getDetails().put(Details.CREDENTIAL_ID, credentialId);
+
+        if (shouldIgnoreCredentialChange(event)) {
+            return null;
+        }
+
+        return generateCredentialChangeEvent(event, adminEvent, stream, changeType, null);
     }
 
     protected SsfSecurityEventToken generateLogoutEventForAdminLogoutAllUserSessions(String userId, AdminEvent adminEvent, StreamConfig stream) {
