@@ -100,6 +100,25 @@ public interface OrganizationModel {
         }
     }
 
+    interface OrganizationRemovedEvent extends ProviderEvent {
+        OrganizationModel getOrganization();
+        KeycloakSession getKeycloakSession();
+
+        static void fire(OrganizationModel organization, KeycloakSession session) {
+            session.getKeycloakSessionFactory().publish(new OrganizationRemovedEvent() {
+                @Override
+                public OrganizationModel getOrganization() {
+                    return organization;
+                }
+
+                @Override
+                public KeycloakSession getKeycloakSession() {
+                    return session;
+                }
+            });
+        }
+    }
+
     String getId();
 
     void setName(String name);
