@@ -50,6 +50,14 @@ ifeval::[{project_community}==true]
 Many thanks to https://github.com/slaskawi[Sebastian Łaskawiec] for the contribution.
 endif::[]
 
+== SAML `login_hint` query parameter support
+
+{project_name} can now forward the `login_hint` query parameter to SAML identity providers, allowing destination providers to pre-fill their login form. This behavior is controlled by a new *Use login_hint* option in the SAML identity provider configuration.
+
+ifeval::[{project_community}==true]
+Many thanks to https://github.com/slaskawi[Sebastian Łaskawiec] for the contribution.
+endif::[]
+
 == Hiding OpenID Connect scopes from the discovery endpoint
 // https://github.com/keycloak/keycloak/issues/10388
 
