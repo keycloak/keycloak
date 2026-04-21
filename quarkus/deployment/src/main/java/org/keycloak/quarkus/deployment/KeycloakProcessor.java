@@ -93,7 +93,7 @@ import org.keycloak.provider.ProviderManager;
 import org.keycloak.provider.Spi;
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.KeycloakRecorder;
-import org.keycloak.quarkus.runtime.configuration.UpdateSocketTimeoutOnConnectionCreationInterceptor;
+import org.keycloak.quarkus.runtime.configuration.UpdateSocketTimeoutOnConnectionAcquireInterceptor;
 import org.keycloak.quarkus.runtime.cli.Picocli;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.quarkus.runtime.configuration.KeycloakConfigSourceProvider;
@@ -431,13 +431,16 @@ class KeycloakProcessor {
     @BuildStep
     void configureAgroalConnection(BuildProducer<AdditionalBeanBuildItem> additionalBeans,
                                    Capabilities capabilities) {
-        if (capabilities.isPresent(Capability.AGROAL)) {
-            additionalBeans.produce(new AdditionalBeanBuildItem.Builder().addBeanClass(UpdateSocketTimeoutOnConnectionCreationInterceptor.class)
-                    .setDefaultScope(BuiltinScope.APPLICATION.getName())
-                    .setUnremovable()
-                    .build());
+        String db = Configuration.getConfigValue(DatabaseOptions.DB).getValue();
+        Database.Vendor vendor = Database.getVendor(db).orElseThrow();
+        if (Database.Vendor.MYSQL == vendor || Database.Vendor.MARIADB == vendor || Database.Vendor.TIDB == vendor) {
+            if (capabilities.isPresent(Capability.AGROAL)) {
+                additionalBeans.produce(new AdditionalBeanBuildItem.Builder().addBeanClass(UpdateSocketTimeoutOnConnectionAcquireInterceptor.class)
+                        .setDefaultScope(BuiltinScope.APPLICATION.getName())
+                        .setUnremovable()
+                        .build());
+            }
         }
-
     }
 
     /**
