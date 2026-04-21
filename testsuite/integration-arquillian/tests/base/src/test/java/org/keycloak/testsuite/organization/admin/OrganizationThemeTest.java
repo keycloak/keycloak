@@ -40,9 +40,9 @@ import org.keycloak.testsuite.util.UserBuilder;
 
 import org.hamcrest.Matchers;
 import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
 
@@ -87,10 +87,10 @@ public class OrganizationThemeTest extends AbstractOrganizationTest {
 
         // organization available to regular login page
         loginPage.open(bc.consumerRealmName());
-        Assert.assertTrue(driver.getPageSource().contains("Sign-in to the realm"));
+        Assertions.assertTrue(driver.getPageSource().contains("Sign-in to the realm"));
         loginPage.loginUsername("tom@myorg.com");
-        Assert.assertTrue(driver.getPageSource().contains("Sign-in to myorg organization"));
-        Assert.assertTrue(loginPage.isPasswordInputPresent());
+        Assertions.assertTrue(driver.getPageSource().contains("Sign-in to myorg organization"));
+        Assertions.assertTrue(loginPage.isPasswordInputPresent());
     }
 
     @Test
@@ -102,11 +102,11 @@ public class OrganizationThemeTest extends AbstractOrganizationTest {
 
         // organization available to identity-first login page
         loginPage.open(bc.consumerRealmName());
-        Assert.assertTrue(driver.getPageSource().contains("Sign-in to the realm"));
-        Assert.assertFalse(loginPage.isPasswordInputPresent());
+        Assertions.assertTrue(driver.getPageSource().contains("Sign-in to the realm"));
+        Assertions.assertFalse(loginPage.isPasswordInputPresent());
         loginPage.loginUsername("non-user@myorg.com");
-        Assert.assertTrue(driver.getPageSource().contains("Sign-in to myorg organization"));
-        Assert.assertFalse(loginPage.isPasswordInputPresent());
+        Assertions.assertTrue(driver.getPageSource().contains("Sign-in to myorg organization"));
+        Assertions.assertFalse(loginPage.isPasswordInputPresent());
     }
 
     @Test
@@ -127,13 +127,13 @@ public class OrganizationThemeTest extends AbstractOrganizationTest {
         loginPage.open(bc.consumerRealmName());
         loginPage.loginUsername("tom@myorg.com");
         waitForPage(driver, "sign in to", true);
-        Assert.assertTrue("Driver should be on the provider realm page right now",
-                driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"));
+        Assertions.assertTrue(driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"),
+                "Driver should be on the provider realm page right now");
         loginPage.login(user.getUsername(), "password");
         waitForPage(driver, "update account information", false);
-        Assert.assertTrue("Driver should be on the consumer realm page right now",
-                driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/"));
-        Assert.assertTrue(driver.getPageSource().contains("Sign-in to myorg organization"));
+        Assertions.assertTrue(driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/"),
+                "Driver should be on the consumer realm page right now");
+        Assertions.assertTrue(driver.getPageSource().contains("Sign-in to myorg organization"));
     }
 
     @Test
@@ -154,12 +154,12 @@ public class OrganizationThemeTest extends AbstractOrganizationTest {
         oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
         loginPage.loginUsername("tom");
-        Assert.assertTrue(driver.getPageSource().contains("Sign-in to myorg organization"));
+        Assertions.assertTrue(driver.getPageSource().contains("Sign-in to myorg organization"));
         loginPage.login("password");
         waitForPage(driver, "update account information", false);
-        Assert.assertTrue("Driver should be on the consumer realm page right now",
-                driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/"));
-        Assert.assertTrue(driver.getPageSource().contains("Sign-in to myorg organization"));
+        Assertions.assertTrue(driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/"),
+                "Driver should be on the consumer realm page right now");
+        Assertions.assertTrue(driver.getPageSource().contains("Sign-in to myorg organization"));
     }
 
     @Test
@@ -172,14 +172,14 @@ public class OrganizationThemeTest extends AbstractOrganizationTest {
 
         // organization available to identity-first login page
         loginPage.open(bc.consumerRealmName());
-        Assert.assertTrue(driver.getPageSource().contains("Sign-in to the realm"));
-        Assert.assertFalse(loginPage.isPasswordInputPresent());
+        Assertions.assertTrue(driver.getPageSource().contains("Sign-in to the realm"));
+        Assertions.assertFalse(loginPage.isPasswordInputPresent());
         loginPage.loginUsername("non-user@myorg.com");
-        Assert.assertTrue(driver.getPageSource().contains("Sign-in to myorg organization"));
+        Assertions.assertTrue(driver.getPageSource().contains("Sign-in to myorg organization"));
         for (Entry<String, List<String>> attribute : orgRep.getAttributes().entrySet()) {
             assertThat(driver.getPageSource(), Matchers.containsString("The " + attribute.getKey() + " is " + String.join(", ", attribute.getValue())));
         }
-        Assert.assertFalse(loginPage.isPasswordInputPresent());
+        Assertions.assertFalse(loginPage.isPasswordInputPresent());
     }
 
     @Test
@@ -208,8 +208,8 @@ public class OrganizationThemeTest extends AbstractOrganizationTest {
         // organization available to identity-first login page
         loginPage.open(bc.consumerRealmName());
         loginPage.loginUsername(user.getEmail());
-        Assert.assertTrue(driver.getPageSource().contains("Sign-in to myorg organization"));
-        Assert.assertTrue(driver.getPageSource().contains("User is member of " + orgRep.getName()));
-        Assert.assertTrue(loginPage.isPasswordInputPresent());
+        Assertions.assertTrue(driver.getPageSource().contains("Sign-in to myorg organization"));
+        Assertions.assertTrue(driver.getPageSource().contains("User is member of " + orgRep.getName()));
+        Assertions.assertTrue(loginPage.isPasswordInputPresent());
     }
 }

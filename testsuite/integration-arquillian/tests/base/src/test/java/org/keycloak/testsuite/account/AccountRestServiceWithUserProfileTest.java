@@ -57,10 +57,10 @@ import static org.keycloak.userprofile.config.UPConfigUtils.ROLE_USER;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Test account rest service with custom user profile configurations
@@ -303,13 +303,13 @@ public class AccountRestServiceWithUserProfileTest extends AbstractRestServiceTe
     }
     
     protected void assertAnnotationValue(UserProfileAttributeMetadata uam, String key, Object value) {
-        assertNotNull("Missing annotations for attribute " + uam.getName(), uam.getAnnotations());
-        assertEquals("Unexpexted value of the "+key+" annotation for attribute " + uam.getName(), value, uam.getAnnotations().get(key));
+        assertNotNull(uam.getAnnotations(), "Missing annotations for attribute " + uam.getName());
+        assertEquals(value, uam.getAnnotations().get(key), "Unexpexted value of the "+key+" annotation for attribute " + uam.getName());
     }
 
     protected Map<String, Object> assertValidatorExists(UserProfileAttributeMetadata uam, String validatorId) {
-        assertNotNull("Missing validators for attribute " + uam.getName(), uam.getValidators());
-        assertTrue("Missing validtor "+validatorId+" for attribute " + uam.getName(), uam.getValidators().containsKey(validatorId));
+        assertNotNull(uam.getValidators(), "Missing validators for attribute " + uam.getName());
+        assertTrue(uam.getValidators().containsKey(validatorId), "Missing validtor "+validatorId+" for attribute " + uam.getName());
         return uam.getValidators().get(validatorId);
     }
     

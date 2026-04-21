@@ -25,7 +25,6 @@ import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
-import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.auth.page.AuthRealm;
@@ -43,12 +42,13 @@ import org.junit.After;
 import org.junit.FixMethodOrder;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 import org.junit.runners.MethodSorters;
 
 import static org.keycloak.testsuite.util.MailAssert.assertEmailAndGetUrl;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  *
@@ -171,7 +171,7 @@ public class TrustStoreEmailTest extends AbstractTestRealmKeycloakTest {
                 .assertEvent();
 
         // Email wasn't send
-        Assert.assertNull(SslMailServer.getLastReceivedMessage());
+        Assertions.assertNull(SslMailServer.getLastReceivedMessage());
 
         // Email wasn't sent, and we notify end user about that.
         assertEquals("Failed to send email, please try again later.",
@@ -209,7 +209,7 @@ public class TrustStoreEmailTest extends AbstractTestRealmKeycloakTest {
                     .assertEvent();
 
             // Email wasn't send
-            Assert.assertNull(SslMailServer.getLastReceivedMessage());
+            Assertions.assertNull(SslMailServer.getLastReceivedMessage());
 
             // Email wasn't sent, and we notify end user about that.
             assertEquals("Failed to send email, please try again later.",

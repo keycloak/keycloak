@@ -5,9 +5,9 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractAdminTest;
 import org.keycloak.testsuite.util.IdentityProviderBuilder;
 
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 public class IdentityProviderThemeConfigTest extends AbstractAdminTest {
 
@@ -32,7 +32,7 @@ public class IdentityProviderThemeConfigTest extends AbstractAdminTest {
         oauth.realm(TEST_REALM_NAME);
         oauth.openLoginForm();
         String pageSource = driver.getPageSource();
-        Assert.assertTrue(pageSource.contains("This value is shown in the Keycloak theme"));
-        Assert.assertFalse(pageSource.contains("This value is not shown in the Keycloak theme"));
+        Assertions.assertTrue(pageSource.contains("This value is shown in the Keycloak theme"));
+        Assertions.assertFalse(pageSource.contains("This value is not shown in the Keycloak theme"));
     }
 }

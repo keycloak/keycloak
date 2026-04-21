@@ -41,7 +41,7 @@ import org.keycloak.testsuite.util.UserBuilder;
 import org.junit.Before;
 import org.junit.Rule;
 
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 
 /**
@@ -107,7 +107,7 @@ public abstract class AbstractRARParserTest extends AbstractTestRealmKeycloakTes
                     .collect(Collectors.toList());
             return new AuthorizationRequestContextHolder(authorizationRequestHolders);
         }, AuthorizationRequestContextHolder.class);
-        assertNotNull("the fetched AuthorizationRequestContext can't be null", authorizationRequestContextHolder);
+        assertNotNull(authorizationRequestContextHolder, "the fetched AuthorizationRequestContext can't be null");
         return authorizationRequestContextHolder;
     }
 

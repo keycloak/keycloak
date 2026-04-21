@@ -48,12 +48,12 @@ import org.keycloak.testsuite.util.GroupBuilder;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
 
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author <a href="mailto:yoshiyuki.tabata.jy@hitachi.com">Yoshiyuki Tabata</a>
@@ -302,8 +302,8 @@ private void createRegexPolicyExtended(String name, String targetClaim, String p
         theRequest.setMetadata(metadata);
         List<Permission> permissions = authzClient.authorization("admin", "password").getPermissions(theRequest);
         assertNotNull(permissions);
-        Assert.assertTrue(permissions.get(0).getResourceName().equals("service"));
-        Assert.assertTrue(permissions.get(0).getScopes().contains("read"));
+        Assertions.assertTrue(permissions.get(0).getResourceName().equals("service"));
+        Assertions.assertTrue(permissions.get(0).getScopes().contains("read"));
     }
 
 

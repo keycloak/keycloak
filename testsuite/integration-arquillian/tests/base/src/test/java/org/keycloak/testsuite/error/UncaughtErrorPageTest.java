@@ -37,8 +37,8 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.util.EntityUtils;
 import org.hamcrest.CoreMatchers;
 import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Assert;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 import org.openqa.selenium.By;
 
 import static org.keycloak.utils.MediaType.APPLICATION_JSON;
@@ -46,10 +46,10 @@ import static org.keycloak.utils.MediaType.APPLICATION_JSON;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class UncaughtErrorPageTest extends AbstractKeycloakTest {
 
@@ -84,7 +84,7 @@ public class UncaughtErrorPageTest extends AbstractKeycloakTest {
         InputStream is = (InputStream) response.getEntity();
         String responseString = StreamUtil.readString(is, StandardCharsets.UTF_8);
 
-        Assert.assertTrue(responseString.contains("An internal server error has occurred"));
+        Assertions.assertTrue(responseString.contains("An internal server error has occurred"));
     }
 
     @Test
@@ -100,7 +100,7 @@ public class UncaughtErrorPageTest extends AbstractKeycloakTest {
 
                 OAuth2ErrorRepresentation error = JsonSerialization.readValue(response.getEntity().getContent(), OAuth2ErrorRepresentation.class);
                 assertEquals(OAuthErrorException.INVALID_REQUEST, error.getError());
-                assertNotNull("found error with " + error.getError() + "/" + error.getErrorDescription(), error.getErrorDescription());
+                assertNotNull(error.getErrorDescription(), "found error with " + error.getError() + "/" + error.getErrorDescription());
             }
         }
     }
@@ -121,7 +121,7 @@ public class UncaughtErrorPageTest extends AbstractKeycloakTest {
 
                 OAuth2ErrorRepresentation error = JsonSerialization.readValue(response.getEntity().getContent(), OAuth2ErrorRepresentation.class);
                 assertEquals(OAuthErrorException.INVALID_REQUEST, error.getError());
-                assertNotNull("found error with " + error.getError() + "/" + error.getErrorDescription(), error.getErrorDescription());
+                assertNotNull(error.getErrorDescription(), "found error with " + error.getError() + "/" + error.getErrorDescription());
             }
         }
     }

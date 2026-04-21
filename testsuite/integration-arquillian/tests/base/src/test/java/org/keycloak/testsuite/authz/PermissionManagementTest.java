@@ -47,11 +47,11 @@ import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -477,19 +477,19 @@ public class PermissionManagementTest extends AbstractResourceServerTest {
       // start with fetching the second half of all permission tickets
       Collection<String> expectedScopes = new ArrayList(Arrays.asList(scopes));
       List<PermissionTicketRepresentation> tickets = getAuthzClient().protection().permission().find(resource.getId(), null, null, null, null, true, 2, 2);
-      assertEquals("Returned number of permissions tickets must match the specified page size (i.e., 'maxResult').", 2, tickets.size());
+      assertEquals(2, tickets.size(), "Returned number of permissions tickets must match the specified page size (i.e., 'maxResult').");
       boolean foundScope = expectedScopes.remove(tickets.get(0).getScopeName());
-      assertTrue("Returned set of permission tickets must be only a sub-set as per pagination offset and specified page size.", foundScope);
+      assertTrue(foundScope, "Returned set of permission tickets must be only a sub-set as per pagination offset and specified page size.");
       foundScope = expectedScopes.remove(tickets.get(1).getScopeName());
-      assertTrue("Returned set of permission tickets must be only a sub-set as per pagination offset and specified page size.", foundScope);
+      assertTrue(foundScope, "Returned set of permission tickets must be only a sub-set as per pagination offset and specified page size.");
 
       // fetch the first half of all permission tickets
       tickets = getAuthzClient().protection().permission().find(resource.getId(), null, null, null, null, true, 0, 2);
-      assertEquals("Returned number of permissions tickets must match the specified page size (i.e., 'maxResult').", 2, tickets.size());
+      assertEquals(2, tickets.size(), "Returned number of permissions tickets must match the specified page size (i.e., 'maxResult').");
       foundScope = expectedScopes.remove(tickets.get(0).getScopeName());
-      assertTrue("Returned set of permission tickets must be only a sub-set as per pagination offset and specified page size.", foundScope);
+      assertTrue(foundScope, "Returned set of permission tickets must be only a sub-set as per pagination offset and specified page size.");
       foundScope = expectedScopes.remove(tickets.get(1).getScopeName());
-      assertTrue("Returned set of permission tickets must be only a sub-set as per pagination offset and specified page size.", foundScope);
+      assertTrue(foundScope, "Returned set of permission tickets must be only a sub-set as per pagination offset and specified page size.");
     }
 
     @Test
@@ -509,6 +509,6 @@ public class PermissionManagementTest extends AbstractResourceServerTest {
         }
 
         Long ticketCount = getAuthzClient().protection().permission().count(resource.getId(), null, null, null, null, true);
-        assertEquals("Returned number of permissions tickets must match the amount of permission tickets.", Long.valueOf(4), ticketCount);
+        assertEquals(Long.valueOf(4), ticketCount, "Returned number of permissions tickets must match the amount of permission tickets.");
     }
 }

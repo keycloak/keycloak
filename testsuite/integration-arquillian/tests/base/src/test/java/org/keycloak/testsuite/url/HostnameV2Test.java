@@ -33,8 +33,8 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.jboss.arquillian.container.spi.client.container.DeployableContainer;
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_PORT;
 import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_SCHEME;
@@ -42,7 +42,7 @@ import static org.keycloak.testsuite.util.oauth.OAuthClient.AUTH_SERVER_ROOT;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * This is testing just the V2 implementation of Hostname SPI. It is NOT testing if the Hostname SPI as such is used correctly.
@@ -207,7 +207,7 @@ public class HostnameV2Test extends AbstractKeycloakTest {
 
         try {
             updateServerHostnameSettings(hostname, hostnameAdmin, hostnameBackchannelDynamic, hostnameStrict);
-            Assert.fail("Server didn't fail");
+            Assertions.fail("Server didn't fail");
         }
         catch (Exception e) {
             if (container instanceof RemoteContainer) {

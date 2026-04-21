@@ -40,7 +40,7 @@ import org.junit.BeforeClass;
 
 import static org.keycloak.common.Profile.Feature.AUTHORIZATION;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>

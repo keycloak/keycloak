@@ -27,6 +27,7 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.admin.AdminApiUtil;
 
 import org.junit.Before;
+import org.junit.jupiter.api.Assertions;
 
 /**
  * <p>Abstract class that re-generates all imported user passwords with a random one.
@@ -105,7 +106,7 @@ abstract public class AbstractChangeImportedUserPasswordsTest extends AbstractTe
 
     protected String getPassword(String username) {
         final String password = userPasswords.get(username);
-        Assert.assertNotNull("password not generated for user " + username, password);
+        Assertions.assertNotNull(password, "password not generated for user " + username);
         return password;
     }
 }

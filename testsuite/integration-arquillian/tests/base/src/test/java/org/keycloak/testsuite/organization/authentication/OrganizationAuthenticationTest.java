@@ -32,7 +32,6 @@ import org.keycloak.organization.authentication.authenticators.browser.Organizat
 import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.organization.admin.AbstractOrganizationTest;
@@ -44,12 +43,13 @@ import org.keycloak.testsuite.util.UserBuilder;
 import org.hamcrest.Matcher;
 import org.hamcrest.Matchers;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
 
@@ -61,9 +61,9 @@ public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
         // first try to log in using only the email
         openIdentityFirstLoginPage(member.getEmail(), false, null, false, false);
 
-        Assert.assertTrue(loginPage.isPasswordInputPresent());
+        Assertions.assertTrue(loginPage.isPasswordInputPresent());
         // no idp should be shown because there is only a single idp that is bound to an organization
-        Assert.assertFalse(loginPage.isSocialButtonPresent(bc.getIDPAlias()));
+        Assertions.assertFalse(loginPage.isSocialButtonPresent(bc.getIDPAlias()));
 
         // the member should be able to log in using the credentials
         loginPage.login(memberPassword);
@@ -78,7 +78,7 @@ public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
 
         // check if the login page is shown
         loginPage.assertAttemptedUsernameAvailability(true);
-        Assert.assertTrue(loginPage.isPasswordInputPresent());
+        Assertions.assertTrue(loginPage.isPasswordInputPresent());
     }
 
     @Test
@@ -87,7 +87,7 @@ public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
 
         oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
-        Assert.assertFalse(loginPage.isPasswordInputPresent());
+        Assertions.assertFalse(loginPage.isPasswordInputPresent());
         loginPage.loginUsername("");
 
         assertEquals("Invalid username.", loginPage.getUsernameInputError());
@@ -101,7 +101,7 @@ public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
 
         // check if the login page is shown
         loginPage.assertAttemptedUsernameAvailability(true);
-        Assert.assertTrue(loginPage.isPasswordInputPresent());
+        Assertions.assertTrue(loginPage.isPasswordInputPresent());
     }
 
     @Test
@@ -112,8 +112,8 @@ public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
         // first try to access login page
         oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
-        Assert.assertFalse(loginPage.isPasswordInputPresent());
-        Assert.assertFalse(loginPage.isSocialButtonPresent(bc.getIDPAlias()));
+        Assertions.assertFalse(loginPage.isPasswordInputPresent());
+        Assertions.assertFalse(loginPage.isSocialButtonPresent(bc.getIDPAlias()));
 
         // disable the organization provider
         try (RealmAttributeUpdater rau = new RealmAttributeUpdater(testRealm())
@@ -126,9 +126,9 @@ public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
             waitForPage(driver, "sign in to", true);
             assertThat("Driver should be on the consumer realm page right now",
                     driver.getCurrentUrl(), Matchers.containsString("/auth/realms/" + bc.consumerRealmName() + "/"));
-            Assert.assertTrue(loginPage.isPasswordInputPresent());
+            Assertions.assertTrue(loginPage.isPasswordInputPresent());
             // no idp should be shown because there is only a single idp that is bound to an organization
-            Assert.assertFalse(loginPage.isSocialButtonPresent(bc.getIDPAlias()));
+            Assertions.assertFalse(loginPage.isSocialButtonPresent(bc.getIDPAlias()));
 
             // the member should be able to log in using the credentials
             loginPage.login(member.getEmail(), memberPassword);
@@ -292,11 +292,11 @@ public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
 
         // check if the login page is shown
         loginPage.assertAttemptedUsernameAvailability(true);
-        Assert.assertTrue(loginPage.isPasswordInputPresent());
+        Assertions.assertTrue(loginPage.isPasswordInputPresent());
 
         loginPage.clickResetLogin();
-        Assert.assertTrue(loginPage.isUsernameInputPresent());
-        Assert.assertFalse(loginPage.isPasswordInputPresent());
+        Assertions.assertTrue(loginPage.isUsernameInputPresent());
+        Assertions.assertFalse(loginPage.isPasswordInputPresent());
     }
 
     @Test
@@ -307,13 +307,13 @@ public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
 
         // check if the login page is shown
         loginPage.assertAttemptedUsernameAvailability(true);
-        Assert.assertTrue(loginPage.isPasswordInputPresent());
+        Assertions.assertTrue(loginPage.isPasswordInputPresent());
 
         for (int i = 0; i < 3; i++) {
             loginPage.login("wrong-password");
             loginPage.assertAttemptedUsernameAvailability(true);
-            Assert.assertFalse(loginPage.isEmailInputPresent());
-            Assert.assertTrue(loginPage.isPasswordInputPresent());
+            Assertions.assertFalse(loginPage.isEmailInputPresent());
+            Assertions.assertTrue(loginPage.isPasswordInputPresent());
         }
     }
 
@@ -339,26 +339,26 @@ public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
         createUser(realm.getRealm(), "existing-user", memberPassword, "John", "Doe", email);
         openIdentityFirstLoginPage(email, false, null, false, false);
         loginPage.assertAttemptedUsernameAvailability(true);
-        Assert.assertTrue(loginPage.isPasswordInputPresent());
+        Assertions.assertTrue(loginPage.isPasswordInputPresent());
 
         loginPage.login("wrong-password");
         loginPage.assertAttemptedUsernameAvailability(true);
-        Assert.assertTrue(loginPage.isPasswordInputPresent());
+        Assertions.assertTrue(loginPage.isPasswordInputPresent());
         loginPage.login("wrong-password");
         loginPage.assertAttemptedUsernameAvailability(true);
-        Assert.assertTrue(loginPage.isPasswordInputPresent());
+        Assertions.assertTrue(loginPage.isPasswordInputPresent());
 
         openIdentityFirstLoginPage(email, false, null, false, false);
         realm.setRegistrationEmailAsUsername(true);
         testRealm().update(realm);
         loginPage.login("wrong-password");
         loginPage.assertAttemptedUsernameAvailability(true);
-        Assert.assertFalse(loginPage.isEmailInputPresent());
-        Assert.assertTrue(loginPage.isPasswordInputPresent());
+        Assertions.assertFalse(loginPage.isEmailInputPresent());
+        Assertions.assertTrue(loginPage.isPasswordInputPresent());
         loginPage.login("wrong-password");
         loginPage.assertAttemptedUsernameAvailability(true);
-        Assert.assertFalse(loginPage.isEmailInputPresent());
-        Assert.assertTrue(loginPage.isPasswordInputPresent());
+        Assertions.assertFalse(loginPage.isEmailInputPresent());
+        Assertions.assertTrue(loginPage.isPasswordInputPresent());
     }
 
     @Test
@@ -384,7 +384,7 @@ public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
         loginPage.assertAttemptedUsernameAvailability(true);
         String displayedUsername = loginPage.getAttemptedUsername();
 
-        assertEquals("Entering email should not expose actual username", member.getEmail(), displayedUsername);
+        assertEquals(member.getEmail(), displayedUsername, "Entering email should not expose actual username");
 
         // Enter email with different case (should still work with case-insensitive comparison)
         String upperCaseEmail = member.getEmail().toUpperCase();
@@ -392,9 +392,9 @@ public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
 
         loginPage.assertAttemptedUsernameAvailability(true);
         String displayedUsernameUpper = loginPage.getAttemptedUsername();
-        assertEquals("Should show what user entered (uppercase email)", upperCaseEmail, displayedUsernameUpper);
+        assertEquals(upperCaseEmail, displayedUsernameUpper, "Should show what user entered (uppercase email)");
         
-        Assert.assertTrue("Password input should be present", loginPage.isPasswordInputPresent());
+        Assertions.assertTrue(loginPage.isPasswordInputPresent(), "Password input should be present");
         
         // Clean up
         testRealm().users().get(memberId).remove();

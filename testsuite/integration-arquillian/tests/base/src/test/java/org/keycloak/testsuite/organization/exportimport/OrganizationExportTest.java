@@ -61,8 +61,8 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class OrganizationExportTest extends AbstractOrganizationTest {
 
@@ -266,7 +266,7 @@ public class OrganizationExportTest extends AbstractOrganizationTest {
         for (GroupRepresentation group : groups) {
             String expectedId = expectedGroupIds.get(group.getName());
             if (expectedId != null) {
-                assertEquals("Group ID mismatch for group: " + group.getName(), expectedId, group.getId());
+                assertEquals(expectedId, group.getId(), "Group ID mismatch for group: " + group.getName());
             }
         }
     }

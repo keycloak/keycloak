@@ -23,7 +23,7 @@ import org.junit.Test;
 
 import static org.keycloak.testsuite.AbstractAdminTest.loadJson;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class AccessTokenResponseTest extends AbstractKeycloakTest {
 

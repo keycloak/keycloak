@@ -41,11 +41,11 @@ import org.junit.Test;
 
 import static org.keycloak.OID4VCConstants.OPENID_CREDENTIAL;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Test class for verifying Attestation Proof functionality with trusted keys configuration.
@@ -110,8 +110,8 @@ public class OID4VCAttestationProofTest extends OID4VCIssuerEndpointTest {
                 runAttestationProofWithInvalidTrustedKey(session, cNonce);
                 fail("Expected VCIssuerException to be thrown");
             } catch (VCIssuerException e) {
-                assertTrue("Expected error about key not found in trusted key registry but got: " + e.getMessage(),
-                        e.getMessage().contains("not found in trusted key registry"));
+                assertTrue(e.getMessage().contains("not found in trusted key registry"),
+                        "Expected error about key not found in trusted key registry but got: " + e.getMessage());
             }
         });
     }
@@ -121,13 +121,11 @@ public class OID4VCAttestationProofTest extends OID4VCIssuerEndpointTest {
         testingClient.server(TEST_REALM_NAME).run(session -> {
             AttestationProofValidatorFactory factory = new AttestationProofValidatorFactory();
 
-            assertEquals("Factory ID should be 'attestation'",
-                    "attestation", factory.getId());
+            assertEquals("attestation", factory.getId(), "Factory ID should be 'attestation'");
 
             ProofValidator validator = factory.create(session);
-            assertNotNull("Factory should create validator", validator);
-            assertEquals("Validator proof type should be 'attestation'",
-                    "attestation", validator.getProofType());
+            assertNotNull(validator, "Factory should create validator");
+            assertEquals("attestation", validator.getProofType(), "Validator proof type should be 'attestation'");
         });
     }
 
@@ -154,10 +152,10 @@ public class OID4VCAttestationProofTest extends OID4VCIssuerEndpointTest {
         AccessTokenResponse tokenResponse = getBearerToken(oauth, authCode, authDetail);
         String token = tokenResponse.getAccessToken();
         List<OID4VCAuthorizationDetail> authDetailsResponse = tokenResponse.getOID4VCAuthorizationDetails();
-        assertNotNull("authorization_details should be present in the response", authDetailsResponse);
-        assertFalse("authorization_details should not be empty", authDetailsResponse.isEmpty());
+        assertNotNull(authDetailsResponse, "authorization_details should be present in the response");
+        assertFalse(authDetailsResponse.isEmpty(), "authorization_details should not be empty");
         String credentialIdentifier = authDetailsResponse.get(0).getCredentialIdentifiers().get(0);
-        assertNotNull("credential_identifier should be present", credentialIdentifier);
+        assertNotNull(credentialIdentifier, "credential_identifier should be present");
         String cNonce = getCNonce();
 
         testingClient.server(TEST_REALM_NAME).run(session -> {
@@ -187,18 +185,18 @@ public class OID4VCAttestationProofTest extends OID4VCIssuerEndpointTest {
                 String requestPayload = JsonSerialization.writeValueAsString(request);
 
                 Response response = endpoint.requestCredential(requestPayload);
-                assertEquals("Response status should be OK", Response.Status.OK.getStatusCode(), response.getStatus());
+                assertEquals(Response.Status.OK.getStatusCode(), response.getStatus(), "Response status should be OK");
 
                 CredentialResponse credentialResponse = JsonSerialization.mapper
                         .convertValue(response.getEntity(), CredentialResponse.class);
-                assertNotNull("Credential response should not be null", credentialResponse);
-                assertNotNull("Credentials array should not be null", credentialResponse.getCredentials());
-                assertEquals("Should return 1 credential", 1, credentialResponse.getCredentials().size());
+                assertNotNull(credentialResponse, "Credential response should not be null");
+                assertNotNull(credentialResponse.getCredentials(), "Credentials array should not be null");
+                assertEquals(1, credentialResponse.getCredentials().size(), "Should return 1 credential");
 
                 // Validate the credential
                 Object credentialObj = credentialResponse.getCredentials().get(0).getCredential();
-                assertNotNull("Credential should not be null", credentialObj);
-                assertTrue("Credential should be a string", credentialObj instanceof String);
+                assertNotNull(credentialObj, "Credential should not be null");
+                assertTrue(credentialObj instanceof String, "Credential should be a string");
 
                 String credentialString = (String) credentialObj;
                 JsonWebToken jsonWebToken;
@@ -209,13 +207,13 @@ public class OID4VCAttestationProofTest extends OID4VCIssuerEndpointTest {
                     return;
                 }
 
-                assertNotNull("A valid credential JWT should be returned", jsonWebToken);
-                assertNotNull("The credentials should include the vc claim", jsonWebToken.getOtherClaims().get("vc"));
+                assertNotNull(jsonWebToken, "A valid credential JWT should be returned");
+                assertNotNull(jsonWebToken.getOtherClaims().get("vc"), "The credentials should include the vc claim");
 
                 VerifiableCredential vc = JsonSerialization.mapper.convertValue(
                         jsonWebToken.getOtherClaims().get("vc"), VerifiableCredential.class);
-                assertNotNull("VerifiableCredential should not be null", vc);
-                assertNotNull("Credential subject should not be null", vc.getCredentialSubject());
+                assertNotNull(vc, "VerifiableCredential should not be null");
+                assertNotNull(vc.getCredentialSubject(), "Credential subject should not be null");
             } catch (Exception e) {
                 LOGGER.error("Test failed with exception", e);
                 fail("Test should not throw exception: " + e.getMessage());
@@ -268,10 +266,9 @@ public class OID4VCAttestationProofTest extends OID4VCIssuerEndpointTest {
                                                     VCIssuanceContext vcIssuanceContext,
                                                     KeyWrapper expectedProofKey) {
         List<JWK> attestedKeys = validator.validateProof(vcIssuanceContext);
-        assertNotNull("Attested keys should not be null", attestedKeys);
-        assertEquals("Should contain exactly one attested key", 1, attestedKeys.size());
-        assertEquals("Attested key ID should match proof key ID",
-                expectedProofKey.getKid(), attestedKeys.get(0).getKeyId());
+        assertNotNull(attestedKeys, "Attested keys should not be null");
+        assertEquals(1, attestedKeys.size(), "Should contain exactly one attested key");
+        assertEquals(expectedProofKey.getKid(), attestedKeys.get(0).getKeyId(), "Attested key ID should match proof key ID");
         return attestedKeys;
     }
 

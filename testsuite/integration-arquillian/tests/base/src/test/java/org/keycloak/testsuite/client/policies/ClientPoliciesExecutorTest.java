@@ -124,8 +124,8 @@ import org.apache.http.message.BasicNameValuePair;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Assert;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 import static org.keycloak.testsuite.AbstractAdminTest.loadJson;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createAnyClientConditionConfig;
@@ -139,10 +139,10 @@ import static org.keycloak.testsuite.util.ClientPoliciesUtil.createSecureSigning
 
 import static org.hamcrest.Matchers.emptyOrNullString;
 import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * This test class is for testing an executor of client policies.
@@ -263,7 +263,7 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
         ClientResource clientResource = AdminApiUtil.findClientByClientId(adminClient.realm(REALM_NAME), clientId);
         assert clientResource != null;
         ClientRepresentation clientRep = clientResource.toRepresentation();
-        Assert.assertEquals(ClientIdAndSecretAuthenticator.PROVIDER_ID, clientRep.getClientAuthenticatorType());
+        Assertions.assertEquals(ClientIdAndSecretAuthenticator.PROVIDER_ID, clientRep.getClientAuthenticatorType());
         clientResource.roles().create(RoleBuilder.create().name(roleAlphaName).build());
 
         // Not allowed to client authentication with clientIdAndSecret anymore. Client matches policy now
@@ -459,15 +459,15 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
 
         IDToken idToken = oauth.verifyIDToken(authorizationEndpointResponse.getIdToken());
         // confirm ID token as detached signature does not include authenticated user's claims
-        Assert.assertNull(idToken.getEmailVerified());
-        Assert.assertNull(idToken.getName());
-        Assert.assertNull(idToken.getPreferredUsername());
-        Assert.assertNull(idToken.getGivenName());
-        Assert.assertNull(idToken.getFamilyName());
-        Assert.assertNull(idToken.getEmail());
+        Assertions.assertNull(idToken.getEmailVerified());
+        Assertions.assertNull(idToken.getName());
+        Assertions.assertNull(idToken.getPreferredUsername());
+        Assertions.assertNull(idToken.getGivenName());
+        Assertions.assertNull(idToken.getFamilyName());
+        Assertions.assertNull(idToken.getEmail());
         assertEquals("LIVieviDie028f", idToken.getNonce());
         // confirm an access token not returned
-        Assert.assertNull(authorizationEndpointResponse.getAccessToken());
+        Assertions.assertNull(authorizationEndpointResponse.getAccessToken());
 
         AccessTokenResponse res = oauth.doAccessTokenRequest(code);
         assertEquals(200, res.getStatusCode());
@@ -964,7 +964,7 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
                 .codeChallenge(PkceGenerator.s256())
                 .open();
         loginPage.assertCurrent();
-        Assert.assertEquals("Sign in to your account", loginPage.getTitleText());
+        Assertions.assertEquals("Sign in to your account", loginPage.getTitleText());
     }
 
     @Test

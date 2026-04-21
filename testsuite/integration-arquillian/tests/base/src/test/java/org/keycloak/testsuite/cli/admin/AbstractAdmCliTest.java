@@ -27,7 +27,7 @@ import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.util.JsonSerialization;
 
-import org.junit.Assert;
+import org.junit.jupiter.api.Assertions;
 
 import static org.keycloak.testsuite.AbstractAdminTest.loadJson;
 import static org.keycloak.testsuite.cli.KcAdmExec.WORK_DIR;
@@ -134,13 +134,13 @@ public abstract class AbstractAdmCliTest extends AbstractCliTest {
         HashSet<String> exclusions = new HashSet<>(Arrays.asList(excluded));
 
         if (!exclusions.contains("serverUrl")) {
-            Assert.assertEquals("serverUrl", config1.getServerUrl(), config2.getServerUrl());
+            Assertions.assertEquals(config1.getServerUrl(), config2.getServerUrl(), "serverUrl");
         }
         if (!exclusions.contains("realm")) {
-            Assert.assertEquals("realm", config1.getRealm(), config2.getRealm());
+            Assertions.assertEquals(config1.getRealm(), config2.getRealm(), "realm");
         }
         if (!exclusions.contains("truststore")) {
-            Assert.assertEquals("truststore", config1.getTruststore(), config2.getTruststore());
+            Assertions.assertEquals(config1.getTruststore(), config2.getTruststore(), "truststore");
         }
         if (!exclusions.contains("endpoints")) {
             Map<String, Map<String, RealmConfigData>> endp1 = config1.getEndpoints();
@@ -156,7 +156,7 @@ public abstract class AbstractAdmCliTest extends AbstractCliTest {
                 String serverUrl = ent1.getKey();
                 String endpskey = "endpoints." + serverUrl;
                 if (!exclusions.contains(endpskey)) {
-                    Assert.assertEquals(endpskey, ent1.getKey(), ent2.getKey());
+                    Assertions.assertEquals(ent1.getKey(), ent2.getKey(), endpskey);
 
                     Map<String, RealmConfigData> realms1 = ent1.getValue();
                     Map<String, RealmConfigData> realms2 = ent2.getValue();
@@ -171,7 +171,7 @@ public abstract class AbstractAdmCliTest extends AbstractCliTest {
                         String realm = rent1.getKey();
                         String rkey = endpskey + "." + realm;
                         if (!exclusions.contains(endpskey)) {
-                            Assert.assertEquals(rkey, rent1.getKey(), rent2.getKey());
+                            Assertions.assertEquals(rent1.getKey(), rent2.getKey(), rkey);
 
                             RealmConfigData rdata1 = rent1.getValue();
                             RealmConfigData rdata2 = rent2.getValue();
@@ -195,52 +195,52 @@ public abstract class AbstractAdmCliTest extends AbstractCliTest {
 
         String ekey = pfix + "serverUrl";
         if (!exclusions.contains(ekey)) {
-            Assert.assertEquals(ekey, data1.serverUrl(), data2.serverUrl());
+            Assertions.assertEquals(data1.serverUrl(), data2.serverUrl(), ekey);
         }
 
         ekey = pfix + "realm";
         if (!exclusions.contains(ekey)) {
-            Assert.assertEquals(ekey, data1.realm(), data2.realm());
+            Assertions.assertEquals(data1.realm(), data2.realm(), ekey);
         }
 
         ekey = pfix + "clientId";
         if (!exclusions.contains(ekey)) {
-            Assert.assertEquals(ekey, data1.getClientId(), data2.getClientId());
+            Assertions.assertEquals(data1.getClientId(), data2.getClientId(), ekey);
         }
 
         ekey = pfix + "token";
         if (!exclusions.contains(ekey)) {
-            Assert.assertEquals(ekey, data1.getToken(), data2.getToken());
+            Assertions.assertEquals(data1.getToken(), data2.getToken(), ekey);
         }
 
         ekey = pfix + "refreshToken";
         if (!exclusions.contains(ekey)) {
-            Assert.assertEquals(ekey, data1.getRefreshToken(), data2.getRefreshToken());
+            Assertions.assertEquals(data1.getRefreshToken(), data2.getRefreshToken(), ekey);
         }
 
         ekey = pfix + "expiresAt";
         if (!exclusions.contains(ekey)) {
-            Assert.assertEquals(ekey, data1.getExpiresAt(), data2.getExpiresAt());
+            Assertions.assertEquals(data1.getExpiresAt(), data2.getExpiresAt(), ekey);
         }
 
         ekey = pfix + "refreshExpiresAt";
         if (!exclusions.contains(ekey)) {
-            Assert.assertEquals(ekey, data1.getRefreshExpiresAt(), data2.getRefreshExpiresAt());
+            Assertions.assertEquals(data1.getRefreshExpiresAt(), data2.getRefreshExpiresAt(), ekey);
         }
 
         ekey = pfix + "secret";
         if (!exclusions.contains(ekey)) {
-            Assert.assertEquals(ekey, data1.getSecret(), data2.getSecret());
+            Assertions.assertEquals(data1.getSecret(), data2.getSecret(), ekey);
         }
 
         ekey = pfix + "signingToken";
         if (!exclusions.contains(ekey)) {
-            Assert.assertEquals(ekey, data1.getSigningToken(), data2.getSigningToken());
+            Assertions.assertEquals(data1.getSigningToken(), data2.getSigningToken(), ekey);
         }
 
         ekey = pfix + "sigExpiresAt";
         if (!exclusions.contains(ekey)) {
-            Assert.assertEquals(ekey, data1.getSigExpiresAt(), data2.getSigExpiresAt());
+            Assertions.assertEquals(data1.getSigExpiresAt(), data2.getSigExpiresAt(), ekey);
         }
     }
 
@@ -253,14 +253,14 @@ public abstract class AbstractAdmCliTest extends AbstractCliTest {
         KcAdmExec exe = execute("create clients --no-config --server " + serverUrl +
                 " --realm test " + credentials + " " + extraOptions + " -s clientId=test-client -o");
 
-        Assert.assertEquals("exitCode == 0", 0, exe.exitCode());
-        Assert.assertTrue("login message expected. But the messages are: " + exe.stderrLines(), exe.stderrLines().stream().anyMatch(message -> message.equals(loginMessage)));
+        Assertions.assertEquals(0, exe.exitCode(), "exitCode == 0");
+        Assertions.assertTrue(exe.stderrLines().stream().anyMatch(message -> message.equals(loginMessage)), "login message expected. But the messages are: " + exe.stderrLines());
 
         ClientRepresentation client = JsonSerialization.readValue(exe.stdout(), ClientRepresentation.class);
-        Assert.assertEquals("clientId", "test-client", client.getClientId());
+        Assertions.assertEquals("test-client", client.getClientId(), "clientId");
 
         long lastModified2 = configFile.exists() ? configFile.lastModified() : 0;
-        Assert.assertEquals("config file not modified", lastModified, lastModified2);
+        Assertions.assertEquals(lastModified, lastModified2, "config file not modified");
 
 
 
@@ -270,10 +270,10 @@ public abstract class AbstractAdmCliTest extends AbstractCliTest {
         assertExitCodeAndStdErrSize(exe, 0, 1);
 
         ClientRepresentation client2 = JsonSerialization.readValue(exe.stdout(), ClientRepresentation.class);
-        Assert.assertEquals("clientId", "test-client", client2.getClientId());
+        Assertions.assertEquals("test-client", client2.getClientId(), "clientId");
 
         lastModified2 = configFile.exists() ? configFile.lastModified() : 0;
-        Assert.assertEquals("config file not modified", lastModified, lastModified2);
+        Assertions.assertEquals(lastModified, lastModified2, "config file not modified");
 
 
 
@@ -284,11 +284,11 @@ public abstract class AbstractAdmCliTest extends AbstractCliTest {
         assertExitCodeAndStdErrSize(exe, 0, 1);
 
         ClientRepresentation client4 = JsonSerialization.readValue(exe.stdout(), ClientRepresentation.class);
-        Assert.assertEquals("clientId", "test-client", client4.getClientId());
-        Assert.assertFalse("enabled", client4.isEnabled());
+        Assertions.assertEquals("test-client", client4.getClientId(), "clientId");
+        Assertions.assertFalse(client4.isEnabled(), "enabled");
 
         lastModified2 = configFile.exists() ? configFile.lastModified() : 0;
-        Assert.assertEquals("config file not modified", lastModified, lastModified2);
+        Assertions.assertEquals(lastModified, lastModified2, "config file not modified");
 
 
 
@@ -299,7 +299,7 @@ public abstract class AbstractAdmCliTest extends AbstractCliTest {
         assertExitCodeAndStreamSizes(exe, 0, 0, 1 - linecountOffset);
 
         lastModified2 = configFile.exists() ? configFile.lastModified() : 0;
-        Assert.assertEquals("config file not modified", lastModified, lastModified2);
+        Assertions.assertEquals(lastModified, lastModified2, "config file not modified");
 
 
 
@@ -309,10 +309,10 @@ public abstract class AbstractAdmCliTest extends AbstractCliTest {
 
         assertExitCodeAndStreamSizes(exe, 1, 0, 2 - linecountOffset);
         String resourceUri = serverUrl + "/admin/realms/test/clients/" + client.getId();
-        Assert.assertEquals("error message", "Resource not found for url: " + resourceUri, exe.stderrLines().get(exe.stderrLines().size() - 1));
+        Assertions.assertEquals("Resource not found for url: " + resourceUri, exe.stderrLines().get(exe.stderrLines().size() - 1), "error message");
 
         lastModified2 = configFile.exists() ? configFile.lastModified() : 0;
-        Assert.assertEquals("config file not modified", lastModified, lastModified2);
+        Assertions.assertEquals(lastModified, lastModified2, "config file not modified");
     }
 
     File initTempFile(String extension) throws IOException {

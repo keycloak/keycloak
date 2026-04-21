@@ -58,17 +58,17 @@ import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
 import org.hamcrest.Matchers;
 import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.anyOf;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -458,8 +458,8 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
         events.expectLogin().detail("username", username.toLowerCase()).user(userId).assertEvent();
 
         UserRepresentation user = getUser(userId);
-        Assert.assertNotNull(user);
-        Assert.assertNotNull(user.getCreatedTimestamp());
+        Assertions.assertNotNull(user);
+        Assertions.assertNotNull(user.getCreatedTimestamp());
         // test that timestamp is current with 10s tollerance
         assertTrue((System.currentTimeMillis() - user.getCreatedTimestamp()) < 10000);
         assertUserBasicRegisterAttributes(userId, username, email, "firstName", "lastName");
@@ -645,8 +645,8 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
             events.expectLogin().detail("username", "registerusersuccesse@email").user(userId).assertEvent();
 
             UserRepresentation user = getUser(userId);
-            Assert.assertNotNull(user);
-            Assert.assertNotNull(user.getCreatedTimestamp());
+            Assertions.assertNotNull(user);
+            Assertions.assertNotNull(user.getCreatedTimestamp());
             // test that timestamp is current with 10s tollerance
             assertTrue((System.currentTimeMillis() - user.getCreatedTimestamp()) < 10000);
         }
@@ -755,7 +755,7 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
 
         // configure Terms and Conditions required action as enabled and default
         RequiredActionProviderRepresentation tacRep = testRealm().flows().getRequiredAction(UserModel.RequiredAction.TERMS_AND_CONDITIONS.name());
-        Assert.assertNotNull(tacRep);
+        Assertions.assertNotNull(tacRep);
         tacRep.setEnabled(true);
         tacRep.setDefaultAction(true);
         testRealm().flows().updateRequiredAction(UserModel.RequiredAction.TERMS_AND_CONDITIONS.name(), tacRep);
@@ -775,10 +775,10 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
             String userId = events.expectRegister("registerUserSuccessTermsAcceptance2", "registerUserSuccessTermsAcceptance2@email")
                     .assertEvent().getUserId();
             UserRepresentation user = assertUserRegistered(userId, "registerUserSuccessTermsAcceptance2", "registerUserSuccessTermsAcceptance2@email");
-            Assert.assertNotNull(user.getAttributes());
-            Assert.assertNotNull(user.getAttributes().get(TermsAndConditions.USER_ATTRIBUTE));
-            Assert.assertEquals(1, user.getAttributes().get(TermsAndConditions.USER_ATTRIBUTE).size());
-            Assert.assertTrue(Integer.parseInt(user.getAttributes().get(TermsAndConditions.USER_ATTRIBUTE).get(0)) >= currentTime);
+            Assertions.assertNotNull(user.getAttributes());
+            Assertions.assertNotNull(user.getAttributes().get(TermsAndConditions.USER_ATTRIBUTE));
+            Assertions.assertEquals(1, user.getAttributes().get(TermsAndConditions.USER_ATTRIBUTE).size());
+            Assertions.assertTrue(Integer.parseInt(user.getAttributes().get(TermsAndConditions.USER_ATTRIBUTE).get(0)) >= currentTime);
         } finally {
             tacRep.setEnabled(false);
             tacRep.setDefaultAction(false);
@@ -803,7 +803,7 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
         events.clear();
 
         UIUtils.navigateBackWithRefresh(driver, errorPage);
-        Assert.assertEquals("Action expired. Please continue with login now.", errorPage.getError());
+        Assertions.assertEquals("Action expired. Please continue with login now.", errorPage.getError());
 
         events.expectRegister("registerUserMissingTermsAcceptance", "registerUserMissingTermsAcceptance@email")
                 .removeDetail(Details.USERNAME)

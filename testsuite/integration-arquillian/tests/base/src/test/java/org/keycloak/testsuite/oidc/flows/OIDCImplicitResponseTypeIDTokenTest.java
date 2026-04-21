@@ -24,11 +24,11 @@ import org.keycloak.events.Details;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.idm.EventRepresentation;
-import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 /**
  * Tests with response_type=id_token
@@ -53,20 +53,20 @@ public class OIDCImplicitResponseTypeIDTokenTest extends AbstractOIDCResponseTyp
 
 
     protected List<IDToken> testAuthzResponseAndRetrieveIDTokens(AuthorizationEndpointResponse authzResponse, EventRepresentation loginEvent) {
-        Assert.assertEquals(OIDCResponseType.ID_TOKEN, loginEvent.getDetails().get(Details.RESPONSE_TYPE));
+        Assertions.assertEquals(OIDCResponseType.ID_TOKEN, loginEvent.getDetails().get(Details.RESPONSE_TYPE));
 
-        Assert.assertNull(authzResponse.getAccessToken());
+        Assertions.assertNull(authzResponse.getAccessToken());
         String idTokenStr = authzResponse.getIdToken();
         IDToken idToken = oauth.verifyIDToken(idTokenStr);
 
-        Assert.assertNull(idToken.getAccessTokenHash());
-        Assert.assertNull(idToken.getCodeHash());
+        Assertions.assertNull(idToken.getAccessTokenHash());
+        Assertions.assertNull(idToken.getCodeHash());
 
         // Validate if token_type is null
-        Assert.assertNull(authzResponse.getTokenType());
+        Assertions.assertNull(authzResponse.getTokenType());
 
         // Validate if expires_in is null
-        Assert.assertNull(authzResponse.getExpiresIn());
+        Assertions.assertNull(authzResponse.getExpiresIn());
 
         return Collections.singletonList(idToken);
     }

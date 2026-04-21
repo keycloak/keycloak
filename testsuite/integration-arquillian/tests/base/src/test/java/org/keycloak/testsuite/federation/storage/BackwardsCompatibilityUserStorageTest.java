@@ -69,6 +69,7 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 import org.openqa.selenium.WebDriver;
 
 import static org.wildfly.common.Assert.assertTrue;
@@ -180,7 +181,7 @@ public class BackwardsCompatibilityUserStorageTest extends AbstractTestRealmKeyc
         Response response = testRealm().users().create(user);
         String userId = ApiUtil.getCreatedId(response);
 
-        Assert.assertEquals(backwardsCompProviderId, new StorageId(userId).getProviderId());
+        Assertions.assertEquals(backwardsCompProviderId, new StorageId(userId).getProviderId());
 
         // Update his password
         CredentialRepresentation passwordRep = new CredentialRepresentation();
@@ -225,7 +226,7 @@ public class BackwardsCompatibilityUserStorageTest extends AbstractTestRealmKeyc
         loginTotpPage.assertCurrent();
         loginTotpPage.login("7123456");
         loginTotpPage.assertCurrent();
-        Assert.assertNotNull(loginTotpPage.getInputError());
+        Assertions.assertNotNull(loginTotpPage.getInputError());
 
         // Authenticate as the user with correct OTP
         loginTotpPage.login(totp.generateTOTP(totpSecret));
@@ -318,17 +319,17 @@ public class BackwardsCompatibilityUserStorageTest extends AbstractTestRealmKeyc
 
         // Get credentials by account REST. User should have OTP credential
         List<CredentialMetadataRepresentation> otpCreds = getOtpCredentialFromAccountREST(accountCredentialsUrl, httpClient, tokenUtil);
-        Assert.assertEquals(1, otpCreds.size());
+        Assertions.assertEquals(1, otpCreds.size());
         String otpCredentialId = otpCreds.get(0).getCredential().getId();
 
         // Delete OTP credential from federated storage
         int deleteStatus = SimpleHttpDefault.doDelete(accountCredentialsUrl + "/" + otpCredentialId, oauth.httpClient().get())
                 .auth(accountToken).acceptJson().asStatus();
-        Assert.assertEquals(204, deleteStatus);
+        Assertions.assertEquals(204, deleteStatus);
 
         // Get credentials by account REST. User should not have OTP credential
         otpCreds = getOtpCredentialFromAccountREST(accountCredentialsUrl, httpClient, tokenUtil);
-        Assert.assertEquals(0, otpCreds.size());
+        Assertions.assertEquals(0, otpCreds.size());
 
         assertUserDontHaveDBCredentials();
         assertUserHasOTPCredentialInUserStorage(false);
@@ -438,7 +439,7 @@ public class BackwardsCompatibilityUserStorageTest extends AbstractTestRealmKeyc
         testingClient.server().run(session -> {
             RealmModel realm1 = session.realms().getRealmByName("test");
             UserModel user1 = session.users().getUserByUsername(realm1, "otp1");
-            Assert.assertEquals(0, user1.credentialManager().getStoredCredentialsStream().count());
+            Assertions.assertEquals(0, user1.credentialManager().getStoredCredentialsStream().count());
         });
     }
 
@@ -448,7 +449,7 @@ public class BackwardsCompatibilityUserStorageTest extends AbstractTestRealmKeyc
                     .getProviderFactory(UserStorageProvider.class, BackwardsCompatibilityUserStorageFactory.PROVIDER_ID);
             return storageFactory.hasUserOTP("otp1");
         }, Boolean.class);
-        Assert.assertEquals(expectedUserHasOTP, hasUserOTP);
+        Assertions.assertEquals(expectedUserHasOTP, hasUserOTP);
     }
 
     private void assertUserHasRecoveryKeysCredentialInUserStorage(boolean expectedUserHasRecoveryKeys) {
@@ -457,7 +458,7 @@ public class BackwardsCompatibilityUserStorageTest extends AbstractTestRealmKeyc
                     .getProviderFactory(UserStorageProvider.class, BackwardsCompatibilityUserStorageFactory.PROVIDER_ID);
             return storageFactory.hasRecoveryCodes("otp1");
         }, Boolean.class);
-        Assert.assertEquals(expectedUserHasRecoveryKeys, hasRecoveryKeys);
+        Assertions.assertEquals(expectedUserHasRecoveryKeys, hasRecoveryKeys);
     }
 
     private List<CredentialMetadataRepresentation> getOtpCredentialFromAccountREST(String accountCredentialsUrl, CloseableHttpClient httpClient, TokenUtil tokenUtil) throws IOException {
@@ -476,7 +477,7 @@ public class BackwardsCompatibilityUserStorageTest extends AbstractTestRealmKeyc
         enterRecoveryAuthnCodePage.setDriver(driver);
         enterRecoveryAuthnCodePage.assertCurrent();
         int requestedCode = enterRecoveryAuthnCodePage.getRecoveryAuthnCodeToEnterNumber();
-        org.junit.Assert.assertEquals("Incorrect code presented to login", expectedCode, requestedCode);
+        Assertions.assertEquals(expectedCode, requestedCode, "Incorrect code presented to login");
         enterRecoveryAuthnCodePage.enterRecoveryAuthnCode(generatedRecoveryAuthnCodes.get(requestedCode));
     }
 

@@ -10,13 +10,13 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.services.managers.AppAuthManager;
-import org.keycloak.testsuite.Assert;
 import org.keycloak.util.JsonSerialization;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Tests for OID4VCIssuerEndpoint with OID4VCI disabled for SD-JWT format
@@ -41,11 +41,10 @@ public class OID4VCSdJwtIssuingEndpointDisabledTest extends OID4VCIssuerEndpoint
             OID4VCIssuerEndpoint issuerEndpoint = prepareIssuerEndpoint(session, authenticator);
 
             // Test getCredentialOfferURI
-            CorsErrorResponseException offerUriException = Assert.assertThrows(CorsErrorResponseException.class, () ->
+            CorsErrorResponseException offerUriException = Assertions.assertThrows(CorsErrorResponseException.class, () ->
                     issuerEndpoint.createCredentialOffer("test-credential")
             );
-            assertEquals("Should fail with 403 Forbidden when client is not OID4VCI-enabled",
-                    Response.Status.FORBIDDEN.getStatusCode(), offerUriException.getResponse().getStatus());
+            assertEquals(Response.Status.FORBIDDEN.getStatusCode(), offerUriException.getResponse().getStatus(), "Should fail with 403 Forbidden when client is not OID4VCI-enabled");
 
             CredentialRequest credentialRequest = new CredentialRequest()
                     .setCredentialConfigurationId(sdJwtTypeCredentialConfigurationIdName);
@@ -53,14 +52,13 @@ public class OID4VCSdJwtIssuingEndpointDisabledTest extends OID4VCIssuerEndpoint
             try {
                 requestPayload = JsonSerialization.writeValueAsString(credentialRequest);
             } catch (JsonProcessingException e) {
-                Assert.fail("Failed to serialize CredentialRequest: " + e.getMessage());
+                Assertions.fail("Failed to serialize CredentialRequest: " + e.getMessage());
                 return;
             }
-            CorsErrorResponseException requestException = Assert.assertThrows(CorsErrorResponseException.class, () ->
+            CorsErrorResponseException requestException = Assertions.assertThrows(CorsErrorResponseException.class, () ->
                     issuerEndpoint.requestCredential(requestPayload)
             );
-            assertEquals("Should fail with 403 Forbidden when client is not OID4VCI-enabled",
-                    Response.Status.FORBIDDEN.getStatusCode(), requestException.getResponse().getStatus());
+            assertEquals(Response.Status.FORBIDDEN.getStatusCode(), requestException.getResponse().getStatus(), "Should fail with 403 Forbidden when client is not OID4VCI-enabled");
         }));
     }
 

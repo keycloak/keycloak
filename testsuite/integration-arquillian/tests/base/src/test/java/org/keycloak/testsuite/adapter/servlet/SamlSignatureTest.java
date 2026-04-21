@@ -67,10 +67,10 @@ import org.apache.xml.security.encryption.XMLCipher;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
-import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 import org.w3c.dom.DOMException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -398,7 +398,7 @@ public class SamlSignatureTest extends AbstractAdapterTest {
 
     private static void removeDocumentSignature(Document doc) throws DOMException {
         Element responseSignature = (Element) doc.getElementsByTagNameNS(XMLSignature.XMLNS, "Signature").item(0);
-        Assert.assertNotNull(doc.getDocumentElement().removeChild(responseSignature));
+        Assertions.assertNotNull(doc.getDocumentElement().removeChild(responseSignature));
     }
 
     @Test

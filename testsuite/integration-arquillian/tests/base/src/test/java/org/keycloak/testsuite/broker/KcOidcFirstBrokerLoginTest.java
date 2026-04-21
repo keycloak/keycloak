@@ -15,7 +15,6 @@ import org.keycloak.representations.idm.FederatedIdentityRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.broker.oidc.TestKeycloakOidcIdentityProviderFactory;
 import org.keycloak.testsuite.forms.RegisterWithUserProfileTest;
 import org.keycloak.testsuite.forms.VerifyProfileTest;
@@ -31,6 +30,7 @@ import org.keycloak.util.JsonSerialization;
 import org.apache.commons.lang3.StringUtils;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 import org.openqa.selenium.By;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebElement;
@@ -50,10 +50,10 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -191,7 +191,7 @@ public class KcOidcFirstBrokerLoginTest extends AbstractFirstBrokerLoginTest {
             loginPage.open(bc.consumerRealmName());
 
             logInWithBroker(samlBrokerConfig);
-            Assert.assertTrue(appPage.isCurrent());
+            Assertions.assertTrue(appPage.isCurrent());
             AccountHelper.logout(adminClient.realm(bc.consumerRealmName()), bc.getUserLogin());
             AccountHelper.logout(adminClient.realm(bc.providerRealmName()), bc.getUserLogin());
 
@@ -209,7 +209,7 @@ public class KcOidcFirstBrokerLoginTest extends AbstractFirstBrokerLoginTest {
 
             try {
                 this.loginPage.findSocialButton(bc.getIDPAlias());
-                org.junit.Assert.fail("Not expected to see social button with " + samlBrokerConfig.getIDPAlias());
+                Assertions.fail("Not expected to see social button with " + samlBrokerConfig.getIDPAlias());
             } catch (NoSuchElementException expected) {
             }
 
@@ -271,7 +271,7 @@ public class KcOidcFirstBrokerLoginTest extends AbstractFirstBrokerLoginTest {
 
             try {
                 this.loginPage.findSocialButton(bc.getIDPAlias());
-                org.junit.Assert.fail("Not expected to see social button with " + bc.getIDPAlias());
+                Assertions.fail("Not expected to see social button with " + bc.getIDPAlias());
             } catch (NoSuchElementException expected) {
             }
 
@@ -317,7 +317,7 @@ public class KcOidcFirstBrokerLoginTest extends AbstractFirstBrokerLoginTest {
 
             try {
                 this.loginPage.findSocialButton(bc.getIDPAlias());
-                org.junit.Assert.fail("Not expected to see social button with " + samlBrokerConfig.getIDPAlias());
+                Assertions.fail("Not expected to see social button with " + samlBrokerConfig.getIDPAlias());
             } catch (NoSuchElementException expected) {
             }
 
@@ -389,8 +389,8 @@ public class KcOidcFirstBrokerLoginTest extends AbstractFirstBrokerLoginTest {
         log.debug("Clicking social " + bc.getIDPAlias());
         loginPage.clickSocial(bc.getIDPAlias());
         waitForPage(driver, "sign in to", true);
-        Assert.assertTrue("Driver should be on the provider realm page right now",
-                driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"));
+        Assertions.assertTrue(driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"),
+                "Driver should be on the provider realm page right now");
         log.debug("Logging in");
         loginPage.login("no-first-name", "password");
 
@@ -405,9 +405,9 @@ public class KcOidcFirstBrokerLoginTest extends AbstractFirstBrokerLoginTest {
 
         UserRepresentation userRepresentation = AccountHelper.getUserRepresentation(adminClient.realm(bc.consumerRealmName()), "new-username");
 
-        Assert.assertEquals("First Name", userRepresentation.getFirstName());
-        Assert.assertEquals("Last Name", userRepresentation.getLastName());
-        Assert.assertEquals("no-first-name@localhost.com", userRepresentation.getEmail());
+        Assertions.assertEquals("First Name", userRepresentation.getFirstName());
+        Assertions.assertEquals("Last Name", userRepresentation.getLastName());
+        Assertions.assertEquals("no-first-name@localhost.com", userRepresentation.getEmail());
 
     }
 
@@ -432,8 +432,8 @@ public class KcOidcFirstBrokerLoginTest extends AbstractFirstBrokerLoginTest {
         log.debug("Clicking social " + bc.getIDPAlias());
         loginPage.clickSocial(bc.getIDPAlias());
         waitForPage(driver, "sign in to", true);
-        Assert.assertTrue("Driver should be on the provider realm page right now",
-            driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"));
+        Assertions.assertTrue(driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"),
+            "Driver should be on the provider realm page right now");
         log.debug("Logging in");
         loginPage.login("idp-cancel-test", "password");
 
@@ -446,7 +446,7 @@ public class KcOidcFirstBrokerLoginTest extends AbstractFirstBrokerLoginTest {
         assertEquals(urlWhenBackFromRegistrationPage, urlWhenWentBackFromIdpLogin);
 
         log.debug("Should not fail here... We're still not logged in, so the IDP should be shown on the login page.");
-        assertTrue("We should be on the login page.", driver.getPageSource().contains("Sign in to your account"));
+        assertTrue(driver.getPageSource().contains("Sign in to your account"), "We should be on the login page.");
         final var socialButton = this.loginPage.findSocialButton(bc.getIDPAlias());
     }
 
@@ -472,11 +472,11 @@ public class KcOidcFirstBrokerLoginTest extends AbstractFirstBrokerLoginTest {
 
         //assert field names
         // i18n replaced
-        org.junit.Assert.assertEquals("First name", updateAccountInformationPage.getLabelForField("firstName"));
+        Assertions.assertEquals("First name", updateAccountInformationPage.getLabelForField("firstName"));
         // attribute name used if no display name set
-        org.junit.Assert.assertEquals("lastName", updateAccountInformationPage.getLabelForField("lastName"));
+        Assertions.assertEquals("lastName", updateAccountInformationPage.getLabelForField("lastName"));
         // direct value in display name
-        org.junit.Assert.assertEquals("Department", updateAccountInformationPage.getLabelForField("department"));
+        Assertions.assertEquals("Department", updateAccountInformationPage.getLabelForField("department"));
     }
 
     @Test
@@ -705,7 +705,7 @@ public class KcOidcFirstBrokerLoginTest extends AbstractFirstBrokerLoginTest {
         waitForPage(driver, "update account information", false);
         updateAccountInformationPage.assertCurrent();
 
-        org.junit.Assert.assertTrue(updateAccountInformationPage.isDepartmentPresent());
+        Assertions.assertTrue(updateAccountInformationPage.isDepartmentPresent());
         updateAccountInformationPage.updateAccountInformation( "attributeNotRequiredAndSelectedByScopeCanBeIgnored", "attributeNotRequiredAndSelectedByScopeCanBeIgnored@email", "FirstAA", "LastAA");
 
         UserRepresentation user = VerifyProfileTest.getUserByUsername(testRealm(),"attributeNotRequiredAndSelectedByScopeCanBeIgnored");
@@ -734,7 +734,7 @@ public class KcOidcFirstBrokerLoginTest extends AbstractFirstBrokerLoginTest {
         waitForPage(driver, "update account information", false);
         updateAccountInformationPage.assertCurrent();
 
-        org.junit.Assert.assertTrue(updateAccountInformationPage.isDepartmentPresent());
+        Assertions.assertTrue(updateAccountInformationPage.isDepartmentPresent());
         updateAccountInformationPage.updateAccountInformation( "attributeNotRequiredAndSelectedByScopeCanBeSet", "attributeNotRequiredAndSelectedByScopeCanBeSet@email", "FirstAA", "LastAA","Department AA");
 
         UserRepresentation user = VerifyProfileTest.getUserByUsername(testRealm(),"attributeNotRequiredAndSelectedByScopeCanBeSet");
@@ -875,7 +875,7 @@ public class KcOidcFirstBrokerLoginTest extends AbstractFirstBrokerLoginTest {
         loginPage.clickSocial(bc.getIDPAlias());
         waitForPage(driver, "sign in to", true);
         loginPage.login(bc.getUserPassword());
-        Assert.assertTrue(appPage.isCurrent());
+        Assertions.assertTrue(appPage.isCurrent());
     }
 
     public void addDepartmentScopeIntoRealm() {
@@ -908,10 +908,10 @@ public class KcOidcFirstBrokerLoginTest extends AbstractFirstBrokerLoginTest {
         logInWithBroker(bc);
 
         waitForPage(driver, "update account information", false);
-        Assert.assertTrue("Should be on update profile page", updateAccountInformationPage.isCurrent());
+        Assertions.assertTrue(updateAccountInformationPage.isCurrent(), "Should be on update profile page");
 
         updateAccountInformationPage.updateAccountInformation("Test", "User");
 
-        Assert.assertTrue("User should be logged in successfully after profile update", appPage.isCurrent());
+        Assertions.assertTrue(appPage.isCurrent(), "User should be logged in successfully after profile update");
     }
 }

@@ -20,9 +20,9 @@ import java.util.List;
 
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.representations.idm.ClientRepresentation;
-import org.keycloak.testsuite.Assert;
 
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
 
@@ -47,14 +47,14 @@ public class KcOidcBrokerIdpHintTest extends AbstractInitializedBaseBrokerTest {
         String url = driver.getCurrentUrl() + "&kc_idp_hint=" + bc.getIDPAlias();
         driver.navigate().to(url);
         waitForPage(driver, "sign in to", true);
-        Assert.assertTrue("Driver should be on the provider realm page right now",
-                driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"));
+        Assertions.assertTrue(driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"),
+                "Driver should be on the provider realm page right now");
 
         log.debug("Logging in");
         loginPage.login(bc.getUserLogin(), bc.getUserPassword());
         
         // authenticated and redirected to app
-        Assert.assertTrue(driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/"));
+        Assertions.assertTrue(driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/"));
     }
     
     // KEYCLOAK-5260
@@ -67,22 +67,22 @@ public class KcOidcBrokerIdpHintTest extends AbstractInitializedBaseBrokerTest {
         String urlWithHint = driver.getCurrentUrl() + "&kc_idp_hint=" + bc.getIDPAlias();        
         driver.navigate().to(urlWithHint);
         waitForPage(driver, "sign in to", true);
-        Assert.assertTrue("Driver should be on the provider realm page right now",
-                driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"));
+        Assertions.assertTrue(driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"),
+                "Driver should be on the provider realm page right now");
         
         // do the same thing a second time
         driver.navigate().to(urlWithHint);
         waitForPage(driver, "sign in to", true);
-        Assert.assertTrue("Driver should be on the provider realm page right now",
-                driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"));
+        Assertions.assertTrue(driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"),
+                "Driver should be on the provider realm page right now");
         
         // redirect shouldn't happen
         oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
 
         waitForPage(driver, "sign in to", true);
-        Assert.assertTrue("Driver should be on the consumer realm page",
-                driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/"));
+        Assertions.assertTrue(driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/"),
+                "Driver should be on the consumer realm page");
     }
     
         @Test
@@ -95,7 +95,7 @@ public class KcOidcBrokerIdpHintTest extends AbstractInitializedBaseBrokerTest {
         waitForPage(driver, "sign in to", true);
 
         // Still on consumer login page
-        Assert.assertTrue(driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/"));
+        Assertions.assertTrue(driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/"));
     }
 
     @Test
@@ -103,7 +103,7 @@ public class KcOidcBrokerIdpHintTest extends AbstractInitializedBaseBrokerTest {
         // Configure broker client to require consent so we can test error scenario
         RealmResource providerRealm = adminClient.realm(bc.providerRealmName());
         List<ClientRepresentation> clients = providerRealm.clients().findByClientId(bc.getIDPClientIdInProviderRealm());
-        Assert.assertEquals(1, clients.size());
+        Assertions.assertEquals(1, clients.size());
         ClientRepresentation brokerClient = clients.get(0);
         brokerClient.setConsentRequired(true);
         providerRealm.clients().get(brokerClient.getId()).update(brokerClient);
@@ -119,8 +119,8 @@ public class KcOidcBrokerIdpHintTest extends AbstractInitializedBaseBrokerTest {
 
             // Should be redirected to provider realm
             waitForPage(driver, "sign in to", true);
-            Assert.assertTrue("Driver should be on the provider realm page right now",
-                    driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"));
+            Assertions.assertTrue(driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"),
+                    "Driver should be on the provider realm page right now");
 
             log.debug("Logging in");
             loginPage.login(bc.getUserLogin(), bc.getUserPassword());
@@ -131,11 +131,11 @@ public class KcOidcBrokerIdpHintTest extends AbstractInitializedBaseBrokerTest {
 
             // Should return to consumer login page (not infinite loop back to IdP)
             waitForPage(driver, "sign in to", true);
-            Assert.assertTrue("Driver should be back on consumer login page after denial",
-                    driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/"));
+            Assertions.assertTrue(driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/"),
+                    "Driver should be back on consumer login page after denial");
 
-            Assert.assertTrue("Error message should be displayed",
-                    driver.getPageSource().contains("Access denied"));
+            Assertions.assertTrue(driver.getPageSource().contains("Access denied"),
+                    "Error message should be displayed");
         } finally {
             // Restore consent setting
             brokerClient.setConsentRequired(false);

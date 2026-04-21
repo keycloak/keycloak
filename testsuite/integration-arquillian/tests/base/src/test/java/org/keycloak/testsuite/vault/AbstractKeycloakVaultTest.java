@@ -29,7 +29,7 @@ import org.keycloak.vault.VaultStringSecret;
 import org.keycloak.vault.VaultTranscriber;
 
 import org.jetbrains.annotations.NotNull;
-import org.junit.Assert;
+import org.junit.jupiter.api.Assertions;
 
 /**
  * Tests the usage of the {@link VaultTranscriber} on the server side. The tests attempt to obtain the transcriber from
@@ -60,17 +60,17 @@ public abstract class AbstractKeycloakVaultTest extends AbstractKeycloakTest {
             VaultTranscriber transcriber = getVaultTranscriber(session);
             // obtain an existing secret from the vault.
             Optional<String> optional = getSecret(transcriber, testKey);
-            Assert.assertTrue(optional.isPresent());
-            Assert.assertEquals(expectedSecret, optional.get());
+            Assertions.assertTrue(optional.isPresent());
+            Assertions.assertEquals(expectedSecret, optional.get());
 
             // try obtaining a secret using a key that does not exist in the vault.
             optional = getSecret(transcriber, "${vault.invalid_entry}");
-            Assert.assertFalse(optional.isPresent());
+            Assertions.assertFalse(optional.isPresent());
 
             // invoke the transcriber using a string that is not a vault expression.
             optional = getSecret(transcriber, "mysecret");
-            Assert.assertTrue(optional.isPresent());
-            Assert.assertEquals("mysecret", optional.get());
+            Assertions.assertTrue(optional.isPresent());
+            Assertions.assertEquals("mysecret", optional.get());
         }
 
         private Optional<String> getSecret(VaultTranscriber transcriber, String testKey) {

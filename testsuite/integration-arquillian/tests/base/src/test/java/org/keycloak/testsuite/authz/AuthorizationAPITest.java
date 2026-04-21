@@ -38,7 +38,6 @@ import org.keycloak.representations.idm.authorization.PermissionRequest;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ResourcePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
-import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.client.resources.TestApplicationResourceUrls;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.RealmBuilder;
@@ -49,12 +48,13 @@ import org.keycloak.util.JsonSerialization;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -210,8 +210,8 @@ public class AuthorizationAPITest extends AbstractAuthzTest {
 
         // Ticket is opaque to client or resourceServer. The audience should be just an authorization server itself
         JsonWebToken ticketDecoded = JsonSerialization.readValue(new JWSInput(ticket).getContent(), JsonWebToken.class);
-        Assert.assertFalse(ticketDecoded.hasAudience(clientId));
-        Assert.assertFalse(ticketDecoded.hasAudience(resourceServerClientId));
+        Assertions.assertFalse(ticketDecoded.hasAudience(clientId));
+        Assertions.assertFalse(ticketDecoded.hasAudience(resourceServerClientId));
 
         AuthorizationResponse response = authzClient.authorization(accessToken).authorize(new AuthorizationRequest(ticket));
 

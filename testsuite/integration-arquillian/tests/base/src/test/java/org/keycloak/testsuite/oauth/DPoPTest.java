@@ -79,7 +79,6 @@ import org.keycloak.services.clientpolicy.condition.ClientAccessTypeConditionFac
 import org.keycloak.services.clientpolicy.executor.DPoPBindEnforcerExecutorFactory;
 import org.keycloak.services.cors.Cors;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
-import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.admin.ApiUtil;
@@ -104,9 +103,11 @@ import org.keycloak.utils.MediaType;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
+import org.hamcrest.MatcherAssert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 import static org.keycloak.OAuth2Constants.DPOP_HTTP_HEADER;
 import static org.keycloak.OAuth2Constants.DPOP_JWT_HEADER_TYPE;
@@ -124,11 +125,11 @@ import static org.keycloak.testsuite.util.ClientPoliciesUtil.generateSignedDPoPP
 import static org.hamcrest.Matchers.emptyOrNullString;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.startsWith;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class DPoPTest extends AbstractTestRealmKeycloakTest {
 
@@ -330,14 +331,14 @@ public class DPoPTest extends AbstractTestRealmKeycloakTest {
         assertNull(refreshToken.getConfirmation());
 
         TokenMetadataRepresentation tokenMetadataRepresentation = oauth.doIntrospectionRequest(response.getAccessToken(), "access_token").asTokenMetadata();
-        Assert.assertTrue(tokenMetadataRepresentation.isActive());
+        Assertions.assertTrue(tokenMetadataRepresentation.isActive());
         assertEquals(jktRsa, tokenMetadataRepresentation.getConfirmation().getKeyThumbprint());
         assertEquals(TokenUtil.TOKEN_TYPE_DPOP, tokenMetadataRepresentation.getOtherClaims().get(OAuth2Constants.TOKEN_TYPE));
 
         oauth.tokenRevocationRequest(response.getAccessToken()).accessToken().send();
 
         tokenMetadataRepresentation = oauth.doIntrospectionRequest(response.getAccessToken(), "access_token").asTokenMetadata();
-        Assert.assertFalse(tokenMetadataRepresentation.isActive());
+        Assertions.assertFalse(tokenMetadataRepresentation.isActive());
 
         // token refresh
         String dpopProofEcEncoded = generateSignedDPoPProof(UUID.randomUUID().toString(), HttpMethod.POST, oauth.getEndpoints().getToken(), (long) (Time.currentTime() + clockSkew), Algorithm.ES256, jwsEcHeader, ecKeyPair.getPrivate(), null);
@@ -653,7 +654,7 @@ public class DPoPTest extends AbstractTestRealmKeycloakTest {
 
     private void testWWWAuthenticateHeaderError(UserInfoResponse userInfoResponse) {
         String wwwAuthenticate = userInfoResponse.getHeaders().get("WWW-Authenticate");
-        Assert.assertThat(wwwAuthenticate, startsWith(DPOP_SCHEME));
+        MatcherAssert.assertThat(wwwAuthenticate, startsWith(DPOP_SCHEME));
         String chunks1 = wwwAuthenticate.substring(DPOP_SCHEME.length() + 1);
         Map<String, String> map = new HashMap<>();
         for (String p : chunks1.split(", ")) {
@@ -661,10 +662,10 @@ public class DPoPTest extends AbstractTestRealmKeycloakTest {
             map.put(chunks2[0], chunks2[1]);
         }
 
-        Assert.assertEquals(map.get(OAuth2Constants.ERROR), "\"" + INVALID_TOKEN + "\"");
+        Assertions.assertEquals(map.get(OAuth2Constants.ERROR), "\"" + INVALID_TOKEN + "\"");
         String algs = map.get(OAuth2Constants.ALGS_ATTRIBUTE);
-        Assert.assertTrue(algs.contains(Algorithm.EdDSA));
-        Assert.assertTrue(algs.contains(Algorithm.RS256));
+        Assertions.assertTrue(algs.contains(Algorithm.EdDSA));
+        Assertions.assertTrue(algs.contains(Algorithm.RS256));
     }
 
     @Test
@@ -975,13 +976,13 @@ public class DPoPTest extends AbstractTestRealmKeycloakTest {
                 "test-admin@localhost", "password", TEST_CONFIDENTIAL_CLIENT_ID, TEST_CONFIDENTIAL_CLIENT_SECRET, null, true);
         ) {
             RealmRepresentation realm = adminClientDPoP.realm(REALM_NAME).toRepresentation();
-            Assert.assertEquals(REALM_NAME, realm.getRealm());
+            Assertions.assertEquals(REALM_NAME, realm.getRealm());
 
             // To enforce token refresh by admin client in the next request
             setTimeOffset(700);
 
             realm = adminClientDPoP.realm(REALM_NAME).toRepresentation();
-            Assert.assertEquals(REALM_NAME, realm.getRealm());
+            Assertions.assertEquals(REALM_NAME, realm.getRealm());
         }
     }
 
@@ -996,9 +997,9 @@ public class DPoPTest extends AbstractTestRealmKeycloakTest {
                 "test-admin@localhost", "password", TEST_CONFIDENTIAL_CLIENT_ID, TEST_CONFIDENTIAL_CLIENT_SECRET, null, false);
         ) {
             adminClientDPoP.realm(REALM_NAME).toRepresentation();
-            Assert.fail("Expected exception when calling adminClient without DPoP for the client, which requires DPoP");
+            Assertions.fail("Expected exception when calling adminClient without DPoP for the client, which requires DPoP");
         } catch (ProcessingException pe) {
-            Assert.assertTrue(pe.getCause() instanceof BadRequestException);
+            Assertions.assertTrue(pe.getCause() instanceof BadRequestException);
         }
     }
 

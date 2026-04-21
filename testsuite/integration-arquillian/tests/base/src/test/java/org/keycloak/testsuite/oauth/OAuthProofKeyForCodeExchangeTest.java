@@ -30,10 +30,10 @@ import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 import static org.keycloak.testsuite.AbstractAdminTest.loadJson;
 import static org.keycloak.testsuite.admin.AdminApiUtil.findUserByUsername;
@@ -42,9 +42,9 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.lessThanOrEqualTo;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 //https://tools.ietf.org/html/rfc7636
 
@@ -210,9 +210,9 @@ public class OAuthProofKeyForCodeExchangeTest extends AbstractKeycloakTest {
     	
         AuthorizationEndpointResponse errorResponse = oauth.parseLoginResponse();
 
-        Assert.assertTrue(errorResponse.isRedirected());
-        Assert.assertEquals(errorResponse.getError(), OAuthErrorException.INVALID_REQUEST);
-        Assert.assertEquals(errorResponse.getErrorDescription(), "Missing parameter: code_challenge");
+        Assertions.assertTrue(errorResponse.isRedirected());
+        Assertions.assertEquals(errorResponse.getError(), OAuthErrorException.INVALID_REQUEST);
+        Assertions.assertEquals(errorResponse.getErrorDescription(), "Missing parameter: code_challenge");
         
         events.expectLogin().error(Errors.INVALID_REQUEST).user((String) null).session((String) null).clearDetails().assertEvent();
     }
@@ -224,9 +224,9 @@ public class OAuthProofKeyForCodeExchangeTest extends AbstractKeycloakTest {
     	
         AuthorizationEndpointResponse errorResponse = oauth.parseLoginResponse();
 
-        Assert.assertTrue(errorResponse.isRedirected());
-        Assert.assertEquals(errorResponse.getError(), OAuthErrorException.INVALID_REQUEST);
-        Assert.assertEquals(errorResponse.getErrorDescription(), "Invalid parameter: code_challenge");
+        Assertions.assertTrue(errorResponse.isRedirected());
+        Assertions.assertEquals(errorResponse.getError(), OAuthErrorException.INVALID_REQUEST);
+        Assertions.assertEquals(errorResponse.getErrorDescription(), "Invalid parameter: code_challenge");
         
         events.expectLogin().error(Errors.INVALID_REQUEST).user((String) null).session((String) null).clearDetails().assertEvent();
     }
@@ -238,9 +238,9 @@ public class OAuthProofKeyForCodeExchangeTest extends AbstractKeycloakTest {
     	
         AuthorizationEndpointResponse errorResponse = oauth.parseLoginResponse();
 
-        Assert.assertTrue(errorResponse.isRedirected());
-        Assert.assertEquals(errorResponse.getError(), OAuthErrorException.INVALID_REQUEST);
-        Assert.assertEquals(errorResponse.getErrorDescription(), "Invalid parameter: code_challenge");
+        Assertions.assertTrue(errorResponse.isRedirected());
+        Assertions.assertEquals(errorResponse.getError(), OAuthErrorException.INVALID_REQUEST);
+        Assertions.assertEquals(errorResponse.getErrorDescription(), "Invalid parameter: code_challenge");
         
         events.expectLogin().error(Errors.INVALID_REQUEST).user((String) null).session((String) null).clearDetails().assertEvent();
     }
@@ -321,9 +321,9 @@ public class OAuthProofKeyForCodeExchangeTest extends AbstractKeycloakTest {
     	
         AuthorizationEndpointResponse errorResponse = oauth.parseLoginResponse();
 
-        Assert.assertTrue(errorResponse.isRedirected());
-        Assert.assertEquals(errorResponse.getError(), OAuthErrorException.INVALID_REQUEST);
-        Assert.assertEquals(errorResponse.getErrorDescription(), "Invalid parameter: code_challenge");
+        Assertions.assertTrue(errorResponse.isRedirected());
+        Assertions.assertEquals(errorResponse.getError(), OAuthErrorException.INVALID_REQUEST);
+        Assertions.assertEquals(errorResponse.getErrorDescription(), "Invalid parameter: code_challenge");
         
         events.expectLogin().error(Errors.INVALID_REQUEST).user((String) null).session((String) null).clearDetails().assertEvent();
     }
@@ -435,7 +435,7 @@ public class OAuthProofKeyForCodeExchangeTest extends AbstractKeycloakTest {
         String refreshTokenString = response.getRefreshToken();
         RefreshToken refreshToken = oauth.parseRefreshToken(refreshTokenString);
 
-        Assert.assertNotNull(refreshTokenString);
+        Assertions.assertNotNull(refreshTokenString);
         assertThat(token.getExp() - getCurrentTime(), allOf(greaterThanOrEqualTo(200L), lessThanOrEqualTo(350L)));
         long actual = refreshToken.getExp() - getCurrentTime();
         assertThat(actual, allOf(greaterThanOrEqualTo(1799L - ALLOWED_CLOCK_SKEW), lessThanOrEqualTo(1800L + ALLOWED_CLOCK_SKEW)));
@@ -458,8 +458,8 @@ public class OAuthProofKeyForCodeExchangeTest extends AbstractKeycloakTest {
         assertThat(refreshedToken.getExp() - token.getExp(), allOf(greaterThanOrEqualTo(1L), lessThanOrEqualTo(10L)));
         assertThat(refreshedRefreshToken.getExp() - refreshToken.getExp(), allOf(greaterThanOrEqualTo(1L), lessThanOrEqualTo(10L)));
 
-        Assert.assertNotEquals(token.getId(), refreshedToken.getId());
-        Assert.assertNotEquals(refreshToken.getId(), refreshedRefreshToken.getId());
+        Assertions.assertNotEquals(token.getId(), refreshedToken.getId());
+        Assertions.assertNotEquals(refreshToken.getId(), refreshedRefreshToken.getId());
 
         assertEquals("Bearer", refreshResponse.getTokenType());
 
@@ -468,14 +468,14 @@ public class OAuthProofKeyForCodeExchangeTest extends AbstractKeycloakTest {
         // Assert.assertNotEquals("test-user@localhost", refreshedToken.getSubject());
 
         assertEquals(2, refreshedToken.getRealmAccess().getRoles().size());
-        Assert.assertTrue(refreshedToken.getRealmAccess().isUserInRole("user"));
+        Assertions.assertTrue(refreshedToken.getRealmAccess().isUserInRole("user"));
 
         assertEquals(1, refreshedToken.getResourceAccess(oauth.getClientId()).getRoles().size());
-        Assert.assertTrue(refreshedToken.getResourceAccess(oauth.getClientId()).isUserInRole("customer-user"));
+        Assertions.assertTrue(refreshedToken.getResourceAccess(oauth.getClientId()).isUserInRole("customer-user"));
 
         EventRepresentation refreshEvent = events.expectRefresh(event.getDetails().get(Details.REFRESH_TOKEN_ID), sessionId).assertEvent();
-        Assert.assertNotEquals(event.getDetails().get(Details.TOKEN_ID), refreshEvent.getDetails().get(Details.TOKEN_ID));
-        Assert.assertNotEquals(event.getDetails().get(Details.REFRESH_TOKEN_ID), refreshEvent.getDetails().get(Details.UPDATED_REFRESH_TOKEN_ID));
+        Assertions.assertNotEquals(event.getDetails().get(Details.TOKEN_ID), refreshEvent.getDetails().get(Details.TOKEN_ID));
+        Assertions.assertNotEquals(event.getDetails().get(Details.REFRESH_TOKEN_ID), refreshEvent.getDetails().get(Details.UPDATED_REFRESH_TOKEN_ID));
 
         setTimeOffset(0);
     }
@@ -548,9 +548,9 @@ public class OAuthProofKeyForCodeExchangeTest extends AbstractKeycloakTest {
 
             AuthorizationEndpointResponse errorResponse = oauth.parseLoginResponse();
 
-            Assert.assertTrue(errorResponse.isRedirected());
-            Assert.assertEquals(errorResponse.getError(), OAuthErrorException.INVALID_REQUEST);
-            Assert.assertEquals(errorResponse.getErrorDescription(), "Invalid parameter: code challenge method is not matching the configured one");
+            Assertions.assertTrue(errorResponse.isRedirected());
+            Assertions.assertEquals(errorResponse.getError(), OAuthErrorException.INVALID_REQUEST);
+            Assertions.assertEquals(errorResponse.getErrorDescription(), "Invalid parameter: code challenge method is not matching the configured one");
 
             events.expectLogin().error(Errors.INVALID_REQUEST).user((String) null).session((String) null).clearDetails().assertEvent();
         } finally {
@@ -569,9 +569,9 @@ public class OAuthProofKeyForCodeExchangeTest extends AbstractKeycloakTest {
 
             AuthorizationEndpointResponse errorResponse = oauth.parseLoginResponse();
 
-            Assert.assertTrue(errorResponse.isRedirected());
-            Assert.assertEquals(errorResponse.getError(), OAuthErrorException.INVALID_REQUEST);
-            Assert.assertEquals(errorResponse.getErrorDescription(), "Missing parameter: code_challenge_method");
+            Assertions.assertTrue(errorResponse.isRedirected());
+            Assertions.assertEquals(errorResponse.getError(), OAuthErrorException.INVALID_REQUEST);
+            Assertions.assertEquals(errorResponse.getErrorDescription(), "Missing parameter: code_challenge_method");
 
             events.expectLogin().error(Errors.INVALID_REQUEST).user((String) null).session((String) null).clearDetails().assertEvent();
 
@@ -589,9 +589,9 @@ public class OAuthProofKeyForCodeExchangeTest extends AbstractKeycloakTest {
 
             AuthorizationEndpointResponse errorResponse = oauth.parseLoginResponse();
 
-            Assert.assertTrue(errorResponse.isRedirected());
-            Assert.assertEquals(errorResponse.getError(), OAuthErrorException.INVALID_REQUEST);
-            Assert.assertEquals(errorResponse.getErrorDescription(), "Missing parameter: code_challenge");
+            Assertions.assertTrue(errorResponse.isRedirected());
+            Assertions.assertEquals(errorResponse.getError(), OAuthErrorException.INVALID_REQUEST);
+            Assertions.assertEquals(errorResponse.getErrorDescription(), "Missing parameter: code_challenge");
 
             events.expectLogin().error(Errors.INVALID_REQUEST).user((String) null).session((String) null).clearDetails().assertEvent();
 
@@ -609,9 +609,9 @@ public class OAuthProofKeyForCodeExchangeTest extends AbstractKeycloakTest {
 
             AuthorizationEndpointResponse errorResponse = oauth.parseLoginResponse();
 
-            Assert.assertTrue(errorResponse.isRedirected());
-            Assert.assertEquals(errorResponse.getError(), OAuthErrorException.INVALID_REQUEST);
-            Assert.assertEquals(errorResponse.getErrorDescription(), "Invalid parameter: code_challenge");
+            Assertions.assertTrue(errorResponse.isRedirected());
+            Assertions.assertEquals(errorResponse.getError(), OAuthErrorException.INVALID_REQUEST);
+            Assertions.assertEquals(errorResponse.getErrorDescription(), "Invalid parameter: code_challenge");
 
             events.expectLogin().error(Errors.INVALID_REQUEST).user((String) null).session((String) null).clearDetails().assertEvent();
 

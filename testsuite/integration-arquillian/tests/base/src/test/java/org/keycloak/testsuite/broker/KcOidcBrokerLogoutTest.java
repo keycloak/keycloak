@@ -17,16 +17,16 @@ import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.WaitUtils;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
-import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 import static org.keycloak.testsuite.broker.BrokerTestConstants.REALM_CONS_NAME;
 import static org.keycloak.testsuite.broker.BrokerTestConstants.REALM_PROV_NAME;
 import static org.keycloak.testsuite.broker.BrokerTestTools.getConsumerRoot;
 import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class KcOidcBrokerLogoutTest extends AbstractKcOidcBrokerLogoutTest {
 
@@ -271,8 +271,8 @@ public class KcOidcBrokerLogoutTest extends AbstractKcOidcBrokerLogoutTest {
 
             WaitUtils.waitForPageToLoad();
             logoutConfirmPage.isCurrent();
-            Assert.assertTrue(driver.getPageSource().contains("You are logging out from following apps"));
-            Assert.assertTrue(driver.getPageSource().contains("broker-app"));
+            Assertions.assertTrue(driver.getPageSource().contains("You are logging out from following apps"));
+            Assertions.assertTrue(driver.getPageSource().contains("broker-app"));
 
             oauth.client("account");
             oauth.redirectUri(getConsumerRoot() + "/auth/realms/" + REALM_PROV_NAME + "/account");

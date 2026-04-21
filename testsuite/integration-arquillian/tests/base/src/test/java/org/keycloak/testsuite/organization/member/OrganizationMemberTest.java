@@ -47,7 +47,6 @@ import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.representations.userprofile.config.UPConfig.UnmanagedAttributePolicy;
-import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.organization.admin.AbstractOrganizationTest;
 import org.keycloak.testsuite.pages.AppPage;
@@ -57,6 +56,7 @@ import org.keycloak.testsuite.util.UserBuilder;
 
 import org.hamcrest.Matchers;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 import static org.keycloak.models.OrganizationDomainModel.ANY_DOMAIN;
 import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
@@ -70,12 +70,12 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class OrganizationMemberTest extends AbstractOrganizationTest {
 
@@ -576,8 +576,8 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
 
         orgb.members().addMember(member.getId()).close();
 
-        Assert.assertTrue(orga.members().list(-1, -1).stream().map(UserRepresentation::getId).anyMatch(member.getId()::equals));
-        Assert.assertTrue(orgb.members().list(-1, -1).stream().map(UserRepresentation::getId).anyMatch(member.getId()::equals));
+        Assertions.assertTrue(orga.members().list(-1, -1).stream().map(UserRepresentation::getId).anyMatch(member.getId()::equals));
+        Assertions.assertTrue(orgb.members().list(-1, -1).stream().map(UserRepresentation::getId).anyMatch(member.getId()::equals));
         String orgbId = orgb.toRepresentation().getId();
         String orgaId = orga.toRepresentation().getId();
         List<String> memberOfOrgs = orga.members().member(member.getId()).getOrganizations(true).stream().map(OrganizationRepresentation::getId).toList();
@@ -677,7 +677,7 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
         assertEquals(orgRep.getDescription(), briefRep.getDescription());
         assertEquals(orgRep.getRedirectUrl(), briefRep.getRedirectUrl());
         assertEquals(orgRep.isEnabled(), briefRep.isEnabled());
-        assertNull("Brief representation should not include attributes", briefRep.getAttributes());
+        assertNull(briefRep.getAttributes(), "Brief representation should not include attributes");
         
         // Test full representation (briefRepresentation=false)
         List<OrganizationRepresentation> fullOrgs = organization.members().member(member.getId()).getOrganizations(false);
@@ -690,23 +690,23 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
         assertEquals(orgRep.getDescription(), fullRep.getDescription());
         assertEquals(orgRep.getRedirectUrl(), fullRep.getRedirectUrl());
         assertEquals(orgRep.isEnabled(), fullRep.isEnabled());
-        assertNotNull("Full representation should include attributes", fullRep.getAttributes());
-        assertTrue("Full representation should include the test attribute", 
-                fullRep.getAttributes().containsKey("testAttribute"));
+        assertNotNull(fullRep.getAttributes(), "Full representation should include attributes");
+        assertTrue(fullRep.getAttributes().containsKey("testAttribute"), 
+                "Full representation should include the test attribute");
         assertEquals("testValue", fullRep.getAttributes().get("testAttribute").get(0));
         
         // Test the global members API endpoint as well
         List<OrganizationRepresentation> briefOrgsGlobal = testRealm().organizations().members().getOrganizations(member.getId(), true);
         assertNotNull(briefOrgsGlobal);
         assertEquals(1, briefOrgsGlobal.size());
-        assertNull("Brief representation should not include attributes", briefOrgsGlobal.get(0).getAttributes());
+        assertNull(briefOrgsGlobal.get(0).getAttributes(), "Brief representation should not include attributes");
         
         List<OrganizationRepresentation> fullOrgsGlobal = testRealm().organizations().members().getOrganizations(member.getId(), false);
         assertNotNull(fullOrgsGlobal);
         assertEquals(1, fullOrgsGlobal.size());
-        assertNotNull("Full representation should include attributes", fullOrgsGlobal.get(0).getAttributes());
-        assertTrue("Full representation should include the test attribute", 
-                fullOrgsGlobal.get(0).getAttributes().containsKey("testAttribute"));
+        assertNotNull(fullOrgsGlobal.get(0).getAttributes(), "Full representation should include attributes");
+        assertTrue(fullOrgsGlobal.get(0).getAttributes().containsKey("testAttribute"), 
+                "Full representation should include the test attribute");
     }
 
     @Test
@@ -759,8 +759,8 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
 
         waitForPage(driver, "update account information", false);
         updateAccountInformationPage.assertCurrent();
-        Assert.assertTrue("We must be on correct realm right now",
-                driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/"));
+        Assertions.assertTrue(driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/"),
+                "We must be on correct realm right now");
         log.debug("Updating info on updateAccount page");
         updateAccountInformationPage.updateAccountInformation(bc.getUserLogin(), bc.getUserEmail(), "Firstname", "Lastname");
 

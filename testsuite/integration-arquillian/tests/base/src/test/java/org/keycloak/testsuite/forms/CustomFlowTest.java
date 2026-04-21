@@ -58,15 +58,15 @@ import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
 import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 import static org.keycloak.testsuite.util.Matchers.statusCodeIs;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -240,7 +240,7 @@ public class CustomFlowTest extends AbstractFlowTest {
             rep.setBrowserFlow(flowAlias);
             testRealm().update(rep);
             rep = testRealm().toRepresentation();
-            Assert.assertEquals(flowAlias, rep.getBrowserFlow());
+            Assertions.assertEquals(flowAlias, rep.getBrowserFlow());
         }
 
 
@@ -250,7 +250,7 @@ public class CustomFlowTest extends AbstractFlowTest {
         loginPage.login("test-user@localhost", "bad-password");
         Assert.assertTrue(loginPage.isCurrent());
         loginPage.login("test-user@localhost", "password");*/
-        Assert.assertTrue(termsPage.isCurrent());
+        Assertions.assertTrue(termsPage.isCurrent());
 
         // Revert dummy flow
         rep.setBrowserFlow("dummy");
@@ -307,8 +307,8 @@ public class CustomFlowTest extends AbstractFlowTest {
 
         oauth.openLoginForm();
 
-        Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assert.assertNotNull(oauth.parseLoginResponse().getCode());
+        Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
 
         events.expectLogin().user(userId).detail(Details.USERNAME, "login-test").assertEvent();
     }

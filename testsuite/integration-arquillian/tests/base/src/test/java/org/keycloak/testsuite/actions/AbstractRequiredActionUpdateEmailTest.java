@@ -39,14 +39,14 @@ import org.keycloak.testsuite.util.UserBuilder;
 
 import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 import org.openqa.selenium.WebDriver;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @EnableFeature(Profile.Feature.UPDATE_EMAIL)
 public abstract class AbstractRequiredActionUpdateEmailTest extends AbstractTestRealmKeycloakTest {
@@ -142,9 +142,9 @@ public abstract class AbstractRequiredActionUpdateEmailTest extends AbstractTest
 		updateEmailPage.assertCurrent();
 
 		// assert that form holds submitted values during validation error
-		Assert.assertEquals("", updateEmailPage.getEmail());
+		Assertions.assertEquals("", updateEmailPage.getEmail());
 
-		Assert.assertTrue(updateEmailPage.getEmailInputError().contains("Please specify email."));
+		Assertions.assertTrue(updateEmailPage.getEmailInputError().contains("Please specify email."));
 
 		events.assertEmpty();
 	}
@@ -162,9 +162,9 @@ public abstract class AbstractRequiredActionUpdateEmailTest extends AbstractTest
 		updateEmailPage.assertCurrent();
 
 		// assert that form holds submitted values during validation error
-		Assert.assertEquals("test-user@localhost", updateEmailPage.getEmail());
+		Assertions.assertEquals("test-user@localhost", updateEmailPage.getEmail());
 
-		Assert.assertEquals("Email already exists.", updateEmailPage.getEmailInputError());
+		Assertions.assertEquals("Email already exists.", updateEmailPage.getEmailInputError());
 
 		events.assertEmpty();
 	}
@@ -182,9 +182,9 @@ public abstract class AbstractRequiredActionUpdateEmailTest extends AbstractTest
 		updateEmailPage.assertCurrent();
 
 		// assert that form holds submitted values during validation error
-		Assert.assertEquals("invalid", updateEmailPage.getEmail());
+		Assertions.assertEquals("invalid", updateEmailPage.getEmail());
 
-		Assert.assertEquals("Invalid email address.", updateEmailPage.getEmailInputError());
+		Assertions.assertEquals("Invalid email address.", updateEmailPage.getEmailInputError());
 
 		events.assertEmpty();
 	}
@@ -204,7 +204,7 @@ public abstract class AbstractRequiredActionUpdateEmailTest extends AbstractTest
 			assertNotNull(lastName);
 			changeEmailUsingRequiredAction("new@localhost", true, true);
 			user = ActionUtil.findUserWithAdminClient(adminClient, "new@localhost");
-			Assert.assertNotNull(user);
+			Assertions.assertNotNull(user);
 			firstName = user.getFirstName();
 			lastName = user.getLastName();
 			assertNotNull(firstName);

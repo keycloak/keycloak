@@ -24,7 +24,7 @@ import org.keycloak.representations.idm.IdentityProviderRepresentation;
 
 import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class OrganizationOIDCBrokerSelfRegistrationTest extends AbstractBrokerSelfRegistrationTest {
 

@@ -201,9 +201,9 @@ import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
 import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
-import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 import org.openqa.selenium.By;
 import org.openqa.selenium.Cookie;
 import org.openqa.selenium.htmlunit.HtmlUnitDriver;
@@ -539,7 +539,7 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
         page.navigateTo();
         waitUntilElement(By.xpath("//body")).text().not().contains(expectedNotContains);
         //Different 403 status page on EAP and Wildfly
-        Assert.assertTrue(driver.getPageSource().contains("Forbidden")
+        Assertions.assertTrue(driver.getPageSource().contains("Forbidden")
                 || driver.getPageSource().contains(FORBIDDEN_TEXT)
                 || driver.getPageSource().contains(WEBSPHERE_FORBIDDEN_TEXT)); // WebSphere
     }
@@ -555,7 +555,7 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
         loginPage.form().login(username, password);
         waitUntilElement(By.xpath("//body")).text().not().contains(expectedNotContains);
         //Different 403 status page on EAP and Wildfly
-        Assert.assertTrue(driver.getPageSource().contains("Forbidden")
+        Assertions.assertTrue(driver.getPageSource().contains("Forbidden")
                 || driver.getPageSource().contains(FORBIDDEN_TEXT)
                 || driver.getPageSource().contains(WEBSPHERE_FORBIDDEN_TEXT)); // WebSphere
     }
@@ -652,7 +652,7 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
 
         waitUntilElement(By.xpath("//body")).text().not().contains("principal=");
         //Different 403 status page on EAP and Wildfly
-        Assert.assertTrue(driver.getPageSource().contains("Forbidden")
+        Assertions.assertTrue(driver.getPageSource().contains("Forbidden")
                 || driver.getPageSource().contains(FORBIDDEN_TEXT)
                 || driver.getPageSource().contains(WEBSPHERE_FORBIDDEN_TEXT)); // WebSphere
     }
@@ -875,7 +875,7 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
         clientRep.setAdminUrl(ServerURLs.getAppServerContextRoot() + "/sales-metadata/saml");
 
         try (Response response = testRealmResource().clients().create(clientRep)) {
-            Assert.assertEquals(201, response.getStatus());
+            Assertions.assertEquals(201, response.getStatus());
         }
 
         testSuccessfulAndUnauthorizedLogin(salesMetadataServletPage, testRealmSAMLPostLoginPage);
@@ -1173,7 +1173,7 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
 
         waitUntilElement(By.xpath("//body")).text().not().contains("bburke");
         //Different 403 status page on EAP and Wildfly
-        Assert.assertTrue(driver.getPageSource().contains("Forbidden")
+        Assertions.assertTrue(driver.getPageSource().contains("Forbidden")
                 || driver.getPageSource().contains(FORBIDDEN_TEXT)
                 || driver.getPageSource().contains(WEBSPHERE_FORBIDDEN_TEXT)); // WebSphere
 
@@ -1197,7 +1197,7 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
         // test that user principal and KeycloakSecurityContext available
         driver.navigate().to(inputPortalPage + "/insecure");
         waitUntilElement(By.xpath("//body")).text().contains("Insecure Page");
-        Assert.assertNotEquals("SessionID has not been changed at login", sessionId, driver.manage().getCookieNamed("JSESSIONID").getValue());
+        Assertions.assertNotEquals(sessionId, driver.manage().getCookieNamed("JSESSIONID").getValue(), "SessionID has not been changed at login");
 
         if (System.getProperty("insecure.user.principal.unsupported") == null) waitUntilElement(By.xpath("//body")).text().contains("UserPrincipal");
 
@@ -1211,7 +1211,7 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
         Form form = new Form();
         form.param("parameter", "hello");
         String text = client.target(inputPortalPage + "/unsecured").request().post(Entity.form(form), String.class);
-        Assert.assertTrue(text.contains("parameter=hello"));
+        Assertions.assertTrue(text.contains("parameter=hello"));
         client.close();
     }
 
@@ -1241,7 +1241,7 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
         testRealmSAMLPostLoginPage.form().login("bburke", "password");
 
         waitUntilElement(By.xpath("//body")).text().contains("Error info: SamlAuthenticationError [reason=INVALID_SIGNATURE");
-        Assert.assertEquals(driver.getCurrentUrl(), badAssertionSalesPostSigPage.getUriBuilder().clone().path("saml").build().toASCIIString());
+        Assertions.assertEquals(driver.getCurrentUrl(), badAssertionSalesPostSigPage.getUriBuilder().clone().path("saml").build().toASCIIString());
     }
 
     @Test
@@ -1251,7 +1251,7 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
         testRealmSAMLPostLoginPage.form().login("bburke", "password");
 
         waitUntilElement(By.xpath("//body")).text().contains("Error info: SamlAuthenticationError [reason=INVALID_SIGNATURE");
-        Assert.assertEquals(driver.getCurrentUrl(), missingAssertionSigPage.getUriBuilder().clone().path("saml").build().toASCIIString());
+        Assertions.assertEquals(driver.getCurrentUrl(), missingAssertionSigPage.getUriBuilder().clone().path("saml").build().toASCIIString());
     }
 
     @Test
@@ -1455,10 +1455,10 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
                 Document doc = DocumentUtil.getDocument(stringResponse);
 
                 if (signature) {
-                    Assert.assertNotNull("IdP metadata is not signed", XMLSignatureUtil.getSignature(doc.getDocumentElement()));
+                    Assertions.assertNotNull(XMLSignatureUtil.getSignature(doc.getDocumentElement()), "IdP metadata is not signed");
                     EntityDescriptorType entityType = (EntityDescriptorType) descriptor;
                     IDPSSODescriptorType idpDescriptor = SAMLMetadataUtil.locateIDPSSODescriptorType(entityType);
-                    Assert.assertNotNull("No IDPSSODescriptorType in the IdP metadata", idpDescriptor);
+                    Assertions.assertNotNull(idpDescriptor, "No IDPSSODescriptorType in the IdP metadata");
                     List<KeyDescriptorType> keyDescriptors = idpDescriptor.getKeyDescriptor();
                     X509Certificate cert = null;
                     if (keyDescriptors != null) {
@@ -1467,10 +1467,10 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
                             break;
                         }
                     }
-                    Assert.assertNotNull("No signing certificate found in the IdP metadata", cert);
+                    Assertions.assertNotNull(cert, "No signing certificate found in the IdP metadata");
                     SamlProtocolUtils.verifyDocumentSignature(doc, new HardcodedKeyLocator(cert.getPublicKey()));
                 } else {
-                    Assert.assertNull("IdP metadata is signed", XMLSignatureUtil.getSignature(doc.getDocumentElement()));
+                    Assertions.assertNull(XMLSignatureUtil.getSignature(doc.getDocumentElement()), "IdP metadata is signed");
                 }
             }
         }
@@ -1498,13 +1498,13 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
         driver.navigate().to(employeeDomServletPage.getUriBuilder().clone().path("getAssertionFromDocument").build().toURL());
         waitForPageToLoad();
         String xml = getRawPageSource();
-        Assert.assertNotEquals("", xml);
+        Assertions.assertNotEquals("", xml);
         Document doc = DocumentUtil.getDocument(new StringReader(xml));
         String certBase64 = DocumentUtil.getElement(doc, new QName("http://www.w3.org/2000/09/xmldsig#", "X509Certificate")).getTextContent();
         CertificateFactory cf = CertificateFactory.getInstance("X.509");
         Certificate cert = cf.generateCertificate(new ByteArrayInputStream(Base64.getMimeDecoder().decode(certBase64)));
         PublicKey pubkey = cert.getPublicKey();
-        Assert.assertTrue(AssertionUtil.isSignatureValid(doc.getDocumentElement(), pubkey));
+        Assertions.assertTrue(AssertionUtil.isSignatureValid(doc.getDocumentElement(), pubkey));
 
         employeeDomServletPage.logout();
         checkLoggedOut(employeeDomServletPage, testRealmSAMLPostLoginPage);
@@ -1667,42 +1667,42 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
         // Do not redirect client to login page if it's an XHR
         WebTarget target = client.target(salesPostAutodetectServletPage.toString() + "/");
         Response response = target.request().header("X-Requested-With", "XMLHttpRequest").get();
-        Assert.assertEquals(401, response.getStatus());
+        Assertions.assertEquals(401, response.getStatus());
         response.close();
 
         // Do not redirect client to login page if it's a partial Faces request
         response = target.request().header("Faces-Request", "partial/ajax").get();
-        Assert.assertEquals(401, response.getStatus());
+        Assertions.assertEquals(401, response.getStatus());
         response.close();
 
         // Do not redirect client to login page if it's a SOAP request
         response = target.request().header("SOAPAction", "").get();
-        Assert.assertEquals(401, response.getStatus());
+        Assertions.assertEquals(401, response.getStatus());
         response.close();
 
         // Do not redirect client to login page if Accept header is missing
         response = target.request().get();
-        Assert.assertEquals(401, response.getStatus());
+        Assertions.assertEquals(401, response.getStatus());
         response.close();
 
         // Do not redirect client to login page if client does not understand HTML reponses
         response = target.request().header(HttpHeaders.ACCEPT, "application/json,text/xml").get();
-        Assert.assertEquals(401, response.getStatus());
+        Assertions.assertEquals(401, response.getStatus());
         response.close();
 
         // Redirect client to login page if it's not an XHR
         response = target.request().header("X-Requested-With", "Dont-Know").header(HttpHeaders.ACCEPT, "*/*").get();
-        Assert.assertEquals(200, response.getStatus());
+        Assertions.assertEquals(200, response.getStatus());
         response.close();
 
         // Redirect client to login page if client explicitely understands HTML responses
         response = target.request().header(HttpHeaders.ACCEPT, "text/html,application/xhtml+xml,application/xml;q=0.9").get();
-        Assert.assertEquals(200, response.getStatus());
+        Assertions.assertEquals(200, response.getStatus());
         response.close();
 
         // Redirect client to login page if client understands all response types
         response = target.request().header(HttpHeaders.ACCEPT, "*/*").get();
-        Assert.assertEquals(200, response.getStatus());
+        Assertions.assertEquals(200, response.getStatus());
         response.close();
         client.close();
     }
@@ -1903,9 +1903,9 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
         authenticate.navigateTo();
         waitForPageToLoad();
         infoPage.assertCurrent();
-        Assert.assertEquals("You are already logged in.", infoPage.getInfo());
+        Assertions.assertEquals("You are already logged in.", infoPage.getInfo());
         Cookie identityCookie = driver.manage().getCookieNamed(CookieType.IDENTITY.getName());
-        Assert.assertNotNull(identityCookie);
+        Assertions.assertNotNull(identityCookie);
         driver.manage().deleteCookieNamed(CookieType.AUTH_SESSION_ID.getName());
         driver.manage().addCookie(new Cookie(CookieType.AUTH_SESSION_ID.getName(), "invalid-value", identityCookie.getPath()));
 
@@ -1923,7 +1923,7 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
     public void testMultipleTabsParallelLogin() {
         try (BrowserTabUtil tabUtil = BrowserTabUtil.getInstanceAndSetEnv(driver)) {
             // open an application in tab1 and go to the login page
-            Assert.assertEquals(1, tabUtil.getCountOfTabs());
+            Assertions.assertEquals(1, tabUtil.getCountOfTabs());
             salesPostServletPage.navigateTo();
             waitForPageToLoad();
             assertCurrentUrlStartsWith(testRealmSAMLPostLoginPage);
@@ -1932,13 +1932,13 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
             tabUtil.newTab(salesPostServletPage.buildUri().toASCIIString());
             waitForPageToLoad();
             assertCurrentUrlStartsWith(testRealmSAMLPostLoginPage);
-            Assert.assertEquals(2, tabUtil.getCountOfTabs());
+            Assertions.assertEquals(2, tabUtil.getCountOfTabs());
             testRealmSAMLPostLoginPage.form().login(bburkeUser);
             waitUntilElement(By.xpath("//body")).text().contains("principal=bburke");
 
             // Go back to tab1 and it should automatically login
             tabUtil.closeTab(1);
-            Assert.assertEquals(1, tabUtil.getCountOfTabs());
+            Assertions.assertEquals(1, tabUtil.getCountOfTabs());
             if (driver instanceof HtmlUnitDriver) {
                 // go to restart URI manually as JS does not work
                 KeycloakUriBuilder current = KeycloakUriBuilder.fromUri(driver.getCurrentUrl(), false);
@@ -1957,7 +1957,7 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
     public void testMultipleTabsParallelLoginAfterAuthSessionExpiration() {
         try (BrowserTabUtil tabUtil = BrowserTabUtil.getInstanceAndSetEnv(driver)) {
             // open an application in tab1 and go to the login page
-            Assert.assertEquals(1, tabUtil.getCountOfTabs());
+            Assertions.assertEquals(1, tabUtil.getCountOfTabs());
             salesPostServletPage.navigateTo();
             waitForPageToLoad();
             assertCurrentUrlStartsWith(testRealmSAMLPostLoginPage);
@@ -1966,11 +1966,11 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
             tabUtil.newTab(salesPostServletPage.buildUri().toASCIIString());
             waitForPageToLoad();
             assertCurrentUrlStartsWith(testRealmSAMLPostLoginPage);
-            Assert.assertEquals(2, tabUtil.getCountOfTabs());
+            Assertions.assertEquals(2, tabUtil.getCountOfTabs());
 
             // remove the authentication session in the server to simulate expiration
             Cookie sessionCookie = driver.manage().getCookieNamed(CookieType.AUTH_SESSION_ID.getName());
-            Assert.assertNotNull(sessionCookie);
+            Assertions.assertNotNull(sessionCookie);
             final String authSessionId = sessionCookie.getValue();
             testingClient.server().run(session -> {
                 RealmModel realm = session.realms().getRealmByName(DEMO);
@@ -1984,7 +1984,7 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
             testRealmSAMLPostLoginPage.form().login(bburkeUser);
             waitForPageToLoad();
             assertCurrentUrlStartsWith(testRealmSAMLPostLoginPage); // we are still in login
-            Assert.assertEquals("Your login attempt timed out. Login will start from the beginning.",
+            Assertions.assertEquals("Your login attempt timed out. Login will start from the beginning.",
                     UIUtils.getTextFromElement(driver.findElement(By.cssSelector("div[class^='pf-v5-c-alert'], div[class^='alert-error']"))));
 
             // login successfully in tab2 after the error
@@ -1993,7 +1993,7 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
 
             // Go back to tab1 and it should automatically log into the app with retry
             tabUtil.closeTab(1);
-            Assert.assertEquals(1, tabUtil.getCountOfTabs());
+            Assertions.assertEquals(1, tabUtil.getCountOfTabs());
             if (driver instanceof HtmlUnitDriver) {
                 // go to restart URI manually as JS does not work
                 KeycloakUriBuilder current = KeycloakUriBuilder.fromUri(driver.getCurrentUrl(), false);
@@ -2023,11 +2023,11 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
                     .addHeader(HttpHeaders.AUTHORIZATION, "Bearer " + client.tokenManager().getAccessTokenString())
                     .build();
             HttpResponse res = httpClient.execute(req);
-            Assert.assertEquals(Response.Status.OK.getStatusCode(), res.getStatusLine().getStatusCode());
+            Assertions.assertEquals(Response.Status.OK.getStatusCode(), res.getStatusLine().getStatusCode());
             String resBody = EntityUtils.toString(res.getEntity());
 
-            Assert.assertNotNull(resBody);
-            Assert.assertTrue(resBody.contains("redirect"));
+            Assertions.assertNotNull(resBody);
+            Assertions.assertTrue(resBody.contains("redirect"));
 
             // return cookies not expired in the store as selenium cookies
             final Date now = new Date();
@@ -2044,12 +2044,12 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
 
         RealmResource realm = adminClient.realm(SAMLSERVLETDEMO);
         List<UserRepresentation> users = realm.users().search("bburke", true);
-        Assert.assertNotNull(users);
-        Assert.assertEquals(1, users.size());
+        Assertions.assertNotNull(users);
+        Assertions.assertEquals(1, users.size());
 
         // impersonate and get all returned cookies
         List<Cookie> cookies = impersonate("admindemo", "password", users.get(0).getId());
-        Assert.assertNotNull(cookies);
+        Assertions.assertNotNull(cookies);
 
         // go to the authenticate page and add all the returned cookies by the impersonation
         authenticate.setAuthRealm(SAMLSERVLETDEMO);
@@ -2060,7 +2060,7 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
         driver.navigate().refresh();
         waitForPageToLoad();
         infoPage.assertCurrent();
-        Assert.assertEquals("You are already logged in.", infoPage.getInfo());
+        Assertions.assertEquals("You are already logged in.", infoPage.getInfo());
 
         // now go to the saml app with all the impersonation cookies
         testRealmSAMLPostLoginPage.navigateTo();
@@ -2097,17 +2097,17 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
         driver.navigate().to(employeeDomServletPage.getUriBuilder().clone().path("getAssertionFromDocument").build().toURL());
         waitForPageToLoad();
         String xml = getRawPageSource();
-        Assert.assertNotEquals("", xml);
+        Assertions.assertNotEquals("", xml);
 
         // change the session id
         driver.navigate().to(employeeDomServletPage.getUriBuilder().clone().path("change-session-id").build().toURL());
         waitForPageToLoad();
-        Assert.assertNotEquals("SessionID has not been changed at login", sessionId, getCookieValue("JSESSIONID", "/employee-dom"));
+        Assertions.assertNotEquals(sessionId, getCookieValue("JSESSIONID", "/employee-dom"), "SessionID has not been changed at login");
 
         // retrieve again the saml document and should be the same as login should be maintained
         driver.navigate().to(employeeDomServletPage.getUriBuilder().clone().path("getAssertionFromDocument").build().toURL());
         waitForPageToLoad();
-        Assert.assertEquals(xml, getRawPageSource());
+        Assertions.assertEquals(xml, getRawPageSource());
 
         // logout
         employeeDomServletPage.logout();
@@ -2151,7 +2151,7 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
         } catch (SAXException e) {
             System.out.println(xmlFile.getSystemId() + " is NOT valid");
             System.out.println("Reason: " + e.getLocalizedMessage());
-            Assert.fail();
+            Assertions.fail();
         }
     }
 
@@ -2159,7 +2159,7 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
         waitUntilElement(By.xpath("//body")).is().present();
 
         //Different 403 status page on EAP and Wildfly
-        Assert.assertTrue(driver.getPageSource().contains("Forbidden")
+        Assertions.assertTrue(driver.getPageSource().contains("Forbidden")
                 || driver.getPageSource().contains(FORBIDDEN_TEXT)
                 || driver.getPageSource().contains(WEBSPHERE_FORBIDDEN_TEXT)); // WebSphere
     }

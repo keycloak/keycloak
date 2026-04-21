@@ -10,13 +10,13 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.services.managers.AppAuthManager;
-import org.keycloak.testsuite.Assert;
 import org.keycloak.util.JsonSerialization;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Tests for OID4VCIssuerEndpoint with OID4VCI disabled.
@@ -45,9 +45,8 @@ public class OID4VCJWTIssuerEndpointDisabledTest extends OID4VCIssuerEndpointTes
             OID4VCIssuerEndpoint issuerEndpoint = prepareIssuerEndpoint(session, authenticator);
 
             // Nonce endpoint should be forbidden when OID4VCI is disabled for the realm
-            CorsErrorResponseException nonceException = Assert.assertThrows(CorsErrorResponseException.class, issuerEndpoint::getCNonce);
-            assertEquals("Realm-disabled OID4VCI should return 403 for nonce endpoint",
-                    Response.Status.FORBIDDEN.getStatusCode(), nonceException.getResponse().getStatus());
+            CorsErrorResponseException nonceException = Assertions.assertThrows(CorsErrorResponseException.class, issuerEndpoint::getCNonce);
+            assertEquals(Response.Status.FORBIDDEN.getStatusCode(), nonceException.getResponse().getStatus(), "Realm-disabled OID4VCI should return 403 for nonce endpoint");
         }));
     }
 
@@ -59,11 +58,10 @@ public class OID4VCJWTIssuerEndpointDisabledTest extends OID4VCIssuerEndpointTes
             OID4VCIssuerEndpoint issuerEndpoint = prepareIssuerEndpoint(session, authenticator);
 
             // Test getCredentialOfferURI
-            CorsErrorResponseException offerUriException = Assert.assertThrows(CorsErrorResponseException.class, () ->
+            CorsErrorResponseException offerUriException = Assertions.assertThrows(CorsErrorResponseException.class, () ->
                     issuerEndpoint.createCredentialOffer("test-credential")
             );
-            assertEquals("Should fail with 403 Forbidden when client is not OID4VCI-enabled",
-                    Response.Status.FORBIDDEN.getStatusCode(), offerUriException.getResponse().getStatus());
+            assertEquals(Response.Status.FORBIDDEN.getStatusCode(), offerUriException.getResponse().getStatus(), "Should fail with 403 Forbidden when client is not OID4VCI-enabled");
 
             // Test requestCredential
             CredentialRequest credentialRequest = new CredentialRequest()
@@ -72,14 +70,13 @@ public class OID4VCJWTIssuerEndpointDisabledTest extends OID4VCIssuerEndpointTes
             try {
                 requestPayload = JsonSerialization.writeValueAsString(credentialRequest);
             } catch (JsonProcessingException e) {
-                Assert.fail("Failed to serialize CredentialRequest: " + e.getMessage());
+                Assertions.fail("Failed to serialize CredentialRequest: " + e.getMessage());
                 return;
             }
-            CorsErrorResponseException requestException = Assert.assertThrows(CorsErrorResponseException.class, () ->
+            CorsErrorResponseException requestException = Assertions.assertThrows(CorsErrorResponseException.class, () ->
                     issuerEndpoint.requestCredential(requestPayload)
             );
-            assertEquals("Should fail with 403 Forbidden when client is not OID4VCI-enabled",
-                    Response.Status.FORBIDDEN.getStatusCode(), requestException.getResponse().getStatus());
+            assertEquals(Response.Status.FORBIDDEN.getStatusCode(), requestException.getResponse().getStatus(), "Should fail with 403 Forbidden when client is not OID4VCI-enabled");
         }));
     }
 

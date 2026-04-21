@@ -46,11 +46,11 @@ import org.junit.Test;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -183,7 +183,7 @@ public class ServiceAccountUserProfileTest extends AbstractKeycloakTest {
         final RealmResource realm = adminClient.realm("test");
         UPConfig config = realm.users().userProfile().getConfiguration();
         UPAttribute lastName = config.getAttribute(UserModel.LAST_NAME);
-        assertNotNull("The attribute lastName is not defined in User Profile", lastName);
+        assertNotNull(lastName, "The attribute lastName is not defined in User Profile");
         UPAttributeRequired upRequired = new UPAttributeRequired(Set.of(
                 UserProfileConstants.ROLE_ADMIN, UserProfileConstants.ROLE_USER), null);
         lastName.setRequired(upRequired);

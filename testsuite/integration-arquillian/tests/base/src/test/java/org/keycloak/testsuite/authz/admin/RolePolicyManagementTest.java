@@ -38,17 +38,17 @@ import org.keycloak.representations.idm.authorization.DecisionStrategy;
 import org.keycloak.representations.idm.authorization.Logic;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.RolePolicyRepresentation;
-import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.RoleBuilder;
 import org.keycloak.testsuite.util.RolesBuilder;
 
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -261,7 +261,7 @@ public class RolePolicyManagementTest extends AbstractPolicyManagementTest {
         representation.addRole("Role B");
         try {
             authorization.policies().role().findById(representation.getId()).update(representation);
-            Assert.fail("should fail due to duplicated roles");
+            Assertions.fail("should fail due to duplicated roles");
         } catch (BadRequestException bre) {
             Response response = bre.getResponse();
             assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());

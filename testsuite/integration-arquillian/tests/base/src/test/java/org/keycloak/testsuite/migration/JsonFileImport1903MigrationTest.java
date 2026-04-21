@@ -38,7 +38,7 @@ import static org.keycloak.userprofile.DeclarativeUserProfileProvider.UP_COMPONE
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.notNullValue;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Tests that we can import json file from previous version. MigrationTest only tests DB.

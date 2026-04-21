@@ -36,10 +36,10 @@ import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginPage;
 
 import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 import org.openqa.selenium.By;
 
 /**
@@ -179,7 +179,7 @@ public class AuthenticatorSubflowsTest2 extends AbstractChangeImportedUserPasswo
 
         // Fill username+password. I am redirected push the button.
         oauth.fillLoginForm("test-user@localhost", getPassword("test-user@localhost"));
-        Assert.assertEquals("PushTheButton", driver.getTitle());
+        Assertions.assertEquals("PushTheButton", driver.getTitle());
 
         // Push the button. I am successfully authenticated.
         driver.findElement(By.name("submit1")).click();

@@ -75,6 +75,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 import org.junit.runners.MethodSorters;
 
 import static jakarta.ws.rs.core.HttpHeaders.ACCEPT;
@@ -82,8 +83,8 @@ import static jakarta.ws.rs.core.HttpHeaders.CONTENT_TYPE;
 
 import static org.keycloak.utils.MediaType.APPLICATION_JWKS;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public abstract class AbstractWellKnownProviderTest extends AbstractKeycloakTest {
@@ -185,15 +186,15 @@ public abstract class AbstractWellKnownProviderTest extends AbstractKeycloakTest
             // Claims
             assertContains(oidcConfig.getClaimsSupported(), "iss", IDToken.SUBJECT, IDToken.AUD, "exp", "iat", IDToken.AUTH_TIME, IDToken.NAME, IDToken.GIVEN_NAME, IDToken.FAMILY_NAME, IDToken.PREFERRED_USERNAME, IDToken.EMAIL, IDToken.ACR, IDToken.AZP, "nonce");
             Assert.assertNames(oidcConfig.getClaimTypesSupported(), "normal");
-            Assert.assertTrue(oidcConfig.getClaimsParameterSupported());
+            Assertions.assertTrue(oidcConfig.getClaimsParameterSupported());
 
             // Scopes supported
             assertScopesSupportedMatchesWithRealm(oidcConfig);
 
             // Request and Request_Uri
-            Assert.assertTrue(oidcConfig.getRequestParameterSupported());
-            Assert.assertTrue(oidcConfig.getRequestUriParameterSupported());
-            Assert.assertTrue(oidcConfig.getRequireRequestUriRegistration());
+            Assertions.assertTrue(oidcConfig.getRequestParameterSupported());
+            Assertions.assertTrue(oidcConfig.getRequestUriParameterSupported());
+            Assertions.assertTrue(oidcConfig.getRequireRequestUriRegistration());
 
             // KEYCLOAK-7451 OAuth Authorization Server Metadata for Proof Key for Code Exchange
             // PKCE support
@@ -201,10 +202,10 @@ public abstract class AbstractWellKnownProviderTest extends AbstractKeycloakTest
 
             // KEYCLOAK-6771 Certificate Bound Token
             // https://tools.ietf.org/html/draft-ietf-oauth-mtls-08#section-6.2
-            Assert.assertTrue(oidcConfig.getTlsClientCertificateBoundAccessTokens());
+            Assertions.assertTrue(oidcConfig.getTlsClientCertificateBoundAccessTokens());
             MTLSEndpointAliases mtlsEndpointAliases = oidcConfig.getMtlsEndpointAliases();
-            Assert.assertEquals(oidcConfig.getTokenEndpoint(), mtlsEndpointAliases.getTokenEndpoint());
-            Assert.assertEquals(oidcConfig.getRevocationEndpoint(), mtlsEndpointAliases.getRevocationEndpoint());
+            Assertions.assertEquals(oidcConfig.getTokenEndpoint(), mtlsEndpointAliases.getTokenEndpoint());
+            Assertions.assertEquals(oidcConfig.getRevocationEndpoint(), mtlsEndpointAliases.getRevocationEndpoint());
 
             // CIBA
             assertEquals(oidcConfig.getBackchannelAuthenticationEndpoint(), oauth.getEndpoints().getBackchannelAuthentication());
@@ -212,8 +213,8 @@ public abstract class AbstractWellKnownProviderTest extends AbstractKeycloakTest
             Assert.assertNames(oidcConfig.getBackchannelTokenDeliveryModesSupported(), "poll", "ping");
             Assert.assertNames(oidcConfig.getBackchannelAuthenticationRequestSigningAlgValuesSupported(), Algorithm.PS256, Algorithm.PS384, Algorithm.PS512, Algorithm.RS256, Algorithm.RS384, Algorithm.RS512, Algorithm.ES256, Algorithm.ES384, Algorithm.ES512, Algorithm.EdDSA);
 
-            Assert.assertTrue(oidcConfig.getBackchannelLogoutSupported());
-            Assert.assertTrue(oidcConfig.getBackchannelLogoutSessionSupported());
+            Assertions.assertTrue(oidcConfig.getBackchannelLogoutSupported());
+            Assertions.assertTrue(oidcConfig.getBackchannelLogoutSessionSupported());
 
             // Token Revocation
             assertEquals(oidcConfig.getRevocationEndpoint(), oauth.getEndpoints().getRevocation());
@@ -243,12 +244,12 @@ public abstract class AbstractWellKnownProviderTest extends AbstractKeycloakTest
         try {
             OIDCConfigurationRepresentation oidcConfig = getOIDCDiscoveryRepresentation(client, "http://localhost:8180/auth");
 
-            Assert.assertNotNull(oidcConfig.getJwksUri());
+            Assertions.assertNotNull(oidcConfig.getJwksUri());
 
             // Token Revocation
-            Assert.assertNotNull(oidcConfig.getRevocationEndpoint());
-            Assert.assertNotNull(oidcConfig.getRevocationEndpointAuthMethodsSupported());
-            Assert.assertNotNull(oidcConfig.getRevocationEndpointAuthSigningAlgValuesSupported());
+            Assertions.assertNotNull(oidcConfig.getRevocationEndpoint());
+            Assertions.assertNotNull(oidcConfig.getRevocationEndpointAuthMethodsSupported());
+            Assertions.assertNotNull(oidcConfig.getRevocationEndpointAuthSigningAlgValuesSupported());
         } finally {
             client.close();
         }
@@ -482,7 +483,7 @@ public abstract class AbstractWellKnownProviderTest extends AbstractKeycloakTest
 
     private void assertContains(List<String> actual, String... expected) {
         for (String exp : expected) {
-            Assert.assertTrue(actual.contains(exp));
+            Assertions.assertTrue(actual.contains(exp));
         }
     }
 }

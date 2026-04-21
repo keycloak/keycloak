@@ -47,14 +47,14 @@ import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
 import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 import org.openqa.selenium.By;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author Stan Silvert
@@ -459,7 +459,7 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
         String uri = driver.getCurrentUrl();
         String src = driver.getPageSource();
         assertTrue(loginPage.isCurrent());
-        Assert.assertFalse(totpPage.isCurrent());
+        Assertions.assertFalse(totpPage.isCurrent());
 
         setOtpTimeOffset(TimeBasedOTP.DEFAULT_INTERVAL_SECONDS, totp);
 
@@ -468,7 +468,7 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
         events.expectLogin().user(userId).detail(Details.USERNAME, "setupTotp2").assertEvent();
 
         // Remove google authenticator
-        Assert.assertTrue(AccountHelper.deleteTotpAuthentication(testRealm(),"setupTotp2"));
+        Assertions.assertTrue(AccountHelper.deleteTotpAuthentication(testRealm(),"setupTotp2"));
         AccountHelper.logout(testRealm(),"setupTotp2");
 
         // Try to login
@@ -659,9 +659,9 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
             try {
                 // This should now fail
                 setupRecoveryAuthnCodesPage.assertCurrent();
-                Assert.fail("Expected AssertionError was not thrown");
+                Assertions.fail("Expected AssertionError was not thrown");
             } catch (AssertionError e) {
-                Assert.assertTrue(e.getMessage().startsWith("Expected SetupRecoveryAuthnCodesPage"));
+                Assertions.assertTrue(e.getMessage().startsWith("Expected SetupRecoveryAuthnCodesPage"));
             }
         } finally {
             // finally, reset totp action config

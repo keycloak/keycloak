@@ -58,15 +58,15 @@ import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
-import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 import static org.keycloak.common.Profile.Feature.SCRIPTS;
 import static org.keycloak.testsuite.arquillian.DeploymentTargetModifier.AUTH_SERVER_CURRENT;
 
-import static org.junit.Assert.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -143,7 +143,7 @@ public class DeployedScriptAuthenticatorTest extends AbstractFlowTest {
                 .build();
 
         Response createFlowResponse = adminClient.realm(TEST_REALM_NAME).flows().createFlow(scriptBrowserFlow);
-        Assert.assertEquals(201, createFlowResponse.getStatus());
+        Assertions.assertEquals(201, createFlowResponse.getStatus());
 
         RealmRepresentation realm = adminClient.realm(TEST_REALM_NAME).toRepresentation();
         realm.setBrowserFlow(scriptFlow);
@@ -167,11 +167,11 @@ public class DeployedScriptAuthenticatorTest extends AbstractFlowTest {
                 .build();
 
         Response addExecutionResponse = testRealm().flows().addExecution(usernamePasswordFormExecution);
-        Assert.assertEquals(201, addExecutionResponse.getStatus());
+        Assertions.assertEquals(201, addExecutionResponse.getStatus());
         addExecutionResponse.close();
 
         addExecutionResponse = testRealm().flows().addExecution(authScriptExecution);
-        Assert.assertEquals(201, addExecutionResponse.getStatus());
+        Assertions.assertEquals(201, addExecutionResponse.getStatus());
         addExecutionResponse.close();
 
         testContext.setInitialized(true);
@@ -210,9 +210,9 @@ public class DeployedScriptAuthenticatorTest extends AbstractFlowTest {
                 .collect(Collectors.toList());
 
         // Both executions refers to same config of deployed script provider
-        Assert.assertEquals(2, scriptExecutions.size());
+        Assertions.assertEquals(2, scriptExecutions.size());
         for (AuthenticationExecutionInfoRepresentation execution : scriptExecutions) {
-            Assert.assertEquals(execution.getAuthenticationConfig(), "script-authenticator-a.js");
+            Assertions.assertEquals(execution.getAuthenticationConfig(), "script-authenticator-a.js");
         }
 
         // Assert updating config should fail due it's read-only
@@ -220,7 +220,7 @@ public class DeployedScriptAuthenticatorTest extends AbstractFlowTest {
         configRep.getConfig().put("scriptCode", "Something");
         try {
             authMgmtResource.updateAuthenticatorConfig("script-authenticator-a.js", configRep);
-            Assert.fail("Update of configuration should have failed");
+            Assertions.fail("Update of configuration should have failed");
         } catch (BadRequestException bre) {
             // Expected
         }
@@ -229,7 +229,7 @@ public class DeployedScriptAuthenticatorTest extends AbstractFlowTest {
         Map<String, Object> newFlow = new HashMap<>();
         newFlow.put("newName", "Copy of script flow");
         Response resp = authMgmtResource.copy("scriptBrowser", newFlow);
-        Assert.assertEquals(201, resp.getStatus());
+        Assertions.assertEquals(201, resp.getStatus());
         resp.close();
         AuthenticationFlowRepresentation copiedFlow = AbstractAuthenticationTest.findFlowByAlias("Copy of script flow", authMgmtResource.getFlows());
 

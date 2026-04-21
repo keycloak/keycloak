@@ -33,17 +33,17 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.util.RealmBuilder;
 
-import org.junit.Assert;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.endsWith;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -58,14 +58,14 @@ public class PasswordPolicyTest extends AbstractKeycloakTest {
 
             realmModel.setPasswordPolicy(PasswordPolicy.parse(session, "length"));
 
-            Assert.assertEquals("invalidPasswordMinLengthMessage", policyManager.validate("jdoe", "1234567").getMessage());
-            Assert.assertArrayEquals(new Object[]{8}, policyManager.validate("jdoe", "1234567").getParameters());
+            Assertions.assertEquals("invalidPasswordMinLengthMessage", policyManager.validate("jdoe", "1234567").getMessage());
+            Assertions.assertArrayEquals(new Object[]{8}, policyManager.validate("jdoe", "1234567").getParameters());
             assertNull(policyManager.validate("jdoe", "12345678"));
 
             realmModel.setPasswordPolicy(PasswordPolicy.parse(session, "length(4)"));
 
-            Assert.assertEquals("invalidPasswordMinLengthMessage", policyManager.validate("jdoe", "123").getMessage());
-            Assert.assertArrayEquals(new Object[]{4}, policyManager.validate("jdoe", "123").getParameters());
+            Assertions.assertEquals("invalidPasswordMinLengthMessage", policyManager.validate("jdoe", "123").getMessage());
+            Assertions.assertArrayEquals(new Object[]{4}, policyManager.validate("jdoe", "123").getParameters());
             assertNull(policyManager.validate("jdoe", "1234"));
         });
     }
@@ -78,17 +78,17 @@ public class PasswordPolicyTest extends AbstractKeycloakTest {
 
             realmModel.setPasswordPolicy(PasswordPolicy.parse(session, "maxLength"));
 
-            Assert.assertEquals("invalidPasswordMaxLengthMessage",
+            Assertions.assertEquals("invalidPasswordMaxLengthMessage",
                     policyManager.validate("jdoe", "12345678901234567890123456789012345678901234567890123456789012345").getMessage());
-            Assert.assertArrayEquals(new Object[]{MaximumLengthPasswordPolicyProviderFactory.DEFAULT_MAX_LENGTH},
+            Assertions.assertArrayEquals(new Object[]{MaximumLengthPasswordPolicyProviderFactory.DEFAULT_MAX_LENGTH},
                     policyManager.validate("jdoe", "12345678901234567890123456789012345678901234567890123456789012345").getParameters());
             assertNull(policyManager.validate("jdoe", "1234567890123456789012345678901234567890123456789012345678901234"));
 
             realmModel.setPasswordPolicy(PasswordPolicy.parse(session, "maxLength(24)"));
 
-            Assert.assertEquals("invalidPasswordMaxLengthMessage",
+            Assertions.assertEquals("invalidPasswordMaxLengthMessage",
                     policyManager.validate("jdoe", "1234567890123456789012345").getMessage());
-            Assert.assertArrayEquals(new Object[]{24},
+            Assertions.assertArrayEquals(new Object[]{24},
                     policyManager.validate("jdoe", "1234567890123456789012345").getParameters());
             assertNull(policyManager.validate("jdoe", "123456789012345678901234"));
         });
@@ -101,13 +101,13 @@ public class PasswordPolicyTest extends AbstractKeycloakTest {
             PasswordPolicyManagerProvider policyManager = session.getProvider(PasswordPolicyManagerProvider.class);
 
             realmModel.setPasswordPolicy(PasswordPolicy.parse(session, "digits"));
-            Assert.assertEquals("invalidPasswordMinDigitsMessage", policyManager.validate("jdoe", "abcd").getMessage());
-            Assert.assertArrayEquals(new Object[]{1}, policyManager.validate("jdoe", "abcd").getParameters());
+            Assertions.assertEquals("invalidPasswordMinDigitsMessage", policyManager.validate("jdoe", "abcd").getMessage());
+            Assertions.assertArrayEquals(new Object[]{1}, policyManager.validate("jdoe", "abcd").getParameters());
             assertNull(policyManager.validate("jdoe", "abcd1"));
 
             realmModel.setPasswordPolicy(PasswordPolicy.parse(session, "digits(2)"));
-            Assert.assertEquals("invalidPasswordMinDigitsMessage", policyManager.validate("jdoe", "abcd1").getMessage());
-            Assert.assertArrayEquals(new Object[]{2}, policyManager.validate("jdoe", "abcd1").getParameters());
+            Assertions.assertEquals("invalidPasswordMinDigitsMessage", policyManager.validate("jdoe", "abcd1").getMessage());
+            Assertions.assertArrayEquals(new Object[]{2}, policyManager.validate("jdoe", "abcd1").getParameters());
             assertNull(policyManager.validate("jdoe", "abcd12"));
         });
     }
@@ -119,13 +119,13 @@ public class PasswordPolicyTest extends AbstractKeycloakTest {
             PasswordPolicyManagerProvider policyManager = session.getProvider(PasswordPolicyManagerProvider.class);
 
             realmModel.setPasswordPolicy(PasswordPolicy.parse(session, "lowerCase"));
-            Assert.assertEquals("invalidPasswordMinLowerCaseCharsMessage", policyManager.validate("jdoe", "ABCD1234").getMessage());
-            Assert.assertArrayEquals(new Object[]{1}, policyManager.validate("jdoe", "ABCD1234").getParameters());
+            Assertions.assertEquals("invalidPasswordMinLowerCaseCharsMessage", policyManager.validate("jdoe", "ABCD1234").getMessage());
+            Assertions.assertArrayEquals(new Object[]{1}, policyManager.validate("jdoe", "ABCD1234").getParameters());
             assertNull(policyManager.validate("jdoe", "ABcD1234"));
 
             realmModel.setPasswordPolicy(PasswordPolicy.parse(session, "lowerCase(2)"));
-            Assert.assertEquals("invalidPasswordMinLowerCaseCharsMessage", policyManager.validate("jdoe", "ABcD1234").getMessage());
-            Assert.assertArrayEquals(new Object[]{2}, policyManager.validate("jdoe", "ABcD1234").getParameters());
+            Assertions.assertEquals("invalidPasswordMinLowerCaseCharsMessage", policyManager.validate("jdoe", "ABcD1234").getMessage());
+            Assertions.assertArrayEquals(new Object[]{2}, policyManager.validate("jdoe", "ABcD1234").getParameters());
             assertNull(policyManager.validate("jdoe", "aBcD1234"));
         });
     }
@@ -137,13 +137,13 @@ public class PasswordPolicyTest extends AbstractKeycloakTest {
             PasswordPolicyManagerProvider policyManager = session.getProvider(PasswordPolicyManagerProvider.class);
 
             realmModel.setPasswordPolicy(PasswordPolicy.parse(session, "upperCase"));
-            Assert.assertEquals("invalidPasswordMinUpperCaseCharsMessage", policyManager.validate("jdoe", "abcd1234").getMessage());
-            Assert.assertArrayEquals(new Object[]{1}, policyManager.validate("jdoe", "abcd1234").getParameters());
+            Assertions.assertEquals("invalidPasswordMinUpperCaseCharsMessage", policyManager.validate("jdoe", "abcd1234").getMessage());
+            Assertions.assertArrayEquals(new Object[]{1}, policyManager.validate("jdoe", "abcd1234").getParameters());
             assertNull(policyManager.validate("jdoe", "abCd1234"));
 
             realmModel.setPasswordPolicy(PasswordPolicy.parse(session, "upperCase(2)"));
-            Assert.assertEquals("invalidPasswordMinUpperCaseCharsMessage", policyManager.validate("jdoe", "abCd1234").getMessage());
-            Assert.assertArrayEquals(new Object[]{2}, policyManager.validate("jdoe", "abCd1234").getParameters());
+            Assertions.assertEquals("invalidPasswordMinUpperCaseCharsMessage", policyManager.validate("jdoe", "abCd1234").getMessage());
+            Assertions.assertArrayEquals(new Object[]{2}, policyManager.validate("jdoe", "abCd1234").getParameters());
             assertNull(policyManager.validate("jdoe", "AbCd1234"));
         });
     }
@@ -155,13 +155,13 @@ public class PasswordPolicyTest extends AbstractKeycloakTest {
             PasswordPolicyManagerProvider policyManager = session.getProvider(PasswordPolicyManagerProvider.class);
 
             realmModel.setPasswordPolicy(PasswordPolicy.parse(session, "specialChars"));
-            Assert.assertEquals("invalidPasswordMinSpecialCharsMessage", policyManager.validate("jdoe", "abcd1234").getMessage());
-            Assert.assertArrayEquals(new Object[]{1}, policyManager.validate("jdoe", "abcd1234").getParameters());
+            Assertions.assertEquals("invalidPasswordMinSpecialCharsMessage", policyManager.validate("jdoe", "abcd1234").getMessage());
+            Assertions.assertArrayEquals(new Object[]{1}, policyManager.validate("jdoe", "abcd1234").getParameters());
             assertNull(policyManager.validate("jdoe", "ab&d1234"));
 
             realmModel.setPasswordPolicy(PasswordPolicy.parse(session, "specialChars(2)"));
-            Assert.assertEquals("invalidPasswordMinSpecialCharsMessage", policyManager.validate("jdoe", "ab&d1234").getMessage());
-            Assert.assertArrayEquals(new Object[]{2}, policyManager.validate("jdoe", "ab&d1234").getParameters());
+            Assertions.assertEquals("invalidPasswordMinSpecialCharsMessage", policyManager.validate("jdoe", "ab&d1234").getMessage());
+            Assertions.assertArrayEquals(new Object[]{2}, policyManager.validate("jdoe", "ab&d1234").getParameters());
             assertNull(policyManager.validate("jdoe", "ab&d-234"));
         });
     }
@@ -178,9 +178,9 @@ public class PasswordPolicyTest extends AbstractKeycloakTest {
 
             realmModel.setPasswordPolicy(PasswordPolicy.parse(session, "passwordBlacklist(test-password-blacklist.txt)"));
 
-            Assert.assertEquals(BlacklistPasswordPolicyProvider.ERROR_MESSAGE, policyManager.validate("jdoe", "blacklisted1").getMessage());
-            Assert.assertEquals(BlacklistPasswordPolicyProvider.ERROR_MESSAGE, policyManager.validate("jdoe", "blacklisted2").getMessage());
-            Assert.assertEquals(BlacklistPasswordPolicyProvider.ERROR_MESSAGE, policyManager.validate("jdoe", "bLaCkLiSteD2").getMessage());
+            Assertions.assertEquals(BlacklistPasswordPolicyProvider.ERROR_MESSAGE, policyManager.validate("jdoe", "blacklisted1").getMessage());
+            Assertions.assertEquals(BlacklistPasswordPolicyProvider.ERROR_MESSAGE, policyManager.validate("jdoe", "blacklisted2").getMessage());
+            Assertions.assertEquals(BlacklistPasswordPolicyProvider.ERROR_MESSAGE, policyManager.validate("jdoe", "bLaCkLiSteD2").getMessage());
             assertNull(policyManager.validate("jdoe", "notblacklisted"));
         });
     }
@@ -205,7 +205,7 @@ public class PasswordPolicyTest extends AbstractKeycloakTest {
             PasswordPolicyManagerProvider policyManager = session.getProvider(PasswordPolicyManagerProvider.class);
 
             realmModel.setPasswordPolicy(PasswordPolicy.parse(session, "notUsername"));
-            Assert.assertEquals("invalidPasswordNotUsernameMessage", policyManager.validate("jdoe", "jdoe").getMessage());
+            Assertions.assertEquals("invalidPasswordNotUsernameMessage", policyManager.validate("jdoe", "jdoe").getMessage());
             assertNull(policyManager.validate("jdoe", "ab&d1234"));
         });
     }
@@ -218,7 +218,7 @@ public class PasswordPolicyTest extends AbstractKeycloakTest {
 
             try {
                 realmModel.setPasswordPolicy(PasswordPolicy.parse(session, "noSuchPolicy"));
-                Assert.fail("Expected exception");
+                Assertions.fail("Expected exception");
             } catch (ModelException e) {
                 assertEquals("Password policy not found", e.getMessage());
             }
@@ -255,14 +255,14 @@ public class PasswordPolicyTest extends AbstractKeycloakTest {
 
             //Fails to match one of the regex pattern
             realmModel.setPasswordPolicy(PasswordPolicy.parse(session, "regexPattern(jdoe) and regexPattern(j*d)"));
-            Assert.assertEquals("invalidPasswordRegexPatternMessage", policyManager.validate("jdoe", "jdoe").getMessage());
+            Assertions.assertEquals("invalidPasswordRegexPatternMessage", policyManager.validate("jdoe", "jdoe").getMessage());
 
             ////Fails to match all of the regex patterns
             realmModel.setPasswordPolicy(PasswordPolicy.parse(session, "regexPattern(j*p) and regexPattern(j*d) and regexPattern(adoe)"));
-            Assert.assertEquals("invalidPasswordRegexPatternMessage", policyManager.validate("jdoe", "jdoe").getMessage());
+            Assertions.assertEquals("invalidPasswordRegexPatternMessage", policyManager.validate("jdoe", "jdoe").getMessage());
 
             realmModel.setPasswordPolicy(PasswordPolicy.parse(session, "regexPattern([a-z][a-z][a-z][a-z][0-9])"));
-            Assert.assertEquals("invalidPasswordRegexPatternMessage", policyManager.validate("jdoe", "jdoe").getMessage());
+            Assertions.assertEquals("invalidPasswordRegexPatternMessage", policyManager.validate("jdoe", "jdoe").getMessage());
 
             realmModel.setPasswordPolicy(PasswordPolicy.parse(session, "regexPattern(jdoe)"));
             assertNull(policyManager.validate("jdoe", "jdoe"));
@@ -279,13 +279,13 @@ public class PasswordPolicyTest extends AbstractKeycloakTest {
             PasswordPolicyManagerProvider policyManager = session.getProvider(PasswordPolicyManagerProvider.class);
 
             realmModel.setPasswordPolicy(PasswordPolicy.parse(session, "length(8) and maxLength(32) and digits(2) and lowerCase(2) and upperCase(2) and specialChars(2) and notUsername()"));
-            Assert.assertNotNull(policyManager.validate("jdoe", "12aaBB&"));
-            Assert.assertNotNull(policyManager.validate("jdoe", "aaaaBB&-"));
-            Assert.assertNotNull(policyManager.validate("jdoe", "12AABB&-"));
-            Assert.assertNotNull(policyManager.validate("jdoe", "12aabb&-"));
-            Assert.assertNotNull(policyManager.validate("jdoe", "12aaBBcc"));
-            Assert.assertNotNull(policyManager.validate("12aaBB&-", "12aaBB&-"));
-            Assert.assertNotNull(policyManager.validate("jdoe", "12aaBB&-12aaBB&-12aaBB&-12aaBB&-1"));
+            Assertions.assertNotNull(policyManager.validate("jdoe", "12aaBB&"));
+            Assertions.assertNotNull(policyManager.validate("jdoe", "aaaaBB&-"));
+            Assertions.assertNotNull(policyManager.validate("jdoe", "12AABB&-"));
+            Assertions.assertNotNull(policyManager.validate("jdoe", "12aabb&-"));
+            Assertions.assertNotNull(policyManager.validate("jdoe", "12aaBBcc"));
+            Assertions.assertNotNull(policyManager.validate("12aaBB&-", "12aaBB&-"));
+            Assertions.assertNotNull(policyManager.validate("jdoe", "12aaBB&-12aaBB&-12aaBB&-12aaBB&-1"));
 
             assertNull(policyManager.validate("jdoe", "12aaBB&-"));
         });

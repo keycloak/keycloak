@@ -70,12 +70,13 @@ import org.hamcrest.Matchers;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -205,8 +206,8 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
         oauth.client("confidential-cli", "bad_credential");
         IntrospectionResponse tokenResponse = oauth.doIntrospectionAccessTokenRequest(accessTokenResponse.getAccessToken());
 
-        Assert.assertEquals("Authentication failed.", tokenResponse.getErrorDescription());
-        Assert.assertEquals(OAuthErrorException.INVALID_REQUEST, tokenResponse.getError());
+        Assertions.assertEquals("Authentication failed.", tokenResponse.getErrorDescription());
+        Assertions.assertEquals(OAuthErrorException.INVALID_REQUEST, tokenResponse.getError());
     }
 
     @Test
@@ -252,7 +253,7 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
         oauth.fillLoginForm("test-user@localhost", "password");
         events.expectLogin().assertEvent();
 
-        Assert.assertFalse(loginPage.isCurrent());
+        Assertions.assertFalse(loginPage.isCurrent());
 
         String code = oauth.parseLoginResponse().getCode();
         AccessTokenResponse tokenResponse2 = oauth.doAccessTokenRequest(code);
@@ -275,8 +276,8 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
         oauth.client("public-cli");
         IntrospectionResponse tokenResponse = oauth.doIntrospectionAccessTokenRequest(accessTokenResponse.getAccessToken());
 
-        Assert.assertEquals("Client not allowed.", tokenResponse.getErrorDescription());
-        Assert.assertEquals(OAuthErrorException.INVALID_REQUEST, tokenResponse.getError());
+        Assertions.assertEquals("Client not allowed.", tokenResponse.getErrorDescription());
+        Assertions.assertEquals(OAuthErrorException.INVALID_REQUEST, tokenResponse.getError());
     }
 
     @Test

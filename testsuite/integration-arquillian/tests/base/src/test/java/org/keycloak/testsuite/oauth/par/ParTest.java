@@ -71,8 +71,8 @@ import org.keycloak.testsuite.util.oauth.ParRequest;
 import org.keycloak.testsuite.util.oauth.ParResponse;
 import org.keycloak.util.JsonSerialization;
 
-import org.junit.Assert;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 import static org.keycloak.OAuthErrorException.INVALID_GRANT;
 import static org.keycloak.testsuite.AbstractAdminTest.loadJson;
@@ -82,12 +82,12 @@ import static org.keycloak.testsuite.util.ClientPoliciesUtil.createTestRaiseExep
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.startsWith;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class ParTest extends AbstractClientPoliciesTest {
 
@@ -853,7 +853,7 @@ public class ParTest extends AbstractClientPoliciesTest {
         String state = "testFailureNotIssuedParUsed";
         oauth.loginForm().requestUri(IMAGINARY_REQUEST_URI).state(state).open();
         AuthorizationEndpointResponse errorResponse = oauth.parseLoginResponse();
-        Assert.assertFalse(errorResponse.isRedirected());
+        Assertions.assertFalse(errorResponse.isRedirected());
     }
 
     // PAR request_uri used twice
@@ -897,7 +897,7 @@ public class ParTest extends AbstractClientPoliciesTest {
         state = "testFailureParUsedTwice2";
         oauth.loginForm().requestUri(requestUri).state(state).open();
         AuthorizationEndpointResponse errorResponse = oauth.parseLoginResponse();
-        Assert.assertFalse(errorResponse.isRedirected());
+        Assertions.assertFalse(errorResponse.isRedirected());
     }
 
     // PAR request_uri used by other client
@@ -942,7 +942,7 @@ public class ParTest extends AbstractClientPoliciesTest {
         String state = "testFailureParUsedByOtherClient";
         oauth.loginForm().state(state).requestUri(requestUri).open();
         AuthorizationEndpointResponse errorResponse = oauth.parseLoginResponse();
-        Assert.assertFalse(errorResponse.isRedirected());
+        Assertions.assertFalse(errorResponse.isRedirected());
     }
 
     // not PAR by PAR required client
@@ -1004,7 +1004,7 @@ public class ParTest extends AbstractClientPoliciesTest {
         String state = "testFailureParExpired";
         oauth.loginForm().state(state).requestUri(requestUri).open();
         AuthorizationEndpointResponse errorResponse = oauth.parseLoginResponse();
-        Assert.assertFalse(errorResponse.isRedirected());
+        Assertions.assertFalse(errorResponse.isRedirected());
     }
 
     // client authentication failed

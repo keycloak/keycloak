@@ -35,7 +35,6 @@ import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.util.ProtocolMapperUtil;
@@ -43,6 +42,7 @@ import org.keycloak.testsuite.util.UserBuilder;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 /**
  * Test for the 'aud' claim in tokens
@@ -180,7 +180,7 @@ public class AudienceTest extends AbstractOIDCScopeTest {
     private void assertAudiences(JsonWebToken token, String... expectedAudience) {
         Collection<String> audiences = token.getAudience() == null ? Collections.emptyList() : Arrays.asList(token.getAudience());
         Collection<String> expectedAudiences = Arrays.asList(expectedAudience);
-        Assert.assertTrue("Not matched. expectedAudiences: " + expectedAudiences + ", audiences: " + audiences,
-                expectedAudiences.containsAll(audiences) && audiences.containsAll(expectedAudiences));
+        Assertions.assertTrue(expectedAudiences.containsAll(audiences) && audiences.containsAll(expectedAudiences),
+                "Not matched. expectedAudiences: " + expectedAudiences + ", audiences: " + audiences);
     }
 }

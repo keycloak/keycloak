@@ -46,7 +46,7 @@ import org.apache.http.message.BasicNameValuePair;
 import org.junit.Before;
 import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @EnableFeature(value = Profile.Feature.OID4VC_VCI, skipRestart = true)
 @EnableFeature(value = Profile.Feature.OID4VC_VCI_PREAUTH_CODE, skipRestart = true)
@@ -65,7 +65,7 @@ public class PreAuthorizedGrantTest extends AbstractTestRealmKeycloakTest {
         String preAuthorizedCode = getTestingClient().testing(TEST_REALM_NAME).getPreAuthorizedCode(TEST_REALM_NAME, userSessionId, "test-app", Time.currentTime() + 30);
         AccessTokenResponse accessTokenResponse = postCode(preAuthorizedCode);
 
-        assertEquals("An access token should have successfully been returned.", HttpStatus.SC_OK, accessTokenResponse.getStatusCode());
+        assertEquals(HttpStatus.SC_OK, accessTokenResponse.getStatusCode(), "An access token should have successfully been returned.");
     }
 
     @Test
@@ -73,7 +73,7 @@ public class PreAuthorizedGrantTest extends AbstractTestRealmKeycloakTest {
         String userSessionId = getUserSession();
         String preAuthorizedCode = getTestingClient().testing(TEST_REALM_NAME).getPreAuthorizedCode(TEST_REALM_NAME, userSessionId, "test-app", Time.currentTime() - 30);
         AccessTokenResponse accessTokenResponse = postCode(preAuthorizedCode);
-        assertEquals("An expired code should not get an access token.", HttpStatus.SC_BAD_REQUEST, accessTokenResponse.getStatusCode());
+        assertEquals(HttpStatus.SC_BAD_REQUEST, accessTokenResponse.getStatusCode(), "An expired code should not get an access token.");
     }
 
     @Test
@@ -81,7 +81,7 @@ public class PreAuthorizedGrantTest extends AbstractTestRealmKeycloakTest {
         // assure that a session exists.
         getUserSession();
         AccessTokenResponse accessTokenResponse = postCode("invalid-code");
-        assertEquals("An invalid code should not get an access token.", HttpStatus.SC_BAD_REQUEST, accessTokenResponse.getStatusCode());
+        assertEquals(HttpStatus.SC_BAD_REQUEST, accessTokenResponse.getStatusCode(), "An invalid code should not get an access token.");
     }
 
     @Test
@@ -95,7 +95,7 @@ public class PreAuthorizedGrantTest extends AbstractTestRealmKeycloakTest {
         post.setEntity(formEntity);
 
         AccessTokenResponse accessTokenResponse = new AccessTokenResponse(httpClient.execute(post));
-        assertEquals("If no code is provided, no access token should be returned.", HttpStatus.SC_BAD_REQUEST, accessTokenResponse.getStatusCode());
+        assertEquals(HttpStatus.SC_BAD_REQUEST, accessTokenResponse.getStatusCode(), "If no code is provided, no access token should be returned.");
     }
 
     /**
@@ -115,8 +115,7 @@ public class PreAuthorizedGrantTest extends AbstractTestRealmKeycloakTest {
                     .getPreAuthorizedCode(TEST_REALM_NAME, userSessionId, "test-app", Time.currentTime() + 30);
 
             AccessTokenResponse accessTokenResponse = postCode(preAuthorizedCode);
-            assertEquals("Pre-authorized grant should be forbidden when verifiable credentials are disabled.",
-                    HttpStatus.SC_FORBIDDEN, accessTokenResponse.getStatusCode());
+            assertEquals(HttpStatus.SC_FORBIDDEN, accessTokenResponse.getStatusCode(), "Pre-authorized grant should be forbidden when verifiable credentials are disabled.");
         } finally {
             // Re-enable verifiable credentials so other tests see the default behavior
             RealmRepresentation realmRepReset = adminClient.realm(TEST_REALM_NAME).toRepresentation();

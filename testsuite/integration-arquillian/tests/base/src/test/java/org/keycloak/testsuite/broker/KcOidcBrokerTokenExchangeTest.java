@@ -58,7 +58,6 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.authorization.ClientPolicyRepresentation;
 import org.keycloak.services.resources.admin.fgap.AdminPermissionManagement;
 import org.keycloak.services.resources.admin.fgap.AdminPermissions;
-import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeatures;
@@ -70,6 +69,7 @@ import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.keycloak.util.BasicAuthHelper;
 
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_OIDC_ALIAS;
 import static org.keycloak.testsuite.util.ProtocolMapperUtil.createHardcodedClaim;
@@ -297,7 +297,7 @@ public class KcOidcBrokerTokenExchangeTest extends AbstractInitializedBaseBroker
         oauth.logoutForm().idTokenHint(idTokenString)
                 .postLogoutRedirectUri(oauth.APP_AUTH_ROOT).open();
         String logoutToken = testingClient.testApp().getBackChannelRawLogoutToken();
-        Assert.assertNotNull(logoutToken);
+        Assertions.assertNotNull(logoutToken);
 
         Client httpClient = AdminClientUtil.createResteasyClient();
         try {
@@ -343,7 +343,7 @@ public class KcOidcBrokerTokenExchangeTest extends AbstractInitializedBaseBroker
         oauth.logoutForm().idTokenHint(idTokenString)
                 .postLogoutRedirectUri(oauth.APP_AUTH_ROOT).open();
         String logoutToken = testingClient.testApp().getBackChannelRawLogoutToken();
-        Assert.assertNotNull(logoutToken);
+        Assertions.assertNotNull(logoutToken);
 
         Client httpClient = AdminClientUtil.createResteasyClient();
         try {
@@ -384,7 +384,7 @@ public class KcOidcBrokerTokenExchangeTest extends AbstractInitializedBaseBroker
     private static void setupRealm(KeycloakSession session) {
         RealmModel realm = session.getContext().getRealm();
         IdentityProviderModel idp = session.identityProviders().getByAlias(IDP_OIDC_ALIAS);
-        org.junit.Assert.assertNotNull(idp);
+        Assertions.assertNotNull(idp);
 
         ClientModel client = realm.addClient("test-app");
         client.setClientId("test-app");

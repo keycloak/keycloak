@@ -38,13 +38,13 @@ import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
 
-import org.junit.Assert;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -165,24 +165,24 @@ public class UserPolicyManagementTest extends AbstractPolicyManagementTest {
 
         representation = authorization.policies().user().findById(representation.getId()).toRepresentation();
 
-        Assert.assertEquals(2, representation.getUsers().size());
-        Assert.assertFalse(representation.getUsers().contains(user.getId()));
+        Assertions.assertEquals(2, representation.getUsers().size());
+        Assertions.assertFalse(representation.getUsers().contains(user.getId()));
 
         user = users.search("User E").get(0);
         users.get(user.getId()).remove();
 
         representation = authorization.policies().user().findById(representation.getId()).toRepresentation();
 
-        Assert.assertEquals(1, representation.getUsers().size());
-        Assert.assertFalse(representation.getUsers().contains(user.getId()));
+        Assertions.assertEquals(1, representation.getUsers().size());
+        Assertions.assertFalse(representation.getUsers().contains(user.getId()));
 
         user = users.search("User F").get(0);
         users.get(user.getId()).remove();
 
         representation = authorization.policies().user().findById(representation.getId()).toRepresentation();
 
-        Assert.assertEquals(0, representation.getUsers().size());
-        Assert.assertFalse(representation.getUsers().contains(user.getId()));
+        Assertions.assertEquals(0, representation.getUsers().size());
+        Assertions.assertFalse(representation.getUsers().contains(user.getId()));
     }
 
     @Test

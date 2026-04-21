@@ -30,8 +30,8 @@ import static org.keycloak.testsuite.forms.BrowserFlowTest.revertFlows;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 /**
  * @author <a href="mailto:mabartos@redhat.com">Martin Bartos</a>

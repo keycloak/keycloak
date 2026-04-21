@@ -42,9 +42,9 @@ import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 import static org.keycloak.representations.idm.CredentialRepresentation.PASSWORD;
 import static org.keycloak.testsuite.admin.ApiUtil.getCreatedId;
@@ -318,10 +318,10 @@ public class PasswordAgePolicyTest extends AbstractAuthTest {
 
             registerPage.register("firstName", "lastName", "registration-user@localhost", "registration-user", "password", "password");
 
-            Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+            Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
             AuthorizationEndpointResponse response = oauth.parseLoginResponse();
-            Assert.assertNull(response.getError());
-            Assert.assertNotNull(response.getCode());
+            Assertions.assertNull(response.getError());
+            Assertions.assertNotNull(response.getCode());
 
             AdminApiUtil.findUserByUsernameId(testRealmResource(), "registration-user").remove();
         }

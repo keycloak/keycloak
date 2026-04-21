@@ -49,10 +49,10 @@ import org.keycloak.testsuite.util.UserBuilder;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -123,7 +123,7 @@ public class AppInitiatedActionDeleteCredentialTest extends AbstractAppInitiated
             appPage.assertCurrent();
             assertKcActionStatus("success");
 
-            Assert.assertNull(getCredentialIdByType(OTPCredentialModel.TYPE));
+            Assertions.assertNull(getCredentialIdByType(OTPCredentialModel.TYPE));
 
             events.expect(EventType.REMOVE_TOTP)
                     .user(userId)
@@ -139,10 +139,10 @@ public class AppInitiatedActionDeleteCredentialTest extends AbstractAppInitiated
                     .assertEvent();
 
             MimeMessage[] receivedMessages = greenMail.getReceivedMessages();
-            Assert.assertEquals(2, receivedMessages.length);
+            Assertions.assertEquals(2, receivedMessages.length);
 
-            Assert.assertEquals("Remove OTP", receivedMessages[0].getSubject());
-            Assert.assertEquals("Remove credential", receivedMessages[1].getSubject());
+            Assertions.assertEquals("Remove OTP", receivedMessages[0].getSubject());
+            Assertions.assertEquals("Remove credential", receivedMessages[1].getSubject());
             MatcherAssert.assertThat(MailUtils.getBody(receivedMessages[1]).getText(),
                     Matchers.startsWith("Credential otp was removed from your account"));
             MatcherAssert.assertThat(MailUtils.getBody(receivedMessages[1]).getHtml(),
@@ -168,7 +168,7 @@ public class AppInitiatedActionDeleteCredentialTest extends AbstractAppInitiated
 
         appPage.assertCurrent();
 
-        Assert.assertNotNull(getCredentialIdByType(OTPCredentialModel.TYPE));
+        Assertions.assertNotNull(getCredentialIdByType(OTPCredentialModel.TYPE));
     }
 
     @Test
@@ -263,7 +263,7 @@ public class AppInitiatedActionDeleteCredentialTest extends AbstractAppInitiated
         appPage.assertCurrent();
         assertKcActionStatus("success");
 
-        Assert.assertNull(getCredentialIdByType(OTPCredentialModel.TYPE));
+        Assertions.assertNull(getCredentialIdByType(OTPCredentialModel.TYPE));
 
         events.expect(EventType.REMOVE_TOTP)
                 .user(userId)

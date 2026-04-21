@@ -108,7 +108,7 @@ import static org.keycloak.testsuite.util.URLUtils.navigateToUri;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  *
@@ -784,7 +784,7 @@ public abstract class AbstractKeycloakTest {
             } while (expectedEndTime - System.nanoTime() > 0);
 
             //last attempt
-            assertEquals(message, expected, actual.get());
+            assertEquals(expected, actual.get(), message);
         } catch (Exception e) {
             throw new RuntimeException("Unexpected!", e);
         }

@@ -68,11 +68,11 @@ import static org.keycloak.common.util.Encode.encodePathAsIs;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.empty;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -458,17 +458,21 @@ public class ResourcesRestServiceTest extends AbstractRestServiceTest {
 
         // test read access
         for (String url : Arrays.asList(resourcesUrl, sharedWithOthersUrl, sharedWithMeUrl, resourceUrl, permissionsUrl, requestsUrl)) {
-            assertEquals( "no-account-access GET " + url, 403,
-                    SimpleHttpDefault.doGet(url, httpClient).acceptJson().auth(noAccessTokenUtil.getToken()).asStatus());
-            assertEquals("view-account-access GET " + url,200,
-                    SimpleHttpDefault.doGet(url, httpClient).acceptJson().auth(viewProfileTokenUtil.getToken()).asStatus());
+            assertEquals( 403,
+                    SimpleHttpDefault.doGet(url, httpClient).acceptJson().auth(noAccessTokenUtil.getToken()).asStatus(),
+                    "no-account-access GET " + url);
+            assertEquals(200,
+                    SimpleHttpDefault.doGet(url, httpClient).acceptJson().auth(viewProfileTokenUtil.getToken()).asStatus(),
+                    "view-account-access GET " + url);
         }
 
         // test write access
-        assertEquals( "no-account-access PUT " + permissionsUrl, 403,
-                SimpleHttpDefault.doPut(permissionsUrl, httpClient).acceptJson().auth(noAccessTokenUtil.getToken()).json(Collections.emptyList()).asStatus());
-        assertEquals( "view-account-access PUT " + permissionsUrl, 403,
-                SimpleHttpDefault.doPut(permissionsUrl, httpClient).acceptJson().auth(viewProfileTokenUtil.getToken()).json(Collections.emptyList()).asStatus());
+        assertEquals( 403,
+                SimpleHttpDefault.doPut(permissionsUrl, httpClient).acceptJson().auth(noAccessTokenUtil.getToken()).json(Collections.emptyList()).asStatus(),
+                "no-account-access PUT " + permissionsUrl);
+        assertEquals( 403,
+                SimpleHttpDefault.doPut(permissionsUrl, httpClient).acceptJson().auth(viewProfileTokenUtil.getToken()).json(Collections.emptyList()).asStatus(),
+                "view-account-access PUT " + permissionsUrl);
     }
 
     @Test

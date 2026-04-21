@@ -37,8 +37,8 @@ import org.keycloak.testsuite.util.KeyUtils;
 
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
-import org.junit.Assert;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 /**
  *
@@ -153,7 +153,7 @@ public class KcSamlMetadataSignedBrokerTest extends AbstractKcSamlMetadataBroker
 
             // manually refresh after 1d plus 20s (15s more min refresh is 10s)
             setTimeOffset(24*60*60 + 20);
-            Assert.assertTrue(adminClient.realm(bc.consumerRealmName()).identityProviders().get(bc.getIDPAlias()).reloadKeys());
+            Assertions.assertTrue(adminClient.realm(bc.consumerRealmName()).identityProviders().get(bc.getIDPAlias()).reloadKeys());
             doSamlRedirectLogin(Status.OK.getStatusCode(), "Update Account Information");
         }
     }
@@ -191,7 +191,7 @@ public class KcSamlMetadataSignedBrokerTest extends AbstractKcSamlMetadataBroker
 
             // manually refresh after 1d plus 20s (15s more min refresh is 10s)
             setTimeOffset(3600 + 20);
-            Assert.assertTrue(adminClient.realm(bc.consumerRealmName()).identityProviders().get(bc.getIDPAlias()).reloadKeys());
+            Assertions.assertTrue(adminClient.realm(bc.consumerRealmName()).identityProviders().get(bc.getIDPAlias()).reloadKeys());
             doSamlRedirectLogin(Status.OK.getStatusCode(), "Update Account Information");
         }
     }

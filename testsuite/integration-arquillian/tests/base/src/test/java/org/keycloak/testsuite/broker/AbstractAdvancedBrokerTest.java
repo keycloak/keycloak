@@ -23,7 +23,6 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.storage.UserStorageProvider;
-import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.federation.DummyUserFederationProviderFactory;
 import org.keycloak.testsuite.util.AccountHelper;
@@ -33,6 +32,7 @@ import org.keycloak.testsuite.util.TestAppHelper;
 
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 import org.openqa.selenium.TimeoutException;
 
 import static org.keycloak.testsuite.admin.AdminApiUtil.removeUserByUsername;
@@ -47,11 +47,11 @@ import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assume.assumeFalse;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Test of advanced functionalities related to brokering like:
@@ -100,7 +100,7 @@ public abstract class AbstractAdvancedBrokerTest extends AbstractBrokerTest {
 
         // Link identity provider through Admin REST api
         Response response = AccountHelper.addIdentityProvider(adminClient.realm(bc.consumerRealmName()), "consumer", adminClient.realm(bc.providerRealmName()), bc.getUserLogin(), bc.getIDPAlias());
-        Assert.assertEquals("status", 204, response.getStatus());
+        Assertions.assertEquals(204, response.getStatus(), "status");
 
         // Assert identity is linked through Admin REST api
         assertTrue(AccountHelper.isIdentityProviderLinked(adminClient.realm(bc.consumerRealmName()), "consumer", bc.getIDPAlias()));
@@ -119,7 +119,7 @@ public abstract class AbstractAdvancedBrokerTest extends AbstractBrokerTest {
         AccountHelper.logout(adminClient.realm(bc.providerRealmName()), "testuser");
 
         // Assert I am not logged immediately into app page and first-broker-login appears instead
-        Assert.assertFalse(testAppHelper.login(bc.getUserLogin(), bc.getUserPassword(), bc.consumerRealmName(), "broker-app", bc.getIDPAlias()));
+        Assertions.assertFalse(testAppHelper.login(bc.getUserLogin(), bc.getUserPassword(), bc.consumerRealmName(), "broker-app", bc.getIDPAlias()));
 
         waitForPage(driver, "update account information", false);
         updateAccountInformationPage.assertCurrent();
@@ -142,7 +142,7 @@ public abstract class AbstractAdvancedBrokerTest extends AbstractBrokerTest {
         AccountHelper.logout(adminClient.realm(bc.providerRealmName()), "testuser");
 
         //Try to log in. Previous link is not valid anymore, so now it should try to register new user instead of logging into app page
-        Assert.assertFalse(testAppHelper.login(bc.getUserLogin(), bc.getUserPassword(), bc.consumerRealmName(), "broker-app", bc.getIDPAlias()));
+        Assertions.assertFalse(testAppHelper.login(bc.getUserLogin(), bc.getUserPassword(), bc.consumerRealmName(), "broker-app", bc.getIDPAlias()));
         waitForPage(driver, "update account information", false);
         updateAccountInformationPage.assertCurrent();
     }
@@ -158,10 +158,10 @@ public abstract class AbstractAdvancedBrokerTest extends AbstractBrokerTest {
 
         // Link identity provider through Admin REST api
         Response response = AccountHelper.addIdentityProvider(adminClient.realm(bc.consumerRealmName()), "consumer", adminClient.realm(bc.providerRealmName()), bc.getUserLogin(), bc.getIDPAlias());
-        Assert.assertEquals("status", 204, response.getStatus());
+        Assertions.assertEquals(204, response.getStatus(), "status");
 
         // Test we will log in immediately into app page
-        Assert.assertTrue(testAppHelper.login(bc.getUserLogin(), bc.getUserPassword(), bc.consumerRealmName(), "broker-app", bc.getIDPAlias()));
+        Assertions.assertTrue(testAppHelper.login(bc.getUserLogin(), bc.getUserPassword(), bc.consumerRealmName(), "broker-app", bc.getIDPAlias()));
     }
 
     // KEYCLOAK-3267
@@ -173,7 +173,7 @@ public abstract class AbstractAdvancedBrokerTest extends AbstractBrokerTest {
 
         loginWithExistingUser();
 
-        Assert.assertTrue(AccountHelper.updatePassword(adminClient.realm(bc.consumerRealmName()), bc.getUserLogin(), "password"));
+        Assertions.assertTrue(AccountHelper.updatePassword(adminClient.realm(bc.consumerRealmName()), bc.getUserLogin(), "password"));
 
         logoutFromConsumerRealm();
         AccountHelper.logout(adminClient.realm(bc.providerRealmName()), bc.getUserLogin());
@@ -186,14 +186,14 @@ public abstract class AbstractAdvancedBrokerTest extends AbstractBrokerTest {
         } catch (TimeoutException e) {
             log.debug(driver.getTitle());
             log.debug(driver.getPageSource());
-            Assert.fail("Timeout while waiting for login page");
+            Assertions.fail("Timeout while waiting for login page");
         }
 
         for (int i = 0; i < 3; i++) {
             try {
                 waitForElementEnabled(driver, "login");
             } catch (TimeoutException e) {
-                Assert.fail("Timeout while waiting for login element enabled");
+                Assertions.fail("Timeout while waiting for login element enabled");
             }
 
             loginPage.login(bc.getUserLogin(), "invalid");
@@ -208,10 +208,10 @@ public abstract class AbstractAdvancedBrokerTest extends AbstractBrokerTest {
         } catch (TimeoutException e) {
             log.debug(driver.getTitle());
             log.debug(driver.getPageSource());
-            Assert.fail("Timeout while waiting for login page");
+            Assertions.fail("Timeout while waiting for login page");
         }
 
-        Assert.assertTrue("Driver should be on the provider realm page right now", driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"));
+        Assertions.assertTrue(driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"), "Driver should be on the provider realm page right now");
 
         loginPage.login(bc.getUserLogin(), bc.getUserPassword());
 
@@ -417,7 +417,7 @@ public abstract class AbstractAdvancedBrokerTest extends AbstractBrokerTest {
         waitForPage(driver, "sorry", false);
         errorPage.assertCurrent();
         String link = errorPage.getBackToApplicationLink();
-        Assert.assertTrue(link.contains("/auth/realms/" + bc.consumerRealmName() + "/app"));
+        Assertions.assertTrue(link.contains("/auth/realms/" + bc.consumerRealmName() + "/app"));
     }
 
     /**
@@ -530,7 +530,7 @@ public abstract class AbstractAdvancedBrokerTest extends AbstractBrokerTest {
                 // Updating password and the rest of the test is irrelevant for transient sessions
                 return;
             }
-            Assert.assertTrue(AccountHelper.updatePassword(adminClient.realm(bc.consumerRealmName()), "test-user", "new-password"));
+            Assertions.assertTrue(AccountHelper.updatePassword(adminClient.realm(bc.consumerRealmName()), "test-user", "new-password"));
 
             AccountHelper.logout(adminClient.realm(bc.consumerRealmName()), "test-user");
             AccountHelper.logout(adminClient.realm(bc.providerRealmName()), "test-user");
@@ -544,7 +544,7 @@ public abstract class AbstractAdvancedBrokerTest extends AbstractBrokerTest {
 
             loginPage.login("test-user-noemail", "password");
 
-            Assert.assertTrue(AccountHelper.updatePassword(adminClient.realm(bc.consumerRealmName()), "test-user-noemail", "new-password"));
+            Assertions.assertTrue(AccountHelper.updatePassword(adminClient.realm(bc.consumerRealmName()), "test-user-noemail", "new-password"));
         } finally {
             removeUserByUsername(adminClient.realm(bc.consumerRealmName()), "test-user");
             removeUserByUsername(adminClient.realm(bc.consumerRealmName()), "test-user-noemail");
@@ -575,7 +575,7 @@ public abstract class AbstractAdvancedBrokerTest extends AbstractBrokerTest {
         oauth.openLoginForm();
         loginPage.clickSocial(bc.getIDPAlias());
         waitForPage(driver, "sign in to", true);
-        Assert.assertTrue("Driver should be on the provider realm page right now", driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"));
+        Assertions.assertTrue(driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"), "Driver should be on the provider realm page right now");
         idpRep.setEnabled(false);
         identityProviderResource.update(idpRep);
         loginPage.login(bc.getUserLogin(), bc.getUserPassword());

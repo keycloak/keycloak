@@ -37,9 +37,9 @@ import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
 
 import org.hamcrest.Matchers;
-import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 import org.openqa.selenium.htmlunit.HtmlUnitDriver;
 
 import static org.keycloak.testsuite.AssertEvents.DEFAULT_REDIRECT_URI;
@@ -81,20 +81,20 @@ public class KcOidcMultipleTabsBrokerTest  extends AbstractInitializedBaseBroker
             // Open new tab 2
             tabUtil.newTab(oauth.loginForm().build());
             assertThat(tabUtil.getCountOfTabs(), Matchers.equalTo(2));
-            Assert.assertTrue(loginPage.isCurrent("consumer"));
+            Assertions.assertTrue(loginPage.isCurrent("consumer"));
             getLogger().infof("URL in tab2: %s", driver.getCurrentUrl());
 
             setTimeOffset(7200000);
 
             // Finish login in tab2
             loginPage.clickSocial(bc.getIDPAlias());
-            Assert.assertEquals(loginPage.getError(), "Your login attempt timed out. Login will start from the beginning.");
+            Assertions.assertEquals(loginPage.getError(), "Your login attempt timed out. Login will start from the beginning.");
             logInWithBroker(bc);
 
             waitForPage(driver, "update account information", false);
             updateAccountInformationPage.assertCurrent();
-            Assert.assertTrue("We must be on consumer realm right now",
-                    driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/"));
+            Assertions.assertTrue(driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/"),
+                    "We must be on consumer realm right now");
             updateAccountInformationPage.updateAccountInformation(bc.getUserLogin(), bc.getUserEmail(), "Firstname", "Lastname");
             appPage.assertCurrent();
 
@@ -121,20 +121,20 @@ public class KcOidcMultipleTabsBrokerTest  extends AbstractInitializedBaseBroker
             // Open login page in tab 2
             tabUtil.newTab(oauth.loginForm().build());
             assertThat(tabUtil.getCountOfTabs(), Matchers.equalTo(2));
-            Assert.assertTrue(loginPage.isCurrent("consumer"));
+            Assertions.assertTrue(loginPage.isCurrent("consumer"));
             getLogger().infof("URL in tab2: %s", driver.getCurrentUrl());
 
             setTimeOffset(7200000);
 
             // Finish login in tab2
             loginPage.clickSocial(bc.getIDPAlias());
-            Assert.assertEquals(loginPage.getError(), "Your login attempt timed out. Login will start from the beginning.");
+            Assertions.assertEquals(loginPage.getError(), "Your login attempt timed out. Login will start from the beginning.");
             logInWithBroker(bc);
 
             waitForPage(driver, "update account information", false);
             updateAccountInformationPage.assertCurrent();
-            Assert.assertTrue("We must be on consumer realm right now",
-                    driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/"));
+            Assertions.assertTrue(driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/"),
+                    "We must be on consumer realm right now");
             updateAccountInformationPage.updateAccountInformation(bc.getUserLogin(), bc.getUserEmail(), "Firstname", "Lastname");
             appPage.assertCurrent();
             events.clear();
@@ -198,20 +198,20 @@ public class KcOidcMultipleTabsBrokerTest  extends AbstractInitializedBaseBroker
             // Open login page in tab 2
             tabUtil.newTab(oauth.loginForm().build());
             assertThat(tabUtil.getCountOfTabs(), Matchers.equalTo(2));
-            Assert.assertTrue(loginPage.isCurrent("consumer"));
+            Assertions.assertTrue(loginPage.isCurrent("consumer"));
             getLogger().infof("URL in tab2: %s", driver.getCurrentUrl());
 
             setTimeOffset(7200000);
 
             // Finish login in tab2
             loginPage.clickSocial(bc.getIDPAlias());
-            Assert.assertEquals(loginPage.getError(), "Your login attempt timed out. Login will start from the beginning.");
+            Assertions.assertEquals(loginPage.getError(), "Your login attempt timed out. Login will start from the beginning.");
             logInWithBroker(bc);
 
             waitForPage(driver, "update account information", false);
             updateAccountInformationPage.assertCurrent();
-            Assert.assertTrue("We must be on consumer realm right now",
-                    driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/"));
+            Assertions.assertTrue(driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/"),
+                    "We must be on consumer realm right now");
             updateAccountInformationPage.updateAccountInformation(bc.getUserLogin(), bc.getUserEmail(), "Firstname", "Lastname");
             appPage.assertCurrent();
             events.clear();
@@ -249,7 +249,7 @@ public class KcOidcMultipleTabsBrokerTest  extends AbstractInitializedBaseBroker
 
             // Being on "You are already logged-in" now. No way to redirect to client due "clientData" are null in "state" of OIDC IDP as OIDC IDP requires short state parameter
             loginPage.assertCurrent("consumer");
-            Assert.assertEquals("You are already logged in.", loginPage.getInstruction());
+            Assertions.assertEquals("You are already logged in.", loginPage.getInstruction());
         } finally {
             // Revert config
             idpRep.getConfig().put(OAuth2IdentityProviderConfig.REQUIRES_SHORT_STATE_PARAMETER, "false");
@@ -275,7 +275,7 @@ public class KcOidcMultipleTabsBrokerTest  extends AbstractInitializedBaseBroker
             // Open login page in tab 2
             tabUtil.newTab(oauth.loginForm().build());
             assertThat(tabUtil.getCountOfTabs(), Matchers.equalTo(2));
-            Assert.assertTrue(loginPage.isCurrent("consumer"));
+            Assertions.assertTrue(loginPage.isCurrent("consumer"));
             getLogger().infof("URL in tab2: %s", driver.getCurrentUrl());
 
             setTimeOffset(3600);
@@ -285,8 +285,8 @@ public class KcOidcMultipleTabsBrokerTest  extends AbstractInitializedBaseBroker
 
             waitForPage(driver, "update account information", false);
             updateAccountInformationPage.assertCurrent();
-            Assert.assertTrue("We must be on consumer realm right now",
-                    driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/"));
+            Assertions.assertTrue(driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/"),
+                    "We must be on consumer realm right now");
             updateAccountInformationPage.updateAccountInformation(bc.getUserLogin(), bc.getUserEmail(), "Firstname", "Lastname");
             appPage.assertCurrent();
             events.clear();
@@ -320,8 +320,8 @@ public class KcOidcMultipleTabsBrokerTest  extends AbstractInitializedBaseBroker
                     .assertEvent();
 
             // We were redirected back to IDP where user is asked to re-authenticate (due prompt=login being sent to OIDC IDP in authz request)
-            Assert.assertEquals("Please re-authenticate to continue", loginPage.getInfoMessage());
-            Assert.assertTrue("We must be on provider realm right now",driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"));
+            Assertions.assertEquals("Please re-authenticate to continue", loginPage.getInfoMessage());
+            Assertions.assertTrue(driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"),"We must be on provider realm right now");
             loginPage.login(bc.getUserPassword());
 
             // Login finished on IDP (provider) as well as on "consumer" realm after being redirected there from "provider"
@@ -332,8 +332,8 @@ public class KcOidcMultipleTabsBrokerTest  extends AbstractInitializedBaseBroker
                     .detail(Details.REDIRECT_URI, Matchers.equalTo(OAuthClient.AUTH_SERVER_ROOT + "/realms/" + bc.consumerRealmName() + "/broker/" + bc.getIDPAlias() + "/endpoint"))
                     .assertEvent();
 
-            Assert.assertEquals(EventType.CODE_TO_TOKEN.name(), events.poll().getType());
-            Assert.assertEquals(EventType.USER_INFO_REQUEST.name(), events.poll().getType());
+            Assertions.assertEquals(EventType.CODE_TO_TOKEN.name(), events.poll().getType());
+            Assertions.assertEquals(EventType.USER_INFO_REQUEST.name(), events.poll().getType());
 
             events.expectLogin()
                     .realm(getConsumerRealmId())
@@ -345,8 +345,8 @@ public class KcOidcMultipleTabsBrokerTest  extends AbstractInitializedBaseBroker
             // Being redirected back to consumer and then back to client right away. Authentication session on "consumer" realm is still valid, so no error here.
             appPage.assertCurrent();
             AuthorizationEndpointResponse authzResponse = oauth.parseLoginResponse();
-            org.keycloak.testsuite.Assert.assertNotNull(authzResponse.getCode());
-            org.keycloak.testsuite.Assert.assertNull(authzResponse.getError());
+            Assertions.assertNotNull(authzResponse.getCode());
+            Assertions.assertNull(authzResponse.getError());
         }
     }
 
@@ -354,8 +354,8 @@ public class KcOidcMultipleTabsBrokerTest  extends AbstractInitializedBaseBroker
     private void assertOnAppPageWithAlreadyLoggedInError() {
         appPage.assertCurrent(); // Page "You are already logged in." should not be here
         AuthorizationEndpointResponse authzResponse = oauth.parseLoginResponse();
-        org.keycloak.testsuite.Assert.assertEquals(OAuthErrorException.TEMPORARILY_UNAVAILABLE, authzResponse.getError());
-        org.keycloak.testsuite.Assert.assertEquals(Constants.AUTHENTICATION_EXPIRED_MESSAGE, authzResponse.getErrorDescription());
+        Assertions.assertEquals(OAuthErrorException.TEMPORARILY_UNAVAILABLE, authzResponse.getError());
+        Assertions.assertEquals(Constants.AUTHENTICATION_EXPIRED_MESSAGE, authzResponse.getErrorDescription());
     }
 
     private String getProviderRealmId() {
