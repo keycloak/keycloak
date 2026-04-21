@@ -35,6 +35,8 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.services.PatchType;
 import org.keycloak.services.ServiceException;
+import org.keycloak.services.client.query.ClientQueryEvaluator;
+import org.keycloak.services.client.query.QueryParseUtils;
 import org.keycloak.services.managers.ClientManager;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resources.admin.AdminEventBuilder;
@@ -103,10 +105,24 @@ public class DefaultClientService implements ClientService {
     public Stream<BaseClientRepresentation> getClients(RealmModel realm, ClientProjectionOptions projectionOptions,
                                                    ClientSearchOptions searchOptions, ClientSortAndSliceOptions sortAndSliceOptions) {
         // TODO: is the access map on the representation needed
-        return clientsResource.getClientModels(null, true, false, null, null, null)
-                .filter(model -> model.getProtocol() != null) // Skip clients with null protocol
+        Stream<BaseClientRepresentation> stream = clientsResource.getClientModels(null, true, false, null, null, null)
+                .filter(model -> model.getProtocol() != null)
                 .map(model -> getMapper(model.getProtocol()).fromModel(model))
                 .filter(java.util.Objects::nonNull);
+
+        return applySearchFilter(stream, searchOptions);
+    }
+
+    protected Stream<BaseClientRepresentation> applySearchFilter(Stream<BaseClientRepresentation> stream, ClientSearchOptions searchOptions) {
+        if (searchOptions != null && searchOptions.getQuery() != null && !searchOptions.getQuery().isBlank()) {
+            var queryCtx = QueryParseUtils.parse(searchOptions.getQuery());
+            // TODO .toList() materializes all results in memory
+            return stream
+                    .filter(client -> ClientQueryEvaluator.matches(queryCtx, client))
+                    .toList()
+                    .stream();
+        }
+        return stream;
     }
 
     @Override

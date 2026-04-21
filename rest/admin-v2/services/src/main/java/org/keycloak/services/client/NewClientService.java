@@ -103,11 +103,13 @@ public class NewClientService extends DefaultClientService implements ClientServ
         // When disabled, we fall back to in-memory filtering by VIEW_CLIENTS role.
         boolean canView = AdminPermissionsSchema.SCHEMA.isAdminPermissionsEnabled(realm) || permissions.clients().canView();
         try {
-            return realm.getClientsStream()
+            Stream<BaseClientRepresentation> stream = realm.getClientsStream()
                     .filter(client -> canView || permissions.clients().canView(client))
                     .filter(client -> client.getProtocol() != null)
                     .map(client -> getMapper(client.getProtocol()).fromModel(client))
                     .filter(java.util.Objects::nonNull);
+
+            return applySearchFilter(stream, searchOptions);
         } catch (ModelException e) {
             throw new ServiceException(e.getMessage(), Response.Status.BAD_REQUEST);
         }

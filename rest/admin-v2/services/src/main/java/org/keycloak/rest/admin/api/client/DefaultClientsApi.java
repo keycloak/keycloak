@@ -4,10 +4,12 @@ import java.util.stream.Stream;
 
 import jakarta.annotation.Nonnull;
 import jakarta.validation.Valid;
+import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.admin.api.client.ClientApi;
@@ -17,6 +19,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.representations.admin.v2.BaseClientRepresentation;
 import org.keycloak.services.client.ClientService;
 import org.keycloak.services.client.ClientServiceHelper;
+import org.keycloak.services.client.query.ClientQueryException;
 import org.keycloak.services.resources.admin.RealmAdminResource;
 import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
 
@@ -43,8 +46,13 @@ public class DefaultClientsApi implements ClientsApi {
 
     @GET
     @Override
-    public Stream<BaseClientRepresentation> getClients() {
-        return clientService.getClients(realm);
+    public Stream<BaseClientRepresentation> getClients(@QueryParam("q") String query) {
+        try {
+            var searchOptions = query != null ? new ClientService.ClientSearchOptions(query) : null;
+            return clientService.getClients(realm, null, searchOptions, null);
+        } catch (ClientQueryException e) {
+            throw new BadRequestException(e.getMessage());
+        }
     }
 
     @POST

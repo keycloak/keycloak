@@ -9,6 +9,7 @@ import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
@@ -28,14 +29,18 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Extension(name = KeycloakOpenAPI.Profiles.ADMIN, value = "")
 public interface ClientsApi {
 
+    default Stream<BaseClientRepresentation> getClients() {
+        return getClients((String) null);
+    }
+
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    @Operation(summary = "Get all clients", description = "Returns a list of all clients in the realm")
+    @Operation(summary = "Get all clients", description = "Returns a list of clients in the realm, optionally filtered by a query expression")
     @APIResponses(value = {
         @APIResponse(responseCode = "200", content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = BaseClientRepresentation.class)))
     })
-    Stream<BaseClientRepresentation> getClients();
+    Stream<BaseClientRepresentation> getClients(@QueryParam("q") String query);
 
     @POST
     @Consumes(MediaType.APPLICATION_JSON)

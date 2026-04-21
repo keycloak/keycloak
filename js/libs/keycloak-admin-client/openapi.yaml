@@ -162,10 +162,16 @@ paths:
   /admin/api/{realmName}/clients/{version}:
     get:
       summary: Get all clients
-      description: Returns a list of all clients in the realm
+      description: "Returns a list of clients in the realm, optionally filtered by\
+        \ a query expression"
       operationId: getClients
       tags:
       - Clients (v2)
+      parameters:
+      - name: q
+        in: query
+        schema:
+          type: string
       responses:
         "200":
           description: OK
