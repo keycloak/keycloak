@@ -31,6 +31,7 @@ import org.keycloak.http.simple.SimpleHttpResponse;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
+import org.apache.http.Header;
 
 public class AuthZenClient {
 
@@ -47,20 +48,32 @@ public class AuthZenClient {
     }
 
     public EvaluationResult evaluate(AuthZen.EvaluationRequest request) throws IOException {
-        return evaluate((Object) request);
+        return evaluate((Object) request, null);
+    }
+
+    public EvaluationResult evaluate(AuthZen.EvaluationRequest request, Map<String, String> headers) throws IOException {
+        return evaluate((Object) request, headers);
     }
 
     public EvaluationResult evaluate(JsonNode request) throws IOException {
-        return evaluate((Object) request);
+        return evaluate(request, null);
     }
 
-    private EvaluationResult evaluate(Object req) throws IOException {
+    private EvaluationResult evaluate(Object req, Map<String, String> headers) throws IOException {
         String url = realmUrl + "/authzen/access/v1/evaluation";
 
-        try (SimpleHttpResponse response = req(simpleHttp.doPost(url).json(req))) {
+        SimpleHttpRequest postReq = simpleHttp.doPost(url).json(req);
+        if (headers != null) {
+            headers.forEach(postReq::header);
+        }
+        try (SimpleHttpResponse response = req(postReq)) {
             int status = response.getStatus();
             AuthZen.EvaluationResponse body = response.asJson(AuthZen.EvaluationResponse.class);
-            return new EvaluationResult(status, body);
+            Map<String, String> responseHeaders = new HashMap<>();
+            for (Header h : response.getAllHeaders()) {
+                responseHeaders.putIfAbsent(h.getName(), h.getValue());
+            }
+            return new EvaluationResult(status, body, responseHeaders);
         }
     }
 
@@ -100,10 +113,14 @@ public class AuthZenClient {
     ) {
     }
 
-    public record EvaluationResult(int statusCode, AuthZen.EvaluationResponse response) {
+    public record EvaluationResult(int statusCode, AuthZen.EvaluationResponse response, Map<String, String> headers) {
 
         public boolean decision() {
             return response.decision();
+        }
+
+        public String header(String name) {
+            return headers != null ? headers.get(name) : null;
         }
     }
 

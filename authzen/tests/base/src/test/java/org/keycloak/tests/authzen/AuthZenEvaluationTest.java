@@ -58,10 +58,12 @@ import org.junit.jupiter.api.Test;
 
 import static org.keycloak.authorization.authzen.AuthZen.SubjectType.CLIENT;
 import static org.keycloak.authorization.authzen.AuthZen.SubjectType.USER;
+import static org.keycloak.authorization.authzen.AuthZenRequestIdFilter.X_REQUEST_ID;
 import static org.keycloak.authorization.authzen.AuthZenWellKnownProvider.accessEvaluationEndpoint;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @KeycloakIntegrationTest(config = AuthZenServerConfig.class)
@@ -115,6 +117,7 @@ public class AuthZenEvaluationTest {
 
         assertEquals(200, result.statusCode());
         assertTrue(result.decision());
+        assertNull(result.header(X_REQUEST_ID));
     }
 
     @Test
@@ -128,6 +131,7 @@ public class AuthZenEvaluationTest {
 
         assertEquals(200, result.statusCode());
         assertFalse(result.decision());
+        assertNull(result.header(X_REQUEST_ID));
     }
 
     @Test
@@ -587,6 +591,62 @@ public class AuthZenEvaluationTest {
               .entity(new StringEntity("{invalid json"))
               .asResponse()) {
             assertEquals(400, response.getStatus());
+        }
+    }
+
+    @Test
+    public void testXRequestIdEchoedInResponse() throws IOException {
+        String requestId = "test-request-id-12345";
+        EvaluationResult result = authzenClient("admin-user", "password")
+              .evaluate(
+                    AuthZenClient.evaluationRequest()
+                          .subject(USER, ADMIN_USER)
+                          .action("read")
+                          .resource("endpoint", "/admin")
+                          .build(),
+                    Map.of(X_REQUEST_ID, requestId)
+              );
+
+        assertEquals(200, result.statusCode());
+        assertTrue(result.decision());
+        assertEquals(requestId, result.header(X_REQUEST_ID));
+    }
+
+    @Test
+    public void testXRequestIdEchoedOnUnauthorizedResponse() throws IOException {
+        String requestId = "unauth-request-id";
+
+        EvaluationResult result = new AuthZenClient(simpleHttp, realmUrl())
+              .evaluate(
+                    AuthZenClient.evaluationRequest()
+                          .subject(USER, ADMIN_USER)
+                          .action("read")
+                          .resource("endpoint", "/admin")
+                          .build(),
+                    Map.of(X_REQUEST_ID, requestId)
+              );
+
+        assertEquals(401, result.statusCode());
+        assertFalse(result.decision());
+        assertEquals(requestId, result.header(X_REQUEST_ID));
+    }
+
+    @Test
+    public void testXRequestIdEchoedOnBadRequestResponse() throws IOException {
+        String requestId = "bad-request-id";
+        String url = accessEvaluationEndpoint(realmUrl());
+        AccessTokenResponse tokenResponse = oauth
+              .client(client.getClientId(), client.getSecret())
+              .doPasswordGrantRequest("admin-user", "password");
+
+        try (SimpleHttpResponse response = simpleHttp.doPost(url)
+              .auth(tokenResponse.getAccessToken())
+              .header("Content-Type", "application/json")
+              .header(X_REQUEST_ID, requestId)
+              .entity(new StringEntity("{invalid json"))
+              .asResponse()) {
+            assertEquals(400, response.getStatus());
+            assertEquals(requestId, response.getFirstHeader(X_REQUEST_ID));
         }
     }
 
