@@ -1,0 +1,263 @@
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/links.adoc" as links>
+
+<@tmpl.guide title="Monitoring CloudNativePG" summary="Observing standby health and replication status in a CloudNativePG cluster" tileVisible="false" >
+
+These instructions are intended for use with the setup described in the <@links.ha id="single-cluster-concepts"/> {section}.
+Use it together with the other building blocks outlined in the <@links.ha id="single-cluster-building-blocks"/> {section}.
+
+include::../partials/blueprint-disclaimer.adoc[]
+
+== When to use this procedure
+
+In a CloudNativePG cluster deployed in high availability mode, standby instances are critical for both data durability and failover readiness.
+Monitoring standby health helps detect replication issues early and ensures a safe promotion candidate is available when needed.
+
+== Prerequisites
+
+* A CloudNativePG cluster deployed according to steps described in the <@links.ha id="single-cluster-deploy-cnpg" /> {section}.
+
+To see the status on the command line:
+
+* The `kubectl` command-line utility.
+* The `kubectl cnpg` plugin.
+Please follow the https://cloudnative-pg.io/docs/${properties["cnpg.major-minor-version"]}/kubectl-plugin[CloudNativePG documentation] for installation steps.
+
+To monitor the status via metrics and dashboards:
+
+* https://prometheus.io/[Prometheus] and https://grafana.com/[Grafana] installed on the {kubernetes} cluster.
+
+== Review the status through command-line
+
+. Review the status of the CloudNativePG cluster using the `kubectl cnpg status` command.
++
+.Command:
+[source,bash]
+----
+kubectl cnpg status -n cnpg-keycloak cnpg-keycloak
+----
++
+.Output:
+[options="nowrap"]
+[source,bash]
+----
+Cluster Summary
+Name                     cnpg-keycloak/cnpg-keycloak
+System ID:               *******************
+PostgreSQL Image:        ghcr.io/cloudnative-pg/postgresql:18.3-system-trixie
+Primary instance:        cnpg-keycloak-1
+Primary promotion time:  2026-04-13 16:02:05 +0000 UTC (1h10m27s)
+Status:                  Cluster in healthy state <1>
+Instances:               3
+Ready instances:         3
+Size:                    128M
+Current Write LSN:       0/7000000 (Timeline: 1 - WAL File: 000000010000000000000007)
+
+Continuous Backup status (Barman Cloud Plugin) <2>
+ObjectStore / Server name:      cnpg-store/cnpg-keycloak
+First Point of Recoverability:  2026-04-13 16:07:54 UTC
+Last Successful Backup:         2026-04-13 17:00:04 UTC
+Last Failed Backup:             -
+Working WAL archiving:          OK
+WALs waiting to be archived:    0
+Last Archived WAL:              000000010000000000000006   @   2026-04-13T16:08:15.350313Z
+Last Failed WAL:                -
+
+Streaming Replication status <3>
+Replication Slots Enabled
+Name             Sent LSN   Write LSN  Flush LSN  Replay LSN  Write Lag        Flush Lag       Replay Lag      State      Sync State  Sync Priority  Replication Slot
+----             --------   ---------  ---------  ----------  ---------        ---------       ----------      -----      ----------  -------------  ----------------
+cnpg-keycloak-2  0/7000000  0/7000000  0/7000000  0/7000000   00:00:00.000438  00:00:00.00148  00:00:00.00148  streaming  quorum      1              active
+cnpg-keycloak-3  0/7000000  0/7000000  0/7000000  0/7000000   00:00:00.000722  00:00:00.0017   00:00:00.0017   streaming  quorum      1              active
+
+Instances status <4>
+Name             Current LSN  Replication role  Status  QoS         Manager Version  Node
+----             -----------  ----------------  ------  ---         ---------------  ----
+cnpg-keycloak-1  0/7000000    Primary           OK      BestEffort  1.29.0           ⋯
+cnpg-keycloak-2  0/7000000    Standby (sync)    OK      BestEffort  1.29.0           ⋯
+cnpg-keycloak-3  0/7000000    Standby (sync)    OK      BestEffort  1.29.0           ⋯
+
+Plugins status
+Name                            Version  Status  Reported Operator Capabilities
+----                            -------  ------  ------------------------------
+barman-cloud.cloudnative-pg.io  0.11.0   N/A     Reconciler Hooks, Lifecycle Service
+----
+
+<1> The cluster status should read `Cluster in healthy state`.
+Any other value indicates a problem.
+<2> This section shows the status of the cluster's backups, if configured.
+<3> This section shows the status of the cluster's standby instances and their replication health. It is based on the https://www.postgresql.org/docs/current/monitoring-stats.html#MONITORING-PG-STAT-REPLICATION-VIEW[`pg_stat_replication`] system view available on the primary node.
+<4> General status of individual instances and their roles in the cluster.
+
+Verify standby health in the _Streaming Replication status_ table.
+
+The following fields help determine whether standbys are healthy and replication is working:
+
+[%autowidth]
+|===
+| Field | Expected value | What it means
+
+| `Current LSN`, `Sent LSN`, `Write LSN`, `Flush LSN`, `Replay LSN`
+| A two-part hexadecimal value like `0/7000000`, indicating a log file number and a byte-offset within that log file.
+| A Log Sequence Number (LSN) is a pointer to a position in the Write-Ahead Log (WAL) stream.
+
+The `Current LSN` shows the latest position recorded by a particular instance.
+
+The `Sent`, `Write`, `Flush`, and `Replay` LSNs show the latest WAL position for a particular standby that has been sent by the primary, written to the file system, safely written to a storage device (flushed from cache), and replayed by the database, respectively. Differences between these values indicate lag between individual phases in terms of bytes.
+
+The difference between a standby's `Replay LSN` and the primary's `Current LSN` indicates the overall replication lag for that standby in terms of bytes.
+
+| `Write Lag`, `Flush Lag`, `Replay Lag`
+| `00:00:00.00NNNN`
+| Replication lag metrics. A non-zero value that grows over time indicates the standby is falling behind.
+
+| `State`
+| `streaming`
+a| Current WAL sender state. Possible values are:
+
+* `startup`: This WAL sender is starting up.
+* `catchup`: This WAL sender's connected standby is catching up with the primary.
+* `streaming`: This WAL sender is streaming changes after its connected standby server has caught up with the primary.
+* `backup`: This WAL sender is sending a backup.
+* `stopping`: This WAL sender is stopping.
+
+| `Sync State`
+| `quorum` or `sync`
+a| Synchronous state of this standby server. Possible values are:
+
+* `async`: This standby server is asynchronous.
+* `potential`: This standby server is now asynchronous, but can potentially become synchronous if one of current synchronous servers fails.
+* `sync`: This standby server is synchronous.
+* `quorum`: This standby server is considered as a candidate for quorum standbys.
+
+| `Replication Slot`
+| `active`
+| Confirms the replication slot is in use and the standby is consuming WAL.
+|===
+
+== Review the status via Prometheus and Grafana
+
+=== Enable monitoring of the CloudNativePG cluster
+
+. Enable metric collection by creating a PodMonitor resource:
++
+.Command:
+[source,bash,indent=0]
+----
+kubectl -n cnpg-keycloak apply -f - <<EOF
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: cnpg-keycloak-pod-monitor
+spec:
+  selector:
+    matchLabels:
+      cnpg.io/cluster: cnpg-keycloak # <1>
+  podMetricsEndpoints:
+  - port: metrics
+EOF
+----
+<1> Name of the CloudNativePG cluster to be monitored.
++
+. Add the https://raw.githubusercontent.com/cloudnative-pg/grafana-dashboards/refs/heads/main/charts/cluster/grafana-dashboard.json[grafana-dashboard.json] from the https://github.com/cloudnative-pg/grafana-dashboards[cloudnative-pg/grafana-dashboards GitHub project] to your Grafana instance.
++
+. Optionally, customize the monitoring according to the https://cloudnative-pg.io/docs/${properties["cnpg.major-minor-version"]}/monitoring#monitoring-instances[Monitoring section of the CloudNativePG documentation].
+
+=== Observe replication status
+
+Use the following metrics to observe standby health:
+
+[%autowidth]
+|===
+| Metric | Description
+
+| `cnpg_pg_replication_lag`
+| Replication lag in seconds per standby instance. A value near `0` is healthy.
+
+| `cnpg_pg_replication_in_recovery`
+| Returns `1` if the instance is a standby (in recovery mode), `0` for the primary.
+
+| `cnpg_pg_replication_is_wal_receiver_up`
+| Returns `1` if the WAL receiver is running on the standby. A value of `0` indicates a broken replication stream.
+
+| `cnpg_pg_stat_replication_write_lag`
+| Time elapsed between WAL flushed on the primary and received by the standby.
+
+| `cnpg_pg_stat_replication_replay_lag`
+| Time elapsed between WAL flushed on the primary and replayed on the standby.
+|===
+
+=== Observe backups
+
+If backups are enabled, use the https://cloudnative-pg.io/plugin-barman-cloud/docs/observability/[metrics exposed by the Barman Cloud Plugin] to monitor their status:
+
+[%autowidth]
+|===
+| Metric | Description
+
+| `barman_cloud_cloudnative_pg_io_last_available_backup_timestamp`
+| UNIX timestamp of the most recent _successful backup_.
+
+| `barman_cloud_cloudnative_pg_io_last_failed_backup_timestamp`
+| UNIX timestamp of the most recent _failed backup_ attempt.
+
+| `barman_cloud_cloudnative_pg_io_first_recoverability_point`
+| UNIX timestamp of the earliest point in time available for cluster recovery.
+
+|===
+
+
+== What a healthy standby looks like
+
+A healthy standby setup typically shows:
+
+* Cluster status is `Cluster in healthy state`.
+* All standby instances show `State: streaming`.
+* `Write Lag`, `Flush Lag`, and `Replay Lag` are low and stable, with no continuous upward trend.
+* At least one standby has `Sync State: quorum` (for quorum-based synchronous replication as described in the <@links.ha id="single-cluster-deploy-cnpg" /> {section}).
+* `cnpg_pg_replication_in_recovery` is `1` for all standby instances in Prometheus.
+
+== Signs of an unhealthy standby
+
+The following are indicators that a standby requires attention:
+
+* The cluster `Status` is not `Cluster in healthy state`.
+* A standby `State` is not `streaming`.
+* Any of `Write Lag`, `Flush Lag`, or `Replay Lag` is continuously increasing over time.
+* No standby is in `quorum` or `sync` state when synchronous replication is expected.
+* A standby is missing from the _Streaming Replication status_ table.
+* `cnpg_pg_replication_in_recovery` is `0` for any instance that is expected to be a standby in Prometheus.
+
+If one or more standby instances show these symptoms, investigate using the following commands:
+
+* Verify that the standby pods are running:
++
+.Command:
+[source,bash]
+----
+kubectl -n cnpg-keycloak get pods -L role
+----
+
+* Check recent events in the namespace for scheduling, image pull, storage, or networking problems:
++
+.Command:
+[source,bash]
+----
+kubectl -n cnpg-keycloak get events --sort-by=.lastTimestamp | tail -n 30
+----
+
+* Inspect the CloudNativePG cluster resource for conditions and related messages:
++
+.Command:
+[source,bash]
+----
+kubectl -n cnpg-keycloak describe cluster cnpg-keycloak
+----
+
+For possible troubleshooting scenarios refer to the link:++https://cloudnative-pg.io/docs/${properties["cnpg.major-minor-version"]}/troubleshooting++[CloudNativePG documentation].
+
+== Next steps
+
+* To perform a manual switchover after confirming standby readiness, see the <@links.ha id="single-cluster-operate-cnpg-switchover" /> {section}.
+
+</@tmpl.guide>

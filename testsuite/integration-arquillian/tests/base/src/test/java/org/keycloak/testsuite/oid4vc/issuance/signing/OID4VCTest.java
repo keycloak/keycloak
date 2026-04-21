@@ -70,7 +70,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oid4vc.OID4VCLoginProtocolFactory;
-import org.keycloak.protocol.oid4vc.issuance.OID4VCAuthorizationDetailsProcessor;
+import org.keycloak.protocol.oid4vc.issuance.OID4VCAuthorizationDetailsParser;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint;
 import org.keycloak.protocol.oid4vc.issuance.TimeProvider;
 import org.keycloak.protocol.oid4vc.issuance.VCIssuanceContext;
@@ -109,8 +109,8 @@ import org.keycloak.util.JsonSerialization;
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.apache.http.HttpStatus;
 import org.jboss.logging.Logger;
-import org.junit.Assert;
 import org.junit.BeforeClass;
+import org.junit.jupiter.api.Assertions;
 
 import static org.keycloak.OID4VCConstants.CLAIM_NAME_SUBJECT_ID;
 import static org.keycloak.OID4VCConstants.OPENID_CREDENTIAL;
@@ -122,6 +122,7 @@ import static org.keycloak.testsuite.oid4vc.issuance.signing.OID4VCSdJwtIssuingE
  * Super class for all OID4VC tests. Provides convenience methods to ease the testing.
  */
 @EnableFeature(value = Profile.Feature.OID4VC_VCI, skipRestart = true)
+@EnableFeature(value = Profile.Feature.OID4VC_VCI_PREAUTH_CODE, skipRestart = true)
 public abstract class OID4VCTest extends AbstractTestRealmKeycloakTest {
 
 	private static final Logger LOGGER = Logger.getLogger(OID4VCTest.class);
@@ -144,11 +145,13 @@ public abstract class OID4VCTest extends AbstractTestRealmKeycloakTest {
 	protected static final String jwtTypeCredentialScopeName = "jwt-credential";
 	protected static final String jwtTypeCredentialConfigurationIdName = "jwt-credential-config-id";
 
+    protected static final String minimalJwtTypeCredentialScopeName = "vc-with-minimal-config";
+
 	protected static final String TEST_CREDENTIAL_MAPPERS_FILE = "/oid4vc/test-credential-mappers.json";
 
     @BeforeClass
     public static void beforeClass() {
-        AuthorizationDetailsParser.registerParser(OPENID_CREDENTIAL, new OID4VCAuthorizationDetailsProcessor.OID4VCAuthorizationDetailsParser());
+        AuthorizationDetailsParser.registerParser(OPENID_CREDENTIAL, new OID4VCAuthorizationDetailsParser());
     }
 
     @Override
@@ -644,11 +647,11 @@ public abstract class OID4VCTest extends AbstractTestRealmKeycloakTest {
 					.header(HttpHeaders.COOKIE, null);
 
 			try (Response response = nonceInvocationBuilder.post(null)) {
-				Assert.assertEquals(HttpStatus.SC_OK, response.getStatus());
-				Assert.assertTrue(response.getMediaType().toString().startsWith(MediaType.APPLICATION_JSON_TYPE.toString()));
+				Assertions.assertEquals(HttpStatus.SC_OK, response.getStatus());
+				Assertions.assertTrue(response.getMediaType().toString().startsWith(MediaType.APPLICATION_JSON_TYPE.toString()));
 				nonceResponseString = parseResponse(response);
-				Assert.assertNotNull(nonceResponseString);
-				Assert.assertEquals("no-store", response.getHeaderString(HttpHeaders.CACHE_CONTROL));
+				Assertions.assertNotNull(nonceResponseString);
+				Assertions.assertEquals("no-store", response.getHeaderString(HttpHeaders.CACHE_CONTROL));
 			}
 		}
 		NonceResponse nonceResponse;

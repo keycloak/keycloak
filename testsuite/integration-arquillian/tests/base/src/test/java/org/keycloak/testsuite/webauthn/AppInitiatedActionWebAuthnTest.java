@@ -36,7 +36,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.UserSessionRepresentation;
 import org.keycloak.testsuite.actions.AbstractAppInitiatedActionTest;
-import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.IgnoreBrowserDriver;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginUsernameOnlyPage;
@@ -66,8 +66,8 @@ import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
  * @author <a href="mailto:mabartos@redhat.com">Martin Bartos</a>
@@ -201,7 +201,7 @@ public class AppInitiatedActionWebAuthnTest extends AbstractAppInitiatedActionTe
 
         doAIA();
 
-        final Supplier<Integer> getCredentialCount = () -> Optional.ofNullable(ApiUtil.findUserByUsernameId(testRealm(), DEFAULT_USERNAME))
+        final Supplier<Integer> getCredentialCount = () -> Optional.ofNullable(AdminApiUtil.findUserByUsernameId(testRealm(), DEFAULT_USERNAME))
                 .map(UserResource::credentials)
                 .map(List::size)
                 .orElse(0);

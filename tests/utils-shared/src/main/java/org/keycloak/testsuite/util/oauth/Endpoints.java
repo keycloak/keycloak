@@ -95,7 +95,7 @@ public class Endpoints {
     }
 
     public String getOid4vcCredentialOfferUri() {
-        return asString(getBase().path(RealmsResource.class).path("{realm}/protocol/oid4vc/credential-offer-uri"));
+        return asString(getBase().path(RealmsResource.class).path("{realm}/protocol/oid4vc/create-credential-offer"));
     }
 
     UriBuilder getBase() {

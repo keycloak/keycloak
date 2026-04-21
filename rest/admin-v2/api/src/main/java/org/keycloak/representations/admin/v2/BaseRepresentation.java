@@ -7,12 +7,11 @@ import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
-import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 @JsonInclude(JsonInclude.Include.NON_ABSENT)
-@Schema
 public class BaseRepresentation {
 
+    // Hard requirement for all representations to support nullifying field in PATCH merge
     @JsonIgnore
     protected Map<String, Object> additionalFields = new LinkedHashMap<String, Object>();
 
@@ -29,5 +28,4 @@ public class BaseRepresentation {
     public void setAdditionalFields(Map<String, Object> additionalFields) {
         this.additionalFields = additionalFields;
     }
-
 }

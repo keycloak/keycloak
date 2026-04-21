@@ -85,7 +85,7 @@ public class SecureParContentsExecutor implements ClientPolicyExecutorProvider<C
 
         String key = requestUri.substring(ParEndpoint.REQUEST_URI_PREFIX_LENGTH);
         SingleUseObjectProvider singleUseStore = session.singleUseObjects();
-        Map<String, String> requestParametersFromPAR = singleUseStore.get(key);
+        Map<String, String> requestParametersFromPAR = singleUseStore.get(ParEndpoint.CACHE_KEY_PREFIX + key);
         if (requestParametersFromPAR == null) {
             throw new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, "PAR not found. not issued or used multiple times.");
         }
@@ -100,7 +100,7 @@ public class SecureParContentsExecutor implements ClientPolicyExecutorProvider<C
 
         for (String queryParamName : requestParametersFromQuery.keySet()) {
             if (!requestParametersNameFromPAR.contains(queryParamName) && !OIDCLoginProtocol.REQUEST_URI_PARAM.equals(queryParamName)) {
-                singleUseStore.remove(key);
+                singleUseStore.remove(ParEndpoint.CACHE_KEY_PREFIX + key);
                 throw new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, "PAR request did not include necessary parameters");
             }
         }

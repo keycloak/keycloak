@@ -23,7 +23,7 @@ import org.junit.Test;
 
 import static org.keycloak.testsuite.AbstractAdminTest.loadJson;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class AccessTokenResponseTest extends AbstractKeycloakTest {
 
@@ -39,7 +39,7 @@ public class AccessTokenResponseTest extends AbstractKeycloakTest {
          * will fail and the clientID will always be "sample-public-client
          * @see AccessTokenTest#testAuthorizationNegotiateHeaderIgnored()
          */
-        oauth.clientId("test-app");
+        oauth.client("test-app", "password");
     }
 
     @Override

@@ -29,6 +29,7 @@ import org.keycloak.dom.saml.v2.assertion.NameIDType;
 import org.keycloak.dom.saml.v2.assertion.StatementAbstractType;
 import org.keycloak.dom.saml.v2.protocol.ResponseType;
 import org.keycloak.protocol.saml.SamlPrincipalType;
+import org.keycloak.protocol.saml.SamlProtocol;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.FederatedIdentityRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
@@ -40,7 +41,7 @@ import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
 import org.keycloak.saml.processing.core.saml.v2.constants.X500SAMLProfileConstants;
 import org.keycloak.saml.processing.core.saml.v2.util.AssertionUtil;
 import org.keycloak.testsuite.AbstractKeycloakTest;
-import org.keycloak.testsuite.Assert;
+import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.PageUtils;
 import org.keycloak.testsuite.pages.UpdateAccountInformationPage;
@@ -52,6 +53,7 @@ import org.keycloak.testsuite.utils.io.IOUtil;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.support.ui.ExpectedCondition;
@@ -69,8 +71,9 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  *
@@ -88,6 +91,9 @@ public class KcSamlIdPInitiatedSsoTest extends AbstractKeycloakTest {
 
     @Page
     protected UpdateAccountInformationPage updateAccountInformationPage;
+
+    @Page
+    protected ErrorPage errorPage;
 
     private String urlRealmConsumer2;
     private String urlRealmConsumer;
@@ -130,6 +136,7 @@ public class KcSamlIdPInitiatedSsoTest extends AbstractKeycloakTest {
         IdentityProviderRepresentation rep = idp.toRepresentation();
         rep.getConfig().put(SAMLIdentityProviderConfig.NAME_ID_POLICY_FORMAT, JBossSAMLURIConstants.NAMEID_FORMAT_PERSISTENT.get());
         rep.getConfig().put(SAMLIdentityProviderConfig.PRINCIPAL_TYPE, SamlPrincipalType.SUBJECT.name());
+        rep.setEnabled(true);
         idp.update(rep);
     }
 
@@ -162,7 +169,7 @@ public class KcSamlIdPInitiatedSsoTest extends AbstractKeycloakTest {
 
         waitForPage("update account information", false);
 
-        Assert.assertTrue(updateAccountInformationPage.isCurrent());
+        Assertions.assertTrue(updateAccountInformationPage.isCurrent());
         assertThat("We must be on consumer realm right now",
                 driver.getCurrentUrl(), containsString("/auth/realms/" + REALM_CONS_NAME + "/"));
 
@@ -172,14 +179,44 @@ public class KcSamlIdPInitiatedSsoTest extends AbstractKeycloakTest {
         UsersResource consumerUsers = adminClient.realm(REALM_CONS_NAME).users();
 
         int userCount = consumerUsers.count();
-        Assert.assertTrue("There must be at least one user", userCount > 0);
+        Assertions.assertTrue(userCount > 0, "There must be at least one user");
 
         List<UserRepresentation> users = consumerUsers.search("", 0, userCount);
 
         boolean isUserFound = users.stream().anyMatch(user -> user.getUsername().equals(CONSUMER_CHOSEN_USERNAME) && user.getEmail().equals("test@localhost"));
-        Assert.assertTrue("There must be user " + CONSUMER_CHOSEN_USERNAME + " in realm " + REALM_CONS_NAME, isUserFound);
+        Assertions.assertTrue(isUserFound, "There must be user " + CONSUMER_CHOSEN_USERNAME + " in realm " + REALM_CONS_NAME);
 
         assertThat(driver.findElement(By.tagName("a")).getAttribute("id"), containsString("account"));
+    }
+
+    @Test
+    public void testDisabledBroker() throws Exception {
+        driver.navigate().to(getSamlIdpInitiatedUrl(REALM_PROV_NAME, "samlbroker"));
+
+        waitForPage("sign in to", true);
+
+        assertThat("Driver should be on the provider realm page right now",
+                driver.getCurrentUrl(), containsString("/auth/realms/" + REALM_PROV_NAME + "/"));
+
+        log.debug("Logging in");
+        accountLoginPage.login(PROVIDER_REALM_USER_NAME, PROVIDER_REALM_USER_PASSWORD);
+
+        waitForPage("update account information", false);
+
+        Assertions.assertTrue(updateAccountInformationPage.isCurrent());
+        assertThat("We must be on consumer realm right now",
+                driver.getCurrentUrl(), containsString("/auth/realms/" + REALM_CONS_NAME + "/"));
+
+        log.debug("Updating info on updateAccount page");
+        updateAccountInformationPage.updateAccountInformation(CONSUMER_CHOSEN_USERNAME, "test@localhost", "Firstname", "Lastname");
+
+        IdentityProviderResource idp = adminClient.realm(REALM_CONS_NAME).identityProviders().get("saml-leaf");
+        IdentityProviderRepresentation rep = idp.toRepresentation();
+        rep.setEnabled(false);
+        idp.update(rep);
+        driver.navigate().to(getSamlIdpInitiatedUrl(REALM_PROV_NAME, "samlbroker"));
+        errorPage.assertCurrent();
+        assertThat(errorPage.getError(), is("Page not found"));
     }
 
     private String getSamlIdpInitiatedUrl(String realmName, String samlIdpInitiatedSsoUrlName) {
@@ -525,5 +562,42 @@ public class KcSamlIdPInitiatedSsoTest extends AbstractKeycloakTest {
           .collect(Collectors.toSet());
 
         assertThat(clientIds, containsInAnyOrder(expectedClientIds));
+    }
+
+    @Test
+    public void testDisabledClient() {
+        driver.navigate().to(getSamlIdpInitiatedUrl(REALM_PROV_NAME, "samlbroker"));
+
+        waitForPage("sign in to", true);
+
+        assertThat("Driver should be on the provider realm page right now",
+                driver.getCurrentUrl(), containsString("/auth/realms/" + REALM_PROV_NAME + "/"));
+
+        log.debug("Logging in");
+        accountLoginPage.login(PROVIDER_REALM_USER_NAME, PROVIDER_REALM_USER_PASSWORD);
+
+        waitForPage("update account information", false);
+
+        Assertions.assertTrue(updateAccountInformationPage.isCurrent());
+        assertThat("We must be on consumer realm right now",
+                driver.getCurrentUrl(), containsString("/auth/realms/" + REALM_CONS_NAME + "/"));
+
+        log.debug("Updating info on updateAccount page");
+        updateAccountInformationPage.updateAccountInformation(CONSUMER_CHOSEN_USERNAME, "test@localhost", "Firstname", "Lastname");
+
+        ClientRepresentation client = adminClient.realm(REALM_CONS_NAME).clients().findAll().stream()
+                .filter(c -> c.getAttributes().getOrDefault(SamlProtocol.SAML_IDP_INITIATED_SSO_URL_NAME, "").equals("sales"))
+                .findAny()
+                .orElse(null);
+        assertNotNull(client);
+        client.setEnabled(false);
+        getCleanup(REALM_CONS_NAME).addCleanup(() -> {
+            client.setEnabled(true);
+            adminClient.realm(REALM_CONS_NAME).clients().get(client.getId()).update(client);
+        });
+        adminClient.realm(REALM_CONS_NAME).clients().get(client.getId()).update(client);
+        driver.navigate().to(getSamlIdpInitiatedUrl(REALM_PROV_NAME, "samlbroker"));
+        errorPage.assertCurrent();
+        assertThat(errorPage.getError(), is("Client not found."));
     }
 }

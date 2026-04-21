@@ -41,7 +41,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractAdminTest;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.IgnoreBrowserDriver;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
@@ -213,7 +213,7 @@ public class WebAuthnIdlessTest extends AbstractWebAuthnVirtualTest {
         assertThat(getVirtualAuthManager().getCurrent().getAuthenticator().getCredentials().stream().filter(cred ->
                 cred.isResidentCredential() == isPasswordless).collect(Collectors.toList()).size(), is(0));
 
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.assertCurrent();
         loginPage.login(username, getPassword(username));
 
@@ -271,7 +271,7 @@ public class WebAuthnIdlessTest extends AbstractWebAuthnVirtualTest {
 
     protected void checkTryAnotherWay() {
 
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.assertCurrent();
         loginPage.assertTryAnotherWayLinkAvailability(true);
         loginPage.clickTryAnotherWayLink();
@@ -298,7 +298,7 @@ public class WebAuthnIdlessTest extends AbstractWebAuthnVirtualTest {
 
         String userId = getUserRepresentation(username).getId();
 
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.assertCurrent();
         loginPage.assertTryAnotherWayLinkAvailability(true);
         loginPage.clickTryAnotherWayLink();
@@ -329,7 +329,7 @@ public class WebAuthnIdlessTest extends AbstractWebAuthnVirtualTest {
 
         String userId = getUserRepresentation(username).getId();
 
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.assertCurrent();
         loginPage.assertTryAnotherWayLinkAvailability(true);
         loginPage.clickTryAnotherWayLink();
@@ -360,7 +360,7 @@ public class WebAuthnIdlessTest extends AbstractWebAuthnVirtualTest {
 
         String userId = getUserRepresentation(username).getId();
 
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.assertCurrent();
         if (tryAnotherMethod) {
             loginPage.assertTryAnotherWayLinkAvailability(true);
@@ -455,7 +455,7 @@ public class WebAuthnIdlessTest extends AbstractWebAuthnVirtualTest {
     protected UserRepresentation getUserRepresentation(String username)
     {
         if (username != null)
-            return ApiUtil.findUserByUsername(testRealm(), username);
+            return AdminApiUtil.findUserByUsername(testRealm(), username);
         else
             return null;
     }

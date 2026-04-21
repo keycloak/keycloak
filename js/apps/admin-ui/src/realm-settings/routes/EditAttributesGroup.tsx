@@ -15,9 +15,9 @@ const AttributesGroupDetails = lazy(
 export const EditAttributesGroupRoute: AppRouteObject = {
   path: "/:realm/realm-settings/user-profile/attributesGroup/edit/:name",
   element: <AttributesGroupDetails />,
-  breadcrumb: (t) => t("editGroupText"),
   handle: {
     access: "view-realm",
+    breadcrumb: (t) => t("editGroupText"),
   },
 };
 

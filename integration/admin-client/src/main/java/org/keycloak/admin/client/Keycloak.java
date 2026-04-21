@@ -16,6 +16,8 @@
  */
 package org.keycloak.admin.client;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.net.URI;
 import java.util.Iterator;
 import java.util.ServiceLoader;
@@ -239,5 +241,22 @@ public class Keycloak implements AutoCloseable {
      */
     public boolean isClosed() {
         return closed;
+    }
+
+    /**
+     * Method to return org.keycloak.admin.client.wrapper.Clients instance. Note that this class
+     * may not be available in some cases and hence reflection is used to instantiate that class
+     *
+     * @param realmName realm name
+     * @param clientsClass Typically class org.keycloak.admin.client.wrapper.Clients . This argument is present just to avoid casting.
+     * @return Instance of org.keycloak.admin.client.wrapper.Clients
+     */
+    public <C> C clients(String realmName, Class<C> clientsClass) {
+        try {
+            Constructor<C> constructor = clientsClass.getDeclaredConstructor(ResteasyClientProvider.class, WebTarget.class, String.class);
+            return constructor.newInstance(CLIENT_PROVIDER, target, realmName);
+        } catch (NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

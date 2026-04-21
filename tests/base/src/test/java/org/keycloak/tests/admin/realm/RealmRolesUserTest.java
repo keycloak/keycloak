@@ -12,6 +12,7 @@ import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.UserConfigBuilder;
+import org.keycloak.tests.suites.DatabaseTest;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -61,6 +62,7 @@ public class RealmRolesUserTest extends AbstractRealmRolesTest {
      * KEYCLOAK-2035 Verifies that Role Membership is ok after user removal
      */
     @Test
+    @DatabaseTest
     public void roleMembershipAfterUserRemoval() {
         RoleResource role = managedRealm.admin().roles().get("role-with-users");
 
@@ -85,6 +87,7 @@ public class RealmRolesUserTest extends AbstractRealmRolesTest {
     }
 
     @Test
+    @DatabaseTest
     public void testRoleMembershipWithPagination() {
         RoleResource role = managedRealm.admin().roles().get("role-with-users");
 

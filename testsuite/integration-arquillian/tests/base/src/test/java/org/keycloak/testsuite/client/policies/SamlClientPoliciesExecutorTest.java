@@ -59,8 +59,8 @@ import org.keycloak.testsuite.util.SamlClientBuilder;
 import org.apache.http.util.EntityUtils;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
-import org.junit.Assert;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 /**
  *
@@ -276,7 +276,7 @@ public class SamlClientPoliciesExecutorTest extends AbstractTestRealmKeycloakTes
         String kid = keysMetadata.getActive().get(Constants.DEFAULT_SIGNATURE_ALGORITHM);
         KeyMetadataRepresentation keyMetadata = keysMetadata.getKeys().stream()
                 .filter(k -> kid.equals(k.getKid())).findAny().orElse(null);
-        Assert.assertNotNull(keyMetadata);
+        Assertions.assertNotNull(keyMetadata);
 
         new SamlClientBuilder()
                 .authnRequest(RealmsResource.protocolUrl(UriBuilder.fromUri(getAuthServerRoot())).build(TEST_REALM_NAME, SamlProtocol.LOGIN_PROTOCOL),
@@ -301,7 +301,7 @@ public class SamlClientPoliciesExecutorTest extends AbstractTestRealmKeycloakTes
                         client.getClientId(), assertionUrl, SamlClient.Binding.POST)
                 .build()
                 .executeAndTransform(response -> {
-                    Assert.assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatusLine().getStatusCode());
+                    Assertions.assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatusLine().getStatusCode());
                     MatcherAssert.assertThat(EntityUtils.toString(response.getEntity(), StandardCharsets.UTF_8),
                             Matchers.containsString("Invalid Request"));
                     return null;
@@ -331,7 +331,7 @@ public class SamlClientPoliciesExecutorTest extends AbstractTestRealmKeycloakTes
                         client.getClientId(), client.getAdminUrl(), SamlClient.Binding.REDIRECT)
                 .build()
                 .executeAndTransform(response -> {
-                    Assert.assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatusLine().getStatusCode());
+                    Assertions.assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatusLine().getStatusCode());
                     MatcherAssert.assertThat(EntityUtils.toString(response.getEntity(), StandardCharsets.UTF_8),
                             Matchers.containsString("Invalid Request"));
                     return null;
@@ -343,12 +343,12 @@ public class SamlClientPoliciesExecutorTest extends AbstractTestRealmKeycloakTes
             if (errorPrefix == null) {
                 if (response != null) {
                     // create returns 201, update returns null
-                    Assert.assertEquals(Response.Status.CREATED.getStatusCode(), response.getStatus());
+                    Assertions.assertEquals(Response.Status.CREATED.getStatusCode(), response.getStatus());
                 }
             } else {
-                Assert.assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+                Assertions.assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
                 OAuth2ErrorRepresentation error = response.readEntity(OAuth2ErrorRepresentation.class);
-                Assert.assertEquals(OAuthErrorException.INVALID_CLIENT_METADATA, error.getError());
+                Assertions.assertEquals(OAuthErrorException.INVALID_CLIENT_METADATA, error.getError());
                 MatcherAssert.assertThat(error.getErrorDescription(), Matchers.startsWith(errorPrefix));
             }
         }

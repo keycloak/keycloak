@@ -60,16 +60,16 @@ import org.keycloak.util.JsonSerialization;
 import org.hamcrest.Matchers;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.AfterClass;
-import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
  *
@@ -173,7 +173,7 @@ public class UIRealmResourceTest extends AbstractTestRealmKeycloakTest {
 
             updateRealmExt(toUIRealmRepresentation(rep, upConfig));
             AdminEventRepresentation adminEvent = assertAdminEvents.assertEvent(TEST_REALM_NAME, OperationType.UPDATE, Matchers.nullValue(String.class), ResourceType.REALM);
-            Assert.assertNotNull(adminEvent.getRepresentation());
+            Assertions.assertNotNull(adminEvent.getRepresentation());
             adminEvent = assertAdminEvents.assertEvent(TEST_REALM_NAME, OperationType.UPDATE, "ui-ext", ResourceType.USER_PROFILE);
             assertEquals(upConfig, toUpConfig(adminEvent.getRepresentation()));
 
@@ -230,12 +230,12 @@ public class UIRealmResourceTest extends AbstractTestRealmKeycloakTest {
         loginPage.form().register();
         registerPage.assertCurrent();
 
-        Assert.assertTrue("Email is missing on the registration page.", registerPage.isEmailPresent());
+        Assertions.assertTrue(registerPage.isEmailPresent(), "Email is missing on the registration page.");
 
         registerPage.registerWithEmailAsUsername("Tom", "Brady", "tbrady@email.com", "password", "password");
 
-        Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assert.assertNotNull(oauth.parseLoginResponse().getCode());
+        Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
 
         String userId = events.expectRegister("tbrady@email.com", "tbrady@email.com").assertEvent().getUserId();
         UserRepresentation user = testRealm().users().get(userId).toRepresentation();
@@ -260,13 +260,13 @@ public class UIRealmResourceTest extends AbstractTestRealmKeycloakTest {
         loginPage.form().register();
         registerPage.assertCurrent();
 
-        Assert.assertTrue("Username is missing on the registration page.", registerPage.isUsernamePresent());
-        Assert.assertFalse("Email should not be present on the registration page.", registerPage.isEmailPresent());
+        Assertions.assertTrue(registerPage.isUsernamePresent(), "Username is missing on the registration page.");
+        Assertions.assertFalse(registerPage.isEmailPresent(), "Email should not be present on the registration page.");
 
         registerPage.register("Alice", "Wood",  null, "awood", "password", "password");
 
-        Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assert.assertNotNull(oauth.parseLoginResponse().getCode());
+        Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
 
         String userId = events.expectRegister("awood", null).removeDetail("email").assertEvent().getUserId();
         UserRepresentation user = testRealm().users().get(userId).toRepresentation();

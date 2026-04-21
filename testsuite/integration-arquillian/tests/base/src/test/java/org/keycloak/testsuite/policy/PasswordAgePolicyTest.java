@@ -29,7 +29,7 @@ import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractAuthTest;
-import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.auth.page.AuthRealm;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
@@ -42,9 +42,9 @@ import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 import static org.keycloak.representations.idm.CredentialRepresentation.PASSWORD;
 import static org.keycloak.testsuite.admin.ApiUtil.getCreatedId;
@@ -318,12 +318,12 @@ public class PasswordAgePolicyTest extends AbstractAuthTest {
 
             registerPage.register("firstName", "lastName", "registration-user@localhost", "registration-user", "password", "password");
 
-            Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+            Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
             AuthorizationEndpointResponse response = oauth.parseLoginResponse();
-            Assert.assertNull(response.getError());
-            Assert.assertNotNull(response.getCode());
+            Assertions.assertNull(response.getError());
+            Assertions.assertNotNull(response.getCode());
 
-            ApiUtil.findUserByUsernameId(testRealmResource(), "registration-user").remove();
+            AdminApiUtil.findUserByUsernameId(testRealmResource(), "registration-user").remove();
         }
     }
 }

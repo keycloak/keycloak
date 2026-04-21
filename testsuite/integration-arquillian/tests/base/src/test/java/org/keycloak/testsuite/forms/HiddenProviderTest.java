@@ -23,8 +23,8 @@ import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.util.IdentityProviderBuilder;
 
 import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Assert;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 public class HiddenProviderTest extends AbstractTestRealmKeycloakTest {
 
@@ -53,13 +53,13 @@ public class HiddenProviderTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     public void testVisibleProviderButton() {
-        loginPage.open();
-        Assert.assertNotNull(loginPage.findSocialButton("visible-oidc"));
+        oauth.openLoginForm();
+        Assertions.assertNotNull(loginPage.findSocialButton("visible-oidc"));
     }
     
     @Test(expected=org.openqa.selenium.NoSuchElementException.class)
     public void testHiddenProviderButton() {
-        loginPage.open();
-        Assert.assertNull(loginPage.findSocialButton("hidden-oidc"));
+        oauth.openLoginForm();
+        Assertions.assertNull(loginPage.findSocialButton("hidden-oidc"));
     } 
 }

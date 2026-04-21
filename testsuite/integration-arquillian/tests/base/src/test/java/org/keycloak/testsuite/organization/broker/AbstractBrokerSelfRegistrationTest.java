@@ -39,7 +39,7 @@ import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.OrganizationDomainRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.testsuite.Assert;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.organization.admin.AbstractOrganizationTest;
 import org.keycloak.testsuite.pages.AppPage;
@@ -48,17 +48,18 @@ import org.keycloak.testsuite.util.UserBuilder;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 import static org.keycloak.models.OrganizationDomainModel.ANY_DOMAIN;
 import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
 
 import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganizationTest {
 
@@ -77,7 +78,7 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
 
         openIdentityFirstLoginPage(bc.getUserEmail(), true, null, false,false);
         // check if the username is automatically filled
-        Assert.assertEquals(bc.getUserEmail(), loginPage.getUsername());
+        Assertions.assertEquals(bc.getUserEmail(), loginPage.getUsername());
     }
 
     @Test
@@ -113,12 +114,12 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
 
         openIdentityFirstLoginPage("user@neworg.org", false, null, false, false);
 
-        Assert.assertTrue(loginPage.isUsernameInputPresent());
+        Assertions.assertTrue(loginPage.isUsernameInputPresent());
         // registration link shown
-        Assert.assertTrue(loginPage.isRegisterLinkPresent());
+        Assertions.assertTrue(loginPage.isRegisterLinkPresent());
         // no need for password because the user does not exist
-        Assert.assertFalse(loginPage.isPasswordInputPresent());
-        Assert.assertFalse(loginPage.isSocialButtonPresent(idpRep.getAlias()));
+        Assertions.assertFalse(loginPage.isPasswordInputPresent());
+        Assertions.assertFalse(loginPage.isSocialButtonPresent(idpRep.getAlias()));
     }
 
     @Test
@@ -131,13 +132,13 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
 
         openIdentityFirstLoginPage("user@neworg.org", false, null, false, false);
 
-        Assert.assertEquals("Your email domain matches the neworg organization but you don't have an account yet.", loginPage.getError());
-        Assert.assertTrue(loginPage.isUsernameInputPresent());
-        Assert.assertFalse(loginPage.isPasswordInputPresent());
-        Assert.assertTrue(loginPage.isSocialButtonPresent(idpRep.getAlias()));
+        Assertions.assertEquals("Your email domain matches an organization but you don't have an account yet.", loginPage.getError());
+        Assertions.assertTrue(loginPage.isUsernameInputPresent());
+        Assertions.assertFalse(loginPage.isPasswordInputPresent());
+        Assertions.assertTrue(loginPage.isSocialButtonPresent(idpRep.getAlias()));
 
         // no self-registration link because the user should register through the broker
-        Assert.assertFalse(loginPage.isRegisterLinkPresent());
+        Assertions.assertFalse(loginPage.isRegisterLinkPresent());
     }
 
     @Test
@@ -150,11 +151,11 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
 
         openIdentityFirstLoginPage("user@neworg.org", false, null, false, false);
 
-        Assert.assertTrue(driver.getPageSource().contains("Your email domain matches the neworg organization but you don't have an account yet."));
-        Assert.assertTrue(loginPage.isUsernameInputPresent());
-        Assert.assertFalse(loginPage.isPasswordInputPresent());
+        Assertions.assertTrue(driver.getPageSource().contains("Your email domain matches an organization but you don't have an account yet."));
+        Assertions.assertTrue(loginPage.isUsernameInputPresent());
+        Assertions.assertFalse(loginPage.isPasswordInputPresent());
         // self-registration link shown because there is no public broker and user can choose to register
-        Assert.assertTrue(loginPage.isRegisterLinkPresent());
+        Assertions.assertTrue(loginPage.isRegisterLinkPresent());
     }
 
     @Test
@@ -181,16 +182,16 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
 
         openIdentityFirstLoginPage("external@user.org", false, idp.getAlias(), false, false);
 
-        Assert.assertTrue(loginPage.isPasswordInputPresent());
-        Assert.assertFalse(loginPage.isSocialButtonPresent(bc.getIDPAlias()));
-        Assert.assertTrue(loginPage.isSocialButtonPresent(idp.getAlias()));
+        Assertions.assertTrue(loginPage.isPasswordInputPresent());
+        Assertions.assertFalse(loginPage.isSocialButtonPresent(bc.getIDPAlias()));
+        Assertions.assertTrue(loginPage.isSocialButtonPresent(idp.getAlias()));
 
         idp.setHideOnLogin(true);
         testRealm().identityProviders().get(idp.getAlias()).update(idp);
         driver.navigate().refresh();
-        Assert.assertTrue(loginPage.isPasswordInputPresent());
-        Assert.assertFalse(loginPage.isSocialButtonPresent(bc.getIDPAlias()));
-        Assert.assertFalse(loginPage.isSocialButtonPresent(idp.getAlias()));
+        Assertions.assertTrue(loginPage.isPasswordInputPresent());
+        Assertions.assertFalse(loginPage.isSocialButtonPresent(bc.getIDPAlias()));
+        Assertions.assertFalse(loginPage.isSocialButtonPresent(idp.getAlias()));
     }
 
     @Test
@@ -209,7 +210,7 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
 
         openIdentityFirstLoginPage("user@neworg.org", false, null, false, false);
 
-        Assert.assertTrue(loginPage.isPasswordInputPresent());
+        Assertions.assertTrue(loginPage.isPasswordInputPresent());
     }
 
     @Test
@@ -220,8 +221,8 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
 
         // check if the login page is shown
         loginPage.assertAttemptedUsernameAvailability(true);
-        Assert.assertTrue(loginPage.isPasswordInputPresent());
-        Assert.assertFalse(loginPage.isSocialButtonPresent(bc.getIDPAlias()));
+        Assertions.assertTrue(loginPage.isPasswordInputPresent());
+        Assertions.assertFalse(loginPage.isSocialButtonPresent(bc.getIDPAlias()));
 
         IdentityProviderRepresentation idp = bc.setUpIdentityProvider();
         idp.setAlias("realm-level-idp");
@@ -231,9 +232,9 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
         driver.navigate().refresh();
 
         loginPage.assertAttemptedUsernameAvailability(true);
-        Assert.assertTrue(loginPage.isPasswordInputPresent());
-        Assert.assertTrue(loginPage.isSocialButtonPresent(idp.getAlias()));
-        Assert.assertFalse(loginPage.isSocialButtonPresent(bc.getIDPAlias()));
+        Assertions.assertTrue(loginPage.isPasswordInputPresent());
+        Assertions.assertTrue(loginPage.isSocialButtonPresent(idp.getAlias()));
+        Assertions.assertFalse(loginPage.isSocialButtonPresent(bc.getIDPAlias()));
     }
 
     @Test
@@ -422,7 +423,7 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
         updateAccountInformationPage.assertCurrent();
         // should enforce a email with the same domain as the organization
         updateAccountInformationPage.updateAccountInformation(email, email, "f", "l");
-        Assert.assertTrue(driver.getPageSource().contains("Email domain does not match any domain from the organization"));
+        Assertions.assertTrue(driver.getPageSource().contains("Email domain does not match any domain from the organization"));
 
         updateAccountInformationPage.updateAccountInformation(email, orgBEmail, "f", "l");
         // user is asked to link accounts
@@ -459,7 +460,7 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
         assertTrue(driver.getPageSource().contains("Sign in to provider"));
 
         oauth.scope("organization");
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
         loginPage.loginUsername(orgAEmail);
         selectOrganizationPage.assertCurrent();
@@ -508,6 +509,15 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
 
     @Test
     public void testShowOnlyBrokersLinkedUserInPasswordPage() {
+        assertOrganizationBrokerVisibilityWhenUserIsLinkedElsewhere(false);
+    }
+
+    @Test
+    public void testShowOrganizationBrokerLinkedElsewhereInPasswordPage() {
+        assertOrganizationBrokerVisibilityWhenUserIsLinkedElsewhere(true);
+    }
+
+    private void assertOrganizationBrokerVisibilityWhenUserIsLinkedElsewhere(boolean showWhenLinkedElsewhere) {
         OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
         OrganizationIdentityProviderResource broker = organization.identityProviders().get(bc.getIDPAlias());
         IdentityProviderRepresentation brokerRep = broker.toRepresentation();
@@ -519,16 +529,17 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
         secondIdp.setInternalId(null);
         secondIdp.setHideOnLogin(false);
         secondIdp.getConfig().remove(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE);
+        secondIdp.getConfig().put(OrganizationModel.SHOW_IDP_ON_LOGIN_WHEN_LINKED_ELSEWHERE, Boolean.toString(showWhenLinkedElsewhere));
         testRealm().identityProviders().create(secondIdp).close();
         getCleanup().addCleanup(testRealm().identityProviders().get("second-idp")::remove);
         organization.identityProviders().addIdentityProvider(secondIdp.getAlias()).close();
 
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
         String email = bc.getUserEmail();
         loginPage.loginUsername(email);
         // second-idp shown because user is not linked yet to any broker
-        Assert.assertTrue(loginPage.isSocialButtonPresent(secondIdp.getAlias()));
+        Assertions.assertTrue(loginPage.isSocialButtonPresent(secondIdp.getAlias()));
         brokerRep.getConfig().put(IdentityProviderRedirectMode.EMAIL_MATCH.getKey(), Boolean.TRUE.toString());
         testRealm().identityProviders().get(brokerRep.getAlias()).update(brokerRep);
 
@@ -545,15 +556,98 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
         IdentityProviderRepresentation finalBrokerRep = brokerRep;
         getCleanup().addCleanup(() -> organization.identityProviders().addIdentityProvider(finalBrokerRep.getInternalId()).close());
 
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
         log.debug("Logging in");
         loginPage.loginUsername(email);
-        Assert.assertFalse(loginPage.isUsernameInputPresent());
-        Assert.assertTrue(loginPage.isPasswordInputPresent());
-        Assert.assertTrue(loginPage.isSocialButtonPresent(bc.getIDPAlias()));
-        // second-idp not shown because user is linked to another broker
-        Assert.assertFalse(loginPage.isSocialButtonPresent(secondIdp.getAlias()));
+
+        Assertions.assertFalse(loginPage.isUsernameInputPresent());
+        Assertions.assertTrue(loginPage.isPasswordInputPresent());
+        Assertions.assertTrue(loginPage.isSocialButtonPresent(bc.getIDPAlias()));
+        Assertions.assertEquals(showWhenLinkedElsewhere, loginPage.isSocialButtonPresent(secondIdp.getAlias()));
+    }
+
+    @Test
+    public void testShowWhenLinkedElsewhereEdgeCases() {
+        OrganizationResource orgA = testRealm().organizations().get(createOrganization("org-a").getId());
+        OrganizationResource orgB = testRealm().organizations().get(createOrganization("org-b").getId());
+        IdentityProviderRepresentation orgABroker = orgA.identityProviders().getIdentityProviders().get(0);
+        orgABroker.setHideOnLogin(false);
+        orgABroker.getConfig().put(OrganizationModel.SHOW_IDP_ON_LOGIN_WHEN_LINKED_ELSEWHERE, Boolean.TRUE.toString());
+        orgABroker.getConfig().put(IdentityProviderRedirectMode.EMAIL_MATCH.getKey(), Boolean.FALSE.toString());
+        testRealm().identityProviders().get(orgABroker.getAlias()).update(orgABroker);
+        IdentityProviderRepresentation orgBBroker = orgB.identityProviders().getIdentityProviders().get(0);
+        orgBBroker.setHideOnLogin(false);
+        orgBBroker.getConfig().put(OrganizationModel.SHOW_IDP_ON_LOGIN_WHEN_LINKED_ELSEWHERE, Boolean.TRUE.toString());
+        orgBBroker.getConfig().put(IdentityProviderRedirectMode.EMAIL_MATCH.getKey(), Boolean.FALSE.toString());
+        testRealm().identityProviders().get(orgBBroker.getAlias()).update(orgBBroker);
+        String hideUnknownAlias = "hide-unknown-idp-" + KeycloakModelUtils.generateId();
+        IdentityProviderRepresentation hideUnknownIdp = bc.setUpIdentityProvider();
+        hideUnknownIdp.setAlias(hideUnknownAlias);
+        hideUnknownIdp.setInternalId(null);
+        hideUnknownIdp.setHideOnLogin(false);
+        hideUnknownIdp.getConfig().remove(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE);
+        hideUnknownIdp.getConfig().put(OrganizationModel.SHOW_IDP_ON_LOGIN_WHEN_LINKED_ELSEWHERE, Boolean.TRUE.toString());
+        hideUnknownIdp.getConfig().put(OrganizationModel.HIDE_IDP_ON_LOGIN_WHEN_ORGANIZATION_UNKNOWN, Boolean.TRUE.toString());
+        testRealm().identityProviders().create(hideUnknownIdp).close();
+        getCleanup().addCleanup(testRealm().identityProviders().get(hideUnknownAlias)::remove);
+        orgA.identityProviders().addIdentityProvider(hideUnknownAlias).close();
+        String username = "user-" + KeycloakModelUtils.generateId();
+        String unresolvedEmail = username + "@user.org";
+        UserRepresentation account = UserBuilder.create().username(username).email(unresolvedEmail).password("updated-password").enabled(true).build();
+        try (Response response = testRealm().users().create(account)) {
+            account.setId(ApiUtil.getCreatedId(response));
+        }
+        UserRepresentation finalAccount = account;
+        getCleanup().addCleanup(() -> testRealm().users().get(finalAccount.getId()).remove());
+        FederatedIdentityRepresentation identity = new FederatedIdentityRepresentation();
+        identity.setIdentityProvider(orgABroker.getAlias());
+        identity.setUserId(KeycloakModelUtils.generateId());
+        identity.setUserName(username);
+        try (Response response = testRealm().users().get(account.getId()).addFederatedIdentity(orgABroker.getAlias(), identity)) {
+            assertEquals(Status.NO_CONTENT.getStatusCode(), response.getStatus());
+        }
+        orgA.members().addMember(account.getId()).close();
+        orgB.members().addMember(account.getId()).close();
+        realmsResouce().realm(bc.consumerRealmName()).users().get(account.getId()).logout();
+        realmsResouce().realm(bc.providerRealmName()).logoutAll();
+        oauth.client("broker-app");
+        loginPage.open(bc.consumerRealmName());
+        loginPage.loginUsername(username);
+        Assertions.assertTrue(loginPage.isSocialButtonPresent(orgABroker.getAlias()));
+        Assertions.assertTrue(loginPage.isSocialButtonPresent(orgBBroker.getAlias()));
+        Assertions.assertFalse(loginPage.isSocialButtonPresent(hideUnknownAlias));
+        String resolvedEmail = username + "@org-a.org";
+        UserRepresentation updatedAccount = testRealm().users().get(account.getId()).toRepresentation();
+        updatedAccount.setEmail(resolvedEmail);
+        testRealm().users().get(account.getId()).update(updatedAccount);
+        String disabledAlias = "disabled-idp-" + KeycloakModelUtils.generateId();
+        IdentityProviderRepresentation disabledIdp = bc.setUpIdentityProvider();
+        disabledIdp.setAlias(disabledAlias);
+        disabledIdp.setInternalId(null);
+        disabledIdp.setEnabled(false);
+        disabledIdp.setHideOnLogin(false);
+        disabledIdp.getConfig().remove(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE);
+        disabledIdp.getConfig().put(OrganizationModel.SHOW_IDP_ON_LOGIN_WHEN_LINKED_ELSEWHERE, Boolean.TRUE.toString());
+        testRealm().identityProviders().create(disabledIdp).close();
+        getCleanup().addCleanup(testRealm().identityProviders().get(disabledAlias)::remove);
+        orgA.identityProviders().addIdentityProvider(disabledAlias).close();
+        String linkOnlyAlias = "link-only-idp-" + KeycloakModelUtils.generateId();
+        IdentityProviderRepresentation linkOnlyIdp = bc.setUpIdentityProvider();
+        linkOnlyIdp.setAlias(linkOnlyAlias);
+        linkOnlyIdp.setInternalId(null);
+        linkOnlyIdp.setLinkOnly(true);
+        linkOnlyIdp.setHideOnLogin(false);
+        linkOnlyIdp.getConfig().remove(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE);
+        linkOnlyIdp.getConfig().put(OrganizationModel.SHOW_IDP_ON_LOGIN_WHEN_LINKED_ELSEWHERE, Boolean.TRUE.toString());
+        testRealm().identityProviders().create(linkOnlyIdp).close();
+        getCleanup().addCleanup(testRealm().identityProviders().get(linkOnlyAlias)::remove);
+        orgA.identityProviders().addIdentityProvider(linkOnlyAlias).close();
+        loginPage.open(bc.consumerRealmName());
+        loginPage.loginUsername(resolvedEmail);
+        Assertions.assertTrue(loginPage.isSocialButtonPresent(hideUnknownAlias));
+        Assertions.assertFalse(loginPage.isSocialButtonPresent(disabledAlias));
+        Assertions.assertFalse(loginPage.isSocialButtonPresent(linkOnlyAlias));
     }
 
     @Test
@@ -567,21 +661,21 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
 
         // set the user's credentials
         UserRepresentation user = testRealm().users().searchByEmail(bc.getUserEmail(), true).get(0);
-        ApiUtil.resetUserPassword(realmsResouce().realm(bc.consumerRealmName()).users().get(user.getId()), "updated-password", false);
+        AdminApiUtil.resetUserPassword(realmsResouce().realm(bc.consumerRealmName()).users().get(user.getId()), "updated-password", false);
 
         // logout to force the user to authenticate again
         UserRepresentation account = getUserRepresentation(bc.getUserEmail());
         realmsResouce().realm(bc.consumerRealmName()).users().get(account.getId()).logout();
         realmsResouce().realm(bc.providerRealmName()).logoutAll();
 
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
         loginPage.loginUsername(bc.getUserEmail());
 
         // after providing username/email, user can pick to authenticate by password or by org IDP
-        Assert.assertFalse(loginPage.isUsernameInputPresent());
-        Assert.assertTrue(loginPage.isPasswordInputPresent());
-        Assert.assertTrue(loginPage.isSocialButtonPresent(bc.getIDPAlias()));
+        Assertions.assertFalse(loginPage.isUsernameInputPresent());
+        Assertions.assertTrue(loginPage.isPasswordInputPresent());
+        Assertions.assertTrue(loginPage.isSocialButtonPresent(bc.getIDPAlias()));
 
         // log in by password
         loginPage.login("updated-password");
@@ -722,6 +816,31 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
     }
 
     @Test
+    public void testRedirectToIdentityProviderAssociatedWithOrganizationDomainUsingAnyMatchCaseInsensitive() {
+        String userEmail = bc.getUserEmail().toUpperCase();
+        OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
+        IdentityProviderRepresentation idp = organization.identityProviders().get(bc.getIDPAlias()).toRepresentation();
+        idp.getConfig().put(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE, ANY_DOMAIN);
+        testRealm().identityProviders().get(bc.getIDPAlias()).update(idp);
+
+        idp.setAlias("second-idp");
+        idp.setInternalId(null);
+        testRealm().identityProviders().create(idp).close();
+        getCleanup().addCleanup(testRealm().identityProviders().get("second-idp")::remove);
+        organization.identityProviders().addIdentityProvider(idp.getAlias()).close();
+
+        openIdentityFirstLoginPage(userEmail, true, idp.getAlias(), false, false);
+
+        loginOrgIdp(userEmail, userEmail, true, true);
+
+        assertIsMember(userEmail, organization);
+        UserRepresentation user = testRealm().users().search(userEmail).get(0);
+        List<FederatedIdentityRepresentation> federatedIdentities = testRealm().users().get(user.getId()).getFederatedIdentity();
+        assertEquals(1, federatedIdentities.size());
+        assertEquals(bc.getIDPAlias(), federatedIdentities.get(0).getIdentityProvider());
+    }
+
+    @Test
     public void testDoNotRedirectToIdentityProviderAssociatedWithOrganizationDomain() {
         OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
         IdentityProviderRepresentation idp = organization.identityProviders().get(bc.getIDPAlias()).toRepresentation();
@@ -732,18 +851,18 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
 
         openIdentityFirstLoginPage(bc.getUserEmail(), false, idp.getAlias(), false, false);
 
-        Assert.assertFalse(loginPage.isPasswordInputPresent());
-        Assert.assertTrue(driver.getPageSource().contains("Your email domain matches the " + organizationName + " organization but you don't have an account yet."));
-        Assert.assertTrue(loginPage.isSocialButtonPresent(bc.getIDPAlias()));
+        Assertions.assertFalse(loginPage.isPasswordInputPresent());
+        Assertions.assertTrue(driver.getPageSource().contains("Your email domain matches an organization but you don't have an account yet."));
+        Assertions.assertTrue(loginPage.isSocialButtonPresent(bc.getIDPAlias()));
 
         idp.getConfig().put(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE, ANY_DOMAIN);
         testRealm().identityProviders().get(bc.getIDPAlias()).update(idp);
 
         openIdentityFirstLoginPage(bc.getUserEmail(), false, idp.getAlias(), false, false);
 
-        Assert.assertFalse(loginPage.isPasswordInputPresent());
-        Assert.assertTrue(driver.getPageSource().contains("Your email domain matches the " + organizationName + " organization but you don't have an account yet."));
-        Assert.assertTrue(loginPage.isSocialButtonPresent(bc.getIDPAlias()));
+        Assertions.assertFalse(loginPage.isPasswordInputPresent());
+        Assertions.assertTrue(driver.getPageSource().contains("Your email domain matches an organization but you don't have an account yet."));
+        Assertions.assertTrue(loginPage.isSocialButtonPresent(bc.getIDPAlias()));
     }
 
     @Test
@@ -762,18 +881,18 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
         org1Broker.getConfig().remove(IdentityProviderRedirectMode.EMAIL_MATCH.getKey());
         testRealm().identityProviders().get(org1Broker.getAlias()).update(org1Broker);
 
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
         loginPage.loginUsername("user@org-0.org");
-        Assert.assertTrue(driver.getPageSource().contains("Your email domain matches the " + org0Name + " organization but you don't have an account yet."));
-        Assert.assertTrue(loginPage.isSocialButtonPresent(org0Broker.getAlias()));
-        Assert.assertFalse(loginPage.isSocialButtonPresent(org1Broker.getAlias()));
+        Assertions.assertTrue(driver.getPageSource().contains("Your email domain matches an organization but you don't have an account yet."));
+        Assertions.assertTrue(loginPage.isSocialButtonPresent(org0Broker.getAlias()));
+        Assertions.assertFalse(loginPage.isSocialButtonPresent(org1Broker.getAlias()));
 
         loginPage.open(bc.consumerRealmName());
         loginPage.loginUsername("user@org-1.org");
-        Assert.assertTrue(driver.getPageSource().contains("Your email domain matches the " + org1Name + " organization but you don't have an account yet."));
-        Assert.assertTrue(loginPage.isSocialButtonPresent(org1Broker.getAlias()));
-        Assert.assertFalse(loginPage.isSocialButtonPresent(org0Broker.getAlias()));
+        Assertions.assertTrue(driver.getPageSource().contains("Your email domain matches an organization but you don't have an account yet."));
+        Assertions.assertTrue(loginPage.isSocialButtonPresent(org1Broker.getAlias()));
+        Assertions.assertFalse(loginPage.isSocialButtonPresent(org0Broker.getAlias()));
     }
 
     @Test
@@ -787,35 +906,35 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
         testRealm().identityProviders().get(org0Broker.getAlias()).update(org0Broker);
 
         // do not show if organization cannot be resolved
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
         loginPage.loginUsername("user@unknowndomain.org");
-        Assert.assertFalse(loginPage.isSocialButtonPresent(org0Broker.getAlias()));
+        Assertions.assertFalse(loginPage.isSocialButtonPresent(org0Broker.getAlias()));
 
         // show if organization can be resolved
         loginPage.open(bc.consumerRealmName());
         loginPage.loginUsername("user@org-0.org");
-        Assert.assertTrue(loginPage.isSocialButtonPresent(org0Broker.getAlias()));
+        Assertions.assertTrue(loginPage.isSocialButtonPresent(org0Broker.getAlias()));
 
         // show if the config is set to false
         org0Broker.getConfig().put(OrganizationModel.HIDE_IDP_ON_LOGIN_WHEN_ORGANIZATION_UNKNOWN, Boolean.FALSE.toString());
         testRealm().identityProviders().get(org0Broker.getAlias()).update(org0Broker);
         loginPage.open(bc.consumerRealmName());
         loginPage.loginUsername("user@unknowndomain.org");
-        Assert.assertTrue(loginPage.isSocialButtonPresent(org0Broker.getAlias()));
+        Assertions.assertTrue(loginPage.isSocialButtonPresent(org0Broker.getAlias()));
         loginPage.open(bc.consumerRealmName());
         loginPage.loginUsername("user@org-0.org");
-        Assert.assertTrue(loginPage.isSocialButtonPresent(org0Broker.getAlias()));
+        Assertions.assertTrue(loginPage.isSocialButtonPresent(org0Broker.getAlias()));
 
         // hide if hide on login is set to true
         org0Broker.setHideOnLogin(true);
         testRealm().identityProviders().get(org0Broker.getAlias()).update(org0Broker);
         loginPage.open(bc.consumerRealmName());
         loginPage.loginUsername("user@unknowndomain.org");
-        Assert.assertFalse(loginPage.isSocialButtonPresent(org0Broker.getAlias()));
+        Assertions.assertFalse(loginPage.isSocialButtonPresent(org0Broker.getAlias()));
         loginPage.open(bc.consumerRealmName());
         loginPage.loginUsername("user@org-0.org");
-        Assert.assertFalse(loginPage.isSocialButtonPresent(org0Broker.getAlias()));
+        Assertions.assertFalse(loginPage.isSocialButtonPresent(org0Broker.getAlias()));
     }
 
     @Test
@@ -877,7 +996,7 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
 
         loginOrgIdp(email, email, true, false);
 
-        Assert.assertTrue(driver.getPageSource().contains("Email domain does not match any domain from the organization"));
+        Assertions.assertTrue(driver.getPageSource().contains("Email domain does not match any domain from the organization"));
         assertIsNotMember(email, organization);
 
         updateAccountInformationPage.updateAccountInformation("external@other.org", "external@other.org", "Firstname", "Lastname");
@@ -1036,7 +1155,7 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
         testRealm().identityProviders().create(realmIdp).close();
         getCleanup().addCleanup(testRealm().identityProviders().get("second-idp")::remove);
 
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
         loginPage.loginUsername("test@" + org1.getDomains().iterator().next().getName());
         // only org idp

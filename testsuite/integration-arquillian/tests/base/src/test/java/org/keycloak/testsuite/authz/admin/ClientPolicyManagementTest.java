@@ -35,13 +35,13 @@ import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.RealmBuilder;
 
-import org.junit.Assert;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -156,24 +156,24 @@ public class ClientPolicyManagementTest extends AbstractPolicyManagementTest {
 
         representation = authorization.policies().client().findById(representation.getId()).toRepresentation();
 
-        Assert.assertEquals(2, representation.getClients().size());
-        Assert.assertFalse(representation.getClients().contains(client.getId()));
+        Assertions.assertEquals(2, representation.getClients().size());
+        Assertions.assertFalse(representation.getClients().contains(client.getId()));
 
         client = clients.findByClientId("Client E").get(0);
         clients.get(client.getId()).remove();
 
         representation = authorization.policies().client().findById(representation.getId()).toRepresentation();
 
-        Assert.assertEquals(1, representation.getClients().size());
-        Assert.assertFalse(representation.getClients().contains(client.getId()));
+        Assertions.assertEquals(1, representation.getClients().size());
+        Assertions.assertFalse(representation.getClients().contains(client.getId()));
 
         client = clients.findByClientId("Client F").get(0);
         clients.get(client.getId()).remove();
 
         representation = authorization.policies().client().findById(representation.getId()).toRepresentation();
 
-        Assert.assertEquals(0, representation.getClients().size());
-        Assert.assertFalse(representation.getClients().contains(client.getId()));
+        Assertions.assertEquals(0, representation.getClients().size());
+        Assertions.assertFalse(representation.getClients().contains(client.getId()));
     }
 
     @Test

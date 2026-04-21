@@ -14,8 +14,8 @@
     <packaging>pom</packaging>
 
     <modules>
-        <module>rest</module>
         <module>api</module>
+        <module>services</module>
         <module>tests</module>
     </modules>
 </project>

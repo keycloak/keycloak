@@ -45,6 +45,15 @@ public final class OID4VCIConstants {
     public static final RoleRepresentation CREDENTIAL_OFFER_CREATE =
             new RoleRepresentation("credential-offer-create", "Allow credential offer creation", false);
 
+    // Required-action provider ID
+    public static final String VERIFIABLE_CREDENTIAL_OFFER_PROVIDER_ID = "verifiable_credential_offer";
+    public static final String CREDENTIAL_CONFIGURATION_ID = "credential_configuration_id";
+    public static final String CLIENT_ID = "client_id";
+    public static final String PRE_AUTHORIZED = "pre_authorized";
+
+    // authenticationSession note with the stored handle for the credential-offer
+    public static final String CREDENTIAL_OFFER_NONCE = "credential_offer_nonce";
+
     private OID4VCIConstants() {
     }
 }

@@ -29,10 +29,12 @@ public class KeycloakIntegrationTestExtension implements BeforeAllCallback, Befo
         getLogHandler(context).beforeEachStarting(context);
         getRegistry(context).beforeEach(context.getRequiredTestInstance(), context.getRequiredTestMethod());
         getLogHandler(context).beforeEachCompleted(context);
+        DebugHelper.testStarted(context.getRequiredTestClass(), context.getRequiredTestMethod());
     }
 
     @Override
     public void afterEach(ExtensionContext context) {
+        DebugHelper.testFinished();
         getLogHandler(context).afterEachStarting(context);
         getRegistry(context).afterEach();
         getLogHandler(context).afterEachCompleted(context);

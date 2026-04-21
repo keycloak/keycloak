@@ -46,6 +46,7 @@ import org.infinispan.commons.time.TimeService;
 import org.jboss.resteasy.reactive.NoCache;
 
 /**
+ * For an implementation see TestingResourceProvider
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
  */
 
@@ -451,6 +452,17 @@ public interface TestingResource {
     @GET
     @Path("/pre-authorized-code")
     String getPreAuthorizedCode(@QueryParam("realm") final String realmName, @QueryParam("userSessionId") final String userSessionId, @QueryParam("clientId") final String clientId, @QueryParam("expiration") final int expiration);
+
+    /**
+     * Return the tx-code that is associated with a pre-authorized_code grant credential offer.
+     *
+     * @param preAuthCode   The pre-authorized_code
+     * @return tx_code or null
+     */
+    @GET
+    @Path("/tx-code")
+    @NoCache
+    String getTxCode(@QueryParam("pre-auth-code") final String preAuthCode);
 
     /**
      * Adds the following types to the email event listener included list.

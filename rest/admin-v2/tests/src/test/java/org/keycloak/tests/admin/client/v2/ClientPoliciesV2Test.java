@@ -26,7 +26,7 @@ import java.util.function.Consumer;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 
-import org.keycloak.admin.api.AdminApi;
+import org.keycloak.admin.api.PatchTypeNames;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthenticator;
 import org.keycloak.authentication.authenticators.client.JWTClientAuthenticator;
@@ -41,6 +41,7 @@ import org.keycloak.representations.idm.ClientPolicyExecutorRepresentation;
 import org.keycloak.representations.idm.ClientPolicyRepresentation;
 import org.keycloak.representations.idm.ClientProfileRepresentation;
 import org.keycloak.representations.idm.ClientProfilesRepresentation;
+import org.keycloak.services.client.ClientServiceHelper;
 import org.keycloak.services.clientpolicy.ClientPolicyEvent;
 import org.keycloak.services.clientpolicy.condition.AnyClientConditionFactory;
 import org.keycloak.services.clientpolicy.condition.ClientUpdaterContextConditionFactory;
@@ -54,11 +55,10 @@ import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testframework.server.KeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
-import org.keycloak.testsuite.client.policies.TrackEventsClientPolicyExecutor;
+import org.keycloak.tests.providers.client.policies.TrackEventsClientPolicyExecutor;
 import org.keycloak.util.JsonSerialization;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import org.apache.http.HttpMessage;
 import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPatch;
@@ -152,7 +152,12 @@ public class ClientPoliciesV2Test extends AbstractClientApiV2Test {
             // Should fail with 400 Bad Request due to policy violation
             assertEquals(400, response.getStatusLine().getStatusCode());
             String body = EntityUtils.toString(response.getEntity());
-            assertThat(body, containsString("invalid_client_metadata"));
+            if (ClientServiceHelper.isLegacyClientServiceEnabled()) {
+                assertThat(body, containsString("invalid_client_metadata"));
+            } else {
+                // TODO might be more consistent in error messages
+                assertThat(body, containsString("Invalid client metadata: token_endpoint_auth_method"));
+            }
         }
     }
 
@@ -275,7 +280,27 @@ public class ClientPoliciesV2Test extends AbstractClientApiV2Test {
             // Should fail with 400 Bad Request due to policy violation
             assertEquals(400, response.getStatusLine().getStatusCode());
             String body = EntityUtils.toString(response.getEntity());
-            assertThat(body, containsString("invalid_client_metadata"));
+            if (ClientServiceHelper.isLegacyClientServiceEnabled()) {
+                assertThat(body, containsString("invalid_client_metadata"));
+            } else {
+                // TODO might be more consistent in error messages
+                assertThat(body, containsString("Invalid client metadata: token_endpoint_auth_method"));
+            }
+        }
+
+        // Verify the client was NOT updated (transaction rollback worked)
+        HttpGet getRequest = new HttpGet(getClientsApiUrl() + "/test-put-update-client");
+        setAuthHeader(getRequest);
+        try (var response = client.execute(getRequest)) {
+            assertEquals(200, response.getStatusLine().getStatusCode());
+            String body = EntityUtils.toString(response.getEntity());
+            OIDCClientRepresentation current = mapper.readValue(body, OIDCClientRepresentation.class);
+
+            // Should still have the original auth method, not the rejected one
+            assertEquals(JWTClientSecretAuthenticator.PROVIDER_ID, current.getAuth().getMethod(),
+                    "Client auth method should remain unchanged after policy rejection");
+            assertEquals("secret", current.getAuth().getSecret(),
+                    "Client secret should remain unchanged after policy rejection");
         }
     }
 
@@ -350,7 +375,7 @@ public class ClientPoliciesV2Test extends AbstractClientApiV2Test {
         // Try to patch the client to use an unacceptable auth type
         HttpPatch patchRequest = new HttpPatch(getClientsApiUrl() + "/test-patch-update-client");
         setAuthHeader(patchRequest);
-        patchRequest.setHeader(HttpHeaders.CONTENT_TYPE, AdminApi.CONTENT_TYPE_MERGE_PATCH);
+        patchRequest.setHeader(HttpHeaders.CONTENT_TYPE, PatchTypeNames.JSON_MERGE);
 
         OIDCClientRepresentation patch = new OIDCClientRepresentation();
         var patchAuth = new OIDCClientRepresentation.Auth();
@@ -364,6 +389,21 @@ public class ClientPoliciesV2Test extends AbstractClientApiV2Test {
             assertEquals(400, response.getStatusLine().getStatusCode());
             String body = EntityUtils.toString(response.getEntity());
             assertThat(body, containsString("invalid_client_metadata"));
+        }
+
+        // Verify the client was NOT updated (transaction rollback worked)
+        HttpGet getRequest = new HttpGet(getClientsApiUrl() + "/test-patch-update-client");
+        setAuthHeader(getRequest);
+        try (var response = client.execute(getRequest)) {
+            assertEquals(200, response.getStatusLine().getStatusCode());
+            String body = EntityUtils.toString(response.getEntity());
+            OIDCClientRepresentation current = mapper.readValue(body, OIDCClientRepresentation.class);
+
+            // Should still have the original auth method, not the rejected one
+            assertEquals(JWTClientSecretAuthenticator.PROVIDER_ID, current.getAuth().getMethod(),
+                    "Client auth method should remain unchanged after policy rejection");
+            assertEquals("secret", current.getAuth().getSecret(),
+                    "Client secret should remain unchanged after policy rejection");
         }
     }
 
@@ -489,7 +529,11 @@ public class ClientPoliciesV2Test extends AbstractClientApiV2Test {
         }
 
         // for now, the VIEW is also present, but it is not required for update
-        assertClientPolicyEventIsEmitted(ClientPolicyEvent.VIEW, ClientPolicyEvent.UPDATE, ClientPolicyEvent.UPDATED);
+        if (ClientServiceHelper.isLegacyClientServiceEnabled()) {
+            assertClientPolicyEventIsEmitted(ClientPolicyEvent.VIEW, ClientPolicyEvent.UPDATE, ClientPolicyEvent.UPDATED);
+        } else {
+            assertClientPolicyEventIsEmitted(ClientPolicyEvent.UPDATE, ClientPolicyEvent.UPDATED);
+        }
     }
 
     /**
@@ -514,7 +558,12 @@ public class ClientPoliciesV2Test extends AbstractClientApiV2Test {
         setupAlwaysAppliedTestPolicy();
         cleanupClient(rep.getClientId());
 
-        assertClientPolicyEventIsEmitted(ClientPolicyEvent.UNREGISTER);
+        if (ClientServiceHelper.isLegacyClientServiceEnabled()) {
+            // for now, the VIEW is also present, but it is not required for delete
+            assertClientPolicyEventIsEmitted(ClientPolicyEvent.VIEW, ClientPolicyEvent.UNREGISTER);
+        } else {
+            assertClientPolicyEventIsEmitted(ClientPolicyEvent.UNREGISTER);
+        }
     }
 
     private void assertClientPolicyEventIsEmitted(ClientPolicyEvent... events) {
@@ -677,11 +726,6 @@ public class ClientPoliciesV2Test extends AbstractClientApiV2Test {
         } catch (Exception e) {
             // Ignore cleanup errors
         }
-    }
-
-    private void setAuthHeader(HttpMessage request) {
-        String token = adminClient.tokenManager().getAccessTokenString();
-        request.setHeader(HttpHeaders.AUTHORIZATION, "Bearer " + token);
     }
 
     public static class AdminV2Config implements KeycloakServerConfig {

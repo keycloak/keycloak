@@ -6,6 +6,7 @@ import java.util.List;
 
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
+import org.keycloak.testframework.util.Collections;
 
 public class ClientConfigBuilder {
 
@@ -102,6 +103,7 @@ public class ClientConfigBuilder {
     }
 
     public ClientConfigBuilder authorizationServicesEnabled(boolean enabled) {
+        serviceAccountsEnabled(enabled);
         rep.setAuthorizationServicesEnabled(enabled);
         return this;
     }
@@ -127,6 +129,11 @@ public class ClientConfigBuilder {
 
     public ClientConfigBuilder defaultClientScopes(String... defaultClientScopes) {
         rep.setDefaultClientScopes(Collections.combine(rep.getDefaultClientScopes(), defaultClientScopes));
+        return this;
+    }
+
+    public ClientConfigBuilder optionalClientScopes(String... optionalClientScopes) {
+        rep.setOptionalClientScopes(Collections.combine(rep.getOptionalClientScopes(), optionalClientScopes));
         return this;
     }
 

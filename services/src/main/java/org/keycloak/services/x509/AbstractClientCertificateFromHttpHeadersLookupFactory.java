@@ -43,25 +43,17 @@ public abstract class AbstractClientCertificateFromHttpHeadersLookupFactory impl
 
     @Override
     public void init(Config.Scope config) {
-        if (config != null) {
-            certificateChainLength = config.getInt(CERTIFICATE_CHAIN_LENGTH, 1);
-            logger.tracev("{0}: ''{1}''", CERTIFICATE_CHAIN_LENGTH, certificateChainLength);
+        certificateChainLength = config.getInt(CERTIFICATE_CHAIN_LENGTH, 1);
+        logger.tracev("{0}: ''{1}''", CERTIFICATE_CHAIN_LENGTH, certificateChainLength);
 
-            sslClientCertHttpHeader = config.get(HTTP_HEADER_CLIENT_CERT, "");
-            logger.tracev("{0}:   ''{1}''", HTTP_HEADER_CLIENT_CERT, sslClientCertHttpHeader);
+        sslClientCertHttpHeader = config.get(HTTP_HEADER_CLIENT_CERT, "");
+        logger.tracev("{0}:   ''{1}''", HTTP_HEADER_CLIENT_CERT, sslClientCertHttpHeader);
 
-            sslChainHttpHeaderPrefix = config.get(HTTP_HEADER_CERT_CHAIN_PREFIX, null);
-            if (sslChainHttpHeaderPrefix != null) {
-                logger.tracev("{0}:  ''{1}''", HTTP_HEADER_CERT_CHAIN_PREFIX, sslChainHttpHeaderPrefix);
-            } else {
-                logger.tracev("{0} was not configured", HTTP_HEADER_CERT_CHAIN_PREFIX);
-            }
-        }
-        else {
-            logger.tracev("No configuration for ''{0}'' reverse proxy was found", this.getId());
-            sslClientCertHttpHeader = "";
-            sslChainHttpHeaderPrefix = "";
-            certificateChainLength = 0;
+        sslChainHttpHeaderPrefix = config.get(HTTP_HEADER_CERT_CHAIN_PREFIX, null);
+        if (sslChainHttpHeaderPrefix != null) {
+            logger.tracev("{0}:  ''{1}''", HTTP_HEADER_CERT_CHAIN_PREFIX, sslChainHttpHeaderPrefix);
+        } else {
+            logger.tracev("{0} was not configured", HTTP_HEADER_CERT_CHAIN_PREFIX);
         }
     }
 

@@ -40,10 +40,10 @@ import org.keycloak.models.UserSessionProviderFactory;
 import org.keycloak.models.UserSessionSpi;
 import org.keycloak.models.sessions.infinispan.changes.CacheHolder;
 import org.keycloak.models.sessions.infinispan.changes.ClientSessionPersistentChangelogBasedTransaction;
-import org.keycloak.models.sessions.infinispan.changes.InfinispanChangelogBasedTransaction;
 import org.keycloak.models.sessions.infinispan.changes.InfinispanChangesUtils;
 import org.keycloak.models.sessions.infinispan.changes.PersistentSessionsWorker;
 import org.keycloak.models.sessions.infinispan.changes.PersistentUpdate;
+import org.keycloak.models.sessions.infinispan.changes.UserSessionInfinispanChangelogBasedTransaction;
 import org.keycloak.models.sessions.infinispan.changes.UserSessionPersistentChangelogBasedTransaction;
 import org.keycloak.models.sessions.infinispan.changes.sessions.PersisterLastSessionRefreshStore;
 import org.keycloak.models.sessions.infinispan.changes.sessions.PersisterLastSessionRefreshStoreFactory;
@@ -422,10 +422,10 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
     }
 
     private VolatileTransactions createVolatileTransaction(KeycloakSession session) {
-        var sessionTx = new InfinispanChangelogBasedTransaction<>(session, sessionCacheHolder);
-        var offlineSessionTx = new InfinispanChangelogBasedTransaction<>(session, offlineSessionCacheHolder);
-        var clientSessionTx = new InfinispanChangelogBasedTransaction<>(session, clientSessionCacheHolder);
-        var offlineClientSessionTx = new InfinispanChangelogBasedTransaction<>(session, offlineClientSessionCacheHolder);
+        var sessionTx = new UserSessionInfinispanChangelogBasedTransaction<>(session, sessionCacheHolder);
+        var offlineSessionTx = new UserSessionInfinispanChangelogBasedTransaction<>(session, offlineSessionCacheHolder);
+        var clientSessionTx = new UserSessionInfinispanChangelogBasedTransaction<>(session, clientSessionCacheHolder);
+        var offlineClientSessionTx = new UserSessionInfinispanChangelogBasedTransaction<>(session, offlineClientSessionCacheHolder);
 
         var transactionProvider = session.getProvider(InfinispanTransactionProvider.class);
         transactionProvider.registerTransaction(sessionTx);
@@ -453,10 +453,11 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
         return new PersistentTransaction(sessionTx, clientSessionTx);
     }
 
-    private record VolatileTransactions(InfinispanChangelogBasedTransaction<String, UserSessionEntity> sessionTx,
-                                        InfinispanChangelogBasedTransaction<String, UserSessionEntity> offlineSessionTx,
-                                        InfinispanChangelogBasedTransaction<EmbeddedClientSessionKey, AuthenticatedClientSessionEntity> clientSessionTx,
-                                        InfinispanChangelogBasedTransaction<EmbeddedClientSessionKey, AuthenticatedClientSessionEntity> offlineClientSessionTx) {}
+    private record VolatileTransactions(
+            UserSessionInfinispanChangelogBasedTransaction<String, UserSessionEntity> sessionTx,
+            UserSessionInfinispanChangelogBasedTransaction<String, UserSessionEntity> offlineSessionTx,
+            UserSessionInfinispanChangelogBasedTransaction<EmbeddedClientSessionKey, AuthenticatedClientSessionEntity> clientSessionTx,
+            UserSessionInfinispanChangelogBasedTransaction<EmbeddedClientSessionKey, AuthenticatedClientSessionEntity> offlineClientSessionTx) {}
 
     private record PersistentTransaction(UserSessionPersistentChangelogBasedTransaction userTx, ClientSessionPersistentChangelogBasedTransaction clientTx) {}
 

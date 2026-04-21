@@ -17,7 +17,6 @@
 package org.keycloak.services.resources;
 
 import java.net.URI;
-import java.util.Comparator;
 
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.NotFoundException;
@@ -47,11 +46,13 @@ import org.keycloak.protocol.LoginProtocolFactory;
 import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.services.clientregistration.ClientRegistrationService;
 import org.keycloak.services.cors.Cors;
+import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resource.RealmResourceProvider;
 import org.keycloak.services.resources.account.AccountLoader;
 import org.keycloak.services.util.CacheControlUtil;
 import org.keycloak.services.util.ResolveRelative;
+import org.keycloak.services.util.WellKnownProviderUtil;
 import org.keycloak.utils.ProfileHelper;
 import org.keycloak.wellknown.WellKnownProvider;
 import org.keycloak.wellknown.WellKnownProviderFactory;
@@ -229,20 +230,17 @@ public class RealmsResource {
     @GET
     @Path("{realm}/.well-known/{alias}")
     @Produces({MediaType.APPLICATION_JSON, APPLICATION_JWT})
-    public Response getWellKnown(final @PathParam("realm") String name,
+    public Response getWellKnown(final @PathParam("realm") String realm,
                                  final @PathParam("alias") String alias) {
-        return getWellKnownResponse(session, name, alias, logger);
+        return getWellKnownResponse(session, realm, alias, logger);
     }
 
-    public static Response getWellKnownResponse(KeycloakSession session, String name, String alias, Logger logger) throws NotFoundException {
-        resolveRealmAndUpdateSession(session, name);
+    public static Response getWellKnownResponse(KeycloakSession session, String realm, String alias, Logger logger) throws NotFoundException {
+        resolveRealmAndUpdateSession(session, realm);
         checkSsl(session, session.getContext().getRealm());
 
-        WellKnownProviderFactory wellKnownProviderFactoryFound = session.getKeycloakSessionFactory().getProviderFactoriesStream(WellKnownProvider.class)
-                .map(providerFactory -> (WellKnownProviderFactory) providerFactory)
-                .filter(wellKnownProviderFactory -> alias.equals(wellKnownProviderFactory.getAlias()))
-                .sorted(Comparator.comparingInt(WellKnownProviderFactory::getPriority))
-                .findFirst().orElseThrow(NotFoundException::new);
+        WellKnownProviderFactory wellKnownProviderFactoryFound = WellKnownProviderUtil.resolveFromAlias(session.getKeycloakSessionFactory(), alias)
+                .orElseThrow(NotFoundException::new);
 
         logger.tracef("Use provider with ID '%s' for well-known alias '%s'", wellKnownProviderFactoryFound.getId(), alias);
 
@@ -279,9 +277,13 @@ public class RealmsResource {
     @Path("{realm}/{extension}")
     public Object resolveRealmExtension(@PathParam("realm") String realmName, @PathParam("extension") String extension) {
         resolveRealmAndUpdateSession(realmName);
+
+        new AppAuthManager.BearerTokenAuthenticator(session).authenticate();
         RealmResourceProvider provider = session.getProvider(RealmResourceProvider.class, extension);
+
         if (provider != null) {
             Object resource = provider.getResource();
+
             if (resource != null) {
                 return resource;
             }

@@ -98,6 +98,15 @@ public class HttpClientBuilder {
     protected boolean disableCookies = false;
     protected ProxyMappings proxyMappings;
     protected boolean expectContinueEnabled = false;
+    protected final org.apache.http.impl.client.HttpClientBuilder apacheBuilder;
+
+    public HttpClientBuilder() {
+        this(HttpClients.custom());
+    }
+
+    public HttpClientBuilder(org.apache.http.impl.client.HttpClientBuilder apacheBuilder) {
+        this.apacheBuilder = apacheBuilder;
+    }
 
     /**
      * Socket inactivity timeout
@@ -175,6 +184,15 @@ public class HttpClientBuilder {
      */
     public HttpClientBuilder disableTrustManager() {
         this.disableTrustManager = true;
+        return this;
+    }
+
+    /**
+     * Disables automatic redirect handling.
+     * @return
+     */
+    public HttpClientBuilder disableRedirectHandling() {
+        apacheBuilder.disableRedirectHandling();
         return this;
     }
 
@@ -301,7 +319,7 @@ public class HttpClientBuilder {
     }
 
     protected org.apache.http.impl.client.HttpClientBuilder getApacheHttpClientBuilder() {
-        return HttpClients.custom();
+        return apacheBuilder;
     }
 
     private SSLContext createSslContext(

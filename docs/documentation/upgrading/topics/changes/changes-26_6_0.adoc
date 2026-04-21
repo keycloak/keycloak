@@ -4,7 +4,7 @@
 Breaking changes are identified as those that might require changes for existing users to their configurations or applications.
 In minor or patch releases, {project_name} will only introduce breaking changes to fix bugs.
 
-=== JavaScript-based policies can only be deployed now if the `scripts` feature is enabled
+=== JavaScript-based policies can now only be deployed if the `scripts` feature is enabled
 
 In this version, JavaScript-based policies can only be deployed if the `scripts` feature is enabled.
 
@@ -25,12 +25,47 @@ Configuring + defers validation to the client's standard 'Valid redirect URIs'. 
 
 Administrators must ensure that all configured URIs for the fields listed above use https. Clients attempting to update or register with http in these fields will fail validation when using the 'secure-client-uris' executor.
 
+=== The Identity Provider issuer should be unique for the JWT authorization grant and client assertions
+
+The JWT authorization grant and the client assertion authentication use the `issuer` claim passed in the assertion to locate the Identity Provider defined in {project_name}, and that provider validates the claims and signature in the assertion. Since this version, the `issuer` configuration option must uniquely identify one provider. The grant operation or the assertion client authentication fails if more providers are returned for a single issuer. In the same way, the Identity Providers, when configured to allow the JWT authorization grant or client assertions, are validated to have a unique issuer defined in their configuration. Any update or add operation will fail if the issuer collides with another provider.
+
+If you have identity providers defined with the same issuer and tested the JWT authorization grants or client assertions features, please update the providers accordingly before the upgrade. You can update the issuer or disable the provider to avoid the duplicates.
+
+=== Endpoints are opened while Keycloak is initializing
+
+{project_name} now opens its HTTP(S) and Management ports while initialization is still in progress when the health endpoints are enabled.
+This resolves problems with long-running migrations on platforms like Kubernetes where a migration might otherwise be aborted, leaving the database in a potentially inconsistent state.
+
+If you use a proxy or load balancer, configure an HTTP health check with the path `/health/ready` to ensure traffic is only routed to the server once it is fully ready.
+
+If this behavior is not desired or an HTTP health check is not possible, start {project_name} with `--server-async-bootstrap=false` to revert to the previous behavior where ports are opened only after initialization completes.
 
 // ------------------------ Notable changes ------------------------ //
 == Notable changes
 
 Notable changes may include internal behavior changes that prevent common misconfigurations, bugs that are fixed, or changes to simplify running {project_name}.
 It also lists significant changes to internal APIs.
+
+=== Usage of second-class options
+
+In prior releases, the introduction of a first-class option with a default would cause the second-class option (typically spi or quarkus properties) to no longer be used at all.
+
+For example, `spi-truststore--file--hostname-verification-policy` was marked as deprecated after the introduction of `tls-hostname-verifier`. However, since
+`tls-hostname-verifier` included a default, direct usage of `spi-truststore--file--hostname-verification-policy` was no longer considered.
+
+To ensure that the further introduction of new first-class options does not immediately break existing configurations, the logic for determining the value of a second-class option
+will now consider the direct usage of the second-class value ahead of a default, or derived default, from the first-class option.
+
+Please review the server startup to see if there are any warnings about the continued usage of second-class options, and update them accordingly.
+
+=== New option for transaction timeout
+
+A new option `transaction-default-timeout` has been introduced to configure the default transaction timeout in {project_name}.
+
+While using Quarkus properties directly is not the supported way to configure {project_name}, some users may have used `quarkus.transaction-manager.default-transaction-timeout` to customize the transaction timeout.
+If you are using this Quarkus property, the new `transaction-default-timeout` CLI option, when set, will take precedence and override your configuration when upgrading to this version.
+
+To maintain your desired transaction timeout configuration, migrate to using the `transaction-default-timeout` CLI option and remove the `quarkus.transaction-manager.default-transaction-timeout` property from your configuration.
 
 === Dev Mode defaults to localhost
 
@@ -49,22 +84,21 @@ See the section https://www.keycloak.org/server/reverseproxy#graceful-http-shutd
 
 With `proxy-headers` set to `xforwarded`, the server can determine the proxy context path from the `X-Forwarded-Prefix` header.
 
-=== New database indexes on the `BROKER_LINK` table
+=== New brute force locking mechanism
 
-The `BROKER_LINK` table now contains two additional indexes `IDX_BROKER_LINK_USER_ID` and `IDX_BROKER_LINK_IDENTITY_PROVIDER` to improve performance.
+There is a new brute force locking mechanism applied to all brute force modes. It is called `Secondary Authentication Failures Lockout`. The brute force protector counts secondary authentication failures only (for example OTP), and when the maximum specified number is reached, the account is permanently locked even in temporary locking modes. This prevents attacks on second factor authenticators such as OTP when the attacker has already guessed the password.
 
-If the table contains more than 300000 entries, {project_name} will skip the index creation by default during the automatic schema migration and instead log the SQL statement on the console during migration to be applied manually after {project_name}'s startup.
-See the link:{upgradingguide_link}[{upgradingguide_name}] for details on how to configure a different limit.
+This new brute force locking mechanism also changes the original behavior of brute force protection. It is applied only to a subset of authentication mechanisms (passwords, OTP, and recovery codes).
 
 === Client secret authentication method
 
-OIDC specification has multiple client authentication methods. Two of them `client_secret_basic` and `client_secret_post` are implemented in {project_name} by **Client Id and Secret**
+OIDC specification has multiple client authentication methods. Two of them, `client_secret_basic` and `client_secret_post`, are implemented in {project_name} by **Client Id and Secret**
 client authenticator. Until now, when the OIDC client registration request was sent with the attribute `token_endpoint_auth_method` set to `client_secret_basic` or `client_secret_post`,
-the {project_name} allowed to authenticate client with both `client_secret_basic` and `client_secret_post` methods and did not preserve the single method specified in the OIDC client
+{project_name} allowed the client to authenticate with both `client_secret_basic` and `client_secret_post` methods and did not preserve the single method specified in the OIDC client
 registration request. Now the specified method is respected, so for example when the OIDC client registration is sent with `token_endpoint_auth_method` set to `client_secret_post`, then
-it is required to authenticate the client really with the client secret sent as a parameter in the POST request body.
+it is required to authenticate the client with the client secret sent as a parameter in the POST request body.
 
-It is still possible to make the OIDC client allow both methods and clients migrated from previous versions are set by default to allow authentication with both methods.
+It is still possible to make the OIDC client allow both methods, and clients migrated from previous versions are set by default to allow authentication with both methods.
 
 === Zero-downtime patch releases enabled by default
 
@@ -78,45 +112,64 @@ For more details on the Operator configuration, see the https://www.keycloak.org
 
 === Infinispan 16 upgrade
 
-{project_name} now uses Infinispan 16.0 for embedded distributed caching. This upgrade brings improved performance, enhanced security, and better support for zero-downtime upgrade in patch releases.
+{project_name} now uses Infinispan 16.0 for embedded distributed caching. This upgrade brings improved performance, enhanced security, and better support for zero-downtime upgrades in patch releases.
 
-If you are using an external {jdgserver_name} server for example in a multi-cluster setup, you should upgrade to version 16.0 as this is the version {project_name} was tested with.
+If you are using an external {jdgserver_name} server, for example in a multi-cluster setup, you should upgrade to version 16.0 as this is the version {project_name} was tested with.
 
-=== Usage of virtual threads for embedded caches
+When upgrading the external {jdgserver_name}, the following changes are necessary:
 
-Previously virtual threads were used when at least two CPU cores were available.
-Starting with this version, virtual threads are only used when at least four CPU cores are available.
-This change should prevent deadlocks due to pinned virtual threads.
-
-=== HTTP Access log does not contain specific sensitive information
-
-Specific sensitive information is omitted from the HTTP Access log, such as the value of the `Authorization` HTTP header. Moreover, values of specific sensitive {project_name} cookies, such as `KEYCLOAK_SESSION`, `KEYCLOAK_IDENTITY`, or `AUTH_SESSION_ID`, are also omitted.
-
-=== Rejecting URL paths with semicolons
-
-Previously {project_name} accepted HTTP requests with paths containing a semicolon (`;`).
-When processing them, it handled them according to RFC 3986 as a separator for matrix parameters, which basically ignored those parts.
-As this has led to hard-to-configure URL filtering, for example, in reverse proxies, this is now disabled, and {project_name} responds with an HTTP 400 response code.
-
-To analyze rejected requests in the server log, enable debug logging for `org.keycloak.quarkus.runtime.services.RejectNonNormalizedPathFilter`.
-
-To revert to the previous behavior and to accept matrix parameters set the option `http-accept-non-normalized-paths` to `true`.
-With this configuration, enable and review the HTTP access log to identify problematic requests.
+1. Enable the legacy metrics to ensure that alerts and dashboard still receive the same metrics as before. See https://www.keycloak.org/observability/metrics-for-troubleshooting-external-infinispan-multi-cluster[External Infinispan metrics] and where to add `legacy: true` to the ConfigMap.
+2. Define `indexing.startupMode=NONE` in your Cache configurations. See https://www.keycloak.org/high-availability/multi-cluster/deploy-infinispan-kubernetes-crossdc[Deploying Infinispan] for examples.
 
 === Adjusted default clock-skew for not-before JWT token checks
 
 Previous versions of {project_name} tested the issued-at timestamp with a clock-skew of zero seconds by default if this value was provided in a token.
-By default, access tokens issued by {project_name} used for the admin API or for the user info endpoint do not contain a not-before claim in the token, but customized setups might have it.
+By default, access tokens issued by {project_name} used for the admin API or for the user info endpoint do not contain a not-before claim, but customized setups might have it.
 In a setup with such a claim configured and with clocks that were not fully synchronized, this could lead to rejecting tokens on a node that lagged behind, as it would consider the tokens not valid yet.
 
-Starting with this version, {project_name} will honor a clock skew of 10 seconds for the issued-at timestamp by default which is aligned with the best practices for example of the https://openid.net/specs/fapi-security-profile-2_0-final.html#section-5.3.2.1-6[FAPI 2.0 Security Profile].
+Starting with this version, {project_name} will honor a clock skew of 10 seconds for the issued-at timestamp by default, which is aligned with best practices such as the https://openid.net/specs/fapi-security-profile-2_0-final.html#section-5.3.2.1-6[FAPI 2.0 Security Profile].
 
-This applies to all places where no explicit configuration of clock skew is configured except for JWT Client Assertions that have a hardcoded clock skew of 15 seconds.
-It does not affect any explicitly configured clock skew for example in identity providers where an individual clock skew can be configured.
+This applies to all places where no explicit clock skew is configured, except for JWT Client Assertions that have a hardcoded clock skew of 15 seconds.
+It does not affect any explicitly configured clock skew, for example in identity providers, where an individual clock skew can be configured.
 
 === The base themes are now abstract
 
-All the `base` themes are now tagged as **abstract**, and they are not listed in the admin console to be selected (**Realm Settings** -> **Themes** tab). They were always intended to be only extended but not used directly. If you use one of them, it will continue working (or not working) in the same way but cannot be selected using the admin console anymore. Please select one of the available default themes or create your own one.
+All the `base` themes are now tagged as **abstract**, and they are not listed in the admin console to be selected (**Realm Settings** -> **Themes** tab). They were always intended to be only extended but not used directly. If you use one of them, it will continue working (or not working) in the same way, but cannot be selected using the admin console anymore. Please select one of the available default themes or create your own one.
+
+=== Truststore initialization moved to the server
+
+{project_name} now automatically discovers and trusts cluster certificate authorities when running on Kubernetes or OpenShift, without relying on the Operator to preconfigure the truststore. Specifically, if present in the container filesystem, the following files are added to the system truststore at runtime:
+
+* `/var/run/secrets/kubernetes.io/serviceaccount/ca.crt` (Kubernetes service account CA)
+* `/var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt` (OpenShift service CA)
+
+This behavior is enabled by default and can be controlled with the server option:
+
+* `--truststore-kubernetes-enabled=true|false` (default: `true`)
+
+No changes are required for most deployments.
+If you previously relied on the Operator to manage these truststore entries, the server now performs the same function directly.
+
+WARNING: when `https-client-auth` is set to `required` or `request` without an explicit `https-trust-store-file`, mTLS client certificate validation falls back to the system truststore. With `truststore-kubernetes-enabled=true`, this means certificates signed by the Kubernetes cluster CA will be accepted as valid client certificates. If this is not desired, either set `https-trust-store-file` explicitly or disable `truststore-kubernetes-enabled`.
+
+For details, see the server guide section "Cluster CA certificates (Kubernetes and OpenShift)" in the Truststore guide.
+
+If you are deploying {project_name} by using the {project_name} Operator and your deployment relies on trusting the Kubernetes CA, upgrade custom Keycloak images first. This ensures that the Kubernetes CAs remain trusted for the entire duration of the upgrade.
+
+If you cannot upgrade the custom image first nor are able to simultaneously upgrade the operator with the custom images, it is recommended to explicitly configure the truststore path in the Keycloak Custom Resource prior to changing the Operator version. This ensures that Pods using older custom images continue to trust the cluster CA during the upgrade procedure:
+
+[source,yaml]
+----
+apiVersion: k8s.keycloak.org/v2alpha1
+kind: Keycloak
+metadata:
+  name: keycloak
+spec:
+  automountServiceAccountToken: true
+  additionalOptions:
+    - name: truststore-paths
+      value: "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt,/var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt"
+----
 
 === New database indexes on the `OFFLINE_CLIENT_SESSION` table
 
@@ -131,9 +184,95 @@ The internal `UserSessionProvider` interface received new methods for efficient 
 The streaming instances are read-only, meaning they will not change.
 The previous methods have been deprecated.
 Custom providers should implement these new methods to avoid performance penalties.
-They should avoid keeping the returned items in memory by for example binding them to the current transaction, in case the invoker needs to analyze all data.
+They should avoid keeping the returned items in memory, for example by binding them to the current transaction, in case the invoker needs to analyze all data.
 
 A similar change was done for the `UserSessionPersisterProvider`.
+
+=== Updated HTTP status code for invalid_grant errors in the Resource Owner Password Credentials Grant
+
+Authentication failures resulting in an invalid_grant now correctly return an HTTP 400 status code instead of 401 for the Resource Owner Password Credentials and UMA Permission grants. This change was done to properly follow the OAuth 2.0 Authorization Framework specification.
+
+=== Sender-constrained tokens are now rejected in Standard Token Exchange
+
+Standard Token Exchange now rejects all sender-constrained tokens (as defined in link:https://datatracker.ietf.org/doc/html/rfc7800[RFC 7800]) used as the `subject_token` parameter. This includes both DPoP-bound tokens and X.509 certificate-bound tokens (mTLS).
+
+This change ensures better security and alignment with the OAuth 2.0 Token Exchange specification. Sender-constrained tokens are bound to specific clients and should not be exchanged across different contexts.
+
+If you attempt to exchange a sender-constrained token, the request will be rejected with an `invalid_request` error. For more details, see the link:{securing_apps_token_exchange_link}[Token Exchange] guide.
+
+=== Re-indexing required for external Infinispan Server
+
+With the `clusterless` feature enabled and `persistent-user-sessions` disabled, a re-index is required due to schema changes.
+{project_name} triggers the re-index on startup, but this may delay server startup depending on the number of sessions stored, and/or return incorrect results during the re-index process.
+
+=== Automatic database connection properties for the MS SQL Server driver
+
+When running with the MS SQL server, {project_name} needs to ensure consistent and predictable string parameter handling with the database.
+Starting with this release, and when using the MS SQL Server JDBC driver, {project_name} sets the `sendStringParametersAsUnicode` property to `false` by default.
+This change prevents the driver from automatically sending string parameters as Unicode unless explicitly required, which can reduce overhead and avoid unexpected performance or query-plan issues in some environments.
+
+You can override this behavior by setting your own value for the `sendStringParametersAsUnicode` property in the database connection URL or configuration, for example by adding `;sendStringParametersAsUnicode=true` to the connection URL.
+
+=== New CLI options for transaction timeout configuration
+
+Two new CLI options are now available to control transaction timeout behavior:
+
+* `transaction-default-timeout`: Controls the transaction timeout for regular transactions.
+The default value is 5 minutes, which is the same value used by the current {project_name} version.
+
+* `transaction-setup-timeout`: Controls the timeout for transactions used by database schema migration, import, and export commands.
+The default value is 30 minutes, as these operations may take a while to complete for large datasets.
+
+The provider configuration `spi-dblock--jpa--lock-wait-timeout` option has been replaced with the CLI option `transaction-setup-timeout`.
+
+=== New columns for tracking resource creation and modification timestamps
+
+The `USER_ENTITY` table now has a new column `LAST_MODIFIED_TIMESTAMP`, and the `KEYCLOAK_GROUP` table now has two new columns `CREATED_TIMESTAMP` and `LAST_MODIFIED_TIMESTAMP`. These columns track when users and groups were created and last modified.
+
+For existing users and groups created before this upgrade, these columns will be `NULL`. Newly created or modified resources will have these timestamps populated automatically.
+
+=== Database character encoding checks during startup
+
+{project_name} will log a warning if the database is not configured to use UTF-8 encoding.
+This check applies to all supported databases.
+
+For details on configuring UTF-8 encoding for your database, see the https://www.keycloak.org/server/db[Configuring the database] guide.
+
+As part of this change, the database configuration documentation has been updated:
+
+* For MySQL and MariaDB, the documentation now recommends using `utf8mb4` as the character set.
+The previously documented `utf8mb3` (or `utf8`) character set has been removed from the documentation due to its limitations in storing certain Unicode characters.
+* Previously recommended JDBC driver settings for Oracle, MySQL, and MariaDB have been removed from the documentation, as current versions of these databases use appropriate default values.
+
+=== New CLI options for database TLS configuration
+
+New CLI options are now available to configure TLS encryption for database connections in a vendor-independent way:
+
+* `db-tls-mode`: Sets the TLS mode for the database connection.
+Valid values are `disabled` (default) and `verify-server`.
+When set to `disabled`, {project_name} does not configure TLS and the driver's default behavior applies.
+When set to `verify-server`, encryption and server identity verification are enabled.
+* `db-tls-trust-store-file`: The path to the truststore file containing the database server certificate or Certificate Authority (CA) certificate.
+* `db-tls-trust-store-password`: The password to access the truststore file.
+* `db-tls-trust-store-type`: The type of the truststore file (for example, `JKS` or `PKCS12`).
+
+These options replace the need to configure vendor-specific JDBC properties manually. {project_name} automatically translates them to the appropriate driver-specific settings.
+
+As an alternative to specifying a truststore file with `db-tls-trust-store-file`, you can use `--truststore-paths` to add the certificate to the Java truststore.
+
+See the https://www.keycloak.org/server/db#_secure_the_database_connection[Secure the database connection] section of the database guide for more details and examples.
+
+=== New `--db-connect-timeout` option for database connection and login timeout
+
+A new CLI option `--db-connect-timeout` sets the JDBC driver connection timeout and login timeout.
+It defaults to `10s` to improve failover behavior and startup resilience during network issues.
+
+=== New `KCRAW_` prefix for environment variables to preserve literal values
+
+{project_name} now supports a `KCRAW_` prefix for environment variables as an alternative to the standard `KC_` prefix.
+If you are already using the KCRAW_ prefix for another purpose, please migrate to a new key prefix.
+
+See the link:{server_guide_base_link}/configuration#kcraw-prefix[Preserving literal values with the KCRAW_ prefix] section in the Server Configuration guide for details.
 
 // ------------------------ Deprecated features ------------------------ //
 == Deprecated features
@@ -142,8 +281,8 @@ The following sections provide details on deprecated features.
 
 === Deprecation of specific tracing properties in Keycloak CR
 
-The `tracing.serviceName`, and `tracing.resourceAttributes` fields of the Keycloak CR, are now deprecated.
-You should use the new `telemetry.serviceName`, and `telemetry.resourceAttributes` fields that are shared among all OpenTelemetry components - logs, metrics, and traces.
+The `tracing.serviceName` and `tracing.resourceAttributes` fields of the Keycloak CR are now deprecated.
+You should use the new `telemetry.serviceName` and `telemetry.resourceAttributes` fields that are shared among all OpenTelemetry components - logs, metrics, and traces.
 
 === Deprecation of tracing span attributes for HTTP requests
 
@@ -160,10 +299,16 @@ The methods `getUserSessionsStream(RealmModel realm, ClientModel client)`, `getU
 They are replaced with read-only alternatives to reduce memory consumption.
 See the `UserSessionProvider` API changes section in notable changes for further information.
 
-// ------------------------ Removed features ------------------------ //
-== Removed features
+=== Non-UTF-8 database character encoding deprecated
 
-The following features have been removed from this release.
+Running {project_name} on a database that is not using UTF-8 as its character set is now deprecated.
 
-=== <TODO>
+In the current version {project_name} will log a warning if the database is not configured to use UTF-8 encoding. Future versions might refuse to work with a database that is not configured to use UTF-8 encoding.
+
+=== `Keycloak` and `KeycloakRealmImport` CRDs v2beta1 version
+
+To better capture the maturity of Operator CRDs for the `Keycloak` and `KeycloakRealmImport`, the resources now include a `v2beta1` version.
+The previous `v2alpha1` version for these resources is deprecated but still served. You can keep using it, but we recommend upgrading to `v2beta1` at your earliest convenience.
+There are currently no differences in the schema between the two versions,
+so you will just need to update the relevant `apiVersion` references.
 

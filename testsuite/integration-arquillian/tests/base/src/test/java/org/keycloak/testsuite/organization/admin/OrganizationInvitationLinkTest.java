@@ -49,7 +49,6 @@ import org.keycloak.representations.idm.OrganizationInvitationRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractAuthenticationTest;
-import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.authentication.PushButtonAuthenticatorFactory;
 import org.keycloak.testsuite.pages.InfoPage;
@@ -71,6 +70,7 @@ import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 import org.openqa.selenium.By;
 
 import static org.keycloak.representations.idm.OrganizationInvitationRepresentation.Status.EXPIRED;
@@ -236,7 +236,7 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
             List<UserRepresentation> users = testRealm().users().searchByEmail(email, true);
             assertThat(users, not(empty()));
             MemberRepresentation member = organization.members().member(users.get(0).getId()).toRepresentation();
-            Assert.assertNotNull(member);
+            Assertions.assertNotNull(member);
             assertThat(member.getMembershipType(), equalTo(MembershipType.MANAGED));
             getCleanup().addCleanup(() -> testRealm().users().get(users.get(0).getId()).remove());
 
@@ -259,13 +259,13 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
         assertThat(users, not(empty()));
         // user is a member
         MemberRepresentation member = organization.members().member(users.get(0).getId()).toRepresentation();
-        Assert.assertNotNull(member);
+        Assertions.assertNotNull(member);
         assertThat(member.getMembershipType(), equalTo(MembershipType.MANAGED));
         getCleanup().addCleanup(() -> testRealm().users().get(users.get(0).getId()).remove());
 
         // authenticated to the account console
-        Assert.assertTrue(driver.getPageSource().contains("Account Management"));
-        Assert.assertNotNull(driver.manage().getCookieNamed(CookieType.IDENTITY.getName()));
+        Assertions.assertTrue(driver.getPageSource().contains("Account Management"));
+        Assertions.assertNotNull(driver.manage().getCookieNamed(CookieType.IDENTITY.getName()));
     }
 
     @Test
@@ -292,7 +292,7 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
         RealmRepresentation realm = testRealm().toRepresentation();
         realm.setRegistrationAllowed(true);
         testRealm().update(realm);
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         loginPage.open(realm.getRealm());
         loginPage.clickRegister();
         registerPage.assertCurrent();
@@ -336,13 +336,13 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
         assertThat(users, not(empty()));
         // user is a member
         MemberRepresentation member = organization.members().member(users.get(0).getId()).toRepresentation();
-        Assert.assertNotNull(member);
+        Assertions.assertNotNull(member);
         assertThat(member.getMembershipType(), equalTo(MembershipType.MANAGED));
         getCleanup().addCleanup(() -> testRealm().users().get(users.get(0).getId()).remove());
 
         // authenticated to the account console
-        Assert.assertTrue(driver.getPageSource().contains("Account Management"));
-        Assert.assertNotNull(driver.manage().getCookieNamed(CookieType.IDENTITY.getName()));
+        Assertions.assertTrue(driver.getPageSource().contains("Account Management"));
+        Assertions.assertNotNull(driver.manage().getCookieNamed(CookieType.IDENTITY.getName()));
     }
 
     @Test
@@ -364,7 +364,7 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
             assertThat(users, not(empty()));
             // user is a member
             MemberRepresentation member = organization.members().member(users.get(0).getId()).toRepresentation();
-            Assert.assertNotNull(member);
+            Assertions.assertNotNull(member);
             assertThat(member.getMembershipType(), equalTo(MembershipType.MANAGED));
             getCleanup().addCleanup(() -> testRealm().users().get(users.get(0).getId()).remove());
 
@@ -387,8 +387,8 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
             registerUser(organization, email);
 
             // authenticated to the account console
-            Assert.assertTrue(driver.getPageSource().contains("Account Management"));
-            Assert.assertNotNull(driver.manage().getCookieNamed(CookieType.IDENTITY.getName()));
+            Assertions.assertTrue(driver.getPageSource().contains("Account Management"));
+            Assertions.assertNotNull(driver.manage().getCookieNamed(CookieType.IDENTITY.getName()));
 
             List<MemberRepresentation> memberByEmail = organization.members().search(email, Boolean.TRUE, null, null);
             assertThat(memberByEmail, Matchers.hasSize(1));
@@ -419,15 +419,15 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
 
             String link = getInvitationLinkFromEmail();
             driver.navigate().to(link);
-            Assert.assertFalse(organization.members().list(-1, -1).stream().anyMatch(actual -> email.equals(actual.getEmail())));
+            Assertions.assertFalse(organization.members().list(-1, -1).stream().anyMatch(actual -> email.equals(actual.getEmail())));
             registerPage.assertCurrent(organizationName);
             registerPage.openLanguage("Portuguese");
-            Assert.assertTrue(driver.getPageSource().contains("Campos obrigatórios"));
+            Assertions.assertTrue(driver.getPageSource().contains("Campos obrigatórios"));
             registerPage.register("firstName", "lastName", email,
                     "invitedUser", "password", "password", null, false, null);
             // authenticated to the account console
-            Assert.assertTrue(driver.getPageSource().contains("Account Management"));
-            Assert.assertNotNull(driver.manage().getCookieNamed(CookieType.IDENTITY.getName()));
+            Assertions.assertTrue(driver.getPageSource().contains("Account Management"));
+            Assertions.assertNotNull(driver.manage().getCookieNamed(CookieType.IDENTITY.getName()));
 
             List<MemberRepresentation> memberByEmail = organization.members().search(email, Boolean.TRUE, null, null);
             assertThat(memberByEmail, Matchers.hasSize(1));
@@ -464,8 +464,8 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
 
     private String getInvitationLinkFromEmail(String ...parameters) throws MessagingException, IOException {
         MimeMessage message = greenMail.getLastReceivedMessage();
-        Assert.assertNotNull(message);
-        Assert.assertEquals("Invitation to join the " + organizationName + " organization", message.getSubject());
+        Assertions.assertNotNull(message);
+        Assertions.assertEquals("Invitation to join the " + organizationName + " organization", message.getSubject());
 
         EmailBody body = MailUtils.getBody(message);
         String text = body.getHtml();
@@ -482,7 +482,7 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
         assertThat(text, Matchers.containsString(("<p>If you don&#39;t want to join the organization, just ignore this message.</p>")));
 
         String orgToken = UriUtils.parseQueryParameters(link, false).values().stream().map(strings -> strings.get(0)).findFirst().orElse(null);
-        Assert.assertNotNull(orgToken);
+        Assertions.assertNotNull(orgToken);
 
         return link;
     }
@@ -519,7 +519,7 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
     private void registerUser(OrganizationResource organization, String expectedEmail, String email) throws MessagingException, IOException {
         String link = getInvitationLinkFromEmail();
         driver.navigate().to(link);
-        Assert.assertFalse(organization.members().list(-1, -1).stream().anyMatch(actual -> email.equals(actual.getEmail())));
+        Assertions.assertFalse(organization.members().list(-1, -1).stream().anyMatch(actual -> email.equals(actual.getEmail())));
         registerPage.assertCurrent(organizationName);
         assertThat(registerPage.getEmail(), equalTo(expectedEmail));
         registerPage.register("firstName", "lastName", email,
@@ -534,7 +534,7 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
         String link = getInvitationLinkFromEmail(user.getFirstName(), user.getLastName());
         driver.navigate().to(link);
         // not yet a member
-        Assert.assertFalse(organization.members().list(-1, -1).stream().anyMatch(actual -> user.getId().equals(actual.getId())));
+        Assertions.assertFalse(organization.members().list(-1, -1).stream().anyMatch(actual -> user.getId().equals(actual.getId())));
         // confirm the intent of membership
         assertThat(driver.getPageSource(), containsString("You are about to join organization " + organizationName));
         assertThat(infoPage.getInfo(), containsString("By clicking on the link below, you will become a member of the " + organizationName + " organization:"));
@@ -542,7 +542,49 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
         // redirect to the redirectUrl and eventually force the user to authenticate if not already
         assertThat(driver.getTitle(), containsString(pageTitle));
         // now a member
-        Assert.assertNotNull(organization.members().member(user.getId()).toRepresentation());
+        Assertions.assertNotNull(organization.members().member(user.getId()).toRepresentation());
+    }
+
+    @Test
+    public void testAcceptInvitationLinkAfterOrgDisabled() throws IOException, MessagingException {
+        UserRepresentation user = createUser("invited", "invited@myemail.com");
+
+        OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
+
+        organization.members().inviteExistingUser(user.getId()).close();
+
+        String link = getInvitationLinkFromEmail(user.getFirstName(), user.getLastName());
+
+        // Disable the organization after the invitation was sent
+        try (OrganizationAttributeUpdater oau = new OrganizationAttributeUpdater(organization).setEnabled(false).update()) {
+            driver.navigate().to(link);
+            assertThat(infoPage.isCurrent(), is(true));
+            assertThat(infoPage.getInfo(), containsString("The organization is not available at this time and cannot accept new members."));
+
+            // User should not be added to organization
+            List<MemberRepresentation> members = organization.members().search(user.getEmail(), Boolean.TRUE, null, null);
+            assertThat(members, empty());
+        }
+
+        // After re-enabling, the link should work again
+        acceptInvitation(organization, user);
+    }
+
+    @Test
+    public void testNewUserRegistrationAfterOrgDisabled() throws IOException, MessagingException {
+        String email = "inviteduser@email";
+
+        OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
+        organization.members().inviteUser(email, "Homer", "Simpson").close();
+
+        String link = getInvitationLinkFromEmail();
+
+        // Disable the organization after the invitation was sent
+        try (OrganizationAttributeUpdater oau = new OrganizationAttributeUpdater(organization).setEnabled(false).update()) {
+            driver.navigate().to(link);
+            // Registration page should show error about disabled org
+            assertThat(driver.getPageSource(), containsString("The organization is not available at this time and cannot accept new members."));
+        }
     }
 
     @Test

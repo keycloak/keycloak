@@ -7,6 +7,9 @@ import org.keycloak.testframework.realm.ManagedRealm;
 
 import org.jboss.logging.Logger;
 
+/**
+ * Poll admin events from the Keycloak server
+ */
 public class AdminEvents extends AbstractEvents<AdminEventRepresentation> {
 
     private static final Logger LOGGER = Logger.getLogger(AdminEvents.class);
@@ -28,6 +31,11 @@ public class AdminEvents extends AbstractEvents<AdminEventRepresentation> {
     @Override
     protected String getRealmId(AdminEventRepresentation rep) {
         return rep.getRealmId();
+    }
+
+    @Override
+    protected long getTime(AdminEventRepresentation rep) {
+        return rep.getTime();
     }
 
     @Override

@@ -43,7 +43,6 @@ import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.forms.LevelOfAssuranceFlowTest;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginTotpPage;
@@ -56,6 +55,7 @@ import org.jboss.arquillian.graphene.page.Page;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 /**
  * @author Ben Cresitello-Dittmar
@@ -184,7 +184,7 @@ public class AuthenticationMethodReferenceTest extends AbstractOIDCScopeTest{
      */
     @Before
     public void configureClient() {
-        oauth.clientId(CLIENT_ID);
+        oauth.client(CLIENT_ID);
     }
 
     /**
@@ -495,7 +495,7 @@ public class AuthenticationMethodReferenceTest extends AbstractOIDCScopeTest{
      * @param password The password to log in with
      */
     private void authenticatePassword(String username, String password){
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login(username, password);
     }
 
@@ -504,7 +504,7 @@ public class AuthenticationMethodReferenceTest extends AbstractOIDCScopeTest{
      * @param totpSecret The secret to use to generate the TOTP token
      */
     private void authenticateTOTP(String totpSecret){
-        org.junit.Assert.assertTrue(loginTotpPage.isCurrent());
+        Assertions.assertTrue(loginTotpPage.isCurrent());
         setOtpTimeOffset(TimeBasedOTP.DEFAULT_INTERVAL_SECONDS, totp);
 
         loginTotpPage.login(totp.generateTOTP(totpSecret));
@@ -531,17 +531,17 @@ public class AuthenticationMethodReferenceTest extends AbstractOIDCScopeTest{
     private void assertAmr(IDToken token, List<String> expectedValues) {
         getLogger().infof("Got claims %s", token.getOtherClaims().toString());
         List<String> amr = (List<String>) token.getOtherClaims().get("amr");
-        Assert.assertNotNull(amr);
+        Assertions.assertNotNull(amr);
 
         // sort otherwise order may be different
         Collections.sort(amr);
         Collections.sort(expectedValues);
 
-        Assert.assertArrayEquals(expectedValues.toArray(), amr.toArray());
+        Assertions.assertArrayEquals(expectedValues.toArray(), amr.toArray());
     }
 
     private void assertAcr(IDToken token, String acr){
-        Assert.assertEquals(acr, token.getAcr());
+        Assertions.assertEquals(acr, token.getAcr());
     }
 
 }

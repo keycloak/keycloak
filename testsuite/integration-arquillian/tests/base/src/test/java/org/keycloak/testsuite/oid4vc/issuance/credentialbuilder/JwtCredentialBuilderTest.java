@@ -37,7 +37,7 @@ import org.junit.Test;
 
 import static org.keycloak.OID4VCConstants.CREDENTIAL_SUBJECT;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author <a href="mailto:Ingrid.Kamga@adorsys.com">Ingrid Kamga</a>

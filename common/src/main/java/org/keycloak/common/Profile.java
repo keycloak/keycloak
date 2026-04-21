@@ -50,6 +50,8 @@ public class Profile {
     public enum Feature {
         AUTHORIZATION("Authorization Service", Type.DEFAULT),
 
+        AUTHZEN("OpenID AuthZen Authorization", Type.EXPERIMENTAL),
+
         ACCOUNT_API("Account Management REST API", Type.DEFAULT),
 
         ACCOUNT_V3("Account Console version 3", Type.DEFAULT, 3, Feature.ACCOUNT_API),
@@ -80,7 +82,7 @@ public class Profile {
         TOKEN_EXCHANGE_STANDARD_V2("Standard Token Exchange version 2", Type.DEFAULT, 2),
         TOKEN_EXCHANGE_EXTERNAL_INTERNAL_V2("External to Internal Token Exchange version 2", Type.EXPERIMENTAL, 2),
 
-        JWT_AUTHORIZATION_GRANT("JWT Profile for Oauth 2.0 Authorization Grant", Type.PREVIEW),
+        JWT_AUTHORIZATION_GRANT("JWT Profile for Oauth 2.0 Authorization Grant", Type.DEFAULT),
 
         WEB_AUTHN("W3C Web Authentication (WebAuthn)", Type.DEFAULT),
 
@@ -95,12 +97,14 @@ public class Profile {
         CLIENT_SECRET_ROTATION("Client Secret Rotation", Type.PREVIEW),
 
         STEP_UP_AUTHENTICATION("Step-up Authentication", Type.DEFAULT),
+        STEP_UP_AUTHENTICATION_SAML("Step-up Authentication Saml", Type.PREVIEW, Feature.STEP_UP_AUTHENTICATION),
 
-        CLIENT_AUTH_FEDERATED("Authenticates client based on assertions issued by identity provider", Type.PREVIEW),
+        CLIENT_AUTH_FEDERATED("Authenticates client based on assertions issued by identity provider", Type.DEFAULT),
+        CLIENT_AUTH_ABCA("Attestation-Based Client Authentication", Type.EXPERIMENTAL),
 
         SPIFFE("SPIFFE trust relationship provider", Type.PREVIEW),
 
-        KUBERNETES_SERVICE_ACCOUNTS("Kubernetes service accounts trust relationship provider", Type.PREVIEW),
+        KUBERNETES_SERVICE_ACCOUNTS("Kubernetes service accounts trust relationship provider", Type.DEFAULT),
 
         // Check if kerberos is available in underlying JVM and auto-detect if feature should be enabled or disabled by default based on that
         KERBEROS("Kerberos", Type.DEFAULT, 1, () -> KerberosJdkProvider.getProvider().isKerberosAvailable()),
@@ -128,6 +132,7 @@ public class Profile {
         PERSISTENT_USER_SESSIONS("Persistent online user sessions across restarts and upgrades", Type.DEFAULT, FeatureUpdatePolicy.SHUTDOWN),
 
         OID4VC_VCI("Support for the OID4VCI protocol as part of OID4VC.", Type.EXPERIMENTAL),
+        OID4VC_VCI_PREAUTH_CODE("Support for credential offers with `pre-authorized_code` grant.", Type.EXPERIMENTAL, OID4VC_VCI),
 
         OPENTELEMETRY("OpenTelemetry support", Type.DEFAULT),
         OPENTELEMETRY_LOGS("OpenTelemetry Logs support", Type.PREVIEW, OPENTELEMETRY),
@@ -149,7 +154,7 @@ public class Profile {
         ROLLING_UPDATES_V1("Rolling Updates", Type.DEPRECATED, 1),
         ROLLING_UPDATES_V2("Rolling Updates for patch releases", Type.DEFAULT, 2),
 
-        WORKFLOWS("Workflows", Type.PREVIEW),
+        WORKFLOWS("Workflows", Type.DEFAULT),
 
         LOG_MDC("Mapped Diagnostic Context (MDC) information in logs", Type.DEFAULT),
 
@@ -159,11 +164,20 @@ public class Profile {
 
         OPENAPI("OpenAPI specification served at runtime", Type.EXPERIMENTAL, CLIENT_ADMIN_API_V2),
 
+        CIMD("OAuth Client ID Metadata Document", Type.EXPERIMENTAL),
+
         /**
          * @see <a href="https://github.com/keycloak/keycloak/issues/37967">Deprecate for removal the Instagram social broker</a>.
          */
         @Deprecated
-        INSTAGRAM_BROKER("Instagram Identity Broker", Type.DEPRECATED, 1);
+        INSTAGRAM_BROKER("Instagram Identity Broker", Type.DEPRECATED, 1),
+
+        SCIM_API("Exposes a SCIM API for managing realm resources on a per-realm basis", Type.EXPERIMENTAL),
+
+        RESOURCE_INDICATORS("Resource Indicators for OAuth 2.0", Type.EXPERIMENTAL),
+
+        IDENTITY_BROKERING_API_V1("Identity Brokering API V1", Type.DEFAULT, 1),
+        IDENTITY_BROKERING_API_V2("Identity Brokering API V2", Type.PREVIEW, 2);
 
         private final Type type;
         private final String label;

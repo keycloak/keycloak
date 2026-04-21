@@ -6,8 +6,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -18,7 +18,7 @@ public class CollectionUtilTest {
     public void joinInputNoneOutputEmpty() {
         final ArrayList<String> strings = new ArrayList<>();
         final String retval = CollectionUtil.join(strings, ",");
-        Assert.assertEquals("", retval);
+        Assertions.assertEquals("", retval);
     }
 
     @Test
@@ -27,7 +27,7 @@ public class CollectionUtilTest {
         strings.add("foo");
         strings.add("bar");
         final String retval = CollectionUtil.join(strings, null);
-        Assert.assertEquals("foonullbar", retval);
+        Assertions.assertEquals("foonullbar", retval);
     }
 
     @Test
@@ -35,7 +35,7 @@ public class CollectionUtilTest {
         final ArrayList<String> strings = new ArrayList<>();
         strings.add("foo");
         final String retval = CollectionUtil.join(strings, ",");
-        Assert.assertEquals("foo", retval);
+        Assertions.assertEquals("foo", retval);
     }
 
   @Test
@@ -44,7 +44,7 @@ public class CollectionUtilTest {
     strings.add("foo");
     strings.add("bar");
     final String retval = CollectionUtil.join(strings, ",");
-    Assert.assertEquals("foo,bar", retval);
+    Assertions.assertEquals("foo,bar", retval);
   }
 
   @Test
@@ -72,9 +72,9 @@ public class CollectionUtilTest {
 
     @Test
     public void equalsCollectionTest() {
-        Assert.assertFalse(CollectionUtil.collectionEquals(Arrays.asList(1, 3, 2), Arrays.asList(1, 3)));
-        Assert.assertFalse(CollectionUtil.collectionEquals(Arrays.asList("A", "C"), Arrays.asList("A", "C", "B")));
-        Assert.assertFalse(CollectionUtil.collectionEquals(Arrays.asList(1, 3, 2, 3), Arrays.asList(1, 2, 3, 2)));
-        Assert.assertTrue(CollectionUtil.collectionEquals(Arrays.asList(1, 3, 3), Arrays.asList(3, 1, 3)));
+        Assertions.assertFalse(CollectionUtil.collectionEquals(Arrays.asList(1, 3, 2), Arrays.asList(1, 3)));
+        Assertions.assertFalse(CollectionUtil.collectionEquals(Arrays.asList("A", "C"), Arrays.asList("A", "C", "B")));
+        Assertions.assertFalse(CollectionUtil.collectionEquals(Arrays.asList(1, 3, 2, 3), Arrays.asList(1, 2, 3, 2)));
+        Assertions.assertTrue(CollectionUtil.collectionEquals(Arrays.asList(1, 3, 3), Arrays.asList(3, 1, 3)));
     }
 }

@@ -15,6 +15,7 @@ import org.keycloak.keys.loader.PublicKeyStorageManager;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oidc.JWTAuthorizationGrantValidationContext;
+import org.keycloak.representations.IDToken;
 import org.keycloak.services.Urls;
 import org.keycloak.utils.StringUtil;
 
@@ -39,7 +40,11 @@ public class JWTAuthorizationGrantIdentityProvider implements JWTAuthorizationGr
         }
 
         BrokeredIdentityContext user = new BrokeredIdentityContext(context.getJWT().getSubject(), getConfig());
-        user.setUsername(context.getJWT().getSubject());
+        String username = (String) context.getJWT().getOtherClaims().get(IDToken.PREFERRED_USERNAME);
+        if (username == null) {
+            username = context.getJWT().getSubject();
+        }
+        user.setUsername(username);
         return user;
     }
 

@@ -20,6 +20,7 @@ package org.keycloak.models.cache.infinispan;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
@@ -124,6 +125,36 @@ public class GroupAdapter implements GroupModel {
     public void setDescription(String description) {
         getDelegateForUpdate();
         updated.setDescription(description);
+    }
+
+    @Override
+    public Long getCreatedTimestamp() {
+        if (isUpdated()) return updated.getCreatedTimestamp();
+        return cached.getCreatedTimestamp();
+    }
+
+    @Override
+    public void setCreatedTimestamp(Long timestamp) {
+        if (updated == null && Objects.equals(cached.getCreatedTimestamp(), timestamp)) {
+            return;
+        }
+        getDelegateForUpdate();
+        updated.setCreatedTimestamp(timestamp);
+    }
+
+    @Override
+    public Long getLastModifiedTimestamp() {
+        if (isUpdated()) return updated.getLastModifiedTimestamp();
+        return cached.getLastModifiedTimestamp();
+    }
+
+    @Override
+    public void setLastModifiedTimestamp(Long timestamp) {
+        if (updated == null && Objects.equals(cached.getLastModifiedTimestamp(), timestamp)) {
+            return;
+        }
+        getDelegateForUpdate();
+        updated.setLastModifiedTimestamp(timestamp);
     }
 
     @Override

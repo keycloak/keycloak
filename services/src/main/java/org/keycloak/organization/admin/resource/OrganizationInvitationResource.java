@@ -94,6 +94,10 @@ public class OrganizationInvitationResource {
     }
 
     public Response inviteUser(String email, String firstName, String lastName) {
+        if (!organization.isEnabled()) {
+            throw ErrorResponse.error("Organization is disabled", Status.BAD_REQUEST);
+        }
+
         if (StringUtil.isBlank(email)) {
             throw ErrorResponse.error("Email is required to invite a member", Status.BAD_REQUEST);
         }
@@ -138,6 +142,10 @@ public class OrganizationInvitationResource {
     }
 
     public Response inviteExistingUser(String id) {
+        if (!organization.isEnabled()) {
+            throw ErrorResponse.error("Organization is disabled", Status.BAD_REQUEST);
+        }
+
         if (StringUtil.isBlank(id)) {
             throw new BadRequestException("To invite a member you need to provide the user id");
         }
@@ -146,6 +154,10 @@ public class OrganizationInvitationResource {
 
         if (user == null) {
             throw ErrorResponse.error("User does not exist", Status.BAD_REQUEST);
+        }
+
+        if (StringUtil.isBlank(user.getEmail())) {
+            throw ErrorResponse.error("User does not have an email address", Status.BAD_REQUEST);
         }
 
         return sendInvitation(user);
@@ -283,13 +295,8 @@ public class OrganizationInvitationResource {
     public OrganizationInvitationRepresentation getInvitation(@PathParam("id") String id) {
         OrganizationProvider provider = session.getProvider(OrganizationProvider.class);
         InvitationManager invitationManager = provider.getInvitationManager();
-        OrganizationInvitationModel invitation = invitationManager.getById(id);
 
-        if (invitation == null) {
-            throw ErrorResponse.error("Invitation not found", Status.NOT_FOUND);
-        }
-
-        return toRepresentation(invitation);
+        return toRepresentation(verifyInvitationById(invitationManager, id));
     }
 
     @DELETE
@@ -303,10 +310,8 @@ public class OrganizationInvitationResource {
         OrganizationProvider provider = session.getProvider(OrganizationProvider.class);
         InvitationManager invitationManager = provider.getInvitationManager();
 
-        if (!invitationManager.remove(id)) {
-            throw ErrorResponse.error("Invitation not found", Status.NOT_FOUND);
-        }
-
+        verifyInvitationById(invitationManager, id);
+        invitationManager.remove(id);
         adminEvent.operation(OperationType.DELETE).resourcePath(session.getContext().getUri()).success();
 
         return Response.noContent().build();
@@ -320,17 +325,26 @@ public class OrganizationInvitationResource {
         @APIResponse(responseCode = "404", description = "Not Found")
     })
     public Response resendInvitation(@PathParam("id") String id) {
+        if (!organization.isEnabled()) {
+            throw ErrorResponse.error("Organization is disabled", Status.BAD_REQUEST);
+        }
+
         OrganizationProvider provider = session.getProvider(OrganizationProvider.class);
         InvitationManager invitationManager = provider.getInvitationManager();
+
+        OrganizationInvitationModel invitation = verifyInvitationById(invitationManager, id);
+        invitationManager.remove(id);
+        return inviteUser(invitation.getEmail(), invitation.getFirstName(), invitation.getLastName());
+    }
+
+    private OrganizationInvitationModel verifyInvitationById(InvitationManager invitationManager, String id) {
         OrganizationInvitationModel invitation = invitationManager.getById(id);
 
-        if (invitation == null) {
+        if (invitation == null || !invitation.getOrganizationId().equals(organization.getId())) {
             throw ErrorResponse.error("Invitation not found", Status.NOT_FOUND);
         }
 
-        invitationManager.remove(id);
-
-        return inviteUser(invitation.getEmail(), invitation.getFirstName(), invitation.getLastName());
+        return invitation;
     }
 
     // Helper method to convert model to representation

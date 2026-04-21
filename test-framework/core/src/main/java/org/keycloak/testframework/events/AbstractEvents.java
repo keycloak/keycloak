@@ -29,6 +29,12 @@ public abstract class AbstractEvents<R> {
         this.realm = realm;
     }
 
+    /**
+     * Returns the oldest event within the current window. The window is reset for each started test, which means
+     * any events triggered by previous tests are ignored
+     *
+     * @return the oldest event with the current window
+     */
     public R poll() {
         long currentTimeOffset = getCurrentTimeOffset();
         if (timeOffset != currentTimeOffset) {
@@ -52,6 +58,7 @@ public abstract class AbstractEvents<R> {
                     .stream().filter(e -> !processedEvents.contains(getEventId(e)))
                     .forEach(e -> {
                         Assertions.assertEquals(realm.getId(), getRealmId(e));
+                        Assertions.assertTrue(getTime(e) > 0);
                         processedEvents.add(getEventId(e));
                         this.events.add(e);
                     });
@@ -69,14 +76,25 @@ public abstract class AbstractEvents<R> {
         return events.poll();
     }
 
+    /**
+     * Skip the next event
+     */
     public void skip() {
         skip(1);
     }
 
+    /**
+     * Skip the specified number of events
+     *
+     * @param events number of events to skip
+     */
     public void skip(int events) {
         skip += events;
     }
 
+    /**
+     * Skip all current events
+     */
     public void skipAll() {
         try {
             Thread.sleep(1); // Wait 1 ms to make sure time passes
@@ -88,6 +106,9 @@ public abstract class AbstractEvents<R> {
         events.clear();
     }
 
+    /**
+     * Clear all events locally and remotely
+     */
     public void clear() {
         events.clear();
         clearServerEvents();
@@ -105,11 +126,13 @@ public abstract class AbstractEvents<R> {
 
     protected abstract String getRealmId(R representation);
 
+    protected abstract long getTime(R representation);
+
     protected abstract void clearServerEvents();
 
     protected abstract Logger getLogger();
 
-    public long getCurrentTime() {
+    protected long getCurrentTime() {
         return System.currentTimeMillis();
     }
 

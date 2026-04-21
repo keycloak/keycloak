@@ -27,6 +27,10 @@ export async function toggleIncludeSubGroupUsers(page: Page) {
   await page.getByTestId("includeSubGroupsCheck").click();
 }
 
+export async function assertIncludeSubGroupUsersNotVisible(page: Page) {
+  await page.getByTestId("includeSubGroupsCheck").waitFor({ state: "hidden" });
+}
+
 export async function leaveGroup(page: Page) {
   await clickTableToolbarItem(page, "Leave", true);
 }

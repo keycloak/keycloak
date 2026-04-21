@@ -24,6 +24,7 @@ import type { FieldProps } from "../component/FormGroupField";
 import { FormGroupField } from "../component/FormGroupField";
 import { SwitchField } from "../component/SwitchField";
 import { TextField } from "../component/TextField";
+import { TimeSelector } from "../../components/time-selector/TimeSelector";
 
 const LoginFlow = ({
   field,
@@ -144,6 +145,14 @@ export const AdvancedSettings = ({
     <>
       {!isOIDC && !isSAML && !isOAuth2 && (
         <TextField field="config.defaultScope" label="scopes" />
+      )}
+      {isFeatureEnabled(Feature.IdentityBrokeringAPIV2) && (
+        <SwitchField
+          field="config.storeTokenInSession"
+          label="storeTokenInSession"
+          fieldType="boolean"
+          defaultValue={!isSAML}
+        />
       )}
       <SwitchField field="storeToken" label="storeTokens" fieldType="boolean" />
       {(isSAML || isOIDC || isOAuth2) && (
@@ -346,6 +355,28 @@ export const AdvancedSettings = ({
             field="config.allowClientIdAsAudience"
             label="allowClientIdAsAudience"
           />
+        )}
+      {isOIDC &&
+        ((isClientAuthFederatedEnabled &&
+          supportsClientAssertions === "true") ||
+          (jwtAuthorizationGrant &&
+            jwtAuthorizationGrantEnabled === "true")) && (
+          <FormGroupField label="fedClientAssertionMaxExp">
+            <Controller
+              name="config.fedClientAssertionMaxExp"
+              defaultValue={""}
+              control={control}
+              render={({ field }) => (
+                <TimeSelector
+                  className="kc-fed-client-assertion-max-expiration-time"
+                  data-testid="fed-client-assertion-max-expiration-time-input"
+                  value={field.value!}
+                  onChange={field.onChange}
+                  units={["minute", "hour", "day"]}
+                />
+              )}
+            />
+          </FormGroupField>
         )}
     </>
   );

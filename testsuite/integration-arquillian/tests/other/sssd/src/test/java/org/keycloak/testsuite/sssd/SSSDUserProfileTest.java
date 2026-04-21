@@ -41,7 +41,7 @@ import org.keycloak.representations.userprofile.config.UPAttributePermissions;
 import org.keycloak.representations.userprofile.config.UPAttributeRequired;
 import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.storage.UserStorageProvider;
-import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.WaitUtils;
@@ -86,7 +86,7 @@ public class SSSDUserProfileTest extends AbstractBaseSSSDTest {
         // default configuration adds all sssd attributes
         // check they are read-only in both admin and user for a SSSD user
         String username = getUsername();
-        UserResource userResource = ApiUtil.findUserByUsernameId(testRealm(), username);
+        UserResource userResource = AdminApiUtil.findUserByUsernameId(testRealm(), username);
         UserRepresentation user = userResource.toRepresentation(true);
 
         // for admin the four should be read-only
@@ -130,7 +130,7 @@ public class SSSDUserProfileTest extends AbstractBaseSSSDTest {
     @Test
     public void test03DefaultInternalDBUserProfile() throws Exception {
         // check non sssd user has normal atttributes enabled
-        UserResource testResource = ApiUtil.findUserByUsernameId(testRealm(), "test-user@localhost");
+        UserResource testResource = AdminApiUtil.findUserByUsernameId(testRealm(), "test-user@localhost");
         UserRepresentation test = testResource.toRepresentation(true);
 
         // for admin the four should be editable
@@ -180,7 +180,7 @@ public class SSSDUserProfileTest extends AbstractBaseSSSDTest {
             // for admin all attributes are added as read-only and postal_code remains editable
             String username = getUsername();
             String sssdId = getSssdProviderId();
-            UserResource userResource = ApiUtil.findUserByUsernameId(testRealm(), username);
+            UserResource userResource = AdminApiUtil.findUserByUsernameId(testRealm(), username);
             UserRepresentation user = userResource.toRepresentation(true);
             // first and last names are removed from the UP config (unmanaged) and are not available from the representation
             assertUser(user, username, getEmail(username), null, null, sssdId);
@@ -231,7 +231,7 @@ public class SSSDUserProfileTest extends AbstractBaseSSSDTest {
             createMixedUPConfiguration();
 
             // for admin firstName and lastName remains removed, the rest editable
-            UserResource testResource = ApiUtil.findUserByUsernameId(testRealm(), "test-user@localhost");
+            UserResource testResource = AdminApiUtil.findUserByUsernameId(testRealm(), "test-user@localhost");
             UserRepresentation test = testResource.toRepresentation(true);
             assertUser(test, "test-user@localhost", "test-user@localhost", null, null, null);
             assertProfileAttributes(test, null, false, "username", "email", "postal_code");

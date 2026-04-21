@@ -144,12 +144,12 @@ public class RealmAdapter implements StorageProviderRealmModel, JpaModel<RealmEn
 
     @Override
     public String getDisplayName() {
-        return getAttribute(RealmAttributes.DISPLAY_NAME);
+        return realm.getDisplayName();
     }
 
     @Override
     public void setDisplayName(String displayName) {
-        setAttribute(RealmAttributes.DISPLAY_NAME, displayName);
+        realm.setDisplayName(displayName);
     }
 
     @Override
@@ -389,6 +389,16 @@ public class RealmAdapter implements StorageProviderRealmModel, JpaModel<RealmEn
     @Override
     public void setFailureFactor(int failureFactor) {
         setAttribute("failureFactor", failureFactor);
+    }
+
+    @Override
+    public int getMaxSecondaryAuthFailures() {
+        return getAttribute("maxSecondaryAuthFailures", 0);
+    }
+
+    @Override
+    public void setMaxSecondaryAuthFailures(int maxSecondaryAuthFailures) {
+        setAttribute("maxSecondaryAuthFailures", maxSecondaryAuthFailures);
     }
 
     @Override
@@ -1309,6 +1319,16 @@ public class RealmAdapter implements StorageProviderRealmModel, JpaModel<RealmEn
     @Override
     public void setVerifiableCredentialsEnabled(boolean verifiableCredentialsEnabled) {
         setAttribute(RealmAttributes.VERIFIABLE_CREDENTIALS_ENABLED, verifiableCredentialsEnabled);
+    }
+
+    @Override
+    public void setScimApiEnabled(boolean enabled) {
+        setAttribute(RealmAttributes.SCIM_API_ENABLED, enabled);
+    }
+
+    @Override
+    public boolean isScimApiEnabled() {
+        return getAttribute(RealmAttributes.SCIM_API_ENABLED, Boolean.FALSE);
     }
 
     @Override

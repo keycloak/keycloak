@@ -103,7 +103,8 @@
                         <dependencySourceInclude>org.keycloak:*</dependencySourceInclude>
                     </dependencySourceIncludes>
                     <dependencySourceExcludes>
-                        <dependencySourceInclude>org.keycloak:keycloak-operator</dependencySourceInclude>
+                        <dependencySourceExclude>org.keycloak:keycloak-operator</dependencySourceExclude>
+                        <dependencySourceExclude>org.keycloak:keycloak-admin-v2-api</dependencySourceExclude>
                     </dependencySourceExcludes>
                 </configuration>
                 <executions>

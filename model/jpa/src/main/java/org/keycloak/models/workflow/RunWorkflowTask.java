@@ -129,7 +129,6 @@ class RunWorkflowTask extends WorkflowTransactionalTask {
     private void fireWorkflowStepScheduled(KeycloakSession session, DefaultWorkflowExecutionContext context, WorkflowStep nextStep) {
         log.debugf("Scheduled step %s to run in %s for resource %s (execution id: %s)",
                 nextStep.getProviderId(), nextStep.getAfter(), context.getResourceId(), context.getExecutionId());
-        // If a step has a time defined, schedule it and stop processing the other steps of workflow
         long scheduledTime = System.currentTimeMillis() + DurationConverter.parseDuration(nextStep.getAfter()).toMillis();
         // Fire workflow step scheduled event
         WorkflowProviderEvents.fireWorkflowStepScheduledEvent(session, context.getWorkflow(), nextStep, context.getResourceId(), context.getExecutionId(),

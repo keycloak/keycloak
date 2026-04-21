@@ -34,12 +34,16 @@ These endpoints respond with HTTP status `200 OK` on success or `503 Service Una
 }
 ----
 
-.Successful response for endpoints with information on the database connection:
+.Successful response for endpoints with additional per-check information:
 [source, json]
 ----
 {
     "status": "UP",
     "checks": [
+        {
+            "name": "Keycloak Initialized",
+            "status": "UP"
+        },
         {
             "name": "Graceful Shutdown",
             "status": "UP"
@@ -63,7 +67,7 @@ It is possible to enable the health checks using the build time option `health-e
 
 <@kc.build parameters="--health-enabled=true"/>
 
-By default, no check is returned from the health endpoints.
+When the health endpoints are enabled, async server bootstrap is also enabled by default, resulting in the HTTP ports being open while bootstrapping is in progress. See <@links.server id="configuration-production" anchor="server-bootstrap-behavior" /> for more details.
 
 == Using the health checks
 
@@ -83,6 +87,13 @@ curl --head -fsS http://localhost:9000/health/ready
 ----
 
 If the command returns with status 0, then {project_name} is `+live+` or `+ready+`, depending on which endpoint you called. Otherwise there is a problem.
+
+If HTTPS is configured for the default {project_name} server, no content appears from this command. Use this command instead:
+
+[source,bash]
+----
+curl --head -fsS https://localhost:9000/health/ready
+----
 
 === Kubernetes
 
@@ -126,6 +137,10 @@ The table below shows the available checks.
 
 |Graceful shutdown
 |Will start to return "DOWN" once the pre-shutdown phase started.
+|No
+
+|Keycloak Initialized
+|Returns the status of the server initialization.
 |No
 
 |===

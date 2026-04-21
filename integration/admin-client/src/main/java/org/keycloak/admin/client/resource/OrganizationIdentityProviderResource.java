@@ -17,12 +17,18 @@
 
 package org.keycloak.admin.client.resource;
 
+import java.util.List;
+
 import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
+import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 
 public interface OrganizationIdentityProviderResource {
@@ -33,4 +39,31 @@ public interface OrganizationIdentityProviderResource {
 
     @DELETE
     Response delete();
+
+    /**
+     * Returns organization groups for the identity provider with the specified alias.
+     * It allows filtering and displaying only the organization groups that are valid for the given identity provider.
+     *
+     * Only returns groups if the identity provider is associated with the organization and the organization
+     * is enabled. Otherwise, returns an error or empty stream.
+     *
+     * @param search a string to search for in group names
+     * @param searchQuery a query to search for group attributes, in the format 'key1:value1 key2:value2'
+     * @param exact if true, perform exact match on the search parameter
+     * @param first the position of the first result (pagination offset)
+     * @param max the maximum number of results to return
+     * @param briefRepresentation if true, return brief group representation; otherwise return full representation
+     * @return a stream of organization groups associated with the organization
+     * @since Keycloak server 26.6.0
+     */
+    @Path("groups")
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    List<GroupRepresentation> getGroups(@QueryParam("search") String search,
+                                        @QueryParam("q") String searchQuery,
+                                        @QueryParam("exact") @DefaultValue("false") Boolean exact,
+                                        @QueryParam("first") Integer first,
+                                        @QueryParam("max") Integer max,
+                                        @QueryParam("briefRepresentation") @DefaultValue("true") boolean briefRepresentation,
+                                        @QueryParam("subGroupsCount") @DefaultValue("false") boolean subGroupsCount);
 }

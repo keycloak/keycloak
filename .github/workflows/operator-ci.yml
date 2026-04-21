@@ -5,6 +5,7 @@ on:
     branches-ignore:
       - main
       - dependabot/**
+      - copilot/**
   pull_request:
   workflow_dispatch:
 
@@ -68,6 +69,10 @@ jobs:
       - name: Setup Java
         uses: ./.github/actions/java-setup
 
+      - name: Restore Quarkus snapshot cache
+        if: github.ref == 'refs/heads/quarkus-next' || github.base_ref == 'quarkus-next'
+        uses: ./.github/actions/quarkus-snapshot-cache
+
       - name: Test operator running locally
         run: |
           ./mvnw install -Poperator -pl :keycloak-operator -am
@@ -89,8 +94,12 @@ jobs:
       - name: Setup Java
         uses: ./.github/actions/java-setup
 
+      - name: Restore Quarkus snapshot cache
+        if: github.ref == 'refs/heads/quarkus-next' || github.base_ref == 'quarkus-next'
+        uses: ./.github/actions/quarkus-snapshot-cache
+
       - name: Setup Minikube-Kubernetes
-        uses: manusa/actions-setup-minikube@b589f2d61bf96695c546929c72b38563e856059d # v2.14.0
+        uses: manusa/actions-setup-minikube@96202dee4ae1c2f46a62fe197273aaf22b83f42d # v2.16.1
         with:
           minikube version: ${{ env.MINIKUBE_VERSION }}
           kubernetes version: ${{ env.KUBERNETES_VERSION }}
@@ -100,7 +109,7 @@ jobs:
 
       - name: Download keycloak distribution
         id: download-keycloak-dist
-        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: keycloak-dist
           path: quarkus/container
@@ -137,8 +146,12 @@ jobs:
       - name: Setup Java
         uses: ./.github/actions/java-setup
 
+      - name: Restore Quarkus snapshot cache
+        if: github.ref == 'refs/heads/quarkus-next' || github.base_ref == 'quarkus-next'
+        uses: ./.github/actions/quarkus-snapshot-cache
+
       - name: Setup Minikube-Kubernetes
-        uses: manusa/actions-setup-minikube@b589f2d61bf96695c546929c72b38563e856059d # v2.14.0
+        uses: manusa/actions-setup-minikube@96202dee4ae1c2f46a62fe197273aaf22b83f42d # v2.16.1
         with:
           minikube version: ${{ env.MINIKUBE_VERSION }}
           kubernetes version: ${{ env.KUBERNETES_VERSION }}
@@ -146,15 +159,12 @@ jobs:
           driver: docker
           start args: --memory=${{ env.MINIKUBE_MEMORY }} --addons=registry --insecure-registry=192.168.49.0/24
 
-      - name: Install OPM
+      - name: Install OPM / OC
         uses: redhat-actions/openshift-tools-installer@144527c7d98999f2652264c048c7a9bd103f8a82 # v1.13.1
         with:
-          source: github
-          opm: 1.21.0
-
-      - name: Install OC
-        uses: redhat-actions/openshift-tools-installer@144527c7d98999f2652264c048c7a9bd103f8a82 # v1.13.1
-        with:
+          # openshift-tools-installer is out-of-date for later opm, which started using the binary name opm-rhelX.
+          # we may have to do our own installation to move past this
+          opm: 4.16.4
           oc: 4
 
       - name: Install Yq
@@ -166,7 +176,7 @@ jobs:
 
       - name: Download keycloak distribution
         id: download-keycloak-dist
-        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: keycloak-dist
           path: quarkus/container
@@ -181,8 +191,10 @@ jobs:
       - name: Deploy an example Keycloak and wait for it to be ready
         working-directory: operator/scripts
         run: |
-          ./check-crd-installed.sh keycloaks
-          ./check-crd-installed.sh keycloakrealmimports
+          ./check-crd-installed.sh keycloaks.v2alpha1.k8s.keycloak.org
+          ./check-crd-installed.sh keycloakrealmimports.v2alpha1.k8s.keycloak.org
+          ./check-crd-installed.sh keycloaks.v2beta1.k8s.keycloak.org
+          ./check-crd-installed.sh keycloakrealmimports.v2beta1.k8s.keycloak.org
           ./deploy-examples.sh
           
       - name: Single namespace cleanup
@@ -227,7 +239,7 @@ jobs:
 
       - name: Upload inspect report
         if: failure()
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: oc-inspect
           path: inspect.*

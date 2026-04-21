@@ -18,7 +18,7 @@ package org.keycloak.testsuite.pages;
 
 import org.keycloak.testsuite.util.UIUtils;
 
-import org.junit.Assert;
+import org.junit.jupiter.api.Assertions;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
@@ -35,7 +35,7 @@ public abstract class LogoutSessionsPage extends LanguageComboboxAwarePage {
     @Override
     public void assertCurrent() {
         super.assertCurrent();
-        Assert.assertTrue("The page doesn't display the logout other sessions checkbox", this.isLogoutSessionDisplayed());
+        Assertions.assertTrue(this.isLogoutSessionDisplayed(), "The page doesn't display the logout other sessions checkbox");
     }
 
     public boolean isLogoutSessionDisplayed() {
@@ -47,12 +47,12 @@ public abstract class LogoutSessionsPage extends LanguageComboboxAwarePage {
     }
 
     public void checkLogoutSessions() {
-        Assert.assertFalse("Logout sessions is checked", isLogoutSessionsChecked());
+        Assertions.assertFalse(isLogoutSessionsChecked(), "Logout sessions is checked");
         UIUtils.switchCheckbox(logoutSessionsCheckbox, true);
     }
 
     public void uncheckLogoutSessions() {
-        Assert.assertTrue("Logout sessions is not checked", isLogoutSessionsChecked());
+        Assertions.assertTrue(isLogoutSessionsChecked(), "Logout sessions is not checked");
         UIUtils.switchCheckbox(logoutSessionsCheckbox, false);
     }
 }

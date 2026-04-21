@@ -135,7 +135,7 @@ public class WebAuthnOtherSettingsTest extends AbstractWebAuthnVirtualTest {
             WebAuthnRealmData realmData = new WebAuthnRealmData(testRealm().toRepresentation(), isPasswordless());
             assertThat(realmData.getCreateTimeout(), is(TIMEOUT));
 
-            loginPage.open();
+            oauth.openLoginForm();
             loginPage.clickRegister();
             registerPage.assertCurrent();
 

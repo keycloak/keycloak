@@ -20,11 +20,13 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 
+import org.keycloak.TokenVerifier;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.authentication.actiontoken.resetcred.ResetCredentialsActionToken;
@@ -32,11 +34,14 @@ import org.keycloak.authentication.authenticators.resetcred.ResetCredentialEmail
 import org.keycloak.common.constants.ServiceAccountConstants;
 import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.common.util.MultivaluedHashMap;
+import org.keycloak.common.util.UriUtils;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.Constants;
+import org.keycloak.models.DefaultActionTokenKey;
+import org.keycloak.models.SingleUseObjectProvider;
 import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.models.utils.SystemClientUtil;
@@ -53,6 +58,7 @@ import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageProviderModel;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.IgnoreBrowserDriver;
 import org.keycloak.testsuite.federation.UserMapStorageFactory;
@@ -65,6 +71,7 @@ import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginPasswordResetPage;
 import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
 import org.keycloak.testsuite.pages.LogoutConfirmPage;
+import org.keycloak.testsuite.pages.PageUtils;
 import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.BrowserTabUtil;
@@ -86,20 +93,23 @@ import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.firefox.FirefoxDriver;
 import org.openqa.selenium.htmlunit.HtmlUnitDriver;
 
+import static org.keycloak.protocol.oidc.par.endpoints.ParEndpoint.REQUEST_URI_PREFIX;
+
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.endsWith;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
+import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -134,7 +144,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
                 .build();
 
         password = generatePassword();
-        userId = ApiUtil.createUserAndResetPasswordWithAdminClient(testRealm(), defaultUser, password);
+        userId = AdminApiUtil.createUserAndResetPasswordWithAdminClient(testRealm(), defaultUser, password);
         defaultUser.setId(userId);
         expectedMessagesCount = 0;
         getCleanup().addUserId(userId);
@@ -190,7 +200,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
     @Test
     public void resetPasswordLoggedUser() throws IOException {
         String username = "login-test";
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login(username, password);
 
         events.expectLogin().user(userId).detail(Details.USERNAME, username).assertEvent();
@@ -247,7 +257,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
         updatePasswordPage.assertCurrent();
 
         if(userAuthenticated) {
-            assertFalse("Logout other sessions was ticked", updatePasswordPage.isLogoutSessionsChecked());
+            assertFalse(updatePasswordPage.isLogoutSessionsChecked(), "Logout other sessions was ticked");
         } else {
             updatePasswordPage.checkLogoutSessions();
         }
@@ -307,26 +317,26 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
         // Client not found
         driver.navigate().to(oauth.AUTH_SERVER_ROOT + "/realms/test/login-actions/reset-credentials?client_id=not_found");
         errorPage.assertCurrent();
-        Assert.assertEquals("Client not found.", errorPage.getError());
+        Assertions.assertEquals("Client not found.", errorPage.getError());
 
         // Redirect_uri without client
         driver.navigate().to(oauth.AUTH_SERVER_ROOT + "/realms/test/login-actions/reset-credentials?redirect_uri=https://foo/bar/");
         errorPage.assertCurrent();
-        Assert.assertEquals("Missing parameters: client_id", errorPage.getError());
+        Assertions.assertEquals("Missing parameters: client_id", errorPage.getError());
 
         // Incorrect redirect_uri
         driver.navigate().to(oauth.AUTH_SERVER_ROOT + "/realms/test/login-actions/reset-credentials?client_id=test-app&redirect_uri=https://foo/bar/");
         errorPage.assertCurrent();
-        Assert.assertEquals("Invalid parameter: redirect_uri", errorPage.getError());
+        Assertions.assertEquals("Invalid parameter: redirect_uri", errorPage.getError());
 
         // Client disabled
-        ClientResource client = ApiUtil.findClientByClientId(testRealm(), "test-app");
+        ClientResource client = AdminApiUtil.findClientByClientId(testRealm(), "test-app");
         ClientRepresentation clientRep = client.toRepresentation();
         clientRep.setEnabled(false);
         client.update(clientRep);
         try {
             driver.navigate().to(oauth.AUTH_SERVER_ROOT + "/realms/test/login-actions/reset-credentials?client_id=test-app");
-            Assert.assertEquals("Client disabled.", errorPage.getError());
+            Assertions.assertEquals("Client disabled.", errorPage.getError());
         } finally {
             clientRep.setEnabled(true);
             client.update(clientRep);
@@ -342,6 +352,35 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
     @Test
     public void resetPasswordTwice() throws IOException {
         String changePasswordUrl = resetPassword("login-test");
+        events.clear();
+
+        assertSecondPasswordResetFails(changePasswordUrl, oauth.getClientId()); // KC_RESTART doesn't exist, it was deleted after first successful reset-password flow was finished
+    }
+
+    @Test
+    public void resetPasswordTwiceWithPARRequestInBetween() throws Exception {
+        String changePasswordUrl = resetPassword("login-test");
+        events.clear();
+
+        // Try to create manually the cache key from actionToken
+        String queryString = changePasswordUrl.substring(changePasswordUrl.indexOf("?") + 1);
+        MultivaluedHashMap<String, String> params = UriUtils.decodeQueryString(queryString);
+        String key = params.getFirst(Constants.KEY);
+        TokenVerifier<DefaultActionTokenKey> tokenVerifier = TokenVerifier.create(key, DefaultActionTokenKey.class);
+        DefaultActionTokenKey aToken = tokenVerifier.getToken();
+        String serializedKey1 = aToken.serializeKey();
+        String serializedKey2 = serializedKey1 + SingleUseObjectProvider.REVOKED_KEY;
+
+        // Try to send PAR request with manually created requestUri related to the manually created serialized keys
+        String state = "testSuccessfulSinglePar";
+        oauth.loginForm()
+                .requestUri(REQUEST_URI_PREFIX + serializedKey1)
+                .state(state)
+                .open();
+        oauth.loginForm()
+                .requestUri(REQUEST_URI_PREFIX + serializedKey2)
+                .state(state)
+                .open();
         events.clear();
 
         assertSecondPasswordResetFails(changePasswordUrl, oauth.getClientId()); // KC_RESTART doesn't exist, it was deleted after first successful reset-password flow was finished
@@ -375,7 +414,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
         user.setEmail("login@test.com");
         user.setFederationLink(componentId);
         this.userId = ApiUtil.getCreatedId(testRealm().users().create(user));
-        Assert.assertFalse(StorageId.isLocalStorage(userId));
+        Assertions.assertFalse(StorageId.isLocalStorage(userId));
 
         // by default federated users are force to re-login
         resetPassword("login-test", "resetPassword", true);
@@ -471,7 +510,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     public void resetPasswordBackButton() {
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("login@test.com", "wrongpassword");
         loginPage.resetPassword();
         resetPasswordPage.assertCurrent();
@@ -530,11 +569,11 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
 
         if (relogin) {
             // relogin is forced therefore the info page should be displayed
-            Assert.assertEquals("Your account has been updated.", infoPage.getInfo());
+            Assertions.assertEquals("Your account has been updated.", infoPage.getInfo());
             String backToAppLink = infoPage.getBackToApplicationLink();
-            ClientRepresentation client = ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app").toRepresentation();
-            Assert.assertEquals(backToAppLink, client.getBaseUrl());
-            loginPage.open();
+            ClientRepresentation client = AdminApiUtil.findClientByClientId(adminClient.realm("test"), "test-app").toRepresentation();
+            Assertions.assertEquals(backToAppLink, client.getBaseUrl());
+            oauth.openLoginForm();
             loginPage.assertCurrent();
         } else {
             // continue to app because it is the same browser and auth session exists
@@ -548,7 +587,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
 
             events.expectLogout(sessionId).user(userId).session(sessionId).assertEvent();
 
-            loginPage.open();
+            oauth.openLoginForm();
 
             loginPage.login("login-test", password);
 
@@ -593,7 +632,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
     }
 
     private void initiateResetPasswordFromResetPasswordPage(String username) {
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.resetPassword();
 
         resetPasswordPage.assertCurrent();
@@ -616,7 +655,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     public void resetPasswordMissingUsername() {
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.resetPassword();
 
         resetPasswordPage.assertCurrent();
@@ -811,9 +850,9 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
             driver.navigate().to(changePasswordUrl.trim());
 
             errorPage.assertCurrent();
-            Assert.assertEquals("Action expired.", errorPage.getError());
+            Assertions.assertEquals("Action expired.", errorPage.getError());
             String backToAppLink = errorPage.getBackToApplicationLink();
-            Assert.assertTrue(backToAppLink.endsWith("/app/auth"));
+            Assertions.assertTrue(backToAppLink.endsWith("/app/auth"));
 
             events.expectRequiredAction(EventType.EXECUTE_ACTION_TOKEN_ERROR).error("expired_code").client((String) null).user(userId).session((String) null).clearDetails().detail(Details.ACTION, ResetCredentialsActionToken.TOKEN_TYPE).assertEvent();
         } finally {
@@ -854,9 +893,9 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
             URLUtils.navigateToUri(changePasswordUrl.trim());
 
             errorPage.assertCurrent();
-            Assert.assertEquals("Action expired.", errorPage.getError());
+            Assertions.assertEquals("Action expired.", errorPage.getError());
             String backToAppLink = errorPage.getBackToApplicationLink();
-            Assert.assertTrue(backToAppLink.endsWith("/app/auth"));
+            Assertions.assertTrue(backToAppLink.endsWith("/app/auth"));
 
             events.expectRequiredAction(EventType.EXECUTE_ACTION_TOKEN_ERROR).error("expired_code").client((String) null).user(userId).session((String) null).clearDetails().detail(Details.ACTION, ResetCredentialsActionToken.TOKEN_TYPE).assertEvent();
         } finally {
@@ -898,9 +937,9 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
             driver.navigate().to(changePasswordUrl.trim());
 
             errorPage.assertCurrent();
-            Assert.assertEquals("Action expired.", errorPage.getError());
+            Assertions.assertEquals("Action expired.", errorPage.getError());
             String backToAppLink = errorPage.getBackToApplicationLink();
-            Assert.assertTrue(backToAppLink.endsWith("/app/auth"));
+            Assertions.assertTrue(backToAppLink.endsWith("/app/auth"));
 
             events.expectRequiredAction(EventType.EXECUTE_ACTION_TOKEN_ERROR).error("expired_code").client((String) null).user(userId).session((String) null).clearDetails().detail(Details.ACTION, ResetCredentialsActionToken.TOKEN_TYPE).assertEvent();
         } finally {
@@ -1113,7 +1152,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
             realmRep.setSmtpServer(smtpConfig);
             testRealm().update(realmRep);
 
-            loginPage.open();
+            oauth.openLoginForm();
             loginPage.resetPassword();
 
             resetPasswordPage.assertCurrent();
@@ -1183,7 +1222,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
 
         events.expectLogout(sessionId).user(userId).session(sessionId).assertEvent();
 
-        loginPage.open();
+        oauth.openLoginForm();
 
         loginPage.login("login-test", "resetPasswordWithPasswordPolicy");
 
@@ -1239,6 +1278,44 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
             resetPassword("login-test", password);
         } finally {
             setTimeOffset(0);
+        }
+    }
+
+
+    @Test
+    public void resetPasswordLinkOpenedInNewBrowserWithDifferentLcoales() {
+        // given
+        String resetUri = oauth.AUTH_SERVER_ROOT + "/realms/test/login-actions/reset-credentials";
+        RealmRepresentation realmRep = testRealm().toRepresentation();
+
+        String origDefaultLocale = realmRep.getDefaultLocale();
+        Set<String> origSupportedLocales = realmRep.getSupportedLocales();
+        try {
+            realmRep.setDefaultLocale("en");
+            realmRep.addSupportedLocales("de");
+            realmRep.addSupportedLocales("it");
+            testRealm().update(realmRep);
+
+            // when
+            driver.navigate().to(resetUri);
+            // then
+            assertThat(PageUtils.getPageTitle(driver), is("Forgot Your Password?"));
+
+            // when
+            driver.manage().deleteAllCookies();
+            driver.navigate().to(resetUri + "?kc_locale=de");
+            // then
+            assertThat(PageUtils.getPageTitle(driver), is("Passwort vergessen?"));
+
+            // when
+            driver.manage().deleteAllCookies();
+            driver.navigate().to(resetUri + "?kc_locale=it");
+            // then
+            assertThat(PageUtils.getPageTitle(driver), is("Password dimenticata?"));
+        } finally {
+            realmRep.setDefaultLocale(origDefaultLocale);
+            realmRep.setSupportedLocales(origSupportedLocales);
+            testRealm().update(realmRep);
         }
     }
 
@@ -1311,7 +1388,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     public void resetPasswordLinkNewBrowserSessionPreserveClient() throws IOException {
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.resetPassword();
 
         resetPasswordPage.assertCurrent();
@@ -1393,7 +1470,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
 
             assertThat(tabUtil.getCountOfTabs(), Matchers.is(1));
 
-            loginPage.open();
+            oauth.openLoginForm();
             resetPasswordInNewTab(defaultUser, CLIENT_ID, REDIRECT_URI);
             assertThat(driver.getCurrentUrl(), Matchers.containsString(REDIRECT_URI));
 
@@ -1401,7 +1478,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
             logoutConfirmPage.assertCurrent();
             logoutConfirmPage.confirmLogout();
 
-            loginPage.open();
+            oauth.openLoginForm();
             resetPasswordInNewTab(defaultUser, CLIENT_ID, REDIRECT_URI);
             assertThat(driver.getCurrentUrl(), Matchers.containsString(REDIRECT_URI));
         }
@@ -1414,7 +1491,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
         Boolean originalDuplicateEmailsAllowed = realmRep.isDuplicateEmailsAllowed();
 
         try {
-            loginPage.open();
+            oauth.openLoginForm();
             loginPage.resetPassword();
 
             resetPasswordPage.assertCurrent();
@@ -1425,7 +1502,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
             realmRep.setDuplicateEmailsAllowed(true);
             testRealm().update(realmRep);
 
-            loginPage.open();
+            oauth.openLoginForm();
             loginPage.resetPassword();
 
             resetPasswordPage.assertCurrent();

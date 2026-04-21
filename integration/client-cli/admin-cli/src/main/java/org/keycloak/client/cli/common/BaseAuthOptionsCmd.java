@@ -57,7 +57,7 @@ public abstract class BaseAuthOptionsCmd extends BaseGlobalOptionsCmd {
     @Option(names = "--realm", description = "Realm name to authenticate against")
     protected String realm;
 
-    @Option(names = "--client", description = "Realm name to authenticate against")
+    @Option(names = "--client", description = "Client ID (defaults to 'admin-cli')")
     protected String clientId;
 
     @Option(names = "--user", description = "Username to login with")

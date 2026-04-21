@@ -24,6 +24,7 @@ data:
         metrics:
           namesAsTags: true
           histograms: false
+          legacy: true
         tracing:
           enabled: true
           collector-endpoint: "http://tempo-tempo.monitoring.svc:4318"
@@ -44,7 +45,7 @@ data:
 ---
 # Source: ispn-helm/templates/infinispan.yaml
 # tag::infinispan-cache-actionTokens[]
-apiVersion: infinispan.org/v2alpha1
+apiVersion: infinispan.org/v2beta1
 kind: Cache
 metadata:
   name: actiontokens
@@ -72,7 +73,7 @@ spec:
 ---
 # Source: ispn-helm/templates/infinispan.yaml
 # tag::infinispan-cache-authenticationSessions[]
-apiVersion: infinispan.org/v2alpha1
+apiVersion: infinispan.org/v2beta1
 kind: Cache
 metadata:
   name: authenticationsessions
@@ -99,12 +100,13 @@ spec:
         enabled: true
         indexed-entities:
         - keycloak.RootAuthenticationSessionEntity
+        startupMode: NONE
       
 # end::infinispan-cache-authenticationSessions[]
 ---
 # Source: ispn-helm/templates/infinispan.yaml
 # tag::infinispan-cache-clientSessions[]
-apiVersion: infinispan.org/v2alpha1
+apiVersion: infinispan.org/v2beta1
 kind: Cache
 metadata:
   name: clientsessions
@@ -131,12 +133,13 @@ spec:
         enabled: true
         indexed-entities:
         - keycloak.RemoteAuthenticatedClientSessionEntity
+        startupMode: NONE
       
 # end::infinispan-cache-clientSessions[]
 ---
 # Source: ispn-helm/templates/infinispan.yaml
 # tag::infinispan-cache-loginFailures[]
-apiVersion: infinispan.org/v2alpha1
+apiVersion: infinispan.org/v2beta1
 kind: Cache
 metadata:
   name: loginfailures
@@ -163,12 +166,13 @@ spec:
         enabled: true
         indexed-entities:
         - keycloak.LoginFailureEntity
+        startupMode: NONE
       
 # end::infinispan-cache-loginFailures[]
 ---
 # Source: ispn-helm/templates/infinispan.yaml
 # tag::infinispan-cache-offlineClientSessions[]
-apiVersion: infinispan.org/v2alpha1
+apiVersion: infinispan.org/v2beta1
 kind: Cache
 metadata:
   name: offlineclientsessions
@@ -195,12 +199,13 @@ spec:
         enabled: true
         indexed-entities:
         - keycloak.RemoteAuthenticatedClientSessionEntity
+        startupMode: NONE
       
 # end::infinispan-cache-offlineClientSessions[]
 ---
 # Source: ispn-helm/templates/infinispan.yaml
 # tag::infinispan-cache-offlineSessions[]
-apiVersion: infinispan.org/v2alpha1
+apiVersion: infinispan.org/v2beta1
 kind: Cache
 metadata:
   name: offlinesessions
@@ -227,12 +232,13 @@ spec:
         enabled: true
         indexed-entities:
         - keycloak.RemoteUserSessionEntity
+        startupMode: NONE
       
 # end::infinispan-cache-offlineSessions[]
 ---
 # Source: ispn-helm/templates/infinispan.yaml
 # tag::infinispan-cache-sessions[]
-apiVersion: infinispan.org/v2alpha1
+apiVersion: infinispan.org/v2beta1
 kind: Cache
 metadata:
   name: sessions
@@ -259,12 +265,13 @@ spec:
         enabled: true
         indexed-entities:
         - keycloak.RemoteUserSessionEntity
+        startupMode: NONE
       
 # end::infinispan-cache-sessions[]
 ---
 # Source: ispn-helm/templates/infinispan.yaml
 # tag::infinispan-cache-work[]
-apiVersion: infinispan.org/v2alpha1
+apiVersion: infinispan.org/v2beta1
 kind: Cache
 metadata:
   name: work
@@ -311,8 +318,8 @@ spec:
   expose:
     type: Route
   configMapName: "cluster-config"
-  image: quay.io/infinispan/server:16.0.5
-  version: 16.0.5
+  image: quay.io/infinispan/server:16.0.8
+  version: 16.0.8
   configListener:
     enabled: false
   container:

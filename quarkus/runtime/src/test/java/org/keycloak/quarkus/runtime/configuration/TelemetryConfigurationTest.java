@@ -10,7 +10,6 @@ public class TelemetryConfigurationTest extends AbstractConfigurationTest {
     public void rootDefaults() {
         initConfig();
         assertConfig(Map.of(
-                "telemetry-enabled", "false",
                 "telemetry-endpoint", "http://localhost:4317",
                 "telemetry-service-name", "keycloak",
                 "telemetry-protocol", "grpc"

@@ -24,7 +24,7 @@ import org.keycloak.testsuite.util.DroneUtils;
 import org.keycloak.testsuite.util.UIUtils;
 import org.keycloak.testsuite.util.WaitUtils;
 
-import org.junit.Assert;
+import org.junit.jupiter.api.Assertions;
 import org.openqa.selenium.By;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebDriver;
@@ -81,7 +81,7 @@ public abstract class LanguageComboboxAwarePage extends AbstractPage {
             String url = langLink.getAttribute("href");
             DroneUtils.getCurrentDriver().navigate().to(url);
         } catch (URISyntaxException ex) {
-            Assert.fail(ex.getMessage());
+            Assertions.fail(ex.getMessage());
         }
         WaitUtils.waitForPageToLoad();
     }
@@ -90,9 +90,9 @@ public abstract class LanguageComboboxAwarePage extends AbstractPage {
     public void assertTryAnotherWayLinkAvailability(boolean expectedAvailability) {
         try {
             driver.findElement(By.id("try-another-way"));
-            Assert.assertTrue(expectedAvailability);
+            Assertions.assertTrue(expectedAvailability);
         } catch (NoSuchElementException nse) {
-            Assert.assertFalse(expectedAvailability);
+            Assertions.assertFalse(expectedAvailability);
         }
     }
 
@@ -103,9 +103,9 @@ public abstract class LanguageComboboxAwarePage extends AbstractPage {
     public void assertAccountLinkAvailability(boolean expectedAvailability) {
         try {
             driver.findElement(By.id("account"));
-            Assert.assertTrue(expectedAvailability);
+            Assertions.assertTrue(expectedAvailability);
         } catch (NoSuchElementException nse) {
-            Assert.assertFalse(expectedAvailability);
+            Assertions.assertFalse(expectedAvailability);
         }
     }
 
@@ -121,11 +121,11 @@ public abstract class LanguageComboboxAwarePage extends AbstractPage {
     public static void assertAttemptedUsernameAvailability(WebDriver driver, boolean expectedAvailability) {
         try {
             driver.findElement(By.id("kc-attempted-username"));
-            Assert.assertTrue(expectedAvailability);
+            Assertions.assertTrue(expectedAvailability);
             // make sure the username field is not shown if the attempted username field is present
-            Assert.assertTrue(driver.findElements(By.id("username")).isEmpty());
+            Assertions.assertTrue(driver.findElements(By.id("username")).isEmpty());
         } catch (NoSuchElementException nse) {
-            Assert.assertFalse(expectedAvailability);
+            Assertions.assertFalse(expectedAvailability);
         }
     }
 

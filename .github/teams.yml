@@ -10,15 +10,14 @@ team/continuous-delivery:
   - area/testsuite
 
 team/core-clients:
+
+team/core-protocols:
   - area/adapter/fuse
   - area/adapter/java-cli
   - area/adapter/jee
   - area/adapter/jee-saml
   - area/adapter/spring
   - area/adapter/javascript
-  - area/authentication
-  - area/authentication/webauthn
-  - area/login/ui
   - area/oidc
   - area/oid4vc
   - area/saml
@@ -30,8 +29,14 @@ team/core-iam:
   - area/identity-brokering
   - area/ldap
   - area/organizations
+  - area/scim
   - area/user-profile
   - area/workflows
+
+team/core-authn:
+  - area/authentication
+  - area/authentication/webauthn
+  - area/login/ui
 
 team/core-shared:
   - area/account/api
@@ -45,7 +50,7 @@ team/core-shared:
   - area/admin/client-js
   - area/admin/ui
 
-team/sre:
+team/production-readiness:
   - area/observability
 
 team/community:

@@ -23,9 +23,9 @@ import org.junit.Test;
 
 import static org.keycloak.testsuite.AbstractAdminTest.loadJson;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author <a href="mailto:mkanis@redhat.com">Martin Kanis</a>
@@ -100,7 +100,7 @@ public class TokenEndpointCorsTest extends AbstractKeycloakTest {
     @Test
     public void accessTokenResourceOwnerCorsRequest() throws Exception {
         oauth.realm("test");
-        oauth.clientId("test-app2");
+        oauth.client("test-app2");
         oauth.origin(VALID_CORS_URL);
 
         // Token request
@@ -112,7 +112,7 @@ public class TokenEndpointCorsTest extends AbstractKeycloakTest {
         // Invalid password
         response = oauth.doPasswordGrantRequest("test-user@localhost", "invalid");
 
-        assertEquals(401, response.getStatusCode());
+        assertEquals(400, response.getStatusCode());
         assertCors(response);
     }
 

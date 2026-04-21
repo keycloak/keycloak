@@ -170,7 +170,7 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
             this.parsedResponseType = checker.getParsedResponseType();
             this.parsedResponseMode = checker.getParsedResponseMode();
         } catch (AuthorizationEndpointChecker.AuthorizationCheckException ex) {
-            OIDCResponseMode responseMode = null;
+            OIDCResponseMode responseMode;
             if (checker.isInvalidResponseType(ex)) {
                 responseMode = OIDCResponseMode.parseWhenInvalidResponseType(request.getResponseMode());
             } else {
@@ -185,8 +185,10 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
         try {
             checker.checkParRequired();
             checker.checkInvalidRequestMessage();
+            checker.checkAuthorizationDetails();
             checker.checkOIDCRequest();
             checker.checkValidScope();
+            checker.checkValidResource();
             checker.checkOIDCParams();
             checker.checkPKCEParams();
         } catch (AuthorizationEndpointChecker.AuthorizationCheckException ex) {
@@ -453,6 +455,7 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
         paramAction.accept(OIDCLoginProtocol.PROMPT_PARAM, request.getPrompt());
         paramAction.accept(OIDCLoginProtocol.RESPONSE_MODE_PARAM, request.getResponseMode());
         paramAction.accept(OIDCLoginProtocol.SCOPE_PARAM, request.getScope());
+        paramAction.accept(OIDCLoginProtocol.RESOURCE_PARAM, request.getResource());
         paramAction.accept(OIDCLoginProtocol.STATE_PARAM, request.getState());
         paramAction.accept(OIDCLoginProtocol.DPOP_JKT, request.getDpopJkt());
     }

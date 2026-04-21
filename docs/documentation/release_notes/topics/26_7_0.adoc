@@ -1,0 +1,13 @@
+// Release notes should contain only headline-worthy new features,
+// assuming that people who migrate will read the upgrading guide anyway.
+
+This release features new capabilities for users and administrators of {project_name}. The highlights of this release are:
+
+== Realm search now matches by display name
+
+When searching for realms in the admin console, the search now also matches against the realm's display name in addition to the realm name.
+
+As part of this change, the `displayName` attribute has been promoted from a realm attribute to a dedicated column on the realm entity.
+
+Before migrating, check the current value of the `displayName` attribute for your realms. If the current value of `displayName` attribute
+exceeds 255 characters, it will be truncated during migration.

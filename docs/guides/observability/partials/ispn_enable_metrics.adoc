@@ -33,6 +33,7 @@ data:
           gauges: true
           namesAsTags: true
           histograms: false
+          legacy: true
 ----
 
 .infinispan.yaml CR

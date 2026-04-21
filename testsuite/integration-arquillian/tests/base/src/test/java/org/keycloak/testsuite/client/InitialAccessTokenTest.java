@@ -31,11 +31,11 @@ import org.keycloak.representations.idm.ClientInitialAccessPresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.testsuite.util.TokenSignatureUtil;
 
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -62,11 +62,11 @@ public class InitialAccessTokenTest extends AbstractClientRegistrationTest {
         setTimeOffset(10);
 
         ClientRepresentation created = reg.create(rep);
-        Assert.assertNotNull(created);
+        Assertions.assertNotNull(created);
 
         try {
             reg.create(rep);
-            Assert.fail("Expected exception");
+            Assertions.fail("Expected exception");
         } catch (ClientRegistrationException e) {
             assertEquals(401, ((HttpErrorException) e.getCause()).getStatusLine().getStatusCode());
         }
@@ -87,7 +87,7 @@ public class InitialAccessTokenTest extends AbstractClientRegistrationTest {
 
             ClientRepresentation rep = new ClientRepresentation();
             ClientRepresentation created = reg.create(rep);
-            Assert.assertNotNull(created);
+            Assertions.assertNotNull(created);
         } finally {
             TokenSignatureUtil.changeRealmTokenSignatureProvider(adminClient, Algorithm.RS256);
         }
@@ -102,14 +102,14 @@ public class InitialAccessTokenTest extends AbstractClientRegistrationTest {
         ClientRepresentation rep = new ClientRepresentation();
 
         ClientRepresentation created = reg.create(rep);
-        Assert.assertNotNull(created);
+        Assertions.assertNotNull(created);
 
         created = reg.create(rep);
-        Assert.assertNotNull(created);
+        Assertions.assertNotNull(created);
 
         try {
             reg.create(rep);
-            Assert.fail("Expected exception");
+            Assertions.fail("Expected exception");
         } catch (ClientRegistrationException e) {
             assertEquals(401, ((HttpErrorException) e.getCause()).getStatusLine().getStatusCode());
         }
@@ -127,7 +127,7 @@ public class InitialAccessTokenTest extends AbstractClientRegistrationTest {
 
         try {
             reg.create(rep);
-            Assert.fail("Expected exception");
+            Assertions.fail("Expected exception");
         } catch (ClientRegistrationException e) {
             assertEquals(401, ((HttpErrorException) e.getCause()).getStatusLine().getStatusCode());
         }
@@ -145,7 +145,7 @@ public class InitialAccessTokenTest extends AbstractClientRegistrationTest {
 
         try {
             reg.create(rep);
-            Assert.fail("Expected exception");
+            Assertions.fail("Expected exception");
         } catch (ClientRegistrationException e) {
             assertEquals(401, ((HttpErrorException) e.getCause()).getStatusLine().getStatusCode());
         }

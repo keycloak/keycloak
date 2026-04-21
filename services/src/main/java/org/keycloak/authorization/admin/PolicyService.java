@@ -54,6 +54,7 @@ import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.utils.ModelToRepresentation;
+import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.representations.idm.authorization.AbstractPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.PolicyProviderRepresentation;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
@@ -158,7 +159,9 @@ public class PolicyService {
             throw new ErrorResponseException("Policy with name [" + representation.getName() + "] already exists", "Conflicting policy", Status.CONFLICT);
         }
 
-        return policyStore.create(resourceServer, representation);
+        Policy policy = policyStore.create(resourceServer, representation);
+        RepresentationToModel.toModel(representation, authorization, policy);
+        return policy;
     }
 
     @Path("/search")
@@ -331,6 +334,8 @@ public class PolicyService {
                             representation.setName(factory.getName());
                             representation.setGroup(factory.getGroup());
                             representation.setType(factory.getId());
+                            representation.setDescription(factory.getDescription());
+                            representation.setCode(factory.getCode());
 
                             return representation;
                         })

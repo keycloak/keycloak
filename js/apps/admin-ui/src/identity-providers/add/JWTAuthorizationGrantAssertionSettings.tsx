@@ -28,17 +28,17 @@ export const JWTAuthorizationGrantAssertionSettings = () => {
             helpText={t(
               "jwtAuthorizationGrantMaxAllowedAssertionExpirationHelp",
             )}
-            fieldLabelId="jwtAuthorizationGrantMaxAllowedAssertionExpirationHelp"
+            fieldLabelId="jwtAuthorizationGrantMaxAllowedAssertionExpiration"
           />
         }
       >
         <Controller
-          name="config.jwtAuthorizationGrantMaxAllowedAssertionExpirationHelp"
+          name="config.jwtAuthorizationGrantMaxAllowedAssertionExpiration"
           defaultValue={300}
           control={control}
           render={({ field }) => (
             <TimeSelector
-              data-testid="jwtAuthorizationGrantMaxAllowedAssertionExpirationHelp"
+              data-testid="jwtAuthorizationGrantMaxAllowedAssertionExpiration"
               value={field.value!}
               onChange={field.onChange}
               units={["second", "minute", "hour"]}

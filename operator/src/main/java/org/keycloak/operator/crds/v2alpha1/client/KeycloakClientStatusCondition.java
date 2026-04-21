@@ -17,7 +17,7 @@
 
 package org.keycloak.operator.crds.v2alpha1.client;
 
-import org.keycloak.operator.crds.v2alpha1.StatusCondition;
+import org.keycloak.operator.crds.v2beta1.StatusCondition;
 
 // TODO: we may want to simply eliminate this until a specialization is needed
 public class KeycloakClientStatusCondition extends StatusCondition {

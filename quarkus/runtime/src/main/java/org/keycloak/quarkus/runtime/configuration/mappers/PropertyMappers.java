@@ -25,7 +25,6 @@ import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.cli.Picocli;
 import org.keycloak.quarkus.runtime.cli.PropertyException;
 import org.keycloak.quarkus.runtime.cli.command.AbstractCommand;
-import org.keycloak.quarkus.runtime.configuration.DisabledMappersInterceptor;
 import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
 import org.keycloak.quarkus.runtime.configuration.NestedPropertyMappingInterceptor;
 import org.keycloak.quarkus.runtime.configuration.PersistedConfigSource;
@@ -54,7 +53,8 @@ public final class PropertyMappers {
                 new FeaturePropertyMappers(), new ImportPropertyMappers(), new ManagementPropertyMappers(),
                 new MetricsPropertyMappers(), new OpenApiPropertyMappers(), new LoggingPropertyMappers(), new ProxyPropertyMappers(),
                 new VaultPropertyMappers(), new TracingPropertyMappers(), new TransactionPropertyMappers(),
-                new SecurityPropertyMappers(), new TruststorePropertyMappers(), new TelemetryPropertyMappers());
+                new SecurityPropertyMappers(), new TruststorePropertyMappers(), new TelemetryPropertyMappers(),
+                new ServerPropertyMappers());
     }
 
     public static List<PropertyMapperGrouping> getPropertyMapperGroupings() {
@@ -96,7 +96,13 @@ public final class PropertyMappers {
 
     public static boolean isSpiBuildTimeProperty(String name) {
         // we can't require the new property formant until we're ok with a breaking change
-        //return name.startsWith(KC_SPI_PREFIX) && (name.endsWith("--provider") || name.endsWith("--enabled") || name.endsWith("--provider-default"));
+        return isSpiBuildTimeProperty(name, false);
+    }
+
+    public static boolean isSpiBuildTimeProperty(String name, boolean strict) {
+        if (strict) {
+            return name.startsWith(KC_SPI_PREFIX) && (name.endsWith("--provider") || name.endsWith("--enabled") || name.endsWith("--provider-default"));
+        }
         return name.startsWith(KC_SPI_PREFIX) && (name.endsWith("-provider") || name.endsWith("-enabled") || name.endsWith("-provider-default"));
     }
 
@@ -195,8 +201,12 @@ public final class PropertyMappers {
         return MAPPERS.getWildcardMappers();
     }
 
-    public static WildcardPropertyMapper<?> getWildcardMappedFrom(Option<?> from) {
-        return MAPPERS.wildcardConfig.wildcardMapFrom.get(from.getKey());
+    public static List<WildcardPropertyMapper<?>> getWildcardsMappedFrom(Option<?> from) {
+        var result = MAPPERS.wildcardConfig.wildcardMapFrom.get(from.getKey());
+        if (result == null) {
+            return List.of();
+        }
+        return result;
     }
 
     public static boolean isSupported(PropertyMapper<?> mapper) {
@@ -300,26 +310,44 @@ public final class PropertyMappers {
         }
 
         public void sanitizeDisabledMappers(AbstractCommand command) {
-            DisabledMappersInterceptor.runWithDisabled(() -> { // We need to have the whole configuration available
-
-                // Initialize profile in order to check state of features. Disable Persisted CS for re-augmentation
-                if (isRebuildCheck()) {
-                    PersistedConfigSource.getInstance().runWithDisabled(Environment::getCurrentOrCreateFeatureProfile);
-                } else {
-                    Environment.getCurrentOrCreateFeatureProfile();
-                    if (!command.shouldStart()) {
-                        // this will use the deferred logger, which means it may not be seen in some circumstances
-                        Profile.getInstance().logUnsupportedFeatures();
-                    }
+            // Initialize profile in order to check state of features. Disable Persisted CS for re-augmentation
+            if (isRebuildCheck()) {
+                PersistedConfigSource.getInstance().runWithDisabled(Environment::getCurrentOrCreateFeatureProfile);
+            } else {
+                Environment.getCurrentOrCreateFeatureProfile();
+                if (!command.shouldStart()) {
+                    // this will use the deferred logger, which means it may not be seen in some circumstances
+                    Profile.getInstance().logUnsupportedFeatures();
                 }
+            }
 
-                sanitizeMappers(buildTimeMappers, disabledBuildTimeMappers, command);
-                sanitizeMappers(runtimeTimeMappers, disabledRuntimeMappers, command);
-
-                entrySet().stream().filter(e -> e.getValue().size() > 1).findFirst().ifPresent(e -> {
+            sanitizeMappers(buildTimeMappers, disabledBuildTimeMappers, command);
+            sanitizeMappers(runtimeTimeMappers, disabledRuntimeMappers, command);
+            
+            // enforce single mappings - by dropping multiple mapping synthetics
+            entrySet().stream().forEach(e -> {
+                if (e.getValue().size() <= 1) {
+                    return;
+                }
+                if (e.getKey().startsWith(MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX)) {
+                    PropertyMapper<?> canonicalMapper = null;
+                    for (PropertyMapper<?> mapper : e.getValue()) {
+                        if (canonicalMapper != null) {
+                            if (mapper.option.isSynthetic()) {
+                                continue;
+                            }
+                            if (!canonicalMapper.option.isSynthetic()) {
+                                throw new PropertyException(String.format("Duplicated mapper for key '%s'.", e.getKey()));                    
+                            }
+                        }
+                        canonicalMapper = mapper;
+                    }
+                    e.setValue(List.of(canonicalMapper));
+                } else {
                     throw new PropertyException(String.format("Duplicated mapper for key '%s'.", e.getKey()));
-                });
+                }
             });
+
         }
 
         public Map<OptionCategory, List<PropertyMapper<?>>> getRuntimeMappers() {
@@ -363,6 +391,8 @@ public final class PropertyMappers {
                     String legacyTo = mapper.getTo().replace("--", "-");
                     operation.accept(legacyTo, mapper);
                 }
+            } else if (mapper.getOption().isSynthetic()) {
+                throw new IllegalStateException("Synthetic options must map to a value");
             }
         }
     }
@@ -372,11 +402,11 @@ public final class PropertyMappers {
      */
     private static class WildcardMappersConfig {
         private final Set<WildcardPropertyMapper<?>> wildcardMappers = new HashSet<>();
-        private final Map<String, WildcardPropertyMapper<?>> wildcardMapFrom = new HashMap<>();
+        private final MultivaluedHashMap<String, WildcardPropertyMapper<?>> wildcardMapFrom = new MultivaluedHashMap<>();
 
         public void addMapper(WildcardPropertyMapper<?> mapper) {
             if (mapper.getMapFrom() != null) {
-                wildcardMapFrom.put(mapper.getMapFrom(), mapper);
+                wildcardMapFrom.add(mapper.getMapFrom(), mapper);
             }
             wildcardMappers.add(mapper);
         }

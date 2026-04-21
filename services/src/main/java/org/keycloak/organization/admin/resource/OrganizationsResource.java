@@ -227,7 +227,11 @@ public class OrganizationsResource {
     public Stream<OrganizationRepresentation> getOrganizations(
             @PathParam("member-id") String memberId,
             @Parameter(description = "if false, return the full representation. Otherwise, only the basic fields are returned.")
-            @QueryParam("briefRepresentation") @DefaultValue("true") boolean briefRepresentation) {
+            @QueryParam("briefRepresentation") @DefaultValue("true") boolean briefRepresentation
+    ) {
+        auth.realm().requireManageRealm();
+        Organizations.checkEnabled(provider);
+
         return new OrganizationMemberResource(session, null, adminEvent).getOrganizations(memberId, briefRepresentation);
     }
 }

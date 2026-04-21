@@ -290,10 +290,10 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
             return true;
         }
 
-        // look for an idp that can match any of the org domains
+        // look for an idp that can match any of the org domains (case-insensitive)
         idp = organization.getIdentityProviders().filter(IdentityProviderRedirectMode.EMAIL_MATCH::isSet)
                 .filter(broker -> ANY_DOMAIN.equals(broker.getConfig().get(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE)))
-                .filter(broker -> organization.getDomains().map(OrganizationDomainModel::getName).anyMatch(domain::equals))
+                .filter(broker -> organization.getDomains().map(OrganizationDomainModel::getName).anyMatch(domain::equalsIgnoreCase))
                 .findFirst().orElse(null);
 
         if (idp != null) {
@@ -350,7 +350,7 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
                 });
 
         if (domainMatch) {
-            form.addError(new FormMessage("Your email domain matches the " + organization.getName() + " organization but you don't have an account yet."));
+            form.addError(new FormMessage("Your email domain matches an organization but you don't have an account yet."));
         }
 
         // user is null, setup webauthn data if enabled
@@ -458,7 +458,7 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
         if (organization == null) {
             OrganizationScope scope = OrganizationScope.valueOfScope(session);
 
-            if (OrganizationScope.SINGLE.equals(scope)) {
+            if (OrganizationScope.SPECIFIC.equals(scope)) {
                 organization = scope.resolveOrganizations(session).findAny().orElse(null);
             }
         }

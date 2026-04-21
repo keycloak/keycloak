@@ -121,6 +121,7 @@ public class LDAPConstants {
     public static final String USER_ACCOUNT_CONTROL = "userAccountControl";
     public static final String PWD_LAST_SET = "pwdLastSet";
     public static final String PWD_CHANGED_TIME = "pwdChangedTime";
+    public static final String PWD_UPDATE_TIME = "pwdUpdateTime";
     public static final String MSDS_USER_ACCOUNT_DISABLED = "msDS-UserAccountDisabled";
     public static final String MSDS_USER_PASSWORD_NOTREQD = "msDS-UserPasswordNotRequired";
     public static final String MSDS_USER_PASSWORD_EXPIRED = "msDS-UserPasswordExpired"; // read-only
@@ -144,6 +145,7 @@ public class LDAPConstants {
     public static final String LDAP_MATCHING_RULE_IN_CHAIN = ":1.2.840.113556.1.4.1941:";
 
     public static final String REFERRAL = "referral";
+    public static final String ENABLE_LDAP_PASSWORD_POLICY = "enableLdapPasswordPolicy";
 
     public static final String CONNECTION_TRACE = "connectionTrace";
 

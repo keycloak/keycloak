@@ -40,15 +40,16 @@ import org.keycloak.representations.userprofile.config.UPAttributePermissions;
 import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.ldap.idm.model.LDAPObject;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.util.LDAPRule;
 import org.keycloak.testsuite.util.LDAPTestUtils;
 import org.keycloak.testsuite.util.UserBuilder;
 
-import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 import org.junit.runners.MethodSorters;
 
 import static org.keycloak.testsuite.util.userprofile.UserProfileUtil.setUserProfileConfiguration;
@@ -58,10 +59,11 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  *
@@ -144,13 +146,13 @@ public class LDAPAdminRestApiTest extends AbstractLDAPTest {
 
     @Test
     public void updateUserWithAdminRest() throws Exception {
-        UserResource userRes = ApiUtil.findUserByUsernameId(testRealm(), "johnkeycloak");
+        UserResource userRes = AdminApiUtil.findUserByUsernameId(testRealm(), "johnkeycloak");
         UserRepresentation user = userRes.toRepresentation();
 
         List<String> origLdapId = new ArrayList<>(user.getAttributes().get(LDAPConstants.LDAP_ID));
         List<String> origLdapEntryDn = new ArrayList<>(user.getAttributes().get(LDAPConstants.LDAP_ENTRY_DN));
-        Assert.assertEquals(1, origLdapId.size());
-        Assert.assertEquals(1, origLdapEntryDn.size());
+        Assertions.assertEquals(1, origLdapId.size());
+        Assertions.assertEquals(1, origLdapEntryDn.size());
         assertThat(user.getAttributes().keySet(), not(contains(KerberosFederationProvider.KERBEROS_PRINCIPAL)));
 
         // Trying to add KERBEROS_PRINCIPAL should fail (Adding attribute, which was not yet present)
@@ -215,14 +217,14 @@ public class LDAPAdminRestApiTest extends AbstractLDAPTest {
 
     private void createUserExpectError(UserRepresentation user) {
         Response response = testRealm().users().create(user);
-        Assert.assertEquals(400, response.getStatus());
+        Assertions.assertEquals(400, response.getStatus());
         response.close();
     }
 
     private void updateUserExpectError(UserResource userRes, UserRepresentation user) {
         try {
             userRes.update(user);
-            Assert.fail("Not expected to successfully update user");
+            Assertions.fail("Not expected to successfully update user");
         } catch (BadRequestException e) {
             // Expected
         }
@@ -259,11 +261,13 @@ public class LDAPAdminRestApiTest extends AbstractLDAPTest {
         assertThat(user1.isEnabled(), is(false));
 
         UserResource userResource = testRealm().users().get(newUserId1);
+        user1 = userResource.toRepresentation();
+        assertFalse(user1.isEnabled());
 
         try {
             user1.setFirstName(user1.getFirstName() + " updated");
             userResource.update(user1);
-            Assert.fail("Not expected to successfully update user");
+            Assertions.fail("Not expected to successfully update user");
         } catch (WebApplicationException expected) {
             Response response = expected.getResponse();
             ErrorRepresentation error = response.readEntity(ErrorRepresentation.class);
@@ -281,6 +285,15 @@ public class LDAPAdminRestApiTest extends AbstractLDAPTest {
         user1 = userResource.toRepresentation();
         assertTrue(user1.isEnabled());
         assertEquals("changed", user1.getLastName());
+
+        ldapProvider.getConfig().put(LDAPConstants.CONNECTION_URL, List.of("ldap://invalid"));
+        testRealm().components().component(ldapProvider.getId()).update(ldapProvider);
+        user1 = userResource.toRepresentation();
+        assertFalse(user1.isEnabled());
+        ldapProviderValid.getConfig().put(LDAPConstants.CONNECTION_URL, originalUrl);
+        testRealm().components().component(ldapProviderValid.getId()).update(ldapProviderValid);
+        user1 = userResource.toRepresentation();
+        assertTrue(user1.isEnabled());
     }
 
     @Test

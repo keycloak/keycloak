@@ -40,11 +40,11 @@ import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
 
 import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 import static org.keycloak.common.Profile.Feature.AUTHORIZATION;
 
@@ -122,7 +122,7 @@ public class ScriptAuthenticatorTest extends AbstractFlowTest {
                 .build();
 
         Response createFlowResponse = testRealm().flows().createFlow(scriptBrowserFlow);
-        Assert.assertEquals(201, createFlowResponse.getStatus());
+        Assertions.assertEquals(201, createFlowResponse.getStatus());
 
         RealmRepresentation realm = testRealm().toRepresentation();
         realm.setBrowserFlow(scriptFlow);
@@ -146,11 +146,11 @@ public class ScriptAuthenticatorTest extends AbstractFlowTest {
                 .build();
 
         Response addExecutionResponse = testRealm().flows().addExecution(usernamePasswordFormExecution);
-        Assert.assertEquals(201, addExecutionResponse.getStatus());
+        Assertions.assertEquals(201, addExecutionResponse.getStatus());
         addExecutionResponse.close();
 
         addExecutionResponse = testRealm().flows().addExecution(authScriptExecution);
-        Assert.assertEquals(201, addExecutionResponse.getStatus());
+        Assertions.assertEquals(201, addExecutionResponse.getStatus());
         addExecutionResponse.close();
 
         testContext.setInitialized(true);
@@ -161,7 +161,7 @@ public class ScriptAuthenticatorTest extends AbstractFlowTest {
      */
     @Test
     public void loginShouldWorkWithScriptAuthenticator() {
-        loginPage.open();
+        oauth.openLoginForm();
 
         loginPage.login("user", getPassword("user"));
 
@@ -173,7 +173,7 @@ public class ScriptAuthenticatorTest extends AbstractFlowTest {
      */
     @Test
     public void loginShouldFailWithScriptAuthenticator() {
-        loginPage.open();
+        oauth.openLoginForm();
 
         loginPage.login("fail", getPassword("fail"));
 
@@ -193,10 +193,10 @@ public class ScriptAuthenticatorTest extends AbstractFlowTest {
                 .build();
 
         Response addExecutionResponse = testRealm().flows().addExecution(authScriptExecution);
-        Assert.assertEquals(201, addExecutionResponse.getStatus());
+        Assertions.assertEquals(201, addExecutionResponse.getStatus());
         addExecutionResponse.close();
 
-        loginPage.open();
+        oauth.openLoginForm();
 
         loginPage.login("user", getPassword("user"));
 

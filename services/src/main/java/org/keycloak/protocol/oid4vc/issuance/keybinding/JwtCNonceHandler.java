@@ -26,12 +26,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Random;
 
 import jakarta.annotation.Nullable;
 
 import org.keycloak.TokenVerifier;
 import org.keycloak.common.VerificationException;
+import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.common.util.Time;
 import org.keycloak.constants.OID4VCIConstants;
 import org.keycloak.crypto.Algorithm;
@@ -49,8 +49,7 @@ import org.keycloak.protocol.oid4vc.model.JwtCNonce;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.saml.RandomSecret;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.jboss.logging.Logger;
 
 /**
  * @author Pascal Knüppel
@@ -63,7 +62,7 @@ public class JwtCNonceHandler implements CNonceHandler {
 
     public static final int NONCE_LENGTH_RANDOM_OFFSET = 15;
 
-    private static final Logger logger = LoggerFactory.getLogger(JwtCNonceHandler.class);
+    private static final Logger logger = Logger.getLogger(JwtCNonceHandler.class);
 
     private final KeycloakSession keycloakSession;
 
@@ -83,7 +82,7 @@ public class JwtCNonceHandler implements CNonceHandler {
         audiences = Optional.ofNullable(audiences).orElseGet(Collections::emptyList);
         final long nowSeconds = Time.currentTime();
         final long expiresAt = nowSeconds + nonceLifetimeSeconds;
-        final int nonceLength = NONCE_DEFAULT_LENGTH + new Random().nextInt(NONCE_LENGTH_RANDOM_OFFSET);
+        final int nonceLength = NONCE_DEFAULT_LENGTH + SecretGenerator.nextInt(NONCE_LENGTH_RANDOM_OFFSET);
         // this generated value itself is basically just a salt-value for the generated token, which itself is the nonce.
         final String strongSalt = Base64.getEncoder().encodeToString(RandomSecret.createRandomSecret(nonceLength));
 
@@ -189,7 +188,7 @@ public class JwtCNonceHandler implements CNonceHandler {
         try {
             signingKey = keycloakSession.keys().getActiveKey(realm, KeyUse.SIG, Algorithm.ES256);
         } catch (RuntimeException ex) {
-            logger.debug("Failed to find active ES256 signing key for realm {}. Falling back to RSA...",
+            logger.debugf("Failed to find active ES256 signing key for realm %s. Falling back to RSA...",
                          realm.getName());
             logger.debug(ex.getMessage(), ex);
             // use RSA only as fallback since the preferred algorithm by OpenID4VC is elliptic curve

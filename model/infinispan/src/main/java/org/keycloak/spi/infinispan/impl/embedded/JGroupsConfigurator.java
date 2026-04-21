@@ -37,6 +37,7 @@ import javax.net.ssl.TrustManager;
 
 import org.keycloak.Config;
 import org.keycloak.common.util.Retry;
+import org.keycloak.common.util.Time;
 import org.keycloak.config.CachingOptions;
 import org.keycloak.config.Option;
 import org.keycloak.connections.infinispan.InfinispanConnectionSpi;
@@ -307,12 +308,13 @@ public final class JGroupsConfigurator {
     private static Address insertSequenceInTable(JpaConnectionProvider cp, String clusterName, String tableName, long mySequence) {
         ExtendedUUID address = new ExtendedUUID(0, mySequence);
         cp.getEntityManager().<Connection>runWithConnection(con -> {
-            try (PreparedStatement s = con.prepareStatement("INSERT INTO %s values (?, ?, ?, ?, ?)".formatted(tableName))) {
+            try (PreparedStatement s = con.prepareStatement("INSERT INTO %s (address, name, cluster_name, ip, coord, last_update) values (?, ?, ?, ?, ?, ?)".formatted(tableName))) {
                 s.setString(1, org.jgroups.util.Util.addressToString(new UUID(address.getMostSignificantBits(), address.getLeastSignificantBits()))); // address
                 s.setString(2, "(starting)"); // name
                 s.setString(3, clusterName); // cluster name
                 s.setString(4, "127.0.0.1:0"); // ip = new IpAddress("localhost", 0).toString()
                 s.setBoolean(5, false); // coord
+                s.setLong(6, Time.currentTime()); // last_update
                 s.execute();
             }
         });
@@ -329,8 +331,8 @@ public final class JGroupsConfigurator {
                     // "cluster" cannot be used with Oracle DB as it's a reserved word.
                     "clear_sql", String.format("DELETE from %s WHERE cluster_name=?", tableName),
                     "delete_single_sql", String.format("DELETE from %s WHERE address=?", tableName),
-                    "insert_single_sql", String.format("INSERT INTO %s values (?, ?, ?, ?, ?)", tableName),
-                    "select_all_pingdata_sql", String.format("SELECT address, name, ip, coord FROM %s WHERE cluster_name=?", tableName),
+                    "insert_single_sql", String.format("INSERT INTO %s (address, name, cluster_name, ip, coord, last_update, coordinated_by) values (?, ?, ?, ?, ?, ?, ?)", tableName),
+                    "select_all_pingdata_sql", String.format("SELECT address, name, ip, coord, coordinated_by, last_update FROM %s WHERE cluster_name=?", tableName),
                     // This guarantees cleanup of stale data
                     "remove_all_data_on_view_change", "true",
                     // This guarantees that merging happens even after the info writer completed
@@ -460,8 +462,10 @@ public final class JGroupsConfigurator {
                 return;
             }
             checkPropertyAlreadySet(userConfig, property);
-            if (altProperty != null)
+            if (altProperty != null) {
                 checkPropertyAlreadySet(userConfig, altProperty);
+                System.setProperty(altProperty, userConfig);
+            }
             System.setProperty(property, userConfig);
         }
 

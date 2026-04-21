@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 #
 # Copyright 2022 Red Hat, Inc. and/or its affiliates
 # and other contributors as indicated by the @author tags.

@@ -47,7 +47,7 @@ import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.hamcrest.Matchers;
 import org.hamcrest.TypeSafeMatcher;
-import org.junit.Assert;
+import org.junit.jupiter.api.Assertions;
 import org.junit.rules.TestRule;
 import org.junit.runners.model.Statement;
 
@@ -96,14 +96,14 @@ public class AssertEvents implements TestRule {
 
     public EventRepresentation poll(int seconds) {
         EventRepresentation event = fetchNextEvent(seconds);
-        Assert.assertNotNull("Event expected", event);
+        Assertions.assertNotNull(event, "Event expected");
 
         return event;
     }
 
     public void assertEmpty() {
         EventRepresentation event = fetchNextEvent();
-        Assert.assertNull("Empty event queue expected, but there is " + event, event);
+        Assertions.assertNull(event, "Empty event queue expected, but there is " + event);
     }
 
     public void clear() {
@@ -226,7 +226,7 @@ public class AssertEvents implements TestRule {
             }
             return;
         }
-        Assert.fail("Unexpected event type: " + e.getType());
+        Assertions.fail("Unexpected event type: " + e.getType());
     }
 
     public ExpectedEvent expectLogout(String sessionId) {
@@ -461,7 +461,7 @@ public class AssertEvents implements TestRule {
                         }
                     }
                 }
-                Assert.fail("Did not find the event of expected type " + expected.getType() +". Events present: " + presentedEventTypes);
+                Assertions.fail("Did not find the event of expected type " + expected.getType() +". Events present: " + presentedEventTypes);
                 return null; // Unreachable code
             } else {
                 return assertEvent(poll(seconds));
@@ -484,7 +484,7 @@ public class AssertEvents implements TestRule {
                 return actual;
             }
 
-            Assert.assertNotNull(actual.getDetails());
+            Assertions.assertNotNull(actual.getDetails());
             for (Map.Entry<String, Matcher<? super String>> d : details.entrySet()) {
                 String actualValue = actual.getDetails().get(d.getKey());
                 assertThat("Unexpected value for " + d.getKey(), actualValue, d.getValue());

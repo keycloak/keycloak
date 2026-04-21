@@ -50,8 +50,8 @@ import org.keycloak.testsuite.runonserver.RunOnServer;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.RealmBuilder;
 
-import org.junit.Assert;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
@@ -64,12 +64,12 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class OrganizationTest extends AbstractOrganizationTest {
 
@@ -135,7 +135,7 @@ public class OrganizationTest extends AbstractOrganizationTest {
         List<OrganizationRepresentation> existing = testRealm().organizations().list(-1, -1);
         assertFalse(existing.isEmpty());
         assertThat(existing, containsInAnyOrder(expected.toArray()));
-        Assert.assertTrue(existing.stream().map(OrganizationRepresentation::getAttributes).filter(Objects::nonNull).findAny().isEmpty());
+        Assertions.assertTrue(existing.stream().map(OrganizationRepresentation::getAttributes).filter(Objects::nonNull).findAny().isEmpty());
 
         List<OrganizationRepresentation> concatenatedList = Stream.of(
                 testRealm().organizations().list(0, 5),
@@ -508,8 +508,8 @@ public class OrganizationTest extends AbstractOrganizationTest {
                     .filter(org -> org.getId().equals(orgWithoutDomainsId))
                     .findFirst();
             
-            assertTrue("Organization with domains should be in the list", foundOrgWithDomains.isPresent());
-            assertTrue("Organization without domains should be in the list", foundOrgWithoutDomains.isPresent());
+            assertTrue(foundOrgWithDomains.isPresent(), "Organization with domains should be in the list");
+            assertTrue(foundOrgWithoutDomains.isPresent(), "Organization without domains should be in the list");
             
             assertThat("Organization with domains should have domains", 
                     foundOrgWithDomains.get().getDomains(), is(notNullValue()));

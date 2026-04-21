@@ -47,11 +47,11 @@ import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -327,6 +327,51 @@ public class PermissionManagementTest extends AbstractResourceServerTest {
         assertNotNull(response.getTicket());
     }
 
+    @Test
+    public void testSearchTicket() throws Exception {
+        ResourceRepresentation resource = addResource("Resource A", "kolo", true);
+        AuthzClient authzClient = getAuthzClient();
+        PermissionResponse response = authzClient.protection("marta", "password").permission().create(new PermissionRequest(resource.getId()));
+        AuthorizationRequest request = new AuthorizationRequest();
+        request.setTicket(response.getTicket());
+        request.setClaimToken(authzClient.obtainAccessToken("marta", "password").getToken());
+        try {
+            authzClient.authorization().authorize(request);
+        } catch (Exception e) {
+
+        }
+        List<PermissionTicketRepresentation> tickets = authzClient.protection("kolo", "password").permission().find(resource.getId(), null, null, null, null, true, -1, -1);
+        assertEquals(1, tickets.size());
+        tickets = authzClient.protection("marta", "password").permission().find(resource.getId(), null, null, null, null, true, -1, -1);
+        assertEquals(1, tickets.size());
+
+        response = authzClient.protection("alice", "password").permission().create(new PermissionRequest(resource.getId()));
+        request = new AuthorizationRequest();
+        request.setTicket(response.getTicket());
+        request.setClaimToken(authzClient.obtainAccessToken("alice", "password").getToken());
+        try {
+            authzClient.authorization().authorize(request);
+        } catch (Exception e) {
+        }
+        // two tickets open for kolo, one for alice and one for marta
+        tickets = authzClient.protection("kolo", "password").permission().find(resource.getId(), null, null, null, null, true, -1, -1);
+        assertEquals(2, tickets.size());
+        assertEquals(2L, (long) authzClient.protection("kolo", "password").permission().count(resource.getId(), null, null, null, null, true));
+        // one ticket for alice
+        tickets = authzClient.protection("alice", "password").permission().find(resource.getId(), null, null, null, null, true, -1, -1);
+        assertEquals(1, tickets.size());
+        assertEquals(1L, (long) authzClient.protection("alice", "password").permission().count(resource.getId(), null, null, null, null, true));
+        PermissionTicketRepresentation aliceTicket = tickets.get(0);
+        // one ticket for marta
+        tickets = authzClient.protection("marta", "password").permission().find(resource.getId(), null, null, null, null, true, -1, -1);
+        assertEquals(1, tickets.size());
+        assertEquals(1L, (long) authzClient.protection("marta", "password").permission().count(resource.getId(), null, null, null, null, true));
+        // the ticket for alice is different from the ticket for marta
+        assertFalse(aliceTicket.getId().equals(tickets.get(0).getId()));
+
+
+    }
+
     private void assertPersistence(PermissionResponse response, ResourceRepresentation resource, String... scopeNames) throws Exception {
         String ticket = response.getTicket();
         assertNotNull(ticket);
@@ -432,19 +477,19 @@ public class PermissionManagementTest extends AbstractResourceServerTest {
       // start with fetching the second half of all permission tickets
       Collection<String> expectedScopes = new ArrayList(Arrays.asList(scopes));
       List<PermissionTicketRepresentation> tickets = getAuthzClient().protection().permission().find(resource.getId(), null, null, null, null, true, 2, 2);
-      assertEquals("Returned number of permissions tickets must match the specified page size (i.e., 'maxResult').", 2, tickets.size());
+      assertEquals(2, tickets.size(), "Returned number of permissions tickets must match the specified page size (i.e., 'maxResult').");
       boolean foundScope = expectedScopes.remove(tickets.get(0).getScopeName());
-      assertTrue("Returned set of permission tickets must be only a sub-set as per pagination offset and specified page size.", foundScope);
+      assertTrue(foundScope, "Returned set of permission tickets must be only a sub-set as per pagination offset and specified page size.");
       foundScope = expectedScopes.remove(tickets.get(1).getScopeName());
-      assertTrue("Returned set of permission tickets must be only a sub-set as per pagination offset and specified page size.", foundScope);
+      assertTrue(foundScope, "Returned set of permission tickets must be only a sub-set as per pagination offset and specified page size.");
 
       // fetch the first half of all permission tickets
       tickets = getAuthzClient().protection().permission().find(resource.getId(), null, null, null, null, true, 0, 2);
-      assertEquals("Returned number of permissions tickets must match the specified page size (i.e., 'maxResult').", 2, tickets.size());
+      assertEquals(2, tickets.size(), "Returned number of permissions tickets must match the specified page size (i.e., 'maxResult').");
       foundScope = expectedScopes.remove(tickets.get(0).getScopeName());
-      assertTrue("Returned set of permission tickets must be only a sub-set as per pagination offset and specified page size.", foundScope);
+      assertTrue(foundScope, "Returned set of permission tickets must be only a sub-set as per pagination offset and specified page size.");
       foundScope = expectedScopes.remove(tickets.get(1).getScopeName());
-      assertTrue("Returned set of permission tickets must be only a sub-set as per pagination offset and specified page size.", foundScope);
+      assertTrue(foundScope, "Returned set of permission tickets must be only a sub-set as per pagination offset and specified page size.");
     }
 
     @Test
@@ -464,6 +509,6 @@ public class PermissionManagementTest extends AbstractResourceServerTest {
         }
 
         Long ticketCount = getAuthzClient().protection().permission().count(resource.getId(), null, null, null, null, true);
-        assertEquals("Returned number of permissions tickets must match the amount of permission tickets.", Long.valueOf(4), ticketCount);
+        assertEquals(Long.valueOf(4), ticketCount, "Returned number of permissions tickets must match the amount of permission tickets.");
     }
 }

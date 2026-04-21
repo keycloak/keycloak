@@ -30,7 +30,7 @@ import org.keycloak.representations.account.OrganizationRepresentation;
 import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.representations.idm.OrganizationDomainRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.broker.util.SimpleHttpDefault;
 import org.keycloak.testsuite.organization.admin.AbstractOrganizationTest;
 import org.keycloak.testsuite.util.TokenUtil;
@@ -40,10 +40,10 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 public class OrganizationAccountTest extends AbstractOrganizationTest {
 
@@ -73,20 +73,20 @@ public class OrganizationAccountTest extends AbstractOrganizationTest {
         assertBrokerRegistration(organization, bc.getUserLogin(), bc.getUserEmail());
         // reset password to obtain a token and access the account api
         UserRepresentation user = testRealm().users().searchByEmail(bc.getUserEmail(), true).get(0);
-        ApiUtil.resetUserPassword(realmsResouce().realm(bc.consumerRealmName()).users().get(user.getId()), bc.getUserPassword(), false);
+        AdminApiUtil.resetUserPassword(realmsResouce().realm(bc.consumerRealmName()).users().get(user.getId()), bc.getUserPassword(), false);
 
         LinkedAccountRepresentation link = findLinkedAccount(bc.getIDPAlias());
-        Assert.assertNotNull(link);
+        Assertions.assertNotNull(link);
         try (SimpleHttpResponse response = SimpleHttpDefault.doDelete(getAccountUrl("linked-accounts/" + link.getProviderAlias()), client).auth(tokenUtil.getToken()).acceptJson().asResponse()) {
-            Assert.assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+            Assertions.assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());
             ErrorRepresentation error = response.asJson(ErrorRepresentation.class);
-            Assert.assertEquals("You cannot remove the link to an identity provider associated with an organization.", error.getErrorMessage());
+            Assertions.assertEquals("You cannot remove the link to an identity provider associated with an organization.", error.getErrorMessage());
         }
 
         // broker no longer linked to the organization
         organization.identityProviders().get(bc.getIDPAlias()).delete().close();
         try (SimpleHttpResponse response = SimpleHttpDefault.doDelete(getAccountUrl("linked-accounts/" + link.getProviderAlias()), client).auth(tokenUtil.getToken()).acceptJson().asResponse()) {
-            Assert.assertEquals(Status.NO_CONTENT.getStatusCode(), response.getStatus());
+            Assertions.assertEquals(Status.NO_CONTENT.getStatusCode(), response.getStatus());
         }
     }
 
@@ -99,18 +99,18 @@ public class OrganizationAccountTest extends AbstractOrganizationTest {
         testRealm().organizations().get(orgB.getId()).members().addMember(member.getId()).close();
 
         List<OrganizationRepresentation> organizations = getOrganizations();
-        Assert.assertEquals(2, organizations.size());
+        Assertions.assertEquals(2, organizations.size());
         OrganizationRepresentation organization = organizations.stream()
                 .filter(o -> orgA.getId().equals(o.getId()))
                 .findAny()
                 .orElse(null);
-        Assert.assertNotNull(organization);
-        Assert.assertEquals(orgA.getId(), organization.getId());
-        Assert.assertEquals(orgA.getAlias(), organization.getAlias());
-        Assert.assertEquals(orgA.getName(), organization.getName());
-        Assert.assertEquals(orgA.getDescription(), organization.getDescription());
-        Assert.assertEquals(orgA.getDomains().size(), organization.getDomains().size());
-        Assert.assertTrue(organization.getDomains().containsAll(orgA.getDomains().stream().map(OrganizationDomainRepresentation::getName).toList()));
+        Assertions.assertNotNull(organization);
+        Assertions.assertEquals(orgA.getId(), organization.getId());
+        Assertions.assertEquals(orgA.getAlias(), organization.getAlias());
+        Assertions.assertEquals(orgA.getName(), organization.getName());
+        Assertions.assertEquals(orgA.getDescription(), organization.getDescription());
+        Assertions.assertEquals(orgA.getDomains().size(), organization.getDomains().size());
+        Assertions.assertTrue(organization.getDomains().containsAll(orgA.getDomains().stream().map(OrganizationDomainRepresentation::getName).toList()));
     }
 
     private SortedSet<LinkedAccountRepresentation> linkedAccountsRep() throws IOException {

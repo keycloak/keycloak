@@ -33,6 +33,10 @@ public class OID4VCClient {
         return new CredentialOfferRequest(client, nonce);
     }
 
+    public CredentialOfferResponse doCredentialOfferRequest(CredentialOfferURI credOfferUri) {
+        return credentialOfferRequest(credOfferUri).send();
+    }
+
     public Oid4vcCredentialRequest credentialRequest() {
         return credentialRequest(new CredentialRequest());
     }
@@ -41,15 +45,19 @@ public class OID4VCClient {
         return new Oid4vcCredentialRequest(client, credRequest);
     }
 
-    public PreAuthorizedCodeGrantRequest preAuthorizedCodeGrantRequest(String preAuthorizedCode) {
-        return new PreAuthorizedCodeGrantRequest(client, preAuthorizedCode);
+    public PreAuthorizedCodeGrantRequest preAuthorizedCodeGrantRequest(String preAuthCode) {
+        return new PreAuthorizedCodeGrantRequest(client, preAuthCode);
     }
 
-    public AccessTokenResponse doPreAuthorizedCodeGrantRequest(String preAuthorizedCode) {
-        return preAuthorizedCodeGrantRequest(preAuthorizedCode).send();
+    public AccessTokenResponse doPreAuthorizedCodeGrantRequest(String preAuthCode) {
+        return preAuthorizedCodeGrantRequest(preAuthCode).send();
     }
 
     public Oid4vcNonceRequest nonceRequest() {
         return new Oid4vcNonceRequest(client);
+    }
+
+    public Oid4vcNonceResponse doNonceRequest() {
+        return nonceRequest().send();
     }
 }

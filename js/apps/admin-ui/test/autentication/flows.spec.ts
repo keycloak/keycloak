@@ -193,17 +193,22 @@ test.describe("Authentication flow details", () => {
     await login(page, { to: toAuthentication({ realm: testBed.realm }) });
 
     await clickTableRowItem(page, flowName);
-    const source = page.getByText("Identity Provider Redirector");
-    const target = page.getByText("Kerberos");
 
-    // execute mouse movement twice to trigger dragover event
-    await source.hover();
-    await source.hover();
+    const sourceBox = await page
+      .getByText("Identity Provider Redirector")
+      .boundingBox();
+    const targetBox = await page.getByText("Kerberos").boundingBox();
 
+    await page.mouse.move(
+      sourceBox!.x + sourceBox!.width / 2,
+      sourceBox!.y + sourceBox!.height / 2,
+    );
     await page.mouse.down();
-    await target.hover();
-    await target.hover();
-
+    await page.mouse.move(
+      targetBox!.x + targetBox!.width / 2,
+      targetBox!.y + targetBox!.height / 2,
+      { steps: 10 },
+    );
     await page.mouse.up();
 
     await assertNotificationMessage(page, "Flow successfully updated");

@@ -35,12 +35,12 @@ import org.keycloak.operator.Constants;
 import org.keycloak.operator.controllers.KeycloakAdminSecretDependentResource;
 import org.keycloak.operator.controllers.KeycloakDistConfigurator;
 import org.keycloak.operator.controllers.KeycloakServiceDependentResource;
-import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
-import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusCondition;
-import org.keycloak.operator.crds.v2alpha1.deployment.ValueOrSecret;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.BootstrapAdminSpec;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.FeatureSpecBuilder;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.HostnameSpecBuilder;
+import org.keycloak.operator.crds.v2beta1.deployment.Keycloak;
+import org.keycloak.operator.crds.v2beta1.deployment.KeycloakStatusCondition;
+import org.keycloak.operator.crds.v2beta1.deployment.ValueOrSecret;
+import org.keycloak.operator.crds.v2beta1.deployment.spec.BootstrapAdminSpec;
+import org.keycloak.operator.crds.v2beta1.deployment.spec.FeatureSpecBuilder;
+import org.keycloak.operator.crds.v2beta1.deployment.spec.HostnameSpecBuilder;
 import org.keycloak.operator.testsuite.apiserver.DisabledIfApiServerTest;
 import org.keycloak.operator.testsuite.unit.WatchedResourcesTest;
 import org.keycloak.operator.testsuite.utils.CRAssert;
@@ -79,6 +79,7 @@ import static org.keycloak.operator.testsuite.utils.K8sUtils.waitForKeycloakToBe
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @DisabledIfApiServerTest
@@ -114,6 +115,30 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
         k8sclient.resource(kc).delete();
         Awaitility.await()
                 .untilAsserted(() -> assertThat(k8sclient.apps().statefulSets().inNamespace(namespace).withName(deploymentName).get()).isNull());
+
+        // check that the operator is not attempting to use telemetry
+        if (operatorDeployment == OperatorDeployment.remote) {
+            String log = k8sclient.apps().deployments().withName(BaseOperatorTest.KEYCLOAK_OPERATOR).getLog();
+            if (log != null) {
+                assertFalse(log.contains("opentelemetry"), "Should not mention opentelemetry " + log);
+            }
+        }
+    }
+
+    /**
+     * Currently, when using the JDBC_PING cache stack, we need at least 4 DB connecdtions to avoid dead lock.
+     * This value is documented as the minimal acceptable value.
+     *
+     * @see <a href="https://github.com/keycloak/keycloak/issues/46673">Issue #46673</a>
+     */
+    @Test
+    public void testDocumentedMinimalPoolMaxSizeWorks() {
+        var kc = getTestKeycloakDeployment(false);
+        kc.getSpec().getDatabaseSpec().setPoolMaxSize(4);
+        deployKeycloak(k8sclient, kc, true);
+
+        assertThat(k8sclient.apps().statefulSets().inNamespace(namespace)
+                .withName(kc.getMetadata().getName()).get().getStatus().getReadyReplicas()).isEqualTo(1);
     }
 
     @Test

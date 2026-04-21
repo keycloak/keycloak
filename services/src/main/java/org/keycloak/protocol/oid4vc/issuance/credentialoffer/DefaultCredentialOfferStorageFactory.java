@@ -29,14 +29,9 @@ import org.keycloak.models.KeycloakSessionFactory;
  */
 public class DefaultCredentialOfferStorageFactory implements CredentialOfferStorageFactory {
 
-    private static CredentialOfferStorage INSTANCE;
-
     @Override
     public CredentialOfferStorage create(KeycloakSession session) {
-        if (INSTANCE == null) {
-            INSTANCE = new DefaultCredentialOfferStorage();
-        }
-        return INSTANCE;
+        return new DefaultCredentialOfferStorage(session);
     }
 
     @Override

@@ -84,7 +84,7 @@ import org.keycloak.services.resources.account.AccountCredentialResource;
 import org.keycloak.services.util.ResolveRelative;
 import org.keycloak.testsuite.AbstractAuthenticationTest;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.broker.util.SimpleHttpDefault;
 import org.keycloak.testsuite.util.TokenUtil;
 import org.keycloak.testsuite.util.UserBuilder;
@@ -96,10 +96,10 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import org.apache.http.Header;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.hamcrest.Matchers;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 import static org.keycloak.testsuite.util.userprofile.UserProfileUtil.PERMISSIONS_ALL;
 
@@ -108,11 +108,11 @@ import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.containsString;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -254,9 +254,9 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         UserProfileAttributeMetadata uam = getUserProfileAttributeMetadata(user, attName);
 
         assertNotNull(uam);
-        assertEquals("Unexpected display name for attribute " + uam.getName(), displayName, uam.getDisplayName());
-        assertEquals("Unexpected required flag for attribute " + uam.getName(), required, uam.isRequired());
-        assertEquals("Unexpected readonly flag for attribute " + uam.getName(), readOnly, uam.isReadOnly());
+        assertEquals(displayName, uam.getDisplayName(), "Unexpected display name for attribute " + uam.getName());
+        assertEquals(required, uam.isRequired(), "Unexpected required flag for attribute " + uam.getName());
+        assertEquals(readOnly, uam.isReadOnly(), "Unexpected readonly flag for attribute " + uam.getName());
 
         return uam;
     }
@@ -736,7 +736,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
 
         List<AccountCredentialResource.CredentialContainer> credentials = getCredentials();
 
-        Assert.assertEquals(4, credentials.size());
+        Assertions.assertEquals(4, credentials.size());
 
         AccountCredentialResource.CredentialContainer password = credentials.get(0);
         assertCredentialContainerExpected(password, PasswordCredentialModel.TYPE, CredentialTypeMetadata.Category.BASIC_AUTHENTICATION.toString(),
@@ -745,7 +745,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
 
         CredentialRepresentation password1 = password.getUserCredentialMetadatas().get(0).getCredential();
         assertNull(password1.getSecretData());
-        Assert.assertNotNull(password1.getCredentialData());
+        Assertions.assertNotNull(password1.getCredentialData());
 
         AccountCredentialResource.CredentialContainer otp = credentials.get(1);
         assertCredentialContainerExpected(otp, OTPCredentialModel.TYPE, CredentialTypeMetadata.Category.TWO_FACTOR.toString(),
@@ -779,18 +779,18 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         // Test password-only
         credentials = SimpleHttpDefault.doGet(getAccountUrl("credentials?" + AccountCredentialResource.TYPE + "=password"), httpClient)
                 .auth(tokenUtil.getToken()).asJson(new TypeReference<List<AccountCredentialResource.CredentialContainer>>() {});
-        Assert.assertEquals(1, credentials.size());
+        Assertions.assertEquals(1, credentials.size());
         password = credentials.get(0);
-        Assert.assertEquals(PasswordCredentialModel.TYPE, password.getType());
-        Assert.assertEquals(1, password.getUserCredentialMetadatas().size());
+        Assertions.assertEquals(PasswordCredentialModel.TYPE, password.getType());
+        Assertions.assertEquals(1, password.getUserCredentialMetadatas().size());
 
         // Test password-only and user-credentials
         credentials = SimpleHttpDefault.doGet(getAccountUrl("credentials?" + AccountCredentialResource.TYPE + "=password&" +
                                                             AccountCredentialResource.USER_CREDENTIALS + "=false"), httpClient)
                 .auth(tokenUtil.getToken()).asJson(new TypeReference<List<AccountCredentialResource.CredentialContainer>>() {});
-        Assert.assertEquals(1, credentials.size());
+        Assertions.assertEquals(1, credentials.size());
         password = credentials.get(0);
-        Assert.assertEquals(PasswordCredentialModel.TYPE, password.getType());
+        Assertions.assertEquals(PasswordCredentialModel.TYPE, password.getType());
         assertNull(password.getUserCredentialMetadatas());
     }
 
@@ -798,7 +798,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
     @Test
     public void testCRUDCredentialOfDifferentUser() throws IOException {
         // Get credential ID of the OTP credential of the different user thant currently logged user
-        UserResource user = ApiUtil.findUserByUsernameId(testRealm(), "user-with-one-configured-otp");
+        UserResource user = AdminApiUtil.findUserByUsernameId(testRealm(), "user-with-one-configured-otp");
         CredentialRepresentation otpCredential = user.credentials().stream()
                 .filter(credentialRep -> OTPCredentialModel.TYPE.equals(credentialRep.getType()))
                 .findFirst()
@@ -827,7 +827,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
                 .filter(credentialRep -> OTPCredentialModel.TYPE.equals(credentialRep.getType()))
                 .findFirst()
                 .get();
-        Assert.assertTrue(ObjectUtil.isEqualOrBothNull(otpCredential.getUserLabel(), otpCredentialLoaded.getUserLabel()));
+        Assertions.assertTrue(ObjectUtil.isEqualOrBothNull(otpCredential.getUserLabel(), otpCredentialLoaded.getUserLabel()));
     }
 
     @Test
@@ -835,7 +835,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
 
         List<AccountCredentialResource.CredentialContainer> credentials = getCredentials();
 
-        UserResource user = ApiUtil.findUserByUsernameId(testRealm(), "test-user@localhost");
+        UserResource user = AdminApiUtil.findUserByUsernameId(testRealm(), "test-user@localhost");
         assertEquals(1, user.credentials().size());
 
         // Add non-OTP credential to the user through admin REST API
@@ -847,15 +847,15 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         user.update(userRep);
 
         credentials = getCredentials();
-        Assert.assertEquals(2, credentials.size());
-        Assert.assertTrue(credentials.get(1).isRemoveable());
+        Assertions.assertEquals(2, credentials.size());
+        Assertions.assertTrue(credentials.get(1).isRemoveable());
 
         // Remove credential
         CredentialRepresentation credential = user.credentials().stream()
                 .filter(credentialRep -> WebAuthnCredentialModel.TYPE_TWOFACTOR.equals(credentialRep.getType()))
                 .findFirst()
                 .get();
-        Assert.assertNotNull(credential);
+        Assertions.assertNotNull(credential);
         user.removeCredential(credential.getId());
 
         events.poll();
@@ -867,7 +867,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
 
         List<AccountCredentialResource.CredentialContainer> credentials = getCredentials();
 
-        UserResource user = ApiUtil.findUserByUsernameId(testRealm(), "test-user@localhost");
+        UserResource user = AdminApiUtil.findUserByUsernameId(testRealm(), "test-user@localhost");
         assertEquals(1, user.credentials().size());
 
         // Add OTP credential to the user through admin REST API
@@ -878,8 +878,8 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         user.update(userRep);
 
         credentials = getCredentials();
-        Assert.assertEquals(2, credentials.size());
-        Assert.assertTrue(credentials.get(1).isRemoveable());
+        Assertions.assertEquals(2, credentials.size());
+        Assertions.assertTrue(credentials.get(1).isRemoveable());
 
         // Remove credential
         CredentialRepresentation otpCredential = user.credentials().stream()
@@ -935,15 +935,15 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
             // Test that OTP credential is not included. Only password
             List<AccountCredentialResource.CredentialContainer> credentials = getCredentials();
 
-            Assert.assertEquals(1, credentials.size());
-            Assert.assertEquals(PasswordCredentialModel.TYPE, credentials.get(0).getType());
+            Assertions.assertEquals(1, credentials.size());
+            Assertions.assertEquals(PasswordCredentialModel.TYPE, credentials.get(0).getType());
 
             // Enable browser subflow. OTP should be available then
             setExecutionRequirement(DefaultAuthenticationFlows.BROWSER_FLOW,
                     "Browser - Conditional 2FA", currentBrowserReq);
             credentials = getCredentials();
-            Assert.assertEquals(2, credentials.size());
-            Assert.assertEquals(OTPCredentialModel.TYPE, credentials.get(1).getType());
+            Assertions.assertEquals(2, credentials.size());
+            Assertions.assertEquals(OTPCredentialModel.TYPE, credentials.get(1).getType());
 
             // Disable browser subflow and enable FirstBrokerLogin. OTP should be available then
             setExecutionRequirement(DefaultAuthenticationFlows.BROWSER_FLOW,
@@ -951,8 +951,8 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
             setExecutionRequirement(DefaultAuthenticationFlows.FIRST_BROKER_LOGIN_FLOW,
                     "OTP Form", currentFBLReq);
             credentials = getCredentials();
-            Assert.assertEquals(2, credentials.size());
-            Assert.assertEquals(OTPCredentialModel.TYPE, credentials.get(1).getType());
+            Assertions.assertEquals(2, credentials.size());
+            Assertions.assertEquals(OTPCredentialModel.TYPE, credentials.get(1).getType());
         } finally {
             // Revert flows
             setExecutionRequirement(DefaultAuthenticationFlows.BROWSER_FLOW,
@@ -976,7 +976,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         assertExpectedCredentialTypes(credentials, PasswordCredentialModel.TYPE);
 
         // Add OTP credential to the user through admin REST API
-        UserResource adminUserResource = ApiUtil.findUserByUsernameId(testRealm(), "test-user@localhost");
+        UserResource adminUserResource = AdminApiUtil.findUserByUsernameId(testRealm(), "test-user@localhost");
         org.keycloak.representations.idm.UserRepresentation userRep = UserBuilder.edit(adminUserResource.toRepresentation())
                 .totpSecret("abcdefabcdef")
                 .build();
@@ -1035,10 +1035,10 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
     }
 
     private void assertExpectedCredentialTypes(List<AccountCredentialResource.CredentialContainer> credentialTypes, String... expectedCredentialTypes) {
-        Assert.assertEquals(credentialTypes.size(), expectedCredentialTypes.length);
+        Assertions.assertEquals(credentialTypes.size(), expectedCredentialTypes.length);
         int i = 0;
         for (AccountCredentialResource.CredentialContainer credential : credentialTypes) {
-            Assert.assertEquals(credential.getType(), expectedCredentialTypes[i]);
+            Assertions.assertEquals(credential.getType(), expectedCredentialTypes[i]);
             i++;
         }
     }
@@ -1060,11 +1060,11 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
                 .auth(tokenUtil.getToken())
                 .asResponse()) {
             assertEquals(400, response.getStatus());
-            Assert.assertEquals("Credential type cannot be removed", response.asJson(OAuth2ErrorRepresentation.class).getError());
+            Assertions.assertEquals("Credential type cannot be removed", response.asJson(OAuth2ErrorRepresentation.class).getError());
         }
 
         // Remove password from the user now
-        UserResource user = ApiUtil.findUserByUsernameId(testRealm(), "test-user@localhost");
+        UserResource user = AdminApiUtil.findUserByUsernameId(testRealm(), "test-user@localhost");
         for (CredentialRepresentation credential : user.credentials()) {
             if (PasswordCredentialModel.TYPE.equals(credential.getType())) {
                 user.removeCredential(credential.getId());
@@ -1079,7 +1079,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
                 UserModel.RequiredAction.UPDATE_PASSWORD.toString(), null, false, 0);
 
         // Re-add the password to the user
-        ApiUtil.resetUserPassword(user, "password", false);
+        AdminApiUtil.resetUserPassword(user, "password", false);
 
     }
 
@@ -1128,15 +1128,15 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
 
     private void assertCredentialContainerExpected(AccountCredentialResource.CredentialContainer credential, String type, String category, String displayName, String helpText, String iconCssClass,
                                                    String createAction, String updateAction, boolean removeable, int userCredentialsCount) {
-        Assert.assertEquals(type, credential.getType());
-        Assert.assertEquals(category, credential.getCategory());
-        Assert.assertEquals(displayName, credential.getDisplayName());
-        Assert.assertEquals(helpText, credential.getHelptext());
-        Assert.assertEquals(iconCssClass, credential.getIconCssClass());
-        Assert.assertEquals(createAction, credential.getCreateAction());
-        Assert.assertEquals(updateAction, credential.getUpdateAction());
-        Assert.assertEquals(removeable, credential.isRemoveable());
-        Assert.assertEquals(userCredentialsCount, credential.getUserCredentialMetadatas().size());
+        Assertions.assertEquals(type, credential.getType());
+        Assertions.assertEquals(category, credential.getCategory());
+        Assertions.assertEquals(displayName, credential.getDisplayName());
+        Assertions.assertEquals(helpText, credential.getHelptext());
+        Assertions.assertEquals(iconCssClass, credential.getIconCssClass());
+        Assertions.assertEquals(createAction, credential.getCreateAction());
+        Assertions.assertEquals(updateAction, credential.getUpdateAction());
+        Assertions.assertEquals(removeable, credential.isRemoveable());
+        Assertions.assertEquals(userCredentialsCount, credential.getUserCredentialMetadatas().size());
     }
 
     public void testDeleteSessions() throws IOException {
@@ -1157,7 +1157,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         String password = "password";
         String firstToken = new TokenUtil(username, password).getToken();
         String secondToken = new TokenUtil(username, password).getToken();
-        UserResource user = ApiUtil.findUserByUsernameId(testRealm(), username);
+        UserResource user = AdminApiUtil.findUserByUsernameId(testRealm(), username);
         List<UserSessionRepresentation> userSessions = user.getUserSessions();
         assertEquals(2, userSessions.size());
 
@@ -1186,7 +1186,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         String firstToken = new TokenUtil(username, password).getToken();
         String secondToken = new TokenUtil(username, password).getToken();
         String thirdToken = new TokenUtil(username, password).getToken();
-        UserResource user = ApiUtil.findUserByUsernameId(testRealm(), username);
+        UserResource user = AdminApiUtil.findUserByUsernameId(testRealm(), username);
         List<UserSessionRepresentation> userSessions = user.getUserSessions();
         assertEquals(3, userSessions.size());
 
@@ -1221,7 +1221,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         String password = "password";
         String firstToken = new TokenUtil(username, password).getToken();
         String secondToken = new TokenUtil(username, password).getToken();
-        UserResource user = ApiUtil.findUserByUsernameId(testRealm(), username);
+        UserResource user = AdminApiUtil.findUserByUsernameId(testRealm(), username);
         List<UserSessionRepresentation> userSessions = user.getUserSessions();
         assertEquals(2, userSessions.size());
 
@@ -1249,7 +1249,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
     public void testListingAllSignedInDevicesEvenOfflineSessionsThenTerminatingAllSessions() throws IOException, JWSInputException {
         String username = "manage-account-access";
         String password = "password";
-        UserResource user = ApiUtil.findUserByUsernameId(testRealm(), username);
+        UserResource user = AdminApiUtil.findUserByUsernameId(testRealm(), username);
         // first direct access grant login
         String firstToken = new TokenUtil(username, password).getToken();
         events.expect(EventType.LOGIN)
@@ -1315,7 +1315,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         AccessTokenResponse offlineTokenResponse = oauth.doPasswordGrantRequest(username, password);
         assertNull(offlineTokenResponse.getErrorDescription());
 
-        UserResource user = ApiUtil.findUserByUsernameId(testRealm(), username);
+        UserResource user = AdminApiUtil.findUserByUsernameId(testRealm(), username);
         Collection<DeviceRepresentation> devices = SimpleHttpDefault
             .doGet(getAccountUrl("sessions/devices"), httpClient)
             .header("Accept", "application/json")
@@ -1475,7 +1475,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
 
     @Test
     public void listApplicationsWithRootUrl() throws Exception {
-        oauth.clientId("root-url-client");
+        oauth.client("root-url-client", "password");
         AccessTokenResponse tokenResponse = oauth.doPasswordGrantRequest("view-applications-access", "password");
         assertNull(tokenResponse.getErrorDescription());
 
@@ -1973,7 +1973,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
 
     @Test
     public void testAudience() throws Exception {
-        oauth.clientId("custom-audience");
+        oauth.client("custom-audience", "password");
         AccessTokenResponse tokenResponse = oauth.doPasswordGrantRequest("test-user@localhost", "password");
         assertNull(tokenResponse.getErrorDescription());
 
@@ -1987,7 +1987,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         // update to correct audience
         org.keycloak.representations.idm.ClientRepresentation clientRep = testRealm().clients().findByClientId("custom-audience").get(0);
         ProtocolMapperRepresentation mapperRep = clientRep.getProtocolMappers().stream().filter(m -> m.getName().equals("aud")).findFirst().orElse(null);
-        assertNotNull("Audience mapper not found", mapperRep);
+        assertNotNull(mapperRep, "Audience mapper not found");
         mapperRep.getConfig().put("included.custom.audience", "account");
         testRealm().clients().get(clientRep.getId()).getProtocolMappers().update(mapperRep.getId(), mapperRep);
 
@@ -2061,7 +2061,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         RealmRepresentation realm = testRealm().toRepresentation();
         Boolean registrationEmailAsUsername = realm.isRegistrationEmailAsUsername();
         Boolean editUsernameAllowed = realm.isEditUsernameAllowed();
-        ApiUtil.enableRequiredAction(testRealm(), RequiredAction.UPDATE_EMAIL, true);
+        AdminApiUtil.enableRequiredAction(testRealm(), RequiredAction.UPDATE_EMAIL, true);
 
         try {
             realm.setRegistrationEmailAsUsername(true);
@@ -2078,7 +2078,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
             assertNotNull(user.getEmail());
             assertUserProfileAttributeMetadata(user, "email", "${email}", true, true);
         } finally {
-            ApiUtil.enableRequiredAction(testRealm(), RequiredAction.UPDATE_EMAIL, false);
+            AdminApiUtil.enableRequiredAction(testRealm(), RequiredAction.UPDATE_EMAIL, false);
             realm.setRegistrationEmailAsUsername(registrationEmailAsUsername);
             realm.setEditUsernameAllowed(editUsernameAllowed);
             testRealm().update(realm);

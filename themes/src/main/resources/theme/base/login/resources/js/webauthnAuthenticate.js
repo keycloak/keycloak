@@ -91,6 +91,14 @@ export function returnSuccess(result) {
     if (result.response.userHandle) {
         document.getElementById("userHandle").value = base64url.stringify(new Uint8Array(result.response.userHandle), { pad: false });
     }
+    const rememberMe = document.getElementById("rememberMe");
+    if (rememberMe) {
+        const rememberMeInput = document.createElement("input");
+        rememberMeInput.type = "hidden";
+        rememberMeInput.name = "rememberMe";
+        rememberMeInput.value = rememberMe.checked ? "on" : "off";
+        document.getElementById("webauth").appendChild(rememberMeInput);
+    }
     document.getElementById("webauth").requestSubmit();
 }
 

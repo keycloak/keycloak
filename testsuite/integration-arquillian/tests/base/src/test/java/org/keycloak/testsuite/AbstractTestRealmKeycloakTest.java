@@ -32,6 +32,7 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
 import org.junit.Before;
+import org.junit.jupiter.api.Assertions;
 
 import static org.keycloak.testsuite.AbstractAdminTest.loadJson;
 
@@ -42,7 +43,9 @@ import static org.keycloak.testsuite.AbstractAdminTest.loadJson;
  * @author Stan Silvert ssilvert@redhat.com (C) 2016 Red Hat Inc.
  */
 public abstract class AbstractTestRealmKeycloakTest extends AbstractKeycloakTest {
+
     public static final String TEST_REALM_NAME = "test";
+    public static final String clientId = "test-app";
 
     protected RealmResource testRealm() {
         return adminClient.realm(TEST_REALM_NAME);
@@ -60,7 +63,7 @@ public abstract class AbstractTestRealmKeycloakTest extends AbstractKeycloakTest
 
     protected ClientRepresentation findTestApp(RealmRepresentation testRealm) {
         for (ClientRepresentation client : testRealm.getClients()) {
-            if (client.getClientId().equals("test-app")) return client;
+            if (client.getClientId().equals(clientId)) return client;
         }
 
         return null;
@@ -121,7 +124,7 @@ public abstract class AbstractTestRealmKeycloakTest extends AbstractKeycloakTest
         String code = oauth.parseLoginResponse().getCode();
         AccessTokenResponse response = oauth.doAccessTokenRequest(code);
 
-        Assert.assertEquals(200, response.getStatusCode());
+        Assertions.assertEquals(200, response.getStatusCode());
 
         if (eventsField != null) {
             events.expectCodeToToken(codeId, sessionId).user(loginEvent.getUserId()).session(sessionId).assertEvent();

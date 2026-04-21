@@ -24,7 +24,7 @@ backwards compatible with future {project_name} versions, and it will be finally
 provided by V2 together with other use cases that are supported by V1. For more details, see this <<_standard-token-exchange-comparison,token exchange comparison>>.
 
 NOTE: If you still need legacy token exchange feature, you also need link:{adminguide_link}#fine-grained-admin-permissions-v1[Fine-grained admin permissions version 1] (FGAP:v1) enabled because
-link:{adminguide_link}#_fine_grained_permissions[version 2 (FGAP:v2)] does not have support for token exchange permissions. This is on purpose because
+link:{adminguide_link}#_fine_grained_permissions[Fine-grained admin permissions version 2] (FGAP:v2) does not have support for token exchange permissions. This is on purpose because
 token-exchange is conceptually not really an "admin" permission and hence there is no plan to add token exchange permissions to FGAP:v2.
 
 [[_standard-token-exchange]]
@@ -265,6 +265,8 @@ This use case can be replaced by refresh token grant.
 * The `subject_token` sent to the token exchange endpoint must have the requester client set as an audience in the `aud` claim. Otherwise, the request would be rejected. The only exception is, if client
 exchanges his own token, which was issued to it. Exchanging to itself might be useful to downscope/upscope the token or filter unneeded token audiences and so on.
 
+* Sender-constrained tokens (as defined in RFC 7800) cannot be used as `subject_token`. This includes DPoP-bound tokens and X.509 certificate-bound tokens. Standard Token Exchange only accepts Bearer access tokens as subject tokens. If you provide a sender-constrained token, the request will be rejected with an `invalid_request` error. However, you can obtain DPoP-bound tokens as **output** from token exchange by including a valid DPoP proof in the request. For more details, see <@links.securingapps id="dpop" />.
+
 * Consents - If the requester client has *Consent required* enabled, the token exchange is allowed only if the user is already granted consent to all requested scopes
 
 * link:{adminguide_link}#_fine_grain_permissions[Fine-grained admin permissions (FGAP)] are not needed for the standard token exchange. We plan to eventually integrate with FGAP for the future, but that
@@ -326,7 +328,7 @@ s|Authorization  | Verification that the requester client must be in the audienc
 s|Revocation chain | Not available for access tokens. Available for refresh tokens   | Not available for access nor refresh tokens
 s|Delegation per RFC 8693|Not supported yet|Not supported
 s|Resource parameter per RFC 8693|Not supported yet|Not supported
-s|Internal to external Token Exchange | Not implemented yet | Implemented as a preview
+s|Internal to external Token Exchange | Identity brokering APIs can be used instead. See link:{developerguide_link}#_identity-brokering-apis[Identity Brokering APIs] for more information. | Implemented as a preview
 s|External to internal Token Exchange | Use-case implemented by Standard Token Exchange V2 and JWT Authorization Grant. See <@links.securingapps id="oauth-identity-authorization-chaining-across-domains" /> for more information. | Implemented as a preview
 s|Subject impersonation (including direct naked impersonation)   | Not implemented yet | Implemented as a preview
 |===
@@ -338,7 +340,10 @@ s|Subject impersonation (including direct naked impersonation)   | Not implement
 
 [NOTE]
 ====
-To use more than the <<_internal-token-to-internal-token-exchange,Internal Token to Internal Token Exchange>> flow, also enable the `admin-fine-grained-authz` feature.
+If you still need legacy token exchange feature, you also need link:{adminguide_link}#fine-grained-admin-permissions-v1[Fine-grained admin permissions version 1] (FGAP:v1) enabled because
+link:{adminguide_link}#_fine_grained_permissions[Fine-grained admin permissions version 2] (FGAP:v2) does not have support for token exchange permissions. This is on purpose because
+token-exchange is conceptually not really an "admin" permission and hence there is no plan to add token exchange permissions to FGAP:v2.
+
 For details, see the https://www.keycloak.org/server/features[Enabling and disabling features] {section}.
 ====
 
@@ -552,6 +557,8 @@ the client making the request to successfully complete the exchange.
 
 === Internal token to external token exchange
 
+NOTE: For internal token to external token exchange, it is recommended to use link:{developerguide_link}#_identity-brokering-apis[Identity Brokering APIs] instead. The legacy Token Exchange V1 is deprecated and will be removed in future versions.
+
 You can exchange a realm token for an external token minted by an external identity provider.  This external identity provider
 must be configured within the `Identity Provider` section of the Admin Console.  Currently only OAuth/OpenID Connect based external
 identity providers are supported, this includes all social providers.  {project_name} does not perform a backchannel exchange to the external provider.  So if the account
@@ -676,7 +683,7 @@ These types of changes required a configured identity provider in the Admin Cons
 
 NOTE:  SAML identity providers are not supported at this time.  Twitter tokens cannot be exchanged either.
 
-WARNING: External to internal Token Exchange will be replaced by <<_standard-token-exchange,Standard Token Exchange V2>> and <@links.securingapps id="jwt-authorization-grant" />. See <@links.securingapps id="oauth-identity-authorization-chaining-across-domains" /> for more information.
+NOTE: A combination of <<_standard-token-exchange,Standard Token Exchange V2>> and <@links.securingapps id="jwt-authorization-grant" /> is recommended instead of the legacy external to internal Token Exchange. See <@links.securingapps id="oauth-identity-authorization-chaining-across-domains" /> for more information about how those two supported features can be used to substitute the legacy Token Exchange.
 
 ==== Granting permission for the exchange
 

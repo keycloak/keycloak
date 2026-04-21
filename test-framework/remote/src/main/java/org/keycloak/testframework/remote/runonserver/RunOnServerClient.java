@@ -31,20 +31,53 @@ public class RunOnServerClient {
         this.executionId = executionId;
     }
 
+    /**
+     * Retrieve some value from the Keycloak server using the specified wrapper
+     *
+     * @param wrapper the wrapper containing the code and return type
+     * @return the value
+     * @param <T> the return type
+     * @throws RunOnServerException
+     */
     public <T> T fetch(FetchOnServerWrapper<T> wrapper) throws RunOnServerException {
         return fetch(wrapper.getRunOnServer(), wrapper.getResultClass());
     }
 
+    /**
+     * Retrieve String value from the server. It returns decoded string value (exactly same value returned by the remote method on the server side)
+     *
+     * @param function the function to execute
+     * @return decoded string value (exactly same value returned by the remote method on the server side)
+     * @throws RunOnServerException
+     */
+    public String fetchString(FetchOnServer function) throws RunOnServerException {
+        return fetch(function, String.class);
+    }
+
+    /**
+     * Retrieve some value from the Keycloak server using the specified function
+     * @param function the function to execute
+     * @param clazz the return type
+     * @return the value
+     * @param <T> the return type
+     * @throws RunOnServerException
+     */
     public <T> T fetch(FetchOnServer function, Class<T> clazz) throws RunOnServerException {
         try {
-            String s = fetchString(function);
+            String s = fetchStringInternal(function);
             return s == null ? null : JsonSerialization.readValue(s, clazz);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
 
-    public String fetchString(FetchOnServer function) throws RunOnServerException {
+    /**
+     * Retrieve a string value from the Keycloak server using the specified function
+     * @param function the function to execute
+     * @return the value
+     * @throws RunOnServerException
+     */
+    private String fetchStringInternal(FetchOnServer function) throws RunOnServerException {
         String encoded = SerializationUtil.encode(function);
 
         String result = runOnServer(encoded);
@@ -60,6 +93,12 @@ public class RunOnServerClient {
         }
     }
 
+    /**
+     * Execute code on the Keycloak server, including assertions to verify values on the server side
+     *
+     * @param function the function to execute
+     * @throws RunOnServerException
+     */
     public void run(RunOnServer function) throws RunOnServerException {
         String encoded = SerializationUtil.encode(function);
 
@@ -74,7 +113,7 @@ public class RunOnServerClient {
         }
     }
 
-    public String runOnServer(String encoded) throws RunOnServerException {
+    private String runOnServer(String encoded) throws RunOnServerException {
         try {
             HttpPost request = new HttpPost(url + "?executionId=" + executionId);
             request.setHeader("Content-type", "text/plain;charset=utf-8");

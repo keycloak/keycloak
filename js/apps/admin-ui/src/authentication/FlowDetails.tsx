@@ -167,7 +167,7 @@ export default function FlowDetails() {
       }
       refresh();
       addAlert(t("updateFlowSuccess"), AlertVariant.success);
-    } catch (error: any) {
+    } catch (error) {
       addError("updateFlowError", error);
     }
   };
@@ -182,7 +182,7 @@ export default function FlowDetails() {
       );
       refresh();
       addAlert(t("updateFlowSuccess"), AlertVariant.success);
-    } catch (error: any) {
+    } catch (error) {
       addError("updateFlowError", error);
     }
   };

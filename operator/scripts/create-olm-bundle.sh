@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 set -euxo pipefail
 
 # Ex: 21.0.0
@@ -69,12 +69,10 @@ yq ea -i '.spec.install.spec.deployments[0].spec.template.metadata.labels.name =
 yq ea -i '.spec.install.spec.deployments[0].spec.template.spec.containers[0].env += [{"name": "POD_NAME", "valueFrom": {"fieldRef": {"fieldPath": "metadata.name"}}}]' "$CSV_PATH"
 yq ea -i '.spec.install.spec.deployments[0].spec.template.spec.containers[0].env += [{"name": "OPERATOR_NAME", "value": "keycloak-operator"}]' "$CSV_PATH"
 
-# Remove ServiceMonitors GVK from nativeAPIS to allow CSV installation when CRDs not present
-yq ea -i 'del(.spec.nativeAPIs[] | select(.kind == "ServiceMonitor"))' "$CSV_PATH"
-
-# Remove Client CRDs to prevent their usage by default
-yq ea -i 'del(.spec.customresourcedefinitions.owned[] | select(.kind == "KeycloakOIDCClient" or .kind == "KeycloakSAMLClient"))' "$CSV_PATH"
-rm ../olm/$VERSION/manifests/keycloak*clients.k8s.keycloak.org-v1.crd.yml
+# Create entries for both alpha1 and beta1 - the indexing is dependent on whether the client crs are present
+yq ea -i '.spec.customresourcedefinitions.owned += [.spec.customresourcedefinitions.owned[] | select(.version == "v2beta1")]' "$CSV_PATH" 
+yq ea -i '.spec.customresourcedefinitions.owned[2].version = "v2alpha1"' "$CSV_PATH"
+yq ea -i '.spec.customresourcedefinitions.owned[3].version = "v2alpha1"' "$CSV_PATH"
 
 { set +x; } 2>/dev/null
 echo ""

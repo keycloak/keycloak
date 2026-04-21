@@ -27,7 +27,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.auth.page.login.UpdateEmailPage;
 import org.keycloak.testsuite.pages.AppPage;
@@ -39,14 +39,14 @@ import org.keycloak.testsuite.util.UserBuilder;
 
 import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 import org.openqa.selenium.WebDriver;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @EnableFeature(Profile.Feature.UPDATE_EMAIL)
 public abstract class AbstractRequiredActionUpdateEmailTest extends AbstractTestRealmKeycloakTest {
@@ -75,8 +75,8 @@ public abstract class AbstractRequiredActionUpdateEmailTest extends AbstractTest
 
 	@Before
 	public void beforeTest() {
-        ApiUtil.enableRequiredAction(testRealm(), RequiredAction.UPDATE_EMAIL, true);
-		ApiUtil.removeUserByUsername(testRealm(), "test-user@localhost");
+        AdminApiUtil.enableRequiredAction(testRealm(), RequiredAction.UPDATE_EMAIL, true);
+		AdminApiUtil.removeUserByUsername(testRealm(), "test-user@localhost");
 		UserRepresentation user = UserBuilder.create().enabled(true)
 				.username("test-user@localhost")
 				.email("test-user@localhost")
@@ -84,9 +84,9 @@ public abstract class AbstractRequiredActionUpdateEmailTest extends AbstractTest
 				.lastName("Brady")
 				.requiredAction(UserModel.RequiredAction.UPDATE_EMAIL.name()).build();
 		prepareUser(user);
-		ApiUtil.createUserAndResetPasswordWithAdminClient(testRealm(), user, "password");
+		AdminApiUtil.createUserAndResetPasswordWithAdminClient(testRealm(), user, "password");
 
-		ApiUtil.removeUserByUsername(testRealm(), "john-doh@localhost");
+		AdminApiUtil.removeUserByUsername(testRealm(), "john-doh@localhost");
 		user = UserBuilder.create().enabled(true)
 				.username("john-doh@localhost")
 				.email("john-doh@localhost")
@@ -94,7 +94,7 @@ public abstract class AbstractRequiredActionUpdateEmailTest extends AbstractTest
 				.lastName("Doh")
 				.requiredAction(UserModel.RequiredAction.UPDATE_EMAIL.name()).build();
 		prepareUser(user);
-		ApiUtil.createUserAndResetPasswordWithAdminClient(testRealm(), user, "password");
+		AdminApiUtil.createUserAndResetPasswordWithAdminClient(testRealm(), user, "password");
 	}
 
 	private void setRegistrationEmailAsUsername(RealmResource realmResource, boolean enabled) {
@@ -104,7 +104,7 @@ public abstract class AbstractRequiredActionUpdateEmailTest extends AbstractTest
 	}
 
         protected void configureRequiredActionsToUser(String username, String... actions) {
-                UserResource userResource = ApiUtil.findUserByUsernameId(testRealm(), username);
+                UserResource userResource = AdminApiUtil.findUserByUsernameId(testRealm(), username);
                 UserRepresentation userRepresentation = userResource.toRepresentation();
                 userRepresentation.setRequiredActions(Arrays.asList(actions));
                 userResource.update(userRepresentation);
@@ -121,7 +121,7 @@ public abstract class AbstractRequiredActionUpdateEmailTest extends AbstractTest
 
 	@Test
 	public void cancelIsNotDisplayed() {
-		loginPage.open();
+		oauth.openLoginForm();
 
 		loginPage.login("test-user@localhost", "password");
 
@@ -131,7 +131,7 @@ public abstract class AbstractRequiredActionUpdateEmailTest extends AbstractTest
 
 	@Test
 	public void updateEmailMissing() {
-		loginPage.open();
+		oauth.openLoginForm();
 
 		loginPage.login("test-user@localhost", "password");
 
@@ -142,16 +142,16 @@ public abstract class AbstractRequiredActionUpdateEmailTest extends AbstractTest
 		updateEmailPage.assertCurrent();
 
 		// assert that form holds submitted values during validation error
-		Assert.assertEquals("", updateEmailPage.getEmail());
+		Assertions.assertEquals("", updateEmailPage.getEmail());
 
-		Assert.assertTrue(updateEmailPage.getEmailInputError().contains("Please specify email."));
+		Assertions.assertTrue(updateEmailPage.getEmailInputError().contains("Please specify email."));
 
 		events.assertEmpty();
 	}
 
 	@Test
 	public void updateEmailDuplicate() {
-		loginPage.open();
+		oauth.openLoginForm();
 
 		loginPage.login("john-doh@localhost", "password");
 
@@ -162,16 +162,16 @@ public abstract class AbstractRequiredActionUpdateEmailTest extends AbstractTest
 		updateEmailPage.assertCurrent();
 
 		// assert that form holds submitted values during validation error
-		Assert.assertEquals("test-user@localhost", updateEmailPage.getEmail());
+		Assertions.assertEquals("test-user@localhost", updateEmailPage.getEmail());
 
-		Assert.assertEquals("Email already exists.", updateEmailPage.getEmailInputError());
+		Assertions.assertEquals("Email already exists.", updateEmailPage.getEmailInputError());
 
 		events.assertEmpty();
 	}
 
 	@Test
 	public void updateEmailInvalid() {
-		loginPage.open();
+		oauth.openLoginForm();
 
 		loginPage.login("test-user@localhost", "password");
 
@@ -182,9 +182,9 @@ public abstract class AbstractRequiredActionUpdateEmailTest extends AbstractTest
 		updateEmailPage.assertCurrent();
 
 		// assert that form holds submitted values during validation error
-		Assert.assertEquals("invalid", updateEmailPage.getEmail());
+		Assertions.assertEquals("invalid", updateEmailPage.getEmail());
 
-		Assert.assertEquals("Invalid email address.", updateEmailPage.getEmailInputError());
+		Assertions.assertEquals("Invalid email address.", updateEmailPage.getEmailInputError());
 
 		events.assertEmpty();
 	}
@@ -204,7 +204,7 @@ public abstract class AbstractRequiredActionUpdateEmailTest extends AbstractTest
 			assertNotNull(lastName);
 			changeEmailUsingRequiredAction("new@localhost", true, true);
 			user = ActionUtil.findUserWithAdminClient(adminClient, "new@localhost");
-			Assert.assertNotNull(user);
+			Assertions.assertNotNull(user);
 			firstName = user.getFirstName();
 			lastName = user.getLastName();
 			assertNotNull(firstName);

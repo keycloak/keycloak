@@ -57,9 +57,9 @@ import org.keycloak.util.JsonSerialization;
 
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 /**
  * @author <a href="mailto:ggrazian@redhat.com">Giuseppe Graziano</a>
@@ -192,7 +192,7 @@ public class AcrAuthFlowTest extends AbstractOIDCScopeTest{
      */
     @Before
     public void setupTest() {
-        oauth.clientId(CLIENT_ID);
+        oauth.client(CLIENT_ID);
         createPasswordFlow();
         createOTPFlow();
 
@@ -216,7 +216,7 @@ public class AcrAuthFlowTest extends AbstractOIDCScopeTest{
             adminClient.realm(TEST_REALM_NAME).clientPoliciesProfilesResource().updateProfiles(clientProfilesRepresentation);
         }
         catch (Exception e) {
-            Assert.fail();
+            Assertions.fail();
         }
 
     }
@@ -402,7 +402,7 @@ public class AcrAuthFlowTest extends AbstractOIDCScopeTest{
             adminClient.realm(realm).clientPoliciesPoliciesResource().updatePolicies(clientPolicies);
         }
         catch (Exception e) {
-            Assert.fail();
+            Assertions.fail();
         }
     }
 
@@ -458,7 +458,7 @@ public class AcrAuthFlowTest extends AbstractOIDCScopeTest{
      * @param password The password to log in with
      */
     private void authenticatePassword(String username, String password){
-        Assert.assertTrue(loginPage.isCurrent());
+        Assertions.assertTrue(loginPage.isCurrent());
         loginPage.login(username, password);
     }
 
@@ -467,7 +467,7 @@ public class AcrAuthFlowTest extends AbstractOIDCScopeTest{
      * @param totpSecret The secret to use to generate the TOTP token
      */
     private void authenticateTOTP(String totpSecret){
-        Assert.assertTrue(loginTotpPage.isCurrent());
+        Assertions.assertTrue(loginTotpPage.isCurrent());
         setOtpTimeOffset(TimeBasedOTP.DEFAULT_INTERVAL_SECONDS, totp);
 
         loginTotpPage.login(totp.generateTOTP(totpSecret));
@@ -501,10 +501,10 @@ public class AcrAuthFlowTest extends AbstractOIDCScopeTest{
         String acr = token.getAcr();
         getLogger().infof("Response acr = %s", acr);
         if (expectedAcr != null) {
-            Assert.assertNotNull(acr);
+            Assertions.assertNotNull(acr);
         }
 
-        Assert.assertEquals(acr, expectedAcr);
+        Assertions.assertEquals(acr, expectedAcr);
     }
 
 }

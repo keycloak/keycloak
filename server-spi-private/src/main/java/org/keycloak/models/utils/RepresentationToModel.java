@@ -1458,7 +1458,7 @@ public class RepresentationToModel {
         }
 
         resourceIds = resourceIds.stream().map(id -> {
-            Resource resource = AdminPermissionsSchema.SCHEMA.getOrCreateResource(session, resourceServer, policy.getType(), policy.getResourceType(), id);
+            Resource resource = AdminPermissionsSchema.SCHEMA.getOrCreateResource(session, resourceServer, policy.getResourceType(), id);
 
             if (resource == null) {
                 return id;

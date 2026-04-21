@@ -21,7 +21,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import jakarta.mail.internet.MimeMessage;
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.authentication.AuthenticationFlow;
@@ -34,7 +33,6 @@ import org.keycloak.authentication.requiredactions.TermsAndConditions;
 import org.keycloak.common.util.Time;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
-import org.keycloak.events.EventType;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
@@ -51,29 +49,26 @@ import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginPasswordResetPage;
 import org.keycloak.testsuite.pages.RegisterPage;
-import org.keycloak.testsuite.pages.VerifyEmailPage;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.FlowUtil;
-import org.keycloak.testsuite.util.GreenMailRule;
-import org.keycloak.testsuite.util.MailUtils;
 import org.keycloak.testsuite.util.UIUtils;
 import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
 import org.hamcrest.Matchers;
 import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.anyOf;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -97,13 +92,7 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
     protected RegisterPage registerPage;
 
     @Page
-    protected VerifyEmailPage verifyEmailPage;
-
-    @Page
     protected LoginPasswordResetPage resetPasswordPage;
-
-    @Rule
-    public GreenMailRule greenMail = new GreenMailRule();
 
     private String idTokenHint;
 
@@ -113,7 +102,7 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     public void registerExistingUsernameForbidden() {
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.clickRegister();
         registerPage.assertCurrent();
 
@@ -137,7 +126,7 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
  
     @Test
     public void registerExistingEmailForbidden() {
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.clickRegister();
         registerPage.assertCurrent();
 
@@ -162,7 +151,7 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
     @Test
     public void registerExistingEmailAllowed() throws IOException {
         try (RealmAttributeUpdater rau = setDuplicateEmailsAllowed(true).update()) {
-            loginPage.open();
+            oauth.openLoginForm();
             loginPage.clickRegister();
             registerPage.assertCurrent();
 
@@ -204,7 +193,7 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
         events.clear();
 
         try (RealmAttributeUpdater rau = configureRealmRegistrationEmailAsUsername(true).update()) {
-            loginPage.open();
+            oauth.openLoginForm();
             loginPage.assertCurrent();
 
             final String EMAIL = "TEST@localhost";
@@ -223,7 +212,7 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     public void registerUserInvalidPasswordConfirm() {
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.clickRegister();
         registerPage.assertCurrent();
 
@@ -248,7 +237,7 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     public void registerUserMissingPassword() {
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.clickRegister();
         registerPage.assertCurrent();
 
@@ -266,7 +255,7 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
     @Test
     public void registerPasswordPolicy() throws IOException {
         try (RealmAttributeUpdater rau = getRealmAttributeUpdater().setPasswordPolicy("length").update()) {
-            loginPage.open();
+            oauth.openLoginForm();
             loginPage.clickRegister();
             registerPage.assertCurrent();
 
@@ -291,7 +280,7 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     public void registerUserMissingUsername() {
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.clickRegister();
         registerPage.assertCurrent();
 
@@ -308,7 +297,7 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     public void registerUserManyErrors() {
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.clickRegister();
         registerPage.assertCurrent();
 
@@ -340,7 +329,7 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     public void registerUserMissingEmail() {
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.clickRegister();
         registerPage.assertCurrent();
 
@@ -354,7 +343,7 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     public void registerUserInvalidEmail() {
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.clickRegister();
         registerPage.assertCurrent();
 
@@ -368,7 +357,7 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     public void registerUserSuccess() {
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.clickRegister();
         registerPage.assertCurrent();
 
@@ -422,7 +411,7 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
             testRealm().update(realm);
         });
         testRealm().update(realm);
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.clickRegister();
         registerPage.assertCurrent();
 
@@ -450,7 +439,7 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
             testRealm().update(realm);
         });
         testRealm().update(realm);
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.clickRegister();
         registerPage.assertCurrent();
 
@@ -469,8 +458,8 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
         events.expectLogin().detail("username", username.toLowerCase()).user(userId).assertEvent();
 
         UserRepresentation user = getUser(userId);
-        Assert.assertNotNull(user);
-        Assert.assertNotNull(user.getCreatedTimestamp());
+        Assertions.assertNotNull(user);
+        Assertions.assertNotNull(user.getCreatedTimestamp());
         // test that timestamp is current with 10s tollerance
         assertTrue((System.currentTimeMillis() - user.getCreatedTimestamp()) < 10000);
         assertUserBasicRegisterAttributes(userId, username, email, "firstName", "lastName");
@@ -478,105 +467,8 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
-     // GreenMailRule is not working atm
-    public void registerUserSuccessWithEmailVerification() throws Exception {
-        try (RealmAttributeUpdater rau = setVerifyEmail(true).update()) {
-            loginPage.open();
-            loginPage.clickRegister();
-            registerPage.assertCurrent();
-
-            registerPage.register("firstName", "lastName", "registerUserSuccessWithEmailVerification@email", "registerUserSuccessWithEmailVerification", generatePassword());
-            verifyEmailPage.assertCurrent();
-
-            String userId = events.expectRegister("registerUserSuccessWithEmailVerification", "registerUserSuccessWithEmailVerification@email").assertEvent().getUserId();
-
-            {
-                assertTrue("Expecting verify email", greenMail.waitForIncomingEmail(1000, 1));
-
-                events.expect(EventType.SEND_VERIFY_EMAIL)
-                  .detail(Details.EMAIL, "registerUserSuccessWithEmailVerification@email".toLowerCase())
-                  .user(userId)
-                  .assertEvent();
-
-                MimeMessage message = greenMail.getLastReceivedMessage();
-                String link = MailUtils.getPasswordResetEmailLink(message);
-
-                driver.navigate().to(link);
-            }
-
-            events.expectRequiredAction(EventType.VERIFY_EMAIL)
-              .detail(Details.EMAIL, "registerUserSuccessWithEmailVerification@email".toLowerCase())
-              .user(userId)
-              .assertEvent();
-
-            assertUserRegistered(userId, "registerUserSuccessWithEmailVerification", "registerUserSuccessWithEmailVerification@email");
-
-            appPage.assertCurrent();
-            assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
-
-            // test that timestamp is current with 10s tollerance
-            // test user info is set from form
-        }
-    }
-
-    @Test
-     // GreenMailRule is not working atm
-    public void registerUserSuccessWithEmailVerificationWithResend() throws Exception {
-        try (RealmAttributeUpdater rau = setVerifyEmail(true).update()) {
-            loginPage.open();
-            loginPage.clickRegister();
-            registerPage.assertCurrent();
-
-            registerPage.register("firstName", "lastName", "registerUserSuccessWithEmailVerificationWithResend@email", "registerUserSuccessWithEmailVerificationWithResend", generatePassword());
-            verifyEmailPage.assertCurrent();
-
-            String userId = events.expectRegister("registerUserSuccessWithEmailVerificationWithResend", "registerUserSuccessWithEmailVerificationWithResend@email").assertEvent().getUserId();
-
-            {
-                assertTrue("Expecting verify email", greenMail.waitForIncomingEmail(1000, 1));
-
-                events.expect(EventType.SEND_VERIFY_EMAIL)
-                  .detail(Details.EMAIL, "registerUserSuccessWithEmailVerificationWithResend@email".toLowerCase())
-                  .user(userId)
-                  .assertEvent();
-
-                setTimeOffset(40);
-                verifyEmailPage.clickResendEmail();
-                verifyEmailPage.assertCurrent();
-
-                assertTrue("Expecting second verify email", greenMail.waitForIncomingEmail(1000, 1));
-
-                events.expect(EventType.SEND_VERIFY_EMAIL)
-                  .detail(Details.EMAIL, "registerUserSuccessWithEmailVerificationWithResend@email".toLowerCase())
-                  .user(userId)
-                  .assertEvent();
-
-                MimeMessage message = greenMail.getLastReceivedMessage();
-                String link = MailUtils.getPasswordResetEmailLink(message);
-
-                driver.navigate().to(link);
-            }
-
-            events.expectRequiredAction(EventType.VERIFY_EMAIL)
-              .detail(Details.EMAIL, "registerUserSuccessWithEmailVerificationWithResend@email".toLowerCase())
-              .user(userId)
-              .assertEvent();
-
-            assertUserRegistered(userId, "registerUserSuccessWithEmailVerificationWithResend", "registerUserSuccessWithEmailVerificationWithResend@email");
-
-            appPage.assertCurrent();
-            assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
-
-            // test that timestamp is current with 10s tollerance
-            // test user info is set from form
-        } finally {
-            setTimeOffset(0);
-        }
-    }
-
-    @Test
     public void registerUserUmlats() {
-        loginPage.open();
+        oauth.openLoginForm();
 
         assertTrue(loginPage.isCurrent());
 
@@ -598,7 +490,7 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
     @Test
     public void registerUserNotUsernamePasswordPolicy() throws IOException {
         try (RealmAttributeUpdater rau = getRealmAttributeUpdater().setPasswordPolicy("notUsername").update()) {
-            loginPage.open();
+            oauth.openLoginForm();
 
             assertTrue(loginPage.isCurrent());
 
@@ -636,7 +528,7 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
     @Test
     public void registerUserNotContainsUsernamePasswordPolicy() throws IOException {
         try (RealmAttributeUpdater rau = getRealmAttributeUpdater().setPasswordPolicy("notContainsUsername").update()) {
-            loginPage.open();
+            oauth.openLoginForm();
 
             assertTrue(loginPage.isCurrent());
 
@@ -679,7 +571,7 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
         try (RealmAttributeUpdater rau = configureRealmRegistrationEmailAsUsername(true)
                 .setPasswordPolicy("notEmail").update()) {
 
-            loginPage.open();
+            oauth.openLoginForm();
 
             assertTrue(loginPage.isCurrent());
 
@@ -706,7 +598,7 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
     @Test
     public void registerExistingUser_emailAsUsername() throws IOException {
         try (RealmAttributeUpdater rau = configureRealmRegistrationEmailAsUsername(true).update()) {
-            loginPage.open();
+            oauth.openLoginForm();
             loginPage.clickRegister();
             registerPage.assertCurrent();
 
@@ -722,7 +614,7 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
     @Test
     public void registerUserMissingOrInvalidEmail_emailAsUsername() throws IOException {
         try (RealmAttributeUpdater rau = configureRealmRegistrationEmailAsUsername(true).update()) {
-            loginPage.open();
+            oauth.openLoginForm();
             loginPage.clickRegister();
             registerPage.assertCurrent();
 
@@ -741,7 +633,7 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
     @Test
     public void registerUserSuccess_emailAsUsername() throws IOException {
         try (RealmAttributeUpdater rau = configureRealmRegistrationEmailAsUsername(true).update()) {
-            loginPage.open();
+            oauth.openLoginForm();
             loginPage.clickRegister();
             registerPage.assertCurrent();
 
@@ -753,8 +645,8 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
             events.expectLogin().detail("username", "registerusersuccesse@email").user(userId).assertEvent();
 
             UserRepresentation user = getUser(userId);
-            Assert.assertNotNull(user);
-            Assert.assertNotNull(user.getCreatedTimestamp());
+            Assertions.assertNotNull(user);
+            Assertions.assertNotNull(user.getCreatedTimestamp());
             // test that timestamp is current with 10s tollerance
             assertTrue((System.currentTimeMillis() - user.getCreatedTimestamp()) < 10000);
         }
@@ -765,7 +657,7 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
         try (RealmAttributeUpdater rau = configureRealmRegistrationEmailAsUsername(true)
                 .setEditUserNameAllowed(false)
                 .update()) {
-            loginPage.open();
+            oauth.openLoginForm();
             loginPage.clickRegister();
             registerPage.assertCurrent();
 
@@ -798,7 +690,7 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
         String newFlowAlias = "register - custom";
         configureRegistrationFlowWithCustomRegistrationPageForm(newFlowAlias);
 
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.clickRegister();
         registerPage.assertCurrent();
     }
@@ -810,7 +702,7 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
                 AuthenticationExecutionModel.Requirement.REQUIRED);
 
         try {
-            loginPage.open();
+            oauth.openLoginForm();
             loginPage.clickRegister();
             registerPage.assertCurrent();
 
@@ -837,7 +729,7 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
                 AuthenticationExecutionModel.Requirement.REQUIRED);
 
         try {
-            loginPage.open();
+            oauth.openLoginForm();
             loginPage.clickRegister();
             registerPage.assertCurrent();
 
@@ -863,13 +755,13 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
 
         // configure Terms and Conditions required action as enabled and default
         RequiredActionProviderRepresentation tacRep = testRealm().flows().getRequiredAction(UserModel.RequiredAction.TERMS_AND_CONDITIONS.name());
-        Assert.assertNotNull(tacRep);
+        Assertions.assertNotNull(tacRep);
         tacRep.setEnabled(true);
         tacRep.setDefaultAction(true);
         testRealm().flows().updateRequiredAction(UserModel.RequiredAction.TERMS_AND_CONDITIONS.name(), tacRep);
 
         try {
-            loginPage.open();
+            oauth.openLoginForm();
             loginPage.clickRegister();
             registerPage.assertCurrent();
 
@@ -883,10 +775,10 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
             String userId = events.expectRegister("registerUserSuccessTermsAcceptance2", "registerUserSuccessTermsAcceptance2@email")
                     .assertEvent().getUserId();
             UserRepresentation user = assertUserRegistered(userId, "registerUserSuccessTermsAcceptance2", "registerUserSuccessTermsAcceptance2@email");
-            Assert.assertNotNull(user.getAttributes());
-            Assert.assertNotNull(user.getAttributes().get(TermsAndConditions.USER_ATTRIBUTE));
-            Assert.assertEquals(1, user.getAttributes().get(TermsAndConditions.USER_ATTRIBUTE).size());
-            Assert.assertTrue(Integer.parseInt(user.getAttributes().get(TermsAndConditions.USER_ATTRIBUTE).get(0)) >= currentTime);
+            Assertions.assertNotNull(user.getAttributes());
+            Assertions.assertNotNull(user.getAttributes().get(TermsAndConditions.USER_ATTRIBUTE));
+            Assertions.assertEquals(1, user.getAttributes().get(TermsAndConditions.USER_ATTRIBUTE).size());
+            Assertions.assertTrue(Integer.parseInt(user.getAttributes().get(TermsAndConditions.USER_ATTRIBUTE).get(0)) >= currentTime);
         } finally {
             tacRep.setEnabled(false);
             tacRep.setDefaultAction(false);
@@ -897,7 +789,7 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     public void testRegisterShouldFailBeforeUserCreationWhenUserIsInContext() {
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.clickRegister();
         registerPage.clickBackToLogin();
         loginPage.assertCurrent(testRealm().toRepresentation().getRealm());
@@ -911,7 +803,7 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
         events.clear();
 
         UIUtils.navigateBackWithRefresh(driver, errorPage);
-        Assert.assertEquals("Action expired. Please continue with login now.", errorPage.getError());
+        Assertions.assertEquals("Action expired. Please continue with login now.", errorPage.getError());
 
         events.expectRegister("registerUserMissingTermsAcceptance", "registerUserMissingTermsAcceptance@email")
                 .removeDetail(Details.USERNAME)
@@ -949,7 +841,7 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
         final String USERNAME = "UPPERCASE";
         final String EMAIL_OR_USERNAME = emailAsUsername ? EMAIL : USERNAME;
 
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.clickRegister();
         registerPage.assertCurrent();
 

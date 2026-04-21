@@ -34,7 +34,7 @@ import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.forms.BrowserFlowTest;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.ErrorPage;
@@ -57,7 +57,7 @@ import static org.keycloak.testsuite.sessionlimits.UserSessionLimitsUtil.assertC
 import static org.keycloak.testsuite.sessionlimits.UserSessionLimitsUtil.assertSessionCount;
 import static org.keycloak.testsuite.sessionlimits.UserSessionLimitsUtil.configureSessionLimits;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class UserSessionLimitsTest extends AbstractTestRealmKeycloakTest {
     private String realmName = "test";
@@ -136,7 +136,7 @@ public class UserSessionLimitsTest extends AbstractTestRealmKeycloakTest {
     @Test
     public void testClientSessionCountExceededAndNewSessionDeniedBrowserFlow() throws Exception {
         // Login and verify login was successful
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("test-user@localhost", "password");
         events.expectLogin().assertEvent();
 
@@ -144,7 +144,7 @@ public class UserSessionLimitsTest extends AbstractTestRealmKeycloakTest {
         super.deleteCookies();
         
         // Login the same user again and verify the configured error message is shown
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("test-user@localhost", "password");
         events.expect(EventType.LOGIN_ERROR).user((String) null).error(Errors.GENERIC_AUTHENTICATION_ERROR).assertEvent();
         errorPage.assertCurrent();
@@ -154,7 +154,7 @@ public class UserSessionLimitsTest extends AbstractTestRealmKeycloakTest {
     @Test
     public void testClientSessionCountNotExceededOnReAuthentication() throws Exception {
         // Login and verify login was successful
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("test-user@localhost", "password");
         events.expectLogin().assertEvent();
 
@@ -170,7 +170,7 @@ public class UserSessionLimitsTest extends AbstractTestRealmKeycloakTest {
             setAuthenticatorConfigItem(DefaultAuthenticationFlows.BROWSER_FLOW, UserSessionLimitsAuthenticatorFactory.BEHAVIOR, UserSessionLimitsAuthenticatorFactory.TERMINATE_OLDEST_SESSION);
 
             // Login and verify login was successful
-            loginPage.open();
+            oauth.openLoginForm();
             loginPage.login("test-user@localhost", "password");
             EventRepresentation initialLoginEvent = events.expectLogin().assertEvent();
             String userId = initialLoginEvent.getUserId();
@@ -179,7 +179,7 @@ public class UserSessionLimitsTest extends AbstractTestRealmKeycloakTest {
             // Delete the cookies, while maintaining the server side session active
             super.deleteCookies();
 
-            loginPage.open();
+            oauth.openLoginForm();
             loginPage.login("test-user@localhost", "password");
             // assert we have a logout session event, as the authenticator should have deleted the first session.
             events.expect(EventType.LOGOUT)
@@ -201,7 +201,7 @@ public class UserSessionLimitsTest extends AbstractTestRealmKeycloakTest {
         try {
             setAuthenticatorConfigItem(DefaultAuthenticationFlows.BROWSER_FLOW, UserSessionLimitsAuthenticatorFactory.USER_REALM_LIMIT, "1");
             setAuthenticatorConfigItem(DefaultAuthenticationFlows.BROWSER_FLOW, UserSessionLimitsAuthenticatorFactory.USER_CLIENT_LIMIT, "0");
-            loginPage.open();
+            oauth.openLoginForm();
             loginPage.login("test-user@localhost", "password");
             events.expectLogin().assertEvent();
 
@@ -209,7 +209,7 @@ public class UserSessionLimitsTest extends AbstractTestRealmKeycloakTest {
             super.deleteCookies();
 
             // Login the same user again and verify the configured error message is shown
-            loginPage.open();
+            oauth.openLoginForm();
             loginPage.login("test-user@localhost", "password");
             events.expect(EventType.LOGIN_ERROR).user((String) null).error(Errors.GENERIC_AUTHENTICATION_ERROR).assertEvent();
             errorPage.assertCurrent();
@@ -226,7 +226,7 @@ public class UserSessionLimitsTest extends AbstractTestRealmKeycloakTest {
             setAuthenticatorConfigItem(DefaultAuthenticationFlows.BROWSER_FLOW, UserSessionLimitsAuthenticatorFactory.BEHAVIOR, UserSessionLimitsAuthenticatorFactory.TERMINATE_OLDEST_SESSION);
             setAuthenticatorConfigItem(DefaultAuthenticationFlows.BROWSER_FLOW, UserSessionLimitsAuthenticatorFactory.USER_REALM_LIMIT, "1");
             setAuthenticatorConfigItem(DefaultAuthenticationFlows.BROWSER_FLOW, UserSessionLimitsAuthenticatorFactory.USER_CLIENT_LIMIT, "0");
-            loginPage.open();
+            oauth.openLoginForm();
             loginPage.login("test-user@localhost", "password");
             EventRepresentation initialLoginEvent = events.expectLogin().assertEvent();
             String userId = initialLoginEvent.getUserId();
@@ -235,7 +235,7 @@ public class UserSessionLimitsTest extends AbstractTestRealmKeycloakTest {
             // Delete the cookies, while maintaining the server side session active
             super.deleteCookies();
 
-            loginPage.open();
+            oauth.openLoginForm();
             loginPage.login("test-user@localhost", "password");
             // assert we have a logout session event, as the authenticator should have deleted the first session.
             events.expect(EventType.LOGOUT)
@@ -262,6 +262,40 @@ public class UserSessionLimitsTest extends AbstractTestRealmKeycloakTest {
         response = oauth.doPasswordGrantRequest("test-user@localhost", "password");
         assertEquals(403, response.getStatusCode());
         assertEquals(ERROR_TO_DISPLAY, response.getError());
+    }
+
+    @Test
+    public void testRealmSessionLimitExceededButClientLimitNotExceededShouldNotThrow() throws Exception {
+        // Reproduces: realm limit exceeded on client-a, then login to client-b whose client
+        // session count is below the client limit. Without the fix, logoutOldestSessions()
+        // receives a negative count and Stream.limit() throws IllegalArgumentException.
+        try {
+            setAuthenticatorConfigItem(DefaultAuthenticationFlows.DIRECT_GRANT_FLOW, UserSessionLimitsAuthenticatorFactory.BEHAVIOR, UserSessionLimitsAuthenticatorFactory.TERMINATE_OLDEST_SESSION);
+            setAuthenticatorConfigItem(DefaultAuthenticationFlows.DIRECT_GRANT_FLOW, UserSessionLimitsAuthenticatorFactory.USER_REALM_LIMIT, "2");
+            setAuthenticatorConfigItem(DefaultAuthenticationFlows.DIRECT_GRANT_FLOW, UserSessionLimitsAuthenticatorFactory.USER_CLIENT_LIMIT, "3");
+
+            AccessTokenResponse response = oauth.client("direct-grant-1", "password")
+                    .doPasswordGrantRequest("test-user@localhost", "password");
+            assertEquals(200, response.getStatusCode());
+
+            response = oauth.client("direct-grant-1", "password")
+                    .doPasswordGrantRequest("test-user@localhost", "password");
+            assertEquals(200, response.getStatusCode());
+
+            // realm limit reached (2 sessions on direct-grant-1); direct-grant-2 has 0 sessions,
+            // below the client limit of 3. login must succeed and must not throw a 500.
+            response = oauth.client("direct-grant-2", "password")
+                    .doPasswordGrantRequest("test-user@localhost", "password");
+            assertEquals(200, response.getStatusCode());
+
+            testingClient.server(realmName).run(assertSessionCount(realmName, username, 2));
+            testingClient.server(realmName).run(assertClientSessionCount(realmName, username, "direct-grant-1", 1));
+            testingClient.server(realmName).run(assertClientSessionCount(realmName, username, "direct-grant-2", 1));
+        } finally {
+            setAuthenticatorConfigItem(DefaultAuthenticationFlows.DIRECT_GRANT_FLOW, UserSessionLimitsAuthenticatorFactory.BEHAVIOR, UserSessionLimitsAuthenticatorFactory.DENY_NEW_SESSION);
+            setAuthenticatorConfigItem(DefaultAuthenticationFlows.DIRECT_GRANT_FLOW, UserSessionLimitsAuthenticatorFactory.USER_REALM_LIMIT, "0");
+            setAuthenticatorConfigItem(DefaultAuthenticationFlows.DIRECT_GRANT_FLOW, UserSessionLimitsAuthenticatorFactory.USER_CLIENT_LIMIT, "1");
+        }
     }
 
     @Test
@@ -411,7 +445,7 @@ public class UserSessionLimitsTest extends AbstractTestRealmKeycloakTest {
         try {
             // Login and verify login was successful
             String redirect_uri = oauth.AUTH_SERVER_ROOT + "/realms/test/account";
-            oauth.clientId("account");
+            oauth.client("account");
             oauth.redirectUri(redirect_uri);
             oauth.doLogin("test-user@localhost", "password");
             EventRepresentation loginEvent = events.expectLogin().client("account").detail(Details.REDIRECT_URI, redirect_uri).assertEvent();
@@ -443,7 +477,7 @@ public class UserSessionLimitsTest extends AbstractTestRealmKeycloakTest {
             events.expect(EventType.RESET_PASSWORD_ERROR).client("account").error(Errors.GENERIC_AUTHENTICATION_ERROR).assertEvent();
         } finally {
             testRealm().clients().findByClientId(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID).get(0).setDirectAccessGrantsEnabled(false);
-            ApiUtil.resetUserPassword(testRealm().users().get(findUser("test-user@localhost").getId()), "password", false);
+            AdminApiUtil.resetUserPassword(testRealm().users().get(findUser("test-user@localhost").getId()), "password", false);
         }
     }
 
@@ -454,7 +488,7 @@ public class UserSessionLimitsTest extends AbstractTestRealmKeycloakTest {
 
             // Login and verify login was successful
             String redirect_uri = oauth.AUTH_SERVER_ROOT + "/realms/test/account";
-            oauth.clientId("account");
+            oauth.client("account");
             oauth.redirectUri(redirect_uri);
             oauth.doLogin("test-user@localhost", "password");
             EventRepresentation loginEvent = events.expectLogin().client("account").detail(Details.REDIRECT_URI, redirect_uri).assertEvent();
@@ -487,7 +521,7 @@ public class UserSessionLimitsTest extends AbstractTestRealmKeycloakTest {
 
             testingClient.server(realmName).run(assertSessionCount(realmName, username, 1));
         } finally {
-            ApiUtil.resetUserPassword(testRealm().users().get(findUser("test-user@localhost").getId()), "password", false);
+            AdminApiUtil.resetUserPassword(testRealm().users().get(findUser("test-user@localhost").getId()), "password", false);
             setAuthenticatorConfigItem(DefaultAuthenticationFlows.RESET_CREDENTIALS_FLOW, UserSessionLimitsAuthenticatorFactory.BEHAVIOR, UserSessionLimitsAuthenticatorFactory.DENY_NEW_SESSION);
         }
     }
@@ -499,7 +533,7 @@ public class UserSessionLimitsTest extends AbstractTestRealmKeycloakTest {
             setAuthenticatorConfigItem(DefaultAuthenticationFlows.RESET_CREDENTIALS_FLOW, UserSessionLimitsAuthenticatorFactory.USER_CLIENT_LIMIT, "0");
 
             // Login and verify login was successful
-            loginPage.open();
+            oauth.openLoginForm();
             loginPage.login("test-user@localhost", "password");
             EventRepresentation loginEvent = events.expectLogin().assertEvent();
 
@@ -542,7 +576,7 @@ public class UserSessionLimitsTest extends AbstractTestRealmKeycloakTest {
             setAuthenticatorConfigItem(DefaultAuthenticationFlows.RESET_CREDENTIALS_FLOW, UserSessionLimitsAuthenticatorFactory.USER_CLIENT_LIMIT, "0");
 
             // Login and verify login was successful
-            loginPage.open();
+            oauth.openLoginForm();
             loginPage.login("test-user@localhost", "password");
             EventRepresentation loginEvent = events.expectLogin().assertEvent();
 
@@ -574,7 +608,7 @@ public class UserSessionLimitsTest extends AbstractTestRealmKeycloakTest {
 
             testingClient.server(realmName).run(assertSessionCount(realmName, username, 1));
         } finally {
-            ApiUtil.resetUserPassword(testRealm().users().get(findUser("test-user@localhost").getId()), "password", false);
+            AdminApiUtil.resetUserPassword(testRealm().users().get(findUser("test-user@localhost").getId()), "password", false);
 
             setAuthenticatorConfigItem(DefaultAuthenticationFlows.RESET_CREDENTIALS_FLOW, UserSessionLimitsAuthenticatorFactory.BEHAVIOR, UserSessionLimitsAuthenticatorFactory.DENY_NEW_SESSION);
             setAuthenticatorConfigItem(DefaultAuthenticationFlows.RESET_CREDENTIALS_FLOW, UserSessionLimitsAuthenticatorFactory.USER_REALM_LIMIT, "0");
@@ -603,7 +637,7 @@ public class UserSessionLimitsTest extends AbstractTestRealmKeycloakTest {
         );
 
         // Login in browser1
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("test-user@localhost", "password");
         assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
         EventRepresentation loginEvent = events.expectLogin().assertEvent();
@@ -620,7 +654,7 @@ public class UserSessionLimitsTest extends AbstractTestRealmKeycloakTest {
         super.deleteCookies();
 
         // New login should fail due the sessions limit
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("test-user@localhost", "password");
         events.expect(EventType.LOGIN_ERROR).user((String) null).error(Errors.GENERIC_AUTHENTICATION_ERROR).assertEvent();
         errorPage.assertCurrent();

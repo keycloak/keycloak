@@ -17,6 +17,7 @@
 
 package org.keycloak.testsuite.organization.mapper;
 
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.HashMap;
@@ -43,6 +44,7 @@ import org.keycloak.protocol.oidc.mappers.GroupMembershipMapper;
 import org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.RefreshToken;
+import org.keycloak.representations.UserInfo;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.FederatedIdentityRepresentation;
@@ -51,14 +53,19 @@ import org.keycloak.representations.idm.MemberRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.representations.oidc.TokenMetadataRepresentation;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.broker.KcOidcBrokerConfiguration;
 import org.keycloak.testsuite.organization.admin.AbstractOrganizationTest;
+import org.keycloak.testsuite.util.BrowserTabUtil;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.IntrospectionResponse;
+import org.keycloak.testsuite.util.oauth.OAuthClient;
+import org.keycloak.testsuite.util.oauth.UserInfoResponse;
 
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
@@ -71,9 +78,9 @@ import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.Matchers.oneOf;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest {
 
@@ -94,8 +101,8 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
 
         orgb.members().addMember(member.getId()).close();
 
-        Assert.assertTrue(orga.members().list(-1, -1).stream().map(UserRepresentation::getId).anyMatch(member.getId()::equals));
-        Assert.assertTrue(orgb.members().list(-1, -1).stream().map(UserRepresentation::getId).anyMatch(member.getId()::equals));
+        Assertions.assertTrue(orga.members().list(-1, -1).stream().map(UserRepresentation::getId).anyMatch(member.getId()::equals));
+        Assertions.assertTrue(orgb.members().list(-1, -1).stream().map(UserRepresentation::getId).anyMatch(member.getId()::equals));
 
         oauth.client("direct-grant", "password");
         oauth.scope("openid organization:*");
@@ -115,6 +122,7 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
     }
 
     @Test
+    @SuppressWarnings("unchecked")
     public void testMultipleOrganizationScopes() throws Exception {
         OrganizationResource orga = testRealm().organizations().get(createOrganization("org-a").getId());
         OrganizationResource orgb = testRealm().organizations().get(createOrganization("org-b").getId());
@@ -125,21 +133,40 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
 
         orgb.members().addMember(member.getId()).close();
 
-        Assert.assertTrue(orga.members().list(-1, -1).stream().map(UserRepresentation::getId).anyMatch(member.getId()::equals));
-        Assert.assertTrue(orgb.members().list(-1, -1).stream().map(UserRepresentation::getId).anyMatch(member.getId()::equals));
+        Assertions.assertTrue(orga.members().list(-1, -1).stream().map(UserRepresentation::getId).anyMatch(member.getId()::equals));
+        Assertions.assertTrue(orgb.members().list(-1, -1).stream().map(UserRepresentation::getId).anyMatch(member.getId()::equals));
 
-        oauth.clientId("test-app");
-        oauth.scope("openid organization organization:org-a");
+        oauth.client("test-app", "password");
+
+        // Test multiple specific organization scopes - should return both organizations
+        oauth.scope("openid organization:org-a organization:org-b");
         AccessTokenResponse response = oauth.doPasswordGrantRequest(memberEmail, memberPassword);
-        Assert.assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatusCode());
+        Assertions.assertEquals(Response.Status.OK.getStatusCode(), response.getStatusCode());
+        AccessToken accessToken = TokenVerifier.create(response.getAccessToken(), AccessToken.class).getToken();
+        List<String> organizations = (List<String>) accessToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION);
+        Assertions.assertNotNull(organizations);
+        Assertions.assertTrue(organizations.contains("org-a"));
+        Assertions.assertTrue(organizations.contains("org-b"));
 
+        // Test organization + specific organization scope - should still fail (mixing ANY with SPECIFIC)
+        oauth.scope("openid organization organization:org-a");
+        response = oauth.doPasswordGrantRequest(memberEmail, memberPassword);
+        Assertions.assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatusCode());
+
+        // Test organization + wildcard scope - should still fail (mixing ANY with ALL)
         oauth.scope("openid organization organization:*");
         response = oauth.doPasswordGrantRequest(memberEmail, memberPassword);
-        Assert.assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatusCode());
+        Assertions.assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatusCode());
 
+        // Test specific organization + wildcard scope - should still fail (mixing SPECIFIC with ALL)
         oauth.scope("openid organization:org-a organization:*");
         response = oauth.doPasswordGrantRequest(memberEmail, memberPassword);
-        Assert.assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatusCode());
+        Assertions.assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatusCode());
+
+        // Test nonexistent org alias - should fail (nonexistent alias is not a valid scope)
+        oauth.scope("openid organization:org-a organization:nonexistent");
+        response = oauth.doPasswordGrantRequest(memberEmail, memberPassword);
+        Assertions.assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatusCode());
     }
 
     @Test
@@ -171,7 +198,7 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
         oauth.client("broker-app", "broker-app-secret");
         oauth.scope("organization:" + orgA.getAlias());
         loginPage.open(bc.consumerRealmName());
-        org.keycloak.testsuite.Assert.assertFalse(loginPage.isPasswordInputPresent());
+        Assertions.assertFalse(loginPage.isPasswordInputPresent());
         assertTrue(loginPage.isSocialButtonPresent(orgA.getAlias() + "-identity-provider"));
         assertFalse(loginPage.isSocialButtonPresent(orgB.getAlias() + "-identity-provider"));
         assertFalse(driver.getPageSource().contains("Your email domain matches"));
@@ -409,6 +436,138 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
     }
 
     @Test
+    public void testMultipleTabsTrackingDifferentOrganizationSelectionHoldAcrossTokenRefresh() {
+        OrganizationRepresentation orgA = createOrganization("orga", true);
+        MemberRepresentation member = addMember(testRealm().organizations().get(orgA.getId()), "member@" + orgA.getDomains().iterator().next().getName());
+        OrganizationRepresentation orgB = createOrganization("orgb", true);
+        testRealm().organizations().get(orgB.getId()).members().addMember(member.getId()).close();
+        oauth.client("broker-app", KcOidcBrokerConfiguration.CONSUMER_BROKER_APP_SECRET);
+        oauth.scope("organization");
+
+        try (BrowserTabUtil tabUtil = BrowserTabUtil.getInstanceAndSetEnv(driver)) {
+            //first tab - select orgA
+            loginPage.open(bc.consumerRealmName());
+            loginPage.loginUsername(member.getEmail());
+            selectOrganizationPage.selectOrganization(orgA.getAlias());
+            loginPage.login(memberPassword);
+            AccessTokenResponse response = assertSuccessfulCodeGrant(oauth);
+            assertThat(response.getScope(), containsString("organization"));
+            String tab1RefreshToken = response.getRefreshToken();
+
+            //second tab - select orgB
+            tabUtil.newTab(oauth.loginForm().build());
+            assertThat(tabUtil.getCountOfTabs(), is(2));
+            selectOrganizationPage.isCurrent();
+            selectOrganizationPage.selectOrganization(orgB.getAlias());
+            response = assertSuccessfulCodeGrant(oauth);
+            assertThat(response.getScope(), containsString("organization"));
+            String tab2RefreshToken = response.getRefreshToken();
+
+            //refresh first tab - ensure still orgA
+            tabUtil.switchToTab(0);
+            response = oauth.doRefreshTokenRequest(tab1RefreshToken);
+            assertThat(response.getScope(), containsString("organization"));
+            AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
+            List<String> organizations = (List<String>) accessToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION);
+            assertThat(organizations.size(), is(1));
+            assertThat(organizations.contains(orgA.getAlias()), is(true));
+
+            //refresh second tab - ensure still orgB
+            tabUtil.switchToTab(1);
+            response = oauth.doRefreshTokenRequest(tab2RefreshToken);
+            assertThat(response.getScope(), containsString("organization"));
+            accessToken = oauth.verifyToken(response.getAccessToken());
+            organizations = (List<String>) accessToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION);
+            assertThat(organizations.size(), is(1));
+            assertThat(organizations.contains(orgB.getAlias()), is(true));
+        }
+    }
+
+    @Test
+    public void testUserInfoEndpoint() {
+        OrganizationRepresentation orgA = createOrganization("orga", true);
+        MemberRepresentation member = addMember(testRealm().organizations().get(orgA.getId()), "member@" + orgA.getDomains().iterator().next().getName());
+        OrganizationRepresentation orgB = createOrganization("orgb", true);
+        testRealm().organizations().get(orgB.getId()).members().addMember(member.getId()).close();
+        oauth.client("broker-app", KcOidcBrokerConfiguration.CONSUMER_BROKER_APP_SECRET);
+        oauth.scope("organization");
+
+        try (BrowserTabUtil tabUtil = BrowserTabUtil.getInstanceAndSetEnv(driver)) {
+            //first tab - select orgA
+            loginPage.open(bc.consumerRealmName());
+            loginPage.loginUsername(member.getEmail());
+            selectOrganizationPage.selectOrganization(orgA.getAlias());
+            loginPage.login(memberPassword);
+            AccessTokenResponse response = assertSuccessfulCodeGrant(oauth);
+            assertThat(response.getScope(), containsString("organization"));
+            String tab1AccessToken = response.getAccessToken();
+
+            //second tab - select orgB
+            tabUtil.newTab(oauth.loginForm().build());
+            assertThat(tabUtil.getCountOfTabs(), is(2));
+            selectOrganizationPage.isCurrent();
+            selectOrganizationPage.selectOrganization(orgB.getAlias());
+            response = assertSuccessfulCodeGrant(oauth);
+            assertThat(response.getScope(), containsString("organization"));
+            String tab2AccessToken = response.getAccessToken();
+
+            UserInfoResponse userInfoResponse = oauth.userInfoRequest(tab1AccessToken).send();
+            UserInfo userInfo = userInfoResponse.getUserInfo();
+            List<String> organizations = (List<String>) userInfo.getOtherClaims().get(OAuth2Constants.ORGANIZATION);
+            assertThat(organizations.size(), is(1));
+            assertThat(organizations.contains(orgA.getAlias()), is(true));
+
+            userInfoResponse = oauth.userInfoRequest(tab2AccessToken).send();
+            userInfo = userInfoResponse.getUserInfo();
+            organizations = (List<String>) userInfo.getOtherClaims().get(OAuth2Constants.ORGANIZATION);
+            assertThat(organizations.size(), is(1));
+            assertThat(organizations.contains(orgB.getAlias()), is(true));
+        }
+    }
+
+    @Test
+    public void testIntrospectionEndpoint() throws IOException {
+        OrganizationRepresentation orgA = createOrganization("orga", true);
+        MemberRepresentation member = addMember(testRealm().organizations().get(orgA.getId()), "member@" + orgA.getDomains().iterator().next().getName());
+        OrganizationRepresentation orgB = createOrganization("orgb", true);
+        testRealm().organizations().get(orgB.getId()).members().addMember(member.getId()).close();
+        oauth.client("broker-app", KcOidcBrokerConfiguration.CONSUMER_BROKER_APP_SECRET);
+        oauth.scope("organization");
+
+        try (BrowserTabUtil tabUtil = BrowserTabUtil.getInstanceAndSetEnv(driver)) {
+            //first tab - select orgA
+            loginPage.open(bc.consumerRealmName());
+            loginPage.loginUsername(member.getEmail());
+            selectOrganizationPage.selectOrganization(orgA.getAlias());
+            loginPage.login(memberPassword);
+            AccessTokenResponse response = assertSuccessfulCodeGrant(oauth);
+            assertThat(response.getScope(), containsString("organization"));
+            String tab1AccessToken = response.getAccessToken();
+
+            //second tab - select orgB
+            tabUtil.newTab(oauth.loginForm().build());
+            assertThat(tabUtil.getCountOfTabs(), is(2));
+            selectOrganizationPage.isCurrent();
+            selectOrganizationPage.selectOrganization(orgB.getAlias());
+            response = assertSuccessfulCodeGrant(oauth);
+            assertThat(response.getScope(), containsString("organization"));
+            String tab2AccessToken = response.getAccessToken();
+
+            IntrospectionResponse userInfoResponse = oauth.introspectionRequest(tab1AccessToken).send();
+            TokenMetadataRepresentation metadata = userInfoResponse.asTokenMetadata();
+            List<String> organizations = (List<String>) metadata.getOtherClaims().get(OAuth2Constants.ORGANIZATION);
+            assertThat(organizations.size(), is(1));
+            assertThat(organizations.contains(orgA.getAlias()), is(true));
+
+            userInfoResponse = oauth.introspectionRequest(tab2AccessToken).send();
+            metadata = userInfoResponse.asTokenMetadata();
+            organizations = (List<String>) metadata.getOtherClaims().get(OAuth2Constants.ORGANIZATION);
+            assertThat(organizations.size(), is(1));
+            assertThat(organizations.contains(orgB.getAlias()), is(true));
+        }
+    }
+
+    @Test
     public void testRefreshTokenWithAllOrganizationsAskingForSpecificOrganization() {
         OrganizationRepresentation orgA = createOrganization("orga", true);
         MemberRepresentation member = addMember(testRealm().organizations().get(orgA.getId()), "member@" + orgA.getDomains().iterator().next().getName());
@@ -428,6 +587,8 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
         assertThat(accessToken.getOtherClaims().keySet(), hasItem(OAuth2Constants.ORGANIZATION));
         List<String> organizations = (List<String>) accessToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION);
         assertThat(organizations.size(), is(2));
+
+        //previous:(ALL) -> current:(SINGLE:orga) == SINGLE:orga
         orgScope = "organization:orga";
         oauth.scope(orgScope).openid(false);
         response = oauth.doRefreshTokenRequest(response.getRefreshToken());
@@ -438,6 +599,35 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
         organizations = (List<String>) accessToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION);
         assertThat(organizations.size(), is(1));
         assertThat(organizations.contains(orgA.getAlias()), is(true));
+    }
+
+    @Test
+    public void testRefreshTokenWithAllOrganizationsAskingForAny() {
+        OrganizationRepresentation orgA = createOrganization("orga", true);
+        MemberRepresentation member = addMember(testRealm().organizations().get(orgA.getId()), "member@" + orgA.getDomains().iterator().next().getName());
+        OrganizationRepresentation orgB = createOrganization("orgb", true);
+        testRealm().organizations().get(orgB.getId()).members().addMember(member.getId()).close();
+        // identity-first login will respect the organization provided in the scope even though the user email maps to a different organization
+        oauth.client("broker-app", KcOidcBrokerConfiguration.CONSUMER_BROKER_APP_SECRET);
+        String orgScope = "organization:*";
+        oauth.scope(orgScope);
+        loginPage.open(bc.consumerRealmName());
+        loginPage.loginUsername(member.getEmail());
+        loginPage.login(memberPassword);
+        AccessTokenResponse response = assertSuccessfulCodeGrant();
+        assertThat(response.getScope(), containsString(orgScope));
+        AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
+        assertThat(accessToken.getScope(), containsString(orgScope));
+        assertThat(accessToken.getOtherClaims().keySet(), hasItem(OAuth2Constants.ORGANIZATION));
+        List<String> organizations = (List<String>) accessToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION);
+        assertThat(organizations.size(), is(2));
+
+        //previous:(ALL) -> current:(ANY) == not allowed
+        orgScope = "organization";
+        oauth.scope(orgScope).openid(false);
+        response = oauth.doRefreshTokenRequest(response.getRefreshToken());
+        assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatusCode());
+        assertEquals("ANY organization scope is not allowed in this context", response.getError());
     }
 
     @Test
@@ -462,6 +652,8 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
         List<String> organizations = (List<String>) accessToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION);
         assertThat(organizations.size(), is(1));
         assertThat(organizations.contains(orgA.getAlias()), is(true));
+
+        //previous:(SINGLE:orga) -> current:(ALL) == SINGLE:orga
         orgScope = "organization:*";
         oauth.scope(orgScope);
         response = oauth.doRefreshTokenRequest(response.getRefreshToken());
@@ -496,18 +688,16 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
         List<String> organizations = (List<String>) accessToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION);
         assertThat(organizations.size(), is(1));
         assertThat(organizations.contains(orgA.getAlias()), is(true));
+
+        //previous:(SINGLE:orga) -> current:(SINGLE:orgb) == not allowed
         orgScope = "organization:orgb";
         oauth.scope(orgScope);
         response = oauth.doRefreshTokenRequest(response.getRefreshToken());
-        assertThat(response.getScope(), not(containsString(originalScope)));
-        accessToken = oauth.verifyToken(response.getAccessToken());
-        assertThat(accessToken.getScope(), not(containsString(orgScope)));
-        assertThat(accessToken.getScope(), not(containsString(originalScope)));
-        assertThat(accessToken.getOtherClaims().keySet(), not(hasItem(OAuth2Constants.ORGANIZATION)));
+        assertResponseMissingOrganizationScopeAndClaims(response);
     }
 
     @Test
-    public void testRefreshTokenScopeAnyAskingAllOrganizations() {
+    public void testRefreshTokenScopeWithOrganizationSelectionAskingForSameOrganization() {
         OrganizationRepresentation orgA = createOrganization("orga", true);
         MemberRepresentation member = addMember(testRealm().organizations().get(orgA.getId()), "member@" + orgA.getDomains().iterator().next().getName());
         OrganizationRepresentation orgB = createOrganization("orgb", true);
@@ -523,26 +713,36 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
         selectOrganizationPage.selectOrganization(orgB.getAlias());
         loginPage.login(memberPassword);
         AccessTokenResponse response = assertSuccessfulCodeGrant();
-        // for now, return the organization scope in the response and access token even though no organization is mapped into the token
-        // once we support the user to select an organization, the selected organization will be mapped
         assertThat(response.getScope(), containsString("organization"));
         AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
+        assertThat(accessToken.getScope(), containsString("organization"));
         assertThat(accessToken.getOtherClaims().keySet(), hasItem(OAuth2Constants.ORGANIZATION));
         List<String> organizations = (List<String>) accessToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION);
+        assertEquals( 1, organizations.toArray().length);
         assertThat(organizations.contains(orgB.getAlias()), is(true));
-        String orgScope = "organization:*";
-        oauth.scope(orgScope);
+        RefreshToken refreshToken = oauth.parseRefreshToken(response.getRefreshToken());
+        assertThat(refreshToken.getScope(), containsString("organization"));
+
+        //previous:(ANY -> SINGLE:orgb) -> current:(SINGLE:orgb) == SINGLE:orgb -> cannot change user selection
+        oauth.scope("organization:orgb");
         response = oauth.doRefreshTokenRequest(response.getRefreshToken());
-        assertThat(response.getScope(), containsString(originalScope));
+        assertThat(response.getScope(), not(containsString("organization")));
+
+        //previous:(ANY -> ALL) -> return the selected org
+        oauth.scope("organization:*");
+        response = oauth.doRefreshTokenRequest(response.getRefreshToken());
+        assertThat(response.getScope(), containsString("organization"));
         accessToken = oauth.verifyToken(response.getAccessToken());
-        assertThat(accessToken.getScope(), containsString(originalScope));
+        assertThat(accessToken.getScope(), containsString("organization"));
         assertThat(accessToken.getOtherClaims().keySet(), hasItem(OAuth2Constants.ORGANIZATION));
         organizations = (List<String>) accessToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION);
+        assertEquals( 1, organizations.toArray().length);
         assertThat(organizations.contains(orgB.getAlias()), is(true));
+        assertThat(organizations.contains(orgA.getAlias()), is(false));
     }
 
     @Test
-    public void testRefreshTokenScopeAnyAskingSingleOrganization() {
+    public void testRefreshTokenScopeWithOrganizationSelectionAskingForDifferentOrganization() {
         OrganizationRepresentation orgA = createOrganization("orga", true);
         MemberRepresentation member = addMember(testRealm().organizations().get(orgA.getId()), "member@" + orgA.getDomains().iterator().next().getName());
         OrganizationRepresentation orgB = createOrganization("orgb", true);
@@ -560,21 +760,259 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
         AccessTokenResponse response = assertSuccessfulCodeGrant();
         assertThat(response.getScope(), containsString("organization"));
         AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
+        assertThat(accessToken.getScope(), containsString("organization"));
         assertThat(accessToken.getOtherClaims().keySet(), hasItem(OAuth2Constants.ORGANIZATION));
         List<String> organizations = (List<String>) accessToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION);
+        assertEquals( 1, organizations.toArray().length);
         assertThat(organizations.contains(orgB.getAlias()), is(true));
-        String orgScope = "organization:orgb";
+        RefreshToken refreshToken = oauth.parseRefreshToken(response.getRefreshToken());
+        assertThat(refreshToken.getScope(), containsString("organization"));
+
+        //previous:(ANY -> SINGLE:orgb) -> current:(SINGLE:orga) == not allowed
+        String orgScope = "organization:orga";
         oauth.scope(orgScope);
         response = oauth.doRefreshTokenRequest(response.getRefreshToken());
-        assertThat(response.getScope(), not(containsString(orgScope)));
+        assertResponseMissingOrganizationScopeAndClaims(response);
+    }
+
+    @Test
+    public void testRefreshTokenScopeWithOrganizationSelectionAskingForAll() {
+        OrganizationRepresentation orgA = createOrganization("orga", true);
+        MemberRepresentation member = addMember(testRealm().organizations().get(orgA.getId()), "member@" + orgA.getDomains().iterator().next().getName());
+        OrganizationRepresentation orgB = createOrganization("orgb", true);
+        testRealm().organizations().get(orgB.getId()).members().addMember(member.getId()).close();
+        oauth.client("broker-app", "broker-app-secret");
+        String originalScope = "organization";
+        oauth.scope(originalScope);
+        loginPage.open(bc.consumerRealmName());
+        loginPage.loginUsername(member.getEmail());
+        assertTrue(selectOrganizationPage.isCurrent());
+        assertTrue(selectOrganizationPage.isOrganizationButtonPresent(orgA.getAlias()));
+        assertTrue(selectOrganizationPage.isOrganizationButtonPresent(orgB.getAlias()));
+        selectOrganizationPage.selectOrganization(orgB.getAlias());
+        loginPage.login(memberPassword);
+        AccessTokenResponse response = assertSuccessfulCodeGrant();
+        assertThat(response.getScope(), containsString("organization"));
+        AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
+        assertThat(accessToken.getScope(), containsString("organization"));
+        assertThat(accessToken.getOtherClaims().keySet(), hasItem(OAuth2Constants.ORGANIZATION));
+        List<String> organizations = (List<String>) accessToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION);
+        assertEquals( 1, organizations.toArray().length);
+        assertThat(organizations.contains(orgB.getAlias()), is(true));
+        RefreshToken refreshToken = oauth.parseRefreshToken(response.getRefreshToken());
+        assertThat(refreshToken.getScope(), containsString("organization"));
+
+        //previous:(ANY -> SINGLE:orgb) -> current:(ALL) == SINGLE:orgb
+        String allOrgsScope = "organization:*";
+        oauth.scope(allOrgsScope);
+        response = oauth.doRefreshTokenRequest(response.getRefreshToken());
+        assertThat(response.getScope(), not(containsString(allOrgsScope)));
         accessToken = oauth.verifyToken(response.getAccessToken());
-        assertThat(accessToken.getScope(), not(containsString(orgScope)));
-        assertThat(accessToken.getOtherClaims().keySet(), not(hasItem(OAuth2Constants.ORGANIZATION)));
+        assertThat(accessToken.getScope(), containsString("organization"));
+        assertThat(accessToken.getOtherClaims().keySet(), hasItem(OAuth2Constants.ORGANIZATION));
+        organizations = (List<String>) accessToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION);
+        assertEquals( 1, organizations.toArray().length);
+        assertThat(organizations.contains(orgB.getAlias()), is(true));
+    }
+
+    @Test
+    public void testRefreshTokenScopeWithSingleOrganizationAskingForAll() {
+        OrganizationRepresentation orgA = createOrganization("orga", true);
+        MemberRepresentation member = addMember(testRealm().organizations().get(orgA.getId()), "member@" + orgA.getDomains().iterator().next().getName());
+        OrganizationRepresentation orgB = createOrganization("orgb", true);
+        testRealm().organizations().get(orgB.getId()).members().addMember(member.getId()).close();
+        oauth.client("broker-app", "broker-app-secret");
+        String originalScope = "organization:" + orgA.getAlias();
+        oauth.scope(originalScope);
+        loginPage.open(bc.consumerRealmName());
+        loginPage.loginUsername(member.getEmail());
+        loginPage.login(memberPassword);
+        AccessTokenResponse response = assertSuccessfulCodeGrant();
+        assertThat(response.getScope(), containsString(originalScope));
+        AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
+        assertThat(accessToken.getScope(), containsString(originalScope));
+        assertThat(accessToken.getOtherClaims().keySet(), hasItem(OAuth2Constants.ORGANIZATION));
+        List<String> organizations = (List<String>) accessToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION);
+        assertEquals( 1, organizations.toArray().length);
+        assertThat(organizations.contains(orgA.getAlias()), is(true));
+        RefreshToken refreshToken = oauth.parseRefreshToken(response.getRefreshToken());
+        assertThat(refreshToken.getScope(), containsString(originalScope));
+
+        //previous:(SINGLE:orga) -> current:(ALL) == SINGLE:orga
+        String allOrgsScope = "organization:*";
+        oauth.scope(allOrgsScope);
+        response = oauth.doRefreshTokenRequest(response.getRefreshToken());
+        assertThat(response.getScope(), not(containsString(allOrgsScope)));
+        accessToken = oauth.verifyToken(response.getAccessToken());
+        assertThat(accessToken.getScope(), containsString(originalScope));
+        assertThat(accessToken.getOtherClaims().keySet(), hasItem(OAuth2Constants.ORGANIZATION));
+        organizations = (List<String>) accessToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION);
+        assertEquals( 1, organizations.toArray().length);
+        assertThat(organizations.contains(orgA.getAlias()), is(true));
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testPasswordGrantWithAllOrganizationsAndRefresh() throws Exception {
+        OrganizationRepresentation orgA = createOrganization("orga", true);
+        MemberRepresentation member = addMember(testRealm().organizations().get(orgA.getId()), "member@" + orgA.getDomains().iterator().next().getName());
+        OrganizationRepresentation orgB = createOrganization("orgb", true);
+        testRealm().organizations().get(orgB.getId()).members().addMember(member.getId()).close();
+
+        oauth.client("direct-grant", "password");
+        oauth.scope("openid organization:*");
+        AccessTokenResponse response = oauth.doPasswordGrantRequest(member.getEmail(), memberPassword);
+        assertThat(response.getScope(), containsString("organization"));
+
+        AccessToken accessToken = TokenVerifier.create(response.getAccessToken(), AccessToken.class).getToken();
+        assertThat(accessToken.getOtherClaims().keySet(), hasItem(OAuth2Constants.ORGANIZATION));
+        List<String> organizations = (List<String>) accessToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION);
+        assertThat(organizations, containsInAnyOrder("orga", "orgb"));
+
+        // refresh token and verify same organizations are resolved
+        response = oauth.doRefreshTokenRequest(response.getRefreshToken());
+        assertThat(response.getScope(), containsString("organization"));
+        accessToken = TokenVerifier.create(response.getAccessToken(), AccessToken.class).getToken();
+        assertThat(accessToken.getOtherClaims().keySet(), hasItem(OAuth2Constants.ORGANIZATION));
+        organizations = (List<String>) accessToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION);
+        assertThat(organizations, containsInAnyOrder("orga", "orgb"));
+
+        // refresh again to verify subsequent refreshes also work
+        response = oauth.doRefreshTokenRequest(response.getRefreshToken());
+        assertThat(response.getScope(), containsString("organization"));
+        accessToken = TokenVerifier.create(response.getAccessToken(), AccessToken.class).getToken();
+        assertThat(accessToken.getOtherClaims().keySet(), hasItem(OAuth2Constants.ORGANIZATION));
+        organizations = (List<String>) accessToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION);
+        assertThat(organizations, containsInAnyOrder("orga", "orgb"));
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testMultipleTabsWithMixedScopeFormats() {
+        OrganizationRepresentation orgA = createOrganization("orga", true);
+        MemberRepresentation member = addMember(testRealm().organizations().get(orgA.getId()), "member@" + orgA.getDomains().iterator().next().getName());
+        OrganizationRepresentation orgB = createOrganization("orgb", true);
+        testRealm().organizations().get(orgB.getId()).members().addMember(member.getId()).close();
+        oauth.client("broker-app", KcOidcBrokerConfiguration.CONSUMER_BROKER_APP_SECRET);
+
+        try (BrowserTabUtil tabUtil = BrowserTabUtil.getInstanceAndSetEnv(driver)) {
+            // first tab - organization:* (all orgs)
+            oauth.scope("organization:*");
+            loginPage.open(bc.consumerRealmName());
+            loginPage.loginUsername(member.getEmail());
+            loginPage.login(memberPassword);
+            AccessTokenResponse response = assertSuccessfulCodeGrant(oauth);
+            assertThat(response.getScope(), containsString("organization:*"));
+            String tab1RefreshToken = response.getRefreshToken();
+            AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
+            List<String> organizations = (List<String>) accessToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION);
+            assertThat(organizations.size(), is(2));
+            assertThat(organizations, containsInAnyOrder(orgA.getAlias(), orgB.getAlias()));
+
+            // second tab - organization (ANY, select orgB)
+            oauth.scope("organization");
+            tabUtil.newTab(oauth.loginForm().build());
+            assertThat(tabUtil.getCountOfTabs(), is(2));
+            selectOrganizationPage.isCurrent();
+            selectOrganizationPage.selectOrganization(orgB.getAlias());
+            response = assertSuccessfulCodeGrant(oauth);
+            assertThat(response.getScope(), containsString("organization"));
+            String tab2RefreshToken = response.getRefreshToken();
+            accessToken = oauth.verifyToken(response.getAccessToken());
+            organizations = (List<String>) accessToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION);
+            assertThat(organizations.size(), is(1));
+            assertThat(organizations.contains(orgB.getAlias()), is(true));
+
+            // refresh first tab - should still have all organizations (not contaminated by tab 2's org selection)
+            tabUtil.switchToTab(0);
+            oauth.scope(null);
+            response = oauth.doRefreshTokenRequest(tab1RefreshToken);
+            assertThat(response.getScope(), containsString("organization:*"));
+            accessToken = oauth.verifyToken(response.getAccessToken());
+            organizations = (List<String>) accessToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION);
+            assertThat(organizations.size(), is(2));
+            assertThat(organizations, containsInAnyOrder(orgA.getAlias(), orgB.getAlias()));
+
+            // refresh second tab - should still have only orgB
+            tabUtil.switchToTab(1);
+            oauth.scope(null);
+            response = oauth.doRefreshTokenRequest(tab2RefreshToken);
+            assertThat(response.getScope(), containsString("organization"));
+            accessToken = oauth.verifyToken(response.getAccessToken());
+            organizations = (List<String>) accessToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION);
+            assertThat(organizations.size(), is(1));
+            assertThat(organizations.contains(orgB.getAlias()), is(true));
+
+            // refresh second tab changing scopes to ask for orgA, should not be allowed since the user selection in
+            // that tab was orgB
+            tabUtil.switchToTab(1);
+            oauth.scope("organization:" + orgA.getAlias());
+            response = oauth.doRefreshTokenRequest(tab2RefreshToken);
+            assertThat(response.getScope(), not(containsString("organization")));
+            accessToken = oauth.verifyToken(response.getAccessToken());
+            organizations = (List<String>) accessToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION);
+            assertThat(organizations, is(nullValue()));
+
+            // refresh first tab changing scopes ALL -> SINGLE
+            tabUtil.switchToTab(0);
+            oauth.scope("organization:" + orgA.getAlias());
+            response = oauth.doRefreshTokenRequest(tab1RefreshToken);
+            assertThat(response.getScope(), containsString("organization:" + orgA.getAlias()));
+            accessToken = oauth.verifyToken(response.getAccessToken());
+            organizations = (List<String>) accessToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION);
+            assertThat(organizations.size(), is(1));
+            assertThat(organizations, containsInAnyOrder(orgA.getAlias()));
+
+            // try to refresh first tab changing scopes SINGLE -> ANY, not allowed
+            tabUtil.switchToTab(0);
+            oauth.scope("organization");
+            response = oauth.doRefreshTokenRequest(tab1RefreshToken);
+            assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatusCode());
+            assertEquals("ANY organization scope is not allowed in this context", response.getError());
+
+            // try to refresh first tab changing scopes SINGLE -> ALL
+            tabUtil.switchToTab(0);
+            oauth.scope("organization:*");
+            response = oauth.doRefreshTokenRequest(tab1RefreshToken);
+            assertThat(response.getScope(), containsString("organization:*"));
+            accessToken = oauth.verifyToken(response.getAccessToken());
+            organizations = (List<String>) accessToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION);
+            assertThat(organizations.size(), is(2));
+            assertThat(organizations, containsInAnyOrder(orgA.getAlias(), orgB.getAlias()));
+
+            // try to refresh second tab changing scopes ANY -> ALL
+            tabUtil.switchToTab(1);
+            oauth.scope("organization:*");
+            response = oauth.doRefreshTokenRequest(tab1RefreshToken);
+            assertThat(response.getScope(), containsString("organization:*"));
+            accessToken = oauth.verifyToken(response.getAccessToken());
+            organizations = (List<String>) accessToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION);
+            assertThat(organizations.size(), is(2));
+            assertThat(organizations, containsInAnyOrder(orgA.getAlias(), orgB.getAlias()));
+
+            // try to refresh second tab changing scopes ALL -> ANY
+            tabUtil.switchToTab(1);
+            oauth.scope("organization");
+            response = oauth.doRefreshTokenRequest(tab1RefreshToken);
+            assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatusCode());
+            assertEquals("ANY organization scope is not allowed in this context", response.getError());
+
+            // refresh second tab resetting scopes so that the scopes from the last successful refresh are respected
+            tabUtil.switchToTab(1);
+            oauth.scope(null);
+            response = oauth.doRefreshTokenRequest(tab1RefreshToken);
+            assertThat(response.getScope(), containsString("organization:*"));
+            accessToken = oauth.verifyToken(response.getAccessToken());
+            organizations = (List<String>) accessToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION);
+            assertThat(organizations.size(), is(2));
+            assertThat(organizations, containsInAnyOrder(orgA.getAlias(), orgB.getAlias()));
+        }
     }
 
     @Test
     public void testIncludeOrganizationAttributes() throws Exception {
-        OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
+        OrganizationRepresentation orgRep = createOrganization();
+        OrganizationResource organization = testRealm().organizations().get(orgRep.getId());
         addMember(organization);
         setMapperConfig(OrganizationMembershipMapper.ADD_ORGANIZATION_ATTRIBUTES, Boolean.TRUE.toString());
 
@@ -599,6 +1037,8 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
         assertThat(organizations.keySet(), hasItem(organizationName));
         assertThat(organizations.get(organizationName).keySet(), hasItem("key"));
         assertThat(organizations.get(organizationName).get("key"), containsInAnyOrder("value1", "value2"));
+        RefreshToken refreshToken = oauth.parseRefreshToken(response.getRefreshToken());
+        assertThat(refreshToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION), is(orgRep.getAlias()));
 
         setMapperConfig(OrganizationMembershipMapper.ADD_ORGANIZATION_ATTRIBUTES, Boolean.FALSE.toString());
         setMapperConfig(OIDCAttributeMapperHelper.JSON_TYPE, "JSON");
@@ -608,6 +1048,8 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
         organizations = (Map<String, Map<String, List<String>>>) accessToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION);
         assertThat(organizations.keySet(), hasItem(organizationName));
         assertThat(organizations.get(organizationName).keySet().isEmpty(), is(true));
+        refreshToken = oauth.parseRefreshToken(response.getRefreshToken());
+        assertThat(refreshToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION), is(orgRep.getAlias()));
     }
 
     @Test
@@ -910,10 +1352,7 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
         oauth.scope("openid");
         oauth.openLoginForm();
         response = assertSuccessfulCodeGrant();
-        assertThat(response.getScope(), not(containsString(orgScope)));
-        accessToken = oauth.verifyToken(response.getAccessToken());
-        assertThat(accessToken.getScope(), not(containsString(orgScope)));
-        assertThat(accessToken.getOtherClaims().keySet(), not(hasItem(OAuth2Constants.ORGANIZATION)));
+        assertResponseMissingOrganizationScopeAndClaims(response);
     }
 
     @Test
@@ -995,8 +1434,8 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
 
         orgb.members().addMember(member.getId()).close();
 
-        Assert.assertTrue(orga.members().list(-1, -1).stream().map(UserRepresentation::getId).anyMatch(member.getId()::equals));
-        Assert.assertTrue(orgb.members().list(-1, -1).stream().map(UserRepresentation::getId).anyMatch(member.getId()::equals));
+        Assertions.assertTrue(orga.members().list(-1, -1).stream().map(UserRepresentation::getId).anyMatch(member.getId()::equals));
+        Assertions.assertTrue(orgb.members().list(-1, -1).stream().map(UserRepresentation::getId).anyMatch(member.getId()::equals));
 
         ClientScopeRepresentation orgScope = testRealm().clientScopes().findAll().stream()
                 .filter(s -> OIDCLoginProtocolFactory.ORGANIZATION.equals(s.getName()))
@@ -1034,6 +1473,65 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
         assertThat(List.of(accessToken.getScope().split(" ")), not(hasItem("org")));
         assertThat(accessToken.getOtherClaims().keySet(), hasItem(OAuth2Constants.ORGANIZATION));
         assertThat((List<String>) accessToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION), hasSize(2));
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void testCustomOrganizationScopeNameMultipleSpecific() throws Exception {
+        OrganizationResource orga = testRealm().organizations().get(createOrganization("org-a").getId());
+        OrganizationResource orgb = testRealm().organizations().get(createOrganization("org-b").getId());
+
+        addMember(orga);
+
+        UserRepresentation member = getUserRepresentation(memberEmail);
+
+        orgb.members().addMember(member.getId()).close();
+
+        assertTrue(orga.members().list(null, null).stream().map(UserRepresentation::getId).anyMatch(member.getId()::equals));
+        assertTrue(orgb.members().list(null, null).stream().map(UserRepresentation::getId).anyMatch(member.getId()::equals));
+
+        // Create custom "org" scope with OrganizationMembershipMapper
+        ClientScopeRepresentation orgScope = testRealm().clientScopes().findAll().stream()
+                .filter(s -> OIDCLoginProtocolFactory.ORGANIZATION.equals(s.getName()))
+                .findAny()
+                .orElseThrow();
+        ClientScopeResource orgScopeResource = testRealm().clientScopes().get(orgScope.getId());
+        ProtocolMapperRepresentation orgMapper = orgScopeResource.getProtocolMappers().getMappers().stream()
+                .filter(m -> OIDCLoginProtocolFactory.ORGANIZATION.equals(m.getName()))
+                .findAny()
+                .orElseThrow();
+        orgMapper.setId(null);
+        orgScope.setProtocolMappers(List.of(orgMapper));
+        orgScope.setId(null);
+        orgScope.setName("org");
+        String createdId = ApiUtil.getCreatedId(testRealm().clientScopes().create(orgScope));
+        testRealm().addDefaultDefaultClientScope(createdId);
+        ClientRepresentation testApp = testRealm().clients().findByClientId("test-app").get(0);
+        testRealm().clients().get(testApp.getId()).addDefaultClientScope(createdId);
+        getCleanup().addCleanup(() -> testRealm().clientScopes().get(createdId).remove());
+
+        oauth.client("test-app", "password");
+
+        // Test multiple specific organization scopes with custom scope name - should return both organizations
+        oauth.scope("openid org:org-a org:org-b");
+        AccessTokenResponse response = oauth.doPasswordGrantRequest(memberEmail, memberPassword);
+        assertThat(response.getStatusCode(), is(Response.Status.OK.getStatusCode()));
+        AccessToken accessToken = TokenVerifier.create(response.getAccessToken(), AccessToken.class).getToken();
+        assertThat(accessToken.getOtherClaims().keySet(), hasItem(OAuth2Constants.ORGANIZATION));
+        List<String> organizations = (List<String>) accessToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION);
+        assertThat(organizations, hasSize(2));
+        assertThat(organizations, hasItem("org-a"));
+        assertThat(organizations, hasItem("org-b"));
+
+        // Test mixing custom ANY + SPECIFIC scope - should fail
+        oauth.scope("openid org org:org-a");
+        response = oauth.doPasswordGrantRequest(memberEmail, memberPassword);
+        assertThat(response.getStatusCode(), is(Response.Status.BAD_REQUEST.getStatusCode()));
+
+        // Test mixing custom SPECIFIC + ALL scope - should fail
+        oauth.scope("openid org:org-a org:*");
+        response = oauth.doPasswordGrantRequest(memberEmail, memberPassword);
+        assertThat(response.getStatusCode(), is(Response.Status.BAD_REQUEST.getStatusCode()));
     }
 
     @Test
@@ -1117,14 +1615,14 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
         OrganizationRepresentation orgRep = createOrganization();
         OrganizationResource organization = testRealm().organizations().get(orgRep.getId());
         addMember(organization);
-        
+
         // Add a custom attribute named "id" to the organization
         orgRep.singleAttribute("id", "custom-id-value");
-        
+
         try (Response response = organization.update(orgRep)) {
             assertEquals(Status.NO_CONTENT.getStatusCode(), response.getStatus());
         }
-        
+
         // Verify that organization ID overrides custom "id" attribute in tokens
         setMapperConfig(OrganizationMembershipMapper.ADD_ORGANIZATION_ID, Boolean.TRUE.toString());
         setMapperConfig(OrganizationMembershipMapper.ADD_ORGANIZATION_ATTRIBUTES, Boolean.TRUE.toString());
@@ -1135,17 +1633,21 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
         assertThat(response.getScope(), containsString("organization"));
         AccessToken accessToken = TokenVerifier.create(response.getAccessToken(), AccessToken.class).getToken();
         assertThat(accessToken.getOtherClaims().keySet(), hasItem(OAuth2Constants.ORGANIZATION));
-        
+
         Map<String, Map<String, String>> organizations = (Map<String, Map<String, String>>) accessToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION);
         assertThat(organizations.keySet(), hasItem(organizationName));
         Map<String, String> orgClaims = organizations.get(organizationName);
-        
+
         // The "id" attribute should contain the organization ID, not the custom value
         assertThat(orgClaims.get("id"), equalTo(orgRep.getId()));
         assertThat(orgClaims.get("id"), not(equalTo("custom-id-value")));
     }
 
     private AccessTokenResponse assertSuccessfulCodeGrant() {
+       return assertSuccessfulCodeGrant(oauth);
+    }
+
+    private AccessTokenResponse assertSuccessfulCodeGrant(OAuthClient oauth) {
         String code = oauth.parseLoginResponse().getCode();
         AccessTokenResponse response = oauth.doAccessTokenRequest(code);
         assertThat(Status.OK, is(Status.fromStatusCode(response.getStatusCode())));
@@ -1187,6 +1689,13 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
         assertThat(organizations.contains(org.getAlias()), is(true));
         refreshToken = oauth.parseRefreshToken(response.getRefreshToken());
         assertThat(refreshToken.getScope(), containsString(orgScope));
+    }
+
+    private void assertResponseMissingOrganizationScopeAndClaims(AccessTokenResponse response) {
+        assertThat(response.getScope(), not(containsString("organization")));
+        AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
+        assertThat(accessToken.getScope(), not(containsString("organization")));
+        assertThat(accessToken.getOtherClaims().keySet(), not(hasItem(OAuth2Constants.ORGANIZATION)));
     }
 
     private void assertClaimNotMapped(String orgScope, OrganizationRepresentation orgARep, boolean grantScope) {

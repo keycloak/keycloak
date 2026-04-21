@@ -19,13 +19,16 @@ package org.keycloak.storage.ldap.mappers;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
+import org.keycloak.cache.AlternativeLookupProvider;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.component.ComponentValidationException;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.storage.ldap.LDAPStorageProvider;
 
@@ -35,7 +38,7 @@ import org.keycloak.storage.ldap.LDAPStorageProvider;
 public class HardcodedLDAPRoleStorageMapperFactory extends AbstractLDAPStorageMapperFactory {
 
     public static final String PROVIDER_ID = "hardcoded-ldap-role-mapper";
-    protected static final List<ProviderConfigProperty> configProperties = new ArrayList<ProviderConfigProperty>();
+    protected static final List<ProviderConfigProperty> configProperties = new ArrayList<>();
 
     static {
         ProviderConfigProperty roleAttr = createConfigProperty(HardcodedLDAPRoleStorageMapper.ROLE,
@@ -63,12 +66,17 @@ public class HardcodedLDAPRoleStorageMapperFactory extends AbstractLDAPStorageMa
     }
 
     @Override
+    public Set<Class<? extends Provider>> dependsOn() {
+        return Set.of(AlternativeLookupProvider.class); // for caching
+    }
+
+    @Override
     public void validateConfiguration(KeycloakSession session, RealmModel realm, ComponentModel config) throws ComponentValidationException {
         String roleName = config.getConfig().getFirst(HardcodedLDAPRoleStorageMapper.ROLE);
         if (roleName == null) {
             throw new ComponentValidationException("Role can't be null");
         }
-        RoleModel role = KeycloakModelUtils.getRoleFromString(realm, roleName);
+        RoleModel role = KeycloakModelUtils.getRoleFromString(session, realm, roleName);
         if (role == null) {
             throw new ComponentValidationException("There is no role corresponding to configured value");
         }
