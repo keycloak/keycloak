@@ -228,7 +228,6 @@
       "request": {
         "subject": {
           "type": "user",
-          "_note" : "ID for Morty",
           "id":"CiRmZDE2MTRkMy1jMzlhLTQ3ODEtYjdiZC04Yjk2ZjVhNTEwMGQSBWxvY2Fs"
         },
         "action": {
