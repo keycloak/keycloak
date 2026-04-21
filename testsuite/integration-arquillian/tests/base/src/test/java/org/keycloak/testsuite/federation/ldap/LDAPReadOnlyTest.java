@@ -145,7 +145,7 @@ public class LDAPReadOnlyTest extends AbstractLDAPTest  {
 
         // Revert TOTP
         setTotpRequirementExecutionForRealm(AuthenticationExecutionModel.Requirement.CONDITIONAL, AuthenticationExecutionModel.Requirement.ALTERNATIVE);
-        UserResource user = AdminApiUtil.findUserByUsernameId(testRealm(), "johnkeycloak");
+        UserResource user = AdminApiUtil.findUserByUsernameId(managedRealm.admin(), "johnkeycloak");
         String totpCredentialId = user.credentials().stream()
                 .filter(credentialRep -> credentialRep.getType().equals(OTPCredentialModel.TYPE))
                 .findFirst().get().getId();
@@ -155,13 +155,13 @@ public class LDAPReadOnlyTest extends AbstractLDAPTest  {
     // KEYCLOAK-3365
     @Test
     public void testReadOnlyUserDoesNotThrowIfUnchanged() {
-        UserResource user = AdminApiUtil.findUserByUsernameId(testRealm(), "johnkeycloak");
+        UserResource user = AdminApiUtil.findUserByUsernameId(managedRealm.admin(), "johnkeycloak");
         UserRepresentation userRepresentation = user.toRepresentation();
         userRepresentation.setRequiredActions(Collections.singletonList(UserModel.RequiredAction.CONFIGURE_TOTP.toString()));
         user.update(userRepresentation);
 
         // assert
-        user = AdminApiUtil.findUserByUsernameId(testRealm(), "johnkeycloak");
+        user = AdminApiUtil.findUserByUsernameId(managedRealm.admin(), "johnkeycloak");
         userRepresentation = user.toRepresentation();
         Assertions.assertEquals(userRepresentation.getRequiredActions().size(), 1);
         Assertions.assertEquals(userRepresentation.getRequiredActions().get(0), UserModel.RequiredAction.CONFIGURE_TOTP.toString());
@@ -173,10 +173,10 @@ public class LDAPReadOnlyTest extends AbstractLDAPTest  {
 
     @Test
     public void testUpdateLocale() {
-        RealmRepresentation realm = testRealm().toRepresentation();
+        RealmRepresentation realm = managedRealm.admin().toRepresentation();
         realm.setInternationalizationEnabled(true);
-        testRealm().update(realm);
-        UserResource user = AdminApiUtil.findUserByUsernameId(testRealm(), "johnkeycloak");
+        managedRealm.admin().update(realm);
+        UserResource user = AdminApiUtil.findUserByUsernameId(managedRealm.admin(), "johnkeycloak");
 
         UserRepresentation userRepresentation = user.toRepresentation();
         String language = "pt_BR";
@@ -194,7 +194,7 @@ public class LDAPReadOnlyTest extends AbstractLDAPTest  {
     // KEYCLOAK-3365
     @Test(expected = ClientErrorException.class)
     public void testReadOnlyUserThrowsIfChanged() {
-        UserResource user = AdminApiUtil.findUserByUsernameId(testRealm(), "johnkeycloak");
+        UserResource user = AdminApiUtil.findUserByUsernameId(managedRealm.admin(), "johnkeycloak");
         UserRepresentation userRepresentation = user.toRepresentation();
         userRepresentation.setFirstName("Jane");
         user.update(userRepresentation);
@@ -204,16 +204,16 @@ public class LDAPReadOnlyTest extends AbstractLDAPTest  {
     @Test
     public void testReadOnlyUserGetsPermanentlyLocked(){
         int failureFactor = 2;
-        RealmRepresentation realm = testRealm().toRepresentation();
+        RealmRepresentation realm = managedRealm.admin().toRepresentation();
         try {
             // Set permanent lockout for the test
             realm.setBruteForceProtected(true);
             realm.setPermanentLockout(true);
             realm.setFailureFactor(failureFactor);
-            testRealm().update(realm);
+            managedRealm.admin().update(realm);
 
             UserRepresentation user = adminClient.realm("test").users().search("johnkeycloak", 0, 1).get(0);
-            Map<String, Object> bruteForceStatus = testRealm().attackDetection().bruteForceUserStatus(user.getId());
+            Map<String, Object> bruteForceStatus = managedRealm.admin().attackDetection().bruteForceUserStatus(user.getId());
             assertFalse((boolean) bruteForceStatus.get("disabled"), "User should not be disabled by brute force.");
             assertTrue(user.isEnabled());
 
@@ -225,7 +225,7 @@ public class LDAPReadOnlyTest extends AbstractLDAPTest  {
             WaitUtils.waitForBruteForceExecutors(testingClient);
 
             // Make sure user is now disabled
-            bruteForceStatus = testRealm().attackDetection().bruteForceUserStatus(user.getId());
+            bruteForceStatus = managedRealm.admin().attackDetection().bruteForceUserStatus(user.getId());
             assertTrue((boolean) bruteForceStatus.get("disabled"), "User should be disabled by brute force.");
             user = adminClient.realm("test").users().search("johnkeycloak", 0, 1).get(0);
             assertFalse(user.isEnabled());
@@ -235,7 +235,7 @@ public class LDAPReadOnlyTest extends AbstractLDAPTest  {
             realm.setBruteForceProtected(false);
             realm.setPermanentLockout(false);
             realm.setFailureFactor(30);
-            testRealm().update(realm);
+            managedRealm.admin().update(realm);
             UserRepresentation user = adminClient.realm("test").users().search("johnkeycloak", 0, 1).get(0);
             user.setEnabled(true);
             updateUser(user);
@@ -259,7 +259,7 @@ public class LDAPReadOnlyTest extends AbstractLDAPTest  {
     }
 
     private void setTotpRequirementExecutionForRealm(AuthenticationExecutionModel.Requirement conditionalReq, AuthenticationExecutionModel.Requirement otpReq) {
-        AuthenticationManagementResource authMgtRes = testRealm().flows();
+        AuthenticationManagementResource authMgtRes = managedRealm.admin().flows();
         AuthenticationExecutionInfoRepresentation browserConditionalExecution = authMgtRes.getExecutions("browser").stream()
                 .filter(execution -> execution.getDisplayName().equals("Browser - Conditional 2FA"))
                 .findAny()

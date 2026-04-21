@@ -55,11 +55,11 @@ public class OrganizationFederationTest extends AbstractOrganizationTest {
 
     @After
     public void onAfter() {
-        List<UserRepresentation> users = testRealm().users().search("member");
+        List<UserRepresentation> users = managedRealm.admin().users().search("member");
 
         if (!users.isEmpty()) {
             UserRepresentation member = users.get(0);
-            testRealm().users().get(member.getId()).remove();
+            managedRealm.admin().users().get(member.getId()).remove();
         }
     }
 

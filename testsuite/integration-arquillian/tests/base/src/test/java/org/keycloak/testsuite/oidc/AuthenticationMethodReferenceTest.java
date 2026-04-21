@@ -198,7 +198,7 @@ public class AuthenticationMethodReferenceTest extends AbstractOIDCScopeTest{
         setBrowserFlow("browser");
 
         // allow otp code reuse
-        new RealmAttributeUpdater(testRealm())
+        new RealmAttributeUpdater(managedRealm.admin())
                 .setOtpPolicyCodeReusable(true)
                 .update();
     }
@@ -214,7 +214,7 @@ public class AuthenticationMethodReferenceTest extends AbstractOIDCScopeTest{
             configVals.put(AMR_MAX_AGE_KEY, null);
             c.setConfig(configVals);
 
-            testRealm().flows().updateAuthenticatorConfig(c.getId(), c);
+            managedRealm.admin().flows().updateAuthenticatorConfig(c.getId(), c);
         });
     }
 
@@ -224,7 +224,7 @@ public class AuthenticationMethodReferenceTest extends AbstractOIDCScopeTest{
      * @return A list of authenticator configs from the specified flow
      */
     private List<AuthenticatorConfigRepresentation> getAuthenticatorConfigs(String flowAlias){
-        return testRealm().flows().getExecutions(flowAlias).stream().filter(e -> e.getAuthenticationConfig() != null).map(e -> testRealm().flows().getAuthenticatorConfig(e.getAuthenticationConfig())).collect(Collectors.toList());
+        return managedRealm.admin().flows().getExecutions(flowAlias).stream().filter(e -> e.getAuthenticationConfig() != null).map(e -> managedRealm.admin().flows().getAuthenticatorConfig(e.getAuthenticationConfig())).collect(Collectors.toList());
     }
 
     /**
@@ -395,7 +395,7 @@ public class AuthenticationMethodReferenceTest extends AbstractOIDCScopeTest{
      * @param maxAge The max age the authenticator reference value is valid
      */
     private void setAmr(String flowAlias, String providerId, String amrValue, Integer maxAge){
-        AuthenticationExecutionInfoRepresentation execution = testRealm().flows().getExecutions(flowAlias).stream().filter(e -> e.getProviderId() != null && e.getProviderId().equals(providerId)).findFirst().orElseThrow();
+        AuthenticationExecutionInfoRepresentation execution = managedRealm.admin().flows().getExecutions(flowAlias).stream().filter(e -> e.getProviderId() != null && e.getProviderId().equals(providerId)).findFirst().orElseThrow();
 
         if (execution.getAuthenticationConfig() == null){
             // create config if it doesn't exist
@@ -406,15 +406,15 @@ public class AuthenticationMethodReferenceTest extends AbstractOIDCScopeTest{
                 put(AMR_MAX_AGE_KEY, maxAge.toString());
             }});
 
-            testRealm().flows().newExecutionConfig(execution.getId(), config);
+            managedRealm.admin().flows().newExecutionConfig(execution.getId(), config);
         } else {
             // update existing config
-            AuthenticatorConfigRepresentation config = testRealm().flows().getAuthenticatorConfig(execution.getAuthenticationConfig());
+            AuthenticatorConfigRepresentation config = managedRealm.admin().flows().getAuthenticatorConfig(execution.getAuthenticationConfig());
             Map<String, String> newConfig = config.getConfig();
             newConfig.put(AMR_VALUE_KEY, amrValue);
             newConfig.put(AMR_MAX_AGE_KEY, maxAge.toString());
             config.setConfig(newConfig);
-            testRealm().flows().updateAuthenticatorConfig(config.getId(), config);
+            managedRealm.admin().flows().updateAuthenticatorConfig(config.getId(), config);
         }
     }
 
@@ -432,13 +432,13 @@ public class AuthenticationMethodReferenceTest extends AbstractOIDCScopeTest{
      * @param acrLoaMap The map to set
      */
     private void configureRealmAcrMap(Map<String, Integer> acrLoaMap){
-        RealmRepresentation realmRep = testRealm().toRepresentation();
+        RealmRepresentation realmRep = managedRealm.admin().toRepresentation();
         try {
             realmRep.getAttributes().put(Constants.ACR_LOA_MAP, JsonSerialization.writeValueAsString(acrLoaMap));
         } catch (IOException e){
             throw new RuntimeException("failed to parse acr loa map");
         }
-        testRealm().update(realmRep);
+        managedRealm.admin().update(realmRep);
     }
 
     /**

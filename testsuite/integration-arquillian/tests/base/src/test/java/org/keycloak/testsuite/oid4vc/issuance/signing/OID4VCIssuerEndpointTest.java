@@ -412,7 +412,7 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
 
     protected ClientScopeRepresentation registerOptionalClientScope(ClientScopeRepresentation clientScope) {
         // Automatically removed when a test method is finished.
-        try (Response res = testRealm().clientScopes().create(clientScope)) {
+        try (Response res = managedRealm.admin().clientScopes().create(clientScope)) {
             String scopeId = ApiUtil.getCreatedId(res);
             getCleanup().addClientScopeId(scopeId);
             clientScope.setId(scopeId);
@@ -421,7 +421,7 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
     }
 
     protected ClientRepresentation requireExistingClient(String clientId) {
-        List<ClientRepresentation> clientRepresentations = testRealm().clients().findByClientId(clientId);
+        List<ClientRepresentation> clientRepresentations = managedRealm.admin().clients().findByClientId(clientId);
         assertFalse(clientRepresentations.isEmpty(), "No such client");
         return clientRepresentations.get(0);
     }
@@ -429,7 +429,7 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
     protected ClientScopeRepresentation requireExistingClientScope(String scopeName) {
 
         // Check if the client scope already exists
-        List<ClientScopeRepresentation> existingScopes = testRealm().clientScopes().findAll();
+        List<ClientScopeRepresentation> existingScopes = managedRealm.admin().clientScopes().findAll();
         for (ClientScopeRepresentation existingScope : existingScopes) {
             if (existingScope.getName().equals(scopeName)) {
                 return existingScope; // Reuse existing scope
@@ -457,12 +457,12 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
     }
 
     protected void assignOptionalClientScope(ClientRepresentation client, ClientScopeRepresentation clientScope) {
-        ClientResource clientResource = testRealm().clients().get(client.getId());
+        ClientResource clientResource = managedRealm.admin().clients().get(client.getId());
         clientResource.addOptionalClientScope(clientScope.getId());
     }
 
     protected void logoutUser(String username) {
-        UserResource user = AdminApiUtil.findUserByUsernameId(adminClient.realm(TEST_REALM_NAME), username);
+        UserResource user = AdminApiUtil.findUserByUsernameId(managedRealm.admin(), username);
         user.logout();
     }
 
@@ -564,7 +564,7 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
     }
 
     protected void setOid4vciEnabled(ClientRepresentation testClient, boolean enabled) {
-        ClientResource clientResource = testRealm().clients().get(testClient.getId());
+        ClientResource clientResource = managedRealm.admin().clients().get(testClient.getId());
 
         Map<String, String> attributes = Optional.ofNullable(testClient.getAttributes()).orElse(new HashMap<>());
         attributes.put(OID4VCI_ENABLED_ATTRIBUTE_KEY, String.valueOf(enabled));

@@ -53,12 +53,12 @@ public class OrganizationSAMLProtocolMapperTest extends AbstractOrganizationTest
 
     @Test
     public void testAttribute() {
-        OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
+        OrganizationResource organization = managedRealm.admin().organizations().get(createOrganization().getId());
         IdentityProviderRepresentation broker = organization.identityProviders().getIdentityProviders().get(0);
         organization.identityProviders().get(broker.getAlias()).delete().close();
         addMember(organization);
         String clientId = "saml-client";
-        testRealm().clients().create(ClientBuilder.create()
+        managedRealm.admin().clients().create(ClientBuilder.create()
                 .protocol(SamlProtocol.LOGIN_PROTOCOL)
                 .clientId(clientId)
                 .redirectUris("*")

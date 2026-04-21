@@ -16,8 +16,8 @@
  */
 package org.keycloak.testsuite.forms;
 
-import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.util.IdentityProviderBuilder;
@@ -28,14 +28,11 @@ import org.junit.jupiter.api.Assertions;
 
 public class HiddenProviderTest extends AbstractTestRealmKeycloakTest {
 
+    protected ManagedRealm managedRealm = new ManagedRealm(this, "realm-with-broker");
+
     @Page
     protected LoginPage loginPage;
-    
-    @Override
-    protected RealmResource testRealm() {
-        return adminClient.realm("realm-with-broker");
-    }
-    
+
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {        
         testRealm.addIdentityProvider(IdentityProviderBuilder.create()

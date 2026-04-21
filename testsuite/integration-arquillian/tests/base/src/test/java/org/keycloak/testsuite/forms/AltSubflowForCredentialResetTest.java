@@ -93,7 +93,7 @@ public class AltSubflowForCredentialResetTest extends AbstractTestRealmKeycloakT
         log.info("Adding login-test user");
         UserRepresentation testUser = UserBuilder.create().username("login-test").email("login@test.com").enabled(true).build();
 
-        userID = AdminApiUtil.createUserAndResetPasswordWithAdminClient(testRealm(), testUser, "password");
+        userID = AdminApiUtil.createUserAndResetPasswordWithAdminClient(managedRealm.admin(), testUser, "password");
         getCleanup().addUserId(userID);
     }
 
@@ -126,10 +126,10 @@ public class AltSubflowForCredentialResetTest extends AbstractTestRealmKeycloakT
             oauth.openLoginForm();
             Assertions.assertTrue(loginPage.isCurrent());
         } finally {
-            testRealm().flows().getFlows().clear();
-            RealmRepresentation realm = testRealm().toRepresentation();
+            managedRealm.admin().flows().getFlows().clear();
+            RealmRepresentation realm = managedRealm.admin().toRepresentation();
             realm.setResetCredentialsFlow(DefaultAuthenticationFlows.RESET_CREDENTIALS_FLOW);
-            testRealm().update(realm);
+            managedRealm.admin().update(realm);
         }
     }
 }

@@ -133,7 +133,7 @@ public class UserProfileTest extends AbstractUserProfileTest {
         UPConfig config = UPConfigUtils.parseSystemDefaultConfig();
         config.addOrReplaceAttribute(new UPAttribute("foo", new UPAttributePermissions(Set.of(), Set.of(ROLE_ADMIN))));
         config.getAttribute(UserModel.EMAIL).setPermissions(new UPAttributePermissions(Set.of(ROLE_USER), Set.of(ROLE_ADMIN)));
-        RealmResource realmRes = testRealm();
+        RealmResource realmRes = managedRealm.admin();
         realmRes.users().userProfile().update(config);
 
         UserRepresentation userRep = new UserRepresentation();
@@ -335,7 +335,7 @@ public class UserProfileTest extends AbstractUserProfileTest {
         getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) UserProfileTest::testAttributeValidation);
         getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) UserProfileTest::testEmailAsUsernameValidation);
         getTestingClient().server(TEST_REALM_NAME).run((KeycloakSession session) -> testNonAsciiEmailValidator(session, false));
-        try (RealmAttributeUpdater updater = new RealmAttributeUpdater(testRealm())
+        try (RealmAttributeUpdater updater = new RealmAttributeUpdater(managedRealm.admin())
                 .setSmtpServer(EmailSenderProvider.CONFIG_ALLOW_UTF8, Boolean.TRUE.toString()).update()) {
             getTestingClient().server(TEST_REALM_NAME).run((KeycloakSession session) -> testNonAsciiEmailValidator(session, true));
         }
@@ -2309,11 +2309,11 @@ public class UserProfileTest extends AbstractUserProfileTest {
 
     @Test
     public void testEmailAttributeInUpdateEmailContext() {
-        AdminApiUtil.enableRequiredAction(testRealm(), RequiredAction.UPDATE_EMAIL, true);
+        AdminApiUtil.enableRequiredAction(managedRealm.admin(), RequiredAction.UPDATE_EMAIL, true);
         try {
             getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) UserProfileTest::testEmailAttributeInUpdateEmailContext);
         } finally {
-            AdminApiUtil.enableRequiredAction(testRealm(), RequiredAction.UPDATE_EMAIL, false);
+            AdminApiUtil.enableRequiredAction(managedRealm.admin(), RequiredAction.UPDATE_EMAIL, false);
         }
     }
 
@@ -2399,11 +2399,11 @@ public class UserProfileTest extends AbstractUserProfileTest {
 
     @Test
     public void testEmailAnnotationsInAccountContext() {
-        AdminApiUtil.enableRequiredAction(testRealm(), RequiredAction.UPDATE_EMAIL, true);
+        AdminApiUtil.enableRequiredAction(managedRealm.admin(), RequiredAction.UPDATE_EMAIL, true);
         try {
             getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) UserProfileTest::testEmailAnnotationsInAccountContext);
         } finally {
-            AdminApiUtil.enableRequiredAction(testRealm(), RequiredAction.UPDATE_EMAIL, false);
+            AdminApiUtil.enableRequiredAction(managedRealm.admin(), RequiredAction.UPDATE_EMAIL, false);
         }
     }
 
@@ -2474,11 +2474,11 @@ public class UserProfileTest extends AbstractUserProfileTest {
 
     @Test
     public void testEmailFieldHiddenWhenEmptyAndReadOnlyWithUpdateEmailEnabled() {
-        AdminApiUtil.enableRequiredAction(testRealm(), RequiredAction.UPDATE_EMAIL, true);
+        AdminApiUtil.enableRequiredAction(managedRealm.admin(), RequiredAction.UPDATE_EMAIL, true);
         try {
             getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) UserProfileTest::testEmailFieldHiddenWhenEmptyAndReadOnlyWithUpdateEmailEnabled);
         } finally {
-            AdminApiUtil.enableRequiredAction(testRealm(), RequiredAction.UPDATE_EMAIL, false);
+            AdminApiUtil.enableRequiredAction(managedRealm.admin(), RequiredAction.UPDATE_EMAIL, false);
         }
     }
 

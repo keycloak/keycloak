@@ -117,7 +117,7 @@ public class MultipleTabsLoginTest extends AbstractChangeImportedUserPasswordsTe
                 .requiredAction(UserModel.RequiredAction.UPDATE_PASSWORD.toString())
                 .build();
 
-        userId = AdminApiUtil.createUserAndResetPasswordWithAdminClient(testRealm(), user, generatePassword("login-test"), true);
+        userId = AdminApiUtil.createUserAndResetPasswordWithAdminClient(managedRealm.admin(), user, generatePassword("login-test"), true);
         getCleanup().addUserId(userId);
 
         oauth.client("test-app", "password");
@@ -682,7 +682,7 @@ public class MultipleTabsLoginTest extends AbstractChangeImportedUserPasswordsTe
                     .addRedirectUri("*")
                     .secret("password")
                     .build();
-            testRealm().clients().create(emptyBaseclient);
+            managedRealm.admin().clients().create(emptyBaseclient);
             getCleanup().addClientUuid(clientUuid);
 
             oauth.client("empty-baseurl-client", "password");

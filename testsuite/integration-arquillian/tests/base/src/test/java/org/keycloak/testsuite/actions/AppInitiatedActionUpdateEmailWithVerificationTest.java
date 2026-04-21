@@ -120,7 +120,7 @@ public class AppInitiatedActionUpdateEmailWithVerificationTest extends AbstractA
 		UserRepresentation user = ActionUtil.findUserWithAdminClient(adminClient, "test-user@localhost");
 		user.setEmail("very-new@localhost");
 		user.setEmailVerified(true);
-		testRealm().users().get(user.getId()).update(user);
+		managedRealm.admin().users().get(user.getId()).update(user);
 
 		driver.navigate().to(confirmationLink);
 
@@ -141,7 +141,7 @@ public class AppInitiatedActionUpdateEmailWithVerificationTest extends AbstractA
 		UserRepresentation otherUser = ActionUtil.findUserWithAdminClient(adminClient, "john-doh@localhost");
 		otherUser.setEmail("new@localhost");
 		otherUser.setEmailVerified(true);
-		testRealm().users().get(otherUser.getId()).update(otherUser);
+		managedRealm.admin().users().get(otherUser.getId()).update(otherUser);
 
 		driver.navigate().to(confirmationLink);
 
@@ -205,7 +205,7 @@ public class AppInitiatedActionUpdateEmailWithVerificationTest extends AbstractA
 		String authServerBaseUrl = getAuthServerContextRoot() + "/auth";
 		client.setBaseUrl(authServerBaseUrl + "/admin/master/console/");
 		client.setRedirectUris(List.of(authServerBaseUrl + "/realms/master/app/auth/*", authServerBaseUrl + "/realms/test/app/auth/*"));
-		testRealm().clients().get(client.getId()).update(client);
+		managedRealm.admin().clients().get(client.getId()).update(client);
 		
 		try {
 			doAIA();
@@ -244,7 +244,7 @@ public class AppInitiatedActionUpdateEmailWithVerificationTest extends AbstractA
 			// Restore original client configuration
 			client.setBaseUrl(originalBaseUrl);
 			client.setRedirectUris(originalRedirectUris);
-			testRealm().clients().get(client.getId()).update(client);
+			managedRealm.admin().clients().get(client.getId()).update(client);
 		}
 	}
 }

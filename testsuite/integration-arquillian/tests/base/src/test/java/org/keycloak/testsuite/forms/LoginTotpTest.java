@@ -214,7 +214,7 @@ public class LoginTotpTest extends AbstractChangeImportedUserPasswordsTest {
     @Test
     public void loginWithTotp_getToken_checkCompatibilityCLI() throws IOException {
         Client httpClient = AdminClientUtil.createResteasyClient();
-        try (RealmAttributeUpdater rau = new RealmAttributeUpdater(testRealm()).setOtpPolicyCodeReusable(true).update()) {
+        try (RealmAttributeUpdater rau = new RealmAttributeUpdater(managedRealm.admin()).setOtpPolicyCodeReusable(true).update()) {
             WebTarget exchangeUrl = httpClient.target(OAuthClient.AUTH_SERVER_ROOT)
                     .path("/realms")
                     .path(TEST)
@@ -246,8 +246,8 @@ public class LoginTotpTest extends AbstractChangeImportedUserPasswordsTest {
 
     @Test
     public void testBase32EncodedSecret() throws IOException {
-        UserRepresentation userRep = testRealm().users().search("test-user@localhost").get(0);
-        UserResource user = testRealm().users().get(userRep.getId());
+        UserRepresentation userRep = managedRealm.admin().users().search("test-user@localhost").get(0);
+        UserResource user = managedRealm.admin().users().get(userRep.getId());
         List<CredentialRepresentation> credentials = user.credentials();
         CredentialRepresentation otpCredential = credentials.stream()
                 .filter(c -> OTPCredentialModel.TYPE.equals(c.getType()))
@@ -272,7 +272,7 @@ public class LoginTotpTest extends AbstractChangeImportedUserPasswordsTest {
 
         newUser.getCredentials().add(credential);
 
-        testRealm().users().create(newUser).close();
+        managedRealm.admin().users().create(newUser).close();
 
         oauth.openLoginForm();
         loginPage.login(newUser.getUsername(), getPassword("test-otp-user@localhost"));

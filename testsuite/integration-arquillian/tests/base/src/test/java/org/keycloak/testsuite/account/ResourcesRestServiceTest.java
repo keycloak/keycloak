@@ -163,7 +163,7 @@ public class ResourcesRestServiceTest extends AbstractRestServiceTest {
     }
 
     private ClientResource getResourceServer() {
-        ClientsResource clients = testRealm().clients();
+        ClientsResource clients = managedRealm.admin().clients();
         return clients.get(clients.findByClientId("my-resource-server").get(0).getId());
     }
 
@@ -733,7 +733,7 @@ public class ResourcesRestServiceTest extends AbstractRestServiceTest {
 
         return AuthzClient
                 .create(new Configuration(suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth",
-                        testRealm().toRepresentation().getRealm(), client.getClientId(),
+                        managedRealm.admin().toRepresentation().getRealm(), client.getClientId(),
                         credentials, httpClient));
     }
 

@@ -165,35 +165,35 @@ public class CompositeRoleTest extends AbstractCompositeKeycloakTest {
         addClientLevelScopeMapping("APP_COMPOSITE_APPLICATION", "APP_ROLE_APPLICATION", "APP_ROLE_2");
 
         // createRealmAppCompositeRole
-        ClientResource appRoleApplication = AdminApiUtil.findClientByClientId(testRealm(), "APP_ROLE_APPLICATION");
+        ClientResource appRoleApplication = AdminApiUtil.findClientByClientId(managedRealm.admin(), "APP_ROLE_APPLICATION");
         RoleResource appRole1 = appRoleApplication.roles().get("APP_ROLE_1");
 
         RoleBuilder realmAppCompositeRole = RoleBuilder.create()
                 .name("REALM_APP_COMPOSITE_ROLE");
 
-        testRealm().roles().create(realmAppCompositeRole.build());
-        String id = testRealm().roles().get("REALM_APP_COMPOSITE_ROLE").toRepresentation().getId();
-        testRealm().rolesById().addComposites(id, Collections.singletonList(appRole1.toRepresentation()));
+        managedRealm.admin().roles().create(realmAppCompositeRole.build());
+        String id = managedRealm.admin().roles().get("REALM_APP_COMPOSITE_ROLE").toRepresentation().getId();
+        managedRealm.admin().rolesById().addComposites(id, Collections.singletonList(appRole1.toRepresentation()));
 
         // addRealmAppCompositeToUsers
-        UserResource userRsc = AdminApiUtil.findUserByUsernameId(testRealm(), "REALM_APP_COMPOSITE_USER");
-        RoleRepresentation realmAppCompositeRolee = testRealm().roles().get("REALM_APP_COMPOSITE_ROLE").toRepresentation();
+        UserResource userRsc = AdminApiUtil.findUserByUsernameId(managedRealm.admin(), "REALM_APP_COMPOSITE_USER");
+        RoleRepresentation realmAppCompositeRolee = managedRealm.admin().roles().get("REALM_APP_COMPOSITE_ROLE").toRepresentation();
         userRsc.roles().realmLevel().add(Collections.singletonList(realmAppCompositeRolee));
 
         // addRealmAppCompositeToUsers2
-        userRsc = AdminApiUtil.findUserByUsernameId(testRealm(), "APP_COMPOSITE_USER");
+        userRsc = AdminApiUtil.findUserByUsernameId(managedRealm.admin(), "APP_COMPOSITE_USER");
         userRsc.roles().realmLevel().add(Collections.singletonList(realmAppCompositeRolee));
 
-        ClientResource appCompositeApplication = AdminApiUtil.findClientByClientId(testRealm(), "APP_COMPOSITE_APPLICATION");
+        ClientResource appCompositeApplication = AdminApiUtil.findClientByClientId(managedRealm.admin(), "APP_COMPOSITE_APPLICATION");
         RoleResource appCompositeRole = appCompositeApplication.roles().get("APP_COMPOSITE_ROLE");
 
         // addCompositeRolesToAppCompositeRoleInAppCompositeApplication
         List<RoleRepresentation> toAdd = new LinkedList<>();
-        toAdd.add(testRealm().roles().get("REALM_ROLE_1").toRepresentation());
-        toAdd.add(testRealm().roles().get("REALM_ROLE_2").toRepresentation());
-        toAdd.add(testRealm().roles().get("REALM_ROLE_3").toRepresentation());
+        toAdd.add(managedRealm.admin().roles().get("REALM_ROLE_1").toRepresentation());
+        toAdd.add(managedRealm.admin().roles().get("REALM_ROLE_2").toRepresentation());
+        toAdd.add(managedRealm.admin().roles().get("REALM_ROLE_3").toRepresentation());
 
-        ClientResource appRolesApplication = AdminApiUtil.findClientByClientId(testRealm(), "APP_ROLE_APPLICATION");
+        ClientResource appRolesApplication = AdminApiUtil.findClientByClientId(managedRealm.admin(), "APP_ROLE_APPLICATION");
         RoleRepresentation appRole1Rep = appRolesApplication.roles().get("APP_ROLE_1").toRepresentation();
         toAdd.add(appRole1Rep);
 
@@ -204,14 +204,14 @@ public class CompositeRoleTest extends AbstractCompositeKeycloakTest {
     }
 
     private void addRealmLevelScopeMapping(String clientId, String roleName) {
-        ClientResource client = AdminApiUtil.findClientByClientId(testRealm(), clientId);
-        RoleRepresentation role = testRealm().roles().get(roleName).toRepresentation();
+        ClientResource client = AdminApiUtil.findClientByClientId(managedRealm.admin(), clientId);
+        RoleRepresentation role = managedRealm.admin().roles().get(roleName).toRepresentation();
         client.getScopeMappings().realmLevel().add(Collections.singletonList(role));
     }
 
     private void addClientLevelScopeMapping(String targetClientId, String sourceClientId, String roleName) {
-        ClientResource targetClient = AdminApiUtil.findClientByClientId(testRealm(), targetClientId);
-        ClientResource sourceClient = AdminApiUtil.findClientByClientId(testRealm(), sourceClientId);
+        ClientResource targetClient = AdminApiUtil.findClientByClientId(managedRealm.admin(), targetClientId);
+        ClientResource sourceClient = AdminApiUtil.findClientByClientId(managedRealm.admin(), sourceClientId);
         RoleRepresentation role = sourceClient.roles().get(roleName).toRepresentation();
         targetClient.getScopeMappings().clientLevel(sourceClient.toRepresentation().getId()).add(Collections.singletonList(role));
     }
@@ -348,19 +348,19 @@ public class CompositeRoleTest extends AbstractCompositeKeycloakTest {
     @Test
     public void testRecursiveComposites() throws Exception {
         // This will create recursive composite mappings between "REALM_COMPOSITE_1" and "REALM_ROLE_1"
-        RoleRepresentation realmComposite1 = testRealm().roles().get("REALM_COMPOSITE_1").toRepresentation();
-        testRealm().roles().get("REALM_ROLE_1").addComposites(Collections.singletonList(realmComposite1));
+        RoleRepresentation realmComposite1 = managedRealm.admin().roles().get("REALM_COMPOSITE_1").toRepresentation();
+        managedRealm.admin().roles().get("REALM_ROLE_1").addComposites(Collections.singletonList(realmComposite1));
 
-        UserResource userResource = AdminApiUtil.findUserByUsernameId(testRealm(), "REALM_COMPOSITE_1_USER");
+        UserResource userResource = AdminApiUtil.findUserByUsernameId(managedRealm.admin(), "REALM_COMPOSITE_1_USER");
         List<RoleRepresentation> realmRoles = userResource.roles().realmLevel().listEffective();
         Assert.assertNames(realmRoles, "REALM_COMPOSITE_1", "REALM_ROLE_1");
 
-        userResource = AdminApiUtil.findUserByUsernameId(testRealm(), "REALM_ROLE_1_USER");
+        userResource = AdminApiUtil.findUserByUsernameId(managedRealm.admin(), "REALM_ROLE_1_USER");
         realmRoles = userResource.roles().realmLevel().listEffective();
         Assert.assertNames(realmRoles, "REALM_COMPOSITE_1", "REALM_ROLE_1");
 
         // Revert
-        testRealm().roles().get("REALM_ROLE_1").deleteComposites(Collections.singletonList(realmComposite1));
+        managedRealm.admin().roles().get("REALM_ROLE_1").deleteComposites(Collections.singletonList(realmComposite1));
     }
 
 }

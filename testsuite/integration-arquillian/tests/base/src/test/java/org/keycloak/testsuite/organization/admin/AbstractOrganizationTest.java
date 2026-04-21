@@ -128,7 +128,7 @@ public abstract class AbstractOrganizationTest extends AbstractAdminTest  {
     }
 
     protected OrganizationRepresentation createOrganization(String name, String... orgDomains) {
-        return createOrganization(testRealm(), name, orgDomains);
+        return createOrganization(managedRealm.admin(), name, orgDomains);
     }
 
     protected OrganizationRepresentation createOrganization(RealmResource realm, String name, String... orgDomains) {
@@ -138,7 +138,7 @@ public abstract class AbstractOrganizationTest extends AbstractAdminTest  {
     protected OrganizationRepresentation createOrganization(String name, boolean isBrokerPublic) {
         IdentityProviderRepresentation broker = brokerConfigFunction.apply(name).setUpIdentityProvider();
         broker.setHideOnLogin(!isBrokerPublic);
-        return createOrganization(testRealm(), getCleanup(), name, broker, name + ".org");
+        return createOrganization(managedRealm.admin(), getCleanup(), name, broker, name + ".org");
     }
 
     protected OrganizationRepresentation createOrganization(RealmResource testRealm, TestCleanup testCleanup, String name,
@@ -208,11 +208,11 @@ public abstract class AbstractOrganizationTest extends AbstractAdminTest  {
             Users.setPasswordFor(expected, memberPassword);
         }
 
-        try (Response response = testRealm().users().create(expected)) {
+        try (Response response = managedRealm.admin().users().create(expected)) {
             expected.setId(ApiUtil.getCreatedId(response));
         }
 
-        getCleanup().addCleanup(() -> testRealm().users().get(expected.getId()).remove());
+        getCleanup().addCleanup(() -> managedRealm.admin().users().get(expected.getId()).remove());
 
         String userId = expected.getId();
 
@@ -343,11 +343,11 @@ public abstract class AbstractOrganizationTest extends AbstractAdminTest  {
     }
 
     protected void setMapperConfig(String key, String value) {
-        ClientScopeRepresentation orgScope = testRealm().clientScopes().findAll().stream()
+        ClientScopeRepresentation orgScope = managedRealm.admin().clientScopes().findAll().stream()
                 .filter(s -> OIDCLoginProtocolFactory.ORGANIZATION.equals(s.getName()))
                 .findAny()
                 .orElseThrow();
-        ClientScopeResource orgScopeResource = testRealm().clientScopes().get(orgScope.getId());
+        ClientScopeResource orgScopeResource = managedRealm.admin().clientScopes().get(orgScope.getId());
 
         ProtocolMapperRepresentation orgMapper = orgScopeResource.getProtocolMappers().getMappers().stream()
                 .filter(m -> OIDCLoginProtocolFactory.ORGANIZATION.equals(m.getName()))

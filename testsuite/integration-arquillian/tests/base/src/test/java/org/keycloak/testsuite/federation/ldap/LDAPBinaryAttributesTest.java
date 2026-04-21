@@ -97,7 +97,7 @@ public class LDAPBinaryAttributesTest extends AbstractLDAPTest {
         });
 
         // User profile unmanaged attributes supported
-        UserProfileResource userProfileRes = testRealm().users().userProfile();
+        UserProfileResource userProfileRes = managedRealm.admin().users().userProfile();
         UserProfileUtil.enableUnmanagedAttributes(userProfileRes);
     }
 

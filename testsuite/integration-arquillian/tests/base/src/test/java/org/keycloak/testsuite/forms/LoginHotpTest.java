@@ -84,7 +84,7 @@ public class LoginHotpTest extends AbstractChangeImportedUserPasswordsTest {
 
     @Before
     public void before() throws MalformedURLException {
-        RealmRepresentation testRealm = testRealm().toRepresentation();
+        RealmRepresentation testRealm = managedRealm.admin().toRepresentation();
 
         policy = new OTPPolicy();
         policy.setAlgorithm(testRealm.getOtpPolicyAlgorithm());

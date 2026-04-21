@@ -105,7 +105,7 @@ public class ClientTypesTest extends AbstractTestRealmKeycloakTest {
                 .type("DNE")
                 .build();
 
-        Response response = testRealm().clients().create(clientRep);
+        Response response = managedRealm.admin().clients().create(clientRep);
         assertEquals(Response.Status.BAD_REQUEST, response.getStatusInfo());
     }
 
@@ -116,7 +116,7 @@ public class ClientTypesTest extends AbstractTestRealmKeycloakTest {
         // Changing type should fail
         clientRep.setType(ClientTypeManager.STANDARD);
         try {
-            testRealm().clients().get(clientRep.getId()).update(clientRep);
+            managedRealm.admin().clients().get(clientRep.getId()).update(clientRep);
             Assertions.fail("Not expected to update client");
         } catch (BadRequestException bre) {
             assertErrorContainsMessage(bre, ClientTypeException.Message.CANNOT_CHANGE_CLIENT_TYPE);
@@ -126,7 +126,7 @@ public class ClientTypesTest extends AbstractTestRealmKeycloakTest {
         clientRep.setType(ClientTypeManager.SERVICE_ACCOUNT);
         clientRep.setServiceAccountsEnabled(false);
         try {
-            testRealm().clients().get(clientRep.getId()).update(clientRep);
+            managedRealm.admin().clients().get(clientRep.getId()).update(clientRep);
             Assertions.fail("Not expected to update client");
         } catch (BadRequestException bre) {
             assertErrorResponseContainsParams(bre.getResponse(), "serviceAccountsEnabled");
@@ -136,13 +136,13 @@ public class ClientTypesTest extends AbstractTestRealmKeycloakTest {
 
         // Adding non-applicable attribute should not fail but not update client attribute
         clientRep.getAttributes().put(ClientModel.LOGO_URI, "https://foo");
-        testRealm().clients().get(clientRep.getId()).update(clientRep);
-        assertNull(testRealm().clients().get(clientRep.getId()).toRepresentation().getAttributes().get(ClientModel.LOGO_URI));
+        managedRealm.admin().clients().get(clientRep.getId()).update(clientRep);
+        assertNull(managedRealm.admin().clients().get(clientRep.getId()).toRepresentation().getAttributes().get(ClientModel.LOGO_URI));
 
         // Update of supported attribute should be successful
         clientRep.getAttributes().remove(ClientModel.LOGO_URI);
         clientRep.setRootUrl("https://foo");
-        testRealm().clients().get(clientRep.getId()).update(clientRep);
+        managedRealm.admin().clients().get(clientRep.getId()).update(clientRep);
     }
 
     @Test
@@ -154,13 +154,13 @@ public class ClientTypesTest extends AbstractTestRealmKeycloakTest {
                 .publicClient()
                 .build();
 
-        Response response = testRealm().clients().create(clientRep);
+        Response response = managedRealm.admin().clients().create(clientRep);
         assertErrorResponseContainsParams(response, "publicClient", "serviceAccountsEnabled");
     }
 
     @Test
     public void testClientTypesAdminRestAPI_globalTypes() {
-        ClientTypesRepresentation clientTypes = testRealm().clientTypes().getClientTypes();
+        ClientTypesRepresentation clientTypes = managedRealm.admin().clientTypes().getClientTypes();
 
         assertEquals(0, clientTypes.getRealmClientTypes().size());
 
@@ -185,7 +185,7 @@ public class ClientTypesTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     public void testClientTypesAdminRestAPI_realmTypes() {
-        ClientTypesRepresentation clientTypes = testRealm().clientTypes().getClientTypes();
+        ClientTypesRepresentation clientTypes = managedRealm.admin().clientTypes().getClientTypes();
 
         // Test invalid provider type should fail
         ClientTypeRepresentation clientType = new ClientTypeRepresentation();
@@ -194,7 +194,7 @@ public class ClientTypesTest extends AbstractTestRealmKeycloakTest {
             clientType.setProvider("non-existent");
             clientType.setConfig(new HashMap<>());
             clientTypes.setRealmClientTypes(List.of(clientType));
-            testRealm().clientTypes().updateClientTypes(clientTypes);
+            managedRealm.admin().clientTypes().updateClientTypes(clientTypes);
             Assertions.fail("Not expected to update client types");
         } catch (BadRequestException bre) {
             assertErrorContainsMessage(bre, ClientTypeException.Message.INVALID_CLIENT_TYPE_PROVIDER);
@@ -205,7 +205,7 @@ public class ClientTypesTest extends AbstractTestRealmKeycloakTest {
             clientType.setProvider(DefaultClientTypeProviderFactory.PROVIDER_ID);
             ClientTypeRepresentation.PropertyConfig cfg = new ClientTypeRepresentation.PropertyConfig();
             clientType.getConfig().put("standardFlowEnabled", cfg);
-            testRealm().clientTypes().updateClientTypes(clientTypes);
+            managedRealm.admin().clientTypes().updateClientTypes(clientTypes);
             Assertions.fail("Not expected to update client types");
         } catch (BadRequestException bre) {
             assertErrorContainsMessage(bre, ClientTypeException.Message.CLIENT_TYPE_FIELD_NOT_APPLICABLE);
@@ -216,7 +216,7 @@ public class ClientTypesTest extends AbstractTestRealmKeycloakTest {
             ClientTypeRepresentation.PropertyConfig cfg = clientType.getConfig().get("standardFlowEnabled");
             cfg.setApplicable(false);
             cfg.setValue(true);
-            testRealm().clientTypes().updateClientTypes(clientTypes);
+            managedRealm.admin().clientTypes().updateClientTypes(clientTypes);
             Assertions.fail("Not expected to update client types");
         } catch (BadRequestException bre) {
             assertErrorContainsMessage(bre, ClientTypeException.Message.INVALID_CLIENT_TYPE_CONFIGURATION);
@@ -225,18 +225,18 @@ public class ClientTypesTest extends AbstractTestRealmKeycloakTest {
         // Update should be successful
         ClientTypeRepresentation.PropertyConfig cfg = clientType.getConfig().get("standardFlowEnabled");
         cfg.setApplicable(true);
-        testRealm().clientTypes().updateClientTypes(clientTypes);
+        managedRealm.admin().clientTypes().updateClientTypes(clientTypes);
 
         // Test duplicate name should fail
         ClientTypeRepresentation clientType2 = new ClientTypeRepresentation();
         try {
-            clientTypes = testRealm().clientTypes().getClientTypes();
+            clientTypes = managedRealm.admin().clientTypes().getClientTypes();
             clientType2 = new ClientTypeRepresentation();
             clientType2.setName("sla1");
             clientType2.setProvider(DefaultClientTypeProviderFactory.PROVIDER_ID);
             clientType2.setConfig(new HashMap<>());
             clientTypes.getRealmClientTypes().add(clientType2);
-            testRealm().clientTypes().updateClientTypes(clientTypes);
+            managedRealm.admin().clientTypes().updateClientTypes(clientTypes);
             Assertions.fail("Not expected to update client types");
         } catch (BadRequestException bre) {
             assertErrorContainsMessage(bre, ClientTypeException.Message.DUPLICATE_CLIENT_TYPE);
@@ -245,7 +245,7 @@ public class ClientTypesTest extends AbstractTestRealmKeycloakTest {
         // Also test duplicated global name should fail
         try {
             clientType2.setName("service-account");
-            testRealm().clientTypes().updateClientTypes(clientTypes);
+            managedRealm.admin().clientTypes().updateClientTypes(clientTypes);
             Assertions.fail("Not expected to update client types");
         } catch (BadRequestException bre) {
             assertErrorContainsMessage(bre, ClientTypeException.Message.DUPLICATE_CLIENT_TYPE);
@@ -253,26 +253,26 @@ public class ClientTypesTest extends AbstractTestRealmKeycloakTest {
 
         // Different name should be fine
         clientType2.setName("different");
-        testRealm().clientTypes().updateClientTypes(clientTypes);
+        managedRealm.admin().clientTypes().updateClientTypes(clientTypes);
 
         // Assert updated
-        clientTypes = testRealm().clientTypes().getClientTypes();
+        clientTypes = managedRealm.admin().clientTypes().getClientTypes();
         assertNames(clientTypes.getRealmClientTypes(), "sla1", "different");
         assertNames(clientTypes.getGlobalClientTypes(), "sla", "service-account");
 
         // Test updating global won't update anything. Nothing will be added to globalTypes
         clientType2.setName("moreDifferent");
         clientTypes.getGlobalClientTypes().add(clientType2);
-        testRealm().clientTypes().updateClientTypes(clientTypes);
+        managedRealm.admin().clientTypes().updateClientTypes(clientTypes);
 
-        clientTypes = testRealm().clientTypes().getClientTypes();
+        clientTypes = managedRealm.admin().clientTypes().getClientTypes();
         assertNames(clientTypes.getRealmClientTypes(), "sla1", "different");
         assertNames(clientTypes.getGlobalClientTypes(), "sla", "service-account");
     }
 
     @Test
     public void testClientTypesInheritFromParent() {
-        ClientTypesRepresentation clientTypes = testRealm().clientTypes().getClientTypes();
+        ClientTypesRepresentation clientTypes = managedRealm.admin().clientTypes().getClientTypes();
 
         ClientTypeRepresentation.PropertyConfig applicableAndTrue = new ClientTypeRepresentation.PropertyConfig();
         applicableAndTrue.setApplicable(true);
@@ -295,7 +295,7 @@ public class ClientTypesTest extends AbstractTestRealmKeycloakTest {
         realmClientTypes.add(subClientType);
         clientTypes.setRealmClientTypes(realmClientTypes);
 
-        testRealm().clientTypes().updateClientTypes(clientTypes);
+        managedRealm.admin().clientTypes().updateClientTypes(clientTypes);
 
         ClientRepresentation childClient = createClientWithType("child-client", childClientType.getName());
         assertEquals(childClient.getProtocol(), "openid-connect");
@@ -340,17 +340,17 @@ public class ClientTypesTest extends AbstractTestRealmKeycloakTest {
                 .clientId(clientId)
                 .type(clientType)
                 .build();
-        Response response = testRealm().clients().create(clientRep);
+        Response response = managedRealm.admin().clients().create(clientRep);
         String clientUUID = ApiUtil.getCreatedId(response);
         getCleanup().addClientUuid(clientUUID);
 
-        return testRealm().clients().get(clientUUID).toRepresentation();
+        return managedRealm.admin().clients().get(clientUUID).toRepresentation();
     }
 
     // Check if the feature really works
     private void checkIfFeatureWorks(boolean shouldWork) {
         try {
-            ClientTypesRepresentation clientTypes = testRealm().clientTypes().getClientTypes();
+            ClientTypesRepresentation clientTypes = managedRealm.admin().clientTypes().getClientTypes();
             Assertions.assertTrue(clientTypes.getRealmClientTypes().isEmpty());
             if (!shouldWork)
                 fail("Feature is available, but at this moment should be disabled");

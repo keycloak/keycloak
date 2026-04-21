@@ -341,7 +341,7 @@ public abstract class OID4VCTest extends AbstractTestRealmKeycloakTest {
 			return;
 		}
 
-		ClientScopeResource clientScopeResource = testRealm().clientScopes().get(scopeId);
+		ClientScopeResource clientScopeResource = managedRealm.admin().clientScopes().get(scopeId);
 		ProtocolMappersResource protocolMappersResource = clientScopeResource.getProtocolMappers();
 
 		for (ProtocolMapperRepresentation protocolMapper : protocolMappers) {

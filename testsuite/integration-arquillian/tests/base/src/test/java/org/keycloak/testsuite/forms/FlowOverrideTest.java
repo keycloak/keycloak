@@ -380,7 +380,7 @@ public class FlowOverrideTest extends AbstractFlowTest {
     }
 
     private void testWithRemovedFlowOverrideByClient(String binding, Consumer<String> testNoOverride) {
-        ClientResource clientResource = AdminApiUtil.findClientByClientId(testRealm(), "test-app");
+        ClientResource clientResource = AdminApiUtil.findClientByClientId(managedRealm.admin(), "test-app");
         Assertions.assertNotNull(clientResource);
         ClientRepresentation clientRep = clientResource.toRepresentation();
 

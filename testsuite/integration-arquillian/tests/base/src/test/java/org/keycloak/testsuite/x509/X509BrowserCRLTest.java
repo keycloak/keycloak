@@ -162,31 +162,31 @@ public class X509BrowserCRLTest extends AbstractX509AuthenticationTest {
             // change CRL to the empty but expired, it should login OK
             crlRule.addHandler("cached-crl", EMPTY_EXPIRED_CRL_PATH);
             x509BrowserLogin(config, userId, "test-user@localhost", "test-user@localhost");
-            AccountHelper.logout(testRealm(), "test-user@localhost");
+            AccountHelper.logout(managedRealm.admin(), "test-user@localhost");
             Assertions.assertEquals(1, crlRule.getCounter("cached-crl"));
 
             // change the CRL to the new one but it is cached the min time
             crlRule.setCrlForHandler("cached-crl", INTERMEDIATE_CA_CRL_PATH);
             x509BrowserLogin(config, userId, "test-user@localhost", "test-user@localhost");
-            AccountHelper.logout(testRealm(), "test-user@localhost");
+            AccountHelper.logout(managedRealm.admin(), "test-user@localhost");
             Assertions.assertEquals(1, crlRule.getCounter("cached-crl"));
 
             // wait the min time and it should be refreshed now and fail
             setTimeOffset(10);
             assertLoginFailedDueRevokedCertificate();
-            AccountHelper.logout(testRealm(), "test-user@localhost");
+            AccountHelper.logout(managedRealm.admin(), "test-user@localhost");
             Assertions.assertEquals(2, crlRule.getCounter("cached-crl"));
 
             // now it's cached until next update 50 years
             setTimeOffset(3600);
             assertLoginFailedDueRevokedCertificate();
-            AccountHelper.logout(testRealm(), "test-user@localhost");
+            AccountHelper.logout(managedRealm.admin(), "test-user@localhost");
             Assertions.assertEquals(2, crlRule.getCounter("cached-crl"));
 
             // clear the cache
-            testRealm().clearCrlCache();
+            managedRealm.admin().clearCrlCache();
             assertLoginFailedDueRevokedCertificate();
-            AccountHelper.logout(testRealm(), "test-user@localhost");
+            AccountHelper.logout(managedRealm.admin(), "test-user@localhost");
             Assertions.assertEquals(3, crlRule.getCounter("cached-crl"));
         } finally {
             crlRule.removeHandler("cached-crl");

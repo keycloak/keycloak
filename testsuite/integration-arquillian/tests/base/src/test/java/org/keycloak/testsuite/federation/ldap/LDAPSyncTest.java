@@ -310,10 +310,10 @@ public class LDAPSyncTest extends AbstractLDAPTest {
             LDAPTestUtils.addLDAPUser(ldapFedProvider, appRealm, "luser11", "User11", "User11", "luser11@email.org", null, "");
         });
 
-        List<UserRepresentation> users = testRealm().users().search("luser10");
+        List<UserRepresentation> users = managedRealm.admin().users().search("luser10");
         assertThat(1, is(users.size()));
 
-        users = testRealm().users().search("luser11");
+        users = managedRealm.admin().users().search("luser11");
         assertThat(1, is(users.size()));
         UserRepresentation userToDelete = users.get(0);
 
@@ -445,9 +445,9 @@ public class LDAPSyncTest extends AbstractLDAPTest {
         });
 
         // Revert config changes
-        ComponentRepresentation ldapRep = testRealm().components().component(ldapModelId).toRepresentation();
+        ComponentRepresentation ldapRep = managedRealm.admin().components().component(ldapModelId).toRepresentation();
         ldapRep.getConfig().putSingle(LDAPConstants.UUID_LDAP_ATTRIBUTE, origUuidAttrName);
-        testRealm().components().component(ldapModelId).update(ldapRep);
+        managedRealm.admin().components().component(ldapModelId).update(ldapRep);
     }
 
     // KEYCLOAK-1728
@@ -498,13 +498,13 @@ public class LDAPSyncTest extends AbstractLDAPTest {
         });
 
         // Revert config changes
-        ComponentRepresentation ldapRep = testRealm().components().component(ldapModelId).toRepresentation();
+        ComponentRepresentation ldapRep = managedRealm.admin().components().component(ldapModelId).toRepresentation();
         if (origUsernameAttrName == null) {
             ldapRep.getConfig().remove(LDAPConstants.USERNAME_LDAP_ATTRIBUTE);
         } else {
             ldapRep.getConfig().putSingle(LDAPConstants.USERNAME_LDAP_ATTRIBUTE, origUsernameAttrName);
         }
-        testRealm().components().component(ldapModelId).update(ldapRep);
+        managedRealm.admin().components().component(ldapModelId).update(ldapRep);
 
         testingClient.server().run(session -> {
             LDAPTestContext ctx = LDAPTestContext.init(session);
@@ -518,10 +518,10 @@ public class LDAPSyncTest extends AbstractLDAPTest {
     // KEYCLOAK-10770 user-storage/{id}/sync should return 400 instead of 404
     @Test
     public void test06SyncRestAPIMissingAction() {
-        ComponentRepresentation ldapRep = testRealm().components().component(ldapModelId).toRepresentation();
+        ComponentRepresentation ldapRep = managedRealm.admin().components().component(ldapModelId).toRepresentation();
 
         try {
-            SynchronizationResultRepresentation syncResultRep = adminClient.realm(TEST_REALM_NAME).userStorage().syncUsers( ldapModelId, null);
+            SynchronizationResultRepresentation syncResultRep = managedRealm.admin().userStorage().syncUsers( ldapModelId, null);
             Assertions.fail("Should throw 400");
         } catch (Exception e) {
             Assertions.assertTrue(e instanceof BadRequestException);
@@ -531,10 +531,10 @@ public class LDAPSyncTest extends AbstractLDAPTest {
     // KEYCLOAK-10770 user-storage/{id}/sync should return 400 instead of 404
     @Test
     public void test07SyncRestAPIWrongAction() {
-        ComponentRepresentation ldapRep = testRealm().components().component(ldapModelId).toRepresentation();
+        ComponentRepresentation ldapRep = managedRealm.admin().components().component(ldapModelId).toRepresentation();
 
         try {
-            SynchronizationResultRepresentation syncResultRep = adminClient.realm(TEST_REALM_NAME).userStorage().syncUsers( ldapModelId, "wrong action");
+            SynchronizationResultRepresentation syncResultRep = managedRealm.admin().userStorage().syncUsers( ldapModelId, "wrong action");
             Assertions.fail("Should throw 400");
         } catch (Exception e) {
             Assertions.assertTrue(e instanceof BadRequestException);

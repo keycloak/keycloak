@@ -137,7 +137,7 @@ public class LDAPNoMSADTest extends AbstractLDAPTest {
 
         // Re-create "sn" mapper back
         snMapperRep.setId(null);
-        testRealm().components().add(snMapperRep);
+        managedRealm.admin().components().add(snMapperRep);
 
     }
 
@@ -163,8 +163,8 @@ public class LDAPNoMSADTest extends AbstractLDAPTest {
         });
 
         // Update some user attributes not mapped to DN. DN won't be changed
-        String userId = testRealm().users().search("johnkeycloak3").get(0).getId();
-        UserResource user = testRealm().users().get(userId);
+        String userId = managedRealm.admin().users().search("johnkeycloak3").get(0).getId();
+        UserResource user = managedRealm.admin().users().get(userId);
 
         UserRepresentation userRep = user.toRepresentation();
         assertFirstRDNEndsWith(userRep, "johnkeycloak3", "Doe3");

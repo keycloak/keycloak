@@ -51,7 +51,7 @@ public class AttestationConveyanceRegisterTest extends AbstractWebAuthnVirtualTe
 
     @Test
     public void attestationDefaultValue() {
-        WebAuthnRealmData realmData = new WebAuthnRealmData(testRealm().toRepresentation(), isPasswordless());
+        WebAuthnRealmData realmData = new WebAuthnRealmData(managedRealm.admin().toRepresentation(), isPasswordless());
         assertThat(realmData.getAttestationConveyancePreference(), is(DEFAULT_WEBAUTHN_POLICY_NOT_SPECIFIED));
 
         registerDefaultUser();
@@ -140,7 +140,7 @@ public class AttestationConveyanceRegisterTest extends AbstractWebAuthnVirtualTe
                 .setWebAuthnPolicyAttestationConveyancePreference(attestation.getValue())
                 .update()) {
 
-            WebAuthnRealmData realmData = new WebAuthnRealmData(testRealm().toRepresentation(), isPasswordless());
+            WebAuthnRealmData realmData = new WebAuthnRealmData(managedRealm.admin().toRepresentation(), isPasswordless());
             assertThat(realmData.getAttestationConveyancePreference(), is(attestation.getValue()));
 
             registerDefaultUser(shouldSuccess);

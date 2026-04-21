@@ -146,7 +146,7 @@ public class UserStorageGracefulDegradationLdapTest extends AbstractLDAPTest {
                     .password("password")
                     .enabled(true)
                     .build();
-            String userId = ApiUtil.getCreatedId(testRealm().users().create(localUser));
+            String userId = ApiUtil.getCreatedId(managedRealm.admin().users().create(localUser));
             userIdRef.set(userId);
             
             // Test that LDAP users fail to login when LDAP is down
@@ -178,7 +178,7 @@ public class UserStorageGracefulDegradationLdapTest extends AbstractLDAPTest {
                 LDAPTestUtils.removeLDAPUserByUsername(ldapProvider, realm, ldapProvider.getLdapIdentityStore().getConfig(), "testldapuser");
             });
 
-            testRealm().users().get(userIdRef.get()).remove();
+            managedRealm.admin().users().get(userIdRef.get()).remove();
         }
     }
 }
