@@ -1,4 +1,9 @@
-import { Button, ButtonVariant, ToolbarItem } from "@patternfly/react-core";
+import {
+  Button,
+  ButtonVariant,
+  Switch,
+  ToolbarItem,
+} from "@patternfly/react-core";
 import { SyncAltIcon } from "@patternfly/react-icons";
 import type { SVGIconProps } from "@patternfly/react-icons/dist/js/createIcon";
 import {
@@ -183,8 +188,8 @@ function DataTable<T>({
           isSelected
             ? [...selectedRows, ...rows.map((row) => row.data)]
             : selectedRows.filter(
-                (v) => !rowsSelectedOnPageIds.includes(get(v, "id")),
-              ),
+              (v) => !rowsSelectedOnPageIds.includes(get(v, "id")),
+            ),
         );
       } else {
         if (isSelected) {
@@ -215,11 +220,11 @@ function DataTable<T>({
               select={
                 !isRadio
                   ? {
-                      onSelect: (_, isSelected) => {
-                        updateState(-1, isSelected);
-                      },
-                      isSelected: rowsSelectedOnPage.length === rows.length,
-                    }
+                    onSelect: (_, isSelected) => {
+                      updateState(-1, isSelected);
+                    },
+                    isSelected: rowsSelectedOnPage.length === rows.length,
+                  }
                   : undefined
               }
             />
@@ -279,24 +284,24 @@ function DataTable<T>({
                     rows[index + 1].cells.length === 0
                       ? undefined
                       : {
-                          isExpanded: expandedRowIds.includes(
-                            getExpandableRowKey(row as Row<T>, index),
-                          ),
-                          rowIndex: index,
-                          expandId: "expandable-row-",
-                          onToggle: (_, rowIndex, isOpen) => {
-                            onCollapse(isOpen, rowIndex);
-                            const rowId = getExpandableRowKey(
-                              row as Row<T>,
-                              index,
-                            );
-                            setExpandedRowIds((current) =>
-                              isOpen
-                                ? [...new Set([...current, rowId])]
-                                : current.filter((value) => value !== rowId),
-                            );
-                          },
-                        }
+                        isExpanded: expandedRowIds.includes(
+                          getExpandableRowKey(row as Row<T>, index),
+                        ),
+                        rowIndex: index,
+                        expandId: "expandable-row-",
+                        onToggle: (_, rowIndex, isOpen) => {
+                          onCollapse(isOpen, rowIndex);
+                          const rowId = getExpandableRowKey(
+                            row as Row<T>,
+                            index,
+                          );
+                          setExpandedRowIds((current) =>
+                            isOpen
+                              ? [...new Set([...current, rowId])]
+                              : current.filter((value) => value !== rowId),
+                          );
+                        },
+                      }
                   }
                 />
                 <CellRenderer
@@ -376,6 +381,7 @@ export type DataListProps<T> = Omit<
   isSearching?: boolean;
   refreshKey?: number | string;
   onRefresh?: () => void;
+  autoRefreshTimeout?: number;
 };
 
 /**
@@ -423,6 +429,7 @@ export function KeycloakDataTable<T>({
   isSearching = false,
   refreshKey,
   onRefresh,
+  autoRefreshTimeout,
   ...props
 }: DataListProps<T>) {
   const { t } = useTranslation();
@@ -443,10 +450,36 @@ export function KeycloakDataTable<T>({
   const prevSearch = useRef<string>();
 
   const [key, setKey] = useState(0);
+  const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(false);
   const prevKey = useRef<number>();
   const prevRefreshKey = useRef<number | string | undefined>();
-  const refresh = () => setKey(key + 1);
+  const refresh = () => setKey((current) => current + 1);
   const id = useId();
+  const autoRefreshIntervalSeconds =
+    autoRefreshTimeout && autoRefreshTimeout > 0
+      ? Math.max(1, Math.round(autoRefreshTimeout / 1000))
+      : 0;
+  const fallbackAutoRefreshLabel = `${t("refresh")} (${autoRefreshIntervalSeconds}s)`;
+  const autoRefreshLabel = t("autoRefresh", {
+    seconds: autoRefreshIntervalSeconds,
+    defaultValue: fallbackAutoRefreshLabel,
+  });
+
+  useEffect(() => {
+    if (!autoRefreshTimeout || autoRefreshTimeout <= 0 || !autoRefreshEnabled) {
+      return;
+    }
+
+    const interval = window.setInterval(() => {
+      if (onRefresh) {
+        onRefresh();
+      } else {
+        refresh();
+      }
+    }, autoRefreshTimeout);
+
+    return () => window.clearInterval(interval);
+  }, [autoRefreshEnabled, autoRefreshTimeout, onRefresh]);
 
   const renderCell = (columns: (Field<T> | DetailField<T>)[], value: T) => {
     return columns.map((col) => {
@@ -514,16 +547,16 @@ export function KeycloakDataTable<T>({
       search === "" || isPaginated
         ? undefined
         : convertToColumns(unPaginatedData || [])
-            .filter((row) =>
-              row.cells.some(
-                (cell) =>
-                  cell &&
-                  getNodeText(cell)
-                    .toLowerCase()
-                    .includes(search.toLowerCase()),
-              ),
-            )
-            .slice(first, first + max + 1),
+          .filter((row) =>
+            row.cells.some(
+              (cell) =>
+                cell &&
+                getNodeText(cell)
+                  .toLowerCase()
+                  .includes(search.toLowerCase()),
+            ),
+          )
+          .slice(first, first + max + 1),
     [search, first, max],
   );
 
@@ -632,6 +665,19 @@ export function KeycloakDataTable<T>({
                   <SyncAltIcon /> {t("refresh")}
                 </Button>
               </ToolbarItem>
+              {autoRefreshIntervalSeconds > 0 && (
+                <ToolbarItem>
+                  <div className="pf-v5-u-pt-xs">
+                    <Switch
+                      id={`${id}-auto-refresh`}
+                      label={autoRefreshLabel}
+                      labelOff={autoRefreshLabel}
+                      isChecked={autoRefreshEnabled}
+                      onChange={(_, checked) => setAutoRefreshEnabled(checked)}
+                    />
+                  </div>
+                </ToolbarItem>
+              )}
             </>
           }
           subToolbar={subToolbar}
@@ -666,12 +712,12 @@ export function KeycloakDataTable<T>({
               secondaryActions={
                 !isSearching
                   ? [
-                      {
-                        text: t("clearAllFilters"),
-                        onClick: () => setSearch(""),
-                        type: ButtonVariant.link,
-                      },
-                    ]
+                    {
+                      text: t("clearAllFilters"),
+                      onClick: () => setSearch(""),
+                      type: ButtonVariant.link,
+                    },
+                  ]
                   : []
               }
             />

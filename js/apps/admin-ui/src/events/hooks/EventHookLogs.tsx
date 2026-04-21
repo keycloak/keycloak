@@ -23,7 +23,6 @@ import {
   Label,
   SelectOption,
   Spinner,
-  Switch,
   Text,
   TextContent,
 } from "@patternfly/react-core";
@@ -329,7 +328,6 @@ export const EventHookLogs = () => {
   const [retryingExecutionIds, setRetryingExecutionIds] = useState<string[]>(
     [],
   );
-  const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(false);
 
   const sourceType = searchParams.get("sourceType") || "";
   const targetId = searchParams.get("targetId") || "";
@@ -429,18 +427,6 @@ export const EventHookLogs = () => {
   useEffect(() => {
     void adminClient.eventHooks.findTargets({ realm }).then(setTargets);
   }, [adminClient, realm]);
-
-  useEffect(() => {
-    if (!autoRefreshEnabled) {
-      return;
-    }
-
-    const interval = window.setInterval(() => {
-      setRefreshCount((count) => count + 1);
-    }, 5000);
-
-    return () => window.clearInterval(interval);
-  }, [autoRefreshEnabled]);
 
   const refresh = () => setRefreshCount((count) => count + 1);
 
@@ -589,6 +575,13 @@ export const EventHookLogs = () => {
 
   const selectedTargetName =
     targets.find((target) => target.id === targetId)?.name || targetId;
+  const isAnyFilterDropdownOpen =
+    searchDropdownOpen ||
+    sourceTypeOpen ||
+    targetTypeOpen ||
+    targetOpen ||
+    statusOpen ||
+    messageStatusOpen;
 
   const searchFormDisplay = () => (
     <FormProvider {...form}>
@@ -905,30 +898,30 @@ export const EventHookLogs = () => {
     const filteredExecutionIds =
       status || dateFrom || dateTo || messageId
         ? new Set(
-            (
-              await adminClient.eventHooks.findLogs({
-                realm,
-                messageId: messageId || undefined,
-                targetId: targetId || undefined,
-                targetType: targetType || undefined,
-                sourceType: sourceType || undefined,
-                event: event || undefined,
-                client: client || undefined,
-                user: user || undefined,
-                ipAddress: ipAddress || undefined,
-                resourceType: resourceType || undefined,
-                resourcePath: resourcePath || undefined,
-                status: status || undefined,
-                messageStatus: messageStatus || undefined,
-                dateFrom: dateFrom || undefined,
-                dateTo: dateTo || undefined,
-                executionId: executionId || undefined,
-                search: search || undefined,
-              })
-            )
-              .map((log) => log.executionId)
-              .filter((value): value is string => Boolean(value)),
+          (
+            await adminClient.eventHooks.findLogs({
+              realm,
+              messageId: messageId || undefined,
+              targetId: targetId || undefined,
+              targetType: targetType || undefined,
+              sourceType: sourceType || undefined,
+              event: event || undefined,
+              client: client || undefined,
+              user: user || undefined,
+              ipAddress: ipAddress || undefined,
+              resourceType: resourceType || undefined,
+              resourcePath: resourcePath || undefined,
+              status: status || undefined,
+              messageStatus: messageStatus || undefined,
+              dateFrom: dateFrom || undefined,
+              dateTo: dateTo || undefined,
+              executionId: executionId || undefined,
+              search: search || undefined,
+            })
           )
+            .map((log) => log.executionId)
+            .filter((value): value is string => Boolean(value)),
+        )
         : undefined;
 
     const targetNames = new Map(
@@ -986,18 +979,8 @@ export const EventHookLogs = () => {
         },
       ]}
       isSearching={Object.keys(activeFilters).length > 0}
-      toolbarItem={
-        <>
-          {searchFormDisplay()}
-          <Switch
-            id="event-hook-logs-auto-refresh"
-            label="Automatically update (5s)"
-            labelOff="Automatically update (5s)"
-            isChecked={autoRefreshEnabled}
-            onChange={(_, checked) => setAutoRefreshEnabled(checked)}
-          />
-        </>
-      }
+      toolbarItem={searchFormDisplay()}
+      autoRefreshTimeout={isAnyFilterDropdownOpen ? undefined : 5000}
       columns={[
         {
           name: "createdAt",
