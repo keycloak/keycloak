@@ -16,7 +16,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.admin.v2.BaseClientRepresentation;
 import org.keycloak.services.client.ClientService;
-import org.keycloak.services.client.ClientServiceHelper;
+import org.keycloak.services.client.DefaultClientService;
 import org.keycloak.services.resources.admin.RealmAdminResource;
 import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
 
@@ -38,7 +38,7 @@ public class DefaultClientsApi implements ClientsApi {
         this.realm = realm;
         this.permissions = permissions;
         this.realmAdminResource = realmAdminResource;
-        this.clientService = ClientServiceHelper.getClientService(session, realm, permissions, realmAdminResource);
+        this.clientService = new DefaultClientService(session, realm, permissions, realmAdminResource);
     }
 
     @GET

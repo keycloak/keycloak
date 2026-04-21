@@ -22,7 +22,6 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.authorization.Logic;
 import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
-import org.keycloak.services.client.ClientServiceHelper;
 import org.keycloak.testframework.admin.AdminClientFactory;
 import org.keycloak.testframework.annotations.InjectAdminClientFactory;
 import org.keycloak.testframework.annotations.InjectClient;
@@ -447,11 +446,7 @@ public class ClientApiV2AuthorizationTest extends AbstractClientApiV2Test {
         try (var response = client.execute(request)) {
             assertThat(response.getStatusLine().getStatusCode(), is(400));
             var body = EntityUtils.toString(response.getEntity());
-            if (ClientServiceHelper.isLegacyClientServiceEnabled()) {
-                assertThat(body, containsString("unknown_error"));
-            } else {
-                assertThat(body, containsString("Not supported for this client"));
-            }
+            assertThat(body, containsString("Not supported for this client"));
         }
 
         // Verify the client still exists (was not deleted)

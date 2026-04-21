@@ -19,7 +19,7 @@ import org.keycloak.representations.admin.v2.BaseClientRepresentation;
 import org.keycloak.services.PatchType;
 import org.keycloak.services.ServiceException;
 import org.keycloak.services.client.ClientService;
-import org.keycloak.services.client.ClientServiceHelper;
+import org.keycloak.services.client.DefaultClientService;
 import org.keycloak.services.resources.admin.RealmAdminResource;
 import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
 
@@ -39,7 +39,7 @@ public class DefaultClientApi implements ClientApi {
         this.session = session;
         this.clientId = clientId;
         this.realm = realm;
-        this.clientService = ClientServiceHelper.getClientService(session, realm, permissions, realmAdminResource);
+        this.clientService = new DefaultClientService(session, realm, permissions, realmAdminResource);
     }
 
     @GET
