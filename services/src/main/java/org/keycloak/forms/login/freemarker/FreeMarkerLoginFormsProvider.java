@@ -331,9 +331,11 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
                 break;
             case FRONTCHANNEL_LOGOUT:
                 attributes.put("logout", new FrontChannelLogoutBean(session));
+                attributes.put("title", getMessage("frontchannel-logout.title"));
                 break;
             case LOGOUT_CONFIRM:
                 attributes.put("logoutConfirm", new LogoutConfirmBean(accessCode, authenticationSession));
+                attributes.put("title", getMessage("logoutConfirmTitle"));
                 break;
         }
 
@@ -493,7 +495,9 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
         }
 
         if (realm != null) {
-            attributes.put("realm", new RealmBean(realm));
+            RealmBean realmBean = new RealmBean(realm);
+            attributes.put("realm", realmBean);
+            attributes.put("title", getMessage("loginTitle", realmBean.getDisplayName()));
 
             IdentityProviderBean idpBean = new IdentityProviderBean(session, realm, baseUriWithCodeAndClientId, context);
 
