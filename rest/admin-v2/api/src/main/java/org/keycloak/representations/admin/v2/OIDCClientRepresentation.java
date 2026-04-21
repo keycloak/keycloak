@@ -127,9 +127,10 @@ public class OIDCClientRepresentation extends BaseClientRepresentation {
 
         @Override
         public boolean equals(Object o) {
-            if (!(o instanceof Auth auth)) {
+            if (!(o instanceof Auth)) {
                 return false;
             }
+            Auth auth = (Auth)o;
             return Objects.equals(method, auth.method) && Objects.equals(secret, auth.secret) && Objects.equals(certificate, auth.certificate);
         }
 
@@ -141,12 +142,13 @@ public class OIDCClientRepresentation extends BaseClientRepresentation {
 
     @Override
     public boolean equals(Object o) {
-        if (!(o instanceof OIDCClientRepresentation that)) {
+        if (!(o instanceof OIDCClientRepresentation)) {
             return false;
         }
         if (!super.equals(o)) {
             return false;
         }
+        OIDCClientRepresentation that = (OIDCClientRepresentation)o;
         return Objects.equals(loginFlows, that.loginFlows) && Objects.equals(auth, that.auth) && Objects.equals(webOrigins, that.webOrigins) && Objects.equals(serviceAccountRoles, that.serviceAccountRoles);
     }
 

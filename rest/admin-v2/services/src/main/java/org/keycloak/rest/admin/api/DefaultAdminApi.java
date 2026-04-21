@@ -1,7 +1,5 @@
 package org.keycloak.rest.admin.api;
 
-import jakarta.ws.rs.NotFoundException;
-
 import org.keycloak.admin.api.AdminApi;
 import org.keycloak.admin.api.client.ClientsApi;
 import org.keycloak.models.KeycloakSession;
@@ -32,10 +30,7 @@ public class DefaultAdminApi implements AdminApi {
     }
 
     @Override
-    public ClientsApi clients(String version) {
-        return switch (version) {
-            case "v2" -> new DefaultClientsApi(session, realm, permissions, realmAdminResource);
-            default -> throw new NotFoundException();
-        };
+    public ClientsApi clientsV2() {
+        return new DefaultClientsApi(session, realm, permissions, realmAdminResource);
     }
 }
