@@ -43,6 +43,7 @@ import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.RefreshToken;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AbstractChangeImportedUserPasswordsTest;
 import org.keycloak.testsuite.ActionURIUtils;
 import org.keycloak.testsuite.AssertEvents;
@@ -63,7 +64,6 @@ import org.keycloak.testsuite.util.BrowserTabUtil;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.GreenMailRule;
 import org.keycloak.testsuite.util.InfinispanTestTimeServiceRule;
-import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.testsuite.util.WaitUtils;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
@@ -113,8 +113,8 @@ public class MultipleTabsLoginTest extends AbstractChangeImportedUserPasswordsTe
                 .username("login-test")
                 .email("login@test.com")
                 .enabled(true)
-                .requiredAction(UserModel.RequiredAction.UPDATE_PROFILE.toString())
-                .requiredAction(UserModel.RequiredAction.UPDATE_PASSWORD.toString())
+                .requiredActions(UserModel.RequiredAction.UPDATE_PROFILE.toString())
+                .requiredActions(UserModel.RequiredAction.UPDATE_PASSWORD.toString())
                 .build();
 
         userId = AdminApiUtil.createUserAndResetPasswordWithAdminClient(managedRealm.admin(), user, generatePassword("login-test"), true);

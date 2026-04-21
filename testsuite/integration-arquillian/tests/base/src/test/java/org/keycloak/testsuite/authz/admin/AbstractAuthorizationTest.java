@@ -29,11 +29,11 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AbstractClientTest;
 import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.RealmBuilder;
-import org.keycloak.testsuite.util.UserBuilder;
 
 import org.junit.After;
 import org.junit.BeforeClass;

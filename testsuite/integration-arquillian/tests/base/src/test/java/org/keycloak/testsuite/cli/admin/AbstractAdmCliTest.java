@@ -21,10 +21,10 @@ import org.keycloak.client.cli.config.RealmConfigData;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.cli.AbstractCliTest;
 import org.keycloak.testsuite.cli.KcAdmExec;
 import org.keycloak.testsuite.util.ClientBuilder;
-import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.util.JsonSerialization;
 
 import org.junit.jupiter.api.Assertions;

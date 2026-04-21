@@ -78,6 +78,7 @@ import org.keycloak.services.clientpolicy.condition.AnyClientConditionFactory;
 import org.keycloak.services.clientpolicy.condition.ClientAccessTypeConditionFactory;
 import org.keycloak.services.clientpolicy.executor.DPoPBindEnforcerExecutorFactory;
 import org.keycloak.services.cors.Cors;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.AdminApiUtil;
@@ -89,7 +90,6 @@ import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientPolicyBuilder;
 import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientProfileBuilder;
 import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientProfilesBuilder;
 import org.keycloak.testsuite.util.ServerURLs;
-import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.keycloak.testsuite.util.oauth.IntrospectionResponse;
@@ -183,8 +183,8 @@ public class DPoPTest extends AbstractTestRealmKeycloakTest {
                 .id(KeycloakModelUtils.generateId())
                 .username("test-admin@localhost")
                 .password("password")
-                .role(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.REALM_ADMIN)
-                .addRoles(OAuth2Constants.OFFLINE_ACCESS);
+                .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.REALM_ADMIN)
+                .roles(OAuth2Constants.OFFLINE_ACCESS);
         testRealm.getUsers().add(testAdmin.build());
     }
 

@@ -26,6 +26,8 @@ import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.realm.ClientScopeBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.AdminApiUtil;
@@ -36,9 +38,7 @@ import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginUpdateProfileEditUsernameAllowedPage;
-import org.keycloak.testsuite.util.ClientScopeBuilder;
 import org.keycloak.testsuite.util.KeycloakModelUtils;
-import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.testsuite.util.userprofile.UserProfileUtil;
 
 import org.apache.commons.lang3.StringUtils;
@@ -119,7 +119,7 @@ public class RequiredActionUpdateProfileWithUserProfileTest extends AbstractTest
                 .firstName("Tom")
                 .lastName("Brady")
                 .emailVerified(true)
-                .requiredAction(UserModel.RequiredAction.UPDATE_PROFILE.name()).build();
+                .requiredActions(UserModel.RequiredAction.UPDATE_PROFILE.name()).build();
         AdminApiUtil.createUserAndResetPasswordWithAdminClient(managedRealm.admin(), user, "password");
 
         AdminApiUtil.removeUserByUsername(managedRealm.admin(), "john-doh@localhost");
@@ -129,7 +129,7 @@ public class RequiredActionUpdateProfileWithUserProfileTest extends AbstractTest
                 .firstName("John")
                 .lastName("Doh")
                 .emailVerified(true)
-                .requiredAction(UserModel.RequiredAction.UPDATE_PROFILE.name()).build();
+                .requiredActions(UserModel.RequiredAction.UPDATE_PROFILE.name()).build();
         AdminApiUtil.createUserAndResetPasswordWithAdminClient(managedRealm.admin(), user, "password");
     }
 

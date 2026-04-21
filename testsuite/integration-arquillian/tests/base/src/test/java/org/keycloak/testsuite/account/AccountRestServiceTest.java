@@ -82,12 +82,12 @@ import org.keycloak.services.cors.Cors;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.account.AccountCredentialResource;
 import org.keycloak.services.util.ResolveRelative;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AbstractAuthenticationTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.broker.util.SimpleHttpDefault;
 import org.keycloak.testsuite.util.TokenUtil;
-import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.userprofile.UserProfileUtil;
 import org.keycloak.userprofile.UserProfileContext;
@@ -841,8 +841,8 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         // Add non-OTP credential to the user through admin REST API
         CredentialRepresentation nonOtpCredential = ModelToRepresentation.toRepresentation(
                 WebAuthnCredentialModel.create(WebAuthnCredentialModel.TYPE_TWOFACTOR, "foo", "foo", "foo", "foo", "foo", 2L, "foo"));
-        org.keycloak.representations.idm.UserRepresentation userRep = UserBuilder.edit(user.toRepresentation())
-                .secret(nonOtpCredential)
+        org.keycloak.representations.idm.UserRepresentation userRep = UserBuilder.update(user.toRepresentation())
+                .credential(nonOtpCredential)
                 .build();
         user.update(userRep);
 
@@ -871,7 +871,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         assertEquals(1, user.credentials().size());
 
         // Add OTP credential to the user through admin REST API
-        org.keycloak.representations.idm.UserRepresentation userRep = UserBuilder.edit(user.toRepresentation())
+        org.keycloak.representations.idm.UserRepresentation userRep = UserBuilder.update(user.toRepresentation())
                 .totpSecret("totpSecret")
                 .build();
         userRep.getCredentials().get(0).setUserLabel("totpCredentialUserLabel");
@@ -977,7 +977,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
 
         // Add OTP credential to the user through admin REST API
         UserResource adminUserResource = AdminApiUtil.findUserByUsernameId(managedRealm.admin(), "test-user@localhost");
-        org.keycloak.representations.idm.UserRepresentation userRep = UserBuilder.edit(adminUserResource.toRepresentation())
+        org.keycloak.representations.idm.UserRepresentation userRep = UserBuilder.update(adminUserResource.toRepresentation())
                 .totpSecret("abcdefabcdef")
                 .build();
         adminUserResource.update(userRep);

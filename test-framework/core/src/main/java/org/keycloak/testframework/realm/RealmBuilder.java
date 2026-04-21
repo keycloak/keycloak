@@ -23,169 +23,169 @@ import org.keycloak.representations.idm.RolesRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testframework.util.Collections;
 
-public class RealmConfigBuilder {
+public class RealmBuilder {
 
     private final RealmRepresentation rep;
 
-    private RealmConfigBuilder(RealmRepresentation rep) {
+    private RealmBuilder(RealmRepresentation rep) {
         this.rep = rep;
     }
 
-    public static RealmConfigBuilder create() {
+    public static RealmBuilder create() {
         RealmRepresentation rep = new RealmRepresentation();
         rep.setEnabled(true);
-        return new RealmConfigBuilder(rep);
+        return new RealmBuilder(rep);
     }
 
-    public static RealmConfigBuilder update(RealmRepresentation rep) {
-        return new RealmConfigBuilder(rep);
+    public static RealmBuilder update(RealmRepresentation rep) {
+        return new RealmBuilder(rep);
     }
 
-    public RealmConfigBuilder id(String id) {
+    public RealmBuilder id(String id) {
         rep.setId(id);
         return this;
     }
 
-    public RealmConfigBuilder name(String name) {
+    public RealmBuilder name(String name) {
         rep.setRealm(name);
         return this;
     }
 
-    public RealmConfigBuilder displayName(String displayName) {
+    public RealmBuilder displayName(String displayName) {
         rep.setDisplayName(displayName);
         return this;
     }
 
-    public RealmConfigBuilder client(ClientRepresentation client) {
+    public RealmBuilder client(ClientRepresentation client) {
         rep.setClients(Collections.combine(rep.getClients(), client));
         return this;
     }
 
-    public ClientConfigBuilder addClient(String clientId) {
+    public ClientBuilder addClient(String clientId) {
         ClientRepresentation client = new ClientRepresentation();
         rep.setClients(Collections.combine(rep.getClients(), client));
-        return ClientConfigBuilder.update(client).enabled(true).clientId(clientId);
+        return ClientBuilder.update(client).enabled(true).clientId(clientId);
     }
 
-    public UserConfigBuilder addUser(String username) {
+    public UserBuilder addUser(String username) {
         UserRepresentation user = new UserRepresentation();
         rep.setUsers(Collections.combine(rep.getUsers(), user));
-        return UserConfigBuilder.update(user).enabled(true).username(username);
+        return UserBuilder.update(user).enabled(true).username(username);
     }
 
-    public UserConfigBuilder addUser(UserRepresentation user) {
+    public UserBuilder addUser(UserRepresentation user) {
         rep.setUsers(Collections.combine(rep.getUsers(), user));
-        return UserConfigBuilder.update(user);
+        return UserBuilder.update(user);
     }
 
-    public GroupConfigBuilder addGroup(String name) {
+    public GroupBuilder addGroup(String name) {
         GroupRepresentation group = new GroupRepresentation();
         rep.setGroups(Collections.combine(rep.getGroups(), group));
-        return GroupConfigBuilder.update(group).name(name);
+        return GroupBuilder.update(group).name(name);
     }
 
-    public RoleConfigBuilder addRole(String name) {
+    public RoleBuilder addRole(String name) {
         RoleRepresentation role = new RoleRepresentation();
         role.setName(name);
         return addRole(role);
     }
 
-    public RoleConfigBuilder addRole(RoleRepresentation roleRepresentation) {
+    public RoleBuilder addRole(RoleRepresentation roleRepresentation) {
         if (rep.getRoles() == null) {
             rep.setRoles(new RolesRepresentation());
         }
 
         rep.getRoles().setRealm(Collections.combine(rep.getRoles().getRealm(), roleRepresentation));
-        return RoleConfigBuilder.update(roleRepresentation).name(roleRepresentation.getName());
+        return RoleBuilder.update(roleRepresentation).name(roleRepresentation.getName());
     }
 
-    public RoleConfigBuilder addClientRole(String clientName, String roleName) {
+    public RoleBuilder addClientRole(String clientName, String roleName) {
         if (rep.getRoles() == null) {
             rep.setRoles(new RolesRepresentation());
         }
 
         RoleRepresentation role = new RoleRepresentation();
         rep.getRoles().setClient(Collections.combine(rep.getRoles().getClient(), clientName, role));
-        return RoleConfigBuilder.update(role).name(roleName);
+        return RoleBuilder.update(role).name(roleName);
     }
 
-    public AuthenticationFlowConfigBuilder addAuthenticationFlow(String alias, String description, String providerId, boolean topLevel, boolean builtIn) {
+    public AuthenticationFlowBuilder addAuthenticationFlow(String alias, String description, String providerId, boolean topLevel, boolean builtIn) {
         AuthenticationFlowRepresentation flow = new AuthenticationFlowRepresentation();
         rep.setAuthenticationFlows(Collections.combine(rep.getAuthenticationFlows(), flow));
-        return AuthenticationFlowConfigBuilder.update(flow).alias(alias).description(description).providerId(providerId).topLevel(topLevel).builtIn(builtIn);
+        return AuthenticationFlowBuilder.update(flow).alias(alias).description(description).providerId(providerId).topLevel(topLevel).builtIn(builtIn);
     }
 
-    public RealmConfigBuilder registrationEmailAsUsername(boolean registrationEmailAsUsername) {
+    public RealmBuilder registrationEmailAsUsername(boolean registrationEmailAsUsername) {
         rep.setRegistrationEmailAsUsername(registrationEmailAsUsername);
         return this;
     }
 
-    public RealmConfigBuilder registrationAllowed(boolean allowed) {
+    public RealmBuilder registrationAllowed(boolean allowed) {
         rep.setRegistrationAllowed(allowed);
         return this;
     }
 
-    public RealmConfigBuilder verifyEmail(boolean verifyEmail) {
+    public RealmBuilder verifyEmail(boolean verifyEmail) {
         rep.setVerifyEmail(verifyEmail);
         return this;
     }
 
-    public RealmConfigBuilder editUsernameAllowed(boolean allowed) {
+    public RealmBuilder editUsernameAllowed(boolean allowed) {
         rep.setEditUsernameAllowed(allowed);
         return this;
     }
 
-    public RealmConfigBuilder defaultSignatureAlgorithm(String algorithm) {
+    public RealmBuilder defaultSignatureAlgorithm(String algorithm) {
         rep.setDefaultSignatureAlgorithm(algorithm);
         return this;
     }
 
-    public RealmConfigBuilder adminPermissionsEnabled(boolean enabled) {
+    public RealmBuilder adminPermissionsEnabled(boolean enabled) {
         rep.setAdminPermissionsEnabled(enabled);
         return this;
     }
 
-    public RealmConfigBuilder eventsEnabled(boolean enabled) {
+    public RealmBuilder eventsEnabled(boolean enabled) {
         rep.setEventsEnabled(enabled);
         return this;
     }
 
-    public RealmConfigBuilder adminEventsEnabled(boolean enabled) {
+    public RealmBuilder adminEventsEnabled(boolean enabled) {
         rep.setAdminEventsEnabled(enabled);
         return this;
     }
 
-    public RealmConfigBuilder adminEventsDetailsEnabled(boolean enabled) {
+    public RealmBuilder adminEventsDetailsEnabled(boolean enabled) {
         rep.setAdminEventsDetailsEnabled(enabled);
         return this;
     }
 
-    public RealmConfigBuilder enabledEventTypes(String... enabledEventTypes) {
+    public RealmBuilder enabledEventTypes(String... enabledEventTypes) {
         rep.setEnabledEventTypes(Collections.combine(rep.getEnabledEventTypes(), enabledEventTypes));
         return this;
     }
 
-    public RealmConfigBuilder setEnabledEventTypes(String... enabledEventTypes) {
+    public RealmBuilder setEnabledEventTypes(String... enabledEventTypes) {
         rep.setEnabledEventTypes(List.of(enabledEventTypes));
         return this;
     }
 
-    public RealmConfigBuilder eventsListeners(String... eventListeners) {
+    public RealmBuilder eventsListeners(String... eventListeners) {
         rep.setEventsListeners(Collections.combine(rep.getEventsListeners(), eventListeners));
         return this;
     }
 
-    public RealmConfigBuilder overwriteEventsListeners(String... eventListeners) {
+    public RealmBuilder overwriteEventsListeners(String... eventListeners) {
         rep.setEventsListeners(List.of(eventListeners));
         return this;
     }
 
-    public RealmConfigBuilder eventsExpiration(long eventsExpiration) {
+    public RealmBuilder eventsExpiration(long eventsExpiration) {
         rep.setEventsExpiration(eventsExpiration);
         return this;
     }
 
-    public RealmConfigBuilder roles(String... roleNames) {
+    public RealmBuilder roles(String... roleNames) {
         if (rep.getRoles() == null) {
             rep.setRoles(new RolesRepresentation());
         }
@@ -196,7 +196,7 @@ public class RealmConfigBuilder {
         return this;
     }
 
-    public RealmConfigBuilder clientRoles(String client, String... clientRoles) {
+    public RealmBuilder clientRoles(String client, String... clientRoles) {
         if (rep.getRoles() == null) {
             rep.setRoles(new RolesRepresentation());
         }
@@ -208,32 +208,32 @@ public class RealmConfigBuilder {
         return this;
     }
 
-    public RealmConfigBuilder groups(String... groupsNames) {
+    public RealmBuilder groups(String... groupsNames) {
         rep.setGroups(Collections.combine(rep.getGroups(), Arrays.stream(groupsNames).map(Representations::toGroup)));
         return this;
     }
 
-    public RealmConfigBuilder defaultGroups(String... groupsNames) {
+    public RealmBuilder defaultGroups(String... groupsNames) {
         rep.setDefaultGroups(Collections.combine(rep.getDefaultGroups(), groupsNames));
         return this;
     }
 
-    public RealmConfigBuilder internationalizationEnabled(boolean enabled) {
+    public RealmBuilder internationalizationEnabled(boolean enabled) {
         rep.setInternationalizationEnabled(enabled);
         return this;
     }
 
-    public RealmConfigBuilder supportedLocales(String... supportedLocales) {
+    public RealmBuilder supportedLocales(String... supportedLocales) {
         rep.setSupportedLocales(Collections.combine(rep.getSupportedLocales(), supportedLocales));
         return this;
     }
 
-    public RealmConfigBuilder defaultLocale(String locale) {
+    public RealmBuilder defaultLocale(String locale) {
         rep.setDefaultLocale(locale);
         return this;
     }
 
-    public RealmConfigBuilder smtp(String host, int port, String from) {
+    public RealmBuilder smtp(String host, int port, String from) {
         Map<String, String> config = new HashMap<>();
         config.put("host", host);
         config.put("port", Integer.toString(port));
@@ -242,97 +242,97 @@ public class RealmConfigBuilder {
         return this;
     }
 
-    public RealmConfigBuilder organizationsEnabled(boolean enabled) {
+    public RealmBuilder organizationsEnabled(boolean enabled) {
         rep.setOrganizationsEnabled(enabled);
         return this;
     }
 
-    public RealmConfigBuilder revokeRefreshToken(boolean enabled) {
+    public RealmBuilder revokeRefreshToken(boolean enabled) {
         rep.setRevokeRefreshToken(enabled);
         return this;
     }
 
-    public RealmConfigBuilder refreshTokenMaxReuse(Integer refreshTokenMaxReuse) {
+    public RealmBuilder refreshTokenMaxReuse(Integer refreshTokenMaxReuse) {
         rep.setRefreshTokenMaxReuse(refreshTokenMaxReuse);
         return this;
     }
 
-    public RealmConfigBuilder ssoSessionIdleTimeout(Integer ssoSessionIdleTimeout) {
+    public RealmBuilder ssoSessionIdleTimeout(Integer ssoSessionIdleTimeout) {
         rep.setSsoSessionIdleTimeout(ssoSessionIdleTimeout);
         return this;
     }
 
-    public RealmConfigBuilder ssoSessionIdleTimeoutRememberMe(Integer ssoSessionIdleTimeoutRememberMe) {
+    public RealmBuilder ssoSessionIdleTimeoutRememberMe(Integer ssoSessionIdleTimeoutRememberMe) {
         rep.setSsoSessionIdleTimeoutRememberMe(ssoSessionIdleTimeoutRememberMe);
         return this;
     }
 
-    public RealmConfigBuilder ssoSessionMaxLifespan(Integer ssoSessionMaxLifespan) {
+    public RealmBuilder ssoSessionMaxLifespan(Integer ssoSessionMaxLifespan) {
         rep.setSsoSessionMaxLifespan(ssoSessionMaxLifespan);
         return this;
     }
 
-    public RealmConfigBuilder ssoSessionMaxLifespanRememberMe(Integer ssoSessionMaxLifespanRememberMe) {
+    public RealmBuilder ssoSessionMaxLifespanRememberMe(Integer ssoSessionMaxLifespanRememberMe) {
         rep.setSsoSessionMaxLifespanRememberMe(ssoSessionMaxLifespanRememberMe);
         return this;
     }
 
-    public RealmConfigBuilder clientSessionMaxLifespan(Integer clientSessionMaxLifespan) {
+    public RealmBuilder clientSessionMaxLifespan(Integer clientSessionMaxLifespan) {
         rep.setClientSessionMaxLifespan(clientSessionMaxLifespan);
         return this;
     }
 
-    public RealmConfigBuilder clientSessionIdleTimeout(Integer clientSessionIdleTimeout) {
+    public RealmBuilder clientSessionIdleTimeout(Integer clientSessionIdleTimeout) {
         rep.setClientSessionIdleTimeout(clientSessionIdleTimeout);
         return this;
     }
 
-    public RealmConfigBuilder bruteForceProtected(boolean enabled) {
+    public RealmBuilder bruteForceProtected(boolean enabled) {
         rep.setBruteForceProtected(enabled);
         return this;
     }
 
-    public RealmConfigBuilder failureFactor(int count) {
+    public RealmBuilder failureFactor(int count) {
         rep.setFailureFactor(count);
         return this;
     }
 
-    public RealmConfigBuilder duplicateEmailsAllowed(boolean allowed) {
+    public RealmBuilder duplicateEmailsAllowed(boolean allowed) {
         rep.setDuplicateEmailsAllowed(allowed);
         return this;
     }
 
-    public RealmConfigBuilder sslRequired(String sslRequired) {
+    public RealmBuilder sslRequired(String sslRequired) {
         rep.setSslRequired(sslRequired);
         return this;
     }
 
-    public RealmConfigBuilder identityProvider(IdentityProviderRepresentation identityProvider) {
+    public RealmBuilder identityProvider(IdentityProviderRepresentation identityProvider) {
         rep.addIdentityProvider(identityProvider);
         return this;
     }
 
-    public RealmConfigBuilder identityProviderMapper(IdentityProviderMapperRepresentation identityProviderMapper) {
+    public RealmBuilder identityProviderMapper(IdentityProviderMapperRepresentation identityProviderMapper) {
         rep.addIdentityProviderMapper(identityProviderMapper);
         return this;
     }
 
-    public RealmConfigBuilder setRememberMe(boolean enabled) {
+    public RealmBuilder setRememberMe(boolean enabled) {
         rep.setRememberMe(enabled);
         return this;
     }
 
-    public RealmConfigBuilder resetPasswordAllowed(boolean allowed) {
+    public RealmBuilder resetPasswordAllowed(boolean allowed) {
         rep.setResetPasswordAllowed(allowed);
         return this;
     }
 
-    public RealmConfigBuilder resetClientPolicies() {
+    public RealmBuilder resetClientPolicies() {
         rep.setParsedClientPolicies(null);
         return this;
     }
 
-    public RealmConfigBuilder clientPolicy(ClientPolicyRepresentation clientPolicyRep) {
+    public RealmBuilder clientPolicy(ClientPolicyRepresentation clientPolicyRep) {
         ClientPoliciesRepresentation clientPolicies = rep.getParsedClientPolicies();
         if (clientPolicies == null) {
             clientPolicies = new ClientPoliciesRepresentation();
@@ -343,12 +343,12 @@ public class RealmConfigBuilder {
         return this;
     }
 
-    public RealmConfigBuilder resetClientProfiles() {
+    public RealmBuilder resetClientProfiles() {
         rep.setParsedClientProfiles(null);
         return this;
     }
 
-    public RealmConfigBuilder clientProfile(ClientProfileRepresentation clientProfileRep) {
+    public RealmBuilder clientProfile(ClientProfileRepresentation clientProfileRep) {
         ClientProfilesRepresentation clientProfiles = rep.getParsedClientProfiles();
         if (clientProfiles == null) {
             clientProfiles = new ClientProfilesRepresentation();
@@ -359,117 +359,117 @@ public class RealmConfigBuilder {
         return this;
     }
 
-    public RealmConfigBuilder browserFlow(String browserFlow) {
+    public RealmBuilder browserFlow(String browserFlow) {
         rep.setBrowserFlow(browserFlow);
         return this;
     }
 
-    public RealmConfigBuilder requiredAction(RequiredActionProviderRepresentation requiredAction) {
+    public RealmBuilder requiredAction(RequiredActionProviderRepresentation requiredAction) {
         rep.setRequiredActions(Collections.combine(rep.getRequiredActions(), requiredAction));
         return this;
     }
 
-    public RealmConfigBuilder verifiableCredentialsEnabled(boolean enabled) {
+    public RealmBuilder verifiableCredentialsEnabled(boolean enabled) {
         rep.setVerifiableCredentialsEnabled(enabled);
         return this;
     }
 
-    public RealmConfigBuilder webAuthnPolicySignatureAlgorithms(List<String> algorithms) {
+    public RealmBuilder webAuthnPolicySignatureAlgorithms(List<String> algorithms) {
         rep.setWebAuthnPolicySignatureAlgorithms(algorithms);
         return this;
     }
 
-    public RealmConfigBuilder webAuthnPolicyAttestationConveyancePreference(String preference) {
+    public RealmBuilder webAuthnPolicyAttestationConveyancePreference(String preference) {
         rep.setWebAuthnPolicyAttestationConveyancePreference(preference);
         return this;
     }
 
-    public RealmConfigBuilder webAuthnPolicyAuthenticatorAttachment(String attachment) {
+    public RealmBuilder webAuthnPolicyAuthenticatorAttachment(String attachment) {
         rep.setWebAuthnPolicyAuthenticatorAttachment(attachment);
         return this;
     }
 
-    public RealmConfigBuilder webAuthnPolicyRequireResidentKey(String residentKey) {
+    public RealmBuilder webAuthnPolicyRequireResidentKey(String residentKey) {
         rep.setWebAuthnPolicyRequireResidentKey(residentKey);
         return this;
     }
 
-    public RealmConfigBuilder webAuthnPolicyUserVerificationRequirement(String requirement) {
+    public RealmBuilder webAuthnPolicyUserVerificationRequirement(String requirement) {
         rep.setWebAuthnPolicyUserVerificationRequirement(requirement);
         return this;
     }
 
-    public RealmConfigBuilder webAuthnPolicyRpEntityName(String entityName) {
+    public RealmBuilder webAuthnPolicyRpEntityName(String entityName) {
         rep.setWebAuthnPolicyRpEntityName(entityName);
         return this;
     }
 
-    public RealmConfigBuilder webAuthnPolicyRpId(String rpId) {
+    public RealmBuilder webAuthnPolicyRpId(String rpId) {
         rep.setWebAuthnPolicyRpId(rpId);
         return this;
     }
 
-    public RealmConfigBuilder webAuthnPolicyCreateTimeout(Integer timeout) {
+    public RealmBuilder webAuthnPolicyCreateTimeout(Integer timeout) {
         rep.setWebAuthnPolicyCreateTimeout(timeout);
         return this;
     }
 
-    public RealmConfigBuilder webAuthnPolicyAvoidSameAuthenticatorRegister(Boolean register) {
+    public RealmBuilder webAuthnPolicyAvoidSameAuthenticatorRegister(Boolean register) {
         rep.setWebAuthnPolicyAvoidSameAuthenticatorRegister(register);
         return this;
     }
 
-    public RealmConfigBuilder webAuthnPolicyPasswordlessSignatureAlgorithms(List<String> algorithms) {
+    public RealmBuilder webAuthnPolicyPasswordlessSignatureAlgorithms(List<String> algorithms) {
         rep.setWebAuthnPolicySignatureAlgorithms(algorithms);
         return this;
     }
 
-    public RealmConfigBuilder webAuthnPolicyPasswordlessAttestationConveyancePreference(String preference) {
+    public RealmBuilder webAuthnPolicyPasswordlessAttestationConveyancePreference(String preference) {
         rep.setWebAuthnPolicyPasswordlessAttestationConveyancePreference(preference);
         return this;
     }
 
-    public RealmConfigBuilder webAuthnPolicyPasswordlessAuthenticatorAttachment(String attachment) {
+    public RealmBuilder webAuthnPolicyPasswordlessAuthenticatorAttachment(String attachment) {
         rep.setWebAuthnPolicyPasswordlessAuthenticatorAttachment(attachment);
         return this;
     }
 
-    public RealmConfigBuilder webAuthnPolicyPasswordlessRequireResidentKey(String residentKey) {
+    public RealmBuilder webAuthnPolicyPasswordlessRequireResidentKey(String residentKey) {
         rep.setWebAuthnPolicyPasswordlessRequireResidentKey(residentKey);
         return this;
     }
 
-    public RealmConfigBuilder webAuthnPolicyPasswordlessUserVerificationRequirement(String requirement) {
+    public RealmBuilder webAuthnPolicyPasswordlessUserVerificationRequirement(String requirement) {
         rep.setWebAuthnPolicyPasswordlessUserVerificationRequirement(requirement);
         return this;
     }
 
-    public RealmConfigBuilder webAuthnPolicyPasswordlessRpEntityName(String entityName) {
+    public RealmBuilder webAuthnPolicyPasswordlessRpEntityName(String entityName) {
         rep.setWebAuthnPolicyPasswordlessRpEntityName(entityName);
         return this;
     }
 
-    public RealmConfigBuilder webAuthnPolicyPasswordlessCreateTimeout(Integer timeout) {
+    public RealmBuilder webAuthnPolicyPasswordlessCreateTimeout(Integer timeout) {
         rep.setWebAuthnPolicyPasswordlessCreateTimeout(timeout);
         return this;
     }
 
-    public RealmConfigBuilder webAuthnPolicyPasswordlessAvoidSameAuthenticatorRegister(Boolean register) {
+    public RealmBuilder webAuthnPolicyPasswordlessAvoidSameAuthenticatorRegister(Boolean register) {
         rep.setWebAuthnPolicyPasswordlessAvoidSameAuthenticatorRegister(register);
         return this;
     }
 
-    public RealmConfigBuilder webAuthnPolicyPasswordlessPasskeysEnabled(Boolean enabled) {
+    public RealmBuilder webAuthnPolicyPasswordlessPasskeysEnabled(Boolean enabled) {
         rep.setWebAuthnPolicyPasswordlessPasskeysEnabled(enabled);
         return this;
     }
 
-    public RealmConfigBuilder webAuthnPolicyAcceptableAaguids(List<String> aaguids) {
+    public RealmBuilder webAuthnPolicyAcceptableAaguids(List<String> aaguids) {
         rep.setWebAuthnPolicyAcceptableAaguids(aaguids);
         return this;
     }
 
-    public RealmConfigBuilder scimEnabled(boolean enabled) {
+    public RealmBuilder scimEnabled(boolean enabled) {
         rep.setScimApiEnabled(enabled);
         return this;
     }
@@ -497,7 +497,7 @@ public class RealmConfigBuilder {
      * @return this
      * @deprecated
      */
-    public RealmConfigBuilder update(RealmUpdate... update) {
+    public RealmBuilder update(RealmUpdate... update) {
         Arrays.stream(update).forEach(u -> u.update(rep));
         return this;
     }

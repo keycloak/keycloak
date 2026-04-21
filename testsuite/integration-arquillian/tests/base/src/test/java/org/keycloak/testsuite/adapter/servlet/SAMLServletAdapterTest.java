@@ -124,6 +124,7 @@ import org.keycloak.saml.processing.core.util.XMLSignatureUtil;
 import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.adapter.page.AdapterLogoutPage;
 import org.keycloak.testsuite.adapter.page.BadAssertionSalesPostSig;
 import org.keycloak.testsuite.adapter.page.BadClientSalesPostSigServlet;
@@ -180,7 +181,6 @@ import org.keycloak.testsuite.util.SamlClient.Binding;
 import org.keycloak.testsuite.util.SamlClientBuilder;
 import org.keycloak.testsuite.util.ServerURLs;
 import org.keycloak.testsuite.util.UIUtils;
-import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.testsuite.util.WaitUtils;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.keycloak.testsuite.utils.arquillian.ContainerConstants;
@@ -1023,8 +1023,8 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
     public void salesPostSigTestUnicodeCharacters() {
         final String username = "ěščřžýáíroàåéèíñòøöùüßåäöü";
         UserRepresentation user = UserBuilder
-          .edit(createUserRepresentation(username, "xyz@redhat.com", "ěščřžýáí", "RoàåéèíñòøöùüßÅÄÖÜ", true))
-          .addPassword(PASSWORD)
+          .update(createUserRepresentation(username, "xyz@redhat.com", "ěščřžýáí", "RoàåéèíñòøöùüßÅÄÖÜ", true))
+          .password(PASSWORD)
           .build();
 
         try (Creator<UserResource> u = Creator.create(testRealmResource(), user)) {
@@ -1049,8 +1049,8 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
     public void employeeSigTestUnicodeCharacters() {
         final String username = "ěščřžýáíroàåéèíñòøöùüßåäöü";
         UserRepresentation user = UserBuilder
-          .edit(createUserRepresentation(username, "xyz@redhat.com", "ěščřžýáí", "RoàåéèíñòøöùüßÅÄÖÜ", true))
-          .addPassword(PASSWORD)
+          .update(createUserRepresentation(username, "xyz@redhat.com", "ěščřžýáí", "RoàåéèíñòøöùüßÅÄÖÜ", true))
+          .password(PASSWORD)
           .build();
         try (Creator<UserResource> u = Creator.create(testRealmResource(), user)) {
             final RoleScopeResource realmRoleRes = u.resource().roles().realmLevel();

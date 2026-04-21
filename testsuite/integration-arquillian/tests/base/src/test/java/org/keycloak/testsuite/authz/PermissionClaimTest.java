@@ -46,12 +46,12 @@ import org.keycloak.representations.idm.authorization.PermissionRequest;
 import org.keycloak.representations.idm.authorization.ResourcePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
+import org.keycloak.testframework.realm.RoleBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.RealmBuilder;
-import org.keycloak.testsuite.util.RoleBuilder;
 import org.keycloak.testsuite.util.RolesBuilder;
-import org.keycloak.testsuite.util.UserBuilder;
 
 import org.hamcrest.Matchers;
 import org.junit.After;
@@ -79,7 +79,7 @@ public class PermissionClaimTest extends AbstractAuthzTest {
     public void addTestRealms(List<RealmRepresentation> testRealms) {
         testRealms.add(RealmBuilder.create().name("authz-test")
                 .roles(RolesBuilder.create().realmRole(RoleBuilder.create().name("uma_authorization").build()))
-                .user(UserBuilder.create().username("marta").password("password").addRoles("uma_authorization"))
+                .user(UserBuilder.create().username("marta").password("password").roles("uma_authorization"))
                 .user(UserBuilder.create().username("kolo").password("password"))
                 .client(ClientBuilder.create().clientId("resource-server-test")
                     .secret("secret")

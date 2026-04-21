@@ -32,8 +32,8 @@ import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.testframework.annotations.InjectClient;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.events.AdminEventAssertion;
+import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.ClientConfig;
-import org.keycloak.testframework.realm.ClientConfigBuilder;
 import org.keycloak.testframework.realm.ManagedClient;
 import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.tests.suites.DatabaseTest;
@@ -255,7 +255,7 @@ public class ClientProtocolMapperTest extends AbstractProtocolMapperTest {
     public static class OidcClient implements ClientConfig {
 
         @Override
-        public ClientConfigBuilder configure(ClientConfigBuilder client) {
+        public ClientBuilder configure(ClientBuilder client) {
             return client.clientId("oidcMapperClient")
                     .name("oidcMapperClient")
                     .protocol("openid-connect");
@@ -265,7 +265,7 @@ public class ClientProtocolMapperTest extends AbstractProtocolMapperTest {
     public static class SamlClient implements ClientConfig {
 
         @Override
-        public ClientConfigBuilder configure(ClientConfigBuilder client) {
+        public ClientBuilder configure(ClientBuilder client) {
             return client.clientId("samlMapperClient")
                     .name("samlMapperClient")
                     .protocol("saml");

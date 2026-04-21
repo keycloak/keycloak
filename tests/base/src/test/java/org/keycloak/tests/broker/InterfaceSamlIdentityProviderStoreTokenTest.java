@@ -18,8 +18,8 @@ import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.saml.SignatureAlgorithm;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
+import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
-import org.keycloak.testframework.realm.RealmConfigBuilder;
 import org.keycloak.testsuite.util.IdentityProviderBuilder;
 
 /**
@@ -36,7 +36,7 @@ public interface InterfaceSamlIdentityProviderStoreTokenTest extends InterfaceId
     public static class IdpRealmConfig implements RealmConfig {
 
         @Override
-        public RealmConfigBuilder configure(RealmConfigBuilder realm) {
+        public RealmBuilder configure(RealmBuilder realm) {
             realm.identityProvider(IdentityProviderBuilder.create()
                     .providerId(SAMLIdentityProviderFactory.PROVIDER_ID)
                     .alias(IDP_ALIAS)
@@ -82,7 +82,7 @@ public interface InterfaceSamlIdentityProviderStoreTokenTest extends InterfaceId
     public static class ExternalRealmConfig implements RealmConfig {
 
         @Override
-        public RealmConfigBuilder configure(RealmConfigBuilder realm) {
+        public RealmBuilder configure(RealmBuilder realm) {
             realm.addClient("http://localhost:8080/realms/default")
                     .name("saml-client")
                     .protocol(SamlProtocol.LOGIN_PROTOCOL)

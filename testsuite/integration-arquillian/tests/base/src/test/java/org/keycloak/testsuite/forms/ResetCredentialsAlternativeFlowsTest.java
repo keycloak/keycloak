@@ -31,6 +31,7 @@ import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AbstractAuthenticationTest;
 import org.keycloak.testsuite.actions.AbstractAppInitiatedActionTest;
 import org.keycloak.testsuite.admin.AdminApiUtil;
@@ -50,7 +51,6 @@ import org.keycloak.testsuite.util.FlowUtil;
 import org.keycloak.testsuite.util.GreenMailRule;
 import org.keycloak.testsuite.util.MailUtils;
 import org.keycloak.testsuite.util.URLUtils;
-import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
 import org.jboss.arquillian.graphene.page.Page;

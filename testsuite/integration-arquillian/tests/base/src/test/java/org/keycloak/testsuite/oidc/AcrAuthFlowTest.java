@@ -47,12 +47,12 @@ import org.keycloak.services.clientpolicy.condition.AcrCondition;
 import org.keycloak.services.clientpolicy.condition.AcrConditionFactory;
 import org.keycloak.services.clientpolicy.executor.AuthenticationFlowSelectorExecutor;
 import org.keycloak.services.clientpolicy.executor.AuthenticationFlowSelectorExecutorFactory;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginTotpPage;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.ClientPoliciesUtil;
 import org.keycloak.testsuite.util.FlowUtil;
-import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.util.JsonSerialization;
 
 import org.jboss.arquillian.graphene.page.Page;
@@ -144,8 +144,7 @@ public class AcrAuthFlowTest extends AbstractOIDCScopeTest{
                 .password(password);
 
         if (totpSecret != null){
-            builder.totpSecret(totpSecret)
-                    .otpEnabled();
+            builder.totpSecret(totpSecret);
         }
 
         return builder.build();

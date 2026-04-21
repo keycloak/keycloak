@@ -74,14 +74,14 @@ import org.keycloak.representations.idm.authorization.ResourceServerRepresentati
 import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
+import org.keycloak.testframework.realm.RoleBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.client.resources.TestApplicationResourceUrls;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.RealmBuilder;
-import org.keycloak.testsuite.util.RoleBuilder;
 import org.keycloak.testsuite.util.RolesBuilder;
-import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.util.JsonSerialization;
 
 import org.apache.http.client.HttpClient;
@@ -136,9 +136,9 @@ public class EntitlementAPITest extends AbstractAuthzTest {
     public void addTestRealms(List<RealmRepresentation> testRealms) {
         testRealms.add(RealmBuilder.create().name("authz-test")
                 .roles(RolesBuilder.create().realmRole(RoleBuilder.create().name("uma_authorization").build()))
-                .user(UserBuilder.create().username("marta").password("password").addRoles("uma_authorization"))
+                .user(UserBuilder.create().username("marta").password("password").roles("uma_authorization"))
                 .user(UserBuilder.create().username("kolo").password("password"))
-                .user(UserBuilder.create().username("offlineuser").password("password").addRoles("offline_access"))
+                .user(UserBuilder.create().username("offlineuser").password("password").roles("offline_access"))
                 .client(ClientBuilder.create().clientId(RESOURCE_SERVER_TEST)
                         .secret("secret")
                         .authorizationServicesEnabled(true)

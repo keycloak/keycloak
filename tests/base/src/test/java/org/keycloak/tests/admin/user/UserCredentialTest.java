@@ -24,8 +24,8 @@ import org.keycloak.testframework.events.AdminEventAssertion;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
 import org.keycloak.testframework.realm.ManagedUser;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.realm.UserConfig;
-import org.keycloak.testframework.realm.UserConfigBuilder;
 import org.keycloak.tests.suites.DatabaseTest;
 import org.keycloak.tests.utils.admin.AdminApiUtil;
 import org.keycloak.tests.utils.admin.AdminEventPaths;
@@ -60,7 +60,7 @@ public class UserCredentialTest extends AbstractUserTest {
     @Test
     @DatabaseTest
     public void resetUserPassword() {
-        UserRepresentation userRep = UserConfigBuilder.create()
+        UserRepresentation userRep = UserBuilder.create()
                 .username("user1").name("User", "One").email("user1@localhost").build();
 
         String userId = createUser(userRep);
@@ -107,7 +107,7 @@ public class UserCredentialTest extends AbstractUserTest {
     public void loginShouldFailAfterPasswordDeleted() {
         String userName = "credential-tester";
         String userPass = "s3cr37";
-        UserRepresentation userRep = UserConfigBuilder.create()
+        UserRepresentation userRep = UserBuilder.create()
                 .username(userName).password(userPass).name("credential", "tester").email("credential@tester").build();
         String userId = createUser(userRep);
 
@@ -308,7 +308,7 @@ public class UserCredentialTest extends AbstractUserTest {
     private static class UserCredentialJohnDohUserConf implements UserConfig {
 
         @Override
-        public UserConfigBuilder configure(UserConfigBuilder builder) {
+        public UserBuilder configure(UserBuilder builder) {
             builder.username("john-doh@localhost");
             builder.password("password");
             builder.name("John", "Doh");
@@ -322,7 +322,7 @@ public class UserCredentialTest extends AbstractUserTest {
     private static class UserCredentialTestUserConf implements UserConfig {
 
         @Override
-        public UserConfigBuilder configure(UserConfigBuilder builder) {
+        public UserBuilder configure(UserBuilder builder) {
             builder.username("test-user@localhost");
             builder.password("password");
             builder.name("Tom", "Brady");
@@ -336,7 +336,7 @@ public class UserCredentialTest extends AbstractUserTest {
     private static class UserCredentialOtp1UserConf implements UserConfig {
 
         @Override
-        public UserConfigBuilder configure(UserConfigBuilder builder) {
+        public UserBuilder configure(UserBuilder builder) {
             builder.username("user-with-one-configured-otp");
             builder.password("password");
             builder.name("Otp", "1");
@@ -351,7 +351,7 @@ public class UserCredentialTest extends AbstractUserTest {
     private static class UserCredentialOtp2UserConf implements UserConfig {
 
         @Override
-        public UserConfigBuilder configure(UserConfigBuilder builder) {
+        public UserBuilder configure(UserBuilder builder) {
             builder.username("user-with-two-configured-otp");
             builder.password("password");
             builder.name("Otp", "2");

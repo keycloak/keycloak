@@ -42,10 +42,10 @@ import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
-import org.keycloak.testframework.realm.GroupConfigBuilder;
+import org.keycloak.testframework.realm.GroupBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
-import org.keycloak.testframework.realm.RealmConfigBuilder;
 import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.tests.suites.DatabaseTest;
 import org.keycloak.tests.utils.admin.AdminApiUtil;
@@ -186,7 +186,7 @@ public class GroupMappersTest extends AbstractGroupTest {
         }
 
         @Override
-        public RealmConfigBuilder configure(RealmConfigBuilder realm) {
+        public RealmBuilder configure(RealmBuilder realm) {
             List<ProtocolMapperRepresentation> mappers = createMappers();
 
             realm.addClient(CLIENT_ID)
@@ -198,7 +198,7 @@ public class GroupMappersTest extends AbstractGroupTest {
             realm.eventsEnabled(true)
                     .clientRoles(CLIENT_ID, CLIENT_ROLE);
 
-            GroupRepresentation subGroup = GroupConfigBuilder.create()
+            GroupRepresentation subGroup = GroupBuilder.create()
                     .name(LEVEL_2_GROUP)
                     .realmRoles("admin")
                     .clientRoles(CLIENT_ID, CLIENT_ROLE)
@@ -206,7 +206,7 @@ public class GroupMappersTest extends AbstractGroupTest {
                     .build();
 
 
-            GroupRepresentation subGroup2 = GroupConfigBuilder.create()
+            GroupRepresentation subGroup2 = GroupBuilder.create()
                     .name("level2group2")
                     .realmRoles("admin")
                     .clientRoles(CLIENT_ID, CLIENT_ROLE)

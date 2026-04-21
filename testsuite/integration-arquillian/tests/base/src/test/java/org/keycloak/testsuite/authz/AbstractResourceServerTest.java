@@ -40,11 +40,11 @@ import org.keycloak.representations.idm.authorization.Permission;
 import org.keycloak.representations.idm.authorization.PermissionRequest;
 import org.keycloak.representations.idm.authorization.ResourceOwnerRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
+import org.keycloak.testframework.realm.RoleBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.RealmBuilder;
-import org.keycloak.testsuite.util.RoleBuilder;
 import org.keycloak.testsuite.util.RolesBuilder;
-import org.keycloak.testsuite.util.UserBuilder;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -65,14 +65,14 @@ public abstract class AbstractResourceServerTest extends AbstractAuthzTest {
                         .realmRole(RoleBuilder.create().name("uma_protection").build())
                 )
                 .user(UserBuilder.create().username("marta").password("password")
-                        .addRoles("uma_authorization", "uma_protection")
-                        .role("resource-server-test", "uma_protection"))
+                        .roles("uma_authorization", "uma_protection")
+                        .clientRoles("resource-server-test", "uma_protection"))
                 .user(UserBuilder.create().username("alice").password("password")
-                        .addRoles("uma_authorization", "uma_protection")
-                        .role("resource-server-test", "uma_protection"))
+                        .roles("uma_authorization", "uma_protection")
+                        .clientRoles("resource-server-test", "uma_protection"))
                 .user(UserBuilder.create().username("kolo").password("password")
-                        .addRoles("uma_authorization", "uma_protection")
-                        .role("resource-server-test", "uma_protection")
+                        .roles("uma_authorization", "uma_protection")
+                        .clientRoles("resource-server-test", "uma_protection")
                 )
                 .client(ClientBuilder.create().clientId("resource-server-test")
                         .secret("secret")

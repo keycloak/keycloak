@@ -62,13 +62,13 @@ import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.TestApp;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectTestApp;
-import org.keycloak.testframework.realm.ClientConfigBuilder;
+import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.ManagedUser;
+import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
-import org.keycloak.testframework.realm.RealmConfigBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.realm.UserConfig;
-import org.keycloak.testframework.realm.UserConfigBuilder;
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testframework.server.KeycloakServerConfig;
@@ -149,7 +149,7 @@ public class ImpersonationTest {
     @Test
     public void testImpersonateByMasterImpersonator() {
         String userId;
-        try (Response response = masterRealm.admin().users().create(UserConfigBuilder.create().username("master-impersonator").build())) {
+        try (Response response = masterRealm.admin().users().create(UserBuilder.create().username("master-impersonator").build())) {
             userId = ApiUtil.getCreatedId(response);
         }
 
@@ -202,7 +202,7 @@ public class ImpersonationTest {
     @Test
     public void testImpersonateByMastertBadImpersonator() {
         String userId;
-        try (Response response = masterRealm.admin().users().create(UserConfigBuilder.create().username("master-bad-impersonator").build())) {
+        try (Response response = masterRealm.admin().users().create(UserBuilder.create().username("master-bad-impersonator").build())) {
             userId = ApiUtil.getCreatedId(response);
         }
         masterRealm.admin().users().get(userId).resetPassword(CredentialBuilder.create().password("password").build());
@@ -236,7 +236,7 @@ public class ImpersonationTest {
     @Test
     public void testImpersonationBySameRealmServiceAccount() throws Exception {
         // Create test client service account
-        ClientRepresentation clientApp = ClientConfigBuilder.create()
+        ClientRepresentation clientApp = ClientBuilder.create()
                 .clientId("service-account-cl")
                 .secret("password")
                 .serviceAccountsEnabled(true)
@@ -262,7 +262,7 @@ public class ImpersonationTest {
     @Test
     public void testImpersonationByMasterRealmServiceAccount() throws Exception {
         // Create test client service account
-        ClientRepresentation clientApp = ClientConfigBuilder.create()
+        ClientRepresentation clientApp = ClientBuilder.create()
                 .clientId("service-account-cl")
                 .secret("password")
                 .serviceAccountsEnabled(true)
@@ -476,7 +476,7 @@ public class ImpersonationTest {
     private static class ImpersonationTestRealmConfig implements RealmConfig {
 
         @Override
-        public RealmConfigBuilder configure(RealmConfigBuilder config) {
+        public RealmBuilder configure(RealmBuilder config) {
             config.addClient("myclient").clientId("myclient")
                     .publicClient(true).directAccessGrantsEnabled(true);
 
@@ -501,7 +501,7 @@ public class ImpersonationTest {
     private static class TestUserConfig implements UserConfig {
 
         @Override
-        public UserConfigBuilder configure(UserConfigBuilder user) {
+        public UserBuilder configure(UserBuilder user) {
             user.username("test-user");
             user.password("password");
             user.name("My", "Test");

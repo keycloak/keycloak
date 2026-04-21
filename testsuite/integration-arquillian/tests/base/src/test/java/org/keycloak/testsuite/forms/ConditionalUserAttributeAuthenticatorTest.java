@@ -16,6 +16,8 @@ import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.realm.GroupBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.pages.ErrorPage;
@@ -23,8 +25,6 @@ import org.keycloak.testsuite.pages.LoginUsernameOnlyPage;
 import org.keycloak.testsuite.pages.PasswordPage;
 import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.FlowUtil;
-import org.keycloak.testsuite.util.GroupBuilder;
-import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.testsuite.util.userprofile.UserProfileUtil;
 
 import org.jboss.arquillian.graphene.page.Page;
@@ -77,25 +77,25 @@ public class ConditionalUserAttributeAuthenticatorTest extends AbstractTestRealm
     private void createUsers() {
         GroupRepresentation subGroup = GroupBuilder.create().name(SUBGROUP).build();
         managedRealm.admin().groups().add(subGroup);
-        GroupRepresentation approvedGroup = GroupBuilder.create().name(APPROVED_GROUP).subGroups(List.of(subGroup))
-            .attributes(Map.of(X_APPROVE_ATTR, List.of(X_APPROVE_ATTR_VALUE)))
+        GroupRepresentation approvedGroup = GroupBuilder.create().name(APPROVED_GROUP).subGroups(subGroup)
+            .setAttributes(Map.of(X_APPROVE_ATTR, List.of(X_APPROVE_ATTR_VALUE)))
             .build();
         managedRealm.admin().groups().add(approvedGroup);
         
         UserRepresentation approved = UserBuilder.create().username(APPROVED_USER).password(PASSWORD)
-            .addAttribute(X_APPROVE_ATTR, X_APPROVE_ATTR_VALUE)
+            .attribute(X_APPROVE_ATTR, X_APPROVE_ATTR_VALUE)
             .build();
         managedRealm.admin().users().create(approved);
 
         UserRepresentation approvedByGroup = UserBuilder.create().username(APPROVED_BY_GROUP_USER).password(PASSWORD)
-            .addAttribute(X_APPROVE_ATTR, X_APPROVE_ATTR_VALUE)
-            .addGroups(APPROVED_GROUP)
+            .attribute(X_APPROVE_ATTR, X_APPROVE_ATTR_VALUE)
+            .groups(APPROVED_GROUP)
             .build();
         managedRealm.admin().users().create(approvedByGroup);
 
         UserRepresentation approvedBySubgroup = UserBuilder.create().username(APPROVED_BY_SUBGROUP_USER).password(PASSWORD)
-            .addAttribute(X_APPROVE_ATTR, X_APPROVE_ATTR_VALUE)
-            .addGroups(SUBGROUP)
+            .attribute(X_APPROVE_ATTR, X_APPROVE_ATTR_VALUE)
+            .groups(SUBGROUP)
             .build();
         managedRealm.admin().users().create(approvedBySubgroup);
     }

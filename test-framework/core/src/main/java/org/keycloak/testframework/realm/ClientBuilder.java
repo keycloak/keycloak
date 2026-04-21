@@ -8,117 +8,117 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.testframework.util.Collections;
 
-public class ClientConfigBuilder {
+public class ClientBuilder {
 
     private final ClientRepresentation rep;
 
-    private ClientConfigBuilder(ClientRepresentation rep) {
+    private ClientBuilder(ClientRepresentation rep) {
         this.rep = rep;
     }
 
-    public static ClientConfigBuilder create() {
+    public static ClientBuilder create() {
         ClientRepresentation rep = new ClientRepresentation();
         rep.setEnabled(true);
-        return new ClientConfigBuilder(rep);
+        return new ClientBuilder(rep);
     }
 
-    public static ClientConfigBuilder update(ClientRepresentation rep) {
-        return new ClientConfigBuilder(rep);
+    public static ClientBuilder update(ClientRepresentation rep) {
+        return new ClientBuilder(rep);
     }
 
-    public ClientConfigBuilder enabled(boolean enabled) {
+    public ClientBuilder enabled(boolean enabled) {
         rep.setEnabled(enabled);
         return this;
     }
 
-    public ClientConfigBuilder clientId(String clientId) {
+    public ClientBuilder clientId(String clientId) {
         rep.setClientId(clientId);
         return this;
     }
 
-    public ClientConfigBuilder id(String id) {
+    public ClientBuilder id(String id) {
         rep.setId(id);
         return this;
     }
 
-    public ClientConfigBuilder secret(String secret) {
+    public ClientBuilder secret(String secret) {
         rep.setSecret(secret);
         return this;
     }
 
-    public ClientConfigBuilder name(String name) {
+    public ClientBuilder name(String name) {
         rep.setName(name);
         return this;
     }
 
-    public ClientConfigBuilder description(String description) {
+    public ClientBuilder description(String description) {
         rep.setDescription(description);
         return this;
     }
 
-    public ClientConfigBuilder publicClient(boolean publicClient) {
+    public ClientBuilder publicClient(boolean publicClient) {
         rep.setPublicClient(publicClient);
         return this;
     }
 
-    public ClientConfigBuilder redirectUris(String... redirectUris) {
+    public ClientBuilder redirectUris(String... redirectUris) {
         rep.setRedirectUris(Collections.combine(rep.getRedirectUris(), redirectUris));
         return this;
     }
 
-    public ClientConfigBuilder adminUrl(String adminUrl) {
+    public ClientBuilder adminUrl(String adminUrl) {
         rep.setAdminUrl(adminUrl);
         return this;
     }
 
-    public ClientConfigBuilder rootUrl(String rootUrl) {
+    public ClientBuilder rootUrl(String rootUrl) {
         rep.setRootUrl(rootUrl);
         return this;
     }
 
-    public ClientConfigBuilder baseUrl(String baseUrl) {
+    public ClientBuilder baseUrl(String baseUrl) {
         rep.setBaseUrl(baseUrl);
         return this;
     }
 
-    public ClientConfigBuilder protocol(String protocol) {
+    public ClientBuilder protocol(String protocol) {
         rep.setProtocol(protocol);
         return this;
     }
 
-    public ClientConfigBuilder bearerOnly(boolean bearerOnly) {
+    public ClientBuilder bearerOnly(boolean bearerOnly) {
         rep.setBearerOnly(bearerOnly);
         return this;
     }
 
 
-    public ClientConfigBuilder serviceAccountsEnabled(boolean enabled) {
+    public ClientBuilder serviceAccountsEnabled(boolean enabled) {
         rep.setServiceAccountsEnabled(enabled);
         return this;
     }
 
-    public ClientConfigBuilder directAccessGrantsEnabled(boolean enabled) {
+    public ClientBuilder directAccessGrantsEnabled(boolean enabled) {
         rep.setDirectAccessGrantsEnabled(enabled);
         return this;
     }
 
-    public ClientConfigBuilder authorizationServicesEnabled(boolean enabled) {
+    public ClientBuilder authorizationServicesEnabled(boolean enabled) {
         serviceAccountsEnabled(enabled);
         rep.setAuthorizationServicesEnabled(enabled);
         return this;
     }
 
-    public ClientConfigBuilder fullScopeEnabled(boolean enabled) {
+    public ClientBuilder fullScopeEnabled(boolean enabled) {
         rep.setFullScopeAllowed(enabled);
         return this;
     }
 
-    public ClientConfigBuilder authenticatorType(String authenticatorType) {
+    public ClientBuilder authenticatorType(String authenticatorType) {
         rep.setClientAuthenticatorType(authenticatorType);
         return this;
     }
 
-    public ClientConfigBuilder attribute(String key, String value) {
+    public ClientBuilder attribute(String key, String value) {
         if (rep.getAttributes() == null) {
             rep.setAttributes(new HashMap<>());
         }
@@ -127,27 +127,27 @@ public class ClientConfigBuilder {
         return this;
     }
 
-    public ClientConfigBuilder defaultClientScopes(String... defaultClientScopes) {
+    public ClientBuilder defaultClientScopes(String... defaultClientScopes) {
         rep.setDefaultClientScopes(Collections.combine(rep.getDefaultClientScopes(), defaultClientScopes));
         return this;
     }
 
-    public ClientConfigBuilder optionalClientScopes(String... optionalClientScopes) {
+    public ClientBuilder optionalClientScopes(String... optionalClientScopes) {
         rep.setOptionalClientScopes(Collections.combine(rep.getOptionalClientScopes(), optionalClientScopes));
         return this;
     }
 
-    public ClientConfigBuilder protocolMappers(List<ProtocolMapperRepresentation> mappers) {
+    public ClientBuilder protocolMappers(List<ProtocolMapperRepresentation> mappers) {
         rep.setProtocolMappers(Collections.combine(rep.getProtocolMappers(), mappers));
         return this;
     }
 
-    public ClientConfigBuilder consentRequired(boolean enabled) {
+    public ClientBuilder consentRequired(boolean enabled) {
         rep.setConsentRequired(enabled);
         return this;
     }
 
-    public ClientConfigBuilder webOrigins(String... webOrigins) {
+    public ClientBuilder webOrigins(String... webOrigins) {
         rep.setWebOrigins(Collections.combine(rep.getWebOrigins(), webOrigins));
         return this;
     }
@@ -161,7 +161,7 @@ public class ClientConfigBuilder {
      * @return this
      * @deprecated
      */
-    public ClientConfigBuilder update(ClientUpdate... update) {
+    public ClientBuilder update(ClientUpdate... update) {
         Arrays.stream(update).forEach(u -> u.update(rep));
         return this;
     }

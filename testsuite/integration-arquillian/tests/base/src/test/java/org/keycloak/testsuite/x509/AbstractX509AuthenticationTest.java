@@ -51,6 +51,7 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.userprofile.config.UPAttribute;
 import org.keycloak.representations.userprofile.config.UPAttributePermissions;
 import org.keycloak.representations.userprofile.config.UPConfig;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
@@ -66,7 +67,6 @@ import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.DroneUtils;
 import org.keycloak.testsuite.util.HtmlUnitBrowser;
 import org.keycloak.testsuite.util.RealmBuilder;
-import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.testsuite.util.WaitUtils;
 import org.keycloak.userprofile.UserProfileConstants;
 
@@ -330,7 +330,7 @@ public abstract class AbstractX509AuthenticationTest extends AbstractTestRealmKe
                 .email("localhost@localhost")
                 .enabled(true)
                 .password("password")
-                .addAttribute("x509_issuer_identity", "Keycloak Intermediate CA")
+                .attribute("x509_issuer_identity", "Keycloak Intermediate CA")
                 .build();
 
         ClientRepresentation client = findTestApp(testRealm);

@@ -24,6 +24,7 @@ import jakarta.mail.internet.MimeMessage;
 
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AbstractChangeImportedUserPasswordsTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.AdminApiUtil;
@@ -41,7 +42,6 @@ import org.keycloak.testsuite.pages.VerifyEmailPage;
 import org.keycloak.testsuite.util.GreenMailRule;
 import org.keycloak.testsuite.util.MailUtils;
 import org.keycloak.testsuite.util.UIUtils;
-import org.keycloak.testsuite.util.UserBuilder;
 
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
@@ -65,8 +65,8 @@ public class BrowserButtonsTest extends AbstractChangeImportedUserPasswordsTest 
                 .username("login-test")
                 .email("login@test.com")
                 .enabled(true)
-                .requiredAction(UserModel.RequiredAction.UPDATE_PROFILE.toString())
-                .requiredAction(UserModel.RequiredAction.UPDATE_PASSWORD.toString())
+                .requiredActions(UserModel.RequiredAction.UPDATE_PROFILE.toString())
+                .requiredActions(UserModel.RequiredAction.UPDATE_PASSWORD.toString())
                 .build();
 
         generatePasswords("login-test");

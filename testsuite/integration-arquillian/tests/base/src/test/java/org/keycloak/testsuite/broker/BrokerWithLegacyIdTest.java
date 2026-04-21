@@ -25,10 +25,10 @@ import org.keycloak.models.IdentityProviderSyncMode;
 import org.keycloak.representations.idm.FederatedIdentityRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.broker.oidc.LegacyIdIdentityProviderFactory;
 import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.FederatedIdentityBuilder;
-import org.keycloak.testsuite.util.UserBuilder;
 
 import org.junit.Test;
 

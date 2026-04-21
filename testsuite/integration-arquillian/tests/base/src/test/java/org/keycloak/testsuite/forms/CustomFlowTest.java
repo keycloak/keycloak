@@ -39,6 +39,7 @@ import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.pages.AppPage;
@@ -54,7 +55,6 @@ import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.ExecutionBuilder;
 import org.keycloak.testsuite.util.FlowBuilder;
 import org.keycloak.testsuite.util.RealmRepUtil;
-import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
 import org.jboss.arquillian.graphene.page.Page;

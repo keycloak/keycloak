@@ -45,14 +45,14 @@ import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.realm.RoleBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.pages.OAuthGrantPage;
 import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.ClientManager;
-import org.keycloak.testsuite.util.RoleBuilder;
-import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.util.TokenUtil;
 
@@ -85,9 +85,9 @@ public class OIDCScopeTest extends AbstractOIDCScopeTest {
                 .firstName("John")
                 .lastName("Doe")
                 .password("password")
-                .role("account", "manage-account")
-                .role("account", "view-profile")
-                .addRoles("role-1", "role-2")
+                .clientRoles("account", "manage-account")
+                .clientRoles("account", "view-profile")
+                .roles("role-1", "role-2")
                 .build();
 
         user.setEmailVerified(true);
@@ -126,7 +126,7 @@ public class OIDCScopeTest extends AbstractOIDCScopeTest {
                 .username("role-1-user")
                 .enabled(true)
                 .password("password")
-                .addRoles("role-1")
+                .roles("role-1")
                 .build();
         testRealm.getUsers().add(user);
 
@@ -134,7 +134,7 @@ public class OIDCScopeTest extends AbstractOIDCScopeTest {
                 .username("role-2-user")
                 .enabled(true)
                 .password("password")
-                .addRoles("role-2")
+                .roles("role-2")
                 .build();
         testRealm.getUsers().add(user);
 
@@ -142,7 +142,7 @@ public class OIDCScopeTest extends AbstractOIDCScopeTest {
                 .username("role-parent-user")
                 .enabled(true)
                 .password("password")
-                .addRoles("role-parent")
+                .roles("role-parent")
                 .build();
         testRealm.getUsers().add(user);
 
@@ -150,7 +150,7 @@ public class OIDCScopeTest extends AbstractOIDCScopeTest {
                 .username("group-role-1-user")
                 .enabled(true)
                 .password("password")
-                .addGroups("group-role-1")
+                .groups("group-role-1")
                 .build();
         testRealm.getUsers().add(user);
     }

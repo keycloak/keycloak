@@ -30,8 +30,8 @@ import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.events.AdminEventAssertion;
 import org.keycloak.testframework.events.AdminEvents;
 import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
-import org.keycloak.testframework.realm.RealmConfigBuilder;
 import org.keycloak.tests.utils.admin.AdminApiUtil;
 import org.keycloak.tests.utils.admin.AdminEventPaths;
 
@@ -92,7 +92,7 @@ public class AdminEventAuthDetailsTest {
     public static class AdminEventsAuthDetailsRealmConfig implements RealmConfig {
 
         @Override
-        public RealmConfigBuilder configure(RealmConfigBuilder realm) {
+        public RealmBuilder configure(RealmBuilder realm) {
             realm.addClient("client").name("client").publicClient(true).directAccessGrantsEnabled(true);
             realm.addUser("admin").password("password").name("My", "Admin").email("admin@localhost")
                     .emailVerified(true).clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.REALM_ADMIN);

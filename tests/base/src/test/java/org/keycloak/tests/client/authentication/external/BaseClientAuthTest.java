@@ -12,8 +12,8 @@ import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.oauth.OAuthIdentityProvider;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthIdentityProvider;
 import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
-import org.keycloak.testframework.realm.RealmConfigBuilder;
 import org.keycloak.testsuite.util.IdentityProviderBuilder;
 
 import org.junit.jupiter.api.Assertions;
@@ -148,7 +148,7 @@ public class BaseClientAuthTest extends AbstractBaseClientAuthTest {
     public static class ExernalClientAuthRealmConfig implements RealmConfig {
 
         @Override
-        public RealmConfigBuilder configure(RealmConfigBuilder realm) {
+        public RealmBuilder configure(RealmBuilder realm) {
             realm.identityProvider(
                     IdentityProviderBuilder.create()
                             .providerId(OIDCIdentityProviderFactory.PROVIDER_ID)

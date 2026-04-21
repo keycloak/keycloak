@@ -40,7 +40,7 @@ import org.keycloak.testframework.admin.AdminClientFactory;
 import org.keycloak.testframework.annotations.InjectAdminClientFactory;
 import org.keycloak.testframework.annotations.InjectUser;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
-import org.keycloak.testframework.realm.ClientConfigBuilder;
+import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.ManagedUser;
 import org.keycloak.testframework.util.ApiUtil;
 
@@ -278,7 +278,7 @@ public class PermissionRESTTest extends AbstractPermissionTest {
                 .add(List.of(manageRealmRole));
 
         // Create a regular test client with authorization enabled
-        ClientRepresentation regularClient = ClientConfigBuilder.create()
+        ClientRepresentation regularClient = ClientBuilder.create()
                 .clientId("regular-authz-client")
                 .secret("secret")
                 .serviceAccountsEnabled(true)

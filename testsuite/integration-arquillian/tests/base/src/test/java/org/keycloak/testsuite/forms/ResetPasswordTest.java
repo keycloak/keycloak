@@ -56,6 +56,7 @@ import org.keycloak.services.resources.LoginActionsService;
 import org.keycloak.storage.StorageId;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageProviderModel;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.AdminApiUtil;
@@ -85,7 +86,6 @@ import org.keycloak.testsuite.util.TestAppHelper;
 import org.keycloak.testsuite.util.UIUtils;
 import org.keycloak.testsuite.util.URLUtils;
 import org.keycloak.testsuite.util.UserActionTokenBuilder;
-import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.testsuite.util.WaitUtils;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 

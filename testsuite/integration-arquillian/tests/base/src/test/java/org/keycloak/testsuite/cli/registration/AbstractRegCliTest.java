@@ -30,10 +30,10 @@ import org.keycloak.services.clientregistration.policy.ClientRegistrationPolicy;
 import org.keycloak.services.clientregistration.policy.ClientRegistrationPolicyManager;
 import org.keycloak.services.clientregistration.policy.RegistrationAuth;
 import org.keycloak.services.clientregistration.policy.impl.TrustedHostClientRegistrationPolicyFactory;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.cli.AbstractCliTest;
 import org.keycloak.testsuite.cli.KcRegExec;
 import org.keycloak.testsuite.util.ClientBuilder;
-import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.util.JsonSerialization;
 
 import org.junit.Before;

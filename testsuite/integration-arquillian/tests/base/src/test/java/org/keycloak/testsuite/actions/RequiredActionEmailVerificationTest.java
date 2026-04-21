@@ -43,6 +43,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.AdminApiUtil;
@@ -66,7 +67,6 @@ import org.keycloak.testsuite.util.MailUtils;
 import org.keycloak.testsuite.util.SecondBrowser;
 import org.keycloak.testsuite.util.TestAppHelper;
 import org.keycloak.testsuite.util.UserActionTokenBuilder;
-import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
 
 import org.hamcrest.Matchers;

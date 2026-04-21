@@ -33,10 +33,10 @@ import org.keycloak.representations.idm.authorization.ClientScopePolicyRepresent
 import org.keycloak.representations.idm.authorization.PermissionRequest;
 import org.keycloak.representations.idm.authorization.ResourcePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
+import org.keycloak.testframework.realm.ClientScopeBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.util.ClientBuilder;
-import org.keycloak.testsuite.util.ClientScopeBuilder;
 import org.keycloak.testsuite.util.RealmBuilder;
-import org.keycloak.testsuite.util.UserBuilder;
 
 import org.junit.Before;
 import org.junit.Test;

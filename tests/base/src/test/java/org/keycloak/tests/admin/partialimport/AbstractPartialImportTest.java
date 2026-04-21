@@ -26,13 +26,13 @@ import org.keycloak.testframework.annotations.InjectClient;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.events.AdminEvents;
 import org.keycloak.testframework.injection.LifeCycle;
+import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.ClientConfig;
-import org.keycloak.testframework.realm.ClientConfigBuilder;
 import org.keycloak.testframework.realm.ManagedClient;
 import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
-import org.keycloak.testframework.realm.RealmConfigBuilder;
-import org.keycloak.testframework.realm.UserConfigBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.server.KeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 import org.keycloak.util.JsonSerialization;
@@ -111,7 +111,7 @@ public class AbstractPartialImportTest {
         List<UserRepresentation> users = new ArrayList<>();
 
         for (int i = 0; i < NUM_ENTITIES; i++) {
-            UserRepresentation user = UserConfigBuilder.create().username(USER_PREFIX + i).email(USER_PREFIX + i + "@foo.com").name("foo", "bar").build();
+            UserRepresentation user = UserBuilder.create().username(USER_PREFIX + i).email(USER_PREFIX + i + "@foo.com").name("foo", "bar").build();
             users.add(user);
         }
 
@@ -122,7 +122,7 @@ public class AbstractPartialImportTest {
         List<UserRepresentation> users = new ArrayList<>();
 
         for (int i = 0; i < NUM_ENTITIES; i++) {
-            UserRepresentation user = UserConfigBuilder.create().id(UUID.randomUUID().toString()).username(USER_PREFIX + i).email(USER_PREFIX + i + "@foo.com").name("foo", "bar").build();
+            UserRepresentation user = UserBuilder.create().id(UUID.randomUUID().toString()).username(USER_PREFIX + i).email(USER_PREFIX + i + "@foo.com").name("foo", "bar").build();
             users.add(user);
         }
 
@@ -135,7 +135,7 @@ public class AbstractPartialImportTest {
         requiredActions.add(UserModel.RequiredAction.TERMS_AND_CONDITIONS.name());
 
         for (int i = 0; i < NUM_ENTITIES; i++) {
-            UserRepresentation user = UserConfigBuilder.create().username(USER_PREFIX + i).email(USER_PREFIX + i + "@foo.com").name("foo", "bar").build();
+            UserRepresentation user = UserBuilder.create().username(USER_PREFIX + i).email(USER_PREFIX + i + "@foo.com").name("foo", "bar").build();
             user.setRequiredActions(requiredActions);
             users.add(user);
         }
@@ -307,7 +307,7 @@ public class AbstractPartialImportTest {
     private static class PartialImportRealmConfig implements RealmConfig {
 
         @Override
-        public RealmConfigBuilder configure(RealmConfigBuilder builder) {
+        public RealmBuilder configure(RealmBuilder builder) {
             builder.duplicateEmailsAllowed(false);
 
             return builder;
@@ -317,7 +317,7 @@ public class AbstractPartialImportTest {
     private static class PartialImportRolesClientConfig implements ClientConfig {
 
         @Override
-        public ClientConfigBuilder configure(ClientConfigBuilder builder) {
+        public ClientBuilder configure(ClientBuilder builder) {
             builder.clientId(CLIENT_ROLES_CLIENT);
             builder.name(CLIENT_ROLES_CLIENT);
             builder.protocol("openid-connect");
@@ -329,7 +329,7 @@ public class AbstractPartialImportTest {
     private static class PartialImportServiceClientConfig implements ClientConfig {
 
         @Override
-        public ClientConfigBuilder configure(ClientConfigBuilder builder) {
+        public ClientBuilder configure(ClientBuilder builder) {
             builder.clientId(CLIENT_SERVICE_ACCOUNT);
             builder.name(CLIENT_SERVICE_ACCOUNT);
             builder.secret("secret");
