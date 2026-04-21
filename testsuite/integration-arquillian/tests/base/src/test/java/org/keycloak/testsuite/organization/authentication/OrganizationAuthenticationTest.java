@@ -412,8 +412,8 @@ public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
     public void testSwitchOrganizationDuringLogin() {
         OrganizationRepresentation orgA = createOrganization();
         OrganizationRepresentation orgB = createOrganization("org-b");
-        OrganizationResource orgAResource = testRealm().organizations().get(orgA.getId());
-        OrganizationResource orgBResource = testRealm().organizations().get(orgB.getId());
+        OrganizationResource orgAResource = managedRealm.admin().organizations().get(orgA.getId());
+        OrganizationResource orgBResource = managedRealm.admin().organizations().get(orgB.getId());
         UserRepresentation member = addMember(orgAResource);
         orgBResource.members().addMember(member.getId()).close();
 
@@ -425,15 +425,15 @@ public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
 
         // org selection page should be shown
         selectOrganizationPage.assertCurrent();
-        Assert.assertTrue(selectOrganizationPage.isOrganizationButtonPresent(orgA.getAlias()));
-        Assert.assertTrue(selectOrganizationPage.isOrganizationButtonPresent(orgB.getAlias()));
+        Assertions.assertTrue(selectOrganizationPage.isOrganizationButtonPresent(orgA.getAlias()));
+        Assertions.assertTrue(selectOrganizationPage.isOrganizationButtonPresent(orgB.getAlias()));
 
         // select org A
         selectOrganizationPage.selectOrganization(orgA.getAlias());
 
         // should be on the password page now
         loginPage.assertAttemptedUsernameAvailability(true);
-        Assert.assertTrue(loginPage.isPasswordInputPresent());
+        Assertions.assertTrue(loginPage.isPasswordInputPresent());
 
         // switch organization link should be available
         loginPage.assertSwitchOrganizationLinkAvailability(true);
@@ -443,14 +443,14 @@ public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
 
         // org selection page should be shown again
         selectOrganizationPage.assertCurrent();
-        Assert.assertTrue(selectOrganizationPage.isOrganizationButtonPresent(orgA.getAlias()));
-        Assert.assertTrue(selectOrganizationPage.isOrganizationButtonPresent(orgB.getAlias()));
+        Assertions.assertTrue(selectOrganizationPage.isOrganizationButtonPresent(orgA.getAlias()));
+        Assertions.assertTrue(selectOrganizationPage.isOrganizationButtonPresent(orgB.getAlias()));
 
         // select org B this time
         selectOrganizationPage.selectOrganization(orgB.getAlias());
 
         // should be on the password page again
-        Assert.assertTrue(loginPage.isPasswordInputPresent());
+        Assertions.assertTrue(loginPage.isPasswordInputPresent());
 
         // complete login
         loginPage.login(memberPassword);
@@ -469,17 +469,17 @@ public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
     @Test
     public void testSwitchOrganizationNotAvailableForSingleOrgUser() {
         OrganizationRepresentation org = createOrganization();
-        OrganizationResource orgResource = testRealm().organizations().get(org.getId());
+        OrganizationResource orgResource = managedRealm.admin().organizations().get(org.getId());
         UserRepresentation member = addMember(orgResource);
 
         // login with "organization" scope — single org member should NOT see org selection
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         oauth.scope("organization");
         loginPage.open(bc.consumerRealmName());
         loginPage.loginUsername(member.getEmail());
 
         // should go directly to password page (no org selection for single-org users)
-        Assert.assertTrue(loginPage.isPasswordInputPresent());
+        Assertions.assertTrue(loginPage.isPasswordInputPresent());
 
         // switch organization link should NOT be available
         loginPage.assertSwitchOrganizationLinkAvailability(false);
@@ -489,19 +489,19 @@ public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
     public void testSwitchOrganizationNotAvailableWithSpecificScope() {
         OrganizationRepresentation orgA = createOrganization();
         OrganizationRepresentation orgB = createOrganization("org-b");
-        OrganizationResource orgAResource = testRealm().organizations().get(orgA.getId());
-        OrganizationResource orgBResource = testRealm().organizations().get(orgB.getId());
+        OrganizationResource orgAResource = managedRealm.admin().organizations().get(orgA.getId());
+        OrganizationResource orgBResource = managedRealm.admin().organizations().get(orgB.getId());
         UserRepresentation member = addMember(orgAResource);
         orgBResource.members().addMember(member.getId()).close();
 
         // login with specific organization scope — no org selection should be shown
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         oauth.scope("organization:" + orgA.getAlias());
         loginPage.open(bc.consumerRealmName());
         loginPage.loginUsername(member.getEmail());
 
         // should go directly to password page (specific org requested by client)
-        Assert.assertTrue(loginPage.isPasswordInputPresent());
+        Assertions.assertTrue(loginPage.isPasswordInputPresent());
 
         // switch organization link should NOT be available
         loginPage.assertSwitchOrganizationLinkAvailability(false);
@@ -511,19 +511,19 @@ public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
     public void testSwitchOrganizationNotAvailableWithWildcardScope() {
         OrganizationRepresentation orgA = createOrganization();
         OrganizationRepresentation orgB = createOrganization("org-b");
-        OrganizationResource orgAResource = testRealm().organizations().get(orgA.getId());
-        OrganizationResource orgBResource = testRealm().organizations().get(orgB.getId());
+        OrganizationResource orgAResource = managedRealm.admin().organizations().get(orgA.getId());
+        OrganizationResource orgBResource = managedRealm.admin().organizations().get(orgB.getId());
         UserRepresentation member = addMember(orgAResource);
         orgBResource.members().addMember(member.getId()).close();
 
         // login with wildcard organization scope — no org selection should be shown
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         oauth.scope("organization:*");
         loginPage.open(bc.consumerRealmName());
         loginPage.loginUsername(member.getEmail());
 
         // should go directly to password page (all orgs mapped)
-        Assert.assertTrue(loginPage.isPasswordInputPresent());
+        Assertions.assertTrue(loginPage.isPasswordInputPresent());
 
         // switch organization link should NOT be available
         loginPage.assertSwitchOrganizationLinkAvailability(false);
@@ -533,13 +533,13 @@ public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
     public void testUsernamePreservedAfterSwitchOrganization() {
         OrganizationRepresentation orgA = createOrganization();
         OrganizationRepresentation orgB = createOrganization("org-b");
-        OrganizationResource orgAResource = testRealm().organizations().get(orgA.getId());
-        OrganizationResource orgBResource = testRealm().organizations().get(orgB.getId());
+        OrganizationResource orgAResource = managedRealm.admin().organizations().get(orgA.getId());
+        OrganizationResource orgBResource = managedRealm.admin().organizations().get(orgB.getId());
         UserRepresentation member = addMember(orgAResource);
         orgBResource.members().addMember(member.getId()).close();
 
         // login with "organization" scope to trigger org selection
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         oauth.scope("organization");
         loginPage.open(bc.consumerRealmName());
         loginPage.loginUsername(member.getEmail());

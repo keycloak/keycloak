@@ -106,9 +106,9 @@ public abstract class LanguageComboboxAwarePage extends AbstractPage {
     public void assertSwitchOrganizationLinkAvailability(boolean expectedAvailability) {
         try {
             driver.findElement(By.id("switch-organization"));
-            Assert.assertTrue(expectedAvailability);
+            Assertions.assertTrue(expectedAvailability);
         } catch (NoSuchElementException nse) {
-            Assert.assertFalse(expectedAvailability);
+            Assertions.assertFalse(expectedAvailability);
         }
     }
 
