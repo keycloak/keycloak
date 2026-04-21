@@ -143,7 +143,7 @@ public class AuthZenResource {
         AuthZen.Subject subject = request.subject();
         Identity identity = switch (subject.type()) {
             case USER -> {
-                UserModel user = session.users().getUserById(realm, subject.id());
+                UserModel user = session.users().getUserByUsername(realm, subject.id());
                 yield user != null ? new UserModelIdentity(realm, user) : null;
             }
             case CLIENT -> {
