@@ -397,7 +397,7 @@ export function KeycloakDataTable<T>({
   const [defaultPageSize, setDefaultPageSize] = useStoredState(
     localStorage,
     "pageSize",
-    10,
+    20,
   );
 
   const [max, setMax] = useState(defaultPageSize);
