@@ -184,6 +184,16 @@
               </form>
           </#if>
 
+          <#if switchOrganizationEnabled?? && switchOrganizationEnabled>
+              <form id="kc-switch-organization-form" action="${url.loginAction}" method="post">
+                  <div class="${properties.kcFormGroupClass!}">
+                      <input type="hidden" name="switchOrganization" value="true"/>
+                      <a href="#" id="switch-organization"
+                         onclick="document.forms['kc-switch-organization-form'].requestSubmit();return false;">${msg("doSwitchOrganization")}</a>
+                  </div>
+              </form>
+          </#if>
+
           <#nested "socialProviders">
 
           <#if displayInfo>
