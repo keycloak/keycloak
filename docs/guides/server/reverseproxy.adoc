@@ -13,7 +13,7 @@ Distributed environments frequently require the use of a reverse proxy. {project
 
 == TLS termination modes
 
-When deploying {project_name} behind a reverse proxy, there are two common approaches for handling TLS connections between clients, the proxy, and {project_name}: re-encrypt and passthrough.
+When deploying {project_name} behind a reverse proxy, there are three common approaches for handling TLS connections between clients, the proxy, and {project_name}: re-encrypt, edge termination and passthrough.
 
 === Re-encrypt
 
@@ -21,6 +21,11 @@ For re-encrypt, the reverse proxy terminates the client TLS connection and estab
 The proxy can inspect and modify HTTP headers (such as `Forwarded` or `X-Forwarded-*`) before re-encrypting the traffic to the backend.
 The proxy and {project_name} use independent TLS certificates: the proxy presents its own certificate to clients, while {project_name} uses a separate certificate for backend communication.
 Configure `--proxy-headers` so that {project_name} parses the forwarded headers set by the proxy, including the real client IP address.
+
+=== Edge termination
+
+The edge termination is similar to re-encrypt as the proxy terminates the TLS connection, but the connection between the proxy and {project_name} is then unencrypted.
+As edge termination is generally considered less secure than re-encrypt, this {section} focuses on re-encrypt instead.
 
 === Passthrough
 

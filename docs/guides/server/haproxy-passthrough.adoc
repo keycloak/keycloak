@@ -102,7 +102,7 @@ Without this, the `/health/ready` endpoint that HAProxy polls will not be availa
 
 `--metrics-enabled true`::
 Enables the metrics endpoints on the management port.
-The management port (`9000`) requires at least one of health or metrics to be enabled; otherwise, the management interface does not start, and health checks will fail.
+Enabling metrics also enables an additional status check for the database, so it is recommended to enable metrics.
 
 [[graceful-shutdown-considerations]]
 == Graceful shutdown considerations
