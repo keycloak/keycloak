@@ -56,6 +56,7 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
     public static final String PG_TARGET_SERVER_TYPE = "quarkus.datasource.jdbc.additional-jdbc-properties.targetServerType";
     public static final String MSSQL_SEND_STRING_PARAMETER_AS_UNICODE = "quarkus.datasource.jdbc.additional-jdbc-properties.sendStringParametersAsUnicode";
     public static final String CONNECT_TIMEOUT = "quarkus.datasource.jdbc.additional-jdbc-properties.connectTimeout";
+    public static final String SOCKET_TIMEOUT = "quarkus.datasource.jdbc.additional-jdbc-properties.socketTimeout";
     public static final String ORACLEDB_CONNECT_TIMEOUT = "quarkus.datasource.jdbc.additional-jdbc-properties.oracle.net.CONNECT_TIMEOUT";
     public static final String MSSQL_CONNECT_TIMEOUT = "quarkus.datasource.jdbc.additional-jdbc-properties.loginTimeout";
     public static final String JDBC_LOGIN_TIMEOUT = "quarkus.datasource.jdbc.login-timeout";
@@ -111,6 +112,10 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
                 fromOption(DatabaseOptions.DB_CONNECT_TIMEOUT)
                         .to(MSSQL_CONNECT_TIMEOUT)
                         .mapFrom(DatabaseOptions.DB_CONNECT_TIMEOUT, getConnectTimeout(EnumSet.of(Database.Vendor.MSSQL), "loginTimeout"))
+                        .build(),
+                fromOption(DatabaseOptions.DB_CONNECT_TIMEOUT)
+                        .to(SOCKET_TIMEOUT)
+                        .mapFrom(DatabaseOptions.DB_CONNECT_TIMEOUT, getConnectTimeout(EnumSet.of(Database.Vendor.MYSQL, Database.Vendor.MARIADB, Database.Vendor.TIDB), "socketTimeout"))
                         .build(),
                 fromOption(DatabaseOptions.DB_URL_HOST)
                         .paramLabel("hostname")

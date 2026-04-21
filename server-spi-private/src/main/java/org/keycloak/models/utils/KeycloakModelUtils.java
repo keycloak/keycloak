@@ -503,6 +503,7 @@ public final class KeycloakModelUtils {
                 try {
                     // If timeout is set to 0, reset to default transaction timeout
                     lookup.getTransactionManager().setTransactionTimeout(timeoutInSeconds);
+
                     if (timeoutInSeconds == 0) {
                         timeouts.remove();
                     } else {
@@ -516,9 +517,8 @@ public final class KeycloakModelUtils {
         }
     }
 
-    public static int getTransactionLimit() {
-        Integer timeout = timeouts.get();
-        return Objects.requireNonNullElse(timeout, 0);
+    public static Optional<Integer> getTransactionLimit() {
+        return Optional.ofNullable(timeouts.get());
     }
 
     public static Function<KeycloakSessionFactory, ComponentModel> componentModelGetter(String realmId, String componentId) {
