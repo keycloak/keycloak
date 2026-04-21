@@ -103,19 +103,32 @@ You should not proxy port `9000` because health checks and metrics use that port
 == {project_name} with TLS passthrough
 
 In TLS passthrough mode, the proxy forwards the raw TLS connection to {project_name} without terminating it.
-Because the proxy cannot inspect or modify HTTP traffic, the only applicable configuration is the PROXY protocol, which allows {project_name} to see the real client IP address.
+Because the proxy cannot inspect or modify HTTP traffic, it cannot set or overwrite HTTP headers such as `Forwarded` or `X-Forwarded-*`.
+
+[WARNING]
+====
+Do not set `--proxy-headers` when using TLS passthrough.
+The proxy cannot inject forwarded headers into the encrypted traffic, and any headers already present in the request originate from the client and cannot be trusted.
+Setting `--proxy-headers` in this mode would allow clients to spoof their IP address or protocol by sending forged headers directly to {project_name}.
+====
+
+Without forwarded headers, the only way for {project_name} to see the real client IP address is through the PROXY protocol, which is strongly recommended for TLS passthrough deployments.
 
 === PROXY Protocol
 
-The `proxy-protocol-enabled` option controls whether the server should use the PROXY protocol when serving requests from behind a proxy.
-When set to true, the remote address returned will be the one from the actual connecting client.
-The value cannot be `true` when using the `proxy-headers` option.
+The PROXY protocol allows the proxy to prepend the original client connection information (such as the source IP address) to the TCP stream before forwarding it to {project_name}.
+This happens outside of the TLS-encrypted channel, so it works even though the proxy cannot modify HTTP traffic.
 
-This is useful when running behind a compatible TLS passthrough proxy because the request headers cannot be manipulated.
-
-For example:
+Enable it in {project_name} with the `--proxy-protocol-enabled` option:
 
 <@kc.start parameters="--proxy-protocol-enabled true"/>
+
+The proxy must also be configured to send the PROXY protocol header.
+Most proxies support both version 1 (text-based) and version 2 (binary).
+Consult your proxy's documentation for the specific configuration directive (for example, `send-proxy-v2` in HAProxy).
+
+NOTE: The `--proxy-protocol-enabled` option and the `--proxy-headers` option are mutually exclusive.
+Setting both will result in a configuration error.
 
 === Blueprints
 
