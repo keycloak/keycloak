@@ -19,6 +19,7 @@ package org.keycloak.services.resources.admin.fgap;
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.GroupModel;
+import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 
@@ -69,6 +70,18 @@ sealed interface ModelRecord {
         @Override
         public String getId() {
             return user == null ? null : user.getId();
+        }
+    }
+
+    record OrganizationModelRecord(OrganizationModel organization) implements ModelRecord {
+        @Override
+        public String getResourceType() {
+            return AdminPermissionsSchema.ORGANIZATIONS_RESOURCE_TYPE;
+        }
+
+        @Override
+        public String getId() {
+            return organization == null ? null : organization.getId();
         }
     }
 
