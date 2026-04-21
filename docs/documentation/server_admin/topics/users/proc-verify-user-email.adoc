@@ -6,7 +6,7 @@
 = Verifying a user's email address
 
 [roles="_abstract"]
-project_name} can send a verification email to a user to confirm that the email address they registered is valid and accessible.
+{project_name} can send a verification email to a user to confirm that the email address they registered is valid and accessible.
 This is useful when onboarding new users or when an administrator wants to ensure a user's email address is correct.
 
 .Prerequisites
