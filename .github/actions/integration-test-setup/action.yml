@@ -29,6 +29,11 @@ runs:
       name: Maven cache
       uses: ./.github/actions/maven-cache
 
+    - id: restore-quarkus-snapshot
+      name: Restore Quarkus snapshot cache
+      if: github.ref == 'refs/heads/quarkus-next' || github.base_ref == 'quarkus-next'
+      uses: ./.github/actions/quarkus-snapshot-cache
+
     - id: pnpm-store-cache
       name: PNPM store cache
       uses: ./.github/actions/pnpm-store-cache

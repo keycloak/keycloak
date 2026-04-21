@@ -476,6 +476,10 @@ jobs:
         name: Node cache
         uses: ./.github/actions/node-cache
 
+      - name: Restore Quarkus snapshot cache
+        if: github.ref == 'refs/heads/quarkus-next' || github.base_ref == 'quarkus-next'
+        uses: ./.github/actions/quarkus-snapshot-cache
+
       - id: aurora-init
         name: Initialize Aurora environment
         run: |
@@ -673,6 +677,10 @@ jobs:
       - id: node-cache
         name: Node cache
         uses: ./.github/actions/node-cache
+
+      - name: Restore Quarkus snapshot cache
+        if: github.ref == 'refs/heads/quarkus-next' || github.base_ref == 'quarkus-next'
+        uses: ./.github/actions/quarkus-snapshot-cache
 
       - id: azure-init
         name: Initialize Azure environment
