@@ -4,6 +4,8 @@ import java.time.Duration;
 import java.util.Map;
 
 import org.keycloak.Config;
+import org.keycloak.events.admin.AdminEvent;
+import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -89,4 +91,27 @@ public class SsfUtil {
     public static Map<String, Object> treeToMap(JsonNode node) {
         return JsonSerialization.mapper.convertValue(node, new TypeReference<Map<String, Object>>() {});
     }
+
+    private static final String ADMIN_EVENT_USERS_PREFIX = "users/";
+
+    public static String userIdFromAdminEventPath(AdminEvent adminEvent) {
+        if (adminEvent == null) {
+            return null;
+        }
+        if (!ResourceType.USER.equals(adminEvent.getResourceType())) {
+            return null;
+        }
+        return userIdFromAdminEventPath(adminEvent.getResourcePath());
+    }
+
+    public static String userIdFromAdminEventPath(String resourcePath) {
+        if (resourcePath == null || !resourcePath.startsWith(ADMIN_EVENT_USERS_PREFIX)) {
+            return null;
+        }
+        int start = ADMIN_EVENT_USERS_PREFIX.length();
+        int end = resourcePath.indexOf('/', start);
+        String id = end < 0 ? resourcePath.substring(start) : resourcePath.substring(start, end);
+        return id.isEmpty() ? null : id;
+    }
+
 }
