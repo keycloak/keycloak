@@ -395,6 +395,7 @@ public abstract class AbstractBaseBrokerTest extends AbstractKeycloakTest {
     // Check whether the logout confirmation is present; if yes, confirm the logout and verify the current page
     private void checkLogoutConfirmation(String realm, String idTokenHint, String clientId) {
         if (logoutConfirmPage.isCurrent()) {
+            Assert.assertEquals("Logging out", driver.getTitle());
             confirmLogout();
             if (idTokenHint != null || clientId != null) {
                 assertLoginPage(realm);
