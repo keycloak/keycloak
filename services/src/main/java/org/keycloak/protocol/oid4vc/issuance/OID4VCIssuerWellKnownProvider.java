@@ -67,7 +67,6 @@ import org.jboss.logging.Logger;
 import static org.keycloak.OID4VCConstants.SIGNED_METADATA_JWT_TYPE;
 import static org.keycloak.OID4VCConstants.WELL_KNOWN_OPENID_CREDENTIAL_ISSUER;
 import static org.keycloak.constants.OID4VCIConstants.BATCH_CREDENTIAL_ISSUANCE_BATCH_SIZE;
-import static org.keycloak.crypto.KeyType.RSA;
 import static org.keycloak.jose.jwk.RSAPublicJWK.RS256;
 
 /**
@@ -379,21 +378,10 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
      * Returns the supported encryption algorithms from realm attributes.
      */
     public static List<String> getSupportedEncryptionAlgorithms(KeycloakSession session) {
-        RealmModel realm = session.getContext().getRealm();
-        KeyManager keyManager = session.keys();
 
         List<String> supportedEncryptionAlgorithms = CryptoUtils.getSupportedAsymmetricEncryptionAlgorithms(session);
-
-        // Default algorithms if none configured
         if (supportedEncryptionAlgorithms.isEmpty()) {
-            boolean hasRsaKeys = keyManager.getKeysStream(realm)
-                    .filter(key -> KeyUse.ENC.equals(key.getUse()))
-                    .anyMatch(key -> RSA.equals(key.getType()));
-
-            if (hasRsaKeys) {
-                supportedEncryptionAlgorithms.add(JWEConstants.RSA_OAEP);
-                supportedEncryptionAlgorithms.add(JWEConstants.RSA_OAEP_256);
-            }
+            supportedEncryptionAlgorithms = List.of(JWEConstants.RSA_OAEP, JWEConstants.RSA_OAEP_256);
         }
 
         return supportedEncryptionAlgorithms;

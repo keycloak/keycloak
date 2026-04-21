@@ -942,7 +942,7 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
                 .credentialConfigurationId(authDetails.get(0).getCredentialConfigurationId())
                 .bearerToken(tokenResponse.getAccessToken())
                 .send().getCredentialResponse());
-        assertTrue(ex.getMessage().contains("Credential must be requested by credential identifier from authorization_details"), "Unexpected - " + ex.getMessage());
+        assertTrue(ex.getMessage().contains("Credential must be requested by credential identifier from authorization_details"), ex.getMessage());
     }
 
     @Test
