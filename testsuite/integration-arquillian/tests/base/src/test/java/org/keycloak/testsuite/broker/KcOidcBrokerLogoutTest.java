@@ -271,6 +271,7 @@ public class KcOidcBrokerLogoutTest extends AbstractKcOidcBrokerLogoutTest {
 
             WaitUtils.waitForPageToLoad();
             logoutConfirmPage.isCurrent();
+            Assertions.assertEquals("Logging out", driver.getTitle());
             Assertions.assertTrue(driver.getPageSource().contains("You are logging out from following apps"));
             Assertions.assertTrue(driver.getPageSource().contains("broker-app"));
 
