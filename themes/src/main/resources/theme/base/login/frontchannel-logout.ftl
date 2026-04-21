@@ -1,9 +1,6 @@
 <#import "template.ftl" as layout>
 <@layout.registrationLayout; section>
     <#if section = "header">
-        <script>
-            document.title =  "${msg("frontchannel-logout.title")}";
-        </script>
         ${msg("frontchannel-logout.title")}
     <#elseif section = "form">
         <p>${msg("frontchannel-logout.message")}</p>
