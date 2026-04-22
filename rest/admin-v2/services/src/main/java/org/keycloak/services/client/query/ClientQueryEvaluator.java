@@ -62,14 +62,10 @@ public class ClientQueryEvaluator extends ClientQueryParserBaseVisitor<Boolean> 
                 .map(e -> e.LIST_ENTRY().getText())
                 .toList();
 
-        boolean allEntriesHaveColon = entries.stream().allMatch(e -> e.contains(":"));
-        boolean noEntriesHaveColon = entries.stream().noneMatch(e -> e.contains(":"));
-        if (!allEntriesHaveColon && !noEntriesHaveColon) {
-            throw new ClientQueryException("Cannot mix list items and map entries in a single list expression");
-        }
+        boolean mapMode = entries.get(0).contains(":");
 
         if (fieldValue instanceof Map<?, ?> map) {
-            if (allEntriesHaveColon) {
+            if (mapMode) {
                 return entries.stream().allMatch(entry -> {
                     int colonIdx = entry.indexOf(':');
                     String key = entry.substring(0, colonIdx);

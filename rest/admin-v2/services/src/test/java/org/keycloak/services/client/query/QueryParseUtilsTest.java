@@ -131,4 +131,58 @@ class QueryParseUtilsTest {
         var ctx = QueryParseUtils.parse("field:\"\"");
         assertEquals(1, ctx.expression().size());
     }
+
+    @Test
+    void validateKnownField() {
+        var ctx = QueryParseUtils.parse("clientId:my-app");
+        QueryParseUtils.validate(ctx);
+    }
+
+    @Test
+    void validateUnknownFieldThrows() {
+        var ctx = QueryParseUtils.parse("unknownField:value");
+        assertThrows(ClientQueryException.class, () -> QueryParseUtils.validate(ctx));
+    }
+
+    @Test
+    void validateDotNotationField() {
+        var ctx = QueryParseUtils.parse("auth.method:client-secret");
+        QueryParseUtils.validate(ctx);
+    }
+
+    @Test
+    void validateUnknownDotNotationFieldThrows() {
+        var ctx = QueryParseUtils.parse("auth.unknown:value");
+        assertThrows(ClientQueryException.class, () -> QueryParseUtils.validate(ctx));
+    }
+
+    @Test
+    void validateMixedListEntriesThrows() {
+        var ctx = QueryParseUtils.parse("roles:[admin,key:value]");
+        assertThrows(ClientQueryException.class, () -> QueryParseUtils.validate(ctx));
+    }
+
+    @Test
+    void validateConsistentListEntries() {
+        var ctx = QueryParseUtils.parse("roles:[admin,user]");
+        QueryParseUtils.validate(ctx);
+    }
+
+    @Test
+    void validateConsistentMapEntries() {
+        var ctx = QueryParseUtils.parse("roles:[key1:val1,key2:val2]");
+        QueryParseUtils.validate(ctx);
+    }
+
+    @Test
+    void validateMultipleExpressions() {
+        var ctx = QueryParseUtils.parse("clientId:my-app enabled:true");
+        QueryParseUtils.validate(ctx);
+    }
+
+    @Test
+    void validateMultipleExpressionsOneUnknownThrows() {
+        var ctx = QueryParseUtils.parse("clientId:my-app unknownField:value");
+        assertThrows(ClientQueryException.class, () -> QueryParseUtils.validate(ctx));
+    }
 }

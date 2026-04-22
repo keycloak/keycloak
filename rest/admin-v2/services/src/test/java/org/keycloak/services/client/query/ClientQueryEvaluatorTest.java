@@ -102,13 +102,6 @@ class ClientQueryEvaluatorTest {
     }
 
     @Test
-    void mixedListEntriesThrows() {
-        var client = createClient("test", true);
-        client.setRoles(Set.of("admin", "user"));
-        assertThrows(ClientQueryException.class, () -> matches("roles:[admin,key:value]", client));
-    }
-
-    @Test
     void emptyCollectionNeverMatchesList() {
         var client = createClient("test", true);
         client.setRoles(Set.of());

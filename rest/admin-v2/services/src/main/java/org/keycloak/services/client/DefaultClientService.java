@@ -116,11 +116,8 @@ public class DefaultClientService implements ClientService {
     protected Stream<BaseClientRepresentation> applySearchFilter(Stream<BaseClientRepresentation> stream, ClientSearchOptions searchOptions) {
         if (searchOptions != null && searchOptions.getQuery() != null && !searchOptions.getQuery().isBlank()) {
             var queryCtx = QueryParseUtils.parse(searchOptions.getQuery());
-            // TODO .toList() materializes all results in memory
-            return stream
-                    .filter(client -> ClientQueryEvaluator.matches(queryCtx, client))
-                    .toList()
-                    .stream();
+            QueryParseUtils.validate(queryCtx);
+            return stream.filter(client -> ClientQueryEvaluator.matches(queryCtx, client));
         }
         return stream;
     }

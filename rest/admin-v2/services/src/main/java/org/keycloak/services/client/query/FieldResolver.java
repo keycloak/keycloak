@@ -28,6 +28,10 @@ public class FieldResolver {
             Map.entry("serviceAccountRoles", client -> client instanceof OIDCClientRepresentation oidc ? oidc.getServiceAccountRoles() : null)
     );
 
+    public static boolean isKnownField(String fieldPath) {
+        return FIELDS.containsKey(fieldPath);
+    }
+
     public static Object resolve(String fieldPath, BaseClientRepresentation client) {
         Function<BaseClientRepresentation, Object> accessor = FIELDS.get(fieldPath);
         if (accessor == null) {
