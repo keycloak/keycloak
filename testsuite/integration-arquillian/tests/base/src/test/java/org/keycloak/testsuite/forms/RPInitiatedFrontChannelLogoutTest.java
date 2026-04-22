@@ -124,6 +124,36 @@ public class RPInitiatedFrontChannelLogoutTest extends AbstractChangeImportedUse
     }
 
     @Test
+    public void testFrontChannelLogoutRedirectUriIsEscapedInJs() throws Exception {
+        String specialCharsUri = OAuthClient.APP_ROOT + "/');alert(document.cookie);//";
+        try (ClientAttributeUpdater updater = ClientAttributeUpdater
+                .forClient(adminClient, oauth.getRealm(), oauth.getClientId())
+                .setFrontchannelLogout(true)
+                .setAttribute(OIDCConfigAttributes.FRONT_CHANNEL_LOGOUT_URI, OAuthClient.APP_ROOT + "/admin/frontchannelLogout")
+                .setAttribute(OIDCConfigAttributes.POST_LOGOUT_REDIRECT_URIS, OAuthClient.APP_ROOT + "/*")
+                .update()) {
+            oauth.doLogin("test-user@localhost", getPassword("test-user@localhost"));
+            String code = oauth.parseLoginResponse().getCode();
+            AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
+            String logoutUrl = oauth.logoutForm().idTokenHint(tokenResponse.getIdToken())
+                    .postLogoutRedirectUri(specialCharsUri).build();
+
+            // XHR to get raw HTML before the JS redirect in frontchannel-logout.ftl fires
+            driver.get(getAuthServerRoot().toString());
+            String pageSource = (String) ((org.openqa.selenium.JavascriptExecutor) driver).executeScript(
+                    "var xhr = new XMLHttpRequest();" +
+                    "xhr.open('GET', arguments[0], false);" +
+                    "xhr.send();" +
+                    "return xhr.responseText;", logoutUrl);
+
+            Assertions.assertFalse(pageSource.contains("window.location.replace('"),
+                    "Redirect URI must not be rendered in a single-quoted JS string");
+            Assertions.assertTrue(pageSource.contains("window.location.replace(\"" + specialCharsUri + "\")"),
+                    "Redirect URI should be rendered as a double-quoted JS string via FreeMarker ?c outputformat escaping");
+        }
+    }
+
+    @Test
     public void testFrontChannelLogoutCustomCSP() throws Exception {
         try (RealmAttributeUpdater realmUpdater = new RealmAttributeUpdater(adminClient.realm(oauth.getRealm()))
                 .setBrowserSecurityHeader(BrowserSecurityHeaders.CONTENT_SECURITY_POLICY.getKey(),
