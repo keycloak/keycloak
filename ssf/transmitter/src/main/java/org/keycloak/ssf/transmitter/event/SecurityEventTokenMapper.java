@@ -238,7 +238,7 @@ public class SecurityEventTokenMapper {
      * Keycloak's {@code UPDATE_CREDENTIAL} / {@code REMOVE_CREDENTIAL} /
      * {@code RESET_PASSWORD} event types each map to a different CAEP
      * change_type (UPDATE / DELETE / UPDATE) and the dispatcher in
-     * {@link #toSecurityEvent(Event, StreamConfig)} knows the right
+     * {@link #toSecurityEventToken(Event, StreamConfig)} knows the right
      * value for each. The {@code credentialType} string is read from
      * {@code userEvent.getDetails().get(Details.CREDENTIAL_TYPE)} when
      * present and falls back to {@code credentialTypeFallback} otherwise
@@ -555,7 +555,7 @@ public class SecurityEventTokenMapper {
 
     /**
      * Cheap predicate that returns {@code true} iff
-     * {@link #toSecurityEvent(Event, StreamConfig)} would produce a
+     * {@link #toSecurityEventToken(Event, StreamConfig)} would produce a
      * non-null SET for {@code event}, based only on event type + details
      * currently present on the event. Callers use this to short-circuit
      * the per-event stream lookup in {@code SsfTransmitterEventListener}
@@ -563,7 +563,7 @@ public class SecurityEventTokenMapper {
      * client store to find eligible streams.
      *
      * <p>The check deliberately mirrors the {@code switch} in
-     * {@link #toSecurityEvent(Event, StreamConfig)} so the two stay in
+     * {@link #toSecurityEventToken(Event, StreamConfig)} so the two stay in
      * sync. New event types added to the mapper must be reflected here
      * too, otherwise the listener will silently drop them.
      */
@@ -582,7 +582,7 @@ public class SecurityEventTokenMapper {
 
     /**
      * Cheap predicate that returns {@code true} iff
-     * {@link #toSecurityEvent(AdminEvent, StreamConfig)} would produce a
+     * {@link #toSecurityEventToken(AdminEvent, StreamConfig)} would produce a
      * non-null SET for {@code adminEvent}. Currently the only mapped
      * admin operation is the "log out all user sessions" path
      * ({@code users/{userId}/logout}); everything else returns null and
@@ -619,11 +619,11 @@ public class SecurityEventTokenMapper {
         return false;
     }
 
-    public SsfSecurityEventToken toSecurityEvent(Event event, StreamConfig stream) {
-        return toSecurityEvent(event, null, stream);
+    public SsfSecurityEventToken toSecurityEventToken(Event event, StreamConfig stream) {
+        return toSecurityEventToken(event, null, stream);
     }
 
-    public SsfSecurityEventToken toSecurityEvent(Event event, AdminEvent adminEvent, StreamConfig stream) {
+    public SsfSecurityEventToken toSecurityEventToken(Event event, AdminEvent adminEvent, StreamConfig stream) {
 
         SsfSecurityEventToken securityEvent = switch (event.getType()) {
 
@@ -714,7 +714,7 @@ public class SecurityEventTokenMapper {
         return null;
     }
 
-    public SsfSecurityEventToken toSecurityEvent(AdminEvent adminEvent, StreamConfig stream) {
+    public SsfSecurityEventToken toSecurityEventToken(AdminEvent adminEvent, StreamConfig stream) {
 
         String userId = SsfUtil.userIdFromAdminEventPath(adminEvent);
         if (userId == null) {
@@ -791,6 +791,6 @@ public class SecurityEventTokenMapper {
         event.getDetails().put("admin", "true");
         event.getDetails().put(Details.REASON, "logout_all_user_sessions");
 
-        return toSecurityEvent(event, stream);
+        return toSecurityEventToken(event, stream);
     }
 }

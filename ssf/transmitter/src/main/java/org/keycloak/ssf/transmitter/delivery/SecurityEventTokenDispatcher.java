@@ -202,7 +202,7 @@ public class SecurityEventTokenDispatcher {
      * {@code true} if the user could receive *any* event on this
      * stream under the current subscription state. Lets the event
      * listener short-circuit streams whose subject is not subscribed
-     * before paying for {@code toSecurityEvent}. The full token-based
+     * before paying for {@code toSecurityEventToken}. The full token-based
      * gate still runs inside {@link #dispatchEvent}, so any mismatch
      * between {@code event.getUserId()} and the final token subject
      * (complex subjects, impersonation) stays safe.
