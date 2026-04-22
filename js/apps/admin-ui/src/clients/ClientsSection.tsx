@@ -28,7 +28,7 @@ import { Action, KeycloakDataTable } from "@keycloak/keycloak-ui-shared";
 import { ViewHeader } from "../components/view-header/ViewHeader";
 import { useAccess } from "../context/access/Access";
 import { useRealm } from "../context/realm-context/RealmContext";
-import { Environment } from "../environment";
+import { Environment } from "../environment.d";
 import helpUrls from "../help-urls";
 import { emptyFormatter, exportClient } from "../util";
 import { convertClientToUrl } from "../utils/client-url";
