@@ -28,29 +28,30 @@ Each realm in {project_name} is represented by a client in the `master` realm.
 The name of the client is `<realm name>-realm`.  These clients each have client-level roles defined which define varying
 level of access to manage an individual realm.
 
-The roles available are: 
+The roles available are:
 
-* create-client
-* impersonation
-* manage-authorization
-* manage-clients
-* manage-events
-* manage-identity-providers
-* manage-organizations
-* manage-realm
-* manage-users
-* query-clients
-* query-groups
-* query-organizations
-* query-realms
-* query-users
-* view-authorization
-* view-clients
-* view-events
-* view-identity-providers
-* view-organizations
-* view-realm
-* view-users
+* **create-client**: Allows creating new clients in the realm.
+* **export-realm**: Allows exporting the realm configuration, including clients, groups and roles (but no secrets).
+* **impersonation**: Allows impersonating other users for testing and support purposes.
+* **manage-authorization**: Allows creating, modifying, and deleting authorization policies and resource-based access controls.
+* **manage-clients**: Allows full management of all clients, including creation, configuration, and deletion.
+* **manage-events**: Allows configuring event listeners, enabling or disabling event logging, and clearing event logs.
+* **manage-identity-providers**: Allows creating, configuring, and deleting identity providers and federation settings.
+* **manage-organizations**: Allows creating, configuring, and managing organizations.
+* **manage-realm**: Allows full management of realm settings and configuration. Implies `view-realm`.
+* **manage-users**: Allows full management of users, including creation, modification, deletion, and role assignment.
+* **query-clients**: Allows querying and listing clients without granting view or modification access.
+* **query-groups**: Allows querying and listing groups without granting view or modification access.
+* **query-organizations**: Allows querying and listing organizations without granting view or modification access.
+* **query-realms**: Allows querying and listing available realms.
+* **query-users**: Allows querying and listing users without granting view or modification access.
+* **view-authorization**: Allows viewing authorization policies and resource configurations.
+* **view-clients**: Allows viewing client details and configurations (incl. client secrets) without modification access.
+* **view-events**: Allows viewing event logs and event configuration without modification access.
+* **view-identity-providers**: Allows viewing identity provider configurations without modification access.
+* **view-organizations**: Allows viewing organization configurations without modification access.
+* **view-realm**: Allows viewing realm settings and general realm information.
+* **view-users**: Allows viewing user details without modification access.
 
 Assign the roles you want to your users and they will only be able to use that specific part of the administration console.
 
