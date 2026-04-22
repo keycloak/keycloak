@@ -43,6 +43,7 @@ import java.util.Optional;
 import java.util.Set;
 
 import org.keycloak.common.VerificationException;
+import org.keycloak.common.util.Time;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.crypto.SignatureProvider;
@@ -62,6 +63,8 @@ import org.keycloak.protocol.oid4vc.issuance.VCIssuerException;
 import org.keycloak.protocol.oid4vc.model.ErrorType;
 import org.keycloak.protocol.oid4vc.model.KeyAttestationJwtBody;
 import org.keycloak.protocol.oid4vc.model.KeyAttestationsRequired;
+import org.keycloak.protocol.oid4vc.model.ProofTypesSupported;
+import org.keycloak.protocol.oid4vc.model.SupportedCredentialConfiguration;
 import org.keycloak.protocol.oid4vc.model.SupportedProofTypeData;
 import org.keycloak.util.JsonSerialization;
 
@@ -89,12 +92,22 @@ public class AttestationValidatorUtil {
     private static final char[] DEFAULT_TRUSTSTORE_PASSWORD = System.getProperty(
             "javax.net.ssl.trustStorePassword", "changeit").toCharArray();
 
+    /**
+     * @param requireExpForJwtProof           OID4VCI D.1: {@code exp} MUST be present when the attestation is used with the
+     *                                        {@code jwt} proof type (embedded {@code key_attestation} header).
+     * @param proofTypeKeyForSigningAlgPolicy {@link org.keycloak.protocol.oid4vc.model.ProofType} value
+     *                                        ({@code jwt} or {@code attestation}) to resolve
+     *                                        {@code proof_signing_alg_values_supported}; if {@code null}, only
+     *                                        FAPI {@code ALLOWED_ALGORITHMS} is enforced.
+     */
     public static KeyAttestationJwtBody validateAttestationJwt(
             String attestationJwt,
             KeycloakSession keycloakSession,
             VCIssuanceContext vcIssuanceContext,
-            AttestationKeyResolver keyResolver)
-        throws JWSInputException, VerificationException {
+            AttestationKeyResolver keyResolver,
+            boolean requireExpForJwtProof,
+            String proofTypeKeyForSigningAlgPolicy)
+            throws JWSInputException, VerificationException {
 
         if (attestationJwt == null || attestationJwt.split("\\.").length != 3) {
             throw new VCIssuerException(ErrorType.INVALID_PROOF, "Invalid JWT format");
@@ -122,11 +135,12 @@ public class AttestationValidatorUtil {
         }
 
         JWSHeader header = jwsInput.getHeader();
-        validateJwsHeader(header);
+        validateJwsHeader(header, vcIssuanceContext, proofTypeKeyForSigningAlgPolicy);
 
         // Verify the signature
         Map<String, Object> rawHeader = JsonSerialization.mapper.convertValue(
-                jwsInput.getHeader(), new TypeReference<>() {});
+                jwsInput.getHeader(), new TypeReference<>() {
+                });
 
         SignatureVerifierContext verifier;
         if (header.getX5c() != null && !header.getX5c().isEmpty()) {
@@ -147,7 +161,7 @@ public class AttestationValidatorUtil {
             throw new VCIssuerException(ErrorType.INVALID_PROOF, "Could not verify signature of attestation JWT");
         }
 
-        validateAttestationPayload(keycloakSession, vcIssuanceContext, attestationBody);
+        validateAttestationPayload(keycloakSession, vcIssuanceContext, attestationBody, requireExpForJwtProof);
 
         if (attestationBody.getAttestedKeys() == null) {
             throw new VCIssuerException(ErrorType.INVALID_PROOF, "Missing required attested_keys claim in attestation");
@@ -159,10 +173,20 @@ public class AttestationValidatorUtil {
     private static void validateAttestationPayload(
             KeycloakSession keycloakSession,
             VCIssuanceContext vcIssuanceContext,
-            KeyAttestationJwtBody attestationBody) throws VCIssuerException, VerificationException {
+            KeyAttestationJwtBody attestationBody,
+            boolean requireExpForJwtProof) throws VCIssuerException, VerificationException {
 
         if (attestationBody.getIat() == null) {
             throw new VCIssuerException(ErrorType.INVALID_PROOF, "Missing 'iat' claim in attestation");
+        }
+
+        long now = Time.currentTime();
+        if (requireExpForJwtProof && attestationBody.getExp() == null) {
+            throw new VCIssuerException(ErrorType.INVALID_PROOF,
+                    "Missing 'exp' claim in key attestation (required when used with jwt proof type per OID4VCI D.1)");
+        }
+        if (attestationBody.getExp() != null && attestationBody.getExp() < now) {
+            throw new VCIssuerException(ErrorType.INVALID_PROOF, "Key attestation has expired");
         }
 
         // Get resistance level requirements from configuration
@@ -222,7 +246,7 @@ public class AttestationValidatorUtil {
     /**
      * validates the configured key_attestations_required attribute against the given attestationBody
      *
-     * @param attestationBody the body to be validated
+     * @param attestationBody         the body to be validated
      * @param attestationRequirements the configuration object that is also displayed in the metadata endpoint
      */
     private static void validateResistanceLevel(KeyAttestationJwtBody attestationBody,
@@ -238,12 +262,12 @@ public class AttestationValidatorUtil {
         if (attestationRequirements != null) {
             // Validate key_storage if present in attestation and required by config
             validateResistanceLevel(attestationBody.getKeyStorage(),
-                                    attestationRequirements.getKeyStorage(),
-                                    "key_storage");
+                    attestationRequirements.getKeyStorage(),
+                    "key_storage");
             // Validate user_authentication if present in attestation and required by config
             validateResistanceLevel(attestationBody.getUserAuthentication(),
-                                    attestationRequirements.getUserAuthentication(),
-                                    "user_authentication");
+                    attestationRequirements.getUserAuthentication(),
+                    "user_authentication");
         }
     }
 
@@ -251,15 +275,15 @@ public class AttestationValidatorUtil {
      * Validates the given key_attestations (key_storage or user_authentication) against the current configuration as
      * provided by the metadata endpoint.
      *
-     * @param providedLevels  the attestation levels to be validated
-     * @param acceptedLevels  the attestation levels as exposed by the metadata endpoint
-     * @param levelType       either "key_storage" or "user_authentication"
+     * @param providedLevels the attestation levels to be validated
+     * @param acceptedLevels the attestation levels as exposed by the metadata endpoint
+     * @param levelType      either "key_storage" or "user_authentication"
      * @throws VCIssuerException if the required resistance level is not met
      */
     private static void validateResistanceLevel(List<String> providedLevels,
                                                 List<String> acceptedLevels,
                                                 String levelType)
-        throws VCIssuerException {
+            throws VCIssuerException {
 
         if (acceptedLevels == null || acceptedLevels.isEmpty()) {
             // We accept all provided levels
@@ -278,11 +302,27 @@ public class AttestationValidatorUtil {
         if (!foundMatch) {
             throw new VCIssuerException(ErrorType.INVALID_PROOF,
                     levelType + " none of the provided levels from '" + providedLevels + "' did match any of the " +
-                    "accepted levels: " + acceptedLevels);
+                            "accepted levels: " + acceptedLevels);
         }
     }
 
-    private static void validateJwsHeader(JWSHeader header) {
+    /**
+     * Credential Issuer metadata {@code proof_signing_alg_values_supported} for the given proof type, if configured.
+     */
+    private static Optional<List<String>> resolveProofSigningAlgorithms(
+            VCIssuanceContext vcIssuanceContext, String proofTypeKey) {
+        return Optional.ofNullable(vcIssuanceContext)
+                .filter(context -> proofTypeKey != null)
+                .map(VCIssuanceContext::getCredentialConfig)
+                .map(SupportedCredentialConfiguration::getProofTypesSupported)
+                .map(ProofTypesSupported::getSupportedProofTypes)
+                .map(supportedProofTypes -> supportedProofTypes.get(proofTypeKey))
+                .map(SupportedProofTypeData::getSigningAlgorithmsSupported)
+                .filter(algs -> !algs.isEmpty());
+    }
+
+    private static void validateJwsHeader(JWSHeader header, VCIssuanceContext vcIssuanceContext,
+                                          String proofTypeKeyForSigningAlgPolicy) {
         String alg = Optional.ofNullable(header.getAlgorithm())
                 .map(Algorithm::name)
                 .orElseThrow(() -> new VCIssuerException(ErrorType.INVALID_PROOF, "Missing algorithm in JWS header"));
@@ -291,7 +331,18 @@ public class AttestationValidatorUtil {
             throw new VCIssuerException(ErrorType.INVALID_PROOF, "'none' algorithm is not allowed");
         }
 
-        if (!ALLOWED_ALGORITHMS.contains(alg)) {
+        if (alg.startsWith("HS")) {
+            throw new VCIssuerException(ErrorType.INVALID_PROOF, "Symmetric algorithms are not allowed for key attestation");
+        }
+
+        Optional<List<String>> metadataAlgs = resolveProofSigningAlgorithms(vcIssuanceContext, proofTypeKeyForSigningAlgPolicy);
+        if (metadataAlgs.isPresent() && !metadataAlgs.get().isEmpty()) {
+            if (!metadataAlgs.get().contains(alg)) {
+                throw new VCIssuerException(ErrorType.INVALID_PROOF,
+                        "Attestation alg must match proof_signing_alg_values_supported for proof type "
+                                + proofTypeKeyForSigningAlgPolicy + ": " + metadataAlgs.get());
+            }
+        } else if (!ALLOWED_ALGORITHMS.contains(alg)) {
             throw new VCIssuerException(ErrorType.INVALID_PROOF, "Unsupported algorithm: " + alg +
                     ". Allowed algorithms: " + ALLOWED_ALGORITHMS);
         }
@@ -312,7 +363,16 @@ public class AttestationValidatorUtil {
     private static SignatureVerifierContext verifierFromX5CChain(
             List<String> x5cList,
             String alg,
-            KeycloakSession keycloakSession) throws VCIssuerException {
+            KeycloakSession keycloakSession) throws VCIssuerException, VerificationException {
+        JWK certJwk = resolveJwkFromValidatedX5c(x5cList, alg);
+        return verifierFromResolvedJWK(certJwk, alg, keycloakSession);
+    }
+
+    /**
+     * Validates x5c certificate chain and converts leaf certificate key to JWK.
+     * Can be reused by proof validators that accept x5c as proof key source.
+     */
+    static JWK resolveJwkFromValidatedX5c(List<String> x5cList, String alg) throws VCIssuerException {
 
         try {
             CertificateFactory cf = CertificateFactory.getInstance("X.509");
@@ -345,9 +405,7 @@ public class AttestationValidatorUtil {
 
             // Get public key from first certificate
             PublicKey publicKey = certChain.get(0).getPublicKey();
-            JWK certJwk = convertPublicKeyToJWK(publicKey, alg, certChain);
-
-            return verifierFromResolvedJWK(certJwk, alg, keycloakSession);
+            return convertPublicKeyToJWK(publicKey, alg, certChain);
 
         } catch (Exception e) {
             throw new VCIssuerException(ErrorType.INVALID_PROOF, "Failed to validate x5c certificate chain", e);
