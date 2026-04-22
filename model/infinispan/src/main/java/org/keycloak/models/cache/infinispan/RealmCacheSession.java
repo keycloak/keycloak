@@ -956,10 +956,14 @@ public class RealmCacheSession implements CacheRealmProvider {
         long loaded = cache.getCurrentRevision(id);
         RoleModel model = getRoleDelegate().getRoleById(realm, id);
         if (model == null) return null;
+        if (invalidations.contains(id)) return model;
 
         StorageId storageId = new StorageId(id);
         if (!storageId.isLocal()) {
             ComponentModel component = realm.getComponent(storageId.getProviderId());
+            if (component == null) {
+                return model;
+            }
             RoleStorageProviderModel providerModel = new RoleStorageProviderModel(component);
             if (!providerModel.isEnabled()) {
                 return model;
@@ -1015,13 +1019,18 @@ public class RealmCacheSession implements CacheRealmProvider {
         }
 
         if (cached == null) {
-            long loaded = cache.getCurrentRevision(id);
-            RoleModel model = getRoleDelegate().getRoleById(realm, id);
-            if (model == null) return null;
-            cached = createCachedRole(loaded, model, realm);
-            cache.addRevisioned(cached, startupRevision);
+            RoleModel model = cacheRole(realm, id);
+            if (model instanceof RoleAdapter roleAdapter) {
+                return roleAdapter.cached;
+            }
+            return null;
         }
-        return cached;
+
+        RoleModel adapter = validateCachedRole(realm, cached);
+        if (adapter instanceof RoleAdapter roleAdapter) {
+            return roleAdapter.cached;
+        }
+        return null;
     }
 
     @Override
@@ -1058,6 +1067,9 @@ public class RealmCacheSession implements CacheRealmProvider {
         StorageId storageId = new StorageId(id);
         if (!storageId.isLocal()) {
             ComponentModel component = realm.getComponent(storageId.getProviderId());
+            if (component == null) {
+                return model;
+            }
             GroupStorageProviderModel providerModel = new GroupStorageProviderModel(component);
             if (!providerModel.isEnabled()) {
                 return model;
