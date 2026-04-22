@@ -53,11 +53,15 @@ public class SecurityEventTokenMapper {
 
     protected static final Logger log = Logger.getLogger(SecurityEventTokenMapper.class);
 
-    protected static final Pattern USER_LOGGED_OUT_BY_ADMIN_PATH_PATTERN = Pattern.compile("^users/(.*)/logout$");
+    // Each group matches a single path segment ([^/]+) rather than .* — path
+    // segments are UUIDs that never contain '/', and .* across segment
+    // boundaries enables polynomial backtracking on adversarial input like
+    // "users//credentials/a/credentials/a/…" (CodeQL js/polynomial-redos).
+    protected static final Pattern USER_LOGGED_OUT_BY_ADMIN_PATH_PATTERN = Pattern.compile("^users/([^/]+)/logout$");
 
-    protected static final Pattern USER_RESET_PASSWORD_BY_ADMIN_PATH_PATTERN = Pattern.compile("^users/(.*)/reset-password$");
+    protected static final Pattern USER_RESET_PASSWORD_BY_ADMIN_PATH_PATTERN = Pattern.compile("^users/([^/]+)/reset-password$");
 
-    protected static final Pattern USER_CREDENTIALS_CHANGED_BY_ADMIN_PATH_PATTERN = Pattern.compile("^users/(.*)/credentials/(.*)$");
+    protected static final Pattern USER_CREDENTIALS_CHANGED_BY_ADMIN_PATH_PATTERN = Pattern.compile("^users/([^/]+)/credentials/([^/]+)$");
 
     /**
      * Issuer URL resolver. Invoked lazily at token-build time rather than
