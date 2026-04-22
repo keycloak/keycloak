@@ -189,11 +189,11 @@ public class FAPI2Test extends AbstractFAPI2Test {
         assertEquals(201, pResp.getStatusCode());
         requestUri = pResp.getRequestUri();
         oauth.loginForm().requestUri(requestUri).state("testFAPI2SecurityProfileLoginWithMTLS").open();
-        assertBrowserWithError("PAR request did not include necessary parameters");
+        assertBrowserWithError("PAR request did not include query parameter: state");
 
         // duplicated usage of a PAR request - should fail
         oauth.loginForm().requestUri(requestUri).state("testFAPI2SecurityProfileLoginWithMTLS").codeChallenge(pkceGenerator).open();
-        assertBrowserWithError("PAR not found. not issued or used multiple times.");
+        assertBrowserWithError("PAR not found, not issued or used multiple times.");
 
         // send a pushed authorization request
         pResp = oauth.pushedAuthorizationRequest().nonce("123456").codeChallenge(pkceGenerator).send();

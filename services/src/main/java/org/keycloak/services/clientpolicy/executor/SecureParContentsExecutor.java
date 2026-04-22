@@ -18,6 +18,7 @@
 package org.keycloak.services.clientpolicy.executor;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -25,6 +26,7 @@ import jakarta.ws.rs.core.MultivaluedMap;
 
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
+import org.keycloak.common.Profile;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -87,7 +89,7 @@ public class SecureParContentsExecutor implements ClientPolicyExecutorProvider<C
         SingleUseObjectProvider singleUseStore = session.singleUseObjects();
         Map<String, String> requestParametersFromPAR = singleUseStore.get(ParEndpoint.CACHE_KEY_PREFIX + key);
         if (requestParametersFromPAR == null) {
-            throw new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, "PAR not found. not issued or used multiple times.");
+            throw new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, "PAR not found, not issued or used multiple times.");
         }
 
         Set<String> requestParametersNameFromPAR = new HashSet<>();
@@ -98,10 +100,18 @@ public class SecureParContentsExecutor implements ClientPolicyExecutorProvider<C
             requestParametersNameFromPAR = requestParametersFromPAR.keySet();
         }
 
-        for (String queryParamName : requestParametersFromQuery.keySet()) {
-            if (!requestParametersNameFromPAR.contains(queryParamName) && !OIDCLoginProtocol.REQUEST_URI_PARAM.equals(queryParamName)) {
-                singleUseStore.remove(ParEndpoint.CACHE_KEY_PREFIX + key);
-                throw new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, "PAR request did not include necessary parameters");
+        List<String> queryKeys = requestParametersFromQuery.keySet().stream()
+                .filter(it -> !it.equals(OIDCLoginProtocol.REQUEST_URI_PARAM))
+                .toList();
+
+        // FAPI says only parameters inside the request object should be used
+        // https://github.com/keycloak/keycloak/issues/48047
+        if (!Profile.isFeatureEnabled(Profile.Feature.OID4VC_HAIP)) {
+            for (String queryParam : queryKeys) {
+                if (!requestParametersNameFromPAR.contains(queryParam)) {
+                    singleUseStore.remove(ParEndpoint.CACHE_KEY_PREFIX + key);
+                    throw new ClientPolicyException(OAuthErrorException.INVALID_REQUEST_OBJECT, "PAR request did not include query parameter: " + queryParam);
+                }
             }
         }
     }
