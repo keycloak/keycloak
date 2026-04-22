@@ -17,7 +17,7 @@ import org.keycloak.testframework.realm.UserConfig;
 import org.keycloak.testframework.realm.UserConfigBuilder;
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
-import org.keycloak.testframework.remote.runonserver.RunOnServerUtils;
+import org.keycloak.testframework.remote.runonserver.RunOnServerHelpers;
 import org.keycloak.testframework.ui.annotations.InjectPage;
 import org.keycloak.testframework.ui.page.LoginPage;
 
@@ -72,7 +72,7 @@ public class LoginTest {
 
         // Expire session
         String realmName = managedRealm.getName();
-        runOnServer.run((session -> RunOnServerUtils.removeUserSession(session, realmName, sessionId)));
+        runOnServer.run(RunOnServerHelpers.removeUserSession(realmName, sessionId));
 
         // Assert rememberMe checked and username/email prefilled
         oauth.openLoginForm();

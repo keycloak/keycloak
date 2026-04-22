@@ -1,5 +1,6 @@
 package org.keycloak.testframework.remote.runonserver;
 
+
 import org.keycloak.testsuite.client.KeycloakTestingClient;
 
 /**
@@ -9,7 +10,7 @@ import org.keycloak.testsuite.client.KeycloakTestingClient;
 public class RunOnServerClient {
 
     public RunOnServerClient(KeycloakTestingClient keycloakTestingClient) {
-        RunOnServerUtils.setTestingClient(keycloakTestingClient);
+        RunOnServerHelpers.setTestingClient(keycloakTestingClient);
     }
 
     public void run(RunOnServer function) {

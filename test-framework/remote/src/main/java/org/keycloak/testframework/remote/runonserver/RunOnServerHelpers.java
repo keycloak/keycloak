@@ -6,18 +6,21 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmProvider;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.testframework.remote.providers.runonserver.RunOnServer;
 
-public final class RunOnServerUtils {
+public final class RunOnServerHelpers {
 
-    public static void removeUserSession(KeycloakSession session, String realmName, String sessionId) {
-        RealmModel realm = getRealmByName(session, realmName);
+    public static RunOnServer removeUserSession(String realmName, String sessionId) {
+        return session -> {
+            RealmModel realm = getRealmByName(session, realmName);
 
-        UserSessionModel sessionModel = session.sessions().getUserSession(realm, sessionId);
-        if (sessionModel == null) {
-            throw new NotFoundException("Session not found");
-        }
+            UserSessionModel sessionModel = session.sessions().getUserSession(realm, sessionId);
+            if (sessionModel == null) {
+                throw new NotFoundException("Session not found");
+            }
 
-        session.sessions().removeUserSession(realm, sessionModel);
+            session.sessions().removeUserSession(realm, sessionModel);
+        };
     }
 
     private static RealmModel getRealmByName(KeycloakSession session, String realmName) {
