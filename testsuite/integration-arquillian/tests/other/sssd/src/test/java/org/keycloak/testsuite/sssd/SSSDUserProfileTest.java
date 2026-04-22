@@ -19,11 +19,7 @@ package org.keycloak.testsuite.sssd;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import org.hamcrest.Matchers;
-import org.junit.Assert;
-import org.junit.FixMethodOrder;
-import org.junit.Test;
-import org.junit.runners.MethodSorters;
+
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.common.util.MultivaluedHashMap;
@@ -43,9 +39,15 @@ import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.pages.AppPage;
-import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.WaitUtils;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.userprofile.config.UPConfigUtils;
+
+import org.hamcrest.Matchers;
+import org.junit.Assert;
+import org.junit.FixMethodOrder;
+import org.junit.Test;
+import org.junit.runners.MethodSorters;
 
 /**
  * <p>Test for the User profile integration in the SSSD provider.</p>
@@ -86,7 +88,7 @@ public class SSSDUserProfileTest extends AbstractBaseSSSDTest {
         // default configuration adds all sssd attributes
         // check they are read-only in both admin and user for a SSSD user
         String username = getUsername();
-        UserResource userResource = AdminApiUtil.findUserByUsernameId(testRealm(), username);
+        UserResource userResource = AdminApiUtil.findUserByUsernameId(managedRealm.admin(), username);
         UserRepresentation user = userResource.toRepresentation(true);
 
         // for admin the four should be read-only
@@ -130,7 +132,7 @@ public class SSSDUserProfileTest extends AbstractBaseSSSDTest {
     @Test
     public void test03DefaultInternalDBUserProfile() throws Exception {
         // check non sssd user has normal atttributes enabled
-        UserResource testResource = AdminApiUtil.findUserByUsernameId(testRealm(), "test-user@localhost");
+        UserResource testResource = AdminApiUtil.findUserByUsernameId(managedRealm.admin(), "test-user@localhost");
         UserRepresentation test = testResource.toRepresentation(true);
 
         // for admin the four should be editable
@@ -172,7 +174,7 @@ public class SSSDUserProfileTest extends AbstractBaseSSSDTest {
 
     @Test
     public void test04MixedSSSDUserProfile() throws Exception {
-        RealmResource realm = testRealm();
+        RealmResource realm = managedRealm.admin();
         UPConfig origConfig = realm.users().userProfile().getConfiguration();
         try {
             createMixedUPConfiguration();
@@ -180,7 +182,7 @@ public class SSSDUserProfileTest extends AbstractBaseSSSDTest {
             // for admin all attributes are added as read-only and postal_code remains editable
             String username = getUsername();
             String sssdId = getSssdProviderId();
-            UserResource userResource = AdminApiUtil.findUserByUsernameId(testRealm(), username);
+            UserResource userResource = AdminApiUtil.findUserByUsernameId(managedRealm.admin(), username);
             UserRepresentation user = userResource.toRepresentation(true);
             // first and last names are removed from the UP config (unmanaged) and are not available from the representation
             assertUser(user, username, getEmail(username), null, null, sssdId);
@@ -225,13 +227,13 @@ public class SSSDUserProfileTest extends AbstractBaseSSSDTest {
 
     @Test
     public void test05MixedInternalDBUserProfile() throws Exception {
-        RealmResource realm = testRealm();
+        RealmResource realm = managedRealm.admin();
         UPConfig origConfig = realm.users().userProfile().getConfiguration();
         try {
             createMixedUPConfiguration();
 
             // for admin firstName and lastName remains removed, the rest editable
-            UserResource testResource = AdminApiUtil.findUserByUsernameId(testRealm(), "test-user@localhost");
+            UserResource testResource = AdminApiUtil.findUserByUsernameId(managedRealm.admin(), "test-user@localhost");
             UserRepresentation test = testResource.toRepresentation(true);
             assertUser(test, "test-user@localhost", "test-user@localhost", null, null, null);
             assertProfileAttributes(test, null, false, "username", "email", "postal_code");
@@ -294,7 +296,7 @@ public class SSSDUserProfileTest extends AbstractBaseSSSDTest {
     }
 
     private String getSssdProviderId() {
-        List<ComponentRepresentation> comps = testRealm().components()
+        List<ComponentRepresentation> comps = managedRealm.admin().components()
                 .query(TEST_REALM_NAME, UserStorageProvider.class.getName(), PROVIDER_NAME);
         Assert.assertEquals(1, comps.size());
         return comps.iterator().next().getId();
@@ -302,7 +304,7 @@ public class SSSDUserProfileTest extends AbstractBaseSSSDTest {
 
     private void createMixedUPConfiguration() {
         // removes firstName and lastName, adds a custom postal_code
-        RealmResource realm = testRealm();
+        RealmResource realm = managedRealm.admin();
         UPConfig config = realm.users().userProfile().getConfiguration();
         config.getAttributes().remove(config.getAttribute(UserModel.FIRST_NAME));
         config.getAttributes().remove(config.getAttribute(UserModel.LAST_NAME));
