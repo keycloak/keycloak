@@ -52,8 +52,8 @@ public class AuthorizationEndpointRequestParserProcessor {
     private static final Logger logger = Logger.getLogger(AuthorizationEndpointRequestParserProcessor.class);
 
     public static AuthorizationEndpointRequest parseRequest(EventBuilder event, KeycloakSession session, ClientModel client, MultivaluedMap<String, String> requestParams, EndpointType endpointType) {
+        AuthorizationEndpointRequest request = new AuthorizationEndpointRequest();
         try {
-            AuthorizationEndpointRequest request = new AuthorizationEndpointRequest();
             boolean isResponseTypeParameterRequired = isResponseTypeParameterRequired(requestParams, endpointType);
             AuthzEndpointQueryStringParser parser = new AuthzEndpointQueryStringParser(session, requestParams, isResponseTypeParameterRequired);
             parser.parseRequest(request);
@@ -107,14 +107,13 @@ public class AuthorizationEndpointRequestParserProcessor {
             if (Profile.isFeatureEnabled(Profile.Feature.DYNAMIC_SCOPES)) {
                 request.authorizationRequestContext = AuthorizationContextUtil.getAuthorizationRequestContextFromScopes(session, request.getScope());
             }
-
-            return request;
-
-        } catch (Exception e) {
-            ServicesLogger.LOGGER.invalidRequest(e);
+        } catch (Exception ex) {
             event.error(Errors.INVALID_REQUEST);
-            throw new ErrorPageException(session, Response.Status.BAD_REQUEST, Messages.INVALID_REQUEST);
+            ServicesLogger.LOGGER.invalidRequest(ex);
+            request.setInvalidRequestMessage(ex.getMessage());
         }
+
+        return request;
     }
 
     public static String getClientId(EventBuilder event, KeycloakSession session, MultivaluedMap<String, String> requestParams) {
