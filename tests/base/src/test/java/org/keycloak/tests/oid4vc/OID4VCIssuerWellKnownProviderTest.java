@@ -87,9 +87,11 @@ import static org.keycloak.jose.jwe.JWEConstants.RSA_OAEP;
 import static org.keycloak.jose.jwe.JWEConstants.RSA_OAEP_256;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.CRYPTOGRAPHIC_BINDING_METHODS_DEFAULT;
 import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider.ATTR_ENCRYPTION_REQUIRED;
+import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider.ATTR_REQUEST_ENCRYPTION_REQUIRED;
 import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider.ATTR_REQUEST_ZIP_ALGS;
 import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider.DEFLATE_COMPRESSION;
 import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider.SIGNED_METADATA_ALG_ATTR;
+import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider.SIGNED_METADATA_ENABLED_ATTR;
 import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider.SIGNED_METADATA_LIFESPAN_ATTR;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -114,6 +116,7 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerTestBase {
         setRealmAttributes(Map.of(
                 "credential_response_encryption.encryption_required", "true",
                 ATTR_ENCRYPTION_REQUIRED, "true",
+                ATTR_REQUEST_ENCRYPTION_REQUIRED, "true",
                 BATCH_CREDENTIAL_ISSUANCE_BATCH_SIZE, "10",
                 ATTR_REQUEST_ZIP_ALGS, DEFLATE_COMPRESSION
         ));
@@ -286,6 +289,103 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerTestBase {
 
         // Reset signed metadata algorithm
         setRealmAttributes(Map.of(SIGNED_METADATA_ALG_ATTR, "RS256"));
+    }
+
+    @Test
+    public void testSignedMetadataRequestedButDisabledReturnsJson() throws IOException {
+
+        Endpoints endpoints = oauth.getEndpoints();
+        String expectedIssuer = endpoints.getIssuer();
+
+        // Explicitly disable signed metadata for this test case
+        setRealmAttributes(Map.of(
+                SIGNED_METADATA_ENABLED_ATTR, "false",
+                SIGNED_METADATA_ALG_ATTR, "RS256",
+                SIGNED_METADATA_LIFESPAN_ATTR, "3600"
+        ));
+
+        try {
+            CredentialIssuerMetadataResponse response = oauth.oid4vc()
+                    .issuerMetadataRequest()
+                    .header(HttpHeaders.ACCEPT, MediaType.APPLICATION_JWT)
+                    .send();
+
+            assertEquals(HttpStatus.SC_OK, response.getStatusCode());
+            assertEquals(MediaType.APPLICATION_JSON, response.getHeader(HttpHeaders.CONTENT_TYPE));
+
+            CredentialIssuer issuer = response.getMetadata();
+            assertNotNull(issuer, "Response should be unsigned CredentialIssuer JSON");
+            assertEquals(expectedIssuer, issuer.getCredentialIssuer());
+        } finally {
+            // Restore signed metadata setting for other tests
+            setRealmAttributes(Map.of(SIGNED_METADATA_ENABLED_ATTR, "true"));
+        }
+    }
+
+    @Test
+    public void testMetadataWithWildcardAcceptReturnsJson() throws IOException {
+        String expectedIssuer = oauth.getEndpoints().getIssuer();
+
+        CredentialIssuerMetadataResponse response = oauth.oid4vc()
+                .issuerMetadataRequest()
+                .header(HttpHeaders.ACCEPT, "*/*")
+                .send();
+
+        assertEquals(HttpStatus.SC_OK, response.getStatusCode());
+        assertEquals(MediaType.APPLICATION_JSON, response.getHeader(HttpHeaders.CONTENT_TYPE));
+
+        CredentialIssuer issuer = response.getMetadata();
+        assertNotNull(issuer, "Response should be unsigned CredentialIssuer JSON");
+        assertEquals(expectedIssuer, issuer.getCredentialIssuer());
+    }
+
+    @Test
+    public void testMetadataWithCombinedAcceptPrefersJwtWhenEnabled() {
+        String expectedIssuer = oauth.getEndpoints().getIssuer();
+
+        // Ensure signed metadata is enabled for this negotiation test
+        setRealmAttributes(Map.of(SIGNED_METADATA_ENABLED_ATTR, "true"));
+
+        CredentialIssuerMetadataResponse response = oauth.oid4vc()
+                .issuerMetadataRequest()
+                .header(HttpHeaders.ACCEPT, "application/json, application/jwt")
+                .send();
+
+        assertEquals(HttpStatus.SC_OK, response.getStatusCode());
+        assertEquals(MediaType.APPLICATION_JWT, response.getHeader(HttpHeaders.CONTENT_TYPE));
+
+        JWSInput jwsInput = (JWSInput) response.getContent();
+        assertNotNull(jwsInput, "Response should be signed metadata JWS");
+        try {
+            @SuppressWarnings("unchecked")
+            Map<String, Object> claims = JsonSerialization.readValue(jwsInput.getContent(), Map.class);
+            assertEquals(expectedIssuer, claims.get("sub"), "sub should match credential_issuer");
+            assertEquals(expectedIssuer, claims.get("iss"), "iss should match credential_issuer");
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Test
+    public void testMetadataWithCaseInsensitiveJwtAcceptWhenDisabledReturnsJson() throws IOException {
+        String expectedIssuer = oauth.getEndpoints().getIssuer();
+
+        setRealmAttributes(Map.of(SIGNED_METADATA_ENABLED_ATTR, "false"));
+        try {
+            CredentialIssuerMetadataResponse response = oauth.oid4vc()
+                    .issuerMetadataRequest()
+                    .header(HttpHeaders.ACCEPT, "APPLICATION/JWT")
+                    .send();
+
+            assertEquals(HttpStatus.SC_OK, response.getStatusCode());
+            assertEquals(MediaType.APPLICATION_JSON, response.getHeader(HttpHeaders.CONTENT_TYPE));
+
+            CredentialIssuer issuer = response.getMetadata();
+            assertNotNull(issuer, "Response should be unsigned CredentialIssuer JSON");
+            assertEquals(expectedIssuer, issuer.getCredentialIssuer());
+        } finally {
+            setRealmAttributes(Map.of(SIGNED_METADATA_ENABLED_ATTR, "true"));
+        }
     }
 
     /**

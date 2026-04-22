@@ -20,6 +20,7 @@ package org.keycloak.protocol.oid4vc.issuance;
 import java.net.URI;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -85,9 +86,11 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
     // Realm attributes for signed metadata configuration
     public static final String SIGNED_METADATA_LIFESPAN_ATTR = "oid4vci.signed_metadata.lifespan";
     public static final String SIGNED_METADATA_ALG_ATTR = "oid4vci.signed_metadata.alg";
+    public static final String SIGNED_METADATA_ENABLED_ATTR = "oid4vci.signed_metadata.enabled";
 
     public static final String VC_KEY = "vc";
     public static final String ATTR_ENCRYPTION_REQUIRED = "oid4vci.encryption.required";
+    public static final String ATTR_REQUEST_ENCRYPTION_REQUIRED = "oid4vci.request.encryption.required";
 
     public static final String DEFLATE_COMPRESSION = "DEF";
     public static final String ATTR_REQUEST_ZIP_ALGS = "oid4vci.request.zip.algorithms";
@@ -117,30 +120,15 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
     public CredentialIssuer getIssuerMetadata() {
         KeycloakContext context = keycloakSession.getContext();
 
-        // Build encryption metadata first to enforce coupling rule from spec:
-        // If credential_response_encryption is included, credential_request_encryption MUST also be included.
+        // Build encryption metadata.
+        // Request and response encryption are independent per OID4VCI.
         CredentialResponseEncryptionMetadata responseEnc = getCredentialResponseEncryption(keycloakSession);
         CredentialRequestEncryptionMetadata requestEnc = getCredentialRequestEncryption(keycloakSession);
 
-        // Keep response encryption metadata even if request encryption metadata is missing
+        // Request and response encryption are independent.
         if (responseEnc != null && requestEnc == null) {
-            LOGGER.warn("credential_response_encryption is advertised but credential_request_encryption metadata is not available. " +
-                    "If response encryption is included, request encryption should also be included. " +
-                    "keep response metadata and setting encryption_required=false.");
-            if (Boolean.TRUE.equals(responseEnc.getEncryptionRequired())) {
-                responseEnc.setEncryptionRequired(false);
-            }
-        }
-
-        // Consistency rule: if both are present and response encryption is required, mark request encryption as required too
-        if (responseEnc != null && requestEnc != null) {
-            boolean responseRequired = Boolean.TRUE.equals(responseEnc.getEncryptionRequired());
-            boolean requestRequired = Boolean.TRUE.equals(requestEnc.isEncryptionRequired());
-            if (responseRequired && !requestRequired) {
-                LOGGER.warn("credential_response_encryption.encryption_required=true while credential_request_encryption.encryption_required is false. " +
-                        "Marking request encryption as required to maintain consistency.");
-                requestEnc.setEncryptionRequired(true);
-            }
+            LOGGER.debug("credential_response_encryption is advertised but credential_request_encryption metadata is not available. " +
+                    "This is allowed because request and response encryption are independent.");
         }
 
         // Add deprecation headers/logs if the old realm-scoped route was used
@@ -160,17 +148,26 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
     public Object getMetadataResponse(CredentialIssuer issuer, KeycloakSession session) {
         RealmModel realm = session.getContext().getRealm();
         String acceptHeader = session.getContext().getRequestHeaders().getHeaderString(HttpHeaders.ACCEPT);
-        boolean preferJwt = acceptHeader != null && acceptHeader.contains(MediaType.APPLICATION_JWT);
+        boolean preferJwt = acceptHeader != null
+                && acceptHeader.toLowerCase(Locale.ROOT).contains(MediaType.APPLICATION_JWT);
+        String signedMetadataEnabledAttr = realm.getAttribute(SIGNED_METADATA_ENABLED_ATTR);
+        boolean signedMetadataEnabled = Boolean.parseBoolean(signedMetadataEnabledAttr);
 
-        if (preferJwt) {
+        if (preferJwt && signedMetadataEnabled) {
             Optional<String> signedJwt = generateSignedMetadata(issuer, session);
             if (signedJwt.isPresent()) {
+                session.getContext().getHttpResponse().setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JWT);
                 return signedJwt.get();
             } else {
                 LOGGER.debugf("Falling back to JSON response due to signed metadata failure for realm: %s", realm.getName());
             }
+        } else if (preferJwt && !signedMetadataEnabled) {
+            LOGGER.infof("Client requested JWT metadata but signed metadata is disabled for realm '%s' (attr '%s' value: '%s'). Returning JSON.",
+                    realm.getName(), SIGNED_METADATA_ENABLED_ATTR, signedMetadataEnabledAttr);
         }
 
+        // JSON metadata is mandatory and always supported.
+        session.getContext().getHttpResponse().setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
         return issuer;
     }
 
@@ -351,11 +348,15 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
         // Build JWKS with public encryption keys
         JSONWebKeySet jwks = buildJwks(session);
 
-        // If encryption is required but no keys exist → reject unencrypted requests
-        boolean encryptionRequired = isEncryptionRequired(realm);
+        // Request encryption requirement is independent from response encryption requirement.
+        boolean requestEncryptionRequired = false;
+        String requestEncRequiredAttr = realm.getAttribute(ATTR_REQUEST_ENCRYPTION_REQUIRED);
+        if (requestEncRequiredAttr != null) {
+            requestEncryptionRequired = Boolean.parseBoolean(requestEncRequiredAttr);
+        }
         if (jwks.getKeys() == null || jwks.getKeys().length == 0) {
-            if (encryptionRequired) {
-                LOGGER.error("Encryption is required but no valid encryption keys are available.");
+            if (requestEncryptionRequired) {
+                LOGGER.error("Request encryption is required but no valid encryption keys are available.");
                 throw new IllegalStateException("Missing encryption keys for required credential_request_encryption.");
             } else {
                 LOGGER.warn("No valid encryption keys found; omitting credential_request_encryption metadata.");
@@ -368,7 +369,7 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
                 .setJwks(jwks)
                 .setEncValuesSupported(getSupportedEncryptionMethods())
                 .setZipValuesSupported(getSupportedZipAlgorithms(realm))
-                .setEncryptionRequired(encryptionRequired);
+                .setEncryptionRequired(requestEncryptionRequired);
 
         return metadata;
     }
@@ -465,8 +466,8 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
 
 
     private static void applyFormatSpecificMetadata(KeycloakSession keycloakSession,
-                                                     SupportedCredentialConfiguration config,
-                                                     CredentialScopeModel credentialScope) {
+                                                    SupportedCredentialConfiguration config,
+                                                    CredentialScopeModel credentialScope) {
         String format = config.getFormat();
         if (format == null) {
             return;
@@ -530,8 +531,8 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
     public static List<String> getAuthorizationServers(KeycloakSession session) {
         return List.of(getIssuer(session.getContext()));
     }
-    
-    /** 
+
+    /**
      * Returns the supported asymmetric signature algorithms.
      * Delegates to CryptoUtils for shared implementation with OIDCWellKnownProvider.
      * This includes all asymmetric algorithms supported by Keycloak (RSA, EC, EdDSA).
