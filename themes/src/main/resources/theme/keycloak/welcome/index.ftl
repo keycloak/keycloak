@@ -8,7 +8,8 @@
     <link rel="shortcut icon" href="${resourcesCommonPath}/img/favicon.ico">
     <#if properties.darkMode?boolean>
       <script type="module" async blocking="render">
-          const DARK_MODE_CLASS = "${properties.kcDarkModeClass}";
+          <#outputformat "JavaScript">
+          const DARK_MODE_CLASS = ${properties.kcDarkModeClass?c};
           const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
 
           updateDarkMode(mediaQuery.matches);
@@ -23,6 +24,7 @@
               classList.remove(DARK_MODE_CLASS);
             }
           }
+          </#outputformat>
       </script>
     </#if>
     <#if properties.stylesCommon?has_content>

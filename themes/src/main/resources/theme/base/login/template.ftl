@@ -43,11 +43,13 @@
         </#list>
     </#if>
     <script type="module">
-        import { startSessionPolling } from "${url.resourcesPath}/js/authChecker.js";
+        <#outputformat "JavaScript">
+        import { startSessionPolling } from ${(url.resourcesPath + "/js/authChecker.js")?c};
 
         startSessionPolling(
-            "${url.ssoLoginInOtherTabsUrl?no_esc}"
+            ${url.ssoLoginInOtherTabsUrl?c}
         );
+        </#outputformat>
     </script>
     <script type="module">
         document.addEventListener("click", (event) => {
@@ -74,11 +76,13 @@
     </script>
     <#if authenticationSession??>
         <script type="module">
-            import { checkAuthSession } from "${url.resourcesPath}/js/authChecker.js";
+            <#outputformat "JavaScript">
+            import { checkAuthSession } from ${(url.resourcesPath + "/js/authChecker.js")?c};
 
             checkAuthSession(
-                "${authenticationSession.authSessionIdHash}"
+                ${authenticationSession.authSessionIdHash?c}
             );
+            </#outputformat>
         </script>
     </#if>
 </head>
