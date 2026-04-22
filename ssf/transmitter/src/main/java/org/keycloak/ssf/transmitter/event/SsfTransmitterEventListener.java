@@ -164,7 +164,7 @@ public class SsfTransmitterEventListener implements EventListenerProvider {
     }
 
     protected SsfSecurityEventToken convertUserEventToSecurityEventToken(Event event, SsfTransmitterProvider transmitter, StreamConfig stream) {
-        return transmitter.securityEventTokenMapper().toSecurityEvent(event, stream);
+        return transmitter.securityEventTokenMapper().toSecurityEventToken(event, stream);
     }
 
     /**
@@ -327,7 +327,7 @@ public class SsfTransmitterEventListener implements EventListenerProvider {
     }
 
     protected SsfSecurityEventToken convertAdminEventToSecurityEventToken(AdminEvent adminEvent, SsfTransmitterProvider transmitter, StreamConfig stream) {
-        return transmitter.securityEventTokenMapper().toSecurityEvent(adminEvent, stream);
+        return transmitter.securityEventTokenMapper().toSecurityEventToken(adminEvent, stream);
     }
 
     protected boolean isUserSessionExpiration(Event event) {
