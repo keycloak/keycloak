@@ -53,6 +53,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.UserBuilder;
+import org.keycloak.testframework.remote.runonserver.RunOnServerUtils;
 import org.keycloak.testsuite.AbstractChangeImportedUserPasswordsTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.ProfileAssume;
@@ -656,7 +657,7 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
             String sessionId = loginEvent.getSessionId();
 
             // Expire session
-            testingClient.testing().removeUserSession("test", sessionId);
+            runOnServer.run((session -> RunOnServerUtils.removeUserSession(session, "test", sessionId)));
 
             // Assert rememberMe checked and username/email prefilled
             oauth.openLoginForm();

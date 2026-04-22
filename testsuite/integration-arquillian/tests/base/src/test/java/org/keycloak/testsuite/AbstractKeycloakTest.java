@@ -58,6 +58,7 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.arquillian.KcArquillian;
 import org.keycloak.testsuite.arquillian.SuiteContext;
@@ -136,6 +137,8 @@ public abstract class AbstractKeycloakTest {
 
     protected KeycloakTestingClient testingClient;
 
+    protected RunOnServerClient runOnServer;
+
     @ArquillianResource
     protected OAuthClient oauth;
 
@@ -181,6 +184,7 @@ public abstract class AbstractKeycloakTest {
         }
 
         getTestingClient();
+        runOnServer = new RunOnServerClient(testingClient);
 
         setDefaultPageUriParameters();
 
