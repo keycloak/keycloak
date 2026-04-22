@@ -31,6 +31,10 @@ public interface RealmPermissionEvaluator {
 
     void requireManageRealm();
 
+    boolean canExportRealm();
+
+    void requireExportRealm();
+
     boolean canViewRealm();
 
     void requireViewRealm();

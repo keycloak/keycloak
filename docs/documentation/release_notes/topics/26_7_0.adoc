@@ -27,6 +27,12 @@ When a user wants to authenticate with Passkeys, {project_name} shows the authen
 As part of this change, the passkey authentication page in the login theme and the signing-in page in the account console were updated.
 If you use a custom theme that overrides these pages, verify that your customizations work as expected with this release.
 
+== Dedicated admin role for realm exports
+
+{project_name} now provides a dedicated realm admin role for exporting realms: `export-realm`.
+
+Previously, exporting a realm via the Admin API's partial export endpoint required the `manage-realm` role, which grants broad administrative access. The new `export-realm` role allows administrators to perform realm exports without requiring full realm management privileges. It allows exporting group and client information as well, without requiring the `query-groups` or `view-clients` role.
+
 == Realm search now matches by display name
 
 When searching for realms in the admin console, the search now also matches against the realm's display name in addition to the realm name.

@@ -99,6 +99,7 @@ export const PageNav = () => {
     "view-realm",
     "query-clients",
     "view-identity-providers",
+    "export-realm",
   );
 
   const showWorkflows =

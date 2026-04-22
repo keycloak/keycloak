@@ -30,10 +30,11 @@ public class MigrateTo26_7_0 extends RealmMigration {
 
     @Override
     public void migrate(KeycloakSession session) {
-        // addOrganizationAdminRoles accesses cross-realm entities (master admin client)
+        // addOrganizationAdminRoles and addExportRealmRole access cross-realm entities (master admin client)
         // which fails with LazyInitializationException when RealmMigration clears the
-        // persistence context between realms. Handle it in a separate pass.
+        // persistence context between realms. Handle them in a separate pass.
         session.realms().getRealmsStream().forEach(this::addOrganizationAdminRoles);
+        session.realms().getRealmsStream().forEach(this::addExportRealmRole);
         super.migrate(session);
     }
 
@@ -41,6 +42,7 @@ public class MigrateTo26_7_0 extends RealmMigration {
     public void migrateImport(KeycloakSession session, RealmModel realm, RealmRepresentation rep,
             boolean skipUserDependent) {
         addOrganizationAdminRoles(realm);
+        addExportRealmRole(realm);
         super.migrateImport(session, realm, rep, skipUserDependent);
     }
 
@@ -123,5 +125,9 @@ public class MigrateTo26_7_0 extends RealmMigration {
         if (realm.getAdminPermissionsClient() != null) {
             AdminPermissionsSchema.SCHEMA.init(session, realm);
         }
+    }
+
+    private void addExportRealmRole(RealmModel realm) {
+        MigrationUtils.addAdminRole(realm, AdminRoles.EXPORT_REALM);
     }
 }
