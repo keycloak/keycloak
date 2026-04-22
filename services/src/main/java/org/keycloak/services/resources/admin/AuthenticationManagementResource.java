@@ -728,31 +728,34 @@ public class AuthenticationManagementResource {
             } else {
                 String providerId = execution.getAuthenticator();
                 ConfigurableAuthenticatorFactory factory = CredentialHelper.getConfigurableAuthenticatorFactory(session, providerId);
-                if (factory == null) {
-                    logger.warnf("Cannot find authentication provider implementation with provider ID '%s'", providerId);
-                    throw new NotFoundException("Could not find authenticator provider");
-                }
-                rep.setDisplayName(factory.getDisplayType());
-                rep.setConfigurable(factory.isConfigurable());
-                for (AuthenticationExecutionModel.Requirement choice : factory.getRequirementChoices()) {
-                    rep.getRequirementChoices().add(choice.name());
-                }
                 rep.setId(execution.getId());
+                rep.setRequirement(execution.getRequirement().name());
 
-                if (factory.isConfigurable()) {
-                    String authenticatorConfigId = execution.getAuthenticatorConfig();
-                    if(authenticatorConfigId != null) {
-                        AuthenticatorConfigModel authenticatorConfig = new DeployedConfigurationsManager(session).getAuthenticatorConfig(realm, authenticatorConfigId);
+                if (factory == null) {
+                    // Return a placeholder so a flow with an orphan execution stays manageable. See issue #15535.
+                    logger.debugf("Cannot find authentication provider implementation with provider ID '%s'", providerId);
+                    rep.setDisplayName(providerId);
+                    rep.setConfigurable(false);
+                    rep.setProviderUnavailable(true);
+                    rep.getRequirementChoices().add(execution.getRequirement().name());
+                } else {
+                    rep.setDisplayName(factory.getDisplayType());
+                    rep.setConfigurable(factory.isConfigurable());
+                    for (AuthenticationExecutionModel.Requirement choice : factory.getRequirementChoices()) {
+                        rep.getRequirementChoices().add(choice.name());
+                    }
 
-                        if (authenticatorConfig != null) {
-                            rep.setAlias(authenticatorConfig.getAlias());
+                    if (factory.isConfigurable()) {
+                        String authenticatorConfigId = execution.getAuthenticatorConfig();
+                        if(authenticatorConfigId != null) {
+                            AuthenticatorConfigModel authenticatorConfig = new DeployedConfigurationsManager(session).getAuthenticatorConfig(realm, authenticatorConfigId);
+
+                            if (authenticatorConfig != null) {
+                                rep.setAlias(authenticatorConfig.getAlias());
+                            }
                         }
                     }
                 }
-
-                rep.setRequirement(execution.getRequirement().name());
-
-                providerId = execution.getAuthenticator();
 
                 // encode the provider id in case the provider is a script deployed to the server to make sure it can be used as path parameters without break the URL syntax
                 if (providerId.startsWith("script-")) {

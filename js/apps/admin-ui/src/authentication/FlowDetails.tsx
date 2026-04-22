@@ -51,6 +51,16 @@ export const providerConditionFilter = (
   value: AuthenticationProviderRepresentation,
 ) => value.displayName?.startsWith("Condition ");
 
+const containsOrphan = (
+  ex: AuthenticationFlowRepresentation | ExpandableExecution,
+): boolean => {
+  if ("providerUnavailable" in ex && ex.providerUnavailable) {
+    return true;
+  }
+  const list = (ex as ExpandableExecution).executionList;
+  return !!list?.some(containsOrphan);
+};
+
 export default function FlowDetails() {
   const { adminClient } = useAdminClient();
 
@@ -104,6 +114,14 @@ export default function FlowDetails() {
     try {
       let id = ex.id!;
       if ("parent" in change) {
+        // Cross-flow drag runs delete + re-create; re-create fails on an unavailable provider, which would silently drop the row.
+        if (containsOrphan(ex)) {
+          addError(
+            "updateFlowError",
+            new Error(t("providerUnavailableMoveBlocked")),
+          );
+          return;
+        }
         let config: AuthenticatorConfigRepresentation = {};
         if ("authenticationConfig" in ex) {
           config = await adminClient.authenticationManagement.getConfig({
@@ -127,13 +145,14 @@ export default function FlowDetails() {
               type: "basic-flow",
             });
           id = result.id!;
-          ex.executionList?.forEach((e, i) =>
-            executeChange(e, {
+          const children = ex.executionList ?? [];
+          for (let i = 0; i < children.length; i++) {
+            await executeChange(children[i], {
               parent: { ...ex, id: result.id },
               newIndex: i,
               oldIndex: i,
-            }),
-          );
+            });
+          }
         } else {
           const result =
             await adminClient.authenticationManagement.addExecutionToFlow({
