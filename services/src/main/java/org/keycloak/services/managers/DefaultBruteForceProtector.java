@@ -96,7 +96,6 @@ public class DefaultBruteForceProtector implements BruteForceProtector {
         if (last > 0) {
             deltaTime = failureTime - last;
         }
-        userLoginFailure.setLastFailure(failureTime);
 
         if (!(realm.isPermanentLockout() && realm.getMaxTemporaryLockouts() == 0) && deltaTime > 0) {
             // if last failure was more than MAX_DELTA clear failures
@@ -104,6 +103,7 @@ public class DefaultBruteForceProtector implements BruteForceProtector {
                 userLoginFailure.clearFailures();
             }
         }
+        userLoginFailure.setLastFailure(failureTime);
         userLoginFailure.incrementFailures();
         logger.debugf("new num failures: %s", userLoginFailure.getNumFailures());
 
