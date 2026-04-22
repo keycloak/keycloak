@@ -81,6 +81,32 @@
                     </compilerArgument>
                 </configuration>
             </plugin>
+            <!-- FIXME: drop this when the smallrye-open-api-maven-plugin exposes enableStandardStaticFiles,
+                 see https://github.com/keycloak/keycloak/pull/48371 -->
+            <plugin>
+                <artifactId>maven-clean-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>remove-stale-openapi-from-classpath</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>clean</goal>
+                        </goals>
+                        <configuration>
+                            <excludeDefaultDirectories>true</excludeDefaultDirectories>
+                            <filesets>
+                                <fileset>
+                                    <directory>${project.build.directory}/classes/META-INF</directory>
+                                    <includes>
+                                        <include>openapi.yaml</include>
+                                        <include>openapi.json</include>
+                                    </includes>
+                                </fileset>
+                            </filesets>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <groupId>io.smallrye</groupId>
                 <artifactId>smallrye-open-api-maven-plugin</artifactId>
