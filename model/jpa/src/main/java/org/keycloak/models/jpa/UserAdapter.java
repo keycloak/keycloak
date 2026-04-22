@@ -18,7 +18,6 @@
 package org.keycloak.models.jpa;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -205,13 +204,8 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
             return;
         }
 
-        Set<String> oldEntries = getAttributeStream(name).collect(Collectors.toSet());
-        Set<String> newEntries;
-        if (values == null) {
-            newEntries = new HashSet<>();
-        } else {
-            newEntries = new HashSet<>(values);
-        }
+        List<String> oldEntries = getAttributeStream(name).collect(Collectors.toList());
+        List<String> newEntries = values == null ? List.of() : values;
         if (CollectionUtil.collectionEquals(oldEntries, newEntries)) {
             return;
         }

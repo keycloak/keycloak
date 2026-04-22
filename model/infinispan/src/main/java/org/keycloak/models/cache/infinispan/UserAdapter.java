@@ -215,13 +215,8 @@ public class UserAdapter implements CachedUserModel {
             if (lowerCasedFirstValue != null) values = Collections.singletonList(lowerCasedFirstValue);
         }
         if (updated == null) {
-            Set<String> oldEntries = getAttributeStream(name).collect(Collectors.toSet());
-            Set<String> newEntries;
-            if (values == null) {
-                newEntries = new HashSet<>();
-            } else {
-                newEntries = new HashSet<>(values);
-            }
+            List<String> oldEntries = getAttributeStream(name).collect(Collectors.toList());
+            List<String> newEntries = values == null ? List.of() : values;
             if (CollectionUtil.collectionEquals(oldEntries, newEntries)) {
                 return;
             }
