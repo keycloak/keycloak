@@ -194,22 +194,27 @@ test.describe("Authentication flow details", () => {
 
     await clickTableRowItem(page, flowName);
 
-    const sourceBox = await page
-      .getByText("Identity Provider Redirector")
-      .boundingBox();
-    const targetBox = await page.getByText("Kerberos").boundingBox();
+    // dnd-kit only activates drags from the grip handle (PointerSensor + activation distance).
+    // Drop target hit-testing uses the row rect; the middle of a non-subflow row maps to
+    // "reorder-after", which is a no-op when moving an item from below onto that row — use the
+    // top band for "reorder-before" so the order actually changes.
+    const sourceRow = page.getByRole("row", {
+      name: /Identity Provider Redirector/,
+    });
+    const sourceHandle = sourceRow.locator(
+      ".keycloak__authentication__drag-handle",
+    );
+    const targetRow = page.getByRole("row", { name: /Kerberos/ }).first();
+    const targetBox = await targetRow.boundingBox();
+    expect(targetBox).not.toBeNull();
 
-    await page.mouse.move(
-      sourceBox!.x + sourceBox!.width / 2,
-      sourceBox!.y + sourceBox!.height / 2,
-    );
-    await page.mouse.down();
-    await page.mouse.move(
-      targetBox!.x + targetBox!.width / 2,
-      targetBox!.y + targetBox!.height / 2,
-      { steps: 10 },
-    );
-    await page.mouse.up();
+    await sourceHandle.dragTo(targetRow, {
+      steps: 20,
+      targetPosition: {
+        x: targetBox!.width / 2,
+        y: Math.max(8, targetBox!.height * 0.12),
+      },
+    });
 
     await assertNotificationMessage(page, "Flow successfully updated");
   });
