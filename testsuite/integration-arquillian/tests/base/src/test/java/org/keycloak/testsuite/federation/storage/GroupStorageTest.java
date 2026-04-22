@@ -27,10 +27,13 @@ import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.cache.infinispan.GroupAdapter;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.storage.CacheableStorageProviderModel;
 import org.keycloak.storage.StorageId;
 import org.keycloak.storage.group.GroupStorageProvider;
+import org.keycloak.storage.group.GroupStorageProviderModel;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.auth.page.AuthRealm;
@@ -43,7 +46,9 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.not;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class GroupStorageTest extends AbstractTestRealmKeycloakTest {
 
@@ -124,135 +129,56 @@ public class GroupStorageTest extends AbstractTestRealmKeycloakTest {
         });
     }
 
-    /* 
-        TODO review caching of groups, it behaves a little bit different than clients so following tests fails.
-        Tracked as KEYCLOAK-15135.
-    */
-//    @Test
-//    public void testDailyEviction() {
-//        testNotCached();
+    @Test
+    public void testNoCache() {
+        testIsCached();
 
-//        testingClient.server().run(session -> {
-//            RealmModel realm = session.realms().getRealmByName("test");
-//            RoleStorageProviderModel model = realm.getRoleStorageProviders().get(0);
-//            Calendar eviction = Calendar.getInstance();
-//            eviction.add(Calendar.HOUR, 1);
-//            model.setCachePolicy(CacheableStorageProviderModel.CachePolicy.EVICT_DAILY);
-//            model.setEvictionHour(eviction.get(HOUR_OF_DAY));
-//            model.setEvictionMinute(eviction.get(MINUTE));
-//            realm.updateComponent(model);
-//        });
-//        testIsCached();
-//        setTimeOffset(2 * 60 * 60); // 2 hours in future
-//        testNotCached();
-//        testIsCached();
-//
-//        setDefaultCachePolicy();
-//        testIsCached();
+        try {
+            testingClient.server().run(session -> {
+                RealmModel realm = session.realms().getRealmByName("test");
+                GroupStorageProviderModel model = new GroupStorageProviderModel(realm.getComponent(providerId));
+                model.setCachePolicy(CacheableStorageProviderModel.CachePolicy.NO_CACHE);
+                realm.updateComponent(model);
+            });
 
-//    }
+            testNotCached();
+            testNotCached();
+        } finally {
+            setDefaultCachePolicy();
+        }
 
-//    @Test
-//    public void testWeeklyEviction() {
-//        testNotCached();
-//
-//        testingClient.server().run(session -> {
-//            RealmModel realm = session.realms().getRealmByName("test");
-//            RoleStorageProviderModel model = realm.getRoleStorageProviders().get(0);
-//            Calendar eviction = Calendar.getInstance();
-//            eviction.add(Calendar.HOUR, 4 * 24);
-//            model.setCachePolicy(CacheableStorageProviderModel.CachePolicy.EVICT_WEEKLY);
-//            model.setEvictionDay(eviction.get(DAY_OF_WEEK));
-//            model.setEvictionHour(eviction.get(HOUR_OF_DAY));
-//            model.setEvictionMinute(eviction.get(MINUTE));
-//            realm.updateComponent(model);
-//        });
-//        testIsCached();
-//        setTimeOffset(2 * 24 * 60 * 60); // 2 days in future
-//        testIsCached();
-//        setTimeOffset(5 * 24 * 60 * 60); // 5 days in future
-//        testNotCached();
-//        testIsCached();
-//
-//        setDefaultCachePolicy();
-//        testIsCached();
-//
-//    }
-//
-//    @Test
-//    public void testMaxLifespan() {
-//        testNotCached();
-//
-//        testingClient.server().run(session -> {
-//            RealmModel realm = session.realms().getRealmByName("test");
-//            RoleStorageProviderModel model = realm.getRoleStorageProviders().get(0);
-//            model.setCachePolicy(CacheableStorageProviderModel.CachePolicy.MAX_LIFESPAN);
-//            model.setMaxLifespan(1 * 60 * 60 * 1000);
-//            realm.updateComponent(model);
-//        });
-//        testIsCached();
-//
-//        setTimeOffset(1/2 * 60 * 60); // 1/2 hour in future
-//
-//        testIsCached();
-//
-//        setTimeOffset(2 * 60 * 60); // 2 hours in future
-//
-//        testNotCached();
-//        testIsCached();
-//
-//        setDefaultCachePolicy();
-//        testIsCached();
-//
-//    }
+        testIsCached();
+    }
 
-//    private void testNotCached() {
-//        String providerId = this.providerId;
-//        testingClient.server().run(session -> {
-//            RealmModel realm = session.realms().getRealmByName("test");
-//            StorageId storageId = new StorageId(providerId, "hardcoded-group");
-//            GroupModel hardcoded = session.groups().getGroupById(realm, storageId.getId());
-//            Assert.assertNotNull(hardcoded);
-//            Assert.assertThat(hardcoded, not(instanceOf(GroupAdapter.class)));
-//        });
-//    }
+    private void testNotCached() {
+        String providerId = this.providerId;
+        testingClient.server().run(session -> {
+            RealmModel realm = session.realms().getRealmByName("test");
+            StorageId storageId = new StorageId(providerId, "hardcoded-group");
+            GroupModel hardcoded = session.groups().getGroupById(realm, storageId.getId());
+            assertNotNull(hardcoded);
+            assertFalse(hardcoded instanceof GroupAdapter);
+        });
+    }
 
-//    private void testIsCached() {
-//        testingClient.server().run(session -> {
-//            RealmModel realm = session.realms().getRealmByName("test");
-//            RoleModel hardcoded = realm.getRole("hardcoded-role");
-//            Assert.assertNotNull(hardcoded);
-//            Assert.assertThat(hardcoded, instanceOf(RoleAdapter.class));
-//        });
-//    }
+    private void testIsCached() {
+        testingClient.server().run(session -> {
+            RealmModel realm = session.realms().getRealmByName("test");
+            GroupModel hardcoded = session.groups().getGroupById(realm, new StorageId(providerId, "hardcoded-group").getId());
+            assertNotNull(hardcoded);
+            assertTrue(hardcoded instanceof GroupAdapter);
+        });
+    }
 
-//    @Test
-//    public void testNoCache() {
-//        testNotCached();
-//
-//        testingClient.server().run(session -> {
-//            RealmModel realm = session.realms().getRealmByName("test");
-//            RoleStorageProviderModel model = realm.getRoleStorageProviders().get(0);
-//            model.setCachePolicy(CacheableStorageProviderModel.CachePolicy.NO_CACHE);
-//            realm.updateComponent(model);
-//        });
-//
-//        testNotCached();
-//
-//        // test twice because updating component should evict
-//        testNotCached();
-//
-//        // set it back
-//        setDefaultCachePolicy();
-//        testIsCached();
-//    }
+    private void setDefaultCachePolicy() {
+        testingClient.server().run(session -> {
+            RealmModel realm = session.realms().getRealmByName("test");
+            GroupStorageProviderModel model = new GroupStorageProviderModel(realm.getComponent(providerId));
+            model.setCachePolicy(CacheableStorageProviderModel.CachePolicy.DEFAULT);
+            realm.updateComponent(model);
+        });
+    }
 
-//    private void setDefaultCachePolicy() {
-//        testingClient.server().run(session -> {
-//            RealmModel realm = session.realms().getRealmByName("test");
-//            RoleStorageProviderModel model = realm.getRoleStorageProviders().get(0);
-//            model.setCachePolicy(CacheableStorageProviderModel.CachePolicy.DEFAULT);
-//            realm.updateComponent(model);
-//        });
-//    }
+    // TODO review caching of groups, it behaves a little bit different than clients so daily/weekly eviction tests still need attention.
+    // Tracked as KEYCLOAK-15135.
 }
