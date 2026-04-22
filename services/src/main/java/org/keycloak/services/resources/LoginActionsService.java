@@ -18,6 +18,7 @@ package org.keycloak.services.resources;
 
 import java.net.URI;
 import java.util.Map;
+import java.util.Optional;
 
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
@@ -626,7 +627,7 @@ public class LoginActionsService {
             String kid = verifier.getHeader().getKeyId();
             String algorithm = verifier.getHeader().getAlgorithm().name();
 
-            SignatureVerifierContext signatureVerifier = session.getProvider(SignatureProvider.class, algorithm).verifier(kid);
+            SignatureVerifierContext signatureVerifier = getSignatureProvider(algorithm).verifier(kid);
             verifier.verifierContext(signatureVerifier);
 
             verifier.verify();
@@ -720,6 +721,11 @@ public class LoginActionsService {
         } catch (VerificationException ex) {
             return handleActionTokenVerificationException(tokenContext, ex, eventError, defaultErrorMessage);
         }
+    }
+
+    private SignatureProvider getSignatureProvider(String algorithm) throws ExplainedTokenVerificationException {
+        return Optional.ofNullable(session.getProvider(SignatureProvider.class, algorithm))
+                .orElseThrow(() -> new ExplainedTokenVerificationException(null, Errors.NOT_ALLOWED, Messages.INVALID_REQUEST));
     }
 
     private Response processFlowFromPath(String flowPath, AuthenticationSessionModel authSession, String errorMessage) {
