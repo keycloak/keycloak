@@ -25,6 +25,7 @@ export type AccessType =
   | "view-organizations"
   | "query-groups"
   | "query-organizations"
+  | "export-realm"
   | "anyone"
   | AccessTypeFunc;
 

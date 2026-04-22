@@ -9,6 +9,7 @@ Each realm has a built-in client called `realm-management`.  You can view this c
 `Clients` left menu item of your realm.  This client defines client-level roles that specify permissions that can be granted to manage the realm.
 
 * create-client
+* export-realm
 * impersonation
 * manage-authorization
 * manage-clients

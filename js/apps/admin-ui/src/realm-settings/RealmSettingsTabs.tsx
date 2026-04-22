@@ -83,8 +83,9 @@ const RealmSettingsHeader = ({
   const navigate = useNavigate();
   const [partialImportOpen, setPartialImportOpen] = useState(false);
   const [partialExportOpen, setPartialExportOpen] = useState(false);
-  const { hasAccess } = useAccess();
+  const { hasAccess, hasSomeAccess } = useAccess();
   const canManageRealm = hasAccess("manage-realm");
+  const canExportRealm = hasSomeAccess("manage-realm", "export-realm");
 
   const [toggleDisableDialog, DisableConfirm] = useConfirmDialog({
     titleKey: "disableConfirmTitle",
@@ -145,7 +146,7 @@ const RealmSettingsHeader = ({
           <DropdownItem
             key="export"
             data-testid="openPartialExportModal"
-            isDisabled={!canManageRealm}
+            isDisabled={!canExportRealm}
             onClick={() => setPartialExportOpen(true)}
           >
             {t("partialExport")}
@@ -302,6 +303,7 @@ export const RealmSettingsTabs = () => {
   const userProfileTab = useTab("user-profile");
   const userRegistrationTab = useTab("user-registration");
   const { hasAccess, hasSomeAccess } = useAccess();
+  const canViewRealm = hasSomeAccess("view-realm", "manage-realm");
   const canViewOrManageEvents =
     hasAccess("view-realm") && hasSomeAccess("view-events", "manage-events");
   const canViewUserRegistration =
@@ -334,151 +336,153 @@ export const RealmSettingsTabs = () => {
           />
         )}
       />
-      <PageSection variant="light" className="pf-v5-u-p-0">
-        <RoutableTabs
-          isBox
-          mountOnEnter
-          aria-label="realm-settings-tabs"
-          defaultLocation={toRealmSettings({
-            realm: realmName,
-            tab: "general",
-          })}
-        >
-          <Tab
-            title={<TabTitleText>{t("general")}</TabTitleText>}
-            data-testid="rs-general-tab"
-            {...generalTab}
+      {canViewRealm && (
+        <PageSection variant="light" className="pf-v5-u-p-0">
+          <RoutableTabs
+            isBox
+            mountOnEnter
+            aria-label="realm-settings-tabs"
+            defaultLocation={toRealmSettings({
+              realm: realmName,
+              tab: "general",
+            })}
           >
-            <RealmSettingsGeneralTab realm={realm!} save={save} />
-          </Tab>
-          <Tab
-            title={<TabTitleText>{t("login")}</TabTitleText>}
-            data-testid="rs-login-tab"
-            {...loginTab}
-          >
-            <RealmSettingsLoginTab refresh={refresh} realm={realm!} />
-          </Tab>
-          <Tab
-            title={<TabTitleText>{t("email")}</TabTitleText>}
-            data-testid="rs-email-tab"
-            {...emailTab}
-          >
-            <RealmSettingsEmailTab realm={realm!} save={save} />
-          </Tab>
-          <Tab
-            title={<TabTitleText>{t("themes")}</TabTitleText>}
-            data-testid="rs-themes-tab"
-            {...themesTab}
-          >
-            <ThemesTab realm={realm!} save={save} />
-          </Tab>
-          <Tab
-            title={<TabTitleText>{t("keys")}</TabTitleText>}
-            data-testid="rs-keys-tab"
-            {...keysTab}
-          >
-            <KeysTab />
-          </Tab>
-          {canViewOrManageEvents && (
             <Tab
-              title={<TabTitleText>{t("events")}</TabTitleText>}
-              data-testid="rs-realm-events-tab"
-              {...eventsTab}
+              title={<TabTitleText>{t("general")}</TabTitleText>}
+              data-testid="rs-general-tab"
+              {...generalTab}
             >
-              <EventsTab realm={realm!} />
+              <RealmSettingsGeneralTab realm={realm!} save={save} />
             </Tab>
-          )}
-          <Tab
-            title={<TabTitleText>{t("localization")}</TabTitleText>}
-            data-testid="rs-localization-tab"
-            {...localizationTab}
-          >
-            <LocalizationTab
-              key={key}
-              save={save}
-              realm={realm!}
-              tableData={tableData}
-            />
-          </Tab>
-          <Tab
-            title={<TabTitleText>{t("securityDefences")}</TabTitleText>}
-            data-testid="rs-security-defenses-tab"
-            {...securityDefensesTab}
-          >
-            <SecurityDefenses realm={realm!} save={save} />
-          </Tab>
-          <Tab
-            title={<TabTitleText>{t("sessions")}</TabTitleText>}
-            data-testid="rs-sessions-tab"
-            {...sessionsTab}
-          >
-            <RealmSettingsSessionsTab key={key} realm={realm!} save={save} />
-          </Tab>
-          <Tab
-            title={<TabTitleText>{t("tokens")}</TabTitleText>}
-            data-testid="rs-tokens-tab"
-            {...tokensTab}
-          >
-            <RealmSettingsTokensTab save={save} realm={realm!} />
-          </Tab>
-          {isFeatureEnabled(Feature.ClientPolicies) && (
             <Tab
-              title={<TabTitleText>{t("clientPolicies")}</TabTitleText>}
-              data-testid="rs-clientPolicies-tab"
-              {...clientPoliciesTab}
+              title={<TabTitleText>{t("login")}</TabTitleText>}
+              data-testid="rs-login-tab"
+              {...loginTab}
             >
-              <RoutableTabs
-                mountOnEnter
-                defaultLocation={toClientPolicies({
-                  realm: realmName,
-                  tab: "profiles",
-                })}
+              <RealmSettingsLoginTab refresh={refresh} realm={realm!} />
+            </Tab>
+            <Tab
+              title={<TabTitleText>{t("email")}</TabTitleText>}
+              data-testid="rs-email-tab"
+              {...emailTab}
+            >
+              <RealmSettingsEmailTab realm={realm!} save={save} />
+            </Tab>
+            <Tab
+              title={<TabTitleText>{t("themes")}</TabTitleText>}
+              data-testid="rs-themes-tab"
+              {...themesTab}
+            >
+              <ThemesTab realm={realm!} save={save} />
+            </Tab>
+            <Tab
+              title={<TabTitleText>{t("keys")}</TabTitleText>}
+              data-testid="rs-keys-tab"
+              {...keysTab}
+            >
+              <KeysTab />
+            </Tab>
+            {canViewOrManageEvents && (
+              <Tab
+                title={<TabTitleText>{t("events")}</TabTitleText>}
+                data-testid="rs-realm-events-tab"
+                {...eventsTab}
               >
-                <Tab
-                  id="profiles"
-                  data-testid="rs-policies-clientProfiles-tab"
-                  aria-label={t("clientProfilesSubTab")}
-                  title={<TabTitleText>{t("profiles")}</TabTitleText>}
-                  tooltip={
-                    <Tooltip content={t("clientPoliciesProfilesHelpText")} />
-                  }
-                  {...clientPoliciesProfilesTab}
-                >
-                  <ProfilesTab />
-                </Tab>
-                <Tab
-                  id="policies"
-                  data-testid="rs-policies-clientPolicies-tab"
-                  aria-label={t("clientPoliciesSubTab")}
-                  {...clientPoliciesPoliciesTab}
-                  title={<TabTitleText>{t("policies")}</TabTitleText>}
-                  tooltip={
-                    <Tooltip content={t("clientPoliciesPoliciesHelpText")} />
-                  }
-                >
-                  <PoliciesTab />
-                </Tab>
-              </RoutableTabs>
-            </Tab>
-          )}
-          <Tab
-            title={<TabTitleText>{t("userProfile")}</TabTitleText>}
-            data-testid="rs-user-profile-tab"
-            {...userProfileTab}
-          >
-            <UserProfileTab setTableData={setTableData as any} />
-          </Tab>
-          {canViewUserRegistration && (
+                <EventsTab realm={realm!} />
+              </Tab>
+            )}
             <Tab
-              title={<TabTitleText>{t("userRegistration")}</TabTitleText>}
-              data-testid="rs-userRegistration-tab"
-              {...userRegistrationTab}
+              title={<TabTitleText>{t("localization")}</TabTitleText>}
+              data-testid="rs-localization-tab"
+              {...localizationTab}
             >
-              <UserRegistration />
+              <LocalizationTab
+                key={key}
+                save={save}
+                realm={realm!}
+                tableData={tableData}
+              />
             </Tab>
-          )}
-        </RoutableTabs>
-      </PageSection>
+            <Tab
+              title={<TabTitleText>{t("securityDefences")}</TabTitleText>}
+              data-testid="rs-security-defenses-tab"
+              {...securityDefensesTab}
+            >
+              <SecurityDefenses realm={realm!} save={save} />
+            </Tab>
+            <Tab
+              title={<TabTitleText>{t("sessions")}</TabTitleText>}
+              data-testid="rs-sessions-tab"
+              {...sessionsTab}
+            >
+              <RealmSettingsSessionsTab key={key} realm={realm!} save={save} />
+            </Tab>
+            <Tab
+              title={<TabTitleText>{t("tokens")}</TabTitleText>}
+              data-testid="rs-tokens-tab"
+              {...tokensTab}
+            >
+              <RealmSettingsTokensTab save={save} realm={realm!} />
+            </Tab>
+            {isFeatureEnabled(Feature.ClientPolicies) && (
+              <Tab
+                title={<TabTitleText>{t("clientPolicies")}</TabTitleText>}
+                data-testid="rs-clientPolicies-tab"
+                {...clientPoliciesTab}
+              >
+                <RoutableTabs
+                  mountOnEnter
+                  defaultLocation={toClientPolicies({
+                    realm: realmName,
+                    tab: "profiles",
+                  })}
+                >
+                  <Tab
+                    id="profiles"
+                    data-testid="rs-policies-clientProfiles-tab"
+                    aria-label={t("clientProfilesSubTab")}
+                    title={<TabTitleText>{t("profiles")}</TabTitleText>}
+                    tooltip={
+                      <Tooltip content={t("clientPoliciesProfilesHelpText")} />
+                    }
+                    {...clientPoliciesProfilesTab}
+                  >
+                    <ProfilesTab />
+                  </Tab>
+                  <Tab
+                    id="policies"
+                    data-testid="rs-policies-clientPolicies-tab"
+                    aria-label={t("clientPoliciesSubTab")}
+                    {...clientPoliciesPoliciesTab}
+                    title={<TabTitleText>{t("policies")}</TabTitleText>}
+                    tooltip={
+                      <Tooltip content={t("clientPoliciesPoliciesHelpText")} />
+                    }
+                  >
+                    <PoliciesTab />
+                  </Tab>
+                </RoutableTabs>
+              </Tab>
+            )}
+            <Tab
+              title={<TabTitleText>{t("userProfile")}</TabTitleText>}
+              data-testid="rs-user-profile-tab"
+              {...userProfileTab}
+            >
+              <UserProfileTab setTableData={setTableData as any} />
+            </Tab>
+            {canViewUserRegistration && (
+              <Tab
+                title={<TabTitleText>{t("userRegistration")}</TabTitleText>}
+                data-testid="rs-userRegistration-tab"
+                {...userRegistrationTab}
+              >
+                <UserRegistration />
+              </Tab>
+            )}
+          </RoutableTabs>
+        </PageSection>
+      )}
     </FormProvider>
   );
 };
