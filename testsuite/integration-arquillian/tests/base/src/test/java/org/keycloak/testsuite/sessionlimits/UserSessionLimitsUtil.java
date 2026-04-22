@@ -9,7 +9,7 @@ import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.AuthenticatorConfigModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.testsuite.runonserver.RunOnServer;
+import org.keycloak.testframework.remote.providers.runonserver.RunOnServer;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 

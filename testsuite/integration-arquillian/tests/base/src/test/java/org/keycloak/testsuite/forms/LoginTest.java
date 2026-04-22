@@ -76,6 +76,7 @@ import org.keycloak.testsuite.util.Matchers;
 import org.keycloak.testsuite.util.TokenSignatureUtil;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
+import org.keycloak.testsuite.util.runonserver.RunHelpers;
 
 import org.apache.commons.lang3.RandomStringUtils;
 import org.hamcrest.MatcherAssert;
@@ -657,7 +658,7 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
             String sessionId = loginEvent.getSessionId();
 
             // Expire session
-            testingClient.testing().removeUserSession("test", sessionId);
+            runOnServer.run(RunHelpers.removeUserSession("test", sessionId));
 
             // Assert rememberMe checked and username/email prefilled
             oauth.openLoginForm();
@@ -715,7 +716,7 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
             String sessionId = loginEvent.getSessionId();
 
             // Expire session
-            testingClient.testing().removeUserSession("test", sessionId);
+            runOnServer.run(RunHelpers.removeUserSession("test", sessionId));
 
             // Assert rememberMe checked and username/email prefilled
             oauth.openLoginForm();
@@ -730,7 +731,7 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
             loginEvent = EventAssertion.expectLoginSuccess(events.poll()).userId(userId)
                                                    .details(Details.USERNAME, "login-test").getEvent();
             sessionId = loginEvent.getSessionId();
-            testingClient.testing().removeUserSession("test", sessionId);
+            runOnServer.run(RunHelpers.removeUserSession("test", sessionId));
 
             // Assert rememberMe not checked nor username/email prefilled
             oauth.openLoginForm();
@@ -760,7 +761,7 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
             String sessionId = loginEvent.getSessionId();
 
             // Expire session
-            testingClient.testing().removeUserSession("test", sessionId);
+            runOnServer.run(RunHelpers.removeUserSession("test", sessionId));
 
             // Assert rememberMe checked and username/email prefilled
             oauth.openLoginForm();

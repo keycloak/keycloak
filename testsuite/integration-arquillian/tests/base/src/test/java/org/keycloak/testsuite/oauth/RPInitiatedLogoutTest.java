@@ -63,6 +63,7 @@ import org.keycloak.testsuite.util.Matchers;
 import org.keycloak.testsuite.util.URLUtils;
 import org.keycloak.testsuite.util.WaitUtils;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.runonserver.RunHelpers;
 
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
@@ -303,7 +304,7 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
             String sessionId = EventAssertion.expectLoginSuccess(events.poll()).getEvent().getSessionId();
 
             // Expire session
-            testingClient.testing().removeUserSession("test", sessionId);
+            runOnServer.run(RunHelpers.removeUserSession("test", sessionId));
 
             // Assert rememberMe checked and username/email prefilled
             oauth.openLoginForm();

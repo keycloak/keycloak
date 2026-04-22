@@ -59,6 +59,7 @@ import org.keycloak.services.clientpolicy.condition.AnyClientConditionFactory;
 import org.keycloak.services.clientpolicy.condition.ClientAccessTypeConditionFactory;
 import org.keycloak.services.clientpolicy.executor.UseLightweightAccessTokenExecutorFactory;
 import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.remote.providers.runonserver.RunOnServerException;
 import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.client.policies.AbstractClientPoliciesTest;
@@ -71,6 +72,7 @@ import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.keycloak.testsuite.util.oauth.PkceGenerator;
+import org.keycloak.testsuite.util.runonserver.RunHelpers;
 import org.keycloak.util.JsonSerialization;
 
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -653,8 +655,11 @@ public class LightWeightAccessTokenTest extends AbstractClientPoliciesTest {
     private void removeSession(final String sessionId) {
         testingClient.testing().removeExpired(REALM_NAME);
         try {
-            testingClient.testing().removeUserSession(REALM_NAME, sessionId);
-        } catch (NotFoundException nfe) {
+            runOnServer.run(RunHelpers.removeUserSession(REALM_NAME, sessionId));
+        } catch (RunOnServerException nfe) {
+            if (!(nfe.getCause() instanceof NotFoundException)) {
+                throw nfe;
+            }
             // Ignore
         }
     }
