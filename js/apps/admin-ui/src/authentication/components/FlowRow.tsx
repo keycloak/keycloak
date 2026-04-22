@@ -110,6 +110,7 @@ export const FlowRow = ({
             {...listeners}
             {...attributes}
             className="keycloak__authentication__drag-handle"
+            aria-label={t("dragHandle")}
           >
             <GripVerticalIcon />
           </div>
