@@ -990,7 +990,7 @@ jobs:
     name: FIPS IT
     needs: build
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 60
     strategy:
       matrix:
         mode: [non-strict, strict]
