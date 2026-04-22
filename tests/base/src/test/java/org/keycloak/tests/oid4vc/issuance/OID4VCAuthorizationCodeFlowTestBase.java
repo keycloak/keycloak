@@ -37,7 +37,6 @@ import org.keycloak.testsuite.util.oauth.oid4vc.Oid4vcCredentialResponse;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.openqa.selenium.NoSuchElementException;
 
 import static org.keycloak.OID4VCConstants.OPENID_CREDENTIAL;
 
@@ -45,7 +44,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -562,11 +560,16 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerTe
         CredentialIssuer issuer = wallet.getIssuerMetadata(ctx);
 
         OID4VCAuthorizationDetail authDetail = createAuthorizationDetail(issuer, "unknown-credential-config-id");
-        NoSuchElementException ex = assertThrows(NoSuchElementException.class, () -> performAuthorizationCodeLoginWithAuthorizationDetails(authDetail));
+        wallet.authorizationRequest()
+                .scope(ctx.getScope())
+                .authorizationDetails(authDetail)
+                .openLoginForm();
+        AuthorizationEndpointResponse authResponse = oauth.parseLoginResponse();
+        assertEquals("invalid_request", authResponse.getError());
 
-        // [TODO #47649] OAuthClient cannot handle invalid authorization requests
-        assertNotNull(ex.getMessage(), "No error message");
-        assertTrue(ex.getMessage().contains("Unable to locate element with ID: 'username'"), ex.getMessage());
+        String errorDescription = authResponse.getErrorDescription();
+        assertNotNull(errorDescription, "No error message");
+        assertTrue(errorDescription.contains("Invalid authorization_details: Invalid credential configuration"), errorDescription);
     }
 
     /** Token exchange without redirect_uri must fail. */
@@ -686,14 +689,16 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerTe
     @Test
     public void testTokenExchangeWithMalformedAuthorizationDetails() {
 
-        NoSuchElementException ex = assertThrows(NoSuchElementException.class, () -> oauth.loginForm()
+        oauth.loginForm()
                 .scope(ctx.getScope())
                 .param(OAuth2Constants.AUTHORIZATION_DETAILS, "invalid-json")
-                .doLogin(TEST_USER, TEST_PASSWORD));
+                .open();
+        AuthorizationEndpointResponse authResponse = oauth.parseLoginResponse();
+        assertEquals("invalid_request", authResponse.getError());
 
-        // [TODO #47649] OAuthClient cannot handle invalid authorization requests
-        assertNotNull(ex.getMessage(), "No error message");
-        assertTrue(ex.getMessage().contains("Unable to locate element with ID: 'username'"), ex.getMessage());
+        String errorDescription = authResponse.getErrorDescription();
+        assertNotNull(errorDescription, "No error description");
+        assertTrue(errorDescription.contains("Invalid authorization_details: invalid-json"), errorDescription);
     }
 
     /**

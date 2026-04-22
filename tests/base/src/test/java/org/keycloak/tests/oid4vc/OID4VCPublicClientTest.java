@@ -35,15 +35,12 @@ import org.keycloak.util.JsonSerialization;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.openqa.selenium.NoSuchElementException;
 
 import static org.keycloak.OID4VCConstants.OPENID_CREDENTIAL;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 
 /**
@@ -104,7 +101,7 @@ public class OID4VCPublicClientTest extends OID4VCIssuerTestBase {
     }
 
     @Test
-    public void testAuthorizationRequestSuccess() throws Exception {
+    public void testAuthorizationRequestSuccess() {
 
         var ctx = new OID4VCTestContext(pubClient, jwtTypeCredentialScope);
 
@@ -121,24 +118,18 @@ public class OID4VCPublicClientTest extends OID4VCIssuerTestBase {
     }
 
     @Test
-    public void testAuthorizationRequestNoPkce() throws Exception {
+    public void testAuthorizationRequestNoPkce() {
 
         var ctx = new OID4VCTestContext(pubClient, jwtTypeCredentialScope);
 
         // Send AuthorizationRequest without required PKCE
         //
-        NoSuchElementException ex = assertThrows(NoSuchElementException.class, () -> wallet
-                .authorizationRequest()
-                .scope(ctx.getScope())
-                .send(ctx.getHolder(), TEST_PASSWORD));
+        oauth.loginForm().scope(ctx.getScope()).open();
+        AuthorizationEndpointResponse authResponse = oauth.parseLoginResponse();
 
-        assertNotNull(ex.getMessage(), "No error message");
-        assertTrue(ex.getMessage().contains("Unable to locate element with ID: 'username'"), ex.getMessage());
-
-        // [TODO #47649] OAuthClient cannot handle invalid authorization requests
-        // https://github.com/keycloak/keycloak/issues/47649
-        // assertEquals("invalid_request", authResponse.getError());
-        // assertEquals("Missing parameter: code_challenge_method", authResponse.getErrorDescription());
+        assertNull(authResponse.getCode(), "Expected no auth code");
+        assertEquals("invalid_request", authResponse.getError());
+        assertEquals("Missing parameter: code_challenge_method", authResponse.getErrorDescription());
     }
 
     // Private ---------------------------------------------------------------------------------------------------------

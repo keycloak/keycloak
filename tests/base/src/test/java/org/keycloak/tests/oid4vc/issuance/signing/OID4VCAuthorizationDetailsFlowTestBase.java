@@ -20,7 +20,6 @@ import org.keycloak.util.Strings;
 
 import org.apache.http.HttpStatus;
 import org.junit.jupiter.api.Test;
-import org.openqa.selenium.NoSuchElementException;
 
 import static org.keycloak.OID4VCConstants.OPENID_CREDENTIAL;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_IDENTIFIER;
@@ -109,14 +108,9 @@ public abstract class OID4VCAuthorizationDetailsFlowTestBase extends OID4VCIssue
 
         ctx.putAttachment(ON_AUTH_REQUEST_ATTACHMENT_KEY, true);
 
-        // [TODO #47649] OAuthClient cannot handle invalid authorization requests
-        // https://github.com/keycloak/keycloak/issues/47649
-        assertThrows(NoSuchElementException.class, () ->
+        IllegalStateException ex = assertThrows(IllegalStateException.class, () ->
                 runAuthorizationDetailsTest(ctx, credIdentifier, () -> authDetail, null, null, null));
-
-//        IllegalStateException ex = assertThrows(IllegalStateException.class, () ->
-//                runAuthorizationDetailsTest(ctx, credIdentifier, () -> authDetail, null, null, null));
-//        assertTrue(ex.getMessage().contains("Found invalid credential_identifiers in authorization_details"), "Unexpected - " + ex.getMessage());
+        assertTrue(ex.getMessage().contains("Invalid authorization_details: credential_identifiers not allowed"), ex.getMessage());
     }
 
     @Test
@@ -197,9 +191,13 @@ public abstract class OID4VCAuthorizationDetailsFlowTestBase extends OID4VCIssue
         }
 
         try {
-            AuthorizationEndpointResponse authResponse = authRequestSupplier.get()
-                    .send(ctx.getHolder(), TEST_PASSWORD);
-
+            AuthorizationEndpointRequest authRequest = authRequestSupplier.get();
+            authRequest.openLoginForm();
+            String currUrl = oauth.getDriver().getCurrentUrl();
+            if (currUrl != null && !currUrl.contains("error=") && !currUrl.contains("error_description=")) {
+                oauth.fillLoginForm(ctx.getHolder(), TEST_PASSWORD);
+            }
+            AuthorizationEndpointResponse authResponse = oauth.parseLoginResponse();
             if (authResponse.getError() != null)
                 throw new IllegalStateException(authResponse.getErrorDescription());
 
@@ -243,8 +241,10 @@ public abstract class OID4VCAuthorizationDetailsFlowTestBase extends OID4VCIssue
             verifyCredentialStructure(credentialObj);
 
         } finally {
+            // Needed, because we don't go through wallet.authorizationRequest().send()
+            wallet.logout(ctx.getHolder());
+
             // Restore the vc.credential_identifier attribute value
-            //
             if (!wasCredentialIdentifier.equals(credIdentifier)) {
                 setCredentialScopeAttributes(ctx.getCredentialScope(), Map.of(VC_IDENTIFIER, wasCredentialIdentifier));
             }
