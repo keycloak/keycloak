@@ -16,7 +16,6 @@
  */
 package org.keycloak.tests.sessionlimits;
 
-import java.time.Duration;
 import java.util.List;
 
 import jakarta.mail.internet.MimeMessage;
@@ -64,7 +63,6 @@ import org.keycloak.tests.utils.MailUtils;
 import org.keycloak.testsuite.util.FlowUtil;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
-import org.awaitility.Awaitility;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
