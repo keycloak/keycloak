@@ -21,6 +21,7 @@ package org.keycloak.protocol.oidc.par.endpoints.request;
 import java.util.Map;
 import java.util.Set;
 
+import org.keycloak.common.Profile;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -109,4 +110,13 @@ public class AuthzEndpointParParser extends AuthzEndpointRequestParser {
         return requestParams.keySet();
     }
 
+    protected <T> T replaceIfNotNull(T previousVal, T newVal) {
+        // FAPI says only parameters inside the request object should be used
+        // https://github.com/keycloak/keycloak/issues/48047
+        if (Profile.isFeatureEnabled(Profile.Feature.OID4VC_HAIP)) {
+            return newVal;
+        } else {
+            return super.replaceIfNotNull(previousVal, newVal);
+        }
+    }
 }
