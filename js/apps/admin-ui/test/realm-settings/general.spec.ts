@@ -20,8 +20,16 @@ import { SERVER_URL } from "../utils/constants.ts";
 
 test.describe.serial("Realm settings general tab tests", () => {
   const realmName = `general-realm-settings-${uuid()}`;
+  const customAttributeName = "custom.attribute";
+  const customAttributeValue = "custom-value";
 
-  test.beforeAll(() => adminClient.createRealm(realmName));
+  test.beforeAll(() =>
+    adminClient.createRealm(realmName, {
+      attributes: {
+        [customAttributeName]: customAttributeValue,
+      },
+    }),
+  );
   test.afterAll(() => adminClient.deleteRealm(realmName));
 
   test.beforeEach(async ({ page }) => {
@@ -49,6 +57,18 @@ test.describe.serial("Realm settings general tab tests", () => {
       .getAttribute("href");
     const response = await page.request.get(link!);
     expect(response.status()).toBe(200);
+  });
+
+  test("preserves custom realm attributes on save", async ({ page }) => {
+    await fillDisplayName(page, "preserve-custom-attributes");
+    await clickSaveRealm(page);
+    await assertNotificationMessage(page, "Realm successfully updated");
+
+    const updatedRealm = await adminClient.getRealm(realmName);
+
+    expect(updatedRealm?.attributes?.[customAttributeName]).toBe(
+      customAttributeValue,
+    );
   });
 
   test("all general tab switches", async ({ page }) => {

@@ -3,6 +3,7 @@ import {
   convertAttributeNameToForm,
   convertFormValuesToObject,
   convertToFormValues,
+  mergeFormValuesWithExistingAttributes,
 } from "./util";
 
 vi.mock("react");
@@ -142,5 +143,31 @@ describe("Tests the form convert util functions", () => {
 
     //then
     expect(form).toEqual(`attributes.some${TOKEN}strange${TOKEN}attribute`);
+  });
+
+  it("preserves existing attributes when saving partial updates", () => {
+    const existing = {
+      attributes: {
+        "custom.attribute": "custom-value",
+        frontendUrl: "https://old.example.com",
+      },
+      enabled: true,
+    };
+    const updated = {
+      attributes: {
+        frontendUrl: "https://new.example.com",
+      },
+      enabled: false,
+    };
+
+    const values = mergeFormValuesWithExistingAttributes(existing, updated);
+
+    expect(values).toEqual({
+      attributes: {
+        "custom.attribute": "custom-value",
+        frontendUrl: "https://new.example.com",
+      },
+      enabled: false,
+    });
   });
 });
