@@ -77,7 +77,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @KeycloakIntegrationTest
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class UserSessionLimitsTest {
 
     @InjectRealm(config = UserSessionLimitsRealmConfig.class)
