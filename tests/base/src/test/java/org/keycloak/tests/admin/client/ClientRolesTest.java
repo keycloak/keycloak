@@ -111,7 +111,7 @@ public class ClientRolesTest {
         RoleRepresentation role1 = RoleBuilder.create()
                 .name("role1")
                 .description("role1-description")
-                .singleAttribute("role1-attr-key", "role1-attr-val")
+                .attribute("role1-attr-key", "role1-attr-val")
                 .build();
         rolesRsc.create(role1);
         managedClient.cleanup().add(c -> c.roles().deleteRole("role1"));

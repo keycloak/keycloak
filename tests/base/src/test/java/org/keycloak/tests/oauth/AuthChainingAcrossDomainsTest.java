@@ -17,7 +17,6 @@
 package org.keycloak.tests.oauth;
 
 import java.util.HashMap;
-import java.util.List;
 
 import org.keycloak.broker.jwtauthorizationgrant.JWTAuthorizationGrantConfig;
 import org.keycloak.broker.oidc.OAuth2IdentityProviderConfig;
@@ -95,7 +94,7 @@ public class AuthChainingAcrossDomainsTest {
                     .secret("password")
                     .redirectUris("*")
                     .attribute(OIDCConfigAttributes.STANDARD_TOKEN_EXCHANGE_ENABLED, Boolean.TRUE.toString())
-                    .protocolMappers(List.of(domainbAudience));
+                    .protocolMappers(domainbAudience);
 
             // test user in domaina
             realm.addUser("testuser")

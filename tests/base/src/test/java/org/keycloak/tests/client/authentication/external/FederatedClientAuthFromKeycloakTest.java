@@ -1,7 +1,5 @@
 package org.keycloak.tests.client.authentication.external;
 
-import java.util.List;
-
 import org.keycloak.authentication.authenticators.client.FederatedJWTClientAuthenticator;
 import org.keycloak.broker.oidc.OIDCIdentityProviderConfig;
 import org.keycloak.broker.oidc.OIDCIdentityProviderFactory;
@@ -94,7 +92,7 @@ public class FederatedClientAuthFromKeycloakTest {
                     .defaultClientScopes()
                     .serviceAccountsEnabled(true)
                     .secret("mysecret")
-                    .protocolMappers(List.of(subMapper, audMapper));
+                    .protocolMappers(subMapper, audMapper);
         }
     }
 

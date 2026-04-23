@@ -19,8 +19,6 @@ package org.keycloak.tests.admin.group;
 
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 
 import jakarta.ws.rs.core.Response;
@@ -144,8 +142,8 @@ public class GroupMappersTest extends AbstractGroupTest {
 
     private static class GroupMappersTestRealmConfig implements RealmConfig {
 
-        private List<ProtocolMapperRepresentation> createMappers() {
-            List<ProtocolMapperRepresentation> mappers = new LinkedList<>();
+        private ProtocolMapperRepresentation[] createMappers() {
+            ProtocolMapperRepresentation[] mappers = new ProtocolMapperRepresentation[3];
             ProtocolMapperRepresentation mapper = new ProtocolMapperRepresentation();
             mapper.setName("groups");
             mapper.setProtocolMapper(GroupMembershipMapper.PROVIDER_ID);
@@ -155,7 +153,7 @@ public class GroupMappersTest extends AbstractGroupTest {
             config.put(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN, "true");
             config.put(OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN, "true");
             mapper.setConfig(config);
-            mappers.add(mapper);
+            mappers[0] = mapper;
 
             mapper = new ProtocolMapperRepresentation();
             mapper.setName(TOP_ATTRIBUTE);
@@ -168,7 +166,7 @@ public class GroupMappersTest extends AbstractGroupTest {
             config.put(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN, "true");
             config.put(OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN, "true");
             mapper.setConfig(config);
-            mappers.add(mapper);
+            mappers[1] = mapper;
 
             mapper = new ProtocolMapperRepresentation();
             mapper.setName(LEVEL_2_ATTRIBUTE);
@@ -181,13 +179,13 @@ public class GroupMappersTest extends AbstractGroupTest {
             config.put(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN, "true");
             config.put(OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN, "true");
             mapper.setConfig(config);
-            mappers.add(mapper);
+            mappers[2] = mapper;
             return mappers;
         }
 
         @Override
         public RealmBuilder configure(RealmBuilder realm) {
-            List<ProtocolMapperRepresentation> mappers = createMappers();
+            ProtocolMapperRepresentation[] mappers = createMappers();
 
             realm.addClient(CLIENT_ID)
                     .enabled(true)

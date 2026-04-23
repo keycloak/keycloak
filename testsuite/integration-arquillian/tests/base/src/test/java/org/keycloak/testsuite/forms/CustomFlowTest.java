@@ -39,6 +39,7 @@ import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
@@ -51,7 +52,6 @@ import org.keycloak.testsuite.pages.RegisterPage;
 import org.keycloak.testsuite.pages.TermsAndConditionsPage;
 import org.keycloak.testsuite.rest.representation.AuthenticatorState;
 import org.keycloak.testsuite.updaters.Creator;
-import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.ExecutionBuilder;
 import org.keycloak.testsuite.util.FlowBuilder;
 import org.keycloak.testsuite.util.RealmRepUtil;
@@ -88,7 +88,7 @@ public class CustomFlowTest extends AbstractFlowTest {
                                               .clientId("dummy-client")
                                               .name("dummy-client")
                                               .authenticatorType(PassThroughClientAuthenticator.PROVIDER_ID)
-                                              .directAccessGrants()
+                                              .directAccessGrantsEnabled()
                                               .build();
         testRealm.getClients().add(dummyClient);
 

@@ -24,8 +24,8 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testsuite.saml.AbstractSamlTest;
-import org.keycloak.testsuite.util.ClientBuilder;
 
 import static org.keycloak.broker.saml.SAMLIdentityProviderConfig.ARTIFACT_BINDING_RESPONSE;
 import static org.keycloak.broker.saml.SAMLIdentityProviderConfig.ARTIFACT_RESOLUTION_SERVICE_URL;
@@ -200,7 +200,7 @@ public class KcSamlBrokerConfiguration implements BrokerConfiguration {
             .fullScopeEnabled(true)
             .protocol(SamlProtocol.LOGIN_PROTOCOL)
             .baseUrl(getConsumerRoot() + "/sales-post")
-            .addRedirectUri(getConsumerRoot() + "/sales-post/*")
+            .redirectUris(getConsumerRoot() + "/sales-post/*")
             .attribute(SamlConfigAttributes.SAML_AUTHNSTATEMENT, SamlProtocol.ATTRIBUTE_TRUE_VALUE)
             .attribute(SamlConfigAttributes.SAML_CLIENT_SIGNATURE_ATTRIBUTE, SamlProtocol.ATTRIBUTE_FALSE_VALUE)
             .build(),
@@ -210,7 +210,7 @@ public class KcSamlBrokerConfiguration implements BrokerConfiguration {
             .fullScopeEnabled(true)
             .protocol(SamlProtocol.LOGIN_PROTOCOL)
             .baseUrl(getConsumerRoot() + "/sales-post")
-            .addRedirectUri(getConsumerRoot() + "/sales-post/*")
+            .redirectUris(getConsumerRoot() + "/sales-post/*")
             .attribute(SamlConfigAttributes.SAML_AUTHNSTATEMENT, SamlProtocol.ATTRIBUTE_TRUE_VALUE)
             .attribute(SamlConfigAttributes.SAML_CLIENT_SIGNATURE_ATTRIBUTE, SamlProtocol.ATTRIBUTE_FALSE_VALUE)
             .attribute(SAML_IDP_INITIATED_SSO_URL_NAME, "sales-post")
@@ -221,8 +221,8 @@ public class KcSamlBrokerConfiguration implements BrokerConfiguration {
             .name("broker-app")
             .secret("broker-app-secret")
             .enabled(true)
-            .directAccessGrants()
-            .addRedirectUri(getConsumerRoot() + "/auth/*")
+            .directAccessGrantsEnabled()
+            .redirectUris(getConsumerRoot() + "/auth/*")
             .baseUrl(getConsumerRoot() + "/auth/realms/" + REALM_CONS_NAME + "/app")
             .build()
         );

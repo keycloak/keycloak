@@ -43,9 +43,9 @@ import org.keycloak.representations.idm.authorization.RegexPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ResourcePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
+import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.GroupBuilder;
 import org.keycloak.testframework.realm.UserBuilder;
-import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.RealmBuilder;
 
 import org.junit.Before;
@@ -125,8 +125,8 @@ public class RegexPolicyTest extends AbstractAuthzTest {
 
 
             .client(ClientBuilder.create().clientId("resource-server-test").secret("secret").authorizationServicesEnabled(true)
-                .redirectUris("http://localhost/resource-server-test").directAccessGrants()
-                .protocolMapper(userAttrFooProtocolMapper, userAttrBarProtocolMapper, userAttrJsonProtocolMapper, userAttrJsonComplexProtocolMapper,userAttributesProtocolMapper,groupAttributesProtocolMapper))
+                .redirectUris("http://localhost/resource-server-test").directAccessGrantsEnabled()
+                .protocolMappers(userAttrFooProtocolMapper, userAttrBarProtocolMapper, userAttrJsonProtocolMapper, userAttrJsonComplexProtocolMapper,userAttributesProtocolMapper,groupAttributesProtocolMapper))
                 .build());
     }
 

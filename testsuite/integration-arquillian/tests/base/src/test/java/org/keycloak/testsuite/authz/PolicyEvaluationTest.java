@@ -69,11 +69,11 @@ import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.TimePolicyRepresentation;
 import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
+import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.GroupBuilder;
 import org.keycloak.testframework.realm.RoleBuilder;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
-import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.RolesBuilder;
 
@@ -125,8 +125,8 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
                         .authorizationServicesEnabled(true)
                         .redirectUris("http://localhost/resource-server-test")
                         .defaultRoles("uma_protection")
-                        .directAccessGrants()
-                        .protocolMapper(groupProtocolMapper))
+                        .directAccessGrantsEnabled()
+                        .protocolMappers(groupProtocolMapper))
                 .client(ClientBuilder.create().clientId("role-mapping-client")
                         .defaultRoles("client-role-a", "client-role-b"))
                 .build());

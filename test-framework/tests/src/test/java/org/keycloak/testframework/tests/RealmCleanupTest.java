@@ -63,7 +63,7 @@ public class RealmCleanupTest {
     @Test
     @Order(7)
     public void updateUser() {
-        managedRealm.updateUserWithCleanup("someuser", u -> u.setFirstName("Bob"));
+        managedRealm.updateUserWithCleanup("someuser", u -> u.firstName("Bob"));
     }
 
     @Test

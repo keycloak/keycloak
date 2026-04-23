@@ -52,10 +52,10 @@ import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 import org.keycloak.services.resources.account.resources.AbstractResourceService;
 import org.keycloak.services.resources.account.resources.AbstractResourceService.Permission;
 import org.keycloak.services.resources.account.resources.AbstractResourceService.Resource;
+import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.broker.util.SimpleHttpDefault;
-import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.TokenUtil;
 import org.keycloak.util.JsonSerialization;
 
@@ -112,7 +112,7 @@ public class ResourcesRestServiceTest extends AbstractRestServiceTest {
                 .secret("secret")
                 .name("My Resource Server")
                 .baseUrl("http://resourceserver.com")
-                .directAccessGrants().build();
+                .directAccessGrantsEnabled().build();
 
         testRealm.getClients().add(client);
     }

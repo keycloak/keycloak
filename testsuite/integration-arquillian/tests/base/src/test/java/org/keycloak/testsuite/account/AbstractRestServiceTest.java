@@ -22,12 +22,12 @@ import java.util.List;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.account.SessionRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.broker.util.SimpleHttpDefault;
-import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.TokenUtil;
 
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -93,7 +93,7 @@ public abstract class AbstractRestServiceTest extends AbstractTestRealmKeycloakT
                 .id(KeycloakModelUtils.generateId())
                 .name("In Use Client")
                 .baseUrl(inUseClientAppUri)
-                .directAccessGrants()
+                .directAccessGrantsEnabled()
                 .secret("secret1").build();
         testRealm.getClients().add(inUseApp);
 
@@ -101,14 +101,14 @@ public abstract class AbstractRestServiceTest extends AbstractTestRealmKeycloakT
                 .id(KeycloakModelUtils.generateId())
                 .name("Offline Client")
                 .baseUrl(offlineClientAppUri)
-                .directAccessGrants()
+                .directAccessGrantsEnabled()
                 .secret("secret1").build();
         testRealm.getClients().add(offlineApp);
 
         org.keycloak.representations.idm.ClientRepresentation offlineApp2 = ClientBuilder.create().clientId("offline-client-without-base-url")
                 .id(KeycloakModelUtils.generateId())
                 .name("Offline Client Without Base URL")
-                .directAccessGrants()
+                .directAccessGrantsEnabled()
                 .secret("secret1").build();
         testRealm.getClients().add(offlineApp2);
 
@@ -116,7 +116,7 @@ public abstract class AbstractRestServiceTest extends AbstractTestRealmKeycloakT
                 .id(KeycloakModelUtils.generateId())
                 .name("Always Display Client")
                 .baseUrl(alwaysDisplayClientAppUri)
-                .directAccessGrants()
+                .directAccessGrantsEnabled()
                 .alwaysDisplayInConsole(true)
                 .secret("secret1").build();
         testRealm.getClients().add(alwaysDisplayApp);

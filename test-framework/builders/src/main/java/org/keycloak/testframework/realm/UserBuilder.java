@@ -129,10 +129,4 @@ public class UserBuilder extends Builder<UserRepresentation> {
         return this;
     }
 
-    public interface UserUpdate {
-
-        void update(UserRepresentation client);
-
-    }
-
 }

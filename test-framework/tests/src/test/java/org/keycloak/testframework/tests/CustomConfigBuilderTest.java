@@ -67,7 +67,7 @@ public class CustomConfigBuilderTest {
 
         @Override
         public ClientBuilder configure(ClientBuilder client) {
-            return client.update(u -> u.setBearerOnly(true));
+            return client.bearerOnly(true);
         }
     }
 

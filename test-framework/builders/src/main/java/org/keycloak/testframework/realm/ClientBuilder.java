@@ -1,32 +1,31 @@
 package org.keycloak.testframework.realm;
 
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
-import org.keycloak.testframework.util.Collections;
 
-public class ClientBuilder {
-
-    private final ClientRepresentation rep;
+public class ClientBuilder extends Builder<ClientRepresentation> {
 
     private ClientBuilder(ClientRepresentation rep) {
-        this.rep = rep;
+        super(rep);
     }
 
     public static ClientBuilder create() {
-        ClientRepresentation rep = new ClientRepresentation();
-        rep.setEnabled(true);
-        return new ClientBuilder(rep);
+        return new ClientBuilder(new ClientRepresentation()).enabled(true);
+    }
+
+    public static ClientBuilder create(String clientId) {
+        return create().clientId(clientId);
     }
 
     public static ClientBuilder update(ClientRepresentation rep) {
         return new ClientBuilder(rep);
     }
 
-    public ClientBuilder enabled(boolean enabled) {
+    public ClientBuilder enabled(Boolean enabled) {
         rep.setEnabled(enabled);
         return this;
     }
@@ -56,13 +55,22 @@ public class ClientBuilder {
         return this;
     }
 
-    public ClientBuilder publicClient(boolean publicClient) {
+    public ClientBuilder type(String type) {
+        rep.setType(type);
+        return this;
+    }
+
+    public ClientBuilder publicClient() {
+        return publicClient(true);
+    }
+
+    public ClientBuilder publicClient(Boolean publicClient) {
         rep.setPublicClient(publicClient);
         return this;
     }
 
     public ClientBuilder redirectUris(String... redirectUris) {
-        rep.setRedirectUris(Collections.combine(rep.getRedirectUris(), redirectUris));
+        rep.setRedirectUris(combine(rep.getRedirectUris(), redirectUris));
         return this;
     }
 
@@ -86,30 +94,42 @@ public class ClientBuilder {
         return this;
     }
 
-    public ClientBuilder bearerOnly(boolean bearerOnly) {
+    public ClientBuilder bearerOnly(Boolean bearerOnly) {
         rep.setBearerOnly(bearerOnly);
         return this;
     }
 
+    public ClientBuilder serviceAccountsEnabled() {
+        return serviceAccountsEnabled(true);
+    }
 
-    public ClientBuilder serviceAccountsEnabled(boolean enabled) {
+    public ClientBuilder serviceAccountsEnabled(Boolean enabled) {
         rep.setServiceAccountsEnabled(enabled);
         return this;
     }
 
-    public ClientBuilder directAccessGrantsEnabled(boolean enabled) {
+    public ClientBuilder directAccessGrantsEnabled() {
+        return directAccessGrantsEnabled(true);
+    }
+
+    public ClientBuilder directAccessGrantsEnabled(Boolean enabled) {
         rep.setDirectAccessGrantsEnabled(enabled);
         return this;
     }
 
-    public ClientBuilder authorizationServicesEnabled(boolean enabled) {
+    public ClientBuilder authorizationServicesEnabled(Boolean enabled) {
         serviceAccountsEnabled(enabled);
         rep.setAuthorizationServicesEnabled(enabled);
         return this;
     }
 
-    public ClientBuilder fullScopeEnabled(boolean enabled) {
+    public ClientBuilder fullScopeEnabled(Boolean enabled) {
         rep.setFullScopeAllowed(enabled);
+        return this;
+    }
+
+    public ClientBuilder frontchannelLogout(Boolean enabled) {
+        rep.setFrontchannelLogout(enabled);
         return this;
     }
 
@@ -119,61 +139,61 @@ public class ClientBuilder {
     }
 
     public ClientBuilder attribute(String key, String value) {
-        if (rep.getAttributes() == null) {
-            rep.setAttributes(new HashMap<>());
-        }
-
+        rep.setAttributes(Builder.createIfNull(rep.getAttributes(), HashMap::new));
         rep.getAttributes().put(key, value);
         return this;
     }
 
+    public ClientBuilder attributes(Map<String, String> attributes) {
+        rep.setAttributes(combineMap(rep.getAttributes(), attributes));
+        return this;
+    }
+
+    public ClientBuilder removeAttributes(String... key) {
+        rep.setAttributes(removeKeys(rep.getAttributes(), key));
+        return this;
+    }
+
     public ClientBuilder defaultClientScopes(String... defaultClientScopes) {
-        rep.setDefaultClientScopes(Collections.combine(rep.getDefaultClientScopes(), defaultClientScopes));
+        rep.setDefaultClientScopes(combine(rep.getDefaultClientScopes(), defaultClientScopes));
         return this;
     }
 
     public ClientBuilder optionalClientScopes(String... optionalClientScopes) {
-        rep.setOptionalClientScopes(Collections.combine(rep.getOptionalClientScopes(), optionalClientScopes));
+        rep.setOptionalClientScopes(combine(rep.getOptionalClientScopes(), optionalClientScopes));
         return this;
     }
 
+    @Deprecated
     public ClientBuilder protocolMappers(List<ProtocolMapperRepresentation> mappers) {
-        rep.setProtocolMappers(Collections.combine(rep.getProtocolMappers(), mappers));
+        rep.setProtocolMappers(combine(rep.getProtocolMappers(), mappers));
         return this;
     }
 
-    public ClientBuilder consentRequired(boolean enabled) {
+    public ClientBuilder protocolMappers(ProtocolMapperRepresentation... mappers) {
+        rep.setProtocolMappers(combine(rep.getProtocolMappers(), mappers));
+        return this;
+    }
+
+    @Deprecated
+    public ClientBuilder defaultRoles(String... roles) {
+        rep.setDefaultRoles(combine(rep.getDefaultRoles(), roles));
+        return this;
+    }
+
+    public ClientBuilder consentRequired(Boolean enabled) {
         rep.setConsentRequired(enabled);
         return this;
     }
 
     public ClientBuilder webOrigins(String... webOrigins) {
-        rep.setWebOrigins(Collections.combine(rep.getWebOrigins(), webOrigins));
+        rep.setWebOrigins(combine(rep.getWebOrigins(), webOrigins));
         return this;
     }
 
-    /**
-     * Best practice is to use other convenience methods when configuring a client, but while the framework is under
-     * active development there may not be a way to perform all updates required. In these cases this method allows
-     * applying any changes to the underlying representation.
-     *
-     * @param update
-     * @return this
-     * @deprecated
-     */
-    public ClientBuilder update(ClientUpdate... update) {
-        Arrays.stream(update).forEach(u -> u.update(rep));
+    public ClientBuilder alwaysDisplayInConsole(Boolean alwaysDisplayInConsole) {
+        rep.setAlwaysDisplayInConsole(alwaysDisplayInConsole);
         return this;
-    }
-
-    public ClientRepresentation build() {
-        return rep;
-    }
-
-    public interface ClientUpdate {
-
-        void update(ClientRepresentation client);
-
     }
 
 }

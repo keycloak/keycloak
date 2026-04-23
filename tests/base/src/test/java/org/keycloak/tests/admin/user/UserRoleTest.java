@@ -43,7 +43,7 @@ public class UserRoleTest extends AbstractUserTest {
     @Test
     public void roleMappings() {
         RealmResource realm = managedRealm.admin();
-        RoleRepresentation realmCompositeRole = RoleBuilder.create().name("realm-composite").singleAttribute("attribute1", "value1").build();
+        RoleRepresentation realmCompositeRole = RoleBuilder.create().name("realm-composite").attribute("attribute1", "value1").build();
 
         realm.roles().create(RoleBuilder.create().name("realm-role").build());
         realm.roles().create(realmCompositeRole);
@@ -55,7 +55,7 @@ public class UserRoleTest extends AbstractUserTest {
             clientUuid = ApiUtil.getCreatedId(response);
         }
 
-        RoleRepresentation clientCompositeRole = RoleBuilder.create().name("client-composite").singleAttribute("attribute1", "value1").build();
+        RoleRepresentation clientCompositeRole = RoleBuilder.create().name("client-composite").attribute("attribute1", "value1").build();
 
 
         realm.clients().get(clientUuid).roles().create(RoleBuilder.create().name("client-role").build());

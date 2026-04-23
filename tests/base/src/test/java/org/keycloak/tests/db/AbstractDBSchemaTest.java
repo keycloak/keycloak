@@ -26,7 +26,7 @@ public abstract class AbstractDBSchemaTest {
         RoleRepresentation role1 = RoleBuilder.create()
                 .name("role1")
                 .description("role1-description")
-                .singleAttribute("role1-attr-key", "role1-attr-val")
+                .attribute("role1-attr-key", "role1-attr-val")
                 .build();
         RolesResource roles = managedClient.admin().roles();
         roles.create(role1);

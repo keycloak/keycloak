@@ -122,27 +122,28 @@ public class ManagedRealm extends ManagedTestResource {
      * @param username the username of the user to update
      * @param update the update to perform on the user
      */
-    public void updateUserWithCleanup(String username, UserBuilder.UserUpdate update) {
+    public void updateUserWithCleanup(String username, ManagedUser.UserUpdate update) {
         List<UserRepresentation> result = realmResource.users().search(username);
         Assertions.assertEquals(1, result.size());
 
         UserRepresentation original = result.get(0);
-        UserRepresentation updated = RepresentationUtils.clone(original);
-        update.update(updated);
+        UserBuilder updatedUser = UserBuilder.update(RepresentationUtils.clone(original));
+        UserRepresentation updated = update.update(updatedUser).build();
+
         realmResource.users().get(original.getId()).update(updated);
 
         cleanup().add(r -> r.users().get(original.getId()).update(original));
     }
 
-    public void updateUser(String username, UserBuilder.UserUpdate update) {
+    public void updateUser(String username, ManagedUser.UserUpdate update) {
         List<UserRepresentation> result = realmResource.users().search(username);
         Assertions.assertEquals(1, result.size());
 
         UserRepresentation original = result.get(0);
-        UserRepresentation updated = RepresentationUtils.clone(original);
-        update.update(updated);
-        realmResource.users().get(original.getId()).update(updated);
+        UserBuilder updatedUser = UserBuilder.update(RepresentationUtils.clone(original));
+        UserRepresentation updated = update.update(updatedUser).build();
 
+        realmResource.users().get(original.getId()).update(updated);
     }
 
     /**

@@ -56,6 +56,7 @@ import org.keycloak.services.resources.LoginActionsService;
 import org.keycloak.storage.StorageId;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageProviderModel;
+import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
@@ -131,7 +132,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
         RealmBuilder.edit(testRealm)
-                .client(org.keycloak.testsuite.util.ClientBuilder.create().clientId("client-user").serviceAccount());
+                .client(ClientBuilder.create().clientId("client-user").serviceAccountsEnabled());
     }
 
     @Before

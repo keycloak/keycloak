@@ -35,13 +35,13 @@ public class RoleBuilder extends Builder<RoleRepresentation> {
         return this;
     }
 
-    public RoleBuilder attributes(Map<String, List<String>> attributes) {
-        rep.setAttributes(combine(rep.getAttributes(), attributes));
+    public RoleBuilder attribute(String key, String value) {
+        rep.singleAttribute(key, value);
         return this;
     }
 
-    public RoleBuilder singleAttribute(String key, String value) {
-        rep.singleAttribute(key, value);
+    public RoleBuilder attributes(Map<String, List<String>> attributes) {
+        rep.setAttributes(combine(rep.getAttributes(), attributes));
         return this;
     }
 

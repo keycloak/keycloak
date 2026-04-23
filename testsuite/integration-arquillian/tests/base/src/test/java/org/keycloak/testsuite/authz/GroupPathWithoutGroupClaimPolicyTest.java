@@ -25,10 +25,10 @@ import org.keycloak.protocol.oidc.mappers.GroupMembershipMapper;
 import org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.GroupBuilder;
 import org.keycloak.testframework.realm.RoleBuilder;
 import org.keycloak.testframework.realm.UserBuilder;
-import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.RolesBuilder;
 
@@ -66,7 +66,7 @@ public class GroupPathWithoutGroupClaimPolicyTest extends GroupPathPolicyTest {
                     .authorizationServicesEnabled(true)
                     .redirectUris("http://localhost/resource-server-test")
                     .defaultRoles("uma_protection")
-                    .directAccessGrants())
+                    .directAccessGrantsEnabled())
                 .build());
     }
 }

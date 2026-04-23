@@ -43,6 +43,7 @@ import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.RefreshToken;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AbstractChangeImportedUserPasswordsTest;
 import org.keycloak.testsuite.ActionURIUtils;
@@ -61,7 +62,6 @@ import org.keycloak.testsuite.pages.RegisterPage;
 import org.keycloak.testsuite.pages.VerifyEmailPage;
 import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.util.BrowserTabUtil;
-import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.GreenMailRule;
 import org.keycloak.testsuite.util.InfinispanTestTimeServiceRule;
 import org.keycloak.testsuite.util.WaitUtils;
@@ -679,7 +679,7 @@ public class MultipleTabsLoginTest extends AbstractChangeImportedUserPasswordsTe
                     .id(clientUuid)
                     .enabled(true)
                     .baseUrl("")
-                    .addRedirectUri("*")
+                    .redirectUris("*")
                     .secret("password")
                     .build();
             managedRealm.admin().clients().create(emptyBaseclient);
