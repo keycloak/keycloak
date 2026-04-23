@@ -46,12 +46,14 @@ components:
           uniqueItems: true
           items:
             type: string
+            pattern: \S
           description: URIs that the browser can redirect to after login
         roles:
           type: array
           uniqueItems: true
           items:
             type: string
+            pattern: \S
           description: Roles associated with this client
         protocol:
           type: string
@@ -91,12 +93,14 @@ components:
           uniqueItems: true
           items:
             type: string
+            pattern: \S
           description: Web origins that are allowed to make requests to this client
         serviceAccountRoles:
           type: array
           uniqueItems: true
           items:
             type: string
+            pattern: \S
           description: Roles assigned to the service account
         protocol:
           type: string
@@ -157,7 +161,6 @@ components:
       description: Bearer token authentication using a Keycloak access token
 tags:
 - name: Clients (v2)
-  x-smallrye-profile-admin: ""
 paths:
   /admin/api/{realmName}/clients/{version}:
     get:
