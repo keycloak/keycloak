@@ -26,6 +26,7 @@ import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.AuthenticatorConfigModel;
 import org.keycloak.models.RealmModel;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testsuite.AbstractChangeImportedUserPasswordsTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.authentication.ExpectedParamAuthenticator;
@@ -269,7 +270,7 @@ public class AuthenticatorSubflowsTest extends AbstractChangeImportedUserPasswor
         oauth.fillLoginForm("test-user@localhost", getPassword("test-user@localhost"));
         appPage.assertCurrent();
 
-        events.expectLogin().detail(Details.USERNAME, "test-user@localhost").assertEvent();
+        EventAssertion.expectLoginSuccess(events.poll()).details(Details.USERNAME, "test-user@localhost");
     }
 
 
@@ -290,7 +291,7 @@ public class AuthenticatorSubflowsTest extends AbstractChangeImportedUserPasswor
         oauth.fillLoginForm("test-user@localhost", getPassword("test-user@localhost"));
         appPage.assertCurrent();
 
-        events.expectLogin().detail(Details.USERNAME, "test-user@localhost").assertEvent();
+        EventAssertion.expectLoginSuccess(events.poll()).details(Details.USERNAME, "test-user@localhost");
     }
 
 
@@ -311,7 +312,7 @@ public class AuthenticatorSubflowsTest extends AbstractChangeImportedUserPasswor
 //
 //        appPage.assertCurrent();
 //
-//        events.expectLogin().detail(Details.USERNAME, "john-doh@localhost").assertEvent();
+//        EventAssertion.expectLoginSuccessWithSessionAndDetails(events.poll()).details(Details.USERNAME, "john-doh@localhost").assertEvent();
 //    }
 //
 //

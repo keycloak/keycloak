@@ -37,6 +37,7 @@ import org.keycloak.services.clientpolicy.condition.ClientAccessTypeCondition.Co
 import org.keycloak.services.clientpolicy.condition.ClientAccessTypeConditionFactory;
 import org.keycloak.services.clientpolicy.executor.ClientSecretRotationExecutor;
 import org.keycloak.services.clientpolicy.executor.ClientSecretRotationExecutorFactory;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.account.AbstractRestServiceTest;
@@ -888,7 +889,8 @@ public class ClientSecretRotationTest extends AbstractRestServiceTest {
         oauth.client(clientId, clientSecret);
         oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
 
-        EventRepresentation loginEvent = events.expectLogin().client(clientId).assertEvent();
+        EventRepresentation loginEvent = events.poll();
+        EventAssertion.expectLoginSuccess(loginEvent).clientId(clientId);
         String sessionId = loginEvent.getSessionId();
         String codeId = loginEvent.getDetails().get(Details.CODE_ID);
         String code = oauth.parseLoginResponse().getCode();

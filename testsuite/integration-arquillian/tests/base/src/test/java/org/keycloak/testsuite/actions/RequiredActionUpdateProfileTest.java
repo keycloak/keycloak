@@ -35,6 +35,7 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.userprofile.config.UPAttribute;
 import org.keycloak.representations.userprofile.config.UPAttributePermissions;
 import org.keycloak.representations.userprofile.config.UPConfig;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AbstractChangeImportedUserPasswordsTest;
 import org.keycloak.testsuite.AssertEvents;
@@ -134,7 +135,7 @@ public class RequiredActionUpdateProfileTest extends AbstractChangeImportedUserP
                 .assertEvent();
         Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-        events.expectLogin().assertEvent();
+        EventAssertion.expectLoginSuccess(events.poll());
 
         // assert user is really updated in persistent store
         user = ActionUtil.findUserWithAdminClient(adminClient, "test-user@localhost");
@@ -158,14 +159,19 @@ public class RequiredActionUpdateProfileTest extends AbstractChangeImportedUserP
 
         updateProfilePage.prepareUpdate().username("new").firstName("New first").lastName("New last").email("john-doh@localhost").submit();
 
-        events.expectLogin().event(EventType.UPDATE_PROFILE).detail(Details.UPDATED_FIRST_NAME, "New first").user(userId).session(Matchers.nullValue(String.class)).removeDetail(Details.CONSENT)
-                .detail(Details.UPDATED_LAST_NAME, "New last").user(userId).session(Matchers.nullValue(String.class)).removeDetail(Details.CONSENT)
-                .detail(Details.USERNAME, "john-doh@localhost")
-                .assertEvent();
+        EventAssertion.assertSuccess(events.poll())
+                .type(EventType.UPDATE_PROFILE)
+                .isCodeId()
+                .sessionId(null)
+                .userId(userId)
+                .details(Details.USERNAME, "john-doh@localhost")
+                .details(Details.UPDATED_FIRST_NAME, "New first")
+                .details(Details.UPDATED_LAST_NAME, "New last")
+                .withoutDetails(Details.CONSENT);
 
         Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-        events.expectLogin().detail(Details.USERNAME, "john-doh@localhost").user(userId).assertEvent();
+        EventAssertion.expectLoginSuccess(events.poll()).details(Details.USERNAME, "john-doh@localhost").userId(userId);
 
         // assert user is really updated in persistent store
         UserRepresentation user = ActionUtil.findUserWithAdminClient(adminClient, "new");
@@ -437,7 +443,7 @@ public class RequiredActionUpdateProfileTest extends AbstractChangeImportedUserP
 
             Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-            events.expectLogin().assertEvent();
+            EventAssertion.expectLoginSuccess(events.poll());
 
             // assert user is really updated in persistent store
             userRep = ActionUtil.findUserWithAdminClient(adminClient, "test-user@localhost");

@@ -28,6 +28,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.messages.Messages;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AbstractChangeImportedUserPasswordsTest;
 import org.keycloak.testsuite.AssertEvents;
@@ -41,7 +42,6 @@ import org.keycloak.testsuite.util.UIUtils;
 import org.keycloak.testsuite.util.WaitUtils;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 
-import org.hamcrest.Matchers;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
 import org.junit.Rule;
@@ -105,7 +105,7 @@ public class TermsAndConditionsTest extends AbstractChangeImportedUserPasswordsT
         AuthorizationEndpointResponse response = oauth.parseLoginResponse();
         Assertions.assertNotNull(response.getCode());
 
-        events.expectLogin().assertEvent();
+        EventAssertion.expectLoginSuccess(events.poll());
 
         // assert user attribute is properly set
         UserRepresentation user = ActionUtil.findUserWithAdminClient(adminClient, "test-user@localhost");
@@ -141,11 +141,10 @@ public class TermsAndConditionsTest extends AbstractChangeImportedUserPasswordsT
         Assertions.assertEquals(Messages.TERMS_AND_CONDITIONS_DECLINED, response.getErrorDescription());
 
         // assert event
-        events.expectLogin().event(EventType.CUSTOM_REQUIRED_ACTION_ERROR).detail(Details.CUSTOM_REQUIRED_ACTION, TermsAndConditions.PROVIDER_ID)
+        EventAssertion.assertError(events.poll()).type(EventType.CUSTOM_REQUIRED_ACTION_ERROR).details(Details.CUSTOM_REQUIRED_ACTION, TermsAndConditions.PROVIDER_ID)
                 .error(Errors.REJECTED_BY_USER)
-                .removeDetail(Details.CONSENT)
-                .session(Matchers.nullValue(String.class))
-                .assertEvent();
+                .withoutDetails(Details.CONSENT)
+                .sessionId(null);
 
         // assert user attribute is properly removed
         UserRepresentation user = ActionUtil.findUserWithAdminClient(adminClient, "test-user@localhost");
@@ -172,13 +171,12 @@ public class TermsAndConditionsTest extends AbstractChangeImportedUserPasswordsT
 
         WaitUtils.waitForPageToLoad();
 
-        events.expectLogin().event(EventType.CUSTOM_REQUIRED_ACTION_ERROR).detail(Details.CUSTOM_REQUIRED_ACTION, TermsAndConditions.PROVIDER_ID)
+        EventAssertion.assertError(events.poll()).type(EventType.CUSTOM_REQUIRED_ACTION_ERROR).details(Details.CUSTOM_REQUIRED_ACTION, TermsAndConditions.PROVIDER_ID)
                 .error(Errors.REJECTED_BY_USER)
-                .removeDetail(Details.CONSENT)
-                .session(Matchers.nullValue(String.class))
-                .client(Constants.ACCOUNT_CONSOLE_CLIENT_ID)
-                .detail(Details.REDIRECT_URI, getAuthServerContextRoot() + "/auth/realms/" + TEST_REALM_NAME + "/account")
-                .assertEvent();
+                .withoutDetails(Details.CONSENT)
+                .sessionId(null)
+                .clientId(Constants.ACCOUNT_CONSOLE_CLIENT_ID)
+                .details(Details.REDIRECT_URI, getAuthServerContextRoot() + "/auth/realms/" + TEST_REALM_NAME + "/account");
 
 
         // assert user attribute is properly removed
@@ -213,7 +211,7 @@ public class TermsAndConditionsTest extends AbstractChangeImportedUserPasswordsT
 
         assertTrue(appPage.isCurrent());
 
-        events.expectLogin().assertEvent();
+        EventAssertion.expectLoginSuccess(events.poll());
 
     }
 

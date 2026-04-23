@@ -21,6 +21,7 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.KeysMetadataRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.AdminApiUtil;
@@ -208,15 +209,14 @@ public class DockerClientTest extends AbstractKeycloakTest {
     }
 
     private void assertLogin(UserRepresentation dockerUser) {
-        events.expectLogin()
-                .realm(REALM_ID)
-                .ipAddress(Matchers.any(String.class))
-                .client(CLIENT_ID)
-                .user(dockerUser.getId())
-                .detail(Details.AUTH_METHOD, DockerAuthV2Protocol.LOGIN_PROTOCOL)
-                .detail(Details.USERNAME, DOCKER_USER)
-                .removeDetail(Details.REDIRECT_URI)
-                .assertEvent();
+        EventAssertion.assertSuccess(events.poll())
+                .type(EventType.LOGIN)
+                .isCodeId()
+                .clientId(CLIENT_ID)
+                .userId(dockerUser.getId())
+                .details(Details.AUTH_METHOD, DockerAuthV2Protocol.LOGIN_PROTOCOL)
+                .details(Details.USERNAME, DOCKER_USER)
+                .withoutDetails(Details.REDIRECT_URI);
     }
 
     private void assertLoginErrorClientDisabled() {

@@ -32,10 +32,12 @@ import org.keycloak.organization.authentication.authenticators.browser.Organizat
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.idm.AuthenticationExecutionInfoRepresentation;
 import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
+import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.OrganizationDomainRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testsuite.AbstractAdminTest;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.IgnoreBrowserDriver;
@@ -109,12 +111,11 @@ public class PasskeysOrganizationAuthenticationTest extends AbstractWebAuthnVirt
 
             appPage.assertCurrent();
 
-            events.expectLogin()
-                    .user(user.getId())
-                    .detail(Details.USERNAME, user.getUsername())
-                    .detail(Details.CREDENTIAL_TYPE, WebAuthnCredentialModel.TYPE_PASSWORDLESS)
-                    .detail(WebAuthnConstants.USER_VERIFICATION_CHECKED, "true")
-                    .assertEvent();
+            EventAssertion.expectLoginSuccess(events.poll())
+                    .userId(user.getId())
+                    .details(Details.USERNAME, user.getUsername())
+                    .details(Details.CREDENTIAL_TYPE, WebAuthnCredentialModel.TYPE_PASSWORDLESS)
+                    .details(WebAuthnConstants.USER_VERIFICATION_CHECKED, "true");
 
             logout();
             events.clear();
@@ -126,12 +127,11 @@ public class PasskeysOrganizationAuthenticationTest extends AbstractWebAuthnVirt
 
             appPage.assertCurrent();
 
-            events.expectLogin()
-                    .user(user.getId())
-                    .detail(Details.USERNAME, user.getUsername())
-                    .detail(Details.CREDENTIAL_TYPE, WebAuthnCredentialModel.TYPE_PASSWORDLESS)
-                    .detail(WebAuthnConstants.USER_VERIFICATION_CHECKED, "true")
-                    .assertEvent();
+            EventAssertion.expectLoginSuccess(events.poll())
+                    .userId(user.getId())
+                    .details(Details.USERNAME, user.getUsername())
+                    .details(Details.CREDENTIAL_TYPE, WebAuthnCredentialModel.TYPE_PASSWORDLESS)
+                    .details(WebAuthnConstants.USER_VERIFICATION_CHECKED, "true");
 
             logout();
         }
@@ -226,11 +226,11 @@ public class PasskeysOrganizationAuthenticationTest extends AbstractWebAuthnVirt
             MatcherAssert.assertThat(driver.findElement(By.xpath("//form[@id='webauth']")), Matchers.notNullValue());
             loginPage.login(getPassword(USERNAME));
             appPage.assertCurrent();
-            events.expectLogin()
-                    .user(user.getId())
-                    .detail(Details.USERNAME, "UserWebAuthn")
-                    .detail(Details.CREDENTIAL_TYPE, Matchers.nullValue())
-                    .assertEvent();
+            EventRepresentation eventRep = events.poll();
+            EventAssertion.expectLoginSuccess(eventRep)
+                    .userId(user.getId())
+                    .details(Details.USERNAME, "UserWebAuthn");
+            MatcherAssert.assertThat(eventRep.getDetails().get(Details.CREDENTIAL_TYPE), Matchers.nullValue());
         }
     }
 
@@ -270,12 +270,11 @@ public class PasskeysOrganizationAuthenticationTest extends AbstractWebAuthnVirt
             webAuthnLoginPage.clickAuthenticate();
             appPage.assertCurrent();
 
-            events.expectLogin()
-                    .user(user.getId())
-                    .detail(Details.USERNAME, user.getUsername())
-                    .detail(Details.CREDENTIAL_TYPE, WebAuthnCredentialModel.TYPE_PASSWORDLESS)
-                    .detail(WebAuthnConstants.USER_VERIFICATION_CHECKED, "true")
-                    .assertEvent();
+            EventAssertion.expectLoginSuccess(events.poll())
+                    .userId(user.getId())
+                    .details(Details.USERNAME, user.getUsername())
+                    .details(Details.CREDENTIAL_TYPE, WebAuthnCredentialModel.TYPE_PASSWORDLESS)
+                    .details(WebAuthnConstants.USER_VERIFICATION_CHECKED, "true");
             logout();
         }
     }
@@ -309,12 +308,11 @@ public class PasskeysOrganizationAuthenticationTest extends AbstractWebAuthnVirt
 
             appPage.assertCurrent();
 
-            events.expectLogin()
-                    .user(user.getId())
-                    .detail(Details.USERNAME, user.getUsername())
-                    .detail(Details.CREDENTIAL_TYPE, WebAuthnCredentialModel.TYPE_PASSWORDLESS)
-                    .detail(WebAuthnConstants.USER_VERIFICATION_CHECKED, "true")
-                    .assertEvent();
+            EventAssertion.expectLoginSuccess(events.poll())
+                    .userId(user.getId())
+                    .details(Details.USERNAME, user.getUsername())
+                    .details(Details.CREDENTIAL_TYPE, WebAuthnCredentialModel.TYPE_PASSWORDLESS)
+                    .details(WebAuthnConstants.USER_VERIFICATION_CHECKED, "true");
 
             // Re-authentication now with prompt=login. Passkeys login should be possible.
             oauth.loginForm()
@@ -328,12 +326,11 @@ public class PasskeysOrganizationAuthenticationTest extends AbstractWebAuthnVirt
             webAuthnLoginPage.clickAuthenticate();
             appPage.assertCurrent();
 
-            events.expectLogin()
-                    .user(user.getId())
-                    .detail(Details.USERNAME, user.getUsername())
-                    .detail(Details.CREDENTIAL_TYPE, WebAuthnCredentialModel.TYPE_PASSWORDLESS)
-                    .detail(WebAuthnConstants.USER_VERIFICATION_CHECKED, "true")
-                    .assertEvent();
+            EventAssertion.expectLoginSuccess(events.poll())
+                    .userId(user.getId())
+                    .details(Details.USERNAME, user.getUsername())
+                    .details(Details.CREDENTIAL_TYPE, WebAuthnCredentialModel.TYPE_PASSWORDLESS)
+                    .details(WebAuthnConstants.USER_VERIFICATION_CHECKED, "true");
 
             logout();
         }

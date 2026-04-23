@@ -21,6 +21,7 @@ import org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigMo
 import org.keycloak.events.Details;
 import org.keycloak.models.Constants;
 import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.ContainerAssume;
@@ -324,10 +325,8 @@ public class X509BrowserCRLTest extends AbstractX509AuthenticationTest {
         Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
         Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
 
-        events.expectLogin()
-                .user(userId)
-                .detail(Details.USERNAME, "test-user@localhost")
-                .removeDetail(Details.REDIRECT_URI)
-                .assertEvent();
+        EventAssertion.expectLoginSuccess(events.poll())
+                .userId(userId)
+                .details(Details.USERNAME, "test-user@localhost");
     }
 }
