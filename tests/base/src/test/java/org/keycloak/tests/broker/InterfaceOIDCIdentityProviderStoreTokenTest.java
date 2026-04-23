@@ -12,11 +12,11 @@ import org.keycloak.models.jpa.JpaRealmProviderFactory;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.testframework.oauth.OAuthClient;
+import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.ClientConfig;
-import org.keycloak.testframework.realm.ClientConfigBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
-import org.keycloak.testframework.realm.RealmConfigBuilder;
 import org.keycloak.testframework.remote.timeoffset.TimeOffSet;
 import org.keycloak.testsuite.util.IdentityProviderBuilder;
 import org.keycloak.testsuite.util.oauth.AbstractHttpResponse;
@@ -180,7 +180,7 @@ public interface InterfaceOIDCIdentityProviderStoreTokenTest extends InterfaceId
     static class ExternalRealmConfig implements RealmConfig {
 
         @Override
-        public RealmConfigBuilder configure(RealmConfigBuilder realm) {
+        public RealmBuilder configure(RealmBuilder realm) {
 
             realm.addUser("testuser")
                     .name("Test", "User")
@@ -194,7 +194,7 @@ public interface InterfaceOIDCIdentityProviderStoreTokenTest extends InterfaceId
     public static class IdpRealmConfig implements RealmConfig {
 
         @Override
-        public RealmConfigBuilder configure(RealmConfigBuilder realm) {
+        public RealmBuilder configure(RealmBuilder realm) {
             realm.identityProvider(IdentityProviderBuilder.create()
                     .providerId(OIDCIdentityProviderFactory.PROVIDER_ID)
                     .alias(IDP_ALIAS)
@@ -216,7 +216,7 @@ public interface InterfaceOIDCIdentityProviderStoreTokenTest extends InterfaceId
     public static class TestClientConfig implements ClientConfig {
 
         @Override
-        public ClientConfigBuilder configure(ClientConfigBuilder client) {
+        public ClientBuilder configure(ClientBuilder client) {
             return client.clientId("test-app")
                     .serviceAccountsEnabled(true)
                     .directAccessGrantsEnabled(true)

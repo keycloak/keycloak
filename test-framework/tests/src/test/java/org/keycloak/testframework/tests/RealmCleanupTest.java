@@ -5,10 +5,10 @@ import jakarta.ws.rs.NotFoundException;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
-import org.keycloak.testframework.realm.RealmConfigBuilder;
-import org.keycloak.testframework.realm.RoleConfigBuilder;
-import org.keycloak.testframework.realm.UserConfigBuilder;
+import org.keycloak.testframework.realm.RoleBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.MethodOrderer;
@@ -26,7 +26,7 @@ public class RealmCleanupTest {
     @Test
     @Order(1)
     public void markRealmDirty() {
-        managedRealm.admin().users().create(UserConfigBuilder.create().username("myuser").build()).close();
+        managedRealm.admin().users().create(UserBuilder.create().username("myuser").build()).close();
         managedRealm.dirty();
     }
 
@@ -51,7 +51,7 @@ public class RealmCleanupTest {
     @Test
     @Order(5)
     public void addUser() {
-        managedRealm.addUser(UserConfigBuilder.create().username("myuser"));
+        managedRealm.addUser(UserBuilder.create().username("myuser"));
     }
 
     @Test
@@ -63,7 +63,7 @@ public class RealmCleanupTest {
     @Test
     @Order(7)
     public void updateUser() {
-        managedRealm.updateUserWithCleanup("someuser", u -> u.setFirstName("Bob"));
+        managedRealm.updateUserWithCleanup("someuser", u -> u.firstName("Bob"));
     }
 
     @Test
@@ -76,7 +76,7 @@ public class RealmCleanupTest {
     @Order(9)
     public void customCleanup() {
         managedRealm.cleanup().add(r -> r.roles().get("foo").remove());
-        managedRealm.admin().roles().create(RoleConfigBuilder.create().name("foo").build());
+        managedRealm.admin().roles().create(RoleBuilder.create().name("foo").build());
     }
 
     @Test
@@ -88,7 +88,7 @@ public class RealmCleanupTest {
     public static class RealmCleanupRealmConfig implements RealmConfig {
 
         @Override
-        public RealmConfigBuilder configure(RealmConfigBuilder realm) {
+        public RealmBuilder configure(RealmBuilder realm) {
             realm.addUser("someuser").firstName("Sarah");
             return realm;
         }

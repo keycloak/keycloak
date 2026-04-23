@@ -15,7 +15,7 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.testframework.annotations.InjectAdminClient;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
-import org.keycloak.testframework.realm.ClientConfigBuilder;
+import org.keycloak.testframework.realm.ClientBuilder;
 
 import org.junit.jupiter.api.Test;
 
@@ -39,7 +39,7 @@ public class RealmRoleAdminTest extends AbstractPermissionTest {
         RoleRepresentation viewClientsRole = clientsApi.get(realmManagement.getId()).roles().get(AdminRoles.VIEW_CLIENTS).toRepresentation();
         realm.admin().users().get(myadmin.getId()).roles().clientLevel(realmManagement.getId()).add(List.of(manageAuthorizationRole, viewClientsRole));
 
-        clientsApi.create(ClientConfigBuilder.create()
+        clientsApi.create(ClientBuilder.create()
                 .clientId("authz-client")
                 .secret("secret")
                 .serviceAccountsEnabled(true)

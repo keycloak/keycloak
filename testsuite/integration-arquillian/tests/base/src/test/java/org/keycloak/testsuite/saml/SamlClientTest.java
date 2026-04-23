@@ -12,7 +12,7 @@ import org.keycloak.saml.common.exceptions.ConfigurationException;
 import org.keycloak.saml.common.exceptions.ParsingException;
 import org.keycloak.saml.common.exceptions.ProcessingException;
 import org.keycloak.saml.processing.api.saml.v2.request.SAML2Request;
-import org.keycloak.testsuite.util.ClientBuilder;
+import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testsuite.util.SamlClient;
 
 import org.apache.commons.io.IOUtils;
@@ -37,7 +37,7 @@ public class SamlClientTest extends AbstractSamlTest {
     @Test
     public void testLoginWithOIDCClient() throws ParsingException, ConfigurationException, ProcessingException, IOException {
         ClientRepresentation salesRep = adminClient.realm(REALM_NAME).clients().findByClientId(SAML_CLIENT_ID_SALES_POST).get(0);
-        adminClient.realm(REALM_NAME).clients().get(salesRep.getId()).update(ClientBuilder.edit(salesRep)
+        adminClient.realm(REALM_NAME).clients().get(salesRep.getId()).update(ClientBuilder.update(salesRep)
                         .protocol(OIDCLoginProtocol.LOGIN_PROTOCOL).build());
 
         AuthnRequestType loginRep = createLoginRequestDocument(SAML_CLIENT_ID_SALES_POST, SAML_ASSERTION_CONSUMER_URL_SALES_POST, REALM_NAME);
@@ -56,7 +56,7 @@ public class SamlClientTest extends AbstractSamlTest {
             response.close();
         }
 
-        adminClient.realm(REALM_NAME).clients().get(salesRep.getId()).update(ClientBuilder.edit(salesRep)
+        adminClient.realm(REALM_NAME).clients().get(salesRep.getId()).update(ClientBuilder.update(salesRep)
                 .protocol(SamlProtocol.LOGIN_PROTOCOL).build());
     }
 

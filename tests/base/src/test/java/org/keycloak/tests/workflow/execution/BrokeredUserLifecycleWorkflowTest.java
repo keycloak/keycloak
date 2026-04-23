@@ -33,15 +33,15 @@ import org.keycloak.testframework.mail.MailServer;
 import org.keycloak.testframework.mail.annotations.InjectMailServer;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
+import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.ClientConfig;
-import org.keycloak.testframework.realm.ClientConfigBuilder;
 import org.keycloak.testframework.realm.ManagedClient;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.ManagedUser;
+import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
-import org.keycloak.testframework.realm.RealmConfigBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.realm.UserConfig;
-import org.keycloak.testframework.realm.UserConfigBuilder;
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testframework.ui.annotations.InjectPage;
@@ -238,7 +238,7 @@ public class BrokeredUserLifecycleWorkflowTest extends AbstractWorkflowTest {
 
         // create new user - it will trigger an activation event but the condition is referencing the removed IDP
         String userId = null;
-        try(Response response = consumerRealm.admin().users().create(UserConfigBuilder.create().username("test").build())) {
+        try(Response response = consumerRealm.admin().users().create(UserBuilder.create().username("test").build())) {
             userId = ApiUtil.getCreatedId(response);
         }
 
@@ -361,7 +361,7 @@ public class BrokeredUserLifecycleWorkflowTest extends AbstractWorkflowTest {
     private static class ProviderRealmUserConf implements UserConfig {
 
         @Override
-        public UserConfigBuilder configure(UserConfigBuilder builder) {
+        public UserBuilder configure(UserBuilder builder) {
             builder.username("alice");
             builder.password("password");
             builder.email("alice@wonderland.org");
@@ -374,7 +374,7 @@ public class BrokeredUserLifecycleWorkflowTest extends AbstractWorkflowTest {
     private static class ConsumerRealmUserConf implements UserConfig {
 
         @Override
-        public UserConfigBuilder configure(UserConfigBuilder builder) {
+        public UserBuilder configure(UserBuilder builder) {
             builder.username("bob");
             builder.password("password");
             builder.email("bob@wonderland.org");
@@ -387,7 +387,7 @@ public class BrokeredUserLifecycleWorkflowTest extends AbstractWorkflowTest {
     private static class ProviderRealmClientConf implements ClientConfig {
 
         @Override
-        public ClientConfigBuilder configure(ClientConfigBuilder builder) {
+        public ClientBuilder configure(ClientBuilder builder) {
             builder.clientId(CLIENT_ID);
             builder.name(CLIENT_ID);
             builder.secret(CLIENT_SECRET);
@@ -402,7 +402,7 @@ public class BrokeredUserLifecycleWorkflowTest extends AbstractWorkflowTest {
     private static class ConsumerRealmConf implements RealmConfig {
 
         @Override
-        public RealmConfigBuilder configure(RealmConfigBuilder builder) {
+        public RealmBuilder configure(RealmBuilder builder) {
             builder.identityProvider(setUpIdentityProvider());
             return builder;
         }

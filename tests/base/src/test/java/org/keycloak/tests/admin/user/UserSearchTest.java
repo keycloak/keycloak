@@ -20,7 +20,7 @@ import org.keycloak.representations.idm.FederatedIdentityRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
-import org.keycloak.testframework.realm.UserConfigBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.tests.suites.DatabaseTest;
 import org.keycloak.userprofile.DefaultAttributes;
@@ -176,7 +176,7 @@ public class UserSearchTest extends AbstractUserTest {
     public void storeAndReadUserWithLongAttributeValue() {
         String longValue = RandomStringUtils.random(Integer.parseInt(DefaultAttributes.DEFAULT_MAX_LENGTH_ATTRIBUTES), true, true);
 
-        UserRepresentation userRep = UserConfigBuilder.create()
+        UserRepresentation userRep = UserBuilder.create()
                 .username("user1").password("password").name("user1FirstName", "user1LastName")
                 .email("user1@example.com").emailVerified(true).attribute("attr", longValue).build();
         String userId = createUser(userRep);
@@ -186,7 +186,7 @@ public class UserSearchTest extends AbstractUserTest {
         Assertions.assertNotNull(user1);
         assertThat(user1.getAttributes().get("attr").get(0), equalTo(longValue));
 
-        UserRepresentation userRep2 = UserConfigBuilder.create()
+        UserRepresentation userRep2 = UserBuilder.create()
                 .username("user2").password("password").name("user2FirstName", "user2LastName")
                 .email("user2@example.com").emailVerified(true).attribute("attr", longValue + "a").build();
 
@@ -202,15 +202,15 @@ public class UserSearchTest extends AbstractUserTest {
         String longValue = RandomStringUtils.random(Integer.parseInt(DefaultAttributes.DEFAULT_MAX_LENGTH_ATTRIBUTES) - 1, true, true) + "u";
         String longValue2 = RandomStringUtils.random(Integer.parseInt(DefaultAttributes.DEFAULT_MAX_LENGTH_ATTRIBUTES) - 1, true, true) + "v";
 
-        UserRepresentation userRep = UserConfigBuilder.create()
+        UserRepresentation userRep = UserBuilder.create()
                 .username("user1").password("password").name("user1FirstName", "user1LastName")
                 .email("user1@example.com").emailVerified(true)
                 .attribute("test1", longValue, "v2").attribute("test2", "v2").build();
-        UserRepresentation userRep2 = UserConfigBuilder.create()
+        UserRepresentation userRep2 = UserBuilder.create()
                 .username("user2").password("password").name("user2FirstName", "user2LastName")
                 .email("user2@example.com").emailVerified(true)
                 .attribute("test1", longValue, "v2").attribute("test2", longValue2).build();
-        UserRepresentation userRep3 = UserConfigBuilder.create()
+        UserRepresentation userRep3 = UserBuilder.create()
                 .username("user3").password("password").name("user3FirstName", "user3LastName")
                 .email("user3@example.com").emailVerified(true)
                 .attribute("test2", longValue, "v3").attribute("test4", "v4").build();

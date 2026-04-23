@@ -32,7 +32,7 @@ import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
-import org.keycloak.testsuite.util.ClientBuilder;
+import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.util.JsonSerialization;
 
 import org.junit.Test;
@@ -125,7 +125,7 @@ public class ResourceServerManagementTest extends AbstractAuthorizationTest {
         assertNotNull(authorization.policies().role().findByName("Resource 1 Policy"));
         settings.getPolicies().removeIf(p -> "js".equals(p.getType()));
 
-        ClientRepresentation anotherClientRep = ClientBuilder.create().clientId(KeycloakModelUtils.generateId()).secret("secret").authorizationServicesEnabled(true).serviceAccount().enabled(true).build();
+        ClientRepresentation anotherClientRep = ClientBuilder.create().clientId(KeycloakModelUtils.generateId()).secret("secret").authorizationServicesEnabled(true).serviceAccountsEnabled().enabled(true).build();
         clientsResource.create(anotherClientRep).close();
         clients = clientsResource.findByClientId(anotherClientRep.getClientId());
         assertFalse(clients.isEmpty());

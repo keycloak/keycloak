@@ -45,7 +45,7 @@ import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.realm.ManagedClient;
 import org.keycloak.testframework.realm.ManagedRealm;
-import org.keycloak.testframework.realm.UserConfigBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.util.ApiUtil;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -204,7 +204,7 @@ public abstract class AbstractPermissionTest {
     }
 
     protected UserRepresentation createUser(String username) {
-        UserRepresentation user = UserConfigBuilder.create()
+        UserRepresentation user = UserBuilder.create()
                 .username(username)
                 .build();
 
@@ -212,7 +212,7 @@ public abstract class AbstractPermissionTest {
     }
 
     protected UserRepresentation createUser(String username, String password) {
-        UserRepresentation user = UserConfigBuilder.create()
+        UserRepresentation user = UserBuilder.create()
                 .username(username)
                 .firstName(username)
                 .lastName(username)

@@ -34,9 +34,9 @@ import org.keycloak.scim.resource.user.Name;
 import org.keycloak.scim.resource.user.User;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.events.AdminEventAssertion;
-import org.keycloak.testframework.realm.ClientConfigBuilder;
-import org.keycloak.testframework.realm.GroupConfigBuilder;
-import org.keycloak.testframework.realm.UserConfigBuilder;
+import org.keycloak.testframework.realm.ClientBuilder;
+import org.keycloak.testframework.realm.GroupBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.scim.client.annotations.InjectScimClient;
 import org.keycloak.testframework.util.ApiUtil;
 
@@ -236,7 +236,7 @@ public class UserTest extends AbstractScimTest {
 
     @Test
     public void testGetExisting() {
-        UserRepresentation existing = UserConfigBuilder.create()
+        UserRepresentation existing = UserBuilder.create()
                 .username(KeycloakModelUtils.generateId())
                 .email(KeycloakModelUtils.generateId() + "@keycloak.org")
                 .firstName("f")
@@ -366,7 +366,7 @@ public class UserTest extends AbstractScimTest {
 
     @Test
     public void testNoManagePermission() {
-        realm.admin().clients().create(ClientConfigBuilder
+        realm.admin().clients().create(ClientBuilder
                 .create()
                 .clientId("noaccess-scim-client")
                 .secret("secret")
@@ -1092,7 +1092,7 @@ public class UserTest extends AbstractScimTest {
     }
 
     private GroupRepresentation createGroup(String name) {
-        GroupRepresentation group = GroupConfigBuilder.create().name(name).build();
+        GroupRepresentation group = GroupBuilder.create().name(name).build();
         try (Response response = realm.admin().groups().add(group)) {
             group.setId(ApiUtil.getCreatedId(response));
         }
@@ -1101,7 +1101,7 @@ public class UserTest extends AbstractScimTest {
 
     private GroupRepresentation createSubGroup(GroupRepresentation parent, String name) {
         GroupResource parentApi = realm.admin().groups().group(parent.getId());
-        GroupRepresentation subGroup = GroupConfigBuilder.create().name(name).build();
+        GroupRepresentation subGroup = GroupBuilder.create().name(name).build();
 
         try (Response response = parentApi.subGroup(subGroup)) {
             subGroup.setId(ApiUtil.getCreatedId(response));

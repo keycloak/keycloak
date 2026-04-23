@@ -61,6 +61,7 @@ import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AbstractAuthenticationTest;
 import org.keycloak.testsuite.AbstractChangeImportedUserPasswordsTest;
 import org.keycloak.testsuite.Assert;
@@ -83,7 +84,6 @@ import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.FlowUtil;
 import org.keycloak.testsuite.util.RealmRepUtil;
-import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.testsuite.util.WaitUtils;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
@@ -151,9 +151,8 @@ public class LevelOfAssuranceFlowTest extends AbstractChangeImportedUserPassword
             testRealm.setOtpPolicyCodeReusable(true);
             findTestApp(testRealm).setAttributes(Collections.singletonMap(Constants.ACR_LOA_MAP, getAcrToLoaMappingForClient()));
             UserRepresentation user = RealmRepUtil.findUser(testRealm, "test-user@localhost");
-            UserBuilder.edit(user)
-                    .totpSecret("totpSecret")
-                    .otpEnabled();
+            UserBuilder.update(user)
+                    .totpSecret("totpSecret");
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -166,10 +165,9 @@ public class LevelOfAssuranceFlowTest extends AbstractChangeImportedUserPassword
         user.remove();
 
         userRep.setId(null);
-        UserBuilder.edit(userRep)
+        UserBuilder.update(userRep)
                 .password(generatePassword("test-user@localhost"))
-                .totpSecret("totpSecret")
-                .otpEnabled();
+                .totpSecret("totpSecret");
         Response response = managedRealm.admin().users().create(userRep);
         Assertions.assertEquals(201, response.getStatus());
         response.close();

@@ -11,8 +11,8 @@ import org.keycloak.testframework.injection.RequestedInstance;
 import org.keycloak.testframework.injection.Supplier;
 import org.keycloak.testframework.injection.SupplierHelpers;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
+import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.ClientConfig;
-import org.keycloak.testframework.realm.ClientConfigBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.server.KeycloakUrls;
 import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
@@ -46,7 +46,7 @@ public class OAuthClientSupplier implements Supplier<OAuthClient, InjectOAuthCli
         String redirectUri = testApp.getRedirectionUri();
 
         ClientConfig clientConfig = SupplierHelpers.getInstance(annotation.config());
-        ClientRepresentation testAppClient = clientConfig.configure(ClientConfigBuilder.create())
+        ClientRepresentation testAppClient = clientConfig.configure(ClientBuilder.create())
                 .redirectUris(redirectUri)
                 .build();
 

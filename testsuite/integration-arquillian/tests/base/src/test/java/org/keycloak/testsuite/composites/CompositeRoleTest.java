@@ -27,14 +27,14 @@ import org.keycloak.common.enums.SslRequired;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
+import org.keycloak.testframework.realm.ClientBuilder;
+import org.keycloak.testframework.realm.RoleBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.pages.LoginPage;
-import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.RealmBuilder;
-import org.keycloak.testsuite.util.RoleBuilder;
 import org.keycloak.testsuite.util.RolesBuilder;
-import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
 import org.jboss.arquillian.graphene.page.Page;
@@ -63,8 +63,8 @@ public class CompositeRoleTest extends AbstractCompositeKeycloakTest {
         RoleRepresentation realmRole1 = RoleBuilder.create().name("REALM_ROLE_1").build();
         RoleRepresentation realmComposite1 = RoleBuilder.create()
                 .name("REALM_COMPOSITE_1")
-                .composite()
-                .realmComposite(realmRole1)
+                .composite(true)
+                .realmComposite(realmRole1.getName())
                 .build();
 
         RolesBuilder roles = RolesBuilder.create()
@@ -78,14 +78,14 @@ public class CompositeRoleTest extends AbstractCompositeKeycloakTest {
                 .username("REALM_COMPOSITE_1_USER")
                 .enabled(true)
                 .password("password")
-                .addRoles(realmComposite1.getName());
+                .roles(realmComposite1.getName());
         realmBuilder.user(realmCompositeUser);
 
         UserBuilder realmRole1User = UserBuilder.create()
                 .username("REALM_ROLE_1_USER")
                 .enabled(true)
                 .password("password")
-                .addRoles(realmRole1.getName());
+                .roles(realmRole1.getName());
         realmBuilder.user(realmRole1User);
 
         ClientBuilder realmComposite1Application = ClientBuilder.create()
@@ -129,7 +129,7 @@ public class CompositeRoleTest extends AbstractCompositeKeycloakTest {
         UserBuilder realmAppRoleUser = UserBuilder.create()
                 .username("REALM_APP_ROLE_USER")
                 .password("password")
-                .addRoles("APP_ROLE_2");
+                .roles("APP_ROLE_2");
         realmBuilder.user(realmAppRoleUser);
 
         ClientBuilder appCompositeApplication = ClientBuilder.create()
@@ -147,7 +147,7 @@ public class CompositeRoleTest extends AbstractCompositeKeycloakTest {
         UserBuilder appCompositeUser = UserBuilder.create()
                 .username("APP_COMPOSITE_USER")
                 .password("password")
-                .addRoles("REALM_COMPOSITE_1");
+                .roles("REALM_COMPOSITE_1");
         realmBuilder.user(appCompositeUser);
 
         testRealms.add(realmBuilder.build());

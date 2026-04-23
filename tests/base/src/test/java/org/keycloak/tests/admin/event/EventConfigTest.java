@@ -23,8 +23,8 @@ import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
-import org.keycloak.testframework.realm.RealmConfigBuilder;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -97,7 +97,7 @@ public class EventConfigTest {
         Assertions.assertEquals(2, enabledEventTypes.size());
 
         // remove all event types
-        configRealm.updateWithCleanup(RealmConfigBuilder::setEnabledEventTypes);
+        configRealm.updateWithCleanup(RealmBuilder::setEnabledEventTypes);
 
         // removing all event types restores default events
         Assertions.assertEquals(defaultEventCount, configRealm.admin().getRealmEventsConfig().getEnabledEventTypes().size());
@@ -136,7 +136,7 @@ public class EventConfigTest {
     public static class EventConfigRealmConfig implements RealmConfig {
 
         @Override
-        public RealmConfigBuilder configure(RealmConfigBuilder realm) {
+        public RealmBuilder configure(RealmBuilder realm) {
             return realm.eventsEnabled(true).adminEventsEnabled(true);
         }
     }

@@ -40,6 +40,7 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.UserSessionRepresentation;
 import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.services.resources.LoginActionsService;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.pages.LoginConfigTotpPage;
 import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
@@ -49,7 +50,6 @@ import org.keycloak.testsuite.util.GreenMailRule;
 import org.keycloak.testsuite.util.MailUtils;
 import org.keycloak.testsuite.util.SecondBrowser;
 import org.keycloak.testsuite.util.URLUtils;
-import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
 
@@ -360,7 +360,7 @@ public class AppInitiatedActionResetPasswordTest extends AbstractAppInitiatedAct
         // Add OTP required action to the user
         UserResource user = AdminApiUtil.findUserByUsernameId(managedRealm.admin(), "test-user@localhost");
         UserRepresentation userRep = user.toRepresentation();
-        UserBuilder.edit(userRep).requiredAction(UserModel.RequiredAction.CONFIGURE_TOTP.name());
+        UserBuilder.update(userRep).requiredActions(UserModel.RequiredAction.CONFIGURE_TOTP.name());
         user.update(userRep);
 
         doAIA();

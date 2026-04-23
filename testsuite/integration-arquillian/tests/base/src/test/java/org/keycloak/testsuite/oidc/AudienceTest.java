@@ -35,10 +35,10 @@ import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.util.ProtocolMapperUtil;
-import org.keycloak.testsuite.util.UserBuilder;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -84,9 +84,9 @@ public class AudienceTest extends AbstractOIDCScopeTest {
                 .firstName("John")
                 .lastName("Doe")
                 .password("password")
-                .role("account", "manage-account")
-                .role("account", "view-profile")
-                .role("service-client", "role1")
+                .clientRoles("account", "manage-account")
+                .clientRoles("account", "view-profile")
+                .clientRoles("service-client", "role1")
                 .build();
         testRealm.getUsers().add(user);
     }
