@@ -1073,7 +1073,7 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         });
         OIDCClientRepresentation response = getClientDynamically(clientId);
         assertThat(response.getClientSecret(), notNullValue());
-        assertThat(response.getClientSecretExpiresAt(), greaterThan(0));
+        assertThat(response.getClientSecretExpiresAt(), greaterThan(0L));
 
     }
 
@@ -1093,7 +1093,7 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         OIDCClientRepresentation response = getClientDynamically(clientId);
 
         String firstSecret = response.getClientSecret();
-        Integer firstSecretExpiration = response.getClientSecretExpiresAt();
+        Long firstSecretExpiration = response.getClientSecretExpiresAt();
 
         updateClientDynamically(clientId, (OIDCClientRepresentation clientRep) -> clientRep.setContacts(Collections.singletonList("keycloak@keycloak.org")));
 
@@ -1150,9 +1150,9 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         OIDCClientRepresentation response = getClientDynamically(clientId);
 
         String firstSecret = response.getClientSecret();
-        Integer firstSecretExpiration = response.getClientSecretExpiresAt();
+        Long firstSecretExpiration = response.getClientSecretExpiresAt();
 
-        assertThat(firstSecretExpiration, is(greaterThan(Time.currentTime())));
+        assertThat(firstSecretExpiration, is(greaterThan((long)Time.currentTime())));
 
         //Enter in Remaining expiration window
         setTimeOffset(41);
