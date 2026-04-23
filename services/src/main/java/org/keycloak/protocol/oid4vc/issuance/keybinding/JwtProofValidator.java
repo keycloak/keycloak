@@ -30,6 +30,7 @@ import java.util.Set;
 
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.Time;
+import org.keycloak.crypto.CryptoUtils;
 import org.keycloak.crypto.SignatureVerifierContext;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jwk.JWKParser;
@@ -67,7 +68,7 @@ public class JwtProofValidator extends AbstractProofValidator {
     public static final String PROOF_JWT_TYP = "openid4vci-proof+jwt";
     private static final String CRYPTOGRAPHIC_BINDING_METHOD_JWK = "jwk";
     private static final String KEY_ATTESTATION_CLAIM = "key_attestation";
-    // JOSE private JWK parameters across RSA/EC/OKP/oct key types.
+    // JOSE private JWK parameters across RSA/EC/OKP/oct key types. TODO: This is not very reliable and should be either removed or improved to cover the cases when other algorithms are introduced in the future
     private static final Set<String> JWK_PRIVATE_KEY_CLAIMS = Set.of("d", "p", "q", "dp", "dq", "qi", "oth", "k");
     private static final int PROOF_MAX_AGE_SECONDS = 30;
     private static final int PROOF_FUTURE_SKEW_SECONDS = 10;
@@ -272,7 +273,7 @@ public class JwtProofValidator extends AbstractProofValidator {
         String alg = Optional.ofNullable(jwsHeader.getAlgorithm())
                 .map(algorithm -> algorithm.name())
                 .orElseThrow(() -> new VCIssuerException(ErrorType.INVALID_PROOF, "Missing jwsHeader claim alg"));
-        if ("none".equalsIgnoreCase(alg) || alg.startsWith("HS")) {
+        if (!CryptoUtils.getSupportedAsymmetricSignatureAlgorithms(keycloakSession).contains(alg)) {
             throw new VCIssuerException(ErrorType.INVALID_PROOF, "Proof signature algorithm not supported: " + alg);
         }
 

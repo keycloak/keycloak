@@ -44,6 +44,7 @@ import java.util.Set;
 
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.Time;
+import org.keycloak.crypto.CryptoUtils;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.crypto.SignatureProvider;
@@ -135,7 +136,7 @@ public class AttestationValidatorUtil {
         }
 
         JWSHeader header = jwsInput.getHeader();
-        validateJwsHeader(header, vcIssuanceContext, proofTypeKeyForSigningAlgPolicy);
+        validateJwsHeader(keycloakSession, header, vcIssuanceContext, proofTypeKeyForSigningAlgPolicy);
 
         // Verify the signature
         Map<String, Object> rawHeader = JsonSerialization.mapper.convertValue(
@@ -196,19 +197,12 @@ public class AttestationValidatorUtil {
         KeycloakContext keycloakContext = keycloakSession.getContext();
         CNonceHandler cNonceHandler = keycloakSession.getProvider(CNonceHandler.class);
 
-        // If CNonceHandler is available, nonce endpoint exists and nonce is required
-        boolean nonceRequired = cNonceHandler != null;
-
-        if (nonceRequired && attestationBody.getNonce() == null) {
+        if (attestationBody.getNonce() == null) {
             throw new VCIssuerException(ErrorType.INVALID_PROOF, "Missing 'nonce' in attestation");
         }
 
         // Validate nonce if present. If provided, it must correspond to a nonce value provided by Keycloak.
         if (attestationBody.getNonce() != null) {
-            if (cNonceHandler == null) {
-                throw new VCIssuerException(ErrorType.INVALID_PROOF, "No CNonceHandler available");
-            }
-
             try {
                 cNonceHandler.verifyCNonce(
                         attestationBody.getNonce(),
@@ -321,18 +315,15 @@ public class AttestationValidatorUtil {
                 .filter(algs -> !algs.isEmpty());
     }
 
-    private static void validateJwsHeader(JWSHeader header, VCIssuanceContext vcIssuanceContext,
+    private static void validateJwsHeader(KeycloakSession session, JWSHeader header, VCIssuanceContext vcIssuanceContext,
                                           String proofTypeKeyForSigningAlgPolicy) {
         String alg = Optional.ofNullable(header.getAlgorithm())
                 .map(Algorithm::name)
                 .orElseThrow(() -> new VCIssuerException(ErrorType.INVALID_PROOF, "Missing algorithm in JWS header"));
 
-        if ("none".equalsIgnoreCase(alg)) {
-            throw new VCIssuerException(ErrorType.INVALID_PROOF, "'none' algorithm is not allowed");
-        }
-
-        if (alg.startsWith("HS")) {
-            throw new VCIssuerException(ErrorType.INVALID_PROOF, "Symmetric algorithms are not allowed for key attestation");
+        List<String> supportedAsymmetricAlgs = CryptoUtils.getSupportedAsymmetricSignatureAlgorithms(session);
+        if (!supportedAsymmetricAlgs.contains(alg)) {
+            throw new VCIssuerException(ErrorType.INVALID_PROOF, "Unsupported algorithm for key attestation. Only asymmetric algorithms are allowed");
         }
 
         Optional<List<String>> metadataAlgs = resolveProofSigningAlgorithms(vcIssuanceContext, proofTypeKeyForSigningAlgPolicy);
