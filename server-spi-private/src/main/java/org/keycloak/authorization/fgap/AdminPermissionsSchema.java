@@ -135,6 +135,11 @@ public class AdminPermissionsSchema extends AuthorizationSchema {
         Resource resource = resourceStore.findById(resourceServer, id);
 
         if (resource != null) {
+            String resourceName = resource.getName();
+            if (!Objects.equals(resourceName, resourceType)) {
+                // instance resource — validate the name resolves as the expected entity type
+                getResourceName(session, resourceType, resourceName);
+            }
             return resource;
         }
 
