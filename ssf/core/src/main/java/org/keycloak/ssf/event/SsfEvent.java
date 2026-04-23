@@ -1,11 +1,17 @@
 package org.keycloak.ssf.event;
 
+import java.lang.reflect.Field;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 import org.keycloak.ssf.subject.SubjectId;
 import org.keycloak.ssf.subject.SubjectIdJsonDeserializer;
 
+import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -114,6 +120,14 @@ public abstract class SsfEvent {
         return eventType;
     }
 
+    /**
+     * Exposes {@link #attributes} as a Jackson "any-getter" so each entry is
+     * rendered as a top-level JSON field on the event object (flattened
+     * alongside the declared {@code @JsonProperty} fields), matching the
+     * SSF §4.2.3 extension-field placement rather than nesting them under
+     * an {@code "attributes"} key.
+     */
+    @JsonAnyGetter
     public Map<String, Object> getAttributes() {
         return attributes;
     }
@@ -124,7 +138,29 @@ public abstract class SsfEvent {
 
     @JsonAnySetter
     public void setAttributeValue(String key, Object value) {
+        if (declaredJsonPropertyNames(getClass()).contains(key)) {
+            throw new IllegalArgumentException(
+                    "Custom attribute key '" + key + "' collides with a declared @JsonProperty on "
+                            + getClass().getName());
+        }
         attributes.put(key, value);
+    }
+
+    private static final ConcurrentMap<Class<?>, Set<String>> DECLARED_JSON_PROPERTIES = new ConcurrentHashMap<>();
+
+    private static Set<String> declaredJsonPropertyNames(Class<?> type) {
+        return DECLARED_JSON_PROPERTIES.computeIfAbsent(type, t -> {
+            Set<String> names = new HashSet<>();
+            for (Class<?> c = t; c != null && c != Object.class; c = c.getSuperclass()) {
+                for (Field f : c.getDeclaredFields()) {
+                    JsonProperty ann = f.getAnnotation(JsonProperty.class);
+                    if (ann != null && !ann.value().isEmpty()) {
+                        names.add(ann.value());
+                    }
+                }
+            }
+            return Set.copyOf(names);
+        });
     }
 
     public void setEventType(String eventType) {
