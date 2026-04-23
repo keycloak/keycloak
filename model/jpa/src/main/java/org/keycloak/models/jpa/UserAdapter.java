@@ -144,8 +144,8 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
         if (value == null) {
             user.getAttributes().removeIf(a -> a.getName().equals(name));
         } else {
-            Set<String> oldEntries = getAttributeStream(name).collect(Collectors.toSet());
-            Set<String> newEntries = Set.of(value);
+            List<String> oldEntries = getAttributeStream(name).sorted().collect(Collectors.toList());
+            List<String> newEntries = List.of(value);
             if (CollectionUtil.collectionEquals(oldEntries, newEntries)) {
                 return;
             }
@@ -195,13 +195,8 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
             return;
         }
 
-        Set<String> oldEntries = getAttributeStream(name).collect(Collectors.toSet());
-        Set<String> newEntries;
-        if (values == null) {
-            newEntries = new HashSet<>();
-        } else {
-            newEntries = new HashSet<>(values);
-        }
+        List<String> oldEntries = getAttributeStream(name).sorted().collect(Collectors.toList());
+        List<String> newEntries = values == null ? List.of() : values.stream().sorted().toList();
         if (CollectionUtil.collectionEquals(oldEntries, newEntries)) {
             return;
         }
