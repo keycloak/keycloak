@@ -63,6 +63,12 @@ public class SecurityEventTokenMapper {
 
     protected static final Pattern USER_CREDENTIALS_CHANGED_BY_ADMIN_PATH_PATTERN = Pattern.compile("^users/([^/]+)/credentials/([^/]+)$");
 
+    public static final String KC_CREDENTIAL_ID = "kc_credential_id";
+
+    public static final String KC_CREDENTIAL_TYPE = "kc_credential_type";
+
+    public static final String KC_CREDENTIAL_USER_LABEL = "kc_credential_user_label";
+
     /**
      * Issuer URL resolver. Invoked lazily at token-build time rather than
      * at construction so that off-request callers (e.g. the scheduled
@@ -254,7 +260,7 @@ public class SecurityEventTokenMapper {
      */
     public SsfSecurityEventToken generateCredentialChangeEvent(Event userEvent,
                                                                AdminEvent adminEvent,
-                                                               StreamConfig stream,
+                                                               StreamConfig streamConfig,
                                                                CaepCredentialChange.ChangeType changeType,
                                                                String credentialTypeFallback) {
         try {
@@ -267,25 +273,26 @@ public class SecurityEventTokenMapper {
                 credentialType = credentialTypeFallback;
             }
 
-            SsfSecurityEventToken eventToken = newSecurityEventToken(stream);
+            SsfSecurityEventToken eventToken = newSecurityEventToken(streamConfig);
             eventToken.setTxn(UUID.randomUUID().toString());
 
             // Set subject ID — composeUserSubject wraps in a complex
             // subject with a tenant sibling when the configured format
             // carries the +tenant composition suffix; otherwise the
             // bare user subject goes on as before.
-            eventToken.setSubjectId(composeUserSubject(eventToken, userId, stream));
+            eventToken.setSubjectId(composeUserSubject(eventToken, userId, streamConfig));
 
             String caepCredentialType = narrowCaepCredentialType(credentialType);
 
-            // Set events
-            Map<String, Object> events = new HashMap<>();
             CaepCredentialChange credentialChangeEvent = new CaepCredentialChange();
             credentialChangeEvent.setChangeType(changeType);
             credentialChangeEvent.setEventTimestamp(Time.currentTime());
             credentialChangeEvent.setCredentialType(caepCredentialType);
             applyInitiatingEntity(userEvent, adminEvent, credentialChangeEvent);
+            applyCustomAttributes(userEvent, adminEvent, credentialChangeEvent);
 
+            // Set events
+            Map<String, Object> events = new HashMap<>();
             events.put(CaepCredentialChange.TYPE, credentialChangeEvent);
             eventToken.setEvents(events);
 
@@ -294,6 +301,17 @@ public class SecurityEventTokenMapper {
             log.error("Error generating credential change event", e);
             return null;
         }
+    }
+
+    protected void applyCustomAttributes(Event userEvent, AdminEvent adminEvent, CaepCredentialChange credentialChangeEvent) {
+        Map<String, String> userEventDetails = userEvent.getDetails();
+        String kcCredentialId = userEventDetails.get(Details.CREDENTIAL_ID);
+        String kcCredentialType = userEventDetails.get(Details.CREDENTIAL_TYPE);
+        String kcUserLabel = userEventDetails.get(Details.CREDENTIAL_USER_LABEL);
+
+        credentialChangeEvent.setAttributeValue(KC_CREDENTIAL_ID, kcCredentialId);
+        credentialChangeEvent.setAttributeValue(KC_CREDENTIAL_TYPE, kcCredentialType);
+        credentialChangeEvent.setAttributeValue(KC_CREDENTIAL_USER_LABEL, kcUserLabel);
     }
 
     protected void applyInitiatingEntity(Event userEvent, AdminEvent adminEvent, CaepEvent caepEvent) {
@@ -757,12 +775,18 @@ public class SecurityEventTokenMapper {
         Event event = new Event();
 
         String credentialType = PasswordCredentialModel.TYPE;
+        String userLabel = null;
         if (credentialId != null) {
             RealmModel realm = session.realms().getRealm(adminEvent.getRealmId());
             UserModel user = session.users().getUserById(realm, userId);
             CredentialModel storedCredentialById = user.credentialManager().getStoredCredentialById(credentialId);
             if (storedCredentialById != null) {
                 credentialType = storedCredentialById.getType();
+                userLabel = storedCredentialById.getUserLabel();
+            } else if (changeType == CaepCredentialChange.ChangeType.DELETE) {
+                credentialType = adminEvent.getDetails().get(Details.CREDENTIAL_TYPE);
+                credentialId = adminEvent.getDetails().get(Details.CREDENTIAL_ID);
+                userLabel = adminEvent.getDetails().get(Details.CREDENTIAL_USER_LABEL);
             }
         }
 
@@ -773,6 +797,7 @@ public class SecurityEventTokenMapper {
         event.getDetails().put(Details.REASON, reason);
         event.getDetails().put(Details.CREDENTIAL_TYPE, credentialType);
         event.getDetails().put(Details.CREDENTIAL_ID, credentialId);
+        event.getDetails().put(Details.CREDENTIAL_USER_LABEL, userLabel);
 
         if (shouldIgnoreCredentialChange(event)) {
             return null;
