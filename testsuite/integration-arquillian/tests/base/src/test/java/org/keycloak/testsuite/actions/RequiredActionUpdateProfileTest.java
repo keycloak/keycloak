@@ -35,6 +35,7 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.userprofile.config.UPAttribute;
 import org.keycloak.representations.userprofile.config.UPAttributePermissions;
 import org.keycloak.representations.userprofile.config.UPConfig;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AbstractChangeImportedUserPasswordsTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.AdminApiUtil;
@@ -44,7 +45,6 @@ import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginUpdateProfileEditUsernameAllowedPage;
-import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.userprofile.UserProfileContext;
 import org.keycloak.utils.StringUtil;
 
@@ -101,7 +101,7 @@ public class RequiredActionUpdateProfileTest extends AbstractChangeImportedUserP
                 .firstName("Tom")
                 .lastName("Brady")
                 .emailVerified(true)
-                .requiredAction(UserModel.RequiredAction.UPDATE_PROFILE.name()).build();
+                .requiredActions(UserModel.RequiredAction.UPDATE_PROFILE.name()).build();
         AdminApiUtil.createUserAndResetPasswordWithAdminClient(managedRealm.admin(), user, generatePassword("test-user@localhost"));
 
         AdminApiUtil.removeUserByUsername(managedRealm.admin(), "john-doh@localhost");
@@ -111,7 +111,7 @@ public class RequiredActionUpdateProfileTest extends AbstractChangeImportedUserP
                 .firstName("John")
                 .lastName("Doh")
                 .emailVerified(true)
-                .requiredAction(UserModel.RequiredAction.UPDATE_PROFILE.name()).build();
+                .requiredActions(UserModel.RequiredAction.UPDATE_PROFILE.name()).build();
         AdminApiUtil.createUserAndResetPasswordWithAdminClient(managedRealm.admin(), user, generatePassword("john-doh@localhost"));
     }
 

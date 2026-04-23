@@ -40,11 +40,11 @@ import org.keycloak.representations.userprofile.config.UPAttributePermissions;
 import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.ldap.idm.model.LDAPObject;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.util.LDAPRule;
 import org.keycloak.testsuite.util.LDAPTestUtils;
-import org.keycloak.testsuite.util.UserBuilder;
 
 import org.junit.ClassRule;
 import org.junit.FixMethodOrder;
@@ -129,7 +129,7 @@ public class LDAPAdminRestApiTest extends AbstractLDAPTest {
         UserRepresentation user3 = UserBuilder.create()
                 .username("admintestuser3")
                 .password("userpass")
-                .addAttribute(LDAPConstants.LDAP_ID, "123456")
+                .attribute(LDAPConstants.LDAP_ID, "123456")
                 .enabled(true)
                 .build();
         createUserExpectError(user3);
@@ -138,7 +138,7 @@ public class LDAPAdminRestApiTest extends AbstractLDAPTest {
         UserRepresentation user4 = UserBuilder.create()
                 .username("admintestuser4")
                 .password("userpass")
-                .addAttribute(LDAPConstants.LDAP_ENTRY_DN, "ou=users,dc=foo")
+                .attribute(LDAPConstants.LDAP_ENTRY_DN, "ou=users,dc=foo")
                 .enabled(true)
                 .build();
         createUserExpectError(user4);
@@ -304,7 +304,7 @@ public class LDAPAdminRestApiTest extends AbstractLDAPTest {
         UserRepresentation newUser = UserBuilder.create()
                 .username("admintestuser1")
                 .password("userpass")
-                .addAttribute("foo", "foo-value")
+                .attribute("foo", "foo-value")
                 .enabled(true)
                 .build();
 

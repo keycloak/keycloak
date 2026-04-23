@@ -29,8 +29,8 @@ import org.keycloak.admin.client.resource.RoleByIdResource;
 import org.keycloak.admin.client.resource.RoleResource;
 import org.keycloak.admin.client.resource.RolesResource;
 import org.keycloak.representations.idm.RoleRepresentation;
+import org.keycloak.testframework.realm.RoleBuilder;
 import org.keycloak.testsuite.arquillian.ContainerInfo;
-import org.keycloak.testsuite.util.RoleBuilder;
 
 import org.apache.commons.lang.RandomStringUtils;
 import org.apache.commons.lang.StringUtils;

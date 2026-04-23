@@ -45,11 +45,11 @@ import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.PartialImportRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.client.resources.TestingExportImportResource;
 import org.keycloak.testsuite.organization.admin.AbstractOrganizationTest;
 import org.keycloak.testsuite.pages.AppPage;
-import org.keycloak.testsuite.util.UserBuilder;
 
 import org.hamcrest.Matchers;
 import org.junit.Test;

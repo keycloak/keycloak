@@ -48,12 +48,12 @@ import org.keycloak.representations.userprofile.config.UPAttributePermissions;
 import org.keycloak.representations.userprofile.config.UPAttributeRequired;
 import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.representations.userprofile.config.UPConfig.UnmanagedAttributePolicy;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.RegisterPage;
 import org.keycloak.testsuite.util.AssertAdminEvents;
-import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.userprofile.config.UPConfigUtils;
 import org.keycloak.util.JsonSerialization;
 
@@ -322,7 +322,7 @@ public class UIRealmResourceTest extends AbstractTestRealmKeycloakTest {
                 .firstName(username + "-first")
                 .lastName(username + "-last")
                 .password(TEST_PWD)
-                .role(clientId, roleName)
+                .clientRoles(clientId, roleName)
                 .build();
     }
 

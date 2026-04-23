@@ -71,6 +71,8 @@ import org.keycloak.services.clientpolicy.executor.ConfidentialClientAcceptExecu
 import org.keycloak.services.clientpolicy.executor.HolderOfKeyEnforcerExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.SecureSigningAlgorithmForSignedJwtExecutorFactory;
 import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.realm.RoleBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.client.policies.AbstractClientPoliciesTest;
@@ -87,9 +89,7 @@ import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientProfilesBuilder;
 import org.keycloak.testsuite.util.InfinispanTestTimeServiceRule;
 import org.keycloak.testsuite.util.KeycloakModelUtils;
 import org.keycloak.testsuite.util.MutualTLSUtils;
-import org.keycloak.testsuite.util.RoleBuilder;
 import org.keycloak.testsuite.util.ServerURLs;
-import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.LogoutResponse;
 import org.keycloak.testsuite.util.oauth.ciba.AuthenticationRequestAcknowledgement;
@@ -156,7 +156,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
                 .email("schwarz@test.example.com")
                 .enabled(true)
                 .password("passwort-schwarz")
-                .addRoles("user", "offline_access")
+                .roles("user", "offline_access")
                 .build();
         realm.getUsers().add(user);
 
@@ -165,7 +165,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
                 .email("rot@test.example.com")
                 .enabled(true)
                 .password("passwort-rot")
-                .addRoles("user", "offline_access")
+                .roles("user", "offline_access")
                 .build();
         realm.getUsers().add(user);
 
@@ -174,7 +174,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
                 .email("gelb@test.example.com")
                 .enabled(true)
                 .password("passwort-gelb")
-                .addRoles("user", "offline_access")
+                .roles("user", "offline_access")
                 .build();
         realm.getUsers().add(user);
 
@@ -183,7 +183,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
                 .email("deaktiviert@test.example.com")
                 .enabled(false)
                 .password("passwort-deaktiviert")
-                .addRoles("user", "offline_access")
+                .roles("user", "offline_access")
                 .build();
         realm.getUsers().add(user);
 

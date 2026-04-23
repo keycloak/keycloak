@@ -6,8 +6,8 @@ import java.util.stream.Collectors;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
-import org.keycloak.testframework.realm.RealmConfigBuilder;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
@@ -42,7 +42,7 @@ public class AbstractClientSearchTest {
     public static class ClientSearchRealmConfig implements RealmConfig {
 
         @Override
-        public RealmConfigBuilder configure(RealmConfigBuilder realm) {
+        public RealmBuilder configure(RealmBuilder realm) {
             realm.addClient(CLIENT_ID_1)
                     .attribute(ATTR_ORG_NAME, ATTR_ORG_VAL)
                     .attribute(ATTR_URL_NAME, ATTR_URL_VAL);

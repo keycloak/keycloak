@@ -39,6 +39,7 @@ import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.provider.ScriptProviderDescriptor;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AbstractAuthenticationTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
@@ -49,7 +50,6 @@ import org.keycloak.testsuite.util.ContainerAssume;
 import org.keycloak.testsuite.util.ExecutionBuilder;
 import org.keycloak.testsuite.util.FlowBuilder;
 import org.keycloak.testsuite.util.RealmBuilder;
-import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.util.JsonSerialization;
 
 import org.jboss.arquillian.container.test.api.Deployment;

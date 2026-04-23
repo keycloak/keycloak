@@ -48,10 +48,10 @@ import org.keycloak.protocol.RestartLoginCookie;
 import org.keycloak.protocol.oidc.endpoints.AuthorizationEndpoint;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.pages.LoginPage;
-import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.oauth.ParResponse;
 import org.keycloak.util.TokenUtil;
 

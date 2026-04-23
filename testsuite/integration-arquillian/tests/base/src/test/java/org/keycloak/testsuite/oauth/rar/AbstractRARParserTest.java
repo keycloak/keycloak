@@ -31,12 +31,12 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.util.AuthorizationContextUtil;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.util.ClientManager;
 import org.keycloak.testsuite.util.RealmBuilder;
-import org.keycloak.testsuite.util.UserBuilder;
 
 import org.junit.Before;
 import org.junit.Rule;

@@ -25,6 +25,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserModel.RequiredAction;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.AdminApiUtil;
@@ -35,7 +36,6 @@ import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginUpdateProfilePage;
 import org.keycloak.testsuite.util.SecondBrowser;
-import org.keycloak.testsuite.util.UserBuilder;
 
 import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.arquillian.graphene.page.Page;
@@ -82,7 +82,7 @@ public abstract class AbstractRequiredActionUpdateEmailTest extends AbstractTest
 				.email("test-user@localhost")
 				.firstName("Tom")
 				.lastName("Brady")
-				.requiredAction(UserModel.RequiredAction.UPDATE_EMAIL.name()).build();
+				.requiredActions(UserModel.RequiredAction.UPDATE_EMAIL.name()).build();
 		prepareUser(user);
 		AdminApiUtil.createUserAndResetPasswordWithAdminClient(managedRealm.admin(), user, "password");
 
@@ -92,7 +92,7 @@ public abstract class AbstractRequiredActionUpdateEmailTest extends AbstractTest
 				.email("john-doh@localhost")
 				.firstName("John")
 				.lastName("Doh")
-				.requiredAction(UserModel.RequiredAction.UPDATE_EMAIL.name()).build();
+				.requiredActions(UserModel.RequiredAction.UPDATE_EMAIL.name()).build();
 		prepareUser(user);
 		AdminApiUtil.createUserAndResetPasswordWithAdminClient(managedRealm.admin(), user, "password");
 	}

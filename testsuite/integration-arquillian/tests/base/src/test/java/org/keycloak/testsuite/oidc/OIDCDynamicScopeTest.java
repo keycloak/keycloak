@@ -35,12 +35,12 @@ import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
-import org.keycloak.testsuite.util.UserBuilder;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -70,7 +70,7 @@ public class OIDCDynamicScopeTest extends OIDCScopeTest {
                 .firstName("John")
                 .lastName("Dynamic")
                 .password("password")
-                .addRoles("dynamic-scope-role")
+                .roles("dynamic-scope-role")
                 .build();
         testRealm.getUsers().add(user);
 
@@ -78,7 +78,7 @@ public class OIDCDynamicScopeTest extends OIDCScopeTest {
                 .username("JohnNormal")
                 .enabled(true)
                 .password("password")
-                .addRoles("role-1")
+                .roles("role-1")
                 .build();
         testRealm.getUsers().add(user);
 

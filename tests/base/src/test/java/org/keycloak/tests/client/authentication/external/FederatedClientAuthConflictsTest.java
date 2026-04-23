@@ -21,7 +21,7 @@ import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.OAuthIdentityProvider;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthIdentityProvider;
-import org.keycloak.testframework.realm.ClientConfigBuilder;
+import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.testsuite.util.IdentityProviderBuilder;
@@ -144,7 +144,7 @@ public class FederatedClientAuthConflictsTest {
     }
 
     private ClientRepresentation createClient(String clientId, String externalClientId, String idpAlias) {
-        ClientRepresentation rep = ClientConfigBuilder.create().clientId(clientId)
+        ClientRepresentation rep = ClientBuilder.create().clientId(clientId)
                 .serviceAccountsEnabled(true)
                 .authenticatorType(FederatedJWTClientAuthenticator.PROVIDER_ID)
                 .attribute(FederatedJWTClientAuthenticator.JWT_CREDENTIAL_ISSUER_KEY, idpAlias)

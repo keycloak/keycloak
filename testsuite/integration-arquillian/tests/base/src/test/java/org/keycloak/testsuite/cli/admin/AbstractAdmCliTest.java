@@ -21,10 +21,10 @@ import org.keycloak.client.cli.config.RealmConfigData;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.realm.ClientBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.cli.AbstractCliTest;
 import org.keycloak.testsuite.cli.KcAdmExec;
-import org.keycloak.testsuite.util.ClientBuilder;
-import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.util.JsonSerialization;
 
 import org.junit.jupiter.api.Assertions;
@@ -70,7 +70,7 @@ public abstract class AbstractAdmCliTest extends AbstractCliTest {
                 .clientId("admin-cli-jwt")
                 .attribute(JWTClientAuthenticator.CERTIFICATE_ATTR, "MIICnTCCAYUCBgFXUhpRTTANBgkqhkiG9w0BAQsFADASMRAwDgYDVQQDDAdyZWctY2xpMB4XDTE2MDkyMjEzMzIxOFoXDTI2MDkyMjEzMzM1OFowEjEQMA4GA1UEAwwHcmVnLWNsaTCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAMHZn/0Bk1M9oKcTHxzn2cGvBWwO1m6OVLQ8LSVwNIf4ixfGkVIkhI5iEGYND+uD8ame54ZPClTVxMra3JldClLIG+L+ymnbT2vKIhEsVvCROs9PnYxbFALt1dXneLIio2uzF+d7/zQWlmeaWfNunSJT1aHNJDkGgDeUuQa25b0IMqsFjsN8Dg4ATkA97r3wKn4Tp3SE7sTM/B2pmra4atNxGeShVrgihqUiQ/PwDiDGwry64AsexkZnQsCR3bJWBAVUiHef3JWzTfWWN5bfCBG6Mnq1xw7YN+YpV1nR3CGmcKJuLe6aTe7Ps8hYejYiQA7Mp7ZQsoImsVFV5HDOlb0CAwEAATANBgkqhkiG9w0BAQsFAAOCAQEAZl8XvLfKXTPYvq/QyHOg7EDlAdlV3HkmHP9SBAV4BccmHmorMkm5I6I21UA5mfju+0nhbEd0bm0kvJFxIfNU6lJyyVvQx3Gns37KYUOzIV/ocWZuOTBLp5tfIBYbBwfE/s1J4PhpA/3WhBY9JKiLvdJfxECGIgaLs2M0UsylW/7o04+18Od8j/m7crQc7fpe5gJB5m/+hxUDowIjG5CumffX9OHYGDvHBpaUl7QNSGgjP8Bn9ogmIMUBJ7XSYUcohKuk2Cnj6p+GlLuqHbOISUXLVjf0DxhCu6diVxvacKbgAZmyCIO1tGL/UVRxg9GOYdCiC9vHfPuZ8US+ZB0P9g==")
                 .authenticatorType(JWTClientAuthenticator.PROVIDER_ID)
-                .serviceAccount()
+                .serviceAccountsEnabled()
                 .build();
 
         realmRepresentation.getClients().add(regClient);
@@ -85,7 +85,7 @@ public abstract class AbstractAdmCliTest extends AbstractCliTest {
                 .clientId("admin-cli-jwt-direct")
                 .attribute(JWTClientAuthenticator.CERTIFICATE_ATTR, "MIICnTCCAYUCBgFXUhpRTTANBgkqhkiG9w0BAQsFADASMRAwDgYDVQQDDAdyZWctY2xpMB4XDTE2MDkyMjEzMzIxOFoXDTI2MDkyMjEzMzM1OFowEjEQMA4GA1UEAwwHcmVnLWNsaTCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAMHZn/0Bk1M9oKcTHxzn2cGvBWwO1m6OVLQ8LSVwNIf4ixfGkVIkhI5iEGYND+uD8ame54ZPClTVxMra3JldClLIG+L+ymnbT2vKIhEsVvCROs9PnYxbFALt1dXneLIio2uzF+d7/zQWlmeaWfNunSJT1aHNJDkGgDeUuQa25b0IMqsFjsN8Dg4ATkA97r3wKn4Tp3SE7sTM/B2pmra4atNxGeShVrgihqUiQ/PwDiDGwry64AsexkZnQsCR3bJWBAVUiHef3JWzTfWWN5bfCBG6Mnq1xw7YN+YpV1nR3CGmcKJuLe6aTe7Ps8hYejYiQA7Mp7ZQsoImsVFV5HDOlb0CAwEAATANBgkqhkiG9w0BAQsFAAOCAQEAZl8XvLfKXTPYvq/QyHOg7EDlAdlV3HkmHP9SBAV4BccmHmorMkm5I6I21UA5mfju+0nhbEd0bm0kvJFxIfNU6lJyyVvQx3Gns37KYUOzIV/ocWZuOTBLp5tfIBYbBwfE/s1J4PhpA/3WhBY9JKiLvdJfxECGIgaLs2M0UsylW/7o04+18Od8j/m7crQc7fpe5gJB5m/+hxUDowIjG5CumffX9OHYGDvHBpaUl7QNSGgjP8Bn9ogmIMUBJ7XSYUcohKuk2Cnj6p+GlLuqHbOISUXLVjf0DxhCu6diVxvacKbgAZmyCIO1tGL/UVRxg9GOYdCiC9vHfPuZ8US+ZB0P9g==")
                 .authenticatorType(JWTClientAuthenticator.PROVIDER_ID)
-                .directAccessGrants()
+                .directAccessGrantsEnabled()
                 .build();
 
         realmRepresentation.getClients().add(regClient);
@@ -98,7 +98,7 @@ public abstract class AbstractAdmCliTest extends AbstractCliTest {
                 .clientId("admin-cli-secret")
                 .secret("password")
                 .authenticatorType(ClientIdAndSecretAuthenticator.PROVIDER_ID)
-                .serviceAccount()
+                .serviceAccountsEnabled()
                 .build();
 
         realmRepresentation.getClients().add(regClient);
@@ -114,7 +114,7 @@ public abstract class AbstractAdmCliTest extends AbstractCliTest {
                 .clientId("admin-cli-secret-direct")
                 .secret("password")
                 .authenticatorType(ClientIdAndSecretAuthenticator.PROVIDER_ID)
-                .directAccessGrants()
+                .directAccessGrantsEnabled()
                 .build();
 
         realmRepresentation.getClients().add(regClient);

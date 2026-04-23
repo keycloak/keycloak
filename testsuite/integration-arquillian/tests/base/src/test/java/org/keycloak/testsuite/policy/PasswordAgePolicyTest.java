@@ -28,6 +28,7 @@ import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testsuite.AbstractAuthTest;
 import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.auth.page.AuthRealm;
@@ -36,7 +37,6 @@ import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.RegisterPage;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
-import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 

@@ -32,11 +32,11 @@ import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginUpdateProfilePage;
-import org.keycloak.testsuite.util.UserBuilder;
 
 import org.hamcrest.Matchers;
 import org.jboss.arquillian.graphene.page.Page;
@@ -144,7 +144,7 @@ public class OrganizationThemeTest extends AbstractOrganizationTest {
                 .password("password")
                 .firstName("Tom")
                 .lastName("Brady")
-                .requiredAction(UserModel.RequiredAction.UPDATE_PROFILE.name())
+                .requiredActions(UserModel.RequiredAction.UPDATE_PROFILE.name())
                 .build();
         try (Response resp = managedRealm.admin().users().create(user)) {
             String userId = ApiUtil.getCreatedId(resp);
@@ -190,7 +190,7 @@ public class OrganizationThemeTest extends AbstractOrganizationTest {
                 .password("password")
                 .firstName("Tom")
                 .lastName("Brady")
-                .requiredAction(UserModel.RequiredAction.UPDATE_PROFILE.name())
+                .requiredActions(UserModel.RequiredAction.UPDATE_PROFILE.name())
                 .build();
         try (Response resp = managedRealm.admin().users().create(user)) {
             String userId = ApiUtil.getCreatedId(resp);

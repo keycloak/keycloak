@@ -14,12 +14,12 @@ import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.storage.UserStorageProvider;
+import org.keycloak.testframework.realm.GroupBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AbstractConcurrencyTest;
 import org.keycloak.testsuite.federation.UserMapStorage;
 import org.keycloak.testsuite.federation.UserMapStorageFactory;
 import org.keycloak.testsuite.updaters.Creator;
-import org.keycloak.testsuite.util.GroupBuilder;
-import org.keycloak.testsuite.util.UserBuilder;
 
 import org.hamcrest.Matchers;
 import org.junit.Before;

@@ -35,8 +35,8 @@ import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.mail.MailServer;
 import org.keycloak.testframework.mail.annotations.InjectMailServer;
 import org.keycloak.testframework.realm.ManagedRealm;
-import org.keycloak.testframework.realm.RealmConfigBuilder;
-import org.keycloak.testframework.realm.UserConfigBuilder;
+import org.keycloak.testframework.realm.RealmBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.tests.organization.admin.AbstractOrganizationTest;
 
@@ -142,7 +142,7 @@ public class OrganizationAdminRolesPermissionsTest extends AbstractOrganizationT
             }
 
             /* Members */
-            UserRepresentation userRep = UserConfigBuilder.create()
+            UserRepresentation userRep = UserBuilder.create()
                     .username("user@testOrg.org")
                     .email("user@testOrg.org")
                     .build();
@@ -220,7 +220,7 @@ public class OrganizationAdminRolesPermissionsTest extends AbstractOrganizationT
             }
 
             // add member
-            UserRepresentation userRep = UserConfigBuilder.create()
+            UserRepresentation userRep = UserBuilder.create()
                     .username("user@testManageOrg.org")
                     .email("user@testManageOrg.org")
                     .build();
@@ -263,7 +263,7 @@ public class OrganizationAdminRolesPermissionsTest extends AbstractOrganizationT
                 realm.cleanup().add(r -> r.organizations().get(orgId).delete().close());
             }
 
-            UserRepresentation userRep = UserConfigBuilder.create()
+            UserRepresentation userRep = UserBuilder.create()
                     .username("user@testViewOrg.org")
                     .email("user@testViewOrg.org")
                     .build();
@@ -344,7 +344,7 @@ public class OrganizationAdminRolesPermissionsTest extends AbstractOrganizationT
                 realm.cleanup().add(r -> r.organizations().get(orgId).delete().close());
             }
 
-            UserRepresentation userRep = UserConfigBuilder.create()
+            UserRepresentation userRep = UserBuilder.create()
                     .username("user@testViewOrgsUsersOrg.org")
                     .email("user@testViewOrgsUsersOrg.org")
                     .build();
@@ -509,7 +509,7 @@ public class OrganizationAdminRolesPermissionsTest extends AbstractOrganizationT
                 realm.cleanup().add(r -> r.organizations().get(orgId).delete().close());
             }
 
-            UserRepresentation userRep = UserConfigBuilder.create()
+            UserRepresentation userRep = UserBuilder.create()
                     .username("user@testQueryOrg.org")
                     .email("user@testQueryOrg.org")
                     .build();
@@ -579,7 +579,7 @@ public class OrganizationAdminRolesPermissionsTest extends AbstractOrganizationT
             }
 
             // create a user
-            UserRepresentation userRep = UserConfigBuilder.create()
+            UserRepresentation userRep = UserBuilder.create()
                     .username("user@testMemberOrg.org")
                     .email("user@testMemberOrg.org")
                     .build();
@@ -636,7 +636,7 @@ public class OrganizationAdminRolesPermissionsTest extends AbstractOrganizationT
                 realm.cleanup().add(r -> r.organizations().get(orgId).delete().close());
             }
 
-            UserRepresentation userRep = UserConfigBuilder.create()
+            UserRepresentation userRep = UserBuilder.create()
                     .username("user@testInviteOrg.org")
                     .email("user@testInviteOrg.org")
                     .build();
@@ -725,7 +725,7 @@ public class OrganizationAdminRolesPermissionsTest extends AbstractOrganizationT
                 realm.cleanup().add(r -> r.organizations().get(orgId).delete().close());
             }
 
-            UserRepresentation userRep = UserConfigBuilder.create()
+            UserRepresentation userRep = UserBuilder.create()
                     .username("user@testRemoveMemberOrg.org")
                     .email("user@testRemoveMemberOrg.org")
                     .build();
@@ -767,7 +767,7 @@ public class OrganizationAdminRolesPermissionsTest extends AbstractOrganizationT
      */
     public static class OrganizationAdminPermissionsRealmConfig extends OrganizationRealmConfig {
         @Override
-        public RealmConfigBuilder configure(RealmConfigBuilder realm) {
+        public RealmBuilder configure(RealmBuilder realm) {
             super.configure(realm);
             realm.addUser("realm-admin")
                     .password("password")

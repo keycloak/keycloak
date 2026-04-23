@@ -32,12 +32,12 @@ import org.keycloak.representations.idm.FederatedIdentityRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.broker.util.SimpleHttpDefault;
 import org.keycloak.testsuite.util.IdentityProviderBuilder;
 import org.keycloak.testsuite.util.TokenUtil;
-import org.keycloak.testsuite.util.UserBuilder;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.apache.http.NameValuePair;
@@ -92,7 +92,7 @@ public class LinkedAccountsRestServiceTest extends AbstractTestRealmKeycloakTest
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
         testRealm.getUsers().add(UserBuilder.create().username("no-account-access").password("password").build());
-        testRealm.getUsers().add(UserBuilder.create().username("view-account-access").role("account", "view-profile").password("password").build());
+        testRealm.getUsers().add(UserBuilder.create().username("view-account-access").clientRoles("account", "view-profile").password("password").build());
 
         String[] providers = new String[]{"saml:mysaml:saml-idp", "oidc:myoidc:oidc-idp", "github", "gitlab", "twitter", "facebook", "bitbucket", "microsoft"};
         for (int i = 0; i < providers.length; i++) {

@@ -4,6 +4,18 @@
 Breaking changes are identified as those that might require changes for existing users to their configurations or applications.
 In minor or patch releases, {project_name} will only introduce breaking changes to fix bugs.
 
+=== Test Framework representation builders
+
+The test framework provides a number of builders to simplify creating representations. These can be used on their own,
+but are also used by `RealmConfig`, `ClientConfig` and `UserConfig` implementations.
+
+Some builders had the suffix `ConfigBuilder`, while others had the shorter syntax `Builder`. They are all now renamed to use
+the shorter suffix `Builder` to keep things consistently.
+
+Additionally, some methods where updated for consistency across the builders:
+
+* `RoleBuilder` method `setSingleAttribute` was renamed to `attribute`
+
 === Identity Provider alias is now immutable
 
 The alias of an Identity Provider can no longer be changed after creation via the Admin REST API. Attempts to update the alias will result in a `400 Bad Request` error.

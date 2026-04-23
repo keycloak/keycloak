@@ -5,7 +5,7 @@ import org.keycloak.testframework.injection.RequestedInstance;
 import org.keycloak.testframework.injection.Supplier;
 import org.keycloak.testframework.injection.SupplierOrder;
 import org.keycloak.testframework.mail.annotations.InjectMailServer;
-import org.keycloak.testframework.realm.RealmConfigBuilder;
+import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfigInterceptor;
 
 public class GreenMailSupplier implements Supplier<MailServer, InjectMailServer>, RealmConfigInterceptor<MailServer, InjectMailServer> {
@@ -30,7 +30,7 @@ public class GreenMailSupplier implements Supplier<MailServer, InjectMailServer>
     }
 
     @Override
-    public RealmConfigBuilder intercept(RealmConfigBuilder realm, InstanceContext<MailServer, InjectMailServer> instanceContext) {
+    public RealmBuilder intercept(RealmBuilder realm, InstanceContext<MailServer, InjectMailServer> instanceContext) {
         return realm.smtp(HOSTNAME, PORT, FROM);
     }
 

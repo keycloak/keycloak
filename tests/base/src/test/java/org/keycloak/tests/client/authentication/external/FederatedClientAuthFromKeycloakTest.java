@@ -1,7 +1,5 @@
 package org.keycloak.tests.client.authentication.external;
 
-import java.util.List;
-
 import org.keycloak.authentication.authenticators.client.FederatedJWTClientAuthenticator;
 import org.keycloak.broker.oidc.OIDCIdentityProviderConfig;
 import org.keycloak.broker.oidc.OIDCIdentityProviderFactory;
@@ -10,11 +8,11 @@ import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
+import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.ClientConfig;
-import org.keycloak.testframework.realm.ClientConfigBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
-import org.keycloak.testframework.realm.RealmConfigBuilder;
 import org.keycloak.testsuite.util.IdentityProviderBuilder;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
@@ -49,7 +47,7 @@ public class FederatedClientAuthFromKeycloakTest {
     public static class InternalRealmConfig implements RealmConfig {
 
         @Override
-        public RealmConfigBuilder configure(RealmConfigBuilder realm) {
+        public RealmBuilder configure(RealmBuilder realm) {
             realm.identityProvider(
                     IdentityProviderBuilder.create()
                             .providerId(OIDCIdentityProviderFactory.PROVIDER_ID)
@@ -74,7 +72,7 @@ public class FederatedClientAuthFromKeycloakTest {
     public static class ExternalClientConfig implements ClientConfig {
 
         @Override
-        public ClientConfigBuilder configure(ClientConfigBuilder client) {
+        public ClientBuilder configure(ClientBuilder client) {
             ProtocolMapperRepresentation subMapper = new ProtocolMapperRepresentation();
             subMapper.setName("fixed-sub");
             subMapper.setProtocol("openid-connect");
@@ -94,7 +92,7 @@ public class FederatedClientAuthFromKeycloakTest {
                     .defaultClientScopes()
                     .serviceAccountsEnabled(true)
                     .secret("mysecret")
-                    .protocolMappers(List.of(subMapper, audMapper));
+                    .protocolMappers(subMapper, audMapper);
         }
     }
 

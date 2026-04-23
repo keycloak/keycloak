@@ -12,12 +12,12 @@ import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
 import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginPasswordResetPage;
 import org.keycloak.testsuite.pages.ResetOtpPage;
 import org.keycloak.testsuite.util.RealmBuilder;
-import org.keycloak.testsuite.util.UserBuilder;
 
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.After;
@@ -93,17 +93,17 @@ public class ResetOtpTest extends AbstractTestRealmKeycloakTest {
 
         var userRemoveNone = UserBuilder.create();
         userRemoveNone.username("reset-otp-test-user-remove-none");
-        userRemoveNone.secret(removeNoneCredential);
+        userRemoveNone.credential(removeNoneCredential);
 
         var userRemoveOne = UserBuilder.create();
         userRemoveOne.username("reset-otp-test-user-remove-one");
-        userRemoveOne.secret(removeOneCredential1);
-        userRemoveOne.secret(removeOneCredential2);
+        userRemoveOne.credential(removeOneCredential1);
+        userRemoveOne.credential(removeOneCredential2);
 
         var userRemoveAll = UserBuilder.create();
         userRemoveAll.username("reset-otp-test-user-remove-all");
-        userRemoveAll.secret(removeAllCredential1);
-        userRemoveAll.secret(removeAllCredential2);
+        userRemoveAll.credential(removeAllCredential1);
+        userRemoveAll.credential(removeAllCredential2);
 
         RealmBuilder.edit(testRealm).user(userRemoveNone.build()).user(userRemoveOne.build()).user(userRemoveAll.build());
 
