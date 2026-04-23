@@ -37,6 +37,7 @@ import jakarta.ws.rs.core.Response.Status;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.common.ClientConnection;
+import org.keycloak.common.Profile;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.http.HttpRequest;
@@ -145,6 +146,10 @@ public class TokenEndpoint {
 
         checkParameters();
 
+        // The token endpoint must return an error if a valid request is sent without a holder of key mechanism (i.e. without DPoP / MTLS).
+        // https://github.com/keycloak/keycloak/issues/48069
+        boolean dpopRequired = Profile.isFeatureEnabled(Profile.Feature.FAPI_V2);
+
         /*
          * To request an access token that is bound to a public key using DPoP, the client MUST provide a valid DPoP
          * proof JWT in a DPoP header when making an access token request to the authorization server's token endpoint.
@@ -152,7 +157,7 @@ public class TokenEndpoint {
          * authorization_code and refresh_token grant types and extension grants such as the JWT
          * authorization grant [RFC7523])
          */
-        DPoPUtil.handleDPoPHeader(session, event, cors, clientConfig);
+        DPoPUtil.handleDPoPHeader(session, event, cors, clientConfig, dpopRequired);
 
         OAuth2GrantType.Context context = new OAuth2GrantType.Context(session, clientConfig, clientAuthAttributes,
                                                                       formParams, event, cors, tokenManager);

@@ -140,7 +140,9 @@ public class DPoPUtil {
     public static void handleDPoPHeader(KeycloakSession keycloakSession,
                                         EventBuilder event,
                                         Cors cors,
-                                        OIDCAdvancedConfigWrapper clientConfig) {
+                                        OIDCAdvancedConfigWrapper clientConfig,
+                                        boolean dpopRequired) {
+
         if (!Profile.isFeatureEnabled(Profile.Feature.DPOP)) {
             return;
         }
@@ -149,6 +151,15 @@ public class DPoPUtil {
         final boolean isClientRequiresDpop = clientConfig != null && clientConfig.isUseDPoP();
         final String dpopHeaderValue = request.getHttpHeaders().getHeaderString(DPOP_HTTP_HEADER);
         final boolean isDpopHeaderPresent = dpopHeaderValue != null;
+
+        // The token endpoint must return an error if a valid request is sent without a holder of key mechanism (i.e. without DPoP / MTLS).
+        // https://github.com/keycloak/keycloak/issues/48069
+        if (dpopRequired && !isDpopHeaderPresent) {
+            String errorMessage = "Proof of key possession DPoP is required";
+            event.detail(Details.REASON, errorMessage);
+            event.error(Errors.INVALID_DPOP_PROOF);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, errorMessage, Response.Status.BAD_REQUEST);
+        }
 
         if (!isClientRequiresDpop && !isDpopHeaderPresent) {
             return;
