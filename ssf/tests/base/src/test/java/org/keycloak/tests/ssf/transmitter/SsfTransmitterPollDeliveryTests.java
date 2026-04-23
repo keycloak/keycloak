@@ -39,9 +39,9 @@ import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
 import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
-import org.keycloak.testframework.realm.RealmConfigBuilder;
-import org.keycloak.testframework.realm.UserConfigBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.server.DefaultKeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 import org.keycloak.testframework.server.KeycloakUrls;
@@ -726,7 +726,7 @@ public class SsfTransmitterPollDeliveryTests {
     public static class PollDeliveryRealm implements RealmConfig {
 
         @Override
-        public RealmConfigBuilder configure(RealmConfigBuilder realm) {
+        public RealmBuilder configure(RealmBuilder realm) {
             realm.name("ssf-transmitter-poll-delivery");
             realm.attribute(Ssf.SSF_TRANSMITTER_ENABLED_KEY, "true");
 
@@ -734,14 +734,14 @@ public class SsfTransmitterPollDeliveryTests {
             realm.adminEventsEnabled(true);
             realm.eventsListeners("jboss-logging", "ssf-events");
 
-            UserConfigBuilder tester = realm.addUser(TEST_USER);
+            UserBuilder tester = realm.addUser(TEST_USER);
             tester.email(TEST_USER + "@local.test");
             tester.firstName("Polly");
             tester.lastName("Tester");
             tester.enabled(true);
             tester.password(TEST_PASSWORD);
 
-            UserConfigBuilder unsubscribed = realm.addUser(UNSUBSCRIBED_USER);
+            UserBuilder unsubscribed = realm.addUser(UNSUBSCRIBED_USER);
             unsubscribed.email(UNSUBSCRIBED_USER + "@local.test");
             unsubscribed.firstName("Unsub");
             unsubscribed.lastName("Tester");

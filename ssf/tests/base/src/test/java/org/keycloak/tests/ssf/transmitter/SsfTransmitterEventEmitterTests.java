@@ -41,9 +41,9 @@ import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
 import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
-import org.keycloak.testframework.realm.RealmConfigBuilder;
-import org.keycloak.testframework.realm.UserConfigBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.server.DefaultKeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 import org.keycloak.testframework.server.KeycloakUrls;
@@ -774,7 +774,7 @@ public class SsfTransmitterEventEmitterTests {
 
     public static class EmitRealm implements RealmConfig {
         @Override
-        public RealmConfigBuilder configure(RealmConfigBuilder realm) {
+        public RealmBuilder configure(RealmBuilder realm) {
             realm.name("ssf-transmitter-emit");
             realm.attribute(Ssf.SSF_TRANSMITTER_ENABLED_KEY, "true");
             realm.organizationsEnabled(true);
@@ -783,7 +783,7 @@ public class SsfTransmitterEventEmitterTests {
             realm.adminEventsEnabled(true);
             realm.eventsListeners("jboss-logging", "ssf-events");
 
-            UserConfigBuilder tester = realm.addUser(TEST_USER);
+            UserBuilder tester = realm.addUser(TEST_USER);
             tester.email(TEST_EMAIL);
             tester.firstName("Emit");
             tester.lastName("Tester");
