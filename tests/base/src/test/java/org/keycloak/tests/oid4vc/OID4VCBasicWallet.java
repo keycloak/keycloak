@@ -550,12 +550,30 @@ public class OID4VCBasicWallet {
             return this;
         }
 
-        public void openLoginForm() {
+        public boolean openLoginForm() {
             loginForm.open();
+            String currUrl = oauth.getDriver().getCurrentUrl();
+            return currUrl != null && !currUrl.contains("error=") && !currUrl.contains("error_description=");
+        }
+
+        public AuthorizationEndpointRequest fillLoginForm(String username, String password) {
+            oauth.fillLoginForm(username, password);
+            return this;
+        }
+
+        public AuthorizationEndpointResponse parseLoginResponse() {
+            return oauth.parseLoginResponse();
         }
 
         public AuthorizationEndpointResponse send(String username, String password) {
-            return loginForm.doLogin(username, password);
+            openLoginForm();
+            fillLoginForm(username, password);
+            return parseLoginResponse();
+        }
+
+        public AuthorizationEndpointResponse send() {
+            openLoginForm();
+            return parseLoginResponse();
         }
     }
 }

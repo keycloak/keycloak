@@ -27,6 +27,7 @@ import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.tests.oid4vc.OID4VCBasicWallet.AuthorizationEndpointRequest;
 import org.keycloak.tests.oid4vc.OID4VCIssuerTestBase.VCTestServerConfig;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
@@ -39,6 +40,7 @@ import org.junit.jupiter.api.Test;
 import static org.keycloak.OID4VCConstants.OPENID_CREDENTIAL;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
@@ -124,8 +126,12 @@ public class OID4VCPublicClientTest extends OID4VCIssuerTestBase {
 
         // Send AuthorizationRequest without required PKCE
         //
-        oauth.loginForm().scope(ctx.getScope()).open();
-        AuthorizationEndpointResponse authResponse = oauth.parseLoginResponse();
+        AuthorizationEndpointRequest authRequest = wallet
+                .authorizationRequest()
+                .scope(ctx.getScope());
+
+        assertFalse(authRequest.openLoginForm(), "Error expected");
+        AuthorizationEndpointResponse authResponse = authRequest.parseLoginResponse();
 
         assertNull(authResponse.getCode(), "Expected no auth code");
         assertEquals("invalid_request", authResponse.getError());
