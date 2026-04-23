@@ -324,6 +324,27 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
         }
 
         if (Booleans.isTrue(getConfig().isStoreToken())) {
+            // Fix: Check token expiration and refresh if needed before returning the token
+            // This addresses the issue where external IDP tokens are not refreshed automatically
+            FederatedIdentityModel model = session.users().getFederatedIdentity(session.getContext().getRealm(), user, getConfig().getAlias());
+            if (model != null && model.getToken() != null && model.getToken().startsWith("{")) {
+                try {
+                    OAuthResponse previousResponse = JsonSerialization.readValue(model.getToken(), OAuthResponse.class);
+                    Long exp = previousResponse.getAccessTokenExpiration();
+                    if (needsRefresh(exp) && previousResponse.getRefreshToken() != null) {
+                        OAuthResponse newResponse = refreshToken(previousResponse, session);
+                        if (newResponse.getExpiresIn() != null && newResponse.getExpiresIn() > 0) {
+                            long accessTokenExpiration = Time.currentTime() + newResponse.getExpiresIn();
+                            newResponse.setAccessTokenExpiration(accessTokenExpiration);
+                        }
+                        model.setToken(JsonSerialization.writeValueAsString(newResponse));
+                        session.users().updateFederatedIdentity(session.getContext().getRealm(), user, model);
+                    }
+                } catch (IOException e) {
+                    logger.warnf(e, "Unable to refresh token for user %s and provider %s", user.getId(), getConfig().getAlias());
+                    // Continue with existing token if refresh fails
+                }
+            }
             response = exchangeStoredToken(uriInfo, null, null, userSession, user);
         }
 
