@@ -242,7 +242,7 @@ public class DPoPUtil {
                         boolean isSchemeDPoP = false;
                         if (StringUtil.isNotBlank(validator.authHeader)) {
                             String[] split = WHITESPACES.split(validator.authHeader);
-                            isSchemeDPoP = TokenUtil.TOKEN_TYPE_DPOP.equals(split[0]);
+                            isSchemeDPoP = TokenUtil.TOKEN_TYPE_DPOP.equalsIgnoreCase(split[0]);
                         }
 
                         if (!isSchemeDPoP && DPoPUtil.DPOP_TOKEN_TYPE.equals(token.getType())) {

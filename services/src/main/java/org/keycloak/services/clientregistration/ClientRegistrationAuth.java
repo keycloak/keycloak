@@ -120,7 +120,7 @@ public class ClientRegistrationAuth {
     }
 
     private boolean isBearerToken() {
-        return jwt != null && TokenUtil.TOKEN_TYPE_BEARER.equals(jwt.getType());
+        return jwt != null && TokenUtil.TOKEN_TYPE_BEARER.equalsIgnoreCase(jwt.getType());
     }
 
     public boolean isInitialAccessToken() {

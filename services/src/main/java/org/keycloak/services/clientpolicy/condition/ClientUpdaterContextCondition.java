@@ -125,7 +125,7 @@ public class ClientUpdaterContextCondition extends AbstractClientPolicyCondition
     }
 
     private boolean isBearerToken(JsonWebToken jwt) {
-        return jwt != null && TokenUtil.TOKEN_TYPE_BEARER.equals(jwt.getType());
+        return jwt != null && TokenUtil.TOKEN_TYPE_BEARER.equalsIgnoreCase(jwt.getType());
     }
 
 }

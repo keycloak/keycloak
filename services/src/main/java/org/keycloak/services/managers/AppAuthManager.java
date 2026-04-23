@@ -78,8 +78,7 @@ public class AppAuthManager extends AuthenticationManager {
                 return null;
             }
         } else {
-            // "Bearer" is case-insensitive for historical reasons. "DPoP" is case-sensitive to follow the spec.
-            if (!isBearerHeader && !typeString.equals(TokenUtil.TOKEN_TYPE_DPOP)) {
+            if (!isBearerHeader && !typeString.equalsIgnoreCase(TokenUtil.TOKEN_TYPE_DPOP)) {
                 return null;
             }
         }
