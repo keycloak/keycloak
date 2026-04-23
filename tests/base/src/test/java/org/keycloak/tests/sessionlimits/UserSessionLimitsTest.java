@@ -66,7 +66,6 @@ import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
 
 import static org.keycloak.tests.sessionlimits.UserSessionLimitsUtil.ERROR_TO_DISPLAY;
 import static org.keycloak.tests.sessionlimits.UserSessionLimitsUtil.assertClientSessionCount;
