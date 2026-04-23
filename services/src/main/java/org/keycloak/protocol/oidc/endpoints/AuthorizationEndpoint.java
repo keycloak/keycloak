@@ -149,6 +149,7 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
         checkClient(clientId);
 
         request = AuthorizationEndpointRequestParserProcessor.parseRequest(event, session, client, params, AuthorizationEndpointRequestParserProcessor.EndpointType.OIDC_AUTH_ENDPOINT);
+        String invalidRequestMessage = request.getInvalidRequestMessage();
 
         AuthorizationEndpointChecker checker = new AuthorizationEndpointChecker()
                 .event(event)
@@ -178,6 +179,17 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
             }
             return redirectErrorToClient(responseMode, ex.getError(), ex.getErrorDescription());
         }
+
+        if (invalidRequestMessage != null) {
+            if (Profile.isFeatureEnabled(Profile.Feature.OID4VC_HAIP)) {
+                event.error(Errors.INVALID_REQUEST);
+                return redirectErrorToClient(parsedResponseMode, Errors.INVALID_REQUEST, invalidRequestMessage);
+            } else {
+                event.error(Errors.INVALID_REQUEST);
+                throw new ErrorPageException(session, authenticationSession, Response.Status.BAD_REQUEST, invalidRequestMessage);
+            }
+        }
+
         if (action == null) {
             action = AuthorizationEndpoint.Action.CODE;
         }
