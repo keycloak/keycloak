@@ -2,6 +2,7 @@ package org.keycloak.theme.freemarker;
 
 import freemarker.cache.URLTemplateLoader;
 import freemarker.core.HTMLOutputFormat;
+import freemarker.core.TemplateClassResolver;
 import freemarker.template.Configuration;
 import freemarker.template.Template;
 import org.keycloak.theme.FreeMarkerException;
@@ -62,6 +63,7 @@ public class DefaultFreeMarkerProvider implements FreeMarkerProvider {
             cfg.setOutputFormat(HTMLOutputFormat.INSTANCE);
         }
 
+        cfg.setNewBuiltinClassResolver(TemplateClassResolver.ALLOWS_NOTHING_RESOLVER);
         cfg.setTemplateLoader(new ThemeTemplateLoader(theme));
         return cfg.getTemplate(templateName, "UTF-8");
     }
