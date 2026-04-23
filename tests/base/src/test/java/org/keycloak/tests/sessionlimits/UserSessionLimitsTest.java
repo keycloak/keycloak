@@ -36,7 +36,6 @@ import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.testframework.annotations.InjectEvents;
-import org.keycloak.testframework.annotations.InjectKeycloakUrls;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.annotations.TestSetup;
@@ -47,11 +46,10 @@ import org.keycloak.testframework.mail.annotations.InjectMailServer;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
 import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
-import org.keycloak.testframework.realm.RealmConfigBuilder;
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
-import org.keycloak.testframework.server.KeycloakUrls;
 import org.keycloak.testframework.ui.annotations.InjectPage;
 import org.keycloak.testframework.ui.annotations.InjectWebDriver;
 import org.keycloak.testframework.ui.page.ErrorPage;
@@ -89,9 +87,6 @@ public class UserSessionLimitsTest {
 
     @InjectOAuthClient
     OAuthClient oauth;
-
-    @InjectKeycloakUrls
-    KeycloakUrls keycloakUrls;
 
     @InjectEvents
     protected Events events;
@@ -571,7 +566,7 @@ public class UserSessionLimitsTest {
             setAuthenticatorConfigItem(DefaultAuthenticationFlows.RESET_CREDENTIALS_FLOW, UserSessionLimitsAuthenticatorFactory.BEHAVIOR, UserSessionLimitsAuthenticatorFactory.TERMINATE_OLDEST_SESSION);
 
             // Login and verify login was successful
-            String redirect_uri = keycloakUrls.getBase()  + "/realms/" + realmName + "/account";
+            String redirect_uri = managedRealm.getBaseUrl()  + "/realms/" + realmName + "/account";
             oauth.client("account");
             oauth.redirectUri(redirect_uri);
             oauth.doLogin(username, password);
@@ -819,7 +814,7 @@ public class UserSessionLimitsTest {
 
     public static class UserSessionLimitsRealmConfig implements RealmConfig {
         @Override
-        public RealmConfigBuilder configure(RealmConfigBuilder realm) {
+        public RealmBuilder configure(RealmBuilder realm) {
             realm.addUser(username)
                     .email(username)
                     .name("Test", "User")
