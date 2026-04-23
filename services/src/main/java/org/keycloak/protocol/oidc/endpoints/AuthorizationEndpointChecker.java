@@ -162,9 +162,9 @@ public class AuthorizationEndpointChecker {
             throw new AuthorizationCheckException(Response.Status.BAD_REQUEST, OAuthErrorException.UNSUPPORTED_RESPONSE_TYPE, null);
         }
 
-        OIDCResponseMode parsedResponseMode = null;
+        OIDCResponseMode responseMode;
         try {
-            parsedResponseMode = OIDCResponseMode.parse(request.getResponseMode(), parsedResponseType);
+            responseMode = OIDCResponseMode.parse(request.getResponseMode(), parsedResponseType);
         } catch (IllegalArgumentException iae) {
             ServicesLogger.LOGGER.invalidParameter(OIDCLoginProtocol.RESPONSE_MODE_PARAM);
             String errorMessage = "Invalid parameter: " + OIDCLoginProtocol.RESPONSE_MODE_PARAM;
@@ -173,10 +173,10 @@ public class AuthorizationEndpointChecker {
             throw new AuthorizationCheckException(Response.Status.BAD_REQUEST, OAuthErrorException.INVALID_REQUEST, errorMessage);
         }
 
-        event.detail(Details.RESPONSE_MODE, parsedResponseMode.toString().toLowerCase());
+        event.detail(Details.RESPONSE_MODE, responseMode.toString().toLowerCase());
 
         // Disallowed by OIDC specs
-        if (parsedResponseType.isImplicitOrHybridFlow() && parsedResponseMode == OIDCResponseMode.QUERY) {
+        if (parsedResponseType.isImplicitOrHybridFlow() && responseMode == OIDCResponseMode.QUERY) {
             ServicesLogger.LOGGER.responseModeQueryNotAllowed();
             String errorMessage = "Response_mode 'query' not allowed for implicit or hybrid flow";
             event.detail(Details.REASON, errorMessage);
@@ -184,7 +184,18 @@ public class AuthorizationEndpointChecker {
             throw new AuthorizationCheckException(Response.Status.BAD_REQUEST, OAuthErrorException.INVALID_REQUEST, errorMessage);
         }
 
-        this.parsedResponseMode = parsedResponseMode;
+        this.parsedResponseMode = responseMode;
+
+        // Not allowed by FAPI2 Security Profile as it would return an id_token via the browser where it may be leaked.
+        // Only the authorization code flow ('response_type=code') is permitted.
+        // https://github.com/keycloak/keycloak/issues/48067
+        if (Profile.isFeatureEnabled(Profile.Feature.OID4VC_HAIP) && !parsedResponseType.hasSingleResponseType(OIDCResponseType.CODE)) {
+            ServicesLogger.LOGGER.flowNotAllowed("Non Standard");
+            String errorMessage = "Non standard response type (i.e. other than 'code') not allowed by FAPI 2.0 Security Profile";
+            event.detail(Details.REASON, errorMessage);
+            event.error(Errors.NOT_ALLOWED);
+            throw new AuthorizationCheckException(Response.Status.BAD_REQUEST, OAuthErrorException.INVALID_REQUEST, errorMessage);
+        }
 
         if (parsedResponseType.isImplicitOrHybridFlow() && parsedResponseMode == OIDCResponseMode.QUERY_JWT &&
                 (!StringUtil.isNotBlank(client.getAttribute(OIDCConfigAttributes.AUTHORIZATION_ENCRYPTED_RESPONSE_ALG)) ||
