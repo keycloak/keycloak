@@ -289,9 +289,7 @@ public class ValidationAnnotationScannerTest {
 
         String description = scanner.buildDescription(classInfo, "notBlankUrlSet");
 
-        assertTrue(description.contains("each element"));
-        assertTrue(description.contains("must not be blank"));
-        assertTrue(description.contains("must be a valid URL"));
+        assertEquals("each element must not be blank, must be a valid URL", description);
     }
 
     @Test

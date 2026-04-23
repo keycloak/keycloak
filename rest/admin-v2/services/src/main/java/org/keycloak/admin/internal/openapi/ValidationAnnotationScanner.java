@@ -338,6 +338,10 @@ public class ValidationAnnotationScanner {
     /**
      * True when the annotation applies to this field, including type-use constraints on the field's type
      * (javac stores {@code @NotBlank String clientId} as a type annotation with enclosing {@code FIELD}).
+     * <p>
+     * Type-use constraints on a <em>generic type argument</em> (e.g. {@code Set<@NotBlank String>}) are also
+     * stored with an enclosing {@code FIELD} in Jandex; those are handled only by
+     * {@link #buildTypeArgumentDescription(FieldInfo)} so we do not emit duplicate prose.
      */
     private static boolean isAnnotationOnFieldDeclaration(AnnotationInstance annotation, FieldInfo field) {
         AnnotationTarget target = annotation.target();
@@ -350,9 +354,55 @@ public class ValidationAnnotationScanner {
         if (target.kind() == AnnotationTarget.Kind.TYPE) {
             TypeTarget typeTarget = target.asType();
             AnnotationTarget enclosing = typeTarget.enclosingTarget();
-            return enclosing != null
-                    && enclosing.kind() == AnnotationTarget.Kind.FIELD
-                    && field.equals(enclosing.asField());
+            if (enclosing == null
+                    || enclosing.kind() != AnnotationTarget.Kind.FIELD
+                    || !field.equals(enclosing.asField())) {
+                return false;
+            }
+            Type annotatedType = typeTarget.target();
+            if (annotatedType != null && isTypeNestedWithinParameterizedArguments(field.type(), annotatedType)) {
+                return false;
+            }
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * True when {@code annotated} refers to a type node strictly inside a generic argument list of
+     * {@code root} (including nested parameterizations), but is not {@code root} itself.
+     */
+    private static boolean isTypeNestedWithinParameterizedArguments(Type root, Type annotated) {
+        if (root == null || annotated == null) {
+            return false;
+        }
+        if (annotated.equals(root)) {
+            return false;
+        }
+        if (root.kind() != Type.Kind.PARAMETERIZED_TYPE) {
+            return false;
+        }
+        for (Type arg : root.asParameterizedType().arguments()) {
+            if (annotated.equals(arg) || typeOccursWithinParameterizedSubtree(arg, annotated)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean typeOccursWithinParameterizedSubtree(Type node, Type needle) {
+        if (node == null) {
+            return false;
+        }
+        if (needle.equals(node)) {
+            return true;
+        }
+        if (node.kind() == Type.Kind.PARAMETERIZED_TYPE) {
+            for (Type arg : node.asParameterizedType().arguments()) {
+                if (typeOccursWithinParameterizedSubtree(arg, needle)) {
+                    return true;
+                }
+            }
         }
         return false;
     }
