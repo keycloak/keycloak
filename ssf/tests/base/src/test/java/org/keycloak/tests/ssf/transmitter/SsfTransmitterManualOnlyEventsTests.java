@@ -43,9 +43,9 @@ import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
 import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
-import org.keycloak.testframework.realm.RealmConfigBuilder;
-import org.keycloak.testframework.realm.UserConfigBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testframework.server.DefaultKeycloakServerConfig;
@@ -406,7 +406,7 @@ public class SsfTransmitterManualOnlyEventsTests {
     public static class ManualOnlyRealm implements RealmConfig {
 
         @Override
-        public RealmConfigBuilder configure(RealmConfigBuilder realm) {
+        public RealmBuilder configure(RealmBuilder realm) {
             realm.name("ssf-transmitter-manual-only");
             realm.attribute(Ssf.SSF_TRANSMITTER_ENABLED_KEY, "true");
 
@@ -414,7 +414,7 @@ public class SsfTransmitterManualOnlyEventsTests {
             realm.adminEventsEnabled(true);
             realm.eventsListeners("jboss-logging", "ssf-events");
 
-            UserConfigBuilder tester = realm.addUser(TEST_USER);
+            UserBuilder tester = realm.addUser(TEST_USER);
             tester.email(TEST_USER + "@local.test");
             tester.firstName("Mona");
             tester.lastName("OnlyTester");

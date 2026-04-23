@@ -36,9 +36,9 @@ import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
 import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
-import org.keycloak.testframework.realm.RealmConfigBuilder;
-import org.keycloak.testframework.realm.UserConfigBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.server.DefaultKeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 import org.keycloak.testframework.server.KeycloakUrls;
@@ -357,7 +357,7 @@ public class SsfSubjectManagementTests {
 
     public static class SubjectMgmtRealm implements RealmConfig {
         @Override
-        public RealmConfigBuilder configure(RealmConfigBuilder realm) {
+        public RealmBuilder configure(RealmBuilder realm) {
             realm.name("ssf-subject-mgmt");
             realm.attribute(Ssf.SSF_TRANSMITTER_ENABLED_KEY, "true");
 
@@ -365,7 +365,7 @@ public class SsfSubjectManagementTests {
             realm.adminEventsEnabled(true);
             realm.eventsListeners("jboss-logging", "ssf-events");
 
-            UserConfigBuilder tester = realm.addUser(TEST_USER);
+            UserBuilder tester = realm.addUser(TEST_USER);
             tester.email(TEST_EMAIL);
             tester.firstName("Subject");
             tester.lastName("Tester");
