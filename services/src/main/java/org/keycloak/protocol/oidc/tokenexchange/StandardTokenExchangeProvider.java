@@ -149,13 +149,15 @@ public class StandardTokenExchangeProvider extends AbstractTokenExchangeProvider
                       Response.Status.BAD_REQUEST);
             }
 
-            // Validate DPoP or mTLS confirmation
             AccessToken.Confirmation cnf = token.getConfirmation();
+            // Validate mTLS
             if (cnf.getCertThumbprint() != null) {
                 if (!MtlsHoKTokenUtil.verifyTokenBindingWithClientCertificate(token, session.getContext().getHttpRequest(), session)) {
                     throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, MtlsHoKTokenUtil.CERT_VERIFY_ERROR_DESC, Response.Status.BAD_REQUEST);
                 }
-            } else if (Profile.isFeatureEnabled(Profile.Feature.DPOP) && cnf.getKeyThumbprint() != null) {
+            }
+            // Validate DPoP
+            if (Profile.isFeatureEnabled(Profile.Feature.DPOP) && cnf.getKeyThumbprint() != null) {
                 DPoP dPoP = session.getAttribute(DPoPUtil.DPOP_SESSION_ATTRIBUTE, DPoP.class);
                 if (dPoP == null) {
                     event.detail(Details.REASON, "DPoP proof is missing");
