@@ -2,17 +2,22 @@ package org.keycloak.testframework.realm;
 
 import org.keycloak.representations.idm.AuthenticationExecutionExportRepresentation;
 
-public class AuthenticationExecutionExportBuilder {
-
-    private final AuthenticationExecutionExportRepresentation rep;
+public class AuthenticationExecutionExportBuilder extends Builder<AuthenticationExecutionExportRepresentation> {
 
     private AuthenticationExecutionExportBuilder(AuthenticationExecutionExportRepresentation rep) {
-        this.rep = rep;
+        super(rep);
     }
 
     public static AuthenticationExecutionExportBuilder create() {
-        AuthenticationExecutionExportRepresentation rep = new AuthenticationExecutionExportRepresentation();
-        return new AuthenticationExecutionExportBuilder(rep);
+        return new AuthenticationExecutionExportBuilder(new AuthenticationExecutionExportRepresentation());
+    }
+
+    public static AuthenticationExecutionExportBuilder authenticator(String authenticator, String requirement, Integer priority, boolean  userSetupAllowed) {
+        return create().authenticatorFlow(false).authenticator(authenticator).requirement(requirement).priority(priority);
+    }
+
+    public static AuthenticationExecutionExportBuilder alias(String flowAlias, String requirement, Integer priority, boolean  userSetupAllowed) {
+        return create().authenticatorFlow(true).flowAlias(flowAlias).requirement(requirement).priority(priority);
     }
 
     public static AuthenticationExecutionExportBuilder update(AuthenticationExecutionExportRepresentation rep) {
@@ -39,17 +44,14 @@ public class AuthenticationExecutionExportBuilder {
         return this;
     }
 
-    public AuthenticationExecutionExportBuilder userSetupAllowed(boolean allowed) {
-        rep.setUserSetupAllowed(allowed);
+    public AuthenticationExecutionExportBuilder authenticatorFlow(boolean authenticatorFlow) {
+        rep.setAuthenticatorFlow(authenticatorFlow);
         return this;
     }
 
-    public AuthenticationExecutionExportBuilder authenticatorFlow(boolean enabled) {
-        rep.setAuthenticatorFlow(enabled);
+    public AuthenticationExecutionExportBuilder userSetupAllowed(boolean userSetupAllowed) {
+        rep.setUserSetupAllowed(userSetupAllowed);
         return this;
     }
 
-    public AuthenticationExecutionExportRepresentation build() {
-        return rep;
-    }
 }

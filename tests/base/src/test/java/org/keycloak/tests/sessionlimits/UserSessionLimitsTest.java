@@ -45,9 +45,11 @@ import org.keycloak.testframework.mail.MailServer;
 import org.keycloak.testframework.mail.annotations.InjectMailServer;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
+import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testframework.ui.annotations.InjectPage;
@@ -815,23 +817,23 @@ public class UserSessionLimitsTest {
     public static class UserSessionLimitsRealmConfig implements RealmConfig {
         @Override
         public RealmBuilder configure(RealmBuilder realm) {
-            realm.addUser(username)
+            realm.users(UserBuilder.create(username)
                     .email(username)
                     .name("Test", "User")
                     .emailVerified(true)
                     .password(password)
-                    .enabled(true);
+                    .enabled(true));
 
             realm.name(realmName);
-            realm.addClient(directGrant1)
+            realm.clients(ClientBuilder.create(directGrant1)
                     .secret(password)
                     .directAccessGrantsEnabled(true)
-                    .redirectUris("*");
+                    .redirectUris("*"));
 
-            realm.addClient(directGrant2)
+            realm.clients(ClientBuilder.create(directGrant2)
                     .secret(password)
                     .directAccessGrantsEnabled(true)
-                    .redirectUris("*");
+                    .redirectUris("*"));
 
             realm.resetPasswordAllowed(true);
             return realm;

@@ -34,7 +34,7 @@ import org.keycloak.representations.idm.authorization.GroupPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.Logic;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.testframework.realm.GroupBuilder;
-import org.keycloak.testsuite.util.RealmBuilder;
+import org.keycloak.testframework.realm.RealmBuilder;
 
 import org.junit.Test;
 
@@ -51,14 +51,14 @@ public class GroupPolicyManagementTest extends AbstractPolicyManagementTest {
     @Override
     protected RealmBuilder createTestRealm() {
         return super.createTestRealm()
-                .group(GroupBuilder.create().name("Group A").subGroups(
+                .groups(GroupBuilder.create().name("Group A").subGroups(
                     GroupBuilder.create("Group B").subGroups("Group C", "Group E"),
-                    GroupBuilder.create("Group D")).build())
-                .group(GroupBuilder.create().name("Group F").build())
-                .group(GroupBuilder.create().name("Group G").build())
-                .group(GroupBuilder.create().name("Group H").subGroups(
+                    GroupBuilder.create("Group D")))
+                .groups(GroupBuilder.create().name("Group F"))
+                .groups(GroupBuilder.create().name("Group G"))
+                .groups(GroupBuilder.create().name("Group H").subGroups(
                     GroupBuilder.create("Group I").subGroups("Group K", "Group L"),
-                    GroupBuilder.create("Group J")).build());
+                    GroupBuilder.create("Group J")));
     }
 
     @Test

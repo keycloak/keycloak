@@ -15,26 +15,23 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.util;
+package org.keycloak.testframework.realm;
 
 import java.util.HashMap;
-import java.util.Map;
 
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class IdentityProviderBuilder {
+public class IdentityProviderBuilder extends Builder<IdentityProviderRepresentation> {
 
-    private IdentityProviderRepresentation rep = new IdentityProviderRepresentation();
-
-    public static IdentityProviderBuilder create() {
-        return new IdentityProviderBuilder();
+    private IdentityProviderBuilder(IdentityProviderRepresentation rep) {
+        super(rep);
     }
 
-    private IdentityProviderBuilder() {
-        rep.setEnabled(true);
+    public static IdentityProviderBuilder create() {
+        return new IdentityProviderBuilder(new IdentityProviderRepresentation());
     }
 
     public IdentityProviderBuilder alias(String alias) {
@@ -67,21 +64,10 @@ public class IdentityProviderBuilder {
         return this;
     }
 
-    public IdentityProviderBuilder setAttribute(String name, String value) {
-        config().put(name, value);
+    public IdentityProviderBuilder attribute(String name, String value) {
+        rep.setConfig(createIfNull(rep.getConfig(), HashMap::new));
+        rep.getConfig().put(name, value);
         return this;
-    }
-
-    public IdentityProviderBuilder removeAttribute(String name) {
-        config().put(name, null);
-        return this;
-    }
-
-    private Map<String, String> config() {
-        if (rep.getConfig() == null) {
-            rep.setConfig(new HashMap<>());
-        }
-        return rep.getConfig();
     }
 
     public IdentityProviderRepresentation build() {

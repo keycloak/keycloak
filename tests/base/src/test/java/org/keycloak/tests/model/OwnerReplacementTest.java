@@ -42,6 +42,7 @@ import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.remote.annotations.TestOnServer;
 
 import org.junit.jupiter.api.Assertions;
@@ -516,8 +517,8 @@ public class OwnerReplacementTest {
         @Override
         public RealmBuilder configure(RealmBuilder realm) {
             realm.name("foo").id("foo");
-            realm.addUser("foo@user").email("foo@user.com")
-                    .password("password");
+            realm.users(UserBuilder.create("foo@user").email("foo@user.com")
+                    .password("password"));
             return realm;
         }
     }

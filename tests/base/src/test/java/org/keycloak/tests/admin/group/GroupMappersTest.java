@@ -40,10 +40,12 @@ import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.GroupBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.tests.suites.DatabaseTest;
 import org.keycloak.tests.utils.admin.AdminApiUtil;
@@ -187,11 +189,11 @@ public class GroupMappersTest extends AbstractGroupTest {
         public RealmBuilder configure(RealmBuilder realm) {
             ProtocolMapperRepresentation[] mappers = createMappers();
 
-            realm.addClient(CLIENT_ID)
+            realm.clients(ClientBuilder.create(CLIENT_ID)
                     .enabled(true)
                     .secret(CLIENT_SECRET)
                     .directAccessGrantsEnabled(true)
-                    .protocolMappers(mappers);
+                    .protocolMappers(mappers));
 
             realm.eventsEnabled(true)
                     .clientRoles(CLIENT_ID, CLIENT_ROLE);
@@ -211,24 +213,24 @@ public class GroupMappersTest extends AbstractGroupTest {
                     .attribute(LEVEL_2_ATTRIBUTE, "true")
                     .build();
 
-            realm.addGroup(TOP_GROUP)
+            realm.groups(GroupBuilder.create(TOP_GROUP)
                     .attribute(TOP_ATTRIBUTE, "true")
                     .realmRoles("user")
-                    .subGroups(subGroup, subGroup2);
+                    .subGroups(subGroup, subGroup2));
 
-            realm.addUser(TOP_GROUP_USER)
+            realm.users(UserBuilder.create(TOP_GROUP_USER)
                     .name("John", "Doe")
                     .enabled(true)
                     .email("top@redhat.com")
                     .password("password")
-                    .groups(TOP_GROUP);
+                    .groups(TOP_GROUP));
 
-            realm.addUser(LEVEL_2_GROUP_USER)
+            realm.users(UserBuilder.create(LEVEL_2_GROUP_USER)
                     .name("Jane", "Doe")
                     .enabled(true)
                     .email("level2@redhat.com")
                     .password("password")
-                    .groups("topGroup/level2group");
+                    .groups("topGroup/level2group"));
 
             return realm;
         }

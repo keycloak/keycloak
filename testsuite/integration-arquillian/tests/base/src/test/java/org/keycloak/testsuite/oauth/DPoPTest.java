@@ -184,7 +184,7 @@ public class DPoPTest extends AbstractTestRealmKeycloakTest {
                 .username("test-admin@localhost")
                 .password("password")
                 .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.REALM_ADMIN)
-                .roles(OAuth2Constants.OFFLINE_ACCESS);
+                .realmRoles(OAuth2Constants.OFFLINE_ACCESS);
         testRealm.getUsers().add(testAdmin.build());
     }
 

@@ -679,7 +679,7 @@ public class GroupTest extends AbstractGroupTest {
         RealmBuilder realmBuilder = RealmBuilder.create()
                 .name("foo")
                 .defaultGroups("/default1");
-        realmBuilder.addGroup("default1").path("/default1");
+        realmBuilder.groups(GroupBuilder.create("default1").path("/default1"));
         RealmRepresentation rep = realmBuilder.build();
 
         adminClient.realms().create(rep);
@@ -978,15 +978,15 @@ public class GroupTest extends AbstractGroupTest {
         public RealmBuilder configure(RealmBuilder realm) {
             realm.eventsEnabled(true);
 
-            realm.addUser("direct-login")
+            realm.users(UserBuilder.create("direct-login")
                     .name("Direct", "Login")
                     .email("direct-login@localhost")
                     .enabled(true)
-                    .password("password");
+                    .password("password"));
 
-            realm.addClient("resource-owner")
+            realm.clients(ClientBuilder.create("resource-owner")
                     .directAccessGrantsEnabled(true)
-                    .secret("secret");
+                    .secret("secret"));
 
             return realm;
         }

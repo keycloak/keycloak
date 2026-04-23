@@ -83,7 +83,7 @@ public class RealmRolesUserTest extends AbstractRealmRolesTest {
         assertThat(roleResource.getUserMembers(), is(empty()));
 
         managedRealm.cleanup().add(r -> r.users().create(UserBuilder.create().username("test-role-member").name("Test", "Role User").
-                email("test-role-member@test-role-member.com").roles("default-roles-default").emailVerified(true).requiredActions().build()));
+                email("test-role-member@test-role-member.com").realmRoles("default-roles-default").emailVerified(true).requiredActions().build()));
     }
 
     @Test

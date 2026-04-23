@@ -30,8 +30,8 @@ import org.keycloak.policy.PasswordPolicyManagerProvider;
 import org.keycloak.policy.PasswordPolicyProvider;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testsuite.AbstractKeycloakTest;
-import org.keycloak.testsuite.util.RealmBuilder;
 
 import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
