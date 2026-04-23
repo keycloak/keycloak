@@ -18,7 +18,7 @@
         <maven.compiler.release>17</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <!-- Use OpenAPI 4.x compatible plugin version -->
-        <smallrye.openapi.generator.plugin.version>4.2.4</smallrye.openapi.generator.plugin.version>
+        <smallrye.openapi.generator.plugin.version>4.3.1</smallrye.openapi.generator.plugin.version>
     </properties>
 
     <dependencies>
@@ -81,36 +81,11 @@
                     </compilerArgument>
                 </configuration>
             </plugin>
-            <!-- FIXME: drop this when the smallrye-open-api-maven-plugin exposes enableStandardStaticFiles,
-                 see https://github.com/keycloak/keycloak/pull/48371 -->
-            <plugin>
-                <artifactId>maven-clean-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>remove-stale-openapi-from-classpath</id>
-                        <phase>generate-sources</phase>
-                        <goals>
-                            <goal>clean</goal>
-                        </goals>
-                        <configuration>
-                            <excludeDefaultDirectories>true</excludeDefaultDirectories>
-                            <filesets>
-                                <fileset>
-                                    <directory>${project.build.directory}/classes/META-INF</directory>
-                                    <includes>
-                                        <include>openapi.yaml</include>
-                                        <include>openapi.json</include>
-                                    </includes>
-                                </fileset>
-                            </filesets>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
             <plugin>
                 <groupId>io.smallrye</groupId>
                 <artifactId>smallrye-open-api-maven-plugin</artifactId>
                 <configuration>
+                    <enableStandardStaticFiles>false</enableStandardStaticFiles>
                     <scanPackages>org.keycloak.representations.admin.v2,org.keycloak.admin.api</scanPackages>
                     <filter>org.keycloak.admin.internal.openapi.OASModelFilter</filter>
                     <outputDirectory>${project.build.directory}</outputDirectory>
