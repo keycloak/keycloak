@@ -65,13 +65,13 @@ import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testframework.events.Events;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
-import org.keycloak.testframework.realm.ClientConfigBuilder;
+import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.ManagedClient;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.ManagedUser;
+import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
-import org.keycloak.testframework.realm.RealmConfigBuilder;
-import org.keycloak.testframework.realm.UserConfigBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testframework.remote.timeoffset.InjectTimeOffSet;
@@ -157,7 +157,7 @@ public class RefreshTokenTest {
     public static class RefreshTokenTestRealmConfig implements RealmConfig {
 
         @Override
-        public RealmConfigBuilder configure(RealmConfigBuilder realm) {
+        public RealmBuilder configure(RealmBuilder realm) {
             realm.addClient("service-account-app")
                     .serviceAccountsEnabled(true)
                     .attribute(OIDCConfigAttributes.USE_REFRESH_TOKEN_FOR_CLIENT_CREDENTIALS_GRANT, "true")
@@ -478,20 +478,20 @@ public class RefreshTokenTest {
             realm.setAccessTokenLifespan((int) TimeUnit.MINUTES.toSeconds(1));
             realmResource.update(realm);
 
-            realmResource.clients().create(ClientConfigBuilder.create()
+            realmResource.clients().create(ClientBuilder.create()
                     .clientId("public-client")
                     .redirectUris("*")
                     .publicClient(true)
                     .build()).close();
 
             realmResource.users()
-                    .create(UserConfigBuilder.create().username("alice")
+                    .create(UserBuilder.create().username("alice")
                             .firstName("alice")
                             .lastName("alice")
                             .email("alice@keycloak.org")
                             .password("alice").roles("offline_access").build()).close();
             realmResource.users()
-                    .create(UserConfigBuilder.create().username("bob")
+                    .create(UserBuilder.create().username("bob")
                             .firstName("bob")
                             .lastName("bob")
                             .email("bob@keycloak.org")
@@ -530,7 +530,7 @@ public class RefreshTokenTest {
     public void testTimeoutWhenReUsingPreviousAuthenticationSession() {
         String realmName = KeycloakModelUtils.generateId();
         RealmsResource realmsResource = adminClient.realms();
-        realmsResource.create(RealmConfigBuilder.create().name(realmName).build());
+        realmsResource.create(RealmBuilder.create().name(realmName).build());
         RealmResource realmResource = realmsResource.realm(realmName);
         RealmRepresentation realm = realmResource.toRepresentation();
 
@@ -544,20 +544,20 @@ public class RefreshTokenTest {
             realm.setAccessTokenLifespan((int) TimeUnit.MINUTES.toSeconds(1));
             realmResource.update(realm);
 
-            realmResource.clients().create(ClientConfigBuilder.create()
+            realmResource.clients().create(ClientBuilder.create()
                     .clientId("public-client")
                     .redirectUris("*")
                     .publicClient(true)
                     .build()).close();
 
             realmResource.users()
-                    .create(UserConfigBuilder.create().username("alice")
+                    .create(UserBuilder.create().username("alice")
                             .firstName("alice")
                             .lastName("alice")
                             .email("alice@keycloak.org")
                             .password("alice").roles("offline_access").build()).close();
             realmResource.users()
-                    .create(UserConfigBuilder.create().username("bob")
+                    .create(UserBuilder.create().username("bob")
                             .firstName("bob")
                             .lastName("bob")
                             .email("bob@keycloak.org")
@@ -933,7 +933,7 @@ public class RefreshTokenTest {
 
     @Test
     public void refreshTokenUserDeleted() {
-        UserConfigBuilder newUser = UserConfigBuilder.create()
+        UserBuilder newUser = UserBuilder.create()
                 .username("temp-user@localhost")
                 .password("password")
                 .name("First", "Last")

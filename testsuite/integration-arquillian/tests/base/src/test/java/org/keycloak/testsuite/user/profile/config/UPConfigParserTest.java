@@ -32,9 +32,9 @@ import org.keycloak.representations.userprofile.config.UPAttributePermissions;
 import org.keycloak.representations.userprofile.config.UPAttributeRequired;
 import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.representations.userprofile.config.UPGroup;
+import org.keycloak.testframework.realm.ClientScopeBuilder;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.runonserver.RunOnServer;
-import org.keycloak.testsuite.util.ClientScopeBuilder;
 import org.keycloak.userprofile.config.UPConfigUtils;
 
 import com.fasterxml.jackson.databind.JsonMappingException;

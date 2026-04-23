@@ -24,8 +24,8 @@ import org.keycloak.representations.account.ClientRepresentation;
 import org.keycloak.representations.account.DeviceRepresentation;
 import org.keycloak.representations.account.SessionRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testsuite.broker.util.SimpleHttpDefault;
-import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.ContainerAssume;
 import org.keycloak.testsuite.util.SecondBrowser;
 import org.keycloak.testsuite.util.ThirdBrowser;
@@ -83,16 +83,16 @@ public class SessionRestServiceTest extends AbstractRestServiceTest {
                 .clientId("confidential-client-0")
                 .name("Confidential Client 0")
                 .secret("secret")
-                .serviceAccount()
-                .directAccessGrants()
+                .serviceAccountsEnabled()
+                .directAccessGrantsEnabled()
                 .redirectUris(OAuthClient.APP_ROOT + "/auth").build());
 
         testRealm.getClients().add(ClientBuilder.create()
                 .clientId("confidential-client-1")
                 .name("Confidential Client 1")
                 .secret("secret")
-                .serviceAccount()
-                .directAccessGrants()
+                .serviceAccountsEnabled()
+                .directAccessGrantsEnabled()
                 .redirectUris(OAuthClient.APP_ROOT + "/auth").build());
     }
 

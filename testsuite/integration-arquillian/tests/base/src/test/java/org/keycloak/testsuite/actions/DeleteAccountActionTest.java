@@ -14,13 +14,13 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.auth.page.login.DeleteAccountActionConfirmPage;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginPage;
-import org.keycloak.testsuite.util.UserBuilder;
 
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
@@ -50,7 +50,7 @@ public class DeleteAccountActionTest extends AbstractTestRealmKeycloakTest {
   @Before
   public void setUpAction() {
     UserRepresentation user = ActionUtil.findUserWithAdminClient(adminClient, "test-user@localhost");
-    UserBuilder.edit(user).requiredAction(DeleteAccount.PROVIDER_ID);
+    UserBuilder.update(user).requiredActions(DeleteAccount.PROVIDER_ID);
     managedRealm.admin().users().get(user.getId()).update(user);
     addDeleteAccountRoleToUserClientRoles();
 
@@ -84,7 +84,7 @@ public class DeleteAccountActionTest extends AbstractTestRealmKeycloakTest {
                 .username("delete-user")
                 .password("password")
                 .enabled(true)
-                .requiredAction(DeleteAccount.PROVIDER_ID)
+                .requiredActions(DeleteAccount.PROVIDER_ID)
                 .build();
         managedRealm.admin().users().create(userRep).close();
         addDeleteAccountRoleToUserClientRoles(userRep.getUsername());

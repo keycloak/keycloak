@@ -104,7 +104,6 @@ import org.keycloak.representations.idm.AuthDetailsRepresentation;
 import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.services.ErrorPage;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.services.resource.RealmResourceProvider;
@@ -740,12 +739,6 @@ public class TestingResourceProvider implements RealmResourceProvider {
         return Response.noContent().build();
     }
 
-    @GET
-    @Path("/uncaught-error")
-    public Response uncaughtError() {
-        throw new RuntimeException("Uncaught error");
-    }
-
     private void suspendTask(String taskName) {
         TimerProvider.TimerTaskContext taskContext = session.getProvider(TimerProvider.class).cancelTask(taskName);
 
@@ -1021,18 +1014,6 @@ public class TestingResourceProvider implements RealmResourceProvider {
                 .type(jakarta.ws.rs.core.MediaType.TEXT_HTML_TYPE)
                 .entity(builder.toString()).build();
 
-    }
-
-    /**
-     * Display message to Error Page - for testing purposes
-     *
-     * @param message message
-     */
-    @GET
-    @Produces(MediaType.APPLICATION_JSON)
-    @Path("/display-error-message")
-    public Response displayErrorMessage(@QueryParam("message") String message) {
-        return ErrorPage.error(session, session.getContext().getAuthenticationSession(), Response.Status.BAD_REQUEST, message == null ? "" : message);
     }
 
     @GET

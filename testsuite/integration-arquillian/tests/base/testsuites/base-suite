@@ -10,7 +10,6 @@ composites,4
 cookies,4
 docker,4
 domainextension,4
-error,4
 exportimport,4
 federation,5
 forms,5
@@ -31,6 +30,5 @@ url,6
 user,4
 util,4
 validation,6
-vault,4
 webauthn,IGNORED
 x509,4

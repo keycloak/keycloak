@@ -25,7 +25,7 @@ import org.keycloak.representations.workflows.WorkflowRepresentation;
 import org.keycloak.representations.workflows.WorkflowScheduleRepresentation;
 import org.keycloak.representations.workflows.WorkflowStepRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
-import org.keycloak.testframework.realm.UserConfigBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.remote.providers.runonserver.RunOnServer;
 import org.keycloak.tests.workflow.AbstractWorkflowTest;
 import org.keycloak.tests.workflow.config.WorkflowsBlockingServerConfig;
@@ -93,7 +93,7 @@ public class UserAttributeWorkflowConditionTest extends AbstractWorkflowTest {
     public void testActivateWorkflowForEligibleResources() {
         // create some users with attributes
         for (int i = 0; i < 10; i++) {
-            try (Response response = managedRealm.admin().users().create(UserConfigBuilder.create().username("user-with-attr-" + i)
+            try (Response response = managedRealm.admin().users().create(UserBuilder.create().username("user-with-attr-" + i)
                     .attribute("key", "value").build())) {
                 assertThat(response.getStatus(), is(Status.CREATED.getStatusCode()));
             }
@@ -132,7 +132,7 @@ public class UserAttributeWorkflowConditionTest extends AbstractWorkflowTest {
     }
 
     private void assertUserAttribute(String username, boolean shouldExist, Map<String, List<String>> attributes) {
-        managedRealm.admin().users().create(UserConfigBuilder.create()
+        managedRealm.admin().users().create(UserBuilder.create()
                 .username(username)
                 .email(username + "@example.com")
                 .attributes(attributes)

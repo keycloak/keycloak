@@ -41,6 +41,7 @@ import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.AdminApiUtil;
@@ -55,7 +56,6 @@ import org.keycloak.testsuite.pages.PageUtils;
 import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.updaters.UserAttributeUpdater;
-import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.ClientManager;
 import org.keycloak.testsuite.util.InfinispanTestTimeServiceRule;
 import org.keycloak.testsuite.util.Matchers;
@@ -1066,7 +1066,7 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
                 .clientId("my-foo-client")
                 .enabled(true)
                 .baseUrl("https://foo/bar")
-                .addRedirectUri(APP_REDIRECT_URI)
+                .redirectUris(APP_REDIRECT_URI)
                 .secret("password")
                 .build();
         try (Response response = managedRealm.admin().clients().create(clientRep)) {

@@ -517,7 +517,7 @@ public class OID4VCBasicWallet {
      */
     public class AuthorizationEndpointRequest {
 
-        protected final LoginUrlBuilder loginForm;
+        private final LoginUrlBuilder loginForm;
 
         public AuthorizationEndpointRequest() {
             this.loginForm = oauth.loginForm();
@@ -550,16 +550,30 @@ public class OID4VCBasicWallet {
             return this;
         }
 
-        public void openLoginForm() {
+        public boolean openLoginForm() {
             loginForm.open();
+            String currUrl = oauth.getDriver().getCurrentUrl();
+            return currUrl != null && !currUrl.contains("error=") && !currUrl.contains("error_description=");
+        }
+
+        public AuthorizationEndpointRequest fillLoginForm(String username, String password) {
+            oauth.fillLoginForm(username, password);
+            return this;
+        }
+
+        public AuthorizationEndpointResponse parseLoginResponse() {
+            return oauth.parseLoginResponse();
         }
 
         public AuthorizationEndpointResponse send(String username, String password) {
-            // [TODO #47649] OAuthClient cannot handle invalid authorization requests
-            // https://github.com/keycloak/keycloak/issues/47649
             openLoginForm();
-            oauth.fillLoginForm(username, password);
-            return oauth.parseLoginResponse();
+            fillLoginForm(username, password);
+            return parseLoginResponse();
+        }
+
+        public AuthorizationEndpointResponse send() {
+            openLoginForm();
+            return parseLoginResponse();
         }
     }
 }

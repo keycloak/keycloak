@@ -27,7 +27,7 @@ import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.InjectUser;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.injection.LifeCycle;
-import org.keycloak.testframework.realm.ClientConfigBuilder;
+import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.ManagedUser;
 import org.keycloak.testframework.scim.client.annotations.InjectScimClient;
@@ -55,7 +55,7 @@ public class AuthorizationTest extends AbstractScimTest {
 
     @BeforeEach
     public void onBefore() {
-        realm.admin().clients().create(ClientConfigBuilder
+        realm.admin().clients().create(ClientBuilder
                 .create()
                 .clientId("scim-client-restricted")
                 .secret("secret")

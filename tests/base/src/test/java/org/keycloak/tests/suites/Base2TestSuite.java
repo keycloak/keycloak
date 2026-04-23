@@ -12,6 +12,7 @@ import org.junit.platform.suite.api.Suite;
         "org.keycloak.tests.common",
         "org.keycloak.tests.cors",
         "org.keycloak.tests.db",
+        "org.keycloak.tests.error",
         "org.keycloak.tests.events",
         "org.keycloak.tests.forms",
         "org.keycloak.tests.i18n",
@@ -26,6 +27,7 @@ import org.junit.platform.suite.api.Suite;
         "org.keycloak.tests.session",
         "org.keycloak.tests.tracing",
         "org.keycloak.tests.transactions",
+        "org.keycloak.tests.vault",
         "org.keycloak.tests.welcomepage",
         "org.keycloak.tests.workflow"
 })

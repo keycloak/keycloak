@@ -24,6 +24,7 @@ import org.keycloak.models.credential.OTPCredentialModel;
 import org.keycloak.models.utils.HmacOTP;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AbstractChangeImportedUserPasswordsTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.pages.AppPage;
@@ -32,7 +33,6 @@ import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginTotpPage;
 import org.keycloak.testsuite.util.GreenMailRule;
 import org.keycloak.testsuite.util.RealmRepUtil;
-import org.keycloak.testsuite.util.UserBuilder;
 
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
@@ -56,9 +56,8 @@ public class LoginHotpTest extends AbstractChangeImportedUserPasswordsTest {
         testRealm.setOtpPolicyLookAheadWindow(2);
         testRealm.setOtpPolicyDigits(6);
         UserRepresentation user = RealmRepUtil.findUser(testRealm, "test-user@localhost");
-        UserBuilder.edit(user)
-                   .hotpSecret("hotpSecret")
-                   .otpEnabled();
+        UserBuilder.update(user)
+                   .hotpSecret("hotpSecret");
     }
 
     @Rule

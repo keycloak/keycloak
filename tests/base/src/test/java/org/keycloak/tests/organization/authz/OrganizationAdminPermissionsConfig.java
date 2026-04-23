@@ -19,13 +19,13 @@ package org.keycloak.tests.organization.authz;
 
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.Constants;
+import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
-import org.keycloak.testframework.realm.RealmConfigBuilder;
 
 public class OrganizationAdminPermissionsConfig implements RealmConfig {
 
     @Override
-    public RealmConfigBuilder configure(RealmConfigBuilder realm) {
+    public RealmBuilder configure(RealmBuilder realm) {
         realm.addUser("myadmin")
                 .name("My", "Admin")
                 .email("myadmin@localhost")

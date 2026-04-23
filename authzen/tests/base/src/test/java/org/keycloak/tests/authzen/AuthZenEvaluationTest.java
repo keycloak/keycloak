@@ -43,12 +43,12 @@ import org.keycloak.testframework.authzen.client.AuthZenClient.EvaluationResult;
 import org.keycloak.testframework.authzen.client.annotations.InjectAuthZenClient;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
+import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.ClientConfig;
-import org.keycloak.testframework.realm.ClientConfigBuilder;
 import org.keycloak.testframework.realm.ManagedClient;
 import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
-import org.keycloak.testframework.realm.RealmConfigBuilder;
 import org.keycloak.testframework.server.KeycloakUrls;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
@@ -748,7 +748,7 @@ public class AuthZenEvaluationTest {
 
     public static class TestRealmConfig implements RealmConfig {
         @Override
-        public RealmConfigBuilder configure(RealmConfigBuilder realm) {
+        public RealmBuilder configure(RealmBuilder realm) {
             realm.addRole("admin");
 
             realm.addUser("admin-user")
@@ -770,7 +770,7 @@ public class AuthZenEvaluationTest {
 
     public static class AuthzClientConfig implements ClientConfig {
         @Override
-        public ClientConfigBuilder configure(ClientConfigBuilder client) {
+        public ClientBuilder configure(ClientBuilder client) {
             return client
                   .secret("secret")
                   .directAccessGrantsEnabled(true)
@@ -780,7 +780,7 @@ public class AuthZenEvaluationTest {
 
     public static class NoAuthzClientConfig implements ClientConfig {
         @Override
-        public ClientConfigBuilder configure(ClientConfigBuilder client) {
+        public ClientBuilder configure(ClientBuilder client) {
             return client
                   .secret("secret")
                   .directAccessGrantsEnabled(true);

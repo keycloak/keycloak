@@ -14,32 +14,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.testsuite.util;
+package org.keycloak.testframework.realm;
 
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 
 /**
  * @author <a href="mailto:yoshiyuki.tabata.jy@hitachi.com">Yoshiyuki Tabata</a>
  */
-public class ClientScopeBuilder {
-
-    private final ClientScopeRepresentation rep;
-
-    public static ClientScopeBuilder create() {
-        ClientScopeRepresentation rep = new ClientScopeRepresentation();
-        return new ClientScopeBuilder(rep);
-    }
-
-    public static ClientScopeBuilder edit(ClientScopeRepresentation rep) {
-        return new ClientScopeBuilder(rep);
-    }
+public class ClientScopeBuilder extends Builder<ClientScopeRepresentation> {
 
     private ClientScopeBuilder(ClientScopeRepresentation rep) {
-        this.rep = rep;
+        super(rep);
     }
 
-    public ClientScopeRepresentation build() {
-        return rep;
+    public static ClientScopeBuilder create() {
+        return new ClientScopeBuilder(new ClientScopeRepresentation());
+    }
+
+    public static ClientScopeBuilder update(ClientScopeRepresentation rep) {
+        return new ClientScopeBuilder(rep);
     }
 
     public ClientScopeBuilder name(String name) {

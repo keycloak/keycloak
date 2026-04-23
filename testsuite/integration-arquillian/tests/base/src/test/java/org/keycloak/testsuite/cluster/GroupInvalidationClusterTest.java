@@ -11,10 +11,10 @@ import org.keycloak.admin.client.resource.GroupResource;
 import org.keycloak.admin.client.resource.GroupsResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.representations.idm.GroupRepresentation;
+import org.keycloak.testframework.realm.GroupBuilder;
 import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.ContainerInfo;
-import org.keycloak.testsuite.util.GroupBuilder;
 
 import org.apache.commons.lang.RandomStringUtils;
 import org.junit.Before;

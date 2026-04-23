@@ -51,7 +51,7 @@ import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.events.AdminEventAssertion;
-import org.keycloak.testframework.realm.RoleConfigBuilder;
+import org.keycloak.testframework.realm.RoleBuilder;
 import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.tests.suites.DatabaseTest;
 import org.keycloak.tests.utils.admin.AdminEventPaths;
@@ -355,9 +355,9 @@ public class ClientScopeTest extends AbstractClientScopeTest {
         String roleContainerClientUuid = realm.clients().findByClientId("role-container-client").stream().findFirst().orElseThrow().getId();
         ClientResource roleContainerClient = realm.clients().get(roleContainerClientUuid);
 
-        RoleRepresentation clientCompositeRole = RoleConfigBuilder.create().name("client-composite").build();
+        RoleRepresentation clientCompositeRole = RoleBuilder.create().name("client-composite").build();
         roleContainerClient.roles().create(clientCompositeRole);
-        roleContainerClient.roles().create(RoleConfigBuilder.create().name("client-child").build());
+        roleContainerClient.roles().create(RoleBuilder.create().name("client-child").build());
         roleContainerClient.roles().get("client-composite").addComposites(Collections
                 .singletonList(
                         roleContainerClient.roles().get("client-child").toRepresentation()));

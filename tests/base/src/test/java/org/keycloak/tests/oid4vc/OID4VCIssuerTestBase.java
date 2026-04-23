@@ -64,13 +64,13 @@ import org.keycloak.testframework.annotations.TestSetup;
 import org.keycloak.testframework.events.Events;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
+import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.ClientConfig;
-import org.keycloak.testframework.realm.ClientConfigBuilder;
 import org.keycloak.testframework.realm.ManagedClient;
 import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
-import org.keycloak.testframework.realm.RealmConfigBuilder;
-import org.keycloak.testframework.realm.UserConfigBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.remote.timeoffset.InjectTimeOffSet;
 import org.keycloak.testframework.remote.timeoffset.TimeOffSet;
 import org.keycloak.testframework.server.KeycloakServerConfig;
@@ -424,7 +424,7 @@ public abstract class OID4VCIssuerTestBase {
         public static final String TEST_REALM_NAME = "test";
 
         @Override
-        public RealmConfigBuilder configure(RealmConfigBuilder realm) {
+        public RealmBuilder configure(RealmBuilder realm) {
             realm.name(TEST_REALM_NAME)
                     .eventsEnabled(true);
 
@@ -547,7 +547,7 @@ public abstract class OID4VCIssuerTestBase {
             String lastName = nameToks.length > 1 ? nameToks[1] : "";
             String username = firstName.toLowerCase();
 
-            UserConfigBuilder userBuilder = UserConfigBuilder.create()
+            UserBuilder userBuilder = UserBuilder.create()
                     .id(KeycloakModelUtils.generateId())
                     .username(username)
                     .enabled(true)
@@ -586,7 +586,7 @@ public abstract class OID4VCIssuerTestBase {
     public static class PrivateOID4VCIClient implements ClientConfig {
 
         @Override
-        public ClientConfigBuilder configure(ClientConfigBuilder client) {
+        public ClientBuilder configure(ClientBuilder client) {
             String[] optionalClientScopes = {
                     jwtTypeCredentialScopeName,
                     sdJwtTypeCredentialScopeName,
@@ -610,7 +610,7 @@ public abstract class OID4VCIssuerTestBase {
     public static class PublicOID4VCIClient implements ClientConfig {
 
         @Override
-        public ClientConfigBuilder configure(ClientConfigBuilder client) {
+        public ClientBuilder configure(ClientBuilder client) {
             String[] optionalClientScopes = {
                     jwtTypeCredentialScopeName,
                     sdJwtTypeCredentialScopeName,

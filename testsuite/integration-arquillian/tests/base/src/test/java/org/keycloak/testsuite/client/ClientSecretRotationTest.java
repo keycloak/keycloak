@@ -37,6 +37,7 @@ import org.keycloak.services.clientpolicy.condition.ClientAccessTypeCondition.Co
 import org.keycloak.services.clientpolicy.condition.ClientAccessTypeConditionFactory;
 import org.keycloak.services.clientpolicy.executor.ClientSecretRotationExecutor;
 import org.keycloak.services.clientpolicy.executor.ClientSecretRotationExecutorFactory;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.account.AbstractRestServiceTest;
 import org.keycloak.testsuite.admin.ApiUtil;
@@ -46,7 +47,6 @@ import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientPolicyBuilder;
 import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientProfileBuilder;
 import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientProfilesBuilder;
 import org.keycloak.testsuite.util.ServerURLs;
-import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.keycloak.util.JsonSerialization;
@@ -127,7 +127,7 @@ public class ClientSecretRotationTest extends AbstractRestServiceTest {
 
         UserRepresentation user = UserBuilder.create().enabled(Boolean.TRUE)
                 .username(ADMIN_USER_NAME)
-                .password(USER_PASSWORD).addRoles(new String[]{AdminRoles.MANAGE_CLIENTS}).build();
+                .password(USER_PASSWORD).roles(new String[]{AdminRoles.MANAGE_CLIENTS}).build();
         users.add(user);
 
         UserRepresentation commonUser = UserBuilder.create().id(COMMON_USER_ID)

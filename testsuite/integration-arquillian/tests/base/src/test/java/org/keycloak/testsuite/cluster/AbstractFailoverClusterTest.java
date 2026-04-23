@@ -21,13 +21,13 @@ package org.keycloak.testsuite.cluster;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.InfoPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LogoutConfirmPage;
 import org.keycloak.testsuite.util.URLUtils;
-import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
 
 import org.jboss.arquillian.graphene.page.Page;
@@ -95,8 +95,8 @@ public abstract class AbstractFailoverClusterTest extends AbstractClusterTest {
                 .username("login-test")
                 .email("login@test.com")
                 .enabled(true)
-                .requiredAction(UserModel.RequiredAction.UPDATE_PASSWORD.toString())
-                .requiredAction(UserModel.RequiredAction.UPDATE_PROFILE.toString())
+                .requiredActions(UserModel.RequiredAction.UPDATE_PASSWORD.toString())
+                .requiredActions(UserModel.RequiredAction.UPDATE_PROFILE.toString())
                 .password("password")
                 .build();
 

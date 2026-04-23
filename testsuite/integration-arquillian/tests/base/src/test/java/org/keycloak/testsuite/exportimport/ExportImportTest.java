@@ -51,6 +51,7 @@ import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.userprofile.config.UPConfig;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
@@ -58,7 +59,6 @@ import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
 import org.keycloak.testsuite.client.resources.TestingExportImportResource;
 import org.keycloak.testsuite.runonserver.RunHelpers;
 import org.keycloak.testsuite.util.JsonTestUtils;
-import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.testsuite.util.userprofile.UserProfileUtil;
 import org.keycloak.userprofile.DeclarativeUserProfileProvider;
 import org.keycloak.util.JsonSerialization;
@@ -103,7 +103,7 @@ public class ExportImportTest extends AbstractKeycloakTest {
                         .username("user-requiredOTP")
                         .email("User-requiredOTP" + "@test.com")
                         .password("password")
-                        .requiredAction(UserModel.RequiredAction.CONFIGURE_TOTP.name())
+                        .requiredActions(UserModel.RequiredAction.CONFIGURE_TOTP.name())
                         .build()
         );
         testRealm1.getUsers().add(
@@ -111,7 +111,7 @@ public class ExportImportTest extends AbstractKeycloakTest {
                         .username("user-requiredWebAuthn")
                         .email("User-requiredWebAuthn" + "@test.com")
                         .password("password")
-                        .requiredAction(WebAuthnRegisterFactory.PROVIDER_ID)
+                        .requiredActions(WebAuthnRegisterFactory.PROVIDER_ID)
                         .build()
         );
 

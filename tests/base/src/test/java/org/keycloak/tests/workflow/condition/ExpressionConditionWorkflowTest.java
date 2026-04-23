@@ -17,9 +17,9 @@ import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.representations.workflows.WorkflowRepresentation;
 import org.keycloak.representations.workflows.WorkflowStepRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
-import org.keycloak.testframework.realm.GroupConfigBuilder;
-import org.keycloak.testframework.realm.RoleConfigBuilder;
-import org.keycloak.testframework.realm.UserConfigBuilder;
+import org.keycloak.testframework.realm.GroupBuilder;
+import org.keycloak.testframework.realm.RoleBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.tests.workflow.AbstractWorkflowTest;
 import org.keycloak.tests.workflow.config.WorkflowsBlockingServerConfig;
@@ -48,8 +48,8 @@ public class ExpressionConditionWorkflowTest extends AbstractWorkflowTest {
     public void testExpressionCondition() {
 
         // create a couple of groups
-        managedRealm.admin().groups().add(GroupConfigBuilder.create().name("engineering").build()).close();
-        managedRealm.admin().groups().add(GroupConfigBuilder.create().name("contractors").build()).close();
+        managedRealm.admin().groups().add(GroupBuilder.create().name("engineering").build()).close();
+        managedRealm.admin().groups().add(GroupBuilder.create().name("contractors").build()).close();
 
         // create a few users with different attributes, roles and group memberships
         addUser("bwayne", "Bruce", "Wayne", List.of("developer", "admin"), List.of("engineering"),
@@ -148,7 +148,7 @@ public class ExpressionConditionWorkflowTest extends AbstractWorkflowTest {
     }
 
     public void addUser(String username, String firstName, String lastName, List<String> roles, List<String> groups, Map<String, List<String>> attributes) {
-        try (Response response = managedRealm.admin().users().create(UserConfigBuilder.create()
+        try (Response response = managedRealm.admin().users().create(UserBuilder.create()
                 .username(username)
                 .email(username + "@gotham.com")
                 .name(firstName, lastName)
@@ -220,7 +220,7 @@ public class ExpressionConditionWorkflowTest extends AbstractWorkflowTest {
             RolesResource roles = managedRealm.admin().clients().get(clients.get(0).getId()).roles();
 
             if (roles.list(clientRoleName, -1, -1).isEmpty()) {
-                roles.create(RoleConfigBuilder.create()
+                roles.create(RoleBuilder.create()
                         .name(clientRoleName)
                         .build());
             }
@@ -230,7 +230,7 @@ public class ExpressionConditionWorkflowTest extends AbstractWorkflowTest {
             RolesResource roles = managedRealm.admin().roles();
 
             if (roles.list(roleName, -1, -1).isEmpty()) {
-                roles.create(RoleConfigBuilder.create()
+                roles.create(RoleBuilder.create()
                         .name(roleName)
                         .build());
             }

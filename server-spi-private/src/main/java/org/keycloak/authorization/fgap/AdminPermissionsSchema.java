@@ -35,6 +35,7 @@ import org.keycloak.authorization.fgap.evaluation.FGAPPolicyEvaluator;
 import org.keycloak.authorization.fgap.evaluation.partial.PartialEvaluationStorageProvider;
 import org.keycloak.authorization.fgap.evaluation.partial.PartialEvaluator;
 import org.keycloak.authorization.model.Policy;
+import org.keycloak.authorization.model.Policy.FilterOption;
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
@@ -544,5 +545,42 @@ public class AdminPermissionsSchema extends AuthorizationSchema {
         }
 
         return Boolean.parseBoolean(session.getAttributeOrDefault(SKIP_EVALUATION, Boolean.FALSE.toString()));
+    }
+
+    public void addResourceTypeScope(KeycloakSession session, RealmModel realm, String resourceType, String scopeName) {
+        ClientModel client = realm.getAdminPermissionsClient();
+
+        if (client == null) {
+            return;
+        }
+
+        AuthorizationProvider authorizationProvider = session.getProvider(AuthorizationProvider.class);
+        StoreFactory storeFactory = authorizationProvider.getStoreFactory();
+        ResourceServer resourceServer = storeFactory.getResourceServerStore().findByClient(client);
+
+        if (resourceServer == null) {
+            return;
+        }
+
+        ScopeStore scopeStore = storeFactory.getScopeStore();
+        Scope newScope = scopeStore.findByName(resourceServer, scopeName);
+
+        if (newScope == null) {
+            newScope = scopeStore.create(resourceServer, scopeName);
+        }
+
+        ResourceStore resourceStore = storeFactory.getResourceStore();
+        Resource resourceTypeResource = resourceStore.findByName(resourceServer, resourceType);
+        Set<Scope> newScopes = new HashSet<>(resourceTypeResource.getScopes());
+
+        newScopes.add(newScope);
+
+        resourceTypeResource.updateScopes(newScopes);
+
+        for (Policy policy : storeFactory.getPolicyStore().find(resourceServer, Map.of(FilterOption.CONFIG, new String[]{"defaultResourceType", resourceType}), -1, -1)) {
+            for (Resource resource : policy.getResources()) {
+                resource.updateScopes(newScopes);
+            }
+        }
     }
 }

@@ -672,10 +672,10 @@ public class Picocli {
 
     private String getCommandNameForHelp() {
         // enforce kc.sh for ALL mode to ensure consistent line wrapping
-        if (getCommandMode() == CommandMode.ALL) {
-            return "kc.sh";
-        }
-        return Environment.getCommand();
+        return switch (getCommandMode()) {
+        case WIN -> "kc.bat";
+        default -> "kc.sh";
+        };
     }
 
     private void configureUsageHelpWidth(CommandLine cmd) {

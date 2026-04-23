@@ -76,6 +76,8 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.Urls;
+import org.keycloak.testframework.realm.ClientBuilder;
+import org.keycloak.testframework.realm.RoleBuilder;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
@@ -90,7 +92,6 @@ import org.keycloak.testsuite.util.ClientManager;
 import org.keycloak.testsuite.util.KeyUtils;
 import org.keycloak.testsuite.util.KeycloakModelUtils;
 import org.keycloak.testsuite.util.RealmBuilder;
-import org.keycloak.testsuite.util.RoleBuilder;
 import org.keycloak.testsuite.util.TokenSignatureUtil;
 import org.keycloak.testsuite.util.UserInfoClientUtil;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
@@ -244,11 +245,11 @@ public class UserInfoTest extends AbstractKeycloakTest {
     public void testSuccess_dotsInClientId() throws Exception {
         // Create client with dot in the name
         final String clientId = "my.foo.$\\client\\$";
-        ClientRepresentation clientRep = org.keycloak.testsuite.util.ClientBuilder.create()
+        ClientRepresentation clientRep = ClientBuilder.create()
                 .clientId(clientId)
-                .addRedirectUri("http://foo.host")
+                .redirectUris("http://foo.host")
                 .secret("password")
-                .directAccessGrants()
+                .directAccessGrantsEnabled()
                 .build();
 
         RealmResource realm = adminClient.realm("test");

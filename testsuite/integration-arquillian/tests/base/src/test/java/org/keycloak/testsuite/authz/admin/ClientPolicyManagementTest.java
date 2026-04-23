@@ -32,7 +32,7 @@ import org.keycloak.representations.idm.authorization.ClientPolicyRepresentation
 import org.keycloak.representations.idm.authorization.DecisionStrategy;
 import org.keycloak.representations.idm.authorization.Logic;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
-import org.keycloak.testsuite.util.ClientBuilder;
+import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testsuite.util.RealmBuilder;
 
 import org.junit.Test;

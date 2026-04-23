@@ -41,6 +41,7 @@ import org.keycloak.representations.idm.RequiredActionConfigRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.UserSessionRepresentation;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.broker.util.SimpleHttpDefault;
 import org.keycloak.testsuite.pages.ErrorPage;
@@ -48,7 +49,6 @@ import org.keycloak.testsuite.pages.InfoPage;
 import org.keycloak.testsuite.util.GreenMailRule;
 import org.keycloak.testsuite.util.InfinispanTestTimeServiceRule;
 import org.keycloak.testsuite.util.MailUtils;
-import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.testsuite.util.WaitUtils;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
 
@@ -446,7 +446,7 @@ public class RequiredActionUpdateEmailTestWithVerificationTest extends AbstractR
                     .email("profile-test-user@localhost")
                     .firstName("Tom")
                     .lastName("Brady")
-                    .requiredAction(UserModel.RequiredAction.UPDATE_PROFILE.name())
+                    .requiredActions(UserModel.RequiredAction.UPDATE_PROFILE.name())
                     .build();
             AdminApiUtil.createUserAndResetPasswordWithAdminClient(managedRealm.admin(), user, "password");
 
@@ -500,7 +500,7 @@ public class RequiredActionUpdateEmailTestWithVerificationTest extends AbstractR
                     .email("") // Start with empty email
                     .firstName("John")
                     .lastName("Doe")
-                    .requiredAction(UserModel.RequiredAction.UPDATE_PROFILE.name())
+                    .requiredActions(UserModel.RequiredAction.UPDATE_PROFILE.name())
                     .build();
             AdminApiUtil.createUserAndResetPasswordWithAdminClient(managedRealm.admin(), user, "password");
 
@@ -560,7 +560,7 @@ public class RequiredActionUpdateEmailTestWithVerificationTest extends AbstractR
                     .firstName("John")
                     .lastName("Doe")
                     .emailVerified(true)
-                    .requiredAction(UserModel.RequiredAction.UPDATE_EMAIL.name())
+                    .requiredActions(UserModel.RequiredAction.UPDATE_EMAIL.name())
                     .build();
             AdminApiUtil.createUserAndResetPasswordWithAdminClient(managedRealm.admin(), user, "password");
 

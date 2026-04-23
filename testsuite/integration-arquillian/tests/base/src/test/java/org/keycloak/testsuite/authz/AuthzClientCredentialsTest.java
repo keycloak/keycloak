@@ -53,11 +53,11 @@ import org.keycloak.representations.idm.authorization.PermissionResponse;
 import org.keycloak.representations.idm.authorization.ResourcePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
+import org.keycloak.testframework.realm.ClientBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.admin.AdminApiUtil;
-import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.RolesBuilder;
-import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.util.JsonSerialization;
 
 import org.junit.Before;
@@ -246,7 +246,7 @@ public class AuthzClientCredentialsTest extends AbstractAuthzTest {
     public void testReusingAccessAndRefreshTokens_refreshEnabled() throws Exception {
         // Use userSessions and refresh tokens
         ClientResource client = AdminApiUtil.findClientByClientId(getAdminClient().realm("authz-test-session"), "resource-server-test");
-        ClientRepresentation clientRepresentation = ClientBuilder.edit(client.toRepresentation())
+        ClientRepresentation clientRepresentation = ClientBuilder.update(client.toRepresentation())
                 .attribute(OIDCConfigAttributes.USE_REFRESH_TOKEN_FOR_CLIENT_CREDENTIALS_GRANT, "true")
                 .build();
         client.update(clientRepresentation);
@@ -378,13 +378,13 @@ public class AuthzClientCredentialsTest extends AbstractAuthzTest {
     private RealmBuilder configureRealm(RealmBuilder builder, ClientBuilder clientBuilder) {
         return builder
                 .roles(RolesBuilder.create().realmRole(new RoleRepresentation("uma_authorization", "", false)))
-                .user(UserBuilder.create().username("marta").password("password").addRoles("uma_authorization"))
+                .user(UserBuilder.create().username("marta").password("password").roles("uma_authorization"))
                 .user(UserBuilder.create().username("kolo").password("password"))
                 .client(clientBuilder.clientId("resource-server-test")
                         .authorizationServicesEnabled(true)
                         .redirectUris("http://localhost/resource-server-test")
                         .defaultRoles("uma_protection")
-                        .directAccessGrants());
+                        .directAccessGrantsEnabled());
     }
 
     private void assertAccessProtectionAPI(ProtectionResource protection) {

@@ -28,6 +28,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.messages.Messages;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AbstractChangeImportedUserPasswordsTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.arquillian.annotation.IgnoreBrowserDriver;
@@ -37,7 +38,6 @@ import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.TermsAndConditionsPage;
 import org.keycloak.testsuite.util.DroneUtils;
 import org.keycloak.testsuite.util.UIUtils;
-import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.testsuite.util.WaitUtils;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 
@@ -81,7 +81,7 @@ public class TermsAndConditionsTest extends AbstractChangeImportedUserPasswordsT
     @Before
     public void addTermsAndConditionRequiredAction() {
         UserRepresentation user = ActionUtil.findUserWithAdminClient(adminClient, "test-user@localhost");
-        UserBuilder.edit(user).requiredAction(TermsAndConditions.PROVIDER_ID);
+        UserBuilder.update(user).requiredActions(TermsAndConditions.PROVIDER_ID);
         adminClient.realm("test").users().get(user.getId()).update(user);
 
         RequiredActionProviderRepresentation rep = adminClient.realm("test").flows().getRequiredAction(UserModel.RequiredAction.TERMS_AND_CONDITIONS.name());
