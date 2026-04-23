@@ -39,7 +39,7 @@ import org.keycloak.models.jpa.entities.OrganizationDomainEntity;
 import org.keycloak.models.jpa.entities.OrganizationEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.organization.OrganizationProvider;
-import org.keycloak.utils.EmailValidationUtil;
+import org.keycloak.organization.utils.Organizations;
 import org.keycloak.utils.StringUtil;
 
 import static java.util.Optional.ofNullable;
@@ -184,9 +184,10 @@ public final class OrganizationAdapter implements OrganizationModel, JpaModel<Or
                 .collect(Collectors.toMap(OrganizationDomainModel::getName, Function.identity()));
 
         for (OrganizationDomainEntity domainEntity : new HashSet<>(this.entity.getDomains())) {
-            // update the existing domain (for now, only the verified flag can be changed).
+            // update the existing domain (verified flag can be changed).
             if (modelMap.containsKey(domainEntity.getName())) {
-                domainEntity.setVerified(modelMap.get(domainEntity.getName()).isVerified());
+                OrganizationDomainModel model = modelMap.get(domainEntity.getName());
+                domainEntity.setVerified(model.isVerified());
                 modelMap.remove(domainEntity.getName());
             } else {
                 // remove domain that is not found in the new set.
@@ -276,14 +277,20 @@ public final class OrganizationAdapter implements OrganizationModel, JpaModel<Or
     private OrganizationDomainModel validateDomain(OrganizationDomainModel domainModel) {
         String domainName = domainModel.getName();
 
-        // we rely on the same validation util used by the EmailValidator to ensure the domain part is consistently validated.
-        if (StringUtil.isBlank(domainName) || !EmailValidationUtil.isValidEmail("nouser@" + domainName)) {
-            throw new ModelValidationException("The specified domain is invalid: " + domainName);
+        if (StringUtil.isBlank(domainName)) {
+            throw new ModelValidationException("Domain name cannot be empty");
         }
+
+        Organizations.validateDomain(domainName);
+
+        // Check for conflicts with other organizations
         OrganizationModel orgModel = provider.getByDomainName(domainName);
-        if (orgModel != null && !Objects.equals(getId(), orgModel.getId())) {
-            throw new ModelValidationException("Domain " + domainName + " is already linked to another organization in realm " + realm.getName());
+
+        if (orgModel != null && !Objects.equals(getId(), orgModel.getId())
+                && orgModel.getDomains().anyMatch(d -> d.getName().equalsIgnoreCase(domainName))) {
+            throw new ModelValidationException("Domain " + domainName + " is already linked to organization " + orgModel.getName() + " in realm " + realm.getName());
         }
+
         return domainModel;
     }
 
