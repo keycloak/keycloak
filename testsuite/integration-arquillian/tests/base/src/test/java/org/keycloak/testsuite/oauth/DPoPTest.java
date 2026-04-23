@@ -1116,6 +1116,28 @@ public class DPoPTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
+    public void testDPoPTokenExchangeDifferentClient() throws Exception {
+        try (ClientAttributeUpdater ignored = ClientAttributeUpdater.forClient(adminClient, REALM_NAME, "named-test-app")
+                .setAttribute(OIDCConfigAttributes.STANDARD_TOKEN_EXCHANGE_ENABLED, Boolean.TRUE.toString())
+                .update()) {
+            AccessTokenResponse tokenResponse = getDPoPBindAccessToken(rsaKeyPair);
+            String dpopProof = generateSignedDPoPProof(UUID.randomUUID().toString(), HttpMethod.POST,
+                    oauth.getEndpoints().getToken(), (long) Time.currentTime(), Algorithm.PS256, jwsRsaHeader,
+                    rsaKeyPair.getPrivate(), tokenResponse.getAccessToken());
+
+            AccessTokenResponse exchangeResponse = oauth.tokenExchangeRequest(tokenResponse.getAccessToken())
+                    .client("named-test-app", "password")
+                    .dpopProof(dpopProof).send();
+
+            assertEquals(Status.BAD_REQUEST.getStatusCode(), exchangeResponse.getStatusCode());
+            assertEquals(OAuthErrorException.INVALID_REQUEST, exchangeResponse.getError());
+            assertTrue(exchangeResponse.getErrorDescription().contains("not issued for the requesting client"));
+
+            oauth.doLogout(tokenResponse.getRefreshToken());
+        }
+    }
+
+    @Test
     public void testDPoPTokenExchangeWrongKey() throws Exception {
         try (ClientAttributeUpdater ignored = ClientAttributeUpdater.forClient(adminClient, REALM_NAME, TEST_CONFIDENTIAL_CLIENT_ID)
                 .setAttribute(OIDCConfigAttributes.STANDARD_TOKEN_EXCHANGE_ENABLED, Boolean.TRUE.toString())
