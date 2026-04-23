@@ -489,12 +489,26 @@ public class DefaultAttributes extends HashMap<String, List<String>> implements 
 
         Stream<String> valuesStream = values.stream().filter(Objects::nonNull);
 
+        // apply converters before any further normalization so subsequent steps and validators operate on the converted value
+        if (metadata != null && metadata.getConverters() != null && !metadata.getConverters().isEmpty()) {
+            List<AttributeConverterMetadata> converters = metadata.getConverters();
+            valuesStream = valuesStream.map(v -> applyConverters(converters, v));
+        }
+
         // do not normalize the username if a federated user because we need to respect the format from the external identity store
         if ((UserModel.USERNAME.equals(name) && !isFederated()) || UserModel.EMAIL.equals(name)) {
             valuesStream = valuesStream.map(KeycloakModelUtils::toLowerCaseSafe);
         }
 
         return valuesStream.collect(Collectors.toList());
+    }
+
+    private String applyConverters(List<AttributeConverterMetadata> converters, String input) {
+        Object current = input;
+        for (AttributeConverterMetadata converter : converters) {
+            current = converter.convert(session, current);
+        }
+        return current == null ? null : current.toString();
     }
 
     protected boolean isAllowUnmanagedAttribute() {

@@ -18,6 +18,7 @@ Among other capabilities, user profile enables administrators to:
 * Define specific permissions for viewing and editing user attributes, making possible to adhere to strong privacy requirements where some attributes can not be seen or be changed by third-parties (including administrators)
 * Dynamically enforce user profile compliance so that user information is always updated and in compliance with the metadata and rules associated with attributes
 * Define validation rules on a per-attribute basis by leveraging the built-in validators or writing custom ones
+* Define converters on a per-attribute basis to normalize attribute values (for example, trim whitespace) before validation and storage
 * Dynamically render forms that users interact with like registration, update profile, brokering, and personal information in the account console, according to the attribute definitions and without any need to manually change themes.
 * Customize user management interfaces in the administration console so that attributes are rendered dynamically based on the user profile schema
 
@@ -194,6 +195,11 @@ In this section, you can define the validations that will be performed when mana
 {project_name} provides a set of built-in validators you can choose from with the possibility to add your own. For more details, look at
 the <<_validating-attributes,Validating Attributes>> section.
 
+Converter::
+In this section, you can define converters that preprocess the attribute value before validation.
+{project_name} provides a set of built-in converters you can choose from with the possibility to add your own. For more details, look at
+the <<_converting-attributes,Converting Attributes>> section.
+
 Annotation::
 In this section, you can associate annotations to the attribute. Annotations are mainly useful to pass over additional metadata to frontends for rendering purposes.
 For more details, look at the <<_defining-ui-annotations,Defining UI Annotations>> section.
@@ -314,6 +320,43 @@ When the realm setting `Email as username` is enabled, this validator is skipped
 
 *max*: an integer to define the maximum allowed count of attribute values.
 
+
+|===
+
+[[_converting-attributes]]
+== Converting Attributes
+
+Converters preprocess an attribute value before validators run and before the value is stored. They are
+useful to normalize user input, for example to strip leading or trailing whitespace that would otherwise
+cause two values to be treated as distinct.
+
+Converters are opt-in and must be configured explicitly on an attribute. No converters are applied by
+default. They run in the order they are declared in the configuration. If multiple converters are
+configured, the output of one converter is fed into the next.
+
+Converters can be added or removed from the `Converters` settings when managing an attribute.
+
+=== Built-in Converters
+
+{project_name} provides built-in converters that you can choose from. You can also provide your own
+converters by extending the `Converter SPI`.
+
+The list below provides the built-in converters:
+
+[cols="3*", options="header"]
+|===
+|Name
+|Description
+|Configuration
+
+|trim-whitespace
+|Removes leading and/or trailing whitespace from a string value. Non-string values are returned unchanged.
+Recognizes the same whitespace characters as `String#strip()`.
+|
+
+*trim-leading*: a boolean to control whether leading whitespace is removed. Defaults to `true`.
+
+*trim-trailing*: a boolean to control whether trailing whitespace is removed. Defaults to `true`.
 
 |===
 
@@ -716,6 +759,9 @@ The JSON schema is defined as follows:
           "max": 255
         }
       },
+      "converters": {
+        "trim-whitespace": {}
+      },
       "annotations": {
         "myannotation": "myannotation-value"
       }
@@ -830,6 +876,21 @@ The attribute-level `annotation` property can be used to associate additional me
       "annotations": {
         "foo": ["foo-value"],
         "bar": ["bar-value"]
+      }
+  ]
+}
+----
+
+The attribute-level `converters` property can be used to declare converters that preprocess the attribute value before validation runs. Converters are opt-in and applied in declaration order. Each entry is keyed by the converter id with an object containing its configuration.
+
+[source,json]
+----
+{
+  "attributes": [
+    {
+      "name": "myattribute",
+      "converters": {
+        "trim-whitespace": {}
       }
   ]
 }
