@@ -259,10 +259,15 @@ test("should save signed metadata, encryption, and batch issuance settings", asy
   await expect(signedMetadataAlgField).toBeVisible();
   await selectItem(page, signedMetadataAlgField, "ES256");
 
-  const requireEncryptionSwitch = page.getByTestId(
+  const requireRequestEncryptionSwitch = page.getByTestId(
+    "attributes.oid4vci.request.encryption.required",
+  );
+  await requireRequestEncryptionSwitch.click({ force: true });
+
+  const requireResponseEncryptionSwitch = page.getByTestId(
     "attributes.oid4vci.encryption.required",
   );
-  await requireEncryptionSwitch.click({ force: true });
+  await requireResponseEncryptionSwitch.click({ force: true });
 
   const batchIssuanceField = page.locator(
     '[id="attributes.oid4vci🍺batch_credential_issuance🍺batch_size"]',
@@ -283,6 +288,9 @@ test("should save signed metadata, encryption, and batch issuance settings", asy
     "7200",
   );
   expect(realmData?.attributes?.["oid4vci.signed_metadata.alg"]).toBe("ES256");
+  expect(realmData?.attributes?.["oid4vci.request.encryption.required"]).toBe(
+    "true",
+  );
   expect(realmData?.attributes?.["oid4vci.encryption.required"]).toBe("true");
   expect(
     realmData?.attributes?.["oid4vci.batch_credential_issuance.batch_size"],
@@ -351,10 +359,10 @@ test("should save Deflate Compression setting", async ({ page }) => {
   const oid4vciJumpLink = page.getByTestId("jump-link-oid4vci-attributes");
   await oid4vciJumpLink.click();
 
-  const encryptionSwitch = page.getByTestId(
-    "attributes.oid4vci.encryption.required",
+  const requestEncryptionSwitch = page.getByTestId(
+    "attributes.oid4vci.request.encryption.required",
   );
-  await encryptionSwitch.click({ force: true });
+  await requestEncryptionSwitch.click({ force: true });
 
   const deflateSwitch = page.getByTestId(
     "attributes.oid4vci.request.zip.algorithms",

@@ -61,8 +61,8 @@ import org.junit.jupiter.api.Test;
 
 import static org.keycloak.OID4VCConstants.OPENID_CREDENTIAL;
 import static org.keycloak.jose.jwe.JWEConstants.A256GCM;
-import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider.ATTR_ENCRYPTION_REQUIRED;
 import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider.ATTR_REQUEST_ENCRYPTION_REQUIRED;
+import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider.ATTR_RESPONSE_ENCRYPTION_REQUIRED;
 import static org.keycloak.tests.oid4vc.OID4VCProofTestUtils.generateJwtProof;
 import static org.keycloak.utils.MediaType.APPLICATION_JWT;
 
@@ -267,7 +267,7 @@ public class OID4VCIssuerEndpointEncryptionTest extends OID4VCIssuerEndpointTest
 
     @Test
     void testRequestCredentialWithMissingResponseEncryptionWhenRequired() throws Exception {
-        setRealmAttributes(Map.of(ATTR_ENCRYPTION_REQUIRED, "true"));
+        setRealmAttributes(Map.of(ATTR_RESPONSE_ENCRYPTION_REQUIRED, "true"));
         try {
             FlowData flow = prepareFlow();
             CredentialRequest request = new CredentialRequest()
@@ -288,7 +288,7 @@ public class OID4VCIssuerEndpointEncryptionTest extends OID4VCIssuerEndpointTest
                 }
             }
         } finally {
-            setRealmAttributes(Map.of(ATTR_ENCRYPTION_REQUIRED, "false"));
+            setRealmAttributes(Map.of(ATTR_RESPONSE_ENCRYPTION_REQUIRED, "false"));
         }
     }
 

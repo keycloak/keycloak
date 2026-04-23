@@ -86,10 +86,9 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
     // Realm attributes for signed metadata configuration
     public static final String SIGNED_METADATA_LIFESPAN_ATTR = "oid4vci.signed_metadata.lifespan";
     public static final String SIGNED_METADATA_ALG_ATTR = "oid4vci.signed_metadata.alg";
-    public static final String SIGNED_METADATA_ENABLED_ATTR = "oid4vci.signed_metadata.enabled";
 
     public static final String VC_KEY = "vc";
-    public static final String ATTR_ENCRYPTION_REQUIRED = "oid4vci.encryption.required";
+    public static final String ATTR_RESPONSE_ENCRYPTION_REQUIRED = "oid4vci.encryption.required";
     public static final String ATTR_REQUEST_ENCRYPTION_REQUIRED = "oid4vci.request.encryption.required";
 
     public static final String DEFLATE_COMPRESSION = "DEF";
@@ -146,24 +145,19 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
     }
 
     public Object getMetadataResponse(CredentialIssuer issuer, KeycloakSession session) {
-        RealmModel realm = session.getContext().getRealm();
         String acceptHeader = session.getContext().getRequestHeaders().getHeaderString(HttpHeaders.ACCEPT);
         boolean preferJwt = acceptHeader != null
                 && acceptHeader.toLowerCase(Locale.ROOT).contains(MediaType.APPLICATION_JWT);
-        String signedMetadataEnabledAttr = realm.getAttribute(SIGNED_METADATA_ENABLED_ATTR);
-        boolean signedMetadataEnabled = Boolean.parseBoolean(signedMetadataEnabledAttr);
 
-        if (preferJwt && signedMetadataEnabled) {
+        if (preferJwt) {
             Optional<String> signedJwt = generateSignedMetadata(issuer, session);
             if (signedJwt.isPresent()) {
                 session.getContext().getHttpResponse().setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JWT);
                 return signedJwt.get();
             } else {
+                RealmModel realm = session.getContext().getRealm();
                 LOGGER.debugf("Falling back to JSON response due to signed metadata failure for realm: %s", realm.getName());
             }
-        } else if (preferJwt && !signedMetadataEnabled) {
-            LOGGER.infof("Client requested JWT metadata but signed metadata is disabled for realm '%s' (attr '%s' value: '%s'). Returning JSON.",
-                    realm.getName(), SIGNED_METADATA_ENABLED_ATTR, signedMetadataEnabledAttr);
         }
 
         // JSON metadata is mandatory and always supported.
@@ -346,7 +340,7 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
         RealmModel realm = session.getContext().getRealm();
 
         // Build JWKS with public encryption keys
-        JSONWebKeySet jwks = buildJwks(session);
+        JSONWebKeySet jwks = buildJwksForEncryption(session);
 
         // Request encryption requirement is independent from response encryption requirement.
         boolean requestEncryptionRequired = false;
@@ -392,7 +386,7 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
     /**
      * Builds JWKS from realm encryption keys with use=enc.
      */
-    private static JSONWebKeySet buildJwks(KeycloakSession session) {
+    private static JSONWebKeySet buildJwksForEncryption(KeycloakSession session) {
         RealmModel realm = session.getContext().getRealm();
         JSONWebKeySet jwks = JWKSServerUtils.getRealmJwks(session, realm);
 
@@ -433,7 +427,7 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
      * Returns whether encryption is required from realm attributes.
      */
     private static boolean isEncryptionRequired(RealmModel realm) {
-        String required = realm.getAttribute(ATTR_ENCRYPTION_REQUIRED);
+        String required = realm.getAttribute(ATTR_RESPONSE_ENCRYPTION_REQUIRED);
         return Boolean.parseBoolean(required);
     }
 

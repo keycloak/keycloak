@@ -500,6 +500,33 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
     }
 
     @Test
+    public void testRequestEncryptionRequiredRejectsUnencryptedJsonRequestOverHttpEndpoint() {
+        setRealmAttributes(Map.of(ATTR_REQUEST_ENCRYPTION_REQUIRED, "true"));
+        try {
+            testCredentialIssuanceWithAuthZCodeFlow(
+                    jwtTypeCredentialScope,
+                    (testScope) -> getBearerToken(oauth, client, testScope),
+                    m -> {
+                        String accessToken = (String) m.get("accessToken");
+                        WebTarget credentialTarget = (WebTarget) m.get("credentialTarget");
+                        CredentialRequest credentialRequest = (CredentialRequest) m.get("credentialRequest");
+
+                        try (Response response = credentialTarget.request()
+                                .header(HttpHeaders.AUTHORIZATION, "bearer " + accessToken)
+                                .post(Entity.json(credentialRequest))) {
+                            assertEquals(400, response.getStatus());
+                            ErrorResponse error = response.readEntity(ErrorResponse.class);
+                            assertEquals(ErrorType.INVALID_ENCRYPTION_PARAMETERS.getValue(), error.getError());
+                            assertTrue(error.getErrorDescription().contains("Encryption is required"));
+                        }
+                    }
+            );
+        } finally {
+            setRealmAttributes(Map.of(ATTR_REQUEST_ENCRYPTION_REQUIRED, "false"));
+        }
+    }
+
+    @Test
     public void testRequestCredential() {
         String scopeName = jwtTypeCredentialScope.getName();
         String credConfigId = jwtTypeCredentialScope.getAttributes().get(CredentialScopeModel.VC_CONFIGURATION_ID);
