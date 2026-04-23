@@ -15,6 +15,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.representations.idm.RealmRepresentation;
 
 public class MigrateTo26_7_0 extends RealmMigration {
 
@@ -27,9 +28,24 @@ public class MigrateTo26_7_0 extends RealmMigration {
 
 
     @Override
+    public void migrate(KeycloakSession session) {
+        // addOrganizationAdminRoles accesses cross-realm entities (master admin client)
+        // which fails with LazyInitializationException when RealmMigration clears the
+        // persistence context between realms. Handle it in a separate pass.
+        session.realms().getRealmsStream().forEach(this::addOrganizationAdminRoles);
+        super.migrate(session);
+    }
+
+    @Override
+    public void migrateImport(KeycloakSession session, RealmModel realm, RealmRepresentation rep,
+            boolean skipUserDependent) {
+        addOrganizationAdminRoles(realm);
+        super.migrateImport(session, realm, rep, skipUserDependent);
+    }
+
+    @Override
     public void migrateRealm(KeycloakSession session, RealmModel realm) {
         updatePasswordAfterEmailVerificationDuringRegistrationOfUsers(realm);
-        addOrganizationAdminRoles(realm);
     }
 
     private void updatePasswordAfterEmailVerificationDuringRegistrationOfUsers(RealmModel realm) {
