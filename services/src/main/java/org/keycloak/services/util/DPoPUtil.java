@@ -183,8 +183,11 @@ public class DPoPUtil {
             throw new VerificationException("Invalid or missing type in DPoP header: " + header.getType());
         }
 
-        String algorithm = header.getAlgorithm().name();
+        if (header.getAlgorithm() == null) {
+            throw new VerificationException("Invalid or missing alg in DPoP header: " + header.getAlgorithm());
+        }
 
+        String algorithm = header.getAlgorithm().name();
         if (!getDPoPSupportedAlgorithms(session).contains(algorithm)) {
             throw new VerificationException("Unsupported DPoP algorithm: " + header.getAlgorithm());
         }
