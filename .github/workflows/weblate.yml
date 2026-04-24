@@ -33,7 +33,7 @@ jobs:
     steps:
       # language=bash
       - run: |
-          if [ "${WEBLATE_TOKEN}" != '' ]; then
+          if [ "${WEBLATE_TOKEN}" != "" ]; then
             curl --fail-with-body -d operation=pull -H "Authorization: Token ${WEBLATE_TOKEN}" https://hosted.weblate.org/api/projects/keycloak/repository/
             curl --fail-with-body -d operation=push -H "Authorization: Token ${WEBLATE_TOKEN}" https://hosted.weblate.org/api/projects/keycloak/repository/
           fi
