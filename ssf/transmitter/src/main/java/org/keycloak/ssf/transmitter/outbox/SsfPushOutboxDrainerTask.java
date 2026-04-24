@@ -96,18 +96,15 @@ public class SsfPushOutboxDrainerTask implements ScheduledTask {
 
     protected final SsfMetricsBinder metricsBinder;
 
-    public SsfPushOutboxDrainerTask(int batchSize,
-                                    SsfPushOutboxBackoff backoff,
-                                    Duration deadLetterRetention,
-                                    Duration deliveredRetention,
+    public SsfPushOutboxDrainerTask(SsfPushOutboxDrainerTaskConfig config,
                                     Function<KeycloakSession, SsfPendingEventStore> pendingSsfEventStoreFactory,
                                     SsfTransmitterContext context,
                                     BiFunction<KeycloakSession, SsfTransmitterContext, PushDeliveryService> pushDeliveryServiceFactory,
                                     SsfMetricsBinder metricsBinder) {
-        this.batchSize = batchSize;
-        this.backoff = backoff;
-        this.deadLetterRetention = deadLetterRetention;
-        this.deliveredRetention = deliveredRetention;
+        this.batchSize = config.batchSize();
+        this.backoff = config.backoff();
+        this.deadLetterRetention = config.deadLetterRetention();
+        this.deliveredRetention = config.deliveredRetention();
         this.pendingSsfEventStoreFactory = pendingSsfEventStoreFactory;
         this.context = context;
         this.pushDeliveryServiceFactory = pushDeliveryServiceFactory;
