@@ -19,4 +19,8 @@ public final class RunOnServerHelpers {
     public static RunOnServer removeUserSession(String realmName, String sessionId) {
         return session -> testingClient.testing().removeUserSession(realmName, sessionId);
     }
+
+    public static RunOnServer removeUserSessions(String realmName) {
+        return session -> testingClient.testing().removeUserSessions(realmName);
+    }
 }

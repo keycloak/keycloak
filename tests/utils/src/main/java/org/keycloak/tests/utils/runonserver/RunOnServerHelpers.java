@@ -23,6 +23,14 @@ public final class RunOnServerHelpers {
         };
     }
 
+    public static RunOnServer removeUserSessions(String realmName) {
+        return session -> {
+            RealmModel realm = getRealmByName(session, realmName);
+
+            session.sessions().removeUserSessions(realm);
+        };
+    }
+
     private static RealmModel getRealmByName(KeycloakSession session, String realmName) {
         RealmProvider realmProvider = session.getProvider(RealmProvider.class);
         RealmModel realm = realmProvider.getRealmByName(realmName);
