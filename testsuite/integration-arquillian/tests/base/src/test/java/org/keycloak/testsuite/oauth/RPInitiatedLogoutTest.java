@@ -42,6 +42,7 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testframework.realm.ClientBuilder;
+import org.keycloak.tests.utils.runonserver.RunOnServerHelpers;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.AdminApiUtil;
@@ -302,7 +303,7 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
             String sessionId = events.expectLogin().assertEvent().getSessionId();
 
             // Expire session
-            testingClient.testing().removeUserSession("test", sessionId);
+            runOnServer.run(RunOnServerHelpers.removeUserSession("test", sessionId));
 
             // Assert rememberMe checked and username/email prefilled
             oauth.openLoginForm();

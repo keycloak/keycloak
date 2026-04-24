@@ -78,6 +78,7 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.RoleBuilder;
 import org.keycloak.testframework.realm.UserBuilder;
+import org.keycloak.tests.utils.runonserver.RunOnServerHelpers;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.ActionURIUtils;
 import org.keycloak.testsuite.AssertEvents;
@@ -403,7 +404,7 @@ public class AccessTokenTest extends AbstractKeycloakTest {
         String sessionId = loginEvent.getSessionId();
 
 
-        testingClient.testing().removeUserSession("test", sessionId);
+        runOnServer.run(RunOnServerHelpers.removeUserSession("test", sessionId));
         String code = oauth.parseLoginResponse().getCode();
 
         AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);

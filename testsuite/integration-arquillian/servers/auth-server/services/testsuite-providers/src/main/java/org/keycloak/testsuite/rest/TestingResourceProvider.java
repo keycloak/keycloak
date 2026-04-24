@@ -165,6 +165,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
     @POST
     @Path("/remove-user-session")
     @Produces(MediaType.APPLICATION_JSON)
+    @Deprecated
     public Response removeUserSession(@QueryParam("realm") final String name, @QueryParam("session") final String sessionId) {
         RealmModel realm = getRealmByName(name);
 

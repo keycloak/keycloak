@@ -176,6 +176,7 @@ public interface TestingResource {
     @POST
     @Path("/remove-user-session")
     @Produces(MediaType.APPLICATION_JSON)
+    @Deprecated
     void removeUserSession(@QueryParam("realm") final String realm, @QueryParam("session") final String sessionId);
 
     @POST

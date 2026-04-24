@@ -717,7 +717,7 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
             String sessionId = loginEvent.getSessionId();
 
             // Expire session
-            testingClient.testing().removeUserSession("test", sessionId);
+            runOnServer.run(RunOnServerHelpers.removeUserSession("test", sessionId));
 
             // Assert rememberMe checked and username/email prefilled
             oauth.openLoginForm();
@@ -733,7 +733,7 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
                                                    .detail(Details.USERNAME, "login-test")
                                                    .assertEvent();
             sessionId = loginEvent.getSessionId();
-            testingClient.testing().removeUserSession("test", sessionId);
+            runOnServer.run(RunOnServerHelpers.removeUserSession("test", sessionId));
 
             // Assert rememberMe not checked nor username/email prefilled
             oauth.openLoginForm();
@@ -764,7 +764,7 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
             String sessionId = loginEvent.getSessionId();
 
             // Expire session
-            testingClient.testing().removeUserSession("test", sessionId);
+            runOnServer.run(RunOnServerHelpers.removeUserSession("test", sessionId));
 
             // Assert rememberMe checked and username/email prefilled
             oauth.openLoginForm();
