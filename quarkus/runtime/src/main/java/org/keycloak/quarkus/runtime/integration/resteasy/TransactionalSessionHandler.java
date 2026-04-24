@@ -18,9 +18,9 @@
 package org.keycloak.quarkus.runtime.integration.resteasy;
 
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.utils.KeycloakSessionUtil;
 
 import io.quarkus.arc.Arc;
+import io.quarkus.arc.ClientProxy;
 import org.jboss.resteasy.reactive.server.core.ResteasyReactiveRequestContext;
 import org.jboss.resteasy.reactive.server.spi.ServerRestHandler;
 
@@ -28,12 +28,14 @@ public final class TransactionalSessionHandler implements ServerRestHandler, org
 
     @Override
     public void handle(ResteasyReactiveRequestContext requestContext) {
+        // This method might be invoked multiple times within a request when resolving sub-resources.
+
+        // This resolves a proxy that is lazily initialized on the first method call or on unwrap.
         requestContext.requireCDIRequestScope();
         KeycloakSession currentSession = Arc.container().instance(KeycloakSession.class).get();
-        // this handler might be invoked multiple times when resolving sub-resources
-        // make sure the transaction is began once when the session is first associated with the thread
-        if (KeycloakSessionUtil.setKeycloakSession(currentSession) == null) {
-            beginTransaction(currentSession);
-        }
+
+        // Unwrap to force bean instantiation which starts the transaction and calls KeycloakSessionUtil.setKeycloakSession(),
+        // so other methods can pick up the transaction
+        ClientProxy.unwrap(currentSession);
     }
 }
