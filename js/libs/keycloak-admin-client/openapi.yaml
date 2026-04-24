@@ -29,7 +29,8 @@ components:
         clientId:
           type: string
           pattern: \S
-          description: ID uniquely identifying this client
+          description: "ID uniquely identifying this client. Validation: must not\
+            \ be blank"
         displayName:
           type: string
           description: Human readable name of the client
@@ -41,8 +42,8 @@ components:
           description: Whether this client is enabled
         appUrl:
           type: string
-          description: URL to the application's homepage that is represented by this
-            client
+          description: "URL to the application's homepage that is represented by this\
+            \ client. Validation: must be a valid URL"
           format: uri
         redirectUris:
           type: array
@@ -50,17 +51,21 @@ components:
           items:
             type: string
             pattern: \S
-          description: URIs that the browser can redirect to after login
+          description: "URIs that the browser can redirect to after login. Validation:\
+            \ each element must not be blank; Invalid redirect URI"
         roles:
           type: array
           uniqueItems: true
           items:
             type: string
             pattern: \S
-          description: Roles associated with this client
+          description: "Roles associated with this client. Validation: each element\
+            \ must not be blank"
         protocol:
           type: string
           pattern: \S
+          description: "Validation: on update/on patch: protocol cannot be changed\
+            \ for an existing client"
       required:
       - clientId
       - protocol
@@ -97,14 +102,16 @@ components:
           items:
             type: string
             pattern: \S
-          description: Web origins that are allowed to make requests to this client
+          description: "Web origins that are allowed to make requests to this client.\
+            \ Validation: each element must not be blank"
         serviceAccountRoles:
           type: array
           uniqueItems: true
           items:
             type: string
             pattern: \S
-          description: Roles assigned to the service account
+          description: "Roles assigned to the service account. Validation: each element\
+            \ must not be blank"
         protocol:
           type: string
       allOf:
