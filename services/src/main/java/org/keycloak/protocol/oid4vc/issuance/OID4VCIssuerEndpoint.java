@@ -20,6 +20,9 @@ package org.keycloak.protocol.oid4vc.issuance;
 import java.io.IOException;
 import java.security.PublicKey;
 import java.time.Instant;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
@@ -331,8 +334,10 @@ public class OID4VCIssuerEndpoint {
 
         eventBuilder.success();
 
+        // RFC7231 recommends Date on origin server responses; OID4VCI conformance checks this explicitly.
         Response.ResponseBuilder responseBuilder = Response.ok()
                 .header(HttpHeaders.CACHE_CONTROL, "no-store")
+                .header(HttpHeaders.DATE, DateTimeFormatter.RFC_1123_DATE_TIME.format(ZonedDateTime.now(ZoneOffset.UTC)))
                 .entity(nonceResponse);
 
         if (headerDPoPNonce != null) {
@@ -535,7 +540,10 @@ public class OID4VCIssuerEndpoint {
         // Respond with QR-Code as 'image/png'
         if (responseType == OfferResponseType.QR) {
             byte[] qrBytes = generateQrCode(credOfferURI, width, height);
-            return cors.add(Response.ok().type(RESPONSE_TYPE_IMG_PNG).entity(qrBytes));
+            return cors.add(Response.ok()
+                    .header(HttpHeaders.DATE, DateTimeFormatter.RFC_1123_DATE_TIME.format(ZonedDateTime.now(ZoneOffset.UTC)))
+                    .type(RESPONSE_TYPE_IMG_PNG)
+                    .entity(qrBytes));
         }
 
         // Respond with URI + QR-Code as 'application/json'
@@ -543,11 +551,17 @@ public class OID4VCIssuerEndpoint {
             byte[] qrBytes = generateQrCode(credOfferURI, width, height);
             String encodedBytes = Base64.getEncoder().encodeToString(qrBytes);
             credOfferURI.setQrCode("data:image/png;base64," + encodedBytes);
-            return cors.add(Response.ok().type(MediaType.APPLICATION_JSON).entity(credOfferURI));
+            return cors.add(Response.ok()
+                    .header(HttpHeaders.DATE, DateTimeFormatter.RFC_1123_DATE_TIME.format(ZonedDateTime.now(ZoneOffset.UTC)))
+                    .type(MediaType.APPLICATION_JSON)
+                    .entity(credOfferURI));
         }
 
         // Respond with URI as 'application/json'
-        return cors.add(Response.ok().type(MediaType.APPLICATION_JSON).entity(credOfferURI));
+        return cors.add(Response.ok()
+                .header(HttpHeaders.DATE, DateTimeFormatter.RFC_1123_DATE_TIME.format(ZonedDateTime.now(ZoneOffset.UTC)))
+                .type(MediaType.APPLICATION_JSON)
+                .entity(credOfferURI));
     }
 
     private byte[] generateQrCode(CredentialOfferURI credOfferURI, int width, int height) {
@@ -641,7 +655,9 @@ public class OID4VCIssuerEndpoint {
         LOGGER.debugf("Responding with offer: %s", JsonSerialization.valueAsString(credOffer));
 
         eventBuilder.success();
-        return cors.add(Response.ok().entity(credOffer));
+        return cors.add(Response.ok()
+                .header(HttpHeaders.DATE, DateTimeFormatter.RFC_1123_DATE_TIME.format(ZonedDateTime.now(ZoneOffset.UTC)))
+                .entity(credOffer));
     }
 
     private void checkScope(CredentialScopeModel requestedCredential) {
@@ -696,7 +712,7 @@ public class OID4VCIssuerEndpoint {
 
         cors = Cors.builder().auth().allowedMethods(HttpPost.METHOD_NAME).auth().exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS);
 
-        CredentialIssuer issuerMetadata = (CredentialIssuer) new OID4VCIssuerWellKnownProvider(session).getConfig();
+        CredentialIssuer issuerMetadata = new OID4VCIssuerWellKnownProvider(session).getIssuerMetadata();
 
         // Validate request encryption
         CredentialRequest credentialRequest = validateRequestEncryption(requestPayload, issuerMetadata, eventBuilder);
@@ -945,10 +961,14 @@ public class OID4VCIssuerEndpoint {
             String jwe = encryptCredentialResponse(eventBuilder, responseVO, encryptionParams, encryptionMetadata);
             response = Response.ok()
                     .type(MediaType.APPLICATION_JWT)
+                    .header(HttpHeaders.DATE, DateTimeFormatter.RFC_1123_DATE_TIME.format(ZonedDateTime.now(ZoneOffset.UTC)))
                     .entity(jwe)
                     .build();
         } else {
-            response = Response.ok().entity(responseVO).build();
+            response = Response.ok()
+                    .header(HttpHeaders.DATE, DateTimeFormatter.RFC_1123_DATE_TIME.format(ZonedDateTime.now(ZoneOffset.UTC)))
+                    .entity(responseVO)
+                    .build();
         }
 
         // Mark event as successful
@@ -1590,6 +1610,7 @@ public class OID4VCIssuerEndpoint {
         errorResponse.setError(errorType).setErrorDescription(errorDescription);
         return Response
                 .status(Response.Status.BAD_REQUEST)
+                .header(HttpHeaders.DATE, DateTimeFormatter.RFC_1123_DATE_TIME.format(ZonedDateTime.now(ZoneOffset.UTC)))
                 .entity(errorResponse)
                 .type(MediaType.APPLICATION_JSON);
     }
