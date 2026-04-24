@@ -64,7 +64,6 @@ import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.protocol.oidc.utils.OAuth2Code;
 import org.keycloak.protocol.oidc.utils.OAuth2CodeParser;
 import org.keycloak.representations.JsonWebToken;
-import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
@@ -100,7 +99,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.fail;
 
 public abstract class OID4VCIssuerEndpointTest extends OID4VCIssuerTestBase {
 
@@ -181,25 +179,6 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCIssuerTestBase {
 
         clientScope.setProtocolMappers(protocolMappers);
         return clientScope;
-    }
-
-    protected ClientRepresentation requireExistingClient(String clientId) {
-        List<ClientRepresentation> clientRepresentations = testRealm.admin().clients().findByClientId(clientId);
-        assertFalse(clientRepresentations.isEmpty(), "No such client");
-        return clientRepresentations.get(0);
-    }
-
-    protected ClientScopeRepresentation requireExistingClientScope(String scopeName) {
-
-        // Check if the client scope already exists
-        List<ClientScopeRepresentation> existingScopes = testRealm.admin().clientScopes().findAll();
-        for (ClientScopeRepresentation existingScope : existingScopes) {
-            if (existingScope.getName().equals(scopeName)) {
-                return existingScope; // Reuse existing scope
-            }
-        }
-        fail("No such client scope: " + scopeName);
-        return null;
     }
 
     protected String getBasePath(String realm) {

@@ -199,12 +199,17 @@ public abstract class OID4VCIssuerTestBase {
         driver.open("about:blank");
     }
 
-    protected CredentialScopeRepresentation getCredentialScopeByName(String scopeName) {
+    protected CredentialScopeRepresentation getCredentialScope(String scopeName) {
         return testRealm.admin().clientScopes().findAll().stream()
                 .filter(it -> scopeName.equals(it.getName()))
                 .map(CredentialScopeRepresentation::new)
                 .findFirst()
                 .orElse(null);
+    }
+
+    protected CredentialScopeRepresentation requireExistingCredentialScope(String scopeName) {
+        return Optional.ofNullable(getCredentialScope(scopeName))
+                .orElseThrow(() -> new IllegalStateException("No such credential scope: " + scopeName));
     }
 
     protected UserRepresentation getExistingUser(String username) {
@@ -342,11 +347,6 @@ public abstract class OID4VCIssuerTestBase {
         RealmRepresentation realm = realmResource.toRepresentation();
         realm.setVerifiableCredentialsEnabled(enabled);
         realmResource.update(realm);
-    }
-
-    protected CredentialScopeRepresentation requireExistingCredentialScope(String scopeName) {
-        return Optional.ofNullable(getCredentialScopeByName(scopeName))
-                .orElseThrow(() -> new IllegalStateException("No such credential scope: " + scopeName));
     }
 
     protected void setCredentialScopeAttributes(ClientScopeRepresentation credScope, Map<String, String> attrUpdate) {
