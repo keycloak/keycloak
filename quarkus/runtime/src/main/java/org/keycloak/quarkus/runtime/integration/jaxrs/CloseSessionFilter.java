@@ -22,6 +22,7 @@ import java.io.OutputStream;
 import java.util.stream.Stream;
 
 import jakarta.annotation.Priority;
+import jakarta.inject.Inject;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerResponseContext;
@@ -30,7 +31,7 @@ import jakarta.ws.rs.container.PreMatching;
 import jakarta.ws.rs.core.StreamingOutput;
 import jakarta.ws.rs.ext.Provider;
 
-import org.keycloak.utils.KeycloakSessionUtil;
+import org.keycloak.models.KeycloakSession;
 
 /**
  * Closing the session at the end of the request.
@@ -42,6 +43,9 @@ import org.keycloak.utils.KeycloakSessionUtil;
 @PreMatching
 @Priority(1)
 public class CloseSessionFilter implements ContainerResponseFilter, org.keycloak.quarkus.runtime.transaction.TransactionalSessionHandler {
+
+    @Inject
+    KeycloakSession session;
 
     @Override
     public void filter(ContainerRequestContext requestContext, ContainerResponseContext responseContext)
@@ -72,6 +76,6 @@ public class CloseSessionFilter implements ContainerResponseFilter, org.keycloak
     }
 
     private void closeSession() {
-        close(KeycloakSessionUtil.getKeycloakSession());
+        close(session);
     }
 }
