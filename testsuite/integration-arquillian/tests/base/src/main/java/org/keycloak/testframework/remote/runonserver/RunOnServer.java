@@ -3,7 +3,8 @@ package org.keycloak.testframework.remote.runonserver;
 import org.keycloak.models.KeycloakSession;
 
 /**
- * @deprecated transition class to ease test migration to the new test framework
+ * @deprecated Bridge class for legacy Arquillian testsuite.
+ * This version will be removed when the legacy testsuite is fully migrated.
  */
 @Deprecated
 public interface RunOnServer {

@@ -1,4 +1,4 @@
-package org.keycloak.testframework.remote.runonserver;
+package org.keycloak.tests.utils.runonserver;
 
 import jakarta.ws.rs.NotFoundException;
 

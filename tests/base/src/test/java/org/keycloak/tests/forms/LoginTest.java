@@ -17,9 +17,9 @@ import org.keycloak.testframework.realm.UserConfig;
 import org.keycloak.testframework.realm.UserConfigBuilder;
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
-import org.keycloak.testframework.remote.runonserver.RunOnServerHelpers;
 import org.keycloak.testframework.ui.annotations.InjectPage;
 import org.keycloak.testframework.ui.page.LoginPage;
+import org.keycloak.tests.utils.runonserver.RunOnServerHelpers;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;

@@ -1,10 +1,11 @@
-package org.keycloak.testframework.remote.runonserver;
+package org.keycloak.tests.utils.runonserver;
 
-
+import org.keycloak.testframework.remote.runonserver.RunOnServer;
 import org.keycloak.testsuite.client.KeycloakTestingClient;
 
 /**
- * @deprecated transition class to ease test migration to the new test framework
+ * @deprecated Bridge class for legacy Arquillian testsuite.
+ * This version will be removed when the legacy testsuite is fully migrated.
  */
 @Deprecated
 public final class RunOnServerHelpers {
@@ -18,5 +19,4 @@ public final class RunOnServerHelpers {
     public static RunOnServer removeUserSession(String realmName, String sessionId) {
         return session -> testingClient.testing().removeUserSession(realmName, sessionId);
     }
-
 }
