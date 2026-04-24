@@ -1,53 +1,32 @@
 package org.keycloak.tests.oid4vc;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.net.URI;
-import java.nio.charset.StandardCharsets;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
-import java.security.PublicKey;
 import java.security.interfaces.RSAPublicKey;
 import java.util.List;
 import java.util.Map;
-import java.util.zip.Deflater;
-import java.util.zip.DeflaterOutputStream;
 
 import jakarta.ws.rs.BadRequestException;
-import jakarta.ws.rs.client.Client;
-import jakarta.ws.rs.client.Entity;
-import jakarta.ws.rs.client.Invocation;
-import jakarta.ws.rs.client.WebTarget;
 import jakarta.ws.rs.core.HttpHeaders;
-import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.core.UriBuilder;
 
 import org.keycloak.TokenVerifier;
-import org.keycloak.admin.client.Keycloak;
 import org.keycloak.common.util.Base64Url;
-import org.keycloak.jose.jwe.JWE;
-import org.keycloak.jose.jwe.JWEException;
-import org.keycloak.jose.jwe.JWEHeader;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jwk.JWKParser;
 import org.keycloak.jose.jwk.RSAPublicJWK;
 import org.keycloak.models.oid4vci.CredentialScopeModel;
-import org.keycloak.protocol.oid4vc.OID4VCLoginProtocolFactory;
-import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint;
 import org.keycloak.protocol.oid4vc.model.CredentialIssuer;
 import org.keycloak.protocol.oid4vc.model.CredentialRequest;
 import org.keycloak.protocol.oid4vc.model.CredentialResponse;
 import org.keycloak.protocol.oid4vc.model.CredentialResponseEncryption;
 import org.keycloak.protocol.oid4vc.model.ErrorResponse;
 import org.keycloak.protocol.oid4vc.model.ErrorType;
-import org.keycloak.protocol.oid4vc.model.NonceResponse;
 import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
 import org.keycloak.protocol.oid4vc.model.Proofs;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.services.managers.AppAuthManager.BearerTokenAuthenticator;
-import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
@@ -55,7 +34,6 @@ import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.util.JsonSerialization;
 
-import org.apache.http.HttpStatus;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
@@ -64,7 +42,6 @@ import static org.keycloak.jose.jwe.JWEConstants.A256GCM;
 import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider.ATTR_REQUEST_ENCRYPTION_REQUIRED;
 import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider.ATTR_RESPONSE_ENCRYPTION_REQUIRED;
 import static org.keycloak.tests.oid4vc.OID4VCProofTestUtils.generateJwtProof;
-import static org.keycloak.utils.MediaType.APPLICATION_JWT;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -95,25 +72,21 @@ public class OID4VCIssuerEndpointEncryptionTest extends OID4VCIssuerEndpointTest
                 .setProofs(new Proofs().setJwt(List.of(generateJwtProof(flow.issuer(), flow.cNonce()))))
                 .setCredentialResponseEncryption(new CredentialResponseEncryption().setEnc(A256GCM).setJwk(responseJwk));
 
-        String requestJson = JsonSerialization.writeValueAsString(credentialRequest);
         JWK requestEncryptionJwk = flow.issuerMetadata().getCredentialRequestEncryption().getJwks().getKeys()[0];
-        String encryptedRequest = encryptRequest(requestJson, requestEncryptionJwk, false);
+        var response = oauth.oid4vc()
+                .credentialRequest(credentialRequest)
+                .bearerToken(flow.token())
+                .encryptRequest(requestEncryptionJwk, false)
+                .send();
 
-        try (Client httpClient = Keycloak.getClientProvider().newRestEasyClient(null, null, true)) {
-            WebTarget target = httpClient.target(flow.issuerMetadata().getCredentialEndpoint());
-            try (Response response = target.request()
-                    .header(HttpHeaders.AUTHORIZATION, "Bearer " + flow.token())
-                    .post(Entity.entity(encryptedRequest, APPLICATION_JWT))) {
-                assertEquals(200, response.getStatus());
-                assertEquals(APPLICATION_JWT, response.getMediaType().toString());
+        assertEquals(200, response.getStatusCode());
+        assertEquals("application/jwt", response.getHeader(HttpHeaders.CONTENT_TYPE));
 
-                CredentialResponse decryptedResponse = decryptJweResponse(response.readEntity(String.class), responsePrivateKey);
-                assertNotNull(decryptedResponse.getCredentials());
-                JsonWebToken jwt = TokenVerifier.create((String) decryptedResponse.getCredentials().get(0).getCredential(), JsonWebToken.class).getToken();
-                VerifiableCredential credential = JsonSerialization.mapper.convertValue(jwt.getOtherClaims().get("vc"), VerifiableCredential.class);
-                assertTrue(credential.getCredentialSubject().getClaims().containsKey("scope-name"));
-            }
-        }
+        CredentialResponse decryptedResponse = response.getCredentialResponse(responsePrivateKey);
+        assertNotNull(decryptedResponse.getCredentials());
+        JsonWebToken jwt = TokenVerifier.create((String) decryptedResponse.getCredentials().get(0).getCredential(), JsonWebToken.class).getToken();
+        VerifiableCredential credential = JsonSerialization.mapper.convertValue(jwt.getOtherClaims().get("vc"), VerifiableCredential.class);
+        assertTrue(credential.getCredentialSubject().getClaims().containsKey("scope-name"));
     }
 
     @Test
@@ -140,21 +113,16 @@ public class OID4VCIssuerEndpointEncryptionTest extends OID4VCIssuerEndpointTest
                     .setProofs(new Proofs().setJwt(List.of(generateJwtProof(flow.issuer(), flow.cNonce()))))
                     .setCredentialResponseEncryption(new CredentialResponseEncryption().setEnc(A256GCM).setJwk(responseJwk));
 
-            String requestJson = JsonSerialization.writeValueAsString(credentialRequest);
             JWK requestEncryptionJwk = flow.issuerMetadata().getCredentialRequestEncryption().getJwks().getKeys()[0];
-            String encryptedRequest = encryptRequest(requestJson, requestEncryptionJwk, true);
-
-            try (Client httpClient = Keycloak.getClientProvider().newRestEasyClient(null, null, true)) {
-                WebTarget target = httpClient.target(flow.issuerMetadata().getCredentialEndpoint());
-                try (Response response = target.request()
-                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + flow.token())
-                        .post(Entity.entity(encryptedRequest, APPLICATION_JWT))) {
-                    assertEquals(200, response.getStatus());
-                    assertEquals(APPLICATION_JWT, response.getMediaType().toString());
-                    CredentialResponse decryptedResponse = decryptJweResponse(response.readEntity(String.class), responsePrivateKey);
-                    assertNotNull(decryptedResponse.getCredentials());
-                }
-            }
+            var response = oauth.oid4vc()
+                    .credentialRequest(credentialRequest)
+                    .bearerToken(flow.token())
+                    .encryptRequest(requestEncryptionJwk, true)
+                    .send();
+            assertEquals(200, response.getStatusCode());
+            assertEquals("application/jwt", response.getHeader(HttpHeaders.CONTENT_TYPE));
+            CredentialResponse decryptedResponse = response.getCredentialResponse(responsePrivateKey);
+            assertNotNull(decryptedResponse.getCredentials());
         } finally {
             setRealmAttributes(Map.of(
                     ATTR_REQUEST_ENCRYPTION_REQUIRED, "false",
@@ -199,19 +167,13 @@ public class OID4VCIssuerEndpointEncryptionTest extends OID4VCIssuerEndpointTest
                 .setProofs(new Proofs().setJwt(List.of(generateJwtProof(flow.issuer(), flow.cNonce()))))
                 .setCredentialResponseEncryption(new CredentialResponseEncryption().setEnc("A128GCM").setJwk(responseJwk));
 
-        String requestJson = JsonSerialization.writeValueAsString(request);
-        String encryptedRequest = encryptRequest(requestJson, flow.issuerMetadata().getCredentialRequestEncryption().getJwks().getKeys()[0], false);
-
-        try (Client httpClient = Keycloak.getClientProvider().newRestEasyClient(null, null, true)) {
-            WebTarget target = httpClient.target(flow.issuerMetadata().getCredentialEndpoint());
-            try (Response response = target.request()
-                    .header(HttpHeaders.AUTHORIZATION, "Bearer " + flow.token())
-                    .post(Entity.entity(encryptedRequest, APPLICATION_JWT))) {
-                assertEquals(400, response.getStatus());
-                ErrorResponse error = JsonSerialization.readValue(response.readEntity(String.class), ErrorResponse.class);
-                assertEquals(ErrorType.INVALID_ENCRYPTION_PARAMETERS.getValue(), error.getError());
-            }
-        }
+        var response = oauth.oid4vc()
+                .credentialRequest(request)
+                .bearerToken(flow.token())
+                .encryptRequest(flow.issuerMetadata().getCredentialRequestEncryption().getJwks().getKeys()[0], false)
+                .send();
+        assertEquals(400, response.getStatusCode());
+        assertEquals(ErrorType.INVALID_ENCRYPTION_PARAMETERS.getValue(), response.getError());
     }
 
     @Test
@@ -225,19 +187,13 @@ public class OID4VCIssuerEndpointEncryptionTest extends OID4VCIssuerEndpointTest
                 .setProofs(new Proofs().setJwt(List.of(generateJwtProof(flow.issuer(), flow.cNonce()))))
                 .setCredentialResponseEncryption(new CredentialResponseEncryption().setEnc(A256GCM).setZip("UNSUPPORTED-ZIP").setJwk(responseJwk));
 
-        String requestJson = JsonSerialization.writeValueAsString(request);
-        String encryptedRequest = encryptRequest(requestJson, flow.issuerMetadata().getCredentialRequestEncryption().getJwks().getKeys()[0], false);
-
-        try (Client httpClient = Keycloak.getClientProvider().newRestEasyClient(null, null, true)) {
-            WebTarget target = httpClient.target(flow.issuerMetadata().getCredentialEndpoint());
-            try (Response response = target.request()
-                    .header(HttpHeaders.AUTHORIZATION, "Bearer " + flow.token())
-                    .post(Entity.entity(encryptedRequest, APPLICATION_JWT))) {
-                assertEquals(400, response.getStatus());
-                ErrorResponse error = JsonSerialization.readValue(response.readEntity(String.class), ErrorResponse.class);
-                assertEquals(ErrorType.INVALID_ENCRYPTION_PARAMETERS.getValue(), error.getError());
-            }
-        }
+        var response = oauth.oid4vc()
+                .credentialRequest(request)
+                .bearerToken(flow.token())
+                .encryptRequest(flow.issuerMetadata().getCredentialRequestEncryption().getJwks().getKeys()[0], false)
+                .send();
+        assertEquals(400, response.getStatusCode());
+        assertEquals(ErrorType.INVALID_ENCRYPTION_PARAMETERS.getValue(), response.getError());
     }
 
     @Test
@@ -250,19 +206,13 @@ public class OID4VCIssuerEndpointEncryptionTest extends OID4VCIssuerEndpointTest
                 .setProofs(new Proofs().setJwt(List.of(generateJwtProof(flow.issuer(), flow.cNonce()))))
                 .setCredentialResponseEncryption(new CredentialResponseEncryption().setEnc(A256GCM).setJwk(invalidJwk));
 
-        String requestJson = JsonSerialization.writeValueAsString(request);
-        String encryptedRequest = encryptRequest(requestJson, flow.issuerMetadata().getCredentialRequestEncryption().getJwks().getKeys()[0], false);
-
-        try (Client httpClient = Keycloak.getClientProvider().newRestEasyClient(null, null, true)) {
-            WebTarget target = httpClient.target(flow.issuerMetadata().getCredentialEndpoint());
-            try (Response response = target.request()
-                    .header(HttpHeaders.AUTHORIZATION, "Bearer " + flow.token())
-                    .post(Entity.entity(encryptedRequest, APPLICATION_JWT))) {
-                assertEquals(400, response.getStatus());
-                ErrorResponse error = JsonSerialization.readValue(response.readEntity(String.class), ErrorResponse.class);
-                assertEquals(ErrorType.INVALID_ENCRYPTION_PARAMETERS.getValue(), error.getError());
-            }
-        }
+        var response = oauth.oid4vc()
+                .credentialRequest(request)
+                .bearerToken(flow.token())
+                .encryptRequest(flow.issuerMetadata().getCredentialRequestEncryption().getJwks().getKeys()[0], false)
+                .send();
+        assertEquals(400, response.getStatusCode());
+        assertEquals(ErrorType.INVALID_ENCRYPTION_PARAMETERS.getValue(), response.getError());
     }
 
     @Test
@@ -274,19 +224,13 @@ public class OID4VCIssuerEndpointEncryptionTest extends OID4VCIssuerEndpointTest
                     .setCredentialIdentifier(flow.credentialIdentifier())
                     .setProofs(new Proofs().setJwt(List.of(generateJwtProof(flow.issuer(), flow.cNonce()))));
 
-            String requestJson = JsonSerialization.writeValueAsString(request);
-            String encryptedRequest = encryptRequest(requestJson, flow.issuerMetadata().getCredentialRequestEncryption().getJwks().getKeys()[0], false);
-
-            try (Client httpClient = Keycloak.getClientProvider().newRestEasyClient(null, null, true)) {
-                WebTarget target = httpClient.target(flow.issuerMetadata().getCredentialEndpoint());
-                try (Response response = target.request()
-                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + flow.token())
-                        .post(Entity.entity(encryptedRequest, APPLICATION_JWT))) {
-                    assertEquals(400, response.getStatus());
-                    ErrorResponse error = JsonSerialization.readValue(response.readEntity(String.class), ErrorResponse.class);
-                    assertEquals(ErrorType.INVALID_ENCRYPTION_PARAMETERS.getValue(), error.getError());
-                }
-            }
+            var response = oauth.oid4vc()
+                    .credentialRequest(request)
+                    .bearerToken(flow.token())
+                    .encryptRequest(flow.issuerMetadata().getCredentialRequestEncryption().getJwks().getKeys()[0], false)
+                    .send();
+            assertEquals(400, response.getStatusCode());
+            assertEquals(ErrorType.INVALID_ENCRYPTION_PARAMETERS.getValue(), response.getError());
         } finally {
             setRealmAttributes(Map.of(ATTR_RESPONSE_ENCRYPTION_REQUIRED, "false"));
         }
@@ -314,51 +258,7 @@ public class OID4VCIssuerEndpointEncryptionTest extends OID4VCIssuerEndpointTest
     }
 
     private String getCNonce() {
-        UriBuilder builder = UriBuilder.fromUri(keycloakUrls.getBase());
-        URI oid4vcUri = RealmsResource.protocolUrl(builder)
-                .build(testRealm.getName(), OID4VCLoginProtocolFactory.PROTOCOL_ID);
-        String nonceUrl = String.format("%s/%s", oid4vcUri, OID4VCIssuerEndpoint.NONCE_PATH);
-
-        try (Client restClient = Keycloak.getClientProvider().newRestEasyClient(null, null, true)) {
-            WebTarget nonceTarget = restClient.target(nonceUrl);
-            Invocation.Builder nonceInvocationBuilder = nonceTarget.request()
-                    .header(HttpHeaders.AUTHORIZATION, null)
-                    .header(HttpHeaders.COOKIE, null);
-            try (Response response = nonceInvocationBuilder.post(null)) {
-                assertEquals(HttpStatus.SC_OK, response.getStatus());
-                assertTrue(response.getMediaType().toString().startsWith(MediaType.APPLICATION_JSON_TYPE.toString()));
-                NonceResponse nonceResponse = JsonSerialization.readValue(response.readEntity(String.class), NonceResponse.class);
-                return nonceResponse.getNonce();
-            }
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private static String encryptRequest(String payload, JWK issuerEncJwk, boolean useCompression) throws Exception {
-        PublicKey publicKey = JWKParser.create(issuerEncJwk).toPublicKey();
-        JWEHeader.JWEHeaderBuilder builder = new JWEHeader.JWEHeaderBuilder()
-                .keyId(issuerEncJwk.getKeyId())
-                .algorithm(issuerEncJwk.getAlgorithm())
-                .encryptionAlgorithm(A256GCM)
-                .type("JWT");
-        if (useCompression) {
-            builder.compressionAlgorithm("DEF");
-        }
-
-        byte[] content = useCompression ? compressPayload(payload.getBytes(StandardCharsets.UTF_8))
-                : payload.getBytes(StandardCharsets.UTF_8);
-        JWE jwe = new JWE().header(builder.build()).content(content);
-        jwe.getKeyStorage().setEncryptionKey(publicKey);
-        return jwe.encodeJwe();
-    }
-
-    private static byte[] compressPayload(byte[] payload) throws IOException {
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        try (DeflaterOutputStream deflater = new DeflaterOutputStream(out, new Deflater(Deflater.DEFAULT_COMPRESSION, true))) {
-            deflater.write(payload);
-        }
-        return out.toByteArray();
+        return oauth.oid4vc().doNonceRequest().getNonce();
     }
 
     private static Map<String, Object> generateRsaJwkWithPrivateKey() throws NoSuchAlgorithmException {
@@ -378,13 +278,6 @@ public class OID4VCIssuerEndpointEncryptionTest extends OID4VCIssuerEndpointTest
         jwk.setPublicExponent(exponent);
 
         return Map.of("jwk", jwk, "privateKey", keyPair.getPrivate());
-    }
-
-    private static CredentialResponse decryptJweResponse(String encryptedResponse, PrivateKey privateKey) throws IOException, JWEException {
-        JWE jwe = new JWE(encryptedResponse);
-        jwe.getKeyStorage().setDecryptionKey(privateKey);
-        jwe.verifyAndDecodeJwe();
-        return JsonSerialization.readValue(jwe.getContent(), CredentialResponse.class);
     }
 
     private record FlowData(String token, String credentialIdentifier, String issuer, String cNonce,
