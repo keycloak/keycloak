@@ -35,6 +35,7 @@
     <packaging>pom</packaging>
 
     <properties>
+        <project.version.override>${project.version}</project.version.override>
         <!-- Maven -->
         <maven.version>3.9.8</maven.version>
         <maven.compiler.source>17</maven.compiler.source>
