@@ -265,7 +265,7 @@ test("should save signed metadata, encryption, and batch issuance settings", asy
   await requireRequestEncryptionSwitch.click({ force: true });
 
   const requireResponseEncryptionSwitch = page.getByTestId(
-    "attributes.oid4vci.encryption.required",
+    "attributes.oid4vci.response.encryption.required",
   );
   await requireResponseEncryptionSwitch.click({ force: true });
 
@@ -291,7 +291,9 @@ test("should save signed metadata, encryption, and batch issuance settings", asy
   expect(realmData?.attributes?.["oid4vci.request.encryption.required"]).toBe(
     "true",
   );
-  expect(realmData?.attributes?.["oid4vci.encryption.required"]).toBe("true");
+  expect(realmData?.attributes?.["oid4vci.response.encryption.required"]).toBe(
+    "true",
+  );
   expect(
     realmData?.attributes?.["oid4vci.batch_credential_issuance.batch_size"],
   ).toBe("5");

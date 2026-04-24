@@ -737,7 +737,7 @@ export const RealmSettingsTokensTab = ({
           />
           <DefaultSwitchControl
             name={convertAttributeNameToForm(
-              "attributes.oid4vci.encryption.required",
+              "attributes.oid4vci.response.encryption.required",
             )}
             label={t("requireResponseEncryption")}
             labelIcon={t("requireResponseEncryptionHelp")}

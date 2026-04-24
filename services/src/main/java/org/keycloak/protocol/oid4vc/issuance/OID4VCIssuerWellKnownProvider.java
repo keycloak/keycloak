@@ -88,7 +88,7 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
     public static final String SIGNED_METADATA_ALG_ATTR = "oid4vci.signed_metadata.alg";
 
     public static final String VC_KEY = "vc";
-    public static final String ATTR_RESPONSE_ENCRYPTION_REQUIRED = "oid4vci.encryption.required";
+    public static final String ATTR_RESPONSE_ENCRYPTION_REQUIRED = "oid4vci.response.encryption.required";
     public static final String ATTR_REQUEST_ENCRYPTION_REQUIRED = "oid4vci.request.encryption.required";
 
     public static final String DEFLATE_COMPRESSION = "DEF";
