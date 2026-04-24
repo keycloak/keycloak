@@ -30,7 +30,7 @@ import org.jboss.logging.Logger;
  * An Infinispan cache listener that delays server shutdown until the cache topology is stable (i.e. no rehash is in
  * progress).
  * <p>
- * Use {@link #waitForStableTopology(Cache, long)} to register this listener on a cache. It returns a
+ * Use {@link #waitForStableTopology(Cache)} to register this listener on a cache. It returns a
  * {@link WaitConditionShutdownListener} that should be added to the {@link ShutdownManager}.
  * <p>
  * <b>Limitation:</b> when two or more Keycloak instances receive a shutdown signal simultaneously, each instance may
@@ -49,13 +49,12 @@ public class TopologyChangeCacheListener {
      * blocks shutdown while the cache topology is unstable.
      *
      * @param cache         The cache to monitor for topology changes.
-     * @param timeoutMillis Maximum time in milliseconds to wait for a stable topology during shutdown.
      * @return A {@link WaitConditionShutdownListener} to be registered with the {@link ShutdownManager}.
      */
-    public static WaitConditionShutdownListener waitForStableTopology(Cache<?, ?> cache, long timeoutMillis) {
+    public static WaitConditionShutdownListener waitForStableTopology(Cache<?, ?> cache) {
         var dm = cache.getAdvancedCache().getDistributionManager();
         var condition = new TopologyShutdownCondition(cache.getName(), dm);
-        var listener = new WaitConditionShutdownListener(timeoutMillis, condition);
+        var listener = new WaitConditionShutdownListener(condition);
         cache.addListener(new TopologyChangeCacheListener(listener));
         return listener;
     }

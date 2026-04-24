@@ -17,6 +17,7 @@
 
 package org.keycloak.connections.infinispan;
 
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -32,6 +33,7 @@ import org.keycloak.Config;
 import org.keycloak.cluster.ClusterEvent;
 import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.common.util.DurationConverter;
+import org.keycloak.config.HttpOptions;
 import org.keycloak.connections.infinispan.remote.RemoteInfinispanConnectionProvider;
 import org.keycloak.connections.infinispan.shutdown.ShutdownManager;
 import org.keycloak.connections.infinispan.shutdown.TopologyChangeCacheListener;
@@ -55,6 +57,7 @@ import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderEvent;
 import org.keycloak.provider.ProviderEventListener;
 import org.keycloak.provider.ServerInfoAwareProviderFactory;
+import org.keycloak.services.resources.ShutdownDelayInitiatedEvent;
 import org.keycloak.spi.infinispan.CacheEmbeddedConfigProvider;
 import org.keycloak.spi.infinispan.CacheRemoteConfigProvider;
 import org.keycloak.spi.infinispan.impl.embedded.CacheConfigurator;
@@ -100,7 +103,7 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
     private volatile RemoteCacheManager remoteCacheManager;
     private volatile InfinispanConnectionProvider connectionProvider;
     private volatile ClusterHealth clusterHealth;
-    private final ShutdownManager shutdownManager = new ShutdownManager();
+    private volatile ShutdownManager shutdownManager;
 
     @Override
     public InfinispanConnectionProvider create(KeycloakSession session) {
@@ -192,11 +195,7 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
     }
 
     private void addShutdownListeners() {
-        var timeout = DurationConverter.parseDuration(config.get(SHUTDOWN_TIMEOUT));
-        if (timeout == null || timeout.isZero() || timeout.isNegative()) {
-            logger.debugf("Skipping shutdown listener, timeout is not valid: %s", timeout);
-            return;
-        }
+        shutdownManager = new ShutdownManager(getShutdownDelay().toMillis(), getShutdownTimeout().toMillis());
         for (var name : CLUSTERED_CACHE_NAMES) {
             if (!cacheManager.cacheConfigurationExists(name)) {
                 logger.debugf("Cache '%s' not defined; skipping the shutdown listener", name);
@@ -218,9 +217,25 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
                 logger.debugf("Cache '%s' has state transfer disabled; skipping the shutdown listener", name);
                 continue;
             }
-            var listener = TopologyChangeCacheListener.waitForStableTopology(cache, timeout.toMillis());
+            var listener = TopologyChangeCacheListener.waitForStableTopology(cache);
             shutdownManager.addListener(listener);
         }
+    }
+
+    private Duration getShutdownTimeout() {
+        return convertDurationAndEnsureGreaterOrEqualsThanZero(config.get(SHUTDOWN_TIMEOUT));
+    }
+
+    private Duration getShutdownDelay() {
+        return convertDurationAndEnsureGreaterOrEqualsThanZero(config.root().get(HttpOptions.SHUTDOWN_DELAY.getKey()));
+    }
+
+    private static Duration convertDurationAndEnsureGreaterOrEqualsThanZero(String value) {
+        var duration = DurationConverter.parseDuration(value);
+        if (duration == null || duration.isZero() || duration.isNegative()) {
+            return Duration.ZERO;
+        }
+        return duration;
     }
 
     protected EmbeddedCacheManager createEmbeddedCacheManager(KeycloakSession session) {
@@ -340,6 +355,11 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
     public void onEvent(ProviderEvent event) {
         if (event instanceof PostMigrationEvent pme) {
             KeycloakModelUtils.runJobInTransaction(pme.getFactory(), this::registerSystemWideListeners);
+        } else if (event instanceof ShutdownDelayInitiatedEvent se) {
+            var manager = shutdownManager;
+            if (manager != null) {
+                manager.onShutdownStarted(se.timestamp());
+            }
         }
     }
 

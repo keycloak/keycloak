@@ -15,24 +15,16 @@
  * limitations under the License.
  */
 
-package org.keycloak.connections.infinispan.shutdown;
+package org.keycloak.services.resources;
 
 import java.time.Instant;
-import java.util.Date;
+
+import org.keycloak.provider.ProviderEvent;
 
 /**
- * A listener that is notified when the server begins shutting down.
+ * Published when the shutdown delay phase has started.
  *
- * @see ShutdownManager
+ * @param timestamp The instant at which the shutdown delay was initiated.
  */
-public interface ShutdownListener {
-
-    /**
-     * Called when the server shutdown is initiated.
-     *
-     * @param shutdownTime The instant at which the shutdown was initiated.
-     * @param deadline     The absolute deadline by which this listener must return.
-     */
-    void onShutdown(Instant shutdownTime, Date deadline);
-
+public record ShutdownDelayInitiatedEvent(Instant timestamp) implements ProviderEvent {
 }

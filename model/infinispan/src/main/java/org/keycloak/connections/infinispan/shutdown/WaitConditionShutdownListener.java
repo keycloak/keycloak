@@ -18,7 +18,6 @@
 package org.keycloak.connections.infinispan.shutdown;
 
 import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.Date;
 import java.util.Objects;
 import java.util.concurrent.locks.Condition;
@@ -26,7 +25,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * A {@link ShutdownListener} that blocks the shutdown thread until a {@link ShutdownCondition} is no longer
- * {@linkplain ShutdownCondition#inProgress() in progress}, or until the configured timeout elapses.
+ * {@linkplain ShutdownCondition#inProgress() in progress}, or until the provided deadline elapses.
  * <p>
  * External events should invoke {@link #check()} whenever the condition may have changed (e.g. after a topology change
  * event). If the condition has cleared, the waiting shutdown thread is unblocked and
@@ -37,19 +36,16 @@ public class WaitConditionShutdownListener implements ShutdownListener {
 
     private final ReentrantLock lock;
     private final Condition stableCluster;
-    private final long timeoutMillis;
     private final ShutdownCondition condition;
 
-    public WaitConditionShutdownListener(long timeoutMillis, ShutdownCondition condition) {
-        this.timeoutMillis = timeoutMillis;
+    public WaitConditionShutdownListener(ShutdownCondition condition) {
         this.condition = Objects.requireNonNull(condition, "condition");
         lock = new ReentrantLock();
         stableCluster = lock.newCondition();
     }
 
     @Override
-    public void onShutdown(Instant shutdownTime) {
-        var deadline = Date.from(shutdownTime.plus(timeoutMillis, ChronoUnit.MILLIS));
+    public void onShutdown(Instant shutdownTime, Date deadline) {
         try {
             lock.lockInterruptibly();
             try {

@@ -18,6 +18,8 @@
 package org.keycloak.connections.infinispan.shutdown;
 
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -31,7 +33,12 @@ import org.jboss.logging.Logger;
  * down.
  * <p>
  * Listeners are invoked in registration order. Each listener may block the calling thread to delay shutdown until its
- * condition is met (e.g. waiting for a stable cache topology).
+ * condition is met (e.g. waiting for a stable cache topology). All listeners share the same deadline, so the total
+ * shutdown time is bounded regardless of how many listeners are registered. It is recommended to respect it.
+ * <p>
+ * If {@link #onShutdownStarted(Instant)} is called before {@link #onShutdown()} (e.g. from a shutdown delay event), the
+ * deadline is anchored to that earlier timestamp. Otherwise, it falls back to the current time when
+ * {@link #onShutdown()} is invoked.
  * <p>
  * This class is thread-safe: listeners can be added or removed concurrently.
  */
@@ -40,6 +47,12 @@ public class ShutdownManager {
     private static final Logger logger = Logger.getLogger(ShutdownManager.class);
 
     private final List<ShutdownListener> listeners = new CopyOnWriteArrayList<>();
+    private final long maxShutdownTimeout;
+    private volatile Instant shutdownStartTime;
+
+    public ShutdownManager(long shutdownDelay, long shutdownTimeout) {
+        this.maxShutdownTimeout = shutdownDelay + shutdownTimeout;
+    }
 
     public void addListener(ShutdownListener listener) {
         listeners.add(Objects.requireNonNull(listener));
@@ -50,14 +63,23 @@ public class ShutdownManager {
     }
 
     public void onShutdown() {
-        var instant = Instant.ofEpochMilli(Time.currentTimeMillis());
+        var instant = Objects.requireNonNullElse(shutdownStartTime, Instant.ofEpochMilli(Time.currentTimeMillis()));
+        var deadline = Date.from(instant.plus(maxShutdownTimeout, ChronoUnit.MILLIS));
         for (var listener : listeners) {
             try {
-                listener.onShutdown(instant);
+                listener.onShutdown(instant, deadline);
             } catch (Exception e) {
                 logger.warnf(e, "Shutdown listener %s failed", listener);
             }
         }
     }
 
+    /**
+     * Records the instant the shutdown sequence began (e.g. when the shutdown delay was initiated by Quarkus).
+     *
+     * @param shutdownStartTime The instant the shutdown was initiated.
+     */
+    public void onShutdownStarted(Instant shutdownStartTime) {
+        this.shutdownStartTime = shutdownStartTime;
+    }
 }

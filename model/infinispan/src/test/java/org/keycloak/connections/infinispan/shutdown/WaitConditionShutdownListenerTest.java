@@ -18,6 +18,8 @@
 package org.keycloak.connections.infinispan.shutdown;
 
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.Date;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -31,11 +33,15 @@ import static org.junit.Assert.assertTrue;
 
 public class WaitConditionShutdownListenerTest {
 
+    private static Date deadlineFromNow(long millis) {
+        return Date.from(Instant.now().plus(millis, ChronoUnit.MILLIS));
+    }
+
     @Test
     public void testNotInProgressReturnsImmediately() {
         var condition = new TestCondition(false);
-        var listener = new WaitConditionShutdownListener(5000, condition);
-        listener.onShutdown(Instant.now());
+        var listener = new WaitConditionShutdownListener(condition);
+        listener.onShutdown(Instant.now(), deadlineFromNow(5000));
 
         assertEquals(1, condition.completeCount.get());
         assertEquals(0, condition.timeoutCount.get());
@@ -44,11 +50,11 @@ public class WaitConditionShutdownListenerTest {
     @Test
     public void testBlocksUntilCheckSignals() throws Exception {
         var condition = new TestCondition(true);
-        var listener = new WaitConditionShutdownListener(5000, condition);
+        var listener = new WaitConditionShutdownListener(condition);
         var completed = new CountDownLatch(1);
 
         var thread = new Thread(() -> {
-            listener.onShutdown(Instant.now());
+            listener.onShutdown(Instant.now(), deadlineFromNow(5000));
             completed.countDown();
         });
         thread.start();
@@ -65,11 +71,11 @@ public class WaitConditionShutdownListenerTest {
     @Test
     public void testTimesOutWhenStillInProgress() throws Exception {
         var condition = new TestCondition(true);
-        var listener = new WaitConditionShutdownListener(100, condition);
+        var listener = new WaitConditionShutdownListener(condition);
         var completed = new CountDownLatch(1);
 
         var thread = new Thread(() -> {
-            listener.onShutdown(Instant.now());
+            listener.onShutdown(Instant.now(), deadlineFromNow(100));
             completed.countDown();
         });
         thread.start();
@@ -82,11 +88,11 @@ public class WaitConditionShutdownListenerTest {
     @Test
     public void testCheckWhenNotInProgressSignals() throws Exception {
         var condition = new TestCondition(true);
-        var listener = new WaitConditionShutdownListener(5000, condition);
+        var listener = new WaitConditionShutdownListener(condition);
         var completed = new CountDownLatch(1);
 
         var thread = new Thread(() -> {
-            listener.onShutdown(Instant.now());
+            listener.onShutdown(Instant.now(), deadlineFromNow(5000));
             completed.countDown();
         });
         thread.start();
@@ -102,11 +108,11 @@ public class WaitConditionShutdownListenerTest {
     @Test
     public void testCheckWhileStillInProgressDoesNotUnblock() throws Exception {
         var condition = new TestCondition(true);
-        var listener = new WaitConditionShutdownListener(500, condition);
+        var listener = new WaitConditionShutdownListener(condition);
         var completed = new CountDownLatch(1);
 
         var thread = new Thread(() -> {
-            listener.onShutdown(Instant.now());
+            listener.onShutdown(Instant.now(), deadlineFromNow(500));
             completed.countDown();
         });
         thread.start();
@@ -121,11 +127,11 @@ public class WaitConditionShutdownListenerTest {
     @Test
     public void testInterruptUnblocksShutdown() throws Exception {
         var condition = new TestCondition(true);
-        var listener = new WaitConditionShutdownListener(30000, condition);
+        var listener = new WaitConditionShutdownListener(condition);
         var completed = new CountDownLatch(1);
 
         var thread = new Thread(() -> {
-            listener.onShutdown(Instant.now());
+            listener.onShutdown(Instant.now(), deadlineFromNow(30000));
             completed.countDown();
         });
         thread.start();
@@ -141,11 +147,11 @@ public class WaitConditionShutdownListenerTest {
     @Test
     public void testMultipleChecksBeforeConditionClears() throws Exception {
         var condition = new TestCondition(true);
-        var listener = new WaitConditionShutdownListener(5000, condition);
+        var listener = new WaitConditionShutdownListener(condition);
         var completed = new CountDownLatch(1);
 
         var thread = new Thread(() -> {
-            listener.onShutdown(Instant.now());
+            listener.onShutdown(Instant.now(), deadlineFromNow(5000));
             completed.countDown();
         });
         thread.start();
@@ -163,14 +169,26 @@ public class WaitConditionShutdownListenerTest {
 
     @Test
     public void testNullConditionThrows() {
-        assertThrows(NullPointerException.class, () -> new WaitConditionShutdownListener(1000, null));
+        assertThrows(NullPointerException.class, () -> new WaitConditionShutdownListener(null));
     }
 
     @Test
     public void testCheckWhenNotInProgressNoOp() {
         var condition = new TestCondition(false);
-        var listener = new WaitConditionShutdownListener(1000, condition);
+        var listener = new WaitConditionShutdownListener(condition);
         listener.check();
+    }
+
+    @Test
+    public void testDeadlineInThePastTimesOutImmediately() {
+        var condition = new TestCondition(true);
+        var listener = new WaitConditionShutdownListener(condition);
+        var pastDeadline = Date.from(Instant.now().minus(1, ChronoUnit.SECONDS));
+
+        listener.onShutdown(Instant.now(), pastDeadline);
+
+        assertEquals(0, condition.completeCount.get());
+        assertEquals(1, condition.timeoutCount.get());
     }
 
     private static class TestCondition implements ShutdownCondition {
