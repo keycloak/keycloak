@@ -112,6 +112,7 @@ public class AuthorizationEndpointRequestParserProcessor {
 
         } catch (Exception e) {
             ServicesLogger.LOGGER.invalidRequest(e);
+            event.detail(Details.REASON, e.getMessage());
             event.error(Errors.INVALID_REQUEST);
             throw new ErrorPageException(session, Response.Status.BAD_REQUEST, Messages.INVALID_REQUEST);
         }
