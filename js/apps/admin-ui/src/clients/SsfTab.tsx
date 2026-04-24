@@ -144,7 +144,7 @@ type SsfPendingEvent = {
 
 type SsfEmitResult = {
   status: string;
-  jti: string;
+  jti?: string;
 };
 
 type SsfClientStreamDelivery = {
@@ -449,7 +449,7 @@ export const SsfTab = ({ save, client, activeTab }: SsfTabProps) => {
    * other failure surfaces both inline and via addError.
    */
   const handlePendingLookup = async () => {
-    if (!client.id || !pendingLookupJti.trim()) {
+    if (!client.id || !pendingLookupJti?.trim()) {
       return;
     }
     // Don't wipe the previous result/error here — that causes the
@@ -557,7 +557,12 @@ export const SsfTab = ({ save, client, activeTab }: SsfTabProps) => {
       setEmitError(null);
       // Pre-fill the lookup field so the operator can immediately
       // click Lookup to inspect the freshly-enqueued outbox row.
-      setPendingLookupJti(result.jti);
+      // The server may omit jti for filter-dropped emissions that
+      // never minted a SET — don't clobber the existing value with
+      // undefined in that case.
+      if (result.jti) {
+        setPendingLookupJti(result.jti);
+      }
     } catch (error) {
       setEmitError(String(error));
       setEmitResult(null);
@@ -2298,7 +2303,7 @@ export const SsfTab = ({ save, client, activeTab }: SsfTabProps) => {
                     variant="primary"
                     onClick={handlePendingLookup}
                     isDisabled={
-                      pendingActionLoading || pendingLookupJti.trim() === ""
+                      pendingActionLoading || !pendingLookupJti?.trim()
                     }
                     data-testid="ssfPendingLookup"
                   >
