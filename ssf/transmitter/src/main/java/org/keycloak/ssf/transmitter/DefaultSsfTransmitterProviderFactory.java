@@ -33,6 +33,7 @@ import org.keycloak.ssf.transmitter.outbox.SsfOutboxCleanupTask;
 import org.keycloak.ssf.transmitter.outbox.SsfPendingEventStore;
 import org.keycloak.ssf.transmitter.outbox.SsfPushOutboxBackoff;
 import org.keycloak.ssf.transmitter.outbox.SsfPushOutboxDrainerTask;
+import org.keycloak.ssf.transmitter.outbox.SsfPushOutboxDrainerTaskConfig;
 import org.keycloak.ssf.transmitter.stream.StreamVerificationService;
 import org.keycloak.ssf.transmitter.stream.storage.client.ClientStreamStore;
 import org.keycloak.ssf.transmitter.subject.DefaultSsfSubjectInclusionResolver;
@@ -511,6 +512,22 @@ public class DefaultSsfTransmitterProviderFactory implements SsfTransmitterProvi
     }
 
     protected SsfPushOutboxDrainerTask createDrainerTask(KeycloakSession session) {
+
+        // Drainer constructs a fresh PushDeliveryService per row via
+        // the same SsfTransmitterServiceBuilder#createPushDelivery
+        // factory method the per-session provider uses, so a custom
+        // subclass that overrides it (e.g. for instrumentation or
+        // tweaked timeouts) automatically applies to outbox push
+        // delivery too.
+        return new SsfPushOutboxDrainerTask(
+                createSsfPushOutboxDrainerTaskConfig(),
+                this::createPendingEventStore,
+                this.context,
+                this::createPushDelivery,
+                metricsBinder);
+    }
+
+    protected SsfPushOutboxDrainerTaskConfig createSsfPushOutboxDrainerTaskConfig() {
         SsfPushOutboxBackoff backoff = new SsfPushOutboxBackoff(outboxDrainerMaxAttempts);
         Duration deadLetterRetention = outboxDeadLetterRetentionMillis > 0
                 ? Duration.ofMillis(outboxDeadLetterRetentionMillis)
@@ -519,16 +536,9 @@ public class DefaultSsfTransmitterProviderFactory implements SsfTransmitterProvi
                 ? Duration.ofMillis(outboxDeliveredRetentionMillis)
                 : null;
 
-        // Drainer constructs a fresh PushDeliveryService per row via
-        // the same SsfTransmitterServiceBuilder#createPushDelivery
-        // factory method the per-session provider uses, so a custom
-        // subclass that overrides it (e.g. for instrumentation or
-        // tweaked timeouts) automatically applies to outbox push
-        // delivery too.
-        return new SsfPushOutboxDrainerTask(outboxDrainerBatchSize, backoff, deadLetterRetention, deliveredRetention,
-                this::createPendingEventStore, this.context,
-                this::createPushDelivery,
-                metricsBinder);
+        SsfPushOutboxDrainerTaskConfig drainerConfig = new SsfPushOutboxDrainerTaskConfig(
+                outboxDrainerBatchSize, backoff, deadLetterRetention, deliveredRetention);
+        return drainerConfig;
     }
 
 
