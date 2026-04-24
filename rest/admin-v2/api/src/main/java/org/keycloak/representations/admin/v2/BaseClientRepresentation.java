@@ -140,9 +140,10 @@ public abstract class BaseClientRepresentation extends BaseRepresentation implem
 
     @Override
     public boolean equals(Object o) {
-        if (!(o instanceof BaseClientRepresentation that)) {
+        if (!(o instanceof BaseClientRepresentation)) {
             return false;
         }
+        BaseClientRepresentation that = (BaseClientRepresentation)o;
         return Objects.equals(uuid, that.uuid) && Objects.equals(clientId, that.clientId) && Objects.equals(displayName, that.displayName) && Objects.equals(description, that.description) && Objects.equals(enabled, that.enabled) && Objects.equals(appUrl, that.appUrl) && Objects.equals(redirectUris, that.redirectUris) && Objects.equals(roles, that.roles);
     }
 

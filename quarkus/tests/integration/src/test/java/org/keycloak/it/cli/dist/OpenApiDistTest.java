@@ -119,10 +119,10 @@ public class OpenApiDistTest {
 
       // Verify endpoints reference the parent schema (no inline oneOf)
       response
-          .body("paths.'/admin/api/{realmName}/clients/{version}'.get.responses.'200'.content.'application/json'.schema.type", equalTo("array"))
-          .body("paths.'/admin/api/{realmName}/clients/{version}'.get.responses.'200'.content.'application/json'.schema.items.'$ref'", equalTo("#/components/schemas/BaseClientRepresentation"))
-          .body("paths.'/admin/api/{realmName}/clients/{version}/{id}'.get.responses.'200'.content.'application/json'.schema.'$ref'", equalTo("#/components/schemas/BaseClientRepresentation"))
-          .body("paths.'/admin/api/{realmName}/clients/{version}/{id}'.put.requestBody.content.'application/json'.schema.'$ref'", equalTo("#/components/schemas/BaseClientRepresentation"));
+          .body("paths.'/admin/api/{realmName}/clients/v2'.get.responses.'200'.content.'application/json'.schema.type", equalTo("array"))
+          .body("paths.'/admin/api/{realmName}/clients/v2'.get.responses.'200'.content.'application/json'.schema.items.'$ref'", equalTo("#/components/schemas/BaseClientRepresentation"))
+          .body("paths.'/admin/api/{realmName}/clients/v2/{id}'.get.responses.'200'.content.'application/json'.schema.'$ref'", equalTo("#/components/schemas/BaseClientRepresentation"))
+          .body("paths.'/admin/api/{realmName}/clients/v2/{id}'.put.requestBody.content.'application/json'.schema.'$ref'", equalTo("#/components/schemas/BaseClientRepresentation"));
 
       // @JsonPropertyDescription values must be propagated to schema property descriptions
       response
