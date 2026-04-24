@@ -304,7 +304,13 @@ public class SecurityEventTokenMapper {
     }
 
     protected void applyCustomAttributes(Event userEvent, AdminEvent adminEvent, CaepCredentialChange credentialChangeEvent) {
-        Map<String, String> userEventDetails = userEvent.getDetails();
+        // Keycloak user events aren't required to carry a details map —
+        // RESET_PASSWORD in particular doesn't populate it. Skip the
+        // custom-attribute enrichment in that case rather than NPE.
+        Map<String, String> userEventDetails = userEvent != null ? userEvent.getDetails() : null;
+        if (userEventDetails == null) {
+            return;
+        }
         String kcCredentialId = userEventDetails.get(Details.CREDENTIAL_ID);
         String kcCredentialType = userEventDetails.get(Details.CREDENTIAL_TYPE);
         String kcUserLabel = userEventDetails.get(Details.CREDENTIAL_USER_LABEL);
