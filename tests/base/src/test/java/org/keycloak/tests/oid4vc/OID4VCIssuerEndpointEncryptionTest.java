@@ -1,7 +1,6 @@
 package org.keycloak.tests.oid4vc;
 
 import java.io.IOException;
-import java.net.URI;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.interfaces.RSAPublicKey;
@@ -9,36 +8,25 @@ import java.util.List;
 import java.util.Map;
 
 import jakarta.ws.rs.BadRequestException;
-import jakarta.ws.rs.client.Client;
-import jakarta.ws.rs.client.Invocation;
-import jakarta.ws.rs.client.WebTarget;
 import jakarta.ws.rs.core.HttpHeaders;
-import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.core.UriBuilder;
 
 import org.keycloak.TokenVerifier;
-import org.keycloak.admin.client.Keycloak;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jwk.JWKParser;
 import org.keycloak.jose.jwk.RSAPublicJWK;
 import org.keycloak.models.oid4vci.CredentialScopeModel;
-import org.keycloak.protocol.oid4vc.OID4VCLoginProtocolFactory;
-import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint;
 import org.keycloak.protocol.oid4vc.model.CredentialIssuer;
 import org.keycloak.protocol.oid4vc.model.CredentialRequest;
 import org.keycloak.protocol.oid4vc.model.CredentialResponse;
 import org.keycloak.protocol.oid4vc.model.CredentialResponseEncryption;
 import org.keycloak.protocol.oid4vc.model.ErrorResponse;
 import org.keycloak.protocol.oid4vc.model.ErrorType;
-import org.keycloak.protocol.oid4vc.model.NonceResponse;
 import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
 import org.keycloak.protocol.oid4vc.model.Proofs;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.services.managers.AppAuthManager.BearerTokenAuthenticator;
-import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
@@ -46,7 +34,6 @@ import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.util.JsonSerialization;
 
-import org.apache.http.HttpStatus;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
@@ -271,25 +258,7 @@ public class OID4VCIssuerEndpointEncryptionTest extends OID4VCIssuerEndpointTest
     }
 
     private String getCNonce() {
-        UriBuilder builder = UriBuilder.fromUri(keycloakUrls.getBase());
-        URI oid4vcUri = RealmsResource.protocolUrl(builder)
-                .build(testRealm.getName(), OID4VCLoginProtocolFactory.PROTOCOL_ID);
-        String nonceUrl = String.format("%s/%s", oid4vcUri, OID4VCIssuerEndpoint.NONCE_PATH);
-
-        try (Client restClient = Keycloak.getClientProvider().newRestEasyClient(null, null, true)) {
-            WebTarget nonceTarget = restClient.target(nonceUrl);
-            Invocation.Builder nonceInvocationBuilder = nonceTarget.request()
-                    .header(HttpHeaders.AUTHORIZATION, null)
-                    .header(HttpHeaders.COOKIE, null);
-            try (Response response = nonceInvocationBuilder.post(null)) {
-                assertEquals(HttpStatus.SC_OK, response.getStatus());
-                assertTrue(response.getMediaType().toString().startsWith(MediaType.APPLICATION_JSON_TYPE.toString()));
-                NonceResponse nonceResponse = JsonSerialization.readValue(response.readEntity(String.class), NonceResponse.class);
-                return nonceResponse.getNonce();
-            }
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        return oauth.oid4vc().doNonceRequest().getNonce();
     }
 
     private static Map<String, Object> generateRsaJwkWithPrivateKey() throws NoSuchAlgorithmException {
