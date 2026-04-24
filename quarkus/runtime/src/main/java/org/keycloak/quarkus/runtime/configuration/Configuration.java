@@ -108,6 +108,7 @@ public final class Configuration {
 
     public static void resetConfig() {
         config = null;
+        KeycloakConfigSourceProvider.reload();
     }
 
     /**

@@ -5,20 +5,21 @@ import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.Assert;
-import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.pages.PasswordPage;
 import org.keycloak.testsuite.pages.SelectAuthenticatorPage;
-import org.keycloak.testsuite.util.UserBuilder;
 
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Tests first-broker-login flow with new authenticators.
@@ -58,11 +59,11 @@ public class KcOidcFirstBrokerLoginNewAuthTest extends AbstractInitializedBaseBr
         loginWithBrokerAndConfirmLinkAccount();
 
         // Assert on the page with password form
-        Assert.assertTrue(passwordPage.isCurrent("consumer"));
+        Assertions.assertTrue(passwordPage.isCurrent("consumer"));
 
         // Try bad password first
         passwordPage.login("bad-password");
-        Assert.assertEquals("Invalid password.", passwordPage.getPasswordError());
+        Assertions.assertEquals("Invalid password.", passwordPage.getPasswordError());
 
         // Try good password
         passwordPage.login("password");
@@ -88,7 +89,7 @@ public class KcOidcFirstBrokerLoginNewAuthTest extends AbstractInitializedBaseBr
         loginWithBrokerAndConfirmLinkAccount();
 
         // Login with password
-        Assert.assertTrue(passwordPage.isCurrent("consumer"));
+        Assertions.assertTrue(passwordPage.isCurrent("consumer"));
         passwordPage.login("password");
 
         // Assert on TOTP page. Login with TOTP
@@ -112,11 +113,11 @@ public class KcOidcFirstBrokerLoginNewAuthTest extends AbstractInitializedBaseBr
         loginWithBrokerAndConfirmLinkAccount();
 
         // Assert that user can't see credentials combobox. Password is the only available credentials.
-        Assert.assertTrue(passwordPage.isCurrent("consumer"));
+        Assertions.assertTrue(passwordPage.isCurrent("consumer"));
         passwordPage.assertTryAnotherWayLinkAvailability(false);
 
         // Login with password
-        Assert.assertTrue(passwordPage.isCurrent("consumer"));
+        Assertions.assertTrue(passwordPage.isCurrent("consumer"));
         passwordPage.login("password");
 
         assertUserAuthenticatedInConsumer(consumerRealmUserId);
@@ -138,7 +139,7 @@ public class KcOidcFirstBrokerLoginNewAuthTest extends AbstractInitializedBaseBr
         loginWithBrokerAndConfirmLinkAccount();
 
         // Assert that user can choose between Password and OTP as available credentials. Password should be selected by default.
-        Assert.assertTrue(passwordPage.isCurrent("consumer"));
+        Assertions.assertTrue(passwordPage.isCurrent("consumer"));
         passwordPage.assertTryAnotherWayLinkAvailability(true);
 
         // Just click "Try another way" to verify that both Password and OTP are available. But go back to Password then
@@ -149,7 +150,7 @@ public class KcOidcFirstBrokerLoginNewAuthTest extends AbstractInitializedBaseBr
         selectAuthenticatorPage.selectLoginMethod(SelectAuthenticatorPage.PASSWORD);
 
         // Login with password
-        Assert.assertTrue(passwordPage.isCurrent("consumer"));
+        Assertions.assertTrue(passwordPage.isCurrent("consumer"));
         passwordPage.login("password");
 
         assertUserAuthenticatedInConsumer(consumerRealmUserId);
@@ -173,7 +174,7 @@ public class KcOidcFirstBrokerLoginNewAuthTest extends AbstractInitializedBaseBr
         loginWithBrokerAndConfirmLinkAccount();
 
         // Assert that user can see credentials combobox. Password and OTP are available credentials. Password should be selected.
-        Assert.assertTrue(passwordPage.isCurrent("consumer"));
+        Assertions.assertTrue(passwordPage.isCurrent("consumer"));
         passwordPage.assertTryAnotherWayLinkAvailability(true);
 
         // Click "Try another way", Select OTP and assert OTP form present
@@ -194,14 +195,14 @@ public class KcOidcFirstBrokerLoginNewAuthTest extends AbstractInitializedBaseBr
     private String addTOTPToUser(String username) {
 
         RealmResource realm = adminClient.realm(bc.consumerRealmName());
-        UserResource user = ApiUtil.findUserByUsernameId(realm, username);
+        UserResource user = AdminApiUtil.findUserByUsernameId(realm, username);
 
         // Add CONFIGURE_TOTP requiredAction to the user
-        UserRepresentation userRep = UserBuilder.edit(user.toRepresentation()).requiredAction(UserModel.RequiredAction.CONFIGURE_TOTP.toString()).build();
+        UserRepresentation userRep = UserBuilder.update(user.toRepresentation()).requiredActions(UserModel.RequiredAction.CONFIGURE_TOTP.toString()).build();
         user.update(userRep);
 
         // Login. TOTP will be required at login time.
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
 
         loginPage.login(username, "password");
@@ -219,7 +220,7 @@ public class KcOidcFirstBrokerLoginNewAuthTest extends AbstractInitializedBaseBr
 
     // Login with broker and click "Link account"
     private void loginWithBrokerAndConfirmLinkAccount() {
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
 
         logInWithBroker(bc);

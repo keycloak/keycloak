@@ -178,6 +178,12 @@ public class UserManagedPermissionService {
             if (!resourceScopes.containsAll(scopes)) {
                 throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "Some of the scopes [" + scopes + "] are not valid for resource [" + resourceId + "]", Response.Status.BAD_REQUEST);
             }
+
+            Set<String> resources = Optional.ofNullable(representation.getResources()).orElse(Set.of());
+
+            if (!resources.isEmpty() && (resources.size() != 1 || !resources.contains(resource.getId()))) {
+                throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "Invalid resource", Response.Status.BAD_REQUEST);
+            }
         }
     }
 

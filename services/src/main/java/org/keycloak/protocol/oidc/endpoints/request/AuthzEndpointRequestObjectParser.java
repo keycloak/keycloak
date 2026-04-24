@@ -43,7 +43,7 @@ public class AuthzEndpointRequestObjectParser extends AuthzEndpointRequestParser
 
     public AuthzEndpointRequestObjectParser(KeycloakSession session, String requestObject, ClientModel client) {
         super(session);
-        this.requestParams = session.tokens().decodeClientJWT(requestObject, client, createRequestObjectValidator(session), JsonNode.class);
+        this.requestParams = session.tokens().decodeClientJWT(requestObject, client, createRequestObjectValidator(session), JsonNode.class, true);
 
         if (this.requestParams == null) {
             throw new RuntimeException("Failed to verify signature on 'request' object");

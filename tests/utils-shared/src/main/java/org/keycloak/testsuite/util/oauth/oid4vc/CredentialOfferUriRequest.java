@@ -18,6 +18,7 @@ public class CredentialOfferUriRequest extends AbstractHttpGetRequest<Credential
     private String targetUser;
     private Integer expireAt;
     private OfferResponseType responseType;
+    private Integer width, height;
 
     public CredentialOfferUriRequest(AbstractOAuthClient<?> client, String credConfigId) {
         super(client);
@@ -44,6 +45,16 @@ public class CredentialOfferUriRequest extends AbstractHttpGetRequest<Credential
         return this;
     }
 
+    public CredentialOfferUriRequest width(Integer width) {
+        this.width = width;
+        return this;
+    }
+
+    public CredentialOfferUriRequest height(Integer height) {
+        this.height = height;
+        return this;
+    }
+
     @Override
     protected String getEndpoint() {
         UriBuilder builder = UriBuilder.fromUri(client.getEndpoints().getOid4vcCredentialOfferUri());
@@ -52,6 +63,8 @@ public class CredentialOfferUriRequest extends AbstractHttpGetRequest<Credential
         if (!Strings.isEmpty(targetUser)) builder.queryParam("target_user", targetUser);
         if (expireAt != null) builder.queryParam("expire", expireAt);
         if (responseType != null) builder.queryParam("type", responseType.getValue());
+        if (width != null) builder.queryParam("width", String.valueOf(width));
+        if (height != null) builder.queryParam("height", String.valueOf(height));
         return builder.build().toString();
     }
 

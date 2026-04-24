@@ -69,9 +69,7 @@ test("should render fields and save values with correct attribute keys", async (
   const nonceField = page.getByTestId(
     "attributes.vc🍺c-nonce-lifetime-seconds",
   );
-  const preAuthField = page.getByTestId(
-    "attributes.preAuthorizedCodeLifespanS",
-  );
+  const preAuthField = page.getByTestId("attributes.credentialOfferLifespanS");
 
   await expect(nonceField).toBeVisible();
   await expect(preAuthField).toBeVisible();
@@ -87,7 +85,7 @@ test("should render fields and save values with correct attribute keys", async (
   expect(realmData).toBeDefined();
   // TimeSelector converts values based on selected unit (60 minutes = 3600 seconds, 120 seconds = 120 seconds)
   expect(realmData?.attributes?.["vc.c-nonce-lifetime-seconds"]).toBe("3600");
-  expect(realmData?.attributes?.["preAuthorizedCodeLifespanS"]).toBe("120");
+  expect(realmData?.attributes?.["credentialOfferLifespanS"]).toBe("120");
 });
 
 test("should persist values after page refresh", async ({ page }) => {
@@ -105,9 +103,7 @@ test("should persist values after page refresh", async ({ page }) => {
   const nonceField = page.getByTestId(
     "attributes.vc🍺c-nonce-lifetime-seconds",
   );
-  const preAuthField = page.getByTestId(
-    "attributes.preAuthorizedCodeLifespanS",
-  );
+  const preAuthField = page.getByTestId("attributes.credentialOfferLifespanS");
 
   await nonceField.fill("60");
   await preAuthField.fill("120");
@@ -130,14 +126,14 @@ test("should persist values after page refresh", async ({ page }) => {
   // The TimeSelector component converts values based on units, so we need to check the actual saved values
   const realmData = await adminClient.getRealm(testBed.realm);
   expect(realmData?.attributes?.["vc.c-nonce-lifetime-seconds"]).toBeDefined();
-  expect(realmData?.attributes?.["preAuthorizedCodeLifespanS"]).toBeDefined();
+  expect(realmData?.attributes?.["credentialOfferLifespanS"]).toBeDefined();
 
   // The values should be numbers representing seconds
   const nonceValue = parseInt(
     realmData?.attributes?.["vc.c-nonce-lifetime-seconds"] || "0",
   );
   const preAuthValue = parseInt(
-    realmData?.attributes?.["preAuthorizedCodeLifespanS"] || "0",
+    realmData?.attributes?.["credentialOfferLifespanS"] || "0",
   );
 
   expect(nonceValue).toBeGreaterThan(0);
@@ -159,9 +155,7 @@ test("should validate form fields and save valid values", async ({ page }) => {
   const nonceField = page.getByTestId(
     "attributes.vc🍺c-nonce-lifetime-seconds",
   );
-  const preAuthField = page.getByTestId(
-    "attributes.preAuthorizedCodeLifespanS",
-  );
+  const preAuthField = page.getByTestId("attributes.credentialOfferLifespanS");
   const saveButton = page.getByTestId("tokens-tab-save");
 
   // Test that fields are visible and can be filled
@@ -188,14 +182,14 @@ test("should validate form fields and save valid values", async ({ page }) => {
   // Verify the values were saved correctly
   const realmData = await adminClient.getRealm(testBed.realm);
   expect(realmData?.attributes?.["vc.c-nonce-lifetime-seconds"]).toBeDefined();
-  expect(realmData?.attributes?.["preAuthorizedCodeLifespanS"]).toBeDefined();
+  expect(realmData?.attributes?.["credentialOfferLifespanS"]).toBeDefined();
 
   // The values should be numbers representing seconds
   const nonceValue = parseInt(
     realmData?.attributes?.["vc.c-nonce-lifetime-seconds"] || "0",
   );
   const preAuthValue = parseInt(
-    realmData?.attributes?.["preAuthorizedCodeLifespanS"] || "0",
+    realmData?.attributes?.["credentialOfferLifespanS"] || "0",
   );
 
   expect(nonceValue).toBeGreaterThan(0);
@@ -219,9 +213,7 @@ test("should show validation error for values below minimum threshold", async ({
   const nonceField = page.getByTestId(
     "attributes.vc🍺c-nonce-lifetime-seconds",
   );
-  const preAuthField = page.getByTestId(
-    "attributes.preAuthorizedCodeLifespanS",
-  );
+  const preAuthField = page.getByTestId("attributes.credentialOfferLifespanS");
   const saveButton = page.getByTestId("tokens-tab-save");
 
   // Fill with values below the minimum threshold (29 seconds)

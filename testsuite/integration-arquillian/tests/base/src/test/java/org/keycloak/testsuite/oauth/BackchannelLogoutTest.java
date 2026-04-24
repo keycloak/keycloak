@@ -48,16 +48,16 @@ import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 
-import static org.keycloak.testsuite.admin.ApiUtil.createUserWithAdminClient;
-import static org.keycloak.testsuite.admin.ApiUtil.resetUserPassword;
+import static org.keycloak.testsuite.admin.AdminApiUtil.createUserWithAdminClient;
+import static org.keycloak.testsuite.admin.AdminApiUtil.resetUserPassword;
 import static org.keycloak.testsuite.broker.BrokerTestTools.getConsumerRoot;
 import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class BackchannelLogoutTest extends AbstractNestedBrokerTest {
 
@@ -247,7 +247,7 @@ public class BackchannelLogoutTest extends AbstractNestedBrokerTest {
 
         OAuthClient oauth2 = oauth.newConfig().driver(driver2);
         oauth2.realm(nbc.consumerRealmName())
-                .clientId(OidcBackchannelLogoutBrokerConfiguration.CONSUMER_CLIENT_ID)
+                .client(OidcBackchannelLogoutBrokerConfiguration.CONSUMER_CLIENT_ID)
                 .redirectUri(getAuthServerRoot() + "realms/" + nbc.consumerRealmName() + "/app");
 
         doLoginSocial(oauth2, nbc.getIDPAlias(), nbc.getUserLogin(), nbc.getUserPassword());
@@ -824,7 +824,7 @@ public class BackchannelLogoutTest extends AbstractNestedBrokerTest {
     private OAuthClient loginWithSecondBrowser(String identityProviderDisplayName) {
         OAuthClient oauth2 = oauth.newConfig().driver(driver2);
         oauth2.realm(nbc.consumerRealmName())
-                .clientId(OidcBackchannelLogoutBrokerConfiguration.CONSUMER_CLIENT_ID)
+                .client(OidcBackchannelLogoutBrokerConfiguration.CONSUMER_CLIENT_ID)
                 .redirectUri(getAuthServerRoot() + "realms/" + nbc.consumerRealmName() + "/app");
         doLoginSocial(oauth2, identityProviderDisplayName, nbc.getUserLogin(), nbc.getUserPassword());
         return oauth2;

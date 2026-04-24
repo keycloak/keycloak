@@ -40,7 +40,7 @@ import org.keycloak.testframework.admin.AdminClientFactory;
 import org.keycloak.testframework.annotations.InjectAdminClientFactory;
 import org.keycloak.testframework.annotations.InjectUser;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
-import org.keycloak.testframework.realm.ClientConfigBuilder;
+import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.ManagedUser;
 import org.keycloak.testframework.util.ApiUtil;
 
@@ -234,6 +234,30 @@ public class PermissionRESTTest extends AbstractPermissionTest {
                 .resources(Set.of("non-existent-id"))
                 .scopes(AdminPermissionsSchema.ROLES.getScopes())
                 .build(), Response.Status.BAD_REQUEST);
+
+        createPermission(client, PermissionBuilder.create()
+                .resourceType(AdminPermissionsSchema.USERS.getType())
+                .resources(Set.of(AdminPermissionsSchema.USERS.getType()))
+                .scopes(AdminPermissionsSchema.USERS.getScopes())
+                .build());
+
+        createPermission(client, PermissionBuilder.create()
+                .resourceType(AdminPermissionsSchema.GROUPS.getType())
+                .resources(Set.of(AdminPermissionsSchema.GROUPS.getType()))
+                .scopes(AdminPermissionsSchema.GROUPS.getScopes())
+                .build());
+
+        createPermission(client, PermissionBuilder.create()
+                .resourceType(AdminPermissionsSchema.CLIENTS.getType())
+                .resources(Set.of(AdminPermissionsSchema.CLIENTS.getType()))
+                .scopes(AdminPermissionsSchema.CLIENTS.getScopes())
+                .build());
+
+        createPermission(client, PermissionBuilder.create()
+                .resourceType(AdminPermissionsSchema.ROLES.getType())
+                .resources(Set.of(AdminPermissionsSchema.ROLES.getType()))
+                .scopes(AdminPermissionsSchema.ROLES.getScopes())
+                .build());
     }
 
     @Test
@@ -254,7 +278,7 @@ public class PermissionRESTTest extends AbstractPermissionTest {
                 .add(List.of(manageRealmRole));
 
         // Create a regular test client with authorization enabled
-        ClientRepresentation regularClient = ClientConfigBuilder.create()
+        ClientRepresentation regularClient = ClientBuilder.create()
                 .clientId("regular-authz-client")
                 .secret("secret")
                 .serviceAccountsEnabled(true)

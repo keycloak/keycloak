@@ -26,11 +26,11 @@ import org.keycloak.exportimport.util.ImportUtils;
 import org.keycloak.representations.idm.ClientPoliciesRepresentation;
 import org.keycloak.representations.idm.ClientProfilesRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.utils.io.IOUtil;
 import org.keycloak.util.JsonSerialization;
 
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 /**
  * This is test only for migration of client policies from Keycloak 13. As the format JSON format of client policies changed between Keycloak 13 and 14
@@ -57,13 +57,13 @@ public class JsonFileImport1301MigrationClientPoliciesTest extends AbstractJsonF
         RealmRepresentation testRealm = adminClient.realms().realm("test").toRepresentation();
 
         // Stick to null for now. No support for proper migration from Keycloak 13 as client policies was preview and JSON format was changed significantly
-        Assert.assertTrue(testRealm.getParsedClientProfiles().getProfiles().isEmpty());
-        Assert.assertTrue(testRealm.getParsedClientPolicies().getPolicies().isEmpty());
+        Assertions.assertTrue(testRealm.getParsedClientProfiles().getProfiles().isEmpty());
+        Assertions.assertTrue(testRealm.getParsedClientPolicies().getPolicies().isEmpty());
 
         ClientProfilesRepresentation clientProfiles = adminClient.realms().realm("test").clientPoliciesProfilesResource().getProfiles(false);
-        Assert.assertTrue(clientProfiles.getProfiles().isEmpty());
+        Assertions.assertTrue(clientProfiles.getProfiles().isEmpty());
         ClientPoliciesRepresentation clientPolicies = adminClient.realms().realm("test").clientPoliciesPoliciesResource().getPolicies();
-        Assert.assertTrue(clientPolicies.getPolicies().isEmpty());
+        Assertions.assertTrue(clientPolicies.getPolicies().isEmpty());
         testViewGroups(masterRealm);
     }
 }

@@ -38,6 +38,7 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.utils.OAuth2Code;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.RefreshToken;
@@ -48,19 +49,20 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.oidc.OIDCClientRepresentation;
 import org.keycloak.services.clientpolicy.ClientPolicyEvent;
 import org.keycloak.services.clientpolicy.condition.ClientRolesConditionFactory;
-import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testframework.realm.ClientBuilder;
+import org.keycloak.testframework.realm.RoleBuilder;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.client.policies.AbstractClientPoliciesTest;
 import org.keycloak.testsuite.client.resources.TestApplicationResourceUrls;
 import org.keycloak.testsuite.client.resources.TestOIDCEndpointsApplicationResource;
 import org.keycloak.testsuite.rest.resource.TestingOIDCEndpointsApplicationResource;
 import org.keycloak.testsuite.services.clientpolicy.executor.TestRaiseExceptionExecutorFactory;
-import org.keycloak.testsuite.util.ClientBuilder;
+import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientPoliciesBuilder;
 import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientPolicyBuilder;
 import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientProfileBuilder;
 import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientProfilesBuilder;
 import org.keycloak.testsuite.util.IdentityProviderBuilder;
-import org.keycloak.testsuite.util.RoleBuilder;
 import org.keycloak.testsuite.util.oauth.AbstractHttpResponse;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
@@ -69,21 +71,23 @@ import org.keycloak.testsuite.util.oauth.ParRequest;
 import org.keycloak.testsuite.util.oauth.ParResponse;
 import org.keycloak.util.JsonSerialization;
 
-import org.junit.Assert;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
+import static org.keycloak.OAuthErrorException.INVALID_GRANT;
 import static org.keycloak.testsuite.AbstractAdminTest.loadJson;
-import static org.keycloak.testsuite.admin.ApiUtil.findUserByUsername;
+import static org.keycloak.testsuite.admin.AdminApiUtil.findUserByUsername;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createClientRolesConditionConfig;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createTestRaiseExeptionExecutorConfig;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.startsWith;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class ParTest extends AbstractClientPoliciesTest {
 
@@ -135,7 +139,7 @@ public class ParTest extends AbstractClientPoliciesTest {
         realm.setUsers(users);
 
         realm.getClients().add(ClientBuilder.create().redirectUris(VALID_CORS_URL + "/realms/master/app")
-                .addWebOrigin(VALID_CORS_URL).clientId("test-app2").publicClient().directAccessGrants().build());
+                .webOrigins(VALID_CORS_URL).clientId("test-app2").publicClient().directAccessGrantsEnabled().build());
 
         realm.addIdentityProvider(IdentityProviderBuilder.create().alias(IDENTITY_PROVIDER_ALIAS).providerId("oidc").build());
 
@@ -300,6 +304,52 @@ public class ParTest extends AbstractClientPoliciesTest {
         }
     }
 
+
+    // Test manually created PAR request cannot be used to obtain OAuth2 code
+    @Test
+    public void testParDoNotClashWithAuthorizationCode() throws Exception {
+        try {
+            // setup PAR realm settings
+            int requestUriLifespan = 45;
+            setParRealmSettings(requestUriLifespan);
+
+            // Step 1 - Login as regular user and obtain sessionId
+            oauth.doLogin(TEST_USER2_NAME, TEST_USER2_PASSWORD);
+            AuthorizationEndpointResponse authzResponse = oauth.parseLoginResponse();
+            String sessionId = authzResponse.getSessionState();
+            String code = authzResponse.getCode();
+            assertNotNull(sessionId);
+            assertNotNull(code);
+
+            // Step 2: PAR request with some custom injected parameters
+            ParRequest pReq = new ParRequest(oauth) {
+
+                @Override
+                protected void initRequest() {
+                    super.initRequest();
+                    parameter(OAuth2Code.ID_NOTE, "some-id");
+                    parameter(OAuth2Code.USER_SESSION_ID_NOTE, sessionId);
+                    parameter(OAuth2Code.EXPIRATION_NOTE, String.valueOf(Time.currentTime() + 9999));
+                }
+            };
+            ParResponse pResp = pReq.send();
+            assertEquals(201, pResp.getStatusCode());
+            String requestUri = pResp.getRequestUri();
+
+            // Step 3: Attempt to exchange code for token with the "fake code" from PAR
+            String parId = requestUri.substring(requestUri.lastIndexOf(":" ) + 1);
+            String clientUUID = AdminApiUtil.findClientByClientId(adminClient.realm("test"), oauth.getClientId()).toRepresentation().getId();
+            String fakeCode = parId + "." + sessionId + "." + clientUUID;
+            AccessTokenResponse response = oauth.doAccessTokenRequest(fakeCode);
+            assertEquals(400, response.getStatusCode());
+            assertEquals(INVALID_GRANT, response.getError());
+        } finally {
+            // Logout
+            AccountHelper.logout(adminClient.realm(oauth.getRealm()), TEST_USER2_NAME);
+            restoreParRealmSettings();
+        }
+    }
+
     @Test
     public void testWrongSigningAlgorithmForRequestObject() throws Exception {
         try {
@@ -339,7 +389,7 @@ public class ParTest extends AbstractClientPoliciesTest {
             TestOIDCEndpointsApplicationResource client = testingClient.testApp().oidcClientEndpoints();
 
             // use and set jwks_url
-            ClientResource clientResource = ApiUtil
+            ClientResource clientResource = AdminApiUtil
                     .findClientByClientId(adminClient.realm(oauth.getRealm()), oauth.getClientId());
             ClientRepresentation clientRep = clientResource.toRepresentation();
             OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setUseJwksUrl(true);
@@ -398,7 +448,7 @@ public class ParTest extends AbstractClientPoliciesTest {
             TestOIDCEndpointsApplicationResource client = testingClient.testApp().oidcClientEndpoints();
 
             // use and set jwks_url
-            ClientResource clientResource = ApiUtil.findClientByClientId(adminClient.realm(oauth.getRealm()), oauth.getClientId());
+            ClientResource clientResource = AdminApiUtil.findClientByClientId(adminClient.realm(oauth.getRealm()), oauth.getClientId());
             ClientRepresentation clientRep = clientResource.toRepresentation();
             OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setUseJwksUrl(true);
             OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setJwksUrl(TestApplicationResourceUrls.clientJwksUri());
@@ -474,7 +524,7 @@ public class ParTest extends AbstractClientPoliciesTest {
             TestOIDCEndpointsApplicationResource client = testingClient.testApp().oidcClientEndpoints();
 
             // use and set jwks_url
-            ClientResource clientResource = ApiUtil.findClientByClientId(adminClient.realm(oauth.getRealm()), oauth.getClientId());
+            ClientResource clientResource = AdminApiUtil.findClientByClientId(adminClient.realm(oauth.getRealm()), oauth.getClientId());
             ClientRepresentation clientRep = clientResource.toRepresentation();
             OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setUseJwksUrl(true);
             OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setJwksUrl(TestApplicationResourceUrls.clientJwksUri());
@@ -550,7 +600,7 @@ public class ParTest extends AbstractClientPoliciesTest {
             TestOIDCEndpointsApplicationResource client = testingClient.testApp().oidcClientEndpoints();
 
             // use and set jwks_url
-            ClientResource clientResource = ApiUtil.findClientByClientId(adminClient.realm(oauth.getRealm()), oauth.getClientId());
+            ClientResource clientResource = AdminApiUtil.findClientByClientId(adminClient.realm(oauth.getRealm()), oauth.getClientId());
             ClientRepresentation clientRep = clientResource.toRepresentation();
             OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setUseJwksUrl(true);
             OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setJwksUrl(TestApplicationResourceUrls.clientJwksUri());
@@ -803,7 +853,7 @@ public class ParTest extends AbstractClientPoliciesTest {
         String state = "testFailureNotIssuedParUsed";
         oauth.loginForm().requestUri(IMAGINARY_REQUEST_URI).state(state).open();
         AuthorizationEndpointResponse errorResponse = oauth.parseLoginResponse();
-        Assert.assertFalse(errorResponse.isRedirected());
+        Assertions.assertFalse(errorResponse.isRedirected());
     }
 
     // PAR request_uri used twice
@@ -847,7 +897,7 @@ public class ParTest extends AbstractClientPoliciesTest {
         state = "testFailureParUsedTwice2";
         oauth.loginForm().requestUri(requestUri).state(state).open();
         AuthorizationEndpointResponse errorResponse = oauth.parseLoginResponse();
-        Assert.assertFalse(errorResponse.isRedirected());
+        Assertions.assertFalse(errorResponse.isRedirected());
     }
 
     // PAR request_uri used by other client
@@ -892,7 +942,7 @@ public class ParTest extends AbstractClientPoliciesTest {
         String state = "testFailureParUsedByOtherClient";
         oauth.loginForm().state(state).requestUri(requestUri).open();
         AuthorizationEndpointResponse errorResponse = oauth.parseLoginResponse();
-        Assert.assertFalse(errorResponse.isRedirected());
+        Assertions.assertFalse(errorResponse.isRedirected());
     }
 
     // not PAR by PAR required client
@@ -954,7 +1004,7 @@ public class ParTest extends AbstractClientPoliciesTest {
         String state = "testFailureParExpired";
         oauth.loginForm().state(state).requestUri(requestUri).open();
         AuthorizationEndpointResponse errorResponse = oauth.parseLoginResponse();
-        Assert.assertFalse(errorResponse.isRedirected());
+        Assertions.assertFalse(errorResponse.isRedirected());
     }
 
     // client authentication failed
@@ -1219,7 +1269,7 @@ public class ParTest extends AbstractClientPoliciesTest {
         updatePolicies(json);
 
         // Add role to the client
-        ClientResource clientResource = ApiUtil.findClientByClientId(adminClient.realm(REALM_NAME), clientId);
+        ClientResource clientResource = AdminApiUtil.findClientByClientId(adminClient.realm(REALM_NAME), clientId);
         clientResource.roles().create(RoleBuilder.create().name(roleName).build());
 
         // Pushed Authorization Request

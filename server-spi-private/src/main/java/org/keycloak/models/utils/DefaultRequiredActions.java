@@ -156,7 +156,7 @@ public class DefaultRequiredActions {
             totp.setName("Configure OTP");
             totp.setProviderId(UserModel.RequiredAction.CONFIGURE_TOTP.name());
             totp.setDefaultAction(false);
-            totp.setPriority(10);
+            totp.setPriority(54);
             realm.addRequiredActionProvider(totp);
         }
     }
@@ -169,7 +169,7 @@ public class DefaultRequiredActions {
             updatePassword.setName("Update Password");
             updatePassword.setProviderId(UserModel.RequiredAction.UPDATE_PASSWORD.name());
             updatePassword.setDefaultAction(false);
-            updatePassword.setPriority(30);
+            updatePassword.setPriority(57);
             realm.addRequiredActionProvider(updatePassword);
         }
     }

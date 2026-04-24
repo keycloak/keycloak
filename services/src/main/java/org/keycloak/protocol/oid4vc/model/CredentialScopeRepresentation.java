@@ -18,7 +18,6 @@ import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_BUILD_CONFIG_H
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_BUILD_CONFIG_SD_JWT_VISIBLE_CLAIMS;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_BUILD_CONFIG_SD_JWT_VISIBLE_CLAIMS_DEFAULT;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_BUILD_CONFIG_TOKEN_JWS_TYPE;
-import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_BUILD_CONFIG_TOKEN_JWS_TYPE_DEFAULT;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_CONFIGURATION_ID;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_CONTEXTS;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_CRYPTOGRAPHIC_BINDING_METHODS;
@@ -37,6 +36,7 @@ import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_SD_JWT_NUMBER_
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_SIGNING_ALG;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_SIGNING_KEY_ID;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_SUPPORTED_TYPES;
+import static org.keycloak.models.oid4vci.CredentialScopeModel.getDefaultTokenJwsTypeForFormat;
 
 /**
  * An extension of {@link ClientScopeRepresentation} which and adds additional functionality for OID4VCI
@@ -48,12 +48,12 @@ public class CredentialScopeRepresentation extends ClientScopeRepresentation {
     public CredentialScopeRepresentation(String name) {
         this.name = name;
         this.protocol = OID4VCIConstants.OID4VC_PROTOCOL;
+        setFormat(VC_FORMAT_DEFAULT);
         setBuildConfigHashAlgorithm(VC_BUILD_CONFIG_HASH_ALGORITHM_DEFAULT);
         setBuildConfigSdJwtVisibleClaims(VC_BUILD_CONFIG_SD_JWT_VISIBLE_CLAIMS_DEFAULT);
-        setBuildConfigTokenJwsType(VC_BUILD_CONFIG_TOKEN_JWS_TYPE_DEFAULT);
+        setBuildConfigTokenJwsType(getDefaultTokenJwsTypeForFormat(VC_FORMAT_DEFAULT));
         setSdJwtNumberOfDecoys(VC_SD_JWT_NUMBER_OF_DECOYS_DEFAULT);
         setExpiryInSeconds(VC_EXPIRY_IN_SECONDS_DEFAULT);
-        setFormat(VC_FORMAT_DEFAULT);
     }
 
     public CredentialScopeRepresentation(ClientScopeModel clientScope) {

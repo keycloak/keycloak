@@ -12,9 +12,9 @@ const AddJWTAuthorizationGrant = lazy(
 export const IdentityProviderJWTAuthorizationGrantRoute: AppRouteObject = {
   path: "/:realm/identity-providers/jwt-authorization-grant/add",
   element: <AddJWTAuthorizationGrant />,
-  breadcrumb: (t) => t("addJWTAuthorizationGrantProvider"),
   handle: {
     access: "manage-identity-providers",
+    breadcrumb: (t) => t("addJWTAuthorizationGrantProvider"),
   },
 };
 

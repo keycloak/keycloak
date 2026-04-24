@@ -55,12 +55,14 @@ body:
         - operator
         - organizations
         - saml
+        - scim
         - storage
         - testsuite
         - token-exchange
         - translations
         - user-profile
         - welcome/ui
+        - workflows
     validations:
       required: true
   - type: textarea

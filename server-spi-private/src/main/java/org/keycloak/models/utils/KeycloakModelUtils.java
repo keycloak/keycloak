@@ -1147,17 +1147,17 @@ public final class KeycloakModelUtils {
      * @param flowUnavailableHandler Will be executed when flow, sub-flow or executor is null
      * @param builtinFlowHandler will be executed when flow is built-in flow
      */
-    public static void deepDeleteAuthenticationFlow(KeycloakSession session, RealmModel realm, AuthenticationFlowModel authFlow, Runnable flowUnavailableHandler, Runnable builtinFlowHandler) {
+    public static void deepDeleteAuthenticationFlow(KeycloakSession session, RealmModel realm, AuthenticationFlowModel authFlow, Runnable flowUnavailableHandler, Runnable builtinFlowHandler, boolean isParentBuiltInFlow) {
         if (authFlow == null) {
             flowUnavailableHandler.run();
             return;
         }
-        if (authFlow.isBuiltIn()) {
+        if (isParentBuiltInFlow) {
             builtinFlowHandler.run();
         }
 
         realm.getAuthenticationExecutionsStream(authFlow.getId())
-                .forEachOrdered(authExecutor -> deepDeleteAuthenticationExecutor(session, realm, authExecutor, flowUnavailableHandler, builtinFlowHandler));
+                .forEachOrdered(authExecutor -> deepDeleteAuthenticationExecutor(session, realm, authExecutor, flowUnavailableHandler, builtinFlowHandler, isParentBuiltInFlow));
 
         realm.removeAuthenticationFlow(authFlow);
     }
@@ -1171,7 +1171,7 @@ public final class KeycloakModelUtils {
      * @param flowUnavailableHandler Handler that will be executed when flow, sub-flow or executor is null
      * @param builtinFlowHandler Handler that will be executed when flow is built-in flow
      */
-    public static void deepDeleteAuthenticationExecutor(KeycloakSession session, RealmModel realm, AuthenticationExecutionModel authExecutor, Runnable flowUnavailableHandler, Runnable builtinFlowHandler) {
+    public static void deepDeleteAuthenticationExecutor(KeycloakSession session, RealmModel realm, AuthenticationExecutionModel authExecutor, Runnable flowUnavailableHandler, Runnable builtinFlowHandler, boolean isParentBuiltInFlow) {
         if (authExecutor == null) {
             flowUnavailableHandler.run();
             return;
@@ -1180,7 +1180,7 @@ public final class KeycloakModelUtils {
         // recursively remove sub flows
         if (authExecutor.getFlowId() != null) {
             AuthenticationFlowModel authFlow = realm.getAuthenticationFlowById(authExecutor.getFlowId());
-            deepDeleteAuthenticationFlow(session, realm, authFlow, flowUnavailableHandler, builtinFlowHandler);
+            deepDeleteAuthenticationFlow(session, realm, authFlow, flowUnavailableHandler, builtinFlowHandler, isParentBuiltInFlow);
         }
 
         // remove the config if not shared

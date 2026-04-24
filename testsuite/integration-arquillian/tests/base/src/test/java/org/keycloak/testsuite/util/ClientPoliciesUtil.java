@@ -84,7 +84,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import static org.keycloak.jose.jwk.JWKUtil.toIntegerBytes;
 
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public final class ClientPoliciesUtil {
 

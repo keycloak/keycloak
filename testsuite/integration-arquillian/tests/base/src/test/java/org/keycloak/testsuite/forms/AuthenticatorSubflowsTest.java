@@ -37,10 +37,10 @@ import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.util.UIUtils;
 
 import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 import org.openqa.selenium.By;
 
 
@@ -278,7 +278,7 @@ public class AuthenticatorSubflowsTest extends AbstractChangeImportedUserPasswor
         // Don't add 'foo' parameter. I am redirected to subflow2 - push the button
         oauth.loginForm().open();
 
-        Assert.assertEquals("PushTheButton", driver.getTitle());
+        Assertions.assertEquals("PushTheButton", driver.getTitle());
 
         // Push the button. I am redirected to username+password form
         UIUtils.clickLink(driver.findElement(By.name("submit1")));

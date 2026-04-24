@@ -353,11 +353,11 @@ export default function DetailSettings() {
 
     try {
       await adminClient.identityProviders.update(
-        { alias },
+        { alias: provider?.alias || alias },
         {
           ...p,
           config: { ...provider?.config, ...p.config },
-          alias,
+          alias: provider?.alias || alias,
           providerId,
         },
       );

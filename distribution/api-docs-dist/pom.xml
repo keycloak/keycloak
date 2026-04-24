@@ -104,7 +104,7 @@
                     </dependencySourceIncludes>
                     <dependencySourceExcludes>
                         <dependencySourceExclude>org.keycloak:keycloak-operator</dependencySourceExclude>
-                        <dependencySourceExclude>org.keycloak:keycloak-admin-v2-rest</dependencySourceExclude>
+                        <dependencySourceExclude>org.keycloak:keycloak-admin-v2-api</dependencySourceExclude>
                     </dependencySourceExcludes>
                 </configuration>
                 <executions>

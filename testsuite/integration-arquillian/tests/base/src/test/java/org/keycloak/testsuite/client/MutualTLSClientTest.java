@@ -17,7 +17,7 @@ import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
-import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.util.KeycloakModelUtils;
 import org.keycloak.testsuite.util.MutualTLSUtils;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
@@ -27,10 +27,10 @@ import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.message.BasicNameValuePair;
-import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 /**
  * Mutual TLS Client tests.
@@ -218,7 +218,7 @@ public class MutualTLSClientTest extends AbstractTestRealmKeycloakTest {
       Supplier<CloseableHttpClient> clientWithProperCertificate = MutualTLSUtils::newCloseableHttpClientWithOBBKeyStoreAndTrustStore;
 
       // Canonical
-      ClientResource client = ApiUtil.findClientByClientId(testRealm(), OBB_SUBJECT_DN_CLIENT_ID);
+      ClientResource client = AdminApiUtil.findClientByClientId(managedRealm.admin(), OBB_SUBJECT_DN_CLIENT_ID);
       ClientRepresentation clientRep = client.toRepresentation();
       OIDCAdvancedConfigWrapper config = OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep);
       config.setTlsClientAuthSubjectDn(expectedSubjectDN);
@@ -246,7 +246,7 @@ public class MutualTLSClientTest extends AbstractTestRealmKeycloakTest {
       // Call protected endpoint with supplied client.
       try {
           oauth.httpClient().set(closeableHttpClient);
-          return oauth.clientId(clientId)
+          return oauth.client(clientId)
                   .doAccessTokenRequest(code);
       } finally {
           oauth.httpClient().reset();
@@ -261,13 +261,13 @@ public class MutualTLSClientTest extends AbstractTestRealmKeycloakTest {
    }
 
    private void assertTokenObtained(AccessTokenResponse token) {
-      Assert.assertEquals(200, token.getStatusCode());
-      Assert.assertNotNull(token.getAccessToken());
+      Assertions.assertEquals(200, token.getStatusCode());
+      Assertions.assertNotNull(token.getAccessToken());
    }
 
    private void assertTokenNotObtained(AccessTokenResponse token) {
-      Assert.assertEquals(401, token.getStatusCode());
-      Assert.assertNull(token.getAccessToken());
+      Assertions.assertEquals(401, token.getStatusCode());
+      Assertions.assertNull(token.getAccessToken());
    }
 
    /*

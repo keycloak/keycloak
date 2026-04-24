@@ -58,7 +58,7 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.arquillian.KcArquillian;
 import org.keycloak.testsuite.arquillian.SuiteContext;
 import org.keycloak.testsuite.arquillian.TestContext;
@@ -108,7 +108,7 @@ import static org.keycloak.testsuite.util.URLUtils.navigateToUri;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  *
@@ -556,18 +556,18 @@ public abstract class AbstractKeycloakTest {
         UserRepresentation homer = createUserRepresentation(username, password);
         homer.setRequiredActions(Arrays.asList(requiredActions));
 
-        return ApiUtil.createUserWithAdminClient(adminClient.realm(realm), homer);
+        return AdminApiUtil.createUserWithAdminClient(adminClient.realm(realm), homer);
     }
 
     public String createUser(String realm, String username, String password, String firstName, String lastName, String email, Consumer<UserRepresentation> customizer) {
         UserRepresentation user = createUserRepresentation(username, email, firstName, lastName, true, password);
         customizer.accept(user);
-        return ApiUtil.createUserWithAdminClient(adminClient.realm(realm), user);
+        return AdminApiUtil.createUserWithAdminClient(adminClient.realm(realm), user);
     }
 
     public String createUser(String realm, String username, String password, String firstName, String lastName, String email) {
         UserRepresentation homer = createUserRepresentation(username, email, firstName, lastName, true, password);
-        return ApiUtil.createUserWithAdminClient(adminClient.realm(realm), homer);
+        return AdminApiUtil.createUserWithAdminClient(adminClient.realm(realm), homer);
     }
 
     public static UserRepresentation createUserRepresentation(String id, String username, String email, String firstName, String lastName, List<String> groups, boolean enabled) {
@@ -784,7 +784,7 @@ public abstract class AbstractKeycloakTest {
             } while (expectedEndTime - System.nanoTime() > 0);
 
             //last attempt
-            assertEquals(message, expected, actual.get());
+            assertEquals(expected, actual.get(), message);
         } catch (Exception e) {
             throw new RuntimeException("Unexpected!", e);
         }

@@ -51,17 +51,17 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.realm.ClientBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AbstractKeycloakTest;
-import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
-import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.ClientManager;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.RealmManager;
 import org.keycloak.testsuite.util.TokenSignatureUtil;
-import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.testsuite.util.UserManager;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.LogoutResponse;
@@ -74,11 +74,12 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.message.BasicNameValuePair;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -111,7 +112,7 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
         ClientRepresentation app = ClientBuilder.create()
                 .id(KeycloakModelUtils.generateId())
                 .clientId("resource-owner")
-                .directAccessGrants()
+                .directAccessGrantsEnabled()
                 .secret("secret")
                 .build();
         realm.client(app);
@@ -119,13 +120,13 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
         ClientRepresentation app2 = ClientBuilder.create()
                 .id(KeycloakModelUtils.generateId())
                 .clientId("resource-owner-public")
-                .directAccessGrants()
+                .directAccessGrantsEnabled()
                 .publicClient()
                 .build();
         realm.client(app2);
 
         ClientRepresentation app3 = ClientBuilder.create().id(KeycloakModelUtils.generateId())
-            .clientId("resource-owner-refresh").directAccessGrants().secret("secret").build();
+            .clientId("resource-owner-refresh").directAccessGrantsEnabled().secret("secret").build();
         OIDCAdvancedConfigWrapper.fromClientRepresentation(app3).setUseRefreshToken(false);
         realm.client(app3);
 
@@ -175,7 +176,7 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
         grantAccessToken("direct-login", "resource-owner");
 
         // Check that count of authSessions is same as before authentication (as authentication session was removed)
-        Assert.assertEquals(authSessionsBefore, getAuthenticationSessionsCount());
+        Assertions.assertEquals(authSessionsBefore, getAuthenticationSessionsCount());
     }
 
     @Test
@@ -202,7 +203,7 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
         try(Response response = realmResource.clientScopes().create(clientScope)) {
             String scopeId = ApiUtil.getCreatedId(response);
             getCleanup().addClientScopeId(scopeId);
-            ClientResource resourceOwnerPublicClient = ApiUtil.findClientByClientId(realmResource, "resource-owner-public");
+            ClientResource resourceOwnerPublicClient = AdminApiUtil.findClientByClientId(realmResource, "resource-owner-public");
             ClientRepresentation testAppRep = resourceOwnerPublicClient.toRepresentation();
             resourceOwnerPublicClient.update(testAppRep);
             resourceOwnerPublicClient.addOptionalClientScope(scopeId);
@@ -305,7 +306,7 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
                 .assertEvent();
 
         // Check that count of authSessions is same as before authentication (as authentication session was removed)
-        Assert.assertEquals(authSessionsBefore, getAuthenticationSessionsCount());
+        Assertions.assertEquals(authSessionsBefore, getAuthenticationSessionsCount());
     }
 
     private void grantAccessToken(String login, String clientId) throws Exception {
@@ -335,7 +336,7 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
                 .removeDetail(Details.CONSENT)
                 .assertEvent();
 
-        Assert.assertTrue(login.equals(accessToken.getPreferredUsername()) || login.equals(accessToken.getEmail()));
+        Assertions.assertTrue(login.equals(accessToken.getPreferredUsername()) || login.equals(accessToken.getEmail()));
 
         assertEquals(accessToken.getSessionState(), refreshToken.getSessionState());
 
@@ -363,11 +364,11 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
     private void conductGrantRequest(String expectedRefreshAlg, String expectedAccessAlg, String realmTokenAlg) throws Exception {
         try {
             TokenSignatureUtil.changeRealmTokenSignatureProvider(adminClient, realmTokenAlg);
-            TokenSignatureUtil.changeClientAccessTokenSignatureProvider(ApiUtil.findClientByClientId(adminClient.realm("test"), "resource-owner"), expectedAccessAlg);
+            TokenSignatureUtil.changeClientAccessTokenSignatureProvider(AdminApiUtil.findClientByClientId(adminClient.realm("test"), "resource-owner"), expectedAccessAlg);
             grantRequest(expectedRefreshAlg, expectedAccessAlg);
         } finally {
             TokenSignatureUtil.changeRealmTokenSignatureProvider(adminClient, Algorithm.RS256);
-            TokenSignatureUtil.changeClientAccessTokenSignatureProvider(ApiUtil.findClientByClientId(adminClient.realm("test"), "resource-owner"), Algorithm.RS256);
+            TokenSignatureUtil.changeClientAccessTokenSignatureProvider(AdminApiUtil.findClientByClientId(adminClient.realm("test"), "resource-owner"), Algorithm.RS256);
         }
         return;
     }
@@ -408,7 +409,7 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
                 .removeDetail(Details.CONSENT)
                 .assertEvent();
 
-        Assert.assertTrue(login.equals(accessToken.getPreferredUsername()) || login.equals(accessToken.getEmail()));
+        Assertions.assertTrue(login.equals(accessToken.getPreferredUsername()) || login.equals(accessToken.getEmail()));
 
         assertEquals(accessToken.getSessionState(), refreshToken.getSessionState());
 
@@ -553,7 +554,7 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
         UserManager.realm(realmResource).username("test-user@localhost").removeRequiredAction(UserModel.RequiredAction.VERIFY_EMAIL.toString());
 
         // Check that count of authSessions is same as before authentication (as authentication session was removed)
-        Assert.assertEquals(authSessionsBefore, getAuthenticationSessionsCount());
+        Assertions.assertEquals(authSessionsBefore, getAuthenticationSessionsCount());
     }
     
     @Test
@@ -667,7 +668,7 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
         String errorMessage = String.format("Times in ms of %d attempts: For invalid password: %d. For invalid username: %d", count, sumInvalidPasswordMs, sumInvalidUsernameMs);
 
         // The times should be very similar. Using the bigger difference just to avoid flakiness (Before the fix, the difference was like 3 times shorter time for invalid-username, which allowed quite accurate username enumeration)
-        Assert.assertTrue(errorMessage, sumInvalidUsernameMs * 2 > sumInvalidPasswordMs);
+        Assertions.assertTrue(sumInvalidUsernameMs * 2 > sumInvalidPasswordMs, errorMessage);
     }
 
     private long perfTest(int actionsCount, String actionMessage, RunnableWithException action) throws Exception {

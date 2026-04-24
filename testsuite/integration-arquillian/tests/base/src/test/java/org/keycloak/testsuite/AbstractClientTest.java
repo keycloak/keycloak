@@ -27,6 +27,7 @@ import org.keycloak.events.admin.ResourceType;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.events.TestEventsListenerProviderFactory;
 import org.keycloak.testsuite.util.AdminEventPaths;
@@ -36,6 +37,7 @@ import org.keycloak.testsuite.util.RealmBuilder;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
+import org.junit.jupiter.api.Assertions;
 
 import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
 
@@ -88,7 +90,7 @@ public abstract class AbstractClientTest extends AbstractAuthTest {
                 result = user;
             }
         }
-        Assert.assertNotNull("Did not find user with username " + userName, result);
+        Assertions.assertNotNull(result, "Did not find user with username " + userName);
         return result;
     }
 
@@ -116,11 +118,11 @@ public abstract class AbstractClientTest extends AbstractAuthTest {
     }
 
     protected ClientResource findClientResource(String name) {
-        return ApiUtil.findClientResourceByName(testRealmResource(), name);
+        return AdminApiUtil.findClientResourceByName(testRealmResource(), name);
     }
 
     protected ClientResource findClientResourceById(String id) {
-        return ApiUtil.findClientResourceByClientId(testRealmResource(), id);
+        return AdminApiUtil.findClientResourceByClientId(testRealmResource(), id);
     }
 
 }

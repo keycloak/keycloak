@@ -352,6 +352,7 @@ need to administer:
 - *query-users* – Required to query realm users.
 - *query-groups* – Required to query realm groups.
 - *query-clients* – Required to query realm clients.
+- *query-organizations* – Required to query realm organizations.
 
 By granting any of these roles to a realm user, they will be able to access the administration console, but only for the
 areas that correspond to roles granted. For instance, if you assign the `query-users` role, the realm administrator
@@ -378,6 +379,8 @@ if a respective admin role is assigned to a realm administrator, permission eval
                              It does not grant the ability to *view* groups.
 | *query-clients*          | A realm administrator can see the *Clients* section in administration console and can search for clients in the realm.
                              It does not grant the ability to *view* clients.
+| *query-organizations*    | A realm administrator can see the *Organizations* section in administration console and can search for organizations in the realm.
+                             It does not grant the ability to *view* organizations.
 | *view-users*             | A realm administrator can *view* all users and groups in the realm.
 | *manage-users*           | A realm administrator can *view*, *map-roles*, *manage-group-membership* and *manage* all users in the realm,
                              as well as *view*, *manage-membership*, *manage-membership-of-members* and *manage* groups in the realm.

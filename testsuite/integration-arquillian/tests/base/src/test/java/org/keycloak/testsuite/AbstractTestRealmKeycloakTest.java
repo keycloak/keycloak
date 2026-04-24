@@ -20,7 +20,6 @@ package org.keycloak.testsuite;
 import java.lang.reflect.Field;
 import java.util.List;
 
-import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.common.util.reflections.Reflections;
 import org.keycloak.events.Details;
 import org.keycloak.models.KeycloakSession;
@@ -29,9 +28,11 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
 import org.junit.Before;
+import org.junit.jupiter.api.Assertions;
 
 import static org.keycloak.testsuite.AbstractAdminTest.loadJson;
 
@@ -46,18 +47,16 @@ public abstract class AbstractTestRealmKeycloakTest extends AbstractKeycloakTest
     public static final String TEST_REALM_NAME = "test";
     public static final String clientId = "test-app";
 
-    protected RealmResource testRealm() {
-        return adminClient.realm(TEST_REALM_NAME);
-    }
+    protected ManagedRealm managedRealm = new ManagedRealm(this, TEST_REALM_NAME);
 
     protected UserRepresentation findUser(String userNameOrEmail) {
-        List<UserRepresentation> repList = testRealm().users().search(userNameOrEmail, -1, -1);
+        List<UserRepresentation> repList = managedRealm.admin().users().search(userNameOrEmail, -1, -1);
         if (repList.size() != 1) throw new IllegalStateException("User search expected one result. Found " + repList.size() + " users.");
         return repList.get(0);
     }
 
     protected void updateUser(UserRepresentation user) {
-        testRealm().users().get(user.getId()).update(user);
+        managedRealm.admin().users().get(user.getId()).update(user);
     }
 
     protected ClientRepresentation findTestApp(RealmRepresentation testRealm) {
@@ -123,7 +122,7 @@ public abstract class AbstractTestRealmKeycloakTest extends AbstractKeycloakTest
         String code = oauth.parseLoginResponse().getCode();
         AccessTokenResponse response = oauth.doAccessTokenRequest(code);
 
-        Assert.assertEquals(200, response.getStatusCode());
+        Assertions.assertEquals(200, response.getStatusCode());
 
         if (eventsField != null) {
             events.expectCodeToToken(codeId, sessionId).user(loginEvent.getUserId()).session(sessionId).assertEvent();

@@ -46,7 +46,7 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Integration tests for Organization Invitation Management functionality
@@ -62,7 +62,7 @@ public class OrganizationInvitationManagementTest extends AbstractOrganizationTe
         MailServer.start();
         OrganizationRepresentation orgRep = createOrganization("test-org", "test-org.com");
         organizationId = orgRep.getId();
-        organization = testRealm().organizations().get(organizationId);
+        organization = managedRealm.admin().organizations().get(organizationId);
     }
 
     @After
@@ -324,7 +324,7 @@ public class OrganizationInvitationManagementTest extends AbstractOrganizationTe
     public void testCrossOrganizationInvitationAccess() {
         // Create second organization
         OrganizationRepresentation org2Rep = createOrganization("test-org-2", "test-org-2.com");
-        OrganizationResource organization2 = testRealm().organizations().get(org2Rep.getId());
+        OrganizationResource organization2 = managedRealm.admin().organizations().get(org2Rep.getId());
 
         // Create invitation in org1
         sendInvitation("user@test-org.com", "User", "One");
@@ -364,7 +364,7 @@ public class OrganizationInvitationManagementTest extends AbstractOrganizationTe
     public void testMultipleOrganizationInvitationIsolation() {
         // Create second organization
         OrganizationRepresentation org2Rep = createOrganization("test-org-2", "test-org-2.com");
-        OrganizationResource organization2 = testRealm().organizations().get(org2Rep.getId());
+        OrganizationResource organization2 = managedRealm.admin().organizations().get(org2Rep.getId());
 
         // Create invitations in both organizations
         sendInvitation("user@test-org.com", "User", "One");

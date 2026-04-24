@@ -881,7 +881,11 @@ public class UserResource {
             else throw new ForbiddenException();
         }
         user.credentialManager().removeStoredCredentialById(credentialId);
-        adminEvent.operation(OperationType.ACTION).resourcePath(session.getContext().getUri()).success();
+        adminEvent.operation(OperationType.ACTION).resourcePath(session.getContext().getUri())
+                .detail(Details.CREDENTIAL_ID, credentialId)
+                .detail(Details.CREDENTIAL_TYPE, credential.getType())
+                .detail(Details.CREDENTIAL_USER_LABEL, credential.getUserLabel())
+                .success();
     }
 
     /**

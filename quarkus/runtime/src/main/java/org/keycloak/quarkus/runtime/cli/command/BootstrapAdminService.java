@@ -20,11 +20,10 @@ package org.keycloak.quarkus.runtime.cli.command;
 import org.keycloak.common.util.IoUtils;
 import org.keycloak.config.BootstrapAdminOptions;
 import org.keycloak.config.OptionCategory;
-import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.quarkus.runtime.cli.PropertyException;
+import org.keycloak.quarkus.runtime.integration.QuarkusKeycloakSessionFactory;
 import org.keycloak.quarkus.runtime.integration.jaxrs.QuarkusKeycloakApplication;
-import org.keycloak.services.resources.KeycloakApplication;
 
 import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.Command;
@@ -99,9 +98,8 @@ public class BootstrapAdminService extends AbstractNonServerCommand {
     }
 
     @Override
-    public void onStart(QuarkusKeycloakApplication application) {
+    public void onStart(QuarkusKeycloakApplication application, QuarkusKeycloakSessionFactory sessionFactory) {
         //BootstrapAdmin bootstrap = spec.commandLine().getParent().getCommand();
-        KeycloakSessionFactory sessionFactory = KeycloakApplication.getSessionFactory();
         KeycloakModelUtils.runJobInTransaction(sessionFactory, session -> application
                 .createTemporaryMasterRealmAdminService(clientId, clientSecret, /* bootstrap.expiration, */ session));
     }

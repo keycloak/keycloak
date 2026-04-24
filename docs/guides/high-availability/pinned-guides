@@ -8,6 +8,7 @@ single-cluster/concepts-memory-and-cpu-sizing
 single-cluster/deploy-aurora
 single-cluster/deploy-cnpg
 single-cluster/deploy-cnpg-with-backup
+single-cluster/monitoring-cnpg
 single-cluster/deploy-cnpg-recovery
 single-cluster/deploy-keycloak
 single-cluster/operate-cnpg-switchover

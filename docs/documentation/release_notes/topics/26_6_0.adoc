@@ -3,9 +3,15 @@
 
 This release features new capabilities for users and administrators of {project_name}. The highlights of this release are:
 
-<TODO>
+* *JWT Authorization Grant*, enabling external-to-internal token exchange using externally signed JWT assertions.
+* *Federated client authentication*, eliminating the need to manage individual client secrets in {project_name}.
+* *Workflows*, enabling administrators to automate realm administrative tasks such as user and client lifecycle management.
+* *Zero-downtime patch releases*, allowing rolling updates within a minor release stream without service downtime.
+* The *Keycloak Test Framework*, replacing the previous Arquillian-based solution.
 
-Read on to learn more about each new feature. If you are upgrading from a previous release, https://www.keycloak.org/docs/latest/upgrading/index.html[review also the changes listed in the upgrading guide].
+All of these features are now fully supported and no longer in preview.
+Read on to learn more about each new feature.
+If you are upgrading from a previous release, https://www.keycloak.org/docs/latest/upgrading/index.html[also review the changes listed in the upgrading guide].
 
 = Security and Standards
 
@@ -31,7 +37,7 @@ See https://www.keycloak.org/nightly/securing-apps/dpop[Securing applications wi
 
 == Identity Brokering APIs V2 (preview)
 
-A new preview version 2 for the Identity Brokering APIs is introduced in this release. When brokering is used during the authentication process, {project_name} allows you to store tokens and responses issued by the external Identity Provider. Applications can call a specific endpoint to retrieve those tokens, that, in turn, can be used to get extra user information or invoke endpoints in the external trust domain. The new version improves the token retrieval endpoint to accommodate its functionality to substitute the internal to external Token Exchange (use-case for the link:{securing_apps_token_exchange_link}#_legacy-token-exchange[legacy Token Exchange V1]).
+A new preview version 2 for the Identity Brokering APIs is introduced in this release. When brokering is used during the authentication process, {project_name} allows you to store tokens and responses issued by the external Identity Provider. Applications can call a specific endpoint to retrieve those tokens, which, in turn, can be used to get extra user information or invoke endpoints in the external trust domain. The new version improves the token retrieval endpoint to substitute the internal to external Token Exchange (use case for the link:{securing_apps_token_exchange_link}#_legacy-token-exchange[legacy Token Exchange V1]).
 
 For more information, see the chapter link:{developerguide_link}#_identity-brokering-apis[Identity Brokering APIs] in the {developerguide_name}.
 
@@ -42,7 +48,7 @@ The feature `step-up-authentication-saml` extends the step-up authentication to 
 
 == OAuth Client ID Metadata Document (experimental)
 
-https://www.ietf.org/archive/id/draft-ietf-oauth-client-id-metadata-document-01.html[OAuth Client ID Metadata Document (CIMD)] is an emerging standard that defines a JSON document format for describing OAuth 2.0 client metadata. Since the version 2025-11-25, the Model Context Protocol (MCP) requires an authorization server to comply with CIMD. {project_name} now includes experimental support for CIMD, allowing it to serve as an authorization server for MCP version 2025-11-25 or later.
+https://www.ietf.org/archive/id/draft-ietf-oauth-client-id-metadata-document-01.html[OAuth Client ID Metadata Document (CIMD)] is an emerging standard that defines a JSON document format for describing OAuth 2.0 client metadata. Since version 2025-11-25, the Model Context Protocol (MCP) requires an authorization server to comply with CIMD. {project_name} now includes experimental support for CIMD, allowing it to serve as an authorization server for MCP version 2025-11-25 or later.
 
 See link:{securing_apps_base_link}/mcp-authz-server[Integrating with Model Context Protocol (MCP)] for the updated guide including CIMD.
 
@@ -93,14 +99,14 @@ Thank you to https://github.com/tsaarni[Tero Saarni] for contributing this chang
 == Java 25 support
 
 {project_name} now supports running with OpenJDK 25.
-The server container image remains to use OpenJDK 21 for now to support FIPS mode. For details see the
+The server container image continues to use OpenJDK 21 for now to support FIPS mode. For details, see the
 note in the FIPS guide.
 
 == Zero-downtime patch releases (supported)
 
-Zero-downtime patch allows you to perform rolling updates when upgrading to a newer patch version within the same `major.minor` release stream without service downtime.
+Zero-downtime patch releases allow you to perform rolling updates when upgrading to a newer patch version within the same `major.minor` release stream without service downtime.
 
-In this release zero-downtime patch is promoted to supported and enabled by default.
+In this release, zero-downtime patch releases are promoted to supported and enabled by default.
 When using the {project_name} Operator, set the update strategy to `Auto` to benefit from this functionality.
 
 For more details on the Operator configuration, see the https://www.keycloak.org/operator/rolling-updates[Avoiding downtime with rolling updates] guide.
@@ -113,35 +119,46 @@ See https://www.keycloak.org/nightly/high-availability/single-cluster/deploy-cnp
 
 == Simplified database operations
 
-Several new command line options simplify the database operations for {project_name} and removes the need to use to raw JDBC connection options:
+Several new command line options simplify the database operations for {project_name} and remove the need to use raw JDBC connection options:
 
 * Configure TLS for the database connection.
 * Database connection timeouts.
-* Transaction timeouts with production ready defaults.
+* Transaction timeouts with production-ready defaults.
 
 It also verifies the correct UTF-8 character encoding of the database at startup and prints a warning if this is not the case.
 
-When running on orchestrators like Kubernetes, the startup and liveness probe return UP during database migrations, simplifying upgrades by removing the need to adjust the probes during upgrades.
+When running on orchestrators like Kubernetes, the startup and liveness probes return UP during database migrations, simplifying upgrades by removing the need to adjust the probes during upgrades.
 
 See the migration guide for additional details on each aspect.
 
 == Graceful shutdown of HTTP stack
 
-To allow for rolling updates for configuration changes or version updates, a graceful shutdown of {project_name} nodes prevents users from seeing error responses when logging in or refreshing their tokens when nodes shut down.
+To allow rolling updates for configuration changes or version updates, a graceful shutdown of {project_name} nodes prevents users from seeing error responses when logging in or refreshing their tokens when nodes shut down.
 
 Starting with this version, {project_name} supports a graceful shutdown of the HTTP stack.
 This includes delaying a shutdown after receiving a termination signal, connection draining for HTTP/1.1 and HTTP/2 connections during that period, and a shutdown timeout to finish ongoing requests.
 
 The defaults are a shutdown delay and a shutdown timeout of one second each.
-This should be a good fit for setups where the reverse proxy is using TLS edge termination or re-encryption, and the reverse proxy is notified about the Keycloak node shutting down at the same time as the Keycloak node.
-This is a common setup for example in Kubernetes environments.
+This should be a good fit for setups where the reverse proxy is using TLS edge termination or re-encryption and the reverse proxy is notified about the {project_name} node shutting down at the same time as the {project_name} node.
+This is a common setup, for example, in Kubernetes environments.
 
 Users should adjust those values depending on their proxy setup.
 See the section https://www.keycloak.org/server/reverseproxy#graceful-http-shutdown[Graceful HTTP shutdown] in the reverse proxy guide for more information.
 
+== New `KCRAW_` prefix for environment variables to preserve literal values
+
+{project_name} now supports a `KCRAW_` prefix for environment variables to preserve values containing `$` characters exactly as written, without expression evaluation.
+
+When using the standard `KC_` prefix, {project_name} (via SmallRye Config) evaluates expressions in values (for example, `${some_key}` is resolved and `$$` is collapsed to `$`).
+This can silently modify passwords or secrets injected by a secrets manager or orchestration tool where manual escaping is not feasible.
+
+Setting `KCRAW_<KEY>` instead of `KC_<KEY>` preserves the value exactly as provided.
+
+See the link:{server_guide_base_link}/configuration#kcraw-prefix[Preserving literal values with the KCRAW_ prefix] section in the Server Configuration guide for details.
+
 == Automatic reload of lists with disallowed passwords
 
-When a list of disallowed passwords (also known as blacklist) changes, it is automatically reloaded. This avoids the need a server restart when the list changes.
+When a list of disallowed passwords (also known as blacklist) changes, it is automatically reloaded. This avoids the need for a server restart when the list changes.
 
 Thank you to https://github.com/tsaarni[Tero Saarni] for contributing this change.
 
@@ -165,7 +182,7 @@ For details, see the link:{server_guide_base_link}/reverseproxy#_enabling_client
 
 == Configurable Kubernetes Service name and port in the Keycloak Operator
 
-The {project_name} Operator now supports overriding the name and port of the Kubernetes Service it creates for a Keycloak deployment.
+The {project_name} Operator now supports overriding the name and port of the Kubernetes Service it creates for a {project_name} deployment.
 
 Previously, the Service name was always derived as `<cr-name>-service` and the Service port always matched the container port.
 You can now use the `spec.http.serviceName`, `spec.http.serviceHttpsPort`, and `spec.http.serviceHttpPort` fields to
@@ -173,10 +190,10 @@ configure these independently.
 
 For more details, see the https://www.keycloak.org/operator/advanced-configuration[Advanced configuration] guide.
 
-== Sensitive Keycloak information is not displayed in the HTTP Access log
+== Sensitive information is not displayed in the HTTP Access log
 
 If you are using the HTTP Access logging capability, sensitive information is omitted.
-This means that tokens in the 'Authorization' HTTP header and specific sensitive Keycloak cookies are not shown.
+This means that tokens in the 'Authorization' HTTP header and specific sensitive cookies are not shown.
 
 For more information, see https://www.keycloak.org/server/logging#http-access-logging[Configuring HTTP access logging].
 
@@ -215,19 +232,19 @@ For more information, see the https://www.keycloak.org/server/logging#customize-
 == New and updated translations
 
 New translations for Indonesian and Armenian were added. A warm welcome to the new language maintainers for these languages!
-There are also new language maintainers for the Swedish translation who translated all remaining message keys for this language, thank you so much!
+There are also new language maintainers for the Swedish translation, who translated all remaining message keys. Thank you so much!
 
-Follow the translation progress on the https://www.keycloak.org/translations[translation status page], help translating, and read in the translation guide on how to add additional languages.
+Follow the translation progress on the https://www.keycloak.org/translations[translation status page], help translate, and read the translation guide on how to add additional languages.
 
 == Right-to-left language support in the Account UI
 
-Support for right-to-left (RTL) languages was added in the Login UI, Admin UI and email templates several releases ago already. This release adds an initial RTL-support to the Account UI, which completes this effort.
+Support for right-to-left (RTL) languages was added to the Login UI, Admin UI, and email templates several releases ago. This release adds initial RTL support to the Account UI, which completes this effort.
 
 = Observability
 
-== Telemetry configuration via Keycloak CR
+== Telemetry configuration via the Keycloak CR
 
-{project_name} now supports configuring the OpenTelemetry properties via Keycloak CR when using the Operator.
+{project_name} now supports configuring the OpenTelemetry properties via the Keycloak CR when using the Operator.
 These properties are shared among the available OpenTelemetry components - logs, metrics, and traces.
 
 For more details, see the link:{telemetryguide_link}[{telemetryguide_name}] guide.
@@ -242,15 +259,15 @@ Alternatively, use `telemetry-logs-header-<header>` for OpenTelemetry Logs or `t
 
 For more details, see the link:{telemetryguide_link}[{telemetryguide_name}] guide.
 
-== Service Monitor annotations and labels via Keycloak CR
+== Service Monitor annotations and labels via the Keycloak CR
 
-It is now possible to configure service monitor labels and annotations via Keycloak CR when using the Operator.
+It is now possible to configure service monitor labels and annotations via the Keycloak CR when using the Operator.
 
-For more details, see the link: https://www.keycloak.org/operator/advanced-configuration#_servicemonitor[Advanced Configuration Operator] guide
+For more details, see the link:https://www.keycloak.org/operator/advanced-configuration#_servicemonitor[Advanced Configuration Operator] guide.
 
 = Extension Development
 
-== Keycloak Test Framework Full Support
+== Keycloak Test Framework (supported)
 
 The Keycloak Test Framework, based on JUnit 6, is now fully supported.
 

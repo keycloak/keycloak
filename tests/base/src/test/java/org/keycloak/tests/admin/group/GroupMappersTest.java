@@ -19,8 +19,6 @@ package org.keycloak.tests.admin.group;
 
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 
 import jakarta.ws.rs.core.Response;
@@ -42,10 +40,10 @@ import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
-import org.keycloak.testframework.realm.GroupConfigBuilder;
+import org.keycloak.testframework.realm.GroupBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
-import org.keycloak.testframework.realm.RealmConfigBuilder;
 import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.tests.suites.DatabaseTest;
 import org.keycloak.tests.utils.admin.AdminApiUtil;
@@ -144,8 +142,8 @@ public class GroupMappersTest extends AbstractGroupTest {
 
     private static class GroupMappersTestRealmConfig implements RealmConfig {
 
-        private List<ProtocolMapperRepresentation> createMappers() {
-            List<ProtocolMapperRepresentation> mappers = new LinkedList<>();
+        private ProtocolMapperRepresentation[] createMappers() {
+            ProtocolMapperRepresentation[] mappers = new ProtocolMapperRepresentation[3];
             ProtocolMapperRepresentation mapper = new ProtocolMapperRepresentation();
             mapper.setName("groups");
             mapper.setProtocolMapper(GroupMembershipMapper.PROVIDER_ID);
@@ -155,7 +153,7 @@ public class GroupMappersTest extends AbstractGroupTest {
             config.put(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN, "true");
             config.put(OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN, "true");
             mapper.setConfig(config);
-            mappers.add(mapper);
+            mappers[0] = mapper;
 
             mapper = new ProtocolMapperRepresentation();
             mapper.setName(TOP_ATTRIBUTE);
@@ -168,7 +166,7 @@ public class GroupMappersTest extends AbstractGroupTest {
             config.put(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN, "true");
             config.put(OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN, "true");
             mapper.setConfig(config);
-            mappers.add(mapper);
+            mappers[1] = mapper;
 
             mapper = new ProtocolMapperRepresentation();
             mapper.setName(LEVEL_2_ATTRIBUTE);
@@ -181,13 +179,13 @@ public class GroupMappersTest extends AbstractGroupTest {
             config.put(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN, "true");
             config.put(OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN, "true");
             mapper.setConfig(config);
-            mappers.add(mapper);
+            mappers[2] = mapper;
             return mappers;
         }
 
         @Override
-        public RealmConfigBuilder configure(RealmConfigBuilder realm) {
-            List<ProtocolMapperRepresentation> mappers = createMappers();
+        public RealmBuilder configure(RealmBuilder realm) {
+            ProtocolMapperRepresentation[] mappers = createMappers();
 
             realm.addClient(CLIENT_ID)
                     .enabled(true)
@@ -198,7 +196,7 @@ public class GroupMappersTest extends AbstractGroupTest {
             realm.eventsEnabled(true)
                     .clientRoles(CLIENT_ID, CLIENT_ROLE);
 
-            GroupRepresentation subGroup = GroupConfigBuilder.create()
+            GroupRepresentation subGroup = GroupBuilder.create()
                     .name(LEVEL_2_GROUP)
                     .realmRoles("admin")
                     .clientRoles(CLIENT_ID, CLIENT_ROLE)
@@ -206,7 +204,7 @@ public class GroupMappersTest extends AbstractGroupTest {
                     .build();
 
 
-            GroupRepresentation subGroup2 = GroupConfigBuilder.create()
+            GroupRepresentation subGroup2 = GroupBuilder.create()
                     .name("level2group2")
                     .realmRoles("admin")
                     .clientRoles(CLIENT_ID, CLIENT_ROLE)

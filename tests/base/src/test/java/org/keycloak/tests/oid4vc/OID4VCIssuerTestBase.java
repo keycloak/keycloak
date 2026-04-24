@@ -23,7 +23,8 @@ import java.util.UUID;
 import org.keycloak.OID4VCConstants;
 import org.keycloak.VCFormat;
 import org.keycloak.admin.client.Keycloak;
-import org.keycloak.admin.client.resource.ClientResource;
+import org.keycloak.admin.client.resource.ClientScopeResource;
+import org.keycloak.admin.client.resource.ClientScopesResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.common.Profile;
 import org.keycloak.common.crypto.CryptoIntegration;
@@ -38,7 +39,6 @@ import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.events.EventType;
 import org.keycloak.keys.KeyProvider;
 import org.keycloak.models.UserModel;
-import org.keycloak.models.oid4vci.CredentialScopeModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCAuthorizationDetailsParser;
 import org.keycloak.protocol.oid4vc.issuance.TimeProvider;
@@ -64,13 +64,13 @@ import org.keycloak.testframework.annotations.TestSetup;
 import org.keycloak.testframework.events.Events;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
+import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.ClientConfig;
-import org.keycloak.testframework.realm.ClientConfigBuilder;
 import org.keycloak.testframework.realm.ManagedClient;
 import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
-import org.keycloak.testframework.realm.RealmConfigBuilder;
-import org.keycloak.testframework.realm.UserConfigBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.remote.timeoffset.InjectTimeOffSet;
 import org.keycloak.testframework.remote.timeoffset.TimeOffSet;
 import org.keycloak.testframework.server.KeycloakServerConfig;
@@ -93,6 +93,10 @@ import static org.keycloak.OID4VCConstants.OID4VCI_ENABLED_ATTRIBUTE_KEY;
 import static org.keycloak.OID4VCConstants.OPENID_CREDENTIAL;
 import static org.keycloak.constants.OID4VCIConstants.CREDENTIAL_OFFER_CREATE;
 import static org.keycloak.models.Constants.CREATE_DEFAULT_CLIENT_SCOPES;
+import static org.keycloak.models.oid4vci.CredentialScopeModel.CRYPTOGRAPHIC_BINDING_METHODS_DEFAULT;
+import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_BINDING_REQUIRED;
+import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_BINDING_REQUIRED_PROOF_TYPES;
+import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_CRYPTOGRAPHIC_BINDING_METHODS;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_FORMAT_DEFAULT;
 
 /**
@@ -111,6 +115,9 @@ public abstract class OID4VCIssuerTestBase {
     public static final String TEST_USER = "john";
     public static final String TEST_PASSWORD = "password";
 
+    public static final String jwtTypeNaturalPersonScopeName = "oid4vc_natural_person_jwt";
+    public static final String sdJwtTypeNaturalPersonScopeName = "oid4vc_natural_person_sd";
+
     public static final String sdJwtTypeCredentialScopeName = "sd-jwt-credential";
     public static final String sdJwtTypeCredentialConfigurationIdName = "sd-jwt-credential-config-id";
     public static final String sdJwtTypeCredentialVct = "https://credentials.example.com/SD-JWT-Credential";
@@ -123,7 +130,7 @@ public abstract class OID4VCIssuerTestBase {
     @InjectRealm(config = VCTestRealmConfig.class)
     protected ManagedRealm testRealm;
 
-    @InjectClient(ref = "oid4vci-client", config = ConfidentialOID4VCIClient.class)
+    @InjectClient(ref = "oid4vci-client", config = PrivateOID4VCIClient.class)
     protected ManagedClient managedClient;
 
     @InjectClient(ref = OID4VCI_PUBLIC_CLIENT_ID, config = PublicOID4VCIClient.class)
@@ -147,11 +154,12 @@ public abstract class OID4VCIssuerTestBase {
     @InjectKeycloakUrls
     protected KeycloakUrls keycloakUrls;
 
-    protected CredentialScopeRepresentation minimalJwtTypeCredentialScope;
     protected CredentialScopeRepresentation jwtTypeCredentialScope;
     protected CredentialScopeRepresentation sdJwtTypeCredentialScope;
+    protected CredentialScopeRepresentation minimalJwtTypeCredentialScope;
+    protected CredentialScopeRepresentation jwtNaturalPersonCredentialScope;
+    protected CredentialScopeRepresentation sdJwtNaturalPersonCredentialScope;
 
-    protected String clientId = "test-app";
     protected ClientRepresentation client;
     protected ClientRepresentation pubClient;
     protected OID4VCBasicWallet wallet;
@@ -168,12 +176,15 @@ public abstract class OID4VCIssuerTestBase {
 
     @BeforeEach
     void beforeEachBase() {
+
         client = managedClient.admin().toRepresentation();
         pubClient = managedPublicClient.admin().toRepresentation();
 
         jwtTypeCredentialScope = requireExistingCredentialScope(jwtTypeCredentialScopeName);
-        minimalJwtTypeCredentialScope = requireExistingCredentialScope(minimalJwtTypeCredentialScopeName);
         sdJwtTypeCredentialScope = requireExistingCredentialScope(sdJwtTypeCredentialScopeName);
+        minimalJwtTypeCredentialScope = requireExistingCredentialScope(minimalJwtTypeCredentialScopeName);
+        jwtNaturalPersonCredentialScope = requireExistingCredentialScope(jwtTypeNaturalPersonScopeName);
+        sdJwtNaturalPersonCredentialScope = requireExistingCredentialScope(sdJwtTypeNaturalPersonScopeName);
 
         oauth.client(client.getClientId(), client.getSecret());
         enableVerifiableCredentialEvents(testRealm);
@@ -188,7 +199,7 @@ public abstract class OID4VCIssuerTestBase {
         driver.open("about:blank");
     }
 
-    protected CredentialScopeRepresentation getExistingCredentialScope(String scopeName) {
+    protected CredentialScopeRepresentation getCredentialScopeByName(String scopeName) {
         return testRealm.admin().clientScopes().findAll().stream()
                 .filter(it -> scopeName.equals(it.getName()))
                 .map(CredentialScopeRepresentation::new)
@@ -295,7 +306,7 @@ public abstract class OID4VCIssuerTestBase {
         if (scope != null) {
             oAuthClient.scope(scope);
         }
-        var authorizationEndpointResponse = oAuthClient.doLogin(username, "password");
+        var authorizationEndpointResponse = oAuthClient.doLogin(username, TEST_PASSWORD);
         return authorizationEndpointResponse;
     }
 
@@ -334,8 +345,21 @@ public abstract class OID4VCIssuerTestBase {
     }
 
     protected CredentialScopeRepresentation requireExistingCredentialScope(String scopeName) {
-        return Optional.ofNullable(getExistingCredentialScope(scopeName))
+        return Optional.ofNullable(getCredentialScopeByName(scopeName))
                 .orElseThrow(() -> new IllegalStateException("No such credential scope: " + scopeName));
+    }
+
+    protected void setCredentialScopeAttributes(ClientScopeRepresentation credScope, Map<String, String> attrUpdate) {
+        ClientScopeResource clientScopeResource = testRealm.admin().clientScopes().get(credScope.getId());
+        credScope = clientScopeResource.toRepresentation();
+        credScope.getAttributes().putAll(attrUpdate);
+        clientScopeResource.update(credScope);
+    }
+
+    protected void updateCredentialScope(CredentialScopeRepresentation clientScope) {
+        ClientScopesResource clientScopesResource = testRealm.admin().clientScopes();
+        ClientScopeResource clientScopeResource = clientScopesResource.get(clientScope.getId());
+        clientScopeResource.update(clientScope);
     }
 
     // Private ---------------------------------------------------------------------------------------------------------
@@ -388,12 +412,19 @@ public abstract class OID4VCIssuerTestBase {
         }
     }
 
+    public static class VCTestServerWithABCAEnabled implements KeycloakServerConfig {
+        @Override
+        public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
+            return config.features(Profile.Feature.OID4VC_VCI, Profile.Feature.CLIENT_AUTH_ABCA);
+        }
+    }
+
     public static class VCTestRealmConfig implements RealmConfig {
 
         public static final String TEST_REALM_NAME = "test";
 
         @Override
-        public RealmConfigBuilder configure(RealmConfigBuilder realm) {
+        public RealmBuilder configure(RealmBuilder realm) {
             realm.name(TEST_REALM_NAME)
                     .eventsEnabled(true);
 
@@ -419,10 +450,9 @@ public abstract class OID4VCIssuerTestBase {
                     List.of(OID4VCConstants.KeyAttestationResistanceLevels.HIGH, OID4VCConstants.KeyAttestationResistanceLevels.MODERATE)
             );
             Map<String, String> sdJwtAttrs = Optional.ofNullable(sdJwtScope.getAttributes()).orElseGet(HashMap::new);
-            sdJwtAttrs.put(CredentialScopeModel.VC_BINDING_REQUIRED, "true");
-            sdJwtAttrs.put(CredentialScopeModel.VC_BINDING_REQUIRED_PROOF_TYPES, "jwt");
-            sdJwtAttrs.put(CredentialScopeModel.VC_CRYPTOGRAPHIC_BINDING_METHODS,
-                    CredentialScopeModel.CRYPTOGRAPHIC_BINDING_METHODS_DEFAULT);
+            sdJwtAttrs.put(VC_BINDING_REQUIRED, "true");
+            sdJwtAttrs.put(VC_BINDING_REQUIRED_PROOF_TYPES, "jwt");
+            sdJwtAttrs.put(VC_CRYPTOGRAPHIC_BINDING_METHODS, CRYPTOGRAPHIC_BINDING_METHODS_DEFAULT);
             sdJwtScope.setAttributes(sdJwtAttrs);
             realm.addClientScope(sdJwtScope);
 
@@ -437,10 +467,9 @@ public abstract class OID4VCIssuerTestBase {
                     Collections.emptyList()
             );
             Map<String, String> jwtVcAttrs = Optional.ofNullable(jwtVcScope.getAttributes()).orElseGet(HashMap::new);
-            jwtVcAttrs.put(CredentialScopeModel.VC_BINDING_REQUIRED, "true");
-            jwtVcAttrs.put(CredentialScopeModel.VC_BINDING_REQUIRED_PROOF_TYPES, "jwt,attestation");
-            jwtVcAttrs.put(CredentialScopeModel.VC_CRYPTOGRAPHIC_BINDING_METHODS,
-                    CredentialScopeModel.CRYPTOGRAPHIC_BINDING_METHODS_DEFAULT);
+            jwtVcAttrs.put(VC_BINDING_REQUIRED, "true");
+            jwtVcAttrs.put(VC_BINDING_REQUIRED_PROOF_TYPES, "jwt,attestation");
+            jwtVcAttrs.put(VC_CRYPTOGRAPHIC_BINDING_METHODS, CRYPTOGRAPHIC_BINDING_METHODS_DEFAULT);
             jwtVcScope.setAttributes(jwtVcAttrs);
             realm.addClientScope(jwtVcScope);
 
@@ -518,7 +547,7 @@ public abstract class OID4VCIssuerTestBase {
             String lastName = nameToks.length > 1 ? nameToks[1] : "";
             String username = firstName.toLowerCase();
 
-            UserConfigBuilder userBuilder = UserConfigBuilder.create()
+            UserBuilder userBuilder = UserBuilder.create()
                     .id(KeycloakModelUtils.generateId())
                     .username(username)
                     .enabled(true)
@@ -526,7 +555,7 @@ public abstract class OID4VCIssuerTestBase {
                     .emailVerified(true)
                     .firstName(firstName)
                     .lastName(lastName)
-                    .password("password")
+                    .password(TEST_PASSWORD)
                     .attribute("address_street_address", "221B Baker Street")
                     .attribute("address_locality", "London")
                     .roles("account", "manage-account", "view-profile");
@@ -554,15 +583,23 @@ public abstract class OID4VCIssuerTestBase {
         }
     }
 
-    public static class ConfidentialOID4VCIClient implements ClientConfig {
+    public static class PrivateOID4VCIClient implements ClientConfig {
 
         @Override
-        public ClientConfigBuilder configure(ClientConfigBuilder client) {
+        public ClientBuilder configure(ClientBuilder client) {
+            String[] optionalClientScopes = {
+                    jwtTypeCredentialScopeName,
+                    sdJwtTypeCredentialScopeName,
+                    minimalJwtTypeCredentialScopeName,
+                    jwtTypeNaturalPersonScopeName,
+                    sdJwtTypeNaturalPersonScopeName,
+                    "email"
+            };
             client.clientId(OID4VCI_CLIENT_ID)
                     .serviceAccountsEnabled(true)
                     .directAccessGrantsEnabled(true)
                     .defaultClientScopes("basic", "profile", "roles")
-                    .optionalClientScopes(jwtTypeCredentialScopeName, minimalJwtTypeCredentialScopeName, sdJwtTypeCredentialScopeName, "email")
+                    .optionalClientScopes(optionalClientScopes)
                     .attribute(OID4VCI_ENABLED_ATTRIBUTE_KEY, "true")
                     .redirectUris("*")
                     .secret("test-secret");
@@ -573,11 +610,19 @@ public abstract class OID4VCIssuerTestBase {
     public static class PublicOID4VCIClient implements ClientConfig {
 
         @Override
-        public ClientConfigBuilder configure(ClientConfigBuilder client) {
+        public ClientBuilder configure(ClientBuilder client) {
+            String[] optionalClientScopes = {
+                    jwtTypeCredentialScopeName,
+                    sdJwtTypeCredentialScopeName,
+                    minimalJwtTypeCredentialScopeName,
+                    jwtTypeNaturalPersonScopeName,
+                    sdJwtTypeNaturalPersonScopeName,
+                    "email"
+            };
             client.clientId(OID4VCI_PUBLIC_CLIENT_ID)
                     .publicClient(true)
                     .defaultClientScopes("basic", "profile", "roles")
-                    .optionalClientScopes(jwtTypeCredentialScopeName, minimalJwtTypeCredentialScopeName, sdJwtTypeCredentialScopeName, "email")
+                    .optionalClientScopes(optionalClientScopes)
                     .redirectUris("http://127.0.0.1:8500/callback/oauth")
                     .attribute(OID4VCI_ENABLED_ATTRIBUTE_KEY, "true")
                     .attribute("pkce.code.challenge.method", "S256");  // require PKCE
@@ -668,6 +713,28 @@ public abstract class OID4VCIssuerTestBase {
             );
             return protocolMapperRepresentation;
         }
+
+        static ProtocolMapperRepresentation getRoleMapper(String clientId) {
+            ProtocolMapperRepresentation protocolMapperRepresentation = new ProtocolMapperRepresentation();
+            protocolMapperRepresentation.setName("role-mapper");
+            protocolMapperRepresentation.setId(UUID.randomUUID().toString());
+            protocolMapperRepresentation.setProtocol(OID4VCIConstants.OID4VC_PROTOCOL);
+            protocolMapperRepresentation.setProtocolMapper("oid4vc-target-role-mapper");
+            protocolMapperRepresentation.setConfig(
+                    Map.of("claim.name", "roles", "clientId", clientId)
+            );
+            return protocolMapperRepresentation;
+        }
+
+        static ProtocolMapperRepresentation getProtocolMapper(String name, String type, Map<String, String> config) {
+            ProtocolMapperRepresentation protocolMapperRepresentation = new ProtocolMapperRepresentation();
+            protocolMapperRepresentation.setName(name);
+            protocolMapperRepresentation.setId(UUID.randomUUID().toString());
+            protocolMapperRepresentation.setProtocol(OID4VCIConstants.OID4VC_PROTOCOL);
+            protocolMapperRepresentation.setProtocolMapper(type);
+            protocolMapperRepresentation.setConfig(config);
+            return protocolMapperRepresentation;
+        }
     }
 
     public static class StaticTimeProvider implements TimeProvider {
@@ -686,13 +753,5 @@ public abstract class OID4VCIssuerTestBase {
         public long currentTimeMillis() {
             return currentTimeInS * 1000L;
         }
-    }
-
-    protected void setOid4vciEnabled(ClientRepresentation testClient, boolean enabled) {
-        ClientResource clientResource = testRealm.admin().clients().get(testClient.getId());
-        Map<String, String> attributes = Optional.ofNullable(testClient.getAttributes()).orElse(new HashMap<>());
-        attributes.put(OID4VCI_ENABLED_ATTRIBUTE_KEY, String.valueOf(enabled));
-        testClient.setAttributes(attributes);
-        clientResource.update(testClient);
     }
 }

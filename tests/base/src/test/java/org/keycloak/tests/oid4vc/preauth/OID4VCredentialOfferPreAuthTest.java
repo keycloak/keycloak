@@ -5,10 +5,9 @@ import java.util.List;
 
 import org.keycloak.TokenVerifier;
 import org.keycloak.admin.client.resource.UserResource;
-import org.keycloak.protocol.oid4vc.model.CredentialIssuer;
+import org.keycloak.protocol.oid4vc.model.CredentialOfferURI;
 import org.keycloak.protocol.oid4vc.model.CredentialResponse;
 import org.keycloak.protocol.oid4vc.model.CredentialsOffer;
-import org.keycloak.protocol.oid4vc.model.Proofs;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -16,11 +15,10 @@ import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.tests.oid4vc.OID4VCIssuerTestBase;
 import org.keycloak.tests.oid4vc.OID4VCTestContext;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.oid4vc.CredentialOfferResponse;
 import org.keycloak.util.JsonSerialization;
 
 import org.junit.jupiter.api.Test;
-
-import static org.keycloak.tests.oid4vc.OID4VCProofTestUtils.jwtProofs;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -56,7 +54,10 @@ public class OID4VCredentialOfferPreAuthTest extends OID4VCIssuerTestBase {
 
         try {
             IllegalStateException error = assertThrows(IllegalStateException.class,
-                    () -> wallet.createCredentialOfferPreAuth(ctx, ctx.getHolder()));
+                    () -> wallet.createCredentialOffer(ctx, req -> {
+                        req.targetUser(ctx.getHolder());
+                        req.preAuthorized(true);
+                    }));
             assertTrue(error.getMessage().contains("User 'alice' disabled"), error.getMessage());
         } finally {
             userRep.setEnabled(true);
@@ -71,7 +72,11 @@ public class OID4VCredentialOfferPreAuthTest extends OID4VCIssuerTestBase {
 
         // Create Pre-Authorized CredentialOffer
         //
-        CredentialsOffer credOffer = wallet.createCredentialOfferPreAuth(ctx, null);
+        CredentialsOffer credOffer = wallet.createCredentialOffer(ctx, req -> {
+            req.preAuthorized(true);
+            req.targetUser(null);
+        });
+
         String preAuthCode = credOffer.getPreAuthorizedCode();
 
         // Redeem Pre-Authorized Code for AccessToken
@@ -89,7 +94,7 @@ public class OID4VCredentialOfferPreAuthTest extends OID4VCIssuerTestBase {
         //
         CredentialResponse credResponse = wallet.credentialRequest(ctx, accessToken)
                 .credentialIdentifier(authorizedIdentifier)
-                .proofs(getJwtProofs(ctx))
+                .proofs(wallet.generateJwtProof(ctx))
                 .send().getCredentialResponse();
 
         verifyCredentialResponse(ctx, ctx.getIssuer(), credResponse);
@@ -101,8 +106,22 @@ public class OID4VCredentialOfferPreAuthTest extends OID4VCIssuerTestBase {
 
         // Create Pre-Authorized CredentialOffer
         //
-        CredentialsOffer credOffer = wallet.createCredentialOfferPreAuth(ctx, ctx.getHolder());
+        CredentialsOffer credOffer = wallet.createCredentialOffer(ctx, req -> {
+            req.targetUser(ctx.getHolder());
+            req.preAuthorized(true);
+        });
+
         String preAuthCode = credOffer.getPreAuthorizedCode();
+        assertNotNull(preAuthCode, "preAuthCode");
+
+        CredentialOfferURI offerURI = ctx.getCredentialsOfferUri();
+        assertNotNull(offerURI, "No CredentialOfferURI");
+
+        // Fetch credential offer again
+        // https://github.com/keycloak/keycloak/issues/48014
+        credOffer = wallet.credentialsOfferRequest(ctx, offerURI).send().getCredentialsOffer();
+        preAuthCode = credOffer.getPreAuthorizedCode();
+        assertNotNull(preAuthCode, "preAuthCode");
 
         // Redeem Pre-Authorized Code for AccessToken
         //
@@ -113,16 +132,21 @@ public class OID4VCredentialOfferPreAuthTest extends OID4VCIssuerTestBase {
         assertNotNull(accessToken, "No accessToken");
 
         String authorizedIdentifier = ctx.getAuthorizedCredentialIdentifier();
-        assertNotNull(authorizedIdentifier, "No authorized credential identifier");
+        assertNotNull(authorizedIdentifier, "Has authorized credential identifier");
 
         // Send the CredentialRequest
         //
         CredentialResponse credResponse = wallet.credentialRequest(ctx, accessToken)
                 .credentialIdentifier(authorizedIdentifier)
-                .proofs(getJwtProofs(ctx))
+                .proofs(wallet.generateJwtProof(ctx))
                 .send().getCredentialResponse();
 
         verifyCredentialResponse(ctx, ctx.getHolder(), credResponse);
+
+        // Attempt to fetch the credential offer again after it has been consumed
+        CredentialOfferResponse res = wallet.credentialsOfferRequest(ctx, offerURI).send();
+        assertEquals("invalid_credential_offer_request", res.getError());
+        assertEquals("Credential offer not found or already consumed", res.getErrorDescription());
     }
 
     // Private ---------------------------------------------------------------------------------------------------------
@@ -140,11 +164,5 @@ public class OID4VCredentialOfferPreAuthTest extends OID4VCIssuerTestBase {
         assertEquals(List.of(scope), credential.getType());
         assertEquals(URI.create("did:web:test.org"), credential.getIssuer());
         assertEquals(expUser + "@email.cz", credential.getCredentialSubject().getClaims().get("email"));
-    }
-
-    private Proofs getJwtProofs(OID4VCTestContext ctx) {
-        String cNonce = oauth.oid4vc().nonceRequest().send().getNonce();
-        CredentialIssuer issuerMetadata = wallet.getIssuerMetadata(ctx);
-        return jwtProofs(issuerMetadata.getCredentialIssuer(), cNonce);
     }
 }

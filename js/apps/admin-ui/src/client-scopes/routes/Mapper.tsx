@@ -15,9 +15,9 @@ const MappingDetails = lazy(() => import("../details/MappingDetails"));
 export const MapperRoute: AppRouteObject = {
   path: "/:realm/client-scopes/:id/mappers/:mapperId/:viewMode",
   element: <MappingDetails />,
-  breadcrumb: (t) => t("mappingDetails"),
   handle: {
     access: "view-clients",
+    breadcrumb: (t) => t("mappingDetails"),
   },
 };
 

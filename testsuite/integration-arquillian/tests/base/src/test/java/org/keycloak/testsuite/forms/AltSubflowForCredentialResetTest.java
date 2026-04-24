@@ -27,26 +27,26 @@ import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.client.KeycloakTestingClient;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginPasswordResetPage;
 import org.keycloak.testsuite.pages.LoginUsernameOnlyPage;
 import org.keycloak.testsuite.util.FlowUtil;
 import org.keycloak.testsuite.util.GreenMailRule;
-import org.keycloak.testsuite.util.UserBuilder;
 
 import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 import static org.keycloak.testsuite.AbstractAdminTest.loadJson;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Tests setting up alternative reset credentials sub flow to prevent signing in after clicking "forgot password"
@@ -93,7 +93,7 @@ public class AltSubflowForCredentialResetTest extends AbstractTestRealmKeycloakT
         log.info("Adding login-test user");
         UserRepresentation testUser = UserBuilder.create().username("login-test").email("login@test.com").enabled(true).build();
 
-        userID = ApiUtil.createUserAndResetPasswordWithAdminClient(testRealm(), testUser, "password");
+        userID = AdminApiUtil.createUserAndResetPasswordWithAdminClient(managedRealm.admin(), testUser, "password");
         getCleanup().addUserId(userID);
     }
 
@@ -117,19 +117,19 @@ public class AltSubflowForCredentialResetTest extends AbstractTestRealmKeycloakT
     public void alternativeSubflowStaySignedOutTest() {
         configureAlternativeResetCredentialsFlow();
         try {
-            loginPage.open();
+            oauth.openLoginForm();
             loginPage.resetPassword();
-            Assert.assertTrue(loginPasswordResetPage.isCurrent());
+            Assertions.assertTrue(loginPasswordResetPage.isCurrent());
             loginPasswordResetPage.changePassword("login@test.com.com");
-            Assert.assertTrue(loginPage.isCurrent());
+            Assertions.assertTrue(loginPage.isCurrent());
             assertEquals("You should receive an email shortly with further instructions.", loginUsernameOnlyPage.getSuccessMessage());
-            loginPage.open();
-            Assert.assertTrue(loginPage.isCurrent());
+            oauth.openLoginForm();
+            Assertions.assertTrue(loginPage.isCurrent());
         } finally {
-            testRealm().flows().getFlows().clear();
-            RealmRepresentation realm = testRealm().toRepresentation();
+            managedRealm.admin().flows().getFlows().clear();
+            RealmRepresentation realm = managedRealm.admin().toRepresentation();
             realm.setResetCredentialsFlow(DefaultAuthenticationFlows.RESET_CREDENTIALS_FLOW);
-            testRealm().update(realm);
+            managedRealm.admin().update(realm);
         }
     }
 }

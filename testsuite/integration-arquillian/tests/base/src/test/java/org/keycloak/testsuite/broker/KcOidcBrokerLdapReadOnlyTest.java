@@ -30,7 +30,7 @@ import org.junit.Test;
 
 import static org.keycloak.models.utils.ModelToRepresentation.toRepresentationWithoutConfig;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public final class KcOidcBrokerLdapReadOnlyTest extends AbstractInitializedBaseBrokerTest {
 
@@ -69,7 +69,7 @@ public final class KcOidcBrokerLdapReadOnlyTest extends AbstractInitializedBaseB
         userProfile.update(upConfig);
 
         // federate user and link account
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
         logInWithBroker(bc);
         updateAccountInformationPage.updateAccountInformation(bc.getUserLogin(), bc.getUserEmail(), "f", "l");
@@ -85,7 +85,7 @@ public final class KcOidcBrokerLdapReadOnlyTest extends AbstractInitializedBaseB
         // logout user on the consumer realm and login again
         user = adminClient.realm(bc.consumerRealmName()).users().search(bc.getUserLogin()).get(0);
         adminClient.realm(bc.consumerRealmName()).users().get(user.getId()).logout();
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
         logInWithBroker(bc);
         appPage.assertCurrent();

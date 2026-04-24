@@ -34,9 +34,9 @@ import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.provider.Provider;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
-import org.keycloak.testsuite.Assert;
 
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 /**
  * Test for having multiple providerFactory of smae SPI with same providerId
@@ -72,6 +72,6 @@ public class ProvidersOverrideTest extends AbstractKeycloakTest {
 
     private void testProviderImplementationClass(Class<? extends Provider> providerClass, String providerId, Class<? extends Provider> expectedProviderImplClass) {
         String providerImplClass = getTestingClient().testing().getProviderClassName(providerClass.getName(), providerId);
-        Assert.assertEquals(expectedProviderImplClass.getName(), providerImplClass);
+        Assertions.assertEquals(expectedProviderImplClass.getName(), providerImplClass);
     }
 }

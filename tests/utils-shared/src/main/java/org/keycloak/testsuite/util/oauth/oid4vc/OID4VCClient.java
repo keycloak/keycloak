@@ -56,4 +56,8 @@ public class OID4VCClient {
     public Oid4vcNonceRequest nonceRequest() {
         return new Oid4vcNonceRequest(client);
     }
+
+    public Oid4vcNonceResponse doNonceRequest() {
+        return nonceRequest().send();
+    }
 }

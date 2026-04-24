@@ -32,10 +32,10 @@ import org.keycloak.testsuite.util.LDAPRule;
 import org.keycloak.testsuite.util.LDAPTestConfiguration;
 import org.keycloak.testsuite.util.LDAPTestUtils;
 
-import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 import org.junit.runners.MethodSorters;
 
 import static org.keycloak.testsuite.AbstractAdminTest.loadJson;
@@ -98,27 +98,27 @@ public class LDAPLegacyImportTest extends AbstractLDAPTest {
 
     @Test
     public void loginClassic() {
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("marykeycloak", "password-app");
 
-        Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assert.assertNotNull(oauth.parseLoginResponse().getCode());
+        Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
 
     }
 
     @Test
     public void loginLdap() {
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("johnkeycloak", "Password1");
 
-        Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assert.assertNotNull(oauth.parseLoginResponse().getCode());
+        Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
 
-        UserRepresentation userRepresentation = AccountHelper.getUserRepresentation(testRealm(), "johnkeycloak");
+        UserRepresentation userRepresentation = AccountHelper.getUserRepresentation(managedRealm.admin(), "johnkeycloak");
 
-        Assert.assertEquals("John", userRepresentation.getFirstName());
-        Assert.assertEquals("Doe", userRepresentation.getLastName());
-        Assert.assertEquals("john@email.org", userRepresentation.getEmail());
+        Assertions.assertEquals("John", userRepresentation.getFirstName());
+        Assertions.assertEquals("Doe", userRepresentation.getLastName());
+        Assertions.assertEquals("john@email.org", userRepresentation.getEmail());
     }
 
 

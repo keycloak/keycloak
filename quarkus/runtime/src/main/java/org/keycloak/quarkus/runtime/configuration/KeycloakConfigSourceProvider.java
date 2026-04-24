@@ -72,7 +72,7 @@ public class KeycloakConfigSourceProvider implements ConfigSourceProvider, Confi
     /**
      * For test purposes
      */
-    public static void reload() {
+    static void reload() {
         CONFIG_SOURCES.clear();
         CONFIG_SOURCE_DISPLAY_NAMES.clear();
     }

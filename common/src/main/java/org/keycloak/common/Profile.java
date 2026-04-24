@@ -50,6 +50,8 @@ public class Profile {
     public enum Feature {
         AUTHORIZATION("Authorization Service", Type.DEFAULT),
 
+        AUTHZEN("OpenID AuthZen Authorization", Type.EXPERIMENTAL),
+
         ACCOUNT_API("Account Management REST API", Type.DEFAULT),
 
         ACCOUNT_V3("Account Console version 3", Type.DEFAULT, 3, Feature.ACCOUNT_API),
@@ -98,6 +100,7 @@ public class Profile {
         STEP_UP_AUTHENTICATION_SAML("Step-up Authentication Saml", Type.PREVIEW, Feature.STEP_UP_AUTHENTICATION),
 
         CLIENT_AUTH_FEDERATED("Authenticates client based on assertions issued by identity provider", Type.DEFAULT),
+        CLIENT_AUTH_ABCA("Attestation-Based Client Authentication", Type.EXPERIMENTAL),
 
         SPIFFE("SPIFFE trust relationship provider", Type.PREVIEW),
 

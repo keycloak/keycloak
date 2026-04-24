@@ -27,7 +27,7 @@
         <!-- Enforce build order: openapi.yaml must be generated before JS build -->
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-admin-v2-rest</artifactId>
+            <artifactId>keycloak-admin-v2-services</artifactId>
             <scope>provided</scope>
             <exclusions>
                 <exclusion>

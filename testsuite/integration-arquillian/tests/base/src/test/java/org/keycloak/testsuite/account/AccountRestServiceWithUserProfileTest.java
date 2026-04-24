@@ -38,7 +38,7 @@ import org.keycloak.representations.idm.UserProfileMetadata;
 import org.keycloak.representations.userprofile.config.UPAttribute;
 import org.keycloak.representations.userprofile.config.UPAttributePermissions;
 import org.keycloak.representations.userprofile.config.UPConfig;
-import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.broker.util.SimpleHttpDefault;
 import org.keycloak.testsuite.util.userprofile.UserProfileUtil;
 import org.keycloak.userprofile.UserProfileContext;
@@ -57,10 +57,10 @@ import static org.keycloak.userprofile.config.UPConfigUtils.ROLE_USER;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Test account rest service with custom user profile configurations
@@ -167,9 +167,9 @@ public class AccountRestServiceWithUserProfileTest extends AbstractRestServiceTe
             assertNull(getUserProfileAttributeMetadata(user, "attr_no_permission"));
 
         } finally {
-            RealmRepresentation realmRep = testRealm().toRepresentation();
+            RealmRepresentation realmRep = managedRealm.admin().toRepresentation();
             realmRep.setEditUsernameAllowed(true);
-            testRealm().update(realmRep);
+            managedRealm.admin().update(realmRep);
         }
     }
 
@@ -177,7 +177,7 @@ public class AccountRestServiceWithUserProfileTest extends AbstractRestServiceTe
     public void testUpdateEmailLink() throws Exception {
         RealmResource realm = adminClient.realm("test");
         RealmRepresentation realmRep = realm.toRepresentation();
-        ApiUtil.enableRequiredAction(realm, RequiredAction.UPDATE_EMAIL, true);
+        AdminApiUtil.enableRequiredAction(realm, RequiredAction.UPDATE_EMAIL, true);
 
         try {
             realmRep.setEditUsernameAllowed(false);
@@ -195,7 +195,7 @@ public class AccountRestServiceWithUserProfileTest extends AbstractRestServiceTe
             assertNotNull(user.getUserProfileMetadata());
             assertThat(user.getUserProfileMetadata().getAttributeMetadata(UserModel.EMAIL).getAnnotations().get("kc.required.action.supported"), is(nullValue()));
         } finally {
-            ApiUtil.enableRequiredAction(realm, RequiredAction.UPDATE_EMAIL, false);
+            AdminApiUtil.enableRequiredAction(realm, RequiredAction.UPDATE_EMAIL, false);
             realmRep.setEditUsernameAllowed(true);
             realm.update(realmRep);
         }
@@ -224,9 +224,9 @@ public class AccountRestServiceWithUserProfileTest extends AbstractRestServiceTe
             assertNull(getUserProfileAttributeMetadata(user, "attr_no_permission"));
 
         } finally {
-            RealmRepresentation realmRep = testRealm().toRepresentation();
+            RealmRepresentation realmRep = managedRealm.admin().toRepresentation();
             realmRep.setEditUsernameAllowed(true);
-            testRealm().update(realmRep);
+            managedRealm.admin().update(realmRep);
         }
     }
 
@@ -249,9 +249,9 @@ public class AccountRestServiceWithUserProfileTest extends AbstractRestServiceTe
             assertUserProfileAttributeMetadata(user, "attr_readonly", "attr_readonly", false, true);
             assertNull(getUserProfileAttributeMetadata(user, "attr_no_permission"));
         } finally {
-            RealmRepresentation realmRep = testRealm().toRepresentation();
+            RealmRepresentation realmRep = managedRealm.admin().toRepresentation();
             realmRep.setEditUsernameAllowed(true);
-            testRealm().update(realmRep);
+            managedRealm.admin().update(realmRep);
         }
     }
 
@@ -295,21 +295,21 @@ public class AccountRestServiceWithUserProfileTest extends AbstractRestServiceTe
             
             assertNull(getUserProfileAttributeMetadata(user, "attr_no_permission"));
         } finally {
-            RealmRepresentation realmRep = testRealm().toRepresentation();
+            RealmRepresentation realmRep = managedRealm.admin().toRepresentation();
             realmRep.setEditUsernameAllowed(true);
             realmRep.setRegistrationEmailAsUsername(false);
-            testRealm().update(realmRep);
+            managedRealm.admin().update(realmRep);
         }
     }
     
     protected void assertAnnotationValue(UserProfileAttributeMetadata uam, String key, Object value) {
-        assertNotNull("Missing annotations for attribute " + uam.getName(), uam.getAnnotations());
-        assertEquals("Unexpexted value of the "+key+" annotation for attribute " + uam.getName(), value, uam.getAnnotations().get(key));
+        assertNotNull(uam.getAnnotations(), "Missing annotations for attribute " + uam.getName());
+        assertEquals(value, uam.getAnnotations().get(key), "Unexpexted value of the "+key+" annotation for attribute " + uam.getName());
     }
 
     protected Map<String, Object> assertValidatorExists(UserProfileAttributeMetadata uam, String validatorId) {
-        assertNotNull("Missing validators for attribute " + uam.getName(), uam.getValidators());
-        assertTrue("Missing validtor "+validatorId+" for attribute " + uam.getName(), uam.getValidators().containsKey(validatorId));
+        assertNotNull(uam.getValidators(), "Missing validators for attribute " + uam.getName());
+        assertTrue(uam.getValidators().containsKey(validatorId), "Missing validtor "+validatorId+" for attribute " + uam.getName());
         return uam.getValidators().get(validatorId);
     }
     
@@ -377,10 +377,10 @@ public class AccountRestServiceWithUserProfileTest extends AbstractRestServiceTe
 
     @Test
     public void testManageUserLocaleAttribute() throws IOException {
-        RealmRepresentation realmRep = testRealm().toRepresentation();
+        RealmRepresentation realmRep = managedRealm.admin().toRepresentation();
         Boolean internationalizationEnabled = realmRep.isInternationalizationEnabled();
         realmRep.setInternationalizationEnabled(false);
-        testRealm().update(realmRep);
+        managedRealm.admin().update(realmRep);
         UserRepresentation user = getUser();
         user.setAttributes(Optional.ofNullable(user.getAttributes()).orElse(new HashMap<>()));
 
@@ -390,7 +390,7 @@ public class AccountRestServiceWithUserProfileTest extends AbstractRestServiceTe
             assertNull(user.getAttributes());
 
             realmRep.setInternationalizationEnabled(true);
-            testRealm().update(realmRep);
+            managedRealm.admin().update(realmRep);
 
             user.singleAttribute(UserModel.LOCALE, "pt_BR");
             user = updateAndGet(user);
@@ -409,13 +409,13 @@ public class AccountRestServiceWithUserProfileTest extends AbstractRestServiceTe
             );
         } finally {
             realmRep.setInternationalizationEnabled(internationalizationEnabled);
-            testRealm().update(realmRep);
+            managedRealm.admin().update(realmRep);
             updateAndGet(user);
         }
     }
 
     protected void setUserProfileConfiguration(String configuration) {
-        UserProfileUtil.setUserProfileConfiguration(testRealm(), configuration);
+        UserProfileUtil.setUserProfileConfiguration(managedRealm.admin(), configuration);
     }
 
     protected UserRepresentation getUser() throws IOException {

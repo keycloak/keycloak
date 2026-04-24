@@ -38,7 +38,7 @@ public class KcAdmV2CompleterTest {
         assertTrue("Should suggest 'create'", candidates.contains("create"));
         assertTrue("Should suggest 'get'", candidates.contains("get"));
         assertTrue("Should suggest 'patch'", candidates.contains("patch"));
-        assertTrue("Should suggest 'update'", candidates.contains("update"));
+        assertTrue("Should suggest 'apply'", candidates.contains("apply"));
         assertTrue("Should suggest 'delete'", candidates.contains("delete"));
     }
 
@@ -103,6 +103,7 @@ public class KcAdmV2CompleterTest {
         assertTrue("Should suggest '--web-origins'", candidates.contains("--web-origins"));
         assertTrue("Should suggest '--auth-method'", candidates.contains("--auth-method"));
         assertFalse("Should not suggest '--sign-documents'", candidates.contains("--sign-documents"));
+        assertFalse("Should not suggest '--uuid' on create: " + candidates, candidates.contains("--uuid"));
     }
 
     @Test
@@ -110,6 +111,19 @@ public class KcAdmV2CompleterTest {
         List<String> candidates = complete("client", "create", "saml", "--");
         assertTrue("Should suggest '--sign-documents'", candidates.contains("--sign-documents"));
         assertFalse("Should not suggest '--login-flows'", candidates.contains("--login-flows"));
+    }
+
+    @Test
+    public void testFileOptionInAutocompleteForCreateParent() {
+        List<String> candidates = complete("client", "create", "-");
+        assertTrue("Should suggest '-f' at parent level", candidates.contains("-f"));
+    }
+
+    @Test
+    public void testFieldOptionsNotInAutocompleteForCreateParent() {
+        List<String> candidates = complete("client", "create", "--");
+        assertFalse("Should not suggest '--client-id' at parent level", candidates.contains("--client-id"));
+        assertFalse("Should not suggest '--login-flows' at parent level", candidates.contains("--login-flows"));
     }
 
     @Test
@@ -125,19 +139,42 @@ public class KcAdmV2CompleterTest {
     }
 
     @Test
-    public void testUpdateVariantsInAutocomplete() {
-        List<String> candidates = complete("client", "update", "");
+    public void testApplyVariantsInAutocomplete() {
+        List<String> candidates = complete("client", "apply", "");
         assertTrue("Should suggest 'oidc'", candidates.contains("oidc"));
         assertTrue("Should suggest 'saml'", candidates.contains("saml"));
     }
 
     @Test
-    public void testUpdateOidcOptionsInAutocomplete() {
-        List<String> candidates = complete("client", "update", "oidc", "--");
+    public void testApplyOidcOptionsInAutocomplete() {
+        List<String> candidates = complete("client", "apply", "oidc", "--");
         assertTrue("Should suggest '--client-id'", candidates.contains("--client-id"));
         assertTrue("Should suggest '--login-flows'", candidates.contains("--login-flows"));
         assertTrue("Should suggest '--compressed'", candidates.contains("--compressed"));
         assertFalse("Should not suggest '--sign-documents'", candidates.contains("--sign-documents"));
+        assertFalse("Should not suggest '--uuid' on apply: " + candidates, candidates.contains("--uuid"));
+    }
+
+    @Test
+    public void testConfigShowsSubcommands() {
+        List<String> candidates = complete("config", "");
+        assertTrue("Should suggest 'credentials'", candidates.contains("credentials"));
+        assertTrue("Should suggest 'openapi'", candidates.contains("openapi"));
+    }
+
+    @Test
+    public void testConfigOpenApiOptionsInAutocomplete() {
+        List<String> candidates = complete("config", "openapi", "--");
+        assertTrue("Should suggest '--config': " + candidates, candidates.contains("--config"));
+        assertTrue("Should suggest '--help': " + candidates, candidates.contains("--help"));
+    }
+
+    @Test
+    public void testConfigCredentialsShowsOpenApiUrlOption() {
+        List<String> candidates = complete("config", "credentials", "--");
+        assertTrue("Should suggest '--openapi-url': " + candidates, candidates.contains("--openapi-url"));
+        assertTrue("Should suggest '--server': " + candidates, candidates.contains("--server"));
+        assertTrue("Should suggest '--realm': " + candidates, candidates.contains("--realm"));
     }
 
     @Test
@@ -165,7 +202,7 @@ public class KcAdmV2CompleterTest {
     }
 
     private void assertSubcommandsDoNotContain(List<String> candidates) {
-        for (String name : new String[]{"create", "get", "patch", "update", "delete"}) {
+        for (String name : new String[]{"create", "get", "patch", "apply", "delete"}) {
             if (candidates.contains(name)) {
                 throw new AssertionError("Should not contain '" + name + "' but did");
             }

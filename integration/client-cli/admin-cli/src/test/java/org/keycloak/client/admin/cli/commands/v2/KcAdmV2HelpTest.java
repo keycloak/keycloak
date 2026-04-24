@@ -8,6 +8,7 @@ import java.util.List;
 
 import org.keycloak.client.admin.cli.KcAdmMain;
 import org.keycloak.client.admin.cli.v2.KcAdmV2Cmd;
+import org.keycloak.client.cli.common.BaseConfigCredentialsCmd;
 import org.keycloak.client.cli.common.Globals;
 
 import org.junit.Test;
@@ -26,6 +27,12 @@ public class KcAdmV2HelpTest {
 
         assertTrue("Help should list 'client' resource group", help.contains("client"));
         assertTrue("Help should list 'config' command", help.contains("config"));
+    }
+
+    @Test
+    public void testHelpShowsCompletionInstructions() {
+        String help = createCli().getUsageMessage();
+        assertTrue("Help should mention tab completion setup", help.contains("completion"));
     }
 
     @Test
@@ -55,7 +62,7 @@ public class KcAdmV2HelpTest {
         CommandLine clientCli = cli.getSubcommands().get("client");
 
         String help = clientCli.getUsageMessage();
-        for (String cmd : List.of("list", "create", "get", "patch", "update", "delete")) {
+        for (String cmd : List.of("list", "create", "get", "patch", "apply", "delete")) {
             assertTrue("Client help should list '" + cmd + "'", help.contains(cmd));
         }
     }
@@ -76,6 +83,7 @@ public class KcAdmV2HelpTest {
         assertTrue("should have --service-account-roles", help.contains("--service-account-roles"));
         assertTrue("should have -f", help.contains("-f"));
         assertFalse("should not have --sign-documents", help.contains("--sign-documents"));
+        assertFalse("create should not expose readOnly --uuid: " + help, help.contains("--uuid"));
     }
 
     @Test
@@ -111,6 +119,7 @@ public class KcAdmV2HelpTest {
         assertTrue("should have --login-flows", help.contains("--login-flows"));
         assertTrue("should have -f", help.contains("-f"));
         assertFalse("should not have --sign-documents", help.contains("--sign-documents"));
+        assertFalse("patch should not expose readOnly --uuid: " + help, help.contains("--uuid"));
     }
 
     @Test
@@ -121,47 +130,48 @@ public class KcAdmV2HelpTest {
     }
 
     @Test
-    public void testUpdateHasProtocolVariants() {
+    public void testApplyHasProtocolVariants() {
         CommandLine cli = createCli();
-        CommandLine updateCli = cli.getSubcommands().get("client").getSubcommands().get("update");
-        assertTrue("update should have 'oidc' subcommand", updateCli.getSubcommands().containsKey("oidc"));
-        assertTrue("update should have 'saml' subcommand", updateCli.getSubcommands().containsKey("saml"));
+        CommandLine applyCli = cli.getSubcommands().get("client").getSubcommands().get("apply");
+        assertTrue("apply should have 'oidc' subcommand", applyCli.getSubcommands().containsKey("oidc"));
+        assertTrue("apply should have 'saml' subcommand", applyCli.getSubcommands().containsKey("saml"));
     }
 
     @Test
-    public void testUpdateOidcShowsOidcOptions() {
-        String help = getVariantHelp("update", "oidc");
+    public void testApplyOidcShowsOidcOptions() {
+        String help = getVariantHelp("apply", "oidc");
         assertTrue("should have --login-flows", help.contains("--login-flows"));
         assertTrue("should have -f", help.contains("-f"));
         assertTrue("should have <id> positional", help.contains("<id>"));
         assertFalse("should not have --sign-documents", help.contains("--sign-documents"));
+        assertFalse("apply should not expose readOnly --uuid: " + help, help.contains("--uuid"));
     }
 
     @Test
-    public void testUpdateSamlShowsSamlOptions() {
-        String help = getVariantHelp("update", "saml");
+    public void testApplySamlShowsSamlOptions() {
+        String help = getVariantHelp("apply", "saml");
         assertTrue("should have --sign-documents", help.contains("--sign-documents"));
         assertTrue("should have <id> positional", help.contains("<id>"));
         assertFalse("should not have --login-flows", help.contains("--login-flows"));
     }
 
     @Test
-    public void testUpdateHasOutputOptions() {
-        String help = getVariantHelp("update", "oidc");
-        assertTrue("update (200 response) should have Output options", help.contains("Output options:"));
+    public void testApplyHasOutputOptions() {
+        String help = getVariantHelp("apply", "oidc");
+        assertTrue("apply (200 response) should have Output options", help.contains("Output options:"));
         assertTrue("should have --compressed", help.contains("--compressed"));
     }
 
     @Test
-    public void testHelpOnUpdateVariantLeafWithRequiredId() {
+    public void testHelpOnApplyVariantLeafWithRequiredId() {
         CommandLine cli = createCli();
         StringWriter out = new StringWriter();
         StringWriter err = new StringWriter();
         cli.setOut(new PrintWriter(out));
         cli.setErr(new PrintWriter(err));
 
-        int exitCode = cli.execute("client", "update", "oidc", "--help");
-        assertEquals("--help on update variant should exit with 0, err: " + err, 0, exitCode);
+        int exitCode = cli.execute("client", "apply", "oidc", "--help");
+        assertEquals("--help on apply variant should exit with 0, err: " + err, 0, exitCode);
         assertTrue("should show help with --client-id option", out.toString().contains("--client-id"));
     }
 
@@ -314,6 +324,44 @@ public class KcAdmV2HelpTest {
     }
 
     @Test
+    public void testVariantParentShowsFileOptionForCreate() {
+        String help = getVariantParentHelp("create");
+        assertTrue("create parent should show -f option: " + help, help.contains("-f"));
+        assertTrue("create parent should show --file option: " + help, help.contains("--file"));
+    }
+
+    @Test
+    public void testVariantParentShowsFileOptionForApply() {
+        String help = getVariantParentHelp("apply");
+        assertTrue("apply parent should show -f option: " + help, help.contains("-f"));
+        assertTrue("apply parent should show --file option: " + help, help.contains("--file"));
+        assertFalse("apply parent should not show <id>: " + help, help.contains("<id>"));
+    }
+
+    @Test
+    public void testVariantParentShowsFileOptionForPatch() {
+        String help = getVariantParentHelp("patch");
+        assertTrue("patch parent should show -f option: " + help, help.contains("-f"));
+        assertTrue("patch parent should show --file option: " + help, help.contains("--file"));
+        assertFalse("patch parent should not show <id>: " + help, help.contains("<id>"));
+    }
+
+    @Test
+    public void testVariantParentDoesNotShowFieldOptions() {
+        String help = getVariantParentHelp("create");
+        assertFalse("create parent should not show --client-id: " + help, help.contains("--client-id"));
+        assertFalse("create parent should not show --login-flows: " + help, help.contains("--login-flows"));
+        assertFalse("create parent should not show --sign-documents: " + help, help.contains("--sign-documents"));
+    }
+
+    @Test
+    public void testVariantParentShowsConnectionOptions() {
+        String help = getVariantParentHelp("create");
+        assertTrue("create parent should show --config: " + help, help.contains("--config"));
+        assertTrue("create parent should show --server: " + help, help.contains("--server"));
+    }
+
+    @Test
     public void testHelpFlagOnVariantParent() {
         CommandLine cli = createCli();
         StringWriter out = new StringWriter();
@@ -381,6 +429,41 @@ public class KcAdmV2HelpTest {
             System.setErr(originalErr);
             Globals.dumpTrace = false;
         }
+    }
+
+    @Test
+    public void testConfigOpenApiHelpShowsUrl() {
+        CommandLine cli = createCli();
+        StringWriter out = new StringWriter();
+        StringWriter err = new StringWriter();
+        cli.setOut(new PrintWriter(out));
+        cli.setErr(new PrintWriter(err));
+
+        int exitCode = cli.execute("config", "openapi", "--help");
+        assertEquals("--help on config openapi should exit with 0", 0, exitCode);
+        String output = out.toString();
+        assertTrue("should show <source> parameter: " + output, output.contains("<source>"));
+        assertTrue("should show --config option: " + output, output.contains("--config"));
+        assertTrue("should mention 'config credentials': " + output, output.contains("config credentials"));
+    }
+
+    @Test
+    public void testConfigCredentialsHelpShowsOpenApiUrl() {
+        CommandLine cli = createCli();
+        String help = ((BaseConfigCredentialsCmd) cli.getSubcommands().get("config")
+                .getSubcommands().get("credentials").getCommand()).help();
+        assertTrue("should show --openapi-url option: " + help, help.contains("--openapi-url"));
+        assertTrue("should show --v2 in command: " + help, help.contains("--v2"));
+    }
+
+    private String getVariantParentHelp(String command) {
+        CommandLine cli = createCli();
+        StringWriter out = new StringWriter();
+        cli.setOut(new PrintWriter(out));
+        cli.setErr(new PrintWriter(new StringWriter()));
+        int exitCode = cli.execute("client", command, "--help");
+        assertEquals("--help should exit with 0", 0, exitCode);
+        return out.toString();
     }
 
     private String getVariantHelp(String command, String variant) {

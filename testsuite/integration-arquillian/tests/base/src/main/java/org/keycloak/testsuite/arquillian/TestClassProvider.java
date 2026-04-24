@@ -17,7 +17,9 @@ public class TestClassProvider {
 
     public static final String[] PERMITTED_PACKAGES = new String[] {
             "/org/keycloak/testsuite",
+            "/org/keycloak/testframework",
             "/org/junit",
+            "/org/opentest4j",
             "/org/hamcrest",
             "/org/keycloak/admin/client",
             "/org/jboss/resteasy/client",

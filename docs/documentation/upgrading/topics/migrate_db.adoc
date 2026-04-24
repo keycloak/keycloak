@@ -57,7 +57,7 @@ default `connections-jpa` provider:
 kc.[sh|bat] start --spi-connections-jpa--quarkus--migration-strategy=manual
 ----
 
-When you start the server with this configuration, the server checks if the database needs to be migrated. If migration is needed, the required changes are written to the `bin/keycloak-database-update.sql` SQL file. You can review and manually run these commands against the database.
+When you start the server with this configuration, the server checks if the database needs to be migrated. If migration is needed, the required changes are written to the `keycloak-database-update.sql` SQL file in the working directory from where {project_name} was started. You can review and manually run these commands against the database.
 
 To change the path and name of the exported SQL file, set the `migration-export` property for the
 default `connections-jpa` provider:

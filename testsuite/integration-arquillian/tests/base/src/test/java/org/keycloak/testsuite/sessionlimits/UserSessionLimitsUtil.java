@@ -11,7 +11,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.testsuite.runonserver.RunOnServer;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class UserSessionLimitsUtil {
     protected static final String ERROR_TO_DISPLAY = "This account has too many sessions";

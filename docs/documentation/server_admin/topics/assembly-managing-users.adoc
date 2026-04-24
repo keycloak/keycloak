@@ -10,6 +10,7 @@ include::users/user-profile.adoc[leveloffset=+2]
 include::users/ref-user-credentials.adoc[leveloffset=+2]
 include::users/proc-setting-password-user.adoc[leveloffset=+3]
 include::users/proc-creating-otp.adoc[leveloffset=+3]
+include::users/proc-verify-user-email.adoc[leveloffset=+3]
 
 include::users/con-user-registration.adoc[leveloffset=+2]
 include::users/proc-enabling-user-registration.adoc[leveloffset=3]

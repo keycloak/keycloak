@@ -1,0 +1,4 @@
+org.keycloak.representations.admin.v2.validators.ClientSecretNotBlankValidator
+org.keycloak.representations.admin.v2.validators.ProtocolUnmodifiedValidator
+org.keycloak.representations.admin.v2.validators.UuidUnmodifiedValidator
+org.keycloak.representations.admin.v2.validators.ValidRedirectUrisValidator

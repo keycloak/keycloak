@@ -70,6 +70,8 @@ export const RealmSettingsTokensTab = ({
 
   const { control, register, reset, formState, handleSubmit } =
     useFormContext<RealmRepresentation>();
+  const credentialOfferLifespanDefaultValue =
+    realm.attributes?.["credentialOfferLifespanS"] ?? 30;
 
   // Show a global error notification if validation fails
   const onError = () => {
@@ -684,12 +686,12 @@ export const RealmSettingsTokensTab = ({
           />
           <TimeSelectorControl
             name={convertAttributeNameToForm(
-              "attributes.preAuthorizedCodeLifespanS",
+              "attributes.credentialOfferLifespanS",
             )}
-            label={t("preAuthorizedCodeLifespan")}
-            labelIcon={t("preAuthorizedCodeLifespanHelp")}
+            label={t("credentialOfferLifespan")}
+            labelIcon={t("credentialOfferLifespanHelp")}
             controller={{
-              defaultValue: 30,
+              defaultValue: credentialOfferLifespanDefaultValue,
               rules: { min: 30 },
             }}
             min={30}

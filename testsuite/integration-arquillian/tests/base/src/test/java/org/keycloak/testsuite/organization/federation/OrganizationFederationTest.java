@@ -41,7 +41,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class OrganizationFederationTest extends AbstractOrganizationTest {
 
@@ -55,11 +55,11 @@ public class OrganizationFederationTest extends AbstractOrganizationTest {
 
     @After
     public void onAfter() {
-        List<UserRepresentation> users = testRealm().users().search("member");
+        List<UserRepresentation> users = managedRealm.admin().users().search("member");
 
         if (!users.isEmpty()) {
             UserRepresentation member = users.get(0);
-            testRealm().users().get(member.getId()).remove();
+            managedRealm.admin().users().get(member.getId()).remove();
         }
     }
 

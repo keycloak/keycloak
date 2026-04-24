@@ -22,10 +22,11 @@ public class Option<T> {
     private final DeprecatedMetadata deprecatedMetadata;
     private final Set<String> connectedOptions;
     private String wildcardKey;
+    private final boolean synthetic;
 
     public Option(Class<T> type, String key, OptionCategory category, boolean hidden, boolean buildTime, String description,
                   Optional<T> defaultValue, List<String> expectedValues, boolean strictExpectedValues, boolean caseInsensitiveExpectedValues,
-                  DeprecatedMetadata deprecatedMetadata, Set<String> connectedOptions, String wildcardKey, Class<?> componentType) {
+                  DeprecatedMetadata deprecatedMetadata, Set<String> connectedOptions, String wildcardKey, Class<?> componentType, boolean synthetic) {
         this.type = type;
         this.key = key;
         this.category = category;
@@ -40,6 +41,7 @@ public class Option<T> {
         this.connectedOptions = connectedOptions;
         this.wildcardKey = wildcardKey;
         this.componentType = componentType;
+        this.synthetic = synthetic;
     }
 
     public Class<T> getType() {
@@ -135,6 +137,9 @@ public class Option<T> {
         if (hidden) {
             builder.hidden();
         }
+        if (synthetic) {
+            builder.synthetic();
+        }
         return builder;
     }
 
@@ -175,5 +180,9 @@ public class Option<T> {
 
     public Class<?> getComponentType() {
         return componentType;
+    }
+
+    public boolean isSynthetic() {
+        return synthetic;
     }
 }

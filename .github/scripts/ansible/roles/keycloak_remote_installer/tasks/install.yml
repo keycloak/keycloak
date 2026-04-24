@@ -51,6 +51,5 @@
 - name: Install Maven repository on the remote hosts
   unarchive:
     src: "{{ maven_archive }}"
-    creates: "{{ kc_home }}"
-    dest: "{{ kc_home }}"
+    dest: "/home/{{ ansible_ssh_user }}"
     owner: "{{ ansible_ssh_user }}"

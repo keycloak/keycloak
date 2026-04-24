@@ -38,19 +38,19 @@ import org.keycloak.representations.idm.authorization.PermissionRequest;
 import org.keycloak.representations.idm.authorization.ResourcePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.RolePolicyRepresentation;
-import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.util.ClientBuilder;
-import org.keycloak.testsuite.util.GroupBuilder;
+import org.keycloak.testframework.realm.ClientBuilder;
+import org.keycloak.testframework.realm.GroupBuilder;
+import org.keycloak.testframework.realm.RoleBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.util.RealmBuilder;
-import org.keycloak.testsuite.util.RoleBuilder;
 import org.keycloak.testsuite.util.RolesBuilder;
-import org.keycloak.testsuite.util.UserBuilder;
 
 import org.junit.Before;
 import org.junit.Test;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -66,17 +66,17 @@ public class RolePolicyTest extends AbstractAuthzTest {
                         .realmRole(RoleBuilder.create().name("Role B").build())
                         .realmRole(RoleBuilder.create().name("Role C").build())
                 )
-                .group(GroupBuilder.create().name("Group A").realmRoles(Arrays.asList("Role A")).build())
-                .group(GroupBuilder.create().name("Group B").realmRoles(Arrays.asList("Role C")).build())
-                .user(UserBuilder.create().username("marta").password("password").addRoles("uma_authorization", "Role A"))
-                .user(UserBuilder.create().username("kolo").password("password").addRoles("uma_authorization", "Role B"))
-                .user(UserBuilder.create().username("alice").password("password").addRoles("uma_authorization").addGroups("Group B"))
+                .group(GroupBuilder.create().name("Group A").realmRoles("Role A").build())
+                .group(GroupBuilder.create().name("Group B").realmRoles("Role C").build())
+                .user(UserBuilder.create().username("marta").password("password").roles("uma_authorization", "Role A"))
+                .user(UserBuilder.create().username("kolo").password("password").roles("uma_authorization", "Role B"))
+                .user(UserBuilder.create().username("alice").password("password").roles("uma_authorization").groups("Group B"))
                 .client(ClientBuilder.create().clientId("resource-server-test")
                     .secret("secret")
                     .authorizationServicesEnabled(true)
                     .redirectUris("http://localhost/resource-server-test")
                     .defaultRoles("uma_protection")
-                    .directAccessGrants())
+                    .directAccessGrantsEnabled())
                 .build());
     }
 
@@ -175,7 +175,7 @@ public class RolePolicyTest extends AbstractAuthzTest {
         RealmResource realm = getRealm();
         ClientsResource clients = realm.clients();
         ClientRepresentation client = clients.findByClientId(authzClient.getConfiguration().getResource()).get(0);
-        ClientScopeRepresentation rolesScope = ApiUtil.findClientScopeByName(realm, OIDCLoginProtocolFactory.ROLES_SCOPE).toRepresentation();
+        ClientScopeRepresentation rolesScope = AdminApiUtil.findClientScopeByName(realm, OIDCLoginProtocolFactory.ROLES_SCOPE).toRepresentation();
         ClientResource clientResource = clients.get(client.getId());
         clientResource.removeDefaultClientScope(rolesScope.getId());
         getCleanup().addCleanup(() -> clientResource.addDefaultClientScope(rolesScope.getId()));
@@ -199,7 +199,7 @@ public class RolePolicyTest extends AbstractAuthzTest {
         RealmResource realm = getRealm();
         ClientsResource clients = realm.clients();
         ClientRepresentation client = clients.findByClientId(authzClient.getConfiguration().getResource()).get(0);
-        ClientScopeRepresentation rolesScope = ApiUtil.findClientScopeByName(realm, OIDCLoginProtocolFactory.ROLES_SCOPE).toRepresentation();
+        ClientScopeRepresentation rolesScope = AdminApiUtil.findClientScopeByName(realm, OIDCLoginProtocolFactory.ROLES_SCOPE).toRepresentation();
         ClientResource clientResource = clients.get(client.getId());
         clientResource.removeDefaultClientScope(rolesScope.getId());
         UserRepresentation serviceAccountUser = clientResource.getServiceAccountUser();

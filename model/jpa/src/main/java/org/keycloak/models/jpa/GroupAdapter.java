@@ -342,6 +342,17 @@ public class GroupAdapter implements GroupModel , JpaModel<GroupEntity> {
         return parent != null && parent.hasRole(role);
     }
 
+    @Override
+    public boolean hasDirectRole(RoleModel role) {
+        TypedQuery<GroupRoleMappingEntity> query = getGroupRoleMappingEntityTypedQuery(role);
+        GroupRoleMappingEntity membership = query.getSingleResultOrNull();
+        // Avoid keeping it in the persistence context, as the group might be detached for example in a bulk delete
+        if (membership != null) {
+            em.detach(membership);
+        }
+        return membership != null;
+    }
+
     protected TypedQuery<GroupRoleMappingEntity> getGroupRoleMappingEntityTypedQuery(RoleModel role) {
         TypedQuery<GroupRoleMappingEntity> query = em.createNamedQuery("groupHasRole", GroupRoleMappingEntity.class);
         query.setParameter("group", getEntity());

@@ -46,15 +46,15 @@ import org.keycloak.testframework.events.Events;
 import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
+import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.ClientConfig;
-import org.keycloak.testframework.realm.ClientConfigBuilder;
 import org.keycloak.testframework.realm.ManagedClient;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.ManagedUser;
+import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
-import org.keycloak.testframework.realm.RealmConfigBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.realm.UserConfig;
-import org.keycloak.testframework.realm.UserConfigBuilder;
 import org.keycloak.testframework.ui.annotations.InjectPage;
 import org.keycloak.testframework.ui.annotations.InjectWebDriver;
 import org.keycloak.testframework.ui.page.ConsentPage;
@@ -407,7 +407,7 @@ public class ConsentsTest {
     private static class UserRealmUserConf implements UserConfig {
 
         @Override
-        public UserConfigBuilder configure(UserConfigBuilder builder) {
+        public UserBuilder configure(UserBuilder builder) {
             builder.username("user");
             builder.password("password");
             builder.email("user@local");
@@ -421,7 +421,7 @@ public class ConsentsTest {
     private static class ProviderRealmUserConf implements UserConfig {
 
         @Override
-        public UserConfigBuilder configure(UserConfigBuilder builder) {
+        public UserBuilder configure(UserBuilder builder) {
             builder.username("provider");
             builder.password("password");
             builder.email("provider@local");
@@ -435,7 +435,7 @@ public class ConsentsTest {
     private static class ProviderRealmClientConf implements ClientConfig {
 
         @Override
-        public ClientConfigBuilder configure(ClientConfigBuilder builder) {
+        public ClientBuilder configure(ClientBuilder builder) {
             builder.clientId(CLIENT_ID);
             builder.name(CLIENT_ID);
             builder.secret(CLIENT_SECRET);
@@ -450,7 +450,7 @@ public class ConsentsTest {
     private static class ConsumerRealmConf implements RealmConfig {
 
         @Override
-        public RealmConfigBuilder configure(RealmConfigBuilder builder) {
+        public RealmBuilder configure(RealmBuilder builder) {
             builder.identityProvider(setUpIdentityProvider());
 
             return builder;

@@ -16,15 +16,15 @@ import org.keycloak.testframework.annotations.InjectUser;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
+import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.ClientConfig;
-import org.keycloak.testframework.realm.ClientConfigBuilder;
 import org.keycloak.testframework.realm.ManagedClient;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.ManagedUser;
+import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
-import org.keycloak.testframework.realm.RealmConfigBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.realm.UserConfig;
-import org.keycloak.testframework.realm.UserConfigBuilder;
 import org.keycloak.testframework.server.KeycloakUrls;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
@@ -273,7 +273,7 @@ public class AdminConsoleWhoAmILocaleTest {
     private static class LocaleOffRealmConfig implements RealmConfig {
 
         @Override
-        public RealmConfigBuilder configure(RealmConfigBuilder realm) {
+        public RealmBuilder configure(RealmBuilder realm) {
             realm.internationalizationEnabled(false);
             realm.addUser(USER_WITHOUT_LOCALE).password(PASSWORD)
                     .name("My", "Locale Off")
@@ -295,7 +295,7 @@ public class AdminConsoleWhoAmILocaleTest {
     private static class LocaleOnRealmConfig implements RealmConfig {
 
         @Override
-        public RealmConfigBuilder configure(RealmConfigBuilder realm) {
+        public RealmBuilder configure(RealmBuilder realm) {
             realm.internationalizationEnabled(true);
             realm.supportedLocales(REALM_LOCALE, USER_LOCALE, EXTRA_LOCALE);
             realm.defaultLocale(REALM_LOCALE);
@@ -326,7 +326,7 @@ public class AdminConsoleWhoAmILocaleTest {
     private static class MasterAdminUserConfig implements UserConfig {
 
         @Override
-        public UserConfigBuilder configure(UserConfigBuilder user) {
+        public UserBuilder configure(UserBuilder user) {
             user.username("master-admin");
             user.password(PASSWORD);
             user.name("My", "Admin");
@@ -342,7 +342,7 @@ public class AdminConsoleWhoAmILocaleTest {
     private static class MasterAdminClientConfig implements ClientConfig {
 
         @Override
-        public ClientConfigBuilder configure(ClientConfigBuilder client) {
+        public ClientBuilder configure(ClientBuilder client) {
             client.clientId("master-admin-cli");
             client.name("master-admin-cli");
             client.secret(SECRET);

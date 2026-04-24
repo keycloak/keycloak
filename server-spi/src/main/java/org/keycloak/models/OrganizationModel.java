@@ -27,10 +27,12 @@ import org.keycloak.provider.ProviderEvent;
 public interface OrganizationModel {
 
     String ORGANIZATION_ATTRIBUTE = "kc.org";
+    String ORGANIZATION_SWITCHABLE_ATTRIBUTE = "kc.org.switchable";
     String ORGANIZATION_NAME_ATTRIBUTE = "kc.org.name";
     String ORGANIZATION_DOMAIN_ATTRIBUTE = "kc.org.domain";
     String ALIAS = "alias";
     String HIDE_IDP_ON_LOGIN_WHEN_ORGANIZATION_UNKNOWN = "kc.org.broker.login.hide-when-org-unknown";
+    String SHOW_IDP_ON_LOGIN_WHEN_LINKED_ELSEWHERE = "kc.org.broker.login.show-when-linked-elsewhere";
 
     enum IdentityProviderRedirectMode {
         EMAIL_MATCH("kc.org.broker.redirect.mode.email-matches");

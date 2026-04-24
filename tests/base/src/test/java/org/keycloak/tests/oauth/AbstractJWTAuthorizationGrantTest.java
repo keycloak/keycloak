@@ -10,6 +10,7 @@ import org.keycloak.common.util.PemUtils;
 import org.keycloak.common.util.Time;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.events.Details;
+import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.IDToken;
@@ -218,6 +219,22 @@ public abstract class AbstractJWTAuthorizationGrantTest extends BaseAbstractJWTA
         newKeys.getKeyWrapper().setKid(keys.getKeyWrapper().getKid());
         String jwt = getIdentityProvider().encodeToken(token, newKeys);
         AccessTokenResponse response = oAuthClient.jwtAuthorizationGrantRequest(jwt).send();
+        assertFailure("Invalid signature", response, events.poll());
+    }
+
+
+    @Test
+    public void testSignatureWithNoneAlgorithm() {
+        JsonWebToken token = createDefaultAuthorizationGrantToken();
+
+        String noneRequest = new JWSBuilder().jsonContent(token).none();
+        AccessTokenResponse response = oAuthClient.jwtAuthorizationGrantRequest(noneRequest).send();
+        assertFailure("Invalid signature", response, events.poll());
+
+        token = createDefaultAuthorizationGrantToken();
+        OAuthIdentityProvider.OAuthIdentityProviderKeys keys = getIdentityProvider().getKeys();
+        String noneRequestWithKid = new JWSBuilder().kid(keys.getKeyWrapper().getKid()).jsonContent(token).none();
+        response = oAuthClient.jwtAuthorizationGrantRequest(noneRequestWithKid).send();
         assertFailure("Invalid signature", response, events.poll());
     }
 

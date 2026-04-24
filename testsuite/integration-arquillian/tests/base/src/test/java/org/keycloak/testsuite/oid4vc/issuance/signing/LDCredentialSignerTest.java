@@ -45,8 +45,8 @@ import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 // LDP_VC format is intentionally disabled to keep scope limited to supported formats.
 @Ignore("LDP_VC format is currently not supported and providers are disabled.")
@@ -190,25 +190,25 @@ public class LDCredentialSignerTest extends OID4VCTest {
         VerifiableCredential verifiableCredential = ldCredentialSigner
                 .signCredential(ldCredentialBody, credentialBuildConfig);
 
-        assertEquals("The types should be included", TEST_TYPES, verifiableCredential.getType());
-        assertEquals("The issuer should be included", TEST_DID, verifiableCredential.getIssuer());
-        assertNotNull("The context needs to be set.", verifiableCredential.getContext());
-        assertEquals("The expiration date should be included", TEST_EXPIRATION_DATE, verifiableCredential.getExpirationDate());
+        assertEquals(TEST_TYPES, verifiableCredential.getType(), "The types should be included");
+        assertEquals(TEST_DID, verifiableCredential.getIssuer(), "The issuer should be included");
+        assertNotNull(verifiableCredential.getContext(), "The context needs to be set.");
+        assertEquals(TEST_EXPIRATION_DATE, verifiableCredential.getExpirationDate(), "The expiration date should be included");
         if (claims.containsKey("issuanceDate")) {
-            assertEquals("The issuance date should be included", claims.get("issuanceDate"), verifiableCredential.getIssuanceDate());
+            assertEquals(claims.get("issuanceDate"), verifiableCredential.getIssuanceDate(), "The issuance date should be included");
         }
 
         CredentialSubject subject = verifiableCredential.getCredentialSubject();
         claims.entrySet().stream()
                 .filter(e -> !e.getKey().equals("issuanceDate"))
-                .forEach(e -> assertEquals(String.format("All additional claims should be set - %s is incorrect", e.getKey()), e.getValue(), subject.getClaims().get(e.getKey())));
+                .forEach(e -> assertEquals(e.getValue(), subject.getClaims().get(e.getKey()), String.format("All additional claims should be set - %s is incorrect", e.getKey())));
 
-        assertNotNull("The credential should contain a signed proof.", verifiableCredential.getAdditionalProperties().get("proof"));
+        assertNotNull(verifiableCredential.getAdditionalProperties().get("proof"), "The credential should contain a signed proof.");
 
         LdProof ldProof = (LdProof) verifiableCredential.getAdditionalProperties().get("proof");
         KeyWrapper keyWrapper = getKeyFromSession(session);
         String expectedKid = Optional.ofNullable(overrideKeyId).orElse(keyWrapper.getKid());
-        assertEquals("The verification method should be set to the key id.", expectedKid, ldProof.getVerificationMethod());
+        assertEquals(expectedKid, ldProof.getVerificationMethod(), "The verification method should be set to the key id.");
 
     }
 

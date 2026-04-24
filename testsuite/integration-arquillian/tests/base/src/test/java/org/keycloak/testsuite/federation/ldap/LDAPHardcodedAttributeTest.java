@@ -29,11 +29,11 @@ import org.keycloak.testsuite.runonserver.RunOnServerException;
 import org.keycloak.testsuite.util.LDAPRule;
 import org.keycloak.testsuite.util.LDAPTestUtils;
 
-import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.FixMethodOrder;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 import org.junit.rules.ExpectedException;
 import org.junit.runners.MethodSorters;
 
@@ -86,9 +86,9 @@ public class LDAPHardcodedAttributeTest extends AbstractLDAPTest {
             RealmModel appRealm = ctx.getRealm();
 
             UserModel user = session.users().getUserByUsername(appRealm, "johnkeycloak");
-            Assert.assertNotNull(user);
-            Assert.assertTrue(user.isEmailVerified());
-            Assert.assertEquals("en", user.getFirstAttribute("locale"));
+            Assertions.assertNotNull(user);
+            Assertions.assertTrue(user.isEmailVerified());
+            Assertions.assertEquals("en", user.getFirstAttribute("locale"));
         });
    }
 

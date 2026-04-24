@@ -30,6 +30,7 @@ import org.keycloak.protocol.oid4vc.model.Proofs;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.keycloak.testsuite.util.oauth.OpenIDProviderConfigurationResponse;
 import org.keycloak.testsuite.util.oauth.ParResponse;
 import org.keycloak.testsuite.util.oauth.oid4vc.CredentialIssuerMetadataResponse;
@@ -40,10 +41,10 @@ import org.junit.Test;
 
 import static org.keycloak.OID4VCConstants.OPENID_CREDENTIAL;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Test class for Authorization Code Flow with PAR (Pushed Authorization Request) containing authorization_details.
@@ -132,7 +133,7 @@ public class OID4VCAuthorizationCodeFlowWithPARTest extends OID4VCIssuerEndpoint
                 .send();
         assertEquals(HttpStatus.SC_CREATED, parResponse.getStatusCode());
         String requestUri = parResponse.getRequestUri();
-        assertNotNull("Request URI should not be null", requestUri);
+        assertNotNull(requestUri, "Request URI should not be null");
 
         // Step 2: Perform authorization with PAR
         oauth.client(clientId);
@@ -140,7 +141,7 @@ public class OID4VCAuthorizationCodeFlowWithPARTest extends OID4VCIssuerEndpoint
         oauth.loginForm().requestUri(requestUri).doLogin("john", "password");
 
         String code = oauth.parseLoginResponse().getCode();
-        assertNotNull("Authorization code should not be null", code);
+        assertNotNull(code, "Authorization code should not be null");
 
         // Step 3: Exchange authorization code for tokens (WITHOUT authorization_details in token request)
         // This tests that authorization_details from PAR request is processed and returned
@@ -152,27 +153,27 @@ public class OID4VCAuthorizationCodeFlowWithPARTest extends OID4VCIssuerEndpoint
 
         // Step 4: Verify authorization_details is present in token response
         List<OID4VCAuthorizationDetail> authDetailsResponse = tokenResponse.getOID4VCAuthorizationDetails();
-        assertNotNull("authorization_details should be present in the response", authDetailsResponse);
-        assertEquals("Should have exactly one authorization detail", 1, authDetailsResponse.size());
+        assertNotNull(authDetailsResponse, "authorization_details should be present in the response");
+        assertEquals(1, authDetailsResponse.size(), "Should have exactly one authorization detail");
 
         OID4VCAuthorizationDetail authDetailResponse = authDetailsResponse.get(0);
-        assertEquals("Type should be openid_credential", OPENID_CREDENTIAL, authDetailResponse.getType());
-        assertEquals("Credential configuration ID should match", credentialConfigurationId, authDetailResponse.getCredentialConfigurationId());
+        assertEquals(OPENID_CREDENTIAL, authDetailResponse.getType(), "Type should be openid_credential");
+        assertEquals(credentialConfigurationId, authDetailResponse.getCredentialConfigurationId(), "Credential configuration ID should match");
 
         // Verify claims are preserved
-        assertNotNull("Claims should be present", authDetailResponse.getClaims());
-        assertEquals("Should have exactly one claim", 1, authDetailResponse.getClaims().size());
+        assertNotNull(authDetailResponse.getClaims(), "Claims should be present");
+        assertEquals(1, authDetailResponse.getClaims().size(), "Should have exactly one claim");
         ClaimsDescription responseClaim = authDetailResponse.getClaims().get(0);
-        assertEquals("Claim path should match", claimPath, responseClaim.getPath());
-        assertTrue("Claim should be mandatory", responseClaim.isMandatory());
+        assertEquals(claimPath, responseClaim.getPath(), "Claim path should match");
+        assertTrue(responseClaim.isMandatory(), "Claim should be mandatory");
 
         // Verify credential identifiers are present
-        assertNotNull("Credential identifiers should be present", authDetailResponse.getCredentialIdentifiers());
-        assertEquals("Should have exactly one credential identifier", 1, authDetailResponse.getCredentialIdentifiers().size());
+        assertNotNull(authDetailResponse.getCredentialIdentifiers(), "Credential identifiers should be present");
+        assertEquals(1, authDetailResponse.getCredentialIdentifiers().size(), "Should have exactly one credential identifier");
 
         String credentialIdentifier = authDetailResponse.getCredentialIdentifiers().get(0);
-        assertNotNull("Credential identifier should not be null", credentialIdentifier);
-        assertFalse("Credential identifier should not be empty", credentialIdentifier.isEmpty());
+        assertNotNull(credentialIdentifier, "Credential identifier should not be null");
+        assertFalse(credentialIdentifier.isEmpty(), "Credential identifier should not be empty");
 
         // Step 5: Request the actual credential using the identifier
         // When authorization_details are present in the token, credential_identifier must be used
@@ -187,16 +188,16 @@ public class OID4VCAuthorizationCodeFlowWithPARTest extends OID4VCIssuerEndpoint
 
         // Parse the credential response
         CredentialResponse parsedResponse = credentialResponse.getCredentialResponse();
-        assertNotNull("Credential response should not be null", parsedResponse);
-        assertNotNull("Credentials should be present", parsedResponse.getCredentials());
-        assertEquals("Should have exactly one credential", 1, parsedResponse.getCredentials().size());
+        assertNotNull(parsedResponse, "Credential response should not be null");
+        assertNotNull(parsedResponse.getCredentials(), "Credentials should be present");
+        assertEquals(1, parsedResponse.getCredentials().size(), "Should have exactly one credential");
 
         // Verify that the issued credential contains the requested claims
         CredentialResponse.Credential credentialWrapper = parsedResponse.getCredentials().get(0);
-        assertNotNull("Credential wrapper should not be null", credentialWrapper);
+        assertNotNull(credentialWrapper, "Credential wrapper should not be null");
 
         Object credentialObj = credentialWrapper.getCredential();
-        assertNotNull("Credential object should not be null", credentialObj);
+        assertNotNull(credentialObj, "Credential object should not be null");
 
         // Verify the credential structure
         verifyCredentialStructure(credentialObj);
@@ -226,27 +227,17 @@ public class OID4VCAuthorizationCodeFlowWithPARTest extends OID4VCIssuerEndpoint
                 .send();
         assertEquals(HttpStatus.SC_CREATED, parResponse.getStatusCode());
         String requestUri = parResponse.getRequestUri();
-        assertNotNull("Request URI should not be null", requestUri);
+        assertNotNull(requestUri, "Request URI should not be null");
 
         // Step 2: Perform authorization with PAR
         oauth.client(clientId);
         oauth.scope(getCredentialClientScope().getName());
-        oauth.loginForm().requestUri(requestUri).doLogin("john", "password");
-
-        String code = oauth.parseLoginResponse().getCode();
-        assertNotNull("Authorization code should not be null", code);
-
-        // Step 3: Exchange authorization code for tokens (should fail because of invalid authorization_details)
-        AccessTokenResponse tokenResponse = oauth.accessTokenRequest(code)
-                .endpoint(ctx.openidConfig.getTokenEndpoint())
-                .client(oauth.getClientId(), "password")
-                .send();
+        oauth.loginForm().requestUri(requestUri).open();
+        AuthorizationEndpointResponse authResponse = oauth.parseLoginResponse();
 
         // Should fail because authorization_details from PAR request cannot be processed
-        assertEquals(HttpStatus.SC_BAD_REQUEST, tokenResponse.getStatusCode());
-        String errorDescription = tokenResponse.getErrorDescription();
-        assertTrue("Error message should indicate authorization_details processing failure",
-                errorDescription != null && errorDescription.contains("authorization_details was used in authorization request but cannot be processed for token response"));
+        String errorDescription = authResponse.getErrorDescription();
+        assertTrue(errorDescription != null && errorDescription.contains("Invalid authorization_details"), "Error message should indicate authorization_details processing failure");
     }
 
     @Test
@@ -263,14 +254,14 @@ public class OID4VCAuthorizationCodeFlowWithPARTest extends OID4VCIssuerEndpoint
                 .send();
         assertEquals(HttpStatus.SC_CREATED, parResponse.getStatusCode());
         String requestUri = parResponse.getRequestUri();
-        assertNotNull("Request URI should not be null", requestUri);
+        assertNotNull(requestUri, "Request URI should not be null");
 
         // Step 2: Perform authorization with PAR
         oauth.scope(getCredentialClientScope().getName());
         oauth.loginForm().requestUri(requestUri).doLogin("john", "password");
 
         String code = oauth.parseLoginResponse().getCode();
-        assertNotNull("Authorization code should not be null", code);
+        assertNotNull(code, "Authorization code should not be null");
 
         // Step 3: Exchange authorization code for tokens
         AccessTokenResponse tokenResponse = oauth.accessTokenRequest(code)
@@ -280,14 +271,14 @@ public class OID4VCAuthorizationCodeFlowWithPARTest extends OID4VCIssuerEndpoint
 
         // Step 4: Verify authorization_details are derived from requested OID4VC scope
         List<OID4VCAuthorizationDetail> authDetailsResponse = tokenResponse.getOID4VCAuthorizationDetails();
-        assertNotNull("authorization_details should be present in the token response", authDetailsResponse);
-        assertFalse("authorization_details should not be empty", authDetailsResponse.isEmpty());
+        assertNotNull(authDetailsResponse, "authorization_details should be present in the token response");
+        assertFalse(authDetailsResponse.isEmpty(), "authorization_details should not be empty");
         OID4VCAuthorizationDetail firstAuthorizationDetail = authDetailsResponse.get(0);
-        assertEquals("credential_configuration_id should match requested scope",
-                getCredentialClientScope().getAttributes().get(CredentialScopeModel.VC_CONFIGURATION_ID),
-                firstAuthorizationDetail.getCredentialConfigurationId());
-        assertNotNull("credential_identifiers should be present", firstAuthorizationDetail.getCredentialIdentifiers());
-        assertFalse("credential_identifiers should not be empty", firstAuthorizationDetail.getCredentialIdentifiers().isEmpty());
+        assertEquals(getCredentialClientScope().getAttributes().get(CredentialScopeModel.VC_CONFIGURATION_ID),
+                firstAuthorizationDetail.getCredentialConfigurationId(),
+                "credential_configuration_id should match requested scope");
+        assertNotNull(firstAuthorizationDetail.getCredentialIdentifiers(), "credential_identifiers should be present");
+        assertFalse(firstAuthorizationDetail.getCredentialIdentifiers().isEmpty(), "credential_identifiers should not be empty");
     }
 
     /**
@@ -296,6 +287,6 @@ public class OID4VCAuthorizationCodeFlowWithPARTest extends OID4VCIssuerEndpoint
      */
     protected void verifyCredentialStructure(Object credentialObj) {
         // Default implementation - subclasses should override
-        assertNotNull("Credential object should not be null", credentialObj);
+        assertNotNull(credentialObj, "Credential object should not be null");
     }
 }
