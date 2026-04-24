@@ -69,6 +69,7 @@ public class ClientRegistrationAuth {
     private String kid;
     private String token;
     private String endpoint;
+    private boolean initialized;
 
     public ClientRegistrationAuth(KeycloakSession session, ClientRegistrationProvider provider, EventBuilder event, String endpoint) {
         this.session = session;
@@ -77,7 +78,11 @@ public class ClientRegistrationAuth {
         this.endpoint = endpoint;
     }
 
-    private void init() {
+    void init() {
+        if (initialized) {
+            return;
+        }
+        initialized = true;
         realm = session.getContext().getRealm();
 
         String authorizationHeader = session.getContext().getRequestHeaders().getRequestHeaders().getFirst(HttpHeaders.AUTHORIZATION);
@@ -228,6 +233,17 @@ public class ClientRegistrationAuth {
     public RegistrationAuth getRegistrationAuth() {
         String str = (String) jwt.getOtherClaims().get(RegistrationAccessToken.REGISTRATION_AUTH);
         return RegistrationAuth.fromString(str);
+    }
+
+    public RegistrationAuth resolveRegistrationAuth() {
+        init();
+        if (jwt == null) {
+            return RegistrationAuth.ANONYMOUS;
+        }
+        if (isRegistrationAccessToken()) {
+            return getRegistrationAuth();
+        }
+        return RegistrationAuth.AUTHENTICATED;
     }
 
     public RegistrationAuth requireUpdate(ClientRegistrationContext context, ClientModel client) {

@@ -17,6 +17,9 @@
 
 package org.keycloak.services.clientregistration.policy;
 
+import java.util.Collection;
+import java.util.Collections;
+
 import org.keycloak.models.ClientModel;
 import org.keycloak.provider.Provider;
 import org.keycloak.services.clientregistration.ClientRegistrationContext;
@@ -38,6 +41,15 @@ public interface ClientRegistrationPolicy extends Provider {
     void beforeView(ClientRegistrationProvider provider, ClientModel clientModel) throws ClientRegistrationPolicyException;
 
     void beforeDelete(ClientRegistrationProvider provider, ClientModel clientModel) throws ClientRegistrationPolicyException;
+
+    /**
+     * Extra web origins this policy contributes to the CORS allow-list for responses produced
+     * by the client registration endpoints. Origins are collected up-front so validation can
+     * happen in a single {@code checkAllowedOrigins} call before the handler runs.
+     */
+    default Collection<String> getAllowedOrigins() {
+        return Collections.emptyList();
+    }
 
     @Override
     default void close() {

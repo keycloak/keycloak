@@ -1224,12 +1224,8 @@ public class ParTest extends AbstractClientPoliciesTest {
             oauth.redirectUri(VALID_CORS_URL + "/realms/master/app");
             oauth.origin(INVALID_CORS_URL);
             ParResponse pResp = oauth.doPushedAuthorizationRequest();
-            assertEquals(201, pResp.getStatusCode());
+            assertEquals(403, pResp.getStatusCode());
             assertNotCors(pResp);
-            String requestUri = pResp.getRequestUri();
-
-            doNormalAuthzProcess(requestUri, VALID_CORS_URL + "/realms/master/app", clientId, clientSecret);
-
         } finally {
             oauth.origin(null);
         }
