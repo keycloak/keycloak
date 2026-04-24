@@ -42,10 +42,9 @@ import org.keycloak.models.AccountRoles;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
+import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.managers.Auth;
 import org.keycloak.utils.MediaType;
-
-import static org.keycloak.models.utils.ModelToRepresentation.toRepresentation;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -104,7 +103,13 @@ public class ResourceService extends AbstractResourceService {
     public Response user(@QueryParam("value") String value) {
         try {
             final UserModel user = getUser(value);
-            return Response.ok(toRepresentation(provider.getKeycloakSession(), provider.getRealm(), user)).build();
+            UserRepresentation rep = new UserRepresentation();
+            rep.setId(user.getId());
+            rep.setUsername(user.getUsername());
+            rep.setFirstName(user.getFirstName());
+            rep.setLastName(user.getLastName());
+            rep.setEmail(user.getEmail());
+            return Response.ok(rep).build();
         } catch (NotFoundException e) {
             return Response.noContent().build();
         }
