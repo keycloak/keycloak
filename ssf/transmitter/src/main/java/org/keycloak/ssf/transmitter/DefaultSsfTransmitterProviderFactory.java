@@ -66,6 +66,8 @@ public class DefaultSsfTransmitterProviderFactory implements SsfTransmitterProvi
 
     public static final String CONFIG_OUTBOX_DEAD_LETTER_RETENTION = "outbox-dead-letter-retention";
 
+    public static final String CONFIG_OUTBOX_DELIVERED_RETENTION = "outbox-delivered-retention";
+
     public static final long DEFAULT_OUTBOX_DRAINER_INTERVAL_MILLIS = Duration.ofSeconds(30).toMillis();
 
     public static final int DEFAULT_OUTBOX_DRAINER_BATCH_SIZE = 50;
@@ -76,6 +78,17 @@ public class DefaultSsfTransmitterProviderFactory implements SsfTransmitterProvi
      * indefinitely (e.g. for audit/forensic use cases).
      */
     public static final long DEFAULT_OUTBOX_DEAD_LETTER_RETENTION_MILLIS = Duration.ofDays(30).toMillis();
+
+    /**
+     * Default retention for {@code DELIVERED} outbox rows — 24 hours.
+     * Delivered rows are kept post-delivery to preserve jti-dedup
+     * coverage for at-least-once enqueue paths that might retry shortly
+     * after a successful delivery; the value must be well beyond the
+     * maximum backoff window so no in-flight retry can outlive it. Set
+     * to {@code 0} to disable the purge and retain delivered rows
+     * indefinitely.
+     */
+    public static final long DEFAULT_OUTBOX_DELIVERED_RETENTION_MILLIS = Duration.ofHours(24).toMillis();
 
     /**
      * Aliases (or full URIs) of the events the transmitter advertises as
@@ -100,6 +113,8 @@ public class DefaultSsfTransmitterProviderFactory implements SsfTransmitterProvi
     protected int outboxDrainerMaxAttempts = SsfPushOutboxBackoff.DEFAULT_MAX_ATTEMPTS;
 
     protected long outboxDeadLetterRetentionMillis = DEFAULT_OUTBOX_DEAD_LETTER_RETENTION_MILLIS;
+
+    protected long outboxDeliveredRetentionMillis = DEFAULT_OUTBOX_DELIVERED_RETENTION_MILLIS;
 
     /**
      * Shared metrics binder — constructed once at factory init time and
@@ -240,6 +255,10 @@ public class DefaultSsfTransmitterProviderFactory implements SsfTransmitterProvi
         String retentionStr = config.get(CONFIG_OUTBOX_DEAD_LETTER_RETENTION);
         if (retentionStr != null) {
             this.outboxDeadLetterRetentionMillis = SsfUtil.parseDurationMillis(retentionStr, DEFAULT_OUTBOX_DEAD_LETTER_RETENTION_MILLIS);
+        }
+        String deliveredRetentionStr = config.get(CONFIG_OUTBOX_DELIVERED_RETENTION);
+        if (deliveredRetentionStr != null) {
+            this.outboxDeliveredRetentionMillis = SsfUtil.parseDurationMillis(deliveredRetentionStr, DEFAULT_OUTBOX_DELIVERED_RETENTION_MILLIS);
         }
 
         // Metrics binder lifecycle. Two gates combine:
@@ -399,6 +418,12 @@ public class DefaultSsfTransmitterProviderFactory implements SsfTransmitterProvi
                 .defaultValue(DEFAULT_OUTBOX_DEAD_LETTER_RETENTION_MILLIS + "ms")
                 .add()
                 .property()
+                .name(CONFIG_OUTBOX_DELIVERED_RETENTION)
+                .type("string")
+                .helpText("How long DELIVERED outbox rows are retained before the drainer purges them. Kept post-delivery to preserve jti-dedup coverage for at-least-once enqueue paths that might retry shortly after a successful delivery — the value must be well beyond the maximum backoff window so no in-flight retry can outlive it. Accepts suffixes ms, s, m, h (default 24h equivalent). Set to 0 to retain delivered rows indefinitely.")
+                .defaultValue(DEFAULT_OUTBOX_DELIVERED_RETENTION_MILLIS + "ms")
+                .add()
+                .property()
                 .name(SsfTransmitterConfig.CONFIG_SUBJECT_MANAGEMENT_ENABLED)
                 .type("boolean")
                 .helpText("Whether the /subjects:add and /subjects:remove endpoints are exposed. When false, the endpoints are not registered and the transmitter metadata omits them. Subject subscriptions can still be managed via admin-curated ssf.notify.<clientId> attributes.")
@@ -474,9 +499,10 @@ public class DefaultSsfTransmitterProviderFactory implements SsfTransmitterProvi
             SsfPushOutboxDrainerTask task = createDrainerTask(session);
             ScheduledTaskRunner runner = createDrainerScheduledTaskRunner(factory, task);
             timer.schedule(runner, outboxDrainerIntervalMillis, outboxDrainerIntervalMillis, task.getClass().getSimpleName());
-            log.infof("SSF push outbox drainer scheduled: interval=%dms, batchSize=%d, maxAttempts=%d, deadLetterRetention=%s",
+            log.infof("SSF push outbox drainer scheduled: interval=%dms, batchSize=%d, maxAttempts=%d, deadLetterRetention=%s, deliveredRetention=%s",
                     outboxDrainerIntervalMillis, outboxDrainerBatchSize, outboxDrainerMaxAttempts,
-                    outboxDeadLetterRetentionMillis > 0 ? outboxDeadLetterRetentionMillis + "ms" : "disabled");
+                    outboxDeadLetterRetentionMillis > 0 ? outboxDeadLetterRetentionMillis + "ms" : "disabled",
+                    outboxDeliveredRetentionMillis > 0 ? outboxDeliveredRetentionMillis + "ms" : "disabled");
         }
     }
 
@@ -489,6 +515,9 @@ public class DefaultSsfTransmitterProviderFactory implements SsfTransmitterProvi
         Duration deadLetterRetention = outboxDeadLetterRetentionMillis > 0
                 ? Duration.ofMillis(outboxDeadLetterRetentionMillis)
                 : null;
+        Duration deliveredRetention = outboxDeliveredRetentionMillis > 0
+                ? Duration.ofMillis(outboxDeliveredRetentionMillis)
+                : null;
 
         // Drainer constructs a fresh PushDeliveryService per row via
         // the same SsfTransmitterServiceBuilder#createPushDelivery
@@ -496,7 +525,7 @@ public class DefaultSsfTransmitterProviderFactory implements SsfTransmitterProvi
         // subclass that overrides it (e.g. for instrumentation or
         // tweaked timeouts) automatically applies to outbox push
         // delivery too.
-        return new SsfPushOutboxDrainerTask(outboxDrainerBatchSize, backoff, deadLetterRetention,
+        return new SsfPushOutboxDrainerTask(outboxDrainerBatchSize, backoff, deadLetterRetention, deliveredRetention,
                 this::createPendingEventStore, this.context,
                 this::createPushDelivery,
                 metricsBinder);

@@ -45,14 +45,6 @@ public class SsfPushOutboxDrainerTask implements ScheduledTask {
 
     private static final Logger log = Logger.getLogger(SsfPushOutboxDrainerTask.class);
 
-    /**
-     * Retain DELIVERED rows for 24h so we keep jti-dedup coverage for
-     * at-least-once enqueue paths that might retry shortly after a
-     * successful delivery. Well beyond the maximum backoff window, so
-     * no in-flight retry can outlive this.
-     */
-    protected static final Duration DELIVERED_RETENTION = Duration.ofHours(24);
-
     protected final int batchSize;
 
     protected final SsfPushOutboxBackoff backoff;
@@ -63,6 +55,17 @@ public class SsfPushOutboxDrainerTask implements ScheduledTask {
      * indefinitely for forensic/audit purposes).
      */
     protected final Duration deadLetterRetention;
+
+    /**
+     * Retention for DELIVERED rows. Kept on disk after successful
+     * delivery to preserve jti-dedup coverage for at-least-once enqueue
+     * paths that might retry shortly after a successful delivery — the
+     * configured value must be well beyond the maximum backoff window
+     * so no in-flight retry can outlive it. Default in the SPI is 24h.
+     * {@code null} or a non-positive {@link Duration} disables the purge
+     * entirely (delivered rows retained indefinitely).
+     */
+    protected final Duration deliveredRetention;
 
     /**
      * Session-scoped factory for the outbox DAO. Extension point for
@@ -96,6 +99,7 @@ public class SsfPushOutboxDrainerTask implements ScheduledTask {
     public SsfPushOutboxDrainerTask(int batchSize,
                                     SsfPushOutboxBackoff backoff,
                                     Duration deadLetterRetention,
+                                    Duration deliveredRetention,
                                     Function<KeycloakSession, SsfPendingEventStore> pendingSsfEventStoreFactory,
                                     SsfTransmitterContext context,
                                     BiFunction<KeycloakSession, SsfTransmitterContext, PushDeliveryService> pushDeliveryServiceFactory,
@@ -103,6 +107,7 @@ public class SsfPushOutboxDrainerTask implements ScheduledTask {
         this.batchSize = batchSize;
         this.backoff = backoff;
         this.deadLetterRetention = deadLetterRetention;
+        this.deliveredRetention = deliveredRetention;
         this.pendingSsfEventStoreFactory = pendingSsfEventStoreFactory;
         this.context = context;
         this.pushDeliveryServiceFactory = pushDeliveryServiceFactory;
@@ -470,7 +475,10 @@ public class SsfPushOutboxDrainerTask implements ScheduledTask {
     }
 
     protected void purgeDeliveredOlderThanRetention(SsfPendingEventStore store) {
-        Instant cutoff = Instant.now().minus(DELIVERED_RETENTION);
+        if (deliveredRetention == null || deliveredRetention.isZero() || deliveredRetention.isNegative()) {
+            return;
+        }
+        Instant cutoff = Instant.now().minus(deliveredRetention);
         store.purgeDeliveredOlderThan(cutoff);
     }
 
