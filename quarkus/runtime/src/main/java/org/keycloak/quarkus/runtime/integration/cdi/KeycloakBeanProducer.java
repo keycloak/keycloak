@@ -38,7 +38,11 @@ public class KeycloakBeanProducer implements TransactionalSessionHandler {
 
     @RequestScoped
     public KeycloakSession getKeycloakSession() {
-        return factory.create();
+        // This is triggered lazily on the first method call on the session.
+        KeycloakSession session = factory.create();
+        KeycloakSessionUtil.setKeycloakSession(session);
+        beginTransaction(session);
+        return session;
     }
 
     void dispose(@Disposes KeycloakSession session) {

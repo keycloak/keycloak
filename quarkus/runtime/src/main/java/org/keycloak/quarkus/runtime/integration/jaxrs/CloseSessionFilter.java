@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Red Hat, Inc. and/or its affiliates
+ * Copyright 2026 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -32,6 +32,12 @@ import jakarta.ws.rs.ext.Provider;
 
 import org.keycloak.utils.KeycloakSessionUtil;
 
+/**
+ * Closing the session at the end of the request.
+ * <p>
+ * This ensures the tranaction is committed and data is written to the database and the caches before the response is closed.
+ * Without this filter a request that runs shortly after the first request completed might return still stale data.
+ */
 @Provider
 @PreMatching
 @Priority(1)
