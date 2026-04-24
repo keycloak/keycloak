@@ -25,6 +25,12 @@ Typical use cases include:
 * *High-security environments*: Where preventing token replay is a strict compliance requirement (e.g., Financial Grade API).
 * *Avoid chaining of services*: Application authenticated with Keycloak invokes the REST service service1 with the access token. The service1 should be able to consume the access token, but it should not be able to use that token to invoke further services on behalf of the original application.
 
+== DPoP Limitations
+
+DPoP is not supported for flows that issue access tokens in the front channel (implicit and hybrid flows).
+
+If a client has **Require DPoP bound tokens** enabled, authorization requests using these response types will be rejected.
+
 == DPoP Concepts
 
 At its core, DPoP uses asymmetric cryptography to change the security model from "Bearer" (whoever holds the token has access) to "Sender-Constrained" (only the legitimate owner of the token has access).
