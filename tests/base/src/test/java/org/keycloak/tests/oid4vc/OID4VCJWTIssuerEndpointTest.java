@@ -67,6 +67,7 @@ import org.keycloak.protocol.oid4vc.model.CredentialIssuer;
 import org.keycloak.protocol.oid4vc.model.CredentialOfferURI;
 import org.keycloak.protocol.oid4vc.model.CredentialRequest;
 import org.keycloak.protocol.oid4vc.model.CredentialResponse;
+import org.keycloak.protocol.oid4vc.model.CredentialResponseEncryption;
 import org.keycloak.protocol.oid4vc.model.CredentialsOffer;
 import org.keycloak.protocol.oid4vc.model.ErrorResponse;
 import org.keycloak.protocol.oid4vc.model.ErrorType;
@@ -105,6 +106,7 @@ import org.junit.jupiter.api.Test;
 import static org.keycloak.OID4VCConstants.CREDENTIAL_SUBJECT;
 import static org.keycloak.OID4VCConstants.OPENID_CREDENTIAL;
 import static org.keycloak.OID4VCConstants.SDJWT_DELIMITER;
+import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider.ATTR_REQUEST_ENCRYPTION_REQUIRED;
 import static org.keycloak.tests.oid4vc.OID4VCProofTestUtils.generateJwtProof;
 import static org.keycloak.tests.oid4vc.OID4VCProofTestUtils.generateJwtProofWithClaims;
 import static org.keycloak.tests.oid4vc.OID4VCProofTestUtils.generateJwtProofWithKidNoAttestation;
@@ -417,6 +419,125 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
                     }
                 }))
         );
+    }
+
+    @Test
+    public void testPlainJsonRequestWithCredentialResponseEncryptionIsRejected() {
+        String token = getBearerToken(oauth);
+
+        runOnServer.run(session -> {
+            try {
+                BearerTokenAuthenticator authenticator = new BearerTokenAuthenticator(session);
+                authenticator.setTokenString(token);
+                OID4VCIssuerEndpoint issuerEndpoint = prepareIssuerEndpoint(session, authenticator);
+                CredentialIssuer issuerMetadata = new OID4VCIssuerWellKnownProvider(session).getIssuerMetadata();
+
+                CredentialResponseEncryption encryption = new CredentialResponseEncryption()
+                        .setEnc("A256GCM")
+                        .setJwk(issuerMetadata.getCredentialRequestEncryption().getJwks().getKeys()[0]);
+
+                CredentialRequest credentialRequest = new CredentialRequest()
+                        .setCredentialResponseEncryption(encryption);
+
+                String requestPayload = JsonSerialization.writeValueAsString(credentialRequest);
+
+                try {
+                    issuerEndpoint.requestCredential(requestPayload);
+                    fail("Expected BadRequestException because credential_response_encryption requires encrypted request");
+                } catch (BadRequestException e) {
+                    ErrorResponse error = (ErrorResponse) e.getResponse().getEntity();
+                    assertEquals(ErrorType.INVALID_ENCRYPTION_PARAMETERS.getValue(), error.getError());
+                    assertTrue(error.getErrorDescription().contains("requires encrypted Credential Request"));
+                }
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        });
+    }
+
+    @Test
+    public void testEncryptedLookingPayloadWithJsonContentTypeIsRejected() {
+        String token = getBearerToken(oauth);
+
+        runOnServer.run(session -> {
+            BearerTokenAuthenticator authenticator = new BearerTokenAuthenticator(session);
+            authenticator.setTokenString(token);
+            OID4VCIssuerEndpoint issuerEndpoint = prepareIssuerEndpoint(session, authenticator);
+
+            // Compact-JWE-like payload (5 segments) to trigger encrypted-payload detection.
+            // This is intentionally not decryptable; the test targets media-type enforcement first.
+            String jweLikePayload = "eyJhbGciOiJSU0EtT0FFUC0yNTYiLCJlbmMiOiJBMjU2R0NNIiwia2lkIjoidGVzdCJ9.a.b.c.d";
+
+            try {
+                issuerEndpoint.requestCredential(jweLikePayload);
+                fail("Expected BadRequestException due to encrypted payload without application/jwt content type");
+            } catch (BadRequestException e) {
+                ErrorResponse error = (ErrorResponse) e.getResponse().getEntity();
+                // This payload is not valid JSON and not a decryptable JWE, so it is malformed request payload.
+                assertEquals(ErrorType.INVALID_CREDENTIAL_REQUEST.getValue(), error.getError());
+                assertTrue(error.getErrorDescription().contains("Failed to parse JSON request"));
+            }
+        });
+    }
+
+    @Test
+    public void testRequestEncryptionRequiredRejectsUnencryptedJsonRequest() {
+        String token = getBearerToken(oauth);
+
+        // Force request encryption requirement for this test.
+        setRealmAttributes(Map.of(ATTR_REQUEST_ENCRYPTION_REQUIRED, "true"));
+        try {
+            runOnServer.run(session -> {
+                try {
+                    BearerTokenAuthenticator authenticator = new BearerTokenAuthenticator(session);
+                    authenticator.setTokenString(token);
+                    OID4VCIssuerEndpoint issuerEndpoint = prepareIssuerEndpoint(session, authenticator);
+
+                    CredentialRequest credentialRequest = new CredentialRequest()
+                            .setCredentialIdentifier("test-credential");
+                    String requestPayload = JsonSerialization.writeValueAsString(credentialRequest);
+
+                    issuerEndpoint.requestCredential(requestPayload);
+                    fail("Expected BadRequestException because request encryption is required");
+                } catch (BadRequestException e) {
+                    ErrorResponse error = (ErrorResponse) e.getResponse().getEntity();
+                    assertEquals(ErrorType.INVALID_ENCRYPTION_PARAMETERS.getValue(), error.getError());
+                    assertTrue(error.getErrorDescription().contains("Encryption is required"));
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            });
+        } finally {
+            // Restore default behavior for remaining tests.
+            setRealmAttributes(Map.of(ATTR_REQUEST_ENCRYPTION_REQUIRED, "false"));
+        }
+    }
+
+    @Test
+    public void testRequestEncryptionRequiredRejectsUnencryptedJsonRequestOverHttpEndpoint() {
+        setRealmAttributes(Map.of(ATTR_REQUEST_ENCRYPTION_REQUIRED, "true"));
+        try {
+            testCredentialIssuanceWithAuthZCodeFlow(
+                    jwtTypeCredentialScope,
+                    (testScope) -> getBearerToken(oauth, client, testScope),
+                    m -> {
+                        String accessToken = (String) m.get("accessToken");
+                        WebTarget credentialTarget = (WebTarget) m.get("credentialTarget");
+                        CredentialRequest credentialRequest = (CredentialRequest) m.get("credentialRequest");
+
+                        try (Response response = credentialTarget.request()
+                                .header(HttpHeaders.AUTHORIZATION, "bearer " + accessToken)
+                                .post(Entity.json(credentialRequest))) {
+                            assertEquals(400, response.getStatus());
+                            ErrorResponse error = response.readEntity(ErrorResponse.class);
+                            assertEquals(ErrorType.INVALID_ENCRYPTION_PARAMETERS.getValue(), error.getError());
+                            assertTrue(error.getErrorDescription().contains("Encryption is required"));
+                        }
+                    }
+            );
+        } finally {
+            setRealmAttributes(Map.of(ATTR_REQUEST_ENCRYPTION_REQUIRED, "false"));
+        }
     }
 
     @Test
