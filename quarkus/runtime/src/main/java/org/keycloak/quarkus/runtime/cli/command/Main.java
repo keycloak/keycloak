@@ -68,7 +68,8 @@ import static org.keycloak.quarkus.runtime.cli.Picocli.NO_PARAM_LABEL;
                 ShowConfig.class,
                 Tools.class,
                 BootstrapAdmin.class,
-                UpdateCompatibility.class
+                UpdateCompatibility.class,
+                Help.class
         })
 public final class Main {
 
