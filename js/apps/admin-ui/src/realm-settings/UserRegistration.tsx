@@ -24,7 +24,7 @@ export const UserRegistration = () => {
 
     try {
       await adminClient.roles.createComposite(
-        { roleId: realm?.defaultRole!.id!, realm: realmName },
+        { roleId: realm.defaultRole!.id!, realm: realmName },
         compositeArray,
       );
       setKey(key + 1);
@@ -47,8 +47,8 @@ export const UserRegistration = () => {
         data-testid="default-roles-tab"
       >
         <RoleMapping
-          name={realm?.defaultRole!.name!}
-          id={realm?.defaultRole!.id!}
+          name={realm.defaultRole!.name!}
+          id={realm.defaultRole!.id!}
           type="roles"
           isManager
           save={(rows) => addComposites(rows.map((r) => r.role))}

@@ -84,7 +84,8 @@ export const getToken = async (settings: Settings): Promise<TokenResponse> => {
 
   // Prepare credentials for openid-connect token request
   // ref: http://openid.net/specs/openid-connect-core-1_0.html#TokenEndpoint
-  const credentials = settings.credentials || ({} as any);
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- credentials may be undefined at runtime despite the type
+  const credentials = settings.credentials ?? ({} as Credentials);
   const payload = stringifyQueryParams({
     username: credentials.username,
     password: credentials.password,

@@ -60,7 +60,7 @@ export default function PageList() {
 
   const loader = async () => {
     const params: ComponentQuery = {
-      parent: realm?.id,
+      parent: realm.id,
       type: PAGE_PROVIDER,
       providerId,
     };

@@ -79,7 +79,7 @@ export const PermissionsConfigurationTab = ({
       });
 
       const processedPermissions = await Promise.all(
-        (permissions || []).map(async (permission) => {
+        permissions.map(async (permission) => {
           const policies = await adminClient.clients.getAssociatedPolicies({
             id: clientId,
             permissionId: permission.id!,
@@ -282,7 +282,7 @@ export const PermissionsConfigurationTab = ({
                             <>
                               <Th>{t("resources")}</Th>
                               {permission.resources &&
-                              permission.resources?.length > 0 ? (
+                              permission.resources.length > 0 ? (
                                 permission.resources!.map(
                                   (resource: ResourceRepresentation, index) => (
                                     <Td key={index}>
