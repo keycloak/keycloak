@@ -123,6 +123,29 @@ public class JavaOptsScriptTest {
         assertThat(output, containsString("DefaultFactory: groovy Closures in annotations are disabled and will not be loaded"));
     }
 
+    @Test
+    @Launch({"start", "--optimized"})
+    @WithEnvVars({"KC_RUN_IN_CONTAINER", "true"})
+    @EnabledOnOs(value = { OS.LINUX, OS.MAC }, disabledReason = "kc.sh is not used on Windows")
+    void testContainerNonPid1Warning(LaunchResult result) {
+        assertThat(result.getOutput(), containsString("WARNING: Keycloak is running inside a container, but is not PID 1."));
+    }
+
+    @Test
+    @Launch({"start", "--optimized"})
+    @EnabledOnOs(value = { OS.LINUX, OS.MAC }, disabledReason = "kc.sh is not used on Windows")
+    void testNoContainerNonPid1Warning(LaunchResult result) {
+        assertThat(result.getOutput(), not(containsString("WARNING: Keycloak is running inside a container")));
+    }
+
+    @Test
+    @Launch({"export", "--dir", "/tmp"})
+    @WithEnvVars({"KC_RUN_IN_CONTAINER", "true"})
+    @EnabledOnOs(value = { OS.LINUX, OS.MAC }, disabledReason = "kc.sh is not used on Windows")
+    void testContainerNonPid1WarningAbsentForNonServerCommands(LaunchResult result) {
+        assertThat(result.getOutput(), not(containsString("WARNING: Keycloak is running inside a container")));
+    }
+
     @EnabledOnOs(value = { OS.WINDOWS }, disabledReason = "different path behaviour on Windows.")
     @Test
     @Launch({"start-dev", "--optimized"})
