@@ -45,9 +45,9 @@ import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
 import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
-import org.keycloak.testsuite.util.ClientBuilder;
+import org.keycloak.testframework.realm.ClientBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.util.RealmBuilder;
-import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.util.JsonSerialization;
 
 import org.junit.Before;
@@ -55,10 +55,10 @@ import org.junit.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -76,7 +76,7 @@ public class ConflictingScopePermissionTest extends AbstractAuthzTest {
                     .authorizationServicesEnabled(true)
                     .redirectUris("http://localhost/resource-server-test")
                     .defaultRoles("uma_protection")
-                    .directAccessGrants())
+                    .directAccessGrantsEnabled())
                 .build());
     }
 
@@ -263,7 +263,7 @@ public class ConflictingScopePermissionTest extends AbstractAuthzTest {
 
         AccessToken.Authorization authorization = accessToken.getAuthorization();
 
-        assertNotNull("RPT does not contain any authorization data", authorization);
+        assertNotNull(authorization, "RPT does not contain any authorization data");
 
         return authorization.getPermissions();
     }

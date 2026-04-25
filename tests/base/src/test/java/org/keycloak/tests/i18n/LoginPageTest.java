@@ -45,10 +45,10 @@ import org.keycloak.testframework.events.Events;
 import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
-import org.keycloak.testframework.realm.ClientConfigBuilder;
+import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.ManagedUser;
-import org.keycloak.testframework.realm.RealmConfigBuilder;
+import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testframework.server.KeycloakServerConfig;
@@ -478,7 +478,7 @@ public class LoginPageTest {
     public static class LoginPageRealmConfig extends RealmWithInternationalization {
 
         @Override
-        public RealmConfigBuilder configure(RealmConfigBuilder realm) {
+        public RealmBuilder configure(RealmBuilder realm) {
             realm = super.configure(realm);
             realm.identityProvider(IdentityProviderBuilder.create()
                         .providerId("github")
@@ -493,7 +493,7 @@ public class LoginPageTest {
                         .alias("myoidc")
                         .displayName("MyOIDC")
                         .build());
-            realm.client(ClientConfigBuilder.create().clientId("third-party").secret("password").consentRequired(true).redirectUris("*").build());
+            realm.client(ClientBuilder.create().clientId("third-party").secret("password").consentRequired(true).redirectUris("*").build());
             return realm;
         }
     }

@@ -24,6 +24,7 @@ import jakarta.mail.internet.MimeMessage;
 
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AbstractChangeImportedUserPasswordsTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.AdminApiUtil;
@@ -41,14 +42,13 @@ import org.keycloak.testsuite.pages.VerifyEmailPage;
 import org.keycloak.testsuite.util.GreenMailRule;
 import org.keycloak.testsuite.util.MailUtils;
 import org.keycloak.testsuite.util.UIUtils;
-import org.keycloak.testsuite.util.UserBuilder;
 
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Test for browser back/forward/refresh buttons
@@ -65,16 +65,16 @@ public class BrowserButtonsTest extends AbstractChangeImportedUserPasswordsTest 
                 .username("login-test")
                 .email("login@test.com")
                 .enabled(true)
-                .requiredAction(UserModel.RequiredAction.UPDATE_PROFILE.toString())
-                .requiredAction(UserModel.RequiredAction.UPDATE_PASSWORD.toString())
+                .requiredActions(UserModel.RequiredAction.UPDATE_PROFILE.toString())
+                .requiredActions(UserModel.RequiredAction.UPDATE_PASSWORD.toString())
                 .build();
 
         generatePasswords("login-test");
-        userId = AdminApiUtil.createUserAndResetPasswordWithAdminClient(testRealm(), user, getPassword("login-test"), true);
+        userId = AdminApiUtil.createUserAndResetPasswordWithAdminClient(managedRealm.admin(), user, getPassword("login-test"), true);
         expectedMessagesCount = 0;
         getCleanup().addUserId(userId);
 
-        oauth.clientId("test-app");
+        oauth.client("test-app", "password");
     }
 
     @Rule
@@ -223,7 +223,7 @@ public class BrowserButtonsTest extends AbstractChangeImportedUserPasswordsTest 
     // KEYCLOAK-4670 - Flow 4
     @Test
     public void consentRefresh() {
-        oauth.clientId("third-party");
+        oauth.client("third-party");
 
         // Login and go through required actions
         oauth.openLoginForm();

@@ -50,8 +50,8 @@ import org.keycloak.testsuite.runonserver.RunOnServer;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.RealmBuilder;
 
-import org.junit.Assert;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
@@ -64,12 +64,12 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class OrganizationTest extends AbstractOrganizationTest {
 
@@ -82,7 +82,7 @@ public class OrganizationTest extends AbstractOrganizationTest {
         expected.setEnabled(false);
         expected.setDescription("ACME Corporation Organization");
 
-        OrganizationResource organization = testRealm().organizations().get(expected.getId());
+        OrganizationResource organization = managedRealm.admin().organizations().get(expected.getId());
 
         try (Response response = organization.update(expected)) {
             assertEquals(Status.NO_CONTENT.getStatusCode(), response.getStatus());
@@ -104,7 +104,7 @@ public class OrganizationTest extends AbstractOrganizationTest {
         OrganizationRepresentation org2 = createOrganization("orga");
 
         org1.setName(org2.getName());
-        OrganizationResource organization = testRealm().organizations().get(org1.getId());
+        OrganizationResource organization = managedRealm.admin().organizations().get(org1.getId());
 
         try (Response response = organization.update(org1)) {
             assertEquals(Status.CONFLICT.getStatusCode(), response.getStatus());
@@ -114,7 +114,7 @@ public class OrganizationTest extends AbstractOrganizationTest {
     @Test
     public void testGet() {
         OrganizationRepresentation expected = createOrganization();
-        OrganizationRepresentation existing = testRealm().organizations().get(expected.getId()).toRepresentation();
+        OrganizationRepresentation existing = managedRealm.admin().organizations().get(expected.getId()).toRepresentation();
         assertNotNull(existing);
         assertEquals(expected.getId(), existing.getId());
         assertEquals(expected.getName(), existing.getName());
@@ -129,18 +129,18 @@ public class OrganizationTest extends AbstractOrganizationTest {
             OrganizationRepresentation organization = createOrganization("kc.org." + i);
             expected.add(organization);
             organization.setAttributes(Map.of("foo", List.of("foo")));
-            testRealm().organizations().get(organization.getId()).update(organization).close();
+            managedRealm.admin().organizations().get(organization.getId()).update(organization).close();
         }
 
-        List<OrganizationRepresentation> existing = testRealm().organizations().list(-1, -1);
+        List<OrganizationRepresentation> existing = managedRealm.admin().organizations().list(-1, -1);
         assertFalse(existing.isEmpty());
         assertThat(existing, containsInAnyOrder(expected.toArray()));
-        Assert.assertTrue(existing.stream().map(OrganizationRepresentation::getAttributes).filter(Objects::nonNull).findAny().isEmpty());
+        Assertions.assertTrue(existing.stream().map(OrganizationRepresentation::getAttributes).filter(Objects::nonNull).findAny().isEmpty());
 
         List<OrganizationRepresentation> concatenatedList = Stream.of(
-                testRealm().organizations().list(0, 5),
-                testRealm().organizations().list(5, 5),
-                testRealm().organizations().list(10, 5))
+                managedRealm.admin().organizations().list(0, 5),
+                managedRealm.admin().organizations().list(5, 5),
+                managedRealm.admin().organizations().list(10, 5))
                 .flatMap(Collection::stream).toList();
 
         assertThat(concatenatedList, containsInAnyOrder(expected.toArray()));
@@ -155,8 +155,8 @@ public class OrganizationTest extends AbstractOrganizationTest {
         createOrganization("TheWave", "the-wave.br");
 
         // test exact search by name (e.g. 'wayne-industries'), e-mail (e.g. 'gtbank.net'), and no result (e.g. 'nonexistent.com')
-        List<OrganizationRepresentation> existing = testRealm().organizations().search("wayne-industries", true, 0, 10);
-        long count = testRealm().organizations().count("wayne-industries", true);
+        List<OrganizationRepresentation> existing = managedRealm.admin().organizations().search("wayne-industries", true, 0, 10);
+        long count = managedRealm.admin().organizations().count("wayne-industries", true);
         assertThat(existing, hasSize(1));
         assertThat(existing, hasSize((int) count));
         OrganizationRepresentation orgRep = existing.get(0);
@@ -167,8 +167,8 @@ public class OrganizationTest extends AbstractOrganizationTest {
         assertThat(orgRep.getDomain("wayneind-gotham.com"), not(nullValue()));
         assertThat(orgRep.getAttributes(), nullValue());
 
-        existing = testRealm().organizations().search("gtbank.net", true, 0, 10);
-        count = testRealm().organizations().count("gtbank.net", true);
+        existing = managedRealm.admin().organizations().search("gtbank.net", true, 0, 10);
+        count = managedRealm.admin().organizations().count("gtbank.net", true);
 
         assertThat(existing, hasSize(1));
         assertThat(existing, hasSize((int) count));
@@ -182,45 +182,45 @@ public class OrganizationTest extends AbstractOrganizationTest {
 
         orgRep.singleAttribute("foo", "bar");
         orgRep.singleAttribute("bar", "foo");
-        testRealm().organizations().get(orgRep.getId()).update(orgRep).close();
-        existing = testRealm().organizations().search("gtbank.net", true, 0, 10, false);
+        managedRealm.admin().organizations().get(orgRep.getId()).update(orgRep).close();
+        existing = managedRealm.admin().organizations().search("gtbank.net", true, 0, 10, false);
         assertThat(existing, hasSize(1));
         orgRep = existing.get(0);
         assertThat(orgRep.getAttributes(), notNullValue());
         assertThat(2, is(orgRep.getAttributes().size()));
 
-        existing = testRealm().organizations().search("nonexistent.org", true, 0, 10);
-        count = testRealm().organizations().count("nonexistent.org", true);
+        existing = managedRealm.admin().organizations().search("nonexistent.org", true, 0, 10);
+        count = managedRealm.admin().organizations().count("nonexistent.org", true);
         assertThat(existing, is(empty()));
         assertThat(count, is(equalTo(0L)));
 
         // partial search matching name (e.g. 'wa' matching 'wayne-industries', and 'TheWave')
-        existing = testRealm().organizations().search("wa", false, 0, 10);
-        count = testRealm().organizations().count("wa", false);
+        existing = managedRealm.admin().organizations().search("wa", false, 0, 10);
+        count = managedRealm.admin().organizations().count("wa", false);
         assertThat(existing, hasSize(2));
         assertThat(existing, hasSize((int) count));
         List<String> orgNames = existing.stream().map(OrganizationRepresentation::getName).collect(Collectors.toList());
         assertThat(orgNames, containsInAnyOrder("wayne-industries", "TheWave"));
 
         // partial search matching domain (e.g. '.net', matching acme and gotham-bank)
-        existing = testRealm().organizations().search(".net", false, 0, 10);
-        count = testRealm().organizations().count(".net", false);
+        existing = managedRealm.admin().organizations().search(".net", false, 0, 10);
+        count = managedRealm.admin().organizations().count(".net", false);
         assertThat(existing, hasSize(2));
         assertThat(existing, hasSize((int) count));
         orgNames = existing.stream().map(OrganizationRepresentation::getName).collect(Collectors.toList());
         assertThat(orgNames, containsInAnyOrder("Gotham-Bank", "acme"));
 
         // partial search matching both a domain and org name, on two different orgs (e.g. 'gotham' matching 'Gotham-Bank' by name and 'wayne-industries' by domain)
-        existing = testRealm().organizations().search("gotham", false, 0, 10);
-        count = testRealm().organizations().count("gotham", false);
+        existing = managedRealm.admin().organizations().search("gotham", false, 0, 10);
+        count = managedRealm.admin().organizations().count("gotham", false);
         assertThat(existing, hasSize(2));
         assertThat(existing, hasSize((int) count));
         orgNames = existing.stream().map(OrganizationRepresentation::getName).collect(Collectors.toList());
         assertThat(orgNames, containsInAnyOrder("Gotham-Bank", "wayne-industries"));
 
         // partial search matching no org (e.g. nonexistent)
-        existing = testRealm().organizations().search("nonexistent", false, 0, 10);
-        count = testRealm().organizations().count("nonexistent", false);
+        existing = managedRealm.admin().organizations().search("nonexistent", false, 0, 10);
+        count = managedRealm.admin().organizations().count("nonexistent", false);
         assertThat(existing, is(empty()));
         assertThat(existing, hasSize((int) count));
 
@@ -228,17 +228,17 @@ public class OrganizationTest extends AbstractOrganizationTest {
         for (int i = 0; i < 10; i++) {
             createOrganization("ztest-" + i);
         }
-        count = testRealm().organizations().count("", false);
+        count = managedRealm.admin().organizations().count("", false);
         assertThat(count, equalTo(14L));
 
-        existing = testRealm().organizations().search("", false, 0, 10);
+        existing = managedRealm.admin().organizations().search("", false, 0, 10);
         // first page should have 10 results.
         assertThat(existing, hasSize(10));
         orgNames = existing.stream().map(OrganizationRepresentation::getName).collect(Collectors.toList());
         assertThat(orgNames, containsInAnyOrder("Gotham-Bank", "TheWave", "acme", "wayne-industries", "ztest-0",
                 "ztest-1", "ztest-2", "ztest-3", "ztest-4", "ztest-5"));
 
-        existing = testRealm().organizations().search("", false, 10, 10);
+        existing = managedRealm.admin().organizations().search("", false, 10, 10);
         // second page should have 4 results.
         assertThat(existing, hasSize(4));
         orgNames = existing.stream().map(OrganizationRepresentation::getName).collect(Collectors.toList());
@@ -255,31 +255,31 @@ public class OrganizationTest extends AbstractOrganizationTest {
         // set attributes to the orgs.
         OrganizationRepresentation orgRep = expected.get(0);
         orgRep.singleAttribute("attr1", "value1");
-        try (Response response = testRealm().organizations().get(orgRep.getId()).update(orgRep)) {
+        try (Response response = managedRealm.admin().organizations().get(orgRep.getId()).update(orgRep)) {
             assertThat(response.getStatus(), is(equalTo(Status.NO_CONTENT.getStatusCode())));
         }
 
         orgRep = expected.get(1);
         orgRep.singleAttribute("attr1", "value1").singleAttribute("attr2", "value2");
-        try (Response response = testRealm().organizations().get(orgRep.getId()).update(orgRep)) {
+        try (Response response = managedRealm.admin().organizations().get(orgRep.getId()).update(orgRep)) {
             assertThat(response.getStatus(), is(equalTo(Status.NO_CONTENT.getStatusCode())));
         }
 
         orgRep = expected.get(2);
         orgRep.singleAttribute("attr1", "value1").singleAttribute("attr3", "value3");
-        try (Response response = testRealm().organizations().get(orgRep.getId()).update(orgRep)) {
+        try (Response response = managedRealm.admin().organizations().get(orgRep.getId()).update(orgRep)) {
             assertThat(response.getStatus(), is(equalTo(Status.NO_CONTENT.getStatusCode())));
         }
 
         orgRep = expected.get(3);
         orgRep.singleAttribute("attr2", "value2");
-        try (Response response = testRealm().organizations().get(orgRep.getId()).update(orgRep)) {
+        try (Response response = managedRealm.admin().organizations().get(orgRep.getId()).update(orgRep)) {
             assertThat(response.getStatus(), is(equalTo(Status.NO_CONTENT.getStatusCode())));
         }
 
         // search for "attr1:value1" - should match testorg.0, testorg.1, and testorg.2
-        List<OrganizationRepresentation> fetchedOrgs = testRealm().organizations().searchByAttribute("attr1:value1");
-        long count = testRealm().organizations().countByAttribute("attr1:value1");
+        List<OrganizationRepresentation> fetchedOrgs = managedRealm.admin().organizations().searchByAttribute("attr1:value1");
+        long count = managedRealm.admin().organizations().countByAttribute("attr1:value1");
         fetchedOrgs.sort(Comparator.comparing(OrganizationRepresentation::getName));
         assertThat(fetchedOrgs, hasSize(3));
         assertThat(fetchedOrgs, hasSize((int) count));
@@ -288,37 +288,37 @@ public class OrganizationTest extends AbstractOrganizationTest {
         assertThat(fetchedOrgs.get(2).getName(), is(equalTo(expected.get(2).getName())));
 
         // search for "attr2:value2" - should match testorg.1 and testorg.3
-        fetchedOrgs = testRealm().organizations().searchByAttribute("attr2:value2");
+        fetchedOrgs = managedRealm.admin().organizations().searchByAttribute("attr2:value2");
         fetchedOrgs.sort(Comparator.comparing(OrganizationRepresentation::getName));
-        count = testRealm().organizations().countByAttribute("attr2:value2");
+        count = managedRealm.admin().organizations().countByAttribute("attr2:value2");
         assertThat(fetchedOrgs, hasSize(2));
         assertThat(fetchedOrgs, hasSize((int) count));
         assertThat(fetchedOrgs.get(0).getName(), is(equalTo(expected.get(1).getName())));
         assertThat(fetchedOrgs.get(1).getName(), is(equalTo(expected.get(3).getName())));
 
         // search for "attr3:value3" - should match only testorg.2
-        fetchedOrgs = testRealm().organizations().searchByAttribute("attr3:value3");
-        count = testRealm().organizations().countByAttribute("attr3:value3");
+        fetchedOrgs = managedRealm.admin().organizations().searchByAttribute("attr3:value3");
+        count = managedRealm.admin().organizations().countByAttribute("attr3:value3");
         assertThat(fetchedOrgs, hasSize(1));
         assertThat(fetchedOrgs, hasSize((int) count));
         assertThat(fetchedOrgs.get(0).getName(), is(equalTo(expected.get(2).getName())));
 
         // search for both "attr1:value1 attr2:value2" - should match only testorg.1
-        fetchedOrgs = testRealm().organizations().searchByAttribute("attr1:value1 attr2:value2");
-        count = testRealm().organizations().countByAttribute("attr1:value1 attr2:value2");
+        fetchedOrgs = managedRealm.admin().organizations().searchByAttribute("attr1:value1 attr2:value2");
+        count = managedRealm.admin().organizations().countByAttribute("attr1:value1 attr2:value2");
         assertThat(fetchedOrgs, hasSize(1));
         assertThat(fetchedOrgs, hasSize((int) count));
         assertThat(fetchedOrgs.get(0).getName(), is(equalTo(expected.get(1).getName())));
 
         // search for both "attr2:value2 attr3:value3" - not org has both of these attributes at the same time.
-        fetchedOrgs = testRealm().organizations().searchByAttribute("attr2:value2 attr3:value3");
-        count = testRealm().organizations().countByAttribute("attr2:value2 attr3:value3");
+        fetchedOrgs = managedRealm.admin().organizations().searchByAttribute("attr2:value2 attr3:value3");
+        count = managedRealm.admin().organizations().countByAttribute("attr2:value2 attr3:value3");
         assertThat(fetchedOrgs, hasSize(0));
         assertThat(fetchedOrgs, hasSize((int) count));
 
         // search for "anything:anyvalue" - should again match no org because no org has this attribute.
-        fetchedOrgs = testRealm().organizations().searchByAttribute("anything:anyvalue");
-        count = testRealm().organizations().countByAttribute("anything:anyvalue");
+        fetchedOrgs = managedRealm.admin().organizations().searchByAttribute("anything:anyvalue");
+        count = managedRealm.admin().organizations().countByAttribute("anything:anyvalue");
         assertThat(fetchedOrgs, hasSize(0));
         assertThat(fetchedOrgs, hasSize((int) count));
     }
@@ -328,14 +328,14 @@ public class OrganizationTest extends AbstractOrganizationTest {
         createOrganization("testorg.1");
         createOrganization("testorg.2");
 
-        assertThat(testRealm().organizations().count(null), is(equalTo(2L)));
-        assertThat(testRealm().organizations().count(".1"), is(equalTo(1L)));
+        assertThat(managedRealm.admin().organizations().count(null), is(equalTo(2L)));
+        assertThat(managedRealm.admin().organizations().count(".1"), is(equalTo(1L)));
     }
 
     @Test
     public void testDelete() {
         OrganizationRepresentation expected = createOrganization();
-        OrganizationResource organization = testRealm().organizations().get(expected.getId());
+        OrganizationResource organization = managedRealm.admin().organizations().get(expected.getId());
 
         try (Response response = organization.delete()) {
             assertEquals(Status.NO_CONTENT.getStatusCode(), response.getStatus());
@@ -353,7 +353,7 @@ public class OrganizationTest extends AbstractOrganizationTest {
         OrganizationRepresentation org = createOrganization();
         org = org.singleAttribute("key", "value");
 
-        OrganizationResource organization = testRealm().organizations().get(org.getId());
+        OrganizationResource organization = managedRealm.admin().organizations().get(org.getId());
 
         try (Response response = organization.update(org)) {
             assertEquals(Status.NO_CONTENT.getStatusCode(), response.getStatus());
@@ -394,7 +394,7 @@ public class OrganizationTest extends AbstractOrganizationTest {
         // test create org with default domain settings
         OrganizationRepresentation expected = createOrganization();
         OrganizationDomainRepresentation expectedNewOrgDomain = expected.getDomains().iterator().next();
-        OrganizationResource organization = testRealm().organizations().get(expected.getId());
+        OrganizationResource organization = managedRealm.admin().organizations().get(expected.getId());
         OrganizationRepresentation existing = organization.toRepresentation();
         assertEquals(1, existing.getDomains().size());
         OrganizationDomainRepresentation existingNewOrgDomain = existing.getDomain("neworg.org");
@@ -450,7 +450,7 @@ public class OrganizationTest extends AbstractOrganizationTest {
         // create another org in the same realm and attempt to set the same internet domain during update - should not be possible.
         OrganizationRepresentation anotherOrg = createOrganization("another-org");
         anotherOrg.addDomain(expectedNewOrgDomain);
-        organization = testRealm().organizations().get(anotherOrg.getId());
+        organization = managedRealm.admin().organizations().get(anotherOrg.getId());
         try (Response response = organization.update(anotherOrg)) {
             assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());
         }
@@ -459,7 +459,7 @@ public class OrganizationTest extends AbstractOrganizationTest {
         createOrganization(adminClient.realm(bc.providerRealmName()), "testorg", "acme.com");
 
         // try to remove a domain
-        organization = testRealm().organizations().get(existing.getId());
+        organization = managedRealm.admin().organizations().get(existing.getId());
         existing.removeDomain(existingNewOrgDomain);
         try (Response response = organization.update(existing)) {
             assertEquals(Status.NO_CONTENT.getStatusCode(), response.getStatus());
@@ -479,12 +479,12 @@ public class OrganizationTest extends AbstractOrganizationTest {
         orgWithoutDomains.setDescription("Organization without domains");
 
         String orgWithoutDomainsId;
-        try (Response response = testRealm().organizations().create(orgWithoutDomains)) {
+        try (Response response = managedRealm.admin().organizations().create(orgWithoutDomains)) {
             assertEquals(Status.CREATED.getStatusCode(), response.getStatus());
             orgWithoutDomainsId = ApiUtil.getCreatedId(response);
         }
 
-        OrganizationRepresentation created = testRealm().organizations().get(orgWithoutDomainsId).toRepresentation();
+        OrganizationRepresentation created = managedRealm.admin().organizations().get(orgWithoutDomainsId).toRepresentation();
         assertEquals("no-domain-org", created.getName());
         assertEquals("no-domain-org", created.getAlias());
         assertThat(created.getDomains() == null || created.getDomains().isEmpty(), is(true));
@@ -492,13 +492,13 @@ public class OrganizationTest extends AbstractOrganizationTest {
         // verify that the organization can be retrieved
         OrganizationRepresentation orgWithDomains = createRepresentation("org-with-domains", "example.com");
         String orgWithDomainsId;
-        try (Response response = testRealm().organizations().create(orgWithDomains)) {
+        try (Response response = managedRealm.admin().organizations().create(orgWithDomains)) {
             assertEquals(Status.CREATED.getStatusCode(), response.getStatus());
             orgWithDomainsId = ApiUtil.getCreatedId(response);
         }
 
         try {
-            List<OrganizationRepresentation> allOrgs = testRealm().organizations().list(-1, -1);
+            List<OrganizationRepresentation> allOrgs = managedRealm.admin().organizations().list(-1, -1);
             assertThat(allOrgs.size(), greaterThanOrEqualTo(2));
             
             Optional<OrganizationRepresentation> foundOrgWithDomains = allOrgs.stream()
@@ -508,8 +508,8 @@ public class OrganizationTest extends AbstractOrganizationTest {
                     .filter(org -> org.getId().equals(orgWithoutDomainsId))
                     .findFirst();
             
-            assertTrue("Organization with domains should be in the list", foundOrgWithDomains.isPresent());
-            assertTrue("Organization without domains should be in the list", foundOrgWithoutDomains.isPresent());
+            assertTrue(foundOrgWithDomains.isPresent(), "Organization with domains should be in the list");
+            assertTrue(foundOrgWithoutDomains.isPresent(), "Organization without domains should be in the list");
             
             assertThat("Organization with domains should have domains", 
                     foundOrgWithDomains.get().getDomains(), is(notNullValue()));
@@ -520,16 +520,16 @@ public class OrganizationTest extends AbstractOrganizationTest {
                     foundOrgWithoutDomains.get().getDomains() == null || 
                     foundOrgWithoutDomains.get().getDomains().isEmpty(), is(true));
 
-            List<OrganizationRepresentation> search = testRealm().organizations().search("with-domains", false, -1, -1);
+            List<OrganizationRepresentation> search = managedRealm.admin().organizations().search("with-domains", false, -1, -1);
 
             assertThat(search, hasSize(1));
 
-            search = testRealm().organizations().search("no-domain", false, -1, -1);
+            search = managedRealm.admin().organizations().search("no-domain", false, -1, -1);
 
             assertThat(search, hasSize(1));
         } finally {
-            testRealm().organizations().get(orgWithDomainsId).delete().close();
-            testRealm().organizations().get(orgWithoutDomainsId).delete().close();
+            managedRealm.admin().organizations().get(orgWithDomainsId).delete().close();
+            managedRealm.admin().organizations().get(orgWithoutDomainsId).delete().close();
         }
     }
 
@@ -543,26 +543,26 @@ public class OrganizationTest extends AbstractOrganizationTest {
     public void testDisabledOrganizationProvider() throws IOException {
         OrganizationRepresentation existing = createOrganization("acme", "acme.org", "acme.net");
         // disable the organization provider and try to access REST endpoints
-        try (RealmAttributeUpdater rau = new RealmAttributeUpdater(testRealm())
+        try (RealmAttributeUpdater rau = new RealmAttributeUpdater(managedRealm.admin())
                 .setOrganizationsEnabled(Boolean.FALSE)
                 .update()) {
             OrganizationRepresentation org = createRepresentation("some", "some.com");
 
-            try (Response response = testRealm().organizations().create(org)) {
+            try (Response response = managedRealm.admin().organizations().create(org)) {
                 assertEquals(Status.NOT_FOUND.getStatusCode(), response.getStatus());
             }
             try {
-                testRealm().organizations().list(-1, -1);
+                managedRealm.admin().organizations().list(-1, -1);
                 fail("Expected NotFoundException");
             } catch (NotFoundException expected) {
             }
             try {
-                testRealm().organizations().search("*");
+                managedRealm.admin().organizations().search("*");
                 fail("Expected NotFoundException");
             } catch (NotFoundException expected) {
             }
             try {
-                testRealm().organizations().get(existing.getId()).toRepresentation();
+                managedRealm.admin().organizations().get(existing.getId()).toRepresentation();
                 fail("Expected NotFoundException");
             } catch (NotFoundException expected) {
             }
@@ -624,7 +624,7 @@ public class OrganizationTest extends AbstractOrganizationTest {
 
         rep.setAlias("changed");
 
-        OrganizationsResource organizations = testRealm().organizations();
+        OrganizationsResource organizations = managedRealm.admin().organizations();
         OrganizationResource organization = organizations.get(rep.getId());
 
         try (Response response = organization.update(rep)) {
@@ -643,7 +643,7 @@ public class OrganizationTest extends AbstractOrganizationTest {
     @Test
     public void testFailDuplicatedAlias() {
         OrganizationRepresentation rep = createOrganization();
-        OrganizationsResource organizations = testRealm().organizations();
+        OrganizationsResource organizations = managedRealm.admin().organizations();
 
         rep.setId(null);
         rep.getDomains().clear();
@@ -665,32 +665,32 @@ public class OrganizationTest extends AbstractOrganizationTest {
         org.addDomain(orgDomain);
 
         org.setAlias("acme&@#!");
-        try (Response response = testRealm().organizations().create(org)) {
+        try (Response response = managedRealm.admin().organizations().create(org)) {
             assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());
         }
 
         // blank alias will be replaced with org name, which is valid
         org.setAlias("");
-        try (Response response = testRealm().organizations().create(org)) {
+        try (Response response = managedRealm.admin().organizations().create(org)) {
             assertEquals(Status.CREATED.getStatusCode(), response.getStatus());
             String id = ApiUtil.getCreatedId(response);
-            getCleanup().addCleanup(() -> testRealm().organizations().get(id).delete().close());
+            getCleanup().addCleanup(() -> managedRealm.admin().organizations().get(id).delete().close());
         }
 
         org.setAlias(" ");
-        try (Response response = testRealm().organizations().create(org)) {
+        try (Response response = managedRealm.admin().organizations().create(org)) {
             assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());
         }
 
         org.setAlias("\n");
-        try (Response response = testRealm().organizations().create(org)) {
+        try (Response response = managedRealm.admin().organizations().create(org)) {
             assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());
         }
 
         // when alias is empty, name is used as alias
         org.setName("acme@");
         org.setAlias("");
-        try (Response response = testRealm().organizations().create(org)) {
+        try (Response response = managedRealm.admin().organizations().create(org)) {
             assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());
         }
     }
@@ -700,7 +700,7 @@ public class OrganizationTest extends AbstractOrganizationTest {
         OrganizationRepresentation expected = createOrganization();
         expected.setRedirectUrl("http://valid.url:8080/");
 
-        OrganizationResource organization = testRealm().organizations().get(expected.getId());
+        OrganizationResource organization = managedRealm.admin().organizations().get(expected.getId());
 
         try (Response response = organization.update(expected)) {
             assertThat(response.getStatus(), equalTo(Status.NO_CONTENT.getStatusCode()));

@@ -41,7 +41,6 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserSessionRepresentation;
 import org.keycloak.representations.oidc.TokenMetadataRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
-import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.broker.util.SimpleHttpDefault;
 import org.keycloak.testsuite.pages.LoginPage;
@@ -67,14 +66,15 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 import static org.keycloak.testsuite.AbstractAdminTest.loadJson;
 import static org.keycloak.testsuite.AssertEvents.isTokenId;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author <a href="mailto:yoshiyuki.tabata.jy@hitachi.com">Yoshiyuki Tabata</a>
@@ -214,7 +214,7 @@ public class TokenRevocationTest extends AbstractKeycloakTest {
         AccessTokenResponse tokenResponse2 = login("test-app", "test-user@localhost", "password");
 
         // Session IDs of "offline" and online session are same for now. This may change in the future
-        Assert.assertEquals(tokenResponse1.getSessionState(), tokenResponse2.getSessionState());
+        Assertions.assertEquals(tokenResponse1.getSessionState(), tokenResponse2.getSessionState());
 
         isTokenEnabled(tokenResponse2, "test-app");
 
@@ -377,7 +377,7 @@ public class TokenRevocationTest extends AbstractKeycloakTest {
         try (Keycloak adminClient = Keycloak.getInstance(OAuthClient.AUTH_SERVER_ROOT, "test", "test-app", accessTokenString, AdminClientUtil.getSSLContextWithTruststore())) {
             try {
                 adminClient.realms().realm("test").toRepresentation();
-                Assert.fail("Not expected to obtain realm");
+                Assertions.fail("Not expected to obtain realm");
             } catch (NotAuthorizedException nae) {
                 // Expected
             }

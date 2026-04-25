@@ -41,6 +41,7 @@ import org.keycloak.protocol.oid4vc.utils.ClaimsPathPointer;
 import org.keycloak.protocol.oidc.rar.AuthorizationDetailsProcessor;
 import org.keycloak.protocol.oidc.rar.InvalidAuthorizationDetailsException;
 import org.keycloak.representations.AuthorizationDetailsJSONRepresentation;
+import org.keycloak.util.JsonSerialization;
 import org.keycloak.util.Strings;
 
 import org.jboss.logging.Logger;
@@ -265,7 +266,9 @@ public class OID4VCAuthorizationDetailsProcessor implements AuthorizationDetails
             }
         }
 
-        if (authorizationDetails.isEmpty()) {
+        if (!authorizationDetails.isEmpty()) {
+            logger.debugf("Generated authorization_details: %s", JsonSerialization.valueAsString(authorizationDetails));
+        } else {
             logger.debug("No generated authorization_details");
         }
         return authorizationDetails;

@@ -25,8 +25,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 import jakarta.ws.rs.core.Response;
 
@@ -58,7 +56,6 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.mappers.GroupMembershipMapper;
 import org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper;
 import org.keycloak.representations.idm.ClientRepresentation;
-import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -72,20 +69,20 @@ import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.TimePolicyRepresentation;
 import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
+import org.keycloak.testframework.realm.ClientBuilder;
+import org.keycloak.testframework.realm.GroupBuilder;
+import org.keycloak.testframework.realm.RoleBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
-import org.keycloak.testsuite.util.ClientBuilder;
-import org.keycloak.testsuite.util.GroupBuilder;
 import org.keycloak.testsuite.util.RealmBuilder;
-import org.keycloak.testsuite.util.RoleBuilder;
 import org.keycloak.testsuite.util.RolesBuilder;
-import org.keycloak.testsuite.util.UserBuilder;
 
-import org.junit.Assert;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -114,30 +111,22 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
                         .realmRole(RoleBuilder.create().name("role-b").build())
                 )
                 .group(GroupBuilder.create().name("Group A")
-                        .subGroups(Arrays.asList("Group B", "Group D").stream().map(name -> {
-                            if ("Group B".equals(name)) {
-                                return GroupBuilder.create().name(name).subGroups(Arrays.asList("Group C", "Group E").stream().map(new Function<String, GroupRepresentation>() {
-                                    @Override
-                                    public GroupRepresentation apply(String name) {
-                                        return GroupBuilder.create().name(name).build();
-                                    }
-                                }).collect(Collectors.toList())).build();
-                            }
-                            return GroupBuilder.create().name(name).realmRoles(Arrays.asList("role-a")).build();
-                        }).collect(Collectors.toList())).build())
+                        .subGroups(GroupBuilder.create("Group B").subGroups("Group C", "Group E"))
+                        .subGroups(GroupBuilder.create("Group D"))
+                        .build())
                 .group(GroupBuilder.create().name("Group E").build())
-                .user(UserBuilder.create().username("marta").password("password").addRoles("uma_authorization", "role-a").addGroups("Group A"))
-                .user(UserBuilder.create().username("alice").password("password").addRoles("uma_authorization").addGroups("/Group A/Group B/Group E"))
-                .user(UserBuilder.create().username("kolo").password("password").addRoles("uma_authorization").addGroups("/Group A/Group D"))
-                .user(UserBuilder.create().username("trinity").password("password").addRoles("uma_authorization").role("role-mapping-client", "client-role-a"))
-                .user(UserBuilder.create().username("jdoe").password("password").addGroups("/Group A/Group B", "/Group A/Group D"))
+                .user(UserBuilder.create().username("marta").password("password").roles("uma_authorization", "role-a").groups("Group A"))
+                .user(UserBuilder.create().username("alice").password("password").roles("uma_authorization").groups("/Group A/Group B/Group E"))
+                .user(UserBuilder.create().username("kolo").password("password").roles("uma_authorization").groups("/Group A/Group D"))
+                .user(UserBuilder.create().username("trinity").password("password").roles("uma_authorization").clientRoles("role-mapping-client", "client-role-a"))
+                .user(UserBuilder.create().username("jdoe").password("password").groups("/Group A/Group B", "/Group A/Group D"))
                 .client(ClientBuilder.create().clientId("resource-server-test")
                         .secret("secret")
                         .authorizationServicesEnabled(true)
                         .redirectUris("http://localhost/resource-server-test")
                         .defaultRoles("uma_protection")
-                        .directAccessGrants()
-                        .protocolMapper(groupProtocolMapper))
+                        .directAccessGrantsEnabled()
+                        .protocolMappers(groupProtocolMapper))
                 .client(ClientBuilder.create().clientId("role-mapping-client")
                         .defaultRoles("client-role-a", "client-role-b"))
                 .build());
@@ -199,7 +188,7 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
 
         provider.evaluate(evaluation);
 
-        Assert.assertNull(evaluation.getEffect());
+        Assertions.assertNull(evaluation.getEffect());
 
         policyRepresentation = new JSPolicyRepresentation();
         policyRepresentation.setId(KeycloakModelUtils.generateId());
@@ -236,7 +225,7 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
 
         provider.evaluate(evaluation);
 
-        Assert.assertNull(evaluation.getEffect());
+        Assertions.assertNull(evaluation.getEffect());
 
         policyRepresentation = new JSPolicyRepresentation();
         policyRepresentation.setName("allow-user-in-group-path-e-policy");
@@ -272,7 +261,7 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
 
         provider.evaluate(evaluation);
 
-        Assert.assertNull(evaluation.getEffect());
+        Assertions.assertNull(evaluation.getEffect());
 
         policyRepresentation = new JSPolicyRepresentation();
         policyRepresentation.setName("allow-alice-in-group-path-e-policy.js");
@@ -284,7 +273,7 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
 
         provider.evaluate(evaluation);
 
-        Assert.assertNull(evaluation.getEffect());
+        Assertions.assertNull(evaluation.getEffect());
 
         policyRepresentation = new JSPolicyRepresentation();
         policyRepresentation.setName("allow-alice-in-group-name-e-policy.js");
@@ -296,7 +285,7 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
 
         provider.evaluate(evaluation);
 
-        Assert.assertNull(evaluation.getEffect());
+        Assertions.assertNull(evaluation.getEffect());
     }
 
     @Test
@@ -335,7 +324,7 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
 
         provider.evaluate(evaluation);
 
-        Assert.assertNull(evaluation.getEffect());
+        Assertions.assertNull(evaluation.getEffect());
     }
 
     @Test
@@ -373,7 +362,7 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
 
         provider.evaluate(evaluation);
 
-        Assert.assertNull(evaluation.getEffect());
+        Assertions.assertNull(evaluation.getEffect());
     }
 
     @Test
@@ -412,7 +401,7 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
 
         provider.evaluate(evaluation);
 
-        Assert.assertNull(evaluation.getEffect());
+        Assertions.assertNull(evaluation.getEffect());
     }
 
     @Test
@@ -593,7 +582,7 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
 
             try {
                 evaluator.evaluate(resourceServer, null);
-                Assert.fail("Instances should be marked as read-only");
+                Assertions.fail("Instances should be marked as read-only");
             } catch (Exception ignore) {
             }
         } finally {

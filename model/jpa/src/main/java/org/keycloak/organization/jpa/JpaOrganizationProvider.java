@@ -23,7 +23,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import java.util.stream.Stream;
 
 import jakarta.persistence.EntityManager;
@@ -37,6 +36,8 @@ import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
 
+import org.keycloak.authorization.fgap.AdminPermissionsSchema;
+import org.keycloak.authorization.fgap.evaluation.partial.PartialEvaluationStorageProvider;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.GroupModel.Type;
@@ -64,6 +65,7 @@ import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.organization.utils.Organizations;
 import org.keycloak.representations.idm.MembershipType;
 import org.keycloak.storage.StorageId;
+import org.keycloak.storage.UserStoragePrivateUtil;
 import org.keycloak.storage.jpa.entity.FederatedUserGroupMembershipEntity;
 import org.keycloak.utils.ReservedCharValidator;
 import org.keycloak.utils.StringUtil;
@@ -376,14 +378,14 @@ public class JpaOrganizationProvider implements OrganizationProvider {
     @Override
     public Stream<UserModel> getMembersStream(OrganizationModel organization, Map<String, String> filters, Boolean exact, Integer first, Integer max) {
         throwExceptionIfObjectIsNull(organization, "Organization");
-        var builder = em.getCriteriaBuilder();
-        var queryBuilder = builder.createQuery(String.class);
-        var groupMembership = queryBuilder.from(UserGroupMembershipEntity.class);
+        CriteriaBuilder builder = em.getCriteriaBuilder();
+        CriteriaQuery<String> queryBuilder = builder.createQuery(String.class);
+        Root<UserGroupMembershipEntity> groupMembership = queryBuilder.from(UserGroupMembershipEntity.class);
 
         queryBuilder.select(groupMembership.get("user").get("id"));
 
-        var predicates = new ArrayList<>();
-        var group = getOrganizationGroup(organization);
+        List<Predicate> predicates = new ArrayList<>();
+        GroupModel group = getOrganizationGroup(organization);
 
         predicates.add(builder.equal(groupMembership.get("groupId"), group.getId()));
 
@@ -397,6 +399,9 @@ public class JpaOrganizationProvider implements OrganizationProvider {
                         .equal(groupMembership.get(MembershipType.NAME), filter.getValue().toUpperCase()));
             }
         }
+
+        PartialEvaluationStorageProvider storageProvider = (PartialEvaluationStorageProvider) UserStoragePrivateUtil.userLocalStorage(session);
+        predicates.addAll(AdminPermissionsSchema.SCHEMA.applyAuthorizationFilters(session, AdminPermissionsSchema.USERS, storageProvider, getRealm(), builder, queryBuilder, userJoin));
 
         queryBuilder.where(predicates.toArray(new Predicate[0]));
         queryBuilder.orderBy(builder.asc(userJoin.get(USERNAME)));
@@ -445,9 +450,22 @@ public class JpaOrganizationProvider implements OrganizationProvider {
     @Override
     public long getMembersCount(OrganizationModel organization) {
         throwExceptionIfObjectIsNull(organization, "Organization");
-        String groupId = getOrganizationGroup(organization).getId();
+        GroupModel group = getOrganizationGroup(organization);
+        CriteriaBuilder builder = em.getCriteriaBuilder();
+        CriteriaQuery<Long> countQuery = builder.createQuery(Long.class);
+        Root<UserGroupMembershipEntity> groupMembership = countQuery.from(UserGroupMembershipEntity.class);
+        From<UserGroupMembershipEntity, UserEntity> userJoin = groupMembership.join("user");
 
-        return userProvider.getUsersCount(getRealm(), Set.of(groupId));
+        List<Predicate> predicates = new ArrayList<Predicate>();
+        predicates.add(builder.equal(groupMembership.get("groupId"), group.getId()));
+
+        PartialEvaluationStorageProvider storageProvider = (PartialEvaluationStorageProvider) UserStoragePrivateUtil.userLocalStorage(session);
+        predicates.addAll(AdminPermissionsSchema.SCHEMA.applyAuthorizationFilters(session, AdminPermissionsSchema.USERS, storageProvider, getRealm(), builder, countQuery, userJoin));
+
+        countQuery.select(builder.count(userJoin));
+        countQuery.where(predicates.toArray(new Predicate[0]));
+
+        return em.createQuery(countQuery).getSingleResult();
     }
 
     @Override

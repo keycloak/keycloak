@@ -41,14 +41,14 @@ import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 import org.openqa.selenium.WebDriver;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -78,13 +78,13 @@ public class SSOTest extends AbstractChangeImportedUserPasswordsTest {
         loginPage.login("test-user@localhost", getPassword("test-user@localhost"));
 
         assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assert.assertNotNull(oauth.parseLoginResponse().getCode());
+        Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
 
         EventRepresentation loginEvent = events.expectLogin().assertEvent();
         String sessionId = loginEvent.getSessionId();
 
         IDToken idToken = sendTokenRequestAndGetIDToken(loginEvent);
-        Assert.assertEquals("1", idToken.getAcr());
+        Assertions.assertEquals("1", idToken.getAcr());
         Long authTime = idToken.getAuth_time();
 
         appPage.open();
@@ -100,9 +100,9 @@ public class SSOTest extends AbstractChangeImportedUserPasswordsTest {
 
         // acr is 0 as we authenticated through SSO cookie
         idToken = sendTokenRequestAndGetIDToken(loginEvent);
-        Assert.assertEquals("0", idToken.getAcr());
+        Assertions.assertEquals("0", idToken.getAcr());
         // auth time hasn't changed as we authenticated through SSO cookie
-        Assert.assertEquals(authTime, idToken.getAuth_time());
+        Assertions.assertEquals(authTime, idToken.getAuth_time());
 
         appPage.assertCurrent();
 
@@ -123,8 +123,8 @@ public class SSOTest extends AbstractChangeImportedUserPasswordsTest {
         oauth.openLoginForm();
         loginPage.login("test-user@localhost", getPassword("test-user@localhost"));
 
-        Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assert.assertNotNull(oauth.parseLoginResponse().getCode());
+        Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
 
         EventRepresentation login1 = events.expectLogin().assertEvent();
 
@@ -135,8 +135,8 @@ public class SSOTest extends AbstractChangeImportedUserPasswordsTest {
 
         EventRepresentation login2 = events.expectLogin().assertEvent();
 
-        Assert.assertEquals(RequestType.AUTH_RESPONSE, RequestType.valueOf(driver2.getTitle()));
-        Assert.assertNotNull(oauth2.parseLoginResponse().getCode());
+        Assertions.assertEquals(RequestType.AUTH_RESPONSE, RequestType.valueOf(driver2.getTitle()));
+        Assertions.assertNotNull(oauth2.parseLoginResponse().getCode());
 
         assertNotEquals(login1.getSessionId(), login2.getSessionId());
 
@@ -151,8 +151,8 @@ public class SSOTest extends AbstractChangeImportedUserPasswordsTest {
         oauth2.openLoginForm();
 
         events.expectLogin().session(login2.getSessionId()).removeDetail(Details.USERNAME).assertEvent();
-        Assert.assertEquals(RequestType.AUTH_RESPONSE, RequestType.valueOf(driver2.getTitle()));
-        Assert.assertNotNull(oauth2.parseLoginResponse().getCode());
+        Assertions.assertEquals(RequestType.AUTH_RESPONSE, RequestType.valueOf(driver2.getTitle()));
+        Assertions.assertNotNull(oauth2.parseLoginResponse().getCode());
 
         String code = oauth2.parseLoginResponse().getCode();
         AccessTokenResponse response = oauth2.doAccessTokenRequest(code);
@@ -173,15 +173,15 @@ public class SSOTest extends AbstractChangeImportedUserPasswordsTest {
         loginPage.login("test-user@localhost", getPassword("test-user@localhost"));
 
         assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assert.assertNotNull(oauth.parseLoginResponse().getCode());
+        Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
 
         EventRepresentation loginEvent = events.expectLogin().assertEvent();
         String sessionId = loginEvent.getSessionId();
 
         // Add update-profile required action to user now
-        UserRepresentation user = testRealm().users().get(loginEvent.getUserId()).toRepresentation();
+        UserRepresentation user = managedRealm.admin().users().get(loginEvent.getUserId()).toRepresentation();
         user.getRequiredActions().add(UserModel.RequiredAction.UPDATE_PASSWORD.toString());
-        testRealm().users().get(loginEvent.getUserId()).update(user);
+        managedRealm.admin().users().get(loginEvent.getUserId()).update(user);
 
         // Attempt SSO login. update-password form is shown
         oauth.openLoginForm();

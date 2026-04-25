@@ -40,6 +40,7 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.UserSessionRepresentation;
 import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.services.resources.LoginActionsService;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.pages.LoginConfigTotpPage;
 import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
@@ -49,7 +50,6 @@ import org.keycloak.testsuite.util.GreenMailRule;
 import org.keycloak.testsuite.util.MailUtils;
 import org.keycloak.testsuite.util.SecondBrowser;
 import org.keycloak.testsuite.util.URLUtils;
-import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
 
@@ -61,15 +61,16 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 import org.openqa.selenium.Cookie;
 import org.openqa.selenium.WebDriver;
 
 import static org.hamcrest.Matchers.contains;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author Stan Silvert
@@ -101,20 +102,20 @@ public class AppInitiatedActionResetPasswordTest extends AbstractAppInitiatedAct
 
     @After
     public void after() {
-        AdminApiUtil.resetUserPassword(testRealm().users().get(findUser("test-user@localhost").getId()), "password", false);
+        AdminApiUtil.resetUserPassword(managedRealm.admin().users().get(findUser("test-user@localhost").getId()), "password", false);
 
         // reset password required action max auth age back to default
-        Optional<RequiredActionProviderRepresentation> passwordRequiredAction = testRealm().flows().getRequiredActions()
+        Optional<RequiredActionProviderRepresentation> passwordRequiredAction = managedRealm.admin().flows().getRequiredActions()
                 .stream()
                 .filter(requiredAction -> requiredAction.getProviderId().equals(UserModel.RequiredAction.UPDATE_PASSWORD.name()))
                 .findFirst();
         if (passwordRequiredAction.isPresent()) {
             passwordRequiredAction.get().getConfig().remove(Constants.MAX_AUTH_AGE_KEY);
-            testRealm().flows().updateRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD.name(), passwordRequiredAction.get());
+            managedRealm.admin().flows().updateRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD.name(), passwordRequiredAction.get());
         }
 
         // remove all required action from the user
-        UserResource user = AdminApiUtil.findUserByUsernameId(testRealm(), "test-user@localhost");
+        UserResource user = AdminApiUtil.findUserByUsernameId(managedRealm.admin(), "test-user@localhost");
         UserRepresentation userRepresentation = user.toRepresentation();
         userRepresentation.setRequiredActions(Collections.emptyList());
         user.update(userRepresentation);
@@ -122,10 +123,10 @@ public class AppInitiatedActionResetPasswordTest extends AbstractAppInitiatedAct
 
     @Test
     public void resetPassword() throws Exception {
-        try (RealmAttributeUpdater realmUpdater = new RealmAttributeUpdater(testRealm())
+        try (RealmAttributeUpdater realmUpdater = new RealmAttributeUpdater(managedRealm.admin())
                 .addEventsListener(EmailEventListenerProviderFactory.ID)
                 .update();
-             UserAttributeUpdater userUpdater = new UserAttributeUpdater(AdminApiUtil.findUserByUsernameId(testRealm(), "test-user@localhost"))
+             UserAttributeUpdater userUpdater = new UserAttributeUpdater(AdminApiUtil.findUserByUsernameId(managedRealm.admin(), "test-user@localhost"))
                 .setEmailVerified(true)
                 .update()) {
 
@@ -164,10 +165,10 @@ public class AppInitiatedActionResetPasswordTest extends AbstractAppInitiatedAct
             events.expectRequiredAction(EventType.UPDATE_CREDENTIAL).detail(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE).assertEvent();
 
             MimeMessage[] receivedMessages = greenMail.getReceivedMessages();
-            Assert.assertEquals(2, receivedMessages.length);
+            Assertions.assertEquals(2, receivedMessages.length);
 
-            Assert.assertEquals("Update password", receivedMessages[0].getSubject());
-            Assert.assertEquals("Update credential", receivedMessages[1].getSubject());
+            Assertions.assertEquals("Update password", receivedMessages[0].getSubject());
+            Assertions.assertEquals("Update credential", receivedMessages[1].getSubject());
             MatcherAssert.assertThat(MailUtils.getBody(receivedMessages[1]).getText(),
                     Matchers.startsWith("Your password credential was changed"));
             MatcherAssert.assertThat(MailUtils.getBody(receivedMessages[1]).getHtml(),
@@ -202,7 +203,7 @@ public class AppInitiatedActionResetPasswordTest extends AbstractAppInitiatedAct
         doAIA();
 
         loginPage.assertCurrent();
-        Assert.assertEquals("test-user@localhost", loginPage.getAttemptedUsername());
+        Assertions.assertEquals("test-user@localhost", loginPage.getAttemptedUsername());
         loginPage.login("password");
 
         changePasswordPage.assertCurrent();
@@ -218,7 +219,7 @@ public class AppInitiatedActionResetPasswordTest extends AbstractAppInitiatedAct
     @Test
     public void resetPasswordRequiresReAuthWithIndividualMaxAuthAgeConfig() throws Exception {
         // retrieve the password required action
-        RequiredActionProviderRepresentation passwordRequiredAction = testRealm().flows().getRequiredActions()
+        RequiredActionProviderRepresentation passwordRequiredAction = managedRealm.admin().flows().getRequiredActions()
                 .stream()
                 .filter(requiredAction -> requiredAction.getProviderId().equals(UserModel.RequiredAction.UPDATE_PASSWORD.name()))
                 .findFirst()
@@ -226,7 +227,7 @@ public class AppInitiatedActionResetPasswordTest extends AbstractAppInitiatedAct
 
         // override default max auth age to 500 seconds for the password required action
         passwordRequiredAction.getConfig().put(Constants.MAX_AUTH_AGE_KEY, "500");
-        testRealm().flows().updateRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD.name(), passwordRequiredAction);
+        managedRealm.admin().flows().updateRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD.name(), passwordRequiredAction);
 
         oauth.openLoginForm();
         loginPage.login("test-user@localhost", "password");
@@ -239,7 +240,7 @@ public class AppInitiatedActionResetPasswordTest extends AbstractAppInitiatedAct
         doAIA();
 
         loginPage.assertCurrent();
-        Assert.assertEquals("test-user@localhost", loginPage.getAttemptedUsername());
+        Assertions.assertEquals("test-user@localhost", loginPage.getAttemptedUsername());
         loginPage.login("password");
 
 
@@ -256,7 +257,7 @@ public class AppInitiatedActionResetPasswordTest extends AbstractAppInitiatedAct
     @Test
     public void resetPasswordRequiresNoReAuthWithIndividualMaxAuthAgeConfig() throws Exception {
         // retrieve the password required action
-        RequiredActionProviderRepresentation passwordRequiredAction = testRealm().flows().getRequiredActions()
+        RequiredActionProviderRepresentation passwordRequiredAction = managedRealm.admin().flows().getRequiredActions()
                 .stream()
                 .filter(requiredAction -> requiredAction.getProviderId().equals(UserModel.RequiredAction.UPDATE_PASSWORD.name()))
                 .findFirst()
@@ -264,7 +265,7 @@ public class AppInitiatedActionResetPasswordTest extends AbstractAppInitiatedAct
 
         // override default max auth age to 500 seconds for the password required action
         passwordRequiredAction.getConfig().put(Constants.MAX_AUTH_AGE_KEY, "500");
-        testRealm().flows().updateRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD.name(), passwordRequiredAction);
+        managedRealm.admin().flows().updateRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD.name(), passwordRequiredAction);
 
 
         oauth.openLoginForm();
@@ -295,14 +296,14 @@ public class AppInitiatedActionResetPasswordTest extends AbstractAppInitiatedAct
     public void resetPasswordRequiresReAuthWithMaxAuthAgePasswordPolicy() {
 
         // set password policy
-        RealmRepresentation currentTestRealmRep = testRealm().toRepresentation();
+        RealmRepresentation currentTestRealmRep = managedRealm.admin().toRepresentation();
         String previousPasswordPolicy = currentTestRealmRep.getPasswordPolicy();
         if (previousPasswordPolicy == null) {
             previousPasswordPolicy = "";
         }
         currentTestRealmRep.setPasswordPolicy("maxAuthAge(0)");
         try {
-            testRealm().update(currentTestRealmRep);
+            managedRealm.admin().update(currentTestRealmRep);
 
             oauth.openLoginForm();
             loginPage.login("test-user@localhost", "password");
@@ -317,7 +318,7 @@ public class AppInitiatedActionResetPasswordTest extends AbstractAppInitiatedAct
 
             loginPage.assertCurrent();
 
-            Assert.assertEquals("test-user@localhost", loginPage.getAttemptedUsername());
+            Assertions.assertEquals("test-user@localhost", loginPage.getAttemptedUsername());
 
             loginPage.login("password");
 
@@ -332,7 +333,7 @@ public class AppInitiatedActionResetPasswordTest extends AbstractAppInitiatedAct
         } finally {
             // reset password policy to previous state
             currentTestRealmRep.setPasswordPolicy(previousPasswordPolicy);
-            testRealm().update(currentTestRealmRep);
+            managedRealm.admin().update(currentTestRealmRep);
         }
     }
 
@@ -357,9 +358,9 @@ public class AppInitiatedActionResetPasswordTest extends AbstractAppInitiatedAct
     @Test
     public void cancelWhenOTPRequiredAction() {
         // Add OTP required action to the user
-        UserResource user = AdminApiUtil.findUserByUsernameId(testRealm(), "test-user@localhost");
+        UserResource user = AdminApiUtil.findUserByUsernameId(managedRealm.admin(), "test-user@localhost");
         UserRepresentation userRep = user.toRepresentation();
-        UserBuilder.edit(userRep).requiredAction(UserModel.RequiredAction.CONFIGURE_TOTP.name());
+        UserBuilder.update(userRep).requiredActions(UserModel.RequiredAction.CONFIGURE_TOTP.name());
         user.update(userRep);
 
         doAIA();
@@ -367,7 +368,7 @@ public class AppInitiatedActionResetPasswordTest extends AbstractAppInitiatedAct
 
         // Cancel button should not be displayed
         totpPage.assertCurrent();
-        Assert.assertFalse(totpPage.isCancelDisplayed());
+        Assertions.assertFalse(totpPage.isCancelDisplayed());
 
         // Try to manually send POST request from browser with cancel the AIA
         String actionUrl = URLUtils.getActionUrlFromCurrentPage(driver);
@@ -382,7 +383,7 @@ public class AppInitiatedActionResetPasswordTest extends AbstractAppInitiatedAct
         oauth.openLoginForm();
         loginPage.login("test-user@localhost", "password");
 
-        UserResource userResource = testRealm().users().get(findUser("test-user@localhost").getId());
+        UserResource userResource = managedRealm.admin().users().get(findUser("test-user@localhost").getId());
         UserRepresentation userRep = userResource.toRepresentation();
         userRep.getRequiredActions().add(UserModel.RequiredAction.UPDATE_PASSWORD.name());
         userResource.update(userRep);
@@ -414,7 +415,7 @@ public class AppInitiatedActionResetPasswordTest extends AbstractAppInitiatedAct
         loginPage.login("test-user@localhost", "password");
         events.expectLogin().assertEvent();
 
-        UserResource testUser = testRealm().users().get(findUser("test-user@localhost").getId());
+        UserResource testUser = managedRealm.admin().users().get(findUser("test-user@localhost").getId());
         List<UserSessionRepresentation> sessions = testUser.getUserSessions();
         assertEquals(1, sessions.size());
         final String firstSessionId = sessions.get(0).getId();
@@ -435,14 +436,14 @@ public class AppInitiatedActionResetPasswordTest extends AbstractAppInitiatedAct
 
         sessions = testUser.getUserSessions();
         assertEquals(1, sessions.size());
-        assertEquals("Old session is still valid", firstSessionId, sessions.get(0).getId());
+        assertEquals(firstSessionId, sessions.get(0).getId(), "Old session is still valid");
     }
 
     @Test
     public void uncheckLogoutSessions() {
         OAuthClient oauth2 = oauth.newConfig().driver(driver2);
 
-        UserResource testUser = testRealm().users().get(findUser("test-user@localhost").getId());
+        UserResource testUser = managedRealm.admin().users().get(findUser("test-user@localhost").getId());
 
         oauth.openLoginForm();
         loginPage.login("test-user@localhost", "password");
@@ -455,7 +456,7 @@ public class AppInitiatedActionResetPasswordTest extends AbstractAppInitiatedAct
         doAIA();
 
         changePasswordPage.assertCurrent();
-        assertFalse("Logout other sessions was ticked", changePasswordPage.isLogoutSessionsChecked());
+        assertFalse(changePasswordPage.isLogoutSessionsChecked(), "Logout other sessions was ticked");
         changePasswordPage.changePassword("All Right Then, Keep Your Secrets", "All Right Then, Keep Your Secrets");
         events.expectRequiredAction(EventType.UPDATE_PASSWORD).assertEvent();
         events.expectRequiredAction(EventType.UPDATE_CREDENTIAL).detail(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE).assertEvent();

@@ -173,11 +173,7 @@ public class DefaultWorkflowProvider implements WorkflowProvider {
 
     @Override
     public void runScheduledSteps() {
-        getWorkflows().forEach((workflow) -> {
-            if (!workflow.isEnabled()) {
-                log.debugf("Skipping workflow %s as it is disabled", workflow.getName());
-                return;
-            }
+        getWorkflows().filter(Workflow::isEnabled).forEach((workflow) -> {
             stateProvider.getDueScheduledSteps(workflow).forEach((scheduled) -> {
                 try {
                     // check if the resource still meets the workflow's resource conditions
@@ -369,11 +365,7 @@ public class DefaultWorkflowProvider implements WorkflowProvider {
     private void processEvent(Stream<Workflow> workflows, WorkflowEvent event) {
         Map<String, ScheduledStep>[] scheduledSteps = new Map[] { null };
 
-        workflows.forEach(workflow -> {
-            if (!workflow.isEnabled()) {
-                log.debugf("Skipping workflow %s as it is disabled or has no steps", workflow.getName());
-                return;
-            }
+        workflows.filter(Workflow::isEnabled).forEach(workflow -> {
 
             EventBasedWorkflow provider = new EventBasedWorkflow(session, workflow.getSupportedType(), getWorkflowComponent(workflow.getId()));
 

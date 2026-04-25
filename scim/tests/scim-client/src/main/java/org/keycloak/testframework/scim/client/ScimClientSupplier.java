@@ -17,7 +17,7 @@ import org.keycloak.testframework.injection.InstanceContext;
 import org.keycloak.testframework.injection.RequestedInstance;
 import org.keycloak.testframework.injection.Supplier;
 import org.keycloak.testframework.injection.SupplierOrder;
-import org.keycloak.testframework.realm.ClientConfigBuilder;
+import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.scim.client.annotations.InjectScimClient;
 import org.keycloak.testframework.server.KeycloakServer;
@@ -36,7 +36,7 @@ public class ScimClientSupplier implements Supplier<ScimClient, InjectScimClient
         List<ClientRepresentation> scimClient = managedRealm.admin().clients().findByClientId(config.clientId());
 
         if (scimClient.isEmpty() && config.attachTo().isEmpty()) {
-            try (Response response = managedRealm.admin().clients().create(ClientConfigBuilder.create()
+            try (Response response = managedRealm.admin().clients().create(ClientBuilder.create()
                             .clientId(config.clientId())
                             .secret(config.clientSecret())
                             .serviceAccountsEnabled(true)

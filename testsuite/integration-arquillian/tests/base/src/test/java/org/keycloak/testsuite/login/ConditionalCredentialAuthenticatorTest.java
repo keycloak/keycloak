@@ -39,9 +39,9 @@ import org.keycloak.testsuite.pages.LoginTotpPage;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
 import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 /**
  *
@@ -165,7 +165,7 @@ public class ConditionalCredentialAuthenticatorTest extends AbstractTestRealmKey
     private void configureConditionalCurrentCredentialFlow(Boolean included, String... credentials) {
         // clone the browser flow and add the current credential condition in the 2FA section
 
-        RealmResource realmRes = testRealm();
+        RealmResource realmRes = managedRealm.admin();
         AuthenticationManagementResource authRes = realmRes.flows();
 
         // revert the flows if already changed
@@ -209,10 +209,10 @@ public class ConditionalCredentialAuthenticatorTest extends AbstractTestRealmKey
 
     private void checkLoginOk(String username) {
         String code = oauth.parseLoginResponse().getCode();
-        Assert.assertNotNull(code);
+        Assertions.assertNotNull(code);
         AccessTokenResponse res = oauth.doAccessTokenRequest(code);
-        Assert.assertNull(res.getError());
-        Assert.assertNotNull(res.getAccessToken());
+        Assertions.assertNull(res.getError());
+        Assertions.assertNotNull(res.getAccessToken());
 
         events.expectLogin().user(AssertEvents.isUUID()).detail(Details.USERNAME, username).assertEvent();
     }

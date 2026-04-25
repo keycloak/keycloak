@@ -44,7 +44,6 @@ import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.RefreshToken;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.services.util.CertificateInfoHelper;
-import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.util.ClientManager;
 import org.keycloak.testsuite.util.KeyUtils;
@@ -57,12 +56,13 @@ import org.apache.http.NameValuePair;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.message.BasicNameValuePair;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -204,7 +204,7 @@ public class ClientAuthSignedJWTTest extends AbstractClientAuthSignedJWTTest {
 
             testCodeToTokenRequestSuccess(Algorithm.ES256, true);
         } catch (Exception e) {
-            Assert.fail();
+            Assertions.fail();
         } finally {
             clientResource = AdminApiUtil.findClientByClientId(adminClient.realm("test"), "client2");
             clientRep = clientResource.toRepresentation();
@@ -215,7 +215,7 @@ public class ClientAuthSignedJWTTest extends AbstractClientAuthSignedJWTTest {
 
     @Test
     public void testDirectGrantRequestSuccess() throws Exception {
-        oauth.clientId("client2");
+        oauth.client("client2");
         AccessTokenResponse response = doGrantAccessTokenRequest("test-user@localhost", "password", getClient2SignedJWT());
 
         assertEquals(200, response.getStatusCode());
@@ -249,7 +249,7 @@ public class ClientAuthSignedJWTTest extends AbstractClientAuthSignedJWTTest {
             PrivateKey privateKey = keyPair.getPrivate();
 
             // test
-            oauth.clientId("client2");
+            oauth.client("client2");
             AccessTokenResponse response = doGrantAccessTokenRequest("test-user@localhost", "password", createSignedRequestToken("client2", getRealmInfoUrl(), privateKey, publicKey, signingAlgorithm));
 
             assertEquals(200, response.getStatusCode());
@@ -270,14 +270,14 @@ public class ClientAuthSignedJWTTest extends AbstractClientAuthSignedJWTTest {
             KeyPair keyPair = setupJwksUrl(signingAlgorithm, false, false, null, clientRepresentation, clientResource);
             PublicKey publicKey = keyPair.getPublic();
             PrivateKey privateKey = keyPair.getPrivate();
-            oauth.clientId("client2");
+            oauth.client("client2");
             AccessTokenResponse response = doGrantAccessTokenRequest("test-user@localhost", "password", createSignedRequestToken("client2", getRealmInfoUrl(), privateKey, publicKey, signingAlgorithm));
             assertEquals(200, response.getStatusCode());
 
             // sending a JWS using another RSA based alg (PS256) should work as alg is not specified
             publicKey = keyPair.getPublic();
             privateKey = keyPair.getPrivate();
-            oauth.clientId("client2");
+            oauth.client("client2");
             response = doGrantAccessTokenRequest("test-user@localhost", "password", createSignedRequestToken("client2", getRealmInfoUrl(), privateKey, publicKey, Algorithm.PS256));
             assertEquals(200, response.getStatusCode());
 
@@ -314,7 +314,7 @@ public class ClientAuthSignedJWTTest extends AbstractClientAuthSignedJWTTest {
             PrivateKey privateKey = keyPair.getPrivate();
 
             // test
-            oauth.clientId("client2");
+            oauth.client("client2");
             JsonWebToken clientAuthJwt = createRequestToken("client2", getRealmInfoUrl());
             AccessTokenResponse response = doGrantAccessTokenRequest("test-user@localhost", "password",
                     createSignledRequestToken(privateKey, publicKey, signingAlgorithm, "my-kid", clientAuthJwt));
@@ -770,8 +770,8 @@ public class ClientAuthSignedJWTTest extends AbstractClientAuthSignedJWTTest {
 
         assertEquals(200, response.getStatusCode());
         AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
-        Assert.assertNotNull(accessToken);
-        Assert.assertNull(response.getError());
+        Assertions.assertNotNull(accessToken);
+        Assertions.assertNull(response.getError());
 
         // 2nd attempt to reuse same JWT should fail
         response = doClientCredentialsGrantRequest(clientJwt);
@@ -865,7 +865,7 @@ public class ClientAuthSignedJWTTest extends AbstractClientAuthSignedJWTTest {
 
             testCodeToTokenRequestFailure(Algorithm.RS256, "invalid_client", Errors.INVALID_CLIENT_CREDENTIALS);
         } catch (Exception e) {
-            Assert.fail();
+            Assertions.fail();
         } finally {
             clientResource = AdminApiUtil.findClientByClientId(adminClient.realm("test"), "client2");
             clientRep = clientResource.toRepresentation();

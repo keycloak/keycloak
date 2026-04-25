@@ -16,7 +16,6 @@
  */
 package org.keycloak.services.resources.admin;
 
-import java.util.Collections;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
@@ -43,14 +42,12 @@ import org.keycloak.broker.social.SocialIdentityProvider;
 import org.keycloak.common.Profile;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
-import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.models.utils.StripSecretsUtils;
@@ -197,6 +194,11 @@ public class IdentityProviderResource {
             providerRep.setInternalId(identityProviderModel.getInternalId());
         }
 
+        String oldProviderAlias = identityProviderModel.getAlias();
+        if (providerRep.getAlias() != null && !oldProviderAlias.equals(providerRep.getAlias())) {
+            throw new IllegalArgumentException("Identity Provider alias cannot be changed");
+        }
+
         IdentityProviderModel updated = RepresentationToModel.toModel(realm, providerRep, session);
 
         if (updated.getConfig() != null && ComponentRepresentation.SECRET_VALUE.equals(updated.getConfig().get("clientSecret"))) {
@@ -206,32 +208,6 @@ public class IdentityProviderResource {
         session.identityProviders().update(updated);
         // update in case of legacy hide on login attr was used.
         providerRep.setHideOnLogin(updated.isHideOnLogin());
-
-        String newProviderAlias = providerRep.getAlias();
-        String oldProviderAlias = identityProviderModel.getAlias();
-        if (!oldProviderAlias.equals(newProviderAlias)) {
-
-            // Admin changed the ID (alias) of identity provider. We must update all clients and users
-            logger.debugf("Changing providerId in all clients and linked users. oldProviderId=%s, newProviderId=%s", oldProviderAlias, newProviderAlias);
-
-            updateUsersAfterProviderAliasChange(session.users().searchForUserStream(realm, Collections.singletonMap(UserModel.INCLUDE_SERVICE_ACCOUNT, Boolean.FALSE.toString())),
-                    oldProviderAlias, newProviderAlias, realm, session);
-        }
-    }
-
-    private static void updateUsersAfterProviderAliasChange(Stream<UserModel> users, String oldProviderId, String newProviderId, RealmModel realm, KeycloakSession session) {
-        users.forEach(user -> {
-            FederatedIdentityModel federatedIdentity = session.users().getFederatedIdentity(realm, user, oldProviderId);
-            if (federatedIdentity != null) {
-                // Remove old link first
-                session.users().removeFederatedIdentity(realm, user, oldProviderId);
-
-                // And create new
-                FederatedIdentityModel newFederatedIdentity = new FederatedIdentityModel(newProviderId, federatedIdentity.getUserId(), federatedIdentity.getUserName(),
-                        federatedIdentity.getToken());
-                session.users().addFederatedIdentity(realm, user, newFederatedIdentity);
-            }
-        });
     }
 
 

@@ -69,12 +69,12 @@ public class OrganizationGroupMembershipOIDCMapperTest extends AbstractOrganizat
         setMapperConfig(OrganizationMembershipMapper.ADD_ORGANIZATION_ID, null);
 
         // Add the organization group membership mapper to the organization scope
-        ClientScopeRepresentation orgScope = testRealm().clientScopes().findAll().stream()
+        ClientScopeRepresentation orgScope = managedRealm.admin().clientScopes().findAll().stream()
                 .filter(s -> OIDCLoginProtocolFactory.ORGANIZATION.equals(s.getName()))
                 .findAny()
                 .orElseThrow();
 
-        ClientScopeResource orgScopeResource = testRealm().clientScopes().get(orgScope.getId());
+        ClientScopeResource orgScopeResource = managedRealm.admin().clientScopes().get(orgScope.getId());
 
         ProtocolMapperRepresentation groupMapper = new ProtocolMapperRepresentation();
         groupMapper.setName("organization-groups");
@@ -95,7 +95,7 @@ public class OrganizationGroupMembershipOIDCMapperTest extends AbstractOrganizat
     public void testNestedGroupsWithRelativePaths() throws Exception {
         // Create organization
         OrganizationRepresentation orgRep = createOrganization("acme");
-        OrganizationResource org = testRealm().organizations().get(orgRep.getId());
+        OrganizationResource org = managedRealm.admin().organizations().get(orgRep.getId());
 
         // Add member
         MemberRepresentation member = addMember(org);
@@ -148,7 +148,7 @@ public class OrganizationGroupMembershipOIDCMapperTest extends AbstractOrganizat
     public void testEmptyGroupsWhenUserHasNoGroups() throws Exception {
         // Create organization
         OrganizationRepresentation orgRep = createOrganization("acme");
-        OrganizationResource org = testRealm().organizations().get(orgRep.getId());
+        OrganizationResource org = managedRealm.admin().organizations().get(orgRep.getId());
 
         // Add member (but don't add to any groups)
         addMember(org);
@@ -175,8 +175,8 @@ public class OrganizationGroupMembershipOIDCMapperTest extends AbstractOrganizat
         OrganizationRepresentation orgA = createOrganization("org-a");
         OrganizationRepresentation orgB = createOrganization("org-b");
 
-        OrganizationResource orgAResource = testRealm().organizations().get(orgA.getId());
-        OrganizationResource orgBResource = testRealm().organizations().get(orgB.getId());
+        OrganizationResource orgAResource = managedRealm.admin().organizations().get(orgA.getId());
+        OrganizationResource orgBResource = managedRealm.admin().organizations().get(orgB.getId());
 
         // Add member to both orgs
         MemberRepresentation member = addMember(orgAResource);
@@ -239,9 +239,9 @@ public class OrganizationGroupMembershipOIDCMapperTest extends AbstractOrganizat
         OrganizationRepresentation orgB = createOrganization("org-b");
         OrganizationRepresentation orgC = createOrganization("org-c");
 
-        OrganizationResource orgAResource = testRealm().organizations().get(orgA.getId());
-        OrganizationResource orgBResource = testRealm().organizations().get(orgB.getId());
-        OrganizationResource orgCResource = testRealm().organizations().get(orgC.getId());
+        OrganizationResource orgAResource = managedRealm.admin().organizations().get(orgA.getId());
+        OrganizationResource orgBResource = managedRealm.admin().organizations().get(orgB.getId());
+        OrganizationResource orgCResource = managedRealm.admin().organizations().get(orgC.getId());
 
         // Add member to all THREE orgs
         MemberRepresentation member = addMember(orgAResource);

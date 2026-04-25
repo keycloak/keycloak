@@ -52,8 +52,8 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
  * @author <a href="mailto:wadahiro@gmail.com">Hiroyuki Wada</a>
@@ -103,7 +103,7 @@ public class RequiredActionPriorityTest extends AbstractTestRealmKeycloakTest {
     public void beforeEach() {
         setRequiredActionEnabled(TEST_REALM_NAME, TermsAndConditions.PROVIDER_ID, true, false);
 
-        testUserId = AdminApiUtil.findUserByUsernameId(testRealm(), USERNAME).toRepresentation().getId();
+        testUserId = AdminApiUtil.findUserByUsernameId(managedRealm.admin(), USERNAME).toRepresentation().getId();
     }
 
     @Override
@@ -173,7 +173,7 @@ public class RequiredActionPriorityTest extends AbstractTestRealmKeycloakTest {
                 RequiredAction.UPDATE_PROFILE,
                 RequiredAction.TERMS_AND_CONDITIONS
         );
-        AdminApiUtil.updateRequiredActionsOrder(testRealm(), requiredActionsCustomOrdered);
+        AdminApiUtil.updateRequiredActionsOrder(managedRealm.admin(), requiredActionsCustomOrdered);
 
         enableRequiredActionForUser(RequiredAction.UPDATE_PASSWORD);
         enableRequiredActionForUser(RequiredAction.UPDATE_PROFILE);
@@ -223,7 +223,7 @@ public class RequiredActionPriorityTest extends AbstractTestRealmKeycloakTest {
                 RequiredAction.UPDATE_PROFILE,
                 RequiredAction.TERMS_AND_CONDITIONS
         );
-        AdminApiUtil.updateRequiredActionsOrder(testRealm(), requiredActionsCustomOrdered);
+        AdminApiUtil.updateRequiredActionsOrder(managedRealm.admin(), requiredActionsCustomOrdered);
 
         enableRequiredActionForUser(RequiredAction.UPDATE_PASSWORD);
         // we don't enable UPDATE_PROFILE for the user, we set this as kc_action param instead
@@ -276,7 +276,7 @@ public class RequiredActionPriorityTest extends AbstractTestRealmKeycloakTest {
                 RequiredAction.UPDATE_PROFILE,
                 RequiredAction.TERMS_AND_CONDITIONS
         );
-        AdminApiUtil.updateRequiredActionsOrder(testRealm(), requiredActionsCustomOrdered);
+        AdminApiUtil.updateRequiredActionsOrder(managedRealm.admin(), requiredActionsCustomOrdered);
 
         // NOTE: we don't configure UPDATE_PASSWORD on the user - it's set on the session by the reset-password flow
         enableRequiredActionForUser(RequiredAction.UPDATE_PROFILE);
@@ -338,10 +338,10 @@ public class RequiredActionPriorityTest extends AbstractTestRealmKeycloakTest {
                 RequiredAction.VERIFY_PROFILE,
                 RequiredAction.TERMS_AND_CONDITIONS
         );
-        AdminApiUtil.updateRequiredActionsOrder(testRealm(), requiredActionsCustomOrdered);
+        AdminApiUtil.updateRequiredActionsOrder(managedRealm.admin(), requiredActionsCustomOrdered);
 
         // make user profile invalid by setting lastName to empty
-        final var userResource = testRealm().users().get(testUserId);
+        final var userResource = managedRealm.admin().users().get(testUserId);
         final var user = userResource.toRepresentation();
         user.setLastName("");
         userResource.update(user);
@@ -390,7 +390,7 @@ public class RequiredActionPriorityTest extends AbstractTestRealmKeycloakTest {
                 RequiredAction.UPDATE_PASSWORD,
                 RequiredAction.CONFIGURE_TOTP
         );
-        AdminApiUtil.updateRequiredActionsOrder(testRealm(), requiredActionsCustomOrdered);
+        AdminApiUtil.updateRequiredActionsOrder(managedRealm.admin(), requiredActionsCustomOrdered);
 
         // Login
         oauth.openLoginForm();
@@ -427,11 +427,11 @@ public class RequiredActionPriorityTest extends AbstractTestRealmKeycloakTest {
         enableRequiredActionForUser(RequiredAction.VERIFY_EMAIL);
         enableRequiredActionForUser(RequiredAction.UPDATE_PASSWORD);
 
-        RealmRepresentation realmRep = testRealm().toRepresentation();
+        RealmRepresentation realmRep = managedRealm.admin().toRepresentation();
         realmRep.setVerifyEmail(true);
-        testRealm().update(realmRep);
+        managedRealm.admin().update(realmRep);
 
-        final var userResource = testRealm().users().get(testUserId);
+        final var userResource = managedRealm.admin().users().get(testUserId);
         final var user = userResource.toRepresentation();
         user.setEmailVerified(true);
         userResource.update(user);
@@ -440,7 +440,7 @@ public class RequiredActionPriorityTest extends AbstractTestRealmKeycloakTest {
                 RequiredAction.VERIFY_EMAIL,
                 RequiredAction.UPDATE_PASSWORD
         );
-        AdminApiUtil.updateRequiredActionsOrder(testRealm(), requiredActionsCustomOrdered);
+        AdminApiUtil.updateRequiredActionsOrder(managedRealm.admin(), requiredActionsCustomOrdered);
 
         // Login
         oauth.openLoginForm();

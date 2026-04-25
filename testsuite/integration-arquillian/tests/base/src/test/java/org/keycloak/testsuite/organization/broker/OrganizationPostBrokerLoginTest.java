@@ -114,7 +114,7 @@ public class OrganizationPostBrokerLoginTest extends AbstractInitializedBaseBrok
         updateExecutions(AbstractBrokerTest::disableUpdateProfileOnFirstLogin);
 
         // 4) First login via broker, run post-broker OTP setup
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
         logInWithBroker(bc);
 
@@ -139,7 +139,7 @@ public class OrganizationPostBrokerLoginTest extends AbstractInitializedBaseBrok
 
         AccountHelper.logout(adminClient.realm(bc.consumerRealmName()), bc.getUserLogin());
         // 5) Try re-login: user SHOULD be automatically redirected to the identity provider
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
         // submit username/email to trigger organization resolution which should redirect to the provider
         loginPage.loginUsername(bc.getUserEmail());

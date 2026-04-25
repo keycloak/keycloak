@@ -42,7 +42,6 @@ import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.client.policies.AbstractClientPoliciesTest;
 import org.keycloak.testsuite.client.resources.TestOIDCEndpointsApplicationResource;
@@ -68,10 +67,11 @@ import org.jboss.arquillian.graphene.page.Page;
 import org.junit.After;
 import org.junit.Assume;
 import org.junit.BeforeClass;
+import org.junit.jupiter.api.Assertions;
 
 import static org.keycloak.testsuite.AbstractAdminTest.loadJson;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public abstract class AbstractFAPITest extends AbstractClientPoliciesTest {
 
@@ -133,8 +133,8 @@ public abstract class AbstractFAPITest extends AbstractClientPoliciesTest {
     public static void assertScopes(String expectedScope, String receivedScope) {
         Collection<String> expectedScopes = Arrays.asList(expectedScope.split(" "));
         Collection<String> receivedScopes = Arrays.asList(receivedScope.split(" "));
-        Assert.assertTrue("Not matched. expectedScope: " + expectedScope + ", receivedScope: " + receivedScope,
-                expectedScopes.containsAll(receivedScopes) && receivedScopes.containsAll(expectedScopes));
+        Assertions.assertTrue(expectedScopes.containsAll(receivedScopes) && receivedScopes.containsAll(expectedScopes),
+                "Not matched. expectedScope: " + expectedScope + ", receivedScope: " + receivedScope);
     }
 
     protected String loginUserAndGetCode(String clientId, String nonce, boolean fragmentResponseModeExpected) {
@@ -146,7 +146,7 @@ public abstract class AbstractFAPITest extends AbstractClientPoliciesTest {
         grantPage.accept();
 
         String code = oauth.parseLoginResponse().getCode();
-        Assert.assertNotNull(code);
+        Assertions.assertNotNull(code);
         return code;
     }
 
@@ -160,7 +160,7 @@ public abstract class AbstractFAPITest extends AbstractClientPoliciesTest {
 
         AuthorizationResponseToken responseToken = oauth.verifyAuthorizationResponseToken(oauth.parseLoginResponse().getResponse());
         String code = (String)responseToken.getOtherClaims().get("code");
-        Assert.assertNotNull(code);
+        Assertions.assertNotNull(code);
         return code;
     }
 
@@ -170,24 +170,24 @@ public abstract class AbstractFAPITest extends AbstractClientPoliciesTest {
         MatcherAssert.assertThat(tokenResponse.getAccessToken(), Matchers.notNullValue());
 
         // Scope parameter must be present per FAPI
-        Assert.assertNotNull(tokenResponse.getScope());
+        Assertions.assertNotNull(tokenResponse.getScope());
         assertScopes("openid profile email", tokenResponse.getScope());
 
         // ID Token contains all the claims
         IDToken idToken = oauth.verifyIDToken(tokenResponse.getIdToken());
-        Assert.assertNotNull(idToken.getId());
-        Assert.assertEquals("foo", idToken.getIssuedFor());
-        Assert.assertEquals("john", idToken.getPreferredUsername());
-        Assert.assertEquals("john@keycloak.org", idToken.getEmail());
-        Assert.assertEquals("Johny", idToken.getGivenName());
-        Assert.assertEquals("123456", idToken.getNonce());
+        Assertions.assertNotNull(idToken.getId());
+        Assertions.assertEquals("foo", idToken.getIssuedFor());
+        Assertions.assertEquals("john", idToken.getPreferredUsername());
+        Assertions.assertEquals("john@keycloak.org", idToken.getEmail());
+        Assertions.assertEquals("Johny", idToken.getGivenName());
+        Assertions.assertEquals("123456", idToken.getNonce());
     }
 
     protected void logoutUserAndRevokeConsent(String clientId, String username) {
         UserResource user = AdminApiUtil.findUserByUsernameId(adminClient.realm(REALM_NAME), username);
         user.logout();
         List<Map<String, Object>> consents = user.getConsents();
-        org.junit.Assert.assertEquals(1, consents.size());
+        Assertions.assertEquals(1, consents.size());
         user.revokeConsent(clientId);
     }
 
@@ -200,7 +200,7 @@ public abstract class AbstractFAPITest extends AbstractClientPoliciesTest {
 
     protected void assertBrowserWithError(String expectedError) {
         errorPage.assertCurrent();
-        Assert.assertEquals(expectedError, errorPage.getError());
+        Assertions.assertEquals(expectedError, errorPage.getError());
     }
 
     protected AccessTokenResponse doAccessTokenRequestWithClientSignedJWT(String code, String signedJwt, Supplier<CloseableHttpClient> httpClientSupplier) {

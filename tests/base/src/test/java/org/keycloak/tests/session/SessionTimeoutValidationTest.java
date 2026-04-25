@@ -24,8 +24,8 @@ import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
-import org.keycloak.testframework.realm.RealmConfigBuilder;
 import org.keycloak.testframework.remote.annotations.TestOnServer;
 
 import org.junit.jupiter.api.Assertions;
@@ -66,7 +66,7 @@ public class SessionTimeoutValidationTest {
     private static class SessionTimeoutValidationRealmConfig implements RealmConfig {
 
         @Override
-        public RealmConfigBuilder configure(RealmConfigBuilder realm) {
+        public RealmBuilder configure(RealmBuilder realm) {
             realm.name("test");
             realm.addUser("user1");
             return realm;

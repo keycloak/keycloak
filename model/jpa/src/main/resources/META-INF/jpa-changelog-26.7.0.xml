@@ -24,4 +24,25 @@
         </addColumn>
     </changeSet>
 
+    <changeSet author="keycloak" id="26.7.0-45292-realm-display-name-add-column">
+        <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
+            <not>
+                <columnExists tableName="REALM" columnName="DISPLAY_NAME"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="REALM">
+            <column name="DISPLAY_NAME" type="NVARCHAR(255)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="keycloak" id="26.7.0-45292-realm-display-name-migrate-data">
+        <customChange class="org.keycloak.connections.jpa.updater.liquibase.custom.JpaUpdate26_7_0_RealmDisplayName"/>
+    </changeSet>
+
+    <changeSet author="keycloak" id="26.7.0-45292-realm-display-name-remove-attribute">
+        <delete tableName="REALM_ATTRIBUTE">
+            <where>NAME = 'displayName'</where>
+        </delete>
+    </changeSet>
+
 </databaseChangeLog>

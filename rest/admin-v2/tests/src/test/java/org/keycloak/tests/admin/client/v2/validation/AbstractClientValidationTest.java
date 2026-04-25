@@ -27,8 +27,8 @@ import org.keycloak.services.error.ViolationExceptionResponse;
 import org.keycloak.testframework.annotations.InjectClient;
 import org.keycloak.testframework.annotations.InjectHttpClient;
 import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.ClientConfig;
-import org.keycloak.testframework.realm.ClientConfigBuilder;
 import org.keycloak.testframework.realm.ManagedClient;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.server.KeycloakServerConfig;
@@ -620,7 +620,7 @@ public abstract class AbstractClientValidationTest extends AbstractClientApiV2Te
 
     public static class TestOidcClient implements ClientConfig {
         @Override
-        public ClientConfigBuilder configure(ClientConfigBuilder client) {
+        public ClientBuilder configure(ClientBuilder client) {
             return client.clientId("test-client-oidc")
                     .enabled(true)
                     .protocol("openid-connect");
@@ -629,7 +629,7 @@ public abstract class AbstractClientValidationTest extends AbstractClientApiV2Te
 
     public static class TestSamlClient implements ClientConfig {
         @Override
-        public ClientConfigBuilder configure(ClientConfigBuilder client) {
+        public ClientBuilder configure(ClientBuilder client) {
             return client.clientId("test-client-saml")
                     .enabled(true)
                     .protocol("saml");

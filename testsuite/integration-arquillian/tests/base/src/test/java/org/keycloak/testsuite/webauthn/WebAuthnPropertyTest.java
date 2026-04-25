@@ -58,7 +58,7 @@ public class WebAuthnPropertyTest extends AbstractWebAuthnVirtualTest {
                 .setWebAuthnPolicyUserVerificationRequirement(Constants.WEBAUTHN_POLICY_OPTION_REQUIRED)
                 .update()) {
 
-            WebAuthnRealmData realmData = new WebAuthnRealmData(testRealm().toRepresentation(), isPasswordless());
+            WebAuthnRealmData realmData = new WebAuthnRealmData(managedRealm.admin().toRepresentation(), isPasswordless());
             assertThat(realmData, notNullValue());
             assertThat(realmData.getRpEntityName(), is("localhost"));
             assertThat(realmData.getRequireResidentKey(), is(YES.getValue()));
@@ -96,7 +96,7 @@ public class WebAuthnPropertyTest extends AbstractWebAuthnVirtualTest {
                 .setWebAuthnPolicyCreateTimeout(TIMEOUT)
                 .update()) {
 
-            WebAuthnRealmData realmData = new WebAuthnRealmData(testRealm().toRepresentation(), isPasswordless());
+            WebAuthnRealmData realmData = new WebAuthnRealmData(managedRealm.admin().toRepresentation(), isPasswordless());
             assertThat(realmData.getCreateTimeout(), is(TIMEOUT));
 
             authenticateDefaultUser(false);
@@ -116,7 +116,7 @@ public class WebAuthnPropertyTest extends AbstractWebAuthnVirtualTest {
                 .setWebAuthnPolicyUserVerificationRequirement(Constants.WEBAUTHN_POLICY_OPTION_REQUIRED)
                 .update()) {
 
-            WebAuthnRealmData realmData = new WebAuthnRealmData(testRealm().toRepresentation(), isPasswordless());
+            WebAuthnRealmData realmData = new WebAuthnRealmData(managedRealm.admin().toRepresentation(), isPasswordless());
             assertThat(realmData, notNullValue());
             assertThat(realmData.getRpEntityName(), is("localhost"));
             assertThat(realmData.getRequireResidentKey(), is(YES.getValue()));

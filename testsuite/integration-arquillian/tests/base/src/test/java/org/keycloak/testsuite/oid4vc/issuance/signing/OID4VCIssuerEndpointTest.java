@@ -100,7 +100,6 @@ import org.keycloak.representations.userprofile.config.UPAttributePermissions;
 import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.AuthenticationManager;
-import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.runonserver.RunOnServerException;
@@ -123,6 +122,7 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.jboss.logging.Logger;
 import org.junit.Before;
+import org.junit.jupiter.api.Assertions;
 
 import static org.keycloak.OID4VCConstants.CLAIM_NAME_VC;
 import static org.keycloak.OID4VCConstants.OID4VCI_ENABLED_ATTRIBUTE_KEY;
@@ -143,11 +143,11 @@ import static org.keycloak.util.JsonSerialization.valueAsPrettyString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.aMapWithSize;
 import static org.hamcrest.Matchers.instanceOf;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Moved test to subclass. so we can reuse initialization code.
@@ -412,7 +412,7 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
 
     protected ClientScopeRepresentation registerOptionalClientScope(ClientScopeRepresentation clientScope) {
         // Automatically removed when a test method is finished.
-        try (Response res = testRealm().clientScopes().create(clientScope)) {
+        try (Response res = managedRealm.admin().clientScopes().create(clientScope)) {
             String scopeId = ApiUtil.getCreatedId(res);
             getCleanup().addClientScopeId(scopeId);
             clientScope.setId(scopeId);
@@ -421,15 +421,15 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
     }
 
     protected ClientRepresentation requireExistingClient(String clientId) {
-        List<ClientRepresentation> clientRepresentations = testRealm().clients().findByClientId(clientId);
-        assertFalse("No such client", clientRepresentations.isEmpty());
+        List<ClientRepresentation> clientRepresentations = managedRealm.admin().clients().findByClientId(clientId);
+        assertFalse(clientRepresentations.isEmpty(), "No such client");
         return clientRepresentations.get(0);
     }
 
     protected ClientScopeRepresentation requireExistingClientScope(String scopeName) {
 
         // Check if the client scope already exists
-        List<ClientScopeRepresentation> existingScopes = testRealm().clientScopes().findAll();
+        List<ClientScopeRepresentation> existingScopes = managedRealm.admin().clientScopes().findAll();
         for (ClientScopeRepresentation existingScope : existingScopes) {
             if (existingScope.getName().equals(scopeName)) {
                 return existingScope; // Reuse existing scope
@@ -457,12 +457,12 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
     }
 
     protected void assignOptionalClientScope(ClientRepresentation client, ClientScopeRepresentation clientScope) {
-        ClientResource clientResource = testRealm().clients().get(client.getId());
+        ClientResource clientResource = managedRealm.admin().clients().get(client.getId());
         clientResource.addOptionalClientScope(clientScope.getId());
     }
 
     protected void logoutUser(String username) {
-        UserResource user = AdminApiUtil.findUserByUsernameId(adminClient.realm(TEST_REALM_NAME), username);
+        UserResource user = AdminApiUtil.findUserByUsernameId(managedRealm.admin(), username);
         user.logout();
     }
 
@@ -509,8 +509,8 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
     }
 
     public static CredentialResponse decryptJweResponse(String encryptedResponse, PrivateKey privateKey) throws IOException, JWEException {
-        assertNotNull("Encrypted response should not be null", encryptedResponse);
-        assertEquals("Response should be a JWE", 5, encryptedResponse.split("\\.").length);
+        assertNotNull(encryptedResponse, "Encrypted response should not be null");
+        assertEquals(5, encryptedResponse.split("\\.").length, "Response should be a JWE");
 
         JWE jwe = new JWE(encryptedResponse);
         jwe.getKeyStorage().setDecryptionKey(privateKey);
@@ -564,7 +564,7 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
     }
 
     protected void setOid4vciEnabled(ClientRepresentation testClient, boolean enabled) {
-        ClientResource clientResource = testRealm().clients().get(testClient.getId());
+        ClientResource clientResource = managedRealm.admin().clients().get(testClient.getId());
 
         Map<String, String> attributes = Optional.ofNullable(testClient.getAttributes()).orElse(new HashMap<>());
         attributes.put(OID4VCI_ENABLED_ATTRIBUTE_KEY, String.valueOf(enabled));
@@ -678,7 +678,7 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
                 }
             }
         } catch (IOException e) {
-            Assert.fail();
+            Assertions.fail();
         }
     }
 
@@ -787,25 +787,25 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
         protected void handleCredentialResponse(CredentialResponse credentialResponse,
                                                 ClientScopeRepresentation clientScope) throws VerificationException {
 
-            assertNotNull("The credentials array should be present in the response.", credentialResponse.getCredentials());
-            assertFalse("The credentials array should not be empty.", credentialResponse.getCredentials().isEmpty());
+            assertNotNull(credentialResponse.getCredentials(), "The credentials array should be present in the response.");
+            assertFalse(credentialResponse.getCredentials().isEmpty(), "The credentials array should not be empty.");
 
             // Get the first credential from the array (maintaining compatibility with single credential tests)
             CredentialResponse.Credential credentialObj = credentialResponse.getCredentials().get(0);
-            assertNotNull("The first credential in the array should not be null.", credentialObj);
+            assertNotNull(credentialObj, "The first credential in the array should not be null.");
 
             JsonWebToken jsonWebToken = TokenVerifier.create((String) credentialObj.getCredential(), JsonWebToken.class).getToken();
             Map<String, Object> otherClaims = jsonWebToken.getOtherClaims();
 
             log.infof("JsonWebToken: %s", valueAsPrettyString(jsonWebToken));
-            assertNotNull("Expected jti claim", jsonWebToken.getId());
-            assertNotNull("Expected exp claim", jsonWebToken.getExp());
-            assertNotNull("Expected nbf claim", jsonWebToken.getNbf());
-            assertNotNull("Expected iss claim", jsonWebToken.getIssuer());
-            assertNotNull("Expected sub claim", jsonWebToken.getSubject());
+            assertNotNull(jsonWebToken.getId(), "Expected jti claim");
+            assertNotNull(jsonWebToken.getExp(), "Expected exp claim");
+            assertNotNull(jsonWebToken.getNbf(), "Expected nbf claim");
+            assertNotNull(jsonWebToken.getIssuer(), "Expected iss claim");
+            assertNotNull(jsonWebToken.getSubject(), "Expected sub claim");
 
-            assertNull("Unexpected aud claim", jsonWebToken.getAudience());
-            assertNull("Unexpected iat claim", jsonWebToken.getIat());
+            assertNull(jsonWebToken.getAudience(), "Unexpected aud claim");
+            assertNull(jsonWebToken.getIat(), "Unexpected iat claim");
 
             assertEquals("did:web:test.org", jsonWebToken.getIssuer());
             assertEquals(Set.of(CLAIM_NAME_VC), otherClaims.keySet());
@@ -814,24 +814,24 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
             VerifiableCredential credential = JsonSerialization.mapper.convertValue(vc, VerifiableCredential.class);
             Map<String, ?> subClaims = credential.getCredentialSubject().getClaims();
 
-            assertNotNull("Expected vc.issuanceDate claim", credential.getIssuanceDate());
-            assertNotNull("Expected vc.expirationDate claim", credential.getExpirationDate());
-            assertNotNull("Expected vc.@context claim", credential.getContext());
+            assertNotNull(credential.getIssuanceDate(), "Expected vc.issuanceDate claim");
+            assertNotNull(credential.getExpirationDate(), "Expected vc.expirationDate claim");
+            assertNotNull(credential.getContext(), "Expected vc.@context claim");
 
-            assertEquals("vc.type mapped correctly", List.of(clientScope.getName()), credential.getType());
-            assertEquals("iss mapped correctly", "did:web:test.org", jsonWebToken.getIssuer());
-            assertEquals("vc.issuer mapped correctly", URI.create("did:web:test.org"), credential.getIssuer());
-            assertEquals("vc.credentialSubject.id mapped correctly", jsonWebToken.getSubject(), subClaims.get("id"));
-            assertEquals("vc.credentialSubject.given_name mapped correctly", "John", subClaims.get("given_name"));
-            assertEquals("vc.credentialSubject.email mapped correctly", "john@email.cz", subClaims.get("email"));
-            assertEquals("vc.credentialSubject.scope-name mapped correctly", clientScope.getName(), subClaims.get("scope-name"));
+            assertEquals(List.of(clientScope.getName()), credential.getType(), "vc.type mapped correctly");
+            assertEquals("did:web:test.org", jsonWebToken.getIssuer(), "iss mapped correctly");
+            assertEquals(URI.create("did:web:test.org"), credential.getIssuer(), "vc.issuer mapped correctly");
+            assertEquals(jsonWebToken.getSubject(), subClaims.get("id"), "vc.credentialSubject.id mapped correctly");
+            assertEquals("John", subClaims.get("given_name"), "vc.credentialSubject.given_name mapped correctly");
+            assertEquals("john@email.cz", subClaims.get("email"), "vc.credentialSubject.email mapped correctly");
+            assertEquals(clientScope.getName(), subClaims.get("scope-name"), "vc.credentialSubject.scope-name mapped correctly");
             assertThat("vc.credentialSubject.address is parent claim for nested claims", subClaims.get("address"), instanceOf(Map.class));
             Map<String, ?> nestedAddressClaim = (Map<String, ?>) subClaims.get("address");
             assertThat("vc.credentialSubject.address contains two nested claims", nestedAddressClaim, aMapWithSize(2));
-            assertEquals("vc.credentialSubject.address.street_address mapped correctly", "221B Baker Street", nestedAddressClaim.get("street_address"));
-            assertEquals("vc.credentialSubject.address.locality mapped correctly", "London", nestedAddressClaim.get("locality"));
+            assertEquals("221B Baker Street", nestedAddressClaim.get("street_address"), "vc.credentialSubject.address.street_address mapped correctly");
+            assertEquals("London", nestedAddressClaim.get("locality"), "vc.credentialSubject.address.locality mapped correctly");
 
-            assertFalse("Unexpected other claim", subClaims.containsKey("AnotherCredentialType"));
+            assertFalse(subClaims.containsKey("AnotherCredentialType"), "Unexpected other claim");
         }
     }
 
@@ -839,7 +839,7 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
         Map<String, Object> responseMap = JsonSerialization.readValue(responseBody, new TypeReference<Map<String, Object>>() {
         });
         Object authDetailsObj = responseMap.get("authorization_details");
-        assertNotNull("authorization_details should be present in the response", authDetailsObj);
+        assertNotNull(authDetailsObj, "authorization_details should be present in the response");
         return JsonSerialization.readValue(
                 JsonSerialization.writeValueAsString(authDetailsObj),
                 new TypeReference<List<OID4VCAuthorizationDetail>>() {
@@ -851,7 +851,7 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
         Map<String, Object> responseMap = JsonSerialization.readValue(responseBody, new TypeReference<Map<String, Object>>() {
         });
         String token = (String) responseMap.get("access_token");
-        assertNotNull("Access token should be present", token);
+        assertNotNull(token, "Access token should be present");
         return token;
     }
 }

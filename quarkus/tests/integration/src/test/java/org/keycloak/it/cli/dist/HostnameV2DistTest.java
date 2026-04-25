@@ -42,4 +42,28 @@ public class HostnameV2DistTest {
     public void testServerStartsDevtWithoutHostnameSpecified(LaunchResult result) {
         ((CLIResult) result).assertStartedDevMode();
     }
+
+    @Test
+    @Launch({"start", "--db=dev-file", "--http-enabled=true", "--hostname=htt://localtest.me"})
+    public void testInvalidHostnameUrl(LaunchResult result) {
+        assertThat(result.getErrorOutput(), containsString("Provided hostname is neither a plain hostname nor a valid URL"));
+    }
+
+    @Test
+    @Launch({"start", "--db=dev-file", "--http-enabled=true", "--hostname=localtest.me", "--hostname-admin=htt://admin.localtest.me"})
+    public void testInvalidAdminUrl(LaunchResult result) {
+        assertThat(result.getErrorOutput(), containsString("Provided hostname-admin is not a valid URL"));
+    }
+
+    @Test
+    @Launch({"start", "--db=dev-file", "--http-enabled=true", "--hostname-backchannel-dynamic=true", "--hostname-strict=false"})
+    public void testBackchannelDynamicRequiresHostname(LaunchResult result) {
+        assertThat(result.getErrorOutput(), containsString("hostname-backchannel-dynamic must be set to false when no hostname is provided"));
+    }
+
+    @Test
+    @Launch({"start", "--db=dev-file", "--http-enabled=true", "--hostname=localtest.me", "--hostname-backchannel-dynamic=true"})
+    public void testBackchannelDynamicRequiresFullHostnameUrl(LaunchResult result) {
+        assertThat(result.getErrorOutput(), containsString("hostname-backchannel-dynamic must be set to false if hostname is not provided as full URL"));
+    }
 }

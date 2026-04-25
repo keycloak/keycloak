@@ -140,6 +140,11 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
         OrganizationModel organization = resolveOrganization(user, domain);
 
         if (organization == null) {
+            // remember the username before the org selection challenge so it can be preserved
+            // when the user switches organizations (the switch handler reads ATTEMPTED_USERNAME)
+            if (user != null && username != null) {
+                context.getAuthenticationSession().setAuthNote(AbstractUsernameFormAuthenticator.ATTEMPTED_USERNAME, username);
+            }
             if (shouldUserSelectOrganization(context, user)) {
                 return;
             }
@@ -215,6 +220,11 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
         if (!alias.isEmpty() || isSSOAuthentication(authSession)) {
             // make sure the organization selected by the user is available from the client session when running mappers and issuing tokens
             authSession.setClientNote(OrganizationModel.ORGANIZATION_ATTRIBUTE, organization.getId());
+        }
+
+        if (!alias.isEmpty()) {
+            // user explicitly selected an organization, allow switching later in the flow
+            authSession.setAuthNote(OrganizationModel.ORGANIZATION_SWITCHABLE_ATTRIBUTE, Boolean.TRUE.toString());
         }
 
         return organization;

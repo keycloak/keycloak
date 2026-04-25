@@ -4,6 +4,23 @@
 Breaking changes are identified as those that might require changes for existing users to their configurations or applications.
 In minor or patch releases, {project_name} will only introduce breaking changes to fix bugs.
 
+=== Test Framework representation builders
+
+The test framework provides a number of builders to simplify creating representations. These can be used on their own,
+but are also used by `RealmConfig`, `ClientConfig` and `UserConfig` implementations.
+
+Some builders had the suffix `ConfigBuilder`, while others had the shorter syntax `Builder`. They are all now renamed to use
+the shorter suffix `Builder` to keep things consistently.
+
+Additionally, some methods where updated for consistency across the builders:
+
+* `RoleBuilder` method `setSingleAttribute` was renamed to `attribute`
+
+=== Identity Provider alias is now immutable
+
+The alias of an Identity Provider can no longer be changed after creation via the Admin REST API. Attempts to update the alias will result in a `400 Bad Request` error.
+Previously, although the admin console UI already treated the alias as read-only, the REST API still allowed alias changes.
+
 // ------------------------ Notable changes ------------------------ //
 == Notable changes
 
@@ -24,3 +41,13 @@ For the details, see the link:{adminguide_link}[{adminguide_name}].
 
 In relation to the previous point, the required actions *Configure OTP* and *Update password* are moved in the order of required actions after *Verify Email*
 required action. This is done automatically for new realm or during server update. If you prefer the old order, you can manually move required actions per your preference.
+
+
+=== Realm search now matches by display name
+
+When searching for realms in the admin console, the search now also matches against the realm's display name in addition to the realm name.
+
+As part of this change, the `displayName` attribute has been promoted from a realm attribute to a dedicated column on the realm entity.
+
+Before migrating, check the current value of the `displayName` attribute for your realms. If the current value of `displayName` attribute
+exceeds 255 characters, it will be truncated during migration.

@@ -474,41 +474,41 @@ public class KcAdmV2ClientCLITest extends AbstractKcAdmV2CLITest {
     }
 
     @Test
-    void testUpdateCreatesNewClient() throws Exception {
+    void testApplyCreatesNewClient() throws Exception {
         Path jsonFile = new File(tempDir, "put-create.json").toPath();
         Files.writeString(jsonFile, """
                 {"clientId": "put-created", "protocol": "openid-connect", "enabled": true}
                 """);
 
-        CommandResult result = kcAdmV2Cmd("client", "update", "oidc", "put-created", "-f", jsonFile.toString());
+        CommandResult result = kcAdmV2Cmd("client", "apply", "oidc", "put-created", "-f", jsonFile.toString());
         assertThat("PUT create should succeed: " + result.err(), result.exitCode(), is(0));
         assertThat(result.out(), containsString("\"clientId\" : \"put-created\""));
         assertThat(result.out(), containsString("\"enabled\" : true"));
     }
 
     @Test
-    void testUpdateExistingClient() throws Exception {
+    void testApplyExistingClient() throws Exception {
         CommandResult createResult = kcAdmV2Cmd("client", "create", "oidc",
                 "--client-id", "put-existing", "--enabled", "true", "--description", "original");
         assertThat("setup: create should succeed", createResult.exitCode(), is(0));
 
-        Path jsonFile = new File(tempDir, "put-update.json").toPath();
+        Path jsonFile = new File(tempDir, "put-apply.json").toPath();
         Files.writeString(jsonFile, """
                 {"clientId": "put-existing", "protocol": "openid-connect", "enabled": false, "description": "updated"}
                 """);
 
-        CommandResult updateResult = kcAdmV2Cmd("client", "update", "oidc", "put-existing", "-f", jsonFile.toString());
-        assertThat("PUT update should succeed: " + updateResult.err(), updateResult.exitCode(), is(0));
-        assertThat(updateResult.out(), containsString("\"enabled\" : false"));
-        assertThat(updateResult.out(), containsString("\"description\" : \"updated\""));
-        assertThat("PUT replaces the whole resource", updateResult.out(), containsString("\"clientId\" : \"put-existing\""));
+        CommandResult applyResult = kcAdmV2Cmd("client", "apply", "oidc", "put-existing", "-f", jsonFile.toString());
+        assertThat("PUT apply should succeed: " + applyResult.err(), applyResult.exitCode(), is(0));
+        assertThat(applyResult.out(), containsString("\"enabled\" : false"));
+        assertThat(applyResult.out(), containsString("\"description\" : \"updated\""));
+        assertThat("PUT replaces the whole resource", applyResult.out(), containsString("\"clientId\" : \"put-existing\""));
     }
 
     @Test
-    void testUpdateWithFieldOptions() {
+    void testApplyWithFieldOptions() {
         kcAdmV2Cmd("client", "create", "oidc", "--client-id", "put-with-options", "--enabled", "true");
 
-        CommandResult result = kcAdmV2Cmd("client", "update", "oidc", "put-with-options",
+        CommandResult result = kcAdmV2Cmd("client", "apply", "oidc", "put-with-options",
                 "--client-id", "put-with-options", "--enabled", "false");
         assertThat("PUT with field options should succeed: " + result.err(), result.exitCode(), is(0));
         assertThat(result.out(), containsString("\"enabled\" : false"));
@@ -516,13 +516,13 @@ public class KcAdmV2ClientCLITest extends AbstractKcAdmV2CLITest {
     }
 
     @Test
-    void testUpdateWithoutClientIdFails() throws Exception {
+    void testApplyWithoutClientIdFails() throws Exception {
         Path jsonFile = new File(tempDir, "put-no-clientid.json").toPath();
         Files.writeString(jsonFile, """
                 {"protocol": "openid-connect", "enabled": true}
                 """);
 
-        CommandResult result = kcAdmV2Cmd("client", "update", "oidc", "some-id", "-f", jsonFile.toString());
+        CommandResult result = kcAdmV2Cmd("client", "apply", "oidc", "some-id", "-f", jsonFile.toString());
         assertThat("PUT without clientId should fail", result.exitCode(), is(not(0)));
         assertThat(result.err(), is("""
                 Provided data is invalid:
@@ -531,30 +531,30 @@ public class KcAdmV2ClientCLITest extends AbstractKcAdmV2CLITest {
     }
 
     @Test
-    void testUpdateWithMismatchedClientIdFails() throws Exception {
+    void testApplyWithMismatchedClientIdFails() throws Exception {
         Path jsonFile = new File(tempDir, "put-mismatch.json").toPath();
         Files.writeString(jsonFile, """
                 {"clientId": "wrong-id", "protocol": "openid-connect"}
                 """);
 
-        CommandResult result = kcAdmV2Cmd("client", "update", "oidc", "correct-id", "-f", jsonFile.toString());
+        CommandResult result = kcAdmV2Cmd("client", "apply", "oidc", "correct-id", "-f", jsonFile.toString());
         assertThat("PUT with mismatched clientId should fail", result.exitCode(), is(not(0)));
         assertThat(result.err(), containsString("does not match"));
     }
 
     @Test
-    void testUpdateWithMalformedJsonFile() throws Exception {
+    void testApplyWithMalformedJsonFile() throws Exception {
         Path jsonFile = new File(tempDir, "put-bad.json").toPath();
         Files.writeString(jsonFile, "not json at all");
 
-        CommandResult result = kcAdmV2Cmd("client", "update", "oidc", "any-id", "-f", jsonFile.toString());
+        CommandResult result = kcAdmV2Cmd("client", "apply", "oidc", "any-id", "-f", jsonFile.toString());
         assertThat("PUT with malformed JSON should fail", result.exitCode(), is(not(0)));
         assertThat(result.err(), containsString("Cannot parse the JSON"));
     }
 
     @Test
-    void testUpdateNonExistentFile() {
-        CommandResult result = kcAdmV2Cmd("client", "update", "oidc", "any-id", "-f", "/nonexistent/file.json");
+    void testApplyNonExistentFile() {
+        CommandResult result = kcAdmV2Cmd("client", "apply", "oidc", "any-id", "-f", "/nonexistent/file.json");
         assertThat("PUT with missing file should fail", result.exitCode(), is(not(0)));
         assertThat(result.err(), containsString("File not found"));
     }
@@ -637,18 +637,18 @@ public class KcAdmV2ClientCLITest extends AbstractKcAdmV2CLITest {
     }
 
     @Test
-    void testClientUpdateFromFile() throws Exception {
+    void testClientApplyFromFile() throws Exception {
         CommandResult createResult = kcAdmV2Cmd("client", "create", "oidc",
-                "--client-id", "update-no-disc", "--enabled", "true");
+                "--client-id", "apply-no-disc", "--enabled", "true");
         assertThat("setup: create should succeed", createResult.exitCode(), is(0));
 
-        Path jsonFile = new File(tempDir, "update-from-file.json").toPath();
+        Path jsonFile = new File(tempDir, "apply-from-file.json").toPath();
         Files.writeString(jsonFile, """
-                {"clientId": "update-no-disc", "protocol": "openid-connect", "enabled": false}
+                {"clientId": "apply-no-disc", "protocol": "openid-connect", "enabled": false}
                 """);
 
-        CommandResult result = kcAdmV2Cmd("client", "update", "-f", jsonFile.toString());
-        assertThat("'client update -f' should succeed: " + result.err(), result.exitCode(), is(0));
+        CommandResult result = kcAdmV2Cmd("client", "apply", "-f", jsonFile.toString());
+        assertThat("'client apply -f' should succeed: " + result.err(), result.exitCode(), is(0));
         assertThat(result.out(), containsString("\"enabled\" : false"));
     }
 
@@ -764,7 +764,7 @@ public class KcAdmV2ClientCLITest extends AbstractKcAdmV2CLITest {
     void testFileBeforeSubcommandAndFieldOptionsMutuallyExclusive() {
         // -f on parent + field options on leaf should still be rejected as mutually exclusive
         // no real file needed — mutual exclusivity check fires before file access
-        CommandResult result = kcAdmV2Cmd("client", "update", "-f", "/any/path.json",
+        CommandResult result = kcAdmV2Cmd("client", "apply", "-f", "/any/path.json",
                 "oidc", "exclusive-test", "--client-id", "exclusive-test");
         assertThat("-f before subcommand with field options should fail, err: " + result.err()
                         + ", out: " + result.out(),

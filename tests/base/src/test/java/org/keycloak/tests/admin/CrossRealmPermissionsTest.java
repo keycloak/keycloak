@@ -30,9 +30,9 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
-import org.keycloak.testframework.realm.RealmConfigBuilder;
-import org.keycloak.testframework.realm.UserConfigBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.util.ApiUtil;
 
 import org.junit.jupiter.api.Assertions;
@@ -52,7 +52,7 @@ public class CrossRealmPermissionsTest {
 
     @Test
     public void users() {
-        UserRepresentation user = UserConfigBuilder.create()
+        UserRepresentation user = UserBuilder.create()
                 .username("randomuser-" + Time.currentTimeMillis())
                 .build();
         final String userUuid = ApiUtil.getCreatedId(managedRealm1.admin().users().create(user));
@@ -111,7 +111,7 @@ public class CrossRealmPermissionsTest {
     private static class CrossRealmPermissionsRealmConfig implements RealmConfig {
 
         @Override
-        public RealmConfigBuilder configure(RealmConfigBuilder realm) {
+        public RealmBuilder configure(RealmBuilder realm) {
             realm.addUser(AdminRoles.REALM_ADMIN)
                     .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.REALM_ADMIN)
                     .password("password");

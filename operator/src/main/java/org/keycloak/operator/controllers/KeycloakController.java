@@ -49,6 +49,7 @@ import io.fabric8.kubernetes.client.readiness.Readiness;
 import io.fabric8.kubernetes.client.utils.KubernetesResourceUtil;
 import io.fabric8.kubernetes.client.utils.Serialization;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.ErrorStatusUpdateControl;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceUtils;
@@ -73,6 +74,8 @@ import io.quarkus.logging.Log;
               activationCondition = KeycloakServiceMonitorDependentResource.ActivationCondition.class
         ),
     })
+// to allow for reactions to annotation changes
+@ControllerConfiguration(generationAwareEventProcessing = false)
 public class KeycloakController implements Reconciler<Keycloak> {
 
     public static final String OPENSHIFT_DEFAULT = "openshift-default";
@@ -101,6 +104,9 @@ public class KeycloakController implements Reconciler<Keycloak> {
 
     @Override
     public UpdateControl<Keycloak> reconcile(Keycloak kc, Context<Keycloak> context) {
+        if (Boolean.valueOf(kc.getMetadata().getAnnotations().get(Constants.KEYCLOAK_PAUSE_ANNOTATION))) {
+            return UpdateControl.noUpdate(); // do nothing while paused
+        }
         String kcName = kc.getMetadata().getName();
         String namespace = kc.getMetadata().getNamespace();
 

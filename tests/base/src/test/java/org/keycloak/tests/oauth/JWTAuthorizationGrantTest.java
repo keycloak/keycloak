@@ -6,7 +6,7 @@ import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.ManagedRealm;
-import org.keycloak.testframework.realm.RealmConfigBuilder;
+import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testsuite.util.IdentityProviderBuilder;
 
 import org.junit.jupiter.api.MethodOrderer;
@@ -22,7 +22,7 @@ public class JWTAuthorizationGrantTest extends AbstractJWTAuthorizationGrantTest
     public static class JWTAuthorizationGrantRealmConfig extends AbstractJWTAuthorizationGrantTest.JWTAuthorizationGrantRealmConfig {
 
         @Override
-        public RealmConfigBuilder configure(RealmConfigBuilder realm) {
+        public RealmBuilder configure(RealmBuilder realm) {
             super.configure(realm);
             realm.identityProvider(IdentityProviderBuilder.create()
                     .providerId(JWTAuthorizationGrantIdentityProviderFactory.PROVIDER_ID)

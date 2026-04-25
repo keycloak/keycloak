@@ -6,6 +6,14 @@ git checkout -b new-quarkus-next origin/main
 # Use io.quarkus:quarkus-bom built from source
 sed -i 's|<groupId>io.quarkus.platform</groupId>|<groupId>io.quarkus</groupId>|g' pom.xml
 
+# Use io.quarkiverse.operatorsdk:quarkus-operator-sdk-bom built from source (QOSDK_VERSION dynamically parsed by the workflow)
+if [ -n "${QOSDK_VERSION:-}" ]; then
+  sed -i '/<groupId>io.quarkus.platform<\/groupId>/,/<\/dependency>/{
+    s|<groupId>io.quarkus.platform</groupId>|<groupId>io.quarkiverse.operatorsdk</groupId>|
+    s|<version>${quarkus.version}</version>|<version>'"${QOSDK_VERSION}"'</version>|
+  }' operator/pom.xml
+fi
+
 ./quarkus/set-quarkus-version.sh
 git commit -am "Set quarkus version to 999-SNAPSHOT"
 

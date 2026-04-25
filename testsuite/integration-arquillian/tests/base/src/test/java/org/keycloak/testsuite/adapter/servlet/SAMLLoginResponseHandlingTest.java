@@ -35,8 +35,8 @@ import org.keycloak.testsuite.utils.arquillian.ContainerConstants;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
-import org.junit.Assert;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 import org.openqa.selenium.By;
 import org.w3c.dom.Document;
 
@@ -191,7 +191,7 @@ public class SAMLLoginResponseHandlingTest extends AbstractSAMLServletAdapterTes
 
         driver.navigate().to(employee2ServletPage.getUriBuilder().clone().path("getAssertionFromDocument").build().toURL());
         waitForPageToLoad();
-        Assert.assertEquals("", getRawPageSource());
+        Assertions.assertEquals("", getRawPageSource());
 
         employee2ServletPage.logout();
         checkLoggedOut(employee2ServletPage, testRealmSAMLPostLoginPage);

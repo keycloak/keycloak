@@ -83,7 +83,7 @@ public class ResidentKeyRegisterTest extends AbstractWebAuthnVirtualTest {
                 .setWebAuthnPolicyUserVerificationRequirement(userVerification)
                 .update()) {
 
-            WebAuthnRealmData realmData = new WebAuthnRealmData(testRealm().toRepresentation(), isPasswordless());
+            WebAuthnRealmData realmData = new WebAuthnRealmData(managedRealm.admin().toRepresentation(), isPasswordless());
             assertThat(realmData.getRpEntityName(), is("localhost"));
             assertThat(realmData.getRequireResidentKey(), is(requirement.getValue()));
             assertThat(realmData.getUserVerificationRequirement(), is(userVerification));
@@ -104,7 +104,7 @@ public class ResidentKeyRegisterTest extends AbstractWebAuthnVirtualTest {
             assertThat(credentials, not(Matchers.empty()));
 
             if (PropertyRequirement.YES.equals(requirement)) {
-                final String userId = AdminApiUtil.findUserByUsername(testRealm(), USERNAME).getId();
+                final String userId = AdminApiUtil.findUserByUsername(managedRealm.admin(), USERNAME).getId();
                 final Credential credential = credentials.get(0);
                 assertThat(credential.isResidentCredential(), is(hasResidentKey));
                 assertThat(new String(credential.getUserHandle()), is(userId));

@@ -297,7 +297,7 @@ public class PicocliTest extends AbstractConfigurationTest {
                 containsString(Help.defaultColorScheme(nonRunningPicocli.getColorMode())
                         .errorText("Unknown option: '--db-pasword'").toString()));
         assertThat(nonRunningPicocli.getErrString(), containsString(
-                "Possible solutions: --db-url, --db-connect-timeout, --db-url-host, --db-url-database, --db-url-port, --db-url-properties, --db-username, --db-password, --db-schema, --db-pool-initial-size, --db-pool-min-size, --db-pool-max-size, --db-pool-max-lifetime, --db-debug-jpql, --db-log-slow-queries-threshold, --db-tls-mode, --db-tls-trust-store-file, --db-tls-trust-store-type, --db-tls-trust-store-password, --db-mtls-key-store-file, --db-mtls-key-store-type, --db-mtls-key-store-password, --db-driver, --db, --db-url-full-<datasource>, --db-connect-timeout-<datasource>, --db-url-host-<datasource>, --db-url-database-<datasource>, --db-url-port-<datasource>, --db-url-properties-<datasource>, --db-username-<datasource>, --db-password-<datasource>, --db-schema-<datasource>, --db-pool-initial-size-<datasource>, --db-pool-min-size-<datasource>, --db-pool-max-size-<datasource>, --db-debug-jpql-<datasource>, --db-log-slow-queries-threshold-<datasource>, --db-tls-mode-<datasource>, --db-tls-trust-store-file-<datasource>, --db-tls-trust-store-type-<datasource>, --db-tls-trust-store-password-<datasource>, --db-mtls-key-store-file-<datasource>, --db-mtls-key-store-type-<datasource>, --db-mtls-key-store-password-<datasource>, --db-enabled-<datasource>, --db-driver-<datasource>, --db-kind-<datasource>"));
+                "--db-password, --db-password-<datasource>, --db-mtls-key-store-password, --db-tls-trust-store-password, --db-mtls-key-store-password-<datasource>, --db-tls-trust-store-password-<datasource>, --db"));
     }
 
     @Test
@@ -1980,6 +1980,18 @@ public class PicocliTest extends AbstractConfigurationTest {
     public void poolMaxSizeLowAllowedWithKubernetesStack() {
         NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev", "--db-pool-max-size=3", "--cache=ispn", "--cache-stack=kubernetes");
         assertNoError(nonRunningPicocli);
+    }
+    
+    @Test
+    public void commandSuggestions() {
+        NonRunningPicocli nonRunningPicocli = new NonRunningPicocli() {
+            @Override
+            protected CommandMode getCommandMode() {
+                return CommandMode.UNIX;
+            }
+        };
+        KeycloakMain.main(new String[] {"strt"}, nonRunningPicocli);
+        assertTrue(nonRunningPicocli.getErrString().contains("Did you mean: kc.sh start or kc.sh start-dev or kc.sh bootstrap-admin?"));
     }
 
 }

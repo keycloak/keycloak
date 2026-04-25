@@ -37,6 +37,7 @@ import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.storage.UserStorageProvider;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
@@ -48,12 +49,12 @@ import org.keycloak.testsuite.pages.LoginConfigTotpPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginTotpPage;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
-import org.keycloak.testsuite.util.UserBuilder;
 
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 import static org.keycloak.storage.UserStorageProviderModel.IMPORT_ENABLED;
 import static org.keycloak.testsuite.federation.storage.UserStorageTest.addComponent;
@@ -99,13 +100,13 @@ public class UserStorageOTPTest extends AbstractTestRealmKeycloakTest {
         dummyProvider.getConfig().putSingle("priority", Integer.toString(0));
         dummyProvider.getConfig().putSingle(IMPORT_ENABLED, Boolean.toString(false));
 
-        addComponent(testRealm(), getCleanup(), dummyProvider);
+        addComponent(managedRealm.admin(), getCleanup(), dummyProvider);
 
         UserRepresentation user = UserBuilder.create()
                 .username("test-user")
                 .email("test-user@something.org")
                 .build();
-        String testUserId = AdminApiUtil.createUserWithAdminClient(testRealm(), user);
+        String testUserId = AdminApiUtil.createUserWithAdminClient(managedRealm.admin(), user);
 
         getCleanup().addUserId(testUserId);
     }
@@ -114,8 +115,8 @@ public class UserStorageOTPTest extends AbstractTestRealmKeycloakTest {
     @Test
     public void testCredentialsThroughRESTAPI() {
         // Test that test-user has federation link on him
-        UserResource user = AdminApiUtil.findUserByUsernameId(testRealm(), "test-user");
-        Assert.assertEquals(componentId, user.toRepresentation().getFederationLink());
+        UserResource user = AdminApiUtil.findUserByUsernameId(managedRealm.admin(), "test-user");
+        Assertions.assertEquals(componentId, user.toRepresentation().getFederationLink());
 
         // Test that both "password" and "otp" are configured for the test-user
         List<String> userStorageCredentialTypes = user.getConfiguredUserStorageCredentialTypes();
@@ -133,21 +134,21 @@ public class UserStorageOTPTest extends AbstractTestRealmKeycloakTest {
 
         loginTotpPage.login("654321");
         loginTotpPage.assertCurrent();
-        Assert.assertEquals("Invalid authenticator code.", loginTotpPage.getInputError());
+        Assertions.assertEquals("Invalid authenticator code.", loginTotpPage.getInputError());
 
         loginTotpPage.login(DummyUserFederationProvider.HARDCODED_OTP);
 
         appPage.assertCurrent();
-        Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assert.assertNotNull(oauth.parseLoginResponse().getCode());
+        Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
     }
 
 
     @Test
     public void testUpdateOTP() throws IOException {
-        try (RealmAttributeUpdater rau = new RealmAttributeUpdater(testRealm()).setOtpPolicyCodeReusable(true).update()) {
+        try (RealmAttributeUpdater rau = new RealmAttributeUpdater(managedRealm.admin()).setOtpPolicyCodeReusable(true).update()) {
             // Add requiredAction to the user for update OTP
-            UserResource user = AdminApiUtil.findUserByUsernameId(testRealm(), "test-user");
+            UserResource user = AdminApiUtil.findUserByUsernameId(managedRealm.admin(), "test-user");
             UserRepresentation userRep = user.toRepresentation();
             userRep.setRequiredActions(Collections.singletonList(UserModel.RequiredAction.CONFIGURE_TOTP.toString()));
             user.update(userRep);
@@ -163,7 +164,7 @@ public class UserStorageOTPTest extends AbstractTestRealmKeycloakTest {
 
             // Dummy OTP code won't work when configure new OTP
             loginConfigTotpPage.configure(DummyUserFederationProvider.HARDCODED_OTP);
-            Assert.assertEquals("Invalid authenticator code.", loginConfigTotpPage.getInputCodeError());
+            Assertions.assertEquals("Invalid authenticator code.", loginConfigTotpPage.getInputCodeError());
 
             // This will save the credential to the local DB
             String totpSecret = loginConfigTotpPage.getTotpSecret();
@@ -218,16 +219,16 @@ public class UserStorageOTPTest extends AbstractTestRealmKeycloakTest {
                 .username("test-user2")
                 .email("test-user2@something.org")
                 .build();
-        String testUserId = AdminApiUtil.createUserWithAdminClient(testRealm(), user);
+        String testUserId = AdminApiUtil.createUserWithAdminClient(managedRealm.admin(), user);
         getCleanup().addUserId(testUserId);
 
         // Assert he has federation link on him
-        UserResource userResource = AdminApiUtil.findUserByUsernameId(testRealm(), "test-user2");
-        Assert.assertEquals(componentId, userResource.toRepresentation().getFederationLink());
+        UserResource userResource = AdminApiUtil.findUserByUsernameId(managedRealm.admin(), "test-user2");
+        Assertions.assertEquals(componentId, userResource.toRepresentation().getFederationLink());
 
         // Assert no userStorage supported credentials shown through admin REST API for that user. For this user, the validation of password and OTP is not delegated
         // to the dummy user storage provider
-        Assert.assertTrue(userResource.getConfiguredUserStorageCredentialTypes().isEmpty());
+        Assertions.assertTrue(userResource.getConfiguredUserStorageCredentialTypes().isEmpty());
 
         // Update password
         AdminApiUtil.resetUserPassword(userResource, "pass", false);
@@ -237,8 +238,8 @@ public class UserStorageOTPTest extends AbstractTestRealmKeycloakTest {
         loginPage.login("test-user2", "pass");
 
         appPage.assertCurrent();
-        Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assert.assertNotNull(oauth.parseLoginResponse().getCode());
+        Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
     }
 
 

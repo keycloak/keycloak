@@ -37,7 +37,7 @@ import org.keycloak.testframework.annotations.InjectAdminClient;
 import org.keycloak.testframework.annotations.InjectUser;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.ManagedUser;
-import org.keycloak.testframework.realm.UserConfigBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.util.ApiUtil;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -117,7 +117,7 @@ public class GroupResourceTypeEvaluationTest extends AbstractPermissionTest {
 
         // my admin should not be able to manage yet
         try {
-            realmAdminClient.realm(realm.getName()).users().get(userAlice.getId()).update(UserConfigBuilder.create().email("email@test.com").build());
+            realmAdminClient.realm(realm.getName()).users().get(userAlice.getId()).update(UserBuilder.create().email("email@test.com").build());
             fail("Expected Exception wasn't thrown.");
         } catch (Exception ex) {
             assertThat(ex, instanceOf(ForbiddenException.class));
@@ -132,7 +132,7 @@ public class GroupResourceTypeEvaluationTest extends AbstractPermissionTest {
         assertEquals(userAlice.getUsername(), search.get(0).getUsername());
 
         // my admin should be able to update Alice due to her membership and MANAGE_MEMBERS permission
-        realmAdminClient.realm(realm.getName()).users().get(userAlice.getId()).update(UserConfigBuilder.create().email("email@test.com").build());
+        realmAdminClient.realm(realm.getName()).users().get(userAlice.getId()).update(UserBuilder.create().email("email@test.com").build());
         assertEquals("email@test.com", realmAdminClient.realm(realm.getName()).users().get(userAlice.getId()).toRepresentation().getEmail());
     }
 
@@ -300,7 +300,7 @@ public class GroupResourceTypeEvaluationTest extends AbstractPermissionTest {
 
         
         //create new user
-        String bobId = ApiUtil.getCreatedId(realm.admin().users().create(UserConfigBuilder.create().username("bob").build()));
+        String bobId = ApiUtil.getCreatedId(realm.admin().users().create(UserBuilder.create().username("bob").build()));
         realm.cleanup().add(r -> r.users().delete(bobId));
 
         //check myadmin can manage membership
@@ -314,15 +314,15 @@ public class GroupResourceTypeEvaluationTest extends AbstractPermissionTest {
         createGroupPermission(topGroup, Set.of(VIEW, MANAGE_MEMBERSHIP, MANAGE_MEMBERS), policy);
         
         //create new user as realm user should fail
-        try (Response response = realmAdminClient.realm(realm.getName()).users().create(UserConfigBuilder.create().username("bob").build())) {
+        try (Response response = realmAdminClient.realm(realm.getName()).users().create(UserBuilder.create().username("bob").build())) {
             assertThat(response.getStatus(), equalTo(Response.Status.FORBIDDEN.getStatusCode()));
         }
         //create new user as member of different group should fail
-        try (Response response = realmAdminClient.realm(realm.getName()).users().create(UserConfigBuilder.create().username("bob").groups("different_group").build())) {
+        try (Response response = realmAdminClient.realm(realm.getName()).users().create(UserBuilder.create().username("bob").groups("different_group").build())) {
             assertThat(response.getStatus(), equalTo(Response.Status.FORBIDDEN.getStatusCode()));
         }
 
-        String bobId = ApiUtil.getCreatedId(realmAdminClient.realm(realm.getName()).users().create(UserConfigBuilder.create().username("bob").groups("/" + groupName).build()));
+        String bobId = ApiUtil.getCreatedId(realmAdminClient.realm(realm.getName()).users().create(UserBuilder.create().username("bob").groups("/" + groupName).build()));
         realm.cleanup().add(r -> r.users().delete(bobId));
     }
 

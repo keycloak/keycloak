@@ -1,13 +1,13 @@
 package org.keycloak.testframework.oauth;
 
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
+import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.ClientConfig;
-import org.keycloak.testframework.realm.ClientConfigBuilder;
 
 public class DefaultOAuthClientConfiguration implements ClientConfig {
 
     @Override
-    public ClientConfigBuilder configure(ClientConfigBuilder client) {
+    public ClientBuilder configure(ClientBuilder client) {
         return client.clientId("test-app")
                 .serviceAccountsEnabled(true)
                 .directAccessGrantsEnabled(true)

@@ -27,6 +27,7 @@ import org.keycloak.provider.ProviderEvent;
 public interface OrganizationModel {
 
     String ORGANIZATION_ATTRIBUTE = "kc.org";
+    String ORGANIZATION_SWITCHABLE_ATTRIBUTE = "kc.org.switchable";
     String ORGANIZATION_NAME_ATTRIBUTE = "kc.org.name";
     String ORGANIZATION_DOMAIN_ATTRIBUTE = "kc.org.domain";
     String ALIAS = "alias";

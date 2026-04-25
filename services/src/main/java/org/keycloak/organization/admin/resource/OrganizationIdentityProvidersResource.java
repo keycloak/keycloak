@@ -45,6 +45,7 @@ import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.AdminEventBuilder;
+import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
 
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
@@ -66,13 +67,15 @@ public class OrganizationIdentityProvidersResource {
     private final OrganizationProvider organizationProvider;
     private final OrganizationModel organization;
     private final AdminEventBuilder adminEvent;
+    private final AdminPermissionEvaluator auth;
 
-    public OrganizationIdentityProvidersResource(KeycloakSession session, OrganizationModel organization, AdminEventBuilder adminEvent) {
+    public OrganizationIdentityProvidersResource(KeycloakSession session, OrganizationModel organization, AdminEventBuilder adminEvent, AdminPermissionEvaluator auth) {
         this.realm = session == null ? null : session.getContext().getRealm();
         this.session = session;
         this.organizationProvider = session == null ? null : session.getProvider(OrganizationProvider.class);
         this.organization = organization;
         this.adminEvent = adminEvent;
+        this.auth = auth;
     }
 
     @POST
@@ -90,8 +93,10 @@ public class OrganizationIdentityProvidersResource {
         @APIResponse(responseCode = "409", description = "Conflict")
     })
     public Response addIdentityProvider(String id) {
+        auth.orgs().requireManage();
+        auth.realm().requireManageIdentityProviders();
         id = id.trim().replaceAll("^\"|\"$", ""); // fixes https://github.com/keycloak/keycloak/issues/34401
-        
+
         try {
             IdentityProviderModel identityProvider = session.identityProviders().getByIdOrAlias(id);
 
@@ -115,7 +120,8 @@ public class OrganizationIdentityProvidersResource {
     @Tag(name = KeycloakOpenAPI.Admin.Tags.ORGANIZATIONS)
     @Operation(summary = "Returns all identity providers associated with the organization")
     @APIResponses(value = {
-        @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = IdentityProviderRepresentation.class, type = SchemaType.ARRAY)))
+        @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = IdentityProviderRepresentation.class, type = SchemaType.ARRAY))),
+        @APIResponse(responseCode = "403", description = "Forbidden")
     })
     public Stream<IdentityProviderRepresentation> getIdentityProviders() {
         return organization.getIdentityProviders().map(this::toRepresentation);
@@ -131,6 +137,7 @@ public class OrganizationIdentityProvidersResource {
                 "organization, it is returned. Otherwise, an error response with status NOT_FOUND is returned")
     @APIResponses(value = {
         @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = IdentityProviderRepresentation.class))),
+        @APIResponse(responseCode = "403", description = "Forbidden"),
         @APIResponse(responseCode = "404", description = "Not Found")
     })
     public IdentityProviderRepresentation getIdentityProvider(@PathParam("alias") String alias) {
@@ -169,6 +176,7 @@ public class OrganizationIdentityProvidersResource {
                 "Only returns groups if the identity provider is associated with the organization.")
     @APIResponses(value = {
         @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = GroupRepresentation.class, type = SchemaType.ARRAY))),
+        @APIResponse(responseCode = "403", description = "Forbidden"),
         @APIResponse(responseCode = "404", description = "Not Found")
     })
     public Stream<GroupRepresentation> getGroups(
@@ -184,7 +192,7 @@ public class OrganizationIdentityProvidersResource {
         // Validate that the identity provider is associated with the organization
         getIdentityProvider(alias);
 
-        OrganizationGroupsResource groupsResource = new OrganizationGroupsResource(session, organization, adminEvent);
+        OrganizationGroupsResource groupsResource = new OrganizationGroupsResource(session, organization, adminEvent, auth);
         return groupsResource.getGroups(search, searchQuery, exact, first, max, briefRepresentation, false, subGroupsCount);
     }
 
@@ -198,9 +206,11 @@ public class OrganizationIdentityProvidersResource {
     @APIResponses(value = {
         @APIResponse(responseCode = "204", description = "No Content"),
         @APIResponse(responseCode = "400", description = "Bad Request"),
+        @APIResponse(responseCode = "403", description = "Forbidden"),
         @APIResponse(responseCode = "404", description = "Not Found")
     })
     public Response delete(@PathParam("alias") String alias) {
+        auth.orgs().requireManage();
         IdentityProviderModel broker = session.identityProviders().getByAlias(alias);
 
         if (!isOrganizationBroker(broker)) {

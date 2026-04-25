@@ -7,7 +7,7 @@ import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.database.TestDatabase;
 import org.keycloak.testframework.injection.Extensions;
 import org.keycloak.testframework.realm.ManagedClient;
-import org.keycloak.testframework.realm.RoleConfigBuilder;
+import org.keycloak.testframework.realm.RoleBuilder;
 
 import org.junit.jupiter.api.Test;
 
@@ -23,10 +23,10 @@ public abstract class AbstractDBSchemaTest {
 
     @Test
     public void testCaseSensitiveSchema() {
-        RoleRepresentation role1 = RoleConfigBuilder.create()
+        RoleRepresentation role1 = RoleBuilder.create()
                 .name("role1")
                 .description("role1-description")
-                .singleAttribute("role1-attr-key", "role1-attr-val")
+                .attribute("role1-attr-key", "role1-attr-val")
                 .build();
         RolesResource roles = managedClient.admin().roles();
         roles.create(role1);

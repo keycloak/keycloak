@@ -20,7 +20,7 @@ import org.keycloak.representations.workflows.WorkflowStepRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.mail.MailServer;
 import org.keycloak.testframework.mail.annotations.InjectMailServer;
-import org.keycloak.testframework.realm.UserConfigBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.remote.providers.runonserver.RunOnServer;
 import org.keycloak.tests.workflow.AbstractWorkflowTest;
 import org.keycloak.tests.workflow.config.WorkflowsBlockingServerConfig;
@@ -55,7 +55,7 @@ public class ScheduledWorkflowExecutionTest extends AbstractWorkflowTest {
                 ).build()).close();
 
         // create a new user - should bind the user to the workflow and setup the first step
-        managedRealm.admin().users().create(UserConfigBuilder.create().username("testuser").email("testuser@example.com").build()).close();
+        managedRealm.admin().users().create(UserBuilder.create().username("testuser").email("testuser@example.com").build()).close();
 
         runOnServer.run((RunOnServer) session -> {
             RealmModel realm = session.getContext().getRealm();

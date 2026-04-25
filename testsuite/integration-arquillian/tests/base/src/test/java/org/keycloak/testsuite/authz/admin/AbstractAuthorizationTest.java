@@ -29,18 +29,18 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
+import org.keycloak.testframework.realm.ClientBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AbstractClientTest;
 import org.keycloak.testsuite.ProfileAssume;
-import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.RealmBuilder;
-import org.keycloak.testsuite.util.UserBuilder;
 
 import org.junit.After;
 import org.junit.BeforeClass;
 
 import static org.keycloak.common.Profile.Feature.AUTHORIZATION;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -134,13 +134,13 @@ public abstract class AbstractAuthorizationTest extends AbstractClientTest {
                         .authorizationServicesEnabled(true)
                         .redirectUris("http://localhost/" + RESOURCE_SERVER_CLIENT_ID)
                         .defaultRoles("uma_protection")
-                        .directAccessGrants())
+                        .directAccessGrantsEnabled())
                 .client(ClientBuilder.create().clientId("another-resource-server-other")
                         .name("another-resource-server-other")
                         .secret("secret")
                         .authorizationServicesEnabled(true)
                         .redirectUris("http://localhost/" + "another-resource-server-other")
                         .defaultRoles("uma_protection")
-                        .directAccessGrants());
+                        .directAccessGrantsEnabled());
     }
 }

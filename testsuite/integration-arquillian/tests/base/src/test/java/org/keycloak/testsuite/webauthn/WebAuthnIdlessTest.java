@@ -205,7 +205,7 @@ public class WebAuthnIdlessTest extends AbstractWebAuthnVirtualTest {
                 WebAuthnRegisterFactory.PROVIDER_ID;
         String credType = isPasswordless ? WebAuthnCredentialModel.TYPE_PASSWORDLESS: WebAuthnCredentialModel.TYPE_TWOFACTOR;
         String userId = getUserRepresentation(username).getId();
-        UserResource userRes = testRealm().users().get(userId);
+        UserResource userRes = managedRealm.admin().users().get(userId);
 
         assertThat(userRes.credentials().stream().filter(cred ->
                 cred.getType().equals(credType)).collect(Collectors.toList()).size(), is(0));
@@ -403,7 +403,7 @@ public class WebAuthnIdlessTest extends AbstractWebAuthnVirtualTest {
         String waplRequireRKString = waplRequireRK ? YES.getValue() : NO.getValue();
         String waplRequireUVString = waplRequireUV ? Constants.WEBAUTHN_POLICY_OPTION_REQUIRED : Constants.WEBAUTHN_POLICY_OPTION_DISCOURAGED;
 
-        RealmRepresentation realmRep = testRealm().toRepresentation();
+        RealmRepresentation realmRep = managedRealm.admin().toRepresentation();
 
         realmRep.setWebAuthnPolicyPasswordlessRequireResidentKey(waplRequireRKString);
         realmRep.setWebAuthnPolicyPasswordlessUserVerificationRequirement(waplRequireUVString);
@@ -415,8 +415,8 @@ public class WebAuthnIdlessTest extends AbstractWebAuthnVirtualTest {
         realmRep.setWebAuthnPolicyRpEntityName("localhost");
         realmRep.setWebAuthnPolicyRpId("localhost");
 
-        testRealm().update(realmRep);
-        realmRep = testRealm().toRepresentation();
+        managedRealm.admin().update(realmRep);
+        realmRep = managedRealm.admin().toRepresentation();
 
         assertThat(realmRep.getWebAuthnPolicyPasswordlessRequireResidentKey(), containsString(waplRequireRKString));
         assertThat(realmRep.getWebAuthnPolicyPasswordlessUserVerificationRequirement(), containsString(waplRequireUVString));
@@ -455,7 +455,7 @@ public class WebAuthnIdlessTest extends AbstractWebAuthnVirtualTest {
     protected UserRepresentation getUserRepresentation(String username)
     {
         if (username != null)
-            return AdminApiUtil.findUserByUsername(testRealm(), username);
+            return AdminApiUtil.findUserByUsername(managedRealm.admin(), username);
         else
             return null;
     }
@@ -475,7 +475,7 @@ public class WebAuthnIdlessTest extends AbstractWebAuthnVirtualTest {
             user.getRequiredActions().add(WebAuthnRegisterFactory.PROVIDER_ID);
         }
 
-        UserResource userResource = testRealm().users().get(user.getId());
+        UserResource userResource = managedRealm.admin().users().get(user.getId());
         assertThat(userResource, notNullValue());
         userResource.update(user);
 

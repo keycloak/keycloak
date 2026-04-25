@@ -39,7 +39,7 @@ import org.keycloak.testsuite.util.saml.SamlDocumentStepBuilder;
 
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
-import org.junit.Assert;
+import org.junit.jupiter.api.Assertions;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -94,7 +94,7 @@ public abstract class AbstractKcSamlMetadataBrokerTest extends AbstractBrokerTes
                 .build()
                 // first-broker flow: if valid request, it displays an update profile page on consumer realm
                 .execute(currentResponse -> {
-                    Assert.assertEquals(statusCode, currentResponse.getStatusLine().getStatusCode());
+                    Assertions.assertEquals(statusCode, currentResponse.getStatusLine().getStatusCode());
                     if (expectedString != null) {
                         MatcherAssert.assertThat(currentResponse, bodyHC(Matchers.containsString(expectedString)));
                     }
@@ -119,7 +119,7 @@ public abstract class AbstractKcSamlMetadataBrokerTest extends AbstractBrokerTes
                 .build()
                 // first-broker flow: if valid request, it displays an update profile page on consumer realm
                 .execute(currentResponse -> {
-                    Assert.assertEquals(statusCode, currentResponse.getStatusLine().getStatusCode());
+                    Assertions.assertEquals(statusCode, currentResponse.getStatusLine().getStatusCode());
                     MatcherAssert.assertThat(currentResponse, bodyHC(Matchers.containsString(expectedString)));
                 });
     }
@@ -144,17 +144,17 @@ public abstract class AbstractKcSamlMetadataBrokerTest extends AbstractBrokerTes
         String realmId = realm.toRepresentation().getId();
         ComponentRepresentation keys = createComponentRep(algorithm, providerId, realmId);
         try (Response response = realm.components().add(keys)) {
-            Assert.assertEquals(201, response.getStatus());
+            Assertions.assertEquals(201, response.getStatus());
         }
 
         String updatedActiveKid = realm.keys().getKeyMetadata().getActive().get(algorithm);
-        Assert.assertNotEquals(activeKid, updatedActiveKid);
+        Assertions.assertNotEquals(activeKid, updatedActiveKid);
     }
 
     protected void updateKeyProvider(String realmName, String providerId, boolean active, boolean enabled) {
         RealmResource realm = adminClient.realm(realmName);
         List<ComponentRepresentation> components = realm.components().query(null, KeyProvider.class.getName(), providerId);
-        Assert.assertEquals("Key provider " + providerId + " not found.", 1, components.size());
+        Assertions.assertEquals(1, components.size(), "Key provider " + providerId + " not found.");
         ComponentRepresentation key = components.iterator().next();
         MultivaluedHashMap<String, String> config = key.getConfig();
         if (config == null) {

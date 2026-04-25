@@ -14,10 +14,12 @@ Each realm has a built-in client called `realm-management`.  You can view this c
 * manage-clients
 * manage-events
 * manage-identity-providers
+* manage-organizations
 * manage-realm
 * manage-users
 * query-clients
 * query-groups
+* query-organizations
 * query-realms
 * query-users
 * realm-admin
@@ -25,6 +27,7 @@ Each realm has a built-in client called `realm-management`.  You can view this c
 * view-clients
 * view-events
 * view-identity-providers
+* view-organizations
 * view-realm
 * view-users
 

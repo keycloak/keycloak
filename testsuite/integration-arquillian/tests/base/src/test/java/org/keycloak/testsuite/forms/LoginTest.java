@@ -51,6 +51,7 @@ import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AbstractChangeImportedUserPasswordsTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.ProfileAssume;
@@ -71,16 +72,15 @@ import org.keycloak.testsuite.util.InfinispanTestTimeServiceRule;
 import org.keycloak.testsuite.util.Matchers;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.TokenSignatureUtil;
-import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
 
 import org.apache.commons.lang3.RandomStringUtils;
 import org.hamcrest.MatcherAssert;
 import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 import org.openqa.selenium.Cookie;
 import org.openqa.selenium.JavascriptExecutor;
 
@@ -93,12 +93,12 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -165,8 +165,8 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
     @Override
     public void importTestRealms() {
         super.importTestRealms();
-        userId = testRealm().users().search("login-test", Boolean.TRUE).get(0).getId();
-        user2Id = testRealm().users().search("login-test2", Boolean.TRUE).get(0).getId();
+        userId = managedRealm.admin().users().search("login-test", Boolean.TRUE).get(0).getId();
+        user2Id = managedRealm.admin().users().search("login-test2", Boolean.TRUE).get(0).getId();
     }
 
     @Test
@@ -180,7 +180,7 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
             if (expectedValue.isEmpty()) {
                 assertNull(headerValue);
             } else {
-                Assert.assertNotNull(headerValue);
+                Assertions.assertNotNull(headerValue);
                 assertThat(headerValue, is(equalTo(expectedValue)));
             }
         }
@@ -256,10 +256,10 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
 
         loginPage.assertCurrent();
 
-        Assert.assertEquals("login-test2", loginPage.getUsername());
-        Assert.assertEquals("", loginPage.getPassword());
+        Assertions.assertEquals("login-test2", loginPage.getUsername());
+        Assertions.assertEquals("", loginPage.getPassword());
 
-        Assert.assertEquals("Invalid username or password.", loginPage.getUsernameInputError());
+        Assertions.assertEquals("Invalid username or password.", loginPage.getUsernameInputError());
         assertNull(loginPage.getPasswordInputError());
 
         events.expectLogin().user(user2Id).session((String) null).error("invalid_user_credentials")
@@ -269,8 +269,8 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
 
         loginPage.login("login-test", getPassword("login-test"));
 
-        Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assert.assertNotNull(oauth.parseLoginResponse().getCode());
+        Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
 
         events.expectLogin().user(userId).detail(Details.USERNAME, "login-test").assertEvent();
     }
@@ -283,10 +283,10 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
         loginPage.assertCurrent();
 
         // KEYCLOAK-1741 - assert form field values kept
-        Assert.assertEquals("login-test", loginPage.getUsername());
-        Assert.assertEquals("", loginPage.getPassword());
+        Assertions.assertEquals("login-test", loginPage.getUsername());
+        Assertions.assertEquals("", loginPage.getPassword());
 
-        Assert.assertEquals("Invalid username or password.", loginPage.getUsernameInputError());
+        Assertions.assertEquals("Invalid username or password.", loginPage.getUsernameInputError());
         assertNull(loginPage.getPasswordInputError());
 
         events.expectLogin().user(userId).session((String) null).error("invalid_user_credentials")
@@ -303,10 +303,10 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
         loginPage.assertCurrent();
 
         // KEYCLOAK-1741 - assert form field values kept
-        Assert.assertEquals("login-test", loginPage.getUsername());
-        Assert.assertEquals("", loginPage.getPassword());
+        Assertions.assertEquals("login-test", loginPage.getUsername());
+        Assertions.assertEquals("", loginPage.getPassword());
 
-        Assert.assertEquals("Invalid username or password.", loginPage.getUsernameInputError());
+        Assertions.assertEquals("Invalid username or password.", loginPage.getUsernameInputError());
         assertNull(loginPage.getPasswordInputError());
 
         events.expectLogin().user(userId).session((String) null).error("invalid_user_credentials")
@@ -332,11 +332,11 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
             loginPage.assertCurrent();
 
             // KEYCLOAK-1741 - assert form field values kept
-            Assert.assertEquals("login-test", loginPage.getUsername());
-            Assert.assertEquals("", loginPage.getPassword());
+            Assertions.assertEquals("login-test", loginPage.getUsername());
+            Assertions.assertEquals("", loginPage.getPassword());
 
             // KEYCLOAK-2024
-            Assert.assertEquals("Invalid username or password.", loginPage.getInputError());
+            Assertions.assertEquals("Invalid username or password.", loginPage.getInputError());
 
             events.expectLogin().user(userId).session((String) null).error("invalid_user_credentials")
                     .detail(Details.USERNAME, "login-test")
@@ -358,11 +358,11 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
             loginPage.assertCurrent();
 
             // KEYCLOAK-1741 - assert form field values kept
-            Assert.assertEquals("login-test", loginPage.getUsername());
-            Assert.assertEquals("", loginPage.getPassword());
+            Assertions.assertEquals("login-test", loginPage.getUsername());
+            Assertions.assertEquals("", loginPage.getPassword());
 
             // KEYCLOAK-2024
-            Assert.assertEquals("Account is disabled, contact your administrator.", loginPage.getError());
+            Assertions.assertEquals("Account is disabled, contact your administrator.", loginPage.getError());
 
             events.expectLogin().user(userId).session((String) null).error("user_disabled")
                     .detail(Details.USERNAME, "login-test")
@@ -406,10 +406,10 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
         loginPage.assertCurrent();
 
         // KEYCLOAK-1741 - assert form field values kept
-        Assert.assertEquals("invalid", loginPage.getUsername());
-        Assert.assertEquals("", loginPage.getPassword());
+        Assertions.assertEquals("invalid", loginPage.getUsername());
+        Assertions.assertEquals("", loginPage.getPassword());
 
-        Assert.assertEquals("Invalid username or password.", loginPage.getInputError());
+        Assertions.assertEquals("Invalid username or password.", loginPage.getInputError());
 
         events.expectLogin().user((String) null).session((String) null).error("user_not_found")
                 .detail(Details.USERNAME, "invalid")
@@ -418,8 +418,8 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
 
         loginPage.login("login-test", getPassword("login-test"));
 
-        Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assert.assertNotNull(oauth.parseLoginResponse().getCode());
+        Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
 
         events.expectLogin().user(userId).detail(Details.USERNAME, "login-test").assertEvent();
     }
@@ -431,7 +431,7 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
 
         loginPage.assertCurrent();
 
-        Assert.assertEquals("Invalid username or password.", loginPage.getInputError());
+        Assertions.assertEquals("Invalid username or password.", loginPage.getInputError());
 
         events.expectLogin().user((String) null).session((String) null).error("user_not_found")
                 .removeDetail(Details.CONSENT)
@@ -444,8 +444,8 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
         oauth.openLoginForm();
         loginPage.login("login@test.com", getPassword("login-test"));
 
-        Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assert.assertNotNull(oauth.parseLoginResponse().getCode());
+        Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
 
         events.expectLogin().user(userId).detail(Details.USERNAME, "login@test.com").assertEvent();
     }
@@ -455,8 +455,8 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
         oauth.openLoginForm();
         loginPage.login("login-test", getPassword("login-test"));
 
-        Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assert.assertNotNull(oauth.parseLoginResponse().getCode());
+        Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
 
         events.expectLogin().user(userId).detail(Details.USERNAME, "login-test").assertEvent();
     }
@@ -468,8 +468,8 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
         oauth.openLoginForm();
         loginPage.login("login-test", getPassword("login-test"));
 
-        Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assert.assertNotNull(oauth.parseLoginResponse().getCode());
+        Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
 
         events.expectLogin().user(userId).detail(Details.USERNAME, "login-test").assertEvent();
 
@@ -484,7 +484,7 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
             TokenSignatureUtil.changeRealmTokenSignatureProvider(adminClient, Algorithm.ES256);
 
             oauth.openLoginForm();
-            Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+            Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
             driver.navigate().to(getAuthServerContextRoot() + "/auth/realms/test/");
             keycloakIdentity = driver.manage().getCookieNamed("KEYCLOAK_IDENTITY").getValue();
@@ -495,7 +495,7 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
 
             // Check identity cookie still works
             oauth.openLoginForm();
-            Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+            Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
         } finally {
             TokenSignatureUtil.changeRealmTokenSignatureProvider(adminClient, Algorithm.RS256);
         }
@@ -506,8 +506,8 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
         oauth.openLoginForm();
         loginPage.login(" login-test \t ", getPassword("login-test"));
 
-        Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assert.assertNotNull(oauth.parseLoginResponse().getCode());
+        Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
 
         events.expectLogin().user(userId).detail(Details.USERNAME, "login-test").assertEvent();
     }
@@ -517,8 +517,8 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
         oauth.openLoginForm();
         loginPage.login("    login@test.com    ", getPassword("login-test"));
 
-        Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assert.assertNotNull(oauth.parseLoginResponse().getCode());
+        Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
 
         events.expectLogin().user(userId).assertEvent();
     }
@@ -554,7 +554,7 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
 
             String currentUrl = driver.getCurrentUrl();
             String pageSource = driver.getPageSource();
-            assertEquals("bad expectation, on page: " + currentUrl, RequestType.AUTH_RESPONSE, appPage.getRequestType());
+            assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType(), "bad expectation, on page: " + currentUrl);
 
             events.expectLogin().user(userId).detail(Details.USERNAME, "login-test").assertEvent();
 
@@ -576,8 +576,8 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
 
             loginPage.login("login-test", getPassword("login-test"));
 
-            Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
-            Assert.assertNotNull(oauth.parseLoginResponse().getCode());
+            Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+            Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
 
             setTimeOffset(0);
 
@@ -604,11 +604,11 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
     public void loginLoginHint() {
         oauth.loginForm().param("login_hint", "login-test").open();
 
-        Assert.assertEquals("login-test", loginPage.getUsername());
+        Assertions.assertEquals("login-test", loginPage.getUsername());
         loginPage.login(getPassword("login-test"));
 
-        Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assert.assertNotNull(oauth.parseLoginResponse().getCode());
+        Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
 
         events.expectLogin().user(userId).detail(Details.USERNAME, "login-test").assertEvent();
     }
@@ -618,8 +618,8 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
         oauth.openLoginForm();
         loginPage.login("login@test.com", getPassword("login-test"));
 
-        Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assert.assertNotNull(oauth.parseLoginResponse().getCode());
+        Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
 
         events.expectLogin().user(userId).assertEvent();
     }
@@ -647,8 +647,8 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
             assertTrue(loginPage.isRememberMeChecked());
             loginPage.login("login-test", getPassword("login-test"));
 
-            Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
-            Assert.assertNotNull(oauth.parseLoginResponse().getCode());
+            Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+            Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
             EventRepresentation loginEvent = events.expectLogin().user(userId)
                                                    .detail(Details.USERNAME, "login-test")
                                                    .detail(Details.REMEMBER_ME, "true")
@@ -661,7 +661,7 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
             // Assert rememberMe checked and username/email prefilled
             oauth.openLoginForm();
             assertTrue(loginPage.isRememberMeChecked());
-            Assert.assertEquals("login-test", loginPage.getUsername());
+            Assertions.assertEquals("login-test", loginPage.getUsername());
 
             loginPage.setRememberMe(false);
         } finally {
@@ -685,8 +685,8 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
         loginPage.setRememberMe(true);
         loginPage.login("login-test", getPassword("login-test"));
 
-        Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assert.assertNotNull(oauth.parseLoginResponse().getCode());
+        Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
         EventRepresentation loginEvent = events.expectLogin().user(userId)
                 .detail(Details.USERNAME, "login-test")
                 .assertEvent();
@@ -707,8 +707,8 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
             assertTrue(loginPage.isRememberMeChecked());
             loginPage.login("login-test", getPassword("login-test"));
 
-            Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
-            Assert.assertNotNull(oauth.parseLoginResponse().getCode());
+            Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+            Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
             EventRepresentation loginEvent = events.expectLogin().user(userId)
                                                    .detail(Details.USERNAME, "login-test")
                                                    .detail(Details.REMEMBER_ME, "true")
@@ -721,7 +721,7 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
             // Assert rememberMe checked and username/email prefilled
             oauth.openLoginForm();
             assertTrue(loginPage.isRememberMeChecked());
-            Assert.assertEquals("login-test", loginPage.getUsername());
+            Assertions.assertEquals("login-test", loginPage.getUsername());
 
             //login without remember me
             loginPage.setRememberMe(false);
@@ -754,8 +754,8 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
             assertTrue(loginPage.isRememberMeChecked());
             loginPage.login("login@test.com", getPassword("login-test"));
 
-            Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
-            Assert.assertNotNull(oauth.parseLoginResponse().getCode());
+            Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+            Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
             EventRepresentation loginEvent = events.expectLogin().user(userId)
                                                    .detail(Details.USERNAME, "login@test.com")
                                                    .detail(Details.REMEMBER_ME, "true")
@@ -769,7 +769,7 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
             oauth.openLoginForm();
             assertTrue(loginPage.isRememberMeChecked());
 
-            Assert.assertEquals("login@test.com", loginPage.getUsername());
+            Assertions.assertEquals("login@test.com", loginPage.getUsername());
 
             loginPage.setRememberMe(false);
         } finally {
@@ -788,8 +788,8 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
             assertTrue(loginPage.isRememberMeChecked());
             loginPage.login("login@test.com", getPassword("login-test"));
 
-            Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
-            Assert.assertNotNull(oauth.parseLoginResponse().getCode());
+            Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+            Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
             events.expectLogin().user(userId)
                     .detail(Details.USERNAME, "login@test.com")
                     .detail(Details.REMEMBER_ME, "true")
@@ -825,7 +825,7 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
         loginPage.login("login@test.com", getPassword("login-test"));
         loginPage.assertCurrent();
 
-        Assert.assertEquals("Your login attempt timed out. Login will start from the beginning.", loginPage.getError());
+        Assertions.assertEquals("Your login attempt timed out. Login will start from the beginning.", loginPage.getError());
         setTimeOffset(0);
 
         events.expectLogin().user((String) null).session((String) null).error(Errors.EXPIRED_CODE).clearDetails()
@@ -842,7 +842,7 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
 
         loginPage.assertCurrent();
 
-        Assert.assertEquals("Your login attempt timed out. Login will start from the beginning.", loginPage.getError());
+        Assertions.assertEquals("Your login attempt timed out. Login will start from the beginning.", loginPage.getError());
 
         setTimeOffset(0);
 
@@ -887,13 +887,13 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
         String link = errorPage.getBackToApplicationLink();
 
         ClientRepresentation thirdParty = findClientByClientId(adminClient.realm("test"), "third-party").toRepresentation();
-        Assert.assertNotNull(link, thirdParty.getBaseUrl());
+        Assertions.assertNotNull(thirdParty.getBaseUrl(), link);
     }
 
     @Test
     public void loginWithDisabledCookies() {
         String userId = adminClient.realm("test").users().search("test-user@localhost").get(0).getId();
-        oauth.clientId("test-app");
+        oauth.client("test-app", "password");
         oauth.openLoginForm();
 
         driver.manage().deleteAllCookies();
@@ -917,7 +917,7 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
         boolean wasEnabled = clientRepresentation.isEnabled();
 
         try {
-            oauth.clientId("test-app");
+            oauth.client("test-app", "password");
             oauth.openLoginForm();
             loginPage.assertCurrent();
 
@@ -942,12 +942,12 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
 
     @Test
     public void openLoginFormWithDifferentApplication() throws Exception {
-        oauth.clientId("root-url-client");
+        oauth.client("root-url-client");
         oauth.redirectUri(SERVER_ROOT + "/foo/bar/");
         oauth.openLoginForm();
 
         // Login form shown after redirect from app
-        oauth.clientId("test-app");
+        oauth.client("test-app", "password");
         oauth.redirectUri(OAuthClient.APP_ROOT + "/auth");
         oauth.openLoginForm();
 
@@ -967,7 +967,7 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
         oauth.openLoginForm();
 
         loginPage.assertCurrent();
-        assertNull("Not expected to have error on loginForm.", loginPage.getError());
+        assertNull(loginPage.getError(), "Not expected to have error on loginForm.");
 
         loginPage.login("test-user@localhost", getPassword("test-user@localhost"));
         appPage.assertCurrent();
@@ -983,17 +983,17 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
 
         // Assert authenticationSession in cache with 2 tabs
         String authSessionId = driver.manage().getCookieNamed(CookieType.AUTH_SESSION_ID.getName()).getValue();
-        Assert.assertEquals((Integer) 2, getTestingClient().testing().getAuthenticationSessionTabsCount("test", authSessionId));
+        Assertions.assertEquals((Integer) 2, getTestingClient().testing().getAuthenticationSessionTabsCount("test", authSessionId));
 
         loginPage.login("test-user@localhost", getPassword("test-user@localhost"));
         appPage.assertCurrent();
 
         // authentication session should still exists with remaining browser tab
-        Assert.assertEquals((Integer) 1, getTestingClient().testing().getAuthenticationSessionTabsCount("test", authSessionId));
+        Assertions.assertEquals((Integer) 1, getTestingClient().testing().getAuthenticationSessionTabsCount("test", authSessionId));
 
         // authentication session should be expired after 1 minute
         setTimeOffset(300);
-        Assert.assertEquals((Integer) 0, getTestingClient().testing().getAuthenticationSessionTabsCount("test", authSessionId));
+        Assertions.assertEquals((Integer) 0, getTestingClient().testing().getAuthenticationSessionTabsCount("test", authSessionId));
     }
 
 
@@ -1005,7 +1005,7 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
           .setRememberMe(true)
           .update()) {
             // login form shown after redirect from app
-            oauth.clientId("test-app");
+            oauth.client("test-app", "password");
             oauth.redirectUri(OAuthClient.APP_ROOT + "/auth");
             oauth.openLoginForm();
 
@@ -1033,7 +1033,7 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
           .setRememberMe(true)
           .update()) {
             // login form shown after redirect from app
-            oauth.clientId("test-app");
+            oauth.client("test-app", "password");
             oauth.redirectUri(OAuthClient.APP_ROOT + "/auth");
             oauth.openLoginForm();
 
@@ -1065,12 +1065,12 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
             put(ClientScopeModel.DYNAMIC_SCOPE_REGEXP, "dynamic:*");
         }});
         clientScope.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
-        Response response = testRealm().clientScopes().create(clientScope);
+        Response response = managedRealm.admin().clientScopes().create(clientScope);
         String scopeId = ApiUtil.getCreatedId(response);
         getCleanup().addClientScopeId(scopeId);
         response.close();
 
-        ClientResource testApp = AdminApiUtil.findClientByClientId(testRealm(), "test-app");
+        ClientResource testApp = AdminApiUtil.findClientByClientId(managedRealm.admin(), "test-app");
         ClientRepresentation testAppRep = testApp.toRepresentation();
         testApp.update(testAppRep);
         testApp.addOptionalClientScope(scopeId);
@@ -1086,7 +1086,7 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
         try {
             oauth.openLoginForm();
             loginPage.login("test-user@localhost", getPassword("test-user@localhost"));
-            Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+            Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
             events.expectLogin().assertEvent();
         } finally {
             testingClient.enableFeature(Profile.Feature.WEB_AUTHN);
@@ -1097,7 +1097,7 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
     public void testExecuteActionIfSessionExists() {
         oauth.openLoginForm();
         loginPage.login("test-user@localhost", getPassword("test-user@localhost"));
-        Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
         events.expectLogin().assertEvent();
 
         UsersResource users = adminClient.realm("test").users();
@@ -1131,15 +1131,15 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
         oauth.openLoginForm();
         String encodedBase64AuthSessionId = driver.manage().getCookieNamed(CookieType.AUTH_SESSION_ID.getName()).getValue();
         String decodedAuthSessionId = new String(Base64Url.decode(encodedBase64AuthSessionId), StandardCharsets.UTF_8);
-        Assert.assertTrue(decodedAuthSessionId.contains("."));
+        Assertions.assertTrue(decodedAuthSessionId.contains("."));
         String authSessionId = decodedAuthSessionId.substring(0, decodedAuthSessionId.indexOf("."));
         String signature = decodedAuthSessionId.substring(decodedAuthSessionId.indexOf(".") + 1);
-        Assert.assertNotNull(authSessionId);
+        Assertions.assertNotNull(authSessionId);
         MatcherAssert.assertThat(authSessionId, AssertEvents.isSessionId());
-        Assert.assertNotNull(signature);
+        Assertions.assertNotNull(signature);
 
         testingClient.server().run(session-> {
-           Assert.assertNotNull(session.authenticationSessions().getRootAuthenticationSession(session.getContext().getRealm(), authSessionId));
+           Assertions.assertNotNull(session.authenticationSessions().getRootAuthenticationSession(session.getContext().getRealm(), authSessionId));
         });
    }
 }

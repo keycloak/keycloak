@@ -62,7 +62,7 @@ public class AuthenticationFlowCallbackProviderTest extends AbstractTestRealmKey
 
     @After
     public void revertFlow() {
-        BrowserFlowTest.revertFlows(testRealm(), DEFAULT_FLOW);
+        BrowserFlowTest.revertFlows(managedRealm.admin(), DEFAULT_FLOW);
     }
 
     @Test

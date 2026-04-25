@@ -10,8 +10,8 @@ import org.keycloak.models.AdminRoles;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
-import org.keycloak.testframework.realm.RealmConfigBuilder;
-import org.keycloak.testframework.realm.UserConfigBuilder;
+import org.keycloak.testframework.realm.RealmBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 
 import org.junit.jupiter.api.Test;
 
@@ -24,9 +24,9 @@ public class RealmAdminMasterRealmTest extends AbstractAdminRBACTest {
 
     @Test
     public void testAccessIfRoleGrantedInMasterRealmClient() {
-        RealmRepresentation realm = RealmConfigBuilder.create().name("myrealm").build();
+        RealmRepresentation realm = RealmBuilder.create().name("myrealm").build();
         adminClient.realms().create(realm);
-        UserRepresentation newUser = UserConfigBuilder.create().username("myuser").build();
+        UserRepresentation newUser = UserBuilder.create().username("myuser").build();
 
         runAs(masterRealm.getName(), masterUser.getUsername(), client -> {
             // user not allowed to list users
@@ -57,7 +57,7 @@ public class RealmAdminMasterRealmTest extends AbstractAdminRBACTest {
 
     @Test
     public void testGrantRealmManagementRoleIfGrantedInMasterRealmClient() {
-        RealmRepresentation realm = RealmConfigBuilder.create().name("myrealm").build();
+        RealmRepresentation realm = RealmBuilder.create().name("myrealm").build();
         adminClient.realms().create(realm);
 
         runAs(masterRealm.getName(), masterUser.getUsername(), client -> {
@@ -77,7 +77,7 @@ public class RealmAdminMasterRealmTest extends AbstractAdminRBACTest {
             assertForbidden("Should not be able to list events in realm", () -> realmApi.getEvents());
 
             // user can create a new user
-            realmApi.users().create(UserConfigBuilder.create()
+            realmApi.users().create(UserBuilder.create()
                             .username(newUserName)
                             .password("password")
                             .email("myuser@keycloak.org")

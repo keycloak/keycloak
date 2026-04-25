@@ -25,10 +25,10 @@ import org.keycloak.storage.ldap.idm.model.LDAPObject;
 import org.keycloak.testsuite.runonserver.RunOnServerException;
 import org.keycloak.testsuite.util.LDAPRule;
 
-import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 import org.junit.runners.MethodSorters;
 
 /**
@@ -71,16 +71,16 @@ public class LdapUsernameAttributeTest extends AbstractLDAPTest {
             LDAPTestContext ctx = LDAPTestContext.init(session);
             RealmModel appRealm = ctx.getRealm();
             UserModel john = session.users().getUserByUsername(appRealm, "johndow");
-            Assert.assertNotNull(john);
-            Assert.assertNotNull(john.getFederationLink());
-            Assert.assertEquals("johndow", john.getUsername());
-            Assert.assertEquals("johndow@email.cz", john.getEmail());
-            Assert.assertEquals("johndow", john.getFirstName());
-            Assert.assertEquals("johndow", john.getLastName());
+            Assertions.assertNotNull(john);
+            Assertions.assertNotNull(john.getFederationLink());
+            Assertions.assertEquals("johndow", john.getUsername());
+            Assertions.assertEquals("johndow@email.cz", john.getEmail());
+            Assertions.assertEquals("johndow", john.getFirstName());
+            Assertions.assertEquals("johndow", john.getLastName());
             LDAPObject johnLdap = ctx.getLdapProvider().loadLDAPUserByUsername(appRealm, "johndow");
-            Assert.assertNotNull(johnLdap);
+            Assertions.assertNotNull(johnLdap);
             LDAPDn.RDN firstRdnEntry = johnLdap.getDn().getFirstRdn();
-            Assert.assertEquals("johndow", firstRdnEntry.getAttrValue(firstRdnEntry.getAllKeys().get(0)));
+            Assertions.assertEquals("johndow", firstRdnEntry.getAttrValue(firstRdnEntry.getAllKeys().get(0)));
         });
         // rename to johndow2
         testingClient.server().run(session -> {
@@ -96,21 +96,21 @@ public class LdapUsernameAttributeTest extends AbstractLDAPTest {
         testingClient.server().run(session -> {
             LDAPTestContext ctx = LDAPTestContext.init(session);
             RealmModel appRealm = ctx.getRealm();
-            Assert.assertNull(session.users().getUserByUsername(appRealm, "johndow"));
+            Assertions.assertNull(session.users().getUserByUsername(appRealm, "johndow"));
             UserModel john2 = session.users().getUserByUsername(appRealm, "johndow2");
-            Assert.assertNotNull(john2);
-            Assert.assertNotNull(john2.getFederationLink());
-            Assert.assertEquals("johndow2", john2.getUsername());
-            Assert.assertEquals("johndow2@email.cz", john2.getEmail());
-            Assert.assertEquals("johndow2", john2.getFirstName());
-            Assert.assertEquals("johndow2", john2.getLastName());
+            Assertions.assertNotNull(john2);
+            Assertions.assertNotNull(john2.getFederationLink());
+            Assertions.assertEquals("johndow2", john2.getUsername());
+            Assertions.assertEquals("johndow2@email.cz", john2.getEmail());
+            Assertions.assertEquals("johndow2", john2.getFirstName());
+            Assertions.assertEquals("johndow2", john2.getLastName());
             LDAPObject johnLdap2 = ctx.getLdapProvider().loadLDAPUserByUsername(appRealm, "johndow2");
-            Assert.assertNotNull(johnLdap2);
+            Assertions.assertNotNull(johnLdap2);
             LDAPDn.RDN firstRdnEntry = johnLdap2.getDn().getFirstRdn();
-            Assert.assertEquals("johndow2", firstRdnEntry.getAttrValue(firstRdnEntry.getAllKeys().get(0)));
+            Assertions.assertEquals("johndow2", firstRdnEntry.getAttrValue(firstRdnEntry.getAllKeys().get(0)));
 
             session.users().removeUser(appRealm, john2);
-            Assert.assertNull(session.users().getUserByUsername(appRealm, "johndow2"));
+            Assertions.assertNull(session.users().getUserByUsername(appRealm, "johndow2"));
         });
     }
 
@@ -134,11 +134,11 @@ public class LdapUsernameAttributeTest extends AbstractLDAPTest {
             LDAPTestContext ctx = LDAPTestContext.init(session);
             RealmModel appRealm = ctx.getRealm();
             UserModel john = session.users().getUserByUsername(appRealm, "johndow");
-            Assert.assertNotNull(john);
-            Assert.assertNotNull(john.getFederationLink());
+            Assertions.assertNotNull(john);
+            Assertions.assertNotNull(john.getFederationLink());
             UserModel john2 = session.users().getUserByUsername(appRealm, "johndow2");
-            Assert.assertNotNull(john2);
-            Assert.assertNotNull(john2.getFederationLink());
+            Assertions.assertNotNull(john2);
+            Assertions.assertNotNull(john2.getFederationLink());
         });
         // rename johndow to johndow2 => it should fail
         try {
@@ -148,23 +148,23 @@ public class LdapUsernameAttributeTest extends AbstractLDAPTest {
                  UserModel john = session.users().getUserByUsername(appRealm, "johndow");
                  john.setUsername("johndow2");
              });
-             Assert.assertFalse("Model exception is expected here, so it should not reach this point", true);
+             Assertions.assertFalse(true, "Model exception is expected here, so it should not reach this point");
          } catch (RunOnServerException e) {
-             Assert.assertTrue("Model exception is expected here but another error found", e.getCause() instanceof ModelDuplicateException);
-             Assert.assertEquals(UserModel.USERNAME, ((ModelDuplicateException)e.getCause()).getDuplicateFieldName());
+             Assertions.assertTrue(e.getCause() instanceof ModelDuplicateException, "Model exception is expected here but another error found");
+             Assertions.assertEquals(UserModel.USERNAME, ((ModelDuplicateException)e.getCause()).getDuplicateFieldName());
          }
         // remove both users
         testingClient.server().run(session -> {
             LDAPTestContext ctx = LDAPTestContext.init(session);
             RealmModel appRealm = ctx.getRealm();
             UserModel john = session.users().getUserByUsername(appRealm, "johndow");
-            Assert.assertNotNull(john);
+            Assertions.assertNotNull(john);
             UserModel john2 = session.users().getUserByUsername(appRealm, "johndow2");
-            Assert.assertNotNull(john2);
+            Assertions.assertNotNull(john2);
             session.users().removeUser(appRealm, john);
             session.users().removeUser(appRealm, john2);
-            Assert.assertNull(session.users().getUserByUsername(appRealm, "johndow"));
-            Assert.assertNull(session.users().getUserByUsername(appRealm, "johndow2"));
+            Assertions.assertNull(session.users().getUserByUsername(appRealm, "johndow"));
+            Assertions.assertNull(session.users().getUserByUsername(appRealm, "johndow2"));
         });
     }
 }

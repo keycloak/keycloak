@@ -35,11 +35,11 @@ import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testframework.events.Events;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
+import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.ClientConfig;
-import org.keycloak.testframework.realm.ClientConfigBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
-import org.keycloak.testframework.realm.RealmConfigBuilder;
 import org.keycloak.testframework.remote.providers.timeoffset.InfinispanTimeUtil;
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
@@ -542,7 +542,7 @@ public class OfflineTokenRefreshTest {
         prev[1] = rep.getOfflineSessionIdleTimeout();
         prev[2] = rep.getClientOfflineSessionMaxLifespan();
         prev[3] = rep.getClientOfflineSessionIdleTimeout();
-        RealmConfigBuilder realmBuilder = RealmConfigBuilder.create();
+        RealmBuilder realmBuilder = RealmBuilder.create();
         realmBuilder.update(r -> {
             r.setOfflineSessionMaxLifespanEnabled(isEnabled);
             r.setOfflineSessionMaxLifespan(sessionMax);
@@ -581,7 +581,7 @@ public class OfflineTokenRefreshTest {
     public static class OfflineTokenRealmConfig implements RealmConfig {
 
         @Override
-        public RealmConfigBuilder configure(RealmConfigBuilder builder) {
+        public RealmBuilder configure(RealmBuilder builder) {
             builder.name("test")
                     .eventsEnabled(true)
                     .ssoSessionIdleTimeout(30)
@@ -624,7 +624,7 @@ public class OfflineTokenRefreshTest {
 
     public static class OfflineAuthClientConfig implements ClientConfig {
         @Override
-        public ClientConfigBuilder configure(ClientConfigBuilder client) {
+        public ClientBuilder configure(ClientBuilder client) {
             return client.clientId("test-app")
                     .secret("password")
                     .serviceAccountsEnabled(true)

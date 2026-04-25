@@ -55,8 +55,8 @@ import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.mail.MailServer;
 import org.keycloak.testframework.mail.annotations.InjectMailServer;
 import org.keycloak.testframework.realm.ManagedUser;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.realm.UserConfig;
-import org.keycloak.testframework.realm.UserConfigBuilder;
 import org.keycloak.testframework.remote.providers.runonserver.RunOnServer;
 import org.keycloak.testframework.server.KeycloakUrls;
 import org.keycloak.testframework.util.ApiUtil;
@@ -297,7 +297,7 @@ public class WorkflowManagementTest extends AbstractWorkflowTest {
 
         // create a new user - should bind the user to the first workflow.
         String userId;
-        try(Response response = managedRealm.admin().users().create(UserConfigBuilder.create().username("testuser")
+        try(Response response = managedRealm.admin().users().create(UserBuilder.create().username("testuser")
                 .email("testuser@example.com").build())) {
             userId = ApiUtil.getCreatedId(response);
         }
@@ -614,7 +614,7 @@ public class WorkflowManagementTest extends AbstractWorkflowTest {
     private static class DefaultUserConfig implements UserConfig {
 
         @Override
-        public UserConfigBuilder configure(UserConfigBuilder user) {
+        public UserBuilder configure(UserBuilder user) {
             user.username("alice");
             user.password("alice");
             user.name("alice", "alice");

@@ -27,6 +27,7 @@ import java.util.stream.Collectors;
 
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.provider.ProviderFactory;
+import org.keycloak.util.Strings;
 
 /**
  * Utility class for common cryptographic operations and algorithm discovery.
@@ -59,10 +60,10 @@ public class CryptoUtils {
      * for those that use asymmetric algorithms (RSA, EC, EdDSA, etc.).
      *
      * @param session The Keycloak session
-     * @return List of asymmetric signature algorithm names
+     * @return List of asymmetric encryption algorithm names
      */
     public static List<String> getSupportedAsymmetricEncryptionAlgorithms(KeycloakSession session) {
-        return session.keys()
+        List<String> encAlgos = session.keys()
                 .getKeysStream(session.getContext().getRealm())
                 .filter(key -> KeyUse.ENC.equals(key.getUse()))
                 .filter(key -> {
@@ -71,8 +72,9 @@ public class CryptoUtils {
                     return k instanceof PublicKey || key.getPrivateKey() instanceof PrivateKey;
                 })
                 .map(KeyWrapper::getAlgorithm)
-                .filter(algorithm -> algorithm != null && !algorithm.isEmpty())
+                .filter(alg -> !Strings.isEmpty(alg))
                 .distinct()
                 .toList();
+        return encAlgos;
     }
 }

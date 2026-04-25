@@ -32,7 +32,7 @@ import org.keycloak.representations.info.ServerInfoRepresentation;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.ManagedRealm;
-import org.keycloak.testframework.realm.RealmConfigBuilder;
+import org.keycloak.testframework.realm.RealmBuilder;
 
 import org.junit.Assert;
 import org.junit.jupiter.api.Test;
@@ -112,7 +112,7 @@ public class ServerInfoPermissionsTest extends AbstractPermissionsTest {
     protected static class PermissionsTestRealm extends PermissionsTestRealmConfig1 {
 
         @Override
-        public RealmConfigBuilder configure(RealmConfigBuilder realm) {
+        public RealmBuilder configure(RealmBuilder realm) {
             // configure with permissions enable to test view-system assignment
             return super.configure(realm).adminPermissionsEnabled(true);
         }
