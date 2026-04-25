@@ -53,4 +53,9 @@ public class LinkedInOIDCIdentityProvider extends OIDCIdentityProvider implement
         String modelKey = PublicKeyStorageUtils.getIdpModelCacheKey(session.getContext().getRealm().getId(), getConfig().getInternalId());
         return keyStorage.getPublicKey(modelKey, jws.getHeader().getKeyId(), jws.getHeader().getRawAlgorithm(), loader);
     }
+
+    @Override
+    public boolean reloadConfig() {
+        return false;
+    }
 }

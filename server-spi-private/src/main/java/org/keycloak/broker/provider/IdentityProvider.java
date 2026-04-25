@@ -64,6 +64,16 @@ public interface IdentityProvider<C extends IdentityProviderModel> extends Provi
     }
 
     /**
+     * Reload configuration from an external source (e.g. an OIDC well-known URL).
+     * Returns {@code true} if a reload was attempted (regardless of outcome - errors are
+     * persisted on the model), {@code false} if this provider does not support config
+     * reloading or is not configured for it.
+     */
+    default boolean reloadConfig() {
+        return false;
+    }
+
+    /**
      * Returns if this Identity Provider is of the passed type. By default it just returns
      * true when it implements the correct interface. Sub-classes like the OIDC
      * provider can check specific configuration options.

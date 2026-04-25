@@ -177,6 +177,20 @@ export class IdentityProviders extends Resource<{ realm?: string }> {
     urlParamKeys: ["alias"],
   });
 
+  public reloadWellKnown = this.makeRequest<
+    {
+      alias: string;
+      reloadEnabled?: boolean;
+      metadataDescriptorUrl?: string;
+      includedWellKnownFields?: string;
+    },
+    IdentityProviderRepresentation
+  >({
+    method: "POST",
+    path: "/instances/{alias}/reload-well-known",
+    urlParamKeys: ["alias"],
+  });
+
   constructor(client: KeycloakAdminClient) {
     super(client, {
       path: "/admin/realms/{realm}/identity-provider",

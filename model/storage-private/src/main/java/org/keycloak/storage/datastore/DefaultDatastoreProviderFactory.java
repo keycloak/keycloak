@@ -22,6 +22,7 @@ import java.util.List;
 
 import org.keycloak.Config;
 import org.keycloak.Config.Scope;
+import org.keycloak.broker.provider.IdentityProviderConfigSyncTask;
 import org.keycloak.migration.MigrationModelManager;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
@@ -122,7 +123,9 @@ public class DefaultDatastoreProviderFactory implements DatastoreProviderFactory
     @Override
     public void onEvent(ProviderEvent event) {
         if (event instanceof PostMigrationEvent) {
-            setupScheduledTasks(((PostMigrationEvent) event).getFactory());
+            KeycloakSessionFactory factory = ((PostMigrationEvent) event).getFactory();
+            setupScheduledTasks(factory);
+            setupIdpConfigSyncTask(factory);
         } else if (event instanceof StoreMigrateRepresentationEvent) {
             StoreMigrateRepresentationEvent ev = (StoreMigrateRepresentationEvent) event;
             MigrationModelManager.migrateImport(ev.getSession(), ev.getRealm(), ev.getRep(), ev.isSkipUserDependent());
@@ -164,6 +167,16 @@ public class DefaultDatastoreProviderFactory implements DatastoreProviderFactory
 
     public static long getScheduledInterval() {
         return Config.scope("scheduled").getLong("interval", 900L) * 1000;
+    }
+
+    public static void setupIdpConfigSyncTask(final KeycloakSessionFactory sessionFactory) {
+        long intervalMs = Config.scope("identityProvider").getLong("syncIntervalSeconds", 3600L) * 1000;
+        try (KeycloakSession session = sessionFactory.create()) {
+            TimerProvider timer = session.getProvider(TimerProvider.class);
+            if (timer != null) {
+                scheduleTask(timer, sessionFactory, new IdentityProviderConfigSyncTask(), intervalMs);
+            }
+        }
     }
 
 }
