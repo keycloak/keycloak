@@ -28,7 +28,9 @@ export const QuickTheme = ({ realm, theme }: QuickThemeProps) => {
     const zip = new JSZip();
 
     const styles = JSON.parse(realm.attributes?.style ?? "{}");
-    const { favicon, logo, bgimage, fileName } = realm;
+    const { favicon, logo, bgimage, fileName, themeName } = realm;
+    const themeId = "quick-theme";
+    const renderedThemeName = themeName?.trim() || themeId;
 
     const logoName =
       "img/logo" + logo?.name?.substring(logo?.name?.lastIndexOf("."));
@@ -115,6 +117,7 @@ styles=css/login.css css/theme-styles.css
       `{
   "themes": [{
       "name" : "${themeNameClean}",
+      "renderedName" : ${JSON.stringify(renderedThemeName)},
       "types": [ "login", "account", "admin", "common" ]
   }]
 }`,
