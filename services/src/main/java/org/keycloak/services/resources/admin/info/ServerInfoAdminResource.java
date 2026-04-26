@@ -246,6 +246,7 @@ public class ServerInfoAdminResource {
                     if (theme != null && name.equals(theme.getName()) && !theme.isAbstract()) {
                         ThemeInfoRepresentation ti = new ThemeInfoRepresentation();
                         ti.setName(name);
+                        ti.setRenderedName(theme.getRenderedName());
 
                         String locales = theme.getProperties().getProperty("locales");
                         if (locales != null) {
