@@ -16,7 +16,7 @@ import org.keycloak.ssf.transmitter.delivery.push.PushDeliveryService;
 import org.keycloak.ssf.transmitter.event.SecurityEventTokenEncoder;
 import org.keycloak.ssf.transmitter.event.SsfSignatureAlgorithms;
 import org.keycloak.ssf.transmitter.metrics.SsfMetricsBinder;
-import org.keycloak.ssf.transmitter.outbox.SsfPendingEventStore;
+import org.keycloak.ssf.transmitter.store.SsfEventStore;
 import org.keycloak.ssf.transmitter.stream.StreamConfig;
 import org.keycloak.ssf.transmitter.subject.SsfSubjectInclusionResolver;
 import org.keycloak.ssf.transmitter.subject.SubjectSubscriptionFilter;
@@ -44,7 +44,7 @@ public class SecurityEventTokenDispatcher {
 
     protected final SsfTransmitterConfig transmitterConfig;
 
-    protected final Function<KeycloakSession, SsfPendingEventStore> pendingSsfEventStoreFactory;
+    protected final Function<KeycloakSession, SsfEventStore> pendingSsfEventStoreFactory;
 
     protected final SubjectSubscriptionFilter subjectSubscriptionFilter;
 
@@ -56,7 +56,7 @@ public class SecurityEventTokenDispatcher {
                                         SecurityEventTokenEncoder securityEventTokenEncoder,
                                         PushDeliveryService pushDeliveryService,
                                         SsfTransmitterConfig transmitterConfig,
-                                        Function<KeycloakSession, SsfPendingEventStore> pendingSsfEventStoreFactory) {
+                                        Function<KeycloakSession, SsfEventStore> pendingSsfEventStoreFactory) {
         this(session, securityEventTokenEncoder, pushDeliveryService, transmitterConfig, pendingSsfEventStoreFactory,
                 SsfMetricsBinder.NOOP, null);
     }
@@ -65,7 +65,7 @@ public class SecurityEventTokenDispatcher {
                                         SecurityEventTokenEncoder securityEventTokenEncoder,
                                         PushDeliveryService pushDeliveryService,
                                         SsfTransmitterConfig transmitterConfig,
-                                        Function<KeycloakSession, SsfPendingEventStore> pendingSsfEventStoreFactory,
+                                        Function<KeycloakSession, SsfEventStore> pendingSsfEventStoreFactory,
                                         SsfMetricsBinder metricsBinder) {
         this(session, securityEventTokenEncoder, pushDeliveryService, transmitterConfig, pendingSsfEventStoreFactory,
                 metricsBinder, null);
@@ -75,7 +75,7 @@ public class SecurityEventTokenDispatcher {
                                         SecurityEventTokenEncoder securityEventTokenEncoder,
                                         PushDeliveryService pushDeliveryService,
                                         SsfTransmitterConfig transmitterConfig,
-                                        Function<KeycloakSession, SsfPendingEventStore> pendingSsfEventStoreFactory,
+                                        Function<KeycloakSession, SsfEventStore> pendingSsfEventStoreFactory,
                                         SsfMetricsBinder metricsBinder,
                                         SsfSubjectInclusionResolver subjectInclusionResolver) {
         this.session = session;
@@ -234,7 +234,7 @@ public class SecurityEventTokenDispatcher {
      * the outbox in {@link org.keycloak.ssf.transmitter.outbox.SsfPendingEventStatus#HELD HELD}
      * status. The drainer/poll endpoint skip HELD rows; they're released
      * to {@code PENDING} when the stream is resumed
-     * ({@link org.keycloak.ssf.transmitter.outbox.SsfPendingEventStore#releaseHeldForClient
+     * ({@link org.keycloak.ssf.transmitter.store.SsfEventStore#releaseHeldForClient
      * releaseHeldForClient}).
      */
     protected void holdEvent(SsfSecurityEventToken eventToken, StreamConfig stream) {
@@ -279,7 +279,7 @@ public class SecurityEventTokenDispatcher {
 
     /**
      * Asynchronously delivers an event to the receiver by enqueuing the
-     * signed SET into the durable {@link SsfPendingEventStore push outbox}.
+     * signed SET into the durable {@link SsfEventStore push outbox}.
      * The cluster-aware drainer picks the row up on its next tick and
      * pushes it to the receiver's endpoint, retrying with exponential
      * backoff and dead-lettering after the configured attempt budget is

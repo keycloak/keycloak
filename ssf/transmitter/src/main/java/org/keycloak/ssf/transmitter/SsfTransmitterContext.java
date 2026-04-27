@@ -5,7 +5,7 @@ import java.util.function.Function;
 
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.ssf.transmitter.metrics.SsfMetricsBinder;
-import org.keycloak.ssf.transmitter.outbox.SsfPendingEventStore;
+import org.keycloak.ssf.transmitter.store.SsfEventStore;
 
 /**
  * Factory-scoped context bundle for the SSF transmitter. Holds the
@@ -26,14 +26,14 @@ public final class SsfTransmitterContext {
     private final SsfTransmitterConfig config;
     private final Set<String> defaultSupportedEventAliases;
     private final SsfMetricsBinder metricsBinder;
-    private final Function<KeycloakSession, SsfPendingEventStore> pendingEventStoreFactory;
+    private final Function<KeycloakSession, SsfEventStore> pendingEventStoreFactory;
     private final Function<KeycloakSession, String> issuerUrlFactory;
     private final SsfTransmitterServiceBuilder services;
 
     public SsfTransmitterContext(SsfTransmitterConfig config,
                                  Set<String> defaultSupportedEventAliases,
                                  SsfMetricsBinder metricsBinder,
-                                 Function<KeycloakSession, SsfPendingEventStore> pendingEventStoreFactory,
+                                 Function<KeycloakSession, SsfEventStore> pendingEventStoreFactory,
                                  Function<KeycloakSession, String> issuerUrlFactory,
                                  SsfTransmitterServiceBuilder services) {
         this.config = config;
@@ -63,20 +63,20 @@ public final class SsfTransmitterContext {
     }
 
     /**
-     * Resolves an {@link SsfPendingEventStore} for the given session.
+     * Resolves an {@link SsfEventStore} for the given session.
      * Indirection so test subclasses can plug in a custom store
      * without overriding the entire context.
      */
-    public SsfPendingEventStore pendingEventStore(KeycloakSession session) {
+    public SsfEventStore pendingEventStore(KeycloakSession session) {
         return pendingEventStoreFactory.apply(session);
     }
 
     /**
      * Function reference variant — passed to constructors that want a
-     * {@code Function<KeycloakSession, SsfPendingEventStore>} (e.g.
+     * {@code Function<KeycloakSession, SsfEventStore>} (e.g.
      * the dispatcher and the stream service for cascade purges).
      */
-    public Function<KeycloakSession, SsfPendingEventStore> pendingEventStoreFactory() {
+    public Function<KeycloakSession, SsfEventStore> pendingEventStoreFactory() {
         return pendingEventStoreFactory;
     }
 

@@ -14,7 +14,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.ssf.transmitter.outbox.SsfOutboxCleanupTask;
 import org.keycloak.ssf.transmitter.outbox.SsfEventEntity;
 import org.keycloak.ssf.transmitter.outbox.SsfPendingEventStatus;
-import org.keycloak.ssf.transmitter.outbox.SsfPendingEventStore;
+import org.keycloak.ssf.transmitter.store.SsfEventStore;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
@@ -26,18 +26,18 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 /**
- * Integration tests for {@link SsfPendingEventStore}. Each test runs a lambda
+ * Integration tests for {@link SsfEventStore}. Each test runs a lambda
  * against a real Keycloak session via {@code runOnServer}, exercising
  * the store against the actual JPA provider and the SSF outbox schema.
  *
  * <p>Tests are isolated by pinning each one to a unique synthetic
- * {@code realmId}; teardown calls {@link SsfPendingEventStore#deleteByRealm}
+ * {@code realmId}; teardown calls {@link SsfEventStore#deleteByRealm}
  * to remove every row enqueued during the test. No real Keycloak
  * realms/clients are created — the store treats realmId/clientId as
  * opaque strings, so synthetic UUIDs exercise the full path.
  */
-@KeycloakIntegrationTest(config = SsfPendingEventStoreTests.OutboxStoreServerConfig.class)
-public class SsfPendingEventStoreTests {
+@KeycloakIntegrationTest(config = SsfEventStoreTests.OutboxStoreServerConfig.class)
+public class SsfEventStoreTests {
 
     @InjectRunOnServer
     RunOnServerClient runOnServer;
@@ -49,14 +49,14 @@ public class SsfPendingEventStoreTests {
     @AfterEach
     public void cleanupRealm() {
         final String realmId = testRealmId;
-        runOnServer.run(session -> new SsfPendingEventStore(session).deleteByRealm(realmId));
+        runOnServer.run(session -> new SsfEventStore(session).deleteByRealm(realmId));
     }
 
     @Test
     public void enqueuePendingPush_persistsRowWithExpectedDefaults() {
         final String realmId = testRealmId;
         runOnServer.run(session -> {
-            SsfPendingEventStore store = new SsfPendingEventStore(session);
+            SsfEventStore store = new SsfEventStore(session);
             String id = store.enqueuePendingPush(realmId, "client-a", "stream-a",
                     "jti-happy-path", "caep.credentialChange", "signed-set");
             Assertions.assertNotNull(id);
@@ -86,7 +86,7 @@ public class SsfPendingEventStoreTests {
     public void enqueuePendingPush_deduplicatesOnClientAndJti() {
         final String realmId = testRealmId;
         runOnServer.run(session -> {
-            SsfPendingEventStore store = new SsfPendingEventStore(session);
+            SsfEventStore store = new SsfEventStore(session);
             String first = store.enqueuePendingPush(realmId, "client-dedup", "stream-a",
                     "jti-dedup", "caep.credentialChange", "encoded-1");
             String second = store.enqueuePendingPush(realmId, "client-dedup", "stream-b",
@@ -125,7 +125,7 @@ public class SsfPendingEventStoreTests {
             em(session).flush();
             em(session).clear();
 
-            List<SsfEventEntity> due = new SsfPendingEventStore(session).lockDueForPush(10);
+            List<SsfEventEntity> due = new SsfEventStore(session).lockDueForPush(10);
             Assertions.assertEquals(1, due.size(),
                     "only rows whose nextAttemptAt is in the past should be returned");
             Assertions.assertEquals("jti-past", due.get(0).getJti());
@@ -145,7 +145,7 @@ public class SsfPendingEventStoreTests {
             em(session).flush();
             em(session).clear();
 
-            List<SsfEventEntity> batch = new SsfPendingEventStore(session).lockDueForPush(3);
+            List<SsfEventEntity> batch = new SsfEventStore(session).lockDueForPush(3);
             Assertions.assertEquals(3, batch.size());
         });
     }
@@ -161,7 +161,7 @@ public class SsfPendingEventStoreTests {
             em(session).flush();
             em(session).clear();
 
-            new SsfPendingEventStore(session).markDelivered(findById(session, row.getId()));
+            new SsfEventStore(session).markDelivered(findById(session, row.getId()));
             em(session).flush();
             em(session).clear();
 
@@ -190,7 +190,7 @@ public class SsfPendingEventStoreTests {
             // the exact same Instant we persisted.
             Instant nextAttempt = now.plus(Duration.ofMinutes(5)).truncatedTo(ChronoUnit.MICROS);
             String hugeError = "x".repeat(3000);
-            new SsfPendingEventStore(session)
+            new SsfEventStore(session)
                     .recordFailure(findById(session, row.getId()), nextAttempt, hugeError);
             em(session).flush();
             em(session).clear();
@@ -218,7 +218,7 @@ public class SsfPendingEventStoreTests {
             em(session).flush();
             em(session).clear();
 
-            new SsfPendingEventStore(session)
+            new SsfEventStore(session)
                     .markDeadLetter(findById(session, row.getId()), "giving up after 8 retries");
             em(session).flush();
             em(session).clear();
@@ -254,7 +254,7 @@ public class SsfPendingEventStoreTests {
             em(session).flush();
             em(session).clear();
 
-            int purged = new SsfPendingEventStore(session)
+            int purged = new SsfEventStore(session)
                     .purgeDeliveredOlderThan(now.minus(Duration.ofDays(1)));
             Assertions.assertEquals(1, purged);
 
@@ -292,7 +292,7 @@ public class SsfPendingEventStoreTests {
             em(session).flush();
             em(session).clear();
 
-            int purged = new SsfPendingEventStore(session)
+            int purged = new SsfEventStore(session)
                     .purgeDeadLetterOlderThan(now.minus(Duration.ofDays(30)));
             Assertions.assertEquals(1, purged);
 
@@ -338,7 +338,7 @@ public class SsfPendingEventStoreTests {
             em(session).flush();
             em(session).clear();
 
-            int migrated = new SsfPendingEventStore(session)
+            int migrated = new SsfEventStore(session)
                     .migrateDeliveryMethodForClient("client-migrate",
                             SsfEventEntity.DELIVERY_METHOD_POLL);
             Assertions.assertEquals(2, migrated,
@@ -377,7 +377,7 @@ public class SsfPendingEventStoreTests {
             em(session).flush();
             em(session).clear();
 
-            int migrated = new SsfPendingEventStore(session)
+            int migrated = new SsfEventStore(session)
                     .migrateDeliveryMethodForClient("client-noop",
                             SsfEventEntity.DELIVERY_METHOD_PUSH);
             Assertions.assertEquals(0, migrated,
@@ -405,7 +405,7 @@ public class SsfPendingEventStoreTests {
                 em(session).flush();
                 em(session).clear();
 
-                int deleted = new SsfPendingEventStore(session).deleteByRealm(realmId);
+                int deleted = new SsfEventStore(session).deleteByRealm(realmId);
                 Assertions.assertEquals(3, deleted,
                         "deleteByRealm must remove every row for the realm regardless of status");
 
@@ -416,7 +416,7 @@ public class SsfPendingEventStoreTests {
                         "rows from other realms must not be touched");
             });
         } finally {
-            runOnServer.run(session -> new SsfPendingEventStore(session).deleteByRealm(otherRealmId));
+            runOnServer.run(session -> new SsfEventStore(session).deleteByRealm(otherRealmId));
         }
     }
 
@@ -435,7 +435,7 @@ public class SsfPendingEventStoreTests {
             em(session).flush();
             em(session).clear();
 
-            SsfPendingEventStore store = new SsfPendingEventStore(session);
+            SsfEventStore store = new SsfEventStore(session);
             int firstBatch = store.deleteBatchByClient("client-batch", 3);
             Assertions.assertEquals(3, firstBatch,
                     "first batch must delete exactly batchSize rows");
@@ -486,7 +486,7 @@ public class SsfPendingEventStoreTests {
             em(session).flush();
             em(session).clear();
 
-            SsfPendingEventStore store = new SsfPendingEventStore(session);
+            SsfEventStore store = new SsfEventStore(session);
             int deleted = store.deleteBatchByClient("client-all", 100);
             Assertions.assertEquals(4, deleted,
                     "batched delete must remove every row for the client regardless of status");
@@ -510,7 +510,7 @@ public class SsfPendingEventStoreTests {
                 em(session).flush();
                 em(session).clear();
 
-                SsfPendingEventStore store = new SsfPendingEventStore(session);
+                SsfEventStore store = new SsfEventStore(session);
                 int firstBatch = store.deleteBatchByRealm(realmId, 2);
                 Assertions.assertEquals(2, firstBatch);
 
@@ -531,7 +531,7 @@ public class SsfPendingEventStoreTests {
                         "rows from other realms must not be touched");
             });
         } finally {
-            runOnServer.run(session -> new SsfPendingEventStore(session).deleteByRealm(otherRealmId));
+            runOnServer.run(session -> new SsfEventStore(session).deleteByRealm(otherRealmId));
         }
     }
 
@@ -539,7 +539,7 @@ public class SsfPendingEventStoreTests {
     public void deleteBatchByClient_rejectsNonPositiveBatchSize() {
 
         runOnServer.run(session -> {
-            SsfPendingEventStore store = new SsfPendingEventStore(session);
+            SsfEventStore store = new SsfEventStore(session);
             Assertions.assertThrows(IllegalArgumentException.class,
                     () -> store.deleteBatchByClient("any", 0),
                     "batch size 0 must be rejected so caller bugs don't silently loop");
@@ -569,7 +569,7 @@ public class SsfPendingEventStoreTests {
         // a small batchSize so we actually iterate rather than drain
         // in one shot.
         runOnServer.run(session -> new SsfOutboxCleanupTask(session.getKeycloakSessionFactory(),
-                SsfPendingEventStore::new,
+                SsfEventStore::new,
                 SsfOutboxCleanupTask.Scope.CLIENT,
                 "client-task",
                 5,
@@ -609,7 +609,7 @@ public class SsfPendingEventStoreTests {
         // maxBatches=2 with batchSize=3 deletes 6 rows, leaves 4 behind.
         // Verifies the safety cap doesn't spin forever on a runaway backlog.
         runOnServer.run(session -> new SsfOutboxCleanupTask(session.getKeycloakSessionFactory(),
-                SsfPendingEventStore::new,
+                SsfEventStore::new,
                 SsfOutboxCleanupTask.Scope.CLIENT,
                 "client-cap",
                 3,
@@ -642,14 +642,14 @@ public class SsfPendingEventStoreTests {
             });
 
             runOnServer.run(session -> new SsfOutboxCleanupTask(session.getKeycloakSessionFactory(),
-                    SsfPendingEventStore::new,
+                    SsfEventStore::new,
                     SsfOutboxCleanupTask.Scope.REALM,
                     realmId,
                     10,
                     SsfOutboxCleanupTask.DEFAULT_MAX_BATCHES).run());
 
             runOnServer.run(session -> {
-                int remaining = new SsfPendingEventStore(session).deleteBatchByRealm(realmId, 100);
+                int remaining = new SsfEventStore(session).deleteBatchByRealm(realmId, 100);
                 Assertions.assertEquals(0, remaining,
                         "realm-scope task must drain every client's rows in the realm");
 
@@ -662,7 +662,7 @@ public class SsfPendingEventStoreTests {
                         "rows in other realms must survive");
             });
         } finally {
-            runOnServer.run(session -> new SsfPendingEventStore(session).deleteByRealm(otherRealmId));
+            runOnServer.run(session -> new SsfEventStore(session).deleteByRealm(otherRealmId));
         }
     }
 
