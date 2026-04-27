@@ -54,6 +54,14 @@ public interface TimerProvider extends Provider {
         scheduleTask(scheduledTask, intervalMillis, scheduledTask.getTaskName());
     }
 
+    public default void scheduleTask(ScheduledTask scheduledTask, long initialDelayMillis, long intervalMillis) {
+        scheduleTask(scheduledTask, initialDelayMillis, intervalMillis, scheduledTask.getTaskName());
+    }
+
+    public default void scheduleTask(ScheduledTask scheduledTask, long initialDelayMillis, long intervalMillis, String taskName) {
+        scheduleTask(scheduledTask, intervalMillis, taskName);
+    }
+
     /**
      * Cancel task and return the details about it, so it can be eventually restored later
      *
