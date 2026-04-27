@@ -50,13 +50,13 @@ public class PollDeliveryService {
 
     protected final KeycloakSession session;
 
-    protected final SsfEventStore pendingEventStore;
+    protected final SsfEventStore eventStore;
 
     protected final SsfMetricsBinder metricsBinder;
 
-    public PollDeliveryService(KeycloakSession session, SsfEventStore pendingEventStore, SsfMetricsBinder metricsBinder) {
+    public PollDeliveryService(KeycloakSession session, SsfEventStore eventStore, SsfMetricsBinder metricsBinder) {
         this.session = session;
-        this.pendingEventStore = pendingEventStore;
+        this.eventStore = eventStore;
         this.metricsBinder = metricsBinder;
     }
 
@@ -78,7 +78,7 @@ public class PollDeliveryService {
         //    inside one request.
         List<String> ack = request.getAck();
         if (ack != null && !ack.isEmpty()) {
-            pendingEventStore.ackPendingForReceiver(receiverClient.getId(), ack);
+            eventStore.ackPendingForReceiver(receiverClient.getId(), ack);
             metricsBinder.recordPollAck(realmName, labelClientId, ack.size());
         }
 
@@ -90,14 +90,14 @@ public class PollDeliveryService {
         Map<String, Map<String, Object>> setErrs = request.getSetErrs();
         Map<String, String> errorByJti = toErrorMessages(setErrs);
         if (!errorByJti.isEmpty()) {
-            pendingEventStore.nackPendingForReceiver(receiverClient.getId(), errorByJti);
+            eventStore.nackPendingForReceiver(receiverClient.getId(), errorByJti);
             metricsBinder.recordPollNack(realmName, labelClientId, errorByJti.size());
         }
 
         // 3. Read the next batch — UPGRADE_SKIPLOCKED so concurrent
         //    pollers (e.g. multiple receiver pods on the same OAuth
         //    credentials) walk disjoint rows.
-        List<SsfEventEntity> rows = pendingEventStore.lockPendingForReceiverPoll(receiverClient.getId(), maxEvents);
+        List<SsfEventEntity> rows = eventStore.lockPendingForReceiverPoll(receiverClient.getId(), maxEvents);
         metricsBinder.recordPollServed(realmName, labelClientId, rows.size());
 
         Map<String, String> sets = new LinkedHashMap<>(rows.size());
@@ -111,7 +111,7 @@ public class PollDeliveryService {
         //    more available than what we just locked.
         boolean moreAvailable = false;
         if (rows.size() == maxEvents) {
-            long pending = pendingEventStore.countByClientStatusAndMethod(
+            long pending = eventStore.countByClientStatusAndMethod(
                     receiverClient.getId(),
                     SsfPendingEventStatus.PENDING,
                     SsfEventEntity.DELIVERY_METHOD_POLL);

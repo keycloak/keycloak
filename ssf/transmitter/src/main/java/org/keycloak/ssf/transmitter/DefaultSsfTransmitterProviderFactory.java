@@ -214,7 +214,7 @@ public class DefaultSsfTransmitterProviderFactory implements SsfTransmitterProvi
                 provider.securityEventTokenEncoder(),
                 provider.pushDeliveryService(),
                 ctx.config(),
-                ctx.pendingEventStoreFactory(),
+                ctx.eventStoreFactory(),
                 ctx.metrics(),
                 provider.subjectInclusionResolver());
     }
@@ -231,7 +231,7 @@ public class DefaultSsfTransmitterProviderFactory implements SsfTransmitterProvi
     @Override
     public PollDeliveryService createPollDelivery(SsfTransmitterProvider provider) {
         return new PollDeliveryService(provider.session(),
-                provider.context().pendingEventStore(provider.session()),
+                provider.context().eventStore(provider.session()),
                 provider.metrics());
     }
 

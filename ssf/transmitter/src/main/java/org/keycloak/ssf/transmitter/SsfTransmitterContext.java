@@ -26,20 +26,20 @@ public final class SsfTransmitterContext {
     private final SsfTransmitterConfig config;
     private final Set<String> defaultSupportedEventAliases;
     private final SsfMetricsBinder metricsBinder;
-    private final Function<KeycloakSession, SsfEventStore> pendingEventStoreFactory;
+    private final Function<KeycloakSession, SsfEventStore> eventStoreFactory;
     private final Function<KeycloakSession, String> issuerUrlFactory;
     private final SsfTransmitterServiceBuilder services;
 
     public SsfTransmitterContext(SsfTransmitterConfig config,
                                  Set<String> defaultSupportedEventAliases,
                                  SsfMetricsBinder metricsBinder,
-                                 Function<KeycloakSession, SsfEventStore> pendingEventStoreFactory,
+                                 Function<KeycloakSession, SsfEventStore> eventStoreFactory,
                                  Function<KeycloakSession, String> issuerUrlFactory,
                                  SsfTransmitterServiceBuilder services) {
         this.config = config;
         this.defaultSupportedEventAliases = defaultSupportedEventAliases;
         this.metricsBinder = metricsBinder == null ? SsfMetricsBinder.NOOP : metricsBinder;
-        this.pendingEventStoreFactory = pendingEventStoreFactory;
+        this.eventStoreFactory = eventStoreFactory;
         this.issuerUrlFactory = issuerUrlFactory;
         this.services = services;
     }
@@ -67,8 +67,8 @@ public final class SsfTransmitterContext {
      * Indirection so test subclasses can plug in a custom store
      * without overriding the entire context.
      */
-    public SsfEventStore pendingEventStore(KeycloakSession session) {
-        return pendingEventStoreFactory.apply(session);
+    public SsfEventStore eventStore(KeycloakSession session) {
+        return eventStoreFactory.apply(session);
     }
 
     /**
@@ -76,8 +76,8 @@ public final class SsfTransmitterContext {
      * {@code Function<KeycloakSession, SsfEventStore>} (e.g.
      * the dispatcher and the stream service for cascade purges).
      */
-    public Function<KeycloakSession, SsfEventStore> pendingEventStoreFactory() {
-        return pendingEventStoreFactory;
+    public Function<KeycloakSession, SsfEventStore> eventStoreFactory() {
+        return eventStoreFactory;
     }
 
     /**
