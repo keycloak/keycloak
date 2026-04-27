@@ -10,13 +10,12 @@ import org.keycloak.tests.model.UserSessionProviderOfflineTest;
 import org.keycloak.tests.model.UserSessionProviderTest;
 import org.keycloak.tests.oauth.RefreshTokenTimeoutsTest;
 import org.keycloak.tests.session.SessionTimeoutValidationTest;
+import org.keycloak.tests.sessionlimits.UserSessionLimitsTest;
 
 import org.junit.platform.suite.api.AfterSuite;
 import org.junit.platform.suite.api.BeforeSuite;
 import org.junit.platform.suite.api.SelectClasses;
 import org.junit.platform.suite.api.Suite;
-
-import org.keycloak.tests.sessionlimits.UserSessionLimitsTest;
 
 @Suite
 @SelectClasses({
