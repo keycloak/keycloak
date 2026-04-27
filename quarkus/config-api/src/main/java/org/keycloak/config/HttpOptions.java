@@ -152,8 +152,8 @@ public class HttpOptions {
 
     public static final Option<String> SHUTDOWN_TIMEOUT = new OptionBuilder<>("shutdown-timeout", String.class)
             .category(OptionCategory.HTTP)
-            .description("The shutdown period waiting for currently running HTTP requests to finish. " + DURATION_DESCRIPTION)
-            .defaultValue("1s")
+            .description("The shutdown period waiting for currently running HTTP requests to finish and distributed caches to settle. " + DURATION_DESCRIPTION)
+            .defaultValue("10s")
             .build();
 
     public static final Option<String> SHUTDOWN_DELAY = new OptionBuilder<>("shutdown-delay", String.class)
