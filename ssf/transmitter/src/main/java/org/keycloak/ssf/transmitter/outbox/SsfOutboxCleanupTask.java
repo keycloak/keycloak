@@ -8,6 +8,7 @@ import java.util.function.Function;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.ssf.transmitter.store.SsfEventStore;
 
 import org.jboss.logging.Logger;
 
@@ -55,21 +56,21 @@ public class SsfOutboxCleanupTask implements Runnable {
     }
 
     protected final KeycloakSessionFactory factory;
-    protected final Function<KeycloakSession, SsfPendingEventStore> storeFactory;
+    protected final Function<KeycloakSession, SsfEventStore> storeFactory;
     protected final Scope scope;
     protected final String key;
     protected final int batchSize;
     protected final int maxBatches;
 
     public SsfOutboxCleanupTask(KeycloakSessionFactory factory,
-                                Function<KeycloakSession, SsfPendingEventStore> storeFactory,
+                                Function<KeycloakSession, SsfEventStore> storeFactory,
                                 Scope scope,
                                 String key) {
         this(factory, storeFactory, scope, key, DEFAULT_BATCH_SIZE, DEFAULT_MAX_BATCHES);
     }
 
     public SsfOutboxCleanupTask(KeycloakSessionFactory factory,
-                                Function<KeycloakSession, SsfPendingEventStore> storeFactory,
+                                Function<KeycloakSession, SsfEventStore> storeFactory,
                                 Scope scope,
                                 String key,
                                 int batchSize,
@@ -96,7 +97,7 @@ public class SsfOutboxCleanupTask implements Runnable {
             while (iterations < maxBatches) {
                 AtomicInteger deletedInBatch = new AtomicInteger(0);
                 KeycloakModelUtils.runJobInTransaction(factory, session -> {
-                    SsfPendingEventStore store = storeFactory.apply(session);
+                    SsfEventStore store = storeFactory.apply(session);
                     int deleted = scope == Scope.CLIENT
                             ? store.deleteBatchByClient(key, batchSize)
                             : store.deleteBatchByRealm(key, batchSize);

@@ -19,6 +19,7 @@ import org.keycloak.ssf.transmitter.SsfTransmitterContext;
 import org.keycloak.ssf.transmitter.SsfTransmitterProvider;
 import org.keycloak.ssf.transmitter.delivery.push.PushDeliveryService;
 import org.keycloak.ssf.transmitter.metrics.SsfMetricsBinder;
+import org.keycloak.ssf.transmitter.store.SsfEventStore;
 import org.keycloak.ssf.transmitter.stream.StreamConfig;
 import org.keycloak.ssf.transmitter.stream.storage.client.ClientStreamStore;
 import org.keycloak.timer.ScheduledTask;
@@ -69,11 +70,11 @@ public class SsfPushOutboxDrainerTask implements ScheduledTask {
 
     /**
      * Session-scoped factory for the outbox DAO. Extension point for
-     * deployments that want to plug in a custom {@link SsfPendingEventStore}
+     * deployments that want to plug in a custom {@link SsfEventStore}
      * subclass (e.g. for instrumentation or schema overrides) — the
-     * default is {@code SsfPendingEventStore::new}.
+     * default is {@code SsfEventStore::new}.
      */
-    protected final Function<KeycloakSession, SsfPendingEventStore> pendingSsfEventStoreFactory;
+    protected final Function<KeycloakSession, SsfEventStore> pendingSsfEventStoreFactory;
 
     /**
      * Factory-scoped transmitter context — carries the transmitter
@@ -97,7 +98,7 @@ public class SsfPushOutboxDrainerTask implements ScheduledTask {
     protected final SsfMetricsBinder metricsBinder;
 
     public SsfPushOutboxDrainerTask(SsfPushOutboxDrainerTaskConfig config,
-                                    Function<KeycloakSession, SsfPendingEventStore> pendingSsfEventStoreFactory,
+                                    Function<KeycloakSession, SsfEventStore> pendingSsfEventStoreFactory,
                                     SsfTransmitterContext context,
                                     BiFunction<KeycloakSession, SsfTransmitterContext, PushDeliveryService> pushDeliveryServiceFactory,
                                     SsfMetricsBinder metricsBinder) {
@@ -123,7 +124,7 @@ public class SsfPushOutboxDrainerTask implements ScheduledTask {
         Instant tickStart = Instant.now();
         SsfMetricsBinder.DrainerOutcome tickOutcome = SsfMetricsBinder.DrainerOutcome.OK;
         try {
-            SsfPendingEventStore store = pendingSsfEventStoreFactory.apply(session);
+            SsfEventStore store = pendingSsfEventStoreFactory.apply(session);
             drain(session, store);
             // Per-receiver TTL pass first so receivers with a tighter
             // ssf.maxEventAgeSeconds shed stale rows before the broader
@@ -166,9 +167,9 @@ public class SsfPushOutboxDrainerTask implements ScheduledTask {
      * cascade hasn't run yet), the realmId is used verbatim so the
      * data point isn't silently lost.
      */
-    protected void refreshOutboxDepthSnapshot(KeycloakSession session, SsfPendingEventStore store) {
+    protected void refreshOutboxDepthSnapshot(KeycloakSession session, SsfEventStore store) {
         try {
-            Map<SsfPendingEventStore.RealmStatusKey, Long> raw = store.countByRealmAndStatus();
+            Map<SsfEventStore.RealmStatusKey, Long> raw = store.countByRealmAndStatus();
             if (raw.isEmpty()) {
                 metricsBinder.updateOutboxDepthSnapshot(java.util.Collections.emptyMap());
                 return;
@@ -177,7 +178,7 @@ public class SsfPushOutboxDrainerTask implements ScheduledTask {
             // rows per realm.
             Map<String, String> realmNameById = new HashMap<>();
             Map<SsfMetricsBinder.RealmStatus, Long> translated = new HashMap<>(raw.size());
-            for (Map.Entry<SsfPendingEventStore.RealmStatusKey, Long> entry : raw.entrySet()) {
+            for (Map.Entry<SsfEventStore.RealmStatusKey, Long> entry : raw.entrySet()) {
                 String realmId = entry.getKey().realmId();
                 String realmLabel = realmNameById.computeIfAbsent(realmId, id -> {
                     try {
@@ -198,7 +199,7 @@ public class SsfPushOutboxDrainerTask implements ScheduledTask {
         }
     }
 
-    protected void drain(KeycloakSession session, SsfPendingEventStore store) {
+    protected void drain(KeycloakSession session, SsfEventStore store) {
         List<SsfEventEntity> due = store.lockDueForPush(batchSize);
         if (due.isEmpty()) {
             return;
@@ -210,7 +211,7 @@ public class SsfPushOutboxDrainerTask implements ScheduledTask {
         }
     }
 
-    protected void processPendingEvent(KeycloakSession session, SsfPendingEventStore store, SsfEventEntity row) {
+    protected void processPendingEvent(KeycloakSession session, SsfEventStore store, SsfEventEntity row) {
         Instant rowStart = Instant.now();
         // Resolve the realm + receiver client the row targets. The row
         // may outlive the client (e.g. admin deleted the client while a
@@ -326,11 +327,11 @@ public class SsfPushOutboxDrainerTask implements ScheduledTask {
      * retention windows.
      *
      * <p>Bounded by the distinct (realmId, clientId) pairs returned from
-     * {@link SsfPendingEventStore#findRealmClientPairsForPurgeScan},
+     * {@link SsfEventStore#findRealmClientPairsForPurgeScan},
      * so it scales with the number of <em>active</em> receivers, not
      * the total client count in the realm.
      */
-    protected void purgeStalePerClient(KeycloakSession session, SsfPendingEventStore store) {
+    protected void purgeStalePerClient(KeycloakSession session, SsfEventStore store) {
         List<Object[]> pairs = store.findRealmClientPairsForPurgeScan();
         if (pairs.isEmpty()) {
             return;
@@ -471,7 +472,7 @@ public class SsfPushOutboxDrainerTask implements ScheduledTask {
         }
     }
 
-    protected void purgeDeliveredOlderThanRetention(SsfPendingEventStore store) {
+    protected void purgeDeliveredOlderThanRetention(SsfEventStore store) {
         if (deliveredRetention == null || deliveredRetention.isZero() || deliveredRetention.isNegative()) {
             return;
         }
@@ -479,7 +480,7 @@ public class SsfPushOutboxDrainerTask implements ScheduledTask {
         store.purgeDeliveredOlderThan(cutoff);
     }
 
-    protected void purgeDeadLetterOlderThanRetention(SsfPendingEventStore store) {
+    protected void purgeDeadLetterOlderThanRetention(SsfEventStore store) {
         if (deadLetterRetention == null || deadLetterRetention.isZero() || deadLetterRetention.isNegative()) {
             return;
         }

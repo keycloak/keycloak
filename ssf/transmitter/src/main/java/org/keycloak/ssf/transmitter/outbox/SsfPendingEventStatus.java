@@ -16,7 +16,7 @@ package org.keycloak.ssf.transmitter.outbox;
  * <p>Per the SSF spec a {@code disabled} stream MUST NOT transmit AND
  * "will not hold any events for later transmission", so the in-flight
  * backlog is discarded on the transition rather than parked — see
- * {@code SsfPendingEventStore.deleteUndeliveredForClient}. DELIVERED
+ * {@code SsfEventStore.deleteUndeliveredForClient}. DELIVERED
  * and DEAD_LETTER rows are kept (jti dedup / post-failure audit).
  *
  * <p>Rows in {@link #DELIVERED} are kept briefly for audit/idempotency

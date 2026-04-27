@@ -37,7 +37,7 @@ import jakarta.persistence.UniqueConstraint;
                 // Dedup: the same SET is never enqueued twice for the same
                 // receiver client. The application-level dedup is the
                 // explicit findByClientAndJti lookup in
-                // SsfPendingEventStore.enqueuePending*; this DB-level
+                // SsfEventStore.enqueuePending*; this DB-level
                 // unique is the safety net.
                 //
                 // CREATED_AT is part of the constraint solely so PostgreSQL /

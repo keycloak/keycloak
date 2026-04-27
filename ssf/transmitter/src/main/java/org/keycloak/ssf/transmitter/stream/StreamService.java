@@ -31,7 +31,7 @@ import org.keycloak.ssf.transmitter.event.SsfUserSubjectFormats;
 import org.keycloak.ssf.transmitter.metadata.TransmitterMetadataService;
 import org.keycloak.ssf.transmitter.metrics.SsfMetricsBinder;
 import org.keycloak.ssf.transmitter.outbox.SsfEventEntity;
-import org.keycloak.ssf.transmitter.outbox.SsfPendingEventStore;
+import org.keycloak.ssf.transmitter.store.SsfEventStore;
 import org.keycloak.ssf.transmitter.stream.storage.SsfStreamStore;
 import org.keycloak.ssf.transmitter.stream.storage.client.ClientStreamStore;
 import org.keycloak.ssf.transmitter.support.SsfTransmitterUrls;
@@ -71,7 +71,7 @@ public class StreamService {
 
     protected final StreamVerificationService streamVerificationService;
 
-    protected final Function<KeycloakSession, SsfPendingEventStore> pendingSsfEventStoreFactory;
+    protected final Function<KeycloakSession, SsfEventStore> pendingSsfEventStoreFactory;
 
     public StreamService(KeycloakSession session,
                          SsfTransmitterProvider transmitterProvider,
@@ -79,7 +79,7 @@ public class StreamService {
                          TransmitterMetadataService transmitterService,
                          StreamVerificationService streamVerificationService,
                          Function<KeycloakSession,
-                         SsfPendingEventStore> pendingSsfEventStoreFactory) {
+                         SsfEventStore> pendingSsfEventStoreFactory) {
         this.session = session;
         this.transmitterProvider = transmitterProvider;
         this.streamStore = streamStore;
@@ -827,7 +827,7 @@ public class StreamService {
             case PUSH, RISC_PUSH -> SsfEventEntity.DELIVERY_METHOD_PUSH;
             case POLL, RISC_POLL -> SsfEventEntity.DELIVERY_METHOD_POLL;
         };
-        SsfPendingEventStore pendingEventStore = pendingSsfEventStoreFactory.apply(session);
+        SsfEventStore pendingEventStore = pendingSsfEventStoreFactory.apply(session);
         int migrated = pendingEventStore.migrateDeliveryMethodForClient(
                 streamConfig.getClientId(), newMethodColumn);
         if (migrated > 0) {
@@ -918,7 +918,7 @@ public class StreamService {
         // strand a legitimate row.
         String clientId = existingStream.getClientId();
         if (clientId != null) {
-            SsfPendingEventStore pendingEventStore = pendingSsfEventStoreFactory.apply(session);
+            SsfEventStore pendingEventStore = pendingSsfEventStoreFactory.apply(session);
             int purged = (int) pendingEventStore.deleteByClient(clientId);
             if (purged > 0) {
                 log.debugf("Stream delete cascade: purged %d outbox rows for client %s", purged, clientId);
@@ -1014,7 +1014,7 @@ public class StreamService {
         //                        any HELD rows; harmless.
         String newStatusCode = streamStatus.getStatus();
         String oldStatusCode = currentStreamStatus.getStatus();
-        SsfPendingEventStore pendingStore = pendingSsfEventStoreFactory.apply(session);
+        SsfEventStore pendingStore = pendingSsfEventStoreFactory.apply(session);
         try {
             if (StreamStatusValue.disabled.getStatusCode().equals(newStatusCode)) {
                 pendingStore.deleteUndeliveredForClient(stream.getClientId());

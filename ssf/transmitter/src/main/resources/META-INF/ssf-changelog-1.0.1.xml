@@ -14,7 +14,7 @@
     neither of which includes a partition-friendly column. Promoting both
     to include `created_at` is backwards-compatible (`id` remains UUID-
     unique on its own; the explicit dedup lookup in
-    `SsfPendingEventStore.enqueuePending*` still does the (client_id, jti)
+    `SsfEventStore.enqueuePending*` still does the (client_id, jti)
     check before insert) and does not break dialects that do not partition
     (H2, older Oracle).
 -->
@@ -41,7 +41,7 @@
         <!--
             Same rationale for the dedup unique constraint. The application-
             level dedup is the explicit findByClientAndJti lookup in
-            SsfPendingEventStore.enqueuePending*; the DB-level unique is the
+            SsfEventStore.enqueuePending*; the DB-level unique is the
             safety net. Adding created_at lets the safety-net constraint
             survive partitioning at the cost of theoretically allowing the
             same (client_id, jti) twice if their created_at differ — which

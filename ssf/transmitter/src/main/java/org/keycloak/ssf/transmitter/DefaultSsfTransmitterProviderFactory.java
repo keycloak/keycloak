@@ -30,7 +30,7 @@ import org.keycloak.ssf.transmitter.event.SecurityEventTokenMapper;
 import org.keycloak.ssf.transmitter.metadata.TransmitterMetadataService;
 import org.keycloak.ssf.transmitter.metrics.SsfMetricsBinder;
 import org.keycloak.ssf.transmitter.outbox.SsfOutboxCleanupTask;
-import org.keycloak.ssf.transmitter.outbox.SsfPendingEventStore;
+import org.keycloak.ssf.transmitter.store.SsfEventStore;
 import org.keycloak.ssf.transmitter.outbox.SsfPushOutboxBackoff;
 import org.keycloak.ssf.transmitter.outbox.SsfPushOutboxDrainerTask;
 import org.keycloak.ssf.transmitter.outbox.SsfPushOutboxDrainerTaskConfig;
@@ -332,12 +332,12 @@ public class DefaultSsfTransmitterProviderFactory implements SsfTransmitterProvi
 
     /**
      * Session-scoped factory for the outbox DAO. Extension point for
-     * deployments that want to plug in a custom {@link SsfPendingEventStore}
+     * deployments that want to plug in a custom {@link SsfEventStore}
      * subclass (e.g. for instrumentation or schema overrides) — the
-     * default is {@code SsfPendingEventStore::new}.
+     * default is {@code SsfEventStore::new}.
      */
-    protected SsfPendingEventStore createPendingEventStore(KeycloakSession session) {
-        return new SsfPendingEventStore(session);
+    protected SsfEventStore createPendingEventStore(KeycloakSession session) {
+        return new SsfEventStore(session);
     }
 
     protected String createSsfIssuerUrl(KeycloakSession session) {

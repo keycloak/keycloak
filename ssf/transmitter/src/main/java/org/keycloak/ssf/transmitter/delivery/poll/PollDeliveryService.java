@@ -9,7 +9,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.ssf.transmitter.metrics.SsfMetricsBinder;
 import org.keycloak.ssf.transmitter.outbox.SsfEventEntity;
 import org.keycloak.ssf.transmitter.outbox.SsfPendingEventStatus;
-import org.keycloak.ssf.transmitter.outbox.SsfPendingEventStore;
+import org.keycloak.ssf.transmitter.store.SsfEventStore;
 
 import org.jboss.logging.Logger;
 
@@ -50,11 +50,11 @@ public class PollDeliveryService {
 
     protected final KeycloakSession session;
 
-    protected final SsfPendingEventStore pendingEventStore;
+    protected final SsfEventStore pendingEventStore;
 
     protected final SsfMetricsBinder metricsBinder;
 
-    public PollDeliveryService(KeycloakSession session, SsfPendingEventStore pendingEventStore, SsfMetricsBinder metricsBinder) {
+    public PollDeliveryService(KeycloakSession session, SsfEventStore pendingEventStore, SsfMetricsBinder metricsBinder) {
         this.session = session;
         this.pendingEventStore = pendingEventStore;
         this.metricsBinder = metricsBinder;

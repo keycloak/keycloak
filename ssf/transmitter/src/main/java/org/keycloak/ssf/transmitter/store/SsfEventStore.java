@@ -1,4 +1,4 @@
-package org.keycloak.ssf.transmitter.outbox;
+package org.keycloak.ssf.transmitter.store;
 
 import java.time.Instant;
 import java.util.Collection;
@@ -16,6 +16,8 @@ import jakarta.persistence.TypedQuery;
 
 import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.ssf.transmitter.outbox.SsfEventEntity;
+import org.keycloak.ssf.transmitter.outbox.SsfPendingEventStatus;
 
 import org.hibernate.LockMode;
 import org.hibernate.query.SelectionQuery;
@@ -27,13 +29,13 @@ import org.jboss.logging.Logger;
  * {@link KeycloakSession} transaction, which Keycloak wraps around
  * request handlers and scheduled-task executions.
  */
-public class SsfPendingEventStore {
+public class SsfEventStore {
 
-    private static final Logger log = Logger.getLogger(SsfPendingEventStore.class);
+    private static final Logger log = Logger.getLogger(SsfEventStore.class);
 
     protected final KeycloakSession session;
 
-    public SsfPendingEventStore(KeycloakSession session) {
+    public SsfEventStore(KeycloakSession session) {
         this.session = session;
     }
 
