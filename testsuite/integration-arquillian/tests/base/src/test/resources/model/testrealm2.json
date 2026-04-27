@@ -1,0 +1,87 @@
+{
+    "realm": "demo-delete",
+    "enabled": true,
+    "accessTokenLifespan": 3000,
+    "accessCodeLifespan": 10,
+    "accessCodeLifespanUserAction": 6000,
+    "sslRequired": "external",
+    "registrationAllowed": false,
+    "requiredCredentials": [ "password" ],
+    "users" : [
+        {
+            "username" : "bburke@redhat.com",
+            "enabled": true,
+            "email" : "bburke@redhat.com",
+            "firstName": "Bill",
+            "lastName": "Burke",
+            "credentials" : [
+                { "type" : "password",
+                  "value" : "password" }
+            ],
+            "realmRoles": ["user"],
+            "applicationRoles": {
+                "account": [ "manage-account" ]
+            }
+
+        }
+    ],
+    "roles" : {
+        "realm" : [
+            {
+                "name": "user",
+                "description": "User privileges"
+            },
+            {
+                "name": "admin",
+                "description": "Administrator privileges"
+            }
+        ]
+    },
+    "scopeMappings": [
+        {
+            "client": "third-party",
+            "roles": ["user"]
+        },
+        {
+            "client": "customer-portal",
+            "roles": ["user"]
+        },
+        {
+            "client": "product-portal",
+            "roles": ["user"]
+        }
+
+    ],
+    "applications": [
+        {
+            "name": "customer-portal",
+            "enabled": true,
+            "adminUrl": "http://localhost:8080/customer-portal",
+            "redirectUris": [
+                "http://localhost:8080/customer-portal/*"
+            ],
+            "secret": "password"
+        },
+        {
+            "name": "product-portal",
+            "enabled": true,
+            "adminUrl": "http://localhost:8080/product-portal",
+            "redirectUris": [
+                "http://localhost:8080/product-portal/*"
+            ],
+            "secret": "password"
+        }
+    ],
+    "oauthClients": [
+        {
+            "name": "third-party",
+            "enabled": true,
+            "redirectUris": [
+                "http://localhost:8080/oauth-client/*",
+                "http://localhost:8080/oauth-client-cdi/*"
+            ],
+            "secret": "password"
+        }
+    ]
+
+}

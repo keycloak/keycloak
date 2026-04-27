@@ -1,0 +1,180 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!--
+  ~ * Copyright 2024 Red Hat, Inc. and/or its affiliates
+  ~ * and other contributors as indicated by the @author tags.
+  ~ *
+  ~ * Licensed under the Apache License, Version 2.0 (the "License");
+  ~ * you may not use this file except in compliance with the License.
+  ~ * You may obtain a copy of the License at
+  ~ *
+  ~ * http://www.apache.org/licenses/LICENSE-2.0
+  ~ *
+  ~ * Unless required by applicable law or agreed to in writing, software
+  ~ * distributed under the License is distributed on an "AS IS" BASIS,
+  ~ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ * See the License for the specific language governing permissions and
+  ~ * limitations under the License.
+  -->
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet author="keycloak" id="25.0.0-28265-tables">
+        <addColumn tableName="OFFLINE_USER_SESSION">
+            <!-- length(broker_session_id) + length(realm_id) <= 1700 for mssql -->
+            <column name="BROKER_SESSION_ID" type="VARCHAR(1024)" />
+            <column name="VERSION" type="INT" defaultValueNumeric="0" />
+        </addColumn>
+        <addColumn tableName="OFFLINE_CLIENT_SESSION">
+            <column name="VERSION" type="INT" defaultValueNumeric="0" />
+        </addColumn>
+        <modifySql dbms="mssql">
+            <!-- ensure that existing rows also get the new values on mssql -->
+            <!-- https://github.com/liquibase/liquibase/issues/4644 -->
+            <replace replace="DEFAULT 0" with="DEFAULT 0 WITH VALUES" />
+        </modifySql>
+    </changeSet>
+    <changeSet author="keycloak" id="25.0.0-28265-index-creation">
+        <createIndex tableName="OFFLINE_USER_SESSION" indexName="IDX_OFFLINE_USS_BY_LAST_SESSION_REFRESH" >
+            <!-- optimize this index for range queries for expire sessions -->
+            <!-- it should also distribute hot segments across realms and online/offline -->
+            <column name="REALM_ID" />
+            <column name="OFFLINE_FLAG" />
+            <column name="LAST_SESSION_REFRESH" />
+        </createIndex>
+    </changeSet>
+    <changeSet author="keycloak" id="25.0.0-28265-index-cleanup-uss-createdon">
+        <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
+            <indexExists tableName="OFFLINE_USER_SESSION" indexName="IDX_OFFLINE_USS_CREATEDON" />
+        </preConditions>
+        <dropIndex tableName="OFFLINE_USER_SESSION" indexName="IDX_OFFLINE_USS_CREATEDON" />
+    </changeSet>
+    <changeSet author="keycloak" id="25.0.0-28265-index-cleanup-uss-preload">
+        <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
+            <indexExists tableName="OFFLINE_USER_SESSION" indexName="IDX_OFFLINE_USS_PRELOAD" />
+        </preConditions>
+        <dropIndex tableName="OFFLINE_USER_SESSION" indexName="IDX_OFFLINE_USS_PRELOAD" />
+    </changeSet>
+    <changeSet author="keycloak" id="25.0.0-28265-index-cleanup-uss-by-usersess">
+        <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
+            <indexExists tableName="OFFLINE_USER_SESSION" indexName="IDX_OFFLINE_USS_BY_USERSESS" />
+        </preConditions>
+        <dropIndex tableName="OFFLINE_USER_SESSION" indexName="IDX_OFFLINE_USS_BY_USERSESS" />
+    </changeSet>
+    <changeSet author="keycloak" id="25.0.0-28265-index-cleanup-css-preload">
+        <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
+            <indexExists tableName="OFFLINE_CLIENT_SESSION" indexName="IDX_OFFLINE_CSS_PRELOAD" />
+        </preConditions>
+        <dropIndex tableName="OFFLINE_CLIENT_SESSION" indexName="IDX_OFFLINE_CSS_PRELOAD" />
+    </changeSet>
+    <changeSet author="keycloak" id="25.0.0-28265-index-2-mysql">
+        <preConditions onSqlOutput="TEST" onFail="MARK_RAN">
+            <or>
+                <dbms type="mysql"/>
+                <dbms type="mariadb"/>
+            </or>
+        </preConditions>
+        <createIndex tableName="OFFLINE_USER_SESSION" indexName="IDX_OFFLINE_USS_BY_BROKER_SESSION_ID" >
+            <!-- This is not unique as we can't guarantee if broker sessions are unique across user sessions, and the table might include expired entries.
+            At least we would need to add the offline flag -->
+            <column name="BROKER_SESSION_ID(255)" valueComputed="BROKER_SESSION_ID(255)" />
+            <column name="REALM_ID" />
+        </createIndex>
+    </changeSet>
+    <changeSet author="keycloak" id="25.0.0-28265-index-2-not-mysql">
+        <preConditions onSqlOutput="TEST" onFail="MARK_RAN">
+            <not>
+                <or>
+                    <dbms type="mysql"/>
+                    <dbms type="mariadb"/>
+                </or>
+            </not>
+        </preConditions>
+        <createIndex tableName="OFFLINE_USER_SESSION" indexName="IDX_OFFLINE_USS_BY_BROKER_SESSION_ID" >
+            <!-- This is not unique as we can't guarantee if broker sessions are unique across user sessions, and the table might include expired entries.
+            At least we would need to add the offline flag -->
+            <column name="BROKER_SESSION_ID" />
+            <column name="REALM_ID" />
+        </createIndex>
+    </changeSet>
+
+    <changeSet author="keycloak" id="25.0.0-org">
+        <createTable tableName="ORG">
+            <column name="ID" type="VARCHAR(255)">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="ENABLED" type="BOOLEAN">
+                <constraints nullable="false"/>
+            </column>
+            <column name="REALM_ID" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="GROUP_ID" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="NAME" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="DESCRIPTION" type="VARCHAR(4000)"/>
+        </createTable>
+        <addUniqueConstraint tableName="ORG" columnNames="REALM_ID, NAME" constraintName="UK_ORG_NAME"/>
+        <addUniqueConstraint tableName="ORG" columnNames="GROUP_ID" constraintName="UK_ORG_GROUP"/>
+
+        <createTable tableName="ORG_DOMAIN">
+            <column name="ID" type="VARCHAR(36)">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="NAME" type="VARCHAR(255)">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="VERIFIED" type="boolean">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ORG_ID" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet author="keycloak" id="unique-consentuser">
+        <preConditions onSqlOutput="TEST" onFail="MARK_RAN">
+            <dbms type="postgresql"/>
+        </preConditions>
+        <customChange class="org.keycloak.connections.jpa.updater.liquibase.custom.JpaUpdate25_0_0_ConsentConstraints"/>
+        <dropUniqueConstraint tableName="USER_CONSENT" constraintName="UK_JKUWUVD56ONTGSUHOGM8UEWRT"/>
+        <addUniqueConstraint columnNames="CLIENT_ID, USER_ID" constraintName="UK_LOCAL_CONSENT" tableName="USER_CONSENT"/>
+        <addUniqueConstraint columnNames="CLIENT_STORAGE_PROVIDER, EXTERNAL_CLIENT_ID, USER_ID" constraintName="UK_EXTERNAL_CONSENT" tableName="USER_CONSENT"/>
+    </changeSet>
+
+    <changeSet author="keycloak" id="unique-consentuser-edb-migration">
+        <preConditions onSqlOutput="TEST" onFail="MARK_RAN">
+            <dbms type="postgresql"/>
+            <changeSetExecuted id="unique-consentuser" author="keycloak" changeLogFile="META-INF/jpa-changelog-25.0.0.xml" />
+            <uniqueConstraintExists tableName="USER_CONSENT" constraintName="UK_JKUWUVD56ONTGSUHOGM8UEWRT"/>
+        </preConditions>
+        <customChange class="org.keycloak.connections.jpa.updater.liquibase.custom.JpaUpdate25_0_0_ConsentConstraints"/>
+        <dropUniqueConstraint tableName="USER_CONSENT" constraintName="UK_JKUWUVD56ONTGSUHOGM8UEWRT"/>
+        <addUniqueConstraint columnNames="CLIENT_ID, USER_ID" constraintName="UK_LOCAL_CONSENT" tableName="USER_CONSENT"/>
+        <addUniqueConstraint columnNames="CLIENT_STORAGE_PROVIDER, EXTERNAL_CLIENT_ID, USER_ID" constraintName="UK_EXTERNAL_CONSENT" tableName="USER_CONSENT"/>
+    </changeSet>
+
+    <changeSet author="keycloak" id="unique-consentuser-mysql">
+        <preConditions onSqlOutput="TEST" onFail="MARK_RAN">
+            <or>
+                <dbms type="mysql"/>
+                <dbms type="mariadb"/>
+            </or>
+        </preConditions>
+        <customChange class="org.keycloak.connections.jpa.updater.liquibase.custom.JpaUpdate25_0_0_MySQL_ConsentConstraints"/>
+        <dropUniqueConstraint tableName="USER_CONSENT" constraintName="UK_JKUWUVD56ONTGSUHOGM8UEWRT"/>
+        <addUniqueConstraint columnNames="CLIENT_ID, USER_ID" constraintName="UK_LOCAL_CONSENT" tableName="USER_CONSENT"/>
+        <addUniqueConstraint columnNames="CLIENT_STORAGE_PROVIDER, EXTERNAL_CLIENT_ID, USER_ID" constraintName="UK_EXTERNAL_CONSENT" tableName="USER_CONSENT"/>
+    </changeSet>
+
+    <changeSet author="keycloak" id="25.0.0-28861-index-creation">
+        <createIndex tableName="RESOURCE_SERVER_PERM_TICKET" indexName="IDX_PERM_TICKET_REQUESTER">
+            <column name="REQUESTER"/>
+        </createIndex>
+        <createIndex tableName="RESOURCE_SERVER_PERM_TICKET" indexName="IDX_PERM_TICKET_OWNER">
+            <column name="OWNER"/>
+        </createIndex>
+    </changeSet>
+</databaseChangeLog>

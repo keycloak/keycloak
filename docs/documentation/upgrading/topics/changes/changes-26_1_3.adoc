@@ -1,0 +1,11 @@
+== Notable changes
+
+Notable changes where an internal behavior changed to prevent common misconfigurations, fix bugs or simplify running {project_name}.
+
+=== Send Reset Email force login again for federated users after reset credentials
+
+Previously the reset credentials flow (*forgot password* feature) kept the user logged in after the reset credentials if the same authentication session (same browser) was used. For federated user providers this behavior can be a security issue. Imagine a provider implementation that detects the user as *enabled*, performs the password change successfully but the validation of the user password fails for some reason. In this scenario the reset credentials flow allowed a user to be logged in after the successful password change that would have not been allowed to login using the normal browser flow. This scenario is not a common case but should be avoided by default.
+
+For this reason now the authenticator `reset-credential-email` (*Send Reset Email*) has a new configuration option called `force-login` (*Force login after reset*) with values `true` (always force the login), `false` (previous behavior that keeps the user logged in if the same authentication session is used), and `only-federated` (default value that forces federated users to authenticate again and keeps previous behavior for users stored in {project_name}'s internal database).
+
+For more information about changing this option, see link:{adminguide_link}#enabling-forgot-password[Enable forgot password].

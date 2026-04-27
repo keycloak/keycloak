@@ -1,0 +1,281 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!--
+~ Copyright 2022 Red Hat, Inc. and/or its affiliates
+~ and other contributors as indicated by the @author tags.
+~
+~ Licensed under the Apache License, Version 2.0 (the "License");
+~ you may not use this file except in compliance with the License.
+~ You may obtain a copy of the License at
+~
+~ http://www.apache.org/licenses/LICENSE-2.0
+~
+~ Unless required by applicable law or agreed to in writing, software
+~ distributed under the License is distributed on an "AS IS" BASIS,
+~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+~ See the License for the specific language governing permissions and
+~ limitations under the License.
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <parent>
+        <groupId>org.keycloak</groupId>
+        <artifactId>galleon-feature-packs-parent</artifactId>
+        <version>999.0.0-SNAPSHOT</version>
+    </parent>
+
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>org.keycloak</groupId>
+    <artifactId>keycloak-saml-adapter-galleon-pack</artifactId>
+
+    <name>Keycloak Galleon Feature Pack: SAML Adapter</name>
+    <description>Keycloak Galleon Feature Pack: SAML Adapter</description>
+    <packaging>pom</packaging>
+
+    <properties>
+        <feature-pack.resources.directory>${basedir}/../../saml-adapters/wildfly-adapter/wildfly-jakarta-modules/src/main/resources</feature-pack.resources.directory>
+        <license.directory>${project.build.directory}/resources/packages/docs.licenses/content/docs/licenses</license.directory>
+    </properties>
+    <dependencies>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-adapter-spi</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-common</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-core</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-crypto-default</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-jboss-adapter-core</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-saml-adapter-api-public</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-saml-adapter-core</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-saml-core</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-saml-core-public</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-saml-wildfly-elytron-adapter</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-saml-wildfly-subsystem</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>${ee.maven.groupId}</groupId>
+            <artifactId>wildfly-ee-galleon-pack</artifactId>
+            <version>${wildfly.version}</version>
+            <type>zip</type>
+            <scope>provided</scope>
+        </dependency>
+    </dependencies>
+
+
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-resources-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>copy-resources</id>
+                        <phase>process-resources</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${basedir}/target/resources</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>${basedir}/src/main/resources</directory>
+                                </resource>
+                                <resource>
+                                    <directory>${basedir}/src/main/layers/${saml.adapter.galleon.pack.metadata.dir}</directory>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.wildfly.galleon-plugins</groupId>
+                <artifactId>wildfly-galleon-maven-plugin</artifactId>
+                <version>${org.wildfly.galleon-plugins.version}</version>
+                <dependencies>
+                    <!--
+                        feature-spec-gen uses wildfly-embedded to generate the feature specs, hence the designated
+                        wildfly-embedded version must match the pack one
+                    -->
+                    <dependency>
+                        <groupId>org.wildfly.core</groupId>
+                        <artifactId>wildfly-embedded</artifactId>
+                        <version>${wildfly.core.version}</version>
+                    </dependency>
+                    <!-- If you add a dependency on wildfly-embedded you need to bring your own transitives -->
+                    <dependency>
+                        <groupId>org.wildfly.common</groupId>
+                        <artifactId>wildfly-common</artifactId>
+                        <version>${wildfly.common.wildfly.aligned.version}</version>
+                    </dependency>
+                </dependencies>
+                <executions>
+                    <execution>
+                        <id>keycloak-saml-adapter-galleon-pack-build</id>
+                        <goals>
+                            <goal>build-feature-pack</goal>
+                        </goals>
+                        <phase>compile</phase>
+                        <configuration>
+                            <generate-channel-manifest>true</generate-channel-manifest>
+                            <add-feature-packs-as-required-manifests>false</add-feature-packs-as-required-manifests>
+                            <fork-embedded>false</fork-embedded>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.wildfly.maven.plugins</groupId>
+                <artifactId>licenses-plugin</artifactId>
+                <version>${org.wildfly.maven.plugins.licenses-plugin.version}</version>
+                <inherited>false</inherited>
+                <executions>
+                    <execution>
+                        <id>update-licenses-xml</id>
+                        <goals>
+                            <goal>insert-versions</goal>
+                        </goals>
+                        <phase>process-resources</phase>
+                        <configuration>
+                            <generateVersionProperty>true</generateVersionProperty>
+                            <sortByGroupIdAndArtifactId>true</sortByGroupIdAndArtifactId>
+                            <licensesConfigFiles>
+                                <licensesConfigFile>${basedir}/target/resources/license/licenses.xml</licensesConfigFile>
+                            </licensesConfigFiles>
+                            <licensesOutputFile>${license.directory}/keycloak-saml-adapter-galleon-pack-licenses.xml</licensesOutputFile>
+                            <excludedArtifacts>wildfly-common-ee-dependency-management|wildfly-ee-galleon-pack|wildfly-legacy-ee-bom|wildfly-standard-ee-bom\z</excludedArtifacts>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+    <profiles>
+        <profile>
+            <id>eap8-adapters</id>
+            <activation>
+                <property>
+                    <name>eap8-adapters</name>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.wildfly.galleon-plugins</groupId>
+                        <artifactId>wildfly-galleon-maven-plugin</artifactId>
+                        <configuration>
+                            <wildfly-channel-resolution-mode>REQUIRED</wildfly-channel-resolution-mode>
+                            <config-file>wildfly-feature-pack-build-eap.xml</config-file>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
+</project>

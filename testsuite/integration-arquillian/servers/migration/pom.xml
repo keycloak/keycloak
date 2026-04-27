@@ -1,0 +1,153 @@
+<?xml version="1.0"?>
+<!--
+~ Copyright 2022 Red Hat, Inc. and/or its affiliates
+~ and other contributors as indicated by the @author tags.
+~
+~ Licensed under the Apache License, Version 2.0 (the "License");
+~ you may not use this file except in compliance with the License.
+~ You may obtain a copy of the License at
+~
+~ http://www.apache.org/licenses/LICENSE-2.0
+~
+~ Unless required by applicable law or agreed to in writing, software
+~ distributed under the License is distributed on an "AS IS" BASIS,
+~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+~ See the License for the specific language governing permissions and
+~ limitations under the License.
+-->
+
+<project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+    <parent>
+        <groupId>org.keycloak.testsuite</groupId>
+        <artifactId>integration-arquillian-servers</artifactId>
+        <version>999.0.0-SNAPSHOT</version>
+    </parent>
+    <modelVersion>4.0.0</modelVersion>
+
+    <artifactId>integration-arquillian-migration-server</artifactId>
+    <packaging>pom</packaging>
+
+    <name>Migration Server Quarkus</name>
+
+    <properties>
+        <auth.server.output.directory>auth-server-migration</auth.server.output.directory>
+        <auth.server.home>${project.build.directory}/unpacked/keycloak-${migrated.auth.server.version}
+        </auth.server.home>
+        <jdbc.driver.tmp.dir>${project.build.directory}/jdbc-driver</jdbc.driver.tmp.dir>
+    </properties>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-enforcer-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>enforce-properties</id>
+                        <goals>
+                            <goal>enforce</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                <requireProperty>
+                                    <property>migrated.auth.server.version</property>
+                                    <message>Property "migrated.auth.server.version" is required for this build. It should be one of supported versions. See base/src/test/resources/migration-test/</message>
+                                </requireProperty>
+                                <requireProperty>
+                                    <property>keycloak.connectionsJpa.user</property>
+                                </requireProperty>
+                                <requireProperty>
+                                    <property>keycloak.connectionsJpa.password</property>
+                                </requireProperty>
+                                <requireProperty>
+                                    <property>keycloak.connectionsJpa.url</property>
+                                    <regex>((?!h2).)*</regex>
+                                    <regexMessage>"keycloak.connectionsJpa.url" property is not set correctly: "${keycloak.connectionsJpa.url}". Migration is not supported for default h2 values!</regexMessage>
+                                </requireProperty>
+                                <requireProperty>
+                                    <property>jdbc.mvn.groupId</property>
+                                    <regex>((?!com.h2database).)*</regex>
+                                    <regexMessage>"jdbc.mvn.groupId" property is not set correctly: "${jdbc.mvn.groupId}". Migration is not supported for default h2 values!</regexMessage>
+                                </requireProperty>
+                                <requireProperty>
+                                    <property>jdbc.mvn.artifactId</property>
+                                    <regex>((?!h2).)*</regex>
+                                    <regexMessage>"jdbc.mvn.artifactId" property is not set correctly: "${jdbc.mvn.artifactId}". Migration is not supported for default h2 values!</regexMessage>
+                                </requireProperty>
+                                <requireProperty>
+                                    <property>jdbc.mvn.version</property>
+                                    <regex>((?!${h2.version}).)*</regex>
+                                    <regexMessage>"jdbc.mvn.version" property is not set correctly: "${jdbc.mvn.version}". Migration is not supported for default h2 values!</regexMessage>
+                                </requireProperty>
+
+                            </rules>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>unpack-server</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>unpack</goal>
+                        </goals>
+                        <configuration>
+                            <artifactItems>
+                                <artifactItem>
+                                    <groupId>org.keycloak</groupId>
+                                    <artifactId>keycloak-quarkus-dist</artifactId>
+                                    <version>${migrated.auth.server.version}</version>
+                                    <type>zip</type>
+                                    <outputDirectory>${project.build.directory}/unpacked</outputDirectory>
+                                </artifactItem>
+                            </artifactItems>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>jdbc-driver</id>
+                        <phase>process-resources</phase>
+                        <goals>
+                            <goal>copy</goal>
+                        </goals>
+                        <configuration>
+                            <artifactItems>
+                                <artifactItem>
+                                    <groupId>${jdbc.mvn.groupId}</groupId>
+                                    <artifactId>${jdbc.mvn.artifactId}</artifactId>
+                                    <version>${jdbc.mvn.version}</version>
+                                    <type>jar</type>
+                                </artifactItem>
+                            </artifactItems>
+                            <outputDirectory>${jdbc.driver.tmp.dir}</outputDirectory>
+                            <overWriteIfNewer>true</overWriteIfNewer>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>create-zip</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                        <configuration>
+                            <descriptors>
+                                <descriptor>assembly.xml</descriptor>
+                            </descriptors>
+                            <appendAssemblyId>false</appendAssemblyId>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+</project>

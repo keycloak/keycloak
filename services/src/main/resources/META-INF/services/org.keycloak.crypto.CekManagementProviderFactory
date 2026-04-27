@@ -1,0 +1,7 @@
+org.keycloak.crypto.EcdhEsCekManagementProviderFactory
+org.keycloak.crypto.EcdhEsA128KwCekManagementProviderFactory
+org.keycloak.crypto.EcdhEsA192KwCekManagementProviderFactory
+org.keycloak.crypto.EcdhEsA256KwCekManagementProviderFactory
+org.keycloak.crypto.RsaesPkcs1CekManagementProviderFactory
+org.keycloak.crypto.RsaesOaepCekManagementProviderFactory
+org.keycloak.crypto.RsaesOaep256CekManagementProviderFactory

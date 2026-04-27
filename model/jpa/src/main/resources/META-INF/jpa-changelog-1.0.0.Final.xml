@@ -1,0 +1,447 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!--
+  ~ Copyright 2016 Red Hat, Inc. and/or its affiliates
+  ~ and other contributors as indicated by the @author tags.
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.2.xsd">
+    <changeSet author="sthorger@redhat.com" id="1.0.0.Final-KEYCLOAK-5461">
+        <validCheckSum>7:4e70412f24a3f382c82183742ec79317</validCheckSum>
+        <preConditions onSqlOutput="TEST" onFail="MARK_RAN">
+            <not>
+                <changeSetExecuted id="1.0.0.Final" author="sthorger@redhat.com" changeLogFile="META-INF/jpa-changelog-1.0.0.Final.xml"/>
+            </not>
+            <not>
+                <dbms type="db2" />
+            </not>
+        </preConditions>
+
+        <createTable tableName="APPLICATION_DEFAULT_ROLES">
+            <column name="APPLICATION_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ROLE_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <createTable tableName="CLIENT">
+            <column name="DTYPE" type="VARCHAR(31)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ALLOWED_CLAIMS_MASK" type="BIGINT"/>
+            <column name="ENABLED" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="FULL_SCOPE_ALLOWED" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="NAME" type="VARCHAR(255)"/>
+            <column name="NOT_BEFORE" type="INT"/>
+            <column name="PUBLIC_CLIENT" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="SECRET" type="VARCHAR(255)"/>
+            <column name="BASE_URL" type="VARCHAR(255)"/>
+            <column name="BEARER_ONLY" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="MANAGEMENT_URL" type="VARCHAR(255)"/>
+            <column name="SURROGATE_AUTH_REQUIRED" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="DIRECT_GRANTS_ONLY" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="REALM_ID" type="VARCHAR(36)"/>
+        </createTable>
+        <createTable tableName="CLIENT_SESSION">
+            <column name="ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ACTION" type="INT"/>
+            <column name="CLIENT_ID" type="VARCHAR(36)"/>
+            <column name="REDIRECT_URI" type="VARCHAR(255)"/>
+            <column name="STATE" type="VARCHAR(255)"/>
+            <column name="TIMESTAMP" type="INT"/>
+            <column name="SESSION_ID" type="VARCHAR(36)"/>
+        </createTable>
+        <createTable tableName="CLIENT_SESSION_ROLE">
+            <column name="ROLE_ID" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="CLIENT_SESSION" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <createTable tableName="COMPOSITE_ROLE">
+            <column name="COMPOSITE" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="CHILD_ROLE" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <createTable tableName="CREDENTIAL">
+            <column name="ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="DEVICE" type="VARCHAR(255)"/>
+            <column name="HASH_ITERATIONS" type="INT"/>
+            <column name="SALT" type="TINYBLOB(16)"/>
+            <column name="TYPE" type="VARCHAR(255)"/>
+            <column name="VALUE" type="VARCHAR(255)"/>
+            <column name="USER_ID" type="VARCHAR(36)"/>
+        </createTable>
+        <createTable tableName="EVENT_ENTITY">
+            <column name="ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="CLIENT_ID" type="VARCHAR(255)"/>
+            <column name="DETAILS_JSON" type="VARCHAR(2550)"/>
+            <column name="ERROR" type="VARCHAR(255)"/>
+            <column name="IP_ADDRESS" type="VARCHAR(255)"/>
+            <column name="REALM_ID" type="VARCHAR(255)"/>
+            <column name="SESSION_ID" type="VARCHAR(255)"/>
+            <column name="TIME" type="BIGINT"/>
+            <column name="TYPE" type="VARCHAR(255)"/>
+            <column name="USER_ID" type="VARCHAR(255)"/>
+        </createTable>
+        <createTable tableName="FED_PROVIDERS">
+            <column name="REALM_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="USERFEDERATIONPROVIDERS_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <createTable tableName="KEYCLOAK_ROLE">
+            <column name="ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="APP_REALM_CONSTRAINT" type="VARCHAR(36)"/>
+            <column name="APPLICATION_ROLE" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="DESCRIPTION" type="VARCHAR(255)"/>
+            <column name="NAME" type="VARCHAR(255)"/>
+            <column name="REALM_ID" type="VARCHAR(255)"/>
+            <column name="APPLICATION" type="VARCHAR(36)"/>
+            <column name="REALM" type="VARCHAR(36)"/>
+        </createTable>
+        <createTable tableName="REALM">
+            <column name="ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ACCESS_CODE_LIFESPAN" type="INT"/>
+            <column name="USER_ACTION_LIFESPAN" type="INT"/>
+            <column name="ACCESS_TOKEN_LIFESPAN" type="INT"/>
+            <column name="ACCOUNT_THEME" type="VARCHAR(255)"/>
+            <column name="ADMIN_THEME" type="VARCHAR(255)"/>
+            <column name="EMAIL_THEME" type="VARCHAR(255)"/>
+            <column name="ENABLED" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="EVENTS_ENABLED" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="EVENTS_EXPIRATION" type="BIGINT"/>
+            <column name="LOGIN_THEME" type="VARCHAR(255)"/>
+            <column name="NAME" type="VARCHAR(255)"/>
+            <column name="NOT_BEFORE" type="INT"/>
+            <column name="PASSWORD_CRED_GRANT_ALLOWED" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="PASSWORD_POLICY" type="VARCHAR(255)"/>
+            <column name="PRIVATE_KEY" type="VARCHAR(2048)"/>
+            <column name="PUBLIC_KEY" type="VARCHAR(2048)"/>
+            <column name="REGISTRATION_ALLOWED" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="REMEMBER_ME" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="RESET_PASSWORD_ALLOWED" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="SOCIAL" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="SSL_REQUIRED" type="VARCHAR(255)"/>
+            <column name="SSO_IDLE_TIMEOUT" type="INT"/>
+            <column name="SSO_MAX_LIFESPAN" type="INT"/>
+            <column name="UPDATE_PROFILE_ON_SOC_LOGIN" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="VERIFY_EMAIL" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="MASTER_ADMIN_APP" type="VARCHAR(36)"/>
+        </createTable>
+        <createTable tableName="REALM_APPLICATION">
+            <column name="APPLICATION_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="REALM_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <createTable tableName="REALM_ATTRIBUTE">
+            <column name="NAME" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="VALUE" type="VARCHAR(255)"/>
+            <column name="REALM_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <createTable tableName="REALM_DEFAULT_ROLES">
+            <column name="REALM_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ROLE_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <createTable tableName="REALM_EVENTS_LISTENERS">
+            <column name="REALM_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="VALUE" type="VARCHAR(255)"/>
+        </createTable>
+        <createTable tableName="REALM_REQUIRED_CREDENTIAL">
+            <column name="TYPE" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="FORM_LABEL" type="VARCHAR(255)"/>
+            <column name="INPUT" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="SECRET" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="REALM_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <createTable tableName="REALM_SMTP_CONFIG">
+            <column name="REALM_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="VALUE" type="VARCHAR(255)"/>
+            <column name="NAME" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <createTable tableName="REALM_SOCIAL_CONFIG">
+            <column name="REALM_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="VALUE" type="VARCHAR(255)"/>
+            <column name="NAME" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <createTable tableName="REDIRECT_URIS">
+            <column name="CLIENT_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="VALUE" type="VARCHAR(255)"/>
+        </createTable>
+        <createTable tableName="SCOPE_MAPPING">
+            <column name="CLIENT_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ROLE_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <createTable tableName="USERNAME_LOGIN_FAILURE">
+            <column name="REALM_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="USERNAME" type="VARCHAR(200)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="FAILED_LOGIN_NOT_BEFORE" type="INT"/>
+            <column name="LAST_FAILURE" type="BIGINT"/>
+            <column name="LAST_IP_FAILURE" type="VARCHAR(255)"/>
+            <column name="NUM_FAILURES" type="INT"/>
+        </createTable>
+        <createTable tableName="USER_ATTRIBUTE">
+            <column name="NAME" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="VALUE" type="VARCHAR(255)"/>
+            <column name="USER_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <createTable tableName="USER_ENTITY">
+            <column name="ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="EMAIL" type="VARCHAR(255)"/>
+            <column name="EMAIL_CONSTRAINT" type="VARCHAR(255)"/>
+            <column name="EMAIL_VERIFIED" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ENABLED" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="FEDERATION_LINK" type="VARCHAR(255)"/>
+            <column name="FIRST_NAME" type="VARCHAR(255)"/>
+            <column name="LAST_NAME" type="VARCHAR(255)"/>
+            <column name="REALM_ID" type="VARCHAR(255)"/>
+            <column name="TOTP" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="USERNAME" type="VARCHAR(255)"/>
+        </createTable>
+        <createTable tableName="USER_FEDERATION_CONFIG">
+            <column name="USER_FEDERATION_PROVIDER_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="VALUE" type="VARCHAR(255)"/>
+            <column name="NAME" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <createTable tableName="USER_FEDERATION_PROVIDER">
+            <column name="ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="CHANGED_SYNC_PERIOD" type="INT"/>
+            <column name="DISPLAY_NAME" type="VARCHAR(255)"/>
+            <column name="FULL_SYNC_PERIOD" type="INT"/>
+            <column name="LAST_SYNC" type="INT"/>
+            <column name="PRIORITY" type="INT"/>
+            <column name="PROVIDER_NAME" type="VARCHAR(255)"/>
+            <column name="REALM_ID" type="VARCHAR(36)"/>
+        </createTable>
+        <createTable tableName="USER_REQUIRED_ACTION">
+            <column name="ACTION" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="USER_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <createTable tableName="USER_ROLE_MAPPING">
+            <column name="ROLE_ID" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="USER_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <createTable tableName="USER_SESSION">
+            <column name="ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="AUTH_METHOD" type="VARCHAR(255)"/>
+            <column name="IP_ADDRESS" type="VARCHAR(255)"/>
+            <column name="LAST_SESSION_REFRESH" type="INT"/>
+            <column name="LOGIN_USERNAME" type="VARCHAR(255)"/>
+            <column name="REALM_ID" type="VARCHAR(255)"/>
+            <column name="REMEMBER_ME" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="STARTED" type="INT"/>
+            <column name="USER_ID" type="VARCHAR(255)"/>
+        </createTable>
+        <createTable tableName="USER_SOCIAL_LINK">
+            <column name="SOCIAL_PROVIDER" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="REALM_ID" type="VARCHAR(255)"/>
+            <column name="SOCIAL_USER_ID" type="VARCHAR(255)"/>
+            <column name="SOCIAL_USERNAME" type="VARCHAR(255)"/>
+            <column name="USER_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <createTable tableName="WEB_ORIGINS">
+            <column name="CLIENT_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="VALUE" type="VARCHAR(255)"/>
+        </createTable>
+        <addPrimaryKey columnNames="REALM_ID, NAME" constraintName="CONSTRAINT_1" tableName="REALM_SOCIAL_CONFIG"/>
+        <addPrimaryKey columnNames="REALM_ID, USERNAME" constraintName="CONSTRAINT_17" tableName="USERNAME_LOGIN_FAILURE"/>
+        <addPrimaryKey columnNames="ACTION, USER_ID" constraintName="CONSTRAINT_2" tableName="USER_REQUIRED_ACTION"/>
+        <addPrimaryKey columnNames="SOCIAL_PROVIDER, USER_ID" constraintName="CONSTRAINT_3" tableName="USER_SOCIAL_LINK"/>
+        <addPrimaryKey columnNames="ID" constraintName="CONSTRAINT_4" tableName="EVENT_ENTITY"/>
+        <addPrimaryKey columnNames="ID" constraintName="CONSTRAINT_4A" tableName="REALM"/>
+        <addPrimaryKey columnNames="CLIENT_SESSION, ROLE_ID" constraintName="CONSTRAINT_5" tableName="CLIENT_SESSION_ROLE"/>
+        <addPrimaryKey columnNames="ID" constraintName="CONSTRAINT_57" tableName="USER_SESSION"/>
+        <addPrimaryKey columnNames="ID" constraintName="CONSTRAINT_5C" tableName="USER_FEDERATION_PROVIDER"/>
+        <addPrimaryKey columnNames="NAME, USER_ID" constraintName="CONSTRAINT_6" tableName="USER_ATTRIBUTE"/>
+        <addPrimaryKey columnNames="ID" constraintName="CONSTRAINT_7" tableName="CLIENT"/>
+        <addPrimaryKey columnNames="ID" constraintName="CONSTRAINT_8" tableName="CLIENT_SESSION"/>
+        <addPrimaryKey columnNames="CLIENT_ID, ROLE_ID" constraintName="CONSTRAINT_81" tableName="SCOPE_MAPPING"/>
+        <addPrimaryKey columnNames="NAME, REALM_ID" constraintName="CONSTRAINT_9" tableName="REALM_ATTRIBUTE"/>
+        <addPrimaryKey columnNames="REALM_ID, TYPE" constraintName="CONSTRAINT_92" tableName="REALM_REQUIRED_CREDENTIAL"/>
+        <addPrimaryKey columnNames="ID" constraintName="CONSTRAINT_A" tableName="KEYCLOAK_ROLE"/>
+        <addPrimaryKey columnNames="ROLE_ID, USER_ID" constraintName="CONSTRAINT_C" tableName="USER_ROLE_MAPPING"/>
+        <addPrimaryKey columnNames="REALM_ID, NAME" constraintName="CONSTRAINT_E" tableName="REALM_SMTP_CONFIG"/>
+        <addPrimaryKey columnNames="ID" constraintName="CONSTRAINT_F" tableName="CREDENTIAL"/>
+        <addPrimaryKey columnNames="USER_FEDERATION_PROVIDER_ID, NAME" constraintName="CONSTRAINT_F9" tableName="USER_FEDERATION_CONFIG"/>
+        <addPrimaryKey columnNames="ID" constraintName="CONSTRAINT_FB" tableName="USER_ENTITY"/>
+        <addUniqueConstraint columnNames="ROLE_ID" constraintName="UK_8AELWNIBJI49AVXSRTUF6XJOW" tableName="APPLICATION_DEFAULT_ROLES"/>
+        <addUniqueConstraint columnNames="REALM_ID,NAME" constraintName="UK_B71CJLBENV945RB6GCON438AT" tableName="CLIENT"/>
+        <addUniqueConstraint columnNames="USERFEDERATIONPROVIDERS_ID" constraintName="UK_DCCIRJLIPU1478VQC89DID88C" tableName="FED_PROVIDERS"/>
+        <addUniqueConstraint columnNames="REALM_ID,EMAIL_CONSTRAINT" constraintName="UK_DYKN684SL8UP1CRFEI6ECKHD7" tableName="USER_ENTITY"/>
+        <addUniqueConstraint columnNames="ROLE_ID" constraintName="UK_H4WPD7W4HSOOLNI3H0SW7BTJE" tableName="REALM_DEFAULT_ROLES"/>
+        <addUniqueConstraint columnNames="NAME,APP_REALM_CONSTRAINT" constraintName="UK_J3RWUVD56ONTGSUHOGM184WW2" tableName="KEYCLOAK_ROLE"/>
+        <addUniqueConstraint columnNames="REALM_ID" constraintName="UK_L5QGA3RFME47335JY8JXYXH3I" tableName="REALM_APPLICATION"/>
+        <addUniqueConstraint columnNames="NAME" constraintName="UK_ORVSDMLA56612EAEFIQ6WL5OI" tableName="REALM"/>
+        <addUniqueConstraint columnNames="REALM_ID,USERNAME" constraintName="UK_RU8TT6T700S9V50BU18WS5HA6" tableName="USER_ENTITY"/>
+        <addForeignKeyConstraint baseColumnNames="CLIENT_SESSION" baseTableName="CLIENT_SESSION_ROLE" constraintName="FK_11B7SGQW18I532811V7O2DV76" referencedColumnNames="ID" referencedTableName="CLIENT_SESSION"/>
+        <addForeignKeyConstraint baseColumnNames="CLIENT_ID" baseTableName="REDIRECT_URIS" constraintName="FK_1BURS8PB4OUJ97H5WUPPAHV9F" referencedColumnNames="ID" referencedTableName="CLIENT"/>
+        <addForeignKeyConstraint baseColumnNames="REALM_ID" baseTableName="USER_FEDERATION_PROVIDER" constraintName="FK_1FJ32F6PTOLW2QY60CD8N01E8" referencedColumnNames="ID" referencedTableName="REALM"/>
+        <addForeignKeyConstraint baseColumnNames="REALM_ID" baseTableName="FED_PROVIDERS" constraintName="FK_213LYQ09FKXQ8K8NY8DY3737T" referencedColumnNames="ID" referencedTableName="REALM"/>
+        <addForeignKeyConstraint baseColumnNames="REALM_ID" baseTableName="REALM_REQUIRED_CREDENTIAL" constraintName="FK_5HG65LYBEVAVKQFKI3KPONH9V" referencedColumnNames="ID" referencedTableName="REALM"/>
+        <addForeignKeyConstraint baseColumnNames="USER_ID" baseTableName="USER_ATTRIBUTE" constraintName="FK_5HRM2VLF9QL5FU043KQEPOVBR" referencedColumnNames="ID" referencedTableName="USER_ENTITY"/>
+        <addForeignKeyConstraint baseColumnNames="USER_ID" baseTableName="USER_SOCIAL_LINK" constraintName="FK_68CJYS5UWM55UY823Y75XG4OM" referencedColumnNames="ID" referencedTableName="USER_ENTITY"/>
+        <addForeignKeyConstraint baseColumnNames="USER_ID" baseTableName="USER_REQUIRED_ACTION" constraintName="FK_6QJ3W1JW9CVAFHE19BWSIUVMD" referencedColumnNames="ID" referencedTableName="USER_ENTITY"/>
+        <addForeignKeyConstraint baseColumnNames="REALM" baseTableName="KEYCLOAK_ROLE" constraintName="FK_6VYQFE4CN4WLQ8R6KT5VDSJ5C" referencedColumnNames="ID" referencedTableName="REALM"/>
+        <addForeignKeyConstraint baseColumnNames="REALM_ID" baseTableName="REALM_SMTP_CONFIG" constraintName="FK_70EJ8XDXGXD0B9HH6180IRR0O" referencedColumnNames="ID" referencedTableName="REALM"/>
+        <addForeignKeyConstraint baseColumnNames="APPLICATION_ID" baseTableName="REALM_APPLICATION" constraintName="FK_71S3P0DIUXAWWQQSA528UBY2Q" referencedColumnNames="ID" referencedTableName="REALM"/>
+        <addForeignKeyConstraint baseColumnNames="ROLE_ID" baseTableName="APPLICATION_DEFAULT_ROLES" constraintName="FK_8AELWNIBJI49AVXSRTUF6XJOW" referencedColumnNames="ID" referencedTableName="KEYCLOAK_ROLE"/>
+        <addForeignKeyConstraint baseColumnNames="REALM_ID" baseTableName="REALM_ATTRIBUTE" constraintName="FK_8SHXD6L3E9ATQUKACXGPFFPTW" referencedColumnNames="ID" referencedTableName="REALM"/>
+        <addForeignKeyConstraint baseColumnNames="COMPOSITE" baseTableName="COMPOSITE_ROLE" constraintName="FK_A63WVEKFTU8JO1PNJ81E7MCE2" referencedColumnNames="ID" referencedTableName="KEYCLOAK_ROLE"/>
+        <addForeignKeyConstraint baseColumnNames="SESSION_ID" baseTableName="CLIENT_SESSION" constraintName="FK_B4AO2VCVAT6UKAU74WBWTFQO1" referencedColumnNames="ID" referencedTableName="USER_SESSION"/>
+        <addForeignKeyConstraint baseColumnNames="USER_ID" baseTableName="USER_ROLE_MAPPING" constraintName="FK_C4FQV34P1MBYLLOXANG7B1Q3L" referencedColumnNames="ID" referencedTableName="USER_ENTITY"/>
+        <addForeignKeyConstraint baseColumnNames="USERFEDERATIONPROVIDERS_ID" baseTableName="FED_PROVIDERS" constraintName="FK_DCCIRJLIPU1478VQC89DID88C" referencedColumnNames="ID" referencedTableName="USER_FEDERATION_PROVIDER"/>
+        <addForeignKeyConstraint baseColumnNames="REALM_ID" baseTableName="REALM_DEFAULT_ROLES" constraintName="FK_EVUDB1PPW84OXFAX2DRS03ICC" referencedColumnNames="ID" referencedTableName="REALM"/>
+        <addForeignKeyConstraint baseColumnNames="CHILD_ROLE" baseTableName="COMPOSITE_ROLE" constraintName="FK_GR7THLLB9LU8Q4VQA4524JJY8" referencedColumnNames="ID" referencedTableName="KEYCLOAK_ROLE"/>
+        <addForeignKeyConstraint baseColumnNames="ROLE_ID" baseTableName="REALM_DEFAULT_ROLES" constraintName="FK_H4WPD7W4HSOOLNI3H0SW7BTJE" referencedColumnNames="ID" referencedTableName="KEYCLOAK_ROLE"/>
+        <addForeignKeyConstraint baseColumnNames="REALM_ID" baseTableName="REALM_EVENTS_LISTENERS" constraintName="FK_H846O4H0W8EPX5NXEV9F5Y69J" referencedColumnNames="ID" referencedTableName="REALM"/>
+        <addForeignKeyConstraint baseColumnNames="REALM_ID" baseTableName="REALM_APPLICATION" constraintName="FK_L5QGA3RFME47335JY8JXYXH3I" referencedColumnNames="ID" referencedTableName="CLIENT"/>
+        <addForeignKeyConstraint baseColumnNames="CLIENT_ID" baseTableName="WEB_ORIGINS" constraintName="FK_LOJPHO213XCX4WNKOG82SSRFY" referencedColumnNames="ID" referencedTableName="CLIENT"/>
+        <addForeignKeyConstraint baseColumnNames="APPLICATION_ID" baseTableName="APPLICATION_DEFAULT_ROLES" constraintName="FK_MAYLTS7KLWQW2H8M2B5JOYTKY" referencedColumnNames="ID" referencedTableName="CLIENT"/>
+        <addForeignKeyConstraint baseColumnNames="CLIENT_ID" baseTableName="SCOPE_MAPPING" constraintName="FK_OUSE064PLMLR732LXJCN1Q5F1" referencedColumnNames="ID" referencedTableName="CLIENT"/>
+        <addForeignKeyConstraint baseColumnNames="ROLE_ID" baseTableName="SCOPE_MAPPING" constraintName="FK_P3RH9GRKU11KQFRS4FLTT7RNQ" referencedColumnNames="ID" referencedTableName="KEYCLOAK_ROLE"/>
+        <addForeignKeyConstraint baseColumnNames="REALM_ID" baseTableName="CLIENT" constraintName="FK_P56CTINXXB9GSK57FO49F9TAC" referencedColumnNames="ID" referencedTableName="REALM"/>
+        <addForeignKeyConstraint baseColumnNames="USER_ID" baseTableName="CREDENTIAL" constraintName="FK_PFYR0GLASQYL0DEI3KL69R6V0" referencedColumnNames="ID" referencedTableName="USER_ENTITY"/>
+        <addForeignKeyConstraint baseColumnNames="APPLICATION" baseTableName="KEYCLOAK_ROLE" constraintName="FK_PIMO5LE2C0RAL09FL8CM9WFW9" referencedColumnNames="ID" referencedTableName="CLIENT"/>
+        <addForeignKeyConstraint baseColumnNames="MASTER_ADMIN_APP" baseTableName="REALM" constraintName="FK_RSAF444KK6QRKMS7N56AIWQ5Y" referencedColumnNames="ID" referencedTableName="CLIENT"/>
+        <addForeignKeyConstraint baseColumnNames="REALM_ID" baseTableName="REALM_SOCIAL_CONFIG" constraintName="FK_SV5I3C2TI7G0G922FGE683SOV" referencedColumnNames="ID" referencedTableName="REALM"/>
+        <addForeignKeyConstraint baseColumnNames="USER_FEDERATION_PROVIDER_ID" baseTableName="USER_FEDERATION_CONFIG" constraintName="FK_T13HPU1J94R2EBPEKR39X5EU5" referencedColumnNames="ID" referencedTableName="USER_FEDERATION_PROVIDER"/>
+    </changeSet>
+</databaseChangeLog>

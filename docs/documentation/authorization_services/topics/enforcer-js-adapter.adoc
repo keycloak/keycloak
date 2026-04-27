@@ -1,0 +1,168 @@
+[[_enforcer_js_adapter]]
+= JavaScript integration for Policy Enforcer
+
+The {project_name} Server comes with a JavaScript library you can use to interact with a resource server protected by a policy enforcer.
+This library is based on the {project_name} JavaScript adapter, which can be integrated to allow your client to obtain permissions from a {project_name} Server.
+
+You can obtain this library by installing it https://www.npmjs.com/package/keycloak-js[from NPM]:
+
+[source,bash]
+----
+npm install keycloak-js
+----
+
+Next, you can create a `KeycloakAuthorization` instance as follows:
+
+[source,javascript]
+----
+import Keycloak from "keycloak-js";
+import KeycloakAuthorization from "keycloak-js/authz";
+
+const keycloak = new Keycloak({
+    url: "http://keycloak-server",
+    realm: "my-realm",
+    clientId: "my-app"
+});
+
+const authorization = new KeycloakAuthorization(keycloak);
+
+await keycloak.init();
+
+// Now you can use the authorization object to interact with the server.
+----
+
+The `keycloak-js/authz` library provides two main features:
+
+* Obtain permissions from the server using a permission ticket, if you are accessing a UMA protected resource server.
+
+* Obtain permissions from the server by sending the resources and scopes the application wants to access.
+
+In both cases, the library allows you to easily interact with both resource server and {project_name} Authorization Services to obtain tokens with
+permissions your client can use as bearer tokens to access the protected resources on a resource server.
+
+== Handling authorization responses from a UMA-Protected resource server
+
+If a resource server is protected by a policy enforcer, it responds to client requests based on the permissions carried along with a bearer token.
+Typically, when you try to access a resource server with a bearer token that is lacking permissions to access a protected resource, the resource server
+responds with a *401* status code and a `WWW-Authenticate` header.
+
+[source,bash,subs="attributes+"]
+----
+HTTP/1.1 401 Unauthorized
+WWW-Authenticate: UMA realm="${realm-name}",
+    as_uri="https://${host}:${port}{kc_realms_path}/${realm-name}",
+    ticket="016f84e8-f9b9-11e0-bd6f-0021cc6004de"
+----
+
+See <<_service_uma_authorization_process, UMA Authorization Process>> for more information.
+
+What your client needs to do is extract the permission ticket from the ```WWW-Authenticate``` header returned by the resource server
+and use the library to send an authorization request as follows:
+
+[source,javascript]
+----
+// prepare a authorization request with the permission ticket
+const authorizationRequest = { ticket };
+
+// send the authorization request, if successful retry the request
+authorization.authorize(authorizationRequest).then((rpt) => {
+    // onGrant
+}, () => {
+    // onDeny
+}, () => {
+    // onError
+});
+----
+
+The `authorize` function is completely asynchronous and supports a few callback functions to receive notifications from the server:
+
+* `onGrant`: The first argument of the function. If authorization succeeds and the server returns an RPT with the requested permissions, the callback receives the RPT.
+* `onDeny`: The second argument of the function. Only called if the server has denied the authorization request.
+* `onError`: The third argument of the function. Only called if the server responds unexpectedly.
+
+Most applications should use the `onGrant` callback to retry a request after a 401 response. Subsequent requests should include the RPT as a bearer token for retries.
+
+== Obtaining entitlements
+
+The `keycloak-js/authz` library provides an `entitlement` function that you can use to obtain an RPT from the server by providing
+the resources and scopes your client wants to access.
+
+.Example about how to obtain an RPT with permissions for all resources and scopes the user can access
+[source,javascript]
+----
+authorization.entitlement("my-resource-server-id").then((rpt) => {
+    // onGrant callback function.
+    // If authorization was successful you'll receive an RPT
+    // with the necessary permissions to access the resource server
+});
+----
+
+.Example about how to obtain an RPT with permissions for specific resources and scopes
+[source,javascript]
+----
+authorization.entitlement("my-resource-server", {
+    permissions: [
+        {
+            id: "Some Resource"
+        }
+    ]
+}).then((rpt) => {
+    // onGrant
+});
+----
+
+When using the `entitlement` function, you must provide the _client_id_ of the resource server you want to access.
+
+The `entitlement` function is completely asynchronous and supports a few callback functions to receive notifications from the server:
+
+* `onGrant`: The first argument of the function. If authorization succeeds and the server returns an RPT with the requested permissions, the callback receives the RPT.
+* `onDeny`: The second argument of the function. Only called if the server has denied the authorization request.
+* `onError`: The third argument of the function. Only called if the server responds unexpectedly.
+
+== Authorization request
+
+Both `authorize` and `entitlement` functions accept an authorization request object. This object can be set with the following
+properties:
+
+* *permissions*
++
+An array of objects representing the resource and scopes. For instance:
++
+[source,javascript]
+----
+const authorizationRequest = {
+   permissions: [
+       {
+           id: "Some Resource",
+           scopes: ["view", "edit"]
+       }
+   ]
+}
+----
++
+* *metadata*
++
+An object where its properties define how the authorization request should be processed by the server.
++
+** *response_include_resource_name*
++
+A boolean value indicating to the server if resource names should be included in the RPT's permissions. If false, only the resource
+identifier is included.
+** *response_permissions_limit*
++
+An integer N that defines a limit for the amount of permissions an RPT can have. When used together with
+`rpt` parameter, only the last N requested permissions will be kept in the RPT
++
+* *submit_request*
++
+A boolean value indicating whether the server should create permission requests to the resources and scopes referenced by a permission ticket.
+This parameter will only take effect when used together with the `ticket` parameter as part of a UMA authorization process.
+
+== Obtaining the RPT
+
+If you have already obtained an RPT using any of the authorization functions provided by the library, you can always obtain the RPT as follows from the authorization object (assuming that it has been initialized by one of the techniques shown earlier):
+
+[source,javascript]
+----
+const rpt = authorization.rpt;
+----

@@ -1,0 +1,240 @@
+
+=== Auditing user events
+
+You can record and view every event that affects users. {project_name} triggers login events for actions such as successful user login, a user entering an incorrect password, or a user account updating. By default, {project_name} does not store or display events in the Admin Console. Only the error events are logged to the Admin Console and the server’s log file.
+
+.Procedure
+
+Use this procedure to start auditing user events.
+
+. Click *Realm settings* in the menu.
+. Click the *Events* tab.
+. Click the *User events settings* tab.
+. Toggle *Save events* to *ON*.
++
+.User events settings
+image:images/user-events-settings.png[User events settings]
+
+. Specify the length of time to store events in the *Expiration* field.
+
+. Click *Add saved types* to see other events you can save.
++
+.Add types
+image:images/add-event-types.png[Add types]
+
+. Click *Add*.
+
+Click *Clear user events* when you want to delete all saved events.
+
+.Procedure
+
+You can now view events.
+
+. Click the *Events* tab in the menu.
++
+.User events
+image:images/user-events.png[Login Events]
+
+. To filter events, click *Search user event*.
++
+.Search user event
+image:images/search-user-event.png[Search user event]
+
+==== Event types
+
+*Login events:*
+
+[cols="2",options="header"]
+|===
+|Event |Description
+|Login
+|A user logs in.
+
+|Register
+|A user registers.
+
+|Logout
+|A user logs out.
+
+|Code to Token
+|An application, or client, exchanges a code for a token.
+
+|Refresh Token
+|An application, or client, refreshes a token.
+
+|===
+
+*Brute force protection:*
+
+[cols="2",options="header"]
+|===
+|Event |Description
+|User disabled by permanent lockout
+|Brute force protection disabled the user account permanently due to too many login failures.
+
+|User disabled by temporary lockout
+|Brute force protection disabled the user account temporarily due to too many login failures.
+
+|===
+
+*Identity Brokering:*
+
+[cols="2",options="header"]
+|===
+|Event |Description
+|Federated identity link override
+|An existing Federated identity link was overridden
+
+|Federated identity link override error
+|Error occurred when trying to override an existing Federated identity link
+
+|===
+
+*OAuth:*
+
+[cols="2",options="header"]
+|===
+|Event |Description
+|OAuth2 extension grant
+|OAuth2 grant was executed
+
+|OAuth2 extension grant error
+|Error occurred during OAuth2 grant execution
+
+|===
+
+*Account events:*
+
+[cols="2",options="header"]
+|===
+|Event |Description
+|Social Link
+|A user account links to a social media provider.
+
+|Remove Social Link
+|The link from a social media account to a user account severs.
+
+|Update Email
+|An email address for an account changes.
+
+|Update Profile
+|A profile for an account changes.
+
+|Send Password Reset
+|{project_name} sends a password reset email.
+
+|Update Password (deprecated)
+|The password for an account changes.
+
+|Update Credential
+|The password or (time-based) one-time Password (OTP/TOTP) settings for an account changes.
+
+|Update TOTP (deprecated)
+|The Time-based One-time Password (TOTP) settings for an account changes.
+
+|Remove TOTP (deprecated)
+|{project_name} removes TOTP from an account.
+
+|Remove Credential
+|{project_name} removes a credential from an account.
+
+|Send Verify Email
+|{project_name} sends an email verification email.
+
+|Verify Email
+|{project_name} verifies the email address for an account.
+
+|===
+
+Each event has a corresponding error event.
+
+[[event-listener]]
+==== Event listener
+
+Event listeners listen for events and perform actions based on that event. {project_name} includes two built-in listeners, the Logging Event Listener and Email Event Listener.
+
+===== The logging event listener
+When the Logging Event Listener is enabled, this listener writes to a log file when an error event occurs.
+
+An example log message from a Logging Event Listener:
+
+----
+11:36:09,965 WARN  [org.keycloak.events] (default task-51) type=LOGIN_ERROR, realmId=master,
+                    clientId=myapp,
+                    userId=19aeb848-96fc-44f6-b0a3-59a17570d374, ipAddress=127.0.0.1,
+                    error=invalid_user_credentials, auth_method=openid-connect, auth_type=code,
+                    redirect_uri=http://localhost:8180/myapp,
+                    code_id=b669da14-cdbb-41d0-b055-0810a0334607, username=admin
+----
+
+You can use the Logging Event Listener to protect against hacker bot attacks:
+
+. Parse the log file for the `LOGIN_ERROR` event.
+. Extract the IP Address of the failed login event.
+. Send the IP address to an intrusion prevention software framework tool.
+
+The Logging Event Listener logs events to the `org.keycloak.events` log category. {project_name} does not include debug log events in server logs, by default.
+
+To include debug log events in server logs:
+
+. Change the log level for the `org.keycloak.events` category
+. Change the log level used by the Logging Event listener.
+
+To change the log level used by the Logging Event listener, add the following:
+
+[source,bash]
+----
+bin/kc.[sh|bat] start --spi-events-listener--jboss-logging--success-level=info --spi-events-listener--jboss-logging--error-level=error
+----
+
+The valid values for log levels are `debug`, `info`, `warn`, `error`, and `fatal`.
+
+===== The Email Event Listener
+
+The Email Event Listener sends a message to the user's email address when an event occurs and supports the following events:
+
+* Login Error.
+* Update Password.
+* Update Time-based One-time Password (TOTP).
+* Remove One-time Password (OTP).
+* Update Credential.
+* Remove Credential.
+
+Below are the optional events you can configure:
+
+* User disabled by permanent lockout.
+* User disabled by temporary lockout.
+
+The following conditions need to be met for an email to be sent:
+
+* User has an email address.
+* User's email address is marked as verified.
+
+.Prerequisites
+
+* Realm's email settings configured.
+
+.Procedure
+
+To enable the Email Listener:
+
+. Click *Realm settings* in the menu.
+. Click the *Events* tab.
+. Click the *Event listeners* field.
+. Select `email`.
++
+.Event listeners
+image:images/event-listeners.png[Event listeners]
+
+You can exclude events by using the `+--spi-events-listener--email--exclude-events+` argument. For example:
+
+[source,bash]
+----
+kc.[sh|bat] --spi-events-listener--email--exclude-events=UPDATE_CREDENTIAL,REMOVE_CREDENTIAL
+----
+
+To enable optional events, use the following command:
+[source,bash]
+----
+kc.[sh|bat] --spi-events-listener--email--include-events=USER_DISABLED_BY_TEMPORARY_LOCKOUT_ERROR,USER_DISABLED_BY_PERMANENT_LOCKOUT
+----

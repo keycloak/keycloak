@@ -1,0 +1,15 @@
+[[_user_federation]]
+== User federation SPI
+
+The keycloak examples directory contains an example of a simple User Federation Provider backed by a simple properties file. See `providers/federation-provider`
+in the examples distribution. Most of how to create a federation provider is explained directly within the example code, but some information is here too.
+
+Writing a User Federation Provider starts by implementing the `UserFederationProvider` and `UserFederationProviderFactory` interfaces. Please see the Javadoc
+and example for complete details on how to do this.
+
+Some important methods of note: getUserByUsername() and getUserByEmail() require that you query your federated storage and if the user exists create and import
+the user into Keycloak storage. How much metadata you import is fully up to you. This import is done by invoking methods on the object returned by
+`KeycloakSession.userFederatedStorage()` to add and import user information. The proxy() method will be called whenever Keycloak has found an imported UserModel.
+This allows the federation provider to proxy the UserModel which is useful if you want to support external storage updates on demand. 
+
+For details on how to package and deploy a custom provider refer to the <<providers.adoc#providers,Service Provider Interfaces>> chapter.

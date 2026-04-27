@@ -1,0 +1,23 @@
+
+=== Leveraging Jakarta EE
+
+Since version 20, Keycloak relies only on Quarkus. Unlike WildFly, Quarkus is not an Application Server.
+ifeval::[{project_community}==true]
+For more detail, see https://www.keycloak.org/migration/migrating-to-quarkus#_quarkus_is_not_an_application_server.
+endif::[]
+
+Therefore, the User Storage Providers cannot be packaged within any Jakarta EE component or make it an EJB as was the case when Keycloak ran over WildFly in previous versions.
+
+Providers implementations are required to be plain java objects which implement the suitable User Storage SPI interfaces, as was explained in the previous sections. They must be packaged and deployed as stated in the Migration Guide.
+ifeval::[{project_community}==true]
+See https://www.keycloak.org/migration/migrating-to-quarkus#_migrating_custom_providers[Migrating custom providers].
+endif::[]
+ifeval::[{project_product}==true]
+See {migration_link}migrating-providers[Migrating custom providers].
+endif::[]
+
+You can still implement your custom `UserStorageProvider` class, which is able to integrate an external database by JPA Entity Manager, as shown in this example:
+
+  - {quickstartRepo_link}/tree/main/extension/user-storage-jpa
+
+CDI is not supported.

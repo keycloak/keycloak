@@ -1,0 +1,173 @@
+= Supported Standard Token Exchange
+
+In this release, we added support for the Standard token exchange! The token exchange feature was in preview for a long time, so we are glad to finally support the standard token exchange.
+For now, this is limited to exchanging the Internal token to internal token compliant with the https://datatracker.ietf.org/doc/html/rfc8693[Token exchange specification]. It does not yet cover use
+cases related to identity brokering or subject impersonation. We hope to support even more token exchange use cases in subsequent releases.
+
+For more details, see the link:{securing_apps_token_exchange_link}#_standard-token-exchange[Standard token exchange].
+
+For information on how to upgrade from the legacy token exchange used in previous {project_name} versions, see the link:{upgradingguide_link}[{upgradingguide_name}].
+
+= Fine-grained admin permissions supported
+
+This release introduces support for a new version of fine-grained admin permissions. Version 2 (V2) provides enhanced flexibility and control over administrative access within realms.
+With this feature, administrators can define permissions for administering users, groups, clients, and roles without relying on broad administrative roles. V2 offers the same level of access control over realm resources as the previous version, with plans to extend its capabilities in future versions. Some key points follow:
+
+* *Centralized Admin Console Management* - New *Permissions* section was introduced to allow management from a single place without having to navigate to different places in the Admin Console.
+* *Improved manageability* - Administrators can more easily search and evaluate permissions when building a permission model for realm resources.
+* *Resource-Specific and Global Permissions* – Permissions can be defined for individual resources (such as specific users or groups),  or entire resource types (such as all users or all groups).
+* *Explicit Operation Scoping* – Permissions are now independent, removing hidden dependencies between operations. Administrators must assign each scope explicitly, making it easier to see what is granted without needing prior knowledge of implicit relationships.
+* *Per-Realm Enablement* – Fine-Grained Admin Permissions can be enabled on a per-realm basis, allowing greater control over adoption and configuration.
+
+For more details, see link:{adminguide_finegrained_link}[{adminguide_finegrained_name}].
+
+For more information about migration, see the link:{upgradingguide_link}[{upgradingguide_name}].
+
+= Guides for metrics and Grafana dashboards
+
+In addition to the list of useful metric names link:{observablitycategory_link}[the Observability guides category] now also contains a guide on how to display these metrics in Grafana.
+link:{grafanadashboards_link}[The guide] contains two dashboards.
+
+* Keycloak troubleshooting dashboard - showing metrics related to service level indicators and troubleshooting.
+* Keycloak capacity planning dashboard - showing metrics related to estimating the load handled by Keycloak.
+
+= Zero-configuration secure cluster communication
+
+For clustering multiple nodes, {project_name} uses distributed caches.
+Starting with this release for all TCP-based transport stacks, the communication between the nodes is encrypted with TLS and secured with automatically generated ephemeral keys and certificates.
+
+This strengthens a secure-by-default setup and minimizes the configuration steps of new setups.
+
+For more information, check the link:https://www.keycloak.org/server/caching#_securing_transport_stacks[Securing Transport Stacks] in the distributed caches guide.
+
+= Rolling updates for optimized and customized images
+
+When using an optimized or customized image, the {project_name} Operator can now perform a rolling update for a new image if the old and the new image contain the same version of {project_name}.
+This is helpful when you want to roll out, for example, an updated theme or provider without downtime.
+
+To use the functionality in the Operator, enable the `Auto` update strategy and the {project_name} Operator will on image change briefly start up the old and the new image to determine if a rolling update without downtime is possible.
+Read the section https://www.keycloak.org/operator/rolling-updates[Managing Rolling Updates] in the {project_name} Operator Advanced Configuration guide for more details on this functionality.
+
+The checks to determine if a rolling update is possible are also available on the {project_name} command line so you can use them in your deployment pipeline. Continue reading in the https://www.keycloak.org/server/update-compatibility[Update Compatibility Tool] guide for more information about the functionality available on the command line.
+
+= Metrics on user activities
+
+Event metrics provide admins an aggregated view of the different user activities in a Keycloak instance.
+For now, only metrics for user events are captured. For example, you can monitor the number of logins, login failures, or token refreshes performed.
+For more information, see Monitoring user activities with event metrics.
+
+While this was a preview feature in 26.1, this is now fully supported in 26.2.
+
+ifeval::[{project_community}==true]
+Many thanks to https://github.com/bohmber[Bernd Bohmann] for the contribution.
+endif::[]
+
+For more information, check the link:https://www.keycloak.org/observability/event-metrics[Monitoring user activities with event metrics] {section}.
+
+= Additional query parameters in Admin Events API
+
+The Admin Events API now supports filtering for events based on Epoc timestamps in addition to the previous
+`yyyy-MM-dd` format. This provides more fine-grained control of the window of events to retrieve.
+
+A `direction` query parameter was also added, allowing controlling the order of returned items as `asc` or
+`desc`. In the past the events where always returned in `desc` order (most recent events first).
+
+Finally, the returned event representations now also include the `id`, which provides a unique identifier for
+an event.
+
+= Logs support ECS format
+
+All available log handlers now support *ECS* (Elastic Common Schema) JSON format.
+It helps to improve {project_name}'s observability story and centralized logging.
+
+For more details, see the https://www.keycloak.org/server/logging[Logging guide].
+
+= New cache for CRLs loaded for the X.509 authenticator
+
+Now the Certificate Revocation Lists (CRL), that are used to validate certificates in the X.509 authenticator, are cached inside a new infinispan cache called `crl`. Caching improves the validation performance and decreases the memory consumption because just one CRL is maintained per source.
+
+Check the `crl-storage` section in the link:https://www.keycloak.org/server/all-provider-config[All provider configuration] {section} to know the options for the new cache provider.
+
+= Operator creates NetworkPolicies to restrict traffic
+
+The {project_name} Operator now creates by default a NetworkPolicy to restrict traffic to internal ports used for {project_name}'s distributed caches.
+
+This strengthens a secure-by-default setup and minimizes the configuration steps of new setups.
+
+You can restrict the access to the management and HTTP endpoints further using the Kubernetes NetworkPolicies rule syntax.
+
+Read more about this in the https://www.keycloak.org/operator/advanced-configuration[Operator Advanced configuration].
+
+= Option to reload trust and key material for the management interface
+
+The `https-management-certificates-reload-period` option can be set to define the reloading period of key store, trust store, and certificate files referenced by `https-management-*` options for the management interface.
+Use -1 to disable reloading. Defaults to `https-certificates-reload-period`, which defaults to 1h (one hour).
+
+For more information, check the link:https://www.keycloak.org/server/management-interface#_tls_support[Configuring the Management Interface] guide.
+
+= Dynamic Authentication Flow selection using Client Policies
+
+Introduced the ability to dynamically select authentication flows based on conditions such as requested scopes, ACR (Authentication Context Class Reference) and others.
+This can be achieved using link:{adminguide_link}#_client_policies[Client Policies] by combining the new `AuthenticationFlowSelectorExecutor` with conditions like the new `ACRCondition`. For more details, see the link:{adminguide_link}#_client-policy-auth-flow[{adminguide_name}].
+
+= JWT Client authentication aligned with the latest OIDC specification
+
+The latest version of the link:https://openid.net/specs/openid-connect-core-1_0-36.html#rfc.section.9[OpenID Connect Core Specification] tightened the rules for
+audience validation in JWT client assertions for the Client Authentication methods `private_key_jwt` and `client_secret_jwt` . {project_name} now enforces by default that there is single audience
+in the JWT token used for client authentication.
+
+For information on the changed audience validation in JWT Client authentication {project_name} versions, see the link:{upgradingguide_link}[{upgradingguide_name}].
+
+ifeval::[{project_community}==true]
+Many thanks to https://github.com/thomasdarimont[Thomas Darimont] for the contribution.
+endif::[]
+
+= Federated credentials are available now when fetching user credentials
+
+Until now, querying user credentials using the User API will not return credentials managed by user storage providers and, as a consequence,
+prevent fetching additional metadata associated with federated credentials like the last time a credential was updated.
+
+In this release, we are adding a new method `getCredentials(RealmModel, UserModel)` to the `org.keycloak.credential.CredentialInputUpdater` interface so that
+user storage providers can return the credentials they manage for a specific user in a realm. By doing this, user storage providers can indicate
+whether the credential is linked to it as well as provide additional metadata so that additional information can be shown when managing users through the administration console.
+
+For LDAP, it should be possible now to see the last time the password was updated based on the standard `pwdChangedTime` attribute or, if
+using Microsoft AD, based on the `pwdLastSet` attribute.
+
+In order to check if a credential is local - managed by {project_name} - or federated, you can check the `federationLink` property available from both
+`CredentialRepresentation` and `CredentialModel` types. If set, the `federationLink` property holds the UUID of the component model associated with a given
+user storage provider.
+
+= Token based authentication for SMTP (XOAUTH2)
+
+The Keycloak outgoing link:{adminguide_email_link}[SMTP mail configuration] now supports token authentication (XOAUTH2).
+Many service providers (Microsoft, Google) are moving towards SMTP OAuth authentication and end the support for basic authentication.
+The token is gathered using Client Credentials Grant.
+
+ifeval::[{project_community}==true]
+Many thanks to https://github.com/srose[Sebastian Rose] for the contribution.
+endif::[]
+
+= New client configuration for access token header type
+
+A new admin setting has been added: Clients -> Advanced -> Fine grain OpenID Connect configuration -> Use "at+jwt" as access token header type
+
+If enabled, access tokens will get header type `at+jwt` in compliance with https://datatracker.ietf.org/doc/html/rfc9068#section-2.1[rfc9068#section-2.1]. Otherwise, the access token header type will be `JWT`.
+
+This setting is turned off by default.
+
+ifeval::[{project_community}==true]
+Many thanks to https://github.com/laurids[Laurids Møller Jepsen] for the contribution.
+endif::[]
+
+ifeval::[{project_community}==true]
+= OpenID for Verifiable Credential Issuance documentation
+
+The OpenID for Verifiable Credential Issuance (OID4VCI) remains an experimental feature in {project_name}, but it received further improvements and especially the link:{adminguide_link}#_oid4vci[The documentation],
+with the steps how to try this feature.
+
+You will find significant development and discussions in the https://github.com/keycloak/kc-sig-fapi[Keycloak OAuth SIG]. Anyone from the Keycloak community is welcome to join and provide the feedback.
+
+Many thanks to all members of the OAuth SIG group for the participation in the development and discussions about this feature. Especially thanks to
+https://github.com/Awambeng[Awambeng Rodrick] and https://github.com/IngridPuppet[Ingrid Kamga].
+endif::[]

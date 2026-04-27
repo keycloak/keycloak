@@ -1,0 +1,163 @@
+[[_service_authorization_uma_policy_api]]
+= Managing resource permissions using the Policy API
+
+{project_name} leverages the UMA Protection API to allow resource servers to manage permissions for their users. In addition
+to the Resource and Permission APIs, {project_name} provides a Policy API from where permissions can be set to resources by resource
+servers on behalf of their users.
+
+The Policy API is available at:
+
+[source,subs="attributes+"]
+----
+http://${host}:${port}{kc_realms_path}/${realm-name}/authz/protection/uma-policy/{resource_id}
+----
+
+This API is protected by a bearer token that must represent a consent granted by the user to the resource server to manage permissions on his behalf. The bearer token can be a regular access token obtained from the
+token endpoint using:
+
+* Resource Owner Password Credentials Grant Type
+* Token Exchange, in order to exchange an access token granted to some client (public client) for a token
+where audience is the resource server
+
+== Associating a permission with a resource
+
+To associate a permission with a specific resource you must send a HTTP POST request as follows:
+
+[source,bash,subs="attributes+"]
+----
+curl -X POST \
+  http://localhost:8180{kc_realms_path}/photoz/authz/protection/uma-policy/{resource_id} \
+  -H 'Authorization: Bearer '$access_token \
+  -H 'Cache-Control: no-cache' \
+  -H 'Content-Type: application/json' \
+  -d '{
+	"name": "Any people manager",
+	"description": "Allow access to any people manager",
+	"scopes": ["read"],
+	"roles": ["people-manager"]
+}'
+----
+
+In the example above we are creating and associating a new permission to a resource represented by `resource_id` where
+any user with a role `people-manager` should be granted with the `read` scope.
+
+You can also create policies using other access control mechanisms, such as using groups:
+
+[source,bash,subs="attributes+"]
+----
+curl -X POST \
+  http://localhost:8180{kc_realms_path}/photoz/authz/protection/uma-policy/{resource_id} \
+  -H 'Authorization: Bearer '$access_token \
+  -H 'Cache-Control: no-cache' \
+  -H 'Content-Type: application/json' \
+  -d '{
+	"name": "Any people manager",
+	"description": "Allow access to any people manager",
+	"scopes": ["read"],
+	"groups": ["/Managers/People Managers"]
+}'
+----
+
+Or a specific client:
+
+[source,bash,subs="attributes+"]
+----
+curl -X POST \
+  http://localhost:8180{kc_realms_path}/photoz/authz/protection/uma-policy/{resource_id} \
+  -H 'Authorization: Bearer '$access_token \
+  -H 'Cache-Control: no-cache' \
+  -H 'Content-Type: application/json' \
+  -d '{
+	"name": "Any people manager",
+	"description": "Allow access to any people manager",
+	"scopes": ["read"],
+	"clients": ["my-client"]
+}'
+----
+
+Or even using a custom policy using JavaScript:
+
+[source,bash,subs="attributes+"]
+----
+curl -X POST \
+  http://localhost:8180{kc_realms_path}/photoz/authz/protection/uma-policy/{resource_id} \
+  -H 'Authorization: Bearer '$access_token \
+  -H 'Cache-Control: no-cache' \
+  -H 'Content-Type: application/json' \
+  -d '{
+	"name": "Any people manager",
+	"description": "Allow access to any people manager",
+	"scopes": ["read"],
+	"condition": "my-deployed-script.js"
+}'
+----
+
+It is also possible to set any combination of these access control mechanisms.
+
+To update an existing permission, send an HTTP PUT request as follows:
+
+[source,bash,subs="attributes+"]
+----
+curl -X PUT \
+  http://localhost:8180{kc_realms_path}/photoz/authz/protection/uma-policy/{permission_id} \
+  -H 'Authorization: Bearer '$access_token \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "id": "21eb3fed-02d7-4b5a-9102-29f3f09b6de2",
+    "name": "Any people manager",
+    "description": "Allow access to any people manager",
+    "type": "uma",
+    "scopes": [
+        "album:view"
+    ],
+    "logic": "POSITIVE",
+    "decisionStrategy": "UNANIMOUS",
+    "owner": "7e22131a-aa57-4f5f-b1db-6e82babcd322",
+    "roles": [
+        "user"
+    ]
+}'
+----
+
+== Removing a permission
+
+To remove a permission associated with a resource, send an HTTP DELETE request as follows:
+
+[source,bash,subs="attributes+"]
+----
+curl -X DELETE \
+  http://localhost:8180{kc_realms_path}/photoz/authz/protection/uma-policy/{permission_id} \
+  -H 'Authorization: Bearer '$access_token
+----
+
+== Querying permission
+
+To query the permissions associated with a resource, send an HTTP GET request as follows:
+
+[source,subs="attributes+"]
+----
+http://${host}:${port}{kc_realms_path}/${realm-name}/authz/protection/uma-policy?resource={resource_id}
+----
+
+To query the permissions given its name, send an HTTP GET request as follows:
+
+[source,bash,subs="attributes+"]
+----
+http://${host}:${port}{kc_realms_path}/${realm-name}/authz/protection/uma-policy?name=Any people manager
+----
+
+To query the permissions associated with a specific scope, send an HTTP GET request as follows:
+
+[source,subs="attributes+"]
+----
+http://${host}:${port}{kc_realms_path}/${realm-name}/authz/protection/uma-policy?scope=read
+----
+
+To query all permissions, send an HTTP GET request as follows:
+
+[source,subs="attributes+"]
+----
+http://${host}:${port}{kc_realms_path}/${realm-name}/authz/protection/uma-policy
+----
+
+When querying the server for permissions use parameters `first` and `max` results to limit the result.

@@ -1,0 +1,18 @@
+
+Usage:
+
+kc.sh update-compatibility [OPTIONS] [COMMAND]
+[Preview] Tool for configuration compatibility.
+
+Options:
+
+-h, --help           This help message.
+-v, --verbose        Print out error details when running this command.
+
+Commands:
+
+  check     Checks if the metadata is compatible with the current
+              configuration. A zero exit code means a rolling update is
+              possible between old and the current metadata.
+  metadata  Stores the metadata necessary to determine if a configuration is
+              compatible.

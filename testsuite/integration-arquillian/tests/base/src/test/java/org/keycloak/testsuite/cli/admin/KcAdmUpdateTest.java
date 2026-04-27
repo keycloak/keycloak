@@ -1,0 +1,191 @@
+package org.keycloak.testsuite.cli.admin;
+
+import java.io.ByteArrayInputStream;
+import java.io.Closeable;
+import java.io.File;
+import java.io.IOException;
+import java.util.Arrays;
+
+import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.broker.saml.SAMLIdentityProviderConfig;
+import org.keycloak.broker.saml.SAMLIdentityProviderFactory;
+import org.keycloak.client.cli.config.FileConfigHandler;
+import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.IdentityProviderRepresentation;
+import org.keycloak.testframework.realm.IdentityProviderBuilder;
+import org.keycloak.testsuite.cli.KcAdmExec;
+import org.keycloak.testsuite.updaters.IdentityProviderCreator;
+import org.keycloak.testsuite.util.TempFileResource;
+import org.keycloak.util.JsonSerialization;
+
+import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+
+import static org.keycloak.testsuite.cli.KcAdmExec.CMD;
+import static org.keycloak.testsuite.cli.KcAdmExec.execute;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.is;
+
+/**
+ * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
+ */
+public class KcAdmUpdateTest extends AbstractAdmCliTest {
+
+    @Test
+    public void testUpdateIDPWithoutInternalId() throws IOException {
+
+        final String realm = "test";
+        final RealmResource realmResource = adminClient.realm(realm);
+
+        IdentityProviderRepresentation identityProvider = IdentityProviderBuilder.create()
+                .providerId(SAMLIdentityProviderFactory.PROVIDER_ID)
+                .alias("idpAlias")
+                .displayName("SAML")
+                .attribute(SAMLIdentityProviderConfig.SINGLE_SIGN_ON_SERVICE_URL, "https://saml.idp/saml")
+                .attribute(SAMLIdentityProviderConfig.ARTIFACT_RESOLUTION_SERVICE_URL, "https://saml.idp/saml")
+                .attribute(SAMLIdentityProviderConfig.SINGLE_LOGOUT_SERVICE_URL, "https://saml.idp/saml")
+                .attribute(SAMLIdentityProviderConfig.NAME_ID_POLICY_FORMAT, "urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress")
+                .attribute(SAMLIdentityProviderConfig.POST_BINDING_RESPONSE, "false")
+                .attribute(SAMLIdentityProviderConfig.POST_BINDING_AUTHN_REQUEST, "false")
+                .attribute(SAMLIdentityProviderConfig.BACKCHANNEL_SUPPORTED, "false")
+                .attribute(SAMLIdentityProviderConfig.ARTIFACT_BINDING_RESPONSE, "false")
+                .build();
+
+        try (Closeable ipc = new IdentityProviderCreator(realmResource, identityProvider)) {
+            initCustomConfigFile();
+            try (TempFileResource configFile = new TempFileResource(FileConfigHandler.getConfigFile())) {
+                loginAsUser(configFile.getFile(), serverUrl, realm, "user1", "userpass");
+
+                KcAdmExec exe = execute("get identity-provider/instances/idpAlias -r " + realm + " --config " + configFile.getFile());
+                assertExitCodeAndStdErrSize(exe, 0, 0);
+
+                final File idpJson = new File("target/test-classes/cli/idp-keycloak-9167.json");
+                exe = execute("update identity-provider/instances/idpAlias -r " + realm + " -f " + idpJson.getAbsolutePath() + " --config " + configFile.getFile());
+                assertExitCodeAndStdErrSize(exe, 0, 0);
+            }
+
+            assertThat(realmResource.identityProviders().get("idpAlias").toRepresentation().getDisplayName(), is(equalTo("SAML_UPDATED")));
+        }
+    }
+
+    @Test
+    public void testUpdateThoroughly() throws IOException {
+
+        initCustomConfigFile();
+
+        try (TempFileResource configFile = new TempFileResource(FileConfigHandler.getConfigFile())) {
+
+            final String realm = "test";
+
+            loginAsUser(configFile.getFile(), serverUrl, realm, "user1", "userpass");
+
+
+            // create an object so we can update it
+            KcAdmExec exe = execute("create clients --config '" + configFile.getName() + "' -o -s clientId=my_client");
+
+            assertExitCodeAndStdErrSize(exe, 0, 0);
+
+            ClientRepresentation client = JsonSerialization.readValue(exe.stdout(), ClientRepresentation.class);
+
+            Assertions.assertTrue(client.isEnabled(), "enabled");
+            Assertions.assertFalse(client.isPublicClient(), "publicClient");
+            Assertions.assertFalse(client.isBearerOnly(), "bearerOnly");
+            Assertions.assertTrue(client.getRedirectUris().isEmpty(), "redirectUris is empty");
+
+
+            // Merge update
+            exe = execute("update clients/" + client.getId() + " --config '" + configFile.getName() + "' -o " +
+                    " -s enabled=false -s 'redirectUris=[\"http://localhost:8980/myapp/*\"]'");
+
+            assertExitCodeAndStdErrSize(exe, 0, 0);
+
+            client = JsonSerialization.readValue(exe.stdout(), ClientRepresentation.class);
+            Assertions.assertFalse(client.isEnabled(), "enabled");
+            Assertions.assertEquals(Arrays.asList("http://localhost:8980/myapp/*"), client.getRedirectUris(), "redirectUris");
+
+
+
+            // Another merge update - test deleting an attribute, deleting a list item and adding a list item
+            exe = execute("update clients/" + client.getId() + " --config '" + configFile.getName() + "' -o -d redirectUris[0] -s webOrigins+=http://localhost:8980/myapp -s webOrigins+=http://localhost:8981/myapp -d webOrigins[0]");
+
+            assertExitCodeAndStdErrSize(exe, 0, 0);
+
+            client = JsonSerialization.readValue(exe.stdout(), ClientRepresentation.class);
+
+            Assertions.assertTrue(client.getRedirectUris().isEmpty(), "redirectUris is empty");
+            Assertions.assertEquals(Arrays.asList("http://localhost:8981/myapp"), client.getWebOrigins(), "webOrigins");
+
+
+
+            // Another merge update - test nested attributes and setting an attribute using json format
+            // TODO KEYCLOAK-3705 Updating protocolMapper config via client registration endpoint has no effect
+            /*
+            exe = execute("update my_client --config '" + configFile.getName() + "' -o -s 'protocolMappers[0].config.\"id.token.claim\"=false' " +
+                    "-s 'protocolMappers[4].config={\"single\": \"true\", \"attribute.nameformat\": \"Basic\", \"attribute.name\": \"Role\"}'");
+
+            assertExitCodeAndStdErrSize(exe, 0, 0);
+
+            client = JsonSerialization.readValue(exe.stdout(), ClientRepresentation.class);
+            Assert.assertEquals("protocolMapper[0].config.\"id.token.claim\"", "false", client.getProtocolMappers().get(0).getConfig().get("id.token.claim"));
+            Assert.assertEquals("protocolMappers[4].config.single", "true", client.getProtocolMappers().get(4).getConfig().get("single"));
+            Assert.assertEquals("protocolMappers[4].config.\"attribute.nameformat\"", "Basic", client.getProtocolMappers().get(4).getConfig().get("attribute.nameformat"));
+            Assert.assertEquals("protocolMappers[4].config.\"attribute.name\"", "Role", client.getProtocolMappers().get(4).getConfig().get("attribute.name"));
+            */
+
+            // update using oidc format
+
+
+            // check that using an invalid attribute key is not ignored
+            exe = execute("update clients/" + client.getId() + " --nonexisting --config '" + configFile.getName() + "'");
+
+            assertExitCodeAndStreamSizes(exe, 2, 0, 3);
+            Assertions.assertEquals("Unknown option: '--nonexisting'", exe.stderrLines().get(0), "error message");
+            Assertions.assertEquals("Try '" + CMD + " update --help' for more information on the available options.", exe.stderrLines().get(2), "try help");
+
+
+            // test overwrite from file
+            exe = KcAdmExec.newBuilder()
+                    .argsLine("update clients/" + client.getId() + " --config '" + configFile.getName() +
+                            "' -o  -s clientId=my_client -s 'redirectUris=[\"http://localhost:8980/myapp/*\"]' -f -")
+                    .stdin(new ByteArrayInputStream("{ \"enabled\": false }".getBytes()))
+                    .execute();
+
+            assertExitCodeAndStdErrSize(exe, 0, 0);
+
+            client = JsonSerialization.readValue(exe.stdout(), ClientRepresentation.class);
+            // web origin is not sent to the server, thus it retains the current value
+            Assertions.assertEquals(Arrays.asList("http://localhost:8981/myapp"), client.getWebOrigins(), "webOrigins");
+            Assertions.assertFalse(client.isEnabled(), "enabled is false");
+            Assertions.assertEquals(Arrays.asList("http://localhost:8980/myapp/*"), client.getRedirectUris(), "redirectUris");
+
+
+            // test using merge with file
+            exe = KcAdmExec.newBuilder()
+                    .argsLine("update clients/" + client.getId() + " --config '" + configFile.getName() +
+                            "' -o -m -f -")
+                    .stdin(new ByteArrayInputStream("{ \"webOrigins\": [\"http://localhost:8980/myapp\"] }".getBytes()))
+                    .execute();
+
+            assertExitCodeAndStdErrSize(exe, 0, 0);
+
+            client = JsonSerialization.readValue(exe.stdout(), ClientRepresentation.class);
+            Assertions.assertEquals(Arrays.asList("http://localhost:8980/myapp"), client.getWebOrigins(), "webOrigins");
+            Assertions.assertFalse(client.isEnabled(), "enabled is false");
+            Assertions.assertEquals(Arrays.asList("http://localhost:8980/myapp/*"), client.getRedirectUris(), "redirectUris");
+
+            exe = KcAdmExec.newBuilder()
+                    .argsLine("update clients/" + client.getId() + " --config '" + configFile.getName() +
+                            "' -o -s enabled=true -m -f -")
+                    .stdin(new ByteArrayInputStream("{ \"webOrigins\": [\"http://localhost:8980/myapp1\"] }".getBytes()))
+                    .execute();
+
+            assertExitCodeAndStdErrSize(exe, 0, 0);
+
+            client = JsonSerialization.readValue(exe.stdout(), ClientRepresentation.class);
+            Assertions.assertEquals(Arrays.asList("http://localhost:8980/myapp1"), client.getWebOrigins(), "webOrigins");
+            Assertions.assertTrue(client.isEnabled(), "enabled is true");
+        }
+    }
+}

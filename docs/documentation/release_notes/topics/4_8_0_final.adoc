@@ -1,0 +1,18 @@
+= OpenShift Integration
+
+It is now possible to fully secure OpenShift 3.11 with {project_name}, including the ability to automatically expose
+Service Accounts as OAuth clients as clients to {project_name}.
+
+This is currently a technology preview feature.
+
+ifeval::[{project_community}==true]
+= Rules/Drools Policy Marked as a Technology Preview Feature
+
+Until now, Drools policies were enabled by default. But now, this policy type is only available as a technology preview feature and
+to use it you need to enable the preview profile or the corresponding feature. Take a look at the link:{authorizationguide_link}[{authorizationguide_name}] for more details.
+
+endif::[]
+
+= Support for DB2 removed
+
+DB2 support has been deprecated for a while. With this release we have removed all support for DB2.

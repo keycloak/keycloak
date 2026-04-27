@@ -1,0 +1,133 @@
+{
+  "realm": "groups",
+  "accountTheme": "keycloak.v3",
+  "enabled": true,
+  "userManagedAccessAllowed": true,
+  "sslRequired": "external",
+  "privateKey": "MIICXAIBAAKBgQCrVrCuTtArbgaZzL1hvh0xtL5mc7o0NqPVnYXkLvgcwiC3BjLGw1tGEGoJaXDuSaRllobm53JBhjx33UNv+5z/UMG4kytBWxheNVKnL6GgqlNabMaFfPLPCF8kAgKnsi79NMo+n6KnSY8YeUmec/p2vjO2NjsSAVcWEQMVhJ31LwIDAQABAoGAfmO8gVhyBxdqlxmIuglbz8bcjQbhXJLR2EoS8ngTXmN1bo2L90M0mUKSdc7qF10LgETBzqL8jYlQIbt+e6TH8fcEpKCjUlyq0Mf/vVbfZSNaVycY13nTzo27iPyWQHK5NLuJzn1xvxxrUeXI6A2WFpGEBLbHjwpx5WQG9A+2scECQQDvdn9NE75HPTVPxBqsEd2z10TKkl9CZxu10Qby3iQQmWLEJ9LNmy3acvKrE3gMiYNWb6xHPKiIqOR1as7L24aTAkEAtyvQOlCvr5kAjVqrEKXalj0Tzewjweuxc0pskvArTI2Oo070h65GpoIKLc9jf+UA69cRtquwP93aZKtW06U8dQJAF2Y44ks/mK5+eyDqik3koCI08qaC8HYq2wVl7G2QkJ6sbAaILtcvD92ToOvyGyeE0flvmDZxMYlvaZnaQ0lcSQJBAKZU6umJi3/xeEbkJqMfeLclD27XGEFoPeNrmdx0q10Azp4NfJAY+Z8KRyQCR2BEG+oNitBOZ+YXF9KCpH3cdmECQHEigJhYg+ykOvr1aiZUMFT72HU0jnmQe2FVekuG+LJUt2Tm7GtMjTFoGpf0JwrVuZN39fOYAlo+nTixgeW7X8Y=",
+  "publicKey": "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCrVrCuTtArbgaZzL1hvh0xtL5mc7o0NqPVnYXkLvgcwiC3BjLGw1tGEGoJaXDuSaRllobm53JBhjx33UNv+5z/UMG4kytBWxheNVKnL6GgqlNabMaFfPLPCF8kAgKnsi79NMo+n6KnSY8YeUmec/p2vjO2NjsSAVcWEQMVhJ31LwIDAQAB",
+  "requiredCredentials": [
+    "password"
+  ],
+  "users": [
+    {
+      "username": "jdoe",
+      "firstName": "John",
+      "lastName": "Doe",
+      "email": "jdoe@keycloak.org",
+      "enabled": true,
+      "realmRoles": [],
+      "clientRoles": {
+        "account": ["view-groups", "manage-account"]
+      },
+      "credentials": [
+        {
+          "type": "password",
+          "value": "jdoe"
+        }
+      ],
+      "groups" : [ "/one", "/two", "/three" ]
+    },
+    {
+      "username": "alice",
+      "firstName": "Alice",
+      "lastName": "Alison",
+      "email": "alice@keycloak.org",
+      "enabled": true,
+      "realmRoles": [],
+      "clientRoles": {
+        "account": ["view-groups", "manage-account"]
+      },
+      "credentials": [
+        {
+          "type": "password",
+          "value": "alice"
+        }
+      ],
+      "groups" : [ "/one/subgroup", "/four", "/five" ]
+    }
+  ],
+  "groups": [
+    {
+      "name": "five",
+      "path": "/five",
+      "attributes": {},
+      "realmRoles": [],
+      "clientRoles": {},
+      "subGroups": []
+    },
+    {
+      "name": "four",
+      "path": "/four",
+      "attributes": {},
+      "realmRoles": [],
+      "clientRoles": {},
+      "subGroups": []
+    },
+    {
+      "name": "one",
+      "path": "/one",
+      "attributes": {},
+      "realmRoles": [],
+      "clientRoles": {},
+      "subGroups": [
+        {
+          "name": "subgroup",
+          "path": "/one/subgroup",
+          "attributes": {},
+          "realmRoles": [],
+          "clientRoles": {},
+          "subGroups": []
+        }
+      ]
+    },
+    {
+      "name": "three",
+      "path": "/three",
+      "attributes": {},
+      "realmRoles": [],
+      "clientRoles": {},
+      "subGroups": []
+    },
+    {
+      "name": "two",
+      "path": "/two",
+      "attributes": {},
+      "realmRoles": [],
+      "clientRoles": {},
+      "subGroups": []
+    }
+  ],
+  "clients": [
+  ],
+  "identityProviders": [
+    {
+      "alias": "oidc",
+      "displayName": "",
+      "providerId": "oidc",
+      "enabled": true,
+      "updateProfileFirstLoginMode": "on",
+      "trustEmail": false,
+      "storeToken": false,
+      "addReadTokenRoleOnCreate": false,
+      "authenticateByDefault": false,
+      "linkOnly": false,
+      "firstBrokerLoginFlowAlias": "first broker login",
+      "config": {
+        "clientId": "groups-idp",
+        "clientSecret": "H0JaTc7VBu3HJR26vrzMxgidfJmgI5Dw",
+        "userInfoUrl": "http://localhost:8180/realms/master/protocol/openid-connect/userinfo",
+        "validateSignature": "true",
+        "tokenUrl": "http://localhost:8180/realms/master/protocol/openid-connect/token",
+        "jwksUrl": "http://localhost:8180/realms/master/protocol/openid-connect/certs",
+        "issuer": "http://localhost:8180/realms/master",
+        "useJwksUrl": "true",
+        "pkceEnabled": "false",
+        "metadataDescriptorUrl": "http://localhost:8180/realms/master/.well-known/openid-configuration",
+        "authorizationUrl": "http://localhost:8180/realms/master/protocol/openid-connect/auth",
+        "clientAuthMethod": "client_secret_post",
+        "logoutUrl": "http://localhost:8180/realms/master/protocol/openid-connect/logout"
+      }
+    }
+  ]
+}

@@ -1,0 +1,156 @@
+package org.keycloak.tests.client.authentication.external;
+
+import java.util.UUID;
+
+import org.keycloak.authentication.authenticators.client.FederatedJWTClientAuthenticator;
+import org.keycloak.broker.kubernetes.KubernetesIdentityProviderFactory;
+import org.keycloak.common.util.Time;
+import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.representations.JsonWebToken;
+import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.oauth.OAuthIdentityProvider;
+import org.keycloak.testframework.oauth.OAuthIdentityProviderConfig;
+import org.keycloak.testframework.oauth.OAuthIdentityProviderConfigBuilder;
+import org.keycloak.testframework.oauth.annotations.InjectOAuthIdentityProvider;
+import org.keycloak.testframework.realm.ClientBuilder;
+import org.keycloak.testframework.realm.IdentityProviderBuilder;
+import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.realm.RealmBuilder;
+import org.keycloak.testframework.realm.RealmConfig;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
+
+@KeycloakIntegrationTest
+@TestMethodOrder(MethodOrderer.MethodName.class)
+public class KubernetesClientAuthTest extends AbstractBaseClientAuthTest {
+
+    static final String INTERNAL_CLIENT_ID = "myclient";
+    static final String EXTERNAL_CLIENT_ID = "system:serviceaccount:mynamespace:myserviceaccount";
+    static final String IDP_ALIAS = "kubernetes-idp";
+    static final String ISSUER = "http://127.0.0.1:8500/idp";
+
+    @InjectRealm(config = ExernalClientAuthRealmConfig.class)
+    protected ManagedRealm realm;
+
+    @InjectOAuthIdentityProvider(config = KubernetesIdpConfig.class)
+    OAuthIdentityProvider identityProvider;
+
+    public KubernetesClientAuthTest() {
+        super(ISSUER, INTERNAL_CLIENT_ID, EXTERNAL_CLIENT_ID, IDP_ALIAS);
+    }
+
+    @Override
+    protected OAuthIdentityProvider getIdentityProvider() {
+        return identityProvider;
+    }
+
+    @Test
+    public void testKeysCached() {
+        Assertions.assertTrue(doClientGrant(createDefaultToken()).isSuccess());
+        int keysRequestCount = identityProvider.getKeysRequestCount();
+        Assertions.assertTrue(doClientGrant(createDefaultToken()).isSuccess());
+        Assertions.assertEquals(keysRequestCount, identityProvider.getKeysRequestCount());
+    }
+
+    @Test
+    public void testInvalidIssuer() {
+        JsonWebToken jwt = createDefaultToken();
+        jwt.issuer("https://invalid");
+        assertFailure(doClientGrant(jwt));
+        assertFailure(null, "https://invalid", jwt.getSubject(), jwt.getId(), "client_not_found", events.poll());
+    }
+
+    @Test
+    public void testOldIAt() {
+        JsonWebToken jwt = createDefaultToken();
+        jwt.iat((long) (Time.currentTime() - 3550));
+        assertSuccess(internalClientId, doClientGrant(jwt));
+        assertSuccess(internalClientId, jwt.getId(), expectedTokenIssuer, externalClientId, events.poll());
+    }
+
+    @Test
+    public void testValidTokenWithClientId() {
+        JsonWebToken jwt = createDefaultToken();
+        String jws = getIdentityProvider().encodeToken(jwt);
+        AccessTokenResponse response = oAuthClient.clientCredentialsGrantRequest()
+                .client(INTERNAL_CLIENT_ID)
+                .clientJwt(jws, getClientAssertionType())
+                .send();
+        assertSuccess(internalClientId, response);
+        assertSuccess(internalClientId, jwt.getId(), expectedTokenIssuer, externalClientId, events.poll());
+    }
+
+    @Test
+    public void testWrongClientIdFailsValidation() {
+        JsonWebToken jwt = createDefaultToken();
+        String jws = getIdentityProvider().encodeToken(jwt);
+        AccessTokenResponse response = oAuthClient.clientCredentialsGrantRequest()
+                .client("completely-wrong-id")
+                .clientJwt(jws, getClientAssertionType())
+                .send();
+        assertFailure(response);
+        assertFailure("completely-wrong-id", expectedTokenIssuer, externalClientId, jwt.getId(), "client_not_found", events.poll());
+    }
+
+    @Test
+    public void testReuse() {
+        JsonWebToken jwt = createDefaultToken();
+        assertSuccess(internalClientId, doClientGrant(jwt));
+        assertSuccess(internalClientId, jwt.getId(), expectedTokenIssuer, externalClientId, events.poll());
+        assertSuccess(internalClientId, doClientGrant(jwt));
+        assertSuccess(internalClientId, jwt.getId(), expectedTokenIssuer, externalClientId, events.poll());
+    }
+
+    @Override
+    protected JsonWebToken createDefaultToken() {
+        JsonWebToken token = new JsonWebToken();
+        token.id(UUID.randomUUID().toString());
+        token.issuer(ISSUER);
+        token.audience(oAuthClient.getEndpoints().getIssuer());
+        token.nbf((long) (Time.currentTime()));
+        token.exp((long) (Time.currentTime() + 300));
+        token.iat((long) (Time.currentTime() - 300));
+        token.subject(EXTERNAL_CLIENT_ID);
+        return token;
+    }
+
+    @Override
+    public ManagedRealm getRealm() {
+        return realm;
+    }
+
+    public static class ExernalClientAuthRealmConfig implements RealmConfig {
+
+        @Override
+        public RealmBuilder configure(RealmBuilder realm) {
+            realm.identityProviders(
+                    IdentityProviderBuilder.create()
+                            .providerId(KubernetesIdentityProviderFactory.PROVIDER_ID)
+                            .alias(IDP_ALIAS)
+                            .attribute(IdentityProviderModel.ISSUER, ISSUER)
+                            .build());
+
+            realm.clients(ClientBuilder.create(INTERNAL_CLIENT_ID)
+                    .serviceAccountsEnabled(true)
+                    .authenticatorType(FederatedJWTClientAuthenticator.PROVIDER_ID)
+                    .attribute(FederatedJWTClientAuthenticator.JWT_CREDENTIAL_ISSUER_KEY, IDP_ALIAS)
+                    .attribute(FederatedJWTClientAuthenticator.JWT_CREDENTIAL_SUBJECT_KEY, EXTERNAL_CLIENT_ID));
+
+            return realm;
+        }
+    }
+
+    public static class KubernetesIdpConfig implements OAuthIdentityProviderConfig {
+
+        @Override
+        public OAuthIdentityProviderConfigBuilder configure(OAuthIdentityProviderConfigBuilder config) {
+            return config.kubernetes();
+        }
+    }
+
+}

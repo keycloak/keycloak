@@ -1,0 +1,90 @@
+
+[[_identity_broker_oauth]]
+=== OAuth v2 identity providers
+
+{project_name} brokers identity providers based on the OAuth v2 protocol. These identity providers (IDPs) must support the xref:con-oidc-auth-flows_{context}[Authorization Code Flow] defined in the specification to authenticate users and authorize access.
+
+
+.Procedure
+. Click *Identity Providers* in the menu.
+. From the `Add provider` list, select `OAuth v2`.
++
+. Enter your initial configuration options. See <<_general-idp-config, General IDP Configuration>> for more information about configuration options.
++
+.OAuth2 settings
+|===
+|Configuration|Description
+
+|Authorization URL
+|The authorization URL endpoint.
+
+|Token URL
+|The token URL endpoint.
+
+|User Info URL
+|An endpoint from where information about the user will be fetched from. When invoking this endpoint, {project_name} will send
+the request with the access token issued by the identity provider as a bearer token. As a result, it expects the response to be a
+JSON document with the claims that should be used to obtain user profile information like ID, username, email, and first and last names.
+
+|Client Authentication
+|Defines the Client Authentication method {project_name} uses with the Authorization Code Flow. In the case of JWT signed with a private key, {project_name} uses the realm private key. In the other cases, define a client secret. See the https://openid.net/specs/openid-connect-core-1_0.html#ClientAuthentication[Client Authentication specifications] for more information.
+
+|Client ID
+|A realm acting as an OIDC client to the external IDP. The realm must have an OIDC client ID if you use the Authorization Code Flow to interact with the external IDP.
+
+|Client Secret
+|Client secret from an external <<_vault-administration,vault>>. This secret is necessary if you are using the Authorization Code Flow.
+
+|Client Assertion Signature Algorithm
+|Signature algorithm to create JWT assertion as client authentication.
+In the case of JWT signed with private key or Client secret as jwt, it is required. If no algorithm is specified, the following algorithm is adapted. `RS256` is adapted in the case of JWT signed with private key.  `HS256` is adapted in the case of Client secret as jwt.
+
+|Client Assertion Audience
+|The audience to use for the client assertion. The default value is the IDP's token endpoint URL.
+
+|Default Scopes
+|A space separated list of scopes {project_name} sends with the authentication request.
+
+|Prompt
+|The prompt parameter in the OIDC specification. Through this parameter, you can force re-authentication and other options. See the specification for more details.
+
+|Accepts prompt=none forward from client
+|Specifies if the IDP accepts forwarded authentication requests containing the `prompt=none` query parameter. If a realm receives an auth request with `prompt=none`, the realm checks if the user is currently authenticated and returns a `login_required` error if the user has not logged in. When {project_name} determines a default IDP for the auth request (using the `kc_idp_hint` query parameter or having a default IDP for the realm), you can forward the auth request with `prompt=none` to the default IDP. The default IDP checks the authentication of the user there. Because not all IDPs support requests with `prompt=none`, {project_name} uses this switch to indicate that the default IDP supports the parameter before redirecting the authentication request.
+
+If the user is unauthenticated in the IDP, the client still receives a `login_required` error. If the user is authentic in the IDP, the client can still receive an `interaction_required` error if {project_name} must display authentication pages that require user interaction. This authentication includes required actions (for example, password change), consent screens, and screens set to display by the `first broker login` flow or `post broker login` flow.
+
+|Requires short state parameter
+|This switch needs to be enabled if identity provider does not support long value of the `state` parameter sent in the initial OAuth2 authorization request (EG. more than 100 characters). In this case, {project_name} will try to make shorter `state` parameter and may omit some client data to be sent in the initial request. This may result in the limited functionality in some very corner case scenarios (EG. in case that IDP redirects to {project_name} with the error in the OAuth2 authorization response, {project_name} might need to display error page instead of being able to redirect to the client in case that login session is expired).
+
+|===
+
+After the user authenticates to the identity provider and is redirected back to {project_name}, the broker will fetch the user profile information from the endpoint defined in the `User Info URL` setting. For that,
+{project_name} will invoke that endpoint using the access token issued by the identity provider as a bearer token. Even though the OAuth2 standard supports access tokens using a JWT format, this broker assumes access tokens are opaque and that user profile information should be obtained from a separate endpoint.
+
+In order to map the claims from the JSON document returned by the user profile endpoint, you might want to set the following settings so that they are mapped to user attributes when federating the user:
+
+.User profile claims
+|===
+|Configuration|Description
+
+|ID Claim
+|The name of the claim from the JSON document returned by the user profile endpoint representing the user's unique identifier. If not provided, defaults to `sub`.
+
+|Username Claim
+|The name of the claim from the JSON document returned by the user profile endpoint representing the user's username. If not provided, defaults to `preferred_username`.
+
+|Email Claim
+|The name of the claim from the JSON document returned by the user profile endpoint representing the user's email. If not provided, defaults to `email`.
+
+|Name Claim
+|The name of the claim from the JSON document returned by the user profile endpoint representing the user's full name. If not provided, defaults to `name`.
+
+|Given name Claim
+|The name of the claim from the JSON document returned by the user profile endpoint representing the user's given name. If not provided, defaults to `given_name`.
+
+|Family name Claim
+|The name of the claim from the JSON document returned by the user profile endpoint representing the user's family name. If not provided, defaults to `family_name`.
+
+|===
+
+You can import all this configuration data by providing a URL or file that points to the Authorization Server Metadata. If you connect to a {project_name} external IDP, you can import the IDP settings from `<root>{kc_realms_path}/{realm-name}/.well-known/openid-configuration`. This link is a JSON document describing metadata about the IDP.

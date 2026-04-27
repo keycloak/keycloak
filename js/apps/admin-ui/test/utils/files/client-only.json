@@ -1,0 +1,12 @@
+{
+  "clients": [
+    {
+      "clientId": "customer-portal3",
+      "enabled": true,
+      "adminUrl": "/customer-portal",
+      "baseUrl": "/customer-portal",
+      "redirectUris": ["/customer-portal/*"],
+      "secret": "password"
+    }
+  ]
+}

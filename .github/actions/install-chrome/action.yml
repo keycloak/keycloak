@@ -1,0 +1,39 @@
+name: Install Chrome browser and driver for Testing
+description: Download and install the compatible Chrome and Chromedriver
+
+inputs:
+  version:
+    description: The version of Chrome and Chromedriver to install. By default none is installed.
+    required: false
+    default: default # E.g. 135.0.7049.84 (fixed version), default (chrome provided by GHA box)
+
+runs:
+  using: composite
+  steps:
+
+    - id: install-chrome
+      name: Install Chrome
+      if: inputs.version != 'default'
+      shell: bash
+      run: |
+        sudo apt-get remove google-chrome-stable
+        wget http://dl.google.com/linux/chrome/deb/pool/main/g/google-chrome-stable/google-chrome-stable_${{ inputs.version }}-1_amd64.deb -O /tmp/google-chrome-stable.deb --no-verbose
+        sudo apt-get install -y /tmp/google-chrome-stable.deb
+
+    - id: install-chromedriver
+      name: Install Chromedriver
+      if: inputs.version != 'default'
+      shell: bash
+      run: |
+        wget https://storage.googleapis.com/chrome-for-testing-public/${{ inputs.version }}/linux64/chromedriver-linux64.zip -O /tmp/chromedriver.zip --no-verbose
+        unzip -j /tmp/chromedriver.zip -d /tmp
+        sudo mv -f /tmp/chromedriver $CHROMEWEBDRIVER/chromedriver
+        sudo chmod +x $CHROMEWEBDRIVER/chromedriver
+
+    - id: show-version
+      name: Show Version
+      if: inputs.version == 'default'
+      shell: bash
+      run: |
+        google-chrome --version
+        $CHROMEWEBDRIVER/chromedriver --version

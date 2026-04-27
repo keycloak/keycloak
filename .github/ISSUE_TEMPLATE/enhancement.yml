@@ -1,0 +1,50 @@
+name: Enhancement Request
+description: Request an enhancement to an existing feature
+labels: ["kind/enhancement", "status/triage"]
+type: enhancement
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: Describe the enhancement at a high-level
+    validations:
+      required: true
+  - type: textarea
+    id: value_proposition
+    attributes:
+      label: Value Proposition
+      description: Describe what value the enhancement brings
+    validations:
+      required: true
+  - type: textarea
+    id: goals
+    attributes:
+      label: Goals
+      description: Describe what the enhancement should provide
+    validations:
+      required: true
+  - type: textarea
+    id: non_goals
+    attributes:
+      label: Non-Goals
+      description: Describe what the enhancement should not provide, or is out of scope
+    validations:
+      required: true
+  - type: input
+    id: discussion
+    attributes:
+      label: Discussion
+      description: |
+        If there has been a discussion around the enhancement, provide a link to the discussion.
+
+        Please note that all, except small requests, should be discussed through [GitHub Discussion](https://github.com/keycloak/keycloak/discussions/categories/ideas).
+    validations:
+      required: false
+  - type: textarea
+    id: notes
+    attributes:
+      label: Notes
+      description: Design ideas? Implementation ideas? Anything that will give us more context about the enhancement you are proposing!
+    validations:
+      required: false

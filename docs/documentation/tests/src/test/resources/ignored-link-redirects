@@ -1,0 +1,19 @@
+https://sso.jboss.org/login*
+https://accounts.google.com/ServiceLogin*
+https://github.com/login*
+https://www.linkedin.com/uas/login*
+https://apps.dev.microsoft.com/?mkt=en-us&deeplink=/appList/create/sapi&referrer=https://account.live.com
+/users/login?returnurl=/apps/oauth/register
+/wiki/spaces/ops4j/pages/5046841/Pax Web Extender - War
+/wiki/spaces/ops4j/pages/5046828/Pax Web Extender - Whiteboard
+/wiki/spaces/ops4j/pages/5046828/Pax Web Extender - Whiteboard
+https://nodejs.org/en/
+https://nodejs.org/en
+/en/
+/en
+http://docs.openshift.com/container-platform/*
+https://access.redhat.com/documentation/en/red-hat-jboss-middleware-for-openshift/3/single/openshift-primer/
+https://access.redhat.com/login?redirectTo=https://access.redhat.com/terms-based-registry
+https://sso.redhat.com/auth/*
+REGEX:https://access.redhat.com/documentation/.*/index
+REGEX:/login\.jsp.+KEYCLOAK-[0-9]+.*

@@ -1,0 +1,546 @@
+/*
+ * Copyright 2017 Red Hat, Inc. and/or its affiliates
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.keycloak.testsuite.federation.storage;
+
+import java.io.IOException;
+import java.net.URISyntaxException;
+import java.util.Calendar;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.client.Client;
+import jakarta.ws.rs.client.Entity;
+import jakarta.ws.rs.client.WebTarget;
+import jakarta.ws.rs.core.Form;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.Response;
+
+import org.keycloak.OAuth2Constants;
+import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthenticator;
+import org.keycloak.common.util.MultivaluedHashMap;
+import org.keycloak.component.ComponentModel;
+import org.keycloak.events.Details;
+import org.keycloak.events.EventType;
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.Constants;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.StorageProviderRealmModel;
+import org.keycloak.models.cache.infinispan.ClientAdapter;
+import org.keycloak.representations.AccessToken;
+import org.keycloak.representations.RefreshToken;
+import org.keycloak.representations.idm.ComponentRepresentation;
+import org.keycloak.representations.idm.EventRepresentation;
+import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.storage.CacheableStorageProviderModel;
+import org.keycloak.storage.client.ClientStorageProvider;
+import org.keycloak.storage.client.ClientStorageProviderModel;
+import org.keycloak.testframework.events.EventAssertion;
+import org.keycloak.testframework.remote.providers.runonserver.RunOnServerException;
+import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
+import org.keycloak.testsuite.AssertEvents;
+import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.auth.page.AuthRealm;
+import org.keycloak.testsuite.federation.HardcodedClientStorageProviderFactory;
+import org.keycloak.testsuite.pages.AppPage;
+import org.keycloak.testsuite.pages.ErrorPage;
+import org.keycloak.testsuite.pages.LoginPage;
+import org.keycloak.testsuite.util.AdminClientUtil;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
+import org.keycloak.testsuite.util.runonserver.RunHelpers;
+import org.keycloak.util.BasicAuthHelper;
+import org.keycloak.util.TokenUtil;
+
+import org.jboss.arquillian.graphene.page.Page;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+
+import static java.util.Calendar.DAY_OF_WEEK;
+import static java.util.Calendar.HOUR_OF_DAY;
+import static java.util.Calendar.MINUTE;
+
+import static org.keycloak.testsuite.admin.AdminApiUtil.findUserByUsername;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.allOf;
+import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.not;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+/**
+ * Test that clients can override auth flows
+ *
+ * @author <a href="mailto:bburke@redhat.com">Bill Burke</a>
+ */
+public class ClientStorageTest extends AbstractTestRealmKeycloakTest {
+    @Rule
+    public AssertEvents events = new AssertEvents(this);
+
+    @Page
+    protected AppPage appPage;
+
+    @Page
+    protected LoginPage loginPage;
+
+    @Page
+    protected ErrorPage errorPage;
+
+    @Override
+    public void configureTestRealm(RealmRepresentation testRealm) {
+    }
+
+    private String providerId;
+
+    protected String addComponent(ComponentRepresentation component) {
+        Response resp = adminClient.realm("test").components().add(component);
+        resp.close();
+        String id = ApiUtil.getCreatedId(resp);
+        getCleanup().addComponentId(id);
+        return id;
+    }
+
+    @Before
+    public void addProvidersBeforeTest() throws URISyntaxException, IOException {
+        ComponentRepresentation provider = new ComponentRepresentation();
+        provider.setName("client-storage-hardcoded");
+        provider.setProviderId(HardcodedClientStorageProviderFactory.PROVIDER_ID);
+        provider.setProviderType(ClientStorageProvider.class.getName());
+        provider.setConfig(new MultivaluedHashMap<>());
+        provider.getConfig().putSingle(HardcodedClientStorageProviderFactory.CLIENT_ID, "hardcoded-client");
+        provider.getConfig().putSingle(HardcodedClientStorageProviderFactory.REDIRECT_URI, oauth.getRedirectUri());
+        provider.getConfig().putSingle(HardcodedClientStorageProviderFactory.DELAYED_SEARCH, Boolean.toString(false));
+
+        providerId = addComponent(provider);
+    }
+
+    protected String userId;
+
+    @Before
+    public void clientConfiguration() {
+        userId = findUserByUsername(adminClient.realm("test"), "test-user@localhost").getId();
+        oauth.client("hardcoded-client");
+    }
+
+    @Test
+    public void testSearchTimeout() throws Exception{
+        runTestWithTimeout(4000, () -> {
+            String hardcodedClient = HardcodedClientStorageProviderFactory.PROVIDER_ID;
+            String delayedSearch = HardcodedClientStorageProviderFactory.DELAYED_SEARCH;
+            String providerId = this.providerId;
+            testingClient.server().run(session -> {
+                RealmModel realm = session.realms().getRealmByName(AuthRealm.TEST);
+
+                assertThat(session.clients()
+                            .searchClientsByClientIdStream(realm, "client", null, null)
+                            .map(ClientModel::getClientId)
+                            .collect(Collectors.toList()),
+                        allOf(
+                            hasItem(hardcodedClient),
+                            hasItem("root-url-client"))
+                        );
+
+                // test the pagination; the clients from local storage (root-url-client) are fetched first
+                assertThat(session.clients()
+                                .searchClientsByClientIdStream(realm, "client", 0, 1)
+                                .map(ClientModel::getClientId)
+                                .collect(Collectors.toList()),
+                        allOf(
+                                not(hasItem(hardcodedClient)),
+                                hasItem("root-url-client"))
+                );
+                assertThat(session.clients()
+                                .searchClientsByClientIdStream(realm, "client", 1, 1)
+                                .map(ClientModel::getClientId)
+                                .collect(Collectors.toList()),
+                        allOf(
+                                hasItem(hardcodedClient),
+                                not(hasItem("root-url-client")))
+                );
+
+                //update the provider to simulate delay during the search
+                ComponentModel memoryProvider = realm.getComponent(providerId);
+                memoryProvider.getConfig().putSingle(delayedSearch, Boolean.toString(true));
+                realm.updateComponent(memoryProvider);
+
+            });
+
+            testingClient.server().run(session -> {
+                // search for clients and check hardcoded-client is not present
+                assertThat(session.clients()
+                        .searchClientsByClientIdStream(session.realms().getRealmByName(AuthRealm.TEST), "client", null, null)
+                        .map(ClientModel::getClientId)
+                        .collect(Collectors.toList()),
+                    allOf(
+                        not(hasItem(hardcodedClient)),
+                        hasItem("root-url-client")
+                    ));
+            });
+        });
+    }
+
+    @Test
+    public void testClientStats() throws Exception {
+        testDirectGrant("hardcoded-client");
+        testDirectGrant("hardcoded-client");
+        testDirectGrant("direct-grant");
+        testBrowser("test-app");
+        offlineTokenDirectGrantFlowNoRefresh("hardcoded-client");
+        offlineTokenDirectGrantFlowNoRefresh("hardcoded-client");
+        offlineTokenDirectGrantFlowNoRefresh("direct-grant");
+        offlineTokenDirectGrantFlowNoRefresh("direct-grant");
+        List<Map<String, String>> list = adminClient.realm("test").getClientSessionStats();
+        boolean hardTested = false;
+        boolean testAppTested = false;
+        boolean directTested = false;
+        for (Map<String, String> entry : list) {
+            if (entry.get("clientId").equals("hardcoded-client")) {
+                Assertions.assertEquals("2", entry.get("active"));
+                Assertions.assertEquals("2", entry.get("offline"));
+                hardTested = true;
+            } else if (entry.get("clientId").equals("test-app")) {
+                Assertions.assertEquals("1", entry.get("active"));
+                Assertions.assertEquals("0", entry.get("offline"));
+                testAppTested = true;
+            } else if (entry.get("clientId").equals("direct-grant")) {
+                Assertions.assertEquals("1", entry.get("active"));
+                Assertions.assertEquals("2", entry.get("offline"));
+                directTested = true;
+            }
+        }
+        Assertions.assertTrue(hardTested && testAppTested && directTested);
+
+        testingClient.server().run(session -> {
+            RealmModel realm = session.realms().getRealmByName("test");
+
+            ClientModel hardcoded = realm.getClientByClientId("hardcoded-client");
+            long activeUserSessions = session.sessions().getActiveUserSessions(realm, hardcoded);
+            long offlineSessionsCount = session.sessions().getOfflineSessionsCount(realm, hardcoded);
+            Assertions.assertEquals(2, activeUserSessions);
+            Assertions.assertEquals(2, offlineSessionsCount);
+
+            ClientModel direct = realm.getClientByClientId("direct-grant");
+            activeUserSessions = session.sessions().getActiveUserSessions(realm, direct);
+            offlineSessionsCount = session.sessions().getOfflineSessionsCount(realm, direct);
+            Assertions.assertEquals(1, activeUserSessions);
+            Assertions.assertEquals(2, offlineSessionsCount);
+        });
+    }
+
+
+    @Test
+    public void testBrowser() throws Exception {
+        String clientId = "hardcoded-client";
+        testBrowser(clientId);
+        //Thread.sleep(10000000);
+    }
+
+     private void testBrowser(String clientId) {
+        oauth.client(clientId, "password");
+        AuthorizationEndpointResponse response = oauth.doLogin("test-user@localhost", "password");
+        appPage.assertCurrent();
+
+        EventAssertion.expectLoginSuccess(events.poll()).clientId(clientId).details(Details.USERNAME, "test-user@localhost");
+
+        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(response.getCode());
+        Assertions.assertNotNull(tokenResponse.getAccessToken());
+        Assertions.assertNotNull(tokenResponse.getRefreshToken());
+
+        events.clear();
+
+    }
+
+    @Test
+    public void testGrantAccessTokenNoOverride() throws Exception {
+        testDirectGrant("hardcoded-client");
+    }
+
+    private void testDirectGrant(String clientId) {
+        Client httpClient = AdminClientUtil.createResteasyClient();
+        String grantUri = oauth.getEndpoints().getToken();
+        WebTarget grantTarget = httpClient.target(grantUri);
+
+        {   // test no password
+            String header = BasicAuthHelper.createHeader(clientId, "password");
+            Form form = new Form();
+            form.param(OAuth2Constants.GRANT_TYPE, OAuth2Constants.PASSWORD);
+            form.param("username", "test-user@localhost");
+            Response response = grantTarget.request()
+                    .header(HttpHeaders.AUTHORIZATION, header)
+                    .post(Entity.form(form));
+            assertEquals(400, response.getStatus());
+            response.close();
+        }
+
+        {   // test invalid password
+            String header = BasicAuthHelper.createHeader(clientId, "password");
+            Form form = new Form();
+            form.param(OAuth2Constants.GRANT_TYPE, OAuth2Constants.PASSWORD);
+            form.param("username", "test-user@localhost");
+            form.param("password", "invalid");
+            Response response = grantTarget.request()
+                    .header(HttpHeaders.AUTHORIZATION, header)
+                    .post(Entity.form(form));
+            assertEquals(400, response.getStatus());
+            response.close();
+        }
+
+        {   // test valid password
+            String header = BasicAuthHelper.createHeader(clientId, "password");
+            Form form = new Form();
+            form.param(OAuth2Constants.GRANT_TYPE, OAuth2Constants.PASSWORD);
+            form.param("username", "test-user@localhost");
+            form.param("password", "password");
+            Response response = grantTarget.request()
+                    .header(HttpHeaders.AUTHORIZATION, header)
+                    .post(Entity.form(form));
+            assertEquals(200, response.getStatus());
+            response.close();
+        }
+
+        httpClient.close();
+        events.clear();
+    }
+
+    @Test
+    public void testDailyEviction() {
+        testIsCached();
+
+        testingClient.server().run(session -> {
+            RealmModel realm = session.realms().getRealmByName("test");
+            ClientStorageProviderModel model = ((StorageProviderRealmModel) realm).getClientStorageProvidersStream().findFirst().get();
+            Calendar eviction = Calendar.getInstance();
+            eviction.add(Calendar.HOUR, 1);
+            model.setCachePolicy(CacheableStorageProviderModel.CachePolicy.EVICT_DAILY);
+            model.setEvictionHour(eviction.get(HOUR_OF_DAY));
+            model.setEvictionMinute(eviction.get(MINUTE));
+            realm.updateComponent(model);
+        });
+        testIsCached();
+        timeOffSet.set(2 * 60 * 60); // 2 hours in future
+        testNotCached();
+        testIsCached();
+
+        setDefaultCachePolicy();
+        testIsCached();
+
+    }
+
+    @Test
+    public void testWeeklyEviction() {
+        testIsCached();
+
+        testingClient.server().run(session -> {
+            RealmModel realm = session.realms().getRealmByName("test");
+            ClientStorageProviderModel model = ((StorageProviderRealmModel) realm).getClientStorageProvidersStream().findAny().get();
+            Calendar eviction = Calendar.getInstance();
+            eviction.add(Calendar.HOUR, 4 * 24);
+            model.setCachePolicy(CacheableStorageProviderModel.CachePolicy.EVICT_WEEKLY);
+            model.setEvictionDay(eviction.get(DAY_OF_WEEK));
+            model.setEvictionHour(eviction.get(HOUR_OF_DAY));
+            model.setEvictionMinute(eviction.get(MINUTE));
+            realm.updateComponent(model);
+        });
+        testIsCached();
+        timeOffSet.set(2 * 24 * 60 * 60); // 2 days in future
+        testIsCached();
+        timeOffSet.set(5 * 24 * 60 * 60); // 5 days in future
+        testNotCached();
+        testIsCached();
+
+        setDefaultCachePolicy();
+        testIsCached();
+
+    }
+
+    @Test
+    public void testMaxLifespan() {
+        testIsCached();
+
+        testingClient.server().run(session -> {
+            RealmModel realm = session.realms().getRealmByName("test");
+            ClientStorageProviderModel model = ((StorageProviderRealmModel) realm).getClientStorageProvidersStream().findFirst().get();
+            model.setCachePolicy(CacheableStorageProviderModel.CachePolicy.MAX_LIFESPAN);
+            model.setMaxLifespan(1 * 60 * 60 * 1000);
+            realm.updateComponent(model);
+        });
+        testIsCached();
+
+        timeOffSet.set(1/2 * 60 * 60); // 1/2 hour in future
+
+        testIsCached();
+
+        timeOffSet.set(2 * 60 * 60); // 2 hours in future
+
+        testNotCached();
+        testIsCached();
+
+        setDefaultCachePolicy();
+        testIsCached();
+
+    }
+
+    private void testNotCached() {
+        testingClient.server().run(session -> {
+            RealmModel realm = session.realms().getRealmByName("test");
+            ClientModel hardcoded = realm.getClientByClientId("hardcoded-client");
+            Assertions.assertNotNull(hardcoded);
+            Assertions.assertFalse(hardcoded instanceof ClientAdapter);
+        });
+    }
+
+
+    @Test
+    public void testIsCached() {
+        testingClient.server().run(session -> {
+            RealmModel realm = session.realms().getRealmByName("test");
+            ClientModel hardcoded = realm.getClientByClientId("hardcoded-client");
+            Assertions.assertNotNull(hardcoded);
+            Assertions.assertTrue(hardcoded instanceof org.keycloak.models.cache.infinispan.ClientAdapter);
+        });
+    }
+
+
+    @Test
+    public void testNoCache() {
+        testIsCached();
+
+        testingClient.server().run(session -> {
+            RealmModel realm = session.realms().getRealmByName("test");
+            ClientStorageProviderModel model = ((StorageProviderRealmModel) realm).getClientStorageProvidersStream().findFirst().get();
+            model.setCachePolicy(CacheableStorageProviderModel.CachePolicy.NO_CACHE);
+            realm.updateComponent(model);
+        });
+
+        testNotCached();
+
+        // test twice because updating component should evict
+        testNotCached();
+
+        // set it back
+        setDefaultCachePolicy();
+        testIsCached();
+
+
+    }
+
+    private void setDefaultCachePolicy() {
+        testingClient.server().run(session -> {
+            RealmModel realm = session.realms().getRealmByName("test");
+            ClientStorageProviderModel model = ((StorageProviderRealmModel) realm).getClientStorageProvidersStream().findFirst().get();
+            model.setCachePolicy(CacheableStorageProviderModel.CachePolicy.DEFAULT);
+            realm.updateComponent(model);
+        });
+    }
+
+    @Test
+    public void offlineTokenDirectGrantFlow() throws Exception {
+        oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
+        oauth.client("hardcoded-client", "password");
+        AccessTokenResponse tokenResponse = oauth.doPasswordGrantRequest("test-user@localhost", "password");
+        Assertions.assertNull(tokenResponse.getErrorDescription());
+        AccessToken token = oauth.verifyToken(tokenResponse.getAccessToken());
+        String offlineTokenString = tokenResponse.getRefreshToken();
+        RefreshToken offlineToken = oauth.parseRefreshToken(offlineTokenString);
+
+        EventAssertion.assertSuccess(events.poll())
+                .type(EventType.LOGIN)
+                .clientId("hardcoded-client")
+                .userId(userId)
+                .sessionId(token.getSessionState())
+                .details(Details.GRANT_TYPE, OAuth2Constants.PASSWORD)
+                .details(Details.TOKEN_ID, token.getId())
+                .details(Details.REFRESH_TOKEN_ID, offlineToken.getId())
+                .details(Details.REFRESH_TOKEN_TYPE, TokenUtil.TOKEN_TYPE_OFFLINE)
+                .details(Details.USERNAME, "test-user@localhost")
+                .withoutDetails(Details.CODE_ID)
+                .withoutDetails(Details.REDIRECT_URI)
+                .withoutDetails(Details.CONSENT);
+
+        Assertions.assertEquals(TokenUtil.TOKEN_TYPE_OFFLINE, offlineToken.getType());
+        Assertions.assertNull(offlineToken.getExp());
+
+        testRefreshWithOfflineToken(token, offlineToken, offlineTokenString, token.getSessionState(), userId);
+
+        // Assert same token can be refreshed again
+        testRefreshWithOfflineToken(token, offlineToken, offlineTokenString, token.getSessionState(), userId);
+    }
+    public void offlineTokenDirectGrantFlowNoRefresh(String clientId) throws Exception {
+        oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
+        oauth.client(clientId, "password");
+        AccessTokenResponse tokenResponse = oauth.doPasswordGrantRequest("test-user@localhost", "password");
+        Assertions.assertNull(tokenResponse.getErrorDescription());
+        AccessToken token = oauth.verifyToken(tokenResponse.getAccessToken());
+        String offlineTokenString = tokenResponse.getRefreshToken();
+        RefreshToken offlineToken = oauth.parseRefreshToken(offlineTokenString);
+    }
+
+    private String testRefreshWithOfflineToken(AccessToken oldToken, RefreshToken offlineToken, String offlineTokenString,
+                                               final String sessionId, String userId) {
+        // Change offset to big value to ensure userSession expired
+        timeOffSet.set(99999);
+        Assertions.assertFalse(oldToken.isActive());
+        Assertions.assertTrue(offlineToken.isActive());
+
+        // Assert userSession expired
+        runOnServer.run(RunHelpers.removeExpired());
+        try {
+            runOnServer.run(RunHelpers.removeUserSession(sessionId));
+        } catch (RunOnServerException nfe) {
+            if (!(nfe.getCause() instanceof NotFoundException)) {
+                throw nfe;
+            }
+            // Ignore
+        }
+
+        AccessTokenResponse response = oauth.doRefreshTokenRequest(offlineTokenString);
+        AccessToken refreshedToken = oauth.verifyToken(response.getAccessToken());
+        String offlineUserSessionId = testingClient.server().fetch((KeycloakSession session) ->
+                session.sessions().getOfflineUserSession(session.realms().getRealmByName("test"), offlineToken.getSessionState()).getId(), String.class);
+
+        Assertions.assertEquals(200, response.getStatusCode());
+        Assertions.assertEquals(offlineUserSessionId, refreshedToken.getSessionState());
+
+        // Assert new refreshToken in the response
+        String newRefreshToken = response.getRefreshToken();
+        Assertions.assertNotNull(newRefreshToken);
+        Assertions.assertNotEquals(oldToken.getId(), refreshedToken.getId());
+
+        Assertions.assertEquals(userId, refreshedToken.getSubject());
+
+        Assertions.assertTrue(refreshedToken.getRealmAccess().isUserInRole(Constants.OFFLINE_ACCESS_ROLE));
+
+
+        EventRepresentation refreshEvent = EventAssertion.expectRefreshTokenSuccess(events.poll())
+                .clientId("hardcoded-client")
+                .userId(userId)
+                .details(Details.REFRESH_TOKEN_ID, offlineToken.getId()).sessionId(sessionId)
+                .details(Details.CLIENT_AUTH_METHOD, ClientIdAndSecretAuthenticator.PROVIDER_ID)
+                .details(Details.REFRESH_TOKEN_TYPE, TokenUtil.TOKEN_TYPE_OFFLINE).getEvent();
+        Assertions.assertNotEquals(oldToken.getId(), refreshEvent.getDetails().get(Details.TOKEN_ID));
+
+        timeOffSet.set(0);
+        return newRefreshToken;
+    }
+
+
+}

@@ -1,0 +1,21 @@
+.keycloak_eventsection_details {
+  --pf-v5-c-description-list--m-horizontal__term--width: 30ch;
+}
+
+.keycloak__events_search__form {
+  --pf-v5-c-form--m-horizontal__group-control--md--GridColumnWidth: 24rem;
+  margin: 0 var(--pf-v5-global--spacer--lg) var(--pf-v5-global--spacer--lg)
+    var(--pf-v5-global--spacer--lg);
+  --pf-v5-c-form__group--m-action--MarginTop: 0rem;
+  --pf-v5-c-form--m-horizontal__group-label--md--GridColumnWidth: 5rem;
+}
+
+.keycloak__events_search__form_label {
+  --pf-v5-c-form--m-horizontal__group-label--md--GridColumnWidth: 5rem;
+  line-height: 0px;
+}
+
+.keycloak__events_search__type_select .pf-v5-c-menu__list {
+  max-height: 200px;
+  overflow: auto;
+}

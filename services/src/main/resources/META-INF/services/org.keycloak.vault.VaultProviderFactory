@@ -1,0 +1,2 @@
+org.keycloak.vault.FilesPlainTextVaultProviderFactory
+org.keycloak.vault.FilesKeystoreVaultProviderFactory

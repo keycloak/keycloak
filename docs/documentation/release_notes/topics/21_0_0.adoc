@@ -1,0 +1,91 @@
+= Old Admin Console removed
+
+In Keycloak 19 the new admin console was graduated to the new default admin console, and the old admin console was
+deprecated. In this release the old admin console has been removed completely.
+
+= Keycloak uses Micrometer for metrics
+
+Keycloak provides an optional a metrics endpoint which exports metrics in the Prometheus format.
+In this release the implementation to provide this data switched from SmallRye to Micrometer.
+Due to this change, metrics have been renamed.
+
+See the migration guide for details.
+
+= Java 11 support for Keycloak server deprecated
+
+Running the Keycloak server with Java 11 is now deprecated, and planned to be removed in Keycloak 22.
+
+Adapters remain supported on Java 8, Java 11, and Java 17. However, we are planning to remove support for Java 8 in the
+not too distant future.
+
+= Hashicop Vault no longer supported
+
+We removed the out-of-box support for Hashicorp vault in this release.
+
+See this https://github.com/keycloak/keycloak/discussions/16446[discussion] for more details.
+
+= SAML SP metadata changes
+
+Prior to this release, SAML SP metadata contained the same key for both
+signing and encryption use. Starting with this version of Keycloak,
+we include only encryption intended realm keys for encryption use
+in SP metadata. For each encryption key descriptor we also specify
+the algorithm that it is supposed to be used with. The following table shows
+the supported XML-Enc algorithms with the mapping to Keycloak realm keys.
+See the link:{upgradingguide_link}[{upgradingguide_name}] for more details.
+
+[cols="1,1"]
+|===
+|*XML-Enc algorithm*
+|*Keycloak realm key algorithm*
+
+|https://www.w3.org/TR/2002/REC-xmlenc-core-20021210/Overview.html#rsa-oaep-mgf1p[rsa-oaep-mgf1p]
+|RSA-OAEP
+
+|https://www.w3.org/TR/2002/REC-xmlenc-core-20021210/Overview.html#rsa-1_5[rsa-1_5]
+|RSA1_5
+|===
+
+= Deprecated methods from user session provider were removed
+
+Several deprecated methods were removed from user session provider. If not done already,
+their usage needs to be replaced with the corresponding replacement documented in Javadoc
+of Keycloak 20 release. See link:{upgradingguide_link}[{upgradingguide_name}] for more details.
+
+= New storage: `IS_CLIENT_ROLE` searchable field was deprecated
+
+The `IS_CLIENT_ROLE` searchable field from the `RoleModel` was deprecated. It
+should be replaced with the `CLIENT_ID` searchable field used with the operators
+`EXISTS` or `NOT_EXISTS`. See JavaDoc of Keycloak 21 for more details.
+
+= FIPS 140-2 preview support
+
+FIPS 140-2 support in Keycloak, which was experimental in the previous release, is now promoted to preview. There were many fixes and improvements to create this preview version.
+For the details, see the https://www.keycloak.org/server/fips[FIPS documentation]. Feedback is welcome!
+
+Thanks again to https://github.com/david-rh[David Anderson], https://github.com/sudeepd[Sudeep Das] and https://github.com/isaacjensen[Isaac Jensen]
+for their huge help with this feature.
+
+= Support for the standard `Forwarded` header when running behind a reverse proxy
+
+In addition to recognize the non-standard `X-Forwarded-*` to fetch information
+added by proxies that would otherwise be altered or lost when proxy servers are involved in the path of the request, Keycloak
+can now leverage the standard `Forwarded` header for the same purpose.
+
+For more details, see the https://www.keycloak.org/server/reverseproxy[Using a reverse proxy] {section}.
+
+Please, make sure your proxy is also overriding the `Forwarded` header when making requests to Keycloak nodes.
+
+= The container image is now based on ubi9-micro
+
+To enhance security, the https://quay.io/repository/keycloak/keycloak?tab=info[Keycloak Container Image] has been modified in two ways: First, it is now based on UBI9, rather than UBI8. Second, we have switched to `+-micro+`, whereas `+-minimal+` was used before.
+
+The change to UBI9 will not have any impact on most users. In rare cases the glibc error https://github.com/keycloak/keycloak/issues/17290[CPU does not support x86-64-v2] may appear. `+x86-64-v2+` has been available from processors since 2009. You're most likely to encounter this issue when your virtualization environment is misconfigured.
+
+The change from `+-minimal+` to `+-micro+` has more potential impact. Users making simple customizations to the image won't notice any difference, however any user that installs RPMs will need to change how they do that. The https://www.keycloak.org/server/containers[Running Keycloak in a container] {section} has been updated to show you how.
+
+As a result of these changes, there has been an 82% reduction in known CVEs affecting the Keycloak Container Image!
+
+= Other improvements
+
+* Option to disable client registration access token rotation. Thanks to https://github.com/reda-alaoui[Réda Housni Alaoui]

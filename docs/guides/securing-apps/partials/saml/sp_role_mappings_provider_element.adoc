@@ -1,0 +1,102 @@
+
+== RoleMappingsProvider element
+
+The `RoleMappingsProvider` is an optional element that allows for the specification of the id and configuration of the
+`org.keycloak.adapters.saml.RoleMappingsProvider` SPI implementation that is to be used by the SAML adapter.
+
+When {project_name} is used as the IDP, it is possible to use the built-in role mappers to map any roles before adding them to the
+SAML assertion. However, the SAML adapters can be used to send SAML requests to third party IDPs and in this case it might be
+necessary to map the roles extracted from the assertion into a different set of roles as required by the SP. The
+`RoleMappingsProvider` SPI allows for the configuration of pluggable role mappers that can be used to perform the necessary
+mappings.
+
+The configuration of the provider looks as follows:
+
+[source,xml]
+----
+...
+<RoleIdentifiers>
+    ...
+</RoleIdentifiers>
+<RoleMappingsProvider id="properties-based-role-mapper">
+    <Property name="properties.resource.location" value="/WEB-INF/role-mappings.properties"/>
+</RoleMappingsProvider>
+<IDP>
+    ...
+</IDP>
+
+----
+The `id` attribute identifies which of the installed providers is to be used. The `Property` sub-element can be used multiple times
+to specify configuration properties for the provider.
+
+=== Properties Based role mappings provider
+
+{project_name} includes a `RoleMappingsProvider` implementation that performs the role mappings using a `properties` file. This
+provider is identified by the id `properties-based-role-mapper` and is implemented by the `org.keycloak.adapters.saml.PropertiesBasedRoleMapper`
+class.
+
+This provider relies on two configuration properties that can be used to specify the location of the `properties` file
+that will be used. First, it checks if the `properties.file.location` property has been specified, using the configured
+value to locate the `properties` file in the filesystem. If the configured file is not located, the provider throws a
+`RuntimeException`. The following snippet shows an example of provider using the `properties.file.configuration`
+option to load the `roles.properties` file from the `/opt/mappers/` directory in the filesystem:
+
+[source,xml,subs="attributes+"]
+----
+    <RoleMappingsProvider id="properties-based-role-mapper">
+        <Property name="properties.file.location" value="/opt/mappers/roles.properties"/>
+    </RoleMappingsProvider>
+----
+
+If the `properties.file.location` configuration has not been set, the provider checks the `properties.resource.location`
+property, using the configured value to load the `properties` file from the `WAR` resource. If this configuration property is
+also not present, the provider attempts to load the file from `/WEB-INF/role-mappings.properties` by default. Failure to load the file
+from the resource will result in the provider throwing a `RuntimeException`. The following snippet shows an example of provider
+using the `properties.resource.location` to load the `roles.properties` file from the application's `/WEB-INF/conf/` directory:
+
+[source,xml,subs="attributes+"]
+----
+    <RoleMappingsProvider id="properties-based-role-mapper">
+        <Property name="properties.resource.location" value="/WEB-INF/conf/roles.properties"/>
+    </RoleMappingsProvider>
+----
+
+The `properties` file can contain both roles and principals as keys, and a list of zero or more roles separated by comma
+as values. When invoked, the implementation iterates through the set of roles that were extracted from the assertion and checks,
+for each role, if a mapping exists. If the role maps to an empty role, it is discarded. If it maps to a set of one or more
+different roles, then these roles are set in the result set. If no mapping is found for the role then it is included as is
+in the result set.
+
+Once the roles have been processed, the implementation checks if the principal extracted from the assertion contains an entry
+`properties` file. If a mapping for the principal exists, any roles listed as value are added to the result set. This
+allows the assignment of extra roles to a principal.
+
+As an example, let's assume the provider has been configured with the following properties file:
+[source]
+----
+roleA=roleX,roleY
+roleB=
+
+kc_user=roleZ
+
+----
+
+If the principal `kc_user` is extracted from the assertion with roles `roleA`, `roleB` and `roleC`, the final set of roles
+assigned to the principal will be `roleC`, `roleX`, `roleY` and `roleZ` because `roleA` is being mapped into both `roleX`
+and `roleY`, `roleB` was mapped into an empty role - thus being discarded, `roleC` is used as is and finally an additional role
+was added to the `kc_user` principal (`roleZ`).
+
+Note: to use spaces in role names for mappings, use unicode replacements for space. For example, incoming 'role A' would appear as:
+[source]
+----
+role\u0020A=roleX,roleY
+----
+
+ifeval::[{project_community}==true]
+=== Adding your own role mappings provider
+
+To add a custom role mappings provider one simply needs to implement the `org.keycloak.adapters.saml.RoleMappingsProvider` SPI.
+For more details see the `SAML Role Mappings SPI` section in link:{developerguide_link}[{developerguide_name}].
+endif::[]
+
+

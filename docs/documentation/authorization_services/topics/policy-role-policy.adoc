@@ -1,0 +1,44 @@
+[[_policy_rbac]]
+= Role-based policy
+
+You can use this type of policy to define conditions for your permissions where a set of one or more roles is permitted to access an object.
+
+By default, roles added to this policy are not specified as required and the policy will grant access if the user requesting access has been granted any of these roles. However, you can specify a specific role as <<_policy_rbac_required, required>> if you want to enforce a specific role. You can also combine required and non-required roles, regardless of whether they are realm or client roles.
+
+Role policies can be useful when you need more restricted role-based access control (RBAC), where specific roles must be enforced to grant access to an object. For instance, you can enforce that a user must consent to allowing a client application (which is acting on the user's behalf) to access the user's resources. You can use {project_name} Client Scope Mapping to enable consent pages or even enforce clients to explicitly provide a scope when obtaining access tokens from a {project_name} server.
+
+To create a new role-based policy, select *Role* from the policy type list.
+
+.Add Role Policy
+image:images/policy/create-role.png[alt="Add Role Policy"]
+
+== Configuration
+
+* *Name*
++
+A human-readable and unique string describing the policy. A best practice is to use names that are closely related to your business and security requirements, so you
+can identify them more easily.
++
+* *Description*
++
+A string containing details about this policy.
++
+* *Realm Roles*
++
+Specifies which *realm* roles are permitted by this policy.
++
+* *Client Roles*
++
+Specifies which *client* roles are permitted by this policy. To enable this field must first select a `Client`.
++
+* *Fetch Roles*
++
+By default, only the roles available from the token sent with the authorization requests are used to check if the user is granted with a role. If this setting is enabled, the policy will ignore roles from the token and check any role associated with the user instead.
++
+* *Logic*
++
+The logic of this policy to apply after the other conditions have been evaluated.
+
+[role="_additional-resources"]
+.Additional resources
+* <<_policy_logic, Positive and negative logic>>

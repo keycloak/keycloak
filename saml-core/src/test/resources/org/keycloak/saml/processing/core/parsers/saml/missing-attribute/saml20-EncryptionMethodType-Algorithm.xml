@@ -1,0 +1,19 @@
+<EntityDescriptor xmlns="urn:oasis:names:tc:SAML:2.0:metadata"
+                  xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion"
+                  xmlns:ds="http://www.w3.org/2000/09/xmldsig#"
+                  xmlns:xenc="http://www.w3.org/2001/04/xmlenc#"
+                  entityID="https://IdentityProvider.com/SAML">
+    <ds:Signature>...</ds:Signature>
+    <PDPDescriptor ID="ID" protocolSupportEnumeration="http://www.example.com/ http://www.example.com/">
+
+        <KeyDescriptor>
+            <ds:KeyInfo>
+                <ds:KeyName>string</ds:KeyName>
+            </ds:KeyInfo>
+            <EncryptionMethod>
+                <xenc:KeySize>1</xenc:KeySize>
+                <xenc:OAEPparams>GpM7</xenc:OAEPparams>
+            </EncryptionMethod>
+        </KeyDescriptor>
+    </PDPDescriptor>
+</EntityDescriptor>

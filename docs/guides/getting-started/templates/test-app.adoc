@@ -1,0 +1,16 @@
+== Test your setup
+
+To confirm the client was created successfully, you can use the SPA testing application on the https://www.keycloak.org/app/[Keycloak website].
+
+ifeval::[{links-local}==true]
+. Open https://www.keycloak.org/app/.
+. Click *Save*` to use the default configuration.
+endif::[]
+
+ifeval::[{links-local}!=true]
+. Open https://www.keycloak.org/app/.
+. Change `Keycloak URL` to the URL of your {project_name} instance.
+. Click *Save*.
+endif::[]
+
+. Click *Sign in* to authenticate to this application using the {project_name} server you started earlier.

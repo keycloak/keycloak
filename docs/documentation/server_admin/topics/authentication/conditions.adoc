@@ -1,0 +1,157 @@
+[#conditions-in-conditional-flows]
+=== Conditions in conditional flows
+
+As was mentioned in <<_execution-requirements, Execution requirements>>, _Condition_ executions can be only contained in _Conditional_ subflow.
+If all _Condition_ executions evaluate as true, then the _Conditional_ sub-flow acts as _Required_.
+You can process the next execution in the _Conditional_ sub-flow.
+If some executions included in the _Conditional_ sub-flow evaluate as false, then the whole sub-flow is considered as _Disabled_.
+
+==== Available conditions
+
+`Condition - User Role`::
+This execution has the ability to determine if the user has a role defined by _User role_ field.
+If the user has the required role, the execution is considered as true and other executions are evaluated.
+The administrator has to define the following fields:
+
+Alias:::
+Describes a name of the execution, which will be shown in the authentication flow.
+
+User role:::
+Role the user should have to execute this flow.
+To specify an application role the syntax is `appname.approle` (for example `myapp.myrole`).
+
+`Condition - User Configured`::
+This checks if the other executions in the flow are configured for the user.
+The Execution requirements section includes an example of the OTP form.
+
+`Condition - User Attribute`::
+This checks if the user has set up the required attribute: optionally, the check can also evaluate the group attributes.
+There is a possibility to negate output, which means the user should not have the attribute.
+The <<user-profile,User Attributes>> section shows how to add a custom attribute.
+You can provide these fields:
+
+Alias:::
+Describes a name of the execution, which will be shown in the authentication flow.
+
+Attribute name:::
+Name of the attribute to check.
+
+Expected attribute value:::
+Expected value in the attribute.
+
+Include group attributes:::
+If On, the condition checks if any of the joined group has one attribute matching the configured name and value: this option can affect performance
+
+Negate output:::
+You can negate the output.
+In other words, the attribute should not be present.
+
+`Condition - sub-flow executed`::
+The condition checks if a previous sub-flow was successfully executed (or not executed) in the authentication process. Therefore, the flow can trigger other steps based on a previous sub-flow termination. These configuration fields exist:
+
+Flow name:::
+The sub-flow name to check if it was executed or not executed. Required.
+
+Check result:::
+When the condition evaluates to true. If `executed` returns true when the configured sub-flow was executed with output success, false otherwise. If `not-executed` returns false when the sub-flow was executed with output success, true otherwise (the negation of the previous option).
+
+`Condition - client scope`::
+The condition to evaluate if a configured client scope is present as a client scope of the client requesting authentication. These configuration fields exist:
+
+Client scope name:::
+The name of the client scope, which should be present as a client scope of the client, which is requesting authentication. If requested client scope is default client scope of the client requesting login, the condition will be evaluated to true. If requested client scope is optional client scope of the client requesting login, condition will be evaluated to true if client scope is sent by the client in the login request (for example, by the `scope` parameter in case of OIDC/OAuth2 client login). Required.
+
+Negate output:::
+Apply a NOT to the check result. When this is true, then the condition will evaluate to true just if configured client scope is not present.
+
+`Condition - credential`::
+This condition evaluates if a specific credential type has been used (or not used) by the user during the authentication process. Configuration options:
+
+Credentials:::
+The list of credentials to be considered by the condition.
+
+Included:::
+If *included* is true, the condition will be evaluated to `true` when any of the credentials specified in the *credentials* option has been used in the authentication process, false otherwise. If *included* is false, the condition is evaluated in the opposite way, it will be `true` if none of the *credentials* configured have been used, and `false` if one or more of them have been used.
+
+
+==== Explicitly deny/allow access in conditional flows
+
+You can allow or deny access to resources in a conditional flow.
+The two authenticators `Deny Access` and `Allow Access` control access to the resources by conditions.
+
+`Allow Access`::
+Authenticator will always successfully authenticate.
+This authenticator is not configurable.
+
+`Deny Access`::
+Access will always be denied.
+You can define an error message, which will be shown to the user.
+You can provide these fields:
+
+Alias:::
+Describes a name of the execution, which will be shown in the authentication flow.
+
+Error message:::
+Error message which will be shown to the user.
+The error message could be provided as a particular message or as a property in order to use it with localization.
+(i.e. "_You do not have the role 'admin'._", _my-property-deny_ in messages properties)
+Leave blank for the default message defined as property `access-denied`.
+
+Here is an example how to deny access to all users who do not have the role `role1` and show an error message defined by a property `deny-role1`.
+This example includes `Condition - User Role` and `Deny Access` executions.
+
+.Browser flow
+image:images/deny-access-flow.png[Deny access flow]
+
+.Condition - user role configuration
+image:images/deny-access-role-condition.png[Deny access role settings]
+
+.Configuration of the `Deny Access` is really easy. You can specify an arbitrary Alias and required message like this:
+image:images/deny-access-execution-cond.png[Deny access execution settings]
+
+The last thing is defining the property with an error message in the login theme `messages_en.properties` (for English):
+
+[source]
+----
+deny-role1 = You do not have required role!
+----
+
+[#twofa-conditional-workflow-examples]
+==== 2FA conditional workflow examples
+
+The section presents some examples of conditional workflows that integrates 2nd Factor Authentication (2FA) in different ways. The examples copy the default `browser` flow and modify the configuration inside the `forms` sub-flow.
+
+===== Conditional 2FA sub-flow
+
+The default `browser` flow uses a `Conditional 2FA` sub-flow that already gives 2nd factor Authentication (2FA) with OTP Form (One Time Password). It also provides WebAuthn and Recovery Codes but they are disabled by default. Consistent with this approach, different 2FA methods can be integrated with the `Condition - User Configured`.
+
+.2FA all alternative
+image:images/2fa-example1.png[2FA all alternative]
+
+The `forms` sub-flow contains another `2FA` conditional sub-flow with `Condition - user configured`. Three 2FA steps (OTP, Webauthn and Recovery Codes) are allowed as alternative steps. The user will be able to choose one of the three options, if they are configured for the user. As the sub-flow is conditional, the authentication process will complete successfully if no 2FA credential is configured.
+
+This configuration provides the same behavior as when you configure with the default *browser* flow with both _Disabled_ steps are configured to _Alternative_.
+
+===== Conditional 2FA sub-flow and deny access
+
+The second example continues the previous one. After the `2FA` sub-flow, another flow `Deny access if no 2FA` is used to check if the previous `2FA` was not executed. In that case (the user has no 2FA credential configured) the access is denied.
+
+.2FA all alternative and deny access
+image:images/2fa-example2.png[2FA all alternative and deny access]
+
+The `Condition - sub-flow executed` is configured to detect if the `2FA` sub-flow was not executed previously.
+
+.Configuration for the sub-flow executed
+image:images/2fa-example2-config.png[Configuration for the sub-flow executed]
+
+The step `Deny access` denies the authentication if not executed.
+
+[[_conditional-2fa-otp-default]]
+===== Conditional 2FA sub-flow with OTP default
+
+The last example is very similar to the previous one. Instead of denying the access, step `OTP Form` is configured as required.
+
+.2FA all alternative with OTP default
+image:images/2fa-example3.png[2FA all alternative with OTP default]
+
+With this flow, if the user has none of the 2FA methods configured, the OTP setup will be enforced to continue the login.

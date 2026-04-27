@@ -1,0 +1,469 @@
+= New Hostname options
+
+Hostname v2 options are supported by default, as the old hostname options are deprecated and will be removed in the following releases.
+New options are activated by default, so {project_name} will not recognize the old options.
+
+List of necessary migrations:
+
+[%autowidth,cols="a,a"]
+|===
+| Old options | New options
+
+|`hostname <hostname>` +
+`hostname-url <url>` +
+`hostname-path <path>` +
+`hostname-port <port>`
+|`hostname <hostname/url>`
+|`hostname-admin <hostname>` +
+`hostname-admin-url <url>`
+|`hostname-admin <url>`
+|`hostname-strict-backchannel <true/false>`
+|`hostname-backchannel-dynamic <true/false>`
+|===
+
+As you can see, the `*-url` suffixes were removed for `hostname` and `hostname-admin` options.
+Option `hostname` accepts both hostname and URL, but `hostname-admin` accepts only full URL now.
+
+Additionally, there is no way to set `path` or `port` separately.
+You can achieve it by providing the full URL for the `hostname` and `hostname-admin` options.
+
+If the port is not part of the URL, it is dynamically resolved from the incoming request headers.
+
+HTTPS is no longer enforced unless it is part of `hostname` and `hostname-admin` URLs.
+If not specified, the used protocol (`http/https`) is dynamically resolved from the incoming request.
+The `hostname-strict-https` option is removed.
+
+[%autowidth,cols="a"]
+|===
+| Removed options
+
+|`hostname-url`
+|`hostname-admin-url`
+|`hostname-path`
+|`hostname-port`
+|`hostname-strict-backchannel`
+|`hostname-strict-https`
+|===
+
+NOTE: In order to use the old hostname options to have more time for migration, turn on the feature `hostname:v1`, e.g. `features=hostname:v1`.
+Be aware, that either `hostname:v1` or `hostname:v2` can be enabled, not both at the same time.
+
+== Examples
+
+.Simplified notation
+[source,bash]
+----
+# Hostname v1
+bin/kc.[sh|bat] start --hostname=mykeycloak.org --https-port=8543 --hostname-path=/auth --hostname-strict-https=true
+
+# Hostname v2
+bin/kc.[sh|bat] start --hostname=https://mykeycloak.org:8543/auth
+----
+As you can see in the example, all the parts of a URL can be now specified via single `hostname` option, which simplifies the hostname setup process.
+Notice that HTTPS is not enforced by the `hostname-strict-https` option, but by specifying it in the hostname URL.
+
+.Backchannel setting
+[source,bash]
+----
+# Hostname v1
+bin/kc.[sh|bat] start --hostname=mykeycloak.org --hostname-strict-backchannel=true
+
+# Hostname v2
+bin/kc.[sh|bat] start --hostname=mykeycloak.org --hostname-backchannel-dynamic=false
+----
+Be aware that there is a change in behavior if the same URL is to be used for both backend and frontend endpoints.
+Previously, in hostname v1, the backchannel URL was dynamically resolved from request headers.
+Therefore, to achieve the required results, you had to specify the `hostname-strict-backchannel=true`.
+
+For hostname v2, the backchannel URLs are already the same as the frontend ones.
+In order to dynamically resolve it from request headers, you need to set the `hostname-backchannel-dynamic=true` and provide a full URL for the `hostname` option.
+
+For more details and more comprehensive scenarios, see https://www.keycloak.org/server/hostname[Configuring the hostname (v2)].
+
+== `security-admin-console` Client Redirect URIs
+
+The handling of the `${authAdminUrl}` has changed in hostname v1. Previously with hostname v1 the admin URL was resolved dynamically from the request if the `hostname-admin` or `hostname-admin-url` options were not set. With hostname v2 the admin URL will default instead to the frontend URL.
+If the `hostname` option is set and `hostname-strict` is true, this change will prevent redirect URIs with alternative hostnames from working for Clients using the Root URL `${authAdminUrl}`.
+You should consider using the `hostname-admin` option instead of the redirect URIs to allow a single alternative hostname. Alternative hostname redirects should be removed as the `security-admin-console` Client only needs the default redirect URI of `/admin/master/console/*` with Root URL of `${authAdminUrl}`.
+
+= Persistent user sessions
+
+Previous versions of {project_name} stored only offline user and offline client sessions in the databases.
+The new feature `persistent-user-sessions` stores online user sessions and online client sessions not only in memory, but also in the database.
+This will allow a user to stay logged in even if all instances of {project_name} are restarted or upgraded.
+
+== Enabling persistent user sessions
+
+The feature is a preview feature and disabled by default. To use it, add the following to your build command:
+
+----
+bin/kc.sh build --features=persistent-user-sessions ...
+----
+
+For more details see the https://www.keycloak.org/server/features[Enabling and disabling features] {section}.
+The https://www.keycloak.org/high-availability/single-cluster/concepts-memory-and-cpu-sizing[sizing guide] contains a new paragraph describing the updated resource requirements when this feature is enabled.
+
+NOTE: If this feature is enabled for an existing deployment that is using only the embedded Infinispan for storing sessions, the existing online user and client sessions will not be migrated to the database. It will only affect newly created online user and online client sessions.
+
+With persistent sessions enabled, the in-memory caches for online user sessions, offline user sessions, online client sessions and offline client sessions are limited to 10000 entries per node by default which will reduce the overall memory usage of Keycloak for larger installations.
+Items which are evicted from memory will be loaded on-demand from the database when needed.
+To set different sizes for the caches, edit {project_name}'s cache config file to set a `+<memory max-count="..."/>+` for those caches.
+Once this feature is enabled, expect an increased database utilization on each login, logout and refresh token request.
+
+To configure the cache size in an external {jdgserver_name} in a {project_name} multi-site setup, consult the updated https://www.keycloak.org/high-availability/multi-cluster/deploy-infinispan-kubernetes-crossdc[Deploy Infinispan for HA with the Infinispan Operator] {section}.
+
+With this feature enabled, the options `spi-user-sessions-infinispan-offline-session-cache-entry-lifespan-override` and `spi-user-sessions-infinispan-offline-client-session-cache-entry-lifespan-override` are no longer available, as they were previously used to override the time offline sessions were kept in-memory.
+
+== Migrating user sessions during the upgrade
+
+When upgrading from {project_name} 24 or earlier, admins can choose to migrate existing online user and client sessions to persistent sessions.
+For this to work, those existing sessions need to be stored in either a remote {jdgserver_name} or in a database configured as JDBC persistence for {project_name}'s embedded cache.
+Migrating in-memory sessions for {project_name} 24 is not supported as all {project_name} instances need to be shut down before the upgrade due to a major version upgrade of the embedded Infinispan.
+
+[WARNING]
+====
+The migration of user sessions only works when the persistent user sessions is enabled when upgrading to {project_name} 25.
+If you chose to upgrade to 25 without enabling persistent user sessions, there is currently no possibility to trigger the migration of existing sessions at a later point in time.
+
+Enabling this feature later, by a configuration change, can result in an undefined behavior of {project_name} related to sessions if both persisted and non-persisted sessions co-exist. To prevent that, remove all existing online user and client sessions before the first node is started with the feature enabled.
+This means all {project_name} nodes need to be stopped and, if used, {jdgserver_name} remote cache store and embedded Infinispan JDBC persistence need to be cleared.
+====
+
+To migrate the user sessions during an upgrade of {project_name}, perform the following steps:
+
+. Stop all running old instances of {project_name}.
+
+. Create backups:
++
+--
+* Create a backup {project_name}'s database.
+* If JDBC persistence is used, create a backup of that database if you want to be able to retry the migration of the sessions.
+* If an external {jdgserver_name} is used, create a backup of its data if you want to be able to retry the migration of the sessions.
+--
+. Start the new instances {project_name} with the persistent user sessions feature enabled.
++
+The first starting node will:
++
+--
+. Migrate the database to the schema version 25.
+. Copy all session information from either the remote {jdgserver_name} or the JDBC persistence configured for {project_name}'s embedded cache to the database of {project_name}.
++
+The data will be stored in the tables `offline_user_session` and `offline_client_session` with `offline_flag` set to `false`.
+
+. Clear the caches.
++
+This includes clearing the caches of the external {jdgserver_name} if one is used, and clearing the JDBC persistence if one is used.
+--
+. Update the cache configuration XML of {project_name} for caches `sessions` and `clientSessions`:
++
+--
+* If JDBC persistence is used, remove the configuration for JDBC persistence.
+* If the remote {jdgserver_name} has been used in a single-site setup solely for keeping user sessions across {project_name} restarts, remove the remote {jdgserver_name} configuration for those caches.
+--
++
+TIP: If the remote {jdgserver_name} is used in a multi-site setup, you can reduce the resource consumption by the external Infinispan by configuring the number of entries in memory. Use the settings outlined in https://www.keycloak.org/high-availability/multi-cluster/deploy-infinispan-kubernetes-crossdc[Deploy Infinispan for HA with the Infinispan Operator] {section}.
+
+. Rolling restart of {project_name} to activate the new cache configuration XML.
+
+== Signing out existing users
+
+In previous versions and when the feature is disabled, a restart of all {project_name} nodes logged out all users.
+To sign out all online users sessions of a realm with the `persistent-user-sessions` feature enabled, use the following steps as before:
+
+. Log in to the Admin Console.
+. Select the menu entry *Sessions*.
+. Select the action *Sign out all active sessions*.
+
+= Metrics for embedded caches enabled by default
+
+Metrics for the embedded caches are now enabled by default.
+To enable histograms for latencies, set the option `cache-metrics-histograms-enabled` to `true`.
+
+= Metrics for HTTP endpoints enabled by default
+
+The metrics provided by {project_name} now include HTTP server metrics starting with `http_server`.
+See below for some examples.
+
+[source]
+----
+http_server_active_requests 1.0
+http_server_requests_seconds_count{method="GET",outcome="SUCCESS",status="200",uri="/realms/{realm}/protocol/{protocol}/auth"} 1.0
+http_server_requests_seconds_sum{method="GET",outcome="SUCCESS",status="200",uri="/realms/{realm}/protocol/{protocol}/auth"} 0.048717142
+----
+
+Use the new options `http-metrics-histograms-enabled` and `http-metrics-slos` to enable default histogram buckets or specific buckets for service level objectives (SLOs).
+Read more about histograms in the https://prometheus.io/docs/concepts/metric_types/#histogram[Prometheus documentation about histograms] on how to use the additional metrics series provided in `http_server_requests_seconds_bucket`.
+
+= Argon2 password hashing
+
+In {project_name} 24 release, we had a change in the password hashing algorithm which resulted in an increased CPU usage. To address that, we opted to a different default hashing algorithm Argon2 for non-FIPS environments which brings the CPU usage back to where it was prior to the {project_name} 24 release.
+
+== Expected improvement in overall CPU usage and temporary increased database activity
+
+The Concepts for sizing CPU and memory resources in the {project_name} High Availability guide have been updated to reflect the new hashing defaults.
+
+After the upgrade, during a password-based login, the user's passwords will be re-hashed with the new hash algorithm and hash iterations as a one-off activity and updated in the database.
+As this clears the user from {project_name}'s internal cache, you'll also see an increased read activity on the database level.
+This increased database activity will decrease over time as more and more user's passwords have been re-hashed.
+
+== Updated JVM garbage collection settings
+
+To support the memory intensive nature of Argon2, we have updated the default GC from ParallelGC to G1GC for a better heap utilization.
+Please monitor the JVM heap utilization closely after this upgrade. Additional tuning may be necessary depending on your specific workload.
+
+= Limiting memory usage when consuming HTTP responses
+
+In some scenarios like brokering Keycloak uses HTTP to talk to external servers.
+To avoid a denial of service when those providers send too much data, {project_name} now restricts responses to 10 MB by default.
+
+Users can configure this limit by setting the provider configuration option `spi-connections-http-client-default-max-consumed-response-size`:
+
+.Restricting the consumed responses to 1 MB
+[source,bash]
+----
+bin/kc.[sh|bat] --spi-connections-http-client-default-max-consumed-response-size=1000000
+----
+
+= Hostname Verification Policy
+
+The default for `spi-truststore-file-hostname-verification-policy` and the new `tls-hostname-verifier` option is now DEFAULT, rather than WILDCARD. The WILDCARD and STRICT option values have been deprecated - you should simply rely upon DEFAULT instead.
+
+Behavior supported by WILDCARD, that is not supported by DEFAULT:
+* allows wildcards in subdomain names (e.g. *.foo.com) to match anything, including multiple levels (e.g. a.b.foo.com).
+* allows matching against well known public suffixes - e.g. foo.co.gl may match *.co.gl
+
+Behavior supported by STRICT, that is not supported by DEFAULT:
+* STRICT uses a small exclusion list for 2 or 3 letter domain names ending in a 2 letter top level (*.XXX.YY) when determining if a wildcard matches. Instead DEFAULT uses a more complete list of public suffix rules and exclusions from https://publicsuffix.org/list/
+
+It is not expected that you should be relying upon these behaviors from the WILDCARD or STRICT options.
+
+= Addressed 'You are already logged in' for expired authentication sessions
+
+{project_name} now does not display the message _You are already logged in_ to the end user when an authentication session expires and user is already logged-in. Instead it redirects the error
+about the expired authentication session to the client application, so the client can act on it and restart authentication as described in the link:{adminguide_link}#_authentication-sessions[{adminguide_name} authentication sessions chapter].
+You may consider updating your applications to being able to handle this error.
+
+= Removed a model module
+
+The module `org.keycloak:keycloak-model-legacy` module was deprecated in a previous release and is removed in this release. Use the `org.keycloak:keycloak-model-storage` module instead.
+
+= XA Transaction Changes
+
+* The option `transaction-xa-enabled` will default to false, rather than true. If you want XA transaction support you will now need to explicitly set this option to true.
+* XA Transaction recovery support is enabled by default. Transaction logs will be stored at KEYCLOAK_HOME/data/transaction-logs.
+
+= Removed offline session preloading
+
+The old behavior to preload offline sessions at startup is now removed after it has been deprecated in the previous release.
+
+= Specify `cache` options at runtime
+
+Options `cache`, `cache-stack`, and `cache-config-file` are no longer build options, and they can be specified only during runtime.
+This eliminates the need to execute the build phase and rebuild your image due to them.
+Be aware that they will not be recognized during the `build` phase, so you need to remove them from the `build` phase and add them to the `runtime` phase.
+If you do not add your current caching options to the `runtime` phase, {project_name} will fall back to the default caching settings.
+
+= kcadm and kcreg changes
+
+How kcadm and kcreg parse and handle options and parameters has changed. Error messages from usage errors, the wrong option or parameter, may be slightly different than previous versions. Also usage errors will have an exit code of 2 instead of 1.
+
+= Removing custom user attribute indexes
+
+When searching for users by user attribute, Keycloak no longer searches for user attribute names forcing lower case comparisons. This means Keycloak's native index on the user attribute table will now be used when searching. If you have created your own index based on `lower(name)`to speed up searches, you can now remove it.
+
+= New default client scope `basic`
+
+The new client scope named `basic` is added as a realm "default" client scope and hence will be added to all newly created OIDC clients. The client scope is also automatically added to all existing OIDC clients during migration.
+
+This scope contains preconfigured protocol mappers for the following claims:
+
+ * `sub` (See the details below in the dedicated section)
+ * `auth_time`
+
+This provides additional help to reduce the number of claims in a lightweight access token, but also gives the chance to configure claims that were always added automatically.
+
+NOTE: In case you already have client scope named `basic` in some of your realms, then the new client scope `basic` will not be added to your realm and will not be added to any clients. The
+migration would be ignored for this particular case. In that case, you either need to make sure to rename your client scope to something different than `basic` before you migrate to this
+{project_name} version or you need to manually deal with missing `sub` and `auth_time` claims in case you need them in your tokens and you may need to manually add corresponding protocol mappers
+to some of your client scopes.
+
+= Removed `session_state` claim
+
+The `session_state` claim, which contains the same value as the `sid` claim, is now removed from all tokens as it is not required according to the OpenID Connect Front-Channel Logout and OpenID Connect Back-Channel Logout specifications. The `session_state` claim remains present in the Access Token Response in accordance with OpenID Connect Session Management specification.
+
+Note that the `setSessionState()` method is also removed from the `IDToken` class in favor of the `setSessionId()` method, and the `getSessionState()` method is now deprecated.
+
+A new `Session State (session_state)` mapper is also included and can be assigned to client scopes (for instance `basic` client scope) to revert to the old behavior.
+
+If an old version of the JS adapter is used, the `Session State (session_state)` mapper should also be used by using client scopes as described above.
+
+= `sub` claim is added to access token via protocol mapper
+
+The `sub` claim, which was always added to the access token, is now added by default but using a new `Subject (sub)` protocol mapper.
+
+The `Subject (sub)` mapper is configured by default in the `basic` client scope. Therefore, no extra configuration is required after upgrading to this version.
+
+If you are using the `Pairwise subject identifier` mapper to map a `sub` claim for an access token, you can consider disabling or removing the `Subject (sub)` mapper, however it is not strictly needed
+as the `Subject (sub)` protocol mapper is executed before the `Pairwise subject identifier` mapper and hence the `pairwise` value will override the value added by `Subject (sub)` mapper.
+This may apply also to other custom protocol mapper implementations, which override the `sub` claim, as the `Subject (sub)` mapper is currently executed as first protocol mapper.
+
+You can use the `Subject (sub)` mapper to configure the `sub` claim only for access token, lightweight access token, and introspection response. IDToken and Userinfo always contain `sub` claim.
+
+The mapper has no effects for service accounts, because no user session exists, and the `sub` claim is always added to the access token.
+
+= Nonce claim is only added to the ID token
+
+The nonce claim is now only added to the ID token strictly following the OpenID Connect Core 1.0 specification. As indicated in the specification, the claim is compulsory inside the https://openid.net/specs/openid-connect-core-1_0.html#IDToken[ID token] when the same parameter was sent in the authorization request. The specification also recommends to not add the `nonce` after a https://openid.net/specs/openid-connect-core-1_0.html#RefreshTokenResponse[refresh request]. Previously, the claim was set to all the tokens (Access, Refresh and ID) in all the responses (refresh included).
+
+A new `Nonce backwards compatible` mapper is also included in the software that can be assigned to client scopes to revert to the old behavior. For example, the JS adapter checked the returned `nonce` claim in all the tokens before fixing issue https://github.com/keycloak/keycloak/issues/26651[#26651] in version 24.0.0. Therefore, if an old version of the JS adapter is used, the mapper should be added to the required clients by using client scopes.
+
+= Changed `userId` for events related to refresh token
+
+The `userId` in the `REFRESH_TOKEN` event is now always taken from user session instead of `sub` claim in the refresh token. The `userId` in the `REFRESH_TOKEN_ERROR` event is now always null.
+The reason for this change is that the value of the `sub` claim in the refresh token may be null with the introduction of the optional `sub` claim or even different from the real user id when using pairwise subject identifiers or other ways to override the `sub` claim.
+
+However a `refresh_token_sub` detail is now added as backwards compatibility to have info about the user in the case of missing userId in the `REFRESH_TOKEN_ERROR` event.
+
+= Using older javascript adapter
+
+If you use the latest {project_name} server with older versions of the javascript adapter in your applications, you may be affected by the token changes mentioned above as previous
+versions of javascript adapter rely on the claims, which were added by {project_name}, but not supported by the OIDC specification. This includes:
+
+* Adding the `Session State (session_state)` mapper in case of using the Keycloak Javascript adapter 24.0.3 or older
+* Adding the `Nonce backwards compatible` mapper in case of using a Keycloak Javascript adapter that is older than Keycloak 24
+
+You can add the protocol mappers directly to the corresponding client or to some client scope, which can be used by your client applications relying on older versions of the Keycloak Javascript adapter.
+Some more details are in the previous sections dedicated to `session_state` and `nonce` claims.
+
+= Default `http-pool-max-threads` reduced
+
+`http-pool-max-threads` if left unset will default to the greater of 50 or 4 x (available processors). Previously it defaulted to the greater of 200 or 8 x (available processors). Reducing the number or task threads for most usage scenarios will result in slightly higher performance due to less context switching among active threads.
+
+= Management port for metrics and health endpoints
+
+The `/health` and `/metrics` endpoints are accessible on the management port `9000`, which is turned on by default.
+That means these endpoints are no longer exposed to the standard Keycloak ports `8080` and `8443`.
+
+In order to reflect the old behavior, use the property `--legacy-observability-interface=true`, which will not expose these endpoints on the management port.
+However, this property is deprecated and will be removed in future releases, so it is recommended not to use it.
+
+The management interface uses a different HTTP server than the default {project_name} HTTP server, and it is possible to configure them separately.
+Beware, if no values are supplied for the management interface properties, they are inherited from the default {project_name} HTTP server.
+
+For more details, see https://www.keycloak.org/server/management-interface[Configuring the Management Interface].
+
+= Escaping slashes in group paths
+
+{project_name} has never escaped slashes in the group paths. Because of that, a group named `group/slash` child of `top` uses the full path `/top/group/slash`, which is clearly misleading. Starting with this version, the server can be started to perform escaping of those slashes in the name:
+
+[source,bash]
+----
+bin/kc.[sh|bat] start --spi-group-jpa-escape-slashes-in-group-path=true
+----
+
+The escape char is the tilde character `~`. The previous example results in the path `/top/group~/slash`. The escape marks the last slash is part of the name and not a hierarchy separator.
+
+The escaping is currently disabled by default because it represents a change in behavior. Nevertheless enabling escaping is recommended and it can be the default in future versions.
+
+= Change to class `EnvironmentDependentProviderFactory`
+
+The method `EnvironmentDependentProviderFactory.isSupported()` was deprecated for several releases and has now been removed.
+
+Instead, implement `isSupported(Config.Scope config)`.
+
+= Removal of the deprecated LinkedIn provider
+
+In version 22.0.2 the OAuh 2.0 social provider for LinkedIn was replaced by a new OpenId Connect implementation. The legacy provider was deprecated but not removed, just in case it was still functional in some existing realms. {project_name} 25.0.0 is definitely removing the old provider and its associated `linkedin-oauth` feature. From now on, the default `LinkedIn` social provider is the only option available.
+
+= Improved performance of `findGrantedResources` and `findGrantedOwnerResources` queries
+
+These queries performed poorly when the `RESOURCE_SERVER_RESOURCE` and `RESOURCE_SERVER_PERM_TICKET` tables had over 100k entries
+and users were granted access to over 1k resources. The queries were simplified and new indexes for the `requester` and `owner`
+columns were introduced.
+
+The new indexes are both applied to the `RESOURCE_SERVER_PERM_TICKET` table. If the table currently contains more than 300.000 entries,
+{project_name} will skip the creation of the indexes by default during the automatic schema migration, and will instead log the SQL statements
+on the console during migration. In this case, the statements must be run manually in the DB after {project_name}'s startup.
+
+See the link:{upgradingguide_link}[{upgradingguide_name}] for details on how to configure a different limit.
+
+= Removing deprecated methods from `AccessToken`, `IDToken`, and `JsonWebToken` classes
+
+The following methods were removed from the `AccessToken` class:
+
+* `expiration`. Use the `exp` method instead.
+* `notBefore`. Use the `nbf` method instead.
+* `issuedAt`. Use the `iat` method instead.
+
+The following methods were removed from the `IDToken` class:
+
+* `getAuthTime` and `setAuthTime`. Use the `getAuth_time` and `setAuth_time` methods, respectively.
+* `notBefore`. Use the `nbf` method instead.
+* `issuedAt`. Use the `iat` method instead.
+* `setSessionState`. Use the `setSessionId` method instead (See the details above in the section about `session_state` claim)
+
+The following methods were removed from the `JsonWebToken` class:
+
+* `expiration`. Use the `exp` method instead.
+* `notBefore`. Use the `nbf` method instead.
+* `issuedAt`. Use the `iat` method instead.
+
+You should also expect both `exp` and `nbf` claims not set in tokens as they are optional. Previously, these claims were
+being set with a value of `0` what does not make mush sense because their value should be a valid `NumericDate`.
+
+= Method `getExp` added to `SingleUseObjectKeyModel`
+
+As a consequence of the removal of deprecated methods from `AccessToken`, `IDToken`, and `JsonWebToken`,
+the `SingleUseObjectKeyModel` also changed to keep consistency with the method names related to expiration values.
+
+The previous `getExpiration` method is now deprecated and you should prefer using new newly introduced `getExp` method
+to avoid overflow after 2038.
+
+= Method encode deprecated on PasswordHashProvider
+
+Method `String encode(String rawPassword, int iterations)` on the interface `org.keycloak.credential.hash.PasswordHashProvider` is deprecated. The method will be removed in
+one of the future {project_name} releases. It might be {project_name} 27 release.
+
+= CollectionUtil intersection method removed
+
+The method `org.keycloak.common.util.CollectionUtil.intersection` has been removed. You should use the 'java.util.Collection.retainAll' instead on an existing collection.
+
+= Resteasy util class is deprecated
+
+`org.keycloak.common.util.Resteasy` has been deprecated. You should use the `org.keycloak.util.KeycloakSessionUtil` to obtain the `KeycloakSession` instead.
+
+It is highly recommended to avoid obtaining the `KeycloakSession` by means other than when creating your custom provider.
+
+= Small changes in session lifespan and idle calculations
+
+In previous versions the session max lifespan and idle timeout calculation was slightly different when validating if a session was still valid. Since now that validation uses the same code than the rest of the project.
+
+If the session is using the remember me feature, the idle timeout and max lifespan are the maximum value between the common SSO and the remember me configuration values.
+
+= External {jdgserver_name} requirements
+
+{project_name} now requires a {jdgserver_name} server version of at least 15.0.0 for external {jdgserver_name} deployments.
+An external {jdgserver_name} deployment is supported for multi-site setups as outlined in the HA guide.
+
+= Oracle Database driver not part of the distribution
+
+The Oracle Database JDBC driver is no longer part of the Keycloak distribution.
+If you wish to use Oracle DB, you must manually install a version of the Oracle Driver that is compatible with your specific environment. Instructions for this process can be found in the https://www.keycloak.org/server/db[Configuring the database] {section}.
+
+= Deprecated theme variables
+
+The following variables were deprecated in the Admin theme and will be removed in a future version:
+
+* `authServerUrl`. Use `serverBaseUrl` instead.
+* `authUrl`. Use `adminBaseUrl` instead.
+
+The following variables were deprecated in the Account theme and will be removed in a future version:
+
+* `authServerUrl`. Use `serverBaseUrl` instead, note `serverBaseUrl` does not include trailing slash.
+* `authUrl`. Use `serverBaseUrl` instead, note `serverBaseUrl` does not include trailing slash.
+
+= Methods to get and set current refresh token in client session are now deprecated
+
+The methods `String getCurrentRefreshToken()`, `void setCurrentRefreshToken(String currentRefreshToken)`, `int getCurrentRefreshTokenUseCount()`, and `void setCurrentRefreshTokenUseCount(int currentRefreshTokenUseCount)` in the interface `org.keycloak.models.AuthenticatedClientSessionModel` are deprecated. They have been replaced by similar methods that require an identifier as a parameter such as `getRefreshToken(String reuseId)` to manage multiple refresh tokens within a client session.
+The methods will be removed in one of the future {project_name} releases. It might be {project_name} 27 release.
+

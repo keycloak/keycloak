@@ -1,0 +1,15 @@
+[ {
+  "realm" : "master",
+  "users" : [ {
+    "username" : "admin",
+    "enabled" : true,
+    "credentials" : [ {
+      "type" : "password",
+      "hashedSaltedValue" : "dqalJHLkWhUJZO/q6+z1fvXOohTcGCXcvoU8xCEyvTxGN4wmLx7DtyhKuefggh6Bkx1I2eBTEX4tiWggwyXMDw==",
+      "salt" : "3fBAt5GAGGxFrV9fznpZHQ==",
+      "hashIterations" : 100000,
+      "algorithm" : "pbkdf2"
+    } ],
+    "realmRoles" : [ "admin" ]
+  } ]
+} ]

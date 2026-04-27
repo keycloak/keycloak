@@ -1,0 +1,21 @@
+. Connect into {jdgserver_name} Cluster using the {jdgserver_name} CLI tool:
++
+.Command:
+[source,bash,subs="+attributes"]
+----
+kubectl -n {ns} exec -it pods/{cluster-name}-0 -- ./bin/cli.sh --trustall --connect https://127.0.0.1:11222
+----
++
+It asks for the username and password for the {jdgserver_name} cluster.
+Those credentials are the one set in the <@links.ha id="multi-cluster-deploy-infinispan-kubernetes-crossdc"/> {section} in the configuring credentials section.
++
+.Output:
+[source,bash,subs="+attributes"]
+----
+Username: developer
+Password:
+[{cluster-name}-0-29897@ISPN//containers/default]>
+----
++
+NOTE: The pod name depends on the cluster name defined in the {jdgserver_name} CR.
+The connection can be done with any pod in the {jdgserver_name} cluster.

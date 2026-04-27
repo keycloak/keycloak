@@ -1,0 +1,64 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+  </head>
+  <body>
+    <script type="module">
+      checkStorageAccess();
+      
+      async function checkStorageAccess() {
+        // Check if the browser has granted us access to 3rd-party storage (such as cookies).
+        const hasAccess = await hasStorageAccess();
+
+        if (hasAccess) {
+          // If so, attempt to place a cookie to test this assumption.
+          attemptWithTestCookie();
+        } else {
+          // Otherwise, signal that 3rd-party access is not supported.
+          signalSupport(false);
+        }
+      }
+
+      // See https://developer.mozilla.org/en-US/docs/Web/API/Storage_Access_API/Using#checking_and_requesting_storage_access
+      async function hasStorageAccess() {
+        // Check if the Storage Access API is supported, if not, pretend we have access.
+        // This is for older browsers, where support can be determined using the test cookie.
+        if (!("hasStorageAccess" in document)) {
+          return true;
+        }
+
+        // Check if we already have been granted storage access, if so, signal access.
+        if (await document.hasStorageAccess()) {
+          return true;
+        }
+
+        try {
+          // Attempt to request storage access without a user interaction.
+          // This might fail, and if it does an exception will be thrown.
+          await document.requestStorageAccess();
+
+          // If no exceptions are thrown, then signal access.
+          return true;
+        } catch (error) {
+          // If an exception is thrown, then signal no access.
+          return false;
+        }
+      }
+
+      function attemptWithTestCookie() {
+        // Place a cookie to test whether we can access cookies from 3rd-party storage.
+        document.cookie = "KEYCLOAK_3P_COOKIE_SAMESITE=supported; Max-Age=60; SameSite=None; Secure";
+        document.cookie = "KEYCLOAK_3P_COOKIE=supported; Max-Age=60";
+
+        // Then redirect to the page where we will read these cookies to confirm this.
+        window.location = "step2.html";
+      }
+
+      function signalSupport(isSupported) {
+        // Signal 3rd-party access support to the page embedding this iframe.
+        window.parent.postMessage(isSupported ? "supported" : "unsupported", "*");
+      }
+    </script>
+  </body>
+</html>

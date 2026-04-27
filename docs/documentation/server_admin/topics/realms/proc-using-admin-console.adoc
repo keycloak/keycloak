@@ -1,0 +1,47 @@
+== Using the Admin Console
+
+You configure realms and perform most administrative tasks in the {project_name} Admin Console.
+
+.Prerequisites
+
+To use the Admin Console, you need an administrator account.
+
+* If no administrators exist, see xref:creating-first-admin_{context}[Creating the first administrator].
+* If other administrators exist, ask an administrator to provide an account with privileges to manage realms.
+
+.Procedure
+
+. Go to the URL for the Admin Console.
++
+For example, for localhost, use this URL: http://localhost:8080{kc_admins_path}/
+
+. Enter the username and password you created on the Welcome Page or through environment variables as described in https://www.keycloak.org/server/configuration#_creating_the_initial_admin_user[Creating the initial admin user].
++
+.Login page
+image:images/login-page.png[Login page]
++
+This action displays the Admin Console.
++
+.Admin Console
+image:images/admin-console.png[Admin Console]
+
+. Note the menus and other options that you can use:
+
+* Click the *Current realm* to see if other realms are available to be managed.
+
+* Click *Create realm* to create another realm that you can manage.
+
+* Click the top right list to view your account or log out.
+
+. Click *Realm settings* in the menu to see the fields and options for this realm.
++
+Click a question mark *?* icon to show the definition of a field such as *Frontend URL*.
+
++
+.Realm settings
+image:images/realm-settings.png[Realm settings]
+
+[NOTE]
+====
+Export files from the Admin Console are not suitable for backups or data transfer between servers. Only boot-time exports are suitable for backups or data transfer between servers.
+====

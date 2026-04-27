@@ -1,0 +1,270 @@
+<!--
+  ~ Copyright 2016 Red Hat, Inc. and/or its affiliates
+  ~ and other contributors as indicated by the @author tags.
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<project name="module-repository-lib">
+
+    <property name="src.dir" value="src"/>
+    <property name="module.repo.src.dir" value="${src.dir}/main/resources/modules"/>
+    <property name="module.xml" value="module.xml"/>
+
+    <taskdef resource="net/sf/antcontrib/antlib.xml"/>
+    <taskdef name="jandex" classname="org.jboss.jandex.JandexAntTask" />
+
+    <macrodef name="module-def">
+        <attribute name="name"/>
+        <attribute name="slot" default="main"/>
+        <element name="resources" implicit="yes" optional="yes"/>
+
+        <sequential>
+            <echo message="Initializing module -> @{name}"/>
+            <property name="module.repo.output.dir" value="${output.dir}/modules/system/add-ons/keycloak"/>
+            <!-- Figure out the correct module path -->
+            <define-module-dir name="@{name}" slot="@{slot}"/>
+
+            <!-- Make the module output director -->
+            <mkdir dir="${module.repo.output.dir}/${current.module.path}"/>
+
+            <!-- Process the resource -->
+            <resources/>
+            
+            <!-- Add keycloak version property to module xml -->
+            <replace file="${module.repo.output.dir}/${current.module.path}/${module.xml}"
+                     token="$${project.version}"
+                     value="${project.version}"/>
+            
+            <!-- Some final cleanup -->
+            <replace file="${module.repo.output.dir}/${current.module.path}/${module.xml}">
+                <replacetoken>
+                    <![CDATA[
+        <!-- Insert resources here -->]]></replacetoken>
+                <replacevalue>
+                </replacevalue>
+            </replace>
+
+        </sequential>
+    </macrodef>
+
+    <macrodef name="bundle-def">
+        <attribute name="name"/>
+        <attribute name="slot" default="main"/>
+        <element name="resources" implicit="yes" optional="yes"/>
+
+        <sequential>
+            <echo message="Initializing bundle -> @{name}"/>
+            <property name="bundle.repo.output.dir" value="${output.dir}/bundles/system/layers/base"/>
+            <!-- Figure out the correct bundle path -->
+            <define-bundle-dir name="@{name}" slot="@{slot}" />
+
+            <!-- Make the bundle output director -->
+            <mkdir dir="${bundle.repo.output.dir}/${current.bundle.path}"/>
+
+            <!-- Process the resource -->
+            <resources/>
+
+        </sequential>
+    </macrodef>
+
+    <macrodef name="maven-bundle" >
+        <attribute name="group"/>
+        <attribute name="artifact"/>
+
+        <sequential>
+            <!-- Copy the jar to the bundle dir -->
+            <property name="bundle.repo.output.dir" value="${output.dir}/bundles/system/layers/base"/>
+            <copy todir="${bundle.repo.output.dir}/${current.bundle.path}" failonerror="true">
+                <fileset file="${@{group}:@{artifact}:jar}"/>
+                <mapper type="flatten" />
+            </copy>
+        </sequential>
+    </macrodef>
+
+    <scriptdef name="define-module-dir" language="javascript" manager="bsf">
+        <attribute name="name"/>
+        <attribute name="slot"/>
+        <![CDATA[
+            name = attributes.get("name");
+            name = name.replace(".", "/");
+            project.setProperty("current.module.path", name + "/" + attributes.get("slot"));
+        ]]>
+    </scriptdef>
+
+    <scriptdef name="define-bundle-dir" language="javascript"  manager="bsf">
+        <attribute name="name"/>
+        <attribute name="slot"/>
+        <![CDATA[
+            name = attributes.get("name");
+            name = name.replace(".", "/");
+            project.setProperty("current.bundle.path", name + "/" + attributes.get("slot"));
+        ]]>
+    </scriptdef>
+
+    <!--
+       Get the version from the parent directory of the jar.  If the parent directory is 'target' this
+       means that the jar is contained in AS build so extract the version from the file name
+    -->
+    <scriptdef name="define-maven-artifact" language="javascript"  manager="bsf">
+        <attribute name="group"/>
+        <attribute name="artifact"/>
+        <attribute name="classifier"/>
+        <attribute name="element"/>
+        <attribute name="path"/>
+        <![CDATA[
+            importClass(Packages.java.io.File);
+            group = attributes.get("group");
+            artifact = attributes.get("artifact");
+            classifier = attributes.get("classifier");
+            element = attributes.get("element");
+            path = attributes.get("path");
+            if(path.indexOf('${') != -1) {
+                throw "Module resource root not found, make sure it is listed in build/pom.xml" + path;
+            }
+            fp = new File(path);
+            version = fp.getParentFile().getName();
+            if (version.equals("target")) {
+               version = fp.getName();
+               version = version.substring(artifact.length() + 1);
+               suffix = ".jar";
+               if (classifier) {
+                  suffix = "-" + classifier + suffix;
+               }
+               version = version.replace(suffix, "");
+            }
+
+            root = "<" + element + " name=\"" + group + ":" + artifact + ":" + version;
+            if (classifier) {
+               root = root + ":" + classifier;
+            }
+            root = root + "\"/>";
+            project.setProperty("current.maven.root", root);
+        ]]>
+    </scriptdef>
+
+    <macrodef name="maven-resource" >
+        <attribute name="group"/>
+        <attribute name="artifact"/>
+        <attribute name="jandex" default="false" />
+
+        <sequential>
+            <if>
+               <equals arg1="${mavenized.modules}" arg2="true"/>
+               <then>
+                <define-maven-artifact group="@{group}" artifact="@{artifact}" element="artifact" path="${@{group}:@{artifact}:jar}"/>
+                <replace file="${module.repo.output.dir}/${current.module.path}/${module.xml}">
+                    <replacefilter token="&lt;!-- Insert resources here --&gt;" value="${current.maven.root}&#10;        &lt;!-- Insert resources here --&gt;"/>
+                </replace>
+               </then>
+
+            <else>
+            <!-- Copy the jar to the module dir -->
+            <copy todir="${module.repo.output.dir}/${current.module.path}" failonerror="true">
+                <fileset file="${@{group}:@{artifact}:jar}"/>
+                <mapper type="flatten" />
+            </copy>
+
+            <basename file="${@{group}:@{artifact}:jar}" property="resourcename.@{group}.@{artifact}"/>
+            <!-- Generate the Jandex Index -->
+            <jandex run="@{jandex}" newJar="true" >
+                <fileset dir="${module.repo.output.dir}/${current.module.path}" />
+            </jandex>
+            <!-- Update the resource entry in module.xml -->
+            <define-resource-root path="${resourcename.@{group}.@{artifact}}" jandex="@{jandex}"/>
+            <replace file="${module.repo.output.dir}/${current.module.path}/${module.xml}">
+                <replacefilter token="&lt;!-- Insert resources here --&gt;" value="${current.resource.root}&#10;        &lt;!-- Insert resources here --&gt;"/>
+            </replace>
+            </else>
+            </if>
+        </sequential>
+    </macrodef>
+
+
+
+    <macrodef name="maven-resource-with-classifier" >
+        <attribute name="group"/>
+        <attribute name="artifact"/>
+        <attribute name="classifier"/>
+        <attribute name="jandex" default="false" />
+
+        <sequential>
+            <if>
+            <equals arg1="${mavenized.modules}" arg2="true"/>
+            <then>
+                <define-maven-artifact group="@{group}" artifact="@{artifact}" element="artifact" classifier="@{classifier}" path="${@{group}:@{artifact}:jar:@{classifier}}"/>
+                <replace file="${module.repo.output.dir}/${current.module.path}/${module.xml}">
+                    <replacefilter token="&lt;!-- Insert resources here --&gt;" value="${current.maven.root}&#10;        &lt;!-- Insert resources here --&gt;"/>
+                </replace>
+            </then>
+            <else>
+            <!-- Copy the jar to the module dir -->
+            <copy todir="${module.repo.output.dir}/${current.module.path}" failonerror="true">
+                <fileset file="${@{group}:@{artifact}:jar:@{classifier}}"/>
+                <!-- http://jira.codehaus.org/browse/MANTRUN-159 -->
+                <mapper type="flatten" />
+            </copy>
+
+            <basename file="${@{group}:@{artifact}:jar:@{classifier}}" property="resourcename.@{group}.@{artifact}.@{classifier}"/>
+
+            <!-- Update the resource entry in module.xml -->
+            <define-resource-root path="${resourcename.@{group}.@{artifact}.@{classifier}}"/>
+            <replace file="${module.repo.output.dir}/${current.module.path}/${module.xml}">
+                <replacefilter token="&lt;!-- Insert resources here --&gt;" value="${current.resource.root}&#10;        &lt;!-- Insert resources here --&gt;"/>
+            </replace>
+            </else>
+            </if>
+        </sequential>
+    </macrodef>
+
+    <macrodef name="extract-native-jar" >
+        <attribute name="group"/>
+        <attribute name="artifact"/>
+        <sequential>
+            <if>
+            <equals arg1="${mavenized.modules}" arg2="true"/>
+            <then>
+                <define-maven-artifact group="@{group}" artifact="@{artifact}" element="native-artifact" path="${@{group}:@{artifact}:jar}"/>
+                <replace file="${module.repo.output.dir}/${current.module.path}/${module.xml}">
+                    <replacefilter token="&lt;!-- Insert resources here --&gt;" value="${current.maven.root}&#10;        &lt;!-- Insert resources here --&gt;"/>
+                </replace>
+            </then>
+
+            <else>
+            <unzip src="${@{group}:@{artifact}:jar}" dest="${module.repo.output.dir}/${current.module.path}">
+           <patternset>
+               <include name="lib/**"/>
+           </patternset>
+           </unzip>
+           </else>
+           </if>
+        </sequential>
+    </macrodef>
+
+    <scriptdef name="define-resource-root" language="javascript" manager="bsf">
+        <attribute name="path"/>
+        <attribute name="jandex"/>
+        <![CDATA[
+            path = attributes.get("path");
+            root = "<resource-root path=\"" + path + "\"/>";
+            if(path.indexOf('${') != -1) {
+                throw "Module resource root not found, make sure it is listed in build/pom.xml" + path;
+            }
+            if(attributes.get("jandex") == "true" ) {
+                root = root + "\n\t<resource-root path=\"" + path.replace(".jar","-jandex.jar") + "\"/>";
+            }
+            project.setProperty("current.resource.root", root);
+        ]]>
+    </scriptdef>
+
+</project>

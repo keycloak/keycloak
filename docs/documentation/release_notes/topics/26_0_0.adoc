@@ -1,0 +1,282 @@
+= Organizations supported
+
+Starting with {project_name} 26, the Organizations feature is fully supported.
+
+= Client libraries updates
+
+== Dedicated release cycle for the client libraries
+
+From this release, some of the {project_name} client libraries will have release cycle independent of the {project_name} server release cycle. The 26.0.0 release may be the last one
+when the client libraries are released together with the {project_name} server. But from now on, the client libraries may be released at a different time than the {project_name} server.
+
+The client libraries are these artifacts:
+
+* Java admin client - Maven artifact `org.keycloak:keycloak-admin-client`
+* Java authorization client - Maven artifact `org.keycloak:keycloak-authz-client`
+* Java policy enforcer - Maven artifact `org.keycloak:keycloak-policy-enforcer`
+
+It is possible that in the future, some more libraries will be included.
+
+The client libraries are supported with Java 8, so it is possible to use them with the client applications deployed on the older application servers.
+
+== Compatibility of the client libraries with the server
+
+Beginning with this release, we are testing and supporting client libraries with the same server version and a few previous major server versions.
+
+For details about supported versions of client libraries with server versions, see the link:{upgradingclientlibs_link}[{upgradingclientlibs_name}].
+
+= User sessions persisted by default
+
+{project_name} 25 introduced the feature `persistent-user-sessions`. With this feature enabled all user sessions are persisted in the database as opposed to the previous behavior where only offline sessions were persisted.
+In {project_name} 26, this feature is enabled by default. This means that all user sessions are persisted in the database by default.
+
+It is possible to revert this behavior to the previous state by disabling the feature. Follow the `Volatile user sessions` section in https://www.keycloak.org/server/caching[Configuring distributed caches] guide for more details.
+
+For information on how to upgrade, see the link:{upgradingguide_link}[{upgradingguide_name}].
+
+= New default login theme
+
+There is now a new version (`v2`) of the `keycloak` login theme, which provides an improved look and feel, including support for switching automatically to a dark theme based on user preferences.
+
+The previous version (`v1`) is now deprecated, and will be removed in a future release.
+
+For all new realms, `keycloak.v2` will be the default login theme.  Also, any existing realm that never explicitly set a login theme will be switched to `keycloak.v2`.
+
+= Highly available multi-site deployments
+
+{project_name} 26 introduces significant improvements to the recommended HA multi-site architecture, most notably:
+
+- {project_name} deployments are now able to handle user requests simultaneously in both sites.
+
+- Active monitoring of the connectivity between the sites is now required to update the replication between the sites in case of a failure.
+
+- The loadbalancer blueprint has been updated to use the AWS Global Accelerator as this avoids prolonged fail-over times caused by DNS caching by clients.
+
+- Persistent user sessions are now a requirement of the architecture. Consequently, user sessions will be kept
+on {project_name} or {jdgserver_name} upgrades.
+
+For information on how to migrate, see the link:{upgradingguide_link}[{upgradingguide_name}].
+
+= Admin Bootstrapping and Recovery
+
+In the past, regaining access to a {project_name} instance when all admin users were locked out was a challenging and complex process. Recognizing these challenges and aiming to significantly enhance the user experience, {project_name} now offers several straightforward methods to bootstrap a temporary admin account and recover lost admin access.
+
+It is now possible to run the `start` or `start-dev` commands with specific options to create a temporary admin account. Additionally, a new dedicated command has been introduced, which allows users to regain admin access without hassle.
+
+For detailed instructions and more information on this topic, refer to the link:{bootstrapadminrecovery_link}[{bootstrapadminrecovery_name}] guide.
+
+= OpenTelemetry Tracing preview
+
+The underlying Quarkus support for OpenTelemetry Tracing has been exposed to {project_name} and allows obtaining application traces for better observability.
+It helps to find performance bottlenecks, determine the cause of application failures, trace a request through the distributed system, and much more.
+The support is in preview mode, and we would be happy to obtain any feedback.
+
+For more information, see the link:{tracingguide_link}[{tracingguide_name}] guide.
+
+ifeval::[{project_community}==true]
+= OpenID for Verifiable Credential Issuance
+
+The OpenID for Verifiable Credential Issuance (OID4VCI) is still an experimental feature in {project_name}, but it was greatly improved in this release. You will find significant development and discussions
+in the https://github.com/keycloak/kc-sig-fapi[Keycloak OAuth SIG]. Anyone from the Keycloak community is welcome to join.
+
+Many thanks to all members of the OAuth SIG group for the participation on the development and discussions about this feature. Especially thanks to the
+https://github.com/francis-pouatcha[Francis Pouatcha], https://github.com/Captain-P-Goldfish[Pascal Knüppel], https://github.com/tnorimat[Takashi Norimatsu],
+https://github.com/IngridPuppet[Ingrid Kamga], https://github.com/wistefan[Stefan Wiedemann] and https://github.com/thomasdarimont[Thomas Darimont]
+endif::[]
+
+= DPoP improvements
+
+The DPoP (OAuth 2.0 Demonstrating Proof-of-Possession) preview feature has improvements. The DPoP is now supported for all grant types.
+With previous releases, this feature was supported only for the `authorization_code` grant type. Support also exists for the DPoP token type on the UserInfo endpoint.
+
+ifeval::[{project_community}==true]
+Many thanks to https://github.com/Captain-P-Goldfish[Pascal Knüppel] for the contribution.
+endif::[]
+
+= Removal of GELF logging handler
+
+GELF support has been deprecated for a while now, and with this release it has been finally removed from {project_name}.
+Other log handlers are available and fully supported to be used as a replacement of GELF, for example Syslog. For details
+see the https://www.keycloak.org/server/logging[Logging guide].
+
+= Lightweight access tokens for Admin REST API
+
+Lightweight access tokens can now be used on the admin REST API. The `security-admin-console` and `admin-cli` clients are now using lightweight access tokens by default, so “Always Use Lightweight Access Token” and “Full Scope Allowed” are now enabled on these two clients. However, the behavior in the admin console should effectively remain the same. Be cautious if you have made changes to these two clients and if you are using them for other purposes.
+
+= Keycloak JavaScript adapter now standalone
+
+Keycloak JavaScript adapter is now a standalone library and is therefore no longer served statically from the Keycloak server. The goal is to de-couple the library from the Keycloak server, so that it can be refactored independently, simplifying the code and making it easier to maintain in the future. Additionally, the library is now free of third-party dependencies, which makes it more lightweight and easier to use in different environments.
+
+For a complete breakdown of the changes consult the link:{upgradingguide_link}[{upgradingguide_name}].
+
+= Hostname v1 feature removed
+
+The deprecated hostname v1 feature was removed. This feature was deprecated in {project_name} 25 and replaced by hostname v2. If you are still using this feature, you must migrate to hostname v2. For more details, see the https://www.keycloak.org/server/hostname[Configuring the hostname (v2)] and https://www.keycloak.org/docs/latest/upgrading/#new-hostname-options[the initial migration guide].
+
+= Automatic redirect from root to relative path
+
+User is automatically redirected to the path where {project_name} is hosted when the `http-relative-path` property is specified.
+It means when the relative path is set to `/auth`, and the user access `localhost:8080/`, the page is redirected to `localhost:8080/auth`.
+
+The same applies to the management interface when the `http-management-relative-path` or `http-relative-path` property is specified.
+
+It improves user experience as users no longer need to set the relative path to the URL explicitly.
+
+= Persisting revoked access tokens across restarts
+
+In this release, revoked access tokens are written to the database and reloaded when the cluster is restarted by default when using the embedded caches.
+
+For information on how to migrate, see the link:{upgradingguide_link}[{upgradingguide_name}].
+
+= Client Attribute condition in Client Policies
+
+The condition based on the client-attribute was added into Client Policies. You can use condition to specify for the clients
+with the specified client attribute having a specified value. It is possible to use either an AND or OR condition when evaluating this condition as mentioned in the documentation
+for client policies.
+
+ifeval::[{project_community}==true]
+Many thanks to https://github.com/y-tabata[Yoshiyuki Tabata] for the contribution.
+endif::[]
+
+= Specify different log levels for log handlers
+
+It is possible to specify log levels for all available log handlers, such as `console`, `file`, or `syslog`.
+The more fine-grained approach provides the ability to control logging over the whole application and be tailored to your needs.
+
+For more information, see the https://www.keycloak.org/server/logging[Logging guide].
+
+= Proxy option removed
+
+The deprecated `proxy` option was removed. This option was deprecated in {project_name} 24 and replaced by the `proxy-headers` option in combination with hostname options as needed. For more details, see https://www.keycloak.org/server/reverseproxy[using a reverse proxy] and https://www.keycloak.org/docs/latest/upgrading/index.html#deprecated-proxy-option[the initial migration guide].
+
+= Option `proxy-trusted-addresses` added
+
+The `proxy-trusted-addresses` can be used when the `proxy-headers` option is set to specify a allowlist of trusted proxy addresses. If the proxy address for a given request is not trusted, then the respective proxy header values will not be used.
+
+= Option `proxy-protocol-enabled` added
+
+The `proxy-protocol-enabled` option controls whether the server should use the HA PROXY protocol when serving requests from behind a proxy. When set to true, the remote address returned will be the one from the actual connecting client.
+
+= Option to reload trust and key material added
+
+The `https-certificates-reload-period` option can be set to define the reloading period of key store, trust store, and certificate files referenced by https-* options. Use -1 to disable reloading. Defaults to 1h (one hour).
+
+= Options to configure cache max-count added
+
+The `--cache-embedded-$\{CACHE_NAME}-max-count=` can be set to define an upper bound on the number of cache entries in the specified cache.
+
+= The `https-trust-store-*` options have been undeprecated
+
+Based on the community feedback, we decided to undeprecate `https-trust-store-*` options to allow better granularity in trusted certificates.
+
+= The `java-keystore` key provider supports more algorithms and vault secrets
+
+The `java-keystore` key provider, which allows loading a realm key from an external java keystore file, has been modified to manage all {project_name} algorithms. Besides, the keystore and key secrets, needed to retrieve the actual key from the store, can be configured using the link:{adminguide_link}#_vault-administration[vault]. Therefore a {project_name} realm can externalize any key to the encrypted file without sensitive data stored in the database.
+
+For more information about this subject, see link:{adminguide_link}#realm_keys[Configuring realm keys].
+
+= Adding support for ECDH-ES encryption key management algorithms
+
+Now {project_name} allows configuring ECDH-ES, ECDH-ES+A128KW, ECDH-ES+A192KW or ECDH-ES+A256KW as the encryption key management algorithm for clients. The Key Agreement with Elliptic Curve Diffie-Hellman Ephemeral Static (ECDH-ES) specification introduces three new header parameters for the JWT: `epk`, `apu` and `apv`. Currently {project_name} implementation only manages the compulsory `epk` while the other two (which are optional) are never added to the header. For more information about those algorithms please refer to the link:https://datatracker.ietf.org/doc/html/rfc7518#section-4.6[JSON Web Algorithms (JWA)].
+
+Also, a new key provider, `ecdh-generated`, is available to generate realm keys and support for ECDH algorithms is added into the Java KeyStore provider.
+
+ifeval::[{project_community}==true]
+Many thanks to https://github.com/justin-tay[Justin Tay] for the contribution.
+endif::[]
+
+= Support for multiple instances of a social broker in a realm
+
+It is now possible to have multiple instances of the same social broker in a realm.
+
+Most of the time a realm does not need multiple instances of the same social broker. But due to the introduction
+of the `organization` feature, it should be possible to link different instances of the same social broker
+to different organizations.
+
+When creating a social broker, you should now provide an `Alias` and optionally a `Display name` just like any other
+broker.
+
+= New generalized event types for credentials
+
+There are now generalized events for updating (`UPDATE_CREDENTIAL`) and removing (`REMOVE_CREDENTIAL`) a credential. The credential type is described in the `credential_type` attribute of the events. The new event types are supported by the Email Event Listener.
+
+The following event types are now deprecated and will be removed in a future version: `UPDATE_PASSWORD`, `UPDATE_PASSWORD_ERROR`, `UPDATE_TOTP`, `UPDATE_TOTP_ERROR`, `REMOVE_TOTP`, `REMOVE_TOTP_ERROR`
+
+= Customizable Footer in login Themes
+
+The `template.ftl` file in the `base/login` and the `keycloak.v2/login` theme now allows to customize the footer
+of the login box. This can be used to show common links or include custom scripts at the end of the page.
+
+The new `footer.ftl` template provides a `content` macro that is rendered at the bottom of the "login box".
+
+= Keycloak CR supports standard scheduling options
+
+The Keycloak CR now exposes first class properties for controlling the scheduling of your Keycloak Pods.
+
+For more details, see the
+https://www.keycloak.org/operator/advanced-configuration[Operator Advanced Configuration].
+
+= KeycloakRealmImport CR supports placeholder replacement
+
+The KeycloakRealmImport CR now exposes `spec.placeholders` to create environment variables for placeholder replacement in the import.
+
+For more details, see the
+https://www.keycloak.org/operator/realm-import[Operator Realm Import].
+
+= Configuring the LDAP Connection Pool
+
+In this release, the LDAP connection pool configuration relies solely on system properties.
+
+For more details, see link:{adminguide_link}#_ldap_connection_pool[Configuring the connection pool].
+
+= Infinispan marshalling changes to Infinispan Protostream
+
+Marshalling is the process of converting Java objects into bytes to send them across the network between {project_name} servers.
+With {project_name} 26, we changed the marshalling format from JBoss Marshalling to Infinispan Protostream.
+
+WARNING: JBoss Marshalling and Infinispan Protostream are not compatible with each other and incorrect usage may lead to data loss.
+Consequently, all caches are cleared when upgrading to this version.
+
+Infinispan Protostream is based on https://protobuf.dev/programming-guides/proto3/[Protocol Buffers] (proto 3), which has the advantage of backwards/forwards compatibility.
+
+= Removal of OSGi metadata
+
+Since all of the Java adapters that used OSGi metadata have been removed we have stopped generating OSGi metadata for our jars.
+
+= Group-related events no longer fired when removing a realm
+
+With the goal of improving the scalability of groups, they are now removed directly from the database when removing a realm.
+As a consequence, group-related events like the `GroupRemovedEvent` are no longer fired when removing a realm.
+
+For information on how to migrate, see the link:{upgradingguide_link}[{upgradingguide_name}].
+
+= Identity Providers no longer available from the realm representation
+
+As part of the improvements around the scalability of realms and organizations when they have many identity providers, the realm representation
+no longer holds the list of identity providers. However, they are still available from the realm representation
+when exporting a realm.
+
+For information on how to migrate, see the link:{upgradingguide_link}[{upgradingguide_name}].
+
+ifeval::[{project_community}==true]
+= Securing Applications documentation converted into the guide format
+
+The _Securing Applications and Services_ documentation was converted into the new format similar to the _Server Installation and Configuration_ documentation converted in the previous releases.
+The documentation is now available under https://www.keycloak.org/guides[Keycloak Guides].
+endif::[]
+
+= Removal of legacy cookies
+
+Keycloak no longer sends `_LEGACY` cookies, which where introduced as a work-around to older browsers not supporting
+the `SameSite` flag on cookies.
+
+The `_LEGACY` cookies also served another purpose, which was to allow login from an insecure context. Although, this is
+not recommended at all in production deployments of Keycloak, it is fairly frequent to access Keycloak over `http` outside
+of `localhost`. As an alternative to the `_LEGACY` cookies Keycloak now doesn't set the `secure` flag and sets `SameSite=Lax`
+instead of `SameSite=None` when it detects an insecure context is used.
+
+= Property `origin` in the `UserRepresentation` is deprecated
+
+The `origin` property in the `UserRepresentation` is deprecated and planned to be removed in future releases.
+
+Instead, prefer using the `federationLink` property to obtain the provider to which a user is linked with.

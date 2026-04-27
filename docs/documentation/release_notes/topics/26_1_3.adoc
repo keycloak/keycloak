@@ -1,0 +1,5 @@
+= Send Reset Email force login again for federated users after reset credentials
+
+In <<keycloak-26-1-1, version 26.1.1>> a new configuration option was added to the `reset-credential-email` (*Send Reset Email*) authenticator to allow changing the default behavior after the reset credentials flow. Now the option `force-login` (*Force login after reset*) is adding a third configuration value `only-federated`, which means that the force login is true for federated users and false for the internal database users. The new behavior is now the default. This way all users managed by user federation providers, whose implementation can be not so tightly integrated with {project_name}, are forced to login again after the reset credentials flow to avoid any issue. This change in behavior is due to the secure by default policy.
+
+For more information, see link:{adminguide_link}#enabling-forgot-password[Enable forgot password].

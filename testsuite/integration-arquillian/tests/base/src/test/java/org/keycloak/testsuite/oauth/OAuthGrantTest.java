@@ -1,0 +1,492 @@
+/*
+ * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.keycloak.testsuite.oauth;
+
+import java.io.IOException;
+import java.util.List;
+import java.util.Map;
+
+import jakarta.ws.rs.core.Response;
+
+import org.keycloak.admin.client.resource.ClientResource;
+import org.keycloak.admin.client.resource.ClientScopeResource;
+import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.admin.client.resource.UserResource;
+import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthenticator;
+import org.keycloak.events.Details;
+import org.keycloak.models.ClientScopeModel;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.representations.AccessToken;
+import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.ClientScopeRepresentation;
+import org.keycloak.representations.idm.EventRepresentation;
+import org.keycloak.representations.idm.ProtocolMapperRepresentation;
+import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testframework.events.EventAssertion;
+import org.keycloak.testsuite.AbstractKeycloakTest;
+import org.keycloak.testsuite.AssertEvents;
+import org.keycloak.testsuite.admin.AdminApiUtil;
+import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.pages.AppPage;
+import org.keycloak.testsuite.pages.ErrorPage;
+import org.keycloak.testsuite.pages.LogoutConfirmPage;
+import org.keycloak.testsuite.pages.OAuthGrantPage;
+import org.keycloak.testsuite.util.AccountHelper;
+import org.keycloak.testsuite.util.ProtocolMapperUtil;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.util.TokenUtil;
+
+import org.jboss.arquillian.graphene.page.Page;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.openqa.selenium.By;
+
+import static org.keycloak.testsuite.AbstractAdminTest.loadJson;
+import static org.keycloak.testsuite.admin.AdminApiUtil.findClientByClientId;
+import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+/**
+ * @author <a href="mailto:vrockai@redhat.com">Viliam Rockai</a>
+ */
+public class OAuthGrantTest extends AbstractKeycloakTest {
+
+    public static final String THIRD_PARTY_APP = "third-party";
+    public static final String REALM_NAME = "test";
+    private final String DEFAULT_USERNAME = "test-user@localhost";
+    private final String DEFAULT_PASSWORD = "password";
+    @Rule
+    public AssertEvents events = new AssertEvents(this);
+
+    @Page
+    protected OAuthGrantPage grantPage;
+
+    @Page
+    protected LogoutConfirmPage logoutConfirmPage;
+
+    @Page
+    protected AppPage appPage;
+
+    @Page
+    protected ErrorPage errorPage;
+
+    @Override
+    public void addTestRealms(List<RealmRepresentation> testRealms) {
+
+        RealmRepresentation realmRepresentation = loadJson(getClass().getResourceAsStream("/testrealm.json"), RealmRepresentation.class);
+        testRealms.add(realmRepresentation);
+    }
+
+    private static String ROLE_USER = "Have User privileges";
+    private static String ROLE_CUSTOMER = "Have Customer User privileges";
+
+    @Test
+    public void oauthGrantAcceptTest() {
+        oauth.client(THIRD_PARTY_APP, "password");
+        oauth.doLogin(DEFAULT_USERNAME, DEFAULT_PASSWORD);
+
+        grantPage.assertCurrent();
+        grantPage.assertGrants(OAuthGrantPage.PROFILE_CONSENT_TEXT, OAuthGrantPage.EMAIL_CONSENT_TEXT, OAuthGrantPage.ROLES_CONSENT_TEXT);
+
+        grantPage.accept();
+
+        Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
+
+        EventRepresentation loginEvent = EventAssertion.expectLoginSuccess(events.poll())
+                .clientId(THIRD_PARTY_APP)
+                .details(Details.REDIRECT_URI, oauth.getRedirectUri())
+                .details(Details.CONSENT, Details.CONSENT_VALUE_CONSENT_GRANTED).getEvent();
+        String codeId = loginEvent.getDetails().get(Details.CODE_ID);
+        String sessionId = loginEvent.getSessionId();
+
+        AccessTokenResponse accessToken = oauth.doAccessTokenRequest(oauth.parseLoginResponse().getCode());
+
+        String tokenString = accessToken.getAccessToken();
+        Assertions.assertNotNull(tokenString);
+        AccessToken token = oauth.verifyToken(tokenString);
+        assertEquals(sessionId, token.getSessionState());
+
+        AccessToken.Access realmAccess = token.getRealmAccess();
+        assertEquals(1, realmAccess.getRoles().size());
+        Assertions.assertTrue(realmAccess.isUserInRole("user"));
+
+        Map<String, AccessToken.Access> resourceAccess = token.getResourceAccess();
+        assertEquals(1, resourceAccess.size());
+        assertEquals(1, resourceAccess.get("test-app").getRoles().size());
+        Assertions.assertTrue(resourceAccess.get("test-app").isUserInRole("customer-user"));
+
+        EventAssertion.expectCodeToTokenSuccess(events.poll())
+                .sessionId(loginEvent.getSessionId())
+                .clientId(THIRD_PARTY_APP)
+                .details(Details.CODE_ID, codeId)
+                .details(Details.REFRESH_TOKEN_TYPE, TokenUtil.TOKEN_TYPE_REFRESH)
+                .details(Details.CLIENT_AUTH_METHOD, ClientIdAndSecretAuthenticator.PROVIDER_ID);
+
+        AccountHelper.revokeConsents(adminClient.realm(TEST), DEFAULT_USERNAME, THIRD_PARTY_APP);
+
+        List<Map<String, Object>> userConsents = AccountHelper.getUserConsents(adminClient.realm(TEST), DEFAULT_USERNAME);
+        Assertions.assertEquals(userConsents.size(), 0);
+
+        assertEquals(0, driver.findElements(By.id("revoke-third-party")).size());
+    }
+
+    @Test
+    public void oauthGrantCancelTest() {
+        oauth.client(THIRD_PARTY_APP);
+        oauth.doLogin(DEFAULT_USERNAME, DEFAULT_PASSWORD);
+
+        grantPage.assertCurrent();
+        grantPage.assertGrants(OAuthGrantPage.PROFILE_CONSENT_TEXT, OAuthGrantPage.EMAIL_CONSENT_TEXT, OAuthGrantPage.ROLES_CONSENT_TEXT);
+
+        grantPage.cancel();
+
+        assertEquals("access_denied", oauth.parseLoginResponse().getError());
+
+        EventAssertion.expectLoginError(events.poll())
+                .clientId(THIRD_PARTY_APP)
+                .error("rejected_by_user")
+                .withoutDetails(Details.CONSENT)
+                .sessionId(null);
+    }
+
+    @Test
+    public void oauthGrantNotShownWhenAlreadyGranted() throws IOException {
+        // Grant permissions on grant screen
+        oauth.client(THIRD_PARTY_APP, "password");
+        oauth.doLogin(DEFAULT_USERNAME, DEFAULT_PASSWORD);
+
+        grantPage.assertCurrent();
+        grantPage.accept();
+
+        EventAssertion.expectLoginSuccess(events.poll())
+                .clientId(THIRD_PARTY_APP)
+                .details(Details.REDIRECT_URI, oauth.getRedirectUri())
+                .details(Details.CONSENT, Details.CONSENT_VALUE_CONSENT_GRANTED);
+
+        // Assert permissions granted on Account mgmt.
+        List<Map<String, Object>> userConsents = AccountHelper.getUserConsents(adminClient.realm(TEST), DEFAULT_USERNAME);
+
+        Assertions.assertTrue(((List) userConsents.get(0).get("grantedClientScopes")).stream().anyMatch(p -> p.equals("profile")));
+        Assertions.assertTrue(((List) userConsents.get(0).get("grantedClientScopes")).stream().anyMatch(p -> p.equals("email")));
+
+        // Open login form and assert grantPage not shown
+        oauth.openLoginForm();
+        appPage.assertCurrent();
+        EventAssertion.expectLoginSuccess(events.poll())
+                .details(Details.AUTH_METHOD, OIDCLoginProtocol.LOGIN_PROTOCOL)
+                .details(Details.REDIRECT_URI, oauth.getRedirectUri())
+                .details(Details.CONSENT, Details.CONSENT_VALUE_PERSISTED_CONSENT)
+                .clientId(THIRD_PARTY_APP);
+
+        // Revoke grant in account mgmt.
+        AccountHelper.revokeConsents(adminClient.realm(TEST), DEFAULT_USERNAME, THIRD_PARTY_APP);
+
+        userConsents = AccountHelper.getUserConsents(adminClient.realm(TEST), DEFAULT_USERNAME);
+        Assertions.assertEquals(userConsents.size(), 0);
+
+        // Open login form again and assert grant Page is shown
+        oauth.openLoginForm();
+        grantPage.assertCurrent();
+        grantPage.assertGrants(OAuthGrantPage.PROFILE_CONSENT_TEXT, OAuthGrantPage.EMAIL_CONSENT_TEXT, OAuthGrantPage.ROLES_CONSENT_TEXT);
+    }
+
+    @Test
+    public void oauthGrantAddAnotherScope() throws IOException {
+        // Grant permissions on grant screen
+        oauth.client(THIRD_PARTY_APP);
+        oauth.doLogin(DEFAULT_USERNAME, DEFAULT_PASSWORD);
+
+        // Create new clientScope and add to client
+        RealmResource appRealm = adminClient.realm(REALM_NAME);
+        ClientScopeRepresentation scope1 = new ClientScopeRepresentation();
+        scope1.setName("foo-scope");
+        scope1.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+        Response response = appRealm.clientScopes().create(scope1);
+        String fooScopeId = ApiUtil.getCreatedId(response);
+        response.close();
+        getCleanup().addClientScopeId(fooScopeId);
+
+        // Add clientScope to client
+        ClientResource thirdParty = findClientByClientId(appRealm, THIRD_PARTY_APP);
+        thirdParty.addDefaultClientScope(fooScopeId);
+
+        // Confirm grant page
+        grantPage.assertCurrent();
+        grantPage.accept();
+        EventAssertion.expectLoginSuccess(events.poll())
+                .clientId(THIRD_PARTY_APP)
+                .details(Details.REDIRECT_URI, oauth.getRedirectUri())
+                .details(Details.CONSENT, Details.CONSENT_VALUE_CONSENT_GRANTED);
+
+        // Assert new clientScope not yet in account mgmt
+        List<Map<String, Object>> userConsents = AccountHelper.getUserConsents(adminClient.realm(TEST), DEFAULT_USERNAME);
+        Assertions.assertFalse(((List) userConsents.get(0).get("grantedClientScopes")).stream().anyMatch(p -> p.equals("foo-scope")));
+
+        // Show grant page another time. Just new clientScope is on the page
+        oauth.openLoginForm();
+        grantPage.assertCurrent();
+        grantPage.assertGrants("foo-scope");
+
+        grantPage.accept();
+        EventAssertion.expectLoginSuccess(events.poll())
+                .clientId(THIRD_PARTY_APP)
+                .details(Details.REDIRECT_URI, oauth.getRedirectUri())
+                .details(Details.CONSENT, Details.CONSENT_VALUE_CONSENT_GRANTED);
+
+        // Go to account mgmt. Everything is granted now
+        userConsents = AccountHelper.getUserConsents(adminClient.realm(TEST), DEFAULT_USERNAME);
+        Assertions.assertTrue(((List) userConsents.get(0).get("grantedClientScopes")).stream().anyMatch(p -> p.equals("foo-scope")));
+
+        // Revoke
+        AccountHelper.revokeConsents(adminClient.realm(TEST), DEFAULT_USERNAME, THIRD_PARTY_APP);
+
+        userConsents = AccountHelper.getUserConsents(adminClient.realm(TEST), DEFAULT_USERNAME);
+        Assertions.assertEquals(userConsents.size(), 0);
+
+        // Cleanup
+        thirdParty.removeDefaultClientScope(fooScopeId);
+    }
+
+    @Test
+    public void oauthGrantScopeParamRequired() throws Exception {
+        RealmResource appRealm = adminClient.realm(REALM_NAME);
+        ClientResource thirdParty = findClientByClientId(appRealm, THIRD_PARTY_APP);
+
+        // Create clientScope
+        ClientScopeRepresentation scope1 = new ClientScopeRepresentation();
+        scope1.setName("foo-scope");
+        scope1.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+        Response response = appRealm.clientScopes().create(scope1);
+        String fooScopeId = ApiUtil.getCreatedId(response);
+        response.close();
+        getCleanup().addClientScopeId(fooScopeId);
+
+        // Add clientScope as optional to client
+        thirdParty.addOptionalClientScope(fooScopeId);
+
+        // Assert clientScope not on grant screen when not requested
+        oauth.client(THIRD_PARTY_APP);
+        oauth.doLogin(DEFAULT_USERNAME, DEFAULT_PASSWORD);
+        grantPage.assertCurrent();
+        List<String> grants = grantPage.getDisplayedGrants();
+        Assertions.assertFalse(grants.contains("foo-scope"));
+        grantPage.cancel();
+
+        EventAssertion.expectLoginError(events.poll())
+                .clientId(THIRD_PARTY_APP)
+                .error("rejected_by_user")
+                .withoutDetails(Details.CONSENT)
+                .details(Details.REDIRECT_URI, oauth.getRedirectUri())
+                .sessionId(null);
+
+        oauth.scope("foo-scope");
+        oauth.doLogin(DEFAULT_USERNAME, DEFAULT_PASSWORD);
+        grantPage.assertCurrent();
+        grants = grantPage.getDisplayedGrants();
+        Assertions.assertTrue(grants.contains("foo-scope"));
+        grantPage.accept();
+
+        EventAssertion.expectLoginSuccess(events.poll())
+                .clientId(THIRD_PARTY_APP)
+                .details(Details.REDIRECT_URI, oauth.getRedirectUri())
+                .details(Details.CONSENT, Details.CONSENT_VALUE_CONSENT_GRANTED);
+
+        // Revoke
+        AccountHelper.revokeConsents(adminClient.realm(TEST), DEFAULT_USERNAME, THIRD_PARTY_APP);
+
+        List<Map<String, Object>> userConsents = AccountHelper.getUserConsents(adminClient.realm(TEST), DEFAULT_USERNAME);
+        Assertions.assertEquals(userConsents.size(), 0);
+
+        // cleanup
+        oauth.scope(null);
+        thirdParty.removeOptionalClientScope(fooScopeId);
+    }
+
+    // KEYCLOAK-4326
+    @Test
+    public void oauthGrantClientScopeMappers() throws Exception {
+        // Add client scope with some protocol mapper
+        RealmResource appRealm = adminClient.realm(REALM_NAME);
+
+        ClientScopeRepresentation scope1 = new ClientScopeRepresentation();
+        scope1.setName("foo-addr");
+        scope1.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+        Response response = appRealm.clientScopes().create(scope1);
+        String fooScopeId = ApiUtil.getCreatedId(response);
+        response.close();
+
+        ProtocolMapperRepresentation protocolMapper = ProtocolMapperUtil.createAddressMapper(true, true, true, true);
+        response = appRealm.clientScopes().get(fooScopeId).getProtocolMappers().createMapper(protocolMapper);
+        response.close();
+
+        // Add clientScope to client
+        ClientResource thirdParty = findClientByClientId(appRealm, THIRD_PARTY_APP);
+        thirdParty.addDefaultClientScope(fooScopeId);
+        getCleanup().addClientScopeId(fooScopeId);
+
+        // Login
+        oauth.client(THIRD_PARTY_APP);
+        oauth.doLogin(DEFAULT_USERNAME, DEFAULT_PASSWORD);
+        grantPage.assertCurrent();
+        grantPage.assertGrants(OAuthGrantPage.EMAIL_CONSENT_TEXT, OAuthGrantPage.PROFILE_CONSENT_TEXT, OAuthGrantPage.ROLES_CONSENT_TEXT, "foo-addr");
+        grantPage.accept();
+
+        EventAssertion.expectLoginSuccess(events.poll())
+                .clientId(THIRD_PARTY_APP)
+                .details(Details.REDIRECT_URI, oauth.getRedirectUri())
+                .details(Details.CONSENT, Details.CONSENT_VALUE_CONSENT_GRANTED);
+
+        // Go to user's application screen
+        List<Map<String, Object>> userConsents = AccountHelper.getUserConsents(adminClient.realm(TEST), DEFAULT_USERNAME);
+
+        Assertions.assertEquals("third-party", userConsents.get(0).get("clientId"));
+        Assertions.assertTrue(((List) userConsents.get(0).get("grantedClientScopes")).stream().anyMatch(p -> p.equals("foo-addr")));
+
+        // Login as admin and see the consent screen of particular user
+        UserResource user = AdminApiUtil.findUserByUsernameId(appRealm, "test-user@localhost");
+        List<Map<String, Object>> consents = user.getConsents();
+        Assertions.assertEquals(1, consents.size());
+
+        // Assert automatically logged another time
+        oauth.openLoginForm();
+        appPage.assertCurrent();
+        EventAssertion.expectLoginSuccess(events.poll())
+                .details(Details.REDIRECT_URI, oauth.getRedirectUri())
+                .details(Details.AUTH_METHOD, OIDCLoginProtocol.LOGIN_PROTOCOL)
+                .details(Details.CONSENT, Details.CONSENT_VALUE_PERSISTED_CONSENT)
+                .clientId(THIRD_PARTY_APP);
+
+        // Revoke
+        AccountHelper.revokeConsents(adminClient.realm(TEST), DEFAULT_USERNAME, THIRD_PARTY_APP);
+
+        userConsents = AccountHelper.getUserConsents(adminClient.realm(TEST), DEFAULT_USERNAME);
+        Assertions.assertEquals(userConsents.size(), 0);
+
+        // Cleanup
+        thirdParty.removeDefaultClientScope(fooScopeId);
+    }
+
+    @Test
+    public void oauthGrantExpiredAuthSession() throws Exception {
+        oauth.client(THIRD_PARTY_APP);
+        oauth.doLogin(DEFAULT_USERNAME, DEFAULT_PASSWORD);
+
+        grantPage.assertCurrent();
+
+        // Expire cookies
+        driver.manage().deleteAllCookies();
+
+        grantPage.accept();
+
+        // Assert link "back to application" present
+        errorPage.assertCurrent();
+        String backToAppLink = errorPage.getBackToApplicationLink();
+        ClientRepresentation thirdParty = findClientByClientId(adminClient.realm(REALM_NAME), THIRD_PARTY_APP).toRepresentation();
+        Assertions.assertEquals(backToAppLink, thirdParty.getBaseUrl());
+    }
+
+    // KEYCLOAK-7470
+    @Test
+    public void oauthGrantOrderedClientScopes() throws Exception {
+        // Add GUI Order to client scopes --- email=1, profile=2
+        RealmResource appRealm = adminClient.realm(REALM_NAME);
+
+        ClientScopeResource emailScope = AdminApiUtil.findClientScopeByName(appRealm, "email");
+        ClientScopeRepresentation emailRep = emailScope.toRepresentation();
+        emailRep.getAttributes().put(ClientScopeModel.GUI_ORDER, "1");
+        emailScope.update(emailRep);
+        Assertions.assertEquals("1", emailRep.getAttributes().get(ClientScopeModel.GUI_ORDER));
+
+        ClientScopeResource profileScope = AdminApiUtil.findClientScopeByName(appRealm, "profile");
+        ClientScopeRepresentation profileRep = profileScope.toRepresentation();
+        profileRep.getAttributes().put(ClientScopeModel.GUI_ORDER, "2");
+        profileScope.update(profileRep);
+        Assertions.assertEquals("2", profileRep.getAttributes().get(ClientScopeModel.GUI_ORDER));
+
+        // Display consent screen --- assert email, then profile
+        oauth.client(THIRD_PARTY_APP);
+        oauth.doLogin(DEFAULT_USERNAME, DEFAULT_PASSWORD);
+
+        grantPage.assertCurrent();
+        List<String> displayedScopes = grantPage.getDisplayedGrants();
+        Assertions.assertEquals("Email address", displayedScopes.get(0));
+        Assertions.assertEquals("User profile", displayedScopes.get(1));
+        grantPage.accept();
+
+        // Update GUI Order --- email=3
+        emailRep = emailScope.toRepresentation();
+        emailRep.getAttributes().put(ClientScopeModel.GUI_ORDER, "3");
+        emailScope.update(emailRep);
+        Assertions.assertEquals("3", emailRep.getAttributes().get(ClientScopeModel.GUI_ORDER));
+
+        // Revoke grant and display consent screen --- assert profile, then email
+        AccountHelper.revokeConsents(adminClient.realm(TEST), DEFAULT_USERNAME, THIRD_PARTY_APP);
+
+        oauth.openLoginForm();
+        grantPage.assertCurrent();
+        displayedScopes = grantPage.getDisplayedGrants();
+        Assertions.assertEquals("User profile", displayedScopes.get(0));
+        Assertions.assertEquals("Email address", displayedScopes.get(1));
+    }
+
+
+    // KEYCLOAK-16006 - tests that after revoke consent from single client, the SSO session is still valid and not automatically logged-out
+    @Test
+    public void oauthGrantUserNotLoggedOutAfterConsentRevoke() throws Exception {
+        // Login
+        oauth.client(THIRD_PARTY_APP);
+        oauth.doLogin(DEFAULT_USERNAME, DEFAULT_PASSWORD);
+
+        // Confirm consent screen
+        grantPage.assertCurrent();
+        grantPage.assertGrants(OAuthGrantPage.PROFILE_CONSENT_TEXT, OAuthGrantPage.EMAIL_CONSENT_TEXT, OAuthGrantPage.ROLES_CONSENT_TEXT);
+        grantPage.accept();
+
+        Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
+
+        EventRepresentation loginEvent = EventAssertion.expectLoginSuccess(events.poll())
+                .clientId(THIRD_PARTY_APP)
+                .details(Details.REDIRECT_URI, oauth.getRedirectUri())
+                .details(Details.CONSENT, Details.CONSENT_VALUE_CONSENT_GRANTED).getEvent();
+        String sessionId = loginEvent.getSessionId();
+
+        // Revoke consent with admin REST API
+        adminClient.realm(REALM_NAME).users().get(loginEvent.getUserId()).revokeConsent(THIRD_PARTY_APP);
+
+        // Make sure that after refresh, consent page is displayed and user doesn't need to re-authenticate. Just accept consent screen again
+        oauth.openLoginForm();
+
+        grantPage.assertCurrent();
+        grantPage.assertGrants(OAuthGrantPage.PROFILE_CONSENT_TEXT, OAuthGrantPage.EMAIL_CONSENT_TEXT, OAuthGrantPage.ROLES_CONSENT_TEXT);
+        grantPage.accept();
+
+        loginEvent = EventAssertion.expectLoginSuccess(events.poll())
+                .clientId(THIRD_PARTY_APP)
+                .details(Details.REDIRECT_URI, oauth.getRedirectUri())
+                .details(Details.CONSENT, Details.CONSENT_VALUE_CONSENT_GRANTED).getEvent();
+
+        //String codeId = loginEvent.getDetails().get(Details.CODE_ID);
+        String sessionId2 = loginEvent.getSessionId();
+        Assertions.assertEquals(sessionId, sessionId2);
+
+        // Revert consent
+        adminClient.realm(REALM_NAME).users().get(loginEvent.getUserId()).revokeConsent(THIRD_PARTY_APP);
+    }
+
+}

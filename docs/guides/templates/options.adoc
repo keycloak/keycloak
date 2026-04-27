@@ -1,0 +1,68 @@
+<#macro expectedValues option>
+    <#assign optionObj = ctx.options.getOption(option) />
+    <#list optionObj.expectedValues as expectedValue>
+        * `+${expectedValue}+` <#if optionObj.defaultValue?has_content && expectedValue == optionObj.defaultValue> (default)</#if> <#if optionObj.deprecated?has_content && optionObj.deprecated.deprecatedValues?seq_contains(expectedValue)> (deprecated)</#if>
+    </#list>
+</#macro>
+
+<#macro includeOptions includedOptions excludedOptions="" deniedCategories="">
+<@list options=ctx.options.getOptions(includedOptions, excludedOptions, deniedCategories) anchor=false></@list>
+</#macro>
+
+<#macro printRelevantOptions includedOptions excludedOptions="" deniedCategories="">
+== Relevant options
+
+<@includeOptions includedOptions=includedOptions excludedOptions=excludedOptions deniedCategories=deniedCategories></@includeOptions>
+<#nested>
+</#macro>
+
+<#macro list options buildIcon=true anchor=true categoryName="">
+[cols="12a,2,2",role="options"]
+|===
+| |_Type_ or Values |Default
+
+<#list options as option>
+|
+[.options-key]#`+${option.key}+`# <#if buildIcon><#if option.build>[.none]#icon:tools[role=options-build]#</#if></#if>
+
+[.options-description]#${option.description}#
+
+[<#if anchor>#option-extended-${categoryName?lower_case}-${option.key},</#if>role="options-extended"]
+--
+<#if option.descriptionExtended?has_content>[.options-description-extended]#${option.descriptionExtended!}#</#if>
+
+<#if option.wildcardKey?has_content>*Named key:* [.options-wildcard-key]#`+${option.wildcardKey}+`# <#if buildIcon><#if option.build>[.none]#icon:tools[role=options-build]#</#if></#if></#if>
+
+*CLI:* `+${option.keyCli}+` +
+*Env:* `+${option.keyEnv}+`
+--
+
+<#if option.enabledWhen?has_content>
+${option.enabledWhen!}
+</#if>
+
+<#if option.deprecated?has_content>
+<#-- Either mark the whole option as deprecated, or just selected values -->
+<#if !option.deprecated.deprecatedValues?has_content>
+*DEPRECATED.*
+</#if>
+${option.deprecated.note!}<#if option.deprecated.newOptionsKeys?has_content><#if option.deprecated.note?has_content> </#if>Use: <#list option.deprecated.newOptionsKeys as key>`+${key}+`<#if key?has_next>, </#if></#list>.</#if>
+<#if option.deprecated.deprecatedValues?has_content>
+*Deprecated values: <#list option.deprecated.deprecatedValues as value>`+${value}+`<#if value?has_next>, </#if></#list>*
+</#if>
+</#if>
+
+|<#if option.expectedValues?has_content>
+<#list option.expectedValues as value>`+${value!}+`<#if option.deprecated?has_content && option.deprecated.deprecatedValues?seq_contains(value)> (deprecated)</#if><#if value?has_next>, </#if></#list><#if !option.strictExpectedValues>, or any</#if>
+<#else>
+_${option.type!}_
+</#if>
+
+|<#if option.defaultValue?has_content>
+`+${option.defaultValue!}+`
+</#if>
+
+</#list>
+
+|===
+</#macro>

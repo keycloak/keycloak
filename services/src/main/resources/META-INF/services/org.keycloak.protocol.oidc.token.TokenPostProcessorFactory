@@ -1,0 +1,2 @@
+org.keycloak.protocol.oidc.resourceindicators.ResourceIndicatorsPostProcessorFactory
+org.keycloak.organization.protocol.mappers.oidc.OrganizationTokenPostProcessorFactory

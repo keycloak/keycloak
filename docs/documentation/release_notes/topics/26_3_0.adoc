@@ -1,0 +1,88 @@
+// Release notes should contain only headline-worthy new features,
+// assuming that people who migrate will read the upgrading guide anyway.
+
+This release delivers advancements to optimize your system and improve the experience of users, developers and administrators:
+
+* *Account recovery* with 2FA recovery codes, protecting users from lockout.
+* Simplified experiences for application developers with *streamlined WebAuthn/Passkey registration* and *simplified account linking* to identity providers via application initiated actions.
+* Broader connectivity with the ability to *broker with any OAuth 2.0 compliant authorization server*, and enhanced *trusted email verification* for OpenID Connect providers.
+* *Asynchronous logging* for higher throughput and lower latency, ensuring more efficient deployments.
+* For administrators, *experimental rolling updates for patch releases* mean minimized downtime and smoother upgrades.
+
+Read on to learn more about each new feature, and https://www.keycloak.org/docs/latest/upgrading/index.html[find additional details in the upgrading guide] if you are upgrading from a previous release of {project_name}.
+
+= Recovering your account if you lose your 2FA credentials
+
+When using for example a one-time-password (OTP) generators as a second factor for authenticating users (2FA), a user can get locked out of their account when they, for example, lose their phone that contains the OTP generator.
+To prepare for such a case, the recovery codes feature allows users to print a set of recovery codes as an additional second factor.
+If the recovery codes are then allowed as an alternative 2FA in the login flow, they can be used instead of the OTP generated passwords.
+
+With this release, the recovery codes feature is promoted from preview to a supported feature.
+For newly created realms, the browser flow now includes the Recovery Authentication Code Form as _Disabled_, and it can be switched to _Alternative_ by admins if they want to use this feature.
+
+For more information about this 2FA method, see the link:{adminguide_link}#_recovery-codes[Recovery Codes] chapter in the {adminguide_name}.
+
+= Performance improvements to import, export and migration
+
+The time it takes to run imports, exports or migrations involving a large number of realms has been improved. There is no longer a cumulative performance degradation for each additional realm processed.
+
+= Simplified registration for WebAuthn and Passkeys
+
+Both WebAuthn Register actions (`webauthn-register` and `webauthn-register-passwordless`) which are also used for Passkeys now support a parameter `skip_if_exists` when initiated by the application (AIA).
+
+This should make it more convenient to use the AIA in scenarios where a user has already set up WebAuthn or Passkeys.
+The parameter allows skipping the action if the user already has a credential of that type.
+
+For more information, see the link:{adminguide_link}#_webauthn_aia[Registering WebAuthn credentials using AIA] chapter in the {adminguide_name}.
+
+= Simplified linking of the user account to an identity provider
+
+Client-initiated linking a user account to the identity provider is now based on application-initiated action (AIA) implementation.
+This functionality aligns configuring this functionality and simplifies the error handling the calling of the client application,
+making it more useful for a broader audience.
+
+The custom protocol, which was previously used for client-initiated account linking, is now deprecated.
+
+= Brokering with OAuth v2 compliant authorization servers
+
+In previous releases {project_name} already supported federation with other OpenID Connect and SAML providers, as well as with several Social Providers like GitHub and Google which are based on OAuth 2.0.
+
+The new OAuth 2.0 broker now closes the gap to federate with any OAuth 2.0 provider.
+This then allows you to federate, for example, with Amazon or other providers.
+As this is a generic provider, you will need to specify the different claims and a user info endpoint in the provider's configuration.
+
+For more information, see the link:{adminguide_link}#_identity_broker_oauth[OAuth v2 identity providers] chapter in the {adminguide_name}.
+
+= Trusted email verification when brokering OpenID Connect Providers
+
+Until now, the OpenID Connect broker did not support the standard `email_verified` claim available from the ID Tokens issued by OpenID Connect Providers.
+
+Starting with this release, {project_name} supports this standard claim as defined by the https://openid.net/specs/openid-connect-core-1_0.html#StandardClaims[OpenID Connect Core Specification] for federation.
+
+Whenever users are federated for the first time or re-authenticating and if the *Trust email* setting is enabled, *Sync Mode* is set to `FORCE` and the provider sends the `email_verified` claim, the user account will have their email marked according to the `email_verified` claim.
+If the provider does not send the claim, it defaults to the original behavior and sets the email as verified.
+
+= Asynchronous logging for higher throughput and lower latency
+
+All available log handlers now support asynchronous logging capabilities.
+Asynchronous logging helps deployments that require high throughput and low latency.
+
+For more details on this opt-in feature, see the https://www.keycloak.org/server/logging[Logging guide].
+
+= Rolling updates for patch releases for minimized downtime (preview)
+
+In the previous release, the Keycloak Operator was enhanced to support performing rolling updates of the Keycloak image if both images contain the same version.
+This is useful, for example, when switching to an optimized image, changing a theme or a provider source code.
+
+In this release, we extended this to perform rolling update when the new image contains a future patch release from the same `major.minor` release stream as a preview feature.
+This can reduce the service's downtime even further, as downtime is only needed when upgrading from a different minor or major version.
+
+Read more on how to enable this feature in https://www.keycloak.org/server/update-compatibility#rolling-updates-for-patch-releases[update compatibility command].
+
+= Passkeys integrated in the default username forms
+
+In this release {project_name} integrates *Passkeys* in the default authentications forms. A new switch *Enable Passkeys* is available in the configuration, *Authentication* → *Policies* → *Webauthn Passwordless Policy*, that seamlessly incorporates passkeys support to the realm. With just one click, {project_name} offers conditional and modal user interfaces in the default login forms to allow users to authenticate with a passkey.
+
+The *Passkeys* feature is still in preview. Follow the https://www.keycloak.org/server/features[Enabling and disabling features] {section} to enable it.
+
+For more information, see link:{adminguide_link}#passkeys_server_administration_guide[Passkeys section in the {adminguide_name}].

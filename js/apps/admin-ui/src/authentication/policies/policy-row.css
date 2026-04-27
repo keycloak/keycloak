@@ -1,0 +1,12 @@
+@media (min-width: 768px) {
+  .keycloak__policies_authentication__form .pf-v5-c-form__group {
+    --pf-v5-c-form--m-horizontal__group-label--md--GridColumnWidth: 10rem;
+  }
+}
+.keycloak__policies_authentication__minus-icon svg {
+  color: var(--pf-v5-c-button--m-plain--Color);
+}
+
+.keycloak__policies_authentication__number-field {
+  --pf-v5-c-number-input--c-form-control--Width: 10ch;
+}

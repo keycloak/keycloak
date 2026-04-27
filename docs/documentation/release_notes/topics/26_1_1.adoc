@@ -1,0 +1,11 @@
+= New option in X.509 authenticator to abort authentication if CRL is outdated
+
+The X.509 authenticator has a new option `x509-cert-auth-crl-abort-if-non-updated` (*CRL abort if non updated* in the Admin Console) to abort the login if a CRL is configured to validate the certificate and the CRL is not updated in the time specified in the next update field. The new option defaults to `true` in the Admin Console. For more details about the CRL next update field, see link:https://datatracker.ietf.org/doc/html/rfc5280#section-5.1.2.5[RFC 5280, Section-5.1.2.5].
+
+The value `false` is maintained for compatibility with the previous behavior. Note that existing configurations will not have the new option and will act as if this option was set to `false`, but the Admin Console will add the default value `true` on edit.
+
+= New option in Send Reset Email to force a login after reset credentials
+
+The `reset-credential-email` (*Send Reset Email*) is the authenticator used in the *reset credentials* flow (*forgot password* feature) for sending the email to the user with the reset credentials token link. This authenticator now has a new option `force-login` (*Force login after reset*). When this option is set to `true`, the authenticator terminates the session and forces a new login.
+
+For more details about this new option, see link:{adminguide_link}#enabling-forgot-password[Enable forgot password].

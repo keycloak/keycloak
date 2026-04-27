@@ -1,0 +1,15 @@
+[[_upgrading]]
+
+== Upgrading the {project_name} server
+
+You upgrade the server before you upgrade the adapters.
+
+include::prep_migration.adoc[leveloffset=1]
+
+include::download.adoc[leveloffset=1]
+
+include::migrate_db.adoc[leveloffset=1]
+
+include::migrate_themes.adoc[leveloffset=1]
+
+include::upgrade_adapters.adoc[leveloffset=1]

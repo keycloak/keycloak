@@ -1,0 +1,5 @@
+
+[[mitigating_security_threats]]
+== Mitigating security threats
+
+Security vulnerabilities exist in any authentication server. See the Internet Engineering Task Force's (IETF) https://datatracker.ietf.org/doc/html/rfc6819[OAuth 2.0 Threat Model] and the https://datatracker.ietf.org/doc/html/draft-ietf-oauth-security-topics[OAuth 2.0 Security Best Current Practice] for more information.

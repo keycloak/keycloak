@@ -1,0 +1,72 @@
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/links.adoc" as links>
+
+<@tmpl.guide
+title="JVM metrics"
+summary="Use JVM metrics to observe performance of {project_name}."
+tileVisible="false"
+>
+
+<#include "partials/prerequisites-metrics-troubleshooting.adoc" />
+
+== Metrics
+
+=== JVM info
+
+|===
+|Metric |Description
+
+m| jvm_info_total
+| Information about the JVM such as version, runtime and vendor.
+
+|===
+
+=== Heap memory usage
+
+|===
+|Metric |Description
+
+m| jvm_memory_committed_bytes
+| The amount of memory that the JVM has committed for use, reflecting the portion of the allocated memory that is guaranteed to be available for the JVM to use.
+
+m| jvm_memory_used_bytes
+| The amount of memory currently used by the JVM, indicating the actual memory consumption by the application and JVM internals.
+
+|===
+
+=== Garbage collection
+
+|===
+|Metric |Description
+
+m| jvm_gc_pause_seconds_max
+
+| The maximum duration, in seconds, of garbage collection pauses experienced by the JVM due to a particular cause, which helps you quickly differentiate between types of GC (minor, major) pauses.
+
+m| jvm_gc_pause_seconds_sum
+| The total cumulative time spent in garbage collection pauses, indicating the impact of GC pauses on application performance in the JVM.
+
+m| jvm_gc_pause_seconds_count
+| Counts the total number of garbage collection pause events, helping to assess the frequency of GC pauses in the JVM.
+
+m| jvm_gc_overhead
+| The percentage of CPU time spent on garbage collection, indicating the impact of GC on application performance in the JVM. It refers to the proportion of the total CPU processing time that is dedicated to executing garbage collection (GC) operations, as opposed to running application code or performing other tasks. This metric helps determine how much overhead GC introduces, affecting the overall performance of the {project_name}'s JVM.
+
+|===
+
+=== CPU Usage in Kubernetes
+
+|===
+|Metric |Description
+
+m| container_cpu_usage_seconds_total
+
+| Cumulative CPU time consumed by the container in core-seconds.
+
+|===
+
+== Next steps
+
+Return back to the <@links.observability id="metrics-for-troubleshooting"/> or proceed to <@links.observability id="metrics-for-troubleshooting-database"/>.
+
+</@tmpl.guide>

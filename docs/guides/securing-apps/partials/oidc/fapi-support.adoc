@@ -1,0 +1,50 @@
+[[_fapi-support]]
+== Financial-grade API (FAPI) Support
+
+{project_name} makes it easier for administrators to make sure that their clients are compliant with these specifications:
+
+* https://openid.net/specs/openid-financial-api-part-1-1_0.html[Financial-grade API Security Profile 1.0 - Part 1: Baseline]
+* https://openid.net/specs/openid-financial-api-part-2-1_0.html[Financial-grade API Security Profile 1.0 - Part 2: Advanced]
+* https://openid.net/specs/openid-financial-api-ciba-ID1.html[Financial-grade API: Client Initiated Backchannel Authentication Profile] (FAPI CIBA)
+* https://openid.net/specs/fapi-security-profile-2_0-final.html[FAPI 2.0 Security Profile (Final)]
+* https://openid.net/specs/fapi-message-signing-2_0-final.html[FAPI 2.0 Message Signing (Final)]
+
+This compliance means that the {project_name} server will verify the requirements
+for the authorization server, which are mentioned in the specifications. {project_name} adapters do not have any specific support for the FAPI, hence the required validations on the client (application)
+side may need to be still done manually or through some other third-party solutions.
+
+=== FAPI client profiles
+
+To make sure that your clients are FAPI compliant, you can configure Client Policies in your realm as described in the link:{adminguide_link}#_client_policies[{adminguide_name}]
+and link them to the global client profiles for FAPI support, which are automatically available in each realm. You can use either `fapi-1-baseline` or `fapi-1-advanced` profile based on which FAPI
+profile you need your clients to conform with. You can use also profiles `fapi-2-security-profile`, `fapi-2-dpop-security-profile`, `fapi-2-message-signing` and `fapi-2-dpop-message-signing` for the compliance with FAPI 2.0 specifications.
+
+In case you want to use link:{adminguide_link}#_oidc_clients[Pushed Authorization Request (PAR)], it is recommended that your client use
+both the `fapi-1-baseline` profile and `fapi-1-advanced` for PAR requests. Specifically, the `fapi-1-baseline` profile contains `pkce-enforcer` executor, which makes sure
+that client use PKCE with secured S256 algorithm. This is not required for FAPI Advanced clients unless they use PAR requests.
+
+In case you want to use <<_backchannel_authentication_endpoint,CIBA>> in a FAPI compliant way, make sure that your clients use both `fapi-1-advanced` and `fapi-ciba` client profiles.
+There is a need to use the `fapi-1-advanced` profile, or other client profile containing the requested executors, as the `fapi-ciba` profile contains just CIBA-specific executors.
+When enforcing the requirements of the FAPI CIBA specification, there is a need for more requirements, such as enforcement of confidential clients or certificate-bound access tokens.
+
+=== Open Finance Brasil Financial-grade API Security Profile
+
+{project_name} is compliant with the https://openfinancebrasil.atlassian.net/wiki/spaces/OF/pages/245760001/EN+Open+Finance+Brasil+Financial-grade+API+Security+Profile+1.0+Implementers+Draft+3[Open Finance Brasil Financial-grade API Security Profile 1.0 Implementers Draft 3].
+This one is stricter in some requirements than the <<_fapi-support,FAPI 1 Advanced>> specification and hence it may be needed to configure link:{adminguide_link}#_client_policies[Client Policies]
+in the more strict way to enforce some of the requirements. Especially:
+
+* If your client does not use PAR, make sure that it uses encrypted OIDC request objects. This can be achieved by using a client profile with the `secure-request-object` executor configured with `Encryption Required` enabled.
+* Make sure that for JWS, the client uses the `PS256` algorithm. For JWE, the client should use the `RSA-OAEP` with `A256GCM`. This may need to be set in all the link:{adminguide_link}#_oidc_clients[Client Settings] where these algorithms are applicable.
+
+=== Australia Consumer Data Right (CDR) Security Profile
+
+{project_name} is compliant with the https://consumerdatastandardsaustralia.github.io/standards/#security-profile[Australia Consumer Data Right Security Profile].
+
+If you want to apply the Australia CDR security profile, you need to use `fapi-1-advanced` profile because the Australia CDR security profile is based on FAPI 1.0 Advanced security profile. If your client also applies PAR, make sure that client applies RFC 7637 Proof Key for Code Exchange (PKCE) because the Australia CDR security profile requires that you apply PKCE when applying PAR. This can be achieved by using a client profile with the `pkce-enforcer` executor.
+
+=== TLS considerations
+
+As confidential information is being exchanged, all interactions shall be encrypted with TLS (HTTPS). Moreover, there are some requirements in the FAPI specification for
+the cipher suites and TLS protocol versions used. To match these requirements, you can consider configure allowed ciphers. This configuration can be done by setting
+the `https-protocols` and `https-cipher-suites` options. {project_name} uses `TLSv1.3` by default and hence it is possibly not needed to change the default settings. However it
+may be needed to adjust ciphers if you need to fall back to lower TLS version for some reason. For more details, see https://www.keycloak.org/server/enabletls[Configuring TLS] {section}.

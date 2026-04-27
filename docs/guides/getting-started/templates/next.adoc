@@ -1,0 +1,9 @@
+== Taking the next step
+
+Before you run {project_name} in production, consider the following actions:
+
+* Switch to a production ready database such as PostgreSQL.
+* Configure SSL with your own certificates.
+* Switch the admin password to a more secure password.
+
+For more information, see the https://www.keycloak.org/guides#server[server guides].

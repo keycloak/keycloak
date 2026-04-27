@@ -1,0 +1,26 @@
+
+== Enabling Remember Me
+
+A logged-in user closing their browser destroys their session, and that user must log in again. You can set {project_name} to keep the user's login session open if that user clicks the _Remember Me_ checkbox upon login. This action turns the login cookie from a session-only cookie to a persistence cookie.
+
+.Procedure
+. Click *Realm settings* in the menu.
+. Click the *Login* tab.
+. Toggle the *Remember Me* switch to *On*.
++
+.Login tab
+image:images/login-tab-remember-me.png[Login Tab Remember Me]
++
+When you save this setting, a `remember me` checkbox displays on the realm's login page.
++
+.Remember Me
+image:images/remember-me.png[Remember Me]
+
+[WARNING]
+=====
+Disabling the "Remember me" option will invalidate all sessions created with the "Remember me" checkbox selected during login, requiring users to log in again.
+Any refresh tokens related to these sessions will also become invalid.
+
+The sessions will not be invalidated immediately when the switch is disabled, but when a cookie or token associated with an invalid session is used, or asynchronously in the background.
+This means that disabling and then re-enabling the "Remember me" switch cannot be used to invalidate old sessions.
+=====

@@ -1,0 +1,26 @@
+name: Quarkus Snapshot Cache
+description: Restores Quarkus and QOSDK snapshot artifacts built from source.
+
+runs:
+  using: composite
+  steps:
+    - id: restore-quarkus-snapshot
+      name: Restore Quarkus snapshot cache
+      uses: actions/cache/restore@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+      with:
+        path: |
+          ~/.m2/repository/io/quarkus
+          ~/.m2/repository/io/quarkiverse/operatorsdk
+        key: quarkus-snapshot-
+        restore-keys: |
+          quarkus-snapshot-
+        enableCrossOsArchive: true
+
+    - name: Copy restored Quarkus cache to home folder on Windows
+      if: runner.os == 'Windows'
+      shell: bash
+      run: |
+        if [ -d ../../../.m2/repository ]; then
+          cp -r ../../../.m2/repository ~/.m2
+          rm -r ../../../.m2/repository
+        fi

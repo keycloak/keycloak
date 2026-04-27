@@ -1,0 +1,64 @@
+
+==== Instagram
+
+IMPORTANT: The Instagram Identity Broker is deprecated for removal. Prefer using the Facebook Identity Broker instead.
+To enable it, start the server with `--features=instagram-broker`.
+
+.Procedure
+. Click *Identity Providers* in the menu.
+. From the *Add provider* list, select *Instagram*.
++
+.Add identity provider
+image:images/instagram-add-identity-provider.png[Add Identity Provider]
+. Copy the value of *Redirect URI* to your clipboard.
+. In a separate browser tab, open the https://developers.facebook.com/[Meta for Developers].
+.. Click *My Apps*.
+.. Select *Create App*.
++
+.Add a use case
+image:images/meta-add-use-case.png[Add a use case]
++
+.. Select *Other*.
++
+.Select an app type
+image:images/meta-select-app-type.png[Select an app type]
++
+.. Select *Consumer*.
++
+.Create an app
+image:images/meta-create-app.png[Create an app]
++
+.. Fill in all required fields.
+.. Click *Create app*. Meta then brings you to the dashboard.
+.. In the navigation panel, select *App settings* - *Basic*.
+.. Select *+ Add Platform* at the bottom of the page.
+.. Click *[Website]*.
+.. Enter a URL for your site.
++
+.Add a product
+image:images/meta-add-product.png[Add Product]
++
+.. Select *Dashboard* from the menu.
+.. Click *Set Up* in the *Instagram Basic Display* box.
+.. Click *Create New App*.
++
+.Create a New Instagram App ID
+image:images/instagram-create-instagram-app-id.png[Create a New Instagram App ID]
++
+.. Enter a value into the *Display name* field.
++
+.Set up the app
+image:images/instagram-app-settings.png[Setup the App]
++
+.. Paste the *Redirect URL* from {project_name} into the *Valid OAuth Redirect URIs* field.
+.. Paste the *Redirect URL* from {project_name} into the *Deauthorize Callback URL* field.
+.. Paste the *Redirect URL* from {project_name} into the *Data Deletion Request URL* field.
+.. Click *Show* in the *Instagram App Secret* field.
+.. Note the *Instagram App ID* and the *Instagram App Secret*.
+.. Click *App Review* - *Requests*.
+.. Follow the instructions on the screen.
+. In {project_name}, paste the value of the `Instagram App ID` into the *Client ID* field.
+. In {project_name}, paste the value of the `Instagram App Secret` into the *Client Secret* field.
+
+. Click *Add*.
+

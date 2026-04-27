@@ -1,0 +1,18 @@
+[#${parent}-load-shedding]
+== Optional: Load shedding
+
+To enable load shedding, limit the number of queued requests.
+
+.Load shedding with max queued http requests
+[source,yaml,indent=0]
+----
+spec:
+  additionalOptions:
+include::../examples/generated/keycloak.yaml[tag=keycloak-queue-size]
+----
+
+All exceeding requests are served with an HTTP 503.
+
+You might consider limiting the value for `http-pool-max-threads` further because multiple concurrent threads will lead to throttling by {kubernetes} once the requested CPU limit is reached.
+
+See the <@links.ha id="${parent}-concepts-threads" anchor="${parent}-load-shedding"/> {section} about load shedding for details.

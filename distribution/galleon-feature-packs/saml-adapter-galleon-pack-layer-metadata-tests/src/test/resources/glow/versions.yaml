@@ -1,0 +1,2 @@
+latest: ${project.version}
+versions: ${project.version}

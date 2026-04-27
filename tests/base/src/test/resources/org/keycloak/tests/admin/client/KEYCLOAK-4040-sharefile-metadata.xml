@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<md:EntityDescriptor entityID="https://pradeepkumar74.sharefile.com/saml/info" ID="_a0263555950f54cb56ead771a6f3516e" xmlns:md="urn:oasis:names:tc:SAML:2.0:metadata">
+	<md:SPSSODescriptor AuthnRequestsSigned="False" protocolSupportEnumeration="urn:oasis:names:tc:SAML:2.0:protocol">
+		<md:NameIDFormat>urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress</md:NameIDFormat>
+		<md:AssertionConsumerService Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST" Location="https://pradeepkumar74.sharefile.com/saml/acs" index="1" isDefault="true" />
+		<md:AssertionConsumerService Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST" Location="https://pradeepkumar74.sf-api.com/sf/v3/Sessions/Acs" index="2" isDefault="false" />
+	</md:SPSSODescriptor>
+	<Signature xmlns="http://www.w3.org/2000/09/xmldsig#">
+		<SignedInfo>
+			<CanonicalizationMethod Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#" />
+			<SignatureMethod Algorithm="http://www.w3.org/2000/09/xmldsig#rsa-sha1" />
+			<Reference URI="#https://pradeepkumar74.sharefile.com/saml/info">
+				<Transforms>
+					<Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature" />
+					<Transform Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#" />
+				</Transforms>
+				<DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1" />
+				<DigestValue>Ldu0001hripzSq7zbIMTEKnQCOU=</DigestValue>
+			</Reference>
+		</SignedInfo>
+		<SignatureValue>J6IRDZ9RmdtpuwTlEK9HjqtbyeSA2Vz9mXF8yYRLIM0qMxRIvPLiIk02UuzCzEJ1I1xT4pcFuUfrdgDG6r9yf2iS+lV7jd0+DdXTHQ4VbQAZRC3Xd8wJ2RnnbZ3gwbIBBYurnWpKI0OCm0MnGvqV75n5Q6iF5jKA8Y4cFp60HHHnCH4QzpVTV5LjSg91eJA1X+99Xga+sK8Z+ln9wBzsrevz6ZfMt24rOMtb64wfAitz+HiD542Ta2TrzKQTnx+EPcr8xBwC62Gl+lIeE3DwKxtNk8pM8mq42D2b5UVKzjfL+PsYZ8XXBwwnwxFs40uxiI/ivq6KuQ/INt4Z5wmjGw==</SignatureValue>
+		<KeyInfo>
+			<X509Data>
+				<X509Certificate>MIIFUjCCBDqgAwIBAgIDBbH0MA0GCSqGSIb3DQEBBQUAMGExCzAJBgNVBAYTAlVTMRYwFAYDVQQKEw1HZW9UcnVzdCBJbmMuMR0wGwYDVQQLExREb21haW4gVmFsaWRhdGVkIFNTTDEbMBkGA1UEAxMSR2VvVHJ1c3QgRFYgU1NMIENBMB4XDTEyMTIxODAyMjcxOVoXDTE2MTIyMDAwNTYwMFowgckxKTAnBgNVBAUTIHlMbC1HNjFUWWtiaHBaL1JMTnNIYU8vTmJyWEVQOXc1MRMwEQYDVQQLEwpHVDQ4MjA0OTU4MTEwLwYDVQQLEyhTZWUgd3d3Lmdlb3RydXN0LmNvbS9yZXNvdXJjZXMvY3BzIChjKTEyMTcwNQYDVQQLEy5Eb21haW4gQ29udHJvbCBWYWxpZGF0ZWQgLSBRdWlja1NTTChSKSBQcmVtaXVtMRswGQYDVQQDExJzYW1sLnNoYXJlZmlsZS5jb20wggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDPUZyhTw3RmP7Y7v06aHgTNuv/Fm0PbGWbGlZEwqr8TGabocPbnb8iTBWAL2ECXMbx+VrpaHiSOVxqC2Y/vDXOs+1r0CzRKeMC6oQPsXZbieW6HxOAv3UVShxc9nfWI6+immo/o3BYI5WKcOaeZieVlDq7a7ctfSUJXHEBhpaSJNhghb+cUZtp1/EXs8/LyVQ31coo1q726WjCvFVB8OUU2u6BQLcbJF5aG3qh5CkNyivwM3NtNAyHhSXRmwyE+Yv5YNo5QAtUagCGYmS2saEJj8FxhXsNRtfW5B6vVhgmNreTcHCcWTpFGhjvferPjsjaIQAs3P2zx/pW/GSCXHy1AgMBAAGjggGoMIIBpDAfBgNVHSMEGDAWgBSM9NmTCke8AKBKzkt1bqC2sLJ+/DAOBgNVHQ8BAf8EBAMCBaAwHQYDVR0lBBYwFAYIKwYBBQUHAwEGCCsGAQUFBwMCMB0GA1UdEQQWMBSCEnNhbWwuc2hhcmVmaWxlLmNvbTBBBgNVHR8EOjA4MDagNKAyhjBodHRwOi8vZ3Rzc2xkdi1jcmwuZ2VvdHJ1c3QuY29tL2NybHMvZ3Rzc2xkdi5jcmwwHQYDVR0OBBYEFIDTam2PfOzLpQoclHMwfsUtSi3kMAwGA1UdEwEB/wQCMAAwdQYIKwYBBQUHAQEEaTBnMCwGCCsGAQUFBzABhiBodHRwOi8vZ3Rzc2xkdi1vY3NwLmdlb3RydXN0LmNvbTA3BggrBgEFBQcwAoYraHR0cDovL2d0c3NsZHYtYWlhLmdlb3RydXN0LmNvbS9ndHNzbGR2LmNydDBMBgNVHSAERTBDMEEGCmCGSAGG+EUBBzYwMzAxBggrBgEFBQcCARYlaHR0cDovL3d3dy5nZW90cnVzdC5jb20vcmVzb3VyY2VzL2NwczANBgkqhkiG9w0BAQUFAAOCAQEAU0I6sMe1ZgJ27pdu9qhQLMIgt0w7CuEbLfsSZZdo5TXEj15SGQwU2A0F6o5ivdAvMWTCISJsjHdqCkvB6ZOdMHIfSqA9ARLqX7wLKYfM8X/4RM3koHfqHOvxXBLqCLj2mn34oZrMU5CVI6rqbMoU4D61io7DVswR7Dss0rCh1b1o52ZEBjy5w9oJhRTEFwL7ekf6tR9UioyxQ37pGfD8qOpX1hj5gqcZ5+qUSVNjOjeh+9e9OO5Y/ns3jjHK5ieZPdYeLLOp+D6qzAnOERgvKvkPyRIHZA9tAjxj5KIEzQUopmbP7oH4Ovo6YXT+iIuMVvX3dDu00ExOSZjEeDzo/w==</X509Certificate>
+			</X509Data>
+		</KeyInfo>
+	</Signature>
+	<md:Organization>
+		<md:OrganizationName xml:lang="en">ShareFile.com</md:OrganizationName>
+		<md:OrganizationDisplayName xml:lang="en">ShareFile.com, a division of Citrix Systems, Inc</md:OrganizationDisplayName>
+		<md:OrganizationUrl xml:lang="en">https://www.sharefile.com</md:OrganizationUrl>
+	</md:Organization>
+</md:EntityDescriptor>

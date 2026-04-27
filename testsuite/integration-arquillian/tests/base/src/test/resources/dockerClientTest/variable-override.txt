@@ -1,0 +1,4 @@
+-e REGISTRY_AUTH_TOKEN_REALM=http://localhost:8080/auth/auth/realms/docker-test-realm/protocol/docker-v2/auth \
+-e REGISTRY_AUTH_TOKEN_SERVICE: docker-test-client \
+-e REGISTRY_AUTH_TOKEN_ISSUER: http://localhost:8080/auth/auth/realms/docker-test-realm \
+

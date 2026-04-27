@@ -1,0 +1,17 @@
+[id="proc_creating_client_scopes_{context}"]
+
+[role="_abstract"]
+To create a client scope, follow these steps:
+
+. Click *Client Scopes* in the menu. 
++
+.Client scopes list
+image:images/client-scopes-list.png[]
++
+. Click *Create*. 
+. Name your client scope.
+. Click *Save*. 
+
+A _client scope_ has similar tabs to regular clients. You can
+define <<_protocol-mappers, protocol mappers>> and <<_role_scope_mappings, role scope mappings>>. These mappings can be inherited by other clients and are configured to inherit from this client scope.
+

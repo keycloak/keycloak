@@ -1,0 +1,206 @@
+/*
+ * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.keycloak.testsuite.forms;
+
+import java.util.UUID;
+
+import jakarta.ws.rs.core.Response;
+
+import org.keycloak.authentication.authenticators.browser.UsernamePasswordFormFactory;
+import org.keycloak.common.Profile;
+import org.keycloak.events.Details;
+import org.keycloak.events.Errors;
+import org.keycloak.events.EventType;
+import org.keycloak.models.AuthenticationExecutionModel;
+import org.keycloak.representations.idm.AuthenticationExecutionRepresentation;
+import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
+import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.events.EventAssertion;
+import org.keycloak.testframework.realm.AuthenticationExecutionBuilder;
+import org.keycloak.testframework.realm.AuthenticationFlowBuilder;
+import org.keycloak.testframework.realm.RealmBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
+import org.keycloak.testsuite.AssertEvents;
+import org.keycloak.testsuite.ProfileAssume;
+import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
+import org.keycloak.testsuite.pages.LoginPage;
+
+import org.jboss.arquillian.graphene.page.Page;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+
+import static org.keycloak.common.Profile.Feature.AUTHORIZATION;
+
+/**
+ * Tests for {@link org.keycloak.authentication.authenticators.browser.ScriptBasedAuthenticator}
+ *
+ * @author <a href="mailto:thomas.darimont@gmail.com">Thomas Darimont</a>
+ */
+@EnableFeature(value = Profile.Feature.SCRIPTS)
+public class ScriptAuthenticatorTest extends AbstractFlowTest {
+
+    @Page
+    protected LoginPage loginPage;
+
+    @Rule
+    public AssertEvents events = new AssertEvents(this);
+
+    private AuthenticationFlowRepresentation flow;
+    private static String userId;
+    private static String failId;
+
+    public static final String EXECUTION_ID = "scriptAuth";
+
+    @BeforeClass
+    public static void enabled() {
+        ProfileAssume.assumeFeatureEnabled(AUTHORIZATION);
+    }
+
+    @Override
+    public void configureTestRealm(RealmRepresentation testRealm) {
+        super.configureTestRealm(testRealm);
+        UserRepresentation failUser = UserBuilder.create()
+                .id(UUID.randomUUID().toString())
+                .username("fail")
+                .email("fail@test.com")
+                .enabled(true)
+                .password(generatePassword("fail"))
+                .build();
+
+        UserRepresentation okayUser = UserBuilder.create()
+                .id(UUID.randomUUID().toString())
+                .username("user")
+                .email("user@test.com")
+                .enabled(true)
+                .password(generatePassword("user"))
+                .build();
+
+        RealmBuilder.update(testRealm)
+                .users(failUser)
+                .users(okayUser);
+    }
+
+    @Override
+    public void importTestRealms() {
+        super.importTestRealms();
+        userId = adminClient.realm("test").users().search("user", true).get(0).getId();
+        failId = adminClient.realm("test").users().search("fail", true).get(0).getId();
+    }
+
+    @Before
+    public void configureFlows() throws Exception {
+        String scriptFlow = "scriptBrowser";
+
+        if (testContext.isInitialized()) {
+            this.flow = findFlowByAlias(scriptFlow);
+            return;
+        }
+
+        AuthenticationFlowRepresentation scriptBrowserFlow = AuthenticationFlowBuilder.create()
+                .alias(scriptFlow)
+                .description("dummy pass through registration")
+                .providerId("basic-flow")
+                .topLevel(true)
+                .builtIn(false)
+                .build();
+
+        Response createFlowResponse = managedRealm.admin().flows().createFlow(scriptBrowserFlow);
+        Assertions.assertEquals(201, createFlowResponse.getStatus());
+
+        RealmRepresentation realm = managedRealm.admin().toRepresentation();
+        realm.setBrowserFlow(scriptFlow);
+        realm.setDirectGrantFlow(scriptFlow);
+        managedRealm.admin().update(realm);
+
+        this.flow = findFlowByAlias(scriptFlow);
+
+        AuthenticationExecutionRepresentation usernamePasswordFormExecution = AuthenticationExecutionBuilder.create()
+                .id("username password form")
+                .parentFlow(this.flow.getId())
+                .requirement(AuthenticationExecutionModel.Requirement.REQUIRED.name())
+                .authenticator(UsernamePasswordFormFactory.PROVIDER_ID)
+                .build();
+
+        AuthenticationExecutionRepresentation authScriptExecution = AuthenticationExecutionBuilder.create()
+                .id(EXECUTION_ID)
+                .parentFlow(this.flow.getId())
+                .requirement(AuthenticationExecutionModel.Requirement.REQUIRED.name())
+                .authenticator("script-scripts/auth-example.js")
+                .build();
+
+        Response addExecutionResponse = managedRealm.admin().flows().addExecution(usernamePasswordFormExecution);
+        Assertions.assertEquals(201, addExecutionResponse.getStatus());
+        addExecutionResponse.close();
+
+        addExecutionResponse = managedRealm.admin().flows().addExecution(authScriptExecution);
+        Assertions.assertEquals(201, addExecutionResponse.getStatus());
+        addExecutionResponse.close();
+
+        testContext.setInitialized(true);
+    }
+
+    /**
+     * KEYCLOAK-3491
+     */
+    @Test
+    public void loginShouldWorkWithScriptAuthenticator() {
+        oauth.openLoginForm();
+
+        loginPage.login("user", getPassword("user"));
+
+        EventAssertion.expectLoginSuccess(events.poll()).userId(userId).details(Details.USERNAME, "user");
+    }
+
+    /**
+     * KEYCLOAK-3491
+     */
+    @Test
+    public void loginShouldFailWithScriptAuthenticator() {
+        oauth.openLoginForm();
+
+        loginPage.login("fail", getPassword("fail"));
+
+        EventAssertion.assertError(events.poll()).type(EventType.LOGIN_ERROR).userId(null).error(Errors.USER_NOT_FOUND);
+    }
+
+    /**
+     * KEYCLOAK-4505
+     */
+    @Test
+    public void scriptWithClientSession()  {
+        AuthenticationExecutionRepresentation authScriptExecution = AuthenticationExecutionBuilder.create()
+                .id(EXECUTION_ID + "client-session")
+                .parentFlow(this.flow.getId())
+                .requirement(AuthenticationExecutionModel.Requirement.REQUIRED.name())
+                .authenticator("script-scripts/auth-session.js")
+                .build();
+
+        Response addExecutionResponse = managedRealm.admin().flows().addExecution(authScriptExecution);
+        Assertions.assertEquals(201, addExecutionResponse.getStatus());
+        addExecutionResponse.close();
+
+        oauth.openLoginForm();
+
+        loginPage.login("user", getPassword("user"));
+
+        EventAssertion.expectLoginSuccess(events.poll()).userId(userId).details(Details.USERNAME, "user");
+    }
+}

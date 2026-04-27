@@ -1,0 +1,61 @@
+[[_migrate_themes]]
+
+== Migrating themes
+
+If you created custom themes, those themes must be migrated to the new server. Also, any changes to the built-in themes might need to be reflected in your custom themes, depending on which aspects you customized.
+
+.Procedure
+
+. Copy your custom themes from the old server `themes` directory to the new server `themes` directory.
+. Use the following sections to migrate templates, messages, and styles.
+* If you customized any of the updated templates listed in <<migration-changes,Migration Changes>>, compare the template from the base theme to check for any changes you need to apply.
+* If you customized messages, you might need to change the key or value or to add additional messages.
+* If you customized any styles and you are extending the {project_name} themes, review the changes to the styles. If you are extending the base theme, you can skip this step.
+
+=== Migrating templates
+
+If you customized any template, compare it to the new version of that template. This comparison shows you what changes you need to apply to your customized template. You can use a diff tool to compare the templates. The following screenshot compares the `info.ftl` template from the Login theme and an example custom theme:
+
+.Updated version of a Login theme template versus a custom Login theme template
+image:images/theme-migration-meld-info-1.png[Updated version of a Login theme template versus a custom Login theme template]
+
+This comparison shows that the first change (`Hello world!!`) is a customization, while the
+second change (`if pageRedirectUri`) is a change to the base theme. By copying the second change to your custom template,
+you have successfully updated your customized template.
+
+In an alternative approach, the following screenshot compares the `info.ftl` template from the old installation with
+the updated `info.ftl` template from the new installation:
+
+.Login theme template from the old installation versus the updated Login theme template
+image:images/theme-migration-meld-info-2.png[Login theme template from the old installation versus the updated Login theme template]
+
+This comparison shows what has been changed in the base template. You can then manually make the same changes to your modified template. Since this approach is more complex, use
+this approach only if the first approach is not feasible.
+
+=== Migrating messages
+
+If you added support for another language, you need to apply all the changes listed above. If you have not added
+support for another language, you might not need to change anything. You need to make changes only if you have changed
+an affected message in your theme.
+
+.Procedure
+
+. For added values, review the value of the message in the base theme to determine if you need to customize that message.
+
+. For renamed keys, rename the key in your custom theme.
+
+. For changed values, check the value in the base theme to determine if you need to make changes to your custom theme.
+
+=== Migrating styles
+
+You might need to update your custom styles to reflect changes made to the styles from the built-in themes. Consider using a diff tool to compare the changes to stylesheets between the old server installation and the new server installation.
+
+For example:
+
+[source,bash,subs=+attributes]
+----
+$ diff {project_dirref}_OLD/themes/keycloak/login/resources/css/login.css \
+{project_dirref}_NEW/themes/keycloak/login/resources/css/login.css
+----
+
+Review the changes and determine if they affect your custom styling.

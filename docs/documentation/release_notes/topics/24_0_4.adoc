@@ -1,0 +1,6 @@
+= Partial update to user attributes when updating users through the Admin User API is no longer supported
+
+When updating user attributes through the Admin User API, you cannot execute partial updates when updating the
+user attributes, including the root attributes like `username`, `email`, `firstName`, and `lastName`.
+
+For more details, see the link:{upgradingguide_link}[{upgradingguide_name}].

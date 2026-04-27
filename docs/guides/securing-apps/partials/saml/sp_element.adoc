@@ -1,0 +1,72 @@
+
+== SP element
+
+Here is the explanation of the SP element attributes: 
+
+[source,xml]
+----
+
+<SP entityID="sp"
+    sslPolicy="ssl"
+    nameIDPolicyFormat="format"
+    forceAuthentication="true"
+    isPassive="false"
+    keepDOMAssertion="true"
+    autodetectBearerOnly="false">
+...
+</SP>
+----
+entityID::
+  This is the identifier for this client.
+  The IdP needs this value to determine who the client is that is communicating with it. This setting is _REQUIRED_.
+
+sslPolicy::
+  This is the SSL policy the adapter will enforce.
+  Valid values are: `ALL`, `EXTERNAL`, and `NONE`.
+  For `ALL`, all requests must come in via HTTPS.
+  For `EXTERNAL`, only non-private IP addresses must come over the wire via HTTPS.
+  For `NONE`, no requests are required to come over via HTTPS.
+  This setting is _OPTIONAL_. Default value is `EXTERNAL`.
+
+nameIDPolicyFormat::
+  SAML clients can request a specific NameID Subject format.
+  Fill in this value if you want a specific format.
+  It must be a standard SAML format identifier: `urn:oasis:names:tc:SAML:2.0:nameid-format:transient`.
+  This setting is _OPTIONAL_.
+  By default, no special format is requested. 
+
+forceAuthentication::
+  SAML clients can request that a user is re-authenticated even if they are already logged in at the IdP.
+  Set this to `true` to enable. This setting is _OPTIONAL_.
+  Default value is `false`.
+
+isPassive::
+  SAML clients can request that a user is never asked to authenticate even if they are not logged in at the IdP.
+  Set this to `true` if you want this.
+  Do not use together with `forceAuthentication` as they are opposite. This setting is _OPTIONAL_.
+  Default value is `false`.
+
+turnOffChangeSessionIdOnLogin::
+  The session ID is changed by default on a successful login on some platforms to plug a security attack vector.
+  Change this to `true` to disable this.  It is recommended you do not turn it off.
+  Default value is `false`.
+
+autodetectBearerOnly::
+  This should be set to __true__ if your application serves both a web application and web services (for example SOAP or REST).
+  It allows you to redirect unauthenticated users of the web application to the {project_name} login page,
+  but send an HTTP `401` status code to unauthenticated SOAP or REST clients instead as they would not understand a redirect to the login page.
+  {project_name} auto-detects SOAP or REST clients based on typical headers like `X-Requested-With`, `SOAPAction` or `Accept`.
+  The default value is _false_.
+
+logoutPage::
+  This sets the page to display after logout. If the page is a full URL, such as `http://web.example.com/logout.html`,
+  the user is redirected after logout to that page using the HTTP `302` status code. If a link without scheme part is specified,
+  such as `/logout.jsp`, the page is displayed after logout, _regardless of whether it lies in a protected area according
+  to `security-constraint` declarations in web.xml_, and the page is resolved relative to the deployment context root.
+
+keepDOMAssertion::
+  This attribute should be set to __true__ to make the adapter store the DOM representation of the assertion in its
+  original form inside the `SamlPrincipal` associated to the request. The assertion document can be retrieved using
+  the method `getAssertionDocument` inside the principal. This is specially useful when re-playing a signed assertion.
+  The returned document is the one that was generated parsing the SAML response received by the {project_name} server.
+  This setting is _OPTIONAL_ and its default value is __false__ (the document is not saved inside the principal).

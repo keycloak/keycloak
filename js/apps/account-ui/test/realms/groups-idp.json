@@ -1,0 +1,19 @@
+{
+  "clientId": "groups-idp",
+  "name": "groups-idp",
+  "protocol": "openid-connect",
+  "rootUrl": "${authAdminUrl}",
+  "enabled": true,
+  "clientAuthenticatorType": "client-secret",
+  "secret": "H0JaTc7VBu3HJR26vrzMxgidfJmgI5Dw",
+  "redirectUris": [ "/realms/*" ],
+  "webOrigins": [ "${authAdminUrl}" ],
+  "notBefore": 0,
+  "bearerOnly": false,
+  "consentRequired": false,
+  "standardFlowEnabled": true,
+  "implicitFlowEnabled": false,
+  "directAccessGrantsEnabled": false,
+  "serviceAccountsEnabled": false,
+  "publicClient": false
+}

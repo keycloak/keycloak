@@ -1,0 +1,32 @@
+<samlp:LogoutRequest xmlns:samlp="urn:oasis:names:tc:SAML:2.0:protocol" xmlns="urn:oasis:names:tc:SAML:2.0:assertion" Destination="http://localhost:8081/auth/realms/saml-demo/protocol/saml" ID="ID_4790c6a3-4b9f-4c0a-a368-5c0e498544e4" IssueInstant="2016-11-01T14:36:43.194Z" Version="2.0">
+    <saml:Issuer xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion">http://localhost:8080/sales-post-enc/</saml:Issuer>
+    <dsig:Signature xmlns:dsig="http://www.w3.org/2000/09/xmldsig#">
+        <dsig:SignedInfo>
+            <dsig:CanonicalizationMethod Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/>
+            <dsig:SignatureMethod Algorithm="http://www.w3.org/2001/04/xmldsig-more#rsa-sha256"/>
+            <dsig:Reference URI="#ID_4790c6a3-4b9f-4c0a-a368-5c0e498544e4">
+                <dsig:Transforms>
+                    <dsig:Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature"/>
+                    <dsig:Transform Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/>
+                </dsig:Transforms>
+                <dsig:DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha256"/>
+                <dsig:DigestValue>zeWNo5eav5tFOOCEJ1YU9eINkPnBSfixzAr8AOC4R4c=</dsig:DigestValue>
+            </dsig:Reference>
+        </dsig:SignedInfo>
+        <dsig:SignatureValue>
+            pyOiS1LsV/XR08zhcN6IqSYuKTDln4otmCvZxCc07ORP1C9jragu8V8rEE09qt/zBcdw7Arb8eLNNC6oCnrnMxuvzRInVTwt7T5K3t0UlzRWOb3HMElhcWFEgDzh6uKw5Cr45A01XNpojtJWCML/qU2Enyyy80FBlCJNcbzyLxE=
+        </dsig:SignatureValue>
+        <dsig:KeyInfo>
+            <dsig:KeyValue>
+                <dsig:RSAKeyValue>
+                    <dsig:Modulus>
+                        2+5MCT5BnVN+IYnKZcH6ev1pjXGi4feE0nOycq/VJ3aeaZMi4G9AxOxCBPupErOC7Kgm/Bw5AdJyw+Q12wSRXfJ9FhqCrLXpb7YOhbVSTJ8De5O8mW35DxAlh/cxe9FXjqPb286wKTUZ3LfGYR+X235UQeCTAPS/Ufi21EXaEik=
+                    </dsig:Modulus>
+                    <dsig:Exponent>AQAB</dsig:Exponent>
+                </dsig:RSAKeyValue>
+            </dsig:KeyValue>
+        </dsig:KeyInfo>
+    </dsig:Signature>
+    <saml:NameID xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion" Format="urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified">bburke</saml:NameID>
+    <samlp:SessionIndex>a3b2df1c-1095-487b-8b56-f62818c449e3</samlp:SessionIndex>
+</samlp:LogoutRequest>

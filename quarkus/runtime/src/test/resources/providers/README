@@ -1,0 +1,1 @@
+Needed for the directory to not be empty. We could put actual jar files in here to better exercise the config logic.

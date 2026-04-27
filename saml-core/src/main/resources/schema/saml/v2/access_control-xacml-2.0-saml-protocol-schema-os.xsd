@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema
+        targetNamespace="urn:oasis:xacml:2.0:saml:protocol:schema:os"
+        xmlns:xs="http://www.w3.org/2001/XMLSchema"
+        xmlns="http://www.w3.org/2001/XMLSchema"
+        xmlns:samlp="urn:oasis:names:tc:SAML:2.0:protocol"
+        xmlns:xacml-context="urn:oasis:names:tc:xacml:2.0:context:schema:os"
+        xmlns:xacml="urn:oasis:names:tc:xacml:2.0:policy:schema:os"
+        xmlns:xacml-samlp="urn:oasis:xacml:2.0:saml:protocol:schema:os"
+        elementFormDefault="unqualified"
+        attributeFormDefault="unqualified"
+        blockDefault="substitution"
+        version="2.0">
+  <xs:import namespace="urn:oasis:names:tc:SAML:2.0:assertion"
+             schemaLocation="http://www.oasis-open.org/committees/download.php/11027/sstc-saml-schema-assertion-2.0.xsd"/>
+  <xs:import namespace="urn:oasis:names:tc:SAML:2.0:protocol"
+             schemaLocation="http://www.oasis-open.org/committees/download.php/11026/sstc-saml-schema-protocol-2.0.xsd"/>
+  <xs:import namespace="urn:oasis:names:tc:xacml:2.0:context:schema:os"
+             schemaLocation="http://docs.oasis-open.org/xacml/2.0/access_control-xacml-2.0-context-schema-os.xsd"/>
+  <xs:import namespace="urn:oasis:names:tc:xacml:2.0:policy:schema:os"
+             schemaLocation="http://docs.oasis-open.org/xacml/2.0/access_control-xacml-2.0-policy-schema-os.xsd"/>
+  <xs:annotation>
+    <xs:documentation>
+      Document identifier: access_control-xacml-2.0-saml-protocol-schema-os.xsd
+      Location: http://docs.oasis-open.org/xacml/2.0/access_control-xacml-2.0-saml-protocol-schema-os.xsd
+    </xs:documentation>
+  </xs:annotation>
+  <!--    -->
+  <xs:element name="XACMLAuthzDecisionQuery"
+              type="xacml-samlp:XACMLAuthzDecisionQueryType"/>
+  <xs:complexType name="XACMLAuthzDecisionQueryType">
+    <xs:complexContent>
+      <xs:extension base="samlp:RequestAbstractType">
+        <xs:sequence>
+          <xs:element ref="xacml-context:Request"/>
+        </xs:sequence>
+        <xs:attribute name="InputContextOnly"
+                      type="boolean"
+                      use="optional"
+                      default="false"/>
+        <xs:attribute name="ReturnContext"
+                      type="boolean"
+                      use="optional"
+                      default="false"/>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+  <!--    -->
+  <xs:element name="XACMLPolicyQuery"
+              type="xacml-samlp:XACMLPolicyQueryType"/>
+  <xs:complexType name="XACMLPolicyQueryType">
+    <xs:complexContent>
+      <xs:extension base="samlp:RequestAbstractType">
+        <xs:choice minOccurs="0" maxOccurs="unbounded">
+          <xs:element ref="xacml-context:Request"/>
+          <xs:element ref="xacml:Target"/>
+          <xs:element ref="xacml:PolicySetIdReference"/>
+          <xs:element ref="xacml:PolicyIdReference"/>
+        </xs:choice>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+</schema>

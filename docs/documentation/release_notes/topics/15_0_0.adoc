@@ -1,0 +1,9 @@
+= Highlights
+
+== Financial-grade API (FAPI) Improvements, FAPI CIBA and Open Banking Brasil
+
+The {project_name} server has improved support for the Financial-grade API (FAPI). More specifically, {project_name} is now compliant with FAPI CIBA and with OpenBanking Brasil.
+We also have support for CIBA ping mode. Thanks to https://github.com/tnorimat[Takashi Norimatsu], who did most of the work on FAPI CIBA and who is
+continually doing a really awesome job for the {project_name} project. Also thanks to https://github.com/DmitryMishchuk[Dmytro Mishchuk],
+https://github.com/andriimurashkin[Andrii Murashkin], https://github.com/HryhoriiHevorkian[Hryhorii Hevorkian] and https://github.com/leandrobortoli[Leandro José de Bortoli], who did a great deal of
+the work on the FAPI compliance as well. Finally thanks to all the members of the https://github.com/keycloak/kc-sig-fapi/blob/main/members.adoc[FAPI Special interest group] for their help and feedback.

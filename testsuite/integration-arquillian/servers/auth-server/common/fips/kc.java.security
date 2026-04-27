@@ -1,0 +1,13 @@
+# Configuration file just with the security properties, which are supposed to be overridden. The properties, which are not mentioned in this file,
+# are inherited from the default java.security file bundled within the Java distribution.
+#
+# NOTE: Each property is specified 2 times. This is so the same file can be used on both FIPS based RHEL host (which uses "fips" prefixed properties by default)
+# and the non-fips based (EG. when running the tests on GH actions)
+
+#
+# Security providers used when global crypto-policies are set to FIPS (Usually it is used when FIPS enabled on system/JVM level)
+#
+# NOTE: This list of providers is needed to be override just because XMLDSig provider is not yet present on the OpenJDK 17 by default on the RHEL FIPS host on OpenJDK 17.0.3.
+# However once it is present, there won't be a need to override this and this part can be fully commented/removed.
+# TODO: Comment/remove this once https://bugzilla.redhat.com/show_bug.cgi?id=1940064 is fixed and OpenJDK 17 updated to corresponding version where XMLDSig is available by default
+#

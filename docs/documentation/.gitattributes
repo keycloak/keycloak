@@ -1,0 +1,20 @@
+* text=auto
+
+*.html text eol=lf
+*.java text eol=lf
+*.js text eol=lf
+*.json text eol=lf
+*.jsp text eol=lf
+*.md text eol=lf
+*.properties text eol=lf
+*.svg text auto
+*.xml text eol=lf
+*.xsl text eol=lf
+
+*.png binary
+*.jpg binary
+*.gif binary
+*.ttf binary
+*.eot binary
+*.otf binary
+*.woff binary

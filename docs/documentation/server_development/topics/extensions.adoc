@@ -1,0 +1,149 @@
+[[_extensions]]
+
+== Extending the server
+
+The {project_name} SPI framework offers the possibility to implement or override particular built-in providers. However {project_name}
+also provides capabilities to extend its core functionalities and domain. This includes possibilities to:
+
+* Add custom REST endpoints to the {project_name} server
+* Add your own custom SPI
+* Add custom JPA entities to the {project_name} data model
+
+[[_extensions_rest]]
+=== Add custom REST endpoints
+
+This is a very powerful extension, which allows you to deploy your own REST endpoints to the {project_name} server. It enables all kinds of extensions, for example
+the possibility to trigger functionality on the {project_name} server, which is not available through the default set of built-in {project_name} REST endpoints.
+
+To add a custom REST endpoint, you need to implement the `RealmResourceProviderFactory` and `RealmResourceProvider` interfaces. `RealmResourceProvider` has one important method:
+
+[source,java]
+----
+
+Object getResource();
+
+----
+
+Use this method to return an object, which acts as a https://github.com/jax-rs[JAX-RS Resource].
+Your JAX-RS resource is only recognized by the server and registered as a valid endpoint if it includes the following configuration:
+- adding an empty file named `beans.xml` under `META-INF`
+- annotating the JAX-RS class with the annotation `jakarta.ws.rs.ext.Provider`.
+
+For details on how to package and deploy a custom provider, refer to the <<_providers,Service Provider Interfaces>> chapter.
+
+NOTE: While it is possible to install other JAX-RS components via the providers extension mechanism, such as filters and interceptors, these are not officially supported.
+
+[[_extensions_spi]]
+=== Add your own custom SPI
+
+A custom SPI is especially useful with Custom REST endpoints. Use this procedure to add your own SPI
+
+.Procedure
+
+. implement the interface `org.keycloak.provider.Spi` and define the ID of your SPI and the `ProviderFactory` and `Provider` classes. That looks like this:
++
+[source,java]
+----
+public class ExampleSpi implements Spi {
+
+    @Override
+    public boolean isInternal() {
+        return false;
+    }
+
+    @Override
+    public String getName() {
+        return "example";
+    }
+
+    @Override
+    public Class<? extends Provider> getProviderClass() {
+        return ExampleService.class;
+    }
+
+    @Override
+    @SuppressWarnings("rawtypes")
+    public Class<? extends ProviderFactory> getProviderFactoryClass() {
+        return ExampleServiceProviderFactory.class;
+    }
+
+}
+
+----
+
+. Create the file `META-INF/services/org.keycloak.provider.Spi` and add the class of your SPI to it. For example:
++
+[source]
+----
+ExampleSpi
+----
+
+. Create the interfaces `ExampleServiceProviderFactory`, which extends from `ProviderFactory` and `ExampleService`, which extends from `Provider`.
+The `ExampleService` will usually contain the business methods you need for your use case. Note that the `ExampleServiceProviderFactory` instance
+is always scoped per application, however `ExampleService` is scoped per-request (or more accurately per `KeycloakSession` lifecycle).
+
+. Finally you need to implement your providers in the same manner as described in the <<_providers,Service Provider Interfaces>> chapter.
+
+[role="_additional-resources"]
+.Additional resources
+* <<_extensions_rest,Custom REST endpoints>>
+
+[[_extensions_jpa]]
+=== Add custom JPA entities to the {project_name} data model
+
+If the {project_name} data model does not exactly match your desired solution, or if you want to add some core functionality to {project_name},
+or when you have your own REST endpoint, you might want to extend the {project_name} data model. We enable you to add your
+own JPA entities to the {project_name} JPA `EntityManager` .
+
+To add your own JPA entities, you need to implement `JpaEntityProviderFactory` and `JpaEntityProvider`. The `JpaEntityProvider`
+allows you to return a list of your custom JPA entities and provide the location and id of the Liquibase changelog. An example implementation can look like this:
+
+NOTE: This is an unsupported API, which means you can use it but there is no guarantee that it will not be removed or changed without warning.
+
+[source,java]
+----
+public class ExampleJpaEntityProvider implements JpaEntityProvider {
+
+    // List of your JPA entities.
+    @Override
+    public List<Class<?>> getEntities() {
+        return Collections.<Class<?>>singletonList(Company.class);
+    }
+
+    // This is used to return the location of the Liquibase changelog file.
+    // You can return null if you don't want Liquibase to create and update the DB schema.
+    @Override
+    public String getChangelogLocation() {
+    	return "META-INF/example-changelog.xml";
+    }
+
+    // Helper method, which will be used internally by Liquibase.
+    @Override
+    public String getFactoryId() {
+        return "sample";
+    }
+
+    ...
+}
+----
+
+In the example above, we added a single JPA entity represented by class `Company`. In the code of your REST endpoint, you can then use something like
+this to retrieve `EntityManager` and call DB operations on it.
+
+
+[source,java]
+----
+EntityManager em = session.getProvider(JpaConnectionProvider.class).getEntityManager();
+Company myCompany = em.find(Company.class, "123");
+----
+
+The methods `getChangelogLocation` and `getFactoryId` are important to support automatic updating of your entities by Liquibase. https://www.liquibase.com/community/contributors[Liquibase]
+is a framework for updating the database schema, which {project_name} internally uses to create the DB schema and update the DB schema among versions. You may need to use
+it as well and create a changelog for your entities. Note that versioning of your own Liquibase changelog is independent
+of {project_name} versions. In other words, when you update to a new {project_name} version, you are not forced to update your
+schema at the same time. And vice versa, you can update your schema even without updating the {project_name} version. The Liquibase update
+is always done at the server startup, so to trigger a DB update of your schema, you just need to add the new changeset to your Liquibase changelog file (in the example above
+it's the file `META-INF/example-changelog.xml` which must be packed in same JAR as the JPA entities and `ExampleJpaEntityProvider`) and then restart server.
+The DB schema will be automatically updated at startup.
+
+NOTE: Don't forget to always back up your database before doing any changes in the Liquibase changelog and triggering a DB update.

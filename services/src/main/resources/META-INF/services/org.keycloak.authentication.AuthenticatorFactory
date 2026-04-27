@@ -1,0 +1,60 @@
+#
+# Copyright 2016 Red Hat, Inc. and/or its affiliates
+# and other contributors as indicated by the @author tags.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+org.keycloak.authentication.authenticators.browser.CookieAuthenticatorFactory
+org.keycloak.authentication.authenticators.browser.UsernamePasswordFormFactory
+org.keycloak.authentication.authenticators.browser.UsernameFormFactory
+org.keycloak.authentication.authenticators.browser.PasswordFormFactory
+org.keycloak.authentication.authenticators.browser.OTPFormAuthenticatorFactory
+org.keycloak.authentication.authenticators.browser.SpnegoAuthenticatorFactory
+org.keycloak.authentication.authenticators.browser.IdentityProviderAuthenticatorFactory
+org.keycloak.authentication.authenticators.conditional.ConditionalSubFlowExecutedAuthenticatorFactory
+org.keycloak.authentication.authenticators.conditional.ConditionalClientScopeAuthenticatorFactory
+org.keycloak.authentication.authenticators.conditional.ConditionalRoleAuthenticatorFactory
+org.keycloak.authentication.authenticators.conditional.ConditionalUserConfiguredAuthenticatorFactory
+org.keycloak.authentication.authenticators.conditional.ConditionalLoaAuthenticatorFactory
+org.keycloak.authentication.authenticators.conditional.ConditionalUserAttributeValueFactory
+org.keycloak.authentication.authenticators.conditional.ConditionalCredentialAuthenticatorFactory
+org.keycloak.authentication.authenticators.directgrant.ValidateOTP
+org.keycloak.authentication.authenticators.directgrant.ValidatePassword
+org.keycloak.authentication.authenticators.directgrant.ValidateUsername
+org.keycloak.authentication.authenticators.resetcred.ResetCredentialChooseUser
+org.keycloak.authentication.authenticators.resetcred.ResetCredentialEmail
+org.keycloak.authentication.authenticators.resetcred.ResetOTP
+org.keycloak.authentication.authenticators.resetcred.ResetPassword
+org.keycloak.authentication.authenticators.broker.IdpReviewProfileAuthenticatorFactory
+org.keycloak.authentication.authenticators.broker.IdpCreateUserIfUniqueAuthenticatorFactory
+org.keycloak.authentication.authenticators.broker.IdpDetectExistingBrokerUserAuthenticatorFactory
+org.keycloak.authentication.authenticators.broker.IdpConfirmLinkAuthenticatorFactory
+org.keycloak.authentication.authenticators.broker.IdpConfirmOverrideLinkAuthenticatorFactory
+org.keycloak.authentication.authenticators.broker.IdpEmailVerificationAuthenticatorFactory
+org.keycloak.authentication.authenticators.broker.IdpUsernamePasswordFormFactory
+org.keycloak.authentication.authenticators.broker.IdpAutoLinkAuthenticatorFactory
+org.keycloak.organization.authentication.authenticators.broker.IdpOrganizationAuthenticatorFactory
+org.keycloak.authentication.authenticators.browser.ConditionalOtpFormAuthenticatorFactory
+org.keycloak.protocol.saml.profile.ecp.authenticator.HttpBasicAuthenticatorFactory
+org.keycloak.authentication.authenticators.x509.X509ClientCertificateAuthenticatorFactory
+org.keycloak.authentication.authenticators.x509.ValidateX509CertificateUsernameFactory
+org.keycloak.protocol.docker.DockerAuthenticatorFactory
+org.keycloak.authentication.authenticators.browser.WebAuthnAuthenticatorFactory
+org.keycloak.authentication.authenticators.browser.WebAuthnPasswordlessAuthenticatorFactory
+org.keycloak.authentication.authenticators.access.DenyAccessAuthenticatorFactory
+org.keycloak.authentication.authenticators.access.AllowAccessAuthenticatorFactory
+org.keycloak.authentication.authenticators.sessionlimits.UserSessionLimitsAuthenticatorFactory
+org.keycloak.authentication.authenticators.browser.RecoveryAuthnCodesFormAuthenticatorFactory
+org.keycloak.organization.authentication.authenticators.browser.OrganizationAuthenticatorFactory
+org.keycloak.authentication.authenticators.browser.PasskeysConditionalUIAuthenticatorFactory

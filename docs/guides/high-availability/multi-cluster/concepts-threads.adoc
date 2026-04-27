@@ -1,0 +1,17 @@
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/links.adoc" as links>
+
+<@tmpl.guide
+title="Concepts for configuring thread pools"
+summary="Understand concepts for avoiding resource exhaustion and congestion."
+tileVisible="false" >
+
+This section is intended when you want to understand the considerations and best practices on how to configure thread pools connection pools for {project_name}.
+For a configuration where this is applied, visit <@links.ha id="multi-cluster-deploy-keycloak-kubernetes" />.
+
+[#multi-cluster-threads-concept]
+== Concepts
+
+<#include "/high-availability/partials/concepts/threads.adoc" />
+
+</@tmpl.guide>

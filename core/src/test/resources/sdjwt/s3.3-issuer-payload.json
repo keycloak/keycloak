@@ -1,0 +1,26 @@
+{
+  "_sd": [
+    "09vKrJMOlyTWM0sjpu_pdOBVBQ2M1y3KhpH515nXkpY",
+    "2rsjGbaC0ky8mT0pJrPioWTq0_daw1sX76poUlgCwbI",
+    "EkO8dhW0dHEJbvUHlE_VCeuC9uRELOieLZhh7XbUTtA",
+    "IlDzIKeiZdDwpqpK6ZfbyphFvz5FgnWa-sN6wqQXCiw",
+    "JzYjH4svliH0R3PyEMfeZu6Jt69u5qehZo7F7EPYlSE",
+    "PorFbpKuVu6xymJagvkFsFXAbRoc2JGlAUA2BA4o7cI",
+    "TGf4oLbgwd5JQaHyKVQZU9UdGE0w5rtDsrZzfUaomLo",
+    "jdrTE8YcbY4EifugihiAe_BPekxJQZICeiUQwY9QqxI",
+    "jsu9yVulwQQlhFlM_3JlzMaSFzglhQG0DpfayQwLUK4"
+  ],
+  "iss": "https://example.com/issuer",
+  "iat": 1683000000,
+  "exp": 1883000000,
+  "vct": "https://credentials.example.com/identity_credential",
+  "_sd_alg": "sha-256",
+  "cnf": {
+    "jwk": {
+      "kty": "EC",
+      "crv": "P-256",
+      "x": "TCAER19Zvu3OHF4j4W4vfSVoHIP1ILilDls7vCeGemc",
+      "y": "ZxjiWWbZMQGHVWKVQ4hbSIirsVfuecCE6t4jT9F2HZQ"
+    }
+  }
+}

@@ -1,0 +1,10 @@
+org.keycloak.representations.admin.v2.validators.ClientSecretNotBlankValidator
+org.keycloak.representations.admin.v2.validators.ConfidentialFlowsRequireAuthValidator
+org.keycloak.representations.admin.v2.validators.ProtocolUnmodifiedValidator
+org.keycloak.representations.admin.v2.validators.RedirectFlowsRequireUrisValidator
+org.keycloak.representations.admin.v2.validators.ServiceAccountRolesRequireFlowValidator
+org.keycloak.representations.admin.v2.validators.UuidUnmodifiedValidator
+org.keycloak.representations.admin.v2.validators.ValidAuthMethodValidator
+org.keycloak.representations.admin.v2.validators.ValidCanonicalizationMethodValidator
+org.keycloak.representations.admin.v2.validators.ValidRedirectUrisValidator
+org.keycloak.representations.admin.v2.validators.ValidWebOriginValidator

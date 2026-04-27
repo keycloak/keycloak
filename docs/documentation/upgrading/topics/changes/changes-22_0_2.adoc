@@ -1,0 +1,13 @@
+= Never expires option removed from client advanced settings combos
+
+The option `Never expires` is now removed from all the combos of the Advanced Settings client tab. This option was misleading because the different lifespans or idle timeouts were never infinite, but limited by the general user session or realm values. Therefore, this option is removed in favor of the other two remaining options: `Inherits from the realm settings` (the client uses general realm timeouts) and `Expires in` (the value is overridden for the client). Internally the `Never expires` was represented by `-1`. Now that value is shown with a warning in the Admin Console and cannot be set directly by the administrator.
+
+= New LinkedIn OpenID Connect social provider
+
+A new social identity provider called *LinkedIn OpenID Connect* has been introduced for the business and employment-focused platform. LinkedIn released recently a new product for developers called link:https://learn.microsoft.com/en-us/linkedin/consumer/integrations/self-serve/sign-in-with-linkedin-v2[Sign In with LinkedIn using OpenID Connect]. The product provides a new way to authenticate members using OpenID Connect, but the default *OpenID Connect v1.0* identity provider does not work with it at present time. For that reason, {project_name} adds this new identity provider as the specific social provider for the new product.
+
+The old LinkedIn way based on OAuth seems to be completely removed from the link:https://developer.linkedin.com[developer portal]. How the existing LinkedIn social provider is working with current applications is not clear. {project_name} maintains the old provider renamed to *LinkedIn (deprecated)*, but in a deprecated feature called *linkedin-oauth* which is disabled by default. It will be removed in future versions. Please enable it again at startup if needed:
+
+```
+kc.[sh|bat] start --features linkedin-oauth ...
+```

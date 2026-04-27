@@ -1,0 +1,17 @@
+
+=== Retrieving external IDP tokens
+
+With {project_name}, you can store tokens and responses from the authentication process with the external IDP using the `Store Token` configuration option on the IDP's settings page.
+
+Application code can retrieve these tokens and responses to import extra user information or to request the external IDP securely. For example, an application can use the Google token to use other Google services and REST APIs. To retrieve a token for a particular identity provider, send a request as follows:
+
+[source,subs="attributes+"]
+----
+GET {kc_realms_path}/{realm-name}/broker/{provider_alias}/token HTTP/1.1
+Host: localhost:8080
+Authorization: Bearer <KEYCLOAK ACCESS TOKEN>
+----
+
+An application must authenticate with {project_name} and receive an access token. This access token must have the `broker` client-level role `read-token` set, so the user must have a role mapping for this role, and the client application must have that role within its scope. In this case, since you are accessing a protected service in {project_name}, send the access token issued by {project_name} during the user authentication. You can assign this role to newly imported users in the broker configuration page by setting the *Stored Tokens Readable* switch to *ON*.
+
+These external tokens can be re-established by logging in again through the provider or using the client-initiated account linking API.

@@ -1,0 +1,18 @@
+{
+  "userinfo":
+  {
+    "given_name": {"essential": true},
+    "nickname": null,
+    "email": {"essential": true},
+    "email_verified": {"essential": true},
+    "picture": null,
+    "http://example.info/claims/groups": null
+  },
+  "id_token":
+  {
+    "auth_time": {"essential": true},
+    "sub": {"value": "248289761001"},
+    "email_verified": {"essential": false, "value":  true },
+    "acr": {"values": ["urn:mace:incommon:iap:silver", "urn:mace:incommon:iap:gold"] }
+  }
+}
