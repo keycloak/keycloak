@@ -2348,7 +2348,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
         AuthenticationRequestAcknowledgement response = oauth.ciba().backchannelAuthenticationRequest(username).bindingMessage(bindingMessage).additionalParams(additionalParameters).send();
         assertThat(response.getStatusCode(), is(equalTo(400)));
         assertThat(response.getError(), is(OAuthErrorException.INVALID_CLIENT));
-        assertThat(response.getErrorDescription(), is("invalid client access type"));
+        assertThat(response.getErrorDescription(), is("invalid client access type: public"));
 
         String clientConfidentialId = generateSuffixedName("confidential-app");
         String clientConfidentialSecret = "app-secret";
@@ -2376,7 +2376,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
         AccessTokenResponse tokenRes = oauth.ciba().doBackchannelAuthenticationTokenRequest(response.getAuthReqId());
         assertThat(tokenRes.getStatusCode(), is(equalTo(400)));
         assertThat(tokenRes.getError(), is(OAuthErrorException.INVALID_GRANT));
-        assertThat(tokenRes.getErrorDescription(), is("invalid client access type"));
+        assertThat(tokenRes.getErrorDescription(), is("invalid client access type: public"));
     }
 
     @Test

@@ -347,7 +347,7 @@ public class FAPI1Test extends AbstractFAPITest {
 
         // Should not be possible to login anymore with public client
         oauth.loginForm().nonce("123456").codeChallenge(pkceGenerator).open();
-        assertRedirectedToClientWithError(OAuthErrorException.INVALID_CLIENT, "invalid client access type");
+        assertRedirectedToClientWithError(OAuthErrorException.INVALID_CLIENT, "invalid client access type: public");
     }
 
     @Test
