@@ -17,13 +17,17 @@
 
 package org.keycloak.policy;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Locale;
 import java.text.DecimalFormat;
 import java.util.List;
 import java.util.Objects;
@@ -248,6 +252,32 @@ public class BlacklistPasswordPolicyProviderFactory implements PasswordPolicyPro
     }
 
     /**
+     * Builds a pre-computed Bloom filter (.bloom) file from a plaintext password denylist file.
+     * Each line is treated as one password (lowercased before insertion).
+     *
+     * @param inputFile path to the plaintext password list (one password per line, UTF-8)
+     * @param fpp       desired false-positive probability (e.g. 0.0001)
+     * @throws IOException if the input file cannot be read or the output file cannot be written
+     */
+    public static void buildBloomFile(Path inputFile, double fpp) throws IOException {
+        Path outputFile = inputFile.resolveSibling(inputFile.getFileName() + ".bloom");
+        long count;
+        try (var lines = Files.lines(inputFile, StandardCharsets.UTF_8)) {
+            count = lines.count();
+        }
+        BloomFilter<String> filter = BloomFilter.create(
+                Funnels.stringFunnel(StandardCharsets.UTF_8), Math.max(count, 1), fpp);
+        try (var lines = Files.lines(inputFile, StandardCharsets.UTF_8)) {
+            lines.map(s -> s.toLowerCase(Locale.ROOT)).forEach(filter::put);
+        }
+        try (OutputStream out = new BufferedOutputStream(Files.newOutputStream(outputFile))) {
+            filter.writeTo(out);
+        }
+        LOG.infof("Built pre-computed denylist: input=%s passwords=%d fpp=%f output=%s",
+                inputFile, count, fpp, outputFile);
+    }
+
+    /**
      * A {@link PasswordBlacklist} describes a list of too easy to guess
      * or potentially leaked passwords that users should not be able to use.
      */
@@ -291,6 +321,17 @@ public class BlacklistPasswordPolicyProviderFactory implements PasswordPolicyPro
          */
         private final Path path;
 
+        /**
+         * Optional path to a pre-computed Bloom filter binary (.bloom).
+         */
+        private final Path bloomPath;
+
+        /**
+         * The file whose mtime/size is watched for changes; set to bloomPath when
+         * a pre-computed Bloom filter exists at construction time, otherwise path.
+         */
+        private final Path watchPath;
+
         private final double falsePositiveProbability;
 
         private volatile BloomFilter<String> blacklist;
@@ -312,6 +353,7 @@ public class BlacklistPasswordPolicyProviderFactory implements PasswordPolicyPro
 
             this.name = name;
             this.path = blacklistBasePath.resolve(name);
+            this.bloomPath = blacklistBasePath.resolve(name + ".bloom");
             this.falsePositiveProbability = falsePositiveProbability;
             this.checkIntervalMillis = checkIntervalMillis;
 
@@ -319,8 +361,14 @@ public class BlacklistPasswordPolicyProviderFactory implements PasswordPolicyPro
                 throw new IllegalArgumentException("Password blacklist " + name + " not found!");
             }
 
-            this.lastModifiedMillis = path.toFile().lastModified();
-            this.lastSizeBytes = path.toFile().length();
+            // Decide once which file to watch for changes. If a pre-computed .bloom file
+            // exists at construction time we watch that; otherwise we watch the plaintext
+            // file. The decision is fixed for the lifetime of this instance so that the
+            // load strategy never switches mid-run.
+            this.watchPath = Files.exists(this.bloomPath) ? this.bloomPath : this.path;
+
+            this.lastModifiedMillis = watchPath.toFile().lastModified();
+            this.lastSizeBytes = watchPath.toFile().length();
             this.blacklist = load();
             this.lastCheckedMillis = System.currentTimeMillis();
         }
@@ -356,8 +404,8 @@ public class BlacklistPasswordPolicyProviderFactory implements PasswordPolicyPro
                     return;
                 }
                 try {
-                    long currentModified = Files.getLastModifiedTime(path).toMillis();
-                    long currentSize = Files.size(path);
+                    long currentModified = Files.getLastModifiedTime(watchPath).toMillis();
+                    long currentSize = Files.size(watchPath);
                     if (currentModified != lastModifiedMillis || currentSize != lastSizeBytes) {
                         blacklist = load();
                         lastModifiedMillis = currentModified;
@@ -371,12 +419,56 @@ public class BlacklistPasswordPolicyProviderFactory implements PasswordPolicyPro
         }
 
         /**
-         * Loads the referenced blacklist into a {@link BloomFilter}.
+         * Loads the denylist into a {@link BloomFilter}, using the pre-computed .bloom binary
+         * when available and falling back to the plaintext file otherwise.
          *
-         * @return the {@link BloomFilter} backing a password blacklist
+         * @return the {@link BloomFilter} backing a password denylist
          */
         private BloomFilter<String> load() {
+            if (Files.exists(bloomPath)) {
+                LOG.infof("Loading pre-computed denylist start: name=%s path=%s", name, bloomPath);
+                try {
+                    return loadFromBloom();
+                } catch (IOException e) {
+                    LOG.warnf("Failed to load pre-computed denylist (path=%s), falling back to plaintext: %s",
+                            bloomPath, e.getMessage());
+                }
+            }
+            return loadFromPlaintext();
+        }
 
+        /**
+         * Fast path: deserialise a pre-computed Bloom filter binary (.bloom).
+         * Emits a warning when the stored false-positive probability differs from the configured value.
+         *
+         * @return the deserialised {@link BloomFilter}
+         * @throws IOException if the binary file cannot be read
+         */
+        private BloomFilter<String> loadFromBloom() throws IOException {
+            long loadStartMillis = System.currentTimeMillis();
+            BloomFilter<String> filter;
+            try (BufferedInputStream in = new BufferedInputStream(
+                    Files.newInputStream(bloomPath), BUFFER_SIZE_IN_BYTES)) {
+                filter = BloomFilter.readFrom(in, Funnels.stringFunnel(StandardCharsets.UTF_8));
+            }
+            long loadTimeMillis = System.currentTimeMillis() - loadStartMillis;
+            LOG.infof("Loading pre-computed denylist finished: name=%s path=%s expectedFpp=%s loadTime=%dms",
+                    name, bloomPath, filter.expectedFpp(), loadTimeMillis);
+            if (Math.abs(filter.expectedFpp() - falsePositiveProbability) > 1e-9) {
+                LOG.warnf("Pre-computed denylist '%s' has fpp=%.6f but configured fpp=%.6f. "
+                        + "Regenerate the .bloom file with 'kc.sh build-password-denylist' if this is unintended.",
+                        name, filter.expectedFpp(), falsePositiveProbability);
+            }
+            return filter;
+        }
+
+        /**
+         * Slow path: build a BloomFilter from the plaintext denylist file.
+         * Requires two passes: one to count passwords, one to insert them.
+         *
+         * @return a newly constructed {@link BloomFilter} populated from the plaintext file
+         */
+        private BloomFilter<String> loadFromPlaintext() {
             try {
                 LOG.infof("Loading blacklist start: name=%s path=%s", name, path);
                 long loadStartMillis = System.currentTimeMillis();
