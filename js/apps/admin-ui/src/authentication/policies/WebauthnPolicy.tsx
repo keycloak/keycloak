@@ -131,7 +131,6 @@ export const WebauthnPolicy = ({
     handleSubmit,
     watch,
     formState: { isDirty },
-    watch,
   } = form;
 
   const namePrefix = isPasswordLess
