@@ -986,6 +986,18 @@ public class OID4VCIssuerEndpoint {
             contentType = contentType.split(";")[0].trim(); // Handle parameters like charset
         }
         boolean contentTypeIsJwt = MediaType.APPLICATION_JWT.equalsIgnoreCase(contentType);
+        boolean payloadLooksLikeJwe = isCompactJwePayload(requestPayload);
+
+        // OID4VCI Section 10: encrypted request payloads MUST use application/jwt media type.
+        if (payloadLooksLikeJwe && !contentTypeIsJwt) {
+            String errorMessage = "Encrypted Credential Request must use Content-Type application/jwt.";
+            LOGGER.debug(errorMessage);
+            if (eventBuilder != null) {
+                eventBuilder.detail(Details.REASON, errorMessage)
+                        .error(ErrorType.INVALID_ENCRYPTION_PARAMETERS.getValue());
+            }
+            throw new BadRequestException(getErrorResponse(ErrorType.INVALID_ENCRYPTION_PARAMETERS, errorMessage));
+        }
 
         if (isRequestEncryptionRequired || contentTypeIsJwt) {
             if (requestEncryptionMetadata == null && contentTypeIsJwt) {
@@ -1024,6 +1036,17 @@ public class OID4VCIssuerEndpoint {
 
         try {
             CredentialRequest credentialRequest = JsonSerialization.mapper.readValue(requestPayload, CredentialRequest.class);
+            // OID4VCI 1.0 Section 8.2:
+            // If credential_response_encryption is requested, Credential Request encryption MUST be used.
+            if (credentialRequest.getCredentialResponseEncryption() != null) {
+                String errorMessage = "credential_response_encryption requires encrypted Credential Request (JWE) on top of TLS.";
+                LOGGER.debug(errorMessage);
+                if (eventBuilder != null) {
+                    eventBuilder.detail(Details.REASON, errorMessage)
+                            .error(ErrorType.INVALID_ENCRYPTION_PARAMETERS.getValue());
+                }
+                throw new BadRequestException(getErrorResponse(ErrorType.INVALID_ENCRYPTION_PARAMETERS, errorMessage));
+            }
             normalizeProofFields(credentialRequest);
             return credentialRequest;
         } catch (JsonProcessingException e) {
@@ -1399,6 +1422,21 @@ public class OID4VCIssuerEndpoint {
         return metadata != null &&
                 metadata.getZipValuesSupported() != null &&
                 metadata.getZipValuesSupported().contains(zip);
+    }
+
+    /**
+     * Detect whether payload is a compact JWE by delegating to Keycloak JOSE parser.
+     */
+    private boolean isCompactJwePayload(String payload) {
+        if (payload == null || payload.trim().isEmpty()) {
+            return false;
+        }
+        try {
+            JWE jwe = new JWE(payload.trim());
+            return jwe.getHeader() != null;
+        } catch (Exception ignored) {
+            return false;
+        }
     }
 
     private AuthenticatedClientSessionModel getAuthenticatedClientSession() {

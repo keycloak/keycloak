@@ -66,7 +66,12 @@ public class AttestationProofValidator extends AbstractProofValidator {
             String jwt = extractAttestationProof(vcIssuanceContext);
 
             KeyAttestationJwtBody attestationBody = AttestationValidatorUtil.validateAttestationJwt(
-                    jwt, keycloakSession, vcIssuanceContext, keyResolver);
+                    jwt,
+                    keycloakSession,
+                    vcIssuanceContext,
+                    keyResolver,
+                    false,
+                    ProofType.ATTESTATION);
 
             if (attestationBody.getAttestedKeys() == null || attestationBody.getAttestedKeys().isEmpty()) {
                 throw new VCIssuerException(ErrorType.INVALID_PROOF, "No valid attested keys found in attestation proof");
@@ -105,7 +110,8 @@ public class AttestationProofValidator extends AbstractProofValidator {
 
         Proofs proofs = vcIssuanceContext.getCredentialRequest().getProofs();
         if (proofs == null || proofs.getAttestation() == null || proofs.getAttestation().isEmpty()) {
-            throw new VCIssuerException(ErrorType.INVALID_PROOF, "Expected a proof of type attestation: " + ProofType.JWT);
+            throw new VCIssuerException(ErrorType.INVALID_PROOF,
+                    "Expected a proof of type attestation: " + ProofType.ATTESTATION);
         }
 
         if (proofs.getAttestation().size() > 1) {

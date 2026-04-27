@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import jakarta.ws.rs.BadRequestException;
@@ -13,9 +14,11 @@ import jakarta.ws.rs.core.Response;
 
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.common.util.ObjectUtil;
+import org.keycloak.events.Details;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.credential.OTPCredentialModel;
+import org.keycloak.representations.idm.AdminEventRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testframework.annotations.InjectUser;
@@ -296,6 +299,40 @@ public class UserCredentialTest extends AbstractUserTest {
                 JsonSerialization.writeValueAsString(user),
                 actualRepresentation
         );
+    }
+
+    @Test
+    public void testDeleteOtpCredentialEmitsAdminEventWithCredentialDetails() {
+        UserRepresentation userRep = UserBuilder.create()
+                .username("otp-remove-subject")
+                .name("Otp", "Removable")
+                .email("otp-remove-subject@localhost")
+                .emailVerified(true)
+                .password("password")
+                .totpSecret("DJmQfC73VGFhw7D4QJ8A")
+                .build();
+        String userId = createUser(userRep);
+
+        UserResource user = managedRealm.admin().users().get(userId);
+        CredentialRepresentation otpCred = user.credentials().stream()
+                .filter(c -> OTPCredentialModel.TYPE.equals(c.getType()))
+                .findFirst().orElseThrow();
+
+        user.setCredentialUserLabel(otpCred.getId(), "My Phone");
+        adminEvents.clear();
+
+        user.removeCredential(otpCred.getId());
+
+        AdminEventRepresentation event = adminEvents.poll();
+        AdminEventAssertion.assertSuccess(event)
+                .operationType(OperationType.ACTION)
+                .resourceType(ResourceType.USER);
+
+        Map<String, String> details = event.getDetails();
+        Assertions.assertNotNull(details, "admin event must expose credential details");
+        Assertions.assertEquals(otpCred.getId(), details.get(Details.CREDENTIAL_ID));
+        Assertions.assertEquals(OTPCredentialModel.TYPE, details.get(Details.CREDENTIAL_TYPE));
+        Assertions.assertEquals("My Phone", details.get(Details.CREDENTIAL_USER_LABEL));
     }
 
     private void assertSameIds(List<String> expectedIds, List<CredentialRepresentation> actual) {

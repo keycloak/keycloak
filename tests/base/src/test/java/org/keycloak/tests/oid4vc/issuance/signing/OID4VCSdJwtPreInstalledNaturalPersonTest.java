@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.testsuite.oid4vc.issuance.signing;
+package org.keycloak.tests.oid4vc.issuance.signing;
 
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -22,9 +22,14 @@ import java.util.stream.Collectors;
 import org.keycloak.VCFormat;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider;
 import org.keycloak.protocol.oid4vc.model.Claim;
-import org.keycloak.representations.idm.ClientScopeRepresentation;
+import org.keycloak.protocol.oid4vc.model.CredentialScopeRepresentation;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
+import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
+import org.keycloak.tests.oid4vc.OID4VCIssuerEndpointTest;
+import org.keycloak.tests.oid4vc.OID4VCIssuerTestBase;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.slf4j.LoggerFactory;
 
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_CONFIGURATION_ID;
@@ -37,7 +42,11 @@ import static org.junit.jupiter.api.Assertions.assertNull;
  * OID4VCI testing for the pre-installed oid4vc_natural_person
  *
  */
+@KeycloakIntegrationTest(config = OID4VCIssuerTestBase.VCTestServerConfig.class)
 public class OID4VCSdJwtPreInstalledNaturalPersonTest extends OID4VCIssuerEndpointTest {
+
+    @InjectRunOnServer
+    RunOnServerClient runOnServer;
 
     /**
      * This is testing the configuration exposed by OID4VCIssuerWellKnownProvider.
@@ -45,11 +54,10 @@ public class OID4VCSdJwtPreInstalledNaturalPersonTest extends OID4VCIssuerEndpoi
     @Test
     public void testGetSdJwtConfigFromMetadata() {
         String scopeName = sdJwtTypeNaturalPersonScopeName;
-        ClientScopeRepresentation clientScope = requireExistingClientScope(scopeName);
+        CredentialScopeRepresentation clientScope = requireExistingCredentialScope(scopeName);
         String credentialConfigurationId = clientScope.getAttributes().get(VC_CONFIGURATION_ID);
-        String expectedIssuer = suiteContext.getAuthServerInfo().getContextRoot() + "/auth/realms/" + TEST_REALM_NAME;
-        testingClient
-                .server(TEST_REALM_NAME)
+        String expectedIssuer = testRealm.getBaseUrl();
+        runOnServer
                 .run((session -> {
                     var log = LoggerFactory.getLogger(OID4VCSdJwtPreInstalledNaturalPersonTest.class);
                     var oid4VCIssuerWellKnownProvider = new OID4VCIssuerWellKnownProvider(session);
