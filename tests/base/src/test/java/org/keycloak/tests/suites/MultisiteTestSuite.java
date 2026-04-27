@@ -16,6 +16,8 @@ import org.junit.platform.suite.api.BeforeSuite;
 import org.junit.platform.suite.api.SelectClasses;
 import org.junit.platform.suite.api.Suite;
 
+import org.keycloak.tests.sessionlimits.UserSessionLimitsTest;
+
 @Suite
 @SelectClasses({
         SessionTest.class,
@@ -23,6 +25,7 @@ import org.junit.platform.suite.api.Suite;
         RefreshTokenTimeoutsTest.class,
         UserSessionProviderTest.class,
         UserSessionProviderOfflineTest.class,
+        UserSessionLimitsTest.class,
         SessionTimeoutValidationTest.class,
 })
 public class MultisiteTestSuite {
