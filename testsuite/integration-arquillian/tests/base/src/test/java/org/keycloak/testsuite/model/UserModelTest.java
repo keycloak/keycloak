@@ -356,6 +356,55 @@ public class UserModelTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     @ModelTest(realmName = "original")
+    public void testUpdateUserAttributeMultipleSameValues(KeycloakSession session) {
+        String key = "foo";
+
+        // Testing "setAttribute"
+        KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), session.getContext(), (KeycloakSession currentSession) -> {
+            RealmModel realm = currentSession.realms().getRealmByName("original");
+            UserModel user = currentSession.users().addUser(realm, "user");
+
+            user.setAttribute(key, List.of("bar", "bar"));
+
+            List<String> expected = List.of("bar", "bar");
+            assertThat(user.getAttributes().get(key), equalTo(expected));
+        });
+
+        KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), session.getContext(), (KeycloakSession currentSession) -> {
+            RealmModel realm = currentSession.realms().getRealmByName("original");
+            UserModel user = currentSession.users().getUserByUsername(realm, "user");
+
+            user.setAttribute(key, List.of("bar"));
+
+            List<String> expected = List.of("bar");
+            assertThat(user.getAttributes().get(key), equalTo(expected));
+        });
+
+        // Testing "setSingleAttribute"
+        KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), session.getContext(), (KeycloakSession currentSession) -> {
+            RealmModel realm = currentSession.realms().getRealmByName("original");
+            UserModel user = currentSession.users().getUserByUsername(realm, "user");
+
+            user.setAttribute(key, List.of("bar", "bar"));
+
+            List<String> expected = List.of("bar", "bar");
+            assertThat(user.getAttributes().get(key), equalTo(expected));
+        });
+
+        KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), session.getContext(), (KeycloakSession currentSession) -> {
+            RealmModel realm = currentSession.realms().getRealmByName("original");
+            UserModel user = currentSession.users().getUserByUsername(realm, "user");
+
+            user.setSingleAttribute(key, "bar");
+
+            List<String> expected = List.of("bar");
+            assertThat(user.getAttributes().get(key), equalTo(expected));
+        });
+
+    }
+
+    @Test
+    @ModelTest(realmName = "original")
     public void testSearchByString(KeycloakSession session) {
 
         KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), session.getContext(), (KeycloakSession sesSearchString1) -> {
