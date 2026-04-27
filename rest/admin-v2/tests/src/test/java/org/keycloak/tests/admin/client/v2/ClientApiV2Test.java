@@ -523,7 +523,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
         auth.setMethod(ClientIdAndSecretAuthenticator.PROVIDER_ID);
         rep.setAuth(auth);
 
-        try (var response = clients(testRealm.getName()).v2().createClient(rep)) {
+        try (var response = clients(testRealm.getName()).createClient(rep)) {
             assertEquals(201, response.getStatus());
             OIDCClientRepresentation created = response.readEntity(OIDCClientRepresentation.class);
             assertThat(created.getRoles(), is(Set.of("my-client-role")));
@@ -531,14 +531,14 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
         }
 
         rep.setServiceAccountRoles(Set.of(defaultRealmRoles, "offline_access", "my-client-role"));
-        try (var response = clients(testRealm.getName()).v2().client("sa-client-role-test").createOrUpdateClient(rep)) {
+        try (var response = clients(testRealm.getName()).client("sa-client-role-test").createOrUpdateClient(rep)) {
             assertEquals(200, response.getStatus());
             OIDCClientRepresentation updated = response.readEntity(OIDCClientRepresentation.class);
             assertThat(updated.getServiceAccountRoles(), is(Set.of(defaultRealmRoles, "offline_access", "my-client-role")));
         }
 
         rep.setServiceAccountRoles(Set.of(defaultRealmRoles, "offline_access"));
-        try (var response = clients(testRealm.getName()).v2().client("sa-client-role-test").createOrUpdateClient(rep)) {
+        try (var response = clients(testRealm.getName()).client("sa-client-role-test").createOrUpdateClient(rep)) {
             assertEquals(200, response.getStatus());
             OIDCClientRepresentation updated = response.readEntity(OIDCClientRepresentation.class);
             assertThat(updated.getServiceAccountRoles(), is(Set.of(defaultRealmRoles, "offline_access")));
