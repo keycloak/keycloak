@@ -752,7 +752,7 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         oauth.client(clientPublicId);
         oauth.openLoginForm();
         assertEquals(OAuthErrorException.INVALID_CLIENT, oauth.parseLoginResponse().getError());
-        assertEquals("invalid client access type", oauth.parseLoginResponse().getErrorDescription());
+        assertEquals("invalid client access type: public", oauth.parseLoginResponse().getErrorDescription());
     }
 
     @Test
