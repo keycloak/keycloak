@@ -34,7 +34,7 @@ import static org.keycloak.OAuth2Constants.PASSWORD;
  *     .password("pass")
  *     .clientId("client")
  *     .clientSecret("secret")
- *     .resteasyClient(new ResteasyClientBuilderImpl()
+ *     .resteasyClient(ResteasyClientClassicProvider.createClientBuilder()
  *                 .connectionPoolSize(20)
  *                 .build()
  *                 .register(org.keycloak.admin.client.JacksonProvider.class, 100))
