@@ -40,6 +40,13 @@ export type Row = {
   id?: string; // KeycloakDataTable expects an id for the row
 };
 
+type ClientRoleMapping = {
+  client?: string;
+  clientId?: string;
+  id?: string;
+  mappings: RoleRepresentation[];
+};
+
 export const mapRoles = (
   assignedRoles: Row[],
   effectiveRoles: Row[],
@@ -131,14 +138,13 @@ export const RoleMapping = ({
     const roles = await getMapping(adminClient, type, id);
     const realmRolesMapping =
       roles.realmMappings?.map((role) => ({ role })) || [];
-    const clientMapping = Object.values(roles.clientMappings || {})
-      .map((client) =>
-        client.mappings.map((role: RoleRepresentation) => ({
-          client: { clientId: client.client, ...client },
+    const clientMapping = Object.values(roles.clientMappings || {}).flatMap(
+      ({ client, clientId, id, mappings }: ClientRoleMapping) =>
+        mappings.map((role) => ({
+          client: { clientId: client ?? clientId, id },
           role,
         })),
-      )
-      .flat();
+    );
 
     return [
       ...mapRoles(
