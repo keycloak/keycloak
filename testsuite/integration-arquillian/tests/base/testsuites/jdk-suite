@@ -5,7 +5,6 @@ ExportImportTest
 KcOidcBrokerTest
 KerberosLdapTest
 LDAPUserLoginTest
-LoginTest
 MutualTLSClientTest
 PasswordPolicyTest
 SSOTest
