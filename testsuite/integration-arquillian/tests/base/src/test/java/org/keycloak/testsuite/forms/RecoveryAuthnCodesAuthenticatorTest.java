@@ -422,6 +422,8 @@ public class RecoveryAuthnCodesAuthenticatorTest extends AbstractChangeImportedU
             Assert.assertEquals("test-user@localhost", passwordPage.getAttemptedUsername());
             passwordPage.login(getPassword("test-user@localhost"));
             setupRecoveryAuthnCodesPage.assertCurrent();
+            Assert.assertTrue("recovery code download messages should be inserted via ?c, not inline in a JS string",
+                    driver.getPageSource().contains("\"<p>\" + "));
             setupRecoveryAuthnCodesPage.clickSaveRecoveryAuthnCodesButton();
         } finally {
             // Remove saved backup codes to keep a clean slate after this test
