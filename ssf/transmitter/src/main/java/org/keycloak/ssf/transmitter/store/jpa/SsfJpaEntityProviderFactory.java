@@ -1,4 +1,4 @@
-package org.keycloak.ssf.transmitter.outbox.jpa;
+package org.keycloak.ssf.transmitter.store.jpa;
 
 import org.keycloak.Config;
 import org.keycloak.common.Profile;
