@@ -13,7 +13,7 @@ import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.ssf.transmitter.outbox.SsfOutboxCleanupTask;
 import org.keycloak.ssf.transmitter.outbox.SsfEventEntity;
-import org.keycloak.ssf.transmitter.outbox.SsfPendingEventStatus;
+import org.keycloak.ssf.transmitter.outbox.SsfEventStatus;
 import org.keycloak.ssf.transmitter.store.SsfEventStore;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
@@ -73,7 +73,7 @@ public class SsfEventStoreTests {
             Assertions.assertEquals("caep.credentialChange", row.getEventType());
             Assertions.assertEquals("signed-set", row.getEncodedSet());
             Assertions.assertEquals(SsfEventEntity.DELIVERY_METHOD_PUSH, row.getDeliveryMethod());
-            Assertions.assertEquals(SsfPendingEventStatus.PENDING, row.getStatus());
+            Assertions.assertEquals(SsfEventStatus.PENDING, row.getStatus());
             Assertions.assertEquals(0, row.getAttempts());
             Assertions.assertNotNull(row.getCreatedAt());
             Assertions.assertNotNull(row.getNextAttemptAt());
@@ -101,7 +101,7 @@ public class SsfEventStoreTests {
             long count = em(session)
                     .createNamedQuery("SsfEventEntity.countByClientAndStatus", Long.class)
                     .setParameter("clientId", "client-dedup")
-                    .setParameter("status", SsfPendingEventStatus.PENDING)
+                    .setParameter("status", SsfEventStatus.PENDING)
                     .getSingleResult();
             Assertions.assertEquals(1, count, "dedup must not create a second row");
 
@@ -119,9 +119,9 @@ public class SsfEventStoreTests {
         runOnServer.run(session -> {
             Instant now = Instant.now();
             persistRaw(session, realmId, "client-due", "stream-a", "jti-past",
-                    SsfPendingEventStatus.PENDING, 0, now.minusSeconds(10), now.minusSeconds(30));
+                    SsfEventStatus.PENDING, 0, now.minusSeconds(10), now.minusSeconds(30));
             persistRaw(session, realmId, "client-due", "stream-b", "jti-future",
-                    SsfPendingEventStatus.PENDING, 0, now.plusSeconds(60), now.minusSeconds(30));
+                    SsfEventStatus.PENDING, 0, now.plusSeconds(60), now.minusSeconds(30));
             em(session).flush();
             em(session).clear();
 
@@ -139,7 +139,7 @@ public class SsfEventStoreTests {
             Instant now = Instant.now();
             for (int i = 0; i < 5; i++) {
                 persistRaw(session, realmId, "client-batch", "stream-a", "jti-b-" + i,
-                        SsfPendingEventStatus.PENDING, 0,
+                        SsfEventStatus.PENDING, 0,
                         now.minusSeconds(i + 1L), now.minusSeconds(10));
             }
             em(session).flush();
@@ -155,7 +155,7 @@ public class SsfEventStoreTests {
         final String realmId = testRealmId;
         runOnServer.run(session -> {
             SsfEventEntity row = persistRaw(session, realmId, "client-d", "stream-a",
-                    "jti-deliver", SsfPendingEventStatus.PENDING, 2,
+                    "jti-deliver", SsfEventStatus.PENDING, 2,
                     Instant.now(), Instant.now());
             row.setLastError("earlier transient failure");
             em(session).flush();
@@ -166,7 +166,7 @@ public class SsfEventStoreTests {
             em(session).clear();
 
             SsfEventEntity after = findById(session, row.getId());
-            Assertions.assertEquals(SsfPendingEventStatus.DELIVERED, after.getStatus());
+            Assertions.assertEquals(SsfEventStatus.DELIVERED, after.getStatus());
             Assertions.assertNotNull(after.getDeliveredAt());
             Assertions.assertNull(after.getLastError(),
                     "lastError should be cleared once delivery succeeds");
@@ -179,7 +179,7 @@ public class SsfEventStoreTests {
         runOnServer.run(session -> {
             Instant now = Instant.now();
             SsfEventEntity row = persistRaw(session, realmId, "client-f", "stream-a",
-                    "jti-fail", SsfPendingEventStatus.PENDING, 2,
+                    "jti-fail", SsfEventStatus.PENDING, 2,
                     now.minusSeconds(1), now);
             em(session).flush();
             em(session).clear();
@@ -196,7 +196,7 @@ public class SsfEventStoreTests {
             em(session).clear();
 
             SsfEventEntity after = findById(session, row.getId());
-            Assertions.assertEquals(SsfPendingEventStatus.PENDING, after.getStatus(),
+            Assertions.assertEquals(SsfEventStatus.PENDING, after.getStatus(),
                     "recordFailure keeps the row in PENDING for the next drainer tick");
             Assertions.assertEquals(3, after.getAttempts(), "attempts must be incremented");
             Assertions.assertEquals(nextAttempt, after.getNextAttemptAt());
@@ -213,7 +213,7 @@ public class SsfEventStoreTests {
         final String realmId = testRealmId;
         runOnServer.run(session -> {
             SsfEventEntity row = persistRaw(session, realmId, "client-dl", "stream-a",
-                    "jti-dead", SsfPendingEventStatus.PENDING, 8,
+                    "jti-dead", SsfEventStatus.PENDING, 8,
                     Instant.now().minusSeconds(1), Instant.now());
             em(session).flush();
             em(session).clear();
@@ -224,7 +224,7 @@ public class SsfEventStoreTests {
             em(session).clear();
 
             SsfEventEntity after = findById(session, row.getId());
-            Assertions.assertEquals(SsfPendingEventStatus.DEAD_LETTER, after.getStatus());
+            Assertions.assertEquals(SsfEventStatus.DEAD_LETTER, after.getStatus());
             Assertions.assertEquals(9, after.getAttempts(),
                     "markDeadLetter bumps attempts so the terminal count reflects the final try");
             Assertions.assertEquals("giving up after 8 retries", after.getLastError());
@@ -238,17 +238,17 @@ public class SsfEventStoreTests {
             Instant now = Instant.now();
 
             SsfEventEntity oldDelivered = persistRaw(session, realmId, "client-p", "stream-a",
-                    "jti-old", SsfPendingEventStatus.DELIVERED, 1,
+                    "jti-old", SsfEventStatus.DELIVERED, 1,
                     now.minusSeconds(60), now.minus(Duration.ofDays(2)));
             oldDelivered.setDeliveredAt(now.minus(Duration.ofDays(2)));
 
             SsfEventEntity freshDelivered = persistRaw(session, realmId, "client-p", "stream-b",
-                    "jti-fresh", SsfPendingEventStatus.DELIVERED, 1,
+                    "jti-fresh", SsfEventStatus.DELIVERED, 1,
                     now.minusSeconds(60), now.minusSeconds(60));
             freshDelivered.setDeliveredAt(now.minusSeconds(60));
 
             SsfEventEntity deadLetter = persistRaw(session, realmId, "client-p", "stream-c",
-                    "jti-dl", SsfPendingEventStatus.DEAD_LETTER, 8,
+                    "jti-dl", SsfEventStatus.DEAD_LETTER, 8,
                     now.minusSeconds(60), now.minus(Duration.ofDays(5)));
 
             em(session).flush();
@@ -277,15 +277,15 @@ public class SsfEventStoreTests {
             Instant now = Instant.now();
 
             SsfEventEntity oldDead = persistRaw(session, realmId, "client-q", "stream-a",
-                    "jti-old-dl", SsfPendingEventStatus.DEAD_LETTER, 8,
+                    "jti-old-dl", SsfEventStatus.DEAD_LETTER, 8,
                     now.minusSeconds(60), now.minus(Duration.ofDays(40)));
 
             SsfEventEntity freshDead = persistRaw(session, realmId, "client-q", "stream-b",
-                    "jti-fresh-dl", SsfPendingEventStatus.DEAD_LETTER, 8,
+                    "jti-fresh-dl", SsfEventStatus.DEAD_LETTER, 8,
                     now.minusSeconds(60), now.minusSeconds(60));
 
             SsfEventEntity oldDelivered = persistRaw(session, realmId, "client-q", "stream-c",
-                    "jti-delivered", SsfPendingEventStatus.DELIVERED, 1,
+                    "jti-delivered", SsfEventStatus.DELIVERED, 1,
                     now.minusSeconds(60), now.minus(Duration.ofDays(40)));
             oldDelivered.setDeliveredAt(now.minus(Duration.ofDays(40)));
 
@@ -315,24 +315,24 @@ public class SsfEventStoreTests {
             Instant now = Instant.now();
 
             SsfEventEntity pending = persistRaw(session, realmId, "client-migrate", "stream-a",
-                    "jti-migrate-pending", SsfPendingEventStatus.PENDING, 0,
+                    "jti-migrate-pending", SsfEventStatus.PENDING, 0,
                     now.minusSeconds(5), now.minusSeconds(5));
 
             SsfEventEntity held = persistRaw(session, realmId, "client-migrate", "stream-a",
-                    "jti-migrate-held", SsfPendingEventStatus.HELD, 0,
+                    "jti-migrate-held", SsfEventStatus.HELD, 0,
                     now.minusSeconds(5), now.minusSeconds(5));
 
             SsfEventEntity delivered = persistRaw(session, realmId, "client-migrate", "stream-a",
-                    "jti-migrate-delivered", SsfPendingEventStatus.DELIVERED, 1,
+                    "jti-migrate-delivered", SsfEventStatus.DELIVERED, 1,
                     now.minusSeconds(5), now.minusSeconds(5));
             delivered.setDeliveredAt(now.minusSeconds(1));
 
             SsfEventEntity deadLetter = persistRaw(session, realmId, "client-migrate", "stream-a",
-                    "jti-migrate-dead", SsfPendingEventStatus.DEAD_LETTER, 8,
+                    "jti-migrate-dead", SsfEventStatus.DEAD_LETTER, 8,
                     now.minusSeconds(5), now.minusSeconds(5));
 
             SsfEventEntity otherClient = persistRaw(session, realmId, "client-other", "stream-b",
-                    "jti-migrate-other", SsfPendingEventStatus.PENDING, 0,
+                    "jti-migrate-other", SsfEventStatus.PENDING, 0,
                     now.minusSeconds(5), now.minusSeconds(5));
 
             em(session).flush();
@@ -373,7 +373,7 @@ public class SsfEventStoreTests {
         runOnServer.run(session -> {
             Instant now = Instant.now();
             persistRaw(session, realmId, "client-noop", "stream-a", "jti-noop",
-                    SsfPendingEventStatus.PENDING, 0, now, now);
+                    SsfEventStatus.PENDING, 0, now, now);
             em(session).flush();
             em(session).clear();
 
@@ -393,14 +393,14 @@ public class SsfEventStoreTests {
             runOnServer.run(session -> {
                 Instant now = Instant.now();
                 persistRaw(session, realmId, "c1", "s1", "jti-pending",
-                        SsfPendingEventStatus.PENDING, 0, now, now);
+                        SsfEventStatus.PENDING, 0, now, now);
                 persistRaw(session, realmId, "c1", "s1", "jti-delivered",
-                        SsfPendingEventStatus.DELIVERED, 1, now, now);
+                        SsfEventStatus.DELIVERED, 1, now, now);
                 persistRaw(session, realmId, "c1", "s1", "jti-dl",
-                        SsfPendingEventStatus.DEAD_LETTER, 8, now, now);
+                        SsfEventStatus.DEAD_LETTER, 8, now, now);
 
                 SsfEventEntity keeper = persistRaw(session, otherRealmId, "c2", "s2",
-                        "jti-other-realm", SsfPendingEventStatus.PENDING, 0, now, now);
+                        "jti-other-realm", SsfEventStatus.PENDING, 0, now, now);
 
                 em(session).flush();
                 em(session).clear();
@@ -427,10 +427,10 @@ public class SsfEventStoreTests {
             Instant now = Instant.now();
             for (int i = 0; i < 7; i++) {
                 persistRaw(session, realmId, "client-batch", "stream-a", "jti-batch-" + i,
-                        SsfPendingEventStatus.PENDING, 0, now, now);
+                        SsfEventStatus.PENDING, 0, now, now);
             }
             SsfEventEntity otherClient = persistRaw(session, realmId, "client-other",
-                    "stream-other", "jti-batch-other", SsfPendingEventStatus.PENDING, 0, now, now);
+                    "stream-other", "jti-batch-other", SsfEventStatus.PENDING, 0, now, now);
 
             em(session).flush();
             em(session).clear();
@@ -475,13 +475,13 @@ public class SsfEventStoreTests {
             // current state (unlike stream-disable, which must preserve
             // DELIVERED + DEAD_LETTER for audit/dedup).
             persistRaw(session, realmId, "client-all", "stream-a", "jti-all-pending",
-                    SsfPendingEventStatus.PENDING, 0, now, now);
+                    SsfEventStatus.PENDING, 0, now, now);
             persistRaw(session, realmId, "client-all", "stream-a", "jti-all-held",
-                    SsfPendingEventStatus.HELD, 0, now, now);
+                    SsfEventStatus.HELD, 0, now, now);
             persistRaw(session, realmId, "client-all", "stream-a", "jti-all-delivered",
-                    SsfPendingEventStatus.DELIVERED, 1, now, now);
+                    SsfEventStatus.DELIVERED, 1, now, now);
             persistRaw(session, realmId, "client-all", "stream-a", "jti-all-dead",
-                    SsfPendingEventStatus.DEAD_LETTER, 8, now, now);
+                    SsfEventStatus.DEAD_LETTER, 8, now, now);
 
             em(session).flush();
             em(session).clear();
@@ -502,10 +502,10 @@ public class SsfEventStoreTests {
                 Instant now = Instant.now();
                 for (int i = 0; i < 5; i++) {
                     persistRaw(session, realmId, "c" + (i % 2), "stream-r", "jti-realm-batch-" + i,
-                            SsfPendingEventStatus.PENDING, 0, now, now);
+                            SsfEventStatus.PENDING, 0, now, now);
                 }
                 SsfEventEntity keeper = persistRaw(session, otherRealmId, "c-other",
-                        "stream-other", "jti-other-realm", SsfPendingEventStatus.PENDING, 0, now, now);
+                        "stream-other", "jti-other-realm", SsfEventStatus.PENDING, 0, now, now);
 
                 em(session).flush();
                 em(session).clear();
@@ -558,10 +558,10 @@ public class SsfEventStoreTests {
             Instant now = Instant.now();
             for (int i = 0; i < 12; i++) {
                 persistRaw(session, realmId, "client-task", "stream-t", "jti-task-" + i,
-                        SsfPendingEventStatus.PENDING, 0, now, now);
+                        SsfEventStatus.PENDING, 0, now, now);
             }
             persistRaw(session, realmId, "client-keeper", "stream-k", "jti-keeper",
-                    SsfPendingEventStatus.PENDING, 0, now, now);
+                    SsfEventStatus.PENDING, 0, now, now);
         });
 
         // Run the task from a fresh tx; the task itself opens its own
@@ -579,7 +579,7 @@ public class SsfEventStoreTests {
             long remaining = em(session)
                     .createNamedQuery("SsfEventEntity.countByClientAndStatus", Long.class)
                     .setParameter("clientId", "client-task")
-                    .setParameter("status", SsfPendingEventStatus.PENDING)
+                    .setParameter("status", SsfEventStatus.PENDING)
                     .getSingleResult();
             Assertions.assertEquals(0, remaining,
                     "cleanup task must drain all rows for the target client");
@@ -587,7 +587,7 @@ public class SsfEventStoreTests {
             long keeperRows = em(session)
                     .createNamedQuery("SsfEventEntity.countByClientAndStatus", Long.class)
                     .setParameter("clientId", "client-keeper")
-                    .setParameter("status", SsfPendingEventStatus.PENDING)
+                    .setParameter("status", SsfEventStatus.PENDING)
                     .getSingleResult();
             Assertions.assertEquals(1, keeperRows,
                     "rows for other clients must not be touched by the task");
@@ -602,7 +602,7 @@ public class SsfEventStoreTests {
             Instant now = Instant.now();
             for (int i = 0; i < 10; i++) {
                 persistRaw(session, realmId, "client-cap", "stream-c", "jti-cap-" + i,
-                        SsfPendingEventStatus.PENDING, 0, now, now);
+                        SsfEventStatus.PENDING, 0, now, now);
             }
         });
 
@@ -619,7 +619,7 @@ public class SsfEventStoreTests {
             long remaining = em(session)
                     .createNamedQuery("SsfEventEntity.countByClientAndStatus", Long.class)
                     .setParameter("clientId", "client-cap")
-                    .setParameter("status", SsfPendingEventStatus.PENDING)
+                    .setParameter("status", SsfEventStatus.PENDING)
                     .getSingleResult();
             Assertions.assertEquals(4, remaining,
                     "task must stop after maxBatches × batchSize rows even if more remain");
@@ -635,10 +635,10 @@ public class SsfEventStoreTests {
                 Instant now = Instant.now();
                 for (int i = 0; i < 4; i++) {
                     persistRaw(session, realmId, "c" + (i % 2), "s", "jti-realmdrain-" + i,
-                            SsfPendingEventStatus.PENDING, 0, now, now);
+                            SsfEventStatus.PENDING, 0, now, now);
                 }
                 persistRaw(session, otherRealmId, "co", "so", "jti-realmdrain-other",
-                        SsfPendingEventStatus.PENDING, 0, now, now);
+                        SsfEventStatus.PENDING, 0, now, now);
             });
 
             runOnServer.run(session -> new SsfOutboxCleanupTask(session.getKeycloakSessionFactory(),
@@ -656,7 +656,7 @@ public class SsfEventStoreTests {
                 long surviving = em(session)
                         .createNamedQuery("SsfEventEntity.countByClientAndStatus", Long.class)
                         .setParameter("clientId", "co")
-                        .setParameter("status", SsfPendingEventStatus.PENDING)
+                        .setParameter("status", SsfEventStatus.PENDING)
                         .getSingleResult();
                 Assertions.assertEquals(1, surviving,
                         "rows in other realms must survive");
@@ -682,7 +682,7 @@ public class SsfEventStoreTests {
                                                     String clientId,
                                                     String streamId,
                                                     String jti,
-                                                    SsfPendingEventStatus status,
+                                                    SsfEventStatus status,
                                                     int attempts,
                                                     Instant nextAttemptAt,
                                                     Instant createdAt) {
