@@ -20,14 +20,14 @@
         eventually transitioned to DEAD_LETTER for admin visibility.
 
         See:
-          - org.keycloak.ssf.transmitter.outbox.SsfEventEntity
+          - org.keycloak.ssf.transmitter.outbox.SsfPendingEventEntity
           - org.keycloak.ssf.transmitter.outbox.SsfPushOutboxDrainerTask
     -->
     <changeSet author="keycloak" id="ssf-1.0.0-outbox">
 
-        <createTable tableName="SSF_EVENT">
+        <createTable tableName="SSF_PENDING_EVENT">
             <column name="ID" type="VARCHAR(36)">
-                <constraints nullable="false" primaryKey="true" primaryKeyName="PK_SSF_EVENT"/>
+                <constraints nullable="false" primaryKey="true" primaryKeyName="PK_SSF_PENDING_EVENT"/>
             </column>
             <column name="REALM_ID" type="VARCHAR(36)">
                 <constraints nullable="false"/>
@@ -73,19 +73,19 @@
 
         <!-- Dedup: one outstanding row per (client, jti). -->
         <addUniqueConstraint
-                tableName="SSF_EVENT"
+                tableName="SSF_PENDING_EVENT"
                 columnNames="CLIENT_ID, JTI"
-                constraintName="UC_SSF_EVENT_CLIENT_JTI"/>
+                constraintName="UC_SSF_PENDING_CLIENT_JTI"/>
 
         <!-- Drainer query: WHERE status=? AND delivery_method=? AND next_attempt_at<=? -->
-        <createIndex tableName="SSF_EVENT" indexName="IDX_SSF_EVENT_DRAIN">
+        <createIndex tableName="SSF_PENDING_EVENT" indexName="IDX_SSF_PENDING_DRAIN">
             <column name="STATUS"/>
             <column name="DELIVERY_METHOD"/>
             <column name="NEXT_ATTEMPT_AT"/>
         </createIndex>
 
         <!-- Admin UI / poll-endpoint: per-client scope. -->
-        <createIndex tableName="SSF_EVENT" indexName="IDX_SSF_EVENT_CLIENT">
+        <createIndex tableName="SSF_PENDING_EVENT" indexName="IDX_SSF_PENDING_CLIENT">
             <column name="CLIENT_ID"/>
             <column name="STATUS"/>
         </createIndex>
@@ -95,7 +95,7 @@
             is a plain column here (no FK), so a RealmRemovedEvent listener
             runs the purge explicitly when a realm is deleted.
         -->
-        <createIndex tableName="SSF_EVENT" indexName="IDX_SSF_EVENT_REALM">
+        <createIndex tableName="SSF_PENDING_EVENT" indexName="IDX_SSF_PENDING_REALM">
             <column name="REALM_ID"/>
             <column name="STATUS"/>
         </createIndex>

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!--
-    Partition-friendly tweaks to SSF_EVENT. None of the changes
+    Partition-friendly tweaks to SSF_PENDING_EVENT. None of the changes
     required for non-partitioned deployments — the schema works exactly the
     same as before. They unlock declarative table partitioning on
     PostgreSQL / MySQL / Oracle for operators that want it (see
@@ -14,7 +14,7 @@
     neither of which includes a partition-friendly column. Promoting both
     to include `created_at` is backwards-compatible (`id` remains UUID-
     unique on its own; the explicit dedup lookup in
-    `SsfEventStore.enqueuePending*` still does the (client_id, jti)
+    `SsfPendingEventStore.enqueuePending*` still does the (client_id, jti)
     check before insert) and does not break dialects that do not partition
     (H2, older Oracle).
 -->
@@ -32,26 +32,26 @@
             without further DDL. Same constraint name so non-partitioned
             deployments see no observable change.
         -->
-        <dropPrimaryKey tableName="SSF_EVENT"
-                        constraintName="PK_SSF_EVENT"/>
-        <addPrimaryKey tableName="SSF_EVENT"
+        <dropPrimaryKey tableName="SSF_PENDING_EVENT"
+                        constraintName="PK_SSF_PENDING_EVENT"/>
+        <addPrimaryKey tableName="SSF_PENDING_EVENT"
                        columnNames="ID, CREATED_AT"
-                       constraintName="PK_SSF_EVENT"/>
+                       constraintName="PK_SSF_PENDING_EVENT"/>
 
         <!--
             Same rationale for the dedup unique constraint. The application-
             level dedup is the explicit findByClientAndJti lookup in
-            SsfEventStore.enqueuePending*; the DB-level unique is the
+            SsfPendingEventStore.enqueuePending*; the DB-level unique is the
             safety net. Adding created_at lets the safety-net constraint
             survive partitioning at the cost of theoretically allowing the
             same (client_id, jti) twice if their created_at differ — which
             the application code never does.
         -->
-        <dropUniqueConstraint tableName="SSF_EVENT"
-                              constraintName="UC_SSF_EVENT_CLIENT_JTI"/>
-        <addUniqueConstraint tableName="SSF_EVENT"
+        <dropUniqueConstraint tableName="SSF_PENDING_EVENT"
+                              constraintName="UC_SSF_PENDING_CLIENT_JTI"/>
+        <addUniqueConstraint tableName="SSF_PENDING_EVENT"
                              columnNames="CLIENT_ID, JTI, CREATED_AT"
-                             constraintName="UC_SSF_EVENT_CLIENT_JTI"/>
+                             constraintName="UC_SSF_PENDING_CLIENT_JTI"/>
 
     </changeSet>
 
@@ -66,11 +66,11 @@
               ORDER BY next_attempt_at ASC
 
             Once DELIVERED rows accumulate (audit retention, anything more
-            than minutes), the existing IDX_SSF_EVENT_DRAIN grows linearly
+            than minutes), the existing IDX_SSF_PENDING_DRAIN grows linearly
             with the table while the hot working set stays tiny. The partial
             index is bounded by the actual PENDING+PUSH cardinality —
             typically <1% of the table on healthy deployments. The full
-            IDX_SSF_EVENT_DRAIN index from ssf-changelog-1.0.0 is kept in
+            IDX_SSF_PENDING_DRAIN index from ssf-changelog-1.0.0 is kept in
             place: it covers other STATUS / DELIVERY_METHOD combinations
             (POLL when that ships, DEAD_LETTER reconciliation queries) and
             stays the only available index on dialects without partial-index
@@ -80,12 +80,12 @@
             against environments that may have applied the index manually.
         -->
         <sql>
-            CREATE INDEX IF NOT EXISTS IDX_SSF_EVENT_DRAIN_HOT
-                ON SSF_EVENT (NEXT_ATTEMPT_AT)
+            CREATE INDEX IF NOT EXISTS IDX_SSF_PENDING_DRAIN_HOT
+                ON SSF_PENDING_EVENT (NEXT_ATTEMPT_AT)
                 WHERE STATUS = 'PENDING' AND DELIVERY_METHOD = 'PUSH'
         </sql>
         <rollback>
-            DROP INDEX IF EXISTS IDX_SSF_EVENT_DRAIN_HOT
+            DROP INDEX IF EXISTS IDX_SSF_PENDING_DRAIN_HOT
         </rollback>
 
     </changeSet>

@@ -17,5 +17,6 @@
 
     <include file="META-INF/ssf-changelog-1.0.0.xml"/>
     <include file="META-INF/ssf-changelog-1.0.1.xml"/>
+    <include file="META-INF/ssf-changelog-1.0.2.xml"/>
 
 </databaseChangeLog>
