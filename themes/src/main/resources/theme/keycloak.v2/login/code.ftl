@@ -13,6 +13,7 @@
                 <p>${msg("copyCodeInstruction")}</p>
                 <@field.clipboard name="code" label="" ariaLabel=msg("codeSuccess") value=code.code />
                 <script type="module">
+                    <#outputformat "JavaScript">
                     (() => {
                         const copyButton = document.getElementById('kc-code-copy-button');
                         const toggleButton = document.getElementById('kc-code-toggle');
@@ -83,10 +84,11 @@
                         // Reset button after 2 seconds
                         setTimeout(() => {
                             button.innerHTML = originalIcon;
-                            button.setAttribute('aria-label', '${msg("code-copy-label")}');
+                            button.setAttribute('aria-label', ${msg("code-copy-label")?c});
                             button.disabled = false;
                         }, 2000);
                     }
+                    </#outputformat>
                 </script>
             <#else>
                 <p id="error">${code.error}</p>
