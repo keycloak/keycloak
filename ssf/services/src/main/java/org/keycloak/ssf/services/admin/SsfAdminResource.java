@@ -1,5 +1,6 @@
 package org.keycloak.ssf.services.admin;
 
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
@@ -16,10 +17,12 @@ import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
+import org.keycloak.events.admin.OperationType;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.AdminEventBuilder;
 import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
@@ -78,6 +81,7 @@ import org.jboss.logging.Logger;
 public class SsfAdminResource {
 
     private static final Logger log = Logger.getLogger(SsfAdminResource.class);
+    public static final String SSF_SYNTHETIC_EVENT_TYPE = "SSF_SYNTHETIC_EVENT";
 
     protected final KeycloakSession session;
 
@@ -115,6 +119,19 @@ public class SsfAdminResource {
 
     protected SsfStreamStore streamStore() {
         return transmitter.streamStore();
+    }
+
+    /**
+     * Builds a 400 BAD_REQUEST response carrying an {@code invalid_request}
+     * {@link SsfErrorRepresentation}. Used by {@link #emitEvent} to surface
+     * each {@link EmitEventStatus} client-error category with its own
+     * default message while preserving any service-supplied detail.
+     */
+    protected Response invalidRequest(String message, String fallback) {
+        return Response.status(Response.Status.BAD_REQUEST)
+                .entity(new SsfErrorRepresentation("invalid_request",
+                        message != null ? message : fallback))
+                .build();
     }
 
     /**
@@ -759,23 +776,89 @@ public class SsfAdminResource {
                 emitResult.status(),
                 emitResult.jti());
 
-        // INVALID_REQUEST from the emitter service typically means the
-        // event payload didn't deserialize against the registered class
-        // for the eventType. Surface as 400 with the registry's error
-        // message so the caller can fix the payload.
-        if (emitResult.status() == EmitEventStatus.INVALID_REQUEST) {
-            return Response.status(Response.Status.BAD_REQUEST)
-                    .entity(new SsfErrorRepresentation("invalid_request",
-                            emitResult.message() != null
-                                    ? emitResult.message()
-                                    : "Event payload could not be deserialized for the given eventType"))
-                    .build();
+        // Map the emitter outcome to an HTTP response. Client-error
+        // categories surface as 400 with a category-specific default
+        // message (any service-supplied {@code emitResult.message()}
+        // wins). Filter-drop categories return 200 like a successful
+        // dispatch — the request itself was well-formed and accepted,
+        // it just didn't produce a SET on the wire by policy. The
+        // explicit listing of every {@link EmitEventStatus} value
+        // makes adding a new status a compile-time visible change.
+        String emitMessage = emitResult.message();
+        switch (emitResult.status()) {
+            case INVALID_REQUEST:
+                return invalidRequest(emitMessage,
+                        "Event payload could not be deserialized for the given eventType");
+            case INVALID_EVENT_DATA:
+                return invalidRequest(emitMessage, "Invalid event data");
+            case UNKNOWN_EVENT_TYPE:
+                return invalidRequest(emitMessage, "Unknown eventType");
+            case EVENT_TYPE_NOT_EMITTABLE:
+                return invalidRequest(emitMessage, "Requested event type not emittable");
+            case SUBJECT_NOT_FOUND:
+                return invalidRequest(emitMessage,
+                        "Subject referenced by the request does not exist");
+            case STREAM_NOT_FOUND:
+                // Defensive — the early stream check above usually catches
+                // this before emit() runs, but emit() can also return it
+                // (e.g. on a stream that was deleted between check and emit).
+                return invalidRequest(emitMessage,
+                        "No SSF stream registered for client");
+            case DISPATCHED:
+            case DROPPED_UNSUBSCRIBED:
+            case DROPPED_FILTERED:
+                // Fall through to the shared audit-then-200 path below so
+                // every accepted invocation produces an admin event,
+                // regardless of whether the SET was actually dispatched
+                // or filter-dropped. The drop reason is captured in the
+                // audited representation via {@code status}.
+                break;
         }
+
+        // Audit the synthetic emission. Logged at the API-call granularity
+        // (one entry per accepted /events/emit invocation regardless of
+        // whether the SET was DISPATCHED or filter-dropped) so the admin
+        // event log mirrors what the operator did, not what the dispatcher
+        // chose to do downstream — the latter is captured in the result
+        // `status` carried in the representation.
+        //
+        // Representation is a slim summary (event type, subject reference,
+        // result status + jti). We deliberately do NOT include the verbatim
+        // event body from the request, which can be arbitrarily large and
+        // may carry payload-specific PII; admins who need that detail can
+        // still grep the SSF metric / outbox row by jti.
+        Map<String, Object> auditRep = createEmitEventAuditRepresentation(request, emitResult);
+        UserModel user = auth.adminAuth().getUser();
+        adminEvent.operation(OperationType.ACTION)
+                .resource(SSF_SYNTHETIC_EVENT_TYPE)
+                .resourcePath("ssf", "clients", receiverClient.getClientId(), "events", "emit")
+                .authUser(user)
+                .representation(auditRep)
+                .success();
 
         return Response.ok(new SsfEmitEventResponse(
                 emitResult.status().wireValue(),
                 emitResult.jti(),
                 emitResult.message())).build();
+    }
+
+    protected Map<String, Object> createEmitEventAuditRepresentation(SsfEmitEventRequest request, EmitEventResult emitResult) {
+        Map<String, Object> auditRep = new LinkedHashMap<>();
+        auditRep.put("eventType", request.getEventType());
+        if (request.getSubjectType() != null) {
+            auditRep.put("subjectType", request.getSubjectType());
+        }
+        if (request.getSubjectValue() != null) {
+            auditRep.put("subjectValue", request.getSubjectValue());
+        }
+        auditRep.put("status", emitResult.status().wireValue());
+        if (emitResult.jti() != null) {
+            auditRep.put("jti", emitResult.jti());
+        }
+        if (request.getEvent() != null) {
+            auditRep.put("eventData", request.getEvent());
+        }
+        return auditRep;
     }
 
     /**
