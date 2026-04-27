@@ -8,7 +8,7 @@ import java.util.concurrent.ThreadLocalRandom;
 /**
  * Computes the exponential-backoff next-attempt timestamp for a failed
  * push delivery, and decides when a row has exhausted its budget and
- * should be transitioned to {@link SsfPendingEventStatus#DEAD_LETTER}.
+ * should be transitioned to {@link SsfEventStatus#DEAD_LETTER}.
  *
  * <p>Default Curve (attempt number → wait before next try):
  * <pre>
@@ -73,7 +73,7 @@ public class SsfPushOutboxBackoff {
     /**
      * Returns {@code true} if the row has burned through its retry
      * budget and the drainer should transition it to
-     * {@link SsfPendingEventStatus#DEAD_LETTER DEAD_LETTER} instead of
+     * {@link SsfEventStatus#DEAD_LETTER DEAD_LETTER} instead of
      * scheduling another attempt.
      *
      * @param attempts Number of attempts that have already been made

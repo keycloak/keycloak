@@ -8,7 +8,7 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.ssf.transmitter.metrics.SsfMetricsBinder;
 import org.keycloak.ssf.transmitter.outbox.SsfEventEntity;
-import org.keycloak.ssf.transmitter.outbox.SsfPendingEventStatus;
+import org.keycloak.ssf.transmitter.outbox.SsfEventStatus;
 import org.keycloak.ssf.transmitter.store.SsfEventStore;
 
 import org.jboss.logging.Logger;
@@ -113,7 +113,7 @@ public class PollDeliveryService {
         if (rows.size() == maxEvents) {
             long pending = eventStore.countByClientStatusAndMethod(
                     receiverClient.getId(),
-                    SsfPendingEventStatus.PENDING,
+                    SsfEventStatus.PENDING,
                     SsfEventEntity.DELIVERY_METHOD_POLL);
             moreAvailable = pending > rows.size();
         }

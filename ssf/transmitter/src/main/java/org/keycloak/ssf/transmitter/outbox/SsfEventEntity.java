@@ -19,7 +19,7 @@ import jakarta.persistence.UniqueConstraint;
  * whose delivery to a receiver is outstanding.
  *
  * <p>For push streams the drainer picks rows in
- * {@link SsfPendingEventStatus#PENDING PENDING} whose
+ * {@link SsfEventStatus#PENDING PENDING} whose
  * {@link #nextAttemptAt} is due, POSTs the SET to the receiver's push
  * endpoint, and transitions the row based on the response. For poll
  * streams (future) the poll endpoint reads pending rows scoped to the
@@ -278,7 +278,7 @@ public class SsfEventEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "STATUS", nullable = false, length = 16)
-    private SsfPendingEventStatus status;
+    private SsfEventStatus status;
 
     @Column(name = "ATTEMPTS", nullable = false)
     private int attempts;
@@ -321,8 +321,8 @@ public class SsfEventEntity {
     public String getDeliveryMethod() { return deliveryMethod; }
     public void setDeliveryMethod(String deliveryMethod) { this.deliveryMethod = deliveryMethod; }
 
-    public SsfPendingEventStatus getStatus() { return status; }
-    public void setStatus(SsfPendingEventStatus status) { this.status = status; }
+    public SsfEventStatus getStatus() { return status; }
+    public void setStatus(SsfEventStatus status) { this.status = status; }
 
     public int getAttempts() { return attempts; }
     public void setAttempts(int attempts) { this.attempts = attempts; }

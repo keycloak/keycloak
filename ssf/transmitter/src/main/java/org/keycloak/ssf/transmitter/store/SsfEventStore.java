@@ -17,7 +17,7 @@ import jakarta.persistence.TypedQuery;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.ssf.transmitter.outbox.SsfEventEntity;
-import org.keycloak.ssf.transmitter.outbox.SsfPendingEventStatus;
+import org.keycloak.ssf.transmitter.outbox.SsfEventStatus;
 
 import org.hibernate.LockMode;
 import org.hibernate.query.SelectionQuery;
@@ -56,15 +56,15 @@ public class SsfEventStore {
                                      String eventType,
                                      String encodedSet) {
         return enqueuePending(realmId, clientId, streamId, jti, eventType, encodedSet,
-                SsfEventEntity.DELIVERY_METHOD_PUSH, SsfPendingEventStatus.PENDING);
+                SsfEventEntity.DELIVERY_METHOD_PUSH, SsfEventStatus.PENDING);
     }
 
     /**
      * Enqueues a SET for asynchronous push delivery in the
-     * {@link SsfPendingEventStatus#HELD HELD} state — used when the
+     * {@link SsfEventStatus#HELD HELD} state — used when the
      * owning stream is in the SSF {@code paused} status. The drainer
      * skips HELD rows; {@link #releaseHeldForClient(String)} flips them
-     * to {@link SsfPendingEventStatus#PENDING PENDING} when the stream
+     * to {@link SsfEventStatus#PENDING PENDING} when the stream
      * is resumed.
      */
     public String enqueueHeldPush(String realmId,
@@ -74,7 +74,7 @@ public class SsfEventStore {
                                   String eventType,
                                   String encodedSet) {
         return enqueuePending(realmId, clientId, streamId, jti, eventType, encodedSet,
-                SsfEventEntity.DELIVERY_METHOD_PUSH, SsfPendingEventStatus.HELD);
+                SsfEventEntity.DELIVERY_METHOD_PUSH, SsfEventStatus.HELD);
     }
 
     /**
@@ -93,12 +93,12 @@ public class SsfEventStore {
                                      String eventType,
                                      String encodedSet) {
         return enqueuePending(realmId, clientId, streamId, jti, eventType, encodedSet,
-                SsfEventEntity.DELIVERY_METHOD_POLL, SsfPendingEventStatus.PENDING);
+                SsfEventEntity.DELIVERY_METHOD_POLL, SsfEventStatus.PENDING);
     }
 
     /**
      * Enqueues a SET for poll delivery in the
-     * {@link SsfPendingEventStatus#HELD HELD} state — see
+     * {@link SsfEventStatus#HELD HELD} state — see
      * {@link #enqueueHeldPush}. The poll endpoint skips HELD rows.
      */
     public String enqueueHeldPoll(String realmId,
@@ -108,7 +108,7 @@ public class SsfEventStore {
                                   String eventType,
                                   String encodedSet) {
         return enqueuePending(realmId, clientId, streamId, jti, eventType, encodedSet,
-                SsfEventEntity.DELIVERY_METHOD_POLL, SsfPendingEventStatus.HELD);
+                SsfEventEntity.DELIVERY_METHOD_POLL, SsfEventStatus.HELD);
     }
 
     /**
@@ -124,7 +124,7 @@ public class SsfEventStore {
                                     String eventType,
                                     String encodedSet,
                                     String deliveryMethod,
-                                    SsfPendingEventStatus initialStatus) {
+                                    SsfEventStatus initialStatus) {
         Objects.requireNonNull(realmId, "realmId");
         Objects.requireNonNull(clientId, "clientId");
         Objects.requireNonNull(jti, "jti");
@@ -180,7 +180,7 @@ public class SsfEventStore {
     public List<SsfEventEntity> lockDueForPush(int limit) {
         TypedQuery<SsfEventEntity> q = getEntityManager()
                 .createNamedQuery("SsfEventEntity.findDueForPush", SsfEventEntity.class)
-                .setParameter("status", SsfPendingEventStatus.PENDING)
+                .setParameter("status", SsfEventStatus.PENDING)
                 .setParameter("deliveryMethod", SsfEventEntity.DELIVERY_METHOD_PUSH)
                 .setParameter("now", Instant.now())
                 .setMaxResults(limit);
@@ -203,7 +203,7 @@ public class SsfEventStore {
     }
 
     public void markDelivered(SsfEventEntity entity) {
-        entity.setStatus(SsfPendingEventStatus.DELIVERED);
+        entity.setStatus(SsfEventStatus.DELIVERED);
         entity.setDeliveredAt(Instant.now());
         entity.setLastError(null);
         getEntityManager().merge(entity);
@@ -225,7 +225,7 @@ public class SsfEventStore {
                 .createNamedQuery("SsfEventEntity.findPendingForReceiverPoll", SsfEventEntity.class)
                 .setParameter("clientId", clientId)
                 .setParameter("deliveryMethod", SsfEventEntity.DELIVERY_METHOD_POLL)
-                .setParameter("status", SsfPendingEventStatus.PENDING)
+                .setParameter("status", SsfEventStatus.PENDING)
                 .setMaxResults(limit);
         // Same Hibernate hook the PUSH drainer uses — see lockDueForPush
         // for the SKIP LOCKED rationale.
@@ -238,7 +238,7 @@ public class SsfEventStore {
      * the poll endpoint to decide whether to set {@code moreAvailable=true}
      * after returning a batch shorter than the read query's limit.
      */
-    public long countByClientStatusAndMethod(String clientId, SsfPendingEventStatus status, String deliveryMethod) {
+    public long countByClientStatusAndMethod(String clientId, SsfEventStatus status, String deliveryMethod) {
         Objects.requireNonNull(clientId, "clientId");
         Objects.requireNonNull(status, "status");
         Objects.requireNonNull(deliveryMethod, "deliveryMethod");
@@ -278,7 +278,7 @@ public class SsfEventStore {
                 .setParameter("clientId", clientId)
                 .setParameter("jtis", jtis)
                 .setParameter("deliveryMethod", SsfEventEntity.DELIVERY_METHOD_POLL)
-                .setParameter("status", SsfPendingEventStatus.PENDING)
+                .setParameter("status", SsfEventStatus.PENDING)
                 .getResultList();
 
         if (rows.isEmpty()) {
@@ -298,7 +298,7 @@ public class SsfEventStore {
      * Receiver-driven NACK for poll-delivered rows. Each entry of
      * {@code errorByJti} matches a {@code PENDING} POLL row owned by
      * the calling client; matched rows transition to
-     * {@link SsfPendingEventStatus#DEAD_LETTER DEAD_LETTER} with the
+     * {@link SsfEventStatus#DEAD_LETTER DEAD_LETTER} with the
      * receiver-supplied error message recorded in {@code last_error}.
      *
      * <p>For POLL rows, DEAD_LETTER is reached only via this explicit
@@ -320,7 +320,7 @@ public class SsfEventStore {
                 .setParameter("clientId", clientId)
                 .setParameter("jtis", errorByJti.keySet())
                 .setParameter("deliveryMethod", SsfEventEntity.DELIVERY_METHOD_POLL)
-                .setParameter("status", SsfPendingEventStatus.PENDING)
+                .setParameter("status", SsfEventStatus.PENDING)
                 .getResultList();
 
         if (rows.isEmpty()) {
@@ -360,9 +360,9 @@ public class SsfEventStore {
     }
 
     /**
-     * Bulk-transitions all {@link SsfPendingEventStatus#HELD HELD} rows
+     * Bulk-transitions all {@link SsfEventStatus#HELD HELD} rows
      * for the given receiver client back to
-     * {@link SsfPendingEventStatus#PENDING PENDING}. Invoked from
+     * {@link SsfEventStatus#PENDING PENDING}. Invoked from
      * {@code StreamService.updateStreamStatus} when a stream is resumed
      * (status returns to {@code enabled}).
      *
@@ -377,8 +377,8 @@ public class SsfEventStore {
         Objects.requireNonNull(clientId, "clientId");
         int released = getEntityManager()
                 .createNamedQuery("SsfEventEntity.releaseHeldForClient")
-                .setParameter("pending", SsfPendingEventStatus.PENDING)
-                .setParameter("held", SsfPendingEventStatus.HELD)
+                .setParameter("pending", SsfEventStatus.PENDING)
+                .setParameter("held", SsfEventStatus.HELD)
                 .setParameter("clientId", clientId)
                 .setParameter("now", Instant.now())
                 .executeUpdate();
@@ -389,9 +389,9 @@ public class SsfEventStore {
     }
 
     /**
-     * Bulk-transitions all {@link SsfPendingEventStatus#PENDING PENDING}
+     * Bulk-transitions all {@link SsfEventStatus#PENDING PENDING}
      * rows for the given receiver client to
-     * {@link SsfPendingEventStatus#HELD HELD}. Invoked from
+     * {@link SsfEventStatus#HELD HELD}. Invoked from
      * {@code StreamService.updateStreamStatus} when a stream leaves
      * {@code enabled} (transitions to {@code paused} or {@code disabled})
      * so events already queued before the transition stop being delivered
@@ -403,8 +403,8 @@ public class SsfEventStore {
         Objects.requireNonNull(clientId, "clientId");
         int held = getEntityManager()
                 .createNamedQuery("SsfEventEntity.holdPendingForClient")
-                .setParameter("held", SsfPendingEventStatus.HELD)
-                .setParameter("pending", SsfPendingEventStatus.PENDING)
+                .setParameter("held", SsfEventStatus.HELD)
+                .setParameter("pending", SsfEventStatus.PENDING)
                 .setParameter("clientId", clientId)
                 .executeUpdate();
         if (held > 0) {
@@ -414,16 +414,16 @@ public class SsfEventStore {
     }
 
     /**
-     * Drops every undelivered ({@link SsfPendingEventStatus#PENDING PENDING}
-     * or {@link SsfPendingEventStatus#HELD HELD}) row for the receiver.
+     * Drops every undelivered ({@link SsfEventStatus#PENDING PENDING}
+     * or {@link SsfEventStatus#HELD HELD}) row for the receiver.
      * Invoked from {@code StreamService.updateStreamStatus} when a stream
      * transitions to {@code disabled} — the SSF spec forbids both
      * transmission and holding for disabled streams, so the in-flight
      * backlog must be discarded rather than parked.
      *
-     * <p>{@link SsfPendingEventStatus#DELIVERED DELIVERED} rows are kept
+     * <p>{@link SsfEventStatus#DELIVERED DELIVERED} rows are kept
      * for {@code jti}-dedup coverage and
-     * {@link SsfPendingEventStatus#DEAD_LETTER DEAD_LETTER} rows are kept
+     * {@link SsfEventStatus#DEAD_LETTER DEAD_LETTER} rows are kept
      * for post-failure audit; only the in-flight backlog is purged.
      *
      * @return the number of rows that were deleted.
@@ -434,7 +434,7 @@ public class SsfEventStore {
                 .createNamedQuery("SsfEventEntity.deleteUndeliveredForClient")
                 .setParameter("clientId", clientId)
                 .setParameter("statuses",
-                        java.util.List.of(SsfPendingEventStatus.PENDING, SsfPendingEventStatus.HELD))
+                        java.util.List.of(SsfEventStatus.PENDING, SsfEventStatus.HELD))
                 .executeUpdate();
         if (deleted > 0) {
             log.debugf("SSF outbox discarded %d undelivered rows for client %s", deleted, clientId);
@@ -464,7 +464,7 @@ public class SsfEventStore {
                 .setParameter("clientId", clientId)
                 .setParameter("newMethod", newDeliveryMethod)
                 .setParameter("statuses",
-                        java.util.List.of(SsfPendingEventStatus.PENDING, SsfPendingEventStatus.HELD))
+                        java.util.List.of(SsfEventStatus.PENDING, SsfEventStatus.HELD))
                 .executeUpdate();
         if (migrated > 0) {
             log.debugf("SSF outbox migrated %d row(s) for client %s to delivery method %s",
@@ -500,7 +500,7 @@ public class SsfEventStore {
         Map<RealmStatusKey, Long> result = new HashMap<>(rows.size());
         for (Object[] row : rows) {
             String realmId = (String) row[0];
-            SsfPendingEventStatus status = (SsfPendingEventStatus) row[1];
+            SsfEventStatus status = (SsfEventStatus) row[1];
             Long count = (Long) row[2];
             result.put(new RealmStatusKey(realmId, status), count);
         }
@@ -512,7 +512,7 @@ public class SsfEventStore {
      * contract consumed by {@code SsfMetricsBinder} — adding fields
      * here needs a coordinated update on the metrics side.
      */
-    public record RealmStatusKey(String realmId, SsfPendingEventStatus status) {
+    public record RealmStatusKey(String realmId, SsfEventStatus status) {
     }
 
     public void recordFailure(SsfEventEntity entity, Instant nextAttemptAt, String lastError) {
@@ -524,7 +524,7 @@ public class SsfEventStore {
 
     public void markDeadLetter(SsfEventEntity entity, String lastError) {
         entity.setAttempts(entity.getAttempts() + 1);
-        entity.setStatus(SsfPendingEventStatus.DEAD_LETTER);
+        entity.setStatus(SsfEventStatus.DEAD_LETTER);
         entity.setLastError(truncateError(lastError));
         getEntityManager().merge(entity);
     }
@@ -608,7 +608,7 @@ public class SsfEventStore {
     public List<Object[]> findRealmClientPairsForPurgeScan() {
         return getEntityManager()
                 .createNamedQuery("SsfEventEntity.findRealmClientPairsForPurgeScan", Object[].class)
-                .setParameter("delivered", SsfPendingEventStatus.DELIVERED)
+                .setParameter("delivered", SsfEventStatus.DELIVERED)
                 .getResultList();
     }
 
@@ -627,7 +627,7 @@ public class SsfEventStore {
         int purged = getEntityManager()
                 .createNamedQuery("SsfEventEntity.purgeStaleForClient")
                 .setParameter("clientId", clientId)
-                .setParameter("delivered", SsfPendingEventStatus.DELIVERED)
+                .setParameter("delivered", SsfEventStatus.DELIVERED)
                 .setParameter("cutoff", cutoff)
                 .executeUpdate();
         if (purged > 0) {
@@ -639,7 +639,7 @@ public class SsfEventStore {
     public int purgeDeliveredOlderThan(Instant cutoff) {
         int purged = getEntityManager()
                 .createNamedQuery("SsfEventEntity.deletePurgedDelivered")
-                .setParameter("status", SsfPendingEventStatus.DELIVERED)
+                .setParameter("status", SsfEventStatus.DELIVERED)
                 .setParameter("olderThan", cutoff)
                 .executeUpdate();
         if (purged > 0) {
@@ -649,7 +649,7 @@ public class SsfEventStore {
     }
 
     /**
-     * Purges {@link SsfPendingEventStatus#DEAD_LETTER DEAD_LETTER} rows
+     * Purges {@link SsfEventStatus#DEAD_LETTER DEAD_LETTER} rows
      * older than {@code cutoff}, anchored on {@code createdAt} (see the
      * named query javadoc on {@link SsfEventEntity} for the
      * rationale).
@@ -657,7 +657,7 @@ public class SsfEventStore {
     public int purgeDeadLetterOlderThan(Instant cutoff) {
         int purged = getEntityManager()
                 .createNamedQuery("SsfEventEntity.deletePurgedDeadLetter")
-                .setParameter("status", SsfPendingEventStatus.DEAD_LETTER)
+                .setParameter("status", SsfEventStatus.DEAD_LETTER)
                 .setParameter("olderThan", cutoff)
                 .executeUpdate();
         if (purged > 0) {

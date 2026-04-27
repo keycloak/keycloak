@@ -26,7 +26,7 @@ package org.keycloak.ssf.transmitter.outbox;
  * {@code createdAt}) and then purged by the same housekeeping pass. Set
  * the retention to {@code 0} to retain dead-letters indefinitely.
  */
-public enum SsfPendingEventStatus {
+public enum SsfEventStatus {
 
     /**
      * Event is queued for delivery. The drainer picks up rows in this
