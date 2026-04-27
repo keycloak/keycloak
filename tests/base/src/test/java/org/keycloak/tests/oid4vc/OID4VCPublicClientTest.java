@@ -27,7 +27,6 @@ import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
-import org.keycloak.tests.oid4vc.OID4VCBasicWallet.AuthorizationEndpointRequest;
 import org.keycloak.tests.oid4vc.OID4VCIssuerTestBase.VCTestServerConfig;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
@@ -126,7 +125,7 @@ public class OID4VCPublicClientTest extends OID4VCIssuerTestBase {
 
         // Send AuthorizationRequest without required PKCE
         //
-        AuthorizationEndpointRequest authRequest = wallet
+        OID4VCAuthorizationRequest authRequest = wallet
                 .authorizationRequest()
                 .scope(ctx.getScope());
 

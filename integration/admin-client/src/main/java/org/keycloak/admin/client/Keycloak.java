@@ -36,7 +36,7 @@ import org.keycloak.admin.client.token.TokenManager;
 import static org.keycloak.OAuth2Constants.PASSWORD;
 
 /**
- * Provides a Keycloak client. By default, this implementation uses a the default RestEasy client builder settings.
+ * Provides a Keycloak client. By default, this implementation uses the default RestEasy client builder settings.
  * To customize the underling client, use a {@link KeycloakBuilder} to create a Keycloak client.
  *
  * To read Responses, you can use {@link CreatedResponseUtil} for objects created

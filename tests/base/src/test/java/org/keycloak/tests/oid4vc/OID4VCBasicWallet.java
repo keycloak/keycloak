@@ -11,11 +11,12 @@ import java.util.Set;
 import java.util.function.Consumer;
 
 import org.keycloak.OID4VCConstants;
-import org.keycloak.admin.client.Keycloak;
+import org.keycloak.TokenVerifier;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.authentication.authenticators.client.AttestationBasedClientAuthenticator.ClientAttestationPoPJwt;
 import org.keycloak.crypto.AsymmetricSignatureSignerContext;
+import org.keycloak.common.VerificationException;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jwk.JWKBuilder;
@@ -27,6 +28,7 @@ import org.keycloak.protocol.oid4vc.model.CredentialOfferURI;
 import org.keycloak.protocol.oid4vc.model.CredentialRequest;
 import org.keycloak.protocol.oid4vc.model.CredentialResponse;
 import org.keycloak.protocol.oid4vc.model.CredentialResponse.Credential;
+import org.keycloak.protocol.oid4vc.model.CredentialScopeRepresentation;
 import org.keycloak.protocol.oid4vc.model.CredentialsOffer;
 import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
 import org.keycloak.protocol.oid4vc.model.ProofType;
@@ -35,13 +37,14 @@ import org.keycloak.protocol.oid4vc.model.SupportedCredentialConfiguration;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.sdjwt.vp.SdJwtVP;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.tests.oid4vc.abca.OIDCClientAttester;
 import org.keycloak.tests.oid4vc.abca.OIDCMockClientAttester;
+import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testsuite.util.oauth.AccessTokenRequest;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
-import org.keycloak.testsuite.util.oauth.LoginUrlBuilder;
 import org.keycloak.testsuite.util.oauth.PkceGenerator;
 import org.keycloak.testsuite.util.oauth.oid4vc.CredentialOfferRequest;
 import org.keycloak.testsuite.util.oauth.oid4vc.CredentialOfferResponse;
@@ -55,6 +58,7 @@ import org.keycloak.util.JsonSerialization;
 import static org.keycloak.OAuth2Constants.AUTHORIZATION_DETAILS;
 import static org.keycloak.authentication.authenticators.client.AttestationBasedClientAuthenticator.OAUTH_CLIENT_ATTESTATION_POP_JWT_TYPE;
 import static org.keycloak.constants.OID4VCIConstants.CREDENTIAL_OFFER_CREATE;
+import static org.keycloak.protocol.oid4vc.model.SupportedCredentialConfiguration.VERIFIABLE_CREDENTIAL_TYPE_KEY;
 import static org.keycloak.tests.oid4vc.OID4VCIssuerTestBase.TEST_PASSWORD;
 import static org.keycloak.tests.oid4vc.OID4VCIssuerTestBase.VCTestRealmConfig.TEST_REALM_NAME;
 import static org.keycloak.tests.oid4vc.OID4VCProofTestUtils.createRsaKeyPair;
@@ -82,17 +86,17 @@ import static org.junit.jupiter.api.Assertions.fail;
  * <p>It maintains internal session state (tracks logged-in users) to facilitate
  * automated cleanup and mimics the behavior of a mobile wallet app.
  *
- * @author <a href="mailto:tdiesler@ibm.com">Thomas Diesler</a>
+ * @author <a href="mailto:tdiesler@proton.me">Thomas Diesler</a>
  */
 public class OID4VCBasicWallet {
 
-    private final Keycloak keycloak;
+    private final ManagedRealm realm;
     private final OAuthClient oauth;
 
     final Set<String> loginUsers = new HashSet<>();
 
-    public OID4VCBasicWallet(Keycloak keycloak, OAuthClient oauth) {
-        this.keycloak = keycloak;
+    public OID4VCBasicWallet(ManagedRealm realm, OAuthClient oauth) {
+        this.realm = realm;
         this.oauth = oauth;
     }
 
@@ -267,9 +271,9 @@ public class OID4VCBasicWallet {
         return kw;
     }
 
-    public AuthorizationEndpointRequest authorizationRequest() {
-        AuthorizationEndpointRequest request = new AuthorizationEndpointRequest() {
-            public AuthorizationEndpointResponse send(String username, String password) {
+    public OID4VCAuthorizationRequest authorizationRequest() {
+        OID4VCAuthorizationRequest request = new OID4VCAuthorizationRequest(oauth) {
+            public OID4VCAuthorizationResponse send(String username, String password) {
                 loginUsers.add(username);
                 return super.send(username, password);
             }
@@ -326,6 +330,9 @@ public class OID4VCBasicWallet {
             public Oid4vcCredentialResponse send() {
                 Oid4vcCredentialResponse response = super.send();
                 ctx.putAttachment(CREDENTIALS_RESPONSE_ATTACHMENT_KEY, response);
+                if (response.isSuccess()) {
+                    ctx.addCredentials(response.getCredentialResponse().getCredentials());
+                }
                 return response;
             }
         };
@@ -361,6 +368,15 @@ public class OID4VCBasicWallet {
     }
 
     public Oid4vcCredentialResponse fetchCredentialByScope(OID4VCTestContext ctx, String scope) {
+        CredentialScopeRepresentation wasCredScope = ctx.getCredentialScope();
+        if (wasCredScope == null || !wasCredScope.getName().equals(scope)) {
+            var credScope = realm.admin().clientScopes().findAll().stream()
+                    .filter(it -> scope.equals(it.getName()))
+                    .map(CredentialScopeRepresentation::new)
+                    .findFirst()
+                    .orElseThrow(() -> new IllegalStateException("No such credential scope: " + scope));
+            ctx.withCredentialScope(credScope);
+        }
         String authCode = authorizationRequest()
                 .scope(scope)
                 .send(ctx.getHolder(), TEST_PASSWORD)
@@ -372,6 +388,37 @@ public class OID4VCBasicWallet {
                 .proofs(generateJwtProof(ctx))
                 .send();
         return credResponse;
+    }
+
+    /**
+     * [TODO] Get the Credential Presentation Request from the Verifier
+     */
+    public Object fetchCredentialPresentationRequest(OID4VCTestContext ctx, String vpReqUri) {
+        var credType = vpReqUri.split(":")[0];
+        return credType + ":CredentialPresentationRequestObject";
+    }
+
+    /**
+     * [TODO] Match the Credential Presentation Request
+     */
+    public List<Credential> matchCredentialPresentationRequest(OID4VCTestContext ctx, Object vpReqObj) {
+        var credType = String.valueOf(vpReqObj).split(":")[0];
+        List<Credential> matchingCredentials = ctx.findCredentials(vc -> {
+            if (vc.isSdJwt()) {
+                SdJwtVP sdJwtVP = SdJwtVP.of(String.valueOf(vc.getCredential()));
+                JsonWebToken sdJwt;
+                try {
+                    sdJwt = TokenVerifier.create(sdJwtVP.getIssuerSignedJWT().getJws(), JsonWebToken.class).getToken();
+                } catch (VerificationException e) {
+                    throw new RuntimeException(e);
+                }
+                Map<String, Object> otherClaims = sdJwt.getOtherClaims();
+                var vct = otherClaims.get(VERIFIABLE_CREDENTIAL_TYPE_KEY);
+                return credType.equals(vct);
+            }
+            return false;
+        });
+        return matchingCredentials;
     }
 
     /**
@@ -391,11 +438,11 @@ public class OID4VCBasicWallet {
      * @param username the username of the user to logout.
      */
     public void logout(String username) {
-        RealmResource realm = keycloak.realm(TEST_REALM_NAME);
-        UserRepresentation userRep = realm.users().search(username, true).stream()
+        RealmResource realmResource = realm.admin();
+        UserRepresentation userRep = realmResource.users().search(username, true).stream()
                 .findFirst()
                 .orElseThrow(() -> new RuntimeException("User not found for logout: " + username));
-        UserResource userResource = realm.users().get(userRep.getId());
+        UserResource userResource = realmResource.users().get(userRep.getId());
         userResource.logout();
     }
 
@@ -492,88 +539,5 @@ public class OID4VCBasicWallet {
         assertEquals(tokenAuthDetail, jwtAuthDetail);
 
         return accessToken;
-    }
-
-    /**
-     * The Authorization request/response follows the known pattern that we have for other message exchanges on
-     * 'OID4VCClient'. The response does not only capture a successful authorization, but (like the other APIs)
-     * also error cases, like ...
-     *
-     *      - login page does not get displayed, because of an invalid request
-     *      - invalid credentials on login page (i.e. redirect url without code)
-     *
-     * In all three cases (i.e. success + 2x error cases), we like to return a response as soon as we have it,
-     * instead of waiting for a timeout like we currently have with authorization through the 'OAuthClient'.
-     *
-     * This API also abstracts to the low level details of web driver and login forms that are specific for the interactive
-     * Authorization Code Flow. In future, we can use the same API for non-interactive flows (e.g. as required by EBSI)
-     *
-     * Historically, this Authorization request abstractions was with the 'OID4VCClient', rather than with the 'OAuthClient'
-     * because we did not want to expose all Keycloak tests to go through this still experimental code. It never got
-     * approved there and is now only available through the Wallet. We can assume that code similar to this would be found
-     * in a real OID4VCI Wallet.
-     *
-     * 'OID4VCPublicClientTest' covers authorization success and the error cases.
-     */
-    public class AuthorizationEndpointRequest {
-
-        private final LoginUrlBuilder loginForm;
-
-        public AuthorizationEndpointRequest() {
-            this.loginForm = oauth.loginForm();
-        }
-
-        public AuthorizationEndpointRequest authorizationDetails(OID4VCAuthorizationDetail authDetail) {
-            loginForm.authorizationDetails(List.of(authDetail));
-            return this;
-        }
-
-        public AuthorizationEndpointRequest codeChallenge(PkceGenerator pkce) {
-            loginForm.codeChallenge(pkce);
-            return this;
-        }
-
-        public AuthorizationEndpointRequest issuerState(String issuerState) {
-            loginForm.issuerState(issuerState);
-            return this;
-        }
-
-        public AuthorizationEndpointRequest request(String request) {
-            loginForm.request(request);
-            return this;
-        }
-
-        public AuthorizationEndpointRequest scope(String... scopes) {
-            if (scopes != null && scopes.length > 0) {
-                loginForm.scope(scopes);
-            }
-            return this;
-        }
-
-        public boolean openLoginForm() {
-            loginForm.open();
-            String currUrl = oauth.getDriver().getCurrentUrl();
-            return currUrl != null && !currUrl.contains("error=") && !currUrl.contains("error_description=");
-        }
-
-        public AuthorizationEndpointRequest fillLoginForm(String username, String password) {
-            oauth.fillLoginForm(username, password);
-            return this;
-        }
-
-        public AuthorizationEndpointResponse parseLoginResponse() {
-            return oauth.parseLoginResponse();
-        }
-
-        public AuthorizationEndpointResponse send(String username, String password) {
-            openLoginForm();
-            fillLoginForm(username, password);
-            return parseLoginResponse();
-        }
-
-        public AuthorizationEndpointResponse send() {
-            openLoginForm();
-            return parseLoginResponse();
-        }
     }
 }

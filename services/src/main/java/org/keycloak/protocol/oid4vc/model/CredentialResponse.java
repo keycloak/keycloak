@@ -20,8 +20,11 @@ package org.keycloak.protocol.oid4vc.model;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+
+import static org.keycloak.OID4VCConstants.SDJWT_DELIMITER;
 
 /**
  * Represents a CredentialResponse according to the OID4VCI Spec
@@ -79,6 +82,11 @@ public class CredentialResponse {
         public Credential setCredential(Object credential) {
             this.credential = credential;
             return this;
+        }
+
+        @JsonIgnore
+        public boolean isSdJwt() {
+            return String.valueOf(credential).indexOf(SDJWT_DELIMITER) > 0;
         }
     }
 }
