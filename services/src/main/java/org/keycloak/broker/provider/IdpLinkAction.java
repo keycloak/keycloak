@@ -81,6 +81,11 @@ public class IdpLinkAction implements RequiredActionProvider, RequiredActionFact
     }
 
     @Override
+    public boolean isOneTimeAction() {
+        return true;
+    }
+
+    @Override
     public void init(Config.Scope config) {
 
     }

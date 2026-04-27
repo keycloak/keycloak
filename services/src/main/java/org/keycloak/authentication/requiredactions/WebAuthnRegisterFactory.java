@@ -79,6 +79,11 @@ public class WebAuthnRegisterFactory implements RequiredActionFactory, Environme
     }
 
     @Override
+    public boolean isOneTimeAction() {
+        return true;
+    }
+
+    @Override
     public boolean isSupported(Config.Scope config) {
         return Profile.isFeatureEnabled(Profile.Feature.WEB_AUTHN);
     }

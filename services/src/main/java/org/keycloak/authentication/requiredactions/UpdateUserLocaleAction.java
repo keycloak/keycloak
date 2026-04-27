@@ -13,6 +13,11 @@ import org.keycloak.models.UserModel;
 public class UpdateUserLocaleAction implements RequiredActionProvider, RequiredActionFactory {
 
     @Override
+    public boolean isOneTimeAction() {
+        return true;
+    }
+
+    @Override
     public String getDisplayText() {
         return "Update User Locale";
     }

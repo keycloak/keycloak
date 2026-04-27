@@ -45,6 +45,11 @@ public class TermsAndConditions implements RequiredActionProvider, RequiredActio
     }
 
     @Override
+    public boolean isOneTimeAction() {
+        return true;
+    }
+
+    @Override
     public void init(Config.Scope config) {
 
     }

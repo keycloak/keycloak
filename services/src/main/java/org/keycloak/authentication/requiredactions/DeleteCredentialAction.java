@@ -63,6 +63,11 @@ public class DeleteCredentialAction implements RequiredActionProvider, RequiredA
     }
 
     @Override
+    public boolean isOneTimeAction() {
+        return true;
+    }
+
+    @Override
     public void init(Config.Scope config) {
 
     }

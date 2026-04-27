@@ -91,6 +91,11 @@ public class VerifyEmail implements RequiredActionProvider, RequiredActionFactor
     }
 
     @Override
+    public boolean isOneTimeAction() {
+        return true;
+    }
+
+    @Override
     public void requiredActionChallenge(RequiredActionContext context) {
         process(context, true);
     }
