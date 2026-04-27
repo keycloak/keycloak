@@ -1057,7 +1057,8 @@ public class TestingResourceProvider implements RealmResourceProvider {
         TruststoreProvider newTrustProvider = new FileTruststoreProvider(
                 origTrustProvider.getTruststore(), hostnamePolicy,
                 Collections.unmodifiableMap(origTrustProvider.getRootCertificates()),
-                Collections.unmodifiableMap(origTrustProvider.getIntermediateCertificates()));
+                Collections.unmodifiableMap(origTrustProvider.getIntermediateCertificates()),
+                null, null, null);
         fact.setProvider(newTrustProvider);
     }
 

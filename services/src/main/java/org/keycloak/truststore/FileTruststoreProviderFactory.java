@@ -42,6 +42,7 @@ import javax.security.auth.x500.X500Principal;
 import org.keycloak.Config;
 import org.keycloak.common.enums.HostnameVerificationPolicy;
 import org.keycloak.common.util.KeystoreUtil;
+import org.keycloak.config.HttpOptions;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.ProviderConfigProperty;
@@ -127,9 +128,34 @@ public class FileTruststoreProviderFactory implements TruststoreProviderFactory 
             }
         }
 
+        // load the HTTP trust-store if defined at startup
+        String httpsTrustStoreFile = config.root().get(HttpOptions.HTTPS_TRUST_STORE_FILE.getKey());
+        String httpsTrustStorePassword = config.root().get(HttpOptions.HTTPS_TRUST_STORE_PASSWORD.getKey());
+        String httpsTrustStoreType = config.root().get(HttpOptions.HTTPS_TRUST_STORE_TYPE.getKey());
+        KeyStore httpsTruststore = null;
+        TruststoreCertificatesLoader httpsCertsLoader = null;
+        if (httpsTrustStoreFile != null) {
+            try {
+                final String truststoreType = KeystoreUtil.getTruststoreType(httpsTrustStoreType, httpsTrustStoreFile, KeyStore.getDefaultType());
+                if (KeystoreUtil.TruststoreFormat.PEM.name().equalsIgnoreCase(truststoreType)) {
+                    httpsTruststore = TruststoreBuilder.createPkcs12KeyStore();
+                    TruststoreBuilder.mergePemFile(httpsTruststore, httpsTrustStoreFile, true);
+                } else {
+                    httpsTruststore = KeystoreUtil.loadKeyStore(httpsTrustStoreFile, httpsTrustStorePassword, httpsTrustStoreType);
+                }
+                httpsCertsLoader = new TruststoreCertificatesLoader(httpsTruststore);
+            } catch (Exception e) {
+                log.debugf(e, "Error loading HTTPS trust-store file '%s'", httpsTrustStoreFile);
+            }
+        }
+
         TruststoreCertificatesLoader certsLoader = new TruststoreCertificatesLoader(truststore);
-        provider = new FileTruststoreProvider(truststore, verificationPolicy, Collections.unmodifiableMap(certsLoader.trustedRootCerts)
-                , Collections.unmodifiableMap(certsLoader.intermediateCerts));
+        provider = new FileTruststoreProvider(truststore, verificationPolicy, Collections.unmodifiableMap(certsLoader.trustedRootCerts),
+                Collections.unmodifiableMap(certsLoader.intermediateCerts),
+                httpsTruststore,
+                httpsCertsLoader != null ? Collections.unmodifiableMap(httpsCertsLoader.trustedRootCerts) : null,
+                httpsCertsLoader != null ? Collections.unmodifiableMap(httpsCertsLoader.intermediateCerts) : null
+        );
         TruststoreProviderSingleton.set(provider);
         log.debugf("File truststore provider initialized: %s, Truststore type: %s",  new File(storepath).getAbsolutePath(), type);
     }

@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.keycloak.authentication.authenticators.client.X509ClientAuthenticator;
 import org.keycloak.authentication.authenticators.util.LoAUtil;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
@@ -200,6 +201,7 @@ public class DefaultClientValidationProvider implements ClientValidationProvider
         validateDefaultAcrValues(context);
         validateMinimumAcrValue(context);
         validateClientSessionTimeout(context);
+        validateX509Credentials(context);
 
         return context.toResult();
     }
@@ -517,6 +519,18 @@ public class DefaultClientValidationProvider implements ClientValidationProvider
             }
         }
 
+    }
+
+    private void validateX509Credentials(ValidationContext<ClientModel> context) {
+        ClientModel client = context.getObjectToValidate();
+        if (!client.isPublicClient() && !client.isBearerOnly() && X509ClientAuthenticator.PROVIDER_ID.equals(client.getClientAuthenticatorType())) {
+            if (StringUtil.isBlank(client.getAttribute(X509ClientAuthenticator.ATTR_SUBJECT_DN))) {
+                context.addError(X509ClientAuthenticator.ATTR_SUBJECT_DN, "Attribute 'x509.subjectdn' is compulsory for X.509 authenticator.");
+            }
+            if (StringUtil.isBlank(client.getAttribute(X509ClientAuthenticator.ATTR_CA_SUBJECT_DN))) {
+                context.addError(X509ClientAuthenticator.ATTR_CA_SUBJECT_DN, "Attribute 'x509.casubjectdn' is compulsory for X.509 authenticator.");
+            }
+        }
     }
 
     private Integer parseIntAttribute(String value) {
