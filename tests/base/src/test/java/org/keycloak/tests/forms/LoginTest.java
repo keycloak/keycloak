@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.testsuite.forms;
+package org.keycloak.tests.forms;
 
 import java.io.Closeable;
 import java.nio.charset.StandardCharsets;
@@ -51,19 +51,29 @@ import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.oauth.OAuthClient;
+import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
+import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.UserBuilder;
+import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
+import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
+import org.keycloak.testframework.ui.annotations.InjectWebDriver;
+import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
+import org.keycloak.tests.utils.LegacyRealmConfig;
 import org.keycloak.testsuite.AbstractChangeImportedUserPasswordsTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.admin.AdminApiUtil;
-import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
-import org.keycloak.testsuite.pages.AppPage;
-import org.keycloak.testsuite.pages.AppPage.RequestType;
-import org.keycloak.testsuite.pages.ErrorPage;
-import org.keycloak.testsuite.pages.LoginConfigTotpPage;
-import org.keycloak.testsuite.pages.LoginPage;
-import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
+import org.keycloak.testframework.ui.page.AppPage;
+import org.keycloak.testframework.ui.page.AppPage.RequestType;
+import org.keycloak.testframework.ui.page.ErrorPage;
+import org.keycloak.testframework.ui.page.LoginConfigTotpPage;
+import org.keycloak.testframework.ui.page.LoginPage;
+import org.keycloak.testframework.ui.page.LoginPasswordUpdatePage;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.AdminClientUtil;
@@ -77,9 +87,9 @@ import org.keycloak.testsuite.util.oauth.OAuthClient;
 
 import org.apache.commons.lang3.RandomStringUtils;
 import org.hamcrest.MatcherAssert;
-import org.jboss.arquillian.graphene.page.Page;
+import org.keycloak.testframework.ui.annotations.InjectPage;
 import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Assertions;
 import org.openqa.selenium.Cookie;
 import org.openqa.selenium.JavascriptExecutor;
@@ -103,56 +113,37 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
+@KeycloakIntegrationTest
 public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
 
-    @Override
-    public void configureTestRealm(RealmRepresentation testRealm) {
-        super.configureTestRealm(testRealm);
-        UserRepresentation user = UserBuilder.create()
-                                             .username("login-test")
-                                             .email("login@test.com")
-                                             .enabled(true)
-                                             .password(generatePassword("login-test"))
-                                             .build();
+    @InjectRealm(config = LoginRealmConfig.class)
+    ManagedRealm managedRealm;
 
-        UserRepresentation user2 = UserBuilder.create()
-                                              .username("login-test2")
-                                              .email("login2@test.com")
-                                              .enabled(true)
-                                              .password(generatePassword("login2-test"))
-                                              .build();
+    @InjectRunOnServer
+    RunOnServerClient runOnServer;
 
-        UserRepresentation admin = UserBuilder.create()
-                .username("admin")
-                .password(generatePassword("admin"))
-                .enabled(true)
-                .build();
-        HashMap<String, List<String>> clientRoles = new HashMap<>();
-        clientRoles.put("realm-management", Arrays.asList("realm-admin"));
-        admin.setClientRoles(clientRoles);
+    @InjectWebDriver
+    ManagedWebDriver driver;
 
-        RealmBuilder.edit(testRealm)
-                    .user(user)
-                    .user(user2)
-                    .user(admin);
-    }
+    @InjectOAuthClient
+    OAuthClient oauth;
 
     @Rule
     public AssertEvents events = new AssertEvents(this);
 
-    @Page
+    @InjectPage
     protected AppPage appPage;
 
-    @Page
+    @InjectPage
     protected LoginPage loginPage;
 
-    @Page
+    @InjectPage
     protected ErrorPage errorPage;
 
-    @Page
+    @InjectPage
     protected LoginPasswordUpdatePage updatePasswordPage;
 
-    @Page
+    @InjectPage
     protected LoginConfigTotpPage configTotpPage;
 
     @Rule
@@ -1138,8 +1129,43 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
         MatcherAssert.assertThat(authSessionId, AssertEvents.isSessionId());
         Assertions.assertNotNull(signature);
 
-        testingClient.server().run(session-> {
+        runOnServer.run(session-> {
            Assertions.assertNotNull(session.authenticationSessions().getRootAuthenticationSession(session.getContext().getRealm(), authSessionId));
         });
    }
+
+    private static class LoginRealmConfig extends LegacyRealmConfig {
+
+        @Override
+        public void configureTestRealm(RealmRepresentation testRealm) {
+            super.configureTestRealm(testRealm);
+            UserRepresentation user = UserBuilder.create()
+                                                 .username("login-test")
+                                                 .email("login@test.com")
+                                                 .enabled(true)
+                                                 .password(generatePassword("login-test"))
+                                                 .build();
+    
+            UserRepresentation user2 = UserBuilder.create()
+                                                  .username("login-test2")
+                                                  .email("login2@test.com")
+                                                  .enabled(true)
+                                                  .password(generatePassword("login2-test"))
+                                                  .build();
+    
+            UserRepresentation admin = UserBuilder.create()
+                    .username("admin")
+                    .password(generatePassword("admin"))
+                    .enabled(true)
+                    .build();
+            HashMap<String, List<String>> clientRoles = new HashMap<>();
+            clientRoles.put("realm-management", Arrays.asList("realm-admin"));
+            admin.setClientRoles(clientRoles);
+    
+            RealmBuilder.edit(testRealm)
+                        .user(user)
+                        .user(user2)
+                        .user(admin);
+        }
+    }
 }
