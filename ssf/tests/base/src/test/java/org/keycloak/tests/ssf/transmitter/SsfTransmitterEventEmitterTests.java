@@ -372,9 +372,9 @@ public class SsfTransmitterEventEmitterTests {
         String mgmtToken = obtainServiceAccountToken(MGMT_EMITTER, MGMT_EMITTER_SECRET);
         try (SimpleHttpResponse res = emit(mgmtToken, "NotARegisteredEvent", TEST_EMAIL,
                 Map.of())) {
-            Assertions.assertEquals(200, res.getStatus());
+            Assertions.assertEquals(400, res.getStatus());
             Assertions.assertEquals("unknown_event_type",
-                    res.asJson().get("status").asText(),
+                    res.asJson().get("error").asText(),
                     "unknown alias / URI should be reported distinctly");
         }
     }
@@ -485,9 +485,9 @@ public class SsfTransmitterEventEmitterTests {
         String mgmtToken = obtainServiceAccountToken(MGMT_EMITTER, MGMT_EMITTER_SECRET);
         try (SimpleHttpResponse res = emit(mgmtToken, "SsfStreamVerificationEvent", TEST_EMAIL,
                 Map.of("state", "test"))) {
-            Assertions.assertEquals(200, res.getStatus());
+            Assertions.assertEquals(400, res.getStatus());
             Assertions.assertEquals("event_type_not_emittable",
-                    res.asJson().get("status").asText(),
+                    res.asJson().get("error").asText(),
                     "stream lifecycle events must be rejected by the synthetic emitter");
         }
         Assertions.assertNull(pushes.poll(1, TimeUnit.SECONDS),
@@ -500,9 +500,9 @@ public class SsfTransmitterEventEmitterTests {
         try (SimpleHttpResponse res = emit(mgmtToken, "CaepCredentialChange",
                 "nonexistent@nowhere.test",
                 Map.of("credential_type", "password"))) {
-            Assertions.assertEquals(200, res.getStatus());
+            Assertions.assertEquals(400, res.getStatus());
             Assertions.assertEquals("subject_not_found",
-                    res.asJson().get("status").asText(),
+                    res.asJson().get("error").asText(),
                     "unresolvable subject should be reported distinctly");
         }
     }

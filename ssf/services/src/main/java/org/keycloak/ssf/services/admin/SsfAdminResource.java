@@ -122,14 +122,18 @@ public class SsfAdminResource {
     }
 
     /**
-     * Builds a 400 BAD_REQUEST response carrying an {@code invalid_request}
-     * {@link SsfErrorRepresentation}. Used by {@link #emitEvent} to surface
+     * Builds a 400 BAD_REQUEST response carrying an
+     * {@link SsfErrorRepresentation} with {@code errorCode} as its
+     * machine-readable category. Used by {@link #emitEvent} to surface
      * each {@link EmitEventStatus} client-error category with its own
-     * default message while preserving any service-supplied detail.
+     * specific code (e.g. {@code unknown_event_type},
+     * {@code subject_not_found}) so callers and tests can distinguish
+     * the failure reason from the wire response, while still preserving
+     * any service-supplied detail message.
      */
-    protected Response invalidRequest(String message, String fallback) {
+    protected Response invalidRequest(String errorCode, String message, String fallback) {
         return Response.status(Response.Status.BAD_REQUEST)
-                .entity(new SsfErrorRepresentation("invalid_request",
+                .entity(new SsfErrorRepresentation(errorCode,
                         message != null ? message : fallback))
                 .build();
     }
@@ -784,25 +788,31 @@ public class SsfAdminResource {
         // it just didn't produce a SET on the wire by policy. The
         // explicit listing of every {@link EmitEventStatus} value
         // makes adding a new status a compile-time visible change.
+        // Each 4xx case uses the status's wire value as the error code
+        // so callers can distinguish categories (unknown_event_type,
+        // subject_not_found, ...) from the wire response without having
+        // to parse a free-form description.
         String emitMessage = emitResult.message();
+        String emitErrorCode = emitResult.status().wireValue();
         switch (emitResult.status()) {
             case INVALID_REQUEST:
-                return invalidRequest(emitMessage,
+                return invalidRequest(emitErrorCode, emitMessage,
                         "Event payload could not be deserialized for the given eventType");
             case INVALID_EVENT_DATA:
-                return invalidRequest(emitMessage, "Invalid event data");
+                return invalidRequest(emitErrorCode, emitMessage, "Invalid event data");
             case UNKNOWN_EVENT_TYPE:
-                return invalidRequest(emitMessage, "Unknown eventType");
+                return invalidRequest(emitErrorCode, emitMessage, "Unknown eventType");
             case EVENT_TYPE_NOT_EMITTABLE:
-                return invalidRequest(emitMessage, "Requested event type not emittable");
+                return invalidRequest(emitErrorCode, emitMessage,
+                        "Requested event type not emittable");
             case SUBJECT_NOT_FOUND:
-                return invalidRequest(emitMessage,
+                return invalidRequest(emitErrorCode, emitMessage,
                         "Subject referenced by the request does not exist");
             case STREAM_NOT_FOUND:
                 // Defensive — the early stream check above usually catches
                 // this before emit() runs, but emit() can also return it
                 // (e.g. on a stream that was deleted between check and emit).
-                return invalidRequest(emitMessage,
+                return invalidRequest(emitErrorCode, emitMessage,
                         "No SSF stream registered for client");
             case DISPATCHED:
             case DROPPED_UNSUBSCRIBED:
