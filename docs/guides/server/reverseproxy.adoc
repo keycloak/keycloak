@@ -433,12 +433,13 @@ The server's readiness endpoint returns a "not ready" status, allowing the load 
 Existing TLS and HTTP keepalive connections are allowed to drain naturally.
 The server continues to process existing requests.
 
-*Shutdown timeout*:: After the pre-shutdown delay, {project_name} stops accepting new requests and waits for in-flight HTTP requests to complete.
-If requests are still running after the timeout expires, the server shuts down regardless.
+*Shutdown timeout*:: After the pre-shutdown delay, {project_name} waits for in-flight HTTP requests to complete.
+Once the HTTP requests are complete, it uses the remaining time of the shutdown timeout to wait for caches to rebalance to avoid possible data loss.
+Once the timeout expires, the server shuts down regardless.
 
 === Default behavior
 
-By default, {project_name} is configured with a 1-second pre-shutdown delay and a 1-second shutdown timeout.
+By default, {project_name} is configured with a 1-second pre-shutdown delay and a 10-second shutdown timeout.
 These defaults work well for most standard deployments where:
 
 * The load balancer reconfigures quickly (within 1 second)
@@ -463,7 +464,7 @@ Default: `1s`
 
 `--shutdown-timeout`::
 The shutdown period waiting for currently running HTTP requests to finish.
-Default: `1s`
+Default: `10s`
 
 Both values accept duration formats: `1s` (seconds), `500ms` (milliseconds), `2m` (minutes), etc.
 

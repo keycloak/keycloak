@@ -77,7 +77,7 @@ public class TopologyChangeCacheListener {
 
         @Override
         public void onTimeout() {
-            logger.warnf("Cache '%s': timed out waiting for stable topology during shutdown", cacheName);
+            logger.warnf("Cache '%s': timed out waiting for stable topology during shutdown. Check for possible causes, or extend the shutdown timeout to allow for more time for the cache to rebalance.", cacheName);
         }
 
         @Override
