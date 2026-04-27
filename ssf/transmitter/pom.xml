@@ -39,7 +39,7 @@
         </dependency>
         <!--
             The outbox stores pending SET pushes in a dedicated JPA
-            entity (SSF_PENDING_EVENT) contributed to Keycloak's JPA
+            entity (SSF_EVENT) contributed to Keycloak's JPA
             layer via the JpaEntityProvider SPI.
         -->
         <dependency>

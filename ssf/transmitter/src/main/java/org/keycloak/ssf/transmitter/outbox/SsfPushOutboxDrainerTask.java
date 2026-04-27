@@ -199,18 +199,18 @@ public class SsfPushOutboxDrainerTask implements ScheduledTask {
     }
 
     protected void drain(KeycloakSession session, SsfPendingEventStore store) {
-        List<SsfPendingEventEntity> due = store.lockDueForPush(batchSize);
+        List<SsfEventEntity> due = store.lockDueForPush(batchSize);
         if (due.isEmpty()) {
             return;
         }
         log.debugf("SSF outbox drainer processing %d due row(s)", due.size());
 
-        for (SsfPendingEventEntity pendingEvent : due) {
+        for (SsfEventEntity pendingEvent : due) {
             processPendingEvent(session, store, pendingEvent);
         }
     }
 
-    protected void processPendingEvent(KeycloakSession session, SsfPendingEventStore store, SsfPendingEventEntity row) {
+    protected void processPendingEvent(KeycloakSession session, SsfPendingEventStore store, SsfEventEntity row) {
         Instant rowStart = Instant.now();
         // Resolve the realm + receiver client the row targets. The row
         // may outlive the client (e.g. admin deleted the client while a
@@ -302,7 +302,7 @@ public class SsfPushOutboxDrainerTask implements ScheduledTask {
      */
     protected boolean deliverEncoded(KeycloakSession session,
                                      StreamConfig stream,
-                                     SsfPendingEventEntity row) {
+                                     SsfEventEntity row) {
 
         PushDeliveryService push = pushDeliveryServiceFactory.apply(session, context);
         SsfSecurityEventToken stub = new SsfSecurityEventToken();

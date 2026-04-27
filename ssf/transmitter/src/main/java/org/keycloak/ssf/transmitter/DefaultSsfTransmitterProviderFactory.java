@@ -139,7 +139,7 @@ public class DefaultSsfTransmitterProviderFactory implements SsfTransmitterProvi
      * Handles {@code RealmRemovedEvent} / {@code ClientRemovedEvent}
      * by submitting a background {@link SsfOutboxCleanupTask} that
      * drains the orphaned outbox rows in short batched transactions
-     * (REALM_ID / CLIENT_ID are not foreign keys on SSF_PENDING_EVENT
+     * (REALM_ID / CLIENT_ID are not foreign keys on SSF_EVENT
      * — the table is plugin-contributed via JpaEntityProvider, so it
      * can't declare FKs into core Keycloak tables — and an inline
      * bulk DELETE would drag the admin's removal transaction into a

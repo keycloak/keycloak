@@ -32,7 +32,7 @@ import jakarta.persistence.UniqueConstraint;
  * expects a stable signature over the same jti.
  */
 @Entity
-@Table(name = "SSF_PENDING_EVENT",
+@Table(name = "SSF_EVENT",
         uniqueConstraints = {
                 // Dedup: the same SET is never enqueued twice for the same
                 // receiver client. The application-level dedup is the
@@ -48,22 +48,22 @@ import jakarta.persistence.UniqueConstraint;
                 // different timestamps, so the operational uniqueness scope
                 // is effectively still (client_id, jti). See
                 // ssf-changelog-1.0.1.xml.
-                @UniqueConstraint(name = "UC_SSF_PENDING_CLIENT_JTI",
+                @UniqueConstraint(name = "UC_SSF_EVENT_CLIENT_JTI",
                         columnNames = {"CLIENT_ID", "JTI", "CREATED_AT"})
         },
         indexes = {
                 // Drainer query: WHERE status = PENDING
                 //                  AND delivery_method = PUSH
                 //                  AND next_attempt_at <= now()
-                @Index(name = "IDX_SSF_PENDING_DRAIN",
+                @Index(name = "IDX_SSF_EVENT_DRAIN",
                         columnList = "STATUS,DELIVERY_METHOD,NEXT_ATTEMPT_AT"),
                 // Admin UI count + poll-endpoint query: per-client scope.
-                @Index(name = "IDX_SSF_PENDING_CLIENT",
+                @Index(name = "IDX_SSF_EVENT_CLIENT",
                         columnList = "CLIENT_ID,STATUS"),
                 // Realm-scoped reads and realm-removed cascade deletes
                 // (REALM_ID is a plain column here, not an FK, so a
                 // RealmRemovedEvent listener runs the purge explicitly).
-                @Index(name = "IDX_SSF_PENDING_REALM",
+                @Index(name = "IDX_SSF_EVENT_REALM",
                         columnList = "REALM_ID,STATUS")
         })
 @NamedQueries({
@@ -80,27 +80,27 @@ import jakarta.persistence.UniqueConstraint;
         // is NOT guaranteed because the SKIP LOCKED claim splits
         // batches across drainers.
         @NamedQuery(
-                name = "SsfPendingEvent.findDueForPush",
-                query = "SELECT e FROM SsfPendingEventEntity e"
+                name = "SsfEventEntity.findDueForPush",
+                query = "SELECT e FROM SsfEventEntity e"
                         + " WHERE e.status = :status"
                         + "   AND e.deliveryMethod = :deliveryMethod"
                         + "   AND e.nextAttemptAt <= :now"
                         + " ORDER BY e.nextAttemptAt ASC, e.createdAt ASC, e.jti ASC"),
         @NamedQuery(
-                name = "SsfPendingEvent.findByClientAndJti",
-                query = "SELECT e FROM SsfPendingEventEntity e"
+                name = "SsfEventEntity.findByClientAndJti",
+                query = "SELECT e FROM SsfEventEntity e"
                         + " WHERE e.clientId = :clientId AND e.jti = :jti"),
         @NamedQuery(
-                name = "SsfPendingEvent.countByClientAndStatus",
-                query = "SELECT COUNT(e) FROM SsfPendingEventEntity e"
+                name = "SsfEventEntity.countByClientAndStatus",
+                query = "SELECT COUNT(e) FROM SsfEventEntity e"
                         + " WHERE e.clientId = :clientId AND e.status = :status"),
         // Poll endpoint read query: returns the next batch of PENDING POLL
         // rows for the requesting receiver, FIFO by createdAt with a jti
         // tiebreak so concurrent enqueues that hit the same millisecond
         // produce a stable order.
         @NamedQuery(
-                name = "SsfPendingEvent.findPendingForReceiverPoll",
-                query = "SELECT e FROM SsfPendingEventEntity e"
+                name = "SsfEventEntity.findPendingForReceiverPoll",
+                query = "SELECT e FROM SsfEventEntity e"
                         + " WHERE e.clientId = :clientId"
                         + "   AND e.deliveryMethod = :deliveryMethod"
                         + "   AND e.status = :status"
@@ -111,15 +111,15 @@ import jakarta.persistence.UniqueConstraint;
         // (setErrs) paths — the only difference between them is the
         // terminal status the matched rows are transitioned to.
         @NamedQuery(
-                name = "SsfPendingEvent.findPendingForReceiverAck",
-                query = "SELECT e FROM SsfPendingEventEntity e"
+                name = "SsfEventEntity.findPendingForReceiverAck",
+                query = "SELECT e FROM SsfEventEntity e"
                         + " WHERE e.clientId = :clientId"
                         + "   AND e.jti IN :jtis"
                         + "   AND e.deliveryMethod = :deliveryMethod"
                         + "   AND e.status = :status"),
         @NamedQuery(
-                name = "SsfPendingEvent.deletePurgedDelivered",
-                query = "DELETE FROM SsfPendingEventEntity e"
+                name = "SsfEventEntity.deletePurgedDelivered",
+                query = "DELETE FROM SsfEventEntity e"
                         + " WHERE e.status = :status AND e.deliveredAt < :olderThan"),
         // Dead-letter rows don't have a deliveredAt timestamp, so we anchor
         // retention on createdAt. This over-retains by at most the drainer's
@@ -127,12 +127,12 @@ import jakarta.persistence.UniqueConstraint;
         // point at which the row actually reached DEAD_LETTER — cheap vs
         // adding a terminalAt column and a schema migration.
         @NamedQuery(
-                name = "SsfPendingEvent.deletePurgedDeadLetter",
-                query = "DELETE FROM SsfPendingEventEntity e"
+                name = "SsfEventEntity.deletePurgedDeadLetter",
+                query = "DELETE FROM SsfEventEntity e"
                         + " WHERE e.status = :status AND e.createdAt < :olderThan"),
         @NamedQuery(
-                name = "SsfPendingEvent.deleteByRealm",
-                query = "DELETE FROM SsfPendingEventEntity e"
+                name = "SsfEventEntity.deleteByRealm",
+                query = "DELETE FROM SsfEventEntity e"
                         + " WHERE e.realmId = :realmId"),
         // Batched-delete primitives for the async client / realm
         // removal cleanup: the listener submits a background task that
@@ -140,32 +140,32 @@ import jakarta.persistence.UniqueConstraint;
         // transaction commits immediately, and a receiver with a
         // six-digit outbox backlog doesn't stall realm/client removal.
         @NamedQuery(
-                name = "SsfPendingEvent.findIdsByClient",
-                query = "SELECT e.id FROM SsfPendingEventEntity e"
+                name = "SsfEventEntity.findIdsByClient",
+                query = "SELECT e.id FROM SsfEventEntity e"
                         + " WHERE e.clientId = :clientId"),
         @NamedQuery(
-                name = "SsfPendingEvent.findIdsByRealm",
-                query = "SELECT e.id FROM SsfPendingEventEntity e"
+                name = "SsfEventEntity.findIdsByRealm",
+                query = "SELECT e.id FROM SsfEventEntity e"
                         + " WHERE e.realmId = :realmId"),
         @NamedQuery(
-                name = "SsfPendingEvent.deleteByIds",
-                query = "DELETE FROM SsfPendingEventEntity e"
+                name = "SsfEventEntity.deleteByIds",
+                query = "DELETE FROM SsfEventEntity e"
                         + " WHERE e.id IN :ids"),
         // Stream-delete cascade for POLL rows: PUSH rows would eventually
         // reach DEAD_LETTER on their own, but POLL rows can sit forever
         // with no consumer once the stream is gone, so the stream/client-
         // delete path explicitly purges them.
         @NamedQuery(
-                name = "SsfPendingEvent.deleteByClient",
-                query = "DELETE FROM SsfPendingEventEntity e"
+                name = "SsfEventEntity.deleteByClient",
+                query = "DELETE FROM SsfEventEntity e"
                         + " WHERE e.clientId = :clientId"),
         // Resume-from-pause hook: bulk-flips every HELD row for the
         // receiver back to PENDING and resets next_attempt_at so the
         // PUSH drainer picks them up on its next tick. POLL rows ignore
         // next_attempt_at but the column is NOT NULL — set it anyway.
         @NamedQuery(
-                name = "SsfPendingEvent.releaseHeldForClient",
-                query = "UPDATE SsfPendingEventEntity e"
+                name = "SsfEventEntity.releaseHeldForClient",
+                query = "UPDATE SsfEventEntity e"
                         + " SET e.status = :pending,"
                         + "     e.nextAttemptAt = :now"
                         + " WHERE e.clientId = :clientId"
@@ -179,8 +179,8 @@ import jakarta.persistence.UniqueConstraint;
         // deleteUndeliveredForClient (the SSF spec says a disabled
         // stream "will not hold any events for later transmission").
         @NamedQuery(
-                name = "SsfPendingEvent.holdPendingForClient",
-                query = "UPDATE SsfPendingEventEntity e"
+                name = "SsfEventEntity.holdPendingForClient",
+                query = "UPDATE SsfEventEntity e"
                         + " SET e.status = :held"
                         + " WHERE e.clientId = :clientId"
                         + "   AND e.status = :pending"),
@@ -191,8 +191,8 @@ import jakarta.persistence.UniqueConstraint;
         // into a future re-enable. DELIVERED rows are kept for jti
         // dedup; DEAD_LETTER rows are kept for post-failure audit.
         @NamedQuery(
-                name = "SsfPendingEvent.deleteUndeliveredForClient",
-                query = "DELETE FROM SsfPendingEventEntity e"
+                name = "SsfEventEntity.deleteUndeliveredForClient",
+                query = "DELETE FROM SsfEventEntity e"
                         + " WHERE e.clientId = :clientId"
                         + "   AND e.status IN :statuses"),
         // Stream-replace / PATCH with a delivery-method change hook:
@@ -203,8 +203,8 @@ import jakarta.persistence.UniqueConstraint;
         // only to PENDING + HELD (DELIVERED + DEAD_LETTER are
         // terminal and stay in their bucket for audit / dedup).
         @NamedQuery(
-                name = "SsfPendingEvent.migrateDeliveryMethodForClient",
-                query = "UPDATE SsfPendingEventEntity e"
+                name = "SsfEventEntity.migrateDeliveryMethodForClient",
+                query = "UPDATE SsfEventEntity e"
                         + " SET e.deliveryMethod = :newMethod"
                         + " WHERE e.clientId = :clientId"
                         + "   AND e.deliveryMethod <> :newMethod"
@@ -214,32 +214,32 @@ import jakarta.persistence.UniqueConstraint;
         // non-DELIVERED row, so the drainer's per-client purge loop
         // visits only receivers that actually have stale candidates.
         @NamedQuery(
-                name = "SsfPendingEvent.findRealmClientPairsForPurgeScan",
-                query = "SELECT DISTINCT e.realmId, e.clientId FROM SsfPendingEventEntity e"
+                name = "SsfEventEntity.findRealmClientPairsForPurgeScan",
+                query = "SELECT DISTINCT e.realmId, e.clientId FROM SsfEventEntity e"
                         + " WHERE e.status <> :delivered"),
         // Grouped outbox-depth aggregate for the Prometheus
         // metrics binder. Runs at the end of each drainer tick
         // and populates the cached depth snapshot that the
         // outbox-depth gauges read from — scrapes pay no DB cost.
-        // Covered by the existing IDX_SSF_PENDING_REALM (REALM_ID,
+        // Covered by the existing IDX_SSF_EVENT_REALM (REALM_ID,
         // STATUS) index so the aggregate stays cheap even for
         // large tables. Plain COUNT takes no row locks, so the
         // drainer's FOR UPDATE SKIP LOCKED claims don't interact.
         @NamedQuery(
-                name = "SsfPendingEvent.countByRealmAndStatus",
-                query = "SELECT e.realmId, e.status, COUNT(e) FROM SsfPendingEventEntity e"
+                name = "SsfEventEntity.countByRealmAndStatus",
+                query = "SELECT e.realmId, e.status, COUNT(e) FROM SsfEventEntity e"
                         + " GROUP BY e.realmId, e.status"),
         // Per-receiver TTL purge: drops every non-DELIVERED row for the
         // client whose createdAt predates the receiver-specific cutoff
         // derived from ssf.maxEventAgeSeconds.
         @NamedQuery(
-                name = "SsfPendingEvent.purgeStaleForClient",
-                query = "DELETE FROM SsfPendingEventEntity e"
+                name = "SsfEventEntity.purgeStaleForClient",
+                query = "DELETE FROM SsfEventEntity e"
                         + " WHERE e.clientId = :clientId"
                         + "   AND e.status <> :delivered"
                         + "   AND e.createdAt < :cutoff")
 })
-public class SsfPendingEventEntity {
+public class SsfEventEntity {
 
     public static final String DELIVERY_METHOD_PUSH = "PUSH";
 

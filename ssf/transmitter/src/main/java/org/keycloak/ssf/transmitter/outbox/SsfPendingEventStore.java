@@ -22,7 +22,7 @@ import org.hibernate.query.SelectionQuery;
 import org.jboss.logging.Logger;
 
 /**
- * Thin JPA repository over {@link SsfPendingEventEntity}. Does not
+ * Thin JPA repository over {@link SsfEventEntity}. Does not
  * manage transactions — callers run inside the ambient
  * {@link KeycloakSession} transaction, which Keycloak wraps around
  * request handlers and scheduled-task executions.
@@ -54,7 +54,7 @@ public class SsfPendingEventStore {
                                      String eventType,
                                      String encodedSet) {
         return enqueuePending(realmId, clientId, streamId, jti, eventType, encodedSet,
-                SsfPendingEventEntity.DELIVERY_METHOD_PUSH, SsfPendingEventStatus.PENDING);
+                SsfEventEntity.DELIVERY_METHOD_PUSH, SsfPendingEventStatus.PENDING);
     }
 
     /**
@@ -72,7 +72,7 @@ public class SsfPendingEventStore {
                                   String eventType,
                                   String encodedSet) {
         return enqueuePending(realmId, clientId, streamId, jti, eventType, encodedSet,
-                SsfPendingEventEntity.DELIVERY_METHOD_PUSH, SsfPendingEventStatus.HELD);
+                SsfEventEntity.DELIVERY_METHOD_PUSH, SsfPendingEventStatus.HELD);
     }
 
     /**
@@ -91,7 +91,7 @@ public class SsfPendingEventStore {
                                      String eventType,
                                      String encodedSet) {
         return enqueuePending(realmId, clientId, streamId, jti, eventType, encodedSet,
-                SsfPendingEventEntity.DELIVERY_METHOD_POLL, SsfPendingEventStatus.PENDING);
+                SsfEventEntity.DELIVERY_METHOD_POLL, SsfPendingEventStatus.PENDING);
     }
 
     /**
@@ -106,7 +106,7 @@ public class SsfPendingEventStore {
                                   String eventType,
                                   String encodedSet) {
         return enqueuePending(realmId, clientId, streamId, jti, eventType, encodedSet,
-                SsfPendingEventEntity.DELIVERY_METHOD_POLL, SsfPendingEventStatus.HELD);
+                SsfEventEntity.DELIVERY_METHOD_POLL, SsfPendingEventStatus.HELD);
     }
 
     /**
@@ -136,7 +136,7 @@ public class SsfPendingEventStore {
         // checked in code first so we don't have to catch a constraint
         // violation from the JPA provider's batched flush for the
         // common no-op path.
-        SsfPendingEventEntity existing = findByClientAndJti(em, clientId, jti);
+        SsfEventEntity existing = findByClientAndJti(em, clientId, jti);
         if (existing != null) {
             log.debugf("SSF outbox enqueue deduplicated. realmId=%s clientId=%s jti=%s existingId=%s status=%s deliveryMethod=%s",
                     existing.getRealmId(), clientId, jti, existing.getId(), existing.getStatus(), existing.getDeliveryMethod());
@@ -144,7 +144,7 @@ public class SsfPendingEventStore {
         }
 
         Instant now = Instant.now();
-        SsfPendingEventEntity entity = new SsfPendingEventEntity();
+        SsfEventEntity entity = new SsfEventEntity();
         entity.setId(UUID.randomUUID().toString());
         entity.setRealmId(realmId);
         entity.setClientId(clientId);
@@ -175,11 +175,11 @@ public class SsfPendingEventStore {
      * same rows. Callers MUST transition each returned row to a
      * terminal status within the same transaction.
      */
-    public List<SsfPendingEventEntity> lockDueForPush(int limit) {
-        TypedQuery<SsfPendingEventEntity> q = getEntityManager()
-                .createNamedQuery("SsfPendingEvent.findDueForPush", SsfPendingEventEntity.class)
+    public List<SsfEventEntity> lockDueForPush(int limit) {
+        TypedQuery<SsfEventEntity> q = getEntityManager()
+                .createNamedQuery("SsfEventEntity.findDueForPush", SsfEventEntity.class)
                 .setParameter("status", SsfPendingEventStatus.PENDING)
-                .setParameter("deliveryMethod", SsfPendingEventEntity.DELIVERY_METHOD_PUSH)
+                .setParameter("deliveryMethod", SsfEventEntity.DELIVERY_METHOD_PUSH)
                 .setParameter("now", Instant.now())
                 .setMaxResults(limit);
         // UPGRADE_SKIPLOCKED is Hibernate's native lock mode for
@@ -200,7 +200,7 @@ public class SsfPendingEventStore {
         return q.getResultList();
     }
 
-    public void markDelivered(SsfPendingEventEntity entity) {
+    public void markDelivered(SsfEventEntity entity) {
         entity.setStatus(SsfPendingEventStatus.DELIVERED);
         entity.setDeliveredAt(Instant.now());
         entity.setLastError(null);
@@ -217,12 +217,12 @@ public class SsfPendingEventStore {
      * the ack within the same transaction or release the locks by
      * letting the transaction commit/rollback.
      */
-    public List<SsfPendingEventEntity> lockPendingForReceiverPoll(String clientId, int limit) {
+    public List<SsfEventEntity> lockPendingForReceiverPoll(String clientId, int limit) {
         Objects.requireNonNull(clientId, "clientId");
-        TypedQuery<SsfPendingEventEntity> q = getEntityManager()
-                .createNamedQuery("SsfPendingEvent.findPendingForReceiverPoll", SsfPendingEventEntity.class)
+        TypedQuery<SsfEventEntity> q = getEntityManager()
+                .createNamedQuery("SsfEventEntity.findPendingForReceiverPoll", SsfEventEntity.class)
                 .setParameter("clientId", clientId)
-                .setParameter("deliveryMethod", SsfPendingEventEntity.DELIVERY_METHOD_POLL)
+                .setParameter("deliveryMethod", SsfEventEntity.DELIVERY_METHOD_POLL)
                 .setParameter("status", SsfPendingEventStatus.PENDING)
                 .setMaxResults(limit);
         // Same Hibernate hook the PUSH drainer uses — see lockDueForPush
@@ -245,7 +245,7 @@ public class SsfPendingEventStore {
         // too so a mixed PUSH+POLL receiver (theoretical) doesn't get
         // a misleading moreAvailable flag.
         return getEntityManager().createQuery(
-                        "SELECT COUNT(e) FROM SsfPendingEventEntity e"
+                        "SELECT COUNT(e) FROM SsfEventEntity e"
                                 + " WHERE e.clientId = :clientId"
                                 + "   AND e.status = :status"
                                 + "   AND e.deliveryMethod = :deliveryMethod",
@@ -271,11 +271,11 @@ public class SsfPendingEventStore {
         if (jtis == null || jtis.isEmpty()) {
             return Set.of();
         }
-        List<SsfPendingEventEntity> rows = getEntityManager()
-                .createNamedQuery("SsfPendingEvent.findPendingForReceiverAck", SsfPendingEventEntity.class)
+        List<SsfEventEntity> rows = getEntityManager()
+                .createNamedQuery("SsfEventEntity.findPendingForReceiverAck", SsfEventEntity.class)
                 .setParameter("clientId", clientId)
                 .setParameter("jtis", jtis)
-                .setParameter("deliveryMethod", SsfPendingEventEntity.DELIVERY_METHOD_POLL)
+                .setParameter("deliveryMethod", SsfEventEntity.DELIVERY_METHOD_POLL)
                 .setParameter("status", SsfPendingEventStatus.PENDING)
                 .getResultList();
 
@@ -283,7 +283,7 @@ public class SsfPendingEventStore {
             return Set.of();
         }
         Set<String> acked = new LinkedHashSet<>(rows.size());
-        for (SsfPendingEventEntity row : rows) {
+        for (SsfEventEntity row : rows) {
             markDelivered(row);
             acked.add(row.getJti());
         }
@@ -313,11 +313,11 @@ public class SsfPendingEventStore {
         if (errorByJti == null || errorByJti.isEmpty()) {
             return Set.of();
         }
-        List<SsfPendingEventEntity> rows = getEntityManager()
-                .createNamedQuery("SsfPendingEvent.findPendingForReceiverAck", SsfPendingEventEntity.class)
+        List<SsfEventEntity> rows = getEntityManager()
+                .createNamedQuery("SsfEventEntity.findPendingForReceiverAck", SsfEventEntity.class)
                 .setParameter("clientId", clientId)
                 .setParameter("jtis", errorByJti.keySet())
-                .setParameter("deliveryMethod", SsfPendingEventEntity.DELIVERY_METHOD_POLL)
+                .setParameter("deliveryMethod", SsfEventEntity.DELIVERY_METHOD_POLL)
                 .setParameter("status", SsfPendingEventStatus.PENDING)
                 .getResultList();
 
@@ -325,7 +325,7 @@ public class SsfPendingEventStore {
             return Set.of();
         }
         Set<String> nacked = new LinkedHashSet<>(rows.size());
-        for (SsfPendingEventEntity row : rows) {
+        for (SsfEventEntity row : rows) {
             String error = errorByJti.get(row.getJti());
             markDeadLetter(row, error);
             nacked.add(row.getJti());
@@ -348,7 +348,7 @@ public class SsfPendingEventStore {
     public int deleteByClient(String clientId) {
         Objects.requireNonNull(clientId, "clientId");
         int deleted = getEntityManager()
-                .createNamedQuery("SsfPendingEvent.deleteByClient")
+                .createNamedQuery("SsfEventEntity.deleteByClient")
                 .setParameter("clientId", clientId)
                 .executeUpdate();
         if (deleted > 0) {
@@ -374,7 +374,7 @@ public class SsfPendingEventStore {
     public int releaseHeldForClient(String clientId) {
         Objects.requireNonNull(clientId, "clientId");
         int released = getEntityManager()
-                .createNamedQuery("SsfPendingEvent.releaseHeldForClient")
+                .createNamedQuery("SsfEventEntity.releaseHeldForClient")
                 .setParameter("pending", SsfPendingEventStatus.PENDING)
                 .setParameter("held", SsfPendingEventStatus.HELD)
                 .setParameter("clientId", clientId)
@@ -400,7 +400,7 @@ public class SsfPendingEventStore {
     public int holdPendingForClient(String clientId) {
         Objects.requireNonNull(clientId, "clientId");
         int held = getEntityManager()
-                .createNamedQuery("SsfPendingEvent.holdPendingForClient")
+                .createNamedQuery("SsfEventEntity.holdPendingForClient")
                 .setParameter("held", SsfPendingEventStatus.HELD)
                 .setParameter("pending", SsfPendingEventStatus.PENDING)
                 .setParameter("clientId", clientId)
@@ -429,7 +429,7 @@ public class SsfPendingEventStore {
     public int deleteUndeliveredForClient(String clientId) {
         Objects.requireNonNull(clientId, "clientId");
         int deleted = getEntityManager()
-                .createNamedQuery("SsfPendingEvent.deleteUndeliveredForClient")
+                .createNamedQuery("SsfEventEntity.deleteUndeliveredForClient")
                 .setParameter("clientId", clientId)
                 .setParameter("statuses",
                         java.util.List.of(SsfPendingEventStatus.PENDING, SsfPendingEventStatus.HELD))
@@ -451,14 +451,14 @@ public class SsfPendingEventStore {
      * DELIVERED + DEAD_LETTER rows are terminal and left alone.
      *
      * @param newDeliveryMethod the target {@code DELIVERY_METHOD}
-     *        column value (e.g. {@link SsfPendingEventEntity#DELIVERY_METHOD_PUSH}).
+     *        column value (e.g. {@link SsfEventEntity#DELIVERY_METHOD_PUSH}).
      * @return the number of rows whose delivery method was migrated.
      */
     public int migrateDeliveryMethodForClient(String clientId, String newDeliveryMethod) {
         Objects.requireNonNull(clientId, "clientId");
         Objects.requireNonNull(newDeliveryMethod, "newDeliveryMethod");
         int migrated = getEntityManager()
-                .createNamedQuery("SsfPendingEvent.migrateDeliveryMethodForClient")
+                .createNamedQuery("SsfEventEntity.migrateDeliveryMethodForClient")
                 .setParameter("clientId", clientId)
                 .setParameter("newMethod", newDeliveryMethod)
                 .setParameter("statuses",
@@ -480,7 +480,7 @@ public class SsfPendingEventStore {
      * never hit the database.
      *
      * <p>Uses a plain read-only {@code COUNT} backed by
-     * {@code IDX_SSF_PENDING_REALM (REALM_ID, STATUS)}; no row locks
+     * {@code IDX_SSF_EVENT_REALM (REALM_ID, STATUS)}; no row locks
      * are requested so the aggregate doesn't interact with the
      * drainer's {@code FOR UPDATE SKIP LOCKED} claims.
      *
@@ -490,7 +490,7 @@ public class SsfPendingEventStore {
     public Map<RealmStatusKey, Long> countByRealmAndStatus() {
         @SuppressWarnings("unchecked")
         List<Object[]> rows = getEntityManager()
-                .createNamedQuery("SsfPendingEvent.countByRealmAndStatus")
+                .createNamedQuery("SsfEventEntity.countByRealmAndStatus")
                 .getResultList();
         if (rows.isEmpty()) {
             return Collections.emptyMap();
@@ -513,14 +513,14 @@ public class SsfPendingEventStore {
     public record RealmStatusKey(String realmId, SsfPendingEventStatus status) {
     }
 
-    public void recordFailure(SsfPendingEventEntity entity, Instant nextAttemptAt, String lastError) {
+    public void recordFailure(SsfEventEntity entity, Instant nextAttemptAt, String lastError) {
         entity.setAttempts(entity.getAttempts() + 1);
         entity.setNextAttemptAt(nextAttemptAt);
         entity.setLastError(truncateError(lastError));
         getEntityManager().merge(entity);
     }
 
-    public void markDeadLetter(SsfPendingEventEntity entity, String lastError) {
+    public void markDeadLetter(SsfEventEntity entity, String lastError) {
         entity.setAttempts(entity.getAttempts() + 1);
         entity.setStatus(SsfPendingEventStatus.DEAD_LETTER);
         entity.setLastError(truncateError(lastError));
@@ -546,7 +546,7 @@ public class SsfPendingEventStore {
      */
     public int deleteBatchByClient(String clientId, int batchSize) {
         Objects.requireNonNull(clientId, "clientId");
-        return deleteBatch("SsfPendingEvent.findIdsByClient", "clientId", clientId, batchSize);
+        return deleteBatch("SsfEventEntity.findIdsByClient", "clientId", clientId, batchSize);
     }
 
     /**
@@ -555,7 +555,7 @@ public class SsfPendingEventStore {
      */
     public int deleteBatchByRealm(String realmId, int batchSize) {
         Objects.requireNonNull(realmId, "realmId");
-        return deleteBatch("SsfPendingEvent.findIdsByRealm", "realmId", realmId, batchSize);
+        return deleteBatch("SsfEventEntity.findIdsByRealm", "realmId", realmId, batchSize);
     }
 
     protected int deleteBatch(String findIdsQueryName, String paramName, String paramValue, int batchSize) {
@@ -570,7 +570,7 @@ public class SsfPendingEventStore {
         if (ids.isEmpty()) {
             return 0;
         }
-        return em.createNamedQuery("SsfPendingEvent.deleteByIds")
+        return em.createNamedQuery("SsfEventEntity.deleteByIds")
                 .setParameter("ids", ids)
                 .executeUpdate();
     }
@@ -588,7 +588,7 @@ public class SsfPendingEventStore {
     public int deleteByRealm(String realmId) {
         Objects.requireNonNull(realmId, "realmId");
         int deleted = getEntityManager()
-                .createNamedQuery("SsfPendingEvent.deleteByRealm")
+                .createNamedQuery("SsfEventEntity.deleteByRealm")
                 .setParameter("realmId", realmId)
                 .executeUpdate();
         if (deleted > 0) {
@@ -605,7 +605,7 @@ public class SsfPendingEventStore {
      */
     public List<Object[]> findRealmClientPairsForPurgeScan() {
         return getEntityManager()
-                .createNamedQuery("SsfPendingEvent.findRealmClientPairsForPurgeScan", Object[].class)
+                .createNamedQuery("SsfEventEntity.findRealmClientPairsForPurgeScan", Object[].class)
                 .setParameter("delivered", SsfPendingEventStatus.DELIVERED)
                 .getResultList();
     }
@@ -623,7 +623,7 @@ public class SsfPendingEventStore {
         Objects.requireNonNull(clientId, "clientId");
         Objects.requireNonNull(cutoff, "cutoff");
         int purged = getEntityManager()
-                .createNamedQuery("SsfPendingEvent.purgeStaleForClient")
+                .createNamedQuery("SsfEventEntity.purgeStaleForClient")
                 .setParameter("clientId", clientId)
                 .setParameter("delivered", SsfPendingEventStatus.DELIVERED)
                 .setParameter("cutoff", cutoff)
@@ -636,7 +636,7 @@ public class SsfPendingEventStore {
 
     public int purgeDeliveredOlderThan(Instant cutoff) {
         int purged = getEntityManager()
-                .createNamedQuery("SsfPendingEvent.deletePurgedDelivered")
+                .createNamedQuery("SsfEventEntity.deletePurgedDelivered")
                 .setParameter("status", SsfPendingEventStatus.DELIVERED)
                 .setParameter("olderThan", cutoff)
                 .executeUpdate();
@@ -649,12 +649,12 @@ public class SsfPendingEventStore {
     /**
      * Purges {@link SsfPendingEventStatus#DEAD_LETTER DEAD_LETTER} rows
      * older than {@code cutoff}, anchored on {@code createdAt} (see the
-     * named query javadoc on {@link SsfPendingEventEntity} for the
+     * named query javadoc on {@link SsfEventEntity} for the
      * rationale).
      */
     public int purgeDeadLetterOlderThan(Instant cutoff) {
         int purged = getEntityManager()
-                .createNamedQuery("SsfPendingEvent.deletePurgedDeadLetter")
+                .createNamedQuery("SsfEventEntity.deletePurgedDeadLetter")
                 .setParameter("status", SsfPendingEventStatus.DEAD_LETTER)
                 .setParameter("olderThan", cutoff)
                 .executeUpdate();
@@ -671,15 +671,15 @@ public class SsfPendingEventStore {
      * Scoped on {@code clientId} so callers cannot probe rows that
      * belong to a different receiver.
      */
-    public SsfPendingEventEntity findByClientAndJti(String clientId, String jti) {
+    public SsfEventEntity findByClientAndJti(String clientId, String jti) {
         Objects.requireNonNull(clientId, "clientId");
         Objects.requireNonNull(jti, "jti");
         return findByClientAndJti(getEntityManager(), clientId, jti);
     }
 
-    protected SsfPendingEventEntity findByClientAndJti(EntityManager em, String clientId, String jti) {
-        List<SsfPendingEventEntity> hits = em
-                .createNamedQuery("SsfPendingEvent.findByClientAndJti", SsfPendingEventEntity.class)
+    protected SsfEventEntity findByClientAndJti(EntityManager em, String clientId, String jti) {
+        List<SsfEventEntity> hits = em
+                .createNamedQuery("SsfEventEntity.findByClientAndJti", SsfEventEntity.class)
                 .setParameter("clientId", clientId)
                 .setParameter("jti", jti)
                 .setMaxResults(1)
