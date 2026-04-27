@@ -44,7 +44,7 @@ public class SecurityEventTokenDispatcher {
 
     protected final SsfTransmitterConfig transmitterConfig;
 
-    protected final Function<KeycloakSession, SsfEventStore> pendingSsfEventStoreFactory;
+    protected final Function<KeycloakSession, SsfEventStore> eventStoreFactory;
 
     protected final SubjectSubscriptionFilter subjectSubscriptionFilter;
 
@@ -56,8 +56,8 @@ public class SecurityEventTokenDispatcher {
                                         SecurityEventTokenEncoder securityEventTokenEncoder,
                                         PushDeliveryService pushDeliveryService,
                                         SsfTransmitterConfig transmitterConfig,
-                                        Function<KeycloakSession, SsfEventStore> pendingSsfEventStoreFactory) {
-        this(session, securityEventTokenEncoder, pushDeliveryService, transmitterConfig, pendingSsfEventStoreFactory,
+                                        Function<KeycloakSession, SsfEventStore> eventStoreFactory) {
+        this(session, securityEventTokenEncoder, pushDeliveryService, transmitterConfig, eventStoreFactory,
                 SsfMetricsBinder.NOOP, null);
     }
 
@@ -65,9 +65,9 @@ public class SecurityEventTokenDispatcher {
                                         SecurityEventTokenEncoder securityEventTokenEncoder,
                                         PushDeliveryService pushDeliveryService,
                                         SsfTransmitterConfig transmitterConfig,
-                                        Function<KeycloakSession, SsfEventStore> pendingSsfEventStoreFactory,
+                                        Function<KeycloakSession, SsfEventStore> eventStoreFactory,
                                         SsfMetricsBinder metricsBinder) {
-        this(session, securityEventTokenEncoder, pushDeliveryService, transmitterConfig, pendingSsfEventStoreFactory,
+        this(session, securityEventTokenEncoder, pushDeliveryService, transmitterConfig, eventStoreFactory,
                 metricsBinder, null);
     }
 
@@ -75,14 +75,14 @@ public class SecurityEventTokenDispatcher {
                                         SecurityEventTokenEncoder securityEventTokenEncoder,
                                         PushDeliveryService pushDeliveryService,
                                         SsfTransmitterConfig transmitterConfig,
-                                        Function<KeycloakSession, SsfEventStore> pendingSsfEventStoreFactory,
+                                        Function<KeycloakSession, SsfEventStore> eventStoreFactory,
                                         SsfMetricsBinder metricsBinder,
                                         SsfSubjectInclusionResolver subjectInclusionResolver) {
         this.session = session;
         this.securityEventTokenEncoder = securityEventTokenEncoder;
         this.pushDeliveryService = pushDeliveryService;
         this.transmitterConfig = transmitterConfig;
-        this.pendingSsfEventStoreFactory = pendingSsfEventStoreFactory;
+        this.eventStoreFactory = eventStoreFactory;
         this.subjectInclusionResolver = subjectInclusionResolver;
         this.subjectSubscriptionFilter = createSubjectSubscriptionFilter();
         this.metricsBinder = metricsBinder == null ? SsfMetricsBinder.NOOP : metricsBinder;
@@ -255,12 +255,12 @@ public class SecurityEventTokenDispatcher {
                 eventType = "<unknown>";
             }
 
-            var pendingEventStore = pendingSsfEventStoreFactory.apply(session);
+            var eventStore = eventStoreFactory.apply(session);
             switch (deliveryMethod) {
                 case PUSH, RISC_PUSH ->
-                        pendingEventStore.enqueueHeldPush(realmId, clientId, streamId, jti, eventType, encodedEvent);
+                        eventStore.enqueueHeldPush(realmId, clientId, streamId, jti, eventType, encodedEvent);
                 case POLL, RISC_POLL ->
-                        pendingEventStore.enqueueHeldPoll(realmId, clientId, streamId, jti, eventType, encodedEvent);
+                        eventStore.enqueueHeldPoll(realmId, clientId, streamId, jti, eventType, encodedEvent);
             }
 
             // HELD is a distinct outcome from normal delivery — we
@@ -406,8 +406,8 @@ public class SecurityEventTokenDispatcher {
             eventType = "<unknown>";
         }
 
-        var pendingEventStore = pendingSsfEventStoreFactory.apply(session);
-        pendingEventStore.enqueuePendingPush(realmId, clientId, streamId, jti, eventType, encodedEvent);
+        var eventStore = eventStoreFactory.apply(session);
+        eventStore.enqueuePendingPush(realmId, clientId, streamId, jti, eventType, encodedEvent);
         metricsBinder.recordEnqueued(currentRealmName(), stream.getClientClientId(), "PUSH",
                 resolveEventAlias(eventType));
     }
@@ -432,8 +432,8 @@ public class SecurityEventTokenDispatcher {
             eventType = "<unknown>";
         }
 
-        var pendingEventStore = pendingSsfEventStoreFactory.apply(session);
-        pendingEventStore.enqueuePendingPoll(realmId, clientId, streamId, jti, eventType, encodedEvent);
+        var eventStore = eventStoreFactory.apply(session);
+        eventStore.enqueuePendingPoll(realmId, clientId, streamId, jti, eventType, encodedEvent);
         metricsBinder.recordEnqueued(currentRealmName(), stream.getClientClientId(), "POLL",
                 resolveEventAlias(eventType));
     }

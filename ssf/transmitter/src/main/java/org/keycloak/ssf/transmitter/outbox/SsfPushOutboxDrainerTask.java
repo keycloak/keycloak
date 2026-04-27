@@ -206,8 +206,8 @@ public class SsfPushOutboxDrainerTask implements ScheduledTask {
         }
         log.debugf("SSF outbox drainer processing %d due row(s)", due.size());
 
-        for (SsfEventEntity pendingEvent : due) {
-            processPendingEvent(session, store, pendingEvent);
+        for (SsfEventEntity dueEvent : due) {
+            processPendingEvent(session, store, dueEvent);
         }
     }
 

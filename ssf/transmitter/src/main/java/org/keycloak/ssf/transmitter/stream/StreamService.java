@@ -71,7 +71,7 @@ public class StreamService {
 
     protected final StreamVerificationService streamVerificationService;
 
-    protected final Function<KeycloakSession, SsfEventStore> pendingSsfEventStoreFactory;
+    protected final Function<KeycloakSession, SsfEventStore> eventStoreFactory;
 
     public StreamService(KeycloakSession session,
                          SsfTransmitterProvider transmitterProvider,
@@ -79,13 +79,13 @@ public class StreamService {
                          TransmitterMetadataService transmitterService,
                          StreamVerificationService streamVerificationService,
                          Function<KeycloakSession,
-                         SsfEventStore> pendingSsfEventStoreFactory) {
+                         SsfEventStore> eventStoreFactory) {
         this.session = session;
         this.transmitterProvider = transmitterProvider;
         this.streamStore = streamStore;
         this.transmitterService = transmitterService;
         this.streamVerificationService = streamVerificationService;
-        this.pendingSsfEventStoreFactory = pendingSsfEventStoreFactory;
+        this.eventStoreFactory = eventStoreFactory;
     }
 
     /**
@@ -827,8 +827,8 @@ public class StreamService {
             case PUSH, RISC_PUSH -> SsfEventEntity.DELIVERY_METHOD_PUSH;
             case POLL, RISC_POLL -> SsfEventEntity.DELIVERY_METHOD_POLL;
         };
-        SsfEventStore pendingEventStore = pendingSsfEventStoreFactory.apply(session);
-        int migrated = pendingEventStore.migrateDeliveryMethodForClient(
+        SsfEventStore eventStore = eventStoreFactory.apply(session);
+        int migrated = eventStore.migrateDeliveryMethodForClient(
                 streamConfig.getClientId(), newMethodColumn);
         if (migrated > 0) {
             log.debugf("Retargeted %d queued outbox row(s) on delivery method change %s → %s. streamId=%s",
@@ -918,8 +918,8 @@ public class StreamService {
         // strand a legitimate row.
         String clientId = existingStream.getClientId();
         if (clientId != null) {
-            SsfEventStore pendingEventStore = pendingSsfEventStoreFactory.apply(session);
-            int purged = (int) pendingEventStore.deleteByClient(clientId);
+            SsfEventStore eventStore = eventStoreFactory.apply(session);
+            int purged = (int) eventStore.deleteByClient(clientId);
             if (purged > 0) {
                 log.debugf("Stream delete cascade: purged %d outbox rows for client %s", purged, clientId);
             }
@@ -1014,7 +1014,7 @@ public class StreamService {
         //                        any HELD rows; harmless.
         String newStatusCode = streamStatus.getStatus();
         String oldStatusCode = currentStreamStatus.getStatus();
-        SsfEventStore pendingStore = pendingSsfEventStoreFactory.apply(session);
+        SsfEventStore pendingStore = eventStoreFactory.apply(session);
         try {
             if (StreamStatusValue.disabled.getStatusCode().equals(newStatusCode)) {
                 pendingStore.deleteUndeliveredForClient(stream.getClientId());
