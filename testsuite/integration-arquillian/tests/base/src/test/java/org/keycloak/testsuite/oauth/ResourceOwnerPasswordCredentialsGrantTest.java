@@ -51,17 +51,17 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.realm.ClientBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
-import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.ClientManager;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.RealmManager;
 import org.keycloak.testsuite.util.TokenSignatureUtil;
-import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.testsuite.util.UserManager;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.LogoutResponse;
@@ -112,7 +112,7 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
         ClientRepresentation app = ClientBuilder.create()
                 .id(KeycloakModelUtils.generateId())
                 .clientId("resource-owner")
-                .directAccessGrants()
+                .directAccessGrantsEnabled()
                 .secret("secret")
                 .build();
         realm.client(app);
@@ -120,13 +120,13 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
         ClientRepresentation app2 = ClientBuilder.create()
                 .id(KeycloakModelUtils.generateId())
                 .clientId("resource-owner-public")
-                .directAccessGrants()
+                .directAccessGrantsEnabled()
                 .publicClient()
                 .build();
         realm.client(app2);
 
         ClientRepresentation app3 = ClientBuilder.create().id(KeycloakModelUtils.generateId())
-            .clientId("resource-owner-refresh").directAccessGrants().secret("secret").build();
+            .clientId("resource-owner-refresh").directAccessGrantsEnabled().secret("secret").build();
         OIDCAdvancedConfigWrapper.fromClientRepresentation(app3).setUseRefreshToken(false);
         realm.client(app3);
 

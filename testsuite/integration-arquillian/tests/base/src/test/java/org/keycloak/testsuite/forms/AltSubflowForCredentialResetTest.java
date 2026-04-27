@@ -27,6 +27,7 @@ import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.AdminApiUtil;
@@ -36,7 +37,6 @@ import org.keycloak.testsuite.pages.LoginPasswordResetPage;
 import org.keycloak.testsuite.pages.LoginUsernameOnlyPage;
 import org.keycloak.testsuite.util.FlowUtil;
 import org.keycloak.testsuite.util.GreenMailRule;
-import org.keycloak.testsuite.util.UserBuilder;
 
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
@@ -93,7 +93,7 @@ public class AltSubflowForCredentialResetTest extends AbstractTestRealmKeycloakT
         log.info("Adding login-test user");
         UserRepresentation testUser = UserBuilder.create().username("login-test").email("login@test.com").enabled(true).build();
 
-        userID = AdminApiUtil.createUserAndResetPasswordWithAdminClient(testRealm(), testUser, "password");
+        userID = AdminApiUtil.createUserAndResetPasswordWithAdminClient(managedRealm.admin(), testUser, "password");
         getCleanup().addUserId(userID);
     }
 
@@ -126,10 +126,10 @@ public class AltSubflowForCredentialResetTest extends AbstractTestRealmKeycloakT
             oauth.openLoginForm();
             Assertions.assertTrue(loginPage.isCurrent());
         } finally {
-            testRealm().flows().getFlows().clear();
-            RealmRepresentation realm = testRealm().toRepresentation();
+            managedRealm.admin().flows().getFlows().clear();
+            RealmRepresentation realm = managedRealm.admin().toRepresentation();
             realm.setResetCredentialsFlow(DefaultAuthenticationFlows.RESET_CREDENTIALS_FLOW);
-            testRealm().update(realm);
+            managedRealm.admin().update(realm);
         }
     }
 }

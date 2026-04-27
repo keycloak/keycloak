@@ -55,7 +55,7 @@ public class CustomRegistrationFlowTest extends AbstractFlowTest {
                                                            .topLevel(true)
                                                            .builtIn(false)
                                                            .build();
-        testRealm().flows().createFlow(flow);
+        managedRealm.admin().flows().createFlow(flow);
 
         setRegistrationFlow(flow);
 
@@ -70,7 +70,7 @@ public class CustomRegistrationFlowTest extends AbstractFlowTest {
                                                             .authenticatorFlow(false)
                                                             .build();
 
-        testRealm().flows().addExecution(execution);
+        managedRealm.admin().flows().addExecution(execution);
     }
 
     @Rule

@@ -29,7 +29,6 @@ import jakarta.ws.rs.core.Response;
 
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.ClientResource;
-import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.client.registration.Auth;
 import org.keycloak.client.registration.ClientRegistrationException;
 import org.keycloak.client.registration.HttpErrorException;
@@ -62,6 +61,7 @@ import org.keycloak.services.clientregistration.policy.impl.ClientScopesClientRe
 import org.keycloak.services.clientregistration.policy.impl.MaxClientsClientRegistrationPolicyFactory;
 import org.keycloak.services.clientregistration.policy.impl.ProtocolMappersClientRegistrationPolicyFactory;
 import org.keycloak.services.clientregistration.policy.impl.TrustedHostClientRegistrationPolicyFactory;
+import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.util.JsonSerialization;
@@ -76,6 +76,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public class ClientRegistrationPoliciesTest extends AbstractClientRegistrationTest {
+
+    protected ManagedRealm managedRealm = new ManagedRealm(this, REALM_NAME);
 
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
@@ -93,11 +95,7 @@ public class ClientRegistrationPoliciesTest extends AbstractClientRegistrationTe
         trustedHostPolicy.getConfig().putSingle(TrustedHostClientRegistrationPolicyFactory.HOST_SENDING_REGISTRATION_REQUEST_MUST_MATCH, "true");
         trustedHostPolicy.getConfig().putSingle(TrustedHostClientRegistrationPolicyFactory.CLIENT_URIS_MUST_MATCH, "true");
         trustedHostPolicy.getConfig().put(TrustedHostClientRegistrationPolicyFactory.TRUSTED_HOSTS, Collections.emptyList());
-        realmResource().components().component(trustedHostPolicy.getId()).update(trustedHostPolicy);
-    }
-
-    private RealmResource realmResource() {
-        return adminClient.realm(REALM_NAME);
+        managedRealm.admin().components().component(trustedHostPolicy.getId()).update(trustedHostPolicy);
     }
 
     private ClientRepresentation createRep(String clientId) {
@@ -239,7 +237,7 @@ public class ClientRegistrationPoliciesTest extends AbstractClientRegistrationTe
 
         // Configure some trusted host and domain
         trustedHostPolicyRep.getConfig().put(TrustedHostClientRegistrationPolicyFactory.TRUSTED_HOSTS, Arrays.asList("www.host.com", "*.example.com"));
-        realmResource().components().component(trustedHostPolicyRep.getId()).update(trustedHostPolicyRep);
+        managedRealm.admin().components().component(trustedHostPolicyRep.getId()).update(trustedHostPolicyRep);
 
         // Verify client can be created with the redirectUri from trusted host and domain
         OIDCClientRepresentation oidcClientRep = createRepOidc("http://www.host.com", "http://www.example.com");
@@ -247,7 +245,7 @@ public class ClientRegistrationPoliciesTest extends AbstractClientRegistrationTe
 
         // Remove domain from the config
         trustedHostPolicyRep.getConfig().put(TrustedHostClientRegistrationPolicyFactory.TRUSTED_HOSTS, Arrays.asList("www.host.com", "www1.example.com"));
-        realmResource().components().component(trustedHostPolicyRep.getId()).update(trustedHostPolicyRep);
+        managedRealm.admin().components().component(trustedHostPolicyRep.getId()).update(trustedHostPolicyRep);
 
         // Check new client can't be created anymore
         oidcClientRep = createRepOidc("http://www.host.com", "http://www.example.com");
@@ -264,7 +262,7 @@ public class ClientRegistrationPoliciesTest extends AbstractClientRegistrationTe
 
         // Assert new client has consent required
         String clientId = client.getClientId();
-        ClientRepresentation clientRep = AdminApiUtil.findClientByClientId(realmResource(), clientId).toRepresentation();
+        ClientRepresentation clientRep = AdminApiUtil.findClientByClientId(managedRealm.admin(), clientId).toRepresentation();
         Assertions.assertTrue(clientRep.isConsentRequired());
 
         // Try update with disabled consent required. Should fail
@@ -284,7 +282,7 @@ public class ClientRegistrationPoliciesTest extends AbstractClientRegistrationTe
 
         // Assert new client has fullScopeAllowed disabled
         String clientId = client.getClientId();
-        ClientRepresentation clientRep = AdminApiUtil.findClientByClientId(realmResource(), clientId).toRepresentation();
+        ClientRepresentation clientRep = AdminApiUtil.findClientByClientId(managedRealm.admin(), clientId).toRepresentation();
         Assertions.assertFalse(clientRep.isFullScopeAllowed());
 
         // Try update with disabled consent required. Should fail
@@ -304,7 +302,7 @@ public class ClientRegistrationPoliciesTest extends AbstractClientRegistrationTe
         // Assert new client is enabled
         OIDCClientRepresentation client = create();
         String clientId = client.getClientId();
-        ClientRepresentation clientRep = AdminApiUtil.findClientByClientId(realmResource(), clientId).toRepresentation();
+        ClientRepresentation clientRep = AdminApiUtil.findClientByClientId(managedRealm.admin(), clientId).toRepresentation();
         Assertions.assertTrue(clientRep.isEnabled());
 
         // Add client-disabled policy
@@ -314,14 +312,14 @@ public class ClientRegistrationPoliciesTest extends AbstractClientRegistrationTe
         rep.setProviderId(ClientDisabledClientRegistrationPolicyFactory.PROVIDER_ID);
         rep.setProviderType(ClientRegistrationPolicy.class.getName());
         rep.setSubType(getPolicyAnon());
-        Response response = realmResource().components().add(rep);
+        Response response = managedRealm.admin().components().add(rep);
         String policyId = ApiUtil.getCreatedId(response);
         response.close();
 
         // Assert new client is disabled
         client = create();
         clientId = client.getClientId();
-        clientRep = AdminApiUtil.findClientByClientId(realmResource(), clientId).toRepresentation();
+        clientRep = AdminApiUtil.findClientByClientId(managedRealm.admin(), clientId).toRepresentation();
         Assertions.assertFalse(clientRep.isEnabled());
 
         // Try enable client. Should fail
@@ -333,7 +331,7 @@ public class ClientRegistrationPoliciesTest extends AbstractClientRegistrationTe
         reg.update(clientRep);
 
         // Revert
-        realmResource().components().component(policyId).remove();
+        managedRealm.admin().components().component(policyId).remove();
     }
 
 
@@ -341,13 +339,13 @@ public class ClientRegistrationPoliciesTest extends AbstractClientRegistrationTe
     public void testMaxClientsPolicy() throws Exception {
         setTrustedHost("localhost");
 
-        int clientsCount = realmResource().clients().findAll().size();
+        int clientsCount = managedRealm.admin().clients().findAll().size();
         int newClientsLimit = clientsCount + 1;
 
         // Allow to create one more client to current limit
         ComponentRepresentation maxClientsPolicyRep = findPolicyByProviderAndAuth(MaxClientsClientRegistrationPolicyFactory.PROVIDER_ID, getPolicyAnon());
         maxClientsPolicyRep.getConfig().putSingle(MaxClientsClientRegistrationPolicyFactory.MAX_CLIENTS, String.valueOf(newClientsLimit));
-        realmResource().components().component(maxClientsPolicyRep.getId()).update(maxClientsPolicyRep);
+        managedRealm.admin().components().component(maxClientsPolicyRep.getId()).update(maxClientsPolicyRep);
 
         // I can register one new client
         OIDCClientRepresentation client = create();
@@ -357,13 +355,13 @@ public class ClientRegistrationPoliciesTest extends AbstractClientRegistrationTe
 
         // Revert
         maxClientsPolicyRep.getConfig().putSingle(MaxClientsClientRegistrationPolicyFactory.MAX_CLIENTS, String.valueOf(10000));
-        realmResource().components().component(maxClientsPolicyRep.getId()).update(maxClientsPolicyRep);
+        managedRealm.admin().components().component(maxClientsPolicyRep.getId()).update(maxClientsPolicyRep);
     }
 
 
     @Test
     public void testProviders() throws Exception {
-        List<ComponentTypeRepresentation> reps = realmResource().clientRegistrationPolicy().getProviders();
+        List<ComponentTypeRepresentation> reps = managedRealm.admin().clientRegistrationPolicy().getProviders();
         Map<String, ComponentTypeRepresentation> providersMap = reps.stream().collect(Collectors.toMap((ComponentTypeRepresentation rep) -> {
             return rep.getId();
         }, (ComponentTypeRepresentation rep) -> {
@@ -393,19 +391,19 @@ public class ClientRegistrationPoliciesTest extends AbstractClientRegistrationTe
         ClientScopeRepresentation clientScope = new ClientScopeRepresentation();
         clientScope.setName("foo");
         clientScope.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
-        Response response = realmResource().clientScopes().create(clientScope);
+        Response response = managedRealm.admin().clientScopes().create(clientScope);
         String fooScopeId = ApiUtil.getCreatedId(response);
         response.close();
 
         clientScope = new ClientScopeRepresentation();
         clientScope.setName("bar");
         clientScope.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
-        response = realmResource().clientScopes().create(clientScope);
+        response = managedRealm.admin().clientScopes().create(clientScope);
         String barScopeId = ApiUtil.getCreatedId(response);
         response.close();
 
         // send request again and test that clientScope provider contains added client scopes
-        reps = realmResource().clientRegistrationPolicy().getProviders();
+        reps = managedRealm.admin().clientRegistrationPolicy().getProviders();
         clientScopeRep = reps.stream().filter((ComponentTypeRepresentation rep1) -> {
 
             return rep1.getId().equals(ClientScopesClientRegistrationPolicyFactory.PROVIDER_ID);
@@ -417,8 +415,8 @@ public class ClientRegistrationPoliciesTest extends AbstractClientRegistrationTe
         Assertions.assertTrue(clientScopes.contains("bar"));
 
         // Revert client scopes
-        realmResource().clientScopes().get(fooScopeId).remove();
-        realmResource().clientScopes().get(barScopeId).remove();
+        managedRealm.admin().clientScopes().get(fooScopeId).remove();
+        managedRealm.admin().clientScopes().get(barScopeId).remove();
     }
 
     private List<String> getProviderConfigProperty(ComponentTypeRepresentation provider, String expectedConfigPropName) {
@@ -448,7 +446,7 @@ public class ClientRegistrationPoliciesTest extends AbstractClientRegistrationTe
         ClientScopeRepresentation clientScope = new ClientScopeRepresentation();
         clientScope.setName("foo");
         clientScope.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
-        Response response = realmResource().clientScopes().create(clientScope);
+        Response response = managedRealm.admin().clientScopes().create(clientScope);
         String clientScopeId = ApiUtil.getCreatedId(response);
         response.close();
 
@@ -467,15 +465,15 @@ public class ClientRegistrationPoliciesTest extends AbstractClientRegistrationTe
         assertFail(ClientRegOp.UPDATE, registeredClient, 403, "Not permitted to use specified clientScope");
 
         // Update client with the clientScope via Admin REST
-        ClientResource client = AdminApiUtil.findClientByClientId(realmResource(), "test-app");
+        ClientResource client = AdminApiUtil.findClientByClientId(managedRealm.admin(), "test-app");
         client.addDefaultClientScope(clientScopeId);
 
         // Now the update via clientRegistration is permitted too as scope was already set
         reg.update(registeredClient);
 
         // Revert client scope
-        realmResource().clients().get(client.toRepresentation().getId()).remove();
-        realmResource().clientScopes().get(clientScopeId).remove();
+        managedRealm.admin().clients().get(client.toRepresentation().getId()).remove();
+        managedRealm.admin().clientScopes().get(clientScopeId).remove();
     }
 
 
@@ -487,7 +485,7 @@ public class ClientRegistrationPoliciesTest extends AbstractClientRegistrationTe
         ClientScopeRepresentation clientScope = new ClientScopeRepresentation();
         clientScope.setName("foo");
         clientScope.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
-        Response response = realmResource().clientScopes().create(clientScope);
+        Response response = managedRealm.admin().clientScopes().create(clientScope);
         String clientScopeId = ApiUtil.getCreatedId(response);
         response.close();
 
@@ -499,15 +497,15 @@ public class ClientRegistrationPoliciesTest extends AbstractClientRegistrationTe
         // Update the policy to allow the "foo" scope
         ComponentRepresentation clientScopesPolicyRep = findPolicyByProviderAndAuth(ClientScopesClientRegistrationPolicyFactory.PROVIDER_ID, getPolicyAnon());
         clientScopesPolicyRep.getConfig().putSingle(ClientScopesClientRegistrationPolicyFactory.ALLOWED_CLIENT_SCOPES, "foo");
-        realmResource().components().component(clientScopesPolicyRep.getId()).update(clientScopesPolicyRep);
+        managedRealm.admin().components().component(clientScopesPolicyRep.getId()).update(clientScopesPolicyRep);
 
         // Check that I can register client now
         ClientRepresentation registeredClient = reg.create(clientRep);
         Assertions.assertNotNull(registeredClient.getRegistrationAccessToken());
 
         // Revert client scope
-        AdminApiUtil.findClientResourceByClientId(realmResource(), "test-app").remove();
-        realmResource().clientScopes().get(clientScopeId).remove();
+        AdminApiUtil.findClientResourceByClientId(managedRealm.admin(), "test-app").remove();
+        managedRealm.admin().clientScopes().get(clientScopeId).remove();
     }
 
 
@@ -530,7 +528,7 @@ public class ClientRegistrationPoliciesTest extends AbstractClientRegistrationTe
         // Update the "authenticated" policy and allow hardcoded role mapper
         ComponentRepresentation protocolMapperPolicyRep = findPolicyByProviderAndAuth(ProtocolMappersClientRegistrationPolicyFactory.PROVIDER_ID, getPolicyAuth());
         protocolMapperPolicyRep.getConfig().add(ProtocolMappersClientRegistrationPolicyFactory.ALLOWED_PROTOCOL_MAPPER_TYPES, HardcodedRole.PROVIDER_ID);
-        realmResource().components().component(protocolMapperPolicyRep.getId()).update(protocolMapperPolicyRep);
+        managedRealm.admin().components().component(protocolMapperPolicyRep.getId()).update(protocolMapperPolicyRep);
 
         // Check authenticated registration is permitted
         ClientRepresentation registeredClient = reg.create(clientRep);
@@ -543,9 +541,9 @@ public class ClientRegistrationPoliciesTest extends AbstractClientRegistrationTe
         assertFail(ClientRegOp.CREATE, clientRep, 403, "ProtocolMapper type not allowed");
 
         // Revert policy change
-        AdminApiUtil.findClientResourceByClientId(realmResource(), "test-app").remove();
+        AdminApiUtil.findClientResourceByClientId(managedRealm.admin(), "test-app").remove();
         protocolMapperPolicyRep.getConfig().get(ProtocolMappersClientRegistrationPolicyFactory.ALLOWED_PROTOCOL_MAPPER_TYPES).remove(HardcodedRole.PROVIDER_ID);
-        realmResource().components().component(protocolMapperPolicyRep.getId()).update(protocolMapperPolicyRep);
+        managedRealm.admin().components().component(protocolMapperPolicyRep.getId()).update(protocolMapperPolicyRep);
     }
 
 
@@ -590,7 +588,7 @@ public class ClientRegistrationPoliciesTest extends AbstractClientRegistrationTe
         reg.update(registeredClient);
 
         // Revert client
-        AdminApiUtil.findClientResourceByClientId(realmResource(), "test-app").remove();
+        AdminApiUtil.findClientResourceByClientId(managedRealm.admin(), "test-app").remove();
     }
 
     @Test
@@ -600,18 +598,18 @@ public class ClientRegistrationPoliciesTest extends AbstractClientRegistrationTe
         ClientRepresentation clientRep = createRep("test-app");
         // Create the client with a client registration disallowed protocolMapper
         clientRep.setProtocolMappers(List.of(createHardcodedMapperRep()));
-        Response adminClientCreationResponse = realmResource().clients().create(clientRep);
+        Response adminClientCreationResponse = managedRealm.admin().clients().create(clientRep);
         String clientTechnicalId = ApiUtil.getCreatedId(adminClientCreationResponse);
         adminClientCreationResponse.close();
 
-        ClientResource clientResource = realmResource().clients().get(clientTechnicalId);
+        ClientResource clientResource = managedRealm.admin().clients().get(clientTechnicalId);
 
         reg.auth(Auth.token(clientResource.regenerateRegistrationAccessToken()));
         // Check the client can be updated with a representation keeping the disallowed protocolMapper
         reg.update(clientResource.toRepresentation());
 
         // Revert client
-        AdminApiUtil.findClientResourceByClientId(realmResource(), "test-app").remove();
+        AdminApiUtil.findClientResourceByClientId(managedRealm.admin(), "test-app").remove();
     }
 
     @Test
@@ -621,11 +619,11 @@ public class ClientRegistrationPoliciesTest extends AbstractClientRegistrationTe
         ClientRepresentation clientRep = createRep("test-app");
         // Create the client with a client registration disallowed protocolMapper
         clientRep.setProtocolMappers(List.of(createHardcodedMapperRep()));
-        Response adminClientCreationResponse = realmResource().clients().create(clientRep);
+        Response adminClientCreationResponse = managedRealm.admin().clients().create(clientRep);
         String clientTechnicalId = ApiUtil.getCreatedId(adminClientCreationResponse);
         adminClientCreationResponse.close();
 
-        ClientResource clientResource = realmResource().clients().get(clientTechnicalId);
+        ClientResource clientResource = managedRealm.admin().clients().get(clientTechnicalId);
 
         reg.auth(Auth.token(clientResource.regenerateRegistrationAccessToken()));
 
@@ -634,7 +632,7 @@ public class ClientRegistrationPoliciesTest extends AbstractClientRegistrationTe
         assertFail(ClientRegOp.UPDATE, representation, 403, "Missing id for mapper named 'Hardcoded foo role'");
 
         // Revert client
-        AdminApiUtil.findClientResourceByClientId(realmResource(), "test-app").remove();
+        AdminApiUtil.findClientResourceByClientId(managedRealm.admin(), "test-app").remove();
     }
 
     @Test
@@ -644,11 +642,11 @@ public class ClientRegistrationPoliciesTest extends AbstractClientRegistrationTe
         ClientRepresentation clientRep = createRep("test-app");
         // Create the client with a client registration disallowed protocolMapper
         clientRep.setProtocolMappers(List.of(createHardcodedMapperRep()));
-        Response adminClientCreationResponse = realmResource().clients().create(clientRep);
+        Response adminClientCreationResponse = managedRealm.admin().clients().create(clientRep);
         String clientTechnicalId = ApiUtil.getCreatedId(adminClientCreationResponse);
         adminClientCreationResponse.close();
 
-        ClientResource clientResource = realmResource().clients().get(clientTechnicalId);
+        ClientResource clientResource = managedRealm.admin().clients().get(clientTechnicalId);
 
         reg.auth(Auth.token(clientResource.regenerateRegistrationAccessToken()));
         // Check the client can be updated with a representation keeping the disallowed protocolMapper
@@ -657,7 +655,7 @@ public class ClientRegistrationPoliciesTest extends AbstractClientRegistrationTe
         assertFail(ClientRegOp.UPDATE, representation, 403, "ProtocolMapper type not allowed");
 
         // Revert client
-        AdminApiUtil.findClientResourceByClientId(realmResource(), "test-app").remove();
+        AdminApiUtil.findClientResourceByClientId(managedRealm.admin(), "test-app").remove();
     }
 
     @Test
@@ -667,11 +665,11 @@ public class ClientRegistrationPoliciesTest extends AbstractClientRegistrationTe
         ClientRepresentation clientRep = createRep("test-app");
         // Create the client with a client registration disallowed protocolMapper
         clientRep.setProtocolMappers(List.of(createHardcodedMapperRep()));
-        Response adminClientCreationResponse = realmResource().clients().create(clientRep);
+        Response adminClientCreationResponse = managedRealm.admin().clients().create(clientRep);
         String clientTechnicalId = ApiUtil.getCreatedId(adminClientCreationResponse);
         adminClientCreationResponse.close();
 
-        ClientResource clientResource = realmResource().clients().get(clientTechnicalId);
+        ClientResource clientResource = managedRealm.admin().clients().get(clientTechnicalId);
 
         reg.auth(Auth.token(clientResource.regenerateRegistrationAccessToken()));
         ClientRepresentation representation = clientResource.toRepresentation();
@@ -679,7 +677,7 @@ public class ClientRegistrationPoliciesTest extends AbstractClientRegistrationTe
         assertFail(ClientRegOp.UPDATE, representation, 403, "No existing mapper model found for id");
 
         // Revert client
-        AdminApiUtil.findClientResourceByClientId(realmResource(), "test-app").remove();
+        AdminApiUtil.findClientResourceByClientId(managedRealm.admin(), "test-app").remove();
     }
 
     @Test
@@ -693,7 +691,7 @@ public class ClientRegistrationPoliciesTest extends AbstractClientRegistrationTe
         Assertions.assertNull(registeredClient.getProtocolMappers());
 
         // Revert
-        AdminApiUtil.findClientResourceByClientId(realmResource(), "test-app").remove();
+        AdminApiUtil.findClientResourceByClientId(managedRealm.admin(), "test-app").remove();
     }
 
 
@@ -705,7 +703,7 @@ public class ClientRegistrationPoliciesTest extends AbstractClientRegistrationTe
 
         ComponentRepresentation protocolMapperPolicyRep = findPolicyByProviderAndAuth(ProtocolMappersClientRegistrationPolicyFactory.PROVIDER_ID, getPolicyAnon());
         protocolMapperPolicyRep.getConfig().add(ProtocolMappersClientRegistrationPolicyFactory.ALLOWED_PROTOCOL_MAPPER_TYPES, HardcodedRole.PROVIDER_ID);
-        realmResource().components().component(protocolMapperPolicyRep.getId()).update(protocolMapperPolicyRep);
+        managedRealm.admin().components().component(protocolMapperPolicyRep.getId()).update(protocolMapperPolicyRep);
 
         // Create client with hardcoded mapper
         ClientRepresentation clientRep = createRep("test-app");
@@ -716,9 +714,9 @@ public class ClientRegistrationPoliciesTest extends AbstractClientRegistrationTe
         ProtocolMapperRepresentation hardcodedMapper = registeredClient.getProtocolMappers().get(0);
 
         // Revert
-        AdminApiUtil.findClientResourceByClientId(realmResource(), "test-app").remove();
+        AdminApiUtil.findClientResourceByClientId(managedRealm.admin(), "test-app").remove();
         protocolMapperPolicyRep.getConfig().get(ProtocolMappersClientRegistrationPolicyFactory.ALLOWED_PROTOCOL_MAPPER_TYPES).remove(HardcodedRole.PROVIDER_ID);
-        realmResource().components().component(protocolMapperPolicyRep.getId()).update(protocolMapperPolicyRep);
+        managedRealm.admin().components().component(protocolMapperPolicyRep.getId()).update(protocolMapperPolicyRep);
     }
 
     @Test
@@ -732,7 +730,7 @@ public class ClientRegistrationPoliciesTest extends AbstractClientRegistrationTe
         rep.setSubType(getPolicyAnon());
         rep.setConfig(new MultivaluedHashMap<>());
         rep.getConfig().putSingle(ClientScopesClientRegistrationPolicyFactory.ALLOWED_CLIENT_SCOPES, "foo1");
-        Response response = realmResource().components().add(rep);
+        Response response = managedRealm.admin().components().add(rep);
         ErrorRepresentation error = response.readEntity(ErrorRepresentation.class);
         Assertions.assertEquals("Client scopes not allowed: [foo1]", error.getErrorMessage());
 
@@ -740,7 +738,7 @@ public class ClientRegistrationPoliciesTest extends AbstractClientRegistrationTe
         ComponentRepresentation clientScopesPolicyRep = findPolicyByProviderAndAuth(ClientScopesClientRegistrationPolicyFactory.PROVIDER_ID, getPolicyAnon());
         clientScopesPolicyRep.getConfig().putSingle(ClientScopesClientRegistrationPolicyFactory.ALLOWED_CLIENT_SCOPES, "foo2");
         BadRequestException e = Assertions.assertThrows(BadRequestException.class,
-                () -> realmResource().components().component(clientScopesPolicyRep.getId()).update(clientScopesPolicyRep));
+                () -> managedRealm.admin().components().component(clientScopesPolicyRep.getId()).update(clientScopesPolicyRep));
         error = e.getResponse().readEntity(ErrorRepresentation.class);
         Assertions.assertEquals("Client scopes not allowed: [foo2]", error.getErrorMessage());
     }
@@ -758,8 +756,8 @@ public class ClientRegistrationPoliciesTest extends AbstractClientRegistrationTe
 
     private ComponentRepresentation findPolicyByProviderAndAuth(String providerId, String authType) {
         // Change the policy to avoid checking hosts
-        String parentId = realmResource().toRepresentation().getId();
-        List<ComponentRepresentation> reps = realmResource().components().query(parentId, ClientRegistrationPolicy.class.getName());
+        String parentId = managedRealm.admin().toRepresentation().getId();
+        List<ComponentRepresentation> reps = managedRealm.admin().components().query(parentId, ClientRegistrationPolicy.class.getName());
         for (ComponentRepresentation rep : reps) {
             if (rep.getSubType().equals(authType) && rep.getProviderId().equals(providerId)) {
                 return rep;
@@ -771,7 +769,7 @@ public class ClientRegistrationPoliciesTest extends AbstractClientRegistrationTe
     private void setTrustedHost(String hostname) {
         ComponentRepresentation trustedHostRep = findPolicyByProviderAndAuth(TrustedHostClientRegistrationPolicyFactory.PROVIDER_ID, getPolicyAnon());
         trustedHostRep.getConfig().putSingle(TrustedHostClientRegistrationPolicyFactory.TRUSTED_HOSTS, hostname);
-        realmResource().components().component(trustedHostRep.getId()).update(trustedHostRep);
+        managedRealm.admin().components().component(trustedHostRep.getId()).update(trustedHostRep);
     }
 
     private void assertRegAccessToken(String registrationAccessToken, RegistrationAuth expectedRegAuth) throws Exception {

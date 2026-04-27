@@ -47,12 +47,12 @@ import org.keycloak.services.clientpolicy.condition.AcrCondition;
 import org.keycloak.services.clientpolicy.condition.AcrConditionFactory;
 import org.keycloak.services.clientpolicy.executor.AuthenticationFlowSelectorExecutor;
 import org.keycloak.services.clientpolicy.executor.AuthenticationFlowSelectorExecutorFactory;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginTotpPage;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.ClientPoliciesUtil;
 import org.keycloak.testsuite.util.FlowUtil;
-import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.util.JsonSerialization;
 
 import org.jboss.arquillian.graphene.page.Page;
@@ -144,8 +144,7 @@ public class AcrAuthFlowTest extends AbstractOIDCScopeTest{
                 .password(password);
 
         if (totpSecret != null){
-            builder.totpSecret(totpSecret)
-                    .otpEnabled();
+            builder.totpSecret(totpSecret);
         }
 
         return builder.build();
@@ -197,7 +196,7 @@ public class AcrAuthFlowTest extends AbstractOIDCScopeTest{
         createOTPFlow();
 
         // needed otherwise multiple OTP tests will fail due to token reuse
-        new RealmAttributeUpdater(testRealm())
+        new RealmAttributeUpdater(managedRealm.admin())
                 .setOtpPolicyCodeReusable(true)
                 .update();
     }
@@ -209,11 +208,11 @@ public class AcrAuthFlowTest extends AbstractOIDCScopeTest{
     public void cleanupTest() {
         try {
             ClientPoliciesRepresentation clientPolicies = JsonSerialization.readValue("{}", ClientPoliciesRepresentation.class);
-            adminClient.realm(TEST_REALM_NAME).clientPoliciesPoliciesResource().updatePolicies(clientPolicies);
+            managedRealm.admin().clientPoliciesPoliciesResource().updatePolicies(clientPolicies);
 
             ClientProfilesRepresentation clientProfilesRepresentation = JsonSerialization.readValue("{}", ClientProfilesRepresentation.class);
 
-            adminClient.realm(TEST_REALM_NAME).clientPoliciesProfilesResource().updateProfiles(clientProfilesRepresentation);
+            managedRealm.admin().clientPoliciesProfilesResource().updateProfiles(clientProfilesRepresentation);
         }
         catch (Exception e) {
             Assertions.fail();
@@ -434,7 +433,7 @@ public class AcrAuthFlowTest extends AbstractOIDCScopeTest{
      * @return The flow ID
      */
     private String findFlowByAlias(String alias){
-        return testRealm().flows().getFlows().stream().filter(f -> f.getAlias().equals(alias)).findFirst().orElseThrow().getId();
+        return managedRealm.admin().flows().getFlows().stream().filter(f -> f.getAlias().equals(alias)).findFirst().orElseThrow().getId();
     }
 
 

@@ -39,6 +39,8 @@ import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.realm.ClientBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.pages.AppPage;
@@ -50,11 +52,9 @@ import org.keycloak.testsuite.pages.RegisterPage;
 import org.keycloak.testsuite.pages.TermsAndConditionsPage;
 import org.keycloak.testsuite.rest.representation.AuthenticatorState;
 import org.keycloak.testsuite.updaters.Creator;
-import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.ExecutionBuilder;
 import org.keycloak.testsuite.util.FlowBuilder;
 import org.keycloak.testsuite.util.RealmRepUtil;
-import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
 import org.jboss.arquillian.graphene.page.Page;
@@ -88,7 +88,7 @@ public class CustomFlowTest extends AbstractFlowTest {
                                               .clientId("dummy-client")
                                               .name("dummy-client")
                                               .authenticatorType(PassThroughClientAuthenticator.PROVIDER_ID)
-                                              .directAccessGrants()
+                                              .directAccessGrantsEnabled()
                                               .build();
         testRealm.getClients().add(dummyClient);
 
@@ -113,12 +113,12 @@ public class CustomFlowTest extends AbstractFlowTest {
                                                            .topLevel(true)
                                                            .builtIn(false)
                                                            .build();
-        testRealm().flows().createFlow(flow);
+        managedRealm.admin().flows().createFlow(flow);
 
-        RealmRepresentation realm = testRealm().toRepresentation();
+        RealmRepresentation realm = managedRealm.admin().toRepresentation();
         realm.setBrowserFlow(flow.getAlias());
         realm.setDirectGrantFlow(flow.getAlias());
-        testRealm().update(realm);
+        managedRealm.admin().update(realm);
 
         // refresh flow to find its id
         flow = findFlowByAlias(flow.getAlias());
@@ -130,7 +130,7 @@ public class CustomFlowTest extends AbstractFlowTest {
                                                             .priority(10)
                                                             .authenticatorFlow(false)
                                                             .build();
-        testRealm().flows().addExecution(execution);
+        managedRealm.admin().flows().addExecution(execution);
 
         flow = FlowBuilder.create()
                         .alias("dummy registration")
@@ -139,7 +139,7 @@ public class CustomFlowTest extends AbstractFlowTest {
                         .topLevel(true)
                         .builtIn(false)
                         .build();
-        testRealm().flows().createFlow(flow);
+        managedRealm.admin().flows().createFlow(flow);
 
         setRegistrationFlow(flow);
 
@@ -153,7 +153,7 @@ public class CustomFlowTest extends AbstractFlowTest {
                         .priority(10)
                         .authenticatorFlow(false)
                         .build();
-        testRealm().flows().addExecution(execution);
+        managedRealm.admin().flows().addExecution(execution);
 
         AuthenticationFlowRepresentation clientFlow = FlowBuilder.create()
                                                            .alias("client-dummy")
@@ -162,11 +162,11 @@ public class CustomFlowTest extends AbstractFlowTest {
                                                            .topLevel(true)
                                                            .builtIn(false)
                                                            .build();
-        testRealm().flows().createFlow(clientFlow);
+        managedRealm.admin().flows().createFlow(clientFlow);
 
-        realm = testRealm().toRepresentation();
+        realm = managedRealm.admin().toRepresentation();
         realm.setClientAuthenticationFlow(clientFlow.getAlias());
-        testRealm().update(realm);
+        managedRealm.admin().update(realm);
 
         // refresh flow to find its id
         clientFlow = findFlowByAlias(clientFlow.getAlias());
@@ -178,7 +178,7 @@ public class CustomFlowTest extends AbstractFlowTest {
                         .priority(10)
                         .authenticatorFlow(false)
                         .build();
-        testRealm().flows().addExecution(execution);
+        managedRealm.admin().flows().addExecution(execution);
 
         testContext.setInitialized(true);
     }
@@ -213,7 +213,7 @@ public class CustomFlowTest extends AbstractFlowTest {
      */
     @Test
     public void testRequiredAfterAlternative() {
-        AuthenticationManagementResource authMgmtResource = testRealm().flows();
+        AuthenticationManagementResource authMgmtResource = managedRealm.admin().flows();
         Map<String, Object> params = new HashMap<>();
         String flowAlias = "Browser Flow With Extra";
         params.put("newName", flowAlias);
@@ -235,11 +235,11 @@ public class CustomFlowTest extends AbstractFlowTest {
                 .authenticatorFlow(false)
                 .build();
 
-        RealmRepresentation rep = testRealm().toRepresentation();
-        try (Response r = testRealm().flows().addExecution(execution)) {
+        RealmRepresentation rep = managedRealm.admin().toRepresentation();
+        try (Response r = managedRealm.admin().flows().addExecution(execution)) {
             rep.setBrowserFlow(flowAlias);
-            testRealm().update(rep);
-            rep = testRealm().toRepresentation();
+            managedRealm.admin().update(rep);
+            rep = managedRealm.admin().toRepresentation();
             Assertions.assertEquals(flowAlias, rep.getBrowserFlow());
         }
 
@@ -254,7 +254,7 @@ public class CustomFlowTest extends AbstractFlowTest {
 
         // Revert dummy flow
         rep.setBrowserFlow("dummy");
-        testRealm().update(rep);
+        managedRealm.admin().update(rep);
     }
 
     @Test
@@ -268,7 +268,7 @@ public class CustomFlowTest extends AbstractFlowTest {
         flow.setTopLevel(true);
         flow.setBuiltIn(false);
 
-        try (Creator.Flow amr = Creator.create(testRealm(), flow)) {
+        try (Creator.Flow amr = Creator.create(managedRealm.admin(), flow)) {
             AuthenticationManagementResource authMgmtResource = amr.resource();
 
             //add execution - X509 username

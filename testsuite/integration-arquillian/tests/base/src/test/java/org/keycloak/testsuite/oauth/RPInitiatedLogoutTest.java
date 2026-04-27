@@ -41,6 +41,7 @@ import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.AdminApiUtil;
@@ -55,7 +56,6 @@ import org.keycloak.testsuite.pages.PageUtils;
 import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.updaters.UserAttributeUpdater;
-import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.ClientManager;
 import org.keycloak.testsuite.util.InfinispanTestTimeServiceRule;
 import org.keycloak.testsuite.util.Matchers;
@@ -290,7 +290,7 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
     //KEYCLOAK-2741
     @Test
     public void logoutWithRememberMe() throws IOException {
-        try (RealmAttributeUpdater update = new RealmAttributeUpdater(testRealm()).setRememberMe(true).update()) {
+        try (RealmAttributeUpdater update = new RealmAttributeUpdater(managedRealm.admin()).setRememberMe(true).update()) {
             String testUsername = "test-user@localhost";
             String testUserPassword = "password";
             oauth.openLoginForm();
@@ -636,7 +636,7 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
         MatcherAssert.assertThat(false, is(isSessionActive(tokenResponse.getSessionState())));
         assertCurrentUrlEquals(APP_REDIRECT_URI + "?state=somethingg");
 
-        UserResource user = AdminApiUtil.findUserByUsernameId(testRealm(), "test-user@localhost");
+        UserResource user = AdminApiUtil.findUserByUsernameId(managedRealm.admin(), "test-user@localhost");
         user.revokeConsent("third-party");
     }
 
@@ -644,7 +644,7 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
     // Test logout request with only "client_id" parameter. Also test "ui_locales" parameter works as expected
     @Test
     public void logoutWithUiLocalesAndClientIdParameter() throws IOException {
-        try (RealmAttributeUpdater updater = new RealmAttributeUpdater(testRealm()).addSupportedLocale("cs").update()) {
+        try (RealmAttributeUpdater updater = new RealmAttributeUpdater(managedRealm.admin()).addSupportedLocale("cs").update()) {
             AccessTokenResponse tokenResponse = loginUser(false);
 
             oauth.logoutForm().withClientId().uiLocales("cs").open();
@@ -844,7 +844,7 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
     // Calling RP-Initiated Logout endpoint with POST request. This must be supported according to specification
     @Test
     public void logoutWithPostRequest() throws IOException {
-        try (RealmAttributeUpdater updater = new RealmAttributeUpdater(testRealm()).addSupportedLocale("cs").update()) {
+        try (RealmAttributeUpdater updater = new RealmAttributeUpdater(managedRealm.admin()).addSupportedLocale("cs").update()) {
             AccessTokenResponse tokenResponse = loginUser();
 
             // Logout with POST request and automatic redirect after logout
@@ -888,11 +888,11 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     public void testLocalizationPreferenceDuringLogout() throws IOException {
-        try (RealmAttributeUpdater realmUpdater = new RealmAttributeUpdater(testRealm()).addSupportedLocale("cs").update()) {
+        try (RealmAttributeUpdater realmUpdater = new RealmAttributeUpdater(managedRealm.admin()).addSupportedLocale("cs").update()) {
             AccessTokenResponse tokenResponse = loginUser();
 
             // Set localization to the user account to "cs". Ensure that it is shown
-            try (UserAttributeUpdater userUpdater = UserAttributeUpdater.forUserByUsername(testRealm(), "test-user@localhost").setAttribute(UserModel.LOCALE, "cs").update()) {
+            try (UserAttributeUpdater userUpdater = UserAttributeUpdater.forUserByUsername(managedRealm.admin(), "test-user@localhost").setAttribute(UserModel.LOCALE, "cs").update()) {
                 oauth.openLogoutForm();
                 Assertions.assertEquals("Odhlašování", PageUtils.getPageTitle(driver)); // Logging out
                 Assertions.assertEquals("Čeština", logoutConfirmPage.getLanguageDropdownText());
@@ -903,7 +903,7 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
                 Assertions.assertEquals("Čeština", logoutConfirmPage.getLanguageDropdownText());
             }
 
-            UserAttributeUpdater.forUserByUsername(testRealm(), "test-user@localhost").removeAttribute(UserModel.LOCALE).update();
+            UserAttributeUpdater.forUserByUsername(managedRealm.admin(), "test-user@localhost").removeAttribute(UserModel.LOCALE).update();
 
             // Removed localization from user account. Now localization set by ui_locales parameter should be used
             oauth.logoutForm().uiLocales("de").open();
@@ -927,7 +927,7 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     public void testLocalizationDuringLogout() throws IOException {
-        try (RealmAttributeUpdater realmUpdater = new RealmAttributeUpdater(testRealm()).addSupportedLocale("cs").update()) {
+        try (RealmAttributeUpdater realmUpdater = new RealmAttributeUpdater(managedRealm.admin()).addSupportedLocale("cs").update()) {
             AccessTokenResponse tokenResponse = loginUser();
 
             // Display the logout page. Then change the localization to Czech, then back to english and then and logout
@@ -1066,17 +1066,17 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
                 .clientId("my-foo-client")
                 .enabled(true)
                 .baseUrl("https://foo/bar")
-                .addRedirectUri(APP_REDIRECT_URI)
+                .redirectUris(APP_REDIRECT_URI)
                 .secret("password")
                 .build();
-        try (Response response = testRealm().clients().create(clientRep)) {
+        try (Response response = managedRealm.admin().clients().create(clientRep)) {
             String uuid = ApiUtil.getCreatedId(response);
             oauth.client("my-foo-client", "password");
 
             AccessTokenResponse tokenResponse = loginUser();
 
             // Remove client after login of user
-            testRealm().clients().get(uuid).remove();
+            managedRealm.admin().clients().get(uuid).remove();
 
             oauth.logoutForm().postLogoutRedirectUri(APP_REDIRECT_URI).idTokenHint(tokenResponse.getIdToken()).open();
 

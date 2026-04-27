@@ -373,10 +373,10 @@ public class UserStorageFailureTest extends AbstractTestRealmKeycloakTest {
         enableCache();
         events.clear();
         toggleForceFailOnValidation(true);
-        UserRepresentation user = testRealm().users().search(FailableHardcodedStorageProvider.username).get(0);
+        UserRepresentation user = managedRealm.admin().users().search(FailableHardcodedStorageProvider.username).get(0);
         assertFalse(user.isEnabled());
         toggleForceFailOnValidation(false);
-        user = testRealm().users().search(FailableHardcodedStorageProvider.username).get(0);
+        user = managedRealm.admin().users().search(FailableHardcodedStorageProvider.username).get(0);
         assertTrue(user.isEnabled());
         oauth.client("offline-client", "secret");
         oauth.redirectUri(OAuthClient.AUTH_SERVER_ROOT + "/offline-client");
@@ -385,33 +385,33 @@ public class UserStorageFailureTest extends AbstractTestRealmKeycloakTest {
         AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
         assertNotNull(tokenResponse.getIdToken());
         toggleForceFailOnValidation(true);
-        user = testRealm().users().search(FailableHardcodedStorageProvider.username).get(0);
+        user = managedRealm.admin().users().search(FailableHardcodedStorageProvider.username).get(0);
         // user still enabled because it was cached before and the cache is still valid based on the storage cache policy config
         assertTrue(user.isEnabled());
 
         try {
             // force cache to expire
             setTimeOffset(Math.toIntExact(Duration.ofMinutes(10).toSeconds()));
-            user = testRealm().users().search(FailableHardcodedStorageProvider.username).get(0);
+            user = managedRealm.admin().users().search(FailableHardcodedStorageProvider.username).get(0);
             assertFalse(user.isEnabled());
             toggleForceFailOnValidation(false);
-            user = testRealm().users().search(FailableHardcodedStorageProvider.username).get(0);
+            user = managedRealm.admin().users().search(FailableHardcodedStorageProvider.username).get(0);
             assertTrue(user.isEnabled());
 
             // force cache to expire again and make sure user is disabled
             setTimeOffset(Math.toIntExact(Duration.ofMinutes(20).toSeconds()));
             toggleForceFailOnValidation(true);
-            user = testRealm().users().search(FailableHardcodedStorageProvider.username).get(0);
+            user = managedRealm.admin().users().search(FailableHardcodedStorageProvider.username).get(0);
             assertFalse(user.isEnabled());
 
             // make sure that once provider is available again user is enabled
             toggleForceFailOnValidation(false);
-            user = testRealm().users().search(FailableHardcodedStorageProvider.username).get(0);
+            user = managedRealm.admin().users().search(FailableHardcodedStorageProvider.username).get(0);
             assertTrue(user.isEnabled());
 
             // user should still be enabled even if provider is failing again because user is cached and cache is valid based on the storage cache policy config
             toggleForceFailOnValidation(true);
-            user = testRealm().users().search(FailableHardcodedStorageProvider.username).get(0);
+            user = managedRealm.admin().users().search(FailableHardcodedStorageProvider.username).get(0);
             assertTrue(user.isEnabled());
         } finally {
             resetTimeOffset();
@@ -420,16 +420,16 @@ public class UserStorageFailureTest extends AbstractTestRealmKeycloakTest {
     }
 
     private void enableCache() {
-        ComponentRepresentation component = testRealm().components().query().stream()
+        ComponentRepresentation component = managedRealm.admin().components().query().stream()
                 .filter(c -> c.getProviderId().equals(FailableHardcodedStorageProviderFactory.PROVIDER_ID))
                 .findAny().orElse(null);
         component.getConfig().putSingle(CACHE_POLICY, CachePolicy.MAX_LIFESPAN.name());
         component.getConfig().putSingle(MAX_LIFESPAN, String.valueOf(Duration.ofMinutes(5).toMillis()));
-        testRealm().components().component(component.getId()).update(component);
+        managedRealm.admin().components().component(component.getId()).update(component);
         getCleanup().addCleanup(() -> {
             component.getConfig().remove(CACHE_POLICY);
             component.getConfig().remove(MAX_LIFESPAN);
-            testRealm().components().component(component.getId()).update(component);
+            managedRealm.admin().components().component(component.getId()).update(component);
         });
     }
 }

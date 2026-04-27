@@ -45,14 +45,14 @@ import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.realm.RoleBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.pages.OAuthGrantPage;
 import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.ClientManager;
-import org.keycloak.testsuite.util.RoleBuilder;
-import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.util.TokenUtil;
 
@@ -85,9 +85,9 @@ public class OIDCScopeTest extends AbstractOIDCScopeTest {
                 .firstName("John")
                 .lastName("Doe")
                 .password("password")
-                .role("account", "manage-account")
-                .role("account", "view-profile")
-                .addRoles("role-1", "role-2")
+                .clientRoles("account", "manage-account")
+                .clientRoles("account", "view-profile")
+                .roles("role-1", "role-2")
                 .build();
 
         user.setEmailVerified(true);
@@ -126,7 +126,7 @@ public class OIDCScopeTest extends AbstractOIDCScopeTest {
                 .username("role-1-user")
                 .enabled(true)
                 .password("password")
-                .addRoles("role-1")
+                .roles("role-1")
                 .build();
         testRealm.getUsers().add(user);
 
@@ -134,7 +134,7 @@ public class OIDCScopeTest extends AbstractOIDCScopeTest {
                 .username("role-2-user")
                 .enabled(true)
                 .password("password")
-                .addRoles("role-2")
+                .roles("role-2")
                 .build();
         testRealm.getUsers().add(user);
 
@@ -142,7 +142,7 @@ public class OIDCScopeTest extends AbstractOIDCScopeTest {
                 .username("role-parent-user")
                 .enabled(true)
                 .password("password")
-                .addRoles("role-parent")
+                .roles("role-parent")
                 .build();
         testRealm.getUsers().add(user);
 
@@ -150,7 +150,7 @@ public class OIDCScopeTest extends AbstractOIDCScopeTest {
                 .username("group-role-1-user")
                 .enabled(true)
                 .password("password")
-                .addGroups("group-role-1")
+                .groups("group-role-1")
                 .build();
         testRealm.getUsers().add(user);
     }
@@ -289,10 +289,10 @@ public class OIDCScopeTest extends AbstractOIDCScopeTest {
     @Test
     public void testRemoveScopes() throws Exception {
         // Add 'profile' as optional scope. Remove 'email' scope entirely
-        String profileScopeId = AdminApiUtil.findClientScopeByName(testRealm(), "profile").toRepresentation().getId();
-        String emailScopeId = AdminApiUtil.findClientScopeByName(testRealm(), "email").toRepresentation().getId();
+        String profileScopeId = AdminApiUtil.findClientScopeByName(managedRealm.admin(), "profile").toRepresentation().getId();
+        String emailScopeId = AdminApiUtil.findClientScopeByName(managedRealm.admin(), "email").toRepresentation().getId();
 
-        ClientResource testApp = AdminApiUtil.findClientByClientId(testRealm(), "test-app");
+        ClientResource testApp = AdminApiUtil.findClientByClientId(managedRealm.admin(), "test-app");
         testApp.removeDefaultClientScope(profileScopeId);
         testApp.removeDefaultClientScope(emailScopeId);
         testApp.addOptionalClientScope(profileScopeId);
@@ -342,7 +342,7 @@ public class OIDCScopeTest extends AbstractOIDCScopeTest {
     @Test
     public void testOptionalScopesWithConsentRequired() throws Exception {
         // Remove "displayOnConsentScreen" from address
-        ClientScopeResource addressScope = AdminApiUtil.findClientScopeByName(testRealm(), "address");
+        ClientScopeResource addressScope = AdminApiUtil.findClientScopeByName(managedRealm.admin(), "address");
         ClientScopeRepresentation addressScopeRep = addressScope.toRepresentation();
         addressScopeRep.getAttributes().put(ClientScopeModel.DISPLAY_ON_CONSENT_SCREEN, "false");
         addressScope.update(addressScopeRep);
@@ -405,7 +405,7 @@ public class OIDCScopeTest extends AbstractOIDCScopeTest {
     @Test
     public void testClientDisplayedOnConsentScreen() throws Exception {
         // Add "displayOnConsentScreen" to client
-        ClientResource thirdParty = AdminApiUtil.findClientByClientId(testRealm(), "third-party");
+        ClientResource thirdParty = AdminApiUtil.findClientByClientId(managedRealm.admin(), "third-party");
         ClientRepresentation thirdPartyRep = thirdParty.toRepresentation();
         thirdPartyRep.getAttributes().put(ClientScopeModel.DISPLAY_ON_CONSENT_SCREEN, "true");
         thirdPartyRep.getAttributes().put(ClientScopeModel.CONSENT_SCREEN_TEXT, "ThirdParty permissions");
@@ -443,14 +443,14 @@ public class OIDCScopeTest extends AbstractOIDCScopeTest {
     @Test
     public void testClientDisplayedOnConsentScreenWithEmptyConsentText() throws Exception {
         // Add "displayOnConsentScreen" to client
-        ClientResource thirdParty = AdminApiUtil.findClientByClientId(testRealm(), "third-party");
+        ClientResource thirdParty = AdminApiUtil.findClientByClientId(managedRealm.admin(), "third-party");
         ClientRepresentation thirdPartyRep = thirdParty.toRepresentation();
         thirdPartyRep.getAttributes().put(ClientScopeModel.DISPLAY_ON_CONSENT_SCREEN, "true");
         thirdPartyRep.getAttributes().put(ClientScopeModel.CONSENT_SCREEN_TEXT, "");
         thirdParty.update(thirdPartyRep);
 
         // Change consent text on profile scope
-        ClientScopeResource profileScope = AdminApiUtil.findClientScopeByName(testRealm(), OAuth2Constants.SCOPE_PROFILE);
+        ClientScopeResource profileScope = AdminApiUtil.findClientScopeByName(managedRealm.admin(), OAuth2Constants.SCOPE_PROFILE);
         ClientScopeRepresentation profileScopeRep = profileScope.toRepresentation();
         profileScopeRep.getAttributes().put(ClientScopeModel.CONSENT_SCREEN_TEXT, " ");
         profileScope.update(profileScopeRep);
@@ -538,7 +538,7 @@ public class OIDCScopeTest extends AbstractOIDCScopeTest {
         ClientScopeRepresentation clientScope1 = new ClientScopeRepresentation();
         clientScope1.setName("scope-role-1");
         clientScope1.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
-        Response response = testRealm().clientScopes().create(clientScope1);
+        Response response = managedRealm.admin().clientScopes().create(clientScope1);
         String scope1Id = ApiUtil.getCreatedId(response);
         getCleanup().addClientScopeId(scope1Id);
         response.close();
@@ -546,19 +546,19 @@ public class OIDCScopeTest extends AbstractOIDCScopeTest {
         ClientScopeRepresentation clientScope2 = new ClientScopeRepresentation();
         clientScope2.setName("scope-role-2");
         clientScope2.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
-        response = testRealm().clientScopes().create(clientScope2);
+        response = managedRealm.admin().clientScopes().create(clientScope2);
         String scope2Id = ApiUtil.getCreatedId(response);
         getCleanup().addClientScopeId(scope2Id);
         response.close();
 
-        RoleRepresentation role1 = testRealm().roles().get("role-1").toRepresentation();
-        testRealm().clientScopes().get(scope1Id).getScopeMappings().realmLevel().add(Arrays.asList(role1));
+        RoleRepresentation role1 = managedRealm.admin().roles().get("role-1").toRepresentation();
+        managedRealm.admin().clientScopes().get(scope1Id).getScopeMappings().realmLevel().add(Arrays.asList(role1));
 
-        RoleRepresentation role2 = testRealm().roles().get("role-2").toRepresentation();
-        testRealm().clientScopes().get(scope2Id).getScopeMappings().realmLevel().add(Arrays.asList(role2));
+        RoleRepresentation role2 = managedRealm.admin().roles().get("role-2").toRepresentation();
+        managedRealm.admin().clientScopes().get(scope2Id).getScopeMappings().realmLevel().add(Arrays.asList(role2));
 
         // Add client scopes to our client. Disable fullScopeAllowed
-        ClientResource testApp = AdminApiUtil.findClientByClientId(testRealm(), "test-app");
+        ClientResource testApp = AdminApiUtil.findClientByClientId(managedRealm.admin(), "test-app");
         ClientRepresentation testAppRep = testApp.toRepresentation();
         testAppRep.setFullScopeAllowed(false);
         testApp.update(testAppRep);
@@ -614,7 +614,7 @@ public class OIDCScopeTest extends AbstractOIDCScopeTest {
         ClientScopeRepresentation clientScope1 = new ClientScopeRepresentation();
         clientScope1.setName("scope-role-1");
         clientScope1.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
-        Response response = testRealm().clientScopes().create(clientScope1);
+        Response response = managedRealm.admin().clientScopes().create(clientScope1);
         String scope1Id = ApiUtil.getCreatedId(response);
         getCleanup().addClientScopeId(scope1Id);
         response.close();
@@ -622,19 +622,19 @@ public class OIDCScopeTest extends AbstractOIDCScopeTest {
         ClientScopeRepresentation clientScopeParent = new ClientScopeRepresentation();
         clientScopeParent.setName("scope-role-parent");
         clientScopeParent.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
-        response = testRealm().clientScopes().create(clientScopeParent);
+        response = managedRealm.admin().clientScopes().create(clientScopeParent);
         String scopeParentId = ApiUtil.getCreatedId(response);
         getCleanup().addClientScopeId(scopeParentId);
         response.close();
 
-        RoleRepresentation role1 = testRealm().roles().get("role-1").toRepresentation();
-        testRealm().clientScopes().get(scope1Id).getScopeMappings().realmLevel().add(Arrays.asList(role1));
+        RoleRepresentation role1 = managedRealm.admin().roles().get("role-1").toRepresentation();
+        managedRealm.admin().clientScopes().get(scope1Id).getScopeMappings().realmLevel().add(Arrays.asList(role1));
 
-        RoleRepresentation roleParent = testRealm().roles().get("role-parent").toRepresentation();
-        testRealm().clientScopes().get(scopeParentId).getScopeMappings().realmLevel().add(Arrays.asList(roleParent));
+        RoleRepresentation roleParent = managedRealm.admin().roles().get("role-parent").toRepresentation();
+        managedRealm.admin().clientScopes().get(scopeParentId).getScopeMappings().realmLevel().add(Arrays.asList(roleParent));
 
         // Add client scopes to our client
-        ClientResource testApp = AdminApiUtil.findClientByClientId(testRealm(), "test-app");
+        ClientResource testApp = AdminApiUtil.findClientByClientId(managedRealm.admin(), "test-app");
         ClientRepresentation testAppRep = testApp.toRepresentation();
         testApp.update(testAppRep);
         testApp.addDefaultClientScope(scope1Id);
@@ -688,7 +688,7 @@ public class OIDCScopeTest extends AbstractOIDCScopeTest {
     }
 
     private void testLoginAndClientScopesPermissions(String username, String expectedRoleScopes, String... expectedRoles) {
-        String userId = AdminApiUtil.findUserByUsername(testRealm(), username).getId();
+        String userId = AdminApiUtil.findUserByUsername(managedRealm.admin(), username).getId();
 
         oauth.openLoginForm();
         oauth.doLogin(username, "password");

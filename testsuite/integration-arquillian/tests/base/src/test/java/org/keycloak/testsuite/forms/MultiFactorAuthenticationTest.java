@@ -135,7 +135,7 @@ public class MultiFactorAuthenticationTest extends AbstractChangeImportedUserPas
             selectAuthenticatorPage.assertCurrent();
             Assertions.assertEquals(Arrays.asList(SelectAuthenticatorPage.AUTHENTICATOR_APPLICATION, SelectAuthenticatorPage.PASSWORD), selectAuthenticatorPage.getAvailableLoginMethods());
         } finally {
-            BrowserFlowTest.revertFlows(testRealm(), "browser - alternative");
+            BrowserFlowTest.revertFlows(managedRealm.admin(), "browser - alternative");
         }
     }
 
@@ -164,7 +164,7 @@ public class MultiFactorAuthenticationTest extends AbstractChangeImportedUserPas
             selectAuthenticatorPage.assertCurrent();
             Assertions.assertEquals(Arrays.asList(SelectAuthenticatorPage.PASSWORD, SelectAuthenticatorPage.AUTHENTICATOR_APPLICATION), selectAuthenticatorPage.getAvailableLoginMethods());
         } finally {
-            BrowserFlowTest.revertFlows(testRealm(), "browser - alternative");
+            BrowserFlowTest.revertFlows(managedRealm.admin(), "browser - alternative");
         }
     }
 
@@ -238,10 +238,10 @@ public class MultiFactorAuthenticationTest extends AbstractChangeImportedUserPas
 
             Assertions.assertFalse(passwordPage.isCurrent());
             Assertions.assertFalse(loginPage.isCurrent());
-            events.expectLogin().user(testRealm().users().search("user-with-one-configured-otp").get(0).getId())
+            events.expectLogin().user(managedRealm.admin().users().search("user-with-one-configured-otp").get(0).getId())
                     .detail(Details.USERNAME, "user-with-one-configured-otp").assertEvent();
         } finally {
-            BrowserFlowTest.revertFlows(testRealm(),"browser - alternative mechanisms");
+            BrowserFlowTest.revertFlows(managedRealm.admin(),"browser - alternative mechanisms");
         }
     }
 
@@ -284,10 +284,10 @@ public class MultiFactorAuthenticationTest extends AbstractChangeImportedUserPas
             // Successfully login with OTP
             loginTotpPage.login(new TimeBasedOTP().generateTOTP("DJmQfC73VGFhw7D4QJ8A"));
             Assertions.assertFalse(loginTotpPage.isCurrent());
-            events.expectLogin().user(testRealm().users().search("user-with-one-configured-otp").get(0).getId())
+            events.expectLogin().user(managedRealm.admin().users().search("user-with-one-configured-otp").get(0).getId())
                     .detail(Details.USERNAME, "user-with-one-configured-otp").assertEvent();
         } finally {
-            BrowserFlowTest.revertFlows(testRealm(),"browser - alternative mechanisms");
+            BrowserFlowTest.revertFlows(managedRealm.admin(),"browser - alternative mechanisms");
         }
     }
 
@@ -297,7 +297,7 @@ public class MultiFactorAuthenticationTest extends AbstractChangeImportedUserPas
     @Test
     public void testUsernameLabelAndResetLogin() {
         try {
-            UserRepresentation user = testRealm().users().search("user-with-one-configured-otp").get(0);
+            UserRepresentation user = managedRealm.admin().users().search("user-with-one-configured-otp").get(0);
             configureBrowserFlowWithAlternativeCredentials();
 
             // The "attempted username" with username not yet available on the login screen
@@ -343,7 +343,7 @@ public class MultiFactorAuthenticationTest extends AbstractChangeImportedUserPas
             events.expectLogin().user(user.getId())
                     .detail(Details.USERNAME, "otp1@redhat.com").assertEvent();
         } finally {
-            BrowserFlowTest.revertFlows(testRealm(), "browser - alternative");
+            BrowserFlowTest.revertFlows(managedRealm.admin(), "browser - alternative");
         }
     }
 

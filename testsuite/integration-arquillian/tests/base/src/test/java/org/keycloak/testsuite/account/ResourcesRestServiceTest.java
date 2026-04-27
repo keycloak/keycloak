@@ -52,11 +52,11 @@ import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 import org.keycloak.services.resources.account.resources.AbstractResourceService;
 import org.keycloak.services.resources.account.resources.AbstractResourceService.Permission;
 import org.keycloak.services.resources.account.resources.AbstractResourceService.Resource;
+import org.keycloak.testframework.realm.ClientBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.broker.util.SimpleHttpDefault;
-import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.TokenUtil;
-import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.util.JsonSerialization;
 
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -100,9 +100,9 @@ public class ResourcesRestServiceTest extends AbstractRestServiceTest {
         testRealm.getUsers().add(createUser("jdoe", "password"));
         testRealm.getUsers().add(createUser("bob", "password"));
         testRealm.getUsers().add(UserBuilder.create().username("test-authz-user@localhost").password("password")
-                .addRoles("uma_authorization", "uma_protection")
-                .role("my-resource-server", "uma_protection")
-                .role("account", AccountRoles.MANAGE_ACCOUNT)
+                .roles("uma_authorization", "uma_protection")
+                .clientRoles("my-resource-server", "uma_protection")
+                .clientRoles("account", AccountRoles.MANAGE_ACCOUNT)
                 .build());
 
         ClientRepresentation client = ClientBuilder.create()
@@ -112,7 +112,7 @@ public class ResourcesRestServiceTest extends AbstractRestServiceTest {
                 .secret("secret")
                 .name("My Resource Server")
                 .baseUrl("http://resourceserver.com")
-                .directAccessGrants().build();
+                .directAccessGrantsEnabled().build();
 
         testRealm.getClients().add(client);
     }
@@ -163,7 +163,7 @@ public class ResourcesRestServiceTest extends AbstractRestServiceTest {
     }
 
     private ClientResource getResourceServer() {
-        ClientsResource clients = testRealm().clients();
+        ClientsResource clients = managedRealm.admin().clients();
         return clients.get(clients.findByClientId("my-resource-server").get(0).getId());
     }
 
@@ -733,7 +733,7 @@ public class ResourcesRestServiceTest extends AbstractRestServiceTest {
 
         return AuthzClient
                 .create(new Configuration(suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth",
-                        testRealm().toRepresentation().getRealm(), client.getClientId(),
+                        managedRealm.admin().toRepresentation().getRealm(), client.getClientId(),
                         credentials, httpClient));
     }
 
@@ -742,7 +742,7 @@ public class ResourcesRestServiceTest extends AbstractRestServiceTest {
                 .username(userName)
                 .enabled(true)
                 .password(password)
-                .role("account", AccountRoles.MANAGE_ACCOUNT)
+                .clientRoles("account", AccountRoles.MANAGE_ACCOUNT)
                 .build();
     }
 

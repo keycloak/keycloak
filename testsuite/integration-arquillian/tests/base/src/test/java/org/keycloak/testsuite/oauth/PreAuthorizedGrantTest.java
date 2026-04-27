@@ -30,9 +30,9 @@ import org.keycloak.protocol.oid4vc.model.PreAuthorizedCodeGrant;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
-import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 
@@ -105,9 +105,9 @@ public class PreAuthorizedGrantTest extends AbstractTestRealmKeycloakTest {
     @Test
     public void testPreAuthorizedGrantRealmDisabled() throws Exception {
         // Disable verifiable credentials for the test realm
-        RealmRepresentation realmRep = adminClient.realm(TEST_REALM_NAME).toRepresentation();
+        RealmRepresentation realmRep = managedRealm.admin().toRepresentation();
         realmRep.setVerifiableCredentialsEnabled(false);
-        adminClient.realm(TEST_REALM_NAME).update(realmRep);
+        managedRealm.admin().update(realmRep);
 
         try {
             String userSessionId = getUserSession();
@@ -118,9 +118,9 @@ public class PreAuthorizedGrantTest extends AbstractTestRealmKeycloakTest {
             assertEquals(HttpStatus.SC_FORBIDDEN, accessTokenResponse.getStatusCode(), "Pre-authorized grant should be forbidden when verifiable credentials are disabled.");
         } finally {
             // Re-enable verifiable credentials so other tests see the default behavior
-            RealmRepresentation realmRepReset = adminClient.realm(TEST_REALM_NAME).toRepresentation();
+            RealmRepresentation realmRepReset = managedRealm.admin().toRepresentation();
             realmRepReset.setVerifiableCredentialsEnabled(true);
-            adminClient.realm(TEST_REALM_NAME).update(realmRepReset);
+            managedRealm.admin().update(realmRepReset);
         }
     }
 

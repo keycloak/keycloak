@@ -1,7 +1,6 @@
 package org.keycloak.tests.broker;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import org.keycloak.broker.saml.SAMLIdentityProviderConfig;
@@ -18,8 +17,8 @@ import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.saml.SignatureAlgorithm;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
+import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
-import org.keycloak.testframework.realm.RealmConfigBuilder;
 import org.keycloak.testsuite.util.IdentityProviderBuilder;
 
 /**
@@ -36,7 +35,7 @@ public interface InterfaceSamlIdentityProviderStoreTokenTest extends InterfaceId
     public static class IdpRealmConfig implements RealmConfig {
 
         @Override
-        public RealmConfigBuilder configure(RealmConfigBuilder realm) {
+        public RealmBuilder configure(RealmBuilder realm) {
             realm.identityProvider(IdentityProviderBuilder.create()
                     .providerId(SAMLIdentityProviderFactory.PROVIDER_ID)
                     .alias(IDP_ALIAS)
@@ -82,7 +81,7 @@ public interface InterfaceSamlIdentityProviderStoreTokenTest extends InterfaceId
     public static class ExternalRealmConfig implements RealmConfig {
 
         @Override
-        public RealmConfigBuilder configure(RealmConfigBuilder realm) {
+        public RealmBuilder configure(RealmBuilder realm) {
             realm.addClient("http://localhost:8080/realms/default")
                     .name("saml-client")
                     .protocol(SamlProtocol.LOGIN_PROTOCOL)
@@ -96,7 +95,7 @@ public interface InterfaceSamlIdentityProviderStoreTokenTest extends InterfaceId
                     .attribute(SamlConfigAttributes.SAML_NAME_ID_FORMAT_ATTRIBUTE, "username")
                     .attribute(SamlConfigAttributes.SAML_USE_METADATA_DESCRIPTOR_URL, Boolean.TRUE.toString())
                     .attribute(SamlConfigAttributes.SAML_METADATA_DESCRIPTOR_URL, "http://localhost:8080/realms/default/broker/" + IDP_ALIAS + "/endpoint/descriptor")
-                    .protocolMappers(List.of(createMapper("email"), createMapper("firstName"), createMapper("lastName")));
+                    .protocolMappers(createMapper("email"), createMapper("firstName"), createMapper("lastName"));
             realm.addUser("testuser")
                     .name("Test", "User")
                     .email("test@localhost")

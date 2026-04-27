@@ -30,13 +30,13 @@ import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.storage.ldap.LDAPStorageProvider;
 import org.keycloak.storage.ldap.idm.model.LDAPObject;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.ModelTest;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.util.LDAPRule;
 import org.keycloak.testsuite.util.LDAPTestConfiguration;
 import org.keycloak.testsuite.util.LDAPTestUtils;
-import org.keycloak.testsuite.util.UserBuilder;
 
 import org.junit.Rule;
 import org.junit.Test;
@@ -146,7 +146,7 @@ public class UserStorageGracefulDegradationLdapTest extends AbstractLDAPTest {
                     .password("password")
                     .enabled(true)
                     .build();
-            String userId = ApiUtil.getCreatedId(testRealm().users().create(localUser));
+            String userId = ApiUtil.getCreatedId(managedRealm.admin().users().create(localUser));
             userIdRef.set(userId);
             
             // Test that LDAP users fail to login when LDAP is down
@@ -178,7 +178,7 @@ public class UserStorageGracefulDegradationLdapTest extends AbstractLDAPTest {
                 LDAPTestUtils.removeLDAPUserByUsername(ldapProvider, realm, ldapProvider.getLdapIdentityStore().getConfig(), "testldapuser");
             });
 
-            testRealm().users().get(userIdRef.get()).remove();
+            managedRealm.admin().users().get(userIdRef.get()).remove();
         }
     }
 }

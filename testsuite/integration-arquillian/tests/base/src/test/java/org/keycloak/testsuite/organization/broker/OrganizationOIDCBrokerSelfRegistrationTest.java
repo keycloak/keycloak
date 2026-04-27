@@ -30,7 +30,7 @@ public class OrganizationOIDCBrokerSelfRegistrationTest extends AbstractBrokerSe
 
     @Test
     public void testMaskedSecretInIDPRepresentation() {
-        OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
+        OrganizationResource organization = managedRealm.admin().organizations().get(createOrganization().getId());
         List<IdentityProviderRepresentation> identityProviders = organization.identityProviders().getIdentityProviders();
 
         String maskedSecret = "**********";

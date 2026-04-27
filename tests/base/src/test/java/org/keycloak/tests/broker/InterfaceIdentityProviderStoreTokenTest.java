@@ -100,9 +100,7 @@ public interface InterfaceIdentityProviderStoreTokenTest {
         AccessTokenResponse internalTokens = oauth.doAccessTokenRequest(oauth.parseLoginResponse().getCode());
         Assertions.assertTrue(internalTokens.isSuccess());
 
-        realm.updateUser("testuser", user -> {
-            user.setEnabled(false);
-        });
+        realm.updateUser("testuser", user -> user.enabled(false));
 
         AbstractHttpResponse externalTokens = doFetchExternalIdpToken(internalTokens.getAccessToken());
         Assertions.assertEquals(400, externalTokens.getStatusCode());

@@ -626,7 +626,11 @@ public class LoginActionsService {
             String kid = verifier.getHeader().getKeyId();
             String algorithm = verifier.getHeader().getAlgorithm().name();
 
-            SignatureVerifierContext signatureVerifier = session.getProvider(SignatureProvider.class, algorithm).verifier(kid);
+            SignatureProvider signatureProvider = session.getProvider(SignatureProvider.class, algorithm);
+            if (signatureProvider == null) {
+                throw new ExplainedTokenVerificationException(aToken, Errors.INVALID_SIGNATURE, Messages.INVALID_REQUEST);
+            }
+            SignatureVerifierContext signatureVerifier = signatureProvider.verifier(kid);
             verifier.verifierContext(signatureVerifier);
 
             verifier.verify();

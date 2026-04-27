@@ -61,7 +61,7 @@ public class AccountRestServiceReadOnlyAttributesTest extends AbstractRestServic
 
     @Before
     public void configureUserProfile() {
-        UserProfileResource userProfileRes = testRealm().users().userProfile();
+        UserProfileResource userProfileRes = managedRealm.admin().users().userProfile();
         UPConfig cfg = userProfileRes.getConfiguration();
         //cfg.setUnmanagedAttributePolicy(UPConfig.UnmanagedAttributePolicy.ENABLED);
         cfg.addOrReplaceAttribute(createUpAttribute("someOtherAttr"));
@@ -149,25 +149,25 @@ public class AccountRestServiceReadOnlyAttributesTest extends AbstractRestServic
 
     @Test
     public void testUpdateProfileCannotUpdateReadOnlyAttributesUnmanagedEnabled() throws IOException {
-        UPConfig configuration = testRealm().users().userProfile().getConfiguration();
+        UPConfig configuration = managedRealm.admin().users().userProfile().getConfiguration();
         UnmanagedAttributePolicy unmanagedAttributePolicy = configuration.getUnmanagedAttributePolicy();
         configuration.setUnmanagedAttributePolicy(UnmanagedAttributePolicy.ENABLED);
         getCleanup().addCleanup(() -> {
             configuration.setUnmanagedAttributePolicy(unmanagedAttributePolicy);
-            testRealm().users().userProfile().update(configuration);
+            managedRealm.admin().users().userProfile().update(configuration);
         });
-        testRealm().users().userProfile().update(configuration);
+        managedRealm.admin().users().userProfile().update(configuration);
         UserRepresentation user = SimpleHttpDefault.doGet(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).asJson(UserRepresentation.class);
-        UserResource adminUserResource = AdminApiUtil.findUserByUsernameId(testRealm(), user.getUsername());
+        UserResource adminUserResource = AdminApiUtil.findUserByUsernameId(managedRealm.admin(), user.getUsername());
         org.keycloak.representations.idm.UserRepresentation adminUserRep = adminUserResource.toRepresentation();
         adminUserRep.singleAttribute("deniedFoo", "foo");
         adminUserResource.update(adminUserRep);
-        adminUserResource = AdminApiUtil.findUserByUsernameId(testRealm(), user.getUsername());
+        adminUserResource = AdminApiUtil.findUserByUsernameId(managedRealm.admin(), user.getUsername());
         adminUserRep = adminUserResource.toRepresentation();
         assertEquals("foo", adminUserRep.getAttributes().get("deniedFoo").get(0));
         assertNull(user.getAttributes());
         updateAndGet(user);
-        adminUserResource = AdminApiUtil.findUserByUsernameId(testRealm(), user.getUsername());
+        adminUserResource = AdminApiUtil.findUserByUsernameId(managedRealm.admin(), user.getUsername());
         adminUserRep = adminUserResource.toRepresentation();
         assertEquals("foo", adminUserRep.getAttributes().get("deniedFoo").get(0));
     }
@@ -189,7 +189,7 @@ public class AccountRestServiceReadOnlyAttributesTest extends AbstractRestServic
         UserResource adminUserResource = null;
         org.keycloak.representations.idm.UserRepresentation adminUserRep = null;
         try {
-            adminUserResource = AdminApiUtil.findUserByUsernameId(testRealm(), user.getUsername());
+            adminUserResource = AdminApiUtil.findUserByUsernameId(managedRealm.admin(), user.getUsername());
             adminUserRep = adminUserResource.toRepresentation();
             adminUserRep.singleAttribute(attrName, "foo");
             adminUserResource.update(adminUserRep);

@@ -24,8 +24,8 @@ import org.keycloak.testframework.annotations.InjectAdminEvents;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.events.AdminEvents;
 import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
-import org.keycloak.testframework.realm.RealmConfigBuilder;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -41,7 +41,7 @@ public class AbstractRealmRolesTest {
     private static class RealmRolesRealmConf implements RealmConfig {
 
         @Override
-        public RealmConfigBuilder configure(RealmConfigBuilder builder) {
+        public RealmBuilder configure(RealmBuilder builder) {
             builder.addGroup("test-role-group").path("/test-role-group");
             builder.addUser("test-role-member").name("Test", "Role User").
                     email("test-role-member@test-role-member.com").roles("default-roles-default").emailVerified(true).requiredActions();

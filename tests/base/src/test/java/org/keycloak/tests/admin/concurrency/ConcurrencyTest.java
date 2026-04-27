@@ -38,7 +38,7 @@ import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
-import org.keycloak.testframework.realm.UserConfigBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.tests.suites.DatabaseTest;
 import org.keycloak.testsuite.util.userprofile.UserProfileUtil;
@@ -70,7 +70,7 @@ public class ConcurrencyTest extends AbstractConcurrencyTest {
         // enable unmanaged attributes
         UserProfileUtil.enableUnmanagedAttributes(users.userProfile());
 
-        UserRepresentation u = UserConfigBuilder.create().username("attributes").build();
+        UserRepresentation u = UserBuilder.create().username("attributes").build();
 
         String userId;
         try (Response response = users.create(u)) {

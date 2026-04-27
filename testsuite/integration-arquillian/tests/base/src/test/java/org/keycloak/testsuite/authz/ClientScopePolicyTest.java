@@ -33,10 +33,10 @@ import org.keycloak.representations.idm.authorization.ClientScopePolicyRepresent
 import org.keycloak.representations.idm.authorization.PermissionRequest;
 import org.keycloak.representations.idm.authorization.ResourcePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
-import org.keycloak.testsuite.util.ClientBuilder;
-import org.keycloak.testsuite.util.ClientScopeBuilder;
+import org.keycloak.testframework.realm.ClientBuilder;
+import org.keycloak.testframework.realm.ClientScopeBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.util.RealmBuilder;
-import org.keycloak.testsuite.util.UserBuilder;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -62,7 +62,7 @@ public class ClientScopePolicyTest extends AbstractAuthzTest {
                 .clientScope(ClientScopeBuilder.create().name("to-remove-b").protocol("openid-connect"))
                 .client(ClientBuilder.create().clientId("resource-server-test").secret("secret")
                     .authorizationServicesEnabled(true).redirectUris("http://localhost/resource-server-test")
-                    .addOptionalClientScopes("foo", "bar", "baz").directAccessGrants())
+                    .optionalClientScopes("foo", "bar", "baz").directAccessGrantsEnabled())
                 .build());
     }
 

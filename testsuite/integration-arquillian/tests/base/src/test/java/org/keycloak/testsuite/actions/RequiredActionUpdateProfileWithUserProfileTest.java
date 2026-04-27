@@ -26,6 +26,8 @@ import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.realm.ClientScopeBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.AdminApiUtil;
@@ -36,9 +38,7 @@ import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginUpdateProfileEditUsernameAllowedPage;
-import org.keycloak.testsuite.util.ClientScopeBuilder;
 import org.keycloak.testsuite.util.KeycloakModelUtils;
-import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.testsuite.util.userprofile.UserProfileUtil;
 
 import org.apache.commons.lang3.StringUtils;
@@ -110,27 +110,27 @@ public class RequiredActionUpdateProfileWithUserProfileTest extends AbstractTest
 
     @Before
     public void beforeTest() {
-        UserProfileUtil.setUserProfileConfiguration(testRealm(), null);
+        UserProfileUtil.setUserProfileConfiguration(managedRealm.admin(), null);
 
-        AdminApiUtil.removeUserByUsername(testRealm(), "test-user@localhost");
+        AdminApiUtil.removeUserByUsername(managedRealm.admin(), "test-user@localhost");
         UserRepresentation user = UserBuilder.create().enabled(true)
                 .username("test-user@localhost")
                 .email("test-user@localhost")
                 .firstName("Tom")
                 .lastName("Brady")
                 .emailVerified(true)
-                .requiredAction(UserModel.RequiredAction.UPDATE_PROFILE.name()).build();
-        AdminApiUtil.createUserAndResetPasswordWithAdminClient(testRealm(), user, "password");
+                .requiredActions(UserModel.RequiredAction.UPDATE_PROFILE.name()).build();
+        AdminApiUtil.createUserAndResetPasswordWithAdminClient(managedRealm.admin(), user, "password");
 
-        AdminApiUtil.removeUserByUsername(testRealm(), "john-doh@localhost");
+        AdminApiUtil.removeUserByUsername(managedRealm.admin(), "john-doh@localhost");
         user = UserBuilder.create().enabled(true)
                 .username("john-doh@localhost")
                 .email("john-doh@localhost")
                 .firstName("John")
                 .lastName("Doh")
                 .emailVerified(true)
-                .requiredAction(UserModel.RequiredAction.UPDATE_PROFILE.name()).build();
-        AdminApiUtil.createUserAndResetPasswordWithAdminClient(testRealm(), user, "password");
+                .requiredActions(UserModel.RequiredAction.UPDATE_PROFILE.name()).build();
+        AdminApiUtil.createUserAndResetPasswordWithAdminClient(managedRealm.admin(), user, "password");
     }
 
     @Test
@@ -238,12 +238,12 @@ public class RequiredActionUpdateProfileWithUserProfileTest extends AbstractTest
 
     @Test
     public void testUsernameOnlyIfEditAllowed() {
-        RealmRepresentation realm = testRealm().toRepresentation();
+        RealmRepresentation realm = managedRealm.admin().toRepresentation();
 
         boolean r = realm.isEditUsernameAllowed();
         try {
             realm.setEditUsernameAllowed(false);
-            testRealm().update(realm);
+            managedRealm.admin().update(realm);
 
             oauth.openLoginForm();
             loginPage.login(USERNAME1, PASSWORD);
@@ -251,13 +251,13 @@ public class RequiredActionUpdateProfileWithUserProfileTest extends AbstractTest
             assertFalse(updateProfilePage.isUsernamePresent());
 
             realm.setEditUsernameAllowed(true);
-            testRealm().update(realm);
+            managedRealm.admin().update(realm);
 
             driver.navigate().refresh();
             assertTrue(updateProfilePage.isUsernamePresent());
         } finally {
             realm.setEditUsernameAllowed(r);
-            testRealm().update(realm);
+            managedRealm.admin().update(realm);
         }
     }
 
@@ -612,11 +612,11 @@ public class RequiredActionUpdateProfileWithUserProfileTest extends AbstractTest
     }
 
     protected void setUserProfileConfiguration(String configuration) {
-        UserProfileUtil.setUserProfileConfiguration(testRealm(), configuration);
+        UserProfileUtil.setUserProfileConfiguration(managedRealm.admin(), configuration);
     }
 
     protected UserRepresentation getUserByUsername(String username) {
-        return VerifyProfileTest.getUserByUsername(testRealm(), username);
+        return VerifyProfileTest.getUserByUsername(managedRealm.admin(), username);
     }
 
     protected void updateUserByUsername(String username, String firstName, String lastName, String department) {
@@ -624,7 +624,7 @@ public class RequiredActionUpdateProfileWithUserProfileTest extends AbstractTest
         ur.setFirstName(firstName);
         ur.setLastName(lastName);
         ur.singleAttribute(ATTRIBUTE_DEPARTMENT, department);
-        testRealm().users().get(ur.getId()).update(ur);
+        managedRealm.admin().users().get(ur.getId()).update(ur);
     }
 
 }

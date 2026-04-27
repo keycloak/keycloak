@@ -30,6 +30,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderSimpleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.realm.RoleBuilder;
 import org.keycloak.testsuite.AbstractAuthenticationTest;
 import org.keycloak.testsuite.AbstractChangeImportedUserPasswordsTest;
 import org.keycloak.testsuite.ActionURIUtils;
@@ -44,7 +45,6 @@ import org.keycloak.testsuite.pages.LoginTotpPage;
 import org.keycloak.testsuite.pages.LoginUsernameOnlyPage;
 import org.keycloak.testsuite.pages.PasswordPage;
 import org.keycloak.testsuite.util.FlowUtil;
-import org.keycloak.testsuite.util.RoleBuilder;
 import org.keycloak.testsuite.util.URLUtils;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
 
@@ -389,19 +389,19 @@ public class BrowserFlowTest extends AbstractChangeImportedUserPasswordsTest {
 
         // Create composite-realm-role-1
         String compositeRealmRoleName = "composite-realm-role-1";
-        testRealm().roles().create(RoleBuilder.create().name(compositeRealmRoleName).build());
+        managedRealm.admin().roles().create(RoleBuilder.create().name(compositeRealmRoleName).build());
 
         // Create child-realm-role-1
         String childRealmRoleName = "child-realm-role-1";
-        testRealm().roles().create(RoleBuilder.create().name(childRealmRoleName).build());
+        managedRealm.admin().roles().create(RoleBuilder.create().name(childRealmRoleName).build());
 
         // Make child-realm-role-1 a member of composite-realm-role-1
-        testRealm().roles().get(compositeRealmRoleName)
-                .addComposites(Collections.singletonList(testRealm().roles().get(childRealmRoleName).toRepresentation()));
+        managedRealm.admin().roles().get(compositeRealmRoleName)
+                .addComposites(Collections.singletonList(managedRealm.admin().roles().get(childRealmRoleName).toRepresentation()));
 
         // Add composite-realm-role-1 to user "user-with-two-configured-otp"
-        UserResource userResource = AdminApiUtil.findUserByUsernameId(testRealm(), "user-with-two-configured-otp");
-        userResource.roles().realmLevel().add(Collections.singletonList(testRealm().roles().get(compositeRealmRoleName).toRepresentation()));
+        UserResource userResource = AdminApiUtil.findUserByUsernameId(managedRealm.admin(), "user-with-two-configured-otp");
+        userResource.roles().realmLevel().add(Collections.singletonList(managedRealm.admin().roles().get(compositeRealmRoleName).toRepresentation()));
 
         // A browser flow is configured with an OTPForm for users having the role "child-realm-role-1"
         configureBrowserFlowOTPNeedsRole(childRealmRoleName);
@@ -419,8 +419,8 @@ public class BrowserFlowTest extends AbstractChangeImportedUserPasswordsTest {
             Assertions.assertFalse(oneTimeCodePage.isOtpLabelPresent());
             Assertions.assertFalse(loginTotpPage.isCurrent());
         } finally {
-            testRealm().roles().deleteRole(childRealmRoleName);
-            testRealm().roles().deleteRole(compositeRealmRoleName);
+            managedRealm.admin().roles().deleteRole(childRealmRoleName);
+            managedRealm.admin().roles().deleteRole(compositeRealmRoleName);
             revertFlows("browser - rule");
         }
     }
@@ -435,24 +435,24 @@ public class BrowserFlowTest extends AbstractChangeImportedUserPasswordsTest {
     public void testConditionalRoleAuthenticatorWithClientRoleIncludedInCompositeClientRole() {
 
         String clientName = "test-app";
-        ClientRepresentation testClient = testRealm().clients().findByClientId(clientName).get(0);
+        ClientRepresentation testClient = managedRealm.admin().clients().findByClientId(clientName).get(0);
 
         // Create composite-client-role-1
         String compositeClientRoleName = "composite-client-role-1";
-        testRealm().clients().get(testClient.getId()).roles().create(RoleBuilder.create().name(compositeClientRoleName).build());
+        managedRealm.admin().clients().get(testClient.getId()).roles().create(RoleBuilder.create().name(compositeClientRoleName).build());
 
         // Create child-client-role-1
         String childClientRoleName = "child-client-role-1";
-        testRealm().clients().get(testClient.getId()).roles().create(RoleBuilder.create().name(childClientRoleName).build());
+        managedRealm.admin().clients().get(testClient.getId()).roles().create(RoleBuilder.create().name(childClientRoleName).build());
 
         // Make child-client-role-1 a member of composite-client-role-1
-        testRealm().clients().get(testClient.getId()).roles().get(compositeClientRoleName)
-                .addComposites(Collections.singletonList(testRealm().clients().get(testClient.getId()).roles().get(childClientRoleName).toRepresentation()));
+        managedRealm.admin().clients().get(testClient.getId()).roles().get(compositeClientRoleName)
+                .addComposites(Collections.singletonList(managedRealm.admin().clients().get(testClient.getId()).roles().get(childClientRoleName).toRepresentation()));
 
         // Add composite-client-role-1 to user "user-with-two-configured-otp"
-        UserResource userResource = AdminApiUtil.findUserByUsernameId(testRealm(), "user-with-two-configured-otp") ;
+        UserResource userResource = AdminApiUtil.findUserByUsernameId(managedRealm.admin(), "user-with-two-configured-otp") ;
         userResource.roles().clientLevel(testClient.getId())
-                .add(Collections.singletonList(testRealm().clients().get(testClient.getId()).roles().get(compositeClientRoleName).toRepresentation()));
+                .add(Collections.singletonList(managedRealm.admin().clients().get(testClient.getId()).roles().get(compositeClientRoleName).toRepresentation()));
 
         // A browser flow is configured with an OTPForm for users having the role "test-app.child-client-role-1"
         configureBrowserFlowOTPNeedsRole(clientName + "." + childClientRoleName);
@@ -469,8 +469,8 @@ public class BrowserFlowTest extends AbstractChangeImportedUserPasswordsTest {
             Assertions.assertFalse(oneTimeCodePage.isOtpLabelPresent());
             Assertions.assertFalse(loginTotpPage.isCurrent());
         } finally {
-            testRealm().clients().get(testClient.getId()).roles().deleteRole(childClientRoleName);
-            testRealm().clients().get(testClient.getId()).roles().deleteRole(compositeClientRoleName);
+            managedRealm.admin().clients().get(testClient.getId()).roles().deleteRole(childClientRoleName);
+            managedRealm.admin().clients().get(testClient.getId()).roles().deleteRole(compositeClientRoleName);
             revertFlows("browser - rule");
         }
     }
@@ -716,7 +716,7 @@ public class BrowserFlowTest extends AbstractChangeImportedUserPasswordsTest {
 
             loginTotpPage.login(getOtpCode(USER_WITH_ONE_OTP_OTP_SECRET));
             Assertions.assertFalse(loginTotpPage.isCurrent());
-            events.expectLogin().user(testRealm().users().search("user-with-one-configured-otp").get(0).getId())
+            events.expectLogin().user(managedRealm.admin().users().search("user-with-one-configured-otp").get(0).getId())
                     .detail(Details.USERNAME, "user-with-one-configured-otp").assertEvent();
 
         } finally {
@@ -767,7 +767,7 @@ public class BrowserFlowTest extends AbstractChangeImportedUserPasswordsTest {
         configureBrowserFlowWithConditionalFlowWithMultipleConditionalAuthenticators(newFlowAlias);
 
         try {
-            String userId = testRealm().users().search("user-with-two-configured-otp").get(0).getId();
+            String userId = managedRealm.admin().users().search("user-with-two-configured-otp").get(0).getId();
             provideUsernamePassword("user-with-two-configured-otp");
             events.expectLogin().user(userId).session((String) null)
                     .error("invalid_user_credentials")
@@ -798,7 +798,7 @@ public class BrowserFlowTest extends AbstractChangeImportedUserPasswordsTest {
         configureBrowserFlowWithConditionalFlowWithMultipleConditionalAuthenticators(newFlowAlias);
 
         try {
-            String userId = testRealm().users().search("user-with-one-configured-otp").get(0).getId();
+            String userId = managedRealm.admin().users().search("user-with-one-configured-otp").get(0).getId();
             provideUsernamePassword("user-with-one-configured-otp");
             events.expectLogin().user(userId).session((String) null)
                     .error("invalid_user_credentials")
@@ -862,8 +862,8 @@ public class BrowserFlowTest extends AbstractChangeImportedUserPasswordsTest {
     public void testLoginWithWithNoOTPCredentialAndNoRequiredActionProviderRegistered(){
         String newFlowAlias = "browser - copy 1";
         configureBrowserFlowWithRequiredOTP(newFlowAlias);
-        RequiredActionProviderRepresentation otpRequiredAction = testRealm().flows().getRequiredAction("CONFIGURE_TOTP");
-        testRealm().flows().removeRequiredAction("CONFIGURE_TOTP");
+        RequiredActionProviderRepresentation otpRequiredAction = managedRealm.admin().flows().getRequiredAction("CONFIGURE_TOTP");
+        managedRealm.admin().flows().removeRequiredAction("CONFIGURE_TOTP");
         try {
             provideUsernamePassword("test-user@localhost");
 
@@ -875,7 +875,7 @@ public class BrowserFlowTest extends AbstractChangeImportedUserPasswordsTest {
             RequiredActionProviderSimpleRepresentation simpleRepresentation = new RequiredActionProviderSimpleRepresentation();
             simpleRepresentation.setProviderId("CONFIGURE_TOTP");
             simpleRepresentation.setName(otpRequiredAction.getName());
-            testRealm().flows().registerRequiredAction(simpleRepresentation);
+            managedRealm.admin().flows().registerRequiredAction(simpleRepresentation);
         }
     }
 
@@ -889,9 +889,9 @@ public class BrowserFlowTest extends AbstractChangeImportedUserPasswordsTest {
     public void testLoginWithWithNoOTPCredentialAndRequiredActionProviderDisabled(){
         String newFlowAlias = "browser - copy 1";
         configureBrowserFlowWithRequiredOTP(newFlowAlias);
-        RequiredActionProviderRepresentation otpRequiredAction = testRealm().flows().getRequiredAction("CONFIGURE_TOTP");
+        RequiredActionProviderRepresentation otpRequiredAction = managedRealm.admin().flows().getRequiredAction("CONFIGURE_TOTP");
         otpRequiredAction.setEnabled(false);
-        testRealm().flows().updateRequiredAction("CONFIGURE_TOTP", otpRequiredAction);
+        managedRealm.admin().flows().updateRequiredAction("CONFIGURE_TOTP", otpRequiredAction);
         try {
             provideUsernamePassword("test-user@localhost");
 
@@ -901,7 +901,7 @@ public class BrowserFlowTest extends AbstractChangeImportedUserPasswordsTest {
         } finally {
             revertFlows("browser - copy 1");
             otpRequiredAction.setEnabled(true);
-            testRealm().flows().updateRequiredAction("CONFIGURE_TOTP", otpRequiredAction);
+            managedRealm.admin().flows().updateRequiredAction("CONFIGURE_TOTP", otpRequiredAction);
         }
     }
 
@@ -922,9 +922,9 @@ public class BrowserFlowTest extends AbstractChangeImportedUserPasswordsTest {
 
         } finally {
             revertFlows("browser - copy 1");
-            UserRepresentation user = testRealm().users().search("test-user@localhost").get(0);
+            UserRepresentation user = managedRealm.admin().users().search("test-user@localhost").get(0);
             user.setRequiredActions(Collections.emptyList());
-            testRealm().users().get(user.getId()).update(user);
+            managedRealm.admin().users().get(user.getId()).update(user);
         }
     }
 
@@ -957,9 +957,9 @@ public class BrowserFlowTest extends AbstractChangeImportedUserPasswordsTest {
     public void testLoginWithWithNoWebAuthnCredentialAndRequiredActionProviderDisabled(){
         String newFlowAlias = "browser - copy 1";
         configureBrowserFlowWithRequiredWebAuthn(newFlowAlias);
-        RequiredActionProviderRepresentation rapr = testRealm().flows().getRequiredAction(WebAuthnRegisterFactory.PROVIDER_ID);
+        RequiredActionProviderRepresentation rapr = managedRealm.admin().flows().getRequiredAction(WebAuthnRegisterFactory.PROVIDER_ID);
         rapr.setEnabled(false);
-        testRealm().flows().updateRequiredAction(WebAuthnRegisterFactory.PROVIDER_ID, rapr);
+        managedRealm.admin().flows().updateRequiredAction(WebAuthnRegisterFactory.PROVIDER_ID, rapr);
         try {
             provideUsernamePassword("test-user@localhost");
 
@@ -988,9 +988,9 @@ public class BrowserFlowTest extends AbstractChangeImportedUserPasswordsTest {
             Assertions.assertTrue(driver.getCurrentUrl().contains("required-action?execution=" + WebAuthnRegisterFactory.PROVIDER_ID));
         } finally {
             revertFlows("browser - copy 1");
-            UserRepresentation user = testRealm().users().search("test-user@localhost").get(0);
+            UserRepresentation user = managedRealm.admin().users().search("test-user@localhost").get(0);
             user.setRequiredActions(Collections.emptyList());
-            testRealm().users().get(user.getId()).update(user);
+            managedRealm.admin().users().get(user.getId()).update(user);
         }
     }
 
@@ -1041,7 +1041,7 @@ public class BrowserFlowTest extends AbstractChangeImportedUserPasswordsTest {
      */
     @Test
     public void testLoginWithWrongCredentialsMessage() {
-        UserRepresentation user = testRealm().users().search("test-user@localhost").get(0);
+        UserRepresentation user = managedRealm.admin().users().search("test-user@localhost").get(0);
         Assertions.assertNotNull(user);
 
         oauth.openLoginForm();
@@ -1067,14 +1067,14 @@ public class BrowserFlowTest extends AbstractChangeImportedUserPasswordsTest {
     @Test
 
     public void testLoginMultiFactorWithWrongCredentialsMessage() {
-        UserRepresentation user = testRealm().users().search("test-user@localhost").get(0);
+        UserRepresentation user = managedRealm.admin().users().search("test-user@localhost").get(0);
         Assertions.assertNotNull(user);
 
         MultiFactorAuthenticationTest.configureBrowserFlowWithAlternativeCredentials(testingClient);
         try {
-            RealmRepresentation realm = testRealm().toRepresentation();
+            RealmRepresentation realm = managedRealm.admin().toRepresentation();
             realm.setLoginWithEmailAllowed(false);
-            testRealm().update(realm);
+            managedRealm.admin().update(realm);
 
             oauth.openLoginForm();
             loginUsernameOnlyPage.assertCurrent();
@@ -1083,7 +1083,7 @@ public class BrowserFlowTest extends AbstractChangeImportedUserPasswordsTest {
             Assertions.assertEquals("Invalid username.", loginUsernameOnlyPage.getUsernameError());
 
             realm.setLoginWithEmailAllowed(true);
-            testRealm().update(realm);
+            managedRealm.admin().update(realm);
             loginUsernameOnlyPage.login("non_existing_user");
             Assertions.assertEquals("Invalid username or email.", loginUsernameOnlyPage.getUsernameError());
             Assertions.assertEquals("Invalid username or email.", loginUsernameOnlyPage.getUsernameError());
@@ -1191,7 +1191,7 @@ public class BrowserFlowTest extends AbstractChangeImportedUserPasswordsTest {
 
             Assertions.assertFalse(loginPage.isCurrent());
             Assertions.assertFalse(oneTimeCodePage.isOtpLabelPresent());
-            events.expectLogin().user(testRealm().users().search("user-with-one-configured-otp").get(0).getId())
+            events.expectLogin().user(managedRealm.admin().users().search("user-with-one-configured-otp").get(0).getId())
                     .detail(Details.USERNAME, "user-with-one-configured-otp").assertEvent();
         } finally {
             revertFlows(newFlowAlias);
@@ -1263,7 +1263,7 @@ public class BrowserFlowTest extends AbstractChangeImportedUserPasswordsTest {
 
 
     private void revertFlows(String flowToDeleteAlias) {
-        revertFlows(testRealm(), flowToDeleteAlias);
+        revertFlows(managedRealm.admin(), flowToDeleteAlias);
     }
 
     public static void revertFlows(RealmResource realmResource, String flowToDeleteAlias) {

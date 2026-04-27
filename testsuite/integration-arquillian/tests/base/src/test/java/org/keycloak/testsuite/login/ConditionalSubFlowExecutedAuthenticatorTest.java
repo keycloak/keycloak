@@ -161,7 +161,7 @@ public class ConditionalSubFlowExecutedAuthenticatorTest extends AbstractTestRea
         // clone the browser flow and add another conditional flow that checks
         // if the OTP flow was executed or not executed to deny the access
 
-        RealmResource realmRes = testRealm();
+        RealmResource realmRes = managedRealm.admin();
         AuthenticationManagementResource authRes = realmRes.flows();
 
         // revert the flows if already changed

@@ -23,10 +23,10 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.storage.UserStorageProvider;
+import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.federation.DummyUserFederationProviderFactory;
 import org.keycloak.testsuite.util.AccountHelper;
-import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.TestAppHelper;
 
@@ -231,7 +231,7 @@ public abstract class AbstractAdvancedBrokerTest extends AbstractBrokerTest {
         adminClient.realm(bc.providerRealmName())
                 .clients()
                 .get(client.getId())
-                .update(ClientBuilder.edit(client).consentRequired(true).build());
+                .update(ClientBuilder.update(client).consentRequired(true).build());
 
         oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
@@ -249,7 +249,7 @@ public abstract class AbstractAdvancedBrokerTest extends AbstractBrokerTest {
         adminClient.realm(bc.providerRealmName())
                 .clients()
                 .get(client.getId())
-                .update(ClientBuilder.edit(client).consentRequired(false).build());
+                .update(ClientBuilder.update(client).consentRequired(false).build());
 
     }
 

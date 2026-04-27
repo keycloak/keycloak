@@ -52,8 +52,8 @@ import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ResourcePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.util.AdminClientUtil;
-import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.util.BasicAuthHelper;
 import org.keycloak.util.JsonSerialization;
 
@@ -423,7 +423,7 @@ public class UmaGrantTypeTest extends AbstractResourceServerTest {
         AccessTokenResponse accessTokenResponse = getAuthzClient().obtainAccessToken("marta", "password");
 
         UserRepresentation userRepresentation = getRealm().users().search("marta").get(0);
-        UserRepresentation updatedUser = UserBuilder.edit(userRepresentation).enabled(false).build();
+        UserRepresentation updatedUser = UserBuilder.update(userRepresentation).enabled(false).build();
         getRealm().users().get(userRepresentation.getId()).update(updatedUser);
 
         PermissionRequest permissions = new PermissionRequest("Resource A", "ScopeA", "ScopeB");

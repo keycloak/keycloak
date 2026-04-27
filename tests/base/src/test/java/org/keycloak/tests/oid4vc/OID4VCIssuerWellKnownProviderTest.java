@@ -19,6 +19,8 @@ package org.keycloak.tests.oid4vc;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -86,12 +88,14 @@ import static org.keycloak.jose.jwe.JWEConstants.A256GCM;
 import static org.keycloak.jose.jwe.JWEConstants.RSA_OAEP;
 import static org.keycloak.jose.jwe.JWEConstants.RSA_OAEP_256;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.CRYPTOGRAPHIC_BINDING_METHODS_DEFAULT;
-import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider.ATTR_ENCRYPTION_REQUIRED;
+import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider.ATTR_REQUEST_ENCRYPTION_REQUIRED;
 import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider.ATTR_REQUEST_ZIP_ALGS;
+import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider.ATTR_RESPONSE_ENCRYPTION_REQUIRED;
 import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider.DEFLATE_COMPRESSION;
 import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider.SIGNED_METADATA_ALG_ATTR;
 import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider.SIGNED_METADATA_LIFESPAN_ATTR;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
@@ -113,7 +117,8 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerTestBase {
 
         setRealmAttributes(Map.of(
                 "credential_response_encryption.encryption_required", "true",
-                ATTR_ENCRYPTION_REQUIRED, "true",
+                ATTR_RESPONSE_ENCRYPTION_REQUIRED, "true",
+                ATTR_REQUEST_ENCRYPTION_REQUIRED, "true",
                 BATCH_CREDENTIAL_ISSUANCE_BATCH_SIZE, "10",
                 ATTR_REQUEST_ZIP_ALGS, DEFLATE_COMPRESSION
         ));
@@ -140,6 +145,9 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerTestBase {
 
             assertEquals(HttpStatus.SC_OK, response.getStatusCode());
             assertEquals(MediaType.APPLICATION_JSON, response.getHeader(HttpHeaders.CONTENT_TYPE));
+            assertNotNull(response.getHeader(HttpHeaders.DATE), "Date header must be present");
+            assertDoesNotThrow(() -> ZonedDateTime.parse(response.getHeader(HttpHeaders.DATE), DateTimeFormatter.RFC_1123_DATE_TIME),
+                    "Date header must be RFC1123 formatted");
 
             CredentialIssuer issuer = response.getMetadata();
             assertNotNull(issuer, "Response should be a CredentialIssuer object");
@@ -286,6 +294,92 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerTestBase {
 
         // Reset signed metadata algorithm
         setRealmAttributes(Map.of(SIGNED_METADATA_ALG_ATTR, "RS256"));
+    }
+
+    @Test
+    public void testSignedMetadataRequestedReturnsJwt() throws IOException {
+
+        Endpoints endpoints = oauth.getEndpoints();
+        String expectedIssuer = endpoints.getIssuer();
+
+        setRealmAttributes(Map.of(
+                SIGNED_METADATA_ALG_ATTR, "RS256",
+                SIGNED_METADATA_LIFESPAN_ATTR, "3600"
+        ));
+
+        CredentialIssuerMetadataResponse response = oauth.oid4vc()
+                .issuerMetadataRequest()
+                .header(HttpHeaders.ACCEPT, MediaType.APPLICATION_JWT)
+                .send();
+
+        assertEquals(HttpStatus.SC_OK, response.getStatusCode());
+        assertEquals(MediaType.APPLICATION_JWT, response.getHeader(HttpHeaders.CONTENT_TYPE));
+
+        JWSInput jwsInput = (JWSInput) response.getContent();
+        assertNotNull(jwsInput, "Response should be signed metadata JWS");
+        Map<String, Object> claims = JsonSerialization.readValue(jwsInput.getContent(), Map.class);
+        assertEquals(expectedIssuer, claims.get("sub"), "sub should match credential_issuer");
+        assertEquals(expectedIssuer, claims.get("iss"), "iss should match credential_issuer");
+    }
+
+    @Test
+    public void testMetadataWithWildcardAcceptReturnsJson() throws IOException {
+        String expectedIssuer = oauth.getEndpoints().getIssuer();
+
+        CredentialIssuerMetadataResponse response = oauth.oid4vc()
+                .issuerMetadataRequest()
+                .header(HttpHeaders.ACCEPT, "*/*")
+                .send();
+
+        assertEquals(HttpStatus.SC_OK, response.getStatusCode());
+        assertEquals(MediaType.APPLICATION_JSON, response.getHeader(HttpHeaders.CONTENT_TYPE));
+
+        CredentialIssuer issuer = response.getMetadata();
+        assertNotNull(issuer, "Response should be unsigned CredentialIssuer JSON");
+        assertEquals(expectedIssuer, issuer.getCredentialIssuer());
+    }
+
+    @Test
+    public void testMetadataWithCombinedAcceptPrefersJwt() {
+        String expectedIssuer = oauth.getEndpoints().getIssuer();
+
+        CredentialIssuerMetadataResponse response = oauth.oid4vc()
+                .issuerMetadataRequest()
+                .header(HttpHeaders.ACCEPT, "application/json, application/jwt")
+                .send();
+
+        assertEquals(HttpStatus.SC_OK, response.getStatusCode());
+        assertEquals(MediaType.APPLICATION_JWT, response.getHeader(HttpHeaders.CONTENT_TYPE));
+
+        JWSInput jwsInput = (JWSInput) response.getContent();
+        assertNotNull(jwsInput, "Response should be signed metadata JWS");
+        try {
+            @SuppressWarnings("unchecked")
+            Map<String, Object> claims = JsonSerialization.readValue(jwsInput.getContent(), Map.class);
+            assertEquals(expectedIssuer, claims.get("sub"), "sub should match credential_issuer");
+            assertEquals(expectedIssuer, claims.get("iss"), "iss should match credential_issuer");
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Test
+    public void testMetadataWithCaseInsensitiveJwtAcceptReturnsJwt() throws IOException {
+        String expectedIssuer = oauth.getEndpoints().getIssuer();
+
+        CredentialIssuerMetadataResponse response = oauth.oid4vc()
+                .issuerMetadataRequest()
+                .header(HttpHeaders.ACCEPT, "APPLICATION/JWT")
+                .send();
+
+        assertEquals(HttpStatus.SC_OK, response.getStatusCode());
+        assertEquals(MediaType.APPLICATION_JWT, response.getHeader(HttpHeaders.CONTENT_TYPE));
+
+        JWSInput jwsInput = (JWSInput) response.getContent();
+        assertNotNull(jwsInput, "Response should be signed metadata JWS");
+        Map<String, Object> claims = JsonSerialization.readValue(jwsInput.getContent(), Map.class);
+        assertEquals(expectedIssuer, claims.get("sub"), "sub should match credential_issuer");
+        assertEquals(expectedIssuer, claims.get("iss"), "iss should match credential_issuer");
     }
 
     /**

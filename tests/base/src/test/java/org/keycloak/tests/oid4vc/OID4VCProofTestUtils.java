@@ -11,6 +11,7 @@ import java.security.interfaces.RSAPublicKey;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import org.keycloak.common.util.BouncyIntegration;
 import org.keycloak.crypto.ECDSASignatureSignerContext;
@@ -43,12 +44,57 @@ public final class OID4VCProofTestUtils {
     }
 
     public static String generateJwtProof(String audience, String nonce) {
-        return generateJwtProof(audience, createEcKeyPair("proof-key"), nonce);
+        return generateJwtProofWithClaims(List.of(audience), nonce, null, null, null, null, createEcKeyPair("proof-key"));
     }
 
     public static String generateJwtProof(String audience, KeyWrapper keyWrapper, String nonce) {
+        return generateJwtProofWithClaims(List.of(audience), nonce, null, null, null, null, keyWrapper);
+    }
+
+    public static String generateJwtProofWithClaims(
+            List<String> audiences,
+            String nonce,
+            String issuer,
+            Long iat,
+            Long exp,
+            Long nbf
+    ) {
+        KeyWrapper keyWrapper = createEcKeyPair();
+        return generateJwtProofWithClaims(audiences, nonce, issuer, iat, exp, nbf, keyWrapper);
+    }
+
+    private static String generateJwtProofWithClaims(
+            List<String> audiences,
+            String nonce,
+            String issuer,
+            Long iat,
+            Long exp,
+            Long nbf,
+            KeyWrapper keyWrapper
+    ) {
         keyWrapper.setKid(null);
         JWK jwk = JWKBuilder.create().ec(keyWrapper.getPublicKey());
+
+        AccessToken token = new AccessToken();
+        List<String> resolvedAudiences = audiences != null ? audiences : List.of();
+        for (String audience : resolvedAudiences) {
+            token.addAudience(audience);
+        }
+        token.setNonce(nonce);
+        Optional.ofNullable(issuer).ifPresent(token::issuer);
+        Optional.ofNullable(iat).ifPresentOrElse(token::iat, token::issuedNow);
+        Optional.ofNullable(exp).ifPresent(token::exp);
+        Optional.ofNullable(nbf).ifPresent(token::nbf);
+
+        return new JWSBuilder()
+                .type(JwtProofValidator.PROOF_JWT_TYP)
+                .jwk(jwk)
+                .jsonContent(token)
+                .sign(new ECDSASignatureSignerContext(keyWrapper));
+    }
+
+    public static String generateJwtProofWithKidNoAttestation(String audience, String nonce) {
+        KeyWrapper keyWrapper = createEcKeyPair();
 
         AccessToken token = new AccessToken();
         token.addAudience(audience);
@@ -57,7 +103,7 @@ public final class OID4VCProofTestUtils {
 
         return new JWSBuilder()
                 .type(JwtProofValidator.PROOF_JWT_TYP)
-                .jwk(jwk)
+                .kid(keyWrapper.getKid())
                 .jsonContent(token)
                 .sign(new ECDSASignatureSignerContext(keyWrapper));
     }
@@ -85,7 +131,9 @@ public final class OID4VCProofTestUtils {
             String certification
     ) {
         KeyAttestationJwtBody body = new KeyAttestationJwtBody();
-        body.setIat(System.currentTimeMillis() / 1000);
+        long iatSeconds = System.currentTimeMillis() / 1000;
+        body.setIat(iatSeconds);
+        body.setExp(iatSeconds + 3600);
         body.setNonce(nonce);
         body.setAttestedKeys(attestedKeys);
         body.setKeyStorage(keyStorage);
@@ -98,6 +146,14 @@ public final class OID4VCProofTestUtils {
                 .kid(attestationKey.getKid())
                 .jsonContent(body)
                 .sign(new ECDSASignatureSignerContext(attestationKey));
+    }
+
+    public static KeyWrapper createEcKeyPair() {
+        return createEcKeyPair("proof-key");
+    }
+
+    public static KeyWrapper newEcSigningKey(String keyId) {
+        return createEcKeyPair(keyId);
     }
 
     public static KeyWrapper createEcKeyPair(String keyId) {

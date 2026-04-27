@@ -167,9 +167,9 @@ public class AccountRestServiceWithUserProfileTest extends AbstractRestServiceTe
             assertNull(getUserProfileAttributeMetadata(user, "attr_no_permission"));
 
         } finally {
-            RealmRepresentation realmRep = testRealm().toRepresentation();
+            RealmRepresentation realmRep = managedRealm.admin().toRepresentation();
             realmRep.setEditUsernameAllowed(true);
-            testRealm().update(realmRep);
+            managedRealm.admin().update(realmRep);
         }
     }
 
@@ -224,9 +224,9 @@ public class AccountRestServiceWithUserProfileTest extends AbstractRestServiceTe
             assertNull(getUserProfileAttributeMetadata(user, "attr_no_permission"));
 
         } finally {
-            RealmRepresentation realmRep = testRealm().toRepresentation();
+            RealmRepresentation realmRep = managedRealm.admin().toRepresentation();
             realmRep.setEditUsernameAllowed(true);
-            testRealm().update(realmRep);
+            managedRealm.admin().update(realmRep);
         }
     }
 
@@ -249,9 +249,9 @@ public class AccountRestServiceWithUserProfileTest extends AbstractRestServiceTe
             assertUserProfileAttributeMetadata(user, "attr_readonly", "attr_readonly", false, true);
             assertNull(getUserProfileAttributeMetadata(user, "attr_no_permission"));
         } finally {
-            RealmRepresentation realmRep = testRealm().toRepresentation();
+            RealmRepresentation realmRep = managedRealm.admin().toRepresentation();
             realmRep.setEditUsernameAllowed(true);
-            testRealm().update(realmRep);
+            managedRealm.admin().update(realmRep);
         }
     }
 
@@ -295,10 +295,10 @@ public class AccountRestServiceWithUserProfileTest extends AbstractRestServiceTe
             
             assertNull(getUserProfileAttributeMetadata(user, "attr_no_permission"));
         } finally {
-            RealmRepresentation realmRep = testRealm().toRepresentation();
+            RealmRepresentation realmRep = managedRealm.admin().toRepresentation();
             realmRep.setEditUsernameAllowed(true);
             realmRep.setRegistrationEmailAsUsername(false);
-            testRealm().update(realmRep);
+            managedRealm.admin().update(realmRep);
         }
     }
     
@@ -377,10 +377,10 @@ public class AccountRestServiceWithUserProfileTest extends AbstractRestServiceTe
 
     @Test
     public void testManageUserLocaleAttribute() throws IOException {
-        RealmRepresentation realmRep = testRealm().toRepresentation();
+        RealmRepresentation realmRep = managedRealm.admin().toRepresentation();
         Boolean internationalizationEnabled = realmRep.isInternationalizationEnabled();
         realmRep.setInternationalizationEnabled(false);
-        testRealm().update(realmRep);
+        managedRealm.admin().update(realmRep);
         UserRepresentation user = getUser();
         user.setAttributes(Optional.ofNullable(user.getAttributes()).orElse(new HashMap<>()));
 
@@ -390,7 +390,7 @@ public class AccountRestServiceWithUserProfileTest extends AbstractRestServiceTe
             assertNull(user.getAttributes());
 
             realmRep.setInternationalizationEnabled(true);
-            testRealm().update(realmRep);
+            managedRealm.admin().update(realmRep);
 
             user.singleAttribute(UserModel.LOCALE, "pt_BR");
             user = updateAndGet(user);
@@ -409,13 +409,13 @@ public class AccountRestServiceWithUserProfileTest extends AbstractRestServiceTe
             );
         } finally {
             realmRep.setInternationalizationEnabled(internationalizationEnabled);
-            testRealm().update(realmRep);
+            managedRealm.admin().update(realmRep);
             updateAndGet(user);
         }
     }
 
     protected void setUserProfileConfiguration(String configuration) {
-        UserProfileUtil.setUserProfileConfiguration(testRealm(), configuration);
+        UserProfileUtil.setUserProfileConfiguration(managedRealm.admin(), configuration);
     }
 
     protected UserRepresentation getUser() throws IOException {

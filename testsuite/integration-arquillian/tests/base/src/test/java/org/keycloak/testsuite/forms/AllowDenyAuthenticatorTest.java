@@ -105,7 +105,7 @@ public class AllowDenyAuthenticatorTest extends AbstractChangeImportedUserPasswo
                     .removeDetail(Details.CONSENT)
                     .assertEvent();
         } finally {
-            revertFlows(testRealm(), flowAlias);
+            revertFlows(managedRealm.admin(), flowAlias);
         }
     }
 
@@ -144,7 +144,7 @@ public class AllowDenyAuthenticatorTest extends AbstractChangeImportedUserPasswo
                     .removeDetail(Details.CONSENT)
                     .assertEvent();
         } finally {
-            revertFlows(testRealm(), flowAlias);
+            revertFlows(managedRealm.admin(), flowAlias);
         }
     }
 
@@ -180,7 +180,7 @@ public class AllowDenyAuthenticatorTest extends AbstractChangeImportedUserPasswo
                     .removeDetail(Details.CONSENT)
                     .assertEvent();
         } finally {
-            revertFlows(testRealm(), flowAlias);
+            revertFlows(managedRealm.admin(), flowAlias);
         }
     }
 
@@ -248,7 +248,7 @@ public class AllowDenyAuthenticatorTest extends AbstractChangeImportedUserPasswo
                     .removeDetail(Details.CONSENT)
                     .assertEvent();
 
-            final String userCondNotMatchId = testRealm().users().search(userCondNotMatch).get(0).getId();
+            final String userCondNotMatchId = managedRealm.admin().users().search(userCondNotMatch).get(0).getId();
 
             oauth.openLoginForm();
             loginUsernameOnlyPage.assertCurrent();
@@ -262,7 +262,7 @@ public class AllowDenyAuthenticatorTest extends AbstractChangeImportedUserPasswo
                     .removeDetail(Details.CONSENT)
                     .assertEvent();
         } finally {
-            revertFlows(testRealm(), flowAlias);
+            revertFlows(managedRealm.admin(), flowAlias);
         }
     }
 
@@ -285,7 +285,7 @@ public class AllowDenyAuthenticatorTest extends AbstractChangeImportedUserPasswo
             loginUsernameOnlyPage.assertCurrent();
             loginUsernameOnlyPage.login(userWithoutRole);
 
-            final String testUserWithoutRoleId = testRealm().users().search(userWithoutRole).get(0).getId();
+            final String testUserWithoutRoleId = managedRealm.admin().users().search(userWithoutRole).get(0).getId();
 
             passwordPage.assertCurrent();
             passwordPage.login(getPassword(userWithoutRole));
@@ -296,7 +296,7 @@ public class AllowDenyAuthenticatorTest extends AbstractChangeImportedUserPasswo
                     .removeDetail(Details.CONSENT)
                     .assertEvent();
         } finally {
-            revertFlows(testRealm(), newFlowAlias);
+            revertFlows(managedRealm.admin(), newFlowAlias);
         }
     }
 
@@ -319,7 +319,7 @@ public class AllowDenyAuthenticatorTest extends AbstractChangeImportedUserPasswo
             loginUsernameOnlyPage.assertCurrent();
             loginUsernameOnlyPage.login(userWithRole);
 
-            final String testUserWithRoleId = testRealm().users().search(userWithRole).get(0).getId();
+            final String testUserWithRoleId = managedRealm.admin().users().search(userWithRole).get(0).getId();
 
             events.expectLogin()
                     .user(testUserWithRoleId)
@@ -327,7 +327,7 @@ public class AllowDenyAuthenticatorTest extends AbstractChangeImportedUserPasswo
                     .removeDetail(Details.CONSENT)
                     .assertEvent();
         } finally {
-            revertFlows(testRealm(), newFlowAlias);
+            revertFlows(managedRealm.admin(), newFlowAlias);
         }
     }
 
@@ -346,7 +346,7 @@ public class AllowDenyAuthenticatorTest extends AbstractChangeImportedUserPasswo
             assertEquals("Access denied", response.getError());
             assertNull(response.getErrorDescription());
         } finally {
-            DirectGrantFlowTest.revertFlows(testRealm(), flowAlias);
+            DirectGrantFlowTest.revertFlows(managedRealm.admin(), flowAlias);
         }
     }
 

@@ -114,7 +114,7 @@ public class LDAPLegacyImportTest extends AbstractLDAPTest {
         Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
         Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
 
-        UserRepresentation userRepresentation = AccountHelper.getUserRepresentation(testRealm(), "johnkeycloak");
+        UserRepresentation userRepresentation = AccountHelper.getUserRepresentation(managedRealm.admin(), "johnkeycloak");
 
         Assertions.assertEquals("John", userRepresentation.getFirstName());
         Assertions.assertEquals("Doe", userRepresentation.getLastName());

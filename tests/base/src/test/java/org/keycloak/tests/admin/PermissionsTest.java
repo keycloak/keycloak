@@ -47,10 +47,10 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.resources.admin.AdminAuth.Resource;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
-import org.keycloak.testframework.realm.ClientConfigBuilder;
+import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
-import org.keycloak.testframework.realm.RoleConfigBuilder;
-import org.keycloak.testframework.realm.UserConfigBuilder;
+import org.keycloak.testframework.realm.RoleBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.testsuite.util.CredentialBuilder;
 import org.keycloak.testsuite.util.FederatedIdentityBuilder;
@@ -104,7 +104,7 @@ public class PermissionsTest extends AbstractPermissionsTest {
 
     @Test
     public void attackDetection() {
-        UserRepresentation newUser = UserConfigBuilder.create()
+        UserRepresentation newUser = UserBuilder.create()
                 .username("attacked")
                 .enabled(true)
                 .build();
@@ -139,7 +139,7 @@ public class PermissionsTest extends AbstractPermissionsTest {
 
         invoke(realm -> realm.convertClientDescription("blahblah"), Resource.CLIENT, true);
         invoke((realm, response) ->
-                        response.set(realm.clients().create(ClientConfigBuilder.create().clientId("foo").build())),
+                        response.set(realm.clients().create(ClientBuilder.create().clientId("foo").build())),
                 Resource.CLIENT, true);
 
         ClientRepresentation foo = managedRealm1.admin().clients().findByClientId("foo").get(0);
@@ -297,7 +297,7 @@ public class PermissionsTest extends AbstractPermissionsTest {
 
     @Test
     public void roles() {
-        RoleRepresentation newRole = RoleConfigBuilder.create().name("sample-role").build();
+        RoleRepresentation newRole = RoleBuilder.create().name("sample-role").build();
         managedRealm1.admin().roles().create(newRole);
         managedRealm1.cleanup().add(r -> r.roles().deleteRole("sample-role"));
 
@@ -330,7 +330,7 @@ public class PermissionsTest extends AbstractPermissionsTest {
 
     @Test
     public void rolesById() {
-        RoleRepresentation newRole = RoleConfigBuilder.create().name("role-by-id").build();
+        RoleRepresentation newRole = RoleBuilder.create().name("role-by-id").build();
         managedRealm1.admin().roles().create(newRole);
         RoleRepresentation role = managedRealm1.admin().roles().get("role-by-id").toRepresentation();
         managedRealm1.cleanup().add(r -> r.roles().deleteRole("role-by-id"));
@@ -402,7 +402,7 @@ public class PermissionsTest extends AbstractPermissionsTest {
     @Test
     public void users() {
         invoke((realm, response) ->
-                        response.set(realm.users().create(UserConfigBuilder.create().username("testuser").build())),
+                        response.set(realm.users().create(UserBuilder.create().username("testuser").build())),
                 Resource.USER, true);
         UserRepresentation user = managedRealm1.admin().users().search("testuser").get(0);
         invoke(realm -> {

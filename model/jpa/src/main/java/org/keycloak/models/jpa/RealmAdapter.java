@@ -1080,6 +1080,12 @@ public class RealmAdapter implements StorageProviderRealmModel, JpaModel<RealmEn
                 : defaultConfig.isPasskeysEnabled();
         policy.setPasskeysEnabled(passKeysEnabled);
 
+        String mediation = getAttribute(RealmAttributes.WEBAUTHN_POLICY_MEDIATION + attributePrefix);
+        if (mediation == null || mediation.isEmpty()) {
+            mediation = defaultConfig.getMediation();
+        }
+        policy.setMediation(mediation);
+
         return policy;
     }
 
@@ -1137,6 +1143,13 @@ public class RealmAdapter implements StorageProviderRealmModel, JpaModel<RealmEn
             setAttribute(RealmAttributes.WEBAUTHN_POLICY_PASSKEYS_ENABLED + attributePrefix, passkeysEnabled.toString());
         } else {
             removeAttribute(RealmAttributes.WEBAUTHN_POLICY_PASSKEYS_ENABLED + attributePrefix);
+        }
+
+        String mediation = policy.getMediation();
+        if (mediation != null && !mediation.isBlank()) {
+            setAttribute(RealmAttributes.WEBAUTHN_POLICY_MEDIATION + attributePrefix, mediation);
+        } else {
+            removeAttribute(RealmAttributes.WEBAUTHN_POLICY_MEDIATION + attributePrefix);
         }
     }
 

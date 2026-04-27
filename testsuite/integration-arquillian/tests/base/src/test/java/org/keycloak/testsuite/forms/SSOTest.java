@@ -179,9 +179,9 @@ public class SSOTest extends AbstractChangeImportedUserPasswordsTest {
         String sessionId = loginEvent.getSessionId();
 
         // Add update-profile required action to user now
-        UserRepresentation user = testRealm().users().get(loginEvent.getUserId()).toRepresentation();
+        UserRepresentation user = managedRealm.admin().users().get(loginEvent.getUserId()).toRepresentation();
         user.getRequiredActions().add(UserModel.RequiredAction.UPDATE_PASSWORD.toString());
-        testRealm().users().get(loginEvent.getUserId()).update(user);
+        managedRealm.admin().users().get(loginEvent.getUserId()).update(user);
 
         // Attempt SSO login. update-password form is shown
         oauth.openLoginForm();

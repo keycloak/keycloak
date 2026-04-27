@@ -39,6 +39,7 @@ import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.provider.ScriptProviderDescriptor;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AbstractAuthenticationTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
@@ -49,7 +50,6 @@ import org.keycloak.testsuite.util.ContainerAssume;
 import org.keycloak.testsuite.util.ExecutionBuilder;
 import org.keycloak.testsuite.util.FlowBuilder;
 import org.keycloak.testsuite.util.RealmBuilder;
-import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.util.JsonSerialization;
 
 import org.jboss.arquillian.container.test.api.Deployment;
@@ -142,13 +142,13 @@ public class DeployedScriptAuthenticatorTest extends AbstractFlowTest {
                 .builtIn(false)
                 .build();
 
-        Response createFlowResponse = adminClient.realm(TEST_REALM_NAME).flows().createFlow(scriptBrowserFlow);
+        Response createFlowResponse = managedRealm.admin().flows().createFlow(scriptBrowserFlow);
         Assertions.assertEquals(201, createFlowResponse.getStatus());
 
-        RealmRepresentation realm = adminClient.realm(TEST_REALM_NAME).toRepresentation();
+        RealmRepresentation realm = managedRealm.admin().toRepresentation();
         realm.setBrowserFlow(scriptFlow);
         realm.setDirectGrantFlow(scriptFlow);
-        testRealm().update(realm);
+        managedRealm.admin().update(realm);
 
         this.flow = findFlowByAlias(scriptFlow);
 
@@ -166,11 +166,11 @@ public class DeployedScriptAuthenticatorTest extends AbstractFlowTest {
                 .authenticator("script-authenticator-a.js")
                 .build();
 
-        Response addExecutionResponse = testRealm().flows().addExecution(usernamePasswordFormExecution);
+        Response addExecutionResponse = managedRealm.admin().flows().addExecution(usernamePasswordFormExecution);
         Assertions.assertEquals(201, addExecutionResponse.getStatus());
         addExecutionResponse.close();
 
-        addExecutionResponse = testRealm().flows().addExecution(authScriptExecution);
+        addExecutionResponse = managedRealm.admin().flows().addExecution(authScriptExecution);
         Assertions.assertEquals(201, addExecutionResponse.getStatus());
         addExecutionResponse.close();
 
@@ -195,7 +195,7 @@ public class DeployedScriptAuthenticatorTest extends AbstractFlowTest {
     @Test
     public void testManyScriptAuthenticatorInstances() throws Exception {
         configureFlows();
-        AuthenticationManagementResource authMgmtResource = adminClient.realm(TEST_REALM_NAME).flows();
+        AuthenticationManagementResource authMgmtResource = managedRealm.admin().flows();
 
         // Endpoint used by admin console
         Map<String, Object> scriptExecution = new HashMap<>();
@@ -239,7 +239,7 @@ public class DeployedScriptAuthenticatorTest extends AbstractFlowTest {
     }
 
     private UserRepresentation okayUser() {
-        return adminClient.realm(TEST_REALM_NAME).users().search("user", true).get(0);
+        return managedRealm.admin().users().search("user", true).get(0);
     }
 
     /**
@@ -259,7 +259,7 @@ public class DeployedScriptAuthenticatorTest extends AbstractFlowTest {
     @Test
     @DisableFeature(value = SCRIPTS, executeAsLast = false, skipRestart = true)
     public void testScriptAuthenticatorNotAvailable() {
-        assertFalse(testRealm().flows().getAuthenticatorProviders().stream().anyMatch(
+        assertFalse(managedRealm.admin().flows().getAuthenticatorProviders().stream().anyMatch(
                 provider -> ScriptBasedAuthenticatorFactory.PROVIDER_ID.equals(provider.get("id"))));
     }
 }

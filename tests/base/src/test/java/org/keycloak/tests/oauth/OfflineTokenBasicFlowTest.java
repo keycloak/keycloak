@@ -45,12 +45,12 @@ import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testframework.events.Events;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
+import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.ClientConfig;
-import org.keycloak.testframework.realm.ClientConfigBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
-import org.keycloak.testframework.realm.RealmConfigBuilder;
-import org.keycloak.testframework.realm.RoleConfigBuilder;
+import org.keycloak.testframework.realm.RoleBuilder;
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testframework.remote.timeoffset.InjectTimeOffSet;
@@ -540,7 +540,7 @@ public class OfflineTokenBasicFlowTest {
                 Constants.OFFLINE_ACCESS_ROLE).toRepresentation();
 
         // Grant offline_access role indirectly through composite role
-        appRealm.roles().create(RoleConfigBuilder.create().name("composite").build());
+        appRealm.roles().create(RoleBuilder.create().name("composite").build());
         RoleResource roleResource = appRealm.roles().get("composite");
         roleResource.addComposites(Collections.singletonList(offlineAccess));
 
@@ -613,7 +613,7 @@ public class OfflineTokenBasicFlowTest {
         // Create new client
         RealmResource appRealm = adminClient.realm("test");
 
-        ClientRepresentation clientRep = ClientConfigBuilder.create().clientId("offline-client-2")
+        ClientRepresentation clientRep = ClientBuilder.create().clientId("offline-client-2")
                 .id(KeycloakModelUtils.generateId())
                 .directAccessGrantsEnabled(true)
                 .secret("secret1").build();
@@ -954,7 +954,7 @@ public class OfflineTokenBasicFlowTest {
     public static class OfflineTokenRealmConfig implements RealmConfig {
 
         @Override
-        public RealmConfigBuilder configure(RealmConfigBuilder builder) {
+        public RealmBuilder configure(RealmBuilder builder) {
             builder.name("test")
                     .eventsEnabled(true)
                     .ssoSessionIdleTimeout(30)
@@ -1004,7 +1004,7 @@ public class OfflineTokenBasicFlowTest {
 
     public static class OfflineAuthClientConfig implements ClientConfig {
         @Override
-        public ClientConfigBuilder configure(ClientConfigBuilder client) {
+        public ClientBuilder configure(ClientBuilder client) {
             return client.clientId("test-app")
                     .secret("password")
                     .serviceAccountsEnabled(true)

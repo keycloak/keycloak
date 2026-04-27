@@ -142,7 +142,7 @@ public class PasskeysOrganizationAuthenticationTest extends AbstractWebAuthnVirt
         getVirtualAuthManager().useAuthenticator(DefaultVirtualAuthOptions.PASSKEYS.getOptions());
 
         // enable organization configuration
-        AuthenticationExecutionInfoRepresentation organizationExec = testRealm().flows().getExecutions("browser-webauthn-conditional-organization").stream()
+        AuthenticationExecutionInfoRepresentation organizationExec = managedRealm.admin().flows().getExecutions("browser-webauthn-conditional-organization").stream()
                 .filter(exec -> OrganizationAuthenticatorFactory.ID.equals(exec.getProviderId()))
                 .findAny()
                 .orElse(null);
@@ -151,7 +151,7 @@ public class PasskeysOrganizationAuthenticationTest extends AbstractWebAuthnVirt
         AuthenticatorConfigRepresentation config = new AuthenticatorConfigRepresentation();
         config.setAlias(KeycloakModelUtils.generateId());
         config.getConfig().put(OrganizationAuthenticatorFactory.REQUIRES_USER_MEMBERSHIP, Boolean.TRUE.toString());
-        getCleanup().addAuthenticationConfigId(ApiUtil.getCreatedId(testRealm().flows().newExecutionConfig(organizationExec.getId(), config)));
+        getCleanup().addAuthenticationConfigId(ApiUtil.getCreatedId(managedRealm.admin().flows().newExecutionConfig(organizationExec.getId(), config)));
 
         // set passwordless policy for discoverable keys
         try (Closeable c = getWebAuthnRealmUpdater()

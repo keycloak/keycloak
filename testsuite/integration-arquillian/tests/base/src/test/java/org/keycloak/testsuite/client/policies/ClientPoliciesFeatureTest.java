@@ -64,7 +64,7 @@ public class ClientPoliciesFeatureTest extends AbstractTestRealmKeycloakTest  {
     // Check if the feature really works
     private void checkIfFeatureWorks(boolean shouldWork) {
         try {
-            ClientPoliciesRepresentation clientPolicies = testRealm().clientPoliciesPoliciesResource().getPolicies();
+            ClientPoliciesRepresentation clientPolicies = managedRealm.admin().clientPoliciesPoliciesResource().getPolicies();
             Assertions.assertTrue(clientPolicies.getPolicies().isEmpty());
             if (!shouldWork)
                 fail("Feature is available, but at this moment should be disabled");

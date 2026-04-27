@@ -25,6 +25,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserModel.RequiredAction;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.AdminApiUtil;
@@ -35,7 +36,6 @@ import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginUpdateProfilePage;
 import org.keycloak.testsuite.util.SecondBrowser;
-import org.keycloak.testsuite.util.UserBuilder;
 
 import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.arquillian.graphene.page.Page;
@@ -75,26 +75,26 @@ public abstract class AbstractRequiredActionUpdateEmailTest extends AbstractTest
 
 	@Before
 	public void beforeTest() {
-        AdminApiUtil.enableRequiredAction(testRealm(), RequiredAction.UPDATE_EMAIL, true);
-		AdminApiUtil.removeUserByUsername(testRealm(), "test-user@localhost");
+        AdminApiUtil.enableRequiredAction(managedRealm.admin(), RequiredAction.UPDATE_EMAIL, true);
+		AdminApiUtil.removeUserByUsername(managedRealm.admin(), "test-user@localhost");
 		UserRepresentation user = UserBuilder.create().enabled(true)
 				.username("test-user@localhost")
 				.email("test-user@localhost")
 				.firstName("Tom")
 				.lastName("Brady")
-				.requiredAction(UserModel.RequiredAction.UPDATE_EMAIL.name()).build();
+				.requiredActions(UserModel.RequiredAction.UPDATE_EMAIL.name()).build();
 		prepareUser(user);
-		AdminApiUtil.createUserAndResetPasswordWithAdminClient(testRealm(), user, "password");
+		AdminApiUtil.createUserAndResetPasswordWithAdminClient(managedRealm.admin(), user, "password");
 
-		AdminApiUtil.removeUserByUsername(testRealm(), "john-doh@localhost");
+		AdminApiUtil.removeUserByUsername(managedRealm.admin(), "john-doh@localhost");
 		user = UserBuilder.create().enabled(true)
 				.username("john-doh@localhost")
 				.email("john-doh@localhost")
 				.firstName("John")
 				.lastName("Doh")
-				.requiredAction(UserModel.RequiredAction.UPDATE_EMAIL.name()).build();
+				.requiredActions(UserModel.RequiredAction.UPDATE_EMAIL.name()).build();
 		prepareUser(user);
-		AdminApiUtil.createUserAndResetPasswordWithAdminClient(testRealm(), user, "password");
+		AdminApiUtil.createUserAndResetPasswordWithAdminClient(managedRealm.admin(), user, "password");
 	}
 
 	private void setRegistrationEmailAsUsername(RealmResource realmResource, boolean enabled) {
@@ -104,7 +104,7 @@ public abstract class AbstractRequiredActionUpdateEmailTest extends AbstractTest
 	}
 
         protected void configureRequiredActionsToUser(String username, String... actions) {
-                UserResource userResource = AdminApiUtil.findUserByUsernameId(testRealm(), username);
+                UserResource userResource = AdminApiUtil.findUserByUsernameId(managedRealm.admin(), username);
                 UserRepresentation userRepresentation = userResource.toRepresentation();
                 userRepresentation.setRequiredActions(Arrays.asList(actions));
                 userResource.update(userRepresentation);
@@ -191,11 +191,11 @@ public abstract class AbstractRequiredActionUpdateEmailTest extends AbstractTest
 
 	@Test
 	public void updateEmailWithEmailAsUsernameEnabled() throws Exception {
-		Boolean genuineRegistrationEmailAsUsername = testRealm()
+		Boolean genuineRegistrationEmailAsUsername = managedRealm.admin()
 				.toRepresentation()
 				.isRegistrationEmailAsUsername();
 
-		setRegistrationEmailAsUsername(testRealm(), true);
+		setRegistrationEmailAsUsername(managedRealm.admin(), true);
 		try {
 			UserRepresentation user = ActionUtil.findUserWithAdminClient(adminClient, "test-user@localhost");
 			String firstName = user.getFirstName();
@@ -210,7 +210,7 @@ public abstract class AbstractRequiredActionUpdateEmailTest extends AbstractTest
 			assertNotNull(firstName);
 			assertNotNull(lastName);
 		} finally {
-			setRegistrationEmailAsUsername(testRealm(), genuineRegistrationEmailAsUsername);
+			setRegistrationEmailAsUsername(managedRealm.admin(), genuineRegistrationEmailAsUsername);
 		}
 	}
 

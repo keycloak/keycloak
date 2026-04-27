@@ -30,6 +30,7 @@ import org.keycloak.protocol.oid4vc.model.Proofs;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.keycloak.testsuite.util.oauth.OpenIDProviderConfigurationResponse;
 import org.keycloak.testsuite.util.oauth.ParResponse;
 import org.keycloak.testsuite.util.oauth.oid4vc.CredentialIssuerMetadataResponse;
@@ -37,14 +38,12 @@ import org.keycloak.testsuite.util.oauth.oid4vc.Oid4vcCredentialResponse;
 
 import org.apache.http.HttpStatus;
 import org.junit.Test;
-import org.openqa.selenium.TimeoutException;
 
 import static org.keycloak.OID4VCConstants.OPENID_CREDENTIAL;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -233,12 +232,12 @@ public class OID4VCAuthorizationCodeFlowWithPARTest extends OID4VCIssuerEndpoint
         // Step 2: Perform authorization with PAR
         oauth.client(clientId);
         oauth.scope(getCredentialClientScope().getName());
-        TimeoutException ex = assertThrows(TimeoutException.class, () ->
-                oauth.loginForm().requestUri(requestUri).doLogin("john", "password"));
+        oauth.loginForm().requestUri(requestUri).open();
+        AuthorizationEndpointResponse authResponse = oauth.parseLoginResponse();
 
-        // [TODO #47649] OAuthClient cannot handle invalid authorization requests
-        assertNotNull("No error message", ex.getMessage());
-        assertTrue(ex.getMessage().contains("waiting for element Proxy element for: DefaultElementLocator 'By.id: username' to be present"), ex.getMessage());
+        // Should fail because authorization_details from PAR request cannot be processed
+        String errorDescription = authResponse.getErrorDescription();
+        assertTrue(errorDescription != null && errorDescription.contains("Invalid authorization_details"), "Error message should indicate authorization_details processing failure");
     }
 
     @Test

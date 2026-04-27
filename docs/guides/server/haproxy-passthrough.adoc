@@ -1,0 +1,121 @@
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/kc.adoc" as kc>
+<#import "/templates/options.adoc" as opts>
+<#import "/templates/links.adoc" as links>
+
+<@tmpl.guide title="HAProxy with TLS passthrough"
+summary="Configure HAProxy as a TLS passthrough load balancer for {project_name}."
+includedOptions="proxy-protocol-enabled metrics-enabled health-enabled"
+tileVisible="false">
+
+This {section} describes how to configure link:https://www.haproxy.com/[HAProxy] as a TLS passthrough load balancer in front of {project_name}.
+
+In TLS passthrough mode, HAProxy forwards the raw TLS connection directly to {project_name} without terminating it.
+HAProxy operates at the TCP layer (Layer 4) and has no visibility into the HTTP content.
+The TLS handshake occurs between the client and {project_name}, preserving end-to-end encryption.
+
+For a general overview of TLS passthrough and how it compares to re-encrypt, see the <@links.server id="reverseproxy"/> {section}.
+
+A ready-to-run example with Docker Compose is available in the link:https://github.com/keycloak/keycloak-quickstarts/tree/main/proxy/haproxy/passthrough[quickstart repository].
+
+== HAProxy configuration
+
+The following `haproxy.cfg` shows a configuration for TLS passthrough with two {project_name} backend servers.
+
+[source,haproxy]
+----
+global
+    log stdout format raw local0
+
+defaults
+    log     global
+    mode    http
+    option  httplog
+    option  dontlognull
+    timeout connect 5s
+    timeout client  50s
+    timeout server  50s
+    retries 3
+
+frontend https_front
+    bind *:8443 # <1>
+    mode tcp # <2>
+    option tcplog
+    default_backend keycloak_back
+
+backend keycloak_back
+    mode tcp # <3>
+    balance roundrobin # <4>
+    option httpchk GET /health/ready # <5>
+    http-check expect status 200
+    server keycloak1 keycloak1:8443 send-proxy-v2 check port 9000 check-ssl verify none inter 5s fall 3 rise 2 # <6>
+    server keycloak2 keycloak2:8443 send-proxy-v2 check port 9000 check-ssl verify none inter 5s fall 3 rise 2
+----
+
+<1> The port HAProxy listens on for incoming TLS connections.
+Clients connect to this port, and HAProxy forwards the raw TCP stream to the backend.
+<2> Enables link:https://docs.haproxy.org/3.2/configuration.html#4-mode[TCP mode] on the frontend.
+This tells HAProxy to operate at Layer 4, forwarding raw bytes without decrypting TLS.
+HAProxy never sees the plaintext HTTP traffic in this mode.
+<3> The backend must also use TCP mode to match the frontend.
+<4> Distributes connections across backend servers using link:https://docs.haproxy.org/3.2/configuration.html#4-balance[round-robin] load balancing.
+<5> Configures link:https://docs.haproxy.org/3.2/configuration.html#4.2-option%20httpchk[HTTP health checks] against {project_name}'s readiness endpoint.
+Even though the data traffic uses TCP mode, HAProxy can perform HTTP health checks on a separate port.
+The `http-check expect status 200` directive tells HAProxy to consider the server healthy only when it receives an HTTP 200 response.
+For details on the {project_name} health check endpoint, see the <@links.server id="management-interface"/> {section}.
+<6> Defines a backend {project_name} server.
+The parameters on this line control PROXY protocol, health checks, and failure detection:
+
+The `server` directive parameters are explained below:
+
+`send-proxy-v2`::
+Enables the link:https://docs.haproxy.org/3.2/configuration.html#5.2-send-proxy-v2[PROXY protocol v2].
+HAProxy prepends the original client IP address to the TCP connection so that {project_name} sees the real source IP instead of HAProxy's address.
+This requires {project_name} to be configured with `--proxy-protocol-enabled=true` (see <<keycloak-configuration>>).
+Version 1 (`send-proxy`) is also supported.
+
+`check port 9000 check-ssl verify none`::
+Directs health checks to the link:https://docs.haproxy.org/3.2/configuration.html#5.2-check[management port] (`9000`) over HTTPS.
+The `verify none` option skips TLS certificate verification for the health check connection, which is acceptable because the health check is an internal communication between HAProxy and {project_name}.
+The management port is separate from the main application port (`8443`), as described in the <@links.server id="management-interface"/> {section}.
+
+`inter 5s fall 3 rise 2`::
+Configures the link:https://docs.haproxy.org/3.2/configuration.html#5.2-inter[health check frequency]:
+poll every 5 seconds, mark a server as down after 3 consecutive failures, and mark it as up again after 2 consecutive successes.
+These values affect how quickly HAProxy detects that a {project_name} instance is shutting down (see <<graceful-shutdown-considerations>>).
+
+[[keycloak-configuration]]
+== {project_name} configuration
+
+With TLS passthrough, {project_name} requires the following configuration:
+
+<@kc.start parameters="--proxy-protocol-enabled true --health-enabled true --metrics-enabled true"/>
+
+`--proxy-protocol-enabled true`::
+Enables the PROXY protocol so that {project_name} can read the real client IP address from the PROXY protocol header added by HAProxy.
+Do not set `--proxy-headers` when using TLS passthrough because HAProxy cannot inject HTTP headers into the encrypted traffic.
+The `--proxy-protocol-enabled` option and the `--proxy-headers` option are mutually exclusive.
+
+`--health-enabled true`::
+Enables the health check endpoints on the management port (`9000`).
+Without this, the `/health/ready` endpoint that HAProxy polls will not be available, and HAProxy will mark all {project_name} instances as down.
+
+`--metrics-enabled true`::
+Enables the metrics endpoints on the management port.
+Enabling metrics also enables an additional status check for the database, so it is recommended to enable metrics.
+
+[[graceful-shutdown-considerations]]
+== Graceful shutdown considerations
+
+With TLS passthrough, HAProxy cannot signal a connection close at the HTTP level.
+The health check timing directly determines how long it takes HAProxy to detect that a {project_name} instance is shutting down and stop routing new connections to it.
+
+With the health check settings from the configuration above (`inter 5s fall 3`), it takes up to 15 seconds (3 failures x 5-second interval) for HAProxy to mark a {project_name} instance as down.
+During this period, {project_name} must remain running to serve in-flight requests.
+Therefore, configure the `--shutdown-delay` to be at least as long as the detection time:
+
+<@kc.start parameters="--proxy-protocol-enabled true --health-enabled true --metrics-enabled true --shutdown-delay=30s"/>
+
+For a detailed explanation of shutdown phases and how to tune the delay and timeout values, see the Graceful HTTP shutdown section in the <@links.server id="reverseproxy"/> {section}.
+
+</@tmpl.guide>

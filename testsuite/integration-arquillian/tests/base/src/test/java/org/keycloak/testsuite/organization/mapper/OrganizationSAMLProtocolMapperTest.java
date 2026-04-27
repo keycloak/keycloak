@@ -34,9 +34,9 @@ import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
 import org.keycloak.services.resources.RealmsResource;
+import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testsuite.organization.admin.AbstractOrganizationTest;
 import org.keycloak.testsuite.saml.RoleMapperTest;
-import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.Matchers;
 import org.keycloak.testsuite.util.SamlClient;
 import org.keycloak.testsuite.util.SamlClientBuilder;
@@ -53,12 +53,12 @@ public class OrganizationSAMLProtocolMapperTest extends AbstractOrganizationTest
 
     @Test
     public void testAttribute() {
-        OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
+        OrganizationResource organization = managedRealm.admin().organizations().get(createOrganization().getId());
         IdentityProviderRepresentation broker = organization.identityProviders().getIdentityProviders().get(0);
         organization.identityProviders().get(broker.getAlias()).delete().close();
         addMember(organization);
         String clientId = "saml-client";
-        testRealm().clients().create(ClientBuilder.create()
+        managedRealm.admin().clients().create(ClientBuilder.create()
                 .protocol(SamlProtocol.LOGIN_PROTOCOL)
                 .clientId(clientId)
                 .redirectUris("*")

@@ -58,6 +58,7 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.clientpolicy.condition.AnyClientConditionFactory;
 import org.keycloak.services.clientpolicy.condition.ClientAccessTypeConditionFactory;
 import org.keycloak.services.clientpolicy.executor.UseLightweightAccessTokenExecutorFactory;
+import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.client.policies.AbstractClientPoliciesTest;
@@ -115,6 +116,9 @@ import static org.keycloak.testsuite.util.ClientPoliciesUtil.createAnyClientCond
 
 public class LightWeightAccessTokenTest extends AbstractClientPoliciesTest {
     private static final Logger logger = Logger.getLogger(LightWeightAccessTokenTest.class);
+
+    protected ManagedRealm managedRealm = new ManagedRealm(this, REALM_NAME);
+
     private static String RESOURCE_SERVER_CLIENT_ID = "resource-server";
     private static String RESOURCE_SERVER_CLIENT_PASSWORD = "password";
     @Before
@@ -746,12 +750,8 @@ public class LightWeightAccessTokenTest extends AbstractClientPoliciesTest {
         assertBasicClaims(token, isAuthCodeFlow, missingBasicClaims);
     }
 
-    protected RealmResource testRealm() {
-        return adminClient.realm(REALM_NAME);
-    }
-
     public void addDefaultBasicClientScope() {
-        testRealm().getDefaultDefaultClientScopes()
+        managedRealm.admin().getDefaultDefaultClientScopes()
                 .stream()
                 .filter(scope-> scope.getName().equals(OIDCLoginProtocolFactory.BASIC_SCOPE))
                 .findFirst()
@@ -761,7 +761,7 @@ public class LightWeightAccessTokenTest extends AbstractClientPoliciesTest {
     }
 
     public void removeDefaultBasicClientScope() {
-        testRealm().getDefaultDefaultClientScopes()
+        managedRealm.admin().getDefaultDefaultClientScopes()
                 .stream()
                 .filter(scope-> scope.getName().equals(OIDCLoginProtocolFactory.BASIC_SCOPE))
                 .findFirst()
@@ -808,7 +808,7 @@ public class LightWeightAccessTokenTest extends AbstractClientPoliciesTest {
     }
 
     private void setScopeProtocolMapper(String scopeName, String mapperName, boolean isIncludeAccessToken, boolean isIncludeIntrospection, boolean isIncludeLightweightAccessToken) {
-        setScopeProtocolMapper(testRealm().toRepresentation().getRealm(), scopeName, mapperName, isIncludeAccessToken, isIncludeIntrospection, isIncludeLightweightAccessToken);
+        setScopeProtocolMapper(managedRealm.admin().toRepresentation().getRealm(), scopeName, mapperName, isIncludeAccessToken, isIncludeIntrospection, isIncludeLightweightAccessToken);
     }
 
     private ProtocolMappersResource setProtocolMappers(boolean isIncludeAccessToken, boolean isIncludeIntrospection, boolean setPairWise) {

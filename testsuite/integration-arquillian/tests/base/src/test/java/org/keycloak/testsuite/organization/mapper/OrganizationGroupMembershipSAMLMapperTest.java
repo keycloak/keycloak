@@ -41,10 +41,10 @@ import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
 import org.keycloak.services.resources.RealmsResource;
+import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.organization.admin.AbstractOrganizationTest;
 import org.keycloak.testsuite.saml.RoleMapperTest;
-import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.Matchers;
 import org.keycloak.testsuite.util.SamlClient;
 import org.keycloak.testsuite.util.SamlClientBuilder;
@@ -66,7 +66,7 @@ public class OrganizationGroupMembershipSAMLMapperTest extends AbstractOrganizat
     @Test
     public void testGroupsAsAttribute() {
         OrganizationRepresentation orgRep = createOrganization();
-        OrganizationResource organization = testRealm().organizations().get(orgRep.getId());
+        OrganizationResource organization = managedRealm.admin().organizations().get(orgRep.getId());
         IdentityProviderRepresentation broker = organization.identityProviders().getIdentityProviders().get(0);
         organization.identityProviders().get(broker.getAlias()).delete().close();
         MemberRepresentation member = addMember(organization);
@@ -91,7 +91,7 @@ public class OrganizationGroupMembershipSAMLMapperTest extends AbstractOrganizat
         organization.groups().group(backendId).addMember(member.getId());
 
         String clientId = "saml-client";
-        testRealm().clients().create(ClientBuilder.create()
+        managedRealm.admin().clients().create(ClientBuilder.create()
                 .protocol(SamlProtocol.LOGIN_PROTOCOL)
                 .clientId(clientId)
                 .redirectUris("*")
@@ -99,8 +99,8 @@ public class OrganizationGroupMembershipSAMLMapperTest extends AbstractOrganizat
                 .build()).close();
 
         // Add the organization group membership mapper to the client
-        ClientRepresentation client = testRealm().clients().findByClientId(clientId).get(0);
-        ClientResource clientResource = testRealm().clients().get(client.getId());
+        ClientRepresentation client = managedRealm.admin().clients().findByClientId(clientId).get(0);
+        ClientResource clientResource = managedRealm.admin().clients().get(client.getId());
 
         ProtocolMapperRepresentation groupMapper = new ProtocolMapperRepresentation();
         groupMapper.setName("organization-groups");

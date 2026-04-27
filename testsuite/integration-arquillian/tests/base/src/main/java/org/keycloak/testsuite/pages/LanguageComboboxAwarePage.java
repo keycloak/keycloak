@@ -53,6 +53,9 @@ public abstract class LanguageComboboxAwarePage extends AbstractPage {
     @FindBy(id = "try-another-way")
     private WebElement tryAnotherWayLink;
 
+    @FindBy(id = "switch-organization")
+    private WebElement switchOrganizationLink;
+
     @FindBy(id = "kc-attempted-username")
     private WebElement attemptedUsernameLabel;
 
@@ -98,6 +101,19 @@ public abstract class LanguageComboboxAwarePage extends AbstractPage {
 
     public void clickTryAnotherWayLink() {
         UIUtils.clickLink(tryAnotherWayLink);
+    }
+
+    public void assertSwitchOrganizationLinkAvailability(boolean expectedAvailability) {
+        try {
+            driver.findElement(By.id("switch-organization"));
+            Assertions.assertTrue(expectedAvailability);
+        } catch (NoSuchElementException nse) {
+            Assertions.assertFalse(expectedAvailability);
+        }
+    }
+
+    public void clickSwitchOrganizationLink() {
+        UIUtils.clickLink(switchOrganizationLink);
     }
 
     public void assertAccountLinkAvailability(boolean expectedAvailability) {

@@ -119,7 +119,7 @@ public class SamlClientPoliciesExecutorTest extends AbstractTestRealmKeycloakTes
     @Test
     public void testSamlSecureClientUrisExecutor() throws Exception {
         createClientProfileAndPolicyToTest(SamlSecureClientUrisExecutorFactory.PROVIDER_ID, null);
-        final RealmResource realm = testRealm();
+        final RealmResource realm = managedRealm.admin();
         String clientId = null;
         try {
             final ClientRepresentation client = createSecureClient("test-saml-client");
@@ -148,7 +148,7 @@ public class SamlClientPoliciesExecutorTest extends AbstractTestRealmKeycloakTes
     @Test
     public void testSamlAvoidRedirectBindingExecutor() throws Exception {
         String clientId = null;
-        final RealmResource realm = testRealm();
+        final RealmResource realm = managedRealm.admin();
         try {
             final ClientRepresentation client = createSecureClient("test-saml-client");
             client.getAttributes().put(SamlConfigAttributes.SAML_FORCE_POST_BINDING, Boolean.FALSE.toString());
@@ -188,7 +188,7 @@ public class SamlClientPoliciesExecutorTest extends AbstractTestRealmKeycloakTes
     @Test
     public void testSamlSignatureEnforcerExecutor() throws Exception {
         String clientId = null;
-        final RealmResource realm = testRealm();
+        final RealmResource realm = managedRealm.admin();
         try {
             final ClientRepresentation client = createSecureClient("test-saml-client");
             client.getAttributes().put(SamlConfigAttributes.SAML_CLIENT_SIGNATURE_ATTRIBUTE, Boolean.FALSE.toString());
@@ -416,7 +416,7 @@ public class SamlClientPoliciesExecutorTest extends AbstractTestRealmKeycloakTes
     }
 
     private void createClientProfileAndPolicyToTest(String executorId, ClientPolicyExecutorConfigurationRepresentation config) throws Exception {
-        RealmResource realm = testRealm();
+        RealmResource realm = managedRealm.admin();
         ClientProfileRepresentation profile = new ClientPoliciesUtil.ClientProfileBuilder()
                 .createProfile(PROFILE_POLICY_NAME, "The profile to test")
                 .addExecutor(executorId, config)
@@ -439,9 +439,9 @@ public class SamlClientPoliciesExecutorTest extends AbstractTestRealmKeycloakTes
 
     private void removeClientProfileAndPolicyToTest() {
         ClientProfilesRepresentation profiles = new ClientPoliciesUtil.ClientProfilesBuilder().toRepresentation();
-        adminClient.realm(TEST_REALM_NAME).clientPoliciesProfilesResource().updateProfiles(profiles);
+        managedRealm.admin().clientPoliciesProfilesResource().updateProfiles(profiles);
         ClientPoliciesRepresentation policies = new ClientPoliciesUtil.ClientPoliciesBuilder().toRepresentation();
-        adminClient.realm(TEST_REALM_NAME).clientPoliciesPoliciesResource().updatePolicies(policies);
+        managedRealm.admin().clientPoliciesPoliciesResource().updatePolicies(policies);
     }
 
     private ClientRepresentation createSecureClient(String clientId) {

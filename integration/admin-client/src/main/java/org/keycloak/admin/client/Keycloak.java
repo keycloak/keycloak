@@ -16,8 +16,6 @@
  */
 package org.keycloak.admin.client;
 
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
 import java.net.URI;
 import java.util.Iterator;
 import java.util.ServiceLoader;
@@ -218,6 +216,13 @@ public class Keycloak implements AutoCloseable {
         WebTarget register = client.target(absoluteURI).register(newAuthFilter());
         return CLIENT_PROVIDER.targetProxy(register, proxyClass);
     }
+    
+    /**
+     * Create a secure proxy with endpoints targetting the server
+     */
+    public <T> T proxy(Class<T> proxyClass) {
+        return CLIENT_PROVIDER.targetProxy(target, proxyClass);
+    }
 
     /**
      * Closes the underlying client. After calling this method, this <code>Keycloak</code> instance cannot be reused.
@@ -243,20 +248,4 @@ public class Keycloak implements AutoCloseable {
         return closed;
     }
 
-    /**
-     * Method to return org.keycloak.admin.client.wrapper.Clients instance. Note that this class
-     * may not be available in some cases and hence reflection is used to instantiate that class
-     *
-     * @param realmName realm name
-     * @param clientsClass Typically class org.keycloak.admin.client.wrapper.Clients . This argument is present just to avoid casting.
-     * @return Instance of org.keycloak.admin.client.wrapper.Clients
-     */
-    public <C> C clients(String realmName, Class<C> clientsClass) {
-        try {
-            Constructor<C> constructor = clientsClass.getDeclaredConstructor(ResteasyClientProvider.class, WebTarget.class, String.class);
-            return constructor.newInstance(CLIENT_PROVIDER, target, realmName);
-        } catch (NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException e) {
-            throw new RuntimeException(e);
-        }
-    }
 }

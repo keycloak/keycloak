@@ -44,6 +44,9 @@ import org.keycloak.saml.RandomSecret;
 import org.keycloak.saml.common.constants.JBossSAMLConstants;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.processing.core.util.XMLEncryptionUtil;
+import org.keycloak.testframework.realm.ClientBuilder;
+import org.keycloak.testframework.realm.RoleBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.adapter.AbstractAdapterTest;
 import org.keycloak.testsuite.adapter.page.SAMLServlet;
 import org.keycloak.testsuite.adapter.page.SalesPostAssertionAndResponseSig;
@@ -51,15 +54,12 @@ import org.keycloak.testsuite.adapter.page.SalesPostEncServlet;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
 import org.keycloak.testsuite.saml.AbstractSamlTest;
 import org.keycloak.testsuite.updaters.Creator;
-import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.IdentityProviderBuilder;
 import org.keycloak.testsuite.util.Matchers;
 import org.keycloak.testsuite.util.RealmBuilder;
-import org.keycloak.testsuite.util.RoleBuilder;
 import org.keycloak.testsuite.util.RolesBuilder;
 import org.keycloak.testsuite.util.SamlClient.Binding;
 import org.keycloak.testsuite.util.SamlClientBuilder;
-import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.testsuite.utils.arquillian.ContainerConstants;
 
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -323,7 +323,7 @@ public class SamlSignatureTest extends AbstractAdapterTest {
 
     @Before
     public void addFreshUserToDemoRealm() {
-        this.user = UserBuilder.edit(createUserRepresentation(("U-" + UUID.randomUUID().toString()).toLowerCase(), "a@b.c", "A", "B", true))
+        this.user = UserBuilder.update(createUserRepresentation(("U-" + UUID.randomUUID().toString()).toLowerCase(), "a@b.c", "A", "B", true))
           .password("password")
           .build();
 

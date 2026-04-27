@@ -30,11 +30,11 @@ import org.keycloak.representations.account.OrganizationRepresentation;
 import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.representations.idm.OrganizationDomainRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.broker.util.SimpleHttpDefault;
 import org.keycloak.testsuite.organization.admin.AbstractOrganizationTest;
 import org.keycloak.testsuite.util.TokenUtil;
-import org.keycloak.testsuite.util.UserBuilder;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -69,10 +69,10 @@ public class OrganizationAccountTest extends AbstractOrganizationTest {
     @Test
     public void testFailUnlinkIdentityProvider() throws IOException {
         // federate user
-        OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
+        OrganizationResource organization = managedRealm.admin().organizations().get(createOrganization().getId());
         assertBrokerRegistration(organization, bc.getUserLogin(), bc.getUserEmail());
         // reset password to obtain a token and access the account api
-        UserRepresentation user = testRealm().users().searchByEmail(bc.getUserEmail(), true).get(0);
+        UserRepresentation user = managedRealm.admin().users().searchByEmail(bc.getUserEmail(), true).get(0);
         AdminApiUtil.resetUserPassword(realmsResouce().realm(bc.consumerRealmName()).users().get(user.getId()), bc.getUserPassword(), false);
 
         LinkedAccountRepresentation link = findLinkedAccount(bc.getIDPAlias());
@@ -94,9 +94,9 @@ public class OrganizationAccountTest extends AbstractOrganizationTest {
     public void testGetOrganizations() throws Exception {
         UserRepresentation member = createUser();
         org.keycloak.representations.idm.OrganizationRepresentation orgA = createOrganization("orga");
-        testRealm().organizations().get(orgA.getId()).members().addMember(member.getId()).close();
+        managedRealm.admin().organizations().get(orgA.getId()).members().addMember(member.getId()).close();
         org.keycloak.representations.idm.OrganizationRepresentation orgB = createOrganization("orgb");
-        testRealm().organizations().get(orgB.getId()).members().addMember(member.getId()).close();
+        managedRealm.admin().organizations().get(orgB.getId()).members().addMember(member.getId()).close();
 
         List<OrganizationRepresentation> organizations = getOrganizations();
         Assertions.assertEquals(2, organizations.size());
@@ -136,13 +136,13 @@ public class OrganizationAccountTest extends AbstractOrganizationTest {
     }
 
     private UserRepresentation createUser() {
-        testRealm().users().create(UserBuilder.create()
+        managedRealm.admin().users().create(UserBuilder.create()
                 .username(bc.getUserEmail())
                 .email(bc.getUserEmail())
                 .password(bc.getUserPassword())
                 .enabled(true)
                 .build()).close();
-        UserRepresentation member = testRealm().users().searchByEmail(bc.getUserEmail(), true).get(0);
+        UserRepresentation member = managedRealm.admin().users().searchByEmail(bc.getUserEmail(), true).get(0);
         getCleanup().addUserId(member.getId());
         return member;
     }

@@ -39,6 +39,7 @@ import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AbstractChangeImportedUserPasswordsTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.pages.AppPage;
@@ -49,7 +50,6 @@ import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.testsuite.util.GreenMailRule;
 import org.keycloak.testsuite.util.RealmRepUtil;
-import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.keycloak.util.JsonSerialization;
 
@@ -71,9 +71,8 @@ public class LoginTotpTest extends AbstractChangeImportedUserPasswordsTest {
     public void configureTestRealm(RealmRepresentation testRealm) {
         super.configureTestRealm(testRealm);
         UserRepresentation user = RealmRepUtil.findUser(testRealm, "test-user@localhost");
-        UserBuilder.edit(user)
-                   .totpSecret("totpSecret")
-                   .otpEnabled();
+        UserBuilder.update(user)
+                   .totpSecret("totpSecret");
     }
 
     @Rule
@@ -214,7 +213,7 @@ public class LoginTotpTest extends AbstractChangeImportedUserPasswordsTest {
     @Test
     public void loginWithTotp_getToken_checkCompatibilityCLI() throws IOException {
         Client httpClient = AdminClientUtil.createResteasyClient();
-        try (RealmAttributeUpdater rau = new RealmAttributeUpdater(testRealm()).setOtpPolicyCodeReusable(true).update()) {
+        try (RealmAttributeUpdater rau = new RealmAttributeUpdater(managedRealm.admin()).setOtpPolicyCodeReusable(true).update()) {
             WebTarget exchangeUrl = httpClient.target(OAuthClient.AUTH_SERVER_ROOT)
                     .path("/realms")
                     .path(TEST)
@@ -246,8 +245,8 @@ public class LoginTotpTest extends AbstractChangeImportedUserPasswordsTest {
 
     @Test
     public void testBase32EncodedSecret() throws IOException {
-        UserRepresentation userRep = testRealm().users().search("test-user@localhost").get(0);
-        UserResource user = testRealm().users().get(userRep.getId());
+        UserRepresentation userRep = managedRealm.admin().users().search("test-user@localhost").get(0);
+        UserResource user = managedRealm.admin().users().get(userRep.getId());
         List<CredentialRepresentation> credentials = user.credentials();
         CredentialRepresentation otpCredential = credentials.stream()
                 .filter(c -> OTPCredentialModel.TYPE.equals(c.getType()))
@@ -272,7 +271,7 @@ public class LoginTotpTest extends AbstractChangeImportedUserPasswordsTest {
 
         newUser.getCredentials().add(credential);
 
-        testRealm().users().create(newUser).close();
+        managedRealm.admin().users().create(newUser).close();
 
         oauth.openLoginForm();
         loginPage.login(newUser.getUsername(), getPassword("test-otp-user@localhost"));

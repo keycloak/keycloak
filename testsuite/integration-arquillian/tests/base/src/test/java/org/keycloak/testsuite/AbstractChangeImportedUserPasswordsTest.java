@@ -72,7 +72,7 @@ abstract public class AbstractChangeImportedUserPasswordsTest extends AbstractTe
     }
 
     protected String changePassword(String username) {
-        UserResource userRes = AdminApiUtil.findUserByUsernameId(testRealm(), username);
+        UserResource userRes = AdminApiUtil.findUserByUsernameId(managedRealm.admin(), username);
         CredentialRepresentation credential = new CredentialRepresentation();
         credential.setType(PasswordCredentialModel.TYPE);
         credential.setTemporary(Boolean.FALSE);

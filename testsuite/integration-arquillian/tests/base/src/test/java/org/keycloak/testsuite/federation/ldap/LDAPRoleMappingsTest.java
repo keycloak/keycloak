@@ -464,10 +464,10 @@ public class LDAPRoleMappingsTest extends AbstractLDAPTest {
         });
 
         // Revert mappers
-        testRealm().components().component(streetMapper.getId()).remove();
-        testRealm().components().component(realmRoleMapper.getId()).remove();
+        managedRealm.admin().components().component(streetMapper.getId()).remove();
+        managedRealm.admin().components().component(realmRoleMapper.getId()).remove();
         realmRoleMapper.setId(null);
-        testRealm().components().add(realmRoleMapper);
+        managedRealm.admin().components().add(realmRoleMapper);
     }
 
     @Test

@@ -79,7 +79,7 @@ public class OrganizationGroupSamlIdpMapperTest extends AbstractOrganizationTest
     @Test
     public void testHardcodedGroupMapperAssignsOrganizationGroupMembershipWithSamlIdp() {
         OrganizationRepresentation orgRep = createOrganization();
-        OrganizationResource orgResource = testRealm().organizations().get(orgRep.getId());
+        OrganizationResource orgResource = managedRealm.admin().organizations().get(orgRep.getId());
 
         GroupRepresentation orgGroup = new GroupRepresentation();
         orgGroup.setName("saml-test-group");
@@ -104,7 +104,7 @@ public class OrganizationGroupSamlIdpMapperTest extends AbstractOrganizationTest
                 .put(ConfigConstants.GROUP_TYPE, GroupModel.Type.ORGANIZATION.name())
                 .build());
 
-        try (Response response = testRealm().identityProviders().get(idp.getAlias()).addMapper(mapper)) {
+        try (Response response = managedRealm.admin().identityProviders().get(idp.getAlias()).addMapper(mapper)) {
             assertThat(response.getStatus(), is(Status.CREATED.getStatusCode()));
         }
 

@@ -125,7 +125,7 @@ public class LDAPUserMultipleCredentialTest extends AbstractLDAPTest {
 
         } finally {
             // Revert flow binding
-            resetDefaultBrowserFlow(testRealm());
+            resetDefaultBrowserFlow(managedRealm.admin());
         }
     }
 

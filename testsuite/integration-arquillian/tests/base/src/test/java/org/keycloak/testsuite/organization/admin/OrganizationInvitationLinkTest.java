@@ -48,6 +48,7 @@ import org.keycloak.representations.idm.MembershipType;
 import org.keycloak.representations.idm.OrganizationInvitationRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AbstractAuthenticationTest;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.authentication.PushButtonAuthenticatorFactory;
@@ -59,7 +60,6 @@ import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.GreenMailRule;
 import org.keycloak.testsuite.util.MailUtils;
 import org.keycloak.testsuite.util.MailUtils.EmailBody;
-import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.keycloak.util.JsonSerialization;
 
@@ -102,9 +102,9 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
 
     @Before
     public void disableSelfRegistration() {
-        RealmRepresentation representation = testRealm().toRepresentation();
+        RealmRepresentation representation = managedRealm.admin().toRepresentation();
         representation.setRegistrationAllowed(false);
-        testRealm().update(representation);
+        managedRealm.admin().update(representation);
     }
 
     @Override
@@ -119,7 +119,7 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
     public void testInviteExistingUser() throws IOException, MessagingException {
         UserRepresentation user = createUser("invited", "invited@myemail.com");
 
-        OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
+        OrganizationResource organization = managedRealm.admin().organizations().get(createOrganization().getId());
 
         organization.members().inviteExistingUser(user.getId()).close();
         List<OrganizationInvitationRepresentation> list = organization.invitations().list();
@@ -134,7 +134,7 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
     public void testInviteExistingUserCustomRedirectUrl() throws IOException, MessagingException {
         UserRepresentation user = createUser("invited", "invited@myemail.com");
 
-        OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
+        OrganizationResource organization = managedRealm.admin().organizations().get(createOrganization().getId());
 
         try (
             OrganizationAttributeUpdater oau = new OrganizationAttributeUpdater(organization).setRedirectUrl(OAuthClient.APP_AUTH_ROOT).update();
@@ -150,7 +150,7 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
     public void testRedirectAfterClickingSecondTimeOnInvitation() throws IOException, MessagingException {
         UserRepresentation user = createUser("invited", "invited@myemail.com");
 
-        OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
+        OrganizationResource organization = managedRealm.admin().organizations().get(createOrganization().getId());
 
         try (
                 OrganizationAttributeUpdater oau = new OrganizationAttributeUpdater(organization).setRedirectUrl(OAuthClient.APP_AUTH_ROOT).update();
@@ -175,7 +175,7 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
     public void testInviteExistingUserWithEmail() throws IOException, MessagingException {
         UserRepresentation user = createUser("invitedWithMatchingEmail", "invitedWithMatchingEmail@myemail.com");
 
-        OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
+        OrganizationResource organization = managedRealm.admin().organizations().get(createOrganization().getId());
 
         organization.members().inviteUser(user.getEmail(), "Homer", "Simpson").close();
 
@@ -186,7 +186,7 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
     public void testInviteExistingUserWithEmailCustomRedirectUrl() throws IOException, MessagingException {
         UserRepresentation user = createUser("invitedWithMatchingEmail", "invitedWithMatchingEmail@myemail.com");
 
-        OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
+        OrganizationResource organization = managedRealm.admin().organizations().get(createOrganization().getId());
 
         try (
             OrganizationAttributeUpdater oau = new OrganizationAttributeUpdater(organization).setRedirectUrl(OAuthClient.APP_AUTH_ROOT).update();
@@ -202,7 +202,7 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
     public void testInviteWithAccountClientCustomBaseUrl() throws IOException, MessagingException {
         UserRepresentation user = createUser("invited", "invited@myemail.com");
 
-        OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
+        OrganizationResource organization = managedRealm.admin().organizations().get(createOrganization().getId());
 
         try (
             ClientAttributeUpdater cau = ClientAttributeUpdater.forClient(adminClient, TEST_REALM_NAME, Constants.ACCOUNT_MANAGEMENT_CLIENT_ID)
@@ -222,7 +222,7 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
         String firstName = "Homer";
         String lastName = "Simpson";
 
-        OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
+        OrganizationResource organization = managedRealm.admin().organizations().get(createOrganization().getId());
 
         try (
             ClientAttributeUpdater cau = ClientAttributeUpdater.forClient(adminClient, TEST_REALM_NAME, Constants.ACCOUNT_MANAGEMENT_CLIENT_ID)
@@ -233,12 +233,12 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
 
             registerUser(organization, email);
 
-            List<UserRepresentation> users = testRealm().users().searchByEmail(email, true);
+            List<UserRepresentation> users = managedRealm.admin().users().searchByEmail(email, true);
             assertThat(users, not(empty()));
             MemberRepresentation member = organization.members().member(users.get(0).getId()).toRepresentation();
             Assertions.assertNotNull(member);
             assertThat(member.getMembershipType(), equalTo(MembershipType.MANAGED));
-            getCleanup().addCleanup(() -> testRealm().users().get(users.get(0).getId()).remove());
+            getCleanup().addCleanup(() -> managedRealm.admin().users().get(users.get(0).getId()).remove());
 
             assertThat(driver.getTitle(), containsString("AUTH_RESPONSE"));
         }
@@ -250,18 +250,18 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
         String firstName = "Homer";
         String lastName = "Simpson";
 
-        OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
+        OrganizationResource organization = managedRealm.admin().organizations().get(createOrganization().getId());
         organization.members().inviteUser(email, firstName, lastName).close();
 
         registerUser(organization, email);
 
-        List<UserRepresentation> users = testRealm().users().searchByEmail(email, true);
+        List<UserRepresentation> users = managedRealm.admin().users().searchByEmail(email, true);
         assertThat(users, not(empty()));
         // user is a member
         MemberRepresentation member = organization.members().member(users.get(0).getId()).toRepresentation();
         Assertions.assertNotNull(member);
         assertThat(member.getMembershipType(), equalTo(MembershipType.MANAGED));
-        getCleanup().addCleanup(() -> testRealm().users().get(users.get(0).getId()).remove());
+        getCleanup().addCleanup(() -> managedRealm.admin().users().get(users.get(0).getId()).remove());
 
         // authenticated to the account console
         Assertions.assertTrue(driver.getPageSource().contains("Account Management"));
@@ -274,7 +274,7 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
         String firstName = "Homer";
         String lastName = "Simpson";
 
-        OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
+        OrganizationResource organization = managedRealm.admin().organizations().get(createOrganization().getId());
         organization.members().inviteUser(email, firstName, lastName).close();
 
         URI link = URI.create(getInvitationLinkFromEmail());
@@ -289,9 +289,9 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
         modifiedToken = token.getEncodedHeader() + modifiedToken.substring(modifiedToken.indexOf('.'));
         modifiedToken = modifiedToken + token.getEncodedSignature();
 
-        RealmRepresentation realm = testRealm().toRepresentation();
+        RealmRepresentation realm = managedRealm.admin().toRepresentation();
         realm.setRegistrationAllowed(true);
-        testRealm().update(realm);
+        managedRealm.admin().update(realm);
         oauth.client("broker-app");
         loginPage.open(realm.getRealm());
         loginPage.clickRegister();
@@ -308,17 +308,17 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
         String registrationFlowAlias = "custom-registration-flow";
         HashMap<String, Object> params = new HashMap<>();
         params.put("newName", registrationFlowAlias);
-        testRealm().flows().copy(DefaultAuthenticationFlows.REGISTRATION_FLOW, params).close();
-        String flowId = AbstractAuthenticationTest.findFlowByAlias(registrationFlowAlias, testRealm().flows().getFlows()).getId();
+        managedRealm.admin().flows().copy(DefaultAuthenticationFlows.REGISTRATION_FLOW, params).close();
+        String flowId = AbstractAuthenticationTest.findFlowByAlias(registrationFlowAlias, managedRealm.admin().flows().getFlows()).getId();
         AuthenticationExecutionRepresentation execution = new AuthenticationExecutionRepresentation();
         execution.setParentFlow(flowId);
         execution.setAuthenticator(PushButtonAuthenticatorFactory.PROVIDER_ID);
         execution.setRequirement(AuthenticationExecutionModel.Requirement.REQUIRED.toString());
-        testRealm().flows().addExecution(execution).close();
-        RealmRepresentation realm = testRealm().toRepresentation();
+        managedRealm.admin().flows().addExecution(execution).close();
+        RealmRepresentation realm = managedRealm.admin().toRepresentation();
         assertThat(realm.isRegistrationAllowed(), is(false));
         realm.setRegistrationFlow(registrationFlowAlias);
-        testRealm().update(realm);
+        managedRealm.admin().update(realm);
         getCleanup().addCleanup(() -> {
             realm.setRegistrationFlow(DefaultAuthenticationFlows.REGISTRATION_FLOW);
         });
@@ -327,18 +327,18 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
         String firstName = "Homer";
         String lastName = "Simpson";
 
-        OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
+        OrganizationResource organization = managedRealm.admin().organizations().get(createOrganization().getId());
         organization.members().inviteUser(email, firstName, lastName).close();
 
         registerUser(organization, email);
         driver.findElement(By.name("submit1")).click();
-        List<UserRepresentation> users = testRealm().users().searchByEmail(email, true);
+        List<UserRepresentation> users = managedRealm.admin().users().searchByEmail(email, true);
         assertThat(users, not(empty()));
         // user is a member
         MemberRepresentation member = organization.members().member(users.get(0).getId()).toRepresentation();
         Assertions.assertNotNull(member);
         assertThat(member.getMembershipType(), equalTo(MembershipType.MANAGED));
-        getCleanup().addCleanup(() -> testRealm().users().get(users.get(0).getId()).remove());
+        getCleanup().addCleanup(() -> managedRealm.admin().users().get(users.get(0).getId()).remove());
 
         // authenticated to the account console
         Assertions.assertTrue(driver.getPageSource().contains("Account Management"));
@@ -351,7 +351,7 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
         String firstName = "Homer";
         String lastName = "Simpson";
 
-        OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
+        OrganizationResource organization = managedRealm.admin().organizations().get(createOrganization().getId());
         try (
             OrganizationAttributeUpdater oau = new OrganizationAttributeUpdater(organization).setRedirectUrl(OAuthClient.APP_AUTH_ROOT).update();
             Response response = organization.members().inviteUser(email, firstName, lastName);
@@ -360,13 +360,13 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
 
             registerUser(organization, email);
 
-            List<UserRepresentation> users = testRealm().users().searchByEmail(email, true);
+            List<UserRepresentation> users = managedRealm.admin().users().searchByEmail(email, true);
             assertThat(users, not(empty()));
             // user is a member
             MemberRepresentation member = organization.members().member(users.get(0).getId()).toRepresentation();
             Assertions.assertNotNull(member);
             assertThat(member.getMembershipType(), equalTo(MembershipType.MANAGED));
-            getCleanup().addCleanup(() -> testRealm().users().get(users.get(0).getId()).remove());
+            getCleanup().addCleanup(() -> managedRealm.admin().users().get(users.get(0).getId()).remove());
 
             // authenticated to the app
             assertThat(driver.getTitle(), containsString("AUTH_RESPONSE"));
@@ -377,9 +377,9 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
     public void testRegistrationEnabledWhenInvitingNewUser() throws Exception {
         String email = "inviteduser@email";
 
-        OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
+        OrganizationResource organization = managedRealm.admin().organizations().get(createOrganization().getId());
         try (
-                RealmAttributeUpdater rau = new RealmAttributeUpdater(testRealm()).setRegistrationAllowed(Boolean.TRUE).update();
+                RealmAttributeUpdater rau = new RealmAttributeUpdater(managedRealm.admin()).setRegistrationAllowed(Boolean.TRUE).update();
                 Response response = organization.members().inviteUser(email, null, null)
             ) {
             assertThat(response.getStatus(), equalTo(Response.Status.NO_CONTENT.getStatusCode()));
@@ -400,19 +400,19 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
     public void testRegistrationEnabledWhenInvitingNewUserWithLocalization() throws Exception {
         String email = "inviteduser@email";
 
-        OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
+        OrganizationResource organization = managedRealm.admin().organizations().get(createOrganization().getId());
         try (
-                RealmAttributeUpdater rau = new RealmAttributeUpdater(testRealm()).setRegistrationAllowed(Boolean.TRUE).update();
+                RealmAttributeUpdater rau = new RealmAttributeUpdater(managedRealm.admin()).setRegistrationAllowed(Boolean.TRUE).update();
                 Response response = organization.members().inviteUser(email, null, null)
         ) {
-            RealmRepresentation realmRep = testRealm().toRepresentation();
+            RealmRepresentation realmRep = managedRealm.admin().toRepresentation();
             Boolean internationalizationEnabled = realmRep.isInternationalizationEnabled();
             realmRep.setInternationalizationEnabled(true);
             realmRep.setSupportedLocales(Set.of("en", "pt-BR"));
-            testRealm().update(realmRep);
+            managedRealm.admin().update(realmRep);
             getCleanup().addCleanup(() -> {
                 realmRep.setInternationalizationEnabled(internationalizationEnabled);
-                testRealm().update(realmRep);
+                managedRealm.admin().update(realmRep);
             });
 
             assertThat(response.getStatus(), equalTo(Response.Status.NO_CONTENT.getStatusCode()));
@@ -439,13 +439,13 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
     public void testEmailDoesNotChangeOnRegistration() throws IOException, MessagingException {
         String email = "inviteduser@email";
 
-        OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
+        OrganizationResource organization = managedRealm.admin().organizations().get(createOrganization().getId());
         organization.members().inviteUser(email, null, null).close();
 
         registerUser(organization, email, "invalid@email.com");
 
         assertThat(driver.getPageSource(), Matchers.containsString("Email does not match the invitation"));
-        assertThat(testRealm().users().searchByEmail(email, true), Matchers.empty());
+        assertThat(managedRealm.admin().users().searchByEmail(email, true), Matchers.empty());
     }
 
     private UserRepresentation createUser(String invitedWithMatchingEmail, String mail) {
@@ -455,7 +455,7 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
                 .password("password")
                 .enabled(true)
                 .build();
-        try (Response response = testRealm().users().create(user)) {
+        try (Response response = managedRealm.admin().users().create(user)) {
             user.setId(ApiUtil.getCreatedId(response));
         }
         getCleanup().addUserId(user.getId());
@@ -491,7 +491,7 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
     public void testLinkExpired() throws IOException, MessagingException {
         String email = "inviteduser@email";
 
-        OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
+        OrganizationResource organization = managedRealm.admin().organizations().get(createOrganization().getId());
         organization.members().inviteUser(email, "Homer", "Simpson").close();
 
         try {
@@ -506,7 +506,7 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
             driver.navigate().to(link);
 
             assertThat(driver.getPageSource(), Matchers.containsString("Action expired."));
-            assertThat(testRealm().users().searchByEmail(email, true), Matchers.empty());
+            assertThat(managedRealm.admin().users().searchByEmail(email, true), Matchers.empty());
         } finally {
             resetTimeOffset();
         }
@@ -549,7 +549,7 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
     public void testAcceptInvitationLinkAfterOrgDisabled() throws IOException, MessagingException {
         UserRepresentation user = createUser("invited", "invited@myemail.com");
 
-        OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
+        OrganizationResource organization = managedRealm.admin().organizations().get(createOrganization().getId());
 
         organization.members().inviteExistingUser(user.getId()).close();
 
@@ -574,7 +574,7 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
     public void testNewUserRegistrationAfterOrgDisabled() throws IOException, MessagingException {
         String email = "inviteduser@email";
 
-        OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
+        OrganizationResource organization = managedRealm.admin().organizations().get(createOrganization().getId());
         organization.members().inviteUser(email, "Homer", "Simpson").close();
 
         String link = getInvitationLinkFromEmail();
@@ -591,10 +591,10 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
     public void testInvitationLinkAfterInvitationDeleted() throws IOException, MessagingException {
         String email = "inviteduser@email";
 
-        OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
+        OrganizationResource organization = managedRealm.admin().organizations().get(createOrganization().getId());
         
         try (
-                RealmAttributeUpdater rau = new RealmAttributeUpdater(testRealm()).setRegistrationAllowed(Boolean.TRUE).update();
+                RealmAttributeUpdater rau = new RealmAttributeUpdater(managedRealm.admin()).setRegistrationAllowed(Boolean.TRUE).update();
                 Response response = organization.members().inviteUser(email, null, null)
             ) {
             assertThat(response.getStatus(), equalTo(Response.Status.NO_CONTENT.getStatusCode()));
@@ -631,7 +631,7 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
     public void testExistingUserInvitationLinkAfterInvitationDeleted() throws IOException, MessagingException {
         UserRepresentation user = createUser("invited", "invited@myemail.com");
 
-        OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
+        OrganizationResource organization = managedRealm.admin().organizations().get(createOrganization().getId());
 
         try (Response response = organization.members().inviteExistingUser(user.getId())) {
             assertThat(response.getStatus(), equalTo(Response.Status.NO_CONTENT.getStatusCode()));
@@ -665,7 +665,7 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
     @Test
     public void testLinkInvalidAfterResending() throws IOException, MessagingException {
         UserRepresentation user = createUser("invited", "invited@myemail.com");
-        OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
+        OrganizationResource organization = managedRealm.admin().organizations().get(createOrganization().getId());
         String firstInvitationLink;
 
         try (Response response = organization.members().inviteExistingUser(user.getId())) {
@@ -705,7 +705,7 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
     public void testInvalidTokenRegistrationAfterResend() throws IOException, MessagingException {
         String email = "inviteduser@email";
 
-        OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
+        OrganizationResource organization = managedRealm.admin().organizations().get(createOrganization().getId());
         organization.members().inviteUser(email, null, null).close();
 
         String link = getInvitationLinkFromEmail();

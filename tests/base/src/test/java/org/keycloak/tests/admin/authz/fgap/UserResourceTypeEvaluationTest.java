@@ -45,7 +45,7 @@ import org.keycloak.testframework.annotations.InjectKeycloakUrls;
 import org.keycloak.testframework.annotations.InjectUser;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.ManagedUser;
-import org.keycloak.testframework.realm.UserConfigBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.server.KeycloakUrls;
 import org.keycloak.testframework.util.ApiUtil;
 
@@ -143,7 +143,7 @@ public class UserResourceTypeEvaluationTest extends AbstractPermissionTest {
     @Test
     public void testManageAllPermission() {
         // myadmin shouldn't be able to create user just yet
-        try (Response response = realmAdminClient.realm(realm.getName()).users().create(UserConfigBuilder.create().username(newUserUsername).build())) {
+        try (Response response = realmAdminClient.realm(realm.getName()).users().create(UserBuilder.create().username(newUserUsername).build())) {
             assertEquals(Response.Status.FORBIDDEN.getStatusCode(), response.getStatus());
         }
 
@@ -152,10 +152,10 @@ public class UserResourceTypeEvaluationTest extends AbstractPermissionTest {
         createAllPermission(client, usersType, policy, Set.of(VIEW, MANAGE));
 
         // creating user requires manage scope
-        String newUserId = ApiUtil.getCreatedId(realmAdminClient.realm(realm.getName()).users().create(UserConfigBuilder.create().username(newUserUsername).build()));
+        String newUserId = ApiUtil.getCreatedId(realmAdminClient.realm(realm.getName()).users().create(UserBuilder.create().username(newUserUsername).build()));
 
         // it should be possible to update the user due to fallback to all-users permission
-        realmAdminClient.realm(realm.getName()).users().get(newUserId).update(UserConfigBuilder.create().email("new@test.com").build());
+        realmAdminClient.realm(realm.getName()).users().get(newUserId).update(UserBuilder.create().email("new@test.com").build());
         assertEquals("new@test.com", realmAdminClient.realm(realm.getName()).users().get(newUserId).toRepresentation().getEmail());
     }
 
@@ -166,17 +166,17 @@ public class UserResourceTypeEvaluationTest extends AbstractPermissionTest {
         ScopePermissionRepresentation allUsersPermission = createAllPermission(client, usersType, policy, Set.of(VIEW, MANAGE));
 
         // creating user requires manage scope
-        String newUserId = ApiUtil.getCreatedId(realmAdminClient.realm(realm.getName()).users().create(UserConfigBuilder.create().username(newUserUsername).build()));
+        String newUserId = ApiUtil.getCreatedId(realmAdminClient.realm(realm.getName()).users().create(UserBuilder.create().username(newUserUsername).build()));
 
         // remove all-users permissions to test user-permission
         allUsersPermission = getScopePermissionsResource(client).findByName(allUsersPermission.getName());
         getScopePermissionsResource(client).findById(allUsersPermission.getId()).remove();
 
         // create user-permissions
-        createPermission(client, UserConfigBuilder.create().id(newUserId).build().getId(), usersType, Set.of(VIEW, MANAGE), policy);
+        createPermission(client, UserBuilder.create().id(newUserId).build().getId(), usersType, Set.of(VIEW, MANAGE), policy);
 
         // it should be possible to update the user due to single user-permission
-        realmAdminClient.realm(realm.getName()).users().get(newUserId).update(UserConfigBuilder.create().email("email@test.com").build());
+        realmAdminClient.realm(realm.getName()).users().get(newUserId).update(UserBuilder.create().email("email@test.com").build());
         assertEquals("email@test.com", realmAdminClient.realm(realm.getName()).users().get(newUserId).toRepresentation().getEmail());
 
         // remove the user permission
@@ -186,7 +186,7 @@ public class UserResourceTypeEvaluationTest extends AbstractPermissionTest {
 
         // updating the user should be denied
         try {
-            realmAdminClient.realm(realm.getName()).users().get(newUserId).update(UserConfigBuilder.create().email("email@test.com").build());
+            realmAdminClient.realm(realm.getName()).users().get(newUserId).update(UserBuilder.create().email("email@test.com").build());
             fail("Expected Exception wasn't thrown.");
         } catch (Exception ex) {
             assertThat(ex, instanceOf(ForbiddenException.class));

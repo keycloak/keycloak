@@ -34,6 +34,8 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.userprofile.config.UPConfig;
+import org.keycloak.testframework.realm.ClientScopeBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AbstractChangeImportedUserPasswordsTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.AdminApiUtil;
@@ -44,11 +46,9 @@ import org.keycloak.testsuite.pages.VerifyProfilePage;
 import org.keycloak.testsuite.runonserver.RunOnServer;
 import org.keycloak.testsuite.util.AdminEventPaths;
 import org.keycloak.testsuite.util.AssertAdminEvents;
-import org.keycloak.testsuite.util.ClientScopeBuilder;
 import org.keycloak.testsuite.util.JsonTestUtils;
 import org.keycloak.testsuite.util.KeycloakModelUtils;
 import org.keycloak.testsuite.util.RealmBuilder;
-import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.keycloak.testsuite.util.userprofile.UserProfileUtil;
 import org.keycloak.userprofile.UserProfileContext;
@@ -238,9 +238,9 @@ public class VerifyProfileTest extends AbstractChangeImportedUserPasswordsTest {
                 + "{\"name\": \"email\", " + PERMISSIONS_ALL + "}"
                 + "]}");
 
-        RealmRepresentation realm = testRealm().toRepresentation();
+        RealmRepresentation realm = managedRealm.admin().toRepresentation();
         realm.setEditUsernameAllowed(true);
-        testRealm().update(realm);
+        managedRealm.admin().update(realm);
 
         oauth.openLoginForm();
         loginPage.login("login-test5", getPassword("login-test5"));
@@ -356,7 +356,7 @@ public class VerifyProfileTest extends AbstractChangeImportedUserPasswordsTest {
 
     @Test
     public void testUsernameOnlyIfEditAllowed() {
-        RealmRepresentation realm = testRealm().toRepresentation();
+        RealmRepresentation realm = managedRealm.admin().toRepresentation();
 
         setUserProfileConfiguration(CONFIGURATION_FOR_USER_EDIT);
         updateUser(user5Id, null, "ExistingLast", null);
@@ -366,7 +366,7 @@ public class VerifyProfileTest extends AbstractChangeImportedUserPasswordsTest {
             setUserProfileConfiguration(null);
 
             realm.setEditUsernameAllowed(false);
-            testRealm().update(realm);
+            managedRealm.admin().update(realm);
 
             oauth.openLoginForm();
             loginPage.login("login-test5", getPassword("login-test5"));
@@ -376,19 +376,19 @@ public class VerifyProfileTest extends AbstractChangeImportedUserPasswordsTest {
             assertTrue(verifyProfilePage.isEmailPresent());
 
             realm.setEditUsernameAllowed(true);
-            testRealm().update(realm);
+            managedRealm.admin().update(realm);
 
             driver.navigate().refresh();
             assertTrue(verifyProfilePage.isUsernamePresent());
         } finally {
             realm.setEditUsernameAllowed(r);
-            testRealm().update(realm);
+            managedRealm.admin().update(realm);
         }
     }
 
     @Test
     public void testUsernameOnlyIfEmailAsUsernameIsDisabled() {
-        RealmRepresentation realm = testRealm().toRepresentation();
+        RealmRepresentation realm = managedRealm.admin().toRepresentation();
 
         setUserProfileConfiguration(CONFIGURATION_FOR_USER_EDIT);
         updateUser(user5Id, null, "ExistingLast", null);
@@ -398,7 +398,7 @@ public class VerifyProfileTest extends AbstractChangeImportedUserPasswordsTest {
 
             realm.setEditUsernameAllowed(true);
             realm.setRegistrationEmailAsUsername(true);
-            testRealm().update(realm);
+            managedRealm.admin().update(realm);
 
             oauth.openLoginForm();
             loginPage.login("login-test5", getPassword("login-test5"));
@@ -409,7 +409,7 @@ public class VerifyProfileTest extends AbstractChangeImportedUserPasswordsTest {
 
             realm.setEditUsernameAllowed(false);
             realm.setRegistrationEmailAsUsername(true);
-            testRealm().update(realm);
+            managedRealm.admin().update(realm);
 
             driver.navigate().refresh();
             verifyProfilePage.assertCurrent();
@@ -418,7 +418,7 @@ public class VerifyProfileTest extends AbstractChangeImportedUserPasswordsTest {
 
             realm.setEditUsernameAllowed(true);
             realm.setRegistrationEmailAsUsername(false);
-            testRealm().update(realm);
+            managedRealm.admin().update(realm);
 
             driver.navigate().refresh();
             verifyProfilePage.assertCurrent();
@@ -427,26 +427,26 @@ public class VerifyProfileTest extends AbstractChangeImportedUserPasswordsTest {
         } finally {
             realm.setEditUsernameAllowed(false);
             realm.setRegistrationEmailAsUsername(false);
-            testRealm().update(realm);
+            managedRealm.admin().update(realm);
         }
     }
 
     @Test
     public void testUsernameOnlyIfEmailAsUsernameIsDisabledWithUpdateEmailFeature() throws Exception {
         reconnectAdminClient();
-        RealmRepresentation realm = testRealm().toRepresentation();
+        RealmRepresentation realm = managedRealm.admin().toRepresentation();
 
         setUserProfileConfiguration(CONFIGURATION_FOR_USER_EDIT);
         updateUser(user5Id, null, "ExistingLast", null);
 
-        AdminApiUtil.enableRequiredAction(testRealm(), RequiredAction.UPDATE_EMAIL, true);
+        AdminApiUtil.enableRequiredAction(managedRealm.admin(), RequiredAction.UPDATE_EMAIL, true);
 
         try {
             setUserProfileConfiguration(null);
 
             realm.setEditUsernameAllowed(true);
             realm.setRegistrationEmailAsUsername(true);
-            testRealm().update(realm);
+            managedRealm.admin().update(realm);
 
             oauth.openLoginForm();
             loginPage.login("login-test5", getPassword("login-test5"));
@@ -457,7 +457,7 @@ public class VerifyProfileTest extends AbstractChangeImportedUserPasswordsTest {
 
             realm.setEditUsernameAllowed(false);
             realm.setRegistrationEmailAsUsername(true);
-            testRealm().update(realm);
+            managedRealm.admin().update(realm);
 
             driver.navigate().refresh();
             verifyProfilePage.assertCurrent();
@@ -466,17 +466,17 @@ public class VerifyProfileTest extends AbstractChangeImportedUserPasswordsTest {
 
             realm.setEditUsernameAllowed(true);
             realm.setRegistrationEmailAsUsername(false);
-            testRealm().update(realm);
+            managedRealm.admin().update(realm);
 
             driver.navigate().refresh();
             verifyProfilePage.assertCurrent();
             assertTrue(verifyProfilePage.isUsernamePresent());
             assertFalse(verifyProfilePage.isEmailPresent());
         } finally {
-            AdminApiUtil.enableRequiredAction(testRealm(), RequiredAction.UPDATE_EMAIL, false);
+            AdminApiUtil.enableRequiredAction(managedRealm.admin(), RequiredAction.UPDATE_EMAIL, false);
             realm.setEditUsernameAllowed(false);
             realm.setRegistrationEmailAsUsername(false);
-            testRealm().update(realm);
+            managedRealm.admin().update(realm);
         }
     }
 
@@ -554,7 +554,7 @@ public class VerifyProfileTest extends AbstractChangeImportedUserPasswordsTest {
 
     @Test
     public void testDoNotValidateUsernameWhenRegistrationAsEmailEnabled() {
-        RealmResource realmResource = testRealm();
+        RealmResource realmResource = managedRealm.admin();
         RealmRepresentation realm = realmResource.toRepresentation();
 
         try {
@@ -1104,28 +1104,28 @@ public class VerifyProfileTest extends AbstractChangeImportedUserPasswordsTest {
 
         UPConfig persistedConfig = setUserProfileConfiguration(customConfig);
 
-        JsonTestUtils.assertJsonEquals(JsonSerialization.writeValueAsString(persistedConfig), testRealm().users().userProfile().getConfiguration());
+        JsonTestUtils.assertJsonEquals(JsonSerialization.writeValueAsString(persistedConfig), managedRealm.admin().users().userProfile().getConfiguration());
     }
 
     protected UserRepresentation getUser(String userId) {
-        return getUser(testRealm(), userId);
+        return getUser(managedRealm.admin(), userId);
     }
 
     protected void updateUser(String userId, String firstName, String lastName, String department) {
-        updateUser(testRealm(), userId, firstName, lastName, department);
+        updateUser(managedRealm.admin(), userId, firstName, lastName, department);
     }
 
     protected void updateUser(String userId, boolean emailVerified, String firstName, String lastName) {
-        UserRepresentation ur = getUser(testRealm(), userId);
+        UserRepresentation ur = getUser(managedRealm.admin(), userId);
         ur.setFirstName(firstName);
         ur.setLastName(lastName);
         ur.setEmailVerified(emailVerified);
-        testRealm().users().get(userId).update(ur);
+        managedRealm.admin().users().get(userId).update(ur);
     }
 
     protected UPConfig setUserProfileConfiguration(String configuration) {
         assertAdminEvents.clear();
-        UPConfig result = UserProfileUtil.setUserProfileConfiguration(testRealm(), configuration);
+        UPConfig result = UserProfileUtil.setUserProfileConfiguration(managedRealm.admin(), configuration);
         AdminEventRepresentation adminEvent = assertAdminEvents.assertEvent(TEST_REALM_NAME,
                 OperationType.UPDATE, AdminEventPaths.userProfilePath(), ResourceType.USER_PROFILE);
         Assertions.assertTrue(StringUtils.isBlank(configuration)

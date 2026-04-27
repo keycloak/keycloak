@@ -172,7 +172,7 @@ public class X509BrowserLoginTest extends AbstractX509AuthenticationTest {
 
     @Test
     public void loginAsUserFromCertSerialnumberAndIssuerDNMappedToUserAttribute() {
-        UserRepresentation user = testRealm().users().get(userId2).toRepresentation();
+        UserRepresentation user = managedRealm.admin().users().get(userId2).toRepresentation();
         Assertions.assertNotNull(user);
 
         user.singleAttribute("x509_certificate_serialnumber", "4105");
@@ -187,7 +187,7 @@ public class X509BrowserLoginTest extends AbstractX509AuthenticationTest {
     
     @Test
     public void loginAsUserFromHexCertSerialnumberAndIssuerDNMappedToUserAttribute() {
-        UserRepresentation user = testRealm().users().get(userId2).toRepresentation();
+        UserRepresentation user = managedRealm.admin().users().get(userId2).toRepresentation();
         Assertions.assertNotNull(user);
 
         user.singleAttribute("x509_certificate_serialnumber", "1009");
@@ -204,7 +204,7 @@ public class X509BrowserLoginTest extends AbstractX509AuthenticationTest {
     @Test
     public void loginAsUserFromCertIssuerDNMappedToUserAttribute() {
 
-        UserRepresentation user = testRealm().users().get(userId2).toRepresentation();
+        UserRepresentation user = managedRealm.admin().users().get(userId2).toRepresentation();
         Assertions.assertNotNull(user);
 
         user.singleAttribute("x509_certificate_identity", "Red Hat");
@@ -219,7 +219,7 @@ public class X509BrowserLoginTest extends AbstractX509AuthenticationTest {
     @Test
     public void loginAsUserFromCertSHA256MappedToUserAttribute() {
 
-        UserRepresentation user = testRealm().users().get(userId2).toRepresentation();
+        UserRepresentation user = managedRealm.admin().users().get(userId2).toRepresentation();
         Assertions.assertNotNull(user);
 
         user.singleAttribute("x509_cert_sha256thumbprint", "71237a14c118a90cc8406f14d039ed3431c9065f68e535293ee919d4c33b5e15");
@@ -235,7 +235,7 @@ public class X509BrowserLoginTest extends AbstractX509AuthenticationTest {
     @Test
     public void loginAsUserFromCertSerialNumberMappedToUserAttribute() {
 
-        UserRepresentation user = testRealm().users().get(userId2).toRepresentation();
+        UserRepresentation user = managedRealm.admin().users().get(userId2).toRepresentation();
         Assertions.assertNotNull(user);
 
         user.singleAttribute("x509_serial_number", "4105");
@@ -250,7 +250,7 @@ public class X509BrowserLoginTest extends AbstractX509AuthenticationTest {
     @Test
     public void loginAsUserFromHexCertSerialNumberMappedToUserAttribute() {
 
-        UserRepresentation user = testRealm().users().get(userId2).toRepresentation();
+        UserRepresentation user = managedRealm.admin().users().get(userId2).toRepresentation();
         Assertions.assertNotNull(user);
 
         user.singleAttribute("x509_serial_number", "1009");
@@ -274,13 +274,13 @@ public class X509BrowserLoginTest extends AbstractX509AuthenticationTest {
         // Set up the users so that the identity extracted from X509 client cert
         // matches more than a single user to trigger DuplicateModelException.
 
-        UserRepresentation user = testRealm().users().get(userId2).toRepresentation();
+        UserRepresentation user = managedRealm.admin().users().get(userId2).toRepresentation();
         Assertions.assertNotNull(user);
 
         user.singleAttribute("x509_certificate_identity", "Red Hat");
         this.updateUser(user);
 
-        user = testRealm().users().get(userId).toRepresentation();
+        user = managedRealm.admin().users().get(userId).toRepresentation();
         Assertions.assertNotNull(user);
 
         user.singleAttribute("x509_certificate_identity", "Red Hat");
@@ -407,7 +407,7 @@ public class X509BrowserLoginTest extends AbstractX509AuthenticationTest {
         UserRepresentation user = findUser("test-user@localhost");
         Assertions.assertNotNull(user);
 
-        Response response = testRealm().users().delete(userId);
+        Response response = managedRealm.admin().users().delete(userId);
         assertEquals(204, response.getStatus());
         response.close();
         // TODO causes the test to fail

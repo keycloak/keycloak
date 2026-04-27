@@ -21,9 +21,9 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserModel.RequiredAction;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.pages.EmailUpdatePage;
-import org.keycloak.testsuite.util.UserBuilder;
 
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
@@ -46,18 +46,18 @@ public abstract class AbstractAppInitiatedActionUpdateEmailTest extends Abstract
 
 	@Before
 	public void beforeTest() {
-		AdminApiUtil.removeUserByUsername(testRealm(), "test-user@localhost");
+		AdminApiUtil.removeUserByUsername(managedRealm.admin(), "test-user@localhost");
 		UserRepresentation user = UserBuilder.create().enabled(true).username("test-user@localhost")
 				.email("test-user@localhost").firstName("Tom").lastName("Brady").build();
 		prepareUser(user);
-		AdminApiUtil.createUserAndResetPasswordWithAdminClient(testRealm(), user, "password");
+		AdminApiUtil.createUserAndResetPasswordWithAdminClient(managedRealm.admin(), user, "password");
 
-		AdminApiUtil.removeUserByUsername(testRealm(), "john-doh@localhost");
+		AdminApiUtil.removeUserByUsername(managedRealm.admin(), "john-doh@localhost");
 		user = UserBuilder.create().enabled(true).username("john-doh@localhost").email("john-doh@localhost").firstName("John")
 				.lastName("Doh").build();
 		prepareUser(user);
-		AdminApiUtil.createUserAndResetPasswordWithAdminClient(testRealm(), user, "password");
-        AdminApiUtil.enableRequiredAction(testRealm(), RequiredAction.UPDATE_EMAIL, true);
+		AdminApiUtil.createUserAndResetPasswordWithAdminClient(managedRealm.admin(), user, "password");
+        AdminApiUtil.enableRequiredAction(managedRealm.admin(), RequiredAction.UPDATE_EMAIL, true);
 	}
 
 	private void setRegistrationEmailAsUsername(RealmResource realmResource, boolean enabled) {
@@ -137,18 +137,18 @@ public abstract class AbstractAppInitiatedActionUpdateEmailTest extends Abstract
 
 	@Test
 	public void updateWithEmailAsUsernameEnabled() throws Exception {
-		Boolean genuineRegistrationEmailAsUsername = testRealm()
+		Boolean genuineRegistrationEmailAsUsername = managedRealm.admin()
 				.toRepresentation()
 				.isRegistrationEmailAsUsername();
 
-		setRegistrationEmailAsUsername(testRealm(), true);
+		setRegistrationEmailAsUsername(managedRealm.admin(), true);
 		try {
 			changeEmailUsingAIA("new@email.com");
 
 			UserRepresentation user = ActionUtil.findUserWithAdminClient(adminClient, "new@email.com");
 			Assertions.assertNotNull(user);
 		} finally {
-			setRegistrationEmailAsUsername(testRealm(), genuineRegistrationEmailAsUsername);
+			setRegistrationEmailAsUsername(managedRealm.admin(), genuineRegistrationEmailAsUsername);
 		}
 	}
 

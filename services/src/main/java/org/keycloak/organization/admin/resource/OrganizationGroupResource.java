@@ -60,6 +60,7 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.AdminEventBuilder;
+import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
 
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
@@ -78,13 +79,15 @@ public class OrganizationGroupResource {
     private final OrganizationModel organization;
     private final GroupModel group;
     private final AdminEventBuilder adminEvent;
+    private final AdminPermissionEvaluator auth;
 
-    public OrganizationGroupResource(KeycloakSession session, OrganizationProvider organizationProvider, OrganizationModel organization, GroupModel group, AdminEventBuilder adminEvent) {
+    public OrganizationGroupResource(KeycloakSession session, OrganizationProvider organizationProvider, OrganizationModel organization, GroupModel group, AdminEventBuilder adminEvent, AdminPermissionEvaluator auth) {
         this.session = session;
         this.organizationProvider = organizationProvider;
         this.organization = organization;
         this.group = group;
         this.adminEvent = adminEvent;
+        this.auth = auth;
     }
 
     @GET
@@ -93,7 +96,8 @@ public class OrganizationGroupResource {
     @Tag(name = KeycloakOpenAPI.Admin.Tags.ORGANIZATIONS)
     @Operation(summary = "Get organization group representation")
     @APIResponses(value = {
-        @APIResponse(responseCode = "200", description = "OK")
+        @APIResponse(responseCode = "200", description = "OK"),
+        @APIResponse(responseCode = "403", description = "Forbidden")
     })
     public GroupRepresentation getGroup(@Parameter(description = "Whether to return the count of subgroups (default: false)") @QueryParam("subGroupsCount") @DefaultValue("false") boolean subGroupsCount) {
         GroupRepresentation rep = ModelToRepresentation.toRepresentation(group, true);
@@ -107,9 +111,11 @@ public class OrganizationGroupResource {
         description = "Deletes the organization group and all its subgroups")
     @APIResponses(value = {
         @APIResponse(responseCode = "204", description = "No Content"),
+        @APIResponse(responseCode = "403", description = "Forbidden"),
         @APIResponse(responseCode = "404", description = "Not Found")
     })
     public void deleteGroup() {
+        auth.orgs().requireManage();
         session.groups().removeGroup(session.getContext().getRealm(), group);
         adminEvent.operation(OperationType.DELETE).resourcePath(session.getContext().getUri()).success();
     }
@@ -122,9 +128,11 @@ public class OrganizationGroupResource {
     @APIResponses(value = {
             @APIResponse(responseCode = "204", description = "No Content"),
             @APIResponse(responseCode = "400", description = "Bad Request"),
+            @APIResponse(responseCode = "403", description = "Forbidden"),
             @APIResponse(responseCode = "409", description = "Conflict")
     })
     public Response updateGroup(GroupRepresentation rep) {
+        auth.orgs().requireManage();
         try {
             String groupName = rep.getName();
 
@@ -177,7 +185,8 @@ public class OrganizationGroupResource {
     @Operation(summary = "Get subgroups of this organization group",
         description = "Returns a paginated stream of subgroups that belong to this organization group")
     @APIResponses(value = {
-        @APIResponse(responseCode = "200", description = "OK")
+        @APIResponse(responseCode = "200", description = "OK"),
+        @APIResponse(responseCode = "403", description = "Forbidden")
     })
     public Stream<GroupRepresentation> getSubGroups(
             @Parameter(description = "A String representing either an exact group name or a partial name") @QueryParam("search") String search,
@@ -185,7 +194,6 @@ public class OrganizationGroupResource {
             @Parameter(description = "The position of the first result to be returned (pagination offset).") @QueryParam("first") @DefaultValue("0") Integer first,
             @Parameter(description = "The maximum number of results that are to be returned. Defaults to 10") @QueryParam("max") @DefaultValue("10") Integer max,
             @Parameter(description = "Whether to return the count of subgroups (default: false)") @QueryParam("subGroupsCount") boolean subGroupsCount) {
-
         return group.getSubGroupsStream(search, exact, first, max)
                 .map(group -> {
                     GroupRepresentation rep = ModelToRepresentation.groupToBriefRepresentation(group);
@@ -215,6 +223,7 @@ public class OrganizationGroupResource {
             @APIResponse(responseCode = "409", description = "Conflict")
     })
     public Response addSubGroup(GroupRepresentation rep) {
+        auth.orgs().requireManage();
         String groupName = rep.getName();
         if (ObjectUtil.isBlank(groupName)) {
             throw ErrorResponse.error("Group name is missing", Response.Status.BAD_REQUEST);
@@ -278,13 +287,13 @@ public class OrganizationGroupResource {
     @Operation(summary = "Get members of this organization group",
         description = "Returns a paginated list of organization members that belong to this group")
     @APIResponses(value = {
-        @APIResponse(responseCode = "200", description = "OK")
+        @APIResponse(responseCode = "200", description = "OK"),
+        @APIResponse(responseCode = "403", description = "Forbidden")
     })
     public Stream<MemberRepresentation> getMembers(@Parameter(description = "Pagination offset") @QueryParam("first") Integer firstResult,
                                                    @Parameter(description = "Maximum results size (defaults to 100)") @QueryParam("max") Integer maxResults,
                                                    @Parameter(description = "Only return basic information (only guaranteed to return id, username, created, first and last name, email, enabled state, email verification state, federation link, and access. Note that it means that namely user attributes, required actions, and not before are not returned.)")
                                                    @QueryParam("briefRepresentation") Boolean briefRepresentation) {
-
         RealmModel realm = session.getContext().getRealm();
         return session.users().getGroupMembersStream(realm, group, firstResult, maxResults)
                 .map(user -> toMemberRepresentation(realm, user, briefRepresentation));
@@ -319,6 +328,7 @@ public class OrganizationGroupResource {
         @APIResponse(responseCode = "409", description = "Conflict - User is already a member of the group")
     })
     public void joinGroup(@PathParam("userId") String userId) {
+        auth.orgs().requireManage();
         UserModel user = session.users().getUserById(session.getContext().getRealm(), userId);
 
         if (user == null) {
@@ -360,6 +370,7 @@ public class OrganizationGroupResource {
         @APIResponse(responseCode = "404", description = "Not Found - User does not exist")
     })
     public void leaveGroup(@PathParam("userId") String userId) {
+        auth.orgs().requireManage();
         UserModel user = session.users().getUserById(session.getContext().getRealm(), userId);
 
         if (user == null) {

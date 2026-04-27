@@ -21,24 +21,29 @@ import java.io.IOException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 
 import jakarta.ws.rs.core.Response;
 
+import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.OrganizationResource;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel.RequiredAction;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.organization.authentication.authenticators.browser.OrganizationAuthenticatorFactory;
+import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.broker.KcOidcBrokerConfiguration;
 import org.keycloak.testsuite.organization.admin.AbstractOrganizationTest;
 import org.keycloak.testsuite.runonserver.RunOnServer;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.FlowUtil;
-import org.keycloak.testsuite.util.UserBuilder;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
 import org.hamcrest.Matcher;
 import org.hamcrest.Matchers;
@@ -47,7 +52,9 @@ import org.junit.jupiter.api.Assertions;
 
 import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
 
+import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -55,7 +62,7 @@ public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
 
     @Test
     public void testAuthenticateUnmanagedMember() {
-        OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
+        OrganizationResource organization = managedRealm.admin().organizations().get(createOrganization().getId());
         UserRepresentation member = addMember(organization, "contractor@contractor.org");
 
         // first try to log in using only the email
@@ -72,7 +79,7 @@ public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
 
     @Test
     public void testTryLoginWithUsernameNotAnEmail() {
-        testRealm().organizations().get(createOrganization().getId());
+        managedRealm.admin().organizations().get(createOrganization().getId());
 
         openIdentityFirstLoginPage("user", false, null, false, false);
 
@@ -95,7 +102,7 @@ public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
 
     @Test
     public void testDefaultAuthenticationMechanismIfNotOrganizationMember() {
-        testRealm().organizations().get(createOrganization().getId());
+        managedRealm.admin().organizations().get(createOrganization().getId());
 
         openIdentityFirstLoginPage("user@noorg.org", false, null, false, false);
 
@@ -106,7 +113,7 @@ public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
 
     @Test
     public void testAuthenticateUnmanagedMemberWhenProviderDisabled() throws IOException {
-        OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
+        OrganizationResource organization = managedRealm.admin().organizations().get(createOrganization().getId());
         UserRepresentation member = addMember(organization, "contractor@contractor.org");
 
         // first try to access login page
@@ -116,7 +123,7 @@ public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
         Assertions.assertFalse(loginPage.isSocialButtonPresent(bc.getIDPAlias()));
 
         // disable the organization provider
-        try (RealmAttributeUpdater rau = new RealmAttributeUpdater(testRealm())
+        try (RealmAttributeUpdater rau = new RealmAttributeUpdater(managedRealm.admin())
                 .setOrganizationsEnabled(Boolean.FALSE)
                 .update()) {
 
@@ -138,7 +145,7 @@ public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
 
     @Test
     public void testForceReAuthenticationBeforeRequiredAction() {
-        OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
+        OrganizationResource organization = managedRealm.admin().organizations().get(createOrganization().getId());
         UserRepresentation member = addMember(organization);
 
         oauth.client("broker-app");
@@ -168,7 +175,7 @@ public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
 
         try {
             OrganizationRepresentation org = createOrganization();
-            OrganizationResource organization = testRealm().organizations().get(org.getId());
+            OrganizationResource organization = managedRealm.admin().organizations().get(org.getId());
             UserRepresentation member = addMember(organization);
             organization.members().member(member.getId()).delete().close();
             oauth.client("broker-app");
@@ -196,7 +203,7 @@ public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
             assertThat(errorPage.getError(), Matchers.containsString("User is not a member of any organization"));
 
             organization.members().addMember(member.getId()).close();
-            testRealm().organizations().get(orgB.getId()).members().addMember(member.getId()).close();
+            managedRealm.admin().organizations().get(orgB.getId()).members().addMember(member.getId()).close();
             oauth.client("broker-app");
             oauth.scope("organization");
             loginPage.open(bc.consumerRealmName());
@@ -214,7 +221,7 @@ public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
     @Test
     public void testLoginHint() {
         OrganizationRepresentation organization = createOrganization();
-        OrganizationResource organizationResource = testRealm().organizations().get(organization.getId());
+        OrganizationResource organizationResource = managedRealm.admin().organizations().get(organization.getId());
         UserRepresentation member = addMember(organizationResource);
 
         // login hint populates the username field
@@ -231,23 +238,23 @@ public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
 
     @Test
     public void testDuplicateEmailsEnabled() {
-        RealmRepresentation realm = testRealm().toRepresentation();
+        RealmRepresentation realm = managedRealm.admin().toRepresentation();
 
         realm.setDuplicateEmailsAllowed(true);
         realm.setLoginWithEmailAllowed(false);
         realm.setRegistrationEmailAsUsername(false);
 
-        testRealm().update(realm);
+        managedRealm.admin().update(realm);
 
         OrganizationRepresentation organization = createOrganization();
-        OrganizationResource organizationResource = testRealm().organizations().get(organization.getId());
+        OrganizationResource organizationResource = managedRealm.admin().organizations().get(organization.getId());
         UserRepresentation member = addMember(organizationResource);
         UserRepresentation duplicatedUser = UserBuilder.create()
                 .username("duplicated-user")
                 .password("duplicated-user")
                 .email(member.getEmail())
                 .enabled(true).build();
-        try (Response response = testRealm().users().create(duplicatedUser)) {
+        try (Response response = managedRealm.admin().users().create(duplicatedUser)) {
             duplicatedUser.setId(ApiUtil.getCreatedId(response));
         }
 
@@ -259,7 +266,7 @@ public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
         loginPage.clickSignIn();
         loginPage.login(memberPassword);
         appPage.assertCurrent();
-        testRealm().users().get(member.getId()).logout();
+        managedRealm.admin().users().get(member.getId()).logout();
 
         // a different account with the same email can also authenticate using a unique username
         oauth.loginForm().open();
@@ -267,7 +274,7 @@ public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
         loginPage.clickSignIn();
         loginPage.login(duplicatedUser.getUsername());
         appPage.assertCurrent();
-        testRealm().users().get(duplicatedUser.getId()).logout();
+        managedRealm.admin().users().get(duplicatedUser.getId()).logout();
 
         // trying to authenticate with the duplicated user using the email will fail because the username is the email of a different account
         oauth.loginForm().open();
@@ -286,7 +293,7 @@ public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
 
     @Test
     public void testRestartLogin() {
-        testRealm().organizations().get(createOrganization().getId());
+        managedRealm.admin().organizations().get(createOrganization().getId());
 
         openIdentityFirstLoginPage("user@noorg.org", false, null, false, false);
 
@@ -301,7 +308,7 @@ public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
 
     @Test
     public void testAttemptedUsernameKeptAfterPasswordFailures() {
-        testRealm().organizations().get(createOrganization().getId());
+        managedRealm.admin().organizations().get(createOrganization().getId());
 
         openIdentityFirstLoginPage("user@noorg.org", false, null, false, false);
 
@@ -319,20 +326,20 @@ public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
 
     @Test
     public void testHideUsernameKeptAfterPasswordFailuresBruteForceEnabled() {
-        testRealm().organizations().get(createOrganization().getId());
+        managedRealm.admin().organizations().get(createOrganization().getId());
 
-        RealmRepresentation realm = testRealm().toRepresentation();
+        RealmRepresentation realm = managedRealm.admin().toRepresentation();
         realm.setBruteForceProtected(true);
         realm.setBruteForceStrategy(RealmRepresentation.BruteForceStrategy.MULTIPLE);
         realm.setFailureFactor(1);
         realm.setMaxDeltaTimeSeconds(30);
         realm.setMaxFailureWaitSeconds(30);
         realm.setWaitIncrementSeconds(30);
-        testRealm().update(realm);
+        managedRealm.admin().update(realm);
         getCleanup().addCleanup(() -> {
-            RealmRepresentation r = testRealm().toRepresentation();
+            RealmRepresentation r = managedRealm.admin().toRepresentation();
             r.setBruteForceProtected(false);
-            testRealm().update(r);
+            managedRealm.admin().update(r);
         });
 
         String email = "existing-user@" + organizationName + ".org";
@@ -350,7 +357,7 @@ public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
 
         openIdentityFirstLoginPage(email, false, null, false, false);
         realm.setRegistrationEmailAsUsername(true);
-        testRealm().update(realm);
+        managedRealm.admin().update(realm);
         loginPage.login("wrong-password");
         loginPage.assertAttemptedUsernameAvailability(true);
         Assertions.assertFalse(loginPage.isEmailInputPresent());
@@ -363,7 +370,7 @@ public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
 
     @Test
     public void testUsernameExposureWhenEnteringEmail() {
-        OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
+        OrganizationResource organization = managedRealm.admin().organizations().get(createOrganization().getId());
 
         UserRepresentation member = UserBuilder.create()
                 .username("secretusername123")  // Different from email
@@ -374,7 +381,7 @@ public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
                 .password(memberPassword)
                 .build();
         
-        String memberId = AdminApiUtil.createUserAndResetPasswordWithAdminClient(testRealm(), member, memberPassword);
+        String memberId = AdminApiUtil.createUserAndResetPasswordWithAdminClient(managedRealm.admin(), member, memberPassword);
         organization.members().addMember(memberId).close();
         
         // Enter the email address in the login form
@@ -397,7 +404,164 @@ public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
         Assertions.assertTrue(loginPage.isPasswordInputPresent(), "Password input should be present");
         
         // Clean up
-        testRealm().users().get(memberId).remove();
+        managedRealm.admin().users().get(memberId).remove();
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void testSwitchOrganizationDuringLogin() {
+        OrganizationRepresentation orgA = createOrganization();
+        OrganizationRepresentation orgB = createOrganization("org-b");
+        OrganizationResource orgAResource = managedRealm.admin().organizations().get(orgA.getId());
+        OrganizationResource orgBResource = managedRealm.admin().organizations().get(orgB.getId());
+        UserRepresentation member = addMember(orgAResource);
+        orgBResource.members().addMember(member.getId()).close();
+
+        // login with "organization" scope (ANY) to trigger org selection
+        oauth.client("broker-app", KcOidcBrokerConfiguration.CONSUMER_BROKER_APP_SECRET);
+        oauth.scope("organization");
+        loginPage.open(bc.consumerRealmName());
+        loginPage.loginUsername(member.getEmail());
+
+        // org selection page should be shown
+        selectOrganizationPage.assertCurrent();
+        Assertions.assertTrue(selectOrganizationPage.isOrganizationButtonPresent(orgA.getAlias()));
+        Assertions.assertTrue(selectOrganizationPage.isOrganizationButtonPresent(orgB.getAlias()));
+
+        // select org A
+        selectOrganizationPage.selectOrganization(orgA.getAlias());
+
+        // should be on the password page now
+        loginPage.assertAttemptedUsernameAvailability(true);
+        Assertions.assertTrue(loginPage.isPasswordInputPresent());
+
+        // switch organization link should be available
+        loginPage.assertSwitchOrganizationLinkAvailability(true);
+
+        // click switch organization
+        loginPage.clickSwitchOrganizationLink();
+
+        // org selection page should be shown again
+        selectOrganizationPage.assertCurrent();
+        Assertions.assertTrue(selectOrganizationPage.isOrganizationButtonPresent(orgA.getAlias()));
+        Assertions.assertTrue(selectOrganizationPage.isOrganizationButtonPresent(orgB.getAlias()));
+
+        // select org B this time
+        selectOrganizationPage.selectOrganization(orgB.getAlias());
+
+        // should be on the password page again
+        Assertions.assertTrue(loginPage.isPasswordInputPresent());
+
+        // complete login
+        loginPage.login(memberPassword);
+        appPage.assertCurrent();
+
+        // verify the token contains org B (the final selection), not org A
+        String code = oauth.parseLoginResponse().getCode();
+        AccessTokenResponse response = oauth.doAccessTokenRequest(code);
+        AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
+        assertThat(accessToken.getOtherClaims().keySet(), hasItem(OAuth2Constants.ORGANIZATION));
+        List<String> organizations = (List<String>) accessToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION);
+        assertThat(organizations, hasItem(orgB.getAlias()));
+        assertThat(organizations, not(hasItem(orgA.getAlias())));
+    }
+
+    @Test
+    public void testSwitchOrganizationNotAvailableForSingleOrgUser() {
+        OrganizationRepresentation org = createOrganization();
+        OrganizationResource orgResource = managedRealm.admin().organizations().get(org.getId());
+        UserRepresentation member = addMember(orgResource);
+
+        // login with "organization" scope — single org member should NOT see org selection
+        oauth.client("broker-app");
+        oauth.scope("organization");
+        loginPage.open(bc.consumerRealmName());
+        loginPage.loginUsername(member.getEmail());
+
+        // should go directly to password page (no org selection for single-org users)
+        Assertions.assertTrue(loginPage.isPasswordInputPresent());
+
+        // switch organization link should NOT be available
+        loginPage.assertSwitchOrganizationLinkAvailability(false);
+    }
+
+    @Test
+    public void testSwitchOrganizationNotAvailableWithSpecificScope() {
+        OrganizationRepresentation orgA = createOrganization();
+        OrganizationRepresentation orgB = createOrganization("org-b");
+        OrganizationResource orgAResource = managedRealm.admin().organizations().get(orgA.getId());
+        OrganizationResource orgBResource = managedRealm.admin().organizations().get(orgB.getId());
+        UserRepresentation member = addMember(orgAResource);
+        orgBResource.members().addMember(member.getId()).close();
+
+        // login with specific organization scope — no org selection should be shown
+        oauth.client("broker-app");
+        oauth.scope("organization:" + orgA.getAlias());
+        loginPage.open(bc.consumerRealmName());
+        loginPage.loginUsername(member.getEmail());
+
+        // should go directly to password page (specific org requested by client)
+        Assertions.assertTrue(loginPage.isPasswordInputPresent());
+
+        // switch organization link should NOT be available
+        loginPage.assertSwitchOrganizationLinkAvailability(false);
+    }
+
+    @Test
+    public void testSwitchOrganizationNotAvailableWithWildcardScope() {
+        OrganizationRepresentation orgA = createOrganization();
+        OrganizationRepresentation orgB = createOrganization("org-b");
+        OrganizationResource orgAResource = managedRealm.admin().organizations().get(orgA.getId());
+        OrganizationResource orgBResource = managedRealm.admin().organizations().get(orgB.getId());
+        UserRepresentation member = addMember(orgAResource);
+        orgBResource.members().addMember(member.getId()).close();
+
+        // login with wildcard organization scope — no org selection should be shown
+        oauth.client("broker-app");
+        oauth.scope("organization:*");
+        loginPage.open(bc.consumerRealmName());
+        loginPage.loginUsername(member.getEmail());
+
+        // should go directly to password page (all orgs mapped)
+        Assertions.assertTrue(loginPage.isPasswordInputPresent());
+
+        // switch organization link should NOT be available
+        loginPage.assertSwitchOrganizationLinkAvailability(false);
+    }
+
+    @Test
+    public void testUsernamePreservedAfterSwitchOrganization() {
+        OrganizationRepresentation orgA = createOrganization();
+        OrganizationRepresentation orgB = createOrganization("org-b");
+        OrganizationResource orgAResource = managedRealm.admin().organizations().get(orgA.getId());
+        OrganizationResource orgBResource = managedRealm.admin().organizations().get(orgB.getId());
+        UserRepresentation member = addMember(orgAResource);
+        orgBResource.members().addMember(member.getId()).close();
+
+        // login with "organization" scope to trigger org selection
+        oauth.client("broker-app");
+        oauth.scope("organization");
+        loginPage.open(bc.consumerRealmName());
+        loginPage.loginUsername(member.getEmail());
+
+        // select org A
+        selectOrganizationPage.assertCurrent();
+        selectOrganizationPage.selectOrganization(orgA.getAlias());
+
+        // verify username is shown on password page
+        loginPage.assertAttemptedUsernameAvailability(true);
+        assertThat(loginPage.getAttemptedUsername(), is(member.getEmail()));
+
+        // switch organization
+        loginPage.clickSwitchOrganizationLink();
+
+        // select org B
+        selectOrganizationPage.assertCurrent();
+        selectOrganizationPage.selectOrganization(orgB.getAlias());
+
+        // username should still be preserved after switching
+        loginPage.assertAttemptedUsernameAvailability(true);
+        assertThat(loginPage.getAttemptedUsername(), is(member.getEmail()));
     }
 
     private void runOnServer(RunOnServer function) {

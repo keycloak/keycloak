@@ -56,19 +56,17 @@ import org.keycloak.representations.idm.authorization.PermissionTicketRepresenta
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.UmaPermissionRepresentation;
+import org.keycloak.testframework.realm.ClientBuilder;
+import org.keycloak.testframework.realm.GroupBuilder;
+import org.keycloak.testframework.realm.RoleBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
 import org.keycloak.testsuite.runonserver.RunOnServer;
-import org.keycloak.testsuite.util.ClientBuilder;
-import org.keycloak.testsuite.util.GroupBuilder;
 import org.keycloak.testsuite.util.RealmBuilder;
-import org.keycloak.testsuite.util.RoleBuilder;
 import org.keycloak.testsuite.util.RolesBuilder;
-import org.keycloak.testsuite.util.UserBuilder;
 
 import org.junit.Test;
-
-import static java.util.Collections.singletonList;
 
 import static org.keycloak.authorization.model.Policy.FilterOption.OWNER;
 
@@ -96,25 +94,25 @@ public class UserManagedPermissionServiceTest extends AbstractResourceServerTest
                         .realmRole(RoleBuilder.create().name("role_d").build())
                 )
                 .group(GroupBuilder.create().name("group_a")
-                        .subGroups(singletonList(GroupBuilder.create().name("group_b").build()))
+                        .subGroups(GroupBuilder.create().name("group_b"))
                         .build())
                 .group(GroupBuilder.create().name("group_c").build())
                 .group(GroupBuilder.create().name("group_remove").build())
                 .user(UserBuilder.create().username("marta").password("password")
-                        .addRoles("uma_authorization", "uma_protection")
-                        .role("resource-server-test", "uma_protection"))
+                        .roles("uma_authorization", "uma_protection")
+                        .clientRoles("resource-server-test", "uma_protection"))
                 .user(UserBuilder.create().username("alice").password("password")
-                        .addRoles("uma_authorization", "uma_protection")
-                        .role("resource-server-test", "uma_protection"))
+                        .roles("uma_authorization", "uma_protection")
+                        .clientRoles("resource-server-test", "uma_protection"))
                 .user(UserBuilder.create().username("kolo").password("password")
-                        .addRoles("role_a")
-                        .addGroups("group_a"))
+                        .roles("role_a")
+                        .groups("group_a"))
                 .client(ClientBuilder.create().clientId("resource-server-test")
                         .secret("secret")
                         .authorizationServicesEnabled(true)
                         .redirectUris("http://localhost/resource-server-test")
                         .defaultRoles("uma_protection")
-                        .directAccessGrants()
+                        .directAccessGrantsEnabled()
                         .serviceAccountsEnabled(true))
                 .client(ClientBuilder.create().clientId("client-a")
                         .redirectUris("http://localhost/resource-server-test")

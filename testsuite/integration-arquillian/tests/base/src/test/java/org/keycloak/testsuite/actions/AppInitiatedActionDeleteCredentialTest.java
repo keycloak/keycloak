@@ -35,6 +35,7 @@ import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.pages.DeleteCredentialPage;
@@ -44,7 +45,6 @@ import org.keycloak.testsuite.pages.LoginTotpPage;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.GreenMailRule;
 import org.keycloak.testsuite.util.MailUtils;
-import org.keycloak.testsuite.util.UserBuilder;
 
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
@@ -90,7 +90,7 @@ public class AppInitiatedActionDeleteCredentialTest extends AbstractAppInitiated
 
     @Before
     public void beforeTest() {
-        AdminApiUtil.removeUserByUsername(testRealm(), "test-user@localhost");
+        AdminApiUtil.removeUserByUsername(managedRealm.admin(), "test-user@localhost");
         UserRepresentation user = UserBuilder.create()
                 .username("john")
                 .email("test-user@localhost")
@@ -100,7 +100,7 @@ public class AppInitiatedActionDeleteCredentialTest extends AbstractAppInitiated
                 .enabled(true)
                 .password("password")
                 .totpSecret("mySecret").build();
-        Response response = testRealm().users().create(user);
+        Response response = managedRealm.admin().users().create(user);
         userId = ApiUtil.getCreatedId(response);
         response.close();
         getCleanup().addUserId(userId);
@@ -108,7 +108,7 @@ public class AppInitiatedActionDeleteCredentialTest extends AbstractAppInitiated
 
     @Test
     public void removeOtpSuccess() throws Exception {
-        try (RealmAttributeUpdater updater = new RealmAttributeUpdater(testRealm())
+        try (RealmAttributeUpdater updater = new RealmAttributeUpdater(managedRealm.admin())
                 .addEventsListener(EmailEventListenerProviderFactory.ID)
                 .update()) {
 
@@ -236,9 +236,9 @@ public class AppInitiatedActionDeleteCredentialTest extends AbstractAppInitiated
     @Test
     public void requiredActionByAdmin() throws Exception {
         // Add required action by admin. It will be ignored as there is no credentialId
-        UserRepresentation user = testRealm().users().get(userId).toRepresentation();
+        UserRepresentation user = managedRealm.admin().users().get(userId).toRepresentation();
         user.setRequiredActions(List.of(DeleteCredentialAction.PROVIDER_ID));
-        testRealm().users().get(userId).update(user);
+        managedRealm.admin().users().get(userId).update(user);
 
         loginPasswordAndOtp(null);
         appPage.assertCurrent();
@@ -251,7 +251,7 @@ public class AppInitiatedActionDeleteCredentialTest extends AbstractAppInitiated
     @Test
     public void removeOtpCustomLabel() throws Exception {
         String credentialId = getCredentialIdByType(OTPCredentialModel.TYPE);
-        testRealm().users().get(userId).setCredentialUserLabel(credentialId, "custom-otp-authenticator");
+        managedRealm.admin().users().get(userId).setCredentialUserLabel(credentialId, "custom-otp-authenticator");
 
         loginPasswordAndOtp(getKcActionParamForDeleteCredential(credentialId));
 
@@ -282,7 +282,7 @@ public class AppInitiatedActionDeleteCredentialTest extends AbstractAppInitiated
     }
 
     private String getCredentialIdByType(String type) {
-        List<CredentialRepresentation> credentials = testRealm().users().get(userId).credentials();
+        List<CredentialRepresentation> credentials = managedRealm.admin().users().get(userId).credentials();
         return credentials.stream()
                 .filter(credential -> type.equals(credential.getType()))
                 .findFirst()

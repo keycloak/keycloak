@@ -76,13 +76,13 @@ public class X509DirectGrantTest extends AbstractX509AuthenticationTest {
         // Set up the users so that the identity extracted from X509 client cert
         // matches more than a single user to trigger DuplicateModelException.
 
-        UserRepresentation user = testRealm().users().get(userId2).toRepresentation();
+        UserRepresentation user = managedRealm.admin().users().get(userId2).toRepresentation();
         Assertions.assertNotNull(user);
 
         user.singleAttribute("x509_certificate_identity", "Red Hat");
         this.updateUser(user);
 
-        user = testRealm().users().get(userId).toRepresentation();
+        user = managedRealm.admin().users().get(userId).toRepresentation();
         Assertions.assertNotNull(user);
 
         user.singleAttribute("x509_certificate_identity", "Red Hat");
@@ -105,7 +105,7 @@ public class X509DirectGrantTest extends AbstractX509AuthenticationTest {
         String cfgId = createConfig(directGrantExecution.getId(), cfg);
         Assertions.assertNotNull(cfgId);
 
-        UserRepresentation user = testRealm().users().get(userId2).toRepresentation();
+        UserRepresentation user = managedRealm.admin().users().get(userId2).toRepresentation();
         Assertions.assertNotNull(user);
 
         user.singleAttribute("x509_certificate_identity", "-");
@@ -300,7 +300,7 @@ public class X509DirectGrantTest extends AbstractX509AuthenticationTest {
         String cfgId = createConfig(directGrantExecution.getId(), cfg);
         Assertions.assertNotNull(cfgId);
 
-        UserRepresentation user = testRealm().users().get(userId).toRepresentation();
+        UserRepresentation user = managedRealm.admin().users().get(userId).toRepresentation();
         Assertions.assertNotNull(user);
 
         user.singleAttribute("x509_certificate_identity", "-");

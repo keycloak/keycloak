@@ -35,6 +35,7 @@ import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.pages.LoginConfigTotpPage;
@@ -43,7 +44,6 @@ import org.keycloak.testsuite.pages.RegisterPage;
 import org.keycloak.testsuite.pages.SetupRecoveryAuthnCodesPage;
 import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.RealmBuilder;
-import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
 import org.jboss.arquillian.graphene.page.Page;
@@ -73,14 +73,14 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
 
     @Before
     public void setOTPAuthRequired() {
-        AdminApiUtil.removeUserByUsername(testRealm(), "test-user@localhost");
+        AdminApiUtil.removeUserByUsername(managedRealm.admin(), "test-user@localhost");
         UserRepresentation user = UserBuilder.create().enabled(true)
                 .username("test-user@localhost")
                 .email("test-user@localhost")
                 .firstName("Tom")
                 .lastName("Brady")
                 .build();
-        AdminApiUtil.createUserAndResetPasswordWithAdminClient(testRealm(), user, "password");
+        AdminApiUtil.createUserAndResetPasswordWithAdminClient(managedRealm.admin(), user, "password");
     }
 
 
@@ -342,7 +342,7 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
 
     @Test
     public void setupTotpModifiedPolicy() {
-        RealmResource realm = testRealm();
+        RealmResource realm = managedRealm.admin();
         RealmRepresentation rep = realm.toRepresentation();
         rep.setOtpPolicyDigits(8);
         rep.setOtpPolicyType("hotp");
@@ -468,8 +468,8 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
         events.expectLogin().user(userId).detail(Details.USERNAME, "setupTotp2").assertEvent();
 
         // Remove google authenticator
-        Assertions.assertTrue(AccountHelper.deleteTotpAuthentication(testRealm(),"setupTotp2"));
-        AccountHelper.logout(testRealm(),"setupTotp2");
+        Assertions.assertTrue(AccountHelper.deleteTotpAuthentication(managedRealm.admin(),"setupTotp2"));
+        AccountHelper.logout(managedRealm.admin(),"setupTotp2");
 
         // Try to login
         oauth.openLoginForm();
@@ -670,14 +670,14 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
     }
 
     private void configureTotpActionToEnforceRecoveryCodes(boolean enforceRecoveryCodes) {
-        List<RequiredActionProviderRepresentation> requiredActions = testRealm().flows().getRequiredActions();
+        List<RequiredActionProviderRepresentation> requiredActions = managedRealm.admin().flows().getRequiredActions();
         RequiredActionProviderRepresentation totpAction = requiredActions.stream().filter(ra -> ra.getProviderId().equals(UserModel.RequiredAction.CONFIGURE_TOTP.name())).findFirst().orElseThrow();
         totpAction.setConfig(Map.of(UpdateTotp.ADD_RECOVERY_CODES, Boolean.toString(enforceRecoveryCodes)));
-        testRealm().flows().updateRequiredAction(UserModel.RequiredAction.CONFIGURE_TOTP.name(), totpAction);
-        testRealm().flows().getExecutions("browser").forEach(exe -> {
+        managedRealm.admin().flows().updateRequiredAction(UserModel.RequiredAction.CONFIGURE_TOTP.name(), totpAction);
+        managedRealm.admin().flows().getExecutions("browser").forEach(exe -> {
             if (Objects.equals(exe.getProviderId(), RecoveryAuthnCodesFormAuthenticatorFactory.PROVIDER_ID)) {
                 exe.setRequirement(enforceRecoveryCodes ? "ALTERNATIVE" : "DISABLED");
-                testRealm().flows().updateExecutions("browser", exe);
+                managedRealm.admin().flows().updateExecutions("browser", exe);
             }
         });
     }

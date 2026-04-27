@@ -34,6 +34,7 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.resources.RealmsResource;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.ErrorPage;
@@ -52,7 +53,6 @@ import org.keycloak.testsuite.pages.ProceedPage;
 import org.keycloak.testsuite.pages.UpdateAccountInformationPage;
 import org.keycloak.testsuite.pages.VerifyEmailPage;
 import org.keycloak.testsuite.util.MailServer;
-import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.testsuite.util.WaitUtils;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.keycloak.testsuite.util.oauth.LogoutUrlBuilder;
@@ -395,6 +395,7 @@ public abstract class AbstractBaseBrokerTest extends AbstractKeycloakTest {
     // Check whether the logout confirmation is present; if yes, confirm the logout and verify the current page
     private void checkLogoutConfirmation(String realm, String idTokenHint, String clientId) {
         if (logoutConfirmPage.isCurrent()) {
+            Assertions.assertEquals("Logging out", driver.getTitle());
             confirmLogout();
             if (idTokenHint != null || clientId != null) {
                 assertLoginPage(realm);

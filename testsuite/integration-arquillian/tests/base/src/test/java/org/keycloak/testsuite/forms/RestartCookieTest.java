@@ -48,10 +48,10 @@ import org.keycloak.protocol.RestartLoginCookie;
 import org.keycloak.protocol.oidc.endpoints.AuthorizationEndpoint;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.pages.LoginPage;
-import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.oauth.ParResponse;
 import org.keycloak.util.TokenUtil;
 
@@ -115,7 +115,7 @@ public class RestartCookieTest extends AbstractTestRealmKeycloakTest {
         // create a HS256 for the compatibility tests for previous RESTART cookie formats
         ComponentRepresentation rep = new ComponentRepresentation();
         rep.setName(GeneratedHmacKeyProviderFactory.ID + "-256");
-        rep.setParentId(testRealm().toRepresentation().getId());
+        rep.setParentId(managedRealm.admin().toRepresentation().getId());
         rep.setProviderId(GeneratedHmacKeyProviderFactory.ID);
         rep.setProviderType(KeyProvider.class.getName());
 
@@ -124,7 +124,7 @@ public class RestartCookieTest extends AbstractTestRealmKeycloakTest {
         config.addFirst(Attributes.ALGORITHM_KEY, Algorithm.HS256);
         rep.setConfig(config);
 
-        try (Response res = testRealm().components().add(rep)) {
+        try (Response res = managedRealm.admin().components().add(rep)) {
             Assertions.assertEquals(Response.Status.CREATED.getStatusCode(), res.getStatus());
         }
     }
@@ -195,7 +195,7 @@ public class RestartCookieTest extends AbstractTestRealmKeycloakTest {
     }
 
     private void rotateAesKeys() {
-        RealmResource realm = adminClient.realm(TEST_REALM_NAME);
+        RealmResource realm = managedRealm.admin();
         String activeKid = realm.keys().getKeyMetadata().getActive().get(Algorithm.AES);
 
         // Rotate public keys on the parent broker
