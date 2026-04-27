@@ -480,7 +480,7 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
     @Test
     public void testSecureRequestObjectExecutor() throws Exception {
         Integer availablePeriod = SecureRequestObjectExecutor.DEFAULT_AVAILABLE_PERIOD + 400;
-        Integer allowedClockSkew = SecureRequestObjectExecutor.DEAULT_ALLOWED_CLOCK_SKEW + 15; // 30 sec
+        Integer allowedClockSkew = SecureRequestObjectExecutor.DEFAULT_ALLOWED_CLOCK_SKEW + 15; // 30 sec
 
         // register profiles
         String json = (new ClientProfilesBuilder()).addProfile(
