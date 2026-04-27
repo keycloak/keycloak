@@ -35,6 +35,8 @@ import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.openqa.selenium.By;
 import org.openqa.selenium.NoSuchElementException;
 
@@ -58,8 +60,9 @@ public class PasskeysUsernamePasswordFormTest extends AbstractWebAuthnVirtualTes
         return true;
     }
 
-    @Test
-    public void webauthnLoginWithDiscoverableKey() {
+    @ParameterizedTest
+    @ValueSource(strings = {"conditional", "optional"})
+    public void webauthnLoginWithDiscoverableKey(String mediation) {
         getVirtualAuthManager().useAuthenticator(DefaultVirtualAuthOptions.PASSKEYS.getOptions());
 
         // set passwordless policy for discoverable keys
@@ -67,7 +70,8 @@ public class PasskeysUsernamePasswordFormTest extends AbstractWebAuthnVirtualTes
             managedRealm.updateWithCleanup(r -> r.webAuthnPolicyPasswordlessRpEntityName("localhost")
                     .webAuthnPolicyPasswordlessRequireResidentKey(null)
                     .webAuthnPolicyPasswordlessUserVerificationRequirement(null)
-                    .webAuthnPolicyPasswordlessPasskeysEnabled(Boolean.TRUE));
+                    .webAuthnPolicyPasswordlessPasskeysEnabled(Boolean.TRUE)
+                    .webAuthnPolicyPasswordlessMediation(mediation));
 
             checkWebAuthnConfiguration(Constants.WEBAUTHN_POLICY_OPTION_YES, Constants.WEBAUTHN_POLICY_OPTION_REQUIRED);
 

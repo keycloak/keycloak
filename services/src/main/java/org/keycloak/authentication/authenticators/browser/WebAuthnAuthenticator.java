@@ -120,6 +120,7 @@ public class WebAuthnAuthenticator implements Authenticator, CredentialValidator
         String userVerificationRequirement = policy.getUserVerificationRequirement();
         form.setAttribute(WebAuthnConstants.USER_VERIFICATION, userVerificationRequirement);
         form.setAttribute(WebAuthnConstants.SHOULD_DISPLAY_AUTHENTICATORS, shouldDisplayAuthenticators(context));
+        form.setAttribute(WebAuthnConstants.MEDIATION, policy.getMediation());
 
         return form;
     }

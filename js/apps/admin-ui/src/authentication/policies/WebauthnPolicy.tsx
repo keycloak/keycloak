@@ -64,6 +64,14 @@ const USER_VERIFY = [
   "discouraged",
 ] as const;
 
+const MEDIATION_OPTIONS = [
+  "conditional",
+  "none",
+  "optional",
+  "required",
+  "silent",
+] as const;
+
 type WeauthnSelectProps = {
   name: string;
   label: string;
@@ -118,6 +126,7 @@ export const WebauthnPolicy = ({
   const {
     setValue,
     handleSubmit,
+    watch,
     formState: { isDirty },
   } = form;
 
@@ -265,13 +274,24 @@ export const WebauthnPolicy = ({
             />
           </FormGroup>
           {isPasswordLess && isFeatureEnabled(Feature.Passkeys) && (
-            <SwitchControl
-              name={`${namePrefix}PasskeysEnabled`}
-              label={t("webAuthnPolicyPasskeysEnabled")}
-              labelIcon={t("webAuthnPolicyPasskeysEnabledHelp")}
-              labelOn={t("on")}
-              labelOff={t("off")}
-            />
+            <>
+              <SwitchControl
+                name={`${namePrefix}PasskeysEnabled`}
+                label={t("webAuthnPolicyPasskeysEnabled")}
+                labelIcon={t("webAuthnPolicyPasskeysEnabledHelp")}
+                labelOn={t("on")}
+                labelOff={t("off")}
+              />
+              {watch(`${namePrefix}PasskeysEnabled`) && (
+                <WebauthnSelect
+                  name={`${namePrefix}Mediation`}
+                  label={t("webAuthnPolicyMediation")}
+                  labelIcon={t("webAuthnPolicyMediationHelp")}
+                  options={MEDIATION_OPTIONS}
+                  labelPrefix="mediation"
+                />
+              )}
+            </>
           )}
         </FormProvider>
 
