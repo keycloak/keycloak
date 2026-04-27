@@ -90,6 +90,8 @@ public class CertificateValidator {
 
     private final static Logger logger = Logger.getLogger(CertificateValidator.class);
 
+    private PKIXCertPathBuilderResult certPathBuilderResult;
+
     enum KeyUsageBits {
         DIGITAL_SIGNATURE(0, "digitalSignature"),
         NON_REPUDIATION(1, "nonRepudiation"),
@@ -136,6 +138,10 @@ public class CertificateValidator {
                     return bit;
             throw new IndexOutOfBoundsException("value");
         }
+    }
+
+    public PKIXCertPathBuilderResult getCertPathBuilderResult() {
+        return this.certPathBuilderResult;
     }
 
     public static class LdapContext {
@@ -604,17 +610,18 @@ public class CertificateValidator {
             return this;
 
         TruststoreProvider truststoreProvider = session.getProvider(TruststoreProvider.class);
-        if (truststoreProvider == null || truststoreProvider.getTruststore() == null) {
+        if (truststoreProvider == null || truststoreProvider.getHttpsTruststore() == null) {
             throw new GeneralSecurityException("Cannot validate client certificate trust: Truststore not available. Please make sure to correctly configure truststore provider in order to be able to revalidate certificate trust");
         }
         else
         {
-            Set<X509Certificate> trustedRootCerts = truststoreProvider.getRootCertificates().entrySet().stream().flatMap(t -> t.getValue().stream()).collect(Collectors.toSet());
-            Set<X509Certificate> trustedIntermediateCerts = truststoreProvider.getIntermediateCertificates().entrySet().stream().flatMap(t -> t.getValue().stream()).collect(Collectors.toSet());
+            Set<X509Certificate> trustedRootCerts = truststoreProvider.getHttpsRootCertificates().entrySet().stream().flatMap(t -> t.getValue().stream()).collect(Collectors.toSet());
+            Set<X509Certificate> trustedIntermediateCerts = truststoreProvider.getHttpsIntermediateCertificates().entrySet().stream().flatMap(t -> t.getValue().stream()).collect(Collectors.toSet());
 
             logger.debugf("Found %d trusted root certs, %d trusted intermediate certs", trustedRootCerts.size(), trustedIntermediateCerts.size());
+            logger.debugf("Found %d trusted root certs", truststoreProvider.getHttpsTruststore().size());
 
-            verifyCertificateTrust(_certChain, trustedRootCerts, trustedIntermediateCerts);
+            this.certPathBuilderResult = verifyCertificateTrust(_certChain, trustedRootCerts, trustedIntermediateCerts);
         }
 
         return this;

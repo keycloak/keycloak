@@ -305,6 +305,14 @@ public class OIDCAdvancedConfigWrapper extends AbstractClientConfigWrapper {
         setAttribute(X509ClientAuthenticator.ATTR_SUBJECT_DN, tls_client_auth_subject_dn);
     }
 
+    public String getTlsClientCAAuthSubjectDn() {
+        return getAttribute(X509ClientAuthenticator.ATTR_CA_SUBJECT_DN);
+     }
+
+    public void setTlsClientAuthCASubjectDn(String caSubjectDn) {
+        setAttribute(X509ClientAuthenticator.ATTR_CA_SUBJECT_DN, caSubjectDn);
+    }
+
     public boolean getAllowRegexPatternComparison() {
         String attrVal = getAttribute(X509ClientAuthenticator.ATTR_ALLOW_REGEX_PATTERN_COMPARISON);
         // Allow Regex Pattern Comparison by default due the backwards compatibility
