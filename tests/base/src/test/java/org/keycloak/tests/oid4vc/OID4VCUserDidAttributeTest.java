@@ -23,7 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 /**
  * Tests the User DID Attribute.
  *
- * @author <a href="mailto:tdiesler@ibm.com">Thomas Diesler</a>
+ * @author <a href="mailto:tdiesler@proton.me">Thomas Diesler</a>
  */
 @KeycloakIntegrationTest(config = VCTestServerConfig.class)
 public class OID4VCUserDidAttributeTest extends OID4VCIssuerTestBase {

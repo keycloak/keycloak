@@ -200,7 +200,7 @@ public class JwtPreAuthCodeHandlerTest extends OID4VCIssuerTestBase {
 
     private void assertPreAuthCodeCtx(PreAuthCodeCtx preAuthCodeCtx) {
         assertEquals(client.getClientId(), preAuthCodeCtx.getTargetClientId());
-        assertEquals(getExistingUser(ctx.getHolder()).getId(), preAuthCodeCtx.getTargetUserId());
+        assertEquals(getUserRepresentation(ctx.getHolder()).getId(), preAuthCodeCtx.getTargetUserId());
         assertEquals(List.of(ctx.getCredentialScope().getCredentialConfigurationId()),
                 preAuthCodeCtx.getCredentialConfigurationIds());
     }
