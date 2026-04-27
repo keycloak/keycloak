@@ -1,5 +1,7 @@
 package org.keycloak.tests.oid4vc;
 
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -100,6 +102,12 @@ public class NonceEndpointTest extends OID4VCIssuerTestBase {
         String dpopNonceHeader = response.getHeader(OAuth2Constants.DPOP_NONCE_HEADER);
         Assertions.assertNotNull(dpopNonceHeader, "DPoP-Nonce header must be present");
         Assertions.assertFalse(dpopNonceHeader.trim().isEmpty(), "DPoP-Nonce header must not be empty");
+
+        // RFC7231 Date header must be present and parse as IMF-fixdate.
+        String dateHeader = response.getHeader(jakarta.ws.rs.core.HttpHeaders.DATE);
+        Assertions.assertNotNull(dateHeader, "Date header must be present");
+        Assertions.assertDoesNotThrow(() -> ZonedDateTime.parse(dateHeader, DateTimeFormatter.RFC_1123_DATE_TIME),
+                "Date header must be RFC1123 formatted");
 
         // Verify that DPoP nonce is different from body nonce (separate generation)
         NonceResponse nonceResponse = response.getNonceResponse();
