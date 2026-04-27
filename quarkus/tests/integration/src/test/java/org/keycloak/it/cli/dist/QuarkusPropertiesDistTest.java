@@ -17,6 +17,7 @@
 
 package org.keycloak.it.cli.dist;
 
+import java.nio.file.Path;
 import java.util.Optional;
 import java.util.function.Consumer;
 
@@ -112,7 +113,8 @@ public class QuarkusPropertiesDistTest {
     }
 
     @Test
-    @Launch({ "start", "--http-enabled=true", "--hostname-strict=false", "--config-keystore=../../../../src/test/resources/keystore" })
+    @BeforeStartDistribution(QuarkusPropertiesDistTest.CopyKeystoreToConf.class)
+    @Launch({ "start", "--http-enabled=true", "--hostname-strict=false", "--config-keystore=../conf/keystore" })
     @Order(9)
     void testMissingSmallRyeKeyStorePasswordProperty(CLIResult cliResult) {
         assertTrue(
@@ -151,8 +153,9 @@ public class QuarkusPropertiesDistTest {
     }
 
     @Test
+    @BeforeStartDistribution(QuarkusPropertiesDistTest.CopyKeystoreToConf.class)
     @Launch({ "start", "--http-enabled=true", "--hostname-strict=false",
-            "--config-keystore=../../../../src/test/resources/keystore", "--config-keystore-password=secret" })
+            "--config-keystore=../conf/keystore", "--config-keystore-password=secret" })
     @Order(12)
     void testSmallRyeKeyStoreConfigSource(CLIResult cliResult) {
         // keytool -importpass -alias kc.log-level -keystore keystore -storepass secret -storetype PKCS12 -v (with "org.keycloak.timer:debug" as the stored password)
@@ -216,6 +219,13 @@ public class QuarkusPropertiesDistTest {
         public void accept(KeycloakDistribution distribution) {
             distribution.deleteQuarkusProperties();
             distribution.setQuarkusProperty(QUARKUS_BUILDTIME_HIBERNATE_METRICS_KEY, "true");
+        }
+    }
+
+    public static class CopyKeystoreToConf implements Consumer<KeycloakDistribution> {
+        @Override
+        public void accept(KeycloakDistribution distribution) {
+            distribution.copyOrReplaceFileFromClasspath("/keystore", Path.of("conf", "keystore"));
         }
     }
 
