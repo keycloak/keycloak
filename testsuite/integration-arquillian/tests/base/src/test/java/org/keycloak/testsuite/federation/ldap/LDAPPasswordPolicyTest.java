@@ -26,6 +26,7 @@ import org.keycloak.testsuite.util.LDAPRule.LDAPPasswordPolicy;
 import org.keycloak.testsuite.util.LDAPTestConfiguration;
 import org.keycloak.testsuite.util.LDAPTestUtils;
 
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 
@@ -45,16 +46,30 @@ public class LDAPPasswordPolicyTest extends AbstractLDAPTest {
 
     @Override
     protected void afterImportTestRealm() {
+    }
+
+    @Before
+    public void setupLdapUsers() {
         testingClient.server().run(session -> {
             LDAPTestContext ctx = LDAPTestContext.init(session);
             RealmModel appRealm = ctx.getRealm();
 
-            LDAPObject user = LDAPTestUtils.addLDAPUser(ctx.getLdapProvider(), appRealm, "mustchange", "John", "Doe",
-                    "john_old@email.org", null, "1234");
-            LDAPTestUtils.updateLDAPPassword(ctx.getLdapProvider(), user, "Password1");
+            // Purge
+            LDAPTestUtils.removeAllLDAPUsers(ctx.getLdapProvider(), appRealm);
+
+            // Recreate
+            LDAPObject userPwdReset = LDAPTestUtils.addLDAPUser(ctx.getLdapProvider(), appRealm, "mustchange", "John", "Doe", "john_old@email.org", null, "1234");
+            LDAPTestUtils.updateLDAPPassword(ctx.getLdapProvider(), userPwdReset, "Password1");
+
+            LDAPObject userPwdExpired = LDAPTestUtils.addLDAPUser(ctx.getLdapProvider(), appRealm, "expired", "John", "Dodo", "john_dodo@email.org", null, "1234");
+            LDAPTestUtils.updateLDAPPassword(ctx.getLdapProvider(), userPwdExpired, "Password1");
+
+            // Reapply flags
+            ctx.getLdapProvider().getLdapIdentityStore().getConfig(); // ensure loaded
         });
 
         ldapRule.getLdapEmbeddedServer().setPwdReset("uid=mustchange,ou=People,dc=keycloak,dc=org", true);
+        ldapRule.getLdapEmbeddedServer().setPwdChangedTime("uid=expired,ou=People,dc=keycloak,dc=org", "19790101000000Z");
     }
 
     @Test
@@ -83,4 +98,29 @@ public class LDAPPasswordPolicyTest extends AbstractLDAPTest {
         appPage.assertCurrent();
     }
 
+    @Test
+    @LDAPPasswordPolicy(mustChange=true, maxAge=31536000)
+    public void testExpiredPassword() throws Exception {
+        // Login with user that has an expired password.
+        oauth.loginForm().open();
+        loginPage.login("expired", "Password1");
+
+        // Forced password change sends user to update password page.
+        passwordUpdatePage.assertCurrent();
+
+        // Repeated login without changing password should still send user to update password page.
+        oauth.loginForm().open();
+        loginPage.login("expired", "Password1");
+        passwordUpdatePage.assertCurrent();
+
+        // Change password and verify that user can login with new password.
+        passwordUpdatePage.changePassword("changedpassword", "changedpassword");
+        appPage.assertCurrent();
+
+        UserRepresentation user = testRealm().users().search("expired").get(0);
+        testRealm().users().get(user.getId()).logout();
+        oauth.loginForm().open();
+        loginPage.login("expired", "changedpassword");
+        appPage.assertCurrent();
+    }
 }

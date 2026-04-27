@@ -25,8 +25,13 @@ public class PasswordPolicyControlTest {
     @Test
     public void testDecodeResponseValue() {
         // SEQUENCE { error changeAfterReset(2) }
-        PasswordPolicyControl control = new PasswordPolicyControl(new byte[] { 0x30, 0x03, (byte) 0x81, 0x01, 0x02 });
-        Assert.assertTrue(control.changeAfterReset());
+        PasswordPolicyControl changeAfterResetControl = new PasswordPolicyControl(new byte[] { 0x30, 0x03, (byte) 0x81, 0x01, 0x02 });
+        Assert.assertTrue(changeAfterResetControl.changeAfterReset());
+        Assert.assertFalse(changeAfterResetControl.passwordExpired());
+
+        PasswordPolicyControl passwordExpiredControl = new PasswordPolicyControl(new byte[] { 0x30, 0x03, (byte) 0x81, 0x01, 0x00 });
+        Assert.assertFalse(passwordExpiredControl.changeAfterReset());
+        Assert.assertTrue(passwordExpiredControl.passwordExpired());
     }
 
     @Test

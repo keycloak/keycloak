@@ -172,12 +172,19 @@ WARNING: Always verify that user passwords are properly hashed and not stored as
 directory entry using `ldapsearch` and base64 decode the `userPassword` attribute value.
 
 [[_ldap_password_policy]]
-==== Enabling password change after reset
+==== Enabling LDAP password policy enforcement
 
-You can force users to change their password after an administrator resets their password. This feature is useful for
-security reasons because it prevents users from using the temporary password set by the administrator for a long time.
+The following features are currently supported:
 
-For that, enable the `Enable LDAP password policy` setting so that a `UPDATE_PASSWORD` required action will be added to
+Password change after reset::
+When an administrator resets a user's password, the LDAP server can signal that the user must change their password on next login.
+Enforcing this change prevents users from using a temporary password set by the administrator for an extended period.
+
+Password expiration:
+When a user's password reaches its maximum age as defined by the LDAP password policy, the LDAP server signals that the
+password has expired and the user must choose a new one before continuing.
+
+For these, enable the `Enable LDAP password policy` setting so that a `UPDATE_PASSWORD` required action will be added to
 the user whenever the LDAP server indicates that the user must update their password.
 
 {project_name} is usually configured to connect to the LDAP server using an administrator account even when users are
