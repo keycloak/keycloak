@@ -45,7 +45,7 @@ import org.keycloak.ssf.transmitter.delivery.SseCaepEventConverter;
 import org.keycloak.ssf.transmitter.emit.EmitEventResult;
 import org.keycloak.ssf.transmitter.emit.EmitEventStatus;
 import org.keycloak.ssf.transmitter.metrics.SsfMetricsBinder;
-import org.keycloak.ssf.transmitter.outbox.SsfPendingEventEntity;
+import org.keycloak.ssf.transmitter.outbox.SsfEventEntity;
 import org.keycloak.ssf.transmitter.outbox.SsfPendingEventStore;
 import org.keycloak.ssf.transmitter.stream.DuplicateStreamConfigException;
 import org.keycloak.ssf.transmitter.stream.StreamConfig;
@@ -912,14 +912,14 @@ public class SsfAdminResource {
 
         
         SsfPendingEventStore store = new SsfPendingEventStore(session);
-        SsfPendingEventEntity entity = store.findByClientAndJti(receiverClient.getId(), jti);
+        SsfEventEntity entity = store.findByClientAndJti(receiverClient.getId(), jti);
         if (entity == null) {
             throw new NotFoundException("Pending event not found");
         }
         return toPendingEventRepresentation(entity);
     }
 
-    protected SsfPendingEventRepresentation toPendingEventRepresentation(SsfPendingEventEntity entity) {
+    protected SsfPendingEventRepresentation toPendingEventRepresentation(SsfEventEntity entity) {
         SsfPendingEventRepresentation rep = new SsfPendingEventRepresentation();
         rep.setJti(entity.getJti());
         rep.setEventType(entity.getEventType());

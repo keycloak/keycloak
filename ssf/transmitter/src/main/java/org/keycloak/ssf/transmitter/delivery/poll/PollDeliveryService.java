@@ -7,7 +7,7 @@ import java.util.Map;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.ssf.transmitter.metrics.SsfMetricsBinder;
-import org.keycloak.ssf.transmitter.outbox.SsfPendingEventEntity;
+import org.keycloak.ssf.transmitter.outbox.SsfEventEntity;
 import org.keycloak.ssf.transmitter.outbox.SsfPendingEventStatus;
 import org.keycloak.ssf.transmitter.outbox.SsfPendingEventStore;
 
@@ -97,11 +97,11 @@ public class PollDeliveryService {
         // 3. Read the next batch — UPGRADE_SKIPLOCKED so concurrent
         //    pollers (e.g. multiple receiver pods on the same OAuth
         //    credentials) walk disjoint rows.
-        List<SsfPendingEventEntity> rows = pendingEventStore.lockPendingForReceiverPoll(receiverClient.getId(), maxEvents);
+        List<SsfEventEntity> rows = pendingEventStore.lockPendingForReceiverPoll(receiverClient.getId(), maxEvents);
         metricsBinder.recordPollServed(realmName, labelClientId, rows.size());
 
         Map<String, String> sets = new LinkedHashMap<>(rows.size());
-        for (SsfPendingEventEntity row : rows) {
+        for (SsfEventEntity row : rows) {
             sets.put(row.getJti(), row.getEncodedSet());
         }
 
@@ -114,7 +114,7 @@ public class PollDeliveryService {
             long pending = pendingEventStore.countByClientStatusAndMethod(
                     receiverClient.getId(),
                     SsfPendingEventStatus.PENDING,
-                    SsfPendingEventEntity.DELIVERY_METHOD_POLL);
+                    SsfEventEntity.DELIVERY_METHOD_POLL);
             moreAvailable = pending > rows.size();
         }
 

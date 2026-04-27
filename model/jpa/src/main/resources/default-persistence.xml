@@ -99,7 +99,7 @@
         <class>org.keycloak.models.workflow.WorkflowStateEntity</class>
 
         <!-- SSF push outbox -->
-        <class>org.keycloak.ssf.transmitter.outbox.SsfPendingEventEntity</class>
+        <class>org.keycloak.ssf.transmitter.outbox.SsfEventEntity</class>
 
         <exclude-unlisted-classes>true</exclude-unlisted-classes>
 

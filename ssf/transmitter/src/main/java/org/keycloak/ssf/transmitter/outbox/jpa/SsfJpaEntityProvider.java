@@ -3,7 +3,7 @@ package org.keycloak.ssf.transmitter.outbox.jpa;
 import java.util.List;
 
 import org.keycloak.connections.jpa.entityprovider.JpaEntityProvider;
-import org.keycloak.ssf.transmitter.outbox.SsfPendingEventEntity;
+import org.keycloak.ssf.transmitter.outbox.SsfEventEntity;
 
 /**
  * Contributes the SSF push outbox entity and its Liquibase changelog
@@ -17,7 +17,7 @@ public class SsfJpaEntityProvider implements JpaEntityProvider {
 
     @Override
     public List<Class<?>> getEntities() {
-        return List.of(SsfPendingEventEntity.class);
+        return List.of(SsfEventEntity.class);
     }
 
     @Override

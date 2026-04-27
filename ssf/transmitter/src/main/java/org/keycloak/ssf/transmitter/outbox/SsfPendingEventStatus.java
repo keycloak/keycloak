@@ -1,7 +1,7 @@
 package org.keycloak.ssf.transmitter.outbox;
 
 /**
- * Lifecycle status of a row in the SSF push outbox ({@code SSF_PENDING_EVENT}).
+ * Lifecycle status of a row in the SSF push outbox ({@code SSF_EVENT}).
  *
  * <p>The state machine is:
  * <pre>

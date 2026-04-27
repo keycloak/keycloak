@@ -30,7 +30,7 @@ import org.keycloak.ssf.transmitter.event.SsfSignatureAlgorithms;
 import org.keycloak.ssf.transmitter.event.SsfUserSubjectFormats;
 import org.keycloak.ssf.transmitter.metadata.TransmitterMetadataService;
 import org.keycloak.ssf.transmitter.metrics.SsfMetricsBinder;
-import org.keycloak.ssf.transmitter.outbox.SsfPendingEventEntity;
+import org.keycloak.ssf.transmitter.outbox.SsfEventEntity;
 import org.keycloak.ssf.transmitter.outbox.SsfPendingEventStore;
 import org.keycloak.ssf.transmitter.stream.storage.SsfStreamStore;
 import org.keycloak.ssf.transmitter.stream.storage.client.ClientStreamStore;
@@ -824,8 +824,8 @@ public class StreamService {
             return;
         }
         String newMethodColumn = switch (newMethod) {
-            case PUSH, RISC_PUSH -> SsfPendingEventEntity.DELIVERY_METHOD_PUSH;
-            case POLL, RISC_POLL -> SsfPendingEventEntity.DELIVERY_METHOD_POLL;
+            case PUSH, RISC_PUSH -> SsfEventEntity.DELIVERY_METHOD_PUSH;
+            case POLL, RISC_POLL -> SsfEventEntity.DELIVERY_METHOD_POLL;
         };
         SsfPendingEventStore pendingEventStore = pendingSsfEventStoreFactory.apply(session);
         int migrated = pendingEventStore.migrateDeliveryMethodForClient(
