@@ -22,12 +22,14 @@ import jakarta.ws.rs.core.Response;
 
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
+import org.keycloak.authentication.authenticators.client.AttestationBasedClientAuthenticator.ABCAResult;
 import org.keycloak.events.Errors;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.RefreshToken;
+import org.keycloak.representations.dpop.DPoP;
 import org.keycloak.representations.idm.ClientPolicyExecutorConfigurationRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
@@ -37,9 +39,12 @@ import org.keycloak.services.clientpolicy.context.LogoutRequestContext;
 import org.keycloak.services.clientpolicy.context.TokenRefreshContext;
 import org.keycloak.services.clientpolicy.context.TokenRevokeContext;
 import org.keycloak.services.clientpolicy.context.UserInfoRequestContext;
+import org.keycloak.services.util.DPoPUtil;
 import org.keycloak.services.util.MtlsHoKTokenUtil;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+
+import static org.keycloak.authentication.authenticators.client.AttestationBasedClientAuthenticator.ABCAResult.ABCA_RESULT;
 
 public class HolderOfKeyEnforcerExecutor implements ClientPolicyExecutorProvider<HolderOfKeyEnforcerExecutor.Configuration> {
 
@@ -91,9 +96,10 @@ public class HolderOfKeyEnforcerExecutor implements ClientPolicyExecutorProvider
             case TOKEN_REQUEST:
             case SERVICE_ACCOUNT_TOKEN_REQUEST:
             case BACKCHANNEL_TOKEN_REQUEST:
+                DPoP dpop = session.getAttribute(DPoPUtil.DPOP_SESSION_ATTRIBUTE, DPoP.class);
                 AccessToken.Confirmation certConf = MtlsHoKTokenUtil.bindTokenWithClientCertificate(request, session);
-                if (certConf == null) {
-                    throw new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, "Client Certification missing for MTLS HoK Token Binding");
+                if (dpop == null && certConf == null) {
+                    throw new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, "Holder of Key Proof required (e.g. mTLS, DPoP)");
                 }
                 break;
             case TOKEN_REFRESH:
@@ -136,7 +142,7 @@ public class HolderOfKeyEnforcerExecutor implements ClientPolicyExecutorProvider
             return;
         }
 
-        if (!MtlsHoKTokenUtil.verifyTokenBindingWithClientCertificate(refreshToken, request, session)) {
+        if (!verifyHolderOfKeyBinding(request, refreshToken)) {
             throw new ClientPolicyException(Errors.NOT_ALLOWED, MtlsHoKTokenUtil.CERT_VERIFY_ERROR_DESC, Response.Status.UNAUTHORIZED);
         }
     }
@@ -165,7 +171,7 @@ public class HolderOfKeyEnforcerExecutor implements ClientPolicyExecutorProvider
             return;
         }
 
-        if (!MtlsHoKTokenUtil.verifyTokenBindingWithClientCertificate(refreshToken, request, session)) {
+        if (!verifyHolderOfKeyBinding(request, refreshToken)) {
             throw new ClientPolicyException(Errors.NOT_ALLOWED, MtlsHoKTokenUtil.CERT_VERIFY_ERROR_DESC, Response.Status.UNAUTHORIZED);
         }
     }
@@ -180,9 +186,14 @@ public class HolderOfKeyEnforcerExecutor implements ClientPolicyExecutorProvider
             return;
         }
 
-        if (!MtlsHoKTokenUtil.verifyTokenBindingWithClientCertificate(refreshToken, request, session)) {
+        if (!verifyHolderOfKeyBinding(request, refreshToken)) {
             throw new ClientPolicyException(OAuthErrorException.INVALID_GRANT, MtlsHoKTokenUtil.CERT_VERIFY_ERROR_DESC, Response.Status.BAD_REQUEST);
         }
     }
 
+    private boolean verifyHolderOfKeyBinding(HttpRequest request, RefreshToken refreshToken) {
+        ABCAResult abcaResult = session.getAttribute(ABCA_RESULT, ABCAResult.class);
+        boolean clientCertVerified = MtlsHoKTokenUtil.verifyTokenBindingWithClientCertificate(refreshToken, request, session);
+        return clientCertVerified || abcaResult != null && abcaResult.hasAttestedClient();
+    }
 }

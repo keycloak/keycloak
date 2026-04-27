@@ -6,15 +6,20 @@ import java.util.stream.Collectors;
 
 import org.keycloak.TokenVerifier;
 import org.keycloak.crypto.KeyWrapper;
+import org.keycloak.jose.jwk.JWK;
 import org.keycloak.protocol.oid4vc.model.CredentialResponse;
 import org.keycloak.protocol.oid4vc.model.CredentialScopeRepresentation;
+import org.keycloak.protocol.oid4vc.model.Proofs;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.sdjwt.IssuerSignedJWT;
 import org.keycloak.sdjwt.vp.SdJwtVP;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.tests.oid4vc.OID4VCIssuerTestBase;
 import org.keycloak.tests.oid4vc.OID4VCTestContext;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.PkceGenerator;
+import org.keycloak.util.JWKSUtils;
+import org.keycloak.util.TokenUtil;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -61,7 +66,7 @@ public class HAIPIssuerConformanceTest extends OID4VCIssuerTestBase {
                 .send().getRequestUri();
         assertNotNull(requestUri, "No requestUri");
 
-        /* Send Authorization Request
+        // Send Authorization Request
         //
         KeyWrapper ecKey = wallet.getECKeyPair(ctx);
         JWK jwkEc = wallet.getECJwk(ecKey);
@@ -101,19 +106,18 @@ public class HAIPIssuerConformanceTest extends OID4VCIssuerTestBase {
         // Send Credential Request
         // Note, we use the same EC key for DPoP and Holder identity
         //
-        String credentialEndpoint = oauth.getEndpoints().getOid4vcCredential();
-        dpopProof = wallet.generateSignedDPoPProof(credentialEndpoint, ecKey, accessToken);
-
-        CredentialResponse credResponse = wallet.credentialRequest(ctx, tokenType, accessToken)
-                .credentialIdentifier(credentialIdentifier)
-                .dpopProof(dpopProof)
-                .proofs(jwtProof)
-                .send().getCredentialResponse();
+//        String credentialEndpoint = oauth.getEndpoints().getOid4vcCredential();
+//        dpopProof = wallet.generateSignedDPoPProof(credentialEndpoint, ecKey, accessToken);
+//
+//        CredentialResponse credResponse = wallet.credentialRequest(ctx, tokenType, accessToken)
+//                .credentialIdentifier(credentialIdentifier)
+//                .dpopProof(dpopProof)
+//                .proofs(jwtProof)
+//                .send().getCredentialResponse();
 
         // Verify Credential Response
         //
-        verifyCredentialResponse(ctx, credResponse);
-        */
+//        verifyCredentialResponse(ctx, credResponse);
     }
 
     private void verifyCredentialResponse(OID4VCTestContext ctx, CredentialResponse credResponse) throws Exception {

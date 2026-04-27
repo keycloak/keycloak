@@ -180,7 +180,8 @@ public class SecureClientUrisExecutor implements ClientPolicyExecutorProvider<Cl
         }
 
         logger.tracev("Redirect URI = {0}", redirectUri);
-        if (!redirectUri.startsWith("https://") || redirectUri.contains("*")) {
+        boolean isRedirectToLocalhost = redirectUri.startsWith("http://localhost") || redirectUri.startsWith("http://127.0.0.1");
+        if (!redirectUri.startsWith("https://") && !isRedirectToLocalhost || redirectUri.contains("*")) {
             throw new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, "Invalid redirect_uri");
         }
     }
