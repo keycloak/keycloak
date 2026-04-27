@@ -176,7 +176,7 @@ public class WebAuthnOtherSettingsTest extends AbstractWebAuthnVirtualTest {
             // webauthn virtual emulator in chrome sets a self signed certificate every time, truststore needs to be disabled
             testingClient.testing().disableTruststoreSpi();
 
-            WebAuthnRealmData realmData = new WebAuthnRealmData(managedRealm.admin().toRepresentation(), isPasswordless());
+            WebAuthnRealmData realmData = new WebAuthnRealmData(testRealm().toRepresentation(), isPasswordless());
             assertThat(realmData.getAcceptableAaguids(), Matchers.contains(ALL_ZERO_AAGUID));
 
             registerDefaultUser();
@@ -200,7 +200,7 @@ public class WebAuthnOtherSettingsTest extends AbstractWebAuthnVirtualTest {
             // webauthn virtual emulator in chrome sets a self signed certificate every time, truststore needs to be disabled
             testingClient.testing().disableTruststoreSpi();
 
-            WebAuthnRealmData realmData = new WebAuthnRealmData(managedRealm.admin().toRepresentation(), isPasswordless());
+            WebAuthnRealmData realmData = new WebAuthnRealmData(testRealm().toRepresentation(), isPasswordless());
             assertThat(realmData.getAcceptableAaguids(), Matchers.contains(CHROME_AAGUID));
 
             registerDefaultUser();
