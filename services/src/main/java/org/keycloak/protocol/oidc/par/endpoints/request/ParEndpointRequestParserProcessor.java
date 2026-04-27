@@ -16,14 +16,10 @@
  */
 package org.keycloak.protocol.oidc.par.endpoints.request;
 
-import java.util.HashSet;
-import java.util.List;
-
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.common.Profile;
-import org.keycloak.connections.httpclient.HttpClientProvider;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.models.ClientModel;
@@ -33,7 +29,6 @@ import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.endpoints.request.AuthorizationEndpointRequest;
 import org.keycloak.protocol.oidc.endpoints.request.AuthzEndpointQueryStringParser;
-import org.keycloak.protocol.oidc.utils.RedirectUtils;
 import org.keycloak.services.ErrorPageException;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.messages.Messages;
@@ -59,36 +54,19 @@ public class ParEndpointRequestParserProcessor {
             }
 
             String requestParam = requestParams.getFirst(OIDCLoginProtocol.REQUEST_PARAM);
-            String requestUriParam = requestParams.getFirst(OIDCLoginProtocol.REQUEST_URI_PARAM);
-
-            if (requestParam != null && requestUriParam != null) {
-                throw new RuntimeException("Illegal to use both 'request' and 'request_uri' parameters together");
-            }
 
             String requestObjectRequired = OIDCAdvancedConfigWrapper.fromClientModel(client).getRequestObjectRequired();
 
             if (OIDCConfigAttributes.REQUEST_OBJECT_REQUIRED_REQUEST_OR_REQUEST_URI.equals(requestObjectRequired)
-                    && requestParam == null && requestUriParam == null) {
-                throw new RuntimeException("Client is required to use 'request' or 'request_uri' parameter.");
+                    && requestParam == null) {
+                throw new RuntimeException("Client is required to use 'request' parameter.");
             } else if (OIDCConfigAttributes.REQUEST_OBJECT_REQUIRED_REQUEST.equals(requestObjectRequired)
                     && requestParam == null) {
                 throw new RuntimeException("Client is required to use 'request' parameter.");
-            } else if (OIDCConfigAttributes.REQUEST_OBJECT_REQUIRED_REQUEST_URI.equals(requestObjectRequired)
-                    && requestUriParam == null) {
-                throw new RuntimeException("Client is required to use 'request_uri' parameter.");
             }
 
             if (requestParam != null) {
                 new ParEndpointRequestObjectParser(session, requestParam, client).parseRequest(request);
-            } else if (requestUriParam != null) {
-                // Validate "requestUriParam" with allowed requestUris
-                List<String> requestUris = OIDCAdvancedConfigWrapper.fromClientModel(client).getRequestUris();
-                String requestUri = RedirectUtils.verifyRedirectUri(session, client.getRootUrl(), requestUriParam, new HashSet<>(requestUris), false);
-                if (requestUri == null) {
-                    throw new RuntimeException("Specified 'request_uri' not allowed for this client.");
-                }
-                String retrievedRequest = session.getProvider(HttpClientProvider.class).getString(requestUri);
-                new ParEndpointRequestObjectParser(session, retrievedRequest, client).parseRequest(request);
             }
 
             if (Profile.isFeatureEnabled(Profile.Feature.DYNAMIC_SCOPES)) {
