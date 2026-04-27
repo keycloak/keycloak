@@ -466,7 +466,7 @@ public class FAPI1Test extends AbstractFAPITest {
         String signedJwt = createSignedRequestToken("foo", privateKey, publicKey, org.keycloak.crypto.Algorithm.PS256);
         AccessTokenResponse tokenResponse = doAccessTokenRequestWithClientSignedJWT(code, signedJwt, DefaultHttpClient::new);
         Assertions.assertEquals(OAuthErrorException.INVALID_GRANT,tokenResponse.getError());
-        Assertions.assertEquals("Client Certification missing for MTLS HoK Token Binding", tokenResponse.getErrorDescription());
+        Assertions.assertEquals("Holder of Key Proof required (e.g. mTLS, DPoP)", tokenResponse.getErrorDescription());
 
         // Login with private-key-jwt client authentication and MTLS added to HttpClient. TokenRequest should be successful now
         oauth.loginForm().requestUri(requestUri).open();
