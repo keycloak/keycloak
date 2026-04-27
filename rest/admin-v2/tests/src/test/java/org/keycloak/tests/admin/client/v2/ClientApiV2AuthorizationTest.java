@@ -22,17 +22,17 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.authorization.Logic;
 import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
-import org.keycloak.services.client.ClientServiceHelper;
 import org.keycloak.testframework.admin.AdminClientFactory;
 import org.keycloak.testframework.annotations.InjectAdminClientFactory;
 import org.keycloak.testframework.annotations.InjectClient;
 import org.keycloak.testframework.annotations.InjectHttpClient;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.annotations.TestSetup;
 import org.keycloak.testframework.realm.ManagedClient;
 import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
-import org.keycloak.testframework.realm.RealmConfigBuilder;
 import org.keycloak.testframework.server.KeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 
@@ -45,7 +45,6 @@ import org.apache.http.client.methods.HttpPut;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.util.EntityUtils;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -85,12 +84,10 @@ public class ClientApiV2AuthorizationTest extends AbstractClientApiV2Test {
 
     private static final Map<String, Keycloak> adminClients = new HashMap<>();
 
-    @BeforeEach
+    @TestSetup
     public void setupClients() {
-        if (adminClients.isEmpty()) {
-            for (String currentUser : CURRENT_USERS) {
-                adminClients.put(currentUser, createAdminClient(currentUser));
-            }
+        for (String currentUser : CURRENT_USERS) {
+            adminClients.put(currentUser, createAdminClient(currentUser));
         }
     }
 
@@ -447,11 +444,7 @@ public class ClientApiV2AuthorizationTest extends AbstractClientApiV2Test {
         try (var response = client.execute(request)) {
             assertThat(response.getStatusLine().getStatusCode(), is(400));
             var body = EntityUtils.toString(response.getEntity());
-            if (ClientServiceHelper.isLegacyClientServiceEnabled()) {
-                assertThat(body, containsString("unknown_error"));
-            } else {
-                assertThat(body, containsString("Not supported for this client"));
-            }
+            assertThat(body, containsString("Not supported for this client"));
         }
 
         // Verify the client still exists (was not deleted)
@@ -702,7 +695,7 @@ public class ClientApiV2AuthorizationTest extends AbstractClientApiV2Test {
 
     public static class AuthorizationRealmConfig implements RealmConfig {
         @Override
-        public RealmConfigBuilder configure(RealmConfigBuilder realm) {
+        public RealmBuilder configure(RealmBuilder realm) {
             realm.name("authztest");
             realm.adminPermissionsEnabled(true);
             realm.addClient("test-client")

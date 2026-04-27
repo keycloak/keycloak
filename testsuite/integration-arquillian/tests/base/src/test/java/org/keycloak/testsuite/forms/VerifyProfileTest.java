@@ -34,6 +34,8 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.userprofile.config.UPConfig;
+import org.keycloak.testframework.realm.ClientScopeBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AbstractChangeImportedUserPasswordsTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.AdminApiUtil;
@@ -44,11 +46,9 @@ import org.keycloak.testsuite.pages.VerifyProfilePage;
 import org.keycloak.testsuite.runonserver.RunOnServer;
 import org.keycloak.testsuite.util.AdminEventPaths;
 import org.keycloak.testsuite.util.AssertAdminEvents;
-import org.keycloak.testsuite.util.ClientScopeBuilder;
 import org.keycloak.testsuite.util.JsonTestUtils;
 import org.keycloak.testsuite.util.KeycloakModelUtils;
 import org.keycloak.testsuite.util.RealmBuilder;
-import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.keycloak.testsuite.util.userprofile.UserProfileUtil;
 import org.keycloak.userprofile.UserProfileContext;
@@ -57,9 +57,9 @@ import org.keycloak.util.JsonSerialization;
 import org.apache.commons.lang3.StringUtils;
 import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.arquillian.test.api.ArquillianResource;
-import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 
@@ -73,9 +73,9 @@ import static org.keycloak.testsuite.util.userprofile.UserProfileUtil.VALIDATION
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author Vlastimil Elias <velias@redhat.com>
@@ -178,11 +178,11 @@ public class VerifyProfileTest extends AbstractChangeImportedUserPasswordsTest {
 
         //assert field names
         // i18n replaced
-        Assert.assertEquals("First name",verifyProfilePage.getLabelForField("firstName"));
+        Assertions.assertEquals("First name",verifyProfilePage.getLabelForField("firstName"));
         // attribute name used if no display name set
-        Assert.assertEquals("lastName",verifyProfilePage.getLabelForField("lastName"));
+        Assertions.assertEquals("lastName",verifyProfilePage.getLabelForField("lastName"));
         // direct value in display name
-        Assert.assertEquals("Department",verifyProfilePage.getLabelForField("department"));
+        Assertions.assertEquals("Department",verifyProfilePage.getLabelForField("department"));
     }
 
     @Test
@@ -238,9 +238,9 @@ public class VerifyProfileTest extends AbstractChangeImportedUserPasswordsTest {
                 + "{\"name\": \"email\", " + PERMISSIONS_ALL + "}"
                 + "]}");
 
-        RealmRepresentation realm = testRealm().toRepresentation();
+        RealmRepresentation realm = managedRealm.admin().toRepresentation();
         realm.setEditUsernameAllowed(true);
-        testRealm().update(realm);
+        managedRealm.admin().update(realm);
 
         oauth.openLoginForm();
         loginPage.login("login-test5", getPassword("login-test5"));
@@ -319,17 +319,17 @@ public class VerifyProfileTest extends AbstractChangeImportedUserPasswordsTest {
 
         //submit with error
         verifyProfilePage.assertCurrent();
-        Assert.assertFalse(verifyProfilePage.isDepartmentPresent());
+        Assertions.assertFalse(verifyProfilePage.isDepartmentPresent());
         verifyProfilePage.update("First", " ");
 
         //submit OK
         verifyProfilePage.assertCurrent();
-        Assert.assertFalse(verifyProfilePage.isDepartmentPresent());
+        Assertions.assertFalse(verifyProfilePage.isDepartmentPresent());
         verifyProfilePage.update("First", "Last");
 
 
-        Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assert.assertNotNull(oauth.parseLoginResponse().getCode());
+        Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
 
         UserRepresentation user = getUser(userId);
         assertEquals("First", user.getFirstName());
@@ -356,7 +356,7 @@ public class VerifyProfileTest extends AbstractChangeImportedUserPasswordsTest {
 
     @Test
     public void testUsernameOnlyIfEditAllowed() {
-        RealmRepresentation realm = testRealm().toRepresentation();
+        RealmRepresentation realm = managedRealm.admin().toRepresentation();
 
         setUserProfileConfiguration(CONFIGURATION_FOR_USER_EDIT);
         updateUser(user5Id, null, "ExistingLast", null);
@@ -366,7 +366,7 @@ public class VerifyProfileTest extends AbstractChangeImportedUserPasswordsTest {
             setUserProfileConfiguration(null);
 
             realm.setEditUsernameAllowed(false);
-            testRealm().update(realm);
+            managedRealm.admin().update(realm);
 
             oauth.openLoginForm();
             loginPage.login("login-test5", getPassword("login-test5"));
@@ -376,19 +376,19 @@ public class VerifyProfileTest extends AbstractChangeImportedUserPasswordsTest {
             assertTrue(verifyProfilePage.isEmailPresent());
 
             realm.setEditUsernameAllowed(true);
-            testRealm().update(realm);
+            managedRealm.admin().update(realm);
 
             driver.navigate().refresh();
             assertTrue(verifyProfilePage.isUsernamePresent());
         } finally {
             realm.setEditUsernameAllowed(r);
-            testRealm().update(realm);
+            managedRealm.admin().update(realm);
         }
     }
 
     @Test
     public void testUsernameOnlyIfEmailAsUsernameIsDisabled() {
-        RealmRepresentation realm = testRealm().toRepresentation();
+        RealmRepresentation realm = managedRealm.admin().toRepresentation();
 
         setUserProfileConfiguration(CONFIGURATION_FOR_USER_EDIT);
         updateUser(user5Id, null, "ExistingLast", null);
@@ -398,7 +398,7 @@ public class VerifyProfileTest extends AbstractChangeImportedUserPasswordsTest {
 
             realm.setEditUsernameAllowed(true);
             realm.setRegistrationEmailAsUsername(true);
-            testRealm().update(realm);
+            managedRealm.admin().update(realm);
 
             oauth.openLoginForm();
             loginPage.login("login-test5", getPassword("login-test5"));
@@ -409,7 +409,7 @@ public class VerifyProfileTest extends AbstractChangeImportedUserPasswordsTest {
 
             realm.setEditUsernameAllowed(false);
             realm.setRegistrationEmailAsUsername(true);
-            testRealm().update(realm);
+            managedRealm.admin().update(realm);
 
             driver.navigate().refresh();
             verifyProfilePage.assertCurrent();
@@ -418,7 +418,7 @@ public class VerifyProfileTest extends AbstractChangeImportedUserPasswordsTest {
 
             realm.setEditUsernameAllowed(true);
             realm.setRegistrationEmailAsUsername(false);
-            testRealm().update(realm);
+            managedRealm.admin().update(realm);
 
             driver.navigate().refresh();
             verifyProfilePage.assertCurrent();
@@ -427,26 +427,26 @@ public class VerifyProfileTest extends AbstractChangeImportedUserPasswordsTest {
         } finally {
             realm.setEditUsernameAllowed(false);
             realm.setRegistrationEmailAsUsername(false);
-            testRealm().update(realm);
+            managedRealm.admin().update(realm);
         }
     }
 
     @Test
     public void testUsernameOnlyIfEmailAsUsernameIsDisabledWithUpdateEmailFeature() throws Exception {
         reconnectAdminClient();
-        RealmRepresentation realm = testRealm().toRepresentation();
+        RealmRepresentation realm = managedRealm.admin().toRepresentation();
 
         setUserProfileConfiguration(CONFIGURATION_FOR_USER_EDIT);
         updateUser(user5Id, null, "ExistingLast", null);
 
-        AdminApiUtil.enableRequiredAction(testRealm(), RequiredAction.UPDATE_EMAIL, true);
+        AdminApiUtil.enableRequiredAction(managedRealm.admin(), RequiredAction.UPDATE_EMAIL, true);
 
         try {
             setUserProfileConfiguration(null);
 
             realm.setEditUsernameAllowed(true);
             realm.setRegistrationEmailAsUsername(true);
-            testRealm().update(realm);
+            managedRealm.admin().update(realm);
 
             oauth.openLoginForm();
             loginPage.login("login-test5", getPassword("login-test5"));
@@ -457,7 +457,7 @@ public class VerifyProfileTest extends AbstractChangeImportedUserPasswordsTest {
 
             realm.setEditUsernameAllowed(false);
             realm.setRegistrationEmailAsUsername(true);
-            testRealm().update(realm);
+            managedRealm.admin().update(realm);
 
             driver.navigate().refresh();
             verifyProfilePage.assertCurrent();
@@ -466,17 +466,17 @@ public class VerifyProfileTest extends AbstractChangeImportedUserPasswordsTest {
 
             realm.setEditUsernameAllowed(true);
             realm.setRegistrationEmailAsUsername(false);
-            testRealm().update(realm);
+            managedRealm.admin().update(realm);
 
             driver.navigate().refresh();
             verifyProfilePage.assertCurrent();
             assertTrue(verifyProfilePage.isUsernamePresent());
             assertFalse(verifyProfilePage.isEmailPresent());
         } finally {
-            AdminApiUtil.enableRequiredAction(testRealm(), RequiredAction.UPDATE_EMAIL, false);
+            AdminApiUtil.enableRequiredAction(managedRealm.admin(), RequiredAction.UPDATE_EMAIL, false);
             realm.setEditUsernameAllowed(false);
             realm.setRegistrationEmailAsUsername(false);
-            testRealm().update(realm);
+            managedRealm.admin().update(realm);
         }
     }
 
@@ -493,8 +493,8 @@ public class VerifyProfileTest extends AbstractChangeImportedUserPasswordsTest {
         verifyProfilePage.assertCurrent();
         verifyProfilePage.update("First", "");
 
-        Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assert.assertNotNull(oauth.parseLoginResponse().getCode());
+        Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
 
         UserRepresentation user = getUser(user2Id);
         assertEquals("First", user.getFirstName());
@@ -524,8 +524,8 @@ public class VerifyProfileTest extends AbstractChangeImportedUserPasswordsTest {
         //submit OK
         verifyProfilePage.update("First", "Last");
 
-        Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assert.assertNotNull(oauth.parseLoginResponse().getCode());
+        Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
 
         UserRepresentation user = getUser(user5Id);
         assertEquals("First", user.getFirstName());
@@ -548,13 +548,13 @@ public class VerifyProfileTest extends AbstractChangeImportedUserPasswordsTest {
         oauth.openLoginForm();
         loginPage.login("login-test5", getPassword("login-test5"));
 
-        Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assert.assertNotNull(oauth.parseLoginResponse().getCode());
+        Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
     }
 
     @Test
     public void testDoNotValidateUsernameWhenRegistrationAsEmailEnabled() {
-        RealmResource realmResource = testRealm();
+        RealmResource realmResource = managedRealm.admin();
         RealmRepresentation realm = realmResource.toRepresentation();
 
         try {
@@ -573,8 +573,8 @@ public class VerifyProfileTest extends AbstractChangeImportedUserPasswordsTest {
             oauth.openLoginForm();
             loginPage.login("login6@test.com", getPassword("login-test6"));
 
-            Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
-            Assert.assertNotNull(oauth.parseLoginResponse().getCode());
+            Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+            Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
         } finally {
             realm.setRegistrationEmailAsUsername(false);
             realmResource.update(realm);
@@ -594,14 +594,14 @@ public class VerifyProfileTest extends AbstractChangeImportedUserPasswordsTest {
         loginPage.login("login-test3", getPassword("login-test3"));
 
         verifyProfilePage.assertCurrent();
-        Assert.assertEquals("ExistingLast", verifyProfilePage.getLastName());
-        Assert.assertFalse(verifyProfilePage.isDepartmentEnabled());
+        Assertions.assertEquals("ExistingLast", verifyProfilePage.getLastName());
+        Assertions.assertFalse(verifyProfilePage.isDepartmentEnabled());
 
         //update of the other attributes must be successful in this case
         verifyProfilePage.update("First", "Last");
 
-        Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assert.assertNotNull(oauth.parseLoginResponse().getCode());
+        Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
 
         UserRepresentation user = getUser(user3Id);
         assertEquals("First", user.getFirstName());
@@ -622,8 +622,8 @@ public class VerifyProfileTest extends AbstractChangeImportedUserPasswordsTest {
         loginPage.login("login-test6", getPassword("login-test6"));
 
         verifyProfilePage.assertCurrent();
-        Assert.assertEquals("ExistingLast", verifyProfilePage.getLastName());
-        Assert.assertFalse("Admin-only attribute should not be visible for user", verifyProfilePage.isDepartmentPresent());
+        Assertions.assertEquals("ExistingLast", verifyProfilePage.getLastName());
+        Assertions.assertFalse(verifyProfilePage.isDepartmentPresent(), "Admin-only attribute should not be visible for user");
     }
 
 
@@ -641,9 +641,9 @@ public class VerifyProfileTest extends AbstractChangeImportedUserPasswordsTest {
         loginPage.login("login-test6", getPassword("login-test6"));
 
         verifyProfilePage.assertCurrent();
-        Assert.assertEquals("ExistingLast", verifyProfilePage.getLastName());
+        Assertions.assertEquals("ExistingLast", verifyProfilePage.getLastName());
 
-        Assert.assertFalse("username should not be editable by user", verifyProfilePage.isUsernameEnabled());
+        Assertions.assertFalse(verifyProfilePage.isUsernameEnabled(), "username should not be editable by user");
     }
 
     @Test
@@ -660,9 +660,9 @@ public class VerifyProfileTest extends AbstractChangeImportedUserPasswordsTest {
         loginPage.login("login-test6", getPassword("login-test6"));
 
         verifyProfilePage.assertCurrent();
-        Assert.assertEquals("ExistingLast", verifyProfilePage.getLastName());
+        Assertions.assertEquals("ExistingLast", verifyProfilePage.getLastName());
 
-        Assert.assertFalse("username should not be shown to user", verifyProfilePage.isUsernamePresent());
+        Assertions.assertFalse(verifyProfilePage.isUsernamePresent(), "username should not be shown to user");
     }
 
     @Test
@@ -688,8 +688,8 @@ public class VerifyProfileTest extends AbstractChangeImportedUserPasswordsTest {
         // set e-mail, update firstname/lastname and complete login
         verifyProfilePage.updateEmail("abcdef0123456789@bar.com", "HasNowMailFirst", "HasNowMailLast");
 
-        Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assert.assertNotNull(oauth.parseLoginResponse().getCode());
+        Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
 
         UserRepresentation user = getUser(userWithoutEmailId);
         assertEquals("HasNowMailFirst", user.getFirstName());
@@ -710,14 +710,14 @@ public class VerifyProfileTest extends AbstractChangeImportedUserPasswordsTest {
         loginPage.login("login-test4", getPassword("login-test4"));
 
         verifyProfilePage.assertCurrent();
-        Assert.assertEquals("ExistingLast", verifyProfilePage.getLastName());
-        Assert.assertFalse("'department' field is visible" , verifyProfilePage.isDepartmentPresent());
+        Assertions.assertEquals("ExistingLast", verifyProfilePage.getLastName());
+        Assertions.assertFalse(verifyProfilePage.isDepartmentPresent(), "'department' field is visible" );
 
         //update of the other attributes must be successful in this case
         verifyProfilePage.update("First", "Last");
 
-        Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assert.assertNotNull(oauth.parseLoginResponse().getCode());
+        Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
 
         UserRepresentation user = getUser(user4Id);
         assertEquals("First", user.getFirstName());
@@ -748,8 +748,8 @@ public class VerifyProfileTest extends AbstractChangeImportedUserPasswordsTest {
         //submit OK
         verifyProfilePage.update("FirstCC", "LastCC", "DepartmentCC");
 
-        Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assert.assertNotNull(oauth.parseLoginResponse().getCode());
+        Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
 
         UserRepresentation user = getUser(user5Id);
         assertEquals("FirstCC", user.getFirstName());
@@ -782,8 +782,8 @@ public class VerifyProfileTest extends AbstractChangeImportedUserPasswordsTest {
         verifyProfilePage.update("FirstCC", "LastCC", "DepartmentCC");
 
 
-        Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assert.assertNotNull(oauth.parseLoginResponse().getCode());
+        Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
 
         UserRepresentation user = getUser(user5Id);
         assertEquals("FirstCC", user.getFirstName());
@@ -802,12 +802,12 @@ public class VerifyProfileTest extends AbstractChangeImportedUserPasswordsTest {
 
         updateUser(user5Id, "ExistingFirst", "ExistingLast", null);
 
-        oauth.clientId(client_scope_optional.getClientId()).openLoginForm();
+        oauth.client(client_scope_optional.getClientId()).openLoginForm();
 
         loginPage.login("login-test5", getPassword("login-test5"));
 
-        Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assert.assertNotNull(oauth.parseLoginResponse().getCode());
+        Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
 
         UserRepresentation user = getUser(user5Id);
         assertEquals("ExistingFirst", user.getFirstName());
@@ -825,7 +825,7 @@ public class VerifyProfileTest extends AbstractChangeImportedUserPasswordsTest {
 
         updateUser(user5Id, "ExistingFirst", "ExistingLast", null);
 
-        oauth.scope(SCOPE_DEPARTMENT).clientId(client_scope_optional.getClientId()).openLoginForm();
+        oauth.scope(SCOPE_DEPARTMENT).client(client_scope_optional.getClientId()).openLoginForm();
 
         loginPage.assertCurrent();
         loginPage.login("login-test5", getPassword("login-test5"));
@@ -834,8 +834,8 @@ public class VerifyProfileTest extends AbstractChangeImportedUserPasswordsTest {
 
         verifyProfilePage.update("FirstAA", "LastAA", "DepartmentAA");
 
-        Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assert.assertNotNull(oauth.parseLoginResponse().getCode());
+        Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
 
         UserRepresentation user = getUser(user5Id);
         assertEquals("FirstAA", user.getFirstName());
@@ -854,7 +854,7 @@ public class VerifyProfileTest extends AbstractChangeImportedUserPasswordsTest {
 
         updateUser(user5Id, "ExistingFirst", "ExistingLast", null);
 
-        oauth.clientId(client_scope_default.getClientId()).openLoginForm();
+        oauth.client(client_scope_default.getClientId()).openLoginForm();
 
         loginPage.assertCurrent();
         loginPage.login("login-test5", getPassword("login-test5"));
@@ -868,8 +868,8 @@ public class VerifyProfileTest extends AbstractChangeImportedUserPasswordsTest {
         //submit OK
         verifyProfilePage.update("FirstBB", "LastBB", "DepartmentBB");
 
-        Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assert.assertNotNull(oauth.parseLoginResponse().getCode());
+        Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
 
         UserRepresentation user = getUser(user5Id);
         assertEquals("FirstBB", user.getFirstName());
@@ -888,13 +888,13 @@ public class VerifyProfileTest extends AbstractChangeImportedUserPasswordsTest {
 
         updateUser(user5Id, "ExistingFirst", "ExistingLast", "ExistingDepartment");
 
-        oauth.clientId(client_scope_default.getClientId()).openLoginForm();
+        oauth.client(client_scope_default.getClientId()).openLoginForm();
 
         loginPage.assertCurrent();
         loginPage.login("login-test5", getPassword("login-test5"));
 
-        Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assert.assertNotNull(oauth.parseLoginResponse().getCode());
+        Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
 
         UserRepresentation user = getUser(user5Id);
         assertEquals("ExistingFirst", user.getFirstName());
@@ -914,13 +914,13 @@ public class VerifyProfileTest extends AbstractChangeImportedUserPasswordsTest {
                 + "{\"name\": \"department\"," + PERMISSIONS_ALL + ", \"required\":{}, \"selector\":{\"scopes\":[\""+SCOPE_DEPARTMENT+"\"]}}"
                 + "]}");
 
-        oauth.clientId(client_scope_optional.getClientId()).openLoginForm();
+        oauth.client(client_scope_optional.getClientId()).openLoginForm();
 
         loginPage.assertCurrent();
         loginPage.login("login-test5", getPassword("login-test5"));
 
-        Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assert.assertNotNull(oauth.parseLoginResponse().getCode());
+        Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
     }
 
     @Test
@@ -935,7 +935,7 @@ public class VerifyProfileTest extends AbstractChangeImportedUserPasswordsTest {
                 + "{\"name\": \"department\"," + PERMISSIONS_ALL + ", \"required\":{}, \"selector\":{\"scopes\":[\""+SCOPE_DEPARTMENT+"\"]}}"
                 + "]}");
 
-        oauth.scope(SCOPE_DEPARTMENT).clientId(client_scope_optional.getClientId()).openLoginForm();
+        oauth.scope(SCOPE_DEPARTMENT).client(client_scope_optional.getClientId()).openLoginForm();
 
         loginPage.assertCurrent();
         loginPage.login("login-test5", getPassword("login-test5"));
@@ -944,8 +944,8 @@ public class VerifyProfileTest extends AbstractChangeImportedUserPasswordsTest {
 
         verifyProfilePage.update("FirstAA", "LastAA", "DepartmentAA");
 
-        Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assert.assertNotNull(oauth.parseLoginResponse().getCode());
+        Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
 
         UserRepresentation user = getUser(user5Id);
         assertEquals("FirstAA", user.getFirstName());
@@ -965,18 +965,18 @@ public class VerifyProfileTest extends AbstractChangeImportedUserPasswordsTest {
                 + "{\"name\": \"department\"," + PERMISSIONS_ALL + ", \"selector\":{\"scopes\":[\""+SCOPE_DEPARTMENT+"\"]}}"
                 + "]}");
 
-        oauth.scope(SCOPE_DEPARTMENT).clientId(client_scope_optional.getClientId()).openLoginForm();
+        oauth.scope(SCOPE_DEPARTMENT).client(client_scope_optional.getClientId()).openLoginForm();
 
         loginPage.assertCurrent();
         loginPage.login("login-test5", getPassword("login-test5"));
 
         verifyProfilePage.assertCurrent();
 
-        Assert.assertTrue(verifyProfilePage.isDepartmentPresent());
+        Assertions.assertTrue(verifyProfilePage.isDepartmentPresent());
         verifyProfilePage.update("FirstAA", "LastAA", "Department AA");
 
-        Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assert.assertNotNull(oauth.parseLoginResponse().getCode());
+        Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
 
         UserRepresentation user = getUser(user5Id);
         assertEquals("FirstAA", user.getFirstName());
@@ -996,18 +996,18 @@ public class VerifyProfileTest extends AbstractChangeImportedUserPasswordsTest {
                 + "{\"name\": \"department\"," + PERMISSIONS_ALL + ", \"required\":{}, \"selector\":{\"scopes\":[\""+SCOPE_DEPARTMENT+"\"]}}"
                 + "]}");
 
-        oauth.clientId(client_scope_optional.getClientId()).openLoginForm();
+        oauth.client(client_scope_optional.getClientId()).openLoginForm();
 
         loginPage.assertCurrent();
         loginPage.login("login-test5", getPassword("login-test5"));
 
         verifyProfilePage.assertCurrent();
 
-        Assert.assertFalse(verifyProfilePage.isDepartmentPresent());
+        Assertions.assertFalse(verifyProfilePage.isDepartmentPresent());
         verifyProfilePage.update("FirstAA", "LastAA");
 
-        Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assert.assertNotNull(oauth.parseLoginResponse().getCode());
+        Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
 
         UserRepresentation user = getUser(user5Id);
         assertEquals("FirstAA", user.getFirstName());
@@ -1040,8 +1040,8 @@ public class VerifyProfileTest extends AbstractChangeImportedUserPasswordsTest {
         verifyProfilePage.update("FirstCC", "LastCC", "DepartmentCC");
 
 
-        Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assert.assertNotNull(oauth.parseLoginResponse().getCode());
+        Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
 
         UserRepresentation user = getUser(user5Id);
         assertEquals("FirstCC", user.getFirstName());
@@ -1067,8 +1067,8 @@ public class VerifyProfileTest extends AbstractChangeImportedUserPasswordsTest {
         //submit OK
         verifyProfilePage.updateEmail("newemail@test.org","FirstCC", "LastCC");
 
-        Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assert.assertNotNull(oauth.parseLoginResponse().getCode());
+        Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
 
         UserRepresentation user = getUser(user5Id);
         assertEquals("newemail@test.org", user.getEmail());
@@ -1090,8 +1090,8 @@ public class VerifyProfileTest extends AbstractChangeImportedUserPasswordsTest {
         oauth.openLoginForm();
         loginPage.login("login-test5", getPassword("login-test5"));
 
-        Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assert.assertNotNull(oauth.parseLoginResponse().getCode());
+        Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
     }
 
     @Test
@@ -1104,33 +1104,33 @@ public class VerifyProfileTest extends AbstractChangeImportedUserPasswordsTest {
 
         UPConfig persistedConfig = setUserProfileConfiguration(customConfig);
 
-        JsonTestUtils.assertJsonEquals(JsonSerialization.writeValueAsString(persistedConfig), testRealm().users().userProfile().getConfiguration());
+        JsonTestUtils.assertJsonEquals(JsonSerialization.writeValueAsString(persistedConfig), managedRealm.admin().users().userProfile().getConfiguration());
     }
 
     protected UserRepresentation getUser(String userId) {
-        return getUser(testRealm(), userId);
+        return getUser(managedRealm.admin(), userId);
     }
 
     protected void updateUser(String userId, String firstName, String lastName, String department) {
-        updateUser(testRealm(), userId, firstName, lastName, department);
+        updateUser(managedRealm.admin(), userId, firstName, lastName, department);
     }
 
     protected void updateUser(String userId, boolean emailVerified, String firstName, String lastName) {
-        UserRepresentation ur = getUser(testRealm(), userId);
+        UserRepresentation ur = getUser(managedRealm.admin(), userId);
         ur.setFirstName(firstName);
         ur.setLastName(lastName);
         ur.setEmailVerified(emailVerified);
-        testRealm().users().get(userId).update(ur);
+        managedRealm.admin().users().get(userId).update(ur);
     }
 
     protected UPConfig setUserProfileConfiguration(String configuration) {
         assertAdminEvents.clear();
-        UPConfig result = UserProfileUtil.setUserProfileConfiguration(testRealm(), configuration);
+        UPConfig result = UserProfileUtil.setUserProfileConfiguration(managedRealm.admin(), configuration);
         AdminEventRepresentation adminEvent = assertAdminEvents.assertEvent(TEST_REALM_NAME,
                 OperationType.UPDATE, AdminEventPaths.userProfilePath(), ResourceType.USER_PROFILE);
-        Assert.assertTrue("Incorrect representation in event", StringUtils.isBlank(configuration)
+        Assertions.assertTrue(StringUtils.isBlank(configuration)
                 ? StringUtils.isBlank(adminEvent.getRepresentation())
-                : StringUtils.isNotBlank(adminEvent.getRepresentation()));
+                : StringUtils.isNotBlank(adminEvent.getRepresentation()), "Incorrect representation in event");
         return result;
     }
 

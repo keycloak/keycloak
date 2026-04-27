@@ -59,6 +59,7 @@ import org.keycloak.services.Urls;
 import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.LoginActionsService;
 import org.keycloak.services.resources.admin.AdminEventBuilder;
+import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
 import org.keycloak.services.util.ResolveRelative;
 import org.keycloak.services.validation.Validation;
 import org.keycloak.storage.adapter.InMemoryUserAdapter;
@@ -85,15 +86,19 @@ public class OrganizationInvitationResource {
     private final RealmModel realm;
     private final OrganizationModel organization;
     private final AdminEventBuilder adminEvent;
+    private final AdminPermissionEvaluator auth;
 
-    public OrganizationInvitationResource(KeycloakSession session, OrganizationModel organization, AdminEventBuilder adminEvent) {
+    public OrganizationInvitationResource(KeycloakSession session, OrganizationModel organization, AdminEventBuilder adminEvent, AdminPermissionEvaluator auth) {
         this.session = session;
         this.realm = session.getContext().getRealm();
         this.organization = organization;
         this.adminEvent = adminEvent.resource(ResourceType.ORGANIZATION_MEMBERSHIP);
+        this.auth = auth;
     }
 
     public Response inviteUser(String email, String firstName, String lastName) {
+        auth.orgs().requireManage();
+
         if (!organization.isEnabled()) {
             throw ErrorResponse.error("Organization is disabled", Status.BAD_REQUEST);
         }
@@ -142,6 +147,8 @@ public class OrganizationInvitationResource {
     }
 
     public Response inviteExistingUser(String id) {
+        auth.orgs().requireManage();
+
         if (!organization.isEnabled()) {
             throw ErrorResponse.error("Organization is disabled", Status.BAD_REQUEST);
         }
@@ -244,7 +251,8 @@ public class OrganizationInvitationResource {
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(summary = "Get invitations for the organization")
     @APIResponses(value = {
-        @APIResponse(responseCode = "200", description = "Success")
+        @APIResponse(responseCode = "200", description = "Success"),
+        @APIResponse(responseCode = "403", description = "Forbidden")
     })
     public Stream<OrganizationInvitationRepresentation> getInvitations(
             @QueryParam("first") Integer first,
@@ -290,6 +298,7 @@ public class OrganizationInvitationResource {
     @Operation(summary = "Get invitation by ID")
     @APIResponses(value = {
         @APIResponse(responseCode = "200", description = "Success"),
+        @APIResponse(responseCode = "403", description = "Forbidden"),
         @APIResponse(responseCode = "404", description = "Not Found")
     })
     public OrganizationInvitationRepresentation getInvitation(@PathParam("id") String id) {
@@ -304,9 +313,11 @@ public class OrganizationInvitationResource {
     @Operation(summary = "Delete an invitation")
     @APIResponses(value = {
         @APIResponse(responseCode = "204", description = "No Content"),
+        @APIResponse(responseCode = "403", description = "Forbidden"),
         @APIResponse(responseCode = "404", description = "Not Found")
     })
     public Response deleteInvitation(@PathParam("id") String id) {
+        auth.orgs().requireManage();
         OrganizationProvider provider = session.getProvider(OrganizationProvider.class);
         InvitationManager invitationManager = provider.getInvitationManager();
 
@@ -322,9 +333,12 @@ public class OrganizationInvitationResource {
     @Operation(summary = "Resend an invitation")
     @APIResponses(value = {
         @APIResponse(responseCode = "204", description = "No Content"),
+        @APIResponse(responseCode = "403", description = "Forbidden"),
         @APIResponse(responseCode = "404", description = "Not Found")
     })
     public Response resendInvitation(@PathParam("id") String id) {
+        auth.orgs().requireManage();
+
         if (!organization.isEnabled()) {
             throw ErrorResponse.error("Organization is disabled", Status.BAD_REQUEST);
         }

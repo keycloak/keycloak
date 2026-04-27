@@ -35,6 +35,7 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.userprofile.config.UPAttribute;
 import org.keycloak.representations.userprofile.config.UPAttributePermissions;
 import org.keycloak.representations.userprofile.config.UPConfig;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AbstractChangeImportedUserPasswordsTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.AdminApiUtil;
@@ -44,16 +45,15 @@ import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginUpdateProfileEditUsernameAllowedPage;
-import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.userprofile.UserProfileContext;
 import org.keycloak.utils.StringUtil;
 
 import org.hamcrest.Matchers;
 import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 import org.openqa.selenium.ElementClickInterceptedException;
 import org.openqa.selenium.htmlunit.HtmlUnitDriver;
 
@@ -63,7 +63,7 @@ import static org.keycloak.userprofile.config.UPConfigUtils.ROLE_USER;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.anyOf;
 import static org.hamcrest.Matchers.containsString;
-import static org.junit.Assert.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -94,25 +94,25 @@ public class RequiredActionUpdateProfileTest extends AbstractChangeImportedUserP
 
     @Before
     public void beforeTest() {
-        AdminApiUtil.removeUserByUsername(testRealm(), "test-user@localhost");
+        AdminApiUtil.removeUserByUsername(managedRealm.admin(), "test-user@localhost");
         UserRepresentation user = UserBuilder.create().enabled(true)
                 .username("test-user@localhost")
                 .email("test-user@localhost")
                 .firstName("Tom")
                 .lastName("Brady")
                 .emailVerified(true)
-                .requiredAction(UserModel.RequiredAction.UPDATE_PROFILE.name()).build();
-        AdminApiUtil.createUserAndResetPasswordWithAdminClient(testRealm(), user, generatePassword("test-user@localhost"));
+                .requiredActions(UserModel.RequiredAction.UPDATE_PROFILE.name()).build();
+        AdminApiUtil.createUserAndResetPasswordWithAdminClient(managedRealm.admin(), user, generatePassword("test-user@localhost"));
 
-        AdminApiUtil.removeUserByUsername(testRealm(), "john-doh@localhost");
+        AdminApiUtil.removeUserByUsername(managedRealm.admin(), "john-doh@localhost");
         user = UserBuilder.create().enabled(true)
                 .username("john-doh@localhost")
                 .email("john-doh@localhost")
                 .firstName("John")
                 .lastName("Doh")
                 .emailVerified(true)
-                .requiredAction(UserModel.RequiredAction.UPDATE_PROFILE.name()).build();
-        AdminApiUtil.createUserAndResetPasswordWithAdminClient(testRealm(), user, generatePassword("john-doh@localhost"));
+                .requiredActions(UserModel.RequiredAction.UPDATE_PROFILE.name()).build();
+        AdminApiUtil.createUserAndResetPasswordWithAdminClient(managedRealm.admin(), user, generatePassword("john-doh@localhost"));
     }
 
     @Test
@@ -132,18 +132,18 @@ public class RequiredActionUpdateProfileTest extends AbstractChangeImportedUserP
                 .detail(Details.PREVIOUS_LAST_NAME, "Brady").detail(Details.UPDATED_LAST_NAME, "New last")
                 .detail(Details.PREVIOUS_EMAIL, "test-user@localhost").detail(Details.UPDATED_EMAIL, "new@email.com")
                 .assertEvent();
-        Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
         events.expectLogin().assertEvent();
 
         // assert user is really updated in persistent store
         user = ActionUtil.findUserWithAdminClient(adminClient, "test-user@localhost");
-        Assert.assertEquals("New first", user.getFirstName());
-        Assert.assertEquals("New last", user.getLastName());
-        Assert.assertEquals("new@email.com", user.getEmail());
-        Assert.assertEquals("test-user@localhost", user.getUsername());
+        Assertions.assertEquals("New first", user.getFirstName());
+        Assertions.assertEquals("New last", user.getLastName());
+        Assertions.assertEquals("new@email.com", user.getEmail());
+        Assertions.assertEquals("test-user@localhost", user.getUsername());
         // email changed so verify that emailVerified flag is reset
-        Assert.assertEquals(false, user.isEmailVerified());
+        Assertions.assertEquals(false, user.isEmailVerified());
     }
 
     @Test
@@ -163,18 +163,18 @@ public class RequiredActionUpdateProfileTest extends AbstractChangeImportedUserP
                 .detail(Details.USERNAME, "john-doh@localhost")
                 .assertEvent();
 
-        Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
         events.expectLogin().detail(Details.USERNAME, "john-doh@localhost").user(userId).assertEvent();
 
         // assert user is really updated in persistent store
         UserRepresentation user = ActionUtil.findUserWithAdminClient(adminClient, "new");
-        Assert.assertEquals("New first", user.getFirstName());
-        Assert.assertEquals("New last", user.getLastName());
-        Assert.assertEquals("john-doh@localhost", user.getEmail());
-        Assert.assertEquals("new", user.getUsername());
+        Assertions.assertEquals("New first", user.getFirstName());
+        Assertions.assertEquals("New last", user.getLastName());
+        Assertions.assertEquals("john-doh@localhost", user.getEmail());
+        Assertions.assertEquals("new", user.getUsername());
         // email not changed so verify that emailVerified flag is NOT reset
-        Assert.assertEquals(true, user.isEmailVerified());
+        Assertions.assertEquals(true, user.isEmailVerified());
         getCleanup().addUserId(user.getId());
     }
 
@@ -191,10 +191,10 @@ public class RequiredActionUpdateProfileTest extends AbstractChangeImportedUserP
         updateProfilePage.assertCurrent();
 
         // assert that form holds submitted values during validation error
-        Assert.assertEquals("", updateProfilePage.getFirstName());
-        Assert.assertEquals("New last", updateProfilePage.getLastName());
-        Assert.assertEquals("new@email.com", updateProfilePage.getEmail());
-        Assert.assertEquals("Please specify this field.", updateProfilePage.getInputErrors().getFirstNameError());
+        Assertions.assertEquals("", updateProfilePage.getFirstName());
+        Assertions.assertEquals("New last", updateProfilePage.getLastName());
+        Assertions.assertEquals("new@email.com", updateProfilePage.getEmail());
+        Assertions.assertEquals("Please specify this field.", updateProfilePage.getInputErrors().getFirstNameError());
 
         events.assertEmpty();
     }
@@ -212,11 +212,11 @@ public class RequiredActionUpdateProfileTest extends AbstractChangeImportedUserP
         updateProfilePage.assertCurrent();
 
         // assert that form holds submitted values during validation error
-        Assert.assertEquals("New first", updateProfilePage.getFirstName());
-        Assert.assertEquals("", updateProfilePage.getLastName());
-        Assert.assertEquals("new@email.com", updateProfilePage.getEmail());
+        Assertions.assertEquals("New first", updateProfilePage.getFirstName());
+        Assertions.assertEquals("", updateProfilePage.getLastName());
+        Assertions.assertEquals("new@email.com", updateProfilePage.getEmail());
 
-        Assert.assertEquals("Please specify this field.", updateProfilePage.getInputErrors().getLastNameError());
+        Assertions.assertEquals("Please specify this field.", updateProfilePage.getInputErrors().getLastNameError());
 
         events.assertEmpty();
     }
@@ -235,9 +235,9 @@ public class RequiredActionUpdateProfileTest extends AbstractChangeImportedUserP
         updateProfilePage.assertCurrent();
 
         // assert that form holds submitted values during validation error
-        Assert.assertEquals("New first", updateProfilePage.getFirstName());
-        Assert.assertEquals("New last", updateProfilePage.getLastName());
-        Assert.assertEquals("", updateProfilePage.getEmail());
+        Assertions.assertEquals("New first", updateProfilePage.getFirstName());
+        Assertions.assertEquals("New last", updateProfilePage.getLastName());
+        Assertions.assertEquals("", updateProfilePage.getEmail());
 
         assertThat(updateProfilePage.getInputErrors().getEmailError(), anyOf(
                 containsString("Please specify email"),
@@ -261,11 +261,11 @@ public class RequiredActionUpdateProfileTest extends AbstractChangeImportedUserP
         updateProfilePage.assertCurrent();
 
         // assert that form holds submitted values during validation error
-        Assert.assertEquals("New first", updateProfilePage.getFirstName());
-        Assert.assertEquals("New last", updateProfilePage.getLastName());
-        Assert.assertEquals("invalidemail", updateProfilePage.getEmail());
+        Assertions.assertEquals("New first", updateProfilePage.getFirstName());
+        Assertions.assertEquals("New last", updateProfilePage.getLastName());
+        Assertions.assertEquals("invalidemail", updateProfilePage.getEmail());
 
-        Assert.assertEquals("Invalid email address.", updateProfilePage.getInputErrors().getEmailError());
+        Assertions.assertEquals("Invalid email address.", updateProfilePage.getInputErrors().getEmailError());
 
         events.assertEmpty();
     }
@@ -283,12 +283,12 @@ public class RequiredActionUpdateProfileTest extends AbstractChangeImportedUserP
         updateProfilePage.assertCurrent();
 
         // assert that form holds submitted values during validation error
-        Assert.assertEquals("New first", updateProfilePage.getFirstName());
-        Assert.assertEquals("New last", updateProfilePage.getLastName());
-        Assert.assertEquals("new@email.com", updateProfilePage.getEmail());
-        Assert.assertEquals("", updateProfilePage.getUsername());
+        Assertions.assertEquals("New first", updateProfilePage.getFirstName());
+        Assertions.assertEquals("New last", updateProfilePage.getLastName());
+        Assertions.assertEquals("new@email.com", updateProfilePage.getEmail());
+        Assertions.assertEquals("", updateProfilePage.getUsername());
 
-        Assert.assertEquals("Please specify username.", updateProfilePage.getInputErrors().getUsernameError());
+        Assertions.assertEquals("Please specify username.", updateProfilePage.getInputErrors().getUsernameError());
 
         events.assertEmpty();
     }
@@ -306,12 +306,12 @@ public class RequiredActionUpdateProfileTest extends AbstractChangeImportedUserP
         updateProfilePage.assertCurrent();
 
         // assert that form holds submitted values during validation error
-        Assert.assertEquals("New first", updateProfilePage.getFirstName());
-        Assert.assertEquals("New last", updateProfilePage.getLastName());
-        Assert.assertEquals("new@email.com", updateProfilePage.getEmail());
-        Assert.assertEquals("test-user@localhost", updateProfilePage.getUsername());
+        Assertions.assertEquals("New first", updateProfilePage.getFirstName());
+        Assertions.assertEquals("New last", updateProfilePage.getLastName());
+        Assertions.assertEquals("new@email.com", updateProfilePage.getEmail());
+        Assertions.assertEquals("test-user@localhost", updateProfilePage.getUsername());
 
-        Assert.assertEquals("Username already exists.", updateProfilePage.getInputErrors().getUsernameError());
+        Assertions.assertEquals("Username already exists.", updateProfilePage.getInputErrors().getUsernameError());
 
         events.assertEmpty();
     }
@@ -330,11 +330,11 @@ public class RequiredActionUpdateProfileTest extends AbstractChangeImportedUserP
         updateProfilePage.assertCurrent();
 
         // assert that form holds submitted values during validation error
-        Assert.assertEquals("New first", updateProfilePage.getFirstName());
-        Assert.assertEquals("New last", updateProfilePage.getLastName());
-        Assert.assertEquals("keycloak-user@localhost", updateProfilePage.getEmail());
+        Assertions.assertEquals("New first", updateProfilePage.getFirstName());
+        Assertions.assertEquals("New last", updateProfilePage.getLastName());
+        Assertions.assertEquals("keycloak-user@localhost", updateProfilePage.getEmail());
 
-        Assert.assertEquals("Email already exists.", updateProfilePage.getInputErrors().getEmailError());
+        Assertions.assertEquals("Email already exists.", updateProfilePage.getInputErrors().getEmailError());
 
         events.assertEmpty();
     }
@@ -354,12 +354,12 @@ public class RequiredActionUpdateProfileTest extends AbstractChangeImportedUserP
         updateProfilePage.assertCurrent();
 
         // assert that form holds submitted values during validation error
-        Assert.assertEquals("New first", updateProfilePage.getFirstName());
-        Assert.assertEquals("New last", updateProfilePage.getLastName());
-        Assert.assertEquals("new@email.com", updateProfilePage.getEmail());
-        Assert.assertEquals("user1@local.org", updateProfilePage.getUsername());
+        Assertions.assertEquals("New first", updateProfilePage.getFirstName());
+        Assertions.assertEquals("New last", updateProfilePage.getLastName());
+        Assertions.assertEquals("new@email.com", updateProfilePage.getEmail());
+        Assertions.assertEquals("user1@local.org", updateProfilePage.getUsername());
 
-        Assert.assertEquals("Username already exists.", updateProfilePage.getInputErrors().getUsernameError());
+        Assertions.assertEquals("Username already exists.", updateProfilePage.getInputErrors().getUsernameError());
 
         events.assertEmpty();
     }
@@ -380,11 +380,11 @@ public class RequiredActionUpdateProfileTest extends AbstractChangeImportedUserP
         updateProfilePage.assertCurrent();
 
         // assert that form holds submitted values during validation error
-        Assert.assertEquals("New first", updateProfilePage.getFirstName());
-        Assert.assertEquals("New last", updateProfilePage.getLastName());
-        Assert.assertEquals("user1@local.com", updateProfilePage.getEmail());
+        Assertions.assertEquals("New first", updateProfilePage.getFirstName());
+        Assertions.assertEquals("New last", updateProfilePage.getLastName());
+        Assertions.assertEquals("user1@local.com", updateProfilePage.getEmail());
 
-        Assert.assertEquals("Email already exists.", updateProfilePage.getInputErrors().getEmailError());
+        Assertions.assertEquals("Email already exists.", updateProfilePage.getInputErrors().getEmailError());
 
         events.assertEmpty();
     }
@@ -405,7 +405,7 @@ public class RequiredActionUpdateProfileTest extends AbstractChangeImportedUserP
         String backToAppLink = errorPage.getBackToApplicationLink();
 
         ClientRepresentation client = AdminApiUtil.findClientByClientId(adminClient.realm("test"), "test-app").toRepresentation();
-        Assert.assertEquals(backToAppLink, client.getBaseUrl());
+        Assertions.assertEquals(backToAppLink, client.getBaseUrl());
     }
 
     @Test
@@ -435,18 +435,18 @@ public class RequiredActionUpdateProfileTest extends AbstractChangeImportedUserP
 
             events.expectRequiredAction(EventType.UPDATE_PROFILE).detail(Details.CONTEXT, UserProfileContext.UPDATE_PROFILE.name()).detail(Details.PREVIOUS_EMAIL, "test-user@localhost").detail(Details.UPDATED_EMAIL, "new@email.com").assertEvent();
 
-            Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+            Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
             events.expectLogin().assertEvent();
 
             // assert user is really updated in persistent store
             userRep = ActionUtil.findUserWithAdminClient(adminClient, "test-user@localhost");
-            Assert.assertEquals("New first", userRep.getFirstName());
-            Assert.assertEquals("New last", userRep.getLastName());
-            Assert.assertEquals("new@email.com", userRep.getEmail());
-            Assert.assertEquals("test-user@localhost", userRep.getUsername());
-            Assert.assertNotNull(userRep.getAttributes());
-            Assert.assertTrue(userRep.getAttributes().containsKey("custom"));
+            Assertions.assertEquals("New first", userRep.getFirstName());
+            Assertions.assertEquals("New last", userRep.getLastName());
+            Assertions.assertEquals("new@email.com", userRep.getEmail());
+            Assertions.assertEquals("test-user@localhost", userRep.getUsername());
+            Assertions.assertNotNull(userRep.getAttributes());
+            Assertions.assertTrue(userRep.getAttributes().containsKey("custom"));
         } finally {
             upConfig.setUnmanagedAttributePolicy(null);
             upResource.update(upConfig);
@@ -456,7 +456,7 @@ public class RequiredActionUpdateProfileTest extends AbstractChangeImportedUserP
     @Test
     @IgnoreBrowserDriver(HtmlUnitDriver.class) // we can't yet run modern JavaScript using HtmlUnit
     public void testMultivaluedAttributes() {
-        UserProfileResource userProfile = testRealm().users().userProfile();
+        UserProfileResource userProfile = managedRealm.admin().users().userProfile();
         UPConfig configuration = userProfile.getConfiguration();
 
         try {
@@ -492,7 +492,7 @@ public class RequiredActionUpdateProfileTest extends AbstractChangeImportedUserP
 
                 // make sure multiple values are properly rendered
                 userRep.setRequiredActions(List.of(UserModel.RequiredAction.UPDATE_PROFILE.name()));
-                testRealm().users().get(userRep.getId()).update(userRep);
+                managedRealm.admin().users().get(userRep.getId()).update(userRep);
                 oauth.openLoginForm();
                 assertThat(IntStream.range(0, 5).mapToObj(value -> updateProfilePage.getAttribute(attribute + "-" + value)).collect(Collectors.toSet()), Matchers.equalTo(valuesSet));
 
@@ -515,7 +515,7 @@ public class RequiredActionUpdateProfileTest extends AbstractChangeImportedUserP
 
                 // make sure adding/removing within the same context works
                 userRep.setRequiredActions(List.of(UserModel.RequiredAction.UPDATE_PROFILE.name()));
-                testRealm().users().get(userRep.getId()).update(userRep);
+                managedRealm.admin().users().get(userRep.getId()).update(userRep);
                 oauth.openLoginForm();
                 for (String value : values) {
                     String elementId = attribute + "-" + value;
@@ -545,7 +545,7 @@ public class RequiredActionUpdateProfileTest extends AbstractChangeImportedUserP
 
                 // at the end the attribute is set with multiple values
                 userRep.setRequiredActions(List.of(UserModel.RequiredAction.UPDATE_PROFILE.name()));
-                testRealm().users().get(userRep.getId()).update(userRep);
+                managedRealm.admin().users().get(userRep.getId()).update(userRep);
                 oauth.openLoginForm();
                 for (String value : values) {
                     String elementId = attribute + "-" + value;
@@ -557,7 +557,7 @@ public class RequiredActionUpdateProfileTest extends AbstractChangeImportedUserP
                 // restart the update profile flow
                 userRep = ActionUtil.findUserWithAdminClient(adminClient, "john-doh@localhost");
                 userRep.setRequiredActions(List.of(UserModel.RequiredAction.UPDATE_PROFILE.name()));
-                testRealm().users().get(userRep.getId()).update(userRep);
+                managedRealm.admin().users().get(userRep.getId()).update(userRep);
                 oauth.openLoginForm();
             }
 

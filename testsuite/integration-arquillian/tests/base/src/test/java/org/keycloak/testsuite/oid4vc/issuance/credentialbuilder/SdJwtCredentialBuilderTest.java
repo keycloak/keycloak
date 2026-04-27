@@ -40,8 +40,8 @@ import static org.keycloak.OID4VCConstants.CLAIM_NAME_SD;
 import static org.keycloak.OID4VCConstants.CLAIM_NAME_SD_HASH_ALGORITHM;
 import static org.keycloak.OID4VCConstants.CLAIM_NAME_VCT;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author <a href="mailto:Ingrid.Kamga@adorsys.com">Ingrid Kamga</a>
@@ -110,33 +110,33 @@ public class SdJwtCredentialBuilderTest extends CredentialBuilderTest {
 
         IssuerSignedJWT jwt = sdJwt.getIssuerSignedJWT();
 
-        assertEquals("The issuer should be set in the token.",
-                issuerDid,
-                jwt.getPayload().get(CLAIM_NAME_ISSUER).asText());
+        assertEquals(issuerDid,
+                jwt.getPayload().get(CLAIM_NAME_ISSUER).asText(),
+                "The issuer should be set in the token.");
 
-        assertEquals("The type should be included",
-                credentialBuildConfig.getCredentialType(),
-                jwt.getPayload().get(CLAIM_NAME_VCT).asText());
+        assertEquals(credentialBuildConfig.getCredentialType(),
+                jwt.getPayload().get(CLAIM_NAME_VCT).asText(),
+                "The type should be included");
 
-        assertEquals("The JWS token type should be included",
-                credentialBuildConfig.getTokenJwsType(),
-                jwt.getJwsHeader().getType());
+        assertEquals(credentialBuildConfig.getTokenJwsType(),
+                jwt.getJwsHeader().getType(),
+                "The JWS token type should be included");
 
         ArrayNode sdArrayNode = (ArrayNode) jwt.getPayload().get(CLAIM_NAME_SD);
         if (sdArrayNode != null) {
-            assertEquals("The algorithm should be included and lowercase",
-                    credentialBuildConfig.getHashAlgorithm().toLowerCase(),
-                    jwt.getPayload().get(CLAIM_NAME_SD_HASH_ALGORITHM).asText());
+            assertEquals(credentialBuildConfig.getHashAlgorithm().toLowerCase(),
+                    jwt.getPayload().get(CLAIM_NAME_SD_HASH_ALGORITHM).asText(),
+                    "The algorithm should be included and lowercase");
         }
 
         List<String> disclosed = sdJwt.getDisclosures().values().stream().toList();
-        assertEquals("All undisclosed claims and decoys should be provided.",
-                disclosed.size() + (decoys == 0 ? SdJwt.DEFAULT_NUMBER_OF_DECOYS : decoys),
-                     sdArrayNode == null ? 0 : sdArrayNode.size());
+        assertEquals(disclosed.size() + (decoys == 0 ? SdJwt.DEFAULT_NUMBER_OF_DECOYS : decoys),
+                     sdArrayNode == null ? 0 : sdArrayNode.size(),
+                     "All undisclosed claims and decoys should be provided.");
 
         visibleClaims.forEach(vc ->
-                assertTrue("The visible claims should be present within the token.",
-                        jwt.getPayload().has(vc))
+                assertTrue(jwt.getPayload().has(vc),
+                        "The visible claims should be present within the token.")
         );
 
         // Will check disclosure conformity

@@ -41,7 +41,6 @@ import org.keycloak.representations.idm.ClientPolicyExecutorRepresentation;
 import org.keycloak.representations.idm.ClientPolicyRepresentation;
 import org.keycloak.representations.idm.ClientProfileRepresentation;
 import org.keycloak.representations.idm.ClientProfilesRepresentation;
-import org.keycloak.services.client.ClientServiceHelper;
 import org.keycloak.services.clientpolicy.ClientPolicyEvent;
 import org.keycloak.services.clientpolicy.condition.AnyClientConditionFactory;
 import org.keycloak.services.clientpolicy.condition.ClientUpdaterContextConditionFactory;
@@ -152,12 +151,7 @@ public class ClientPoliciesV2Test extends AbstractClientApiV2Test {
             // Should fail with 400 Bad Request due to policy violation
             assertEquals(400, response.getStatusLine().getStatusCode());
             String body = EntityUtils.toString(response.getEntity());
-            if (ClientServiceHelper.isLegacyClientServiceEnabled()) {
-                assertThat(body, containsString("invalid_client_metadata"));
-            } else {
-                // TODO might be more consistent in error messages
-                assertThat(body, containsString("Invalid client metadata: token_endpoint_auth_method"));
-            }
+            assertThat(body, containsString("Invalid client metadata: token_endpoint_auth_method"));
         }
     }
 
@@ -280,12 +274,7 @@ public class ClientPoliciesV2Test extends AbstractClientApiV2Test {
             // Should fail with 400 Bad Request due to policy violation
             assertEquals(400, response.getStatusLine().getStatusCode());
             String body = EntityUtils.toString(response.getEntity());
-            if (ClientServiceHelper.isLegacyClientServiceEnabled()) {
-                assertThat(body, containsString("invalid_client_metadata"));
-            } else {
-                // TODO might be more consistent in error messages
-                assertThat(body, containsString("Invalid client metadata: token_endpoint_auth_method"));
-            }
+            assertThat(body, containsString("Invalid client metadata: token_endpoint_auth_method"));
         }
 
         // Verify the client was NOT updated (transaction rollback worked)
@@ -388,7 +377,7 @@ public class ClientPoliciesV2Test extends AbstractClientApiV2Test {
             // Should fail with 400 Bad Request due to policy violation
             assertEquals(400, response.getStatusLine().getStatusCode());
             String body = EntityUtils.toString(response.getEntity());
-            assertThat(body, containsString("invalid_client_metadata"));
+            assertThat(body, containsString("Invalid client metadata: token_endpoint_auth_method"));
         }
 
         // Verify the client was NOT updated (transaction rollback worked)
@@ -528,12 +517,7 @@ public class ClientPoliciesV2Test extends AbstractClientApiV2Test {
             EntityUtils.consumeQuietly(response.getEntity());
         }
 
-        // for now, the VIEW is also present, but it is not required for update
-        if (ClientServiceHelper.isLegacyClientServiceEnabled()) {
-            assertClientPolicyEventIsEmitted(ClientPolicyEvent.VIEW, ClientPolicyEvent.UPDATE, ClientPolicyEvent.UPDATED);
-        } else {
-            assertClientPolicyEventIsEmitted(ClientPolicyEvent.UPDATE, ClientPolicyEvent.UPDATED);
-        }
+        assertClientPolicyEventIsEmitted(ClientPolicyEvent.UPDATE, ClientPolicyEvent.UPDATED);
     }
 
     /**
@@ -558,12 +542,7 @@ public class ClientPoliciesV2Test extends AbstractClientApiV2Test {
         setupAlwaysAppliedTestPolicy();
         cleanupClient(rep.getClientId());
 
-        if (ClientServiceHelper.isLegacyClientServiceEnabled()) {
-            // for now, the VIEW is also present, but it is not required for delete
-            assertClientPolicyEventIsEmitted(ClientPolicyEvent.VIEW, ClientPolicyEvent.UNREGISTER);
-        } else {
-            assertClientPolicyEventIsEmitted(ClientPolicyEvent.UNREGISTER);
-        }
+        assertClientPolicyEventIsEmitted(ClientPolicyEvent.UNREGISTER);
     }
 
     private void assertClientPolicyEventIsEmitted(ClientPolicyEvent... events) {

@@ -6,7 +6,7 @@ import { FetchRequestAdapter } from "@microsoft/kiota-http-fetchlibrary";
 
 import type { KeycloakAdminClient } from "../client.js";
 import { createAdminClient } from "../generated/adminClient.js";
-import type { WithVersionItemRequestBuilder } from "../generated/admin/api/item/clients/item/index.js";
+import type { V2RequestBuilder } from "../generated/admin/api/item/clients/v2/index.js";
 
 // Re-export types for convenience
 export type {
@@ -42,15 +42,13 @@ class KeycloakAuthProvider implements AuthenticationProvider {
  */
 function createClientsV2Endpoint(
   client: KeycloakAdminClient,
-): WithVersionItemRequestBuilder {
+): V2RequestBuilder {
   const authProvider = new KeycloakAuthProvider(() => client.getAccessToken());
   const adapter = new FetchRequestAdapter(authProvider);
   adapter.baseUrl = client.baseUrl;
 
   const adminClient = createAdminClient(adapter);
-  return adminClient.admin.api
-    .byRealmName(client.realmName)
-    .clients.byVersion("v2");
+  return adminClient.admin.api.byRealmName(client.realmName).clients.v2;
 }
 
 /**
@@ -70,7 +68,7 @@ export class ClientsV2 {
    *
    * @returns The clients v2 endpoint
    */
-  api(): WithVersionItemRequestBuilder {
+  api(): V2RequestBuilder {
     return createClientsV2Endpoint(this.#client);
   }
 }

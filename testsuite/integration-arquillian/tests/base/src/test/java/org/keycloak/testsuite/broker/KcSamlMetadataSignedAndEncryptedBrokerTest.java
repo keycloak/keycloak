@@ -48,9 +48,9 @@ import org.keycloak.testsuite.util.SamlClientBuilder;
 
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
-import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 import org.w3c.dom.Document;
 
 /**
@@ -237,7 +237,7 @@ public class KcSamlMetadataSignedAndEncryptedBrokerTest extends AbstractKcSamlMe
                 .processSamlResponse(binding).build() // AuthnRequest to producer IdP
                 .execute(currentResponse -> {
                     // the login page should present an error because signature is invalid
-                    Assert.assertEquals(Status.BAD_REQUEST.getStatusCode(), currentResponse.getStatusLine().getStatusCode());
+                    Assertions.assertEquals(Status.BAD_REQUEST.getStatusCode(), currentResponse.getStatusLine().getStatusCode());
                 });
 
         events.expect(EventType.LOGIN_ERROR)

@@ -41,8 +41,8 @@ import org.openqa.selenium.support.ui.WebDriverWait;
 import static org.keycloak.testsuite.util.DroneUtils.getCurrentDriver;
 
 import static org.jboss.arquillian.graphene.Graphene.waitGui;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.openqa.selenium.support.ui.ExpectedConditions.javaScriptThrowsNoExceptions;
 import static org.openqa.selenium.support.ui.ExpectedConditions.not;
 import static org.openqa.selenium.support.ui.ExpectedConditions.urlToBe;

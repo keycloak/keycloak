@@ -37,6 +37,7 @@ import org.keycloak.testsuite.util.RealmBuilder;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
+import org.junit.jupiter.api.Assertions;
 
 import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
 
@@ -89,7 +90,7 @@ public abstract class AbstractClientTest extends AbstractAuthTest {
                 result = user;
             }
         }
-        Assert.assertNotNull("Did not find user with username " + userName, result);
+        Assertions.assertNotNull(result, "Did not find user with username " + userName);
         return result;
     }
 

@@ -43,6 +43,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.UserSessionRepresentation;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.AdminApiUtil;
@@ -58,7 +59,6 @@ import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.SecondBrowser;
-import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
 
@@ -66,16 +66,16 @@ import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -105,7 +105,7 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
     }
 
     private void setOTPAuthRequirement(AuthenticationExecutionModel.Requirement conditionalReq, AuthenticationExecutionModel.Requirement otpReq) {
-        AuthenticationManagementResource authMgtRes = testRealm().flows();
+        AuthenticationManagementResource authMgtRes = managedRealm.admin().flows();
         AuthenticationExecutionInfoRepresentation browserConditionalExecution = authMgtRes.getExecutions("browser").stream()
                 .filter(execution -> execution.getDisplayName().equals("Browser - Conditional 2FA"))
                 .findAny()
@@ -121,7 +121,7 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
     }
 
     private void configureRequiredActionsToUser(String username, String... actions) {
-        UserResource userResource = AdminApiUtil.findUserByUsernameId(testRealm(), username);
+        UserResource userResource = AdminApiUtil.findUserByUsernameId(managedRealm.admin(), username);
         UserRepresentation userRepresentation = userResource.toRepresentation();
         userRepresentation.setRequiredActions(Arrays.asList(actions));
         userResource.update(userRepresentation);
@@ -129,14 +129,14 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
 
     @Before
     public void setOTPAuthRequired() {
-        AdminApiUtil.removeUserByUsername(testRealm(), "test-user@localhost");
+        AdminApiUtil.removeUserByUsername(managedRealm.admin(), "test-user@localhost");
         UserRepresentation user = UserBuilder.create().enabled(true)
                 .username("test-user@localhost")
                 .email("test-user@localhost")
                 .firstName("Tom")
                 .lastName("Brady")
                 .build();
-        AdminApiUtil.createUserAndResetPasswordWithAdminClient(testRealm(), user, "password");
+        AdminApiUtil.createUserAndResetPasswordWithAdminClient(managedRealm.admin(), user, "password");
     }
 
 
@@ -353,13 +353,13 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
         totpPage.configure(totp.generateTOTP(totpPage.getTotpSecret()), customOtpLabel);
 
         // Check if OTP credential is present
-        Assert.assertTrue(AccountHelper.isTotpPresent(testRealm(), "setupTotpRegister"));
-        Assert.assertTrue(AccountHelper.totpUserLabelComparator(testRealm(), "setupTotpRegister", customOtpLabel));
+        Assertions.assertTrue(AccountHelper.isTotpPresent(managedRealm.admin(), "setupTotpRegister"));
+        Assertions.assertTrue(AccountHelper.totpUserLabelComparator(managedRealm.admin(), "setupTotpRegister", customOtpLabel));
     }
 
     @Test
     public void setupTotpModifiedPolicy() {
-        RealmResource realm = testRealm();
+        RealmResource realm = managedRealm.admin();
         RealmRepresentation rep = realm.toRepresentation();
         rep.setOtpPolicyDigits(8);
         rep.setOtpPolicyType("hotp");
@@ -392,7 +392,7 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     public void setupTotpExistingReusableCodeEnabled() throws IOException {
-        try (RealmAttributeUpdater rau = new RealmAttributeUpdater(testRealm()).setOtpPolicyCodeReusable(true).update()) {
+        try (RealmAttributeUpdater rau = new RealmAttributeUpdater(managedRealm.admin()).setOtpPolicyCodeReusable(true).update()) {
             setupTotpExisting(true);
         }
     }
@@ -455,7 +455,7 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
             String configureTotp = UserModel.RequiredAction.CONFIGURE_TOTP.name();
 
             // Remove required action from the user
-            UserResource user = AdminApiUtil.findUserByUsernameId(testRealm(), username);
+            UserResource user = AdminApiUtil.findUserByUsernameId(managedRealm.admin(), username);
             UserRepresentation userRepresentation = user.toRepresentation();
             userRepresentation.getRequiredActions().remove(configureTotp);
             user.update(userRepresentation);
@@ -521,7 +521,7 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
             String uri = driver.getCurrentUrl();
             String src = driver.getPageSource();
             assertTrue(loginPage.isCurrent());
-            Assert.assertFalse(totpPage.isCurrent());
+            Assertions.assertFalse(totpPage.isCurrent());
 
             // Login with one-time password
             loginTotpPage.login(totp.generateTOTP(totpCode));
@@ -529,8 +529,8 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
             loginEvent = events.expectLogin().user(userId).detail(Details.USERNAME, "setupTotp2").assertEvent();
 
             // Remove google authenticator
-            Assert.assertTrue(AccountHelper.deleteTotpAuthentication(testRealm(), "setupTotp2"));
-            AccountHelper.logout(testRealm(), "setupTotp2");
+            Assertions.assertTrue(AccountHelper.deleteTotpAuthentication(managedRealm.admin(), "setupTotp2"));
+            AccountHelper.logout(managedRealm.admin(), "setupTotp2");
 
             setOtpTimeOffset(TimeBasedOTP.DEFAULT_INTERVAL_SECONDS, totp);
 
@@ -725,7 +725,7 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
         configureRequiredActionsToUser("test-user@localhost");
 
         // login with the user using the second driver
-        UserResource testUser = testRealm().users().get(findUser("test-user@localhost").getId());
+        UserResource testUser = managedRealm.admin().users().get(findUser("test-user@localhost").getId());
         OAuthClient oauth2 = oauth.newConfig().driver(driver2);
         oauth2.doLogin("test-user@localhost", "password");
         EventRepresentation event1 = events.expectLogin().assertEvent();
@@ -741,7 +741,7 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
         if (logoutOtherSessions) {
             totpPage.checkLogoutSessions();
         }
-        Assert.assertEquals(logoutOtherSessions, totpPage.isLogoutSessionsChecked());
+        Assertions.assertEquals(logoutOtherSessions, totpPage.isLogoutSessionsChecked());
         totpPage.configure(totp.generateTOTP(totpPage.getTotpSecret()));
         assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
@@ -804,14 +804,14 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
     }
 
     private void configureTotpActionToEnforceRecoveryCodes(boolean enforceRecoveryCodes) {
-        List<RequiredActionProviderRepresentation> requiredActions = testRealm().flows().getRequiredActions();
+        List<RequiredActionProviderRepresentation> requiredActions = managedRealm.admin().flows().getRequiredActions();
         RequiredActionProviderRepresentation totpAction = requiredActions.stream().filter(ra -> ra.getProviderId().equals(UserModel.RequiredAction.CONFIGURE_TOTP.name())).findFirst().orElseThrow();
         totpAction.setConfig(Map.of(UpdateTotp.ADD_RECOVERY_CODES, Boolean.toString(enforceRecoveryCodes)));
-        testRealm().flows().updateRequiredAction(UserModel.RequiredAction.CONFIGURE_TOTP.name(), totpAction);
-        testRealm().flows().getExecutions("browser").forEach(exe -> {
+        managedRealm.admin().flows().updateRequiredAction(UserModel.RequiredAction.CONFIGURE_TOTP.name(), totpAction);
+        managedRealm.admin().flows().getExecutions("browser").forEach(exe -> {
             if (Objects.equals(exe.getProviderId(), RecoveryAuthnCodesFormAuthenticatorFactory.PROVIDER_ID)) {
               exe.setRequirement(enforceRecoveryCodes ? "ALTERNATIVE" : "DISABLED");
-              testRealm().flows().updateExecutions("browser", exe);
+              managedRealm.admin().flows().updateExecutions("browser", exe);
             }
         });
     }

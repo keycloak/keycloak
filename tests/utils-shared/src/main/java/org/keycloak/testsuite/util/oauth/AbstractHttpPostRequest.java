@@ -114,10 +114,11 @@ public abstract class AbstractHttpPostRequest<T, R> {
         return request();
     }
 
-    protected void header(String name, String value) {
+    public T header(String name, String value) {
         if (value != null) {
             headers.put(name, value);
         }
+        return request();
     }
 
     protected void parameter(String name, String value) {

@@ -3,7 +3,7 @@ package org.keycloak.testframework.events;
 import org.keycloak.testframework.annotations.InjectAdminEvents;
 import org.keycloak.testframework.injection.InstanceContext;
 import org.keycloak.testframework.realm.ManagedRealm;
-import org.keycloak.testframework.realm.RealmConfigBuilder;
+import org.keycloak.testframework.realm.RealmBuilder;
 
 public class AdminEventsSupplier extends AbstractEventsSupplier<AdminEvents, InjectAdminEvents> {
 
@@ -18,7 +18,7 @@ public class AdminEventsSupplier extends AbstractEventsSupplier<AdminEvents, Inj
     }
 
     @Override
-    public RealmConfigBuilder intercept(RealmConfigBuilder realm, InstanceContext<AdminEvents, InjectAdminEvents> instanceContext) {
+    public RealmBuilder intercept(RealmBuilder realm, InstanceContext<AdminEvents, InjectAdminEvents> instanceContext) {
         return realm.adminEventsEnabled(true).adminEventsDetailsEnabled(true);
     }
 

@@ -63,6 +63,7 @@ import org.jsoup.select.Elements;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 import static org.keycloak.userprofile.UserProfileUtil.USER_METADATA_GROUP;
 
@@ -118,17 +119,17 @@ public class KerberosStandaloneTest extends AbstractKerberosSingleRealmTest {
         // Switch updateProfileOnFirstLogin to on
         String parentId = testRealmResource().toRepresentation().getId();
         List<ComponentRepresentation> reps = testRealmResource().components().query(parentId, UserStorageProvider.class.getName());
-        Assert.assertEquals(1, reps.size());
+        Assertions.assertEquals(1, reps.size());
         ComponentRepresentation kerberosProvider = reps.get(0);
         kerberosProvider.getConfig().putSingle(KerberosConstants.UPDATE_PROFILE_FIRST_LOGIN, "true");
         testRealmResource().components().component(kerberosProvider.getId()).update(kerberosProvider);
 
         // Assert update profile page is displayed
         Response spnegoResponse = spnegoLogin("hnelson", "secret");
-        Assert.assertEquals(200, spnegoResponse.getStatus());
+        Assertions.assertEquals(200, spnegoResponse.getStatus());
         String responseText = spnegoResponse.readEntity(String.class);
-        Assert.assertTrue(responseText.contains("You need to update your user profile to activate your account."));
-        Assert.assertTrue(responseText.contains("hnelson@" + kerberosRule.getConfig().get(KerberosConstants.KERBEROS_REALM).toLowerCase()));
+        Assertions.assertTrue(responseText.contains("You need to update your user profile to activate your account."));
+        Assertions.assertTrue(responseText.contains("hnelson@" + kerberosRule.getConfig().get(KerberosConstants.KERBEROS_REALM).toLowerCase()));
         spnegoResponse.close();
 
         // Assert user was imported and has required action on him
@@ -152,7 +153,7 @@ public class KerberosStandaloneTest extends AbstractKerberosSingleRealmTest {
     public void noProvider() throws Exception {
         String parentId = testRealmResource().toRepresentation().getId();
         List<ComponentRepresentation> reps = testRealmResource().components().query(parentId, UserStorageProvider.class.getName());
-        Assert.assertEquals(1, reps.size());
+        Assertions.assertEquals(1, reps.size());
         ComponentRepresentation kerberosProvider = reps.get(0);
         testRealmResource().components().component(kerberosProvider.getId()).remove();
 
@@ -166,7 +167,7 @@ public class KerberosStandaloneTest extends AbstractKerberosSingleRealmTest {
         String context = spnegoResponse.readEntity(String.class);
         spnegoResponse.close();
 
-        Assert.assertTrue(context.contains("Sign in to test"));
+        Assertions.assertTrue(context.contains("Sign in to test"));
 
         String url = ActionURIUtils.getActionURIFromPageSource(context);
 
@@ -199,7 +200,7 @@ public class KerberosStandaloneTest extends AbstractKerberosSingleRealmTest {
         // Switch kerberos realm to "unavailable
         String parentId = testRealmResource().toRepresentation().getId();
         List<ComponentRepresentation> reps = testRealmResource().components().query(parentId, UserStorageProvider.class.getName());
-        Assert.assertEquals(1, reps.size());
+        Assertions.assertEquals(1, reps.size());
         ComponentRepresentation kerberosProvider = reps.get(0);
         kerberosProvider.getConfig().putSingle(KerberosConstants.KERBEROS_REALM, "unavailable");
         testRealmResource().components().component(kerberosProvider.getId()).update(kerberosProvider);
@@ -208,9 +209,9 @@ public class KerberosStandaloneTest extends AbstractKerberosSingleRealmTest {
         UserRepresentation john = new UserRepresentation();
         john.setUsername("john");
         Response response = testRealmResource().users().create(john);
-        Assert.assertEquals(400, response.getStatus());
+        Assertions.assertEquals(400, response.getStatus());
         ErrorRepresentation error = response.readEntity(ErrorRepresentation.class);
-        Assert.assertEquals("Could not create user", error.getErrorMessage());
+        Assertions.assertEquals("Could not create user", error.getErrorMessage());
         response.close();
     }
 
@@ -225,18 +226,18 @@ public class KerberosStandaloneTest extends AbstractKerberosSingleRealmTest {
 
         // KERBEROS_PRINCIPAL attribute should be read-only and should be in "User metadata" group
         UserProfileAttributeMetadata krbPrincipalAttribute = john.getUserProfileMetadata().getAttributeMetadata(KerberosConstants.KERBEROS_PRINCIPAL);
-        Assert.assertTrue(krbPrincipalAttribute.isReadOnly());
-        Assert.assertEquals(USER_METADATA_GROUP, krbPrincipalAttribute.getGroup());
+        Assertions.assertTrue(krbPrincipalAttribute.isReadOnly());
+        Assertions.assertEquals(USER_METADATA_GROUP, krbPrincipalAttribute.getGroup());
 
         // Test Update profile
         john.getRequiredActions().add(UserModel.RequiredAction.UPDATE_PROFILE.toString());
         johnResource.update(john);
 
         Response spnegoResponse = spnegoLogin("hnelson", "secret");
-        Assert.assertEquals(200, spnegoResponse.getStatus());
+        Assertions.assertEquals(200, spnegoResponse.getStatus());
         String responseText = spnegoResponse.readEntity(String.class);
-        Assert.assertTrue(responseText.contains("You need to update your user profile to activate your account."));
-        Assert.assertFalse(responseText.contains("KERBEROS_PRINCIPAL"));
+        Assertions.assertTrue(responseText.contains("You need to update your user profile to activate your account."));
+        Assertions.assertFalse(responseText.contains("KERBEROS_PRINCIPAL"));
         spnegoResponse.close();
 
         john.getRequiredActions().remove(UserModel.RequiredAction.UPDATE_PROFILE.toString());
@@ -249,12 +250,12 @@ public class KerberosStandaloneTest extends AbstractKerberosSingleRealmTest {
         String resetUri = OAuthClient.AUTH_SERVER_ROOT + "/realms/test/login-actions/reset-credentials";
         String actionUri;
         try (Response response = client.target(resetUri).queryParam(Constants.CLIENT_ID, oauth.getClientId()).request().get()) {
-            Assert.assertEquals(200, response.getStatus());
+            Assertions.assertEquals(200, response.getStatus());
             Document theResponsePage = Jsoup.parse(response.readEntity(String.class));
             Elements forms = theResponsePage.select("form[id=kc-reset-password-form]");
-            Assert.assertEquals(1, forms.size());
+            Assertions.assertEquals(1, forms.size());
             actionUri = forms.get(0).attr("action");
-            Assert.assertNotNull(actionUri);
+            Assertions.assertNotNull(actionUri);
         }
 
         // continue the reset providing the user to change email
@@ -262,13 +263,13 @@ public class KerberosStandaloneTest extends AbstractKerberosSingleRealmTest {
         Form form = new Form();
         form.param("username", "test-user@localhost");
         try (Response response = client.target(actionUri).request().post(Entity.form(form))) {
-            Assert.assertEquals(200, response.getStatus());
+            Assertions.assertEquals(200, response.getStatus());
             MatcherAssert.assertThat(response.readEntity(String.class), Matchers.containsString("You should receive an email shortly with further instructions."));
         }
 
         // get the email from green mail
         MimeMessage message = greenMail.getLastReceivedMessage();
-        Assert.assertNotNull(message);
+        Assertions.assertNotNull(message);
         String changePasswordUrl = MailUtils.getPasswordResetEmailLink(message);
 
         // perform the password change using the email url
@@ -279,7 +280,7 @@ public class KerberosStandaloneTest extends AbstractKerberosSingleRealmTest {
         events.poll();
         events.expectRequiredAction(EventType.UPDATE_PASSWORD).detail(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE).client(oauth.getClientId()).detail(Details.USERNAME, "test-user@localhost");
         infoPage.assertCurrent();
-        Assert.assertEquals("Your account has been updated.", infoPage.getInfo());
+        Assertions.assertEquals("Your account has been updated.", infoPage.getInfo());
     }
 
     @Test
@@ -294,7 +295,7 @@ public class KerberosStandaloneTest extends AbstractKerberosSingleRealmTest {
 
         try {
             johnResource.toRepresentation(true);
-            Assert.fail("should remove the user");
+            Assertions.fail("should remove the user");
         } catch (NotFoundException expected) {
         }
     }

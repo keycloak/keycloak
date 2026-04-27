@@ -6,7 +6,7 @@ import java.util.List;
 import org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
-import org.keycloak.testsuite.util.ClientBuilder;
+import org.keycloak.testframework.realm.ClientBuilder;
 
 import org.junit.Ignore;
 
@@ -52,11 +52,11 @@ public class KcOidcBrokerSubMatchIntrospectionTest extends AbstractBrokerTest {
 
     @Override
     public void testLogInAsUserInIDP() {
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
 
         oauth.realm(bc.consumerRealmName());
-        oauth.clientId("consumer-client");
+        oauth.client("consumer-client");
 
         log.debug("Clicking social " + bc.getIDPAlias());
         loginPage.clickSocial(bc.getIDPAlias());

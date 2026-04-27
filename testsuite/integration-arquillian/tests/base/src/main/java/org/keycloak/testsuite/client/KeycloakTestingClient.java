@@ -38,8 +38,8 @@ import org.keycloak.util.JsonSerialization;
 import org.jboss.resteasy.client.jaxrs.ResteasyClient;
 import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
 import org.jboss.resteasy.client.jaxrs.ResteasyWebTarget;
-import org.junit.Assert;
 import org.junit.AssumptionViolatedException;
+import org.junit.jupiter.api.Assertions;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
@@ -98,7 +98,7 @@ public class KeycloakTestingClient implements AutoCloseable {
             featureString = feature.getKey();
         }
         Set<Profile.Feature> disabledFeatures = testing().enableFeature(featureString);
-        Assert.assertFalse(disabledFeatures.contains(feature));
+        Assertions.assertFalse(disabledFeatures.contains(feature));
         ProfileAssume.updateDisabledFeatures(disabledFeatures);
     }
 
@@ -114,7 +114,7 @@ public class KeycloakTestingClient implements AutoCloseable {
             featureString = feature.getKey();
         }
         Set<Profile.Feature> disabledFeatures = testing().disableFeature(featureString);
-        Assert.assertTrue(disabledFeatures.contains(feature));
+        Assertions.assertTrue(disabledFeatures.contains(feature));
         ProfileAssume.updateDisabledFeatures(disabledFeatures);
     }
 

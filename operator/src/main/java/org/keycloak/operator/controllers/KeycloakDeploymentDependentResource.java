@@ -17,8 +17,6 @@
 package org.keycloak.operator.controllers;
 
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
@@ -70,7 +68,6 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.config.informer.Informer;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
-import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.Condition;
 import io.quarkus.logging.Log;
@@ -84,7 +81,7 @@ import static org.keycloak.operator.crds.v2beta1.deployment.spec.TelemetrySpec.c
 @KubernetesDependent(
         informer = @Informer(labelSelector = Constants.DEFAULT_LABELS_AS_STRING)
 )
-public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependentResource<StatefulSet, Keycloak> {
+public class KeycloakDeploymentDependentResource extends VersionTolerantCRUDKubernetesDependentResource<StatefulSet, Keycloak> {
 
     public static final String HTTP_MANAGEMENT_SCHEME = "http-management-scheme";
 
@@ -92,9 +89,6 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
     public static final String HOST_IP_SPI_OPTION = "KC_SPI_CACHE_EMBEDDED_DEFAULT_MACHINE_NAME";
 
     private static final List<String> COPY_ENV = Arrays.asList("HTTP_PROXY", "HTTPS_PROXY", "NO_PROXY");
-
-    private static final String SERVICE_ACCOUNT_DIR = "/var/run/secrets/kubernetes.io/serviceaccount/";
-    private static final String SERVICE_CA_CRT = SERVICE_ACCOUNT_DIR + "service-ca.crt";
 
     public static final String CACHE_CONFIG_FILE_MOUNT_NAME = "cache-config-file-configmap";
 
@@ -107,8 +101,6 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
     public static final String KC_TRACING_RESOURCE_ATTRIBUTES = "KC_TRACING_RESOURCE_ATTRIBUTES";
 
     public static final String OPTIMIZED_ARG = "--optimized";
-
-    private boolean useServiceCaCrt;
 
     // Do not create the deployment before the initial admin secret is created to prevent the deployment from restarting.
     // Not using native dependsOn as the initial admin secret may not be created by the operator and might be provided by the user,
@@ -124,11 +116,6 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
 
     public KeycloakDeploymentDependentResource() {
         super(StatefulSet.class);
-        useServiceCaCrt = Files.exists(Path.of(SERVICE_CA_CRT));
-    }
-
-    public void setUseServiceCaCrt(boolean useServiceCaCrt) {
-        this.useServiceCaCrt = useServiceCaCrt;
     }
 
     public StatefulSet initialDesired(Keycloak primary, Context<Keycloak> context) {

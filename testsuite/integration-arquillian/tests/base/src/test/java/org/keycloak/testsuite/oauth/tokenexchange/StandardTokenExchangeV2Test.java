@@ -87,8 +87,8 @@ import org.keycloak.util.TokenUtil;
 
 import org.hamcrest.MatcherAssert;
 import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Assert;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 import static org.keycloak.testsuite.AbstractAdminTest.loadJson;
 import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
@@ -97,12 +97,12 @@ import static org.keycloak.testsuite.util.ClientPoliciesUtil.createGrantTypeCond
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createTestRaiseExeptionExecutorConfig;
 
 import static org.hamcrest.Matchers.containsInAnyOrder;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThrows;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -399,7 +399,7 @@ public class StandardTokenExchangeV2Test extends AbstractClientPoliciesTest {
             assertEquals(OAuth2Constants.ACCESS_TOKEN_TYPE, response.getIssuedTokenType());
             String exchangedTokenString = response.getAccessToken();
             AccessToken exchangedToken = TokenVerifier.create(exchangedTokenString, AccessToken.class).parse().getToken();
-            assertTrue("Exchanged token is not active", exchangedToken.isActive());
+            assertTrue(exchangedToken.isActive(), "Exchanged token is not active");
             assertEquals(getSessionIdFromToken(accessToken), exchangedToken.getSessionId());
             assertEquals("requester-client", exchangedToken.getIssuedFor());
             assertAccessTokenContext(exchangedToken.getId(), AccessTokenContext.SessionType.OFFLINE_TRANSIENT_CLIENT,
@@ -418,14 +418,14 @@ public class StandardTokenExchangeV2Test extends AbstractClientPoliciesTest {
             setTimeOffset(610);
             final AccessTokenResponse refreshResponse = oauth.client("subject-client", "secret").scope(null)
                     .refreshRequest(initialResponse.getRefreshToken()).send();
-            assertNull("Error refreshing the initial token: " + refreshResponse.getErrorDescription(), refreshResponse.getError());
+            assertNull(refreshResponse.getError(), "Error refreshing the initial token: " + refreshResponse.getErrorDescription());
             accessToken = refreshResponse.getAccessToken();
             oauth.scope(OAuth2Constants.SCOPE_OPENID);
             response = tokenExchange(accessToken, "requester-client", "secret", null, null);
-            assertNull("Error exchanging the token: " + response.getErrorDescription(), response.getError());
+            assertNull(response.getError(), "Error exchanging the token: " + response.getErrorDescription());
             exchangedTokenString = response.getAccessToken();
             exchangedToken = TokenVerifier.create(exchangedTokenString, AccessToken.class).parse().getToken();
-            assertTrue("Exchanged token is not active", exchangedToken.isActive());
+            assertTrue(exchangedToken.isActive(), "Exchanged token is not active");
             assertEquals(getSessionIdFromToken(accessToken), exchangedToken.getSessionId());
             assertEquals("requester-client", exchangedToken.getIssuedFor());
             assertAccessTokenContext(exchangedToken.getId(), AccessTokenContext.SessionType.OFFLINE_TRANSIENT_CLIENT,
@@ -545,7 +545,7 @@ public class StandardTokenExchangeV2Test extends AbstractClientPoliciesTest {
                 .parse().getToken();
         assertEquals(TokenUtil.TOKEN_TYPE_BEARER, exchangedToken.getType());
 
-        assertNotNull("ID Token is null, but was expected to be present", response.getIdToken());
+        assertNotNull(response.getIdToken(), "ID Token is null, but was expected to be present");
         IDToken exchangedIdToken = TokenVerifier.create(response.getIdToken(), IDToken.class)
                 .parse().getToken();
         assertEquals(TokenUtil.TOKEN_TYPE_ID, exchangedIdToken.getType());
@@ -558,14 +558,14 @@ public class StandardTokenExchangeV2Test extends AbstractClientPoliciesTest {
         response = tokenExchange(accessToken, "requester-client", "secret", null, OAuth2Constants.ACCESS_TOKEN_TYPE);
         assertEquals(OAuth2Constants.ACCESS_TOKEN_TYPE, response.getIssuedTokenType());
         assertNotNull(response.getAccessToken());
-        assertNull("ID Token was present, but should not be present", response.getIdToken());
+        assertNull(response.getIdToken(), "ID Token was present, but should not be present");
 
         // Exchange request requesting id-token. ID Token should be issued inside "access_token" parameter (as per token-exchange specification https://datatracker.ietf.org/doc/html/rfc8693#name-successful-response - parameter "access_token")
         response = tokenExchange(accessToken, "requester-client", "secret", null, OAuth2Constants.ID_TOKEN_TYPE);
         assertEquals(OAuth2Constants.ID_TOKEN_TYPE, response.getIssuedTokenType());
         assertEquals(TokenUtil.TOKEN_TYPE_NA, response.getTokenType());
         assertNotNull(response.getAccessToken());
-        assertNull("ID Token was present, but should not be present", response.getIdToken());
+        assertNull(response.getIdToken(), "ID Token was present, but should not be present");
 
         exchangedIdToken = TokenVerifier.create(response.getAccessToken(), IDToken.class)
                 .parse().getToken();
@@ -829,9 +829,9 @@ public class StandardTokenExchangeV2Test extends AbstractClientPoliciesTest {
         String accessToken = resourceOwnerLogin("john", "password", "subject-client", "secret").getAccessToken();
         {
             AccessTokenResponse response = tokenExchange(accessToken, "disabled-requester-client", "secret", null, null);
-            org.junit.Assert.assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatusCode());
-            org.junit.Assert.assertEquals(OAuthErrorException.INVALID_REQUEST, response.getError());
-            org.junit.Assert.assertEquals("Standard token exchange is not enabled for the requested client", response.getErrorDescription());
+            Assertions.assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatusCode());
+            Assertions.assertEquals(OAuthErrorException.INVALID_REQUEST, response.getError());
+            Assertions.assertEquals("Standard token exchange is not enabled for the requested client", response.getErrorDescription());
         }
     }
 
@@ -897,7 +897,7 @@ public class StandardTokenExchangeV2Test extends AbstractClientPoliciesTest {
                 .update()) {
             String accessToken = resourceOwnerLogin("mike", "password", "subject-client", "secret").getAccessToken();
             String sessionId = TokenVerifier.create(accessToken, AccessToken.class).parse().getToken().getSessionId();
-            Assert.assertEquals(testingClient.testing(TEST).getClientSessionsCountInUserSession(TEST, sessionId), Integer.valueOf(1));
+            Assertions.assertEquals(testingClient.testing(TEST).getClientSessionsCountInUserSession(TEST, sessionId), Integer.valueOf(1));
 
             oauth.scope("offline_access");
             AccessTokenResponse response = tokenExchange(accessToken, "requester-client", "secret", List.of("target-client1"), OAuth2Constants.REFRESH_TOKEN_TYPE);
@@ -906,7 +906,7 @@ public class StandardTokenExchangeV2Test extends AbstractClientPoliciesTest {
             assertEquals("Scope offline_access not allowed for token exchange", response.getErrorDescription());
 
             // Check that client session was not created
-            Assert.assertEquals(testingClient.testing(TEST).getClientSessionsCountInUserSession(TEST, sessionId), Integer.valueOf(1));
+            Assertions.assertEquals(testingClient.testing(TEST).getClientSessionsCountInUserSession(TEST, sessionId), Integer.valueOf(1));
         }
     }
 
@@ -969,9 +969,9 @@ public class StandardTokenExchangeV2Test extends AbstractClientPoliciesTest {
             String subjectClientUuid = AdminApiUtil.findClientByClientId(adminClient.realm(TEST), "subject-client").toRepresentation().getId();
             String requesterClientUuid = AdminApiUtil.findClientByClientId(adminClient.realm(TEST), "requester-client").toRepresentation().getId();
             UserResource user = AdminApiUtil.findUserByUsernameId(adminClient.realm(TEST), "mike");
-            Assert.assertEquals(0, user.getUserSessions().size());
-            Assert.assertEquals(1, user.getOfflineSessions(subjectClientUuid).size());
-            Assert.assertEquals(0, user.getOfflineSessions(requesterClientUuid).size());
+            Assertions.assertEquals(0, user.getUserSessions().size());
+            Assertions.assertEquals(1, user.getOfflineSessions(subjectClientUuid).size());
+            Assertions.assertEquals(0, user.getOfflineSessions(requesterClientUuid).size());
 
             // Token exchange with scope=offline-access should not be allowed
             oauth.scope("offline_access");
@@ -979,9 +979,9 @@ public class StandardTokenExchangeV2Test extends AbstractClientPoliciesTest {
             assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatusCode());
 
             // Make sure not new user sessions persisted
-            Assert.assertEquals(0, user.getUserSessions().size());
-            Assert.assertEquals(1, user.getOfflineSessions(subjectClientUuid).size());
-            Assert.assertEquals(0, user.getOfflineSessions(requesterClientUuid).size());
+            Assertions.assertEquals(0, user.getUserSessions().size());
+            Assertions.assertEquals(1, user.getOfflineSessions(subjectClientUuid).size());
+            Assertions.assertEquals(0, user.getOfflineSessions(requesterClientUuid).size());
         }
     }
 
@@ -1000,7 +1000,7 @@ public class StandardTokenExchangeV2Test extends AbstractClientPoliciesTest {
             // Token exchange access-token for "Requester-client" . No client session yet for "requester-client" at this stage
             AccessTokenResponse response = tokenExchange(accessToken, "requester-client", "secret",  null, null);
             String exchangedToken = response.getAccessToken();
-            Assert.assertNotNull(exchangedToken);
+            Assertions.assertNotNull(exchangedToken);
 
             // Set time offset
             setTimeOffset(10);
@@ -1381,7 +1381,7 @@ public class StandardTokenExchangeV2Test extends AbstractClientPoliciesTest {
         TokenVerifier<AccessToken> accessTokenVerifier = TokenVerifier.create(tokenExchangeResponse.getAccessToken(), AccessToken.class);
         AccessToken token = accessTokenVerifier.parse().getToken();
         if (expectedAudiences == null) {
-            assertNull("Expected token to not contain audience", token.getAudience());
+            assertNull(token.getAudience(), "Expected token to not contain audience");
         } else {
             assertAudiences(token, expectedAudiences);
         }
@@ -1476,7 +1476,7 @@ public class StandardTokenExchangeV2Test extends AbstractClientPoliciesTest {
 
         assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatusCode());
         assertEquals(OAuthErrorException.INVALID_REQUEST, response.getError());
-        assertTrue("Error should mention sender-constrained tokens", response.getErrorDescription().contains("Sender-constrained"));
+        assertTrue(response.getErrorDescription().contains("Sender-constrained"), "Error should mention sender-constrained tokens");
 
         client.getProtocolMappers().delete(mapperId);
 

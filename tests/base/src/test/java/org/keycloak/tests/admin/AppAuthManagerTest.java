@@ -15,8 +15,8 @@ import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
 import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
-import org.keycloak.testframework.realm.RealmConfigBuilder;
 import org.keycloak.testframework.server.KeycloakUrls;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
@@ -126,7 +126,7 @@ public class AppAuthManagerTest {
     private static class TestRealmConfig implements RealmConfig {
 
         @Override
-        public RealmConfigBuilder configure(RealmConfigBuilder realm) {
+        public RealmBuilder configure(RealmBuilder realm) {
             realm.internationalizationEnabled(false);
             realm.addUser("test-admin")
                     .password("password")

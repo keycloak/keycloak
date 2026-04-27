@@ -24,8 +24,8 @@ import org.keycloak.representations.account.ClientRepresentation;
 import org.keycloak.representations.account.DeviceRepresentation;
 import org.keycloak.representations.account.SessionRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testsuite.broker.util.SimpleHttpDefault;
-import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.ContainerAssume;
 import org.keycloak.testsuite.util.SecondBrowser;
 import org.keycloak.testsuite.util.ThirdBrowser;
@@ -43,10 +43,10 @@ import org.openqa.selenium.WebDriver;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.anyOf;
 import static org.hamcrest.Matchers.equalTo;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assume.assumeTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -83,16 +83,16 @@ public class SessionRestServiceTest extends AbstractRestServiceTest {
                 .clientId("confidential-client-0")
                 .name("Confidential Client 0")
                 .secret("secret")
-                .serviceAccount()
-                .directAccessGrants()
+                .serviceAccountsEnabled()
+                .directAccessGrantsEnabled()
                 .redirectUris(OAuthClient.APP_ROOT + "/auth").build());
 
         testRealm.getClients().add(ClientBuilder.create()
                 .clientId("confidential-client-1")
                 .name("Confidential Client 1")
                 .secret("secret")
-                .serviceAccount()
-                .directAccessGrants()
+                .serviceAccountsEnabled()
+                .directAccessGrantsEnabled()
                 .redirectUris(OAuthClient.APP_ROOT + "/auth").build());
     }
 
@@ -153,7 +153,7 @@ public class SessionRestServiceTest extends AbstractRestServiceTest {
 
         List<DeviceRepresentation> devices = getDevicesOtherThanOther(tokenResponse.getAccessToken());
 
-        assertEquals("Should have a single device", 1, devices.size());
+        assertEquals(1, devices.size(), "Should have a single device");
 
         DeviceRepresentation device = devices.get(0);
 
@@ -188,10 +188,10 @@ public class SessionRestServiceTest extends AbstractRestServiceTest {
         setBrowserHeader("User-Agent", "Mozilla/5.0 (X11; Fedora; Linux x86_64; rv:15.0) Gecko/20100101 Firefox/15.0.1");
         AccessTokenResponse tokenResponse1 = codeGrant("public-client-0");
         List<DeviceRepresentation> devices = getDevicesOtherThanOther();
-        assertEquals("Should have a single device", 1, devices.size());
+        assertEquals(1, devices.size(), "Should have a single device");
         List<DeviceRepresentation> fedoraDevices = devices.stream()
                 .filter(deviceRepresentation -> "Fedora".equals(deviceRepresentation.getOs())).collect(Collectors.toList());
-        assertEquals("Should have a single Fedora device", 1, fedoraDevices.size());
+        assertEquals(1, fedoraDevices.size(), "Should have a single Fedora device");
         fedoraDevices.stream().forEach(device -> {
             List<SessionRepresentation> sessions = device.getSessions();
             assertEquals(1, sessions.size());
@@ -205,7 +205,7 @@ public class SessionRestServiceTest extends AbstractRestServiceTest {
         AccessTokenResponse tokenResponse2 = codeGrant("public-client-0");
         devices = getDevicesOtherThanOther();
         // should have two devices
-        assertEquals("Should have two devices", 2, devices.size());
+        assertEquals(2, devices.size(), "Should have two devices");
         fedoraDevices = devices.stream()
                 .filter(deviceRepresentation -> "Fedora".equals(deviceRepresentation.getOs())).collect(Collectors.toList());
         assertEquals(1, fedoraDevices.size());
@@ -240,8 +240,7 @@ public class SessionRestServiceTest extends AbstractRestServiceTest {
         AccessTokenResponse tokenResponse3 = codeGrant("public-client-0");
         devices = getDevicesOtherThanOther(tokenResponse3.getAccessToken());
         assertEquals(
-                "Should have a single device because all browsers (and sessions) are from the same platform (OS + OS version)",
-                1, devices.size());
+                1, devices.size(), "Should have a single device because all browsers (and sessions) are from the same platform (OS + OS version)");
         windowsDevices = devices.stream()
                 .filter(device -> "Windows".equals(device.getOs())).collect(Collectors.toList());
         assertEquals(1, windowsDevices.size());
@@ -269,7 +268,7 @@ public class SessionRestServiceTest extends AbstractRestServiceTest {
         devices = getDevicesOtherThanOther();
         windowsDevices = devices.stream()
                 .filter(device -> "Windows".equals(device.getOs())).collect(Collectors.toList());
-        assertEquals("Should have two devices for two distinct Windows versions", 2, devices.size());
+        assertEquals(2, devices.size(), "Should have two devices for two distinct Windows versions");
         assertEquals(2, windowsDevices.size());
 
         oauth.setDriver(firstBrowser);
@@ -284,7 +283,7 @@ public class SessionRestServiceTest extends AbstractRestServiceTest {
                 "Mozilla/5.0 (X11; Fedora; Linux x86_64; rv:15.0) Gecko/20100101 Firefox/15.0.1");
         tokenResponse2 = codeGrant("public-client-0");
         devices = getDevicesOtherThanOther();
-        assertEquals("Should have 3 devices", 3, devices.size());
+        assertEquals(3, devices.size(), "Should have 3 devices");
         windowsDevices = devices.stream()
                 .filter(device -> "Windows".equals(device.getOs())).collect(Collectors.toList());
         assertEquals(1, windowsDevices.size());
@@ -362,7 +361,7 @@ public class SessionRestServiceTest extends AbstractRestServiceTest {
 
         List<DeviceRepresentation> devices = queryDevices(tokenResponse.getAccessToken());
 
-        assertEquals("Should have a single device", 1, devices.size());
+        assertEquals(1, devices.size(), "Should have a single device");
 
         DeviceRepresentation device = devices.get(0);
 
@@ -442,7 +441,7 @@ public class SessionRestServiceTest extends AbstractRestServiceTest {
     }
 
     private void joinSsoSession(String clientId) {
-        oauth.clientId(clientId);
+        oauth.client(clientId);
         oauth.redirectUri(OAuthClient.APP_ROOT + "/auth");
         oauth.openLoginForm();
     }

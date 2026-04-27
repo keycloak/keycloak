@@ -377,6 +377,9 @@ Themes can be deployed to {project_name} by copying the theme directory to `them
 theme to the `themes` directory, but in production you may want to consider using an `archive`. An `archive` makes it simpler to have a versioned copy of
 the theme, especially when you have multiple instances of {project_name} for example with clustering.
 
+WARNING: Themes contain FreeMarker templates that the server renders at runtime, so a malicious template can run code as the {project_name} process. Install themes only from trusted sources, and restrict write access to the `themes` directory and to theme JARs under `providers/` to trusted operators.
+
+
 .Procedure
 
 . To deploy a theme as an archive, create a JAR archive with the theme resources.

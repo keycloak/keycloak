@@ -42,10 +42,10 @@ import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.TestApp;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectTestApp;
-import org.keycloak.testframework.realm.AuthenticationFlowConfigBuilder;
+import org.keycloak.testframework.realm.AuthenticationFlowBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
-import org.keycloak.testframework.realm.RealmConfigBuilder;
 import org.keycloak.testframework.ui.annotations.InjectPage;
 import org.keycloak.testframework.ui.annotations.InjectWebDriver;
 import org.keycloak.testframework.ui.page.ErrorPage;
@@ -396,10 +396,10 @@ public abstract class AbstractWebAuthnVirtualTest implements UseVirtualAuthentic
     public static class WebAuthnRealmConfig implements RealmConfig {
 
         @Override
-        public RealmConfigBuilder configure(RealmConfigBuilder builder) {
+        public RealmBuilder configure(RealmBuilder builder) {
             builder.name("webauthn").registrationAllowed(true);
 
-            AuthenticationFlowConfigBuilder flowBuilder1 = builder
+            AuthenticationFlowBuilder flowBuilder1 = builder
                     .addAuthenticationFlow("browser-webauthn", "browser based authentication", "basic-flow", true, false);
                     flowBuilder1.addAuthenticationExecutionWithAuthenticator("auth-cookie", "ALTERNATIVE", 10, false);
                     flowBuilder1.addAuthenticationExecutionWithAuthenticator("auth-spnego", "DISABLED", 20, false);
@@ -410,31 +410,31 @@ public abstract class AbstractWebAuthnVirtualTest implements UseVirtualAuthentic
             builder.addAuthenticationFlow("browser-webauthn-organization", "", "basic-flow", false, true)
                 .addAuthenticationExecutionWithAliasFlow("browser-webauthn-conditional-organization", "CONDITIONAL", 10, false);
 
-            AuthenticationFlowConfigBuilder flowBuilder2 = builder.addAuthenticationFlow("browser-webauthn-conditional-organization", "Flow to determine if the organization identity-first login is to be used", "basic-flow", false, true);
+            AuthenticationFlowBuilder flowBuilder2 = builder.addAuthenticationFlow("browser-webauthn-conditional-organization", "Flow to determine if the organization identity-first login is to be used", "basic-flow", false, true);
             flowBuilder2.addAuthenticationExecutionWithAuthenticator("conditional-user-configured", "REQUIRED", 10, false);
             flowBuilder2.addAuthenticationExecutionWithAuthenticator("organization", "ALTERNATIVE" , 20, false);
 
-            AuthenticationFlowConfigBuilder flowBuilder3 = builder.addAuthenticationFlow("browser-webauthn-forms", "Username, password, otp and other auth forms.", "basic-flow", false,false);
+            AuthenticationFlowBuilder flowBuilder3 = builder.addAuthenticationFlow("browser-webauthn-forms", "Username, password, otp and other auth forms.", "basic-flow", false,false);
             flowBuilder3.addAuthenticationExecutionWithAuthenticator("auth-username-password-form", "REQUIRED", 10, false);
             flowBuilder3.addAuthenticationExecutionWithAuthenticator("auth-otp-form", "DISABLED" , 20, false);
             flowBuilder3.addAuthenticationExecutionWithAuthenticator("webauthn-authenticator", "REQUIRED", 21, false);
 
-            AuthenticationFlowConfigBuilder flowBuilder4 = builder.addAuthenticationFlow("browser-webauthn-passwordless", "browser based authentication", "basic-flow", true, false);
+            AuthenticationFlowBuilder flowBuilder4 = builder.addAuthenticationFlow("browser-webauthn-passwordless", "browser based authentication", "basic-flow", true, false);
             flowBuilder4.addAuthenticationExecutionWithAuthenticator("auth-cookie", "ALTERNATIVE", 10, false);
             flowBuilder4.addAuthenticationExecutionWithAliasFlow("browser-webauthn-passwordless-forms", "ALTERNATIVE", 30, false);
 
-            AuthenticationFlowConfigBuilder flowBuilder5 = builder.addAuthenticationFlow("browser-webauthn-passwordless-forms", "Username, password, otp and other auth forms.", "basic-flow", false, false);
+            AuthenticationFlowBuilder flowBuilder5 = builder.addAuthenticationFlow("browser-webauthn-passwordless-forms", "Username, password, otp and other auth forms.", "basic-flow", false, false);
             flowBuilder5.addAuthenticationExecutionWithAuthenticator("auth-username-password-form", "REQUIRED", 10, false);
             flowBuilder5.addAuthenticationExecutionWithAuthenticator("webauthn-authenticator", "REQUIRED", 20, false);
             flowBuilder5.addAuthenticationExecutionWithAuthenticator("webauthn-authenticator-passwordless", "REQUIRED", 30, false);
 
             // passkeys-username-forms
-            AuthenticationFlowConfigBuilder flowBuilder6 = builder.addAuthenticationFlow("passkeys-username-forms", "Username, password, otp and other auth forms.", "basic-flow", false,false);
+            AuthenticationFlowBuilder flowBuilder6 = builder.addAuthenticationFlow("passkeys-username-forms", "Username, password, otp and other auth forms.", "basic-flow", false,false);
             flowBuilder6.addAuthenticationExecutionWithAuthenticator("auth-username-form", "REQUIRED", 10, false);
             flowBuilder6.addAuthenticationExecutionWithAuthenticator("auth-password-form", "REQUIRED" , 20, false);
 
             // flow for passkeys-username
-            AuthenticationFlowConfigBuilder flowBuilder7 = builder
+            AuthenticationFlowBuilder flowBuilder7 = builder
                     .addAuthenticationFlow("passkeys-username", "passkeys username", "basic-flow", true, false);
             flowBuilder7.addAuthenticationExecutionWithAuthenticator("auth-cookie", "ALTERNATIVE", 10, false);
             flowBuilder7.addAuthenticationExecutionWithAuthenticator("auth-spnego", "DISABLED", 20, false);

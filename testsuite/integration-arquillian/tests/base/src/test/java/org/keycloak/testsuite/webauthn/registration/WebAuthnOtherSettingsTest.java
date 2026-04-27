@@ -132,7 +132,7 @@ public class WebAuthnOtherSettingsTest extends AbstractWebAuthnVirtualTest {
 
         try (Closeable u = getWebAuthnRealmUpdater().setWebAuthnPolicyCreateTimeout(TIMEOUT).update()) {
 
-            WebAuthnRealmData realmData = new WebAuthnRealmData(testRealm().toRepresentation(), isPasswordless());
+            WebAuthnRealmData realmData = new WebAuthnRealmData(managedRealm.admin().toRepresentation(), isPasswordless());
             assertThat(realmData.getCreateTimeout(), is(TIMEOUT));
 
             oauth.openLoginForm();
@@ -162,7 +162,7 @@ public class WebAuthnOtherSettingsTest extends AbstractWebAuthnVirtualTest {
 
     @Test
     public void acceptableAaguidsShouldBeEmptyOrNullByDefault() {
-        WebAuthnRealmData realmData = new WebAuthnRealmData(testRealm().toRepresentation(), isPasswordless());
+        WebAuthnRealmData realmData = new WebAuthnRealmData(managedRealm.admin().toRepresentation(), isPasswordless());
         assertThat(realmData.getAcceptableAaguids(), anyOf(nullValue(), Matchers.empty()));
     }
 
@@ -175,7 +175,7 @@ public class WebAuthnOtherSettingsTest extends AbstractWebAuthnVirtualTest {
                 .setWebAuthnPolicyAcceptableAaguids(acceptableAaguids)
                 .update()) {
 
-            WebAuthnRealmData realmData = new WebAuthnRealmData(testRealm().toRepresentation(), isPasswordless());
+            WebAuthnRealmData realmData = new WebAuthnRealmData(managedRealm.admin().toRepresentation(), isPasswordless());
             assertThat(realmData.getAcceptableAaguids(), Matchers.contains(ALL_ONE_AAGUID));
 
             registerDefaultUser();

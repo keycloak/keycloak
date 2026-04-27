@@ -38,7 +38,7 @@ public class KcAdmV2CompleterTest {
         assertTrue("Should suggest 'create'", candidates.contains("create"));
         assertTrue("Should suggest 'get'", candidates.contains("get"));
         assertTrue("Should suggest 'patch'", candidates.contains("patch"));
-        assertTrue("Should suggest 'update'", candidates.contains("update"));
+        assertTrue("Should suggest 'apply'", candidates.contains("apply"));
         assertTrue("Should suggest 'delete'", candidates.contains("delete"));
     }
 
@@ -103,6 +103,7 @@ public class KcAdmV2CompleterTest {
         assertTrue("Should suggest '--web-origins'", candidates.contains("--web-origins"));
         assertTrue("Should suggest '--auth-method'", candidates.contains("--auth-method"));
         assertFalse("Should not suggest '--sign-documents'", candidates.contains("--sign-documents"));
+        assertFalse("Should not suggest '--uuid' on create: " + candidates, candidates.contains("--uuid"));
     }
 
     @Test
@@ -138,19 +139,20 @@ public class KcAdmV2CompleterTest {
     }
 
     @Test
-    public void testUpdateVariantsInAutocomplete() {
-        List<String> candidates = complete("client", "update", "");
+    public void testApplyVariantsInAutocomplete() {
+        List<String> candidates = complete("client", "apply", "");
         assertTrue("Should suggest 'oidc'", candidates.contains("oidc"));
         assertTrue("Should suggest 'saml'", candidates.contains("saml"));
     }
 
     @Test
-    public void testUpdateOidcOptionsInAutocomplete() {
-        List<String> candidates = complete("client", "update", "oidc", "--");
+    public void testApplyOidcOptionsInAutocomplete() {
+        List<String> candidates = complete("client", "apply", "oidc", "--");
         assertTrue("Should suggest '--client-id'", candidates.contains("--client-id"));
         assertTrue("Should suggest '--login-flows'", candidates.contains("--login-flows"));
         assertTrue("Should suggest '--compressed'", candidates.contains("--compressed"));
         assertFalse("Should not suggest '--sign-documents'", candidates.contains("--sign-documents"));
+        assertFalse("Should not suggest '--uuid' on apply: " + candidates, candidates.contains("--uuid"));
     }
 
     @Test
@@ -200,7 +202,7 @@ public class KcAdmV2CompleterTest {
     }
 
     private void assertSubcommandsDoNotContain(List<String> candidates) {
-        for (String name : new String[]{"create", "get", "patch", "update", "delete"}) {
+        for (String name : new String[]{"create", "get", "patch", "apply", "delete"}) {
             if (candidates.contains(name)) {
                 throw new AssertionError("Should not contain '" + name + "' but did");
             }

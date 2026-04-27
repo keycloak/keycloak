@@ -46,8 +46,8 @@ import org.keycloak.testframework.events.Events;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
 import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
-import org.keycloak.testframework.realm.RealmConfigBuilder;
 import org.keycloak.testframework.ui.annotations.InjectPage;
 import org.keycloak.testframework.ui.page.LoginPage;
 import org.keycloak.tests.suites.DatabaseTest;
@@ -341,7 +341,6 @@ public class IdentityProviderOidcTest extends AbstractIdentityProviderTest {
 
         assertEquals("update-identity-provider", representation.getAlias());
 
-        representation.setAlias("changed-alias");
         representation.setEnabled(false);
         representation.setStoreToken(true);
         representation.getConfig().put("clientId", "changedClientId");
@@ -362,7 +361,7 @@ public class IdentityProviderOidcTest extends AbstractIdentityProviderTest {
         assertTrue(representation.isStoreToken());
         assertEquals("changedClientId", representation.getConfig().get("clientId"));
 
-        assertEquals("some secret value", runOnServer.fetch(s -> s.identityProviders().getByAlias("changed-alias").getConfig().get("clientSecret"), String.class));
+        assertEquals("some secret value", runOnServer.fetch(s -> s.identityProviders().getByAlias("update-identity-provider").getConfig().get("clientSecret"), String.class));
 
         representation.getConfig().put("clientSecret", "${vault.key}");
         identityProviderResource.update(representation);
@@ -372,7 +371,32 @@ public class IdentityProviderOidcTest extends AbstractIdentityProviderTest {
         assertThat(event.getRepresentation(), not(containsString(ComponentRepresentation.SECRET_VALUE)));
 
         assertThat(identityProviderResource.toRepresentation().getConfig(), hasEntry("clientSecret", "${vault.key}"));
-        assertEquals("${vault.key}", runOnServer.fetch(s -> s.identityProviders().getByAlias("changed-alias").getConfig().get("clientSecret"), String.class));
+        assertEquals("${vault.key}", runOnServer.fetch(s -> s.identityProviders().getByAlias("update-identity-provider").getConfig().get("clientSecret"), String.class));
+    }
+
+    @Test
+    public void failUpdateAlias() {
+        IdentityProviderRepresentation newIdentityProvider = createRep("fail-update-alias", "oidc");
+        newIdentityProvider.getConfig().put("clientId", "clientId");
+        String id = create(newIdentityProvider);
+
+        IdentityProviderResource identityProviderResource = managedRealm.admin().identityProviders().get("fail-update-alias");
+        IdentityProviderRepresentation representation = identityProviderResource.toRepresentation();
+
+        representation.setAlias("changed-alias");
+
+        try {
+            identityProviderResource.update(representation);
+            fail("Should not be able to change the alias");
+        } catch (Exception e) {
+            assertError(e, "Identity Provider alias cannot be changed");
+        }
+
+        // Verify alias was not changed
+        representation = managedRealm.admin().identityProviders().get("fail-update-alias").toRepresentation();
+        assertEquals("fail-update-alias", representation.getAlias());
+
+        managedRealm.cleanup().add(r -> r.identityProviders().get(id).remove());
     }
 
     @Test
@@ -564,7 +588,7 @@ public class IdentityProviderOidcTest extends AbstractIdentityProviderTest {
     public static class ExternalRealmConfig implements RealmConfig {
 
         @Override
-        public RealmConfigBuilder configure(RealmConfigBuilder realm) {
+        public RealmBuilder configure(RealmBuilder realm) {
             realm.name("external-realm");
 
             realm.addClient("test-client")

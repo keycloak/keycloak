@@ -44,9 +44,9 @@ import org.junit.Test;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.fail;
 
 
 public class OrganizationGroupOidcIdpMapperTest extends AbstractOrganizationTest {
@@ -55,7 +55,7 @@ public class OrganizationGroupOidcIdpMapperTest extends AbstractOrganizationTest
     public void testAdvancedClaimToGroupMapperWithOrganizationGroup() {
         // Create organization with IdP
         OrganizationRepresentation orgRep = createOrganization();
-        OrganizationResource orgResource = testRealm().organizations().get(orgRep.getId());
+        OrganizationResource orgResource = managedRealm.admin().organizations().get(orgRep.getId());
 
         // Create organization group
         GroupRepresentation orgGroup = new GroupRepresentation();
@@ -84,25 +84,25 @@ public class OrganizationGroupOidcIdpMapperTest extends AbstractOrganizationTest
                 .build());
 
         String mapperId;
-        try (Response response = testRealm().identityProviders().get(idp.getAlias()).addMapper(mapper)) {
+        try (Response response = managedRealm.admin().identityProviders().get(idp.getAlias()).addMapper(mapper)) {
             assertThat(response.getStatus(), is(Status.CREATED.getStatusCode()));
             mapperId = ApiUtil.getCreatedId(response);
         }
 
         // Verify mapper was created
-        IdentityProviderMapperRepresentation createdMapper = testRealm().identityProviders()
+        IdentityProviderMapperRepresentation createdMapper = managedRealm.admin().identityProviders()
                 .get(idp.getAlias())
                 .getMapperById(mapperId);
 
-        assertNotNull("Mapper should be created", createdMapper);
-        assertEquals("Mapper should reference org group", groupPath, createdMapper.getConfig().get(ConfigConstants.GROUP));
+        assertNotNull(createdMapper, "Mapper should be created");
+        assertEquals(groupPath, createdMapper.getConfig().get(ConfigConstants.GROUP), "Mapper should reference org group");
     }
 
     @Test
     public void testCreateMapperWithOrganizationSubgroup() {
         // Create organization with IdP
         OrganizationRepresentation orgRep = createOrganization();
-        OrganizationResource orgResource = testRealm().organizations().get(orgRep.getId());
+        OrganizationResource orgResource = managedRealm.admin().organizations().get(orgRep.getId());
 
         // Create parent organization group
         GroupRepresentation parentGroup = new GroupRepresentation();
@@ -122,7 +122,7 @@ public class OrganizationGroupOidcIdpMapperTest extends AbstractOrganizationTest
 
         // Get the subgroup from the parent's children
         List<GroupRepresentation> children = orgResource.groups().group(parentId).getSubGroups(null, null, null, null);
-        assertNotNull("Parent should have subgroups", children);
+        assertNotNull(children, "Parent should have subgroups");
         assertThat("Parent should have 1 subgroup", children.size(), is(1));
 
         String childGroupPath = children.get(0).getPath();
@@ -140,18 +140,18 @@ public class OrganizationGroupOidcIdpMapperTest extends AbstractOrganizationTest
                 .build());
 
         String mapperId;
-        try (Response response = testRealm().identityProviders().get(idp.getAlias()).addMapper(mapper)) {
+        try (Response response = managedRealm.admin().identityProviders().get(idp.getAlias()).addMapper(mapper)) {
             assertThat(response.getStatus(), is(Status.CREATED.getStatusCode()));
             mapperId = ApiUtil.getCreatedId(response);
         }
 
         // Verify mapper was created with subgroup path
-        IdentityProviderMapperRepresentation createdMapper = testRealm().identityProviders()
+        IdentityProviderMapperRepresentation createdMapper = managedRealm.admin().identityProviders()
                 .get(idp.getAlias())
                 .getMapperById(mapperId);
 
-        assertNotNull("Mapper should be created", createdMapper);
-        assertEquals("Mapper should reference org subgroup", childGroupPath, createdMapper.getConfig().get(ConfigConstants.GROUP));
+        assertNotNull(createdMapper, "Mapper should be created");
+        assertEquals(childGroupPath, createdMapper.getConfig().get(ConfigConstants.GROUP), "Mapper should reference org subgroup");
     }
 
     @Test
@@ -159,14 +159,14 @@ public class OrganizationGroupOidcIdpMapperTest extends AbstractOrganizationTest
         // Create IdP NOT linked to organization
         IdentityProviderRepresentation nonOrgIdp = bc.setUpIdentityProvider();
         nonOrgIdp.setAlias("non-org-idp");
-        try (Response response = testRealm().identityProviders().create(nonOrgIdp)) {
+        try (Response response = managedRealm.admin().identityProviders().create(nonOrgIdp)) {
             assertThat(response.getStatus(), is(Status.CREATED.getStatusCode()));
         }
-        getCleanup().addCleanup(() -> testRealm().identityProviders().get("non-org-idp").remove());
+        getCleanup().addCleanup(() -> managedRealm.admin().identityProviders().get("non-org-idp").remove());
 
         // Create organization with groups
         OrganizationRepresentation orgRep = createOrganization();
-        OrganizationResource orgResource = testRealm().organizations().get(orgRep.getId());
+        OrganizationResource orgResource = managedRealm.admin().organizations().get(orgRep.getId());
 
         GroupRepresentation orgGroup = new GroupRepresentation();
         orgGroup.setName("test-org-group");
@@ -176,7 +176,7 @@ public class OrganizationGroupOidcIdpMapperTest extends AbstractOrganizationTest
 
         // Try to get groups for non-org IdP - should return NOT_FOUND
         try {
-            testRealm().organizations().get(orgRep.getId())
+            managedRealm.admin().organizations().get(orgRep.getId())
                     .identityProviders().get("non-org-idp").getGroups(null, null, false, null, null, true, false);
             fail("Should have failed with NotFoundException");
         } catch (jakarta.ws.rs.NotFoundException e) {
@@ -188,7 +188,7 @@ public class OrganizationGroupOidcIdpMapperTest extends AbstractOrganizationTest
     public void testUserAddedToOrganizationGroupViaMapper() {
         // Create organization with group
         OrganizationRepresentation orgRep = createOrganization();
-        OrganizationResource orgResource = testRealm().organizations().get(orgRep.getId());
+        OrganizationResource orgResource = managedRealm.admin().organizations().get(orgRep.getId());
 
         GroupRepresentation orgGroup = new GroupRepresentation();
         orgGroup.setName("mapper-test-group");
@@ -213,7 +213,7 @@ public class OrganizationGroupOidcIdpMapperTest extends AbstractOrganizationTest
                 .put(ConfigConstants.GROUP_TYPE, GroupModel.Type.ORGANIZATION.name())
                 .build());
 
-        try (Response response = testRealm().identityProviders().get(idp.getAlias()).addMapper(mapper)) {
+        try (Response response = managedRealm.admin().identityProviders().get(idp.getAlias()).addMapper(mapper)) {
             assertThat(response.getStatus(), is(Status.CREATED.getStatusCode()));
         }
 
@@ -232,7 +232,7 @@ public class OrganizationGroupOidcIdpMapperTest extends AbstractOrganizationTest
     @Test
     public void testUserNotAddedToGroupAfterIdpUnlinkedFromOrganization() {
         OrganizationRepresentation orgRep = createOrganization();
-        OrganizationResource orgResource = testRealm().organizations().get(orgRep.getId());
+        OrganizationResource orgResource = managedRealm.admin().organizations().get(orgRep.getId());
 
         GroupRepresentation orgGroup = new GroupRepresentation();
         orgGroup.setName("unlink-test-group");
@@ -257,7 +257,7 @@ public class OrganizationGroupOidcIdpMapperTest extends AbstractOrganizationTest
                 .put(ConfigConstants.GROUP_TYPE, GroupModel.Type.ORGANIZATION.name())
                 .build());
 
-        try (Response response = testRealm().identityProviders().get(idp.getAlias()).addMapper(mapper)) {
+        try (Response response = managedRealm.admin().identityProviders().get(idp.getAlias()).addMapper(mapper)) {
             assertThat(response.getStatus(), is(Status.CREATED.getStatusCode()));
         }
 
@@ -285,7 +285,7 @@ public class OrganizationGroupOidcIdpMapperTest extends AbstractOrganizationTest
         // Second login: bypass the org identity-first page (which hides the unlinked IdP) by
         // navigating directly with kc_idp_hint. The IdP still exists in the realm so login succeeds,
         // but the mapper cannot resolve the org group and the user is NOT re-added to it.
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
         driver.navigate().to(driver.getCurrentUrl() + "&kc_idp_hint=" + bc.getIDPAlias());
         loginOrgIdp(bc.getUserLogin(), bc.getUserEmail(), false, true);
@@ -298,7 +298,7 @@ public class OrganizationGroupOidcIdpMapperTest extends AbstractOrganizationTest
     @Test
     public void testRealmGroupAllowedWithOrganizationIdp() {
         OrganizationRepresentation orgRep = createOrganization();
-        OrganizationResource orgResource = testRealm().organizations().get(orgRep.getId());
+        OrganizationResource orgResource = managedRealm.admin().organizations().get(orgRep.getId());
 
         // Create REALM group in the consumer realm
         GroupRepresentation realmGroup = new GroupRepresentation();
@@ -321,7 +321,7 @@ public class OrganizationGroupOidcIdpMapperTest extends AbstractOrganizationTest
                 .put(ConfigConstants.GROUP, groupPath)
                 .build());
 
-        try (Response response = testRealm().identityProviders().get(idp.getAlias()).addMapper(mapper)) {
+        try (Response response = managedRealm.admin().identityProviders().get(idp.getAlias()).addMapper(mapper)) {
             assertThat(response.getStatus(), is(Status.CREATED.getStatusCode()));
         }
 
@@ -340,7 +340,7 @@ public class OrganizationGroupOidcIdpMapperTest extends AbstractOrganizationTest
     @Test
     public void testHardcodedGroupMapperDoesNotAssignOrganizationGroupMembershipWhenOrganizationIsDisabled() {
         OrganizationRepresentation orgRep = createOrganization();
-        OrganizationResource orgResource = testRealm().organizations().get(orgRep.getId());
+        OrganizationResource orgResource = managedRealm.admin().organizations().get(orgRep.getId());
 
         GroupRepresentation orgGroup = new GroupRepresentation();
         orgGroup.setName("disabled-org-test-group");
@@ -364,7 +364,7 @@ public class OrganizationGroupOidcIdpMapperTest extends AbstractOrganizationTest
                 .put(ConfigConstants.GROUP_TYPE, GroupModel.Type.ORGANIZATION.name())
                 .build());
 
-        try (Response response = testRealm().identityProviders().get(idp.getAlias()).addMapper(mapper)) {
+        try (Response response = managedRealm.admin().identityProviders().get(idp.getAlias()).addMapper(mapper)) {
             assertThat(response.getStatus(), is(Status.CREATED.getStatusCode()));
         }
 
@@ -381,7 +381,7 @@ public class OrganizationGroupOidcIdpMapperTest extends AbstractOrganizationTest
         }
 
         // Verify the org-linked IdP now appears disabled (org-aware wrapper)
-        IdentityProviderRepresentation updatedIdp = testRealm().identityProviders().get(bc.getIDPAlias()).toRepresentation();
+        IdentityProviderRepresentation updatedIdp = managedRealm.admin().identityProviders().get(bc.getIDPAlias()).toRepresentation();
         assertThat("IdP should appear disabled when org is disabled", updatedIdp.isEnabled(), is(false));
 
         // Group membership assigned while the org was enabled is unaffected by the org being disabled

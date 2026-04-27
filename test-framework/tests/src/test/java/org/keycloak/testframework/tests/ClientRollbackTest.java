@@ -3,8 +3,8 @@ package org.keycloak.testframework.tests;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.testframework.annotations.InjectClient;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.ClientConfig;
-import org.keycloak.testframework.realm.ClientConfigBuilder;
 import org.keycloak.testframework.realm.ManagedClient;
 
 import org.junit.jupiter.api.Assertions;
@@ -42,7 +42,7 @@ public class ClientRollbackTest {
     public static class ClientWithSingleAttribute implements ClientConfig {
 
         @Override
-        public ClientConfigBuilder configure(ClientConfigBuilder client) {
+        public ClientBuilder configure(ClientBuilder client) {
             return client.attribute("one", "one");
         }
 

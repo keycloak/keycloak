@@ -37,7 +37,6 @@ import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractAdminTest;
-import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.IgnoreBrowserDriver;
 import org.keycloak.testsuite.util.WaitUtils;
@@ -47,6 +46,7 @@ import org.keycloak.testsuite.webauthn.authenticators.DefaultVirtualAuthOptions;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 import org.openqa.selenium.By;
 import org.openqa.selenium.firefox.FirefoxDriver;
 
@@ -142,16 +142,16 @@ public class PasskeysOrganizationAuthenticationTest extends AbstractWebAuthnVirt
         getVirtualAuthManager().useAuthenticator(DefaultVirtualAuthOptions.PASSKEYS.getOptions());
 
         // enable organization configuration
-        AuthenticationExecutionInfoRepresentation organizationExec = testRealm().flows().getExecutions("browser-webauthn-conditional-organization").stream()
+        AuthenticationExecutionInfoRepresentation organizationExec = managedRealm.admin().flows().getExecutions("browser-webauthn-conditional-organization").stream()
                 .filter(exec -> OrganizationAuthenticatorFactory.ID.equals(exec.getProviderId()))
                 .findAny()
                 .orElse(null);
-        Assert.assertNotNull("Organization execution not found", organizationExec);
+        Assertions.assertNotNull(organizationExec, "Organization execution not found");
 
         AuthenticatorConfigRepresentation config = new AuthenticatorConfigRepresentation();
         config.setAlias(KeycloakModelUtils.generateId());
         config.getConfig().put(OrganizationAuthenticatorFactory.REQUIRES_USER_MEMBERSHIP, Boolean.TRUE.toString());
-        getCleanup().addAuthenticationConfigId(ApiUtil.getCreatedId(testRealm().flows().newExecutionConfig(organizationExec.getId(), config)));
+        getCleanup().addAuthenticationConfigId(ApiUtil.getCreatedId(managedRealm.admin().flows().newExecutionConfig(organizationExec.getId(), config)));
 
         // set passwordless policy for discoverable keys
         try (Closeable c = getWebAuthnRealmUpdater()

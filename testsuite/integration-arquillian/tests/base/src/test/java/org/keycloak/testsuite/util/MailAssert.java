@@ -26,9 +26,9 @@ import jakarta.mail.internet.MimeMultipart;
 
 import org.jboss.logging.Logger;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class MailAssert {
 
@@ -43,7 +43,7 @@ public class MailAssert {
             } else {
                 message = MailServer.getLastReceivedMessage();
             }            
-            assertNotNull("There is no received email.", message);
+            assertNotNull(message, "There is no received email.");
             assertEquals(recipient, message.getRecipients(RecipientType.TO)[0].toString());
             assertEquals(from, message.getFrom()[0].toString());
 
@@ -60,7 +60,7 @@ public class MailAssert {
             String errorMessage = "Email content should contains \"" + content
                     + "\", but it doesn't.\nEmail content:\n" + messageContent + "\n";
 
-            assertTrue(errorMessage, messageContent.contains(content));
+            assertTrue(messageContent.contains(content), errorMessage);
             for (String string : messageContent.split("\n")) {
                 if (string.startsWith("http")) {
                     // Ampersand escaped in the text version. Needs to be replaced to have correct URL

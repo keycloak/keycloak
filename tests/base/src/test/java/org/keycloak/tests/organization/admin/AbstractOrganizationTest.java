@@ -42,8 +42,8 @@ import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
-import org.keycloak.testframework.realm.RealmConfigBuilder;
 import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.testsuite.util.CredentialBuilder;
 import org.keycloak.testsuite.util.IdentityProviderBuilder;
@@ -249,7 +249,7 @@ public abstract class AbstractOrganizationTest {
      */
     public static class OrganizationRealmConfig implements RealmConfig {
         @Override
-        public RealmConfigBuilder configure(RealmConfigBuilder realm) {
+        public RealmBuilder configure(RealmBuilder realm) {
             return realm.organizationsEnabled(true);
         }
     }

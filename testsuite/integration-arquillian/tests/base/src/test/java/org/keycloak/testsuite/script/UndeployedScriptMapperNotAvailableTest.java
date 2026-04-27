@@ -44,7 +44,7 @@ import static org.keycloak.testsuite.admin.AdminApiUtil.findClientResourceByClie
 import static org.keycloak.testsuite.arquillian.DeploymentTargetModifier.AUTH_SERVER_CURRENT;
 import static org.keycloak.testsuite.util.ProtocolMapperUtil.createScriptMapper;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>

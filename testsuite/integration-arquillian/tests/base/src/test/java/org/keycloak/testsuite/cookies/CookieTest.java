@@ -59,8 +59,8 @@ import static org.keycloak.testsuite.AbstractAdminTest.loadJson;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.not;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  *
@@ -119,7 +119,7 @@ public class CookieTest extends AbstractKeycloakTest {
             HttpContext localContext = new BasicHttpContext();
             localContext.setAttribute(HttpClientContext.COOKIE_STORE, cookieStore);
 
-            HttpGet get = new HttpGet(oauth.clientId("test-app").redirectUri(oauth.APP_AUTH_ROOT).loginForm().build());
+            HttpGet get = new HttpGet(oauth.client("test-app", "password").redirectUri(oauth.APP_AUTH_ROOT).loginForm().build());
             try (CloseableHttpResponse resp = hc.execute(get, localContext)) {
                 final String pageContent = EntityUtils.toString(resp.getEntity());
 
@@ -157,7 +157,7 @@ public class CookieTest extends AbstractKeycloakTest {
             HttpContext localContext = new BasicHttpContext();
             localContext.setAttribute(HttpClientContext.COOKIE_STORE, cookieStore);
 
-            HttpGet get = new HttpGet(oauth.clientId("test-app").redirectUri(oauth.APP_AUTH_ROOT).loginForm().build());
+            HttpGet get = new HttpGet(oauth.client("test-app", "password").redirectUri(oauth.APP_AUTH_ROOT).loginForm().build());
             try (CloseableHttpResponse resp = hc.execute(get, localContext)) {
                 final String pageContent = EntityUtils.toString(resp.getEntity());
 
@@ -201,7 +201,7 @@ public class CookieTest extends AbstractKeycloakTest {
                 Set<String> cookies = new HashSet<>();
 
                 for (Header header : headers) {
-                    assertTrue("Cookie '" + header.getValue() + "' is duplicated", cookies.add(header.getValue()));
+                    assertTrue(cookies.add(header.getValue()), "Cookie '" + header.getValue() + "' is duplicated");
                 }
 
                 assertFalse(cookies.isEmpty());

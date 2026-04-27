@@ -38,10 +38,10 @@ import org.keycloak.testsuite.util.LDAPRule;
 import org.keycloak.testsuite.util.LDAPTestConfiguration;
 import org.keycloak.testsuite.util.LDAPTestUtils;
 
-import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 import org.junit.runners.MethodSorters;
 
 import static org.keycloak.testsuite.util.LDAPTestUtils.getGroupDescriptionLDAPAttrName;
@@ -112,7 +112,7 @@ public class LDAPSpecialCharsTest extends AbstractLDAPTest {
         }).findFirst().isPresent();
 
         if (!found) {
-            Assert.fail("Username " + username + " not found in the list");
+            Assertions.fail("Username " + username + " not found in the list");
         }
     }
 
@@ -122,16 +122,16 @@ public class LDAPSpecialCharsTest extends AbstractLDAPTest {
         // Fail login with wildcard
         oauth.openLoginForm();
         loginPage.login("john*", "Password1");
-        Assert.assertEquals("Invalid username or password.", loginPage.getInputError());
+        Assertions.assertEquals("Invalid username or password.", loginPage.getInputError());
 
         // Fail login with wildcard
         loginPage.login("j*", "Password1");
-        Assert.assertEquals("Invalid username or password.", loginPage.getInputError());
+        Assertions.assertEquals("Invalid username or password.", loginPage.getInputError());
 
         // Success login as username exactly match
         loginPage.login("jamees,key*cložak)ppp", "Password1");
-        Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assert.assertNotNull(oauth.parseLoginResponse().getCode());
+        Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
     }
 
 
@@ -146,46 +146,46 @@ public class LDAPSpecialCharsTest extends AbstractLDAPTest {
             appRealm.updateComponent(mapperModel);
 
             UserModel specialUser = session.users().getUserByUsername(appRealm, "jamees,key*cložak)ppp");
-            Assert.assertNotNull(specialUser);
+            Assertions.assertNotNull(specialUser);
 
             // 1 - Grant some groups in LDAP
 
             // This group should already exists as it was imported from LDAP
             GroupModel specialGroup = KeycloakModelUtils.findGroupByPath(session, appRealm, "/group-spec,ia*l_characžter)s");
-            Assert.assertNotNull(specialGroup);
+            Assertions.assertNotNull(specialGroup);
 
             specialUser.joinGroup(specialGroup);
 
             GroupModel groupWithSlashes = KeycloakModelUtils.findGroupByPath(session, appRealm, "/group/with/three/slashes");
-            Assert.assertNotNull(groupWithSlashes);
+            Assertions.assertNotNull(groupWithSlashes);
 
             specialUser.joinGroup(groupWithSlashes);
 
             // 2 - Check that group mappings are in LDAP and hence available through federation
 
             Set<GroupModel> userGroups = specialUser.getGroupsStream().collect(Collectors.toSet());
-            Assert.assertEquals(2, userGroups.size());
-            Assert.assertTrue(userGroups.contains(specialGroup));
+            Assertions.assertEquals(2, userGroups.size());
+            Assertions.assertTrue(userGroups.contains(specialGroup));
 
             // 3 - Check through userProvider
             List<UserModel> groupMembers = session.users().getGroupMembersStream(appRealm, specialGroup, 0, 10)
                     .collect(Collectors.toList());
 
-            Assert.assertEquals(1, groupMembers.size());
-            Assert.assertEquals("jamees,key*cložak)ppp", groupMembers.get(0).getUsername());
+            Assertions.assertEquals(1, groupMembers.size());
+            Assertions.assertEquals("jamees,key*cložak)ppp", groupMembers.get(0).getUsername());
 
             groupMembers = session.users().getGroupMembersStream(appRealm, groupWithSlashes, 0, 10)
                     .collect(Collectors.toList());
 
-            Assert.assertEquals(1, groupMembers.size());
-            Assert.assertEquals("jamees,key*cložak)ppp", groupMembers.get(0).getUsername());
+            Assertions.assertEquals(1, groupMembers.size());
+            Assertions.assertEquals("jamees,key*cložak)ppp", groupMembers.get(0).getUsername());
 
             // 4 - Delete some group mappings and check they are deleted
 
             specialUser.leaveGroup(specialGroup);
             specialUser.leaveGroup(groupWithSlashes);
 
-            Assert.assertEquals(0, specialUser.getGroupsStream().count());
+            Assertions.assertEquals(0, specialUser.getGroupsStream().count());
 
         });
     }
@@ -193,7 +193,7 @@ public class LDAPSpecialCharsTest extends AbstractLDAPTest {
     @Test
     public void test04_loginWithSpecialCharacterUsingSameUUIDThanUsernameAttribute() {
         // remove users from the ldap to use the new UUID attribute
-        adminClient.realm(TEST_REALM_NAME).userStorage().removeImportedUsers(ldapModelId);
+        managedRealm.admin().userStorage().removeImportedUsers(ldapModelId);
 
         // change the UUID attribute to be the username attribute
         String origUuidAttrName = testingClient.server().fetch(session -> {
@@ -209,26 +209,26 @@ public class LDAPSpecialCharsTest extends AbstractLDAPTest {
 
         try {
             // assert the user is found and UUID is the name
-            List<UserRepresentation> users = adminClient.realm(TEST_REALM_NAME).users().search("jamees,key*cložak)ppp", true);
-            Assert.assertEquals("User not found", 1, users.size());
+            List<UserRepresentation> users = managedRealm.admin().users().search("jamees,key*cložak)ppp", true);
+            Assertions.assertEquals(1, users.size(), "User not found");
             UserRepresentation jamees = users.iterator().next();
-            Assert.assertEquals("Incorrect user", "jamees,key*cložak)ppp", jamees.getUsername());
-            Assert.assertEquals("Incorrect UUID attribute", "jamees,key*cložak)ppp", jamees.firstAttribute(LDAPConstants.LDAP_ID));
+            Assertions.assertEquals("jamees,key*cložak)ppp", jamees.getUsername(), "Incorrect user");
+            Assertions.assertEquals("jamees,key*cložak)ppp", jamees.firstAttribute(LDAPConstants.LDAP_ID), "Incorrect UUID attribute");
 
             // Fail login with wildcard
             oauth.openLoginForm();
             loginPage.login("jamees*", "Password1");
-            Assert.assertEquals("Invalid username or password.", loginPage.getInputError());
+            Assertions.assertEquals("Invalid username or password.", loginPage.getInputError());
 
             // Success login as username exactly match
             loginPage.login("jamees,key*cložak)ppp", "Password1");
-            Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
-            Assert.assertNotNull(oauth.parseLoginResponse().getCode());
+            Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+            Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
         } finally {
             // Revert config changes to be back to previous UUID attribute
-            ComponentRepresentation ldapRep = testRealm().components().component(ldapModelId).toRepresentation();
+            ComponentRepresentation ldapRep = managedRealm.admin().components().component(ldapModelId).toRepresentation();
             ldapRep.getConfig().putSingle(LDAPConstants.UUID_LDAP_ATTRIBUTE, origUuidAttrName);
-            testRealm().components().component(ldapModelId).update(ldapRep);
+            managedRealm.admin().components().component(ldapModelId).update(ldapRep);
         }
     }
 }

@@ -80,7 +80,7 @@ import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Abstract class for WebAuthn tests which use Virtual Authenticators
@@ -166,16 +166,16 @@ public abstract class AbstractWebAuthnVirtualTest extends AbstractChangeImported
 
     @Override
     protected void postAfterAbstractKeycloak() {
-        List<UserRepresentation> defaultUser = testRealm().users().search(USERNAME, true);
+        List<UserRepresentation> defaultUser = managedRealm.admin().users().search(USERNAME, true);
         if (defaultUser != null && !defaultUser.isEmpty()) {
-            Response response = testRealm().users().delete(defaultUser.get(0).getId());
+            Response response = managedRealm.admin().users().delete(defaultUser.get(0).getId());
             assertThat(response, notNullValue());
             assertThat(response.getStatus(), is(204));
         }
     }
 
     public UserResource userResource() {
-        return AdminApiUtil.findUserByUsernameId(testRealm(), USERNAME);
+        return AdminApiUtil.findUserByUsernameId(managedRealm.admin(), USERNAME);
     }
 
     public VirtualAuthenticatorOptions getDefaultAuthenticatorOptions() {
@@ -192,7 +192,7 @@ public abstract class AbstractWebAuthnVirtualTest extends AbstractChangeImported
     }
 
     public AbstractWebAuthnRealmUpdater<?> getWebAuthnRealmUpdater() {
-        return isPasswordless() ? new PasswordLessRealmAttributeUpdater(testRealm()) : new WebAuthnRealmAttributeUpdater(testRealm());
+        return isPasswordless() ? new PasswordLessRealmAttributeUpdater(managedRealm.admin()) : new WebAuthnRealmAttributeUpdater(managedRealm.admin());
     }
 
     public String getCredentialType() {
@@ -454,7 +454,7 @@ public abstract class AbstractWebAuthnVirtualTest extends AbstractChangeImported
     }
 
     protected void checkWebAuthnConfiguration(String residentKey, String userVerification) {
-        WebAuthnRealmData realmData = new WebAuthnRealmData(testRealm().toRepresentation(), isPasswordless());
+        WebAuthnRealmData realmData = new WebAuthnRealmData(managedRealm.admin().toRepresentation(), isPasswordless());
         assertThat(realmData, notNullValue());
         assertThat(realmData.getRpEntityName(), is("localhost"));
         assertThat(realmData.getRequireResidentKey(), is(residentKey));

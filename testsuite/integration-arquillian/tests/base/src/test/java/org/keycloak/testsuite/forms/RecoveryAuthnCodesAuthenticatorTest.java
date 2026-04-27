@@ -59,10 +59,10 @@ import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Assert;
 import org.junit.FixMethodOrder;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 import org.junit.runners.MethodSorters;
 import org.openqa.selenium.WebDriver;
 
@@ -70,7 +70,7 @@ import static org.keycloak.authentication.requiredactions.RecoveryAuthnCodesActi
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Backup Code Authentication test
@@ -151,13 +151,13 @@ public class RecoveryAuthnCodesAuthenticatorTest extends AbstractChangeImportedU
                 .defineAsBrowserFlow()
         );
 
-        AdminApiUtil.removeUserByUsername(testRealm(), "test-user@localhost");
+        AdminApiUtil.removeUserByUsername(managedRealm.admin(), "test-user@localhost");
         createUser("test", "test-user@localhost", generatePassword("test-user@localhost"), UserModel.RequiredAction.CONFIGURE_RECOVERY_AUTHN_CODES.name());
     }
 
     private void testSetupRecoveryAuthnCodesLogoutOtherSessions(boolean logoutOtherSessions) {
         // login with the user using the second driver
-        UserResource testUser = testRealm().users().get(findUser("test-user@localhost").getId());
+        UserResource testUser = managedRealm.admin().users().get(findUser("test-user@localhost").getId());
         OAuthClient oauth2 = oauth.newConfig().driver(driver2);
         oauth2.doLogin("test-user@localhost", getPassword("test-user@localhost"));
         EventRepresentation event1 = events.expectLogin().assertEvent();
@@ -175,7 +175,7 @@ public class RecoveryAuthnCodesAuthenticatorTest extends AbstractChangeImportedU
         if (logoutOtherSessions) {
             setupRecoveryAuthnCodesPage.checkLogoutSessions();
         }
-        Assert.assertEquals(logoutOtherSessions, setupRecoveryAuthnCodesPage.isLogoutSessionsChecked());
+        Assertions.assertEquals(logoutOtherSessions, setupRecoveryAuthnCodesPage.isLogoutSessionsChecked());
         setupRecoveryAuthnCodesPage.clickSaveRecoveryAuthnCodesButton();
         assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
@@ -218,7 +218,7 @@ public class RecoveryAuthnCodesAuthenticatorTest extends AbstractChangeImportedU
     @Test
     public void test03SetupRecoveryAuthnCodesModifyGeneratedAt() {
         // add the configure recovery codes action
-        UserResource testUser = AdminApiUtil.findUserByUsernameId(testRealm(), "test-user@localhost");
+        UserResource testUser = AdminApiUtil.findUserByUsernameId(managedRealm.admin(), "test-user@localhost");
         UserRepresentation userRepresentation = testUser.toRepresentation();
         userRepresentation.setRequiredActions(Arrays.asList(UserModel.RequiredAction.CONFIGURE_RECOVERY_AUTHN_CODES.name()));
         testUser.update(userRepresentation);
@@ -250,7 +250,7 @@ public class RecoveryAuthnCodesAuthenticatorTest extends AbstractChangeImportedU
     @Test
     public void test04SetupRecoveryAuthnCodesModifyGeneratedCodes() {
         // add the configure recovery codes action
-        UserResource testUser = AdminApiUtil.findUserByUsernameId(testRealm(), "test-user@localhost");
+        UserResource testUser = AdminApiUtil.findUserByUsernameId(managedRealm.admin(), "test-user@localhost");
         UserRepresentation userRepresentation = testUser.toRepresentation();
         userRepresentation.setRequiredActions(Arrays.asList(UserModel.RequiredAction.CONFIGURE_RECOVERY_AUTHN_CODES.name()));
         testUser.update(userRepresentation);
@@ -292,7 +292,7 @@ public class RecoveryAuthnCodesAuthenticatorTest extends AbstractChangeImportedU
         passwordPage.assertCurrent();
         passwordPage.assertAttemptedUsernameAvailability(true);
         // On the password page, username should be shown as we know the user
-        Assert.assertEquals("test-user@localhost", passwordPage.getAttemptedUsername());
+        Assertions.assertEquals("test-user@localhost", passwordPage.getAttemptedUsername());
         passwordPage.assertTryAnotherWayLinkAvailability(true);
         passwordPage.clickTryAnotherWayLink();
     }
@@ -300,7 +300,7 @@ public class RecoveryAuthnCodesAuthenticatorTest extends AbstractChangeImportedU
     private void selectRecoveryAuthnCodes(SelectAuthenticatorPage selectAuthenticatorPage, WebDriver driver) {
         selectAuthenticatorPage.setDriver(driver);
         selectAuthenticatorPage.assertCurrent();
-        Assert.assertEquals(Arrays.asList(SelectAuthenticatorPage.PASSWORD, SelectAuthenticatorPage.RECOVERY_AUTHN_CODES), selectAuthenticatorPage.getAvailableLoginMethods());
+        Assertions.assertEquals(Arrays.asList(SelectAuthenticatorPage.PASSWORD, SelectAuthenticatorPage.RECOVERY_AUTHN_CODES), selectAuthenticatorPage.getAvailableLoginMethods());
         selectAuthenticatorPage.selectLoginMethod(SelectAuthenticatorPage.RECOVERY_AUTHN_CODES);
     }
 
@@ -309,12 +309,12 @@ public class RecoveryAuthnCodesAuthenticatorTest extends AbstractChangeImportedU
         enterRecoveryAuthnCodePage.setDriver(driver);
         enterRecoveryAuthnCodePage.assertCurrent();
         int requestedCode = enterRecoveryAuthnCodePage.getRecoveryAuthnCodeToEnterNumber();
-        Assert.assertEquals("Incorrect code presented to login", expectedCode, requestedCode);
+        Assertions.assertEquals(expectedCode, requestedCode, "Incorrect code presented to login");
         enterRecoveryAuthnCodePage.enterRecoveryAuthnCode(generatedRecoveryAuthnCodes.get(requestedCode));
     }
 
     private void removeRequiredActionIfPresent() {
-        AuthenticationManagementResource authMgt = testRealm().flows();
+        AuthenticationManagementResource authMgt = managedRealm.admin().flows();
         authMgt.getRequiredActions().stream()
                 .filter(action -> UserModel.RequiredAction.CONFIGURE_RECOVERY_AUTHN_CODES.name().equals(action.getAlias()))
                 .findAny()
@@ -344,7 +344,7 @@ public class RecoveryAuthnCodesAuthenticatorTest extends AbstractChangeImportedU
                 // silently fail because it can be other event in the list
             }
         }
-        Assert.fail("No event found in the list for " + expectedEvent);
+        Assertions.fail("No event found in the list for " + expectedEvent);
     }
 
 
@@ -369,7 +369,7 @@ public class RecoveryAuthnCodesAuthenticatorTest extends AbstractChangeImportedU
             events.expectLogin().detail(Details.USERNAME, "test-user@localhost").assertEvent();
         } finally {
             // Revert copy of browser flow to original to keep clean slate after this test
-            BrowserFlowTest.revertFlows(testRealm(), BROWSER_FLOW_WITH_RECOVERY_AUTHN_CODES);
+            BrowserFlowTest.revertFlows(managedRealm.admin(), BROWSER_FLOW_WITH_RECOVERY_AUTHN_CODES);
         }
     }
 
@@ -402,7 +402,7 @@ public class RecoveryAuthnCodesAuthenticatorTest extends AbstractChangeImportedU
             assertIsContained(events.expect(EventType.LOGIN_ERROR).error(Errors.INVALID_USER_CREDENTIALS), actualEvents);
         } finally {
             // Revert copy of browser flow to original to keep clean slate after this test
-            BrowserFlowTest.revertFlows(testRealm(), BROWSER_FLOW_WITH_RECOVERY_AUTHN_CODES);
+            BrowserFlowTest.revertFlows(managedRealm.admin(), BROWSER_FLOW_WITH_RECOVERY_AUTHN_CODES);
         }
     }
 
@@ -414,12 +414,12 @@ public class RecoveryAuthnCodesAuthenticatorTest extends AbstractChangeImportedU
             RequiredActionProviderSimpleRepresentation simpleRepresentation = new RequiredActionProviderSimpleRepresentation();
             simpleRepresentation.setProviderId(UserModel.RequiredAction.CONFIGURE_RECOVERY_AUTHN_CODES.name());
             simpleRepresentation.setName(UserModel.RequiredAction.CONFIGURE_RECOVERY_AUTHN_CODES.name());
-            testRealm().flows().registerRequiredAction(simpleRepresentation);
+            managedRealm.admin().flows().registerRequiredAction(simpleRepresentation);
             loginUsername(loginUsernameOnlyPage, driver);
             // On the password page, username should be shown as we know the user
             passwordPage.assertCurrent();
             //passwordPage.assertAttemptedUsernameAvailability(true);
-            Assert.assertEquals("test-user@localhost", passwordPage.getAttemptedUsername());
+            Assertions.assertEquals("test-user@localhost", passwordPage.getAttemptedUsername());
             passwordPage.login(getPassword("test-user@localhost"));
             setupRecoveryAuthnCodesPage.assertCurrent();
             setupRecoveryAuthnCodesPage.clickSaveRecoveryAuthnCodesButton();
@@ -429,7 +429,7 @@ public class RecoveryAuthnCodesAuthenticatorTest extends AbstractChangeImportedU
             setupRecoveryAuthnCodesPage.clickAccountLink();
             assertThat(driver.getTitle(), containsString("Account Management"));
             // Revert copy of browser flow to original to keep clean slate after this test
-            BrowserFlowTest.revertFlows(testRealm(), BROWSER_FLOW_WITH_RECOVERY_AUTHN_CODES);
+            BrowserFlowTest.revertFlows(managedRealm.admin(), BROWSER_FLOW_WITH_RECOVERY_AUTHN_CODES);
         }
     }
 
@@ -437,10 +437,10 @@ public class RecoveryAuthnCodesAuthenticatorTest extends AbstractChangeImportedU
     public void test08BruteforceProtectionRecoveryAuthnCodes() {
         try {
             configureBrowserFlowWithRecoveryAuthnCodes(testingClient, 0);
-            RealmRepresentation rep = testRealm().toRepresentation();
+            RealmRepresentation rep = managedRealm.admin().toRepresentation();
             rep.setBruteForceProtected(true);
             rep.setMaxSecondaryAuthFailures(100);
-            testRealm().update(rep);
+            managedRealm.admin().update(rep);
 
             List<String> generatedRecoveryAuthnCodes = createRecoveryAuthnCodesForUser();
 
@@ -455,27 +455,27 @@ public class RecoveryAuthnCodesAuthenticatorTest extends AbstractChangeImportedU
                 enterRecoveryAuthnCodePage.clickSignInButton();
                 enterRecoveryAuthnCodePage.assertCurrent();
                 String feedbackText = enterRecoveryAuthnCodePage.getFeedbackText();
-                Assert.assertEquals("Invalid recovery authentication code", feedbackText);
+                Assertions.assertEquals("Invalid recovery authentication code", feedbackText);
             }
             // Now enter the right code which should not work
             enterRecoveryAuthnCodePage.enterRecoveryAuthnCode(generatedRecoveryAuthnCodes.get(enterRecoveryAuthnCodePage.getRecoveryAuthnCodeToEnterNumber()));
             enterRecoveryAuthnCodePage.clickSignInButton();
             // Message changes after exhausting number of brute force attempts
-            Assert.assertEquals("Invalid username or password.", enterRecoveryAuthnCodePage.getFeedbackText());
+            Assertions.assertEquals("Invalid username or password.", enterRecoveryAuthnCodePage.getFeedbackText());
             enterRecoveryAuthnCodePage.assertAccountLinkAvailability(false);
         } finally {
-            RealmRepresentation rep = testRealm().toRepresentation();
+            RealmRepresentation rep = managedRealm.admin().toRepresentation();
             rep.setBruteForceProtected(false);
             rep.setMaxSecondaryAuthFailures(0);
-            testRealm().update(rep);
+            managedRealm.admin().update(rep);
             // Revert copy of browser flow to original to keep clean slate after this test
-            BrowserFlowTest.revertFlows(testRealm(), BROWSER_FLOW_WITH_RECOVERY_AUTHN_CODES);
+            BrowserFlowTest.revertFlows(managedRealm.admin(), BROWSER_FLOW_WITH_RECOVERY_AUTHN_CODES);
         }
     }
 
     @Test
     public void test09recoveryAuthnCodesWithThresholdConfigured() throws Exception {
-        AuthenticationManagementResource authMgt = testRealm().flows();
+        AuthenticationManagementResource authMgt = managedRealm.admin().flows();
         RequiredActionProviderRepresentation requiredAction = authMgt.getRequiredActions().stream()
                 .filter(action -> UserModel.RequiredAction.CONFIGURE_RECOVERY_AUTHN_CODES.name().equals(action.getAlias()))
                 .findAny().get();
@@ -489,7 +489,7 @@ public class RecoveryAuthnCodesAuthenticatorTest extends AbstractChangeImportedU
             authMgt.updateRequiredAction(requiredAction.getAlias(), requiredAction);
 
             // Add required action to the user
-            UserResource testUser = AdminApiUtil.findUserByUsernameId(testRealm(), "test-user@localhost");
+            UserResource testUser = AdminApiUtil.findUserByUsernameId(managedRealm.admin(), "test-user@localhost");
             UserRepresentation userRepresentation = testUser.toRepresentation();
             userRepresentation.setRequiredActions(Arrays.asList(UserModel.RequiredAction.CONFIGURE_RECOVERY_AUTHN_CODES.name()));
             testUser.update(userRepresentation);
@@ -507,15 +507,15 @@ public class RecoveryAuthnCodesAuthenticatorTest extends AbstractChangeImportedU
 
             // Check account REST API that warning threshold not there on recovery-codes credential as user has full count of recovery codes
             CredentialMetadataRepresentation recoveryCodesMetadata = getRecoveryCodeCredentialFromAccountRestApi(httpClient, response.getAccessToken());
-            Assert.assertNull("Expected not warning", recoveryCodesMetadata.getWarningMessageTitle());
-            Assert.assertEquals("0/12", recoveryCodesMetadata.getInfoMessage().getParameters()[0]);
-            Assert.assertNotNull(recoveryCodesMetadata.getCredential().getCredentialData());
+            Assertions.assertNull(recoveryCodesMetadata.getWarningMessageTitle(), "Expected not warning");
+            Assertions.assertEquals("0/12", recoveryCodesMetadata.getInfoMessage().getParameters()[0]);
+            Assertions.assertNotNull(recoveryCodesMetadata.getCredential().getCredentialData());
             RecoveryAuthnCodesCredentialData data = JsonSerialization.readValue(
                     recoveryCodesMetadata.getCredential().getCredentialData(), RecoveryAuthnCodesCredentialData.class);
-            Assert.assertEquals(12, data.getTotalCodes());
-            Assert.assertEquals(12, data.getRemainingCodes());
-            Assert.assertEquals(JavaAlgorithm.SHA512, data.getAlgorithm());
-            Assert.assertNull(data.getHashIterations());
+            Assertions.assertEquals(12, data.getTotalCodes());
+            Assertions.assertEquals(12, data.getRemainingCodes());
+            Assertions.assertEquals(JavaAlgorithm.SHA512, data.getAlgorithm());
+            Assertions.assertNull(data.getHashIterations());
 
             // Re-authenticate with recovery codes
             oauth.loginForm().prompt(OIDCLoginProtocol.PROMPT_VALUE_LOGIN).open();
@@ -526,14 +526,14 @@ public class RecoveryAuthnCodesAuthenticatorTest extends AbstractChangeImportedU
 
             // Check warning is there as only 11 recovery codes remaining
             recoveryCodesMetadata = getRecoveryCodeCredentialFromAccountRestApi(httpClient, response.getAccessToken());
-            Assert.assertEquals("recovery-codes-number-remaining", recoveryCodesMetadata.getWarningMessageTitle().getKey());
-            Assert.assertEquals("1/12", recoveryCodesMetadata.getInfoMessage().getParameters()[0]);
+            Assertions.assertEquals("recovery-codes-number-remaining", recoveryCodesMetadata.getWarningMessageTitle().getKey());
+            Assertions.assertEquals("1/12", recoveryCodesMetadata.getInfoMessage().getParameters()[0]);
         } finally {
             // Revert
             requiredAction.setConfig(origReqActionConfig);
             authMgt.updateRequiredAction(requiredAction.getAlias(), requiredAction);
 
-            BrowserFlowTest.revertFlows(testRealm(), BROWSER_FLOW_WITH_RECOVERY_AUTHN_CODES);
+            BrowserFlowTest.revertFlows(managedRealm.admin(), BROWSER_FLOW_WITH_RECOVERY_AUTHN_CODES);
         }
     }
 

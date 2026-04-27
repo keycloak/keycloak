@@ -27,7 +27,7 @@ import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.ContainerInfo;
 
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 public class ClientScopeInvalidationClusterTest extends AbstractInvalidationClusterTestWithTestRealm<ClientScopeRepresentation, ClientScopeResource> {
     @Override

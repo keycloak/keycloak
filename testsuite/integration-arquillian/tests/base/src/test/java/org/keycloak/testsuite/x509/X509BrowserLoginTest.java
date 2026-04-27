@@ -30,9 +30,9 @@ import org.keycloak.testsuite.util.DroneUtils;
 import org.keycloak.testsuite.util.HtmlUnitBrowser;
 
 import org.jboss.arquillian.drone.api.annotation.Drone;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 import org.openqa.selenium.WebDriver;
 
 import static org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel.IdentityMapperType.USERNAME_EMAIL;
@@ -48,7 +48,7 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.startsWith;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author <a href="mailto:brat000012001@gmail.com">Peter Nalyvayko</a>
@@ -80,7 +80,7 @@ public class X509BrowserLoginTest extends AbstractX509AuthenticationTest {
         AuthenticatorConfigRepresentation cfg = newConfig("x509-browser-config", config.getConfig());
 
         String cfgId = createConfig(browserExecution.getId(), cfg);
-        Assert.assertNotNull(cfgId);
+        Assertions.assertNotNull(cfgId);
 
         oauth.openLoginForm();
 
@@ -99,7 +99,7 @@ public class X509BrowserLoginTest extends AbstractX509AuthenticationTest {
         AuthenticatorConfigRepresentation cfg = newConfig("x509-browser-config",
                 createLoginSubjectEmailWithKeyUsage("dataEncipherment").getConfig());
         String cfgId = createConfig(browserExecution.getId(), cfg);
-        Assert.assertNotNull(cfgId);
+        Assertions.assertNotNull(cfgId);
 
         oauth.openLoginForm();
 
@@ -125,13 +125,13 @@ public class X509BrowserLoginTest extends AbstractX509AuthenticationTest {
 
             AuthenticatorConfigRepresentation cfg = newConfig("x509-browser-config", createLoginSubjectEmailWithRevalidateCert(true).getConfig());
             String cfgId = createConfig(browserExecution.getId(), cfg);
-            Assert.assertNotNull(cfgId);
+            Assertions.assertNotNull(cfgId);
 
             oauth.openLoginForm();
             loginPage.assertCurrent();
 
             // Verify there is an error message
-            Assert.assertNotNull(loginPage.getError());
+            Assertions.assertNotNull(loginPage.getError());
 
             assertThat(loginPage.getError(), containsString("Certificate validation's failed."));
         } finally {
@@ -144,18 +144,18 @@ public class X509BrowserLoginTest extends AbstractX509AuthenticationTest {
         // Set the X509 authenticator configuration
         AuthenticatorConfigRepresentation cfg = newConfig("x509-browser-config", createLoginSubjectEmail2UsernameOrEmailConfig().getConfig());
         String cfgId = createConfig(browserExecution.getId(), cfg);
-        Assert.assertNotNull(cfgId);
+        Assertions.assertNotNull(cfgId);
 
         oauth.openLoginForm();
 
-        Assert.assertTrue(loginConfirmationPage.getSubjectDistinguishedNameText().startsWith("EMAILADDRESS=test-user@localhost"));
-        Assert.assertEquals("test-user@localhost", loginConfirmationPage.getUsernameText());
+        Assertions.assertTrue(loginConfirmationPage.getSubjectDistinguishedNameText().startsWith("EMAILADDRESS=test-user@localhost"));
+        Assertions.assertEquals("test-user@localhost", loginConfirmationPage.getUsernameText());
 
         loginConfirmationPage.ignore();
         loginPage.login("test-user@localhost", "password");
 
-        Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assert.assertNotNull(oauth.parseLoginResponse().getCode());
+        Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
 
          events.expectLogin()
                  .user(userId)
@@ -172,8 +172,8 @@ public class X509BrowserLoginTest extends AbstractX509AuthenticationTest {
 
     @Test
     public void loginAsUserFromCertSerialnumberAndIssuerDNMappedToUserAttribute() {
-        UserRepresentation user = testRealm().users().get(userId2).toRepresentation();
-        Assert.assertNotNull(user);
+        UserRepresentation user = managedRealm.admin().users().get(userId2).toRepresentation();
+        Assertions.assertNotNull(user);
 
         user.singleAttribute("x509_certificate_serialnumber", "4105");
         user.singleAttribute("x509_issuer_dn", "EMAILADDRESS=contact@keycloak.org, CN=Keycloak Intermediate CA, OU=Keycloak, O=Red Hat, ST=MA, C=US");
@@ -187,8 +187,8 @@ public class X509BrowserLoginTest extends AbstractX509AuthenticationTest {
     
     @Test
     public void loginAsUserFromHexCertSerialnumberAndIssuerDNMappedToUserAttribute() {
-        UserRepresentation user = testRealm().users().get(userId2).toRepresentation();
-        Assert.assertNotNull(user);
+        UserRepresentation user = managedRealm.admin().users().get(userId2).toRepresentation();
+        Assertions.assertNotNull(user);
 
         user.singleAttribute("x509_certificate_serialnumber", "1009");
         user.singleAttribute("x509_issuer_dn", "EMAILADDRESS=contact@keycloak.org, CN=Keycloak Intermediate CA, OU=Keycloak, O=Red Hat, ST=MA, C=US");
@@ -204,8 +204,8 @@ public class X509BrowserLoginTest extends AbstractX509AuthenticationTest {
     @Test
     public void loginAsUserFromCertIssuerDNMappedToUserAttribute() {
 
-        UserRepresentation user = testRealm().users().get(userId2).toRepresentation();
-        Assert.assertNotNull(user);
+        UserRepresentation user = managedRealm.admin().users().get(userId2).toRepresentation();
+        Assertions.assertNotNull(user);
 
         user.singleAttribute("x509_certificate_identity", "Red Hat");
         this.updateUser(user);
@@ -219,8 +219,8 @@ public class X509BrowserLoginTest extends AbstractX509AuthenticationTest {
     @Test
     public void loginAsUserFromCertSHA256MappedToUserAttribute() {
 
-        UserRepresentation user = testRealm().users().get(userId2).toRepresentation();
-        Assert.assertNotNull(user);
+        UserRepresentation user = managedRealm.admin().users().get(userId2).toRepresentation();
+        Assertions.assertNotNull(user);
 
         user.singleAttribute("x509_cert_sha256thumbprint", "71237a14c118a90cc8406f14d039ed3431c9065f68e535293ee919d4c33b5e15");
         this.updateUser(user);
@@ -235,8 +235,8 @@ public class X509BrowserLoginTest extends AbstractX509AuthenticationTest {
     @Test
     public void loginAsUserFromCertSerialNumberMappedToUserAttribute() {
 
-        UserRepresentation user = testRealm().users().get(userId2).toRepresentation();
-        Assert.assertNotNull(user);
+        UserRepresentation user = managedRealm.admin().users().get(userId2).toRepresentation();
+        Assertions.assertNotNull(user);
 
         user.singleAttribute("x509_serial_number", "4105");
         this.updateUser(user);
@@ -250,8 +250,8 @@ public class X509BrowserLoginTest extends AbstractX509AuthenticationTest {
     @Test
     public void loginAsUserFromHexCertSerialNumberMappedToUserAttribute() {
 
-        UserRepresentation user = testRealm().users().get(userId2).toRepresentation();
-        Assert.assertNotNull(user);
+        UserRepresentation user = managedRealm.admin().users().get(userId2).toRepresentation();
+        Assertions.assertNotNull(user);
 
         user.singleAttribute("x509_serial_number", "1009");
         this.updateUser(user);
@@ -269,19 +269,19 @@ public class X509BrowserLoginTest extends AbstractX509AuthenticationTest {
 
         AuthenticatorConfigRepresentation cfg = newConfig("x509-browser-config", createLoginIssuerDN_OU2CustomAttributeConfig().getConfig());
         String cfgId = createConfig(browserExecution.getId(), cfg);
-        Assert.assertNotNull(cfgId);
+        Assertions.assertNotNull(cfgId);
 
         // Set up the users so that the identity extracted from X509 client cert
         // matches more than a single user to trigger DuplicateModelException.
 
-        UserRepresentation user = testRealm().users().get(userId2).toRepresentation();
-        Assert.assertNotNull(user);
+        UserRepresentation user = managedRealm.admin().users().get(userId2).toRepresentation();
+        Assertions.assertNotNull(user);
 
         user.singleAttribute("x509_certificate_identity", "Red Hat");
         this.updateUser(user);
 
-        user = testRealm().users().get(userId).toRepresentation();
-        Assert.assertNotNull(user);
+        user = managedRealm.admin().users().get(userId).toRepresentation();
+        Assertions.assertNotNull(user);
 
         user.singleAttribute("x509_certificate_identity", "Red Hat");
         this.updateUser(user);
@@ -294,8 +294,8 @@ public class X509BrowserLoginTest extends AbstractX509AuthenticationTest {
 
         loginPage.login("test-user@localhost", "password");
 
-        Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assert.assertNotNull(oauth.parseLoginResponse().getCode());
+        Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
 
         events.expectLogin()
                 .user(userId)
@@ -314,8 +314,8 @@ public class X509BrowserLoginTest extends AbstractX509AuthenticationTest {
         // Continue with form based login
         loginPage.login("test-user@localhost", "password");
 
-        Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assert.assertNotNull(oauth.parseLoginResponse().getCode());
+        Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
         events.expectLogin()
                 .user(userId)
                 .detail(Details.USERNAME, "test-user@localhost")
@@ -334,13 +334,13 @@ public class X509BrowserLoginTest extends AbstractX509AuthenticationTest {
                         .setUserIdentityMapperType(USER_ATTRIBUTE);
         AuthenticatorConfigRepresentation cfg = newConfig("x509-browser-config", config.getConfig());
         String cfgId = createConfig(browserExecution.getId(), cfg);
-        Assert.assertNotNull(cfgId);
+        Assertions.assertNotNull(cfgId);
 
         oauth.openLoginForm();
         loginPage.assertCurrent();
 
         // Verify there is an error message
-        Assert.assertNotNull(loginPage.getError());
+        Assertions.assertNotNull(loginPage.getError());
 
         assertThat(loginPage.getError(), containsString("X509 certificate authentication's failed."));
         events.expectLogin()
@@ -355,8 +355,8 @@ public class X509BrowserLoginTest extends AbstractX509AuthenticationTest {
         // Continue with form based login
         loginPage.login("test-user@localhost", "password");
 
-        Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assert.assertNotNull(oauth.parseLoginResponse().getCode());
+        Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
         events.expectLogin()
                 .user(userId)
                 .detail(Details.USERNAME, "test-user@localhost")
@@ -375,12 +375,12 @@ public class X509BrowserLoginTest extends AbstractX509AuthenticationTest {
                         .setUserIdentityMapperType(USER_ATTRIBUTE);
         AuthenticatorConfigRepresentation cfg = newConfig("x509-browser-config", config.getConfig());
         String cfgId = createConfig(browserExecution.getId(), cfg);
-        Assert.assertNotNull(cfgId);
+        Assertions.assertNotNull(cfgId);
 
         // Update the attribute used to match the user identity to that
         // extracted from the client certificate
         UserRepresentation user = findUser("test-user@localhost");
-        Assert.assertNotNull(user);
+        Assertions.assertNotNull(user);
         user.singleAttribute("x509_certificate_identity", "Red Hat");
         this.updateUser(user);
 
@@ -388,26 +388,26 @@ public class X509BrowserLoginTest extends AbstractX509AuthenticationTest {
 
         oauth.openLoginForm();
 
-        Assert.assertTrue(loginConfirmationPage.getSubjectDistinguishedNameText().startsWith("EMAILADDRESS=test-user@localhost"));
-        Assert.assertEquals("test-user@localhost", loginConfirmationPage.getUsernameText());
+        Assertions.assertTrue(loginConfirmationPage.getSubjectDistinguishedNameText().startsWith("EMAILADDRESS=test-user@localhost"));
+        Assertions.assertEquals("test-user@localhost", loginConfirmationPage.getUsernameText());
 
         loginConfirmationPage.confirm();
 
-        Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assert.assertNotNull(oauth.parseLoginResponse().getCode());
+        Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
     }
 
     @Test
     public void loginWithX509CertBadUserOrNotFound() {
         AuthenticatorConfigRepresentation cfg = newConfig("x509-browser-config", createLoginSubjectEmail2UsernameOrEmailConfig().getConfig());
         String cfgId = createConfig(browserExecution.getId(), cfg);
-        Assert.assertNotNull(cfgId);
+        Assertions.assertNotNull(cfgId);
 
         // Delete user
         UserRepresentation user = findUser("test-user@localhost");
-        Assert.assertNotNull(user);
+        Assertions.assertNotNull(user);
 
-        Response response = testRealm().users().delete(userId);
+        Response response = managedRealm.admin().users().delete(userId);
         assertEquals(204, response.getStatus());
         response.close();
         // TODO causes the test to fail
@@ -417,7 +417,7 @@ public class X509BrowserLoginTest extends AbstractX509AuthenticationTest {
         loginPage.assertCurrent();
 
         // Verify there is an error message
-        Assert.assertNotNull(loginPage.getError());
+        Assertions.assertNotNull(loginPage.getError());
 
         assertThat(loginPage.getError(), containsString("X509 certificate authentication's failed."));
 
@@ -436,10 +436,10 @@ public class X509BrowserLoginTest extends AbstractX509AuthenticationTest {
         loginPage.login("test-user@localhost", "password");
         loginPage.assertCurrent();
 
-        Assert.assertEquals("test-user@localhost", loginPage.getUsername());
-        Assert.assertEquals("", loginPage.getPassword());
+        Assertions.assertEquals("test-user@localhost", loginPage.getUsername());
+        Assertions.assertEquals("", loginPage.getPassword());
 
-        Assert.assertEquals("Invalid username or password.", loginPage.getInputError());
+        Assertions.assertEquals("Invalid username or password.", loginPage.getInputError());
     }
 
     @Test
@@ -449,12 +449,12 @@ public class X509BrowserLoginTest extends AbstractX509AuthenticationTest {
         try {
             AuthenticatorConfigRepresentation cfg = newConfig("x509-browser-config", createLoginSubjectEmail2UsernameOrEmailConfig().getConfig());
             String cfgId = createConfig(browserExecution.getId(), cfg);
-            Assert.assertNotNull(cfgId);
+            Assertions.assertNotNull(cfgId);
 
             oauth.openLoginForm();
             loginPage.assertCurrent();
 
-            Assert.assertNotNull(loginPage.getError());
+            Assertions.assertNotNull(loginPage.getError());
 
             assertThat(loginPage.getError(), containsString("X509 certificate authentication's failed. User is disabled"));
 
@@ -471,11 +471,11 @@ public class X509BrowserLoginTest extends AbstractX509AuthenticationTest {
             loginPage.assertCurrent();
 
             // KEYCLOAK-1741 - assert form field values kept
-            Assert.assertEquals("test-user@localhost", loginPage.getUsername());
-            Assert.assertEquals("", loginPage.getPassword());
+            Assertions.assertEquals("test-user@localhost", loginPage.getUsername());
+            Assertions.assertEquals("", loginPage.getPassword());
 
             // KEYCLOAK-2024
-            Assert.assertEquals("Account is disabled, contact your administrator.", loginPage.getError());
+            Assertions.assertEquals("Account is disabled, contact your administrator.", loginPage.getError());
 
             events.expectLogin()
                     .user(userId)
@@ -500,14 +500,14 @@ public class X509BrowserLoginTest extends AbstractX509AuthenticationTest {
                     .setUserIdentityMapperType(USERNAME_EMAIL);
         AuthenticatorConfigRepresentation cfg = newConfig("x509-browser-config", config.getConfig());
         String cfgId = createConfig(browserExecution.getId(), cfg);
-        Assert.assertNotNull(cfgId);
+        Assertions.assertNotNull(cfgId);
 
         oauth.openLoginForm();
         // X509 authenticator extracts the user identity, maps it to an existing
         // user and automatically logs the user in without prompting to confirm
         // the identity.
-        Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assert.assertNotNull(oauth.parseLoginResponse().getCode());
+        Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
 
         AssertEvents.ExpectedEvent expectedEvent = events.expectLogin()
                 .user(userId)
@@ -538,7 +538,7 @@ public class X509BrowserLoginTest extends AbstractX509AuthenticationTest {
     public void changeLocaleOnX509InfoPage() {
         AuthenticatorConfigRepresentation cfg = newConfig("x509-browser-config", createLoginSubjectEmail2UsernameOrEmailConfig().getConfig());
         String cfgId = createConfig(browserExecution.getId(), cfg);
-        Assert.assertNotNull(cfgId);
+        Assertions.assertNotNull(cfgId);
 
         log.debug("Open confirm page");
         oauth.openLoginForm();

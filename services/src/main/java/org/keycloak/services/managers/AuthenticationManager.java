@@ -169,6 +169,9 @@ public class AuthenticationManager {
     // authSession note with flag that is true if the user's password has been correctly validated
     public static final String PASSWORD_VALIDATED = "PASSWORD_VALIDATED";
 
+    // authSession note with flag that registration of new user happened in this authSession
+    public static final String NEW_USER_REGISTERED = "NEW_USER_REGISTERED";
+
     // state checker identity token claim
     private static final String STATE_CHECKER = "state_checker";
 

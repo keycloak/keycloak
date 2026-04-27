@@ -16,26 +16,23 @@
  */
 package org.keycloak.testsuite.forms;
 
-import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.util.IdentityProviderBuilder;
 
 import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Assert;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 public class HiddenProviderTest extends AbstractTestRealmKeycloakTest {
 
+    protected ManagedRealm managedRealm = new ManagedRealm(this, "realm-with-broker");
+
     @Page
     protected LoginPage loginPage;
-    
-    @Override
-    protected RealmResource testRealm() {
-        return adminClient.realm("realm-with-broker");
-    }
-    
+
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {        
         testRealm.addIdentityProvider(IdentityProviderBuilder.create()
@@ -54,12 +51,12 @@ public class HiddenProviderTest extends AbstractTestRealmKeycloakTest {
     @Test
     public void testVisibleProviderButton() {
         oauth.openLoginForm();
-        Assert.assertNotNull(loginPage.findSocialButton("visible-oidc"));
+        Assertions.assertNotNull(loginPage.findSocialButton("visible-oidc"));
     }
     
     @Test(expected=org.openqa.selenium.NoSuchElementException.class)
     public void testHiddenProviderButton() {
         oauth.openLoginForm();
-        Assert.assertNull(loginPage.findSocialButton("hidden-oidc"));
+        Assertions.assertNull(loginPage.findSocialButton("hidden-oidc"));
     } 
 }

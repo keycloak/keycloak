@@ -16,9 +16,9 @@ import org.keycloak.testsuite.util.KeystoreUtils;
 import org.keycloak.testsuite.util.TempFileResource;
 import org.keycloak.util.JsonSerialization;
 
-import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 import static org.keycloak.client.cli.util.OsUtil.EOL;
 import static org.keycloak.client.registration.cli.KcRegMain.CMD;
@@ -40,10 +40,10 @@ public class KcRegTest extends AbstractRegCliTest {
         assertExitCodeAndStdErrSize(exe, 2, 0);
 
         List<String> lines = exe.stdoutLines();
-        Assert.assertTrue("stdout output not empty", lines.size() > 0);
-        Assert.assertEquals("stdout first line", "Keycloak Client Registration CLI", lines.get(0));
-        Assert.assertEquals("stdout one but last line", "Use '" + KcRegExec.CMD + " help <command>' for more information about a given command.", lines.get(lines.size() - 2));
-        Assert.assertEquals("stdout last line", "", lines.get(lines.size() - 1));
+        Assertions.assertTrue(lines.size() > 0, "stdout output not empty");
+        Assertions.assertEquals("Keycloak Client Registration CLI", lines.get(0), "stdout first line");
+        Assertions.assertEquals("Use '" + KcRegExec.CMD + " help <command>' for more information about a given command.", lines.get(lines.size() - 2), "stdout one but last line");
+        Assertions.assertEquals("", lines.get(lines.size() - 1), "stdout last line");
 
 
         /*
@@ -51,72 +51,72 @@ public class KcRegTest extends AbstractRegCliTest {
          */
         exe = execute("config");
         assertExitCodeAndStreamSizes(exe, 2, 8, 0);
-        Assert.assertEquals("error message",
-                "Usage: kcreg.sh config SUB_COMMAND [ARGUMENTS]",
-                exe.stdoutLines().get(0));
+        Assertions.assertEquals("Usage: kcreg.sh config SUB_COMMAND [ARGUMENTS]",
+                exe.stdoutLines().get(0),
+                "error message");
 
         exe = execute("config credentials");
         assertExitCodeAndStdErrSize(exe, 2, 0);
-        Assert.assertTrue("help message returned", exe.stdoutLines().size() > 10);
-        Assert.assertEquals("help message", "Usage: " + CMD + " config credentials --server SERVER_URL --realm REALM [ARGUMENTS]", exe.stdoutLines().get(0));
+        Assertions.assertTrue(exe.stdoutLines().size() > 10, "help message returned");
+        Assertions.assertEquals("Usage: " + CMD + " config credentials --server SERVER_URL --realm REALM [ARGUMENTS]", exe.stdoutLines().get(0), "help message");
 
         exe = execute("config initial-token");
         assertExitCodeAndStdErrSize(exe, 2, 0);
-        Assert.assertTrue("help message returned", exe.stdoutLines().size() > 10);
-        Assert.assertEquals("help message", "Usage: " + CMD + " config initial-token --server SERVER --realm REALM [--delete | TOKEN] [ARGUMENTS]", exe.stdoutLines().get(0));
+        Assertions.assertTrue(exe.stdoutLines().size() > 10, "help message returned");
+        Assertions.assertEquals("Usage: " + CMD + " config initial-token --server SERVER --realm REALM [--delete | TOKEN] [ARGUMENTS]", exe.stdoutLines().get(0), "help message");
 
         exe = execute("config registration-token");
         assertExitCodeAndStdErrSize(exe, 2, 0);
-        Assert.assertTrue("help message returned", exe.stdoutLines().size() > 10);
-        Assert.assertEquals("help message", "Usage: " + CMD + " config registration-token --server SERVER --realm REALM --client CLIENT [--delete | TOKEN] [ARGUMENTS]", exe.stdoutLines().get(0));
+        Assertions.assertTrue(exe.stdoutLines().size() > 10, "help message returned");
+        Assertions.assertEquals("Usage: " + CMD + " config registration-token --server SERVER --realm REALM --client CLIENT [--delete | TOKEN] [ARGUMENTS]", exe.stdoutLines().get(0), "help message");
 
         exe = execute("config truststore");
         assertExitCodeAndStdErrSize(exe, 2, 0);
-        Assert.assertTrue("help message returned", exe.stdoutLines().size() > 10);
-        Assert.assertEquals("help message", "Usage: " + CMD + " config truststore [TRUSTSTORE | --delete] [--trustpass PASSWORD] [ARGUMENTS]", exe.stdoutLines().get(0));
+        Assertions.assertTrue(exe.stdoutLines().size() > 10, "help message returned");
+        Assertions.assertEquals("Usage: " + CMD + " config truststore [TRUSTSTORE | --delete] [--trustpass PASSWORD] [ARGUMENTS]", exe.stdoutLines().get(0), "help message");
 
         exe = execute("create");
         assertExitCodeAndStdErrSize(exe, 2, 0);
-        Assert.assertTrue("help message returned", exe.stdoutLines().size() > 10);
-        Assert.assertEquals("help message", "Usage: " + CMD + " create [ARGUMENTS]", exe.stdoutLines().get(0));
+        Assertions.assertTrue(exe.stdoutLines().size() > 10, "help message returned");
+        Assertions.assertEquals("Usage: " + CMD + " create [ARGUMENTS]", exe.stdoutLines().get(0), "help message");
         //Assert.assertEquals("error message", "No file nor attribute values specified", exe.stderrLines().get(0));
 
         exe = execute("get");
         assertExitCodeAndStdErrSize(exe, 2, 0);
-        Assert.assertTrue("help message returned", exe.stdoutLines().size() > 10);
-        Assert.assertEquals("help message", "Usage: " + CMD + " get CLIENT [ARGUMENTS]", exe.stdoutLines().get(0));
+        Assertions.assertTrue(exe.stdoutLines().size() > 10, "help message returned");
+        Assertions.assertEquals("Usage: " + CMD + " get CLIENT [ARGUMENTS]", exe.stdoutLines().get(0), "help message");
         //Assert.assertEquals("error message", "CLIENT not specified", exe.stderrLines().get(0));
 
         exe = execute("update");
         assertExitCodeAndStdErrSize(exe, 2, 0);
-        Assert.assertTrue("help message returned", exe.stdoutLines().size() > 10);
-        Assert.assertEquals("help message", "Usage: " + CMD + " update CLIENT [ARGUMENTS]", exe.stdoutLines().get(0));
+        Assertions.assertTrue(exe.stdoutLines().size() > 10, "help message returned");
+        Assertions.assertEquals("Usage: " + CMD + " update CLIENT [ARGUMENTS]", exe.stdoutLines().get(0), "help message");
         //Assert.assertEquals("error message", "No file nor attribute values specified", exe.stderrLines().get(0));
 
         exe = execute("delete");
         assertExitCodeAndStdErrSize(exe, 2, 0);
-        Assert.assertTrue("help message returned", exe.stdoutLines().size() > 10);
-        Assert.assertEquals("help message", "Usage: " + CMD + " delete CLIENT [ARGUMENTS]", exe.stdoutLines().get(0));
+        Assertions.assertTrue(exe.stdoutLines().size() > 10, "help message returned");
+        Assertions.assertEquals("Usage: " + CMD + " delete CLIENT [ARGUMENTS]", exe.stdoutLines().get(0), "help message");
         //Assert.assertEquals("error message", "CLIENT not specified", exe.stderrLines().get(0));
 
         exe = execute("attrs");
-        Assert.assertEquals("exit code", 0, exe.exitCode());
-        Assert.assertTrue("stdout has response", exe.stdoutLines().size() > 10);
-        Assert.assertEquals("first line", "Attributes for default format:", exe.stdoutLines().get(0));
+        Assertions.assertEquals(0, exe.exitCode(), "exit code");
+        Assertions.assertTrue(exe.stdoutLines().size() > 10, "stdout has response");
+        Assertions.assertEquals("Attributes for default format:", exe.stdoutLines().get(0), "first line");
 
         exe = execute("update-token");
         assertExitCodeAndStdErrSize(exe, 2, 0);
-        Assert.assertTrue("help message returned", exe.stdoutLines().size() > 10);
-        Assert.assertEquals("help message", "Usage: " + CMD + " update-token CLIENT [ARGUMENTS]", exe.stdoutLines().get(0));
+        Assertions.assertTrue(exe.stdoutLines().size() > 10, "help message returned");
+        Assertions.assertEquals("Usage: " + CMD + " update-token CLIENT [ARGUMENTS]", exe.stdoutLines().get(0), "help message");
         //Assert.assertEquals("error message", "CLIENT not specified", exe.stderrLines().get(0));
 
         exe = execute("help");
         assertExitCodeAndStdErrSize(exe, 0, 0);
         lines = exe.stdoutLines();
-        Assert.assertTrue("stdout output not empty", lines.size() > 0);
-        Assert.assertEquals("stdout first line", "Keycloak Client Registration CLI", lines.get(0));
-        Assert.assertEquals("stdout one but last line", "Use '" + KcRegExec.CMD + " help <command>' for more information about a given command.", lines.get(lines.size() - 2));
-        Assert.assertEquals("stdout last line", "", lines.get(lines.size() - 1));
+        Assertions.assertTrue(lines.size() > 0, "stdout output not empty");
+        Assertions.assertEquals("Keycloak Client Registration CLI", lines.get(0), "stdout first line");
+        Assertions.assertEquals("Use '" + KcRegExec.CMD + " help <command>' for more information about a given command.", lines.get(lines.size() - 2), "stdout one but last line");
+        Assertions.assertEquals("", lines.get(lines.size() - 1), "stdout last line");
     }
 
     @Test
@@ -126,59 +126,59 @@ public class KcRegTest extends AbstractRegCliTest {
          */
         KcRegExec exe = execute("--help");
         assertExitCodeAndStdErrSize(exe, 0, 0);
-        Assert.assertEquals("stdout first line", "Keycloak Client Registration CLI", exe.stdoutLines().get(0));
+        Assertions.assertEquals("Keycloak Client Registration CLI", exe.stdoutLines().get(0), "stdout first line");
 
         exe = execute("create --help");
         assertExitCodeAndStdErrSize(exe, 0, 0);
-        Assert.assertEquals("stdout first line", "Usage: " + CMD + " create [ARGUMENTS]", exe.stdoutLines().get(0));
+        Assertions.assertEquals("Usage: " + CMD + " create [ARGUMENTS]", exe.stdoutLines().get(0), "stdout first line");
 
         exe = execute("get --help");
         assertExitCodeAndStdErrSize(exe, 0, 0);
-        Assert.assertEquals("stdout first line", "Usage: " + CMD + " get CLIENT [ARGUMENTS]", exe.stdoutLines().get(0));
+        Assertions.assertEquals("Usage: " + CMD + " get CLIENT [ARGUMENTS]", exe.stdoutLines().get(0), "stdout first line");
 
         exe = execute("update --help");
         assertExitCodeAndStdErrSize(exe, 0, 0);
-        Assert.assertEquals("stdout first line", "Usage: " + CMD + " update CLIENT [ARGUMENTS]", exe.stdoutLines().get(0));
+        Assertions.assertEquals("Usage: " + CMD + " update CLIENT [ARGUMENTS]", exe.stdoutLines().get(0), "stdout first line");
 
         exe = execute("delete --help");
         assertExitCodeAndStdErrSize(exe, 0, 0);
-        Assert.assertEquals("stdout first line", "Usage: " + CMD + " delete CLIENT [ARGUMENTS]", exe.stdoutLines().get(0));
+        Assertions.assertEquals("Usage: " + CMD + " delete CLIENT [ARGUMENTS]", exe.stdoutLines().get(0), "stdout first line");
 
         exe = execute("attrs --help");
         assertExitCodeAndStdErrSize(exe, 0, 0);
-        Assert.assertEquals("stdout first line", "Usage: " + CMD + " attrs [ATTRIBUTE] [ARGUMENTS]", exe.stdoutLines().get(0));
+        Assertions.assertEquals("Usage: " + CMD + " attrs [ATTRIBUTE] [ARGUMENTS]", exe.stdoutLines().get(0), "stdout first line");
 
         exe = execute("update-token --help");
         assertExitCodeAndStdErrSize(exe, 0, 0);
-        Assert.assertEquals("stdout first line", "Usage: " + CMD + " update-token CLIENT [ARGUMENTS]", exe.stdoutLines().get(0));
+        Assertions.assertEquals("Usage: " + CMD + " update-token CLIENT [ARGUMENTS]", exe.stdoutLines().get(0), "stdout first line");
 
         exe = execute("config --help");
         assertExitCodeAndStdErrSize(exe, 0, 0);
-        Assert.assertEquals("stdout first line", "Usage: " + CMD + " config SUB_COMMAND [ARGUMENTS]", exe.stdoutLines().get(0));
+        Assertions.assertEquals("Usage: " + CMD + " config SUB_COMMAND [ARGUMENTS]", exe.stdoutLines().get(0), "stdout first line");
 
         exe = execute("config credentials --help");
         assertExitCodeAndStdErrSize(exe, 0, 0);
-        Assert.assertEquals("stdout first line",
-                "Usage: " + CMD + " config credentials --server SERVER_URL --realm REALM [ARGUMENTS]",
-                exe.stdoutLines().get(0));
+        Assertions.assertEquals("Usage: " + CMD + " config credentials --server SERVER_URL --realm REALM [ARGUMENTS]",
+                exe.stdoutLines().get(0),
+                "stdout first line");
 
         exe = execute("config initial-token --help");
         assertExitCodeAndStdErrSize(exe, 0, 0);
-        Assert.assertEquals("stdout first line",
-                "Usage: " + CMD + " config initial-token --server SERVER --realm REALM [--delete | TOKEN] [ARGUMENTS]",
-                exe.stdoutLines().get(0));
+        Assertions.assertEquals("Usage: " + CMD + " config initial-token --server SERVER --realm REALM [--delete | TOKEN] [ARGUMENTS]",
+                exe.stdoutLines().get(0),
+                "stdout first line");
 
         exe = execute("config registration-token --help");
         assertExitCodeAndStdErrSize(exe, 0, 0);
-        Assert.assertEquals("stdout first line",
-                "Usage: " + CMD + " config registration-token --server SERVER --realm REALM --client CLIENT [--delete | TOKEN] [ARGUMENTS]",
-                exe.stdoutLines().get(0));
+        Assertions.assertEquals("Usage: " + CMD + " config registration-token --server SERVER --realm REALM --client CLIENT [--delete | TOKEN] [ARGUMENTS]",
+                exe.stdoutLines().get(0),
+                "stdout first line");
 
         exe = execute("config truststore --help");
         assertExitCodeAndStdErrSize(exe, 0, 0);
-        Assert.assertEquals("stdout first line",
-                "Usage: " + CMD + " config truststore [TRUSTSTORE | --delete] [--trustpass PASSWORD] [ARGUMENTS]",
-                exe.stdoutLines().get(0));
+        Assertions.assertEquals("Usage: " + CMD + " config truststore [TRUSTSTORE | --delete] [--trustpass PASSWORD] [ARGUMENTS]",
+                exe.stdoutLines().get(0),
+                "stdout first line");
 
     }
 
@@ -190,7 +190,7 @@ public class KcRegTest extends AbstractRegCliTest {
         KcRegExec exe = execute("nonexistent");
 
         assertExitCodeAndStreamSizes(exe, 2, 0, 3);
-        Assert.assertEquals("stderr first line", "Unmatched argument at index 0: 'nonexistent'", exe.stderrLines().get(0));
+        Assertions.assertEquals("Unmatched argument at index 0: 'nonexistent'", exe.stderrLines().get(0), "stderr first line");
     }
 
     @Test
@@ -201,7 +201,7 @@ public class KcRegTest extends AbstractRegCliTest {
         KcRegExec exe = execute("--nonexistent");
 
         assertExitCodeAndStreamSizes(exe, 2, 0, 2);
-        Assert.assertEquals("stderr first line", "Unknown option: '--nonexistent'", exe.stderrLines().get(0));
+        Assertions.assertEquals("Unknown option: '--nonexistent'", exe.stderrLines().get(0), "stderr first line");
     }
 
     @Test
@@ -213,8 +213,8 @@ public class KcRegTest extends AbstractRegCliTest {
         KcRegExec exe = execute("get my_client --nonexistent");
 
         assertExitCodeAndStreamSizes(exe, 2, 0, 3);
-        Assert.assertEquals("stderr first line", "Unknown option: '--nonexistent'", exe.stderrLines().get(0));
-        Assert.assertEquals("try help", "Try '" + CMD + " get --help' for more information on the available options.", exe.stderrLines().get(2));
+        Assertions.assertEquals("Unknown option: '--nonexistent'", exe.stderrLines().get(0), "stderr first line");
+        Assertions.assertEquals("Try '" + CMD + " get --help' for more information on the available options.", exe.stderrLines().get(2), "try help");
     }
 
     @Test
@@ -235,8 +235,8 @@ public class KcRegTest extends AbstractRegCliTest {
         KcRegExec exe = execute("config credentials --realm master --user admin --password admin");
 
         assertExitCodeAndStreamSizes(exe, 2, 0, 2);
-        Assert.assertEquals("stderr first line", "Required option not specified: --server", exe.stderrLines().get(0));
-        Assert.assertEquals("try help", "Try '" + CMD + " config credentials --help' for more information on the available options.", exe.stderrLines().get(1));
+        Assertions.assertEquals("Required option not specified: --server", exe.stderrLines().get(0), "stderr first line");
+        Assertions.assertEquals("Try '" + CMD + " config credentials --help' for more information on the available options.", exe.stderrLines().get(1), "try help");
     }
 
     @Test
@@ -247,8 +247,8 @@ public class KcRegTest extends AbstractRegCliTest {
         KcRegExec exe = execute("config credentials --server " + serverUrl + " --user admin --password admin");
 
         assertExitCodeAndStreamSizes(exe, 2, 0, 2);
-        Assert.assertEquals("stderr first line", "Required option not specified: --realm", exe.stderrLines().get(0));
-        Assert.assertEquals("try help", "Try '" + CMD + " config credentials --help' for more information on the available options.", exe.stderrLines().get(1));
+        Assertions.assertEquals("Required option not specified: --realm", exe.stderrLines().get(0), "stderr first line");
+        Assertions.assertEquals("Try '" + CMD + " config credentials --help' for more information on the available options.", exe.stderrLines().get(1), "try help");
     }
 
     @Test
@@ -259,8 +259,8 @@ public class KcRegTest extends AbstractRegCliTest {
         KcRegExec exe = KcRegExec.execute("config credentials --no-config --server " + serverUrl + " --realm master --user admin --password admin");
 
         assertExitCodeAndStreamSizes(exe, 2, 0, 2);
-        Assert.assertEquals("stderr first line", "Unsupported option: --no-config", exe.stderrLines().get(0));
-        Assert.assertEquals("try help", "Try '" + CMD + " config credentials --help' for more information on the available options.", exe.stderrLines().get(1));
+        Assertions.assertEquals("Unsupported option: --no-config", exe.stderrLines().get(0), "stderr first line");
+        Assertions.assertEquals("Try '" + CMD + " config credentials --help' for more information on the available options.", exe.stderrLines().get(1), "try help");
     }
 
     @Test
@@ -271,7 +271,7 @@ public class KcRegTest extends AbstractRegCliTest {
         KcRegExec exe = execute("config credentials --server " + serverUrl + " --realm master --user admin --password admin");
 
         assertExitCodeAndStreamSizes(exe, 0, 0, 1);
-        Assert.assertEquals("stderr first line", "Logging into " + serverUrl + " as user admin of realm master", exe.stderrLines().get(0));
+        Assertions.assertEquals("Logging into " + serverUrl + " as user admin of realm master", exe.stderrLines().get(0), "stderr first line");
     }
 
     @Test
@@ -294,7 +294,7 @@ public class KcRegTest extends AbstractRegCliTest {
         exe.waitCompletion();
 
         assertExitCodeAndStreamSizes(exe, 0, 1, 1);
-        Assert.assertEquals("stderr first line", "Logging into " + serverUrl + " as user admin of realm master", exe.stderrLines().get(0));
+        Assertions.assertEquals("Logging into " + serverUrl + " as user admin of realm master", exe.stderrLines().get(0), "stderr first line");
 
 
         /*
@@ -310,8 +310,8 @@ public class KcRegTest extends AbstractRegCliTest {
             exe = execute("config credentials --server " + serverUrl + " --realm master --user admin < '" + tmpFile.getName() + "'");
 
             assertExitCodeAndStreamSizes(exe, 0, 1, 1);
-            Assert.assertTrue("Enter password prompt", exe.stdoutLines().get(0).startsWith("Enter password: "));
-            Assert.assertEquals("stderr first line", "Logging into " + serverUrl + " as user admin of realm master", exe.stderrLines().get(0));
+            Assertions.assertTrue(exe.stdoutLines().get(0).startsWith("Enter password: "), "Enter password prompt");
+            Assertions.assertEquals("Logging into " + serverUrl + " as user admin of realm master", exe.stderrLines().get(0), "stderr first line");
 
         } finally {
             tmpFile.delete();
@@ -339,7 +339,7 @@ public class KcRegTest extends AbstractRegCliTest {
         exe.waitCompletion();
 
         assertExitCodeAndStreamSizes(exe, 0, 1, 1);
-        Assert.assertEquals("stderr first line", "Logging into " + serverUrl + " as service-account-reg-cli-secret of realm test", exe.stderrLines().get(0));
+        Assertions.assertEquals("Logging into " + serverUrl + " as service-account-reg-cli-secret of realm test", exe.stderrLines().get(0), "stderr first line");
 
         /*
          *  Run the test one more time with stdin redirect
@@ -356,8 +356,8 @@ public class KcRegTest extends AbstractRegCliTest {
                     .execute();
 
             assertExitCodeAndStreamSizes(exe, 0, 1, 1);
-            Assert.assertTrue("Enter client secret prompt", exe.stdoutLines().get(0).startsWith("Enter client secret: "));
-            Assert.assertEquals("stderr first line", "Logging into " + serverUrl + " as service-account-reg-cli-secret of realm test", exe.stderrLines().get(0));
+            Assertions.assertTrue(exe.stdoutLines().get(0).startsWith("Enter client secret: "), "Enter client secret prompt");
+            Assertions.assertEquals("Logging into " + serverUrl + " as service-account-reg-cli-secret of realm test", exe.stderrLines().get(0), "stderr first line");
         } finally {
             tmpFile.delete();
         }
@@ -376,24 +376,24 @@ public class KcRegTest extends AbstractRegCliTest {
                     " --user admin --password admin --config '" + configFile.getName() + "'");
 
             assertExitCodeAndStreamSizes(exe, 0, 0, 1);
-            Assert.assertEquals("stderr first line", "Logging into " + serverUrl + " as user admin of realm master", exe.stderrLines().get(0));
+            Assertions.assertEquals("Logging into " + serverUrl + " as user admin of realm master", exe.stderrLines().get(0), "stderr first line");
 
             // make sure the config file exists, and has the right content
             ConfigData config = handler.loadConfig();
-            Assert.assertEquals("serverUrl", serverUrl, config.getServerUrl());
-            Assert.assertEquals("realm", "master", config.getRealm());
+            Assertions.assertEquals(serverUrl, config.getServerUrl(), "serverUrl");
+            Assertions.assertEquals("master", config.getRealm(), "realm");
             RealmConfigData realmcfg = config.sessionRealmConfigData();
-            Assert.assertNotNull("realm config data no null", realmcfg);
-            Assert.assertEquals("realm cfg serverUrl", serverUrl, realmcfg.serverUrl());
-            Assert.assertEquals("realm cfg realm", "master", realmcfg.realm());
-            Assert.assertEquals("client id", "admin-cli", realmcfg.getClientId());
-            Assert.assertNotNull("token not null", realmcfg.getToken());
-            Assert.assertNotNull("refresh token not null", realmcfg.getRefreshToken());
-            Assert.assertNotNull("token expires not null", realmcfg.getExpiresAt());
-            Assert.assertNotNull("token expires in future", realmcfg.getExpiresAt() > System.currentTimeMillis());
-            Assert.assertNotNull("refresh token expires not null", realmcfg.getRefreshExpiresAt());
-            Assert.assertNotNull("refresh token expires in future", realmcfg.getRefreshExpiresAt() > System.currentTimeMillis());
-            Assert.assertTrue("clients is empty", realmcfg.getClients().isEmpty());
+            Assertions.assertNotNull(realmcfg, "realm config data no null");
+            Assertions.assertEquals(serverUrl, realmcfg.serverUrl(), "realm cfg serverUrl");
+            Assertions.assertEquals("master", realmcfg.realm(), "realm cfg realm");
+            Assertions.assertEquals("admin-cli", realmcfg.getClientId(), "client id");
+            Assertions.assertNotNull(realmcfg.getToken(), "token not null");
+            Assertions.assertNotNull(realmcfg.getRefreshToken(), "refresh token not null");
+            Assertions.assertNotNull(realmcfg.getExpiresAt(), "token expires not null");
+            Assertions.assertNotNull(realmcfg.getExpiresAt() > System.currentTimeMillis(), "token expires in future");
+            Assertions.assertNotNull(realmcfg.getRefreshExpiresAt(), "refresh token expires not null");
+            Assertions.assertNotNull(realmcfg.getRefreshExpiresAt() > System.currentTimeMillis(), "refresh token expires in future");
+            Assertions.assertTrue(realmcfg.getClients().isEmpty(), "clients is empty");
 
         } finally {
             configFile.delete();
@@ -431,14 +431,13 @@ public class KcRegTest extends AbstractRegCliTest {
             assertFieldsEqualWithExclusions(config1, config2, "endpoints." + serverUrl + ".master.clients.test-client");
 
             // check that registration access token is now set
-            Assert.assertNotNull(config2.sessionRealmConfigData().getClients().get("test-client"));
+            Assertions.assertNotNull(config2.sessionRealmConfigData().getClients().get("test-client"));
 
 
             ClientRepresentation client = JsonSerialization.readValue(exe.stdout(), ClientRepresentation.class);
-            Assert.assertEquals("clientId", "test-client", client.getClientId());
-            Assert.assertNotNull("registrationAccessToken", client.getRegistrationAccessToken());
-            Assert.assertEquals("registrationAccessToken in returned json same as in config",
-                    config2.sessionRealmConfigData().getClients().get("test-client"), client.getRegistrationAccessToken());
+            Assertions.assertEquals("test-client", client.getClientId(), "clientId");
+            Assertions.assertNotNull(client.getRegistrationAccessToken(), "registrationAccessToken");
+            Assertions.assertEquals(config2.sessionRealmConfigData().getClients().get("test-client"), client.getRegistrationAccessToken(), "registrationAccessToken in returned json same as in config");
 
 
 
@@ -452,7 +451,7 @@ public class KcRegTest extends AbstractRegCliTest {
             assertFieldsEqualWithExclusions(config2, config3, "endpoints." + serverUrl + ".master.clients.test-client");
 
             // check that registration access token is no longer there
-            Assert.assertTrue("clients empty", config3.sessionRealmConfigData().getClients().isEmpty());
+            Assertions.assertTrue(config3.sessionRealmConfigData().getClients().isEmpty(), "clients empty");
         }
     }
 
@@ -477,8 +476,8 @@ public class KcRegTest extends AbstractRegCliTest {
                 " --user user1 --password userpass --client reg-cli-secret --secret password");
 
         assertExitCodeAndStreamSizes(exe, 1, 0, 2);
-        Assert.assertEquals("login message", "Logging into " + serverUrl + " as user user1 of realm test", exe.stderrLines().get(0));
-        Assert.assertEquals("error message", "Client not allowed for direct access grants [unauthorized_client]", exe.stderrLines().get(exe.stderrLines().size() - 1));
+        Assertions.assertEquals("Logging into " + serverUrl + " as user user1 of realm test", exe.stderrLines().get(0), "login message");
+        Assertions.assertEquals("Client not allowed for direct access grants [unauthorized_client]", exe.stderrLines().get(exe.stderrLines().size() - 1), "error message");
 
 
         // try wrong user password
@@ -486,8 +485,8 @@ public class KcRegTest extends AbstractRegCliTest {
                 " --user user1 --password wrong --client reg-cli-secret-direct --secret password");
 
         assertExitCodeAndStreamSizes(exe, 1, 0, 2);
-        Assert.assertEquals("login message", "Logging into " + serverUrl + " as user user1 of realm test", exe.stderrLines().get(0));
-        Assert.assertEquals("error message", "Invalid user credentials [invalid_grant]", exe.stderrLines().get(exe.stderrLines().size() - 1));
+        Assertions.assertEquals("Logging into " + serverUrl + " as user user1 of realm test", exe.stderrLines().get(0), "login message");
+        Assertions.assertEquals("Invalid user credentials [invalid_grant]", exe.stderrLines().get(exe.stderrLines().size() - 1), "error message");
 
 
         // try wrong client secret
@@ -495,8 +494,8 @@ public class KcRegTest extends AbstractRegCliTest {
                 " --user user1 --password userpass --client reg-cli-secret-direct --secret wrong");
 
         assertExitCodeAndStreamSizes(exe, 1, 0, 2);
-        Assert.assertEquals("login message", "Logging into " + serverUrl + " as user user1 of realm test", exe.stderrLines().get(0));
-        Assert.assertEquals("error message", "Invalid client or Invalid client credentials [unauthorized_client]", exe.stderrLines().get(exe.stderrLines().size() - 1));
+        Assertions.assertEquals("Logging into " + serverUrl + " as user user1 of realm test", exe.stderrLines().get(0), "login message");
+        Assertions.assertEquals("Invalid client or Invalid client credentials [unauthorized_client]", exe.stderrLines().get(exe.stderrLines().size() - 1), "error message");
 
 
         // try whole CRUD
@@ -522,7 +521,7 @@ public class KcRegTest extends AbstractRegCliTest {
          *  Login is performed by each operation again, and again using username, password, and client JWT signature.
          */
         File keystore = new File(System.getProperty("user.dir") + "/src/test/resources/cli/kcreg/reg-cli-keystore." + keystoreFileExtension);
-        Assert.assertTrue("reg-cli-keystore." + keystoreFileExtension + " exists", keystore.isFile());
+        Assertions.assertTrue(keystore.isFile(), "reg-cli-keystore." + keystoreFileExtension + " exists");
 
         // try client without direct grants enabled
         KcRegExec exe = execute("get test-client --no-config --server " + serverUrl + " --realm test" +
@@ -530,8 +529,8 @@ public class KcRegTest extends AbstractRegCliTest {
                 " --storepass storepass --keypass keypass --alias reg-cli");
 
         assertExitCodeAndStreamSizes(exe, 1, 0, 2);
-        Assert.assertEquals("login message", "Logging into " + serverUrl + " as user user1 of realm test", exe.stderrLines().get(0));
-        Assert.assertEquals("error message", "Client not allowed for direct access grants [unauthorized_client]", exe.stderrLines().get(exe.stderrLines().size() - 1));
+        Assertions.assertEquals("Logging into " + serverUrl + " as user user1 of realm test", exe.stderrLines().get(0), "login message");
+        Assertions.assertEquals("Client not allowed for direct access grants [unauthorized_client]", exe.stderrLines().get(exe.stderrLines().size() - 1), "error message");
 
 
         // try wrong user password
@@ -540,8 +539,8 @@ public class KcRegTest extends AbstractRegCliTest {
                 " --storepass storepass --keypass keypass --alias reg-cli");
 
         assertExitCodeAndStreamSizes(exe, 1, 0, 2);
-        Assert.assertEquals("login message", "Logging into " + serverUrl + " as user user1 of realm test", exe.stderrLines().get(0));
-        Assert.assertEquals("error message", "Invalid user credentials [invalid_grant]", exe.stderrLines().get(exe.stderrLines().size() - 1));
+        Assertions.assertEquals("Logging into " + serverUrl + " as user user1 of realm test", exe.stderrLines().get(0), "login message");
+        Assertions.assertEquals("Invalid user credentials [invalid_grant]", exe.stderrLines().get(exe.stderrLines().size() - 1), "error message");
 
 
         // try wrong storepass
@@ -550,8 +549,8 @@ public class KcRegTest extends AbstractRegCliTest {
                 " --storepass wrong --keypass keypass --alias reg-cli");
 
         assertExitCodeAndStreamSizes(exe, 1, 0, 2);
-        Assert.assertEquals("login message", "Logging into " + serverUrl + " as user user1 of realm test", exe.stderrLines().get(0));
-        Assert.assertTrue("error message", exe.stderrLines().get(exe.stderrLines().size() - 1).startsWith("Failed to load private key: "));
+        Assertions.assertEquals("Logging into " + serverUrl + " as user user1 of realm test", exe.stderrLines().get(0), "login message");
+        Assertions.assertTrue(exe.stderrLines().get(exe.stderrLines().size() - 1).startsWith("Failed to load private key: "), "error message");
 
 
         // try whole CRUD
@@ -579,7 +578,7 @@ public class KcRegTest extends AbstractRegCliTest {
          *  Login is performed by each operation again, and again using only client JWT signature - service account is used.
          */
         File keystore = new File(System.getProperty("user.dir") + "/src/test/resources/cli/kcreg/reg-cli-keystore.p12");
-        Assert.assertTrue("reg-cli-keystore.p12 exists", keystore.isFile());
+        Assertions.assertTrue(keystore.isFile(), "reg-cli-keystore.p12 exists");
 
         testCRUDWithOnTheFlyAuth(serverUrl,
                 "--client reg-cli-jwt --keystore '" + keystore.getAbsolutePath() + "' --storepass storepass --keypass keypass --alias reg-cli", "",
@@ -620,21 +619,22 @@ public class KcRegTest extends AbstractRegCliTest {
             KcRegExec exe = execute("create " + (useConfig ? ("--config '" + configFile.getAbsolutePath()) + "'" : "--no-config")
                     + " --insecure --server " + oauth.AUTH_SERVER_ROOT + " --realm " + realm + " -s clientId=test-client2 -o -t " + token);
 
-            Assert.assertEquals("exitCode == 0", 0, exe.exitCode());
+            Assertions.assertEquals(0, exe.exitCode(), "exitCode == 0");
 
 
             ClientRepresentation client = JsonSerialization.readValue(exe.stdout(), ClientRepresentation.class);
 
-            Assert.assertEquals("clientId", "test-client2", client.getClientId());
-            Assert.assertNotNull("registrationAccessToken", client.getRegistrationAccessToken());
+            Assertions.assertEquals("test-client2", client.getClientId(), "clientId");
+            Assertions.assertNotNull(client.getRegistrationAccessToken(), "registrationAccessToken");
 
 
             if (useConfig) {
                 ConfigData config = handler.loadConfig();
-                Assert.assertEquals("Registration Access Token in config file", client.getRegistrationAccessToken(),
-                        config.ensureRealmConfigData(oauth.AUTH_SERVER_ROOT, realm).getClients().get("test-client2"));
+                Assertions.assertEquals(client.getRegistrationAccessToken(),
+                        config.ensureRealmConfigData(oauth.AUTH_SERVER_ROOT, realm).getClients().get("test-client2"),
+                        "Registration Access Token in config file");
             } else {
-                Assert.assertFalse("There should be no config file", configFile.isFile());
+                Assertions.assertFalse(configFile.isFile(), "There should be no config file");
             }
 
             exe = execute("delete test-client2 " + (useConfig ? ("--config '" + configFile.getAbsolutePath()) + "'" : "--no-config")
@@ -670,8 +670,8 @@ public class KcRegTest extends AbstractRegCliTest {
 
             ClientRepresentation client = JsonSerialization.readValue(exe.stdout(), ClientRepresentation.class);
 
-            Assert.assertEquals("clientId", "test-client", client.getClientId());
-            Assert.assertNotNull("registrationAccessToken", client.getRegistrationAccessToken());
+            Assertions.assertEquals("test-client", client.getClientId(), "clientId");
+            Assertions.assertNotNull(client.getRegistrationAccessToken(), "registrationAccessToken");
 
             exe = execute("delete test-client " + (useConfig ? ("--config '" + configFile.getAbsolutePath()) + "'" : "--no-config")
                     + " --server " + serverUrl + " --realm " + realm + " -t " + client.getRegistrationAccessToken());

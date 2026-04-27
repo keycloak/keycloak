@@ -47,6 +47,9 @@ import org.keycloak.services.clientpolicy.condition.ClientAccessTypeConditionFac
 import org.keycloak.services.clientpolicy.condition.ClientRolesConditionFactory;
 import org.keycloak.services.clientpolicy.condition.ClientScopesConditionFactory;
 import org.keycloak.services.clientpolicy.executor.SuppressRefreshTokenRotationExecutorFactory;
+import org.keycloak.testframework.realm.ClientBuilder;
+import org.keycloak.testframework.realm.RoleBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LogoutConfirmPage;
@@ -54,19 +57,16 @@ import org.keycloak.testsuite.pages.OAuth2DeviceVerificationPage;
 import org.keycloak.testsuite.pages.OAuthGrantPage;
 import org.keycloak.testsuite.services.clientpolicy.executor.TestEnhancedPluggableTokenManagerExecutorFactory;
 import org.keycloak.testsuite.services.clientpolicy.executor.TestRaiseExceptionExecutorFactory;
-import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientPoliciesBuilder;
 import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientPolicyBuilder;
 import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientProfileBuilder;
 import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientProfilesBuilder;
-import org.keycloak.testsuite.util.RoleBuilder;
-import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.device.DeviceAuthorizationResponse;
 
 import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Assert;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 import static org.keycloak.testsuite.AbstractAdminTest.loadJson;
 import static org.keycloak.testsuite.admin.AdminApiUtil.findUserByUsername;
@@ -78,11 +78,11 @@ import static org.keycloak.testsuite.util.ClientPoliciesUtil.createTestRaiseExep
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.empty;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * This test class is for testing a newly supported event for client policies.
@@ -281,7 +281,7 @@ public class ClientPoliciesExtendedEventTest extends AbstractClientPoliciesTest 
         oauth.client(DEVICE_APP, "secret");
         DeviceAuthorizationResponse response = oauth.device().doDeviceAuthorizationRequest();
 
-        Assert.assertEquals(200, response.getStatusCode());
+        Assertions.assertEquals(200, response.getStatusCode());
         assertNotNull(response.getDeviceCode());
         assertNotNull(response.getUserCode());
         assertNotNull(response.getVerificationUri());
@@ -336,7 +336,7 @@ public class ClientPoliciesExtendedEventTest extends AbstractClientPoliciesTest 
         oauth.client(DEVICE_APP, "secret");
         DeviceAuthorizationResponse response = oauth.device().doDeviceAuthorizationRequest();
 
-        Assert.assertEquals(200, response.getStatusCode());
+        Assertions.assertEquals(200, response.getStatusCode());
         assertNotNull(response.getDeviceCode());
         assertNotNull(response.getUserCode());
         assertNotNull(response.getVerificationUri());
@@ -533,9 +533,9 @@ public class ClientPoliciesExtendedEventTest extends AbstractClientPoliciesTest 
         updatePolicies(json);
 
         // now the online session should be removed as it's an offline first request
-        NotFoundException nfe = Assert.assertThrows(NotFoundException.class,
+        NotFoundException nfe = Assertions.assertThrows(NotFoundException.class,
                 () -> adminClient.realm(REALM_NAME).deleteSession(token.getSessionId(), false));
-        Assert.assertEquals(404, nfe.getResponse().getStatus());
+        Assertions.assertEquals(404, nfe.getResponse().getStatus());
 
         String refreshTokenString = res.getRefreshToken();
         AccessTokenResponse accessTokenResponseRefreshed = oauth.doRefreshTokenRequest(refreshTokenString);

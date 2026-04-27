@@ -32,7 +32,6 @@ import org.keycloak.representations.idm.FederatedIdentityRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractChangeImportedUserPasswordsTest;
-import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.auth.page.login.OneTimeCode;
 import org.keycloak.testsuite.broker.SocialLoginTest;
@@ -54,6 +53,7 @@ import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.arquillian.test.api.ArquillianResource;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 
@@ -116,7 +116,7 @@ public class ReAuthenticationTest extends AbstractChangeImportedUserPasswordsTes
     @Test
     public void usernamePasswordFormReauthentication() {
         // Add fake github link to user account
-        UserResource user = AdminApiUtil.findUserByUsernameId(testRealm(), "test-user@localhost");
+        UserResource user = AdminApiUtil.findUserByUsernameId(managedRealm.admin(), "test-user@localhost");
         FederatedIdentityRepresentation fedLink = FederatedIdentityBuilder.create()
                 .identityProvider("github")
                 .userId("123")
@@ -130,7 +130,7 @@ public class ReAuthenticationTest extends AbstractChangeImportedUserPasswordsTes
         assertUsernameFieldAndOtherFields(true);
         assertSocialButtonsPresent(true, true);
         loginPage.login("test-user@localhost", getPassword("test-user@localhost"));
-        Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
         // Set time offset
         setTimeOffset(10);
@@ -149,12 +149,12 @@ public class ReAuthenticationTest extends AbstractChangeImportedUserPasswordsTes
         // Try bad password and assert things still hidden
         loginPage.login("bad-password");
         loginPage.assertCurrent();
-        Assert.assertEquals("Invalid username or password.", loginPage.getInputError());
+        Assertions.assertEquals("Invalid username or password.", loginPage.getInputError());
         assertUsernameFieldAndOtherFields(false);
         assertInfoMessageAboutReAuthenticate(false);
 
         loginPage.login(getPassword("test-user@localhost"));
-        Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
         // Remove link
         user.removeFederatedIdentity("github");
@@ -169,7 +169,7 @@ public class ReAuthenticationTest extends AbstractChangeImportedUserPasswordsTes
         assertUsernameFieldAndOtherFields(true);
         assertSocialButtonsPresent(true, true);
         loginPage.login("test-user@localhost", getPassword("test-user@localhost"));
-        Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
         // Set time offset
         setTimeOffset(10);
@@ -186,7 +186,7 @@ public class ReAuthenticationTest extends AbstractChangeImportedUserPasswordsTes
         assertSocialButtonsPresent(false, false);
 
         // Try click "Reset password" . This will start login page from the beginning due SSO logout
-        Assert.assertEquals("test-user@localhost", loginPage.getAttemptedUsername());
+        Assertions.assertEquals("test-user@localhost", loginPage.getAttemptedUsername());
         loginPage.clickResetLogin();
 
         // Username field should be back. Attempted username should not be shown
@@ -199,7 +199,7 @@ public class ReAuthenticationTest extends AbstractChangeImportedUserPasswordsTes
 
         // Successfully login as different user. It should be possible due previous SSO session was removed
         loginPage.login("john-doh@localhost", getPassword("john-doh@localhost"));
-        Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
     }
 
     // Re-authentication with user form separate to the password form. The username form would be skipped
@@ -216,7 +216,7 @@ public class ReAuthenticationTest extends AbstractChangeImportedUserPasswordsTes
         loginUsernameOnlyPage.login("test-user@localhost");
         passwordPage.assertCurrent();
         passwordPage.login(getPassword("test-user@localhost"));
-        Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
         // Set time offset
         setTimeOffset(10);
@@ -226,16 +226,16 @@ public class ReAuthenticationTest extends AbstractChangeImportedUserPasswordsTes
 
         // User directly on the password page. Info message should be shown here
         passwordPage.assertCurrent();
-        Assert.assertEquals("test-user@localhost", passwordPage.getAttemptedUsername());
+        Assertions.assertEquals("test-user@localhost", passwordPage.getAttemptedUsername());
         assertInfoMessageAboutReAuthenticate(true);
 
         passwordPage.login("bad-password");
-        Assert.assertEquals("Invalid password.", passwordPage.getPasswordError());
+        Assertions.assertEquals("Invalid password.", passwordPage.getPasswordError());
         passwordPage.login(getPassword("test-user@localhost"));
-        Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
         // Revert flows
-        BrowserFlowTest.revertFlows(testRealm(), "browser - identity first");
+        BrowserFlowTest.revertFlows(managedRealm.admin(), "browser - identity first");
     }
 
     // Re-authentication with user form separate to the password form. The username form is shown due the user linked with "github"
@@ -245,7 +245,7 @@ public class ReAuthenticationTest extends AbstractChangeImportedUserPasswordsTes
         setupIdentityFirstFlow();
 
         // Add fake federated link to the user
-        UserResource user = AdminApiUtil.findUserByUsernameId(testRealm(), "test-user@localhost");
+        UserResource user = AdminApiUtil.findUserByUsernameId(managedRealm.admin(), "test-user@localhost");
         FederatedIdentityRepresentation fedLink = FederatedIdentityBuilder.create()
                 .identityProvider("github")
                 .userId("123")
@@ -259,7 +259,7 @@ public class ReAuthenticationTest extends AbstractChangeImportedUserPasswordsTes
         loginUsernameOnlyPage.login("test-user@localhost");
         passwordPage.assertCurrent();
         passwordPage.login(getPassword("test-user@localhost"));
-        Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
         // See that user can re-authenticate with the github link present on the page as user has link to github social provider
         setTimeOffset(10);
@@ -283,11 +283,11 @@ public class ReAuthenticationTest extends AbstractChangeImportedUserPasswordsTes
         passwordPage.assertCurrent();
         passwordPage.login(getPassword("test-user@localhost"));
         assertInfoMessageAboutReAuthenticate(false);
-        Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
         // Remove link and flow
         user.removeFederatedIdentity("github");
-        BrowserFlowTest.revertFlows(testRealm(), "browser - identity first");
+        BrowserFlowTest.revertFlows(managedRealm.admin(), "browser - identity first");
     }
 
     @Test
@@ -308,13 +308,13 @@ public class ReAuthenticationTest extends AbstractChangeImportedUserPasswordsTes
         AccessToken accessToken1 = oauth.verifyToken(response1.getAccessToken());
         AccessToken accessToken2 = oauth.verifyToken(response2.getAccessToken());
 
-        Assert.assertNotEquals(accessToken1.getSubject(), accessToken2.getSubject());
-        Assert.assertNotEquals(accessToken1.getSessionId(), accessToken2.getSessionId());
+        Assertions.assertNotEquals(accessToken1.getSubject(), accessToken2.getSubject());
+        Assertions.assertNotEquals(accessToken1.getSessionId(), accessToken2.getSessionId());
     }
 
     @Test
     public void loginAfterExpiredUserSession() {
-        RealmRepresentation rep = testRealm().toRepresentation();
+        RealmRepresentation rep = managedRealm.admin().toRepresentation();
         Integer originalSsoSessionIdleTimeout = rep.getSsoSessionIdleTimeout();
         Integer originalSsoSessionMaxLifespan = rep.getSsoSessionMaxLifespan();
 
@@ -341,8 +341,8 @@ public class ReAuthenticationTest extends AbstractChangeImportedUserPasswordsTes
         AccessToken accessToken1 = oauth.verifyToken(response1.getAccessToken());
         AccessToken accessToken2 = oauth.verifyToken(response2.getAccessToken());
 
-        Assert.assertNotEquals(accessToken1.getSubject(), accessToken2.getSubject());
-        Assert.assertNotEquals(accessToken1.getSessionId(), accessToken2.getSessionId());
+        Assertions.assertNotEquals(accessToken1.getSubject(), accessToken2.getSubject());
+        Assertions.assertNotEquals(accessToken1.getSessionId(), accessToken2.getSessionId());
 
         setTimeOffset(0);
         rep.setSsoSessionIdleTimeout(originalSsoSessionIdleTimeout);
@@ -382,8 +382,8 @@ public class ReAuthenticationTest extends AbstractChangeImportedUserPasswordsTes
         AccessTokenResponse response2 = oauth.doAccessTokenRequest(code);
         AccessToken accessToken2 = oauth.verifyToken(response2.getAccessToken());
 
-        Assert.assertNotEquals(accessToken1.getId(), accessToken2.getId());
-        Assert.assertNotEquals(accessToken1.getSessionId(), accessToken2.getSessionId());
+        Assertions.assertNotEquals(accessToken1.getId(), accessToken2.getId());
+        Assertions.assertNotEquals(accessToken1.getSessionId(), accessToken2.getSessionId());
     }
 
     private void setupIdentityFirstFlow() {

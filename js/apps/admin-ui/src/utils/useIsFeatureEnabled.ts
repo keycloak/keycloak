@@ -32,7 +32,9 @@ export default function useIsFeatureEnabled() {
   const hasFeatureAccess = (feature: Feature) => {
     switch (feature) {
       case Feature.Organizations:
-        return hasAccess("manage-realm");
+        return hasAccess(({ hasAny }) =>
+          hasAny("manage-realm", "query-organizations"),
+        );
       default:
         return true;
     }

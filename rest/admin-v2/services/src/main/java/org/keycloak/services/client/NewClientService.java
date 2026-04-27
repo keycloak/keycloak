@@ -82,10 +82,10 @@ public class NewClientService extends DefaultClientService implements ClientServ
                                                         @Nonnull String clientId,
                                                         ClientProjectionOptions projectionOptions) throws ServiceException {
         ClientModel client = avoidClientIdPhishing(realm.getClientByClientId(clientId)).orElseThrow(() -> new ServiceException("Could not find client", Response.Status.NOT_FOUND));
+        permissions.clients().requireView(client);
+
         try {
             session.clientPolicy().triggerOnEvent(new AdminClientViewContext(client, permissions.adminAuth()));
-            permissions.clients().requireView(client);
-
             return Optional.ofNullable(getMapper(client.getProtocol()).fromModel(client));
         } catch (ClientPolicyException e) {
             throw new ServiceException(e.getErrorDetail(), Response.Status.BAD_REQUEST);

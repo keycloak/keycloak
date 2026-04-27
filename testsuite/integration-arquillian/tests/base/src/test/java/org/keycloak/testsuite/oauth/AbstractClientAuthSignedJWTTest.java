@@ -90,20 +90,19 @@ import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.util.CertificateInfoHelper;
+import org.keycloak.testframework.realm.ClientBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AbstractKeycloakTest;
-import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.auth.page.AuthRealm;
 import org.keycloak.testsuite.client.resources.TestApplicationResourceUrls;
 import org.keycloak.testsuite.client.resources.TestOIDCEndpointsApplicationResource;
 import org.keycloak.testsuite.rest.resource.TestingOIDCEndpointsApplicationResource;
-import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.ClientManager;
 import org.keycloak.testsuite.util.KeystoreUtils;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.SignatureSignerUtil;
-import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.keycloak.util.JsonSerialization;
@@ -128,11 +127,12 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Rule;
+import org.junit.jupiter.api.Assertions;
 import org.junit.rules.TemporaryFolder;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 public abstract class AbstractClientAuthSignedJWTTest extends AbstractKeycloakTest {
 
@@ -188,7 +188,7 @@ public abstract class AbstractClientAuthSignedJWTTest extends AbstractKeycloakTe
         app2 = ClientBuilder.create()
                 .id(KeycloakModelUtils.generateId())
                 .clientId("client2")
-                .directAccessGrants()
+                .directAccessGrantsEnabled()
                 .serviceAccountsEnabled(true)
                 .redirectUris(OAuthClient.APP_ROOT + "/auth")
                 .attribute(JWTClientAuthenticator.CERTIFICATE_ATTR, "MIICnTCCAYUCBgFPPQDGxTANBgkqhkiG9w0BAQsFADASMRAwDgYDVQQDDAdjbGllbnQxMB4XDTE1MDgxNzE4NTAwNVoXDTI1MDgxNzE4NTE0NVowEjEQMA4GA1UEAwwHY2xpZW50MTCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAMMw3PaBffWxgS2PYSDDBp6As+cNvv9kt2C4f/RDAGmvSIHPFev9kuQiKs3Oaws3ZsV4JG3qHEuYgnh9W4vfe3DwNwtD1bjL5FYBhPBFTw0lAQECYxaBHnkjHwUKp957FqdSPPICm3LjmTcEdlH+9dpp9xHCMbbiNiWDzWI1xSxC8Fs2d0hwz1sd+Q4QeTBPIBWcPM+ICZtNG5MN+ORfayu4X+Me5d0tXG2fQO//rAevk1i5IFjKZuOjTwyKB5SJIY4b8QTeg0g/50IU7Ht00Pxw6CK02dHS+FvXHasZlD3ckomqCDjStTBWdhJo5dST0CbOqalkkpLlCCbGA1yEQRsCAwEAATANBgkqhkiG9w0BAQsFAAOCAQEAUIMeJ+EAo8eNpCG/nXImacjrKakbFnZYBGD/gqeTGaZynkX+jgBSructTHR83zSH+yELEhsAy+3BfK4EEihp+PEcRnK2fASVkHste8AQ7rlzC+HGGirlwrVhWCdizNUCGK80DE537IZ7nmZw6LFG9P5/Q2MvCsOCYjRUvMkukq6TdXBXR9tETwZ+0gpSfsOxjj0ZF7ftTRUSzx4rFfcbM9fRNdVizdOuKGc8HJPA5lLOxV6CyaYIvi3y5RlQI1OHeS34lE4w9CNPRFa/vdxXvN7ClyzA0HMFNWxBN7pC/Ht/FbhSvaAagJBHg+vCrcY5C26Oli7lAglf/zZrwUPs0w==")
@@ -223,7 +223,7 @@ public abstract class AbstractClientAuthSignedJWTTest extends AbstractKeycloakTe
         app3 = ClientBuilder.create()
                 .id(KeycloakModelUtils.generateId())
                 .clientId("client3")
-                .directAccessGrants()
+                .directAccessGrantsEnabled()
                 .redirectUris(OAuthClient.APP_ROOT + "/auth")
                 .authenticatorType(JWTClientAuthenticator.PROVIDER_ID)
                 .build();
@@ -266,7 +266,7 @@ public abstract class AbstractClientAuthSignedJWTTest extends AbstractKeycloakTe
             PrivateKey privateKey = keyPair.getPrivate();
 
             // test
-            oauth.clientId("client2");
+            oauth.client("client2");
             oauth.doLogin("test-user@localhost", "password");
 
             String code = oauth.parseLoginResponse().getCode();
@@ -354,7 +354,7 @@ public abstract class AbstractClientAuthSignedJWTTest extends AbstractKeycloakTe
         PrivateKey privateKey = keyPair.getPrivate();
 
         // test
-        oauth.realm("test").clientId(clientId);
+        oauth.realm("test").client(clientId);
         oauth.doLogin("test-user@localhost", "password");
         EventRepresentation loginEvent = events.expectLogin()
                 .client(clientId)
@@ -384,7 +384,7 @@ public abstract class AbstractClientAuthSignedJWTTest extends AbstractKeycloakTe
             PrivateKey privateKey = keyPair.getPrivate();
 
             // test
-            oauth.clientId("client2");
+            oauth.client("client2");
             AccessTokenResponse response = doGrantAccessTokenRequest("test-user@localhost", "password", createSignedRequestToken("client2", getRealmInfoUrl(), privateKey, publicKey, algorithm));
 
             assertEquals(200, response.getStatusCode());
@@ -455,7 +455,7 @@ public abstract class AbstractClientAuthSignedJWTTest extends AbstractKeycloakTe
         assertCertificate(client, certOld,
                 KeycloakModelUtils.getPemFromCertificate(x509Cert));
         MatcherAssert.assertThat(x509Cert.getPublicKey(), Matchers.instanceOf(RSAKey.class));
-        Assert.assertEquals(keySize == null ? 4096 : keySize, ((RSAKey) x509Cert.getPublicKey()).getModulus().bitLength());
+        Assertions.assertEquals(keySize == null ? 4096 : keySize, ((RSAKey) x509Cert.getPublicKey()).getModulus().bitLength());
 
         Calendar afterCreateCalendar = Calendar.getInstance();
         afterCreateCalendar.add(Calendar.YEAR, expectedValidity);
@@ -468,7 +468,7 @@ public abstract class AbstractClientAuthSignedJWTTest extends AbstractKeycloakTe
 
         // Try to login with the new keys
 
-        oauth.clientId(client.getClientId());
+        oauth.client(client.getClientId());
         PrivateKey privateKey = (PrivateKey) keyStore.getKey(keyAlias, keyPassword.toCharArray());
         KeyPair keyPair = new KeyPair(x509Cert.getPublicKey(), privateKey);
 
@@ -543,17 +543,17 @@ public abstract class AbstractClientAuthSignedJWTTest extends AbstractKeycloakTe
         if (keystoreFormat.equals(CertificateInfoHelper.PUBLIC_KEY_PEM)) {
             String pem = new String(Files.readAllBytes(keystoreFile.toPath()));
             final String publicKeyNew = client.getAttributes().get(JWTClientAuthenticator.ATTR_PREFIX + "." + CertificateInfoHelper.PUBLIC_KEY);
-            assertEquals("Certificates don't match", pem, publicKeyNew);
+            assertEquals(pem, publicKeyNew, "Certificates don't match");
         } else if (keystoreFormat.equals(CertificateInfoHelper.JSON_WEB_KEY_SET)) {
-            Assert.assertEquals("true", client.getAttributes().get(OIDCConfigAttributes.USE_JWKS_STRING));
+            Assertions.assertEquals("true", client.getAttributes().get(OIDCConfigAttributes.USE_JWKS_STRING));
             String jwks = new String(Files.readAllBytes(keystoreFile.toPath()));
-            Assert.assertEquals(jwks, client.getAttributes().get(OIDCConfigAttributes.JWKS_STRING));
+            Assertions.assertEquals(jwks, client.getAttributes().get(OIDCConfigAttributes.JWKS_STRING));
             CertificateRepresentation info = getClient(testRealm.getRealm(), client.getId())
                     .getCertficateResource(JWTClientAuthenticator.ATTR_PREFIX).getKeyInfo();
-            Assert.assertNotNull(info.getPublicKey());
+            Assertions.assertNotNull(info.getPublicKey());
             // Just assert it's valid public key
             PublicKey pk = KeycloakModelUtils.getPublicKey(info.getPublicKey());
-            Assert.assertNotNull(pk);
+            Assertions.assertNotNull(pk);
         } else if (keystoreFormat.equals(CertificateInfoHelper.CERTIFICATE_PEM)) {
             String pem = new String(Files.readAllBytes(keystoreFile.toPath()));
             assertCertificate(client, certOld, pem);
@@ -664,8 +664,8 @@ public abstract class AbstractClientAuthSignedJWTTest extends AbstractKeycloakTe
     protected static void assertCertificate(ClientRepresentation client, String certOld, String pem) {
         pem = PemUtils.removeBeginEnd(pem);
         final String certNew = client.getAttributes().get(JWTClientAuthenticator.CERTIFICATE_ATTR);
-        assertNotEquals("The old and new certificates shouldn't match", certOld, certNew);
-        assertEquals("Certificates don't match", pem, certNew);
+        assertNotEquals(certOld, certNew, "The old and new certificates shouldn't match");
+        assertEquals(pem, certNew, "Certificates don't match");
     }
 
     protected void testCodeToTokenRequestFailure(String algorithm, String error, String description) throws Exception {
@@ -679,7 +679,7 @@ public abstract class AbstractClientAuthSignedJWTTest extends AbstractKeycloakTe
             PrivateKey privateKey = keyPair.getPrivate();
 
             // test
-            oauth.clientId("client2");
+            oauth.client("client2");
             oauth.doLogin("test-user@localhost", "password");
             EventRepresentation loginEvent = events.expectLogin()
                     .client("client2")
@@ -713,7 +713,7 @@ public abstract class AbstractClientAuthSignedJWTTest extends AbstractKeycloakTe
             setupJwksUrl(algorithm, clientRepresentation, clientResource);
 
             // test
-            oauth.clientId("client2");
+            oauth.client("client2");
             AccessTokenResponse response = doGrantAccessTokenRequest("test-user@localhost", "password", getClient2SignedJWT());
 
             assertEquals(400, response.getStatusCode());
