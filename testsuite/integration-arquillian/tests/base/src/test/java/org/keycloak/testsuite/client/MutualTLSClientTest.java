@@ -3,8 +3,6 @@ package org.keycloak.testsuite.client;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -58,38 +56,49 @@ public class MutualTLSClientTest extends AbstractTestRealmKeycloakTest {
       properConfiguration.setServiceAccountsEnabled(Boolean.TRUE);
       properConfiguration.setRedirectUris(Arrays.asList("https://localhost:8543/auth/realms/master/app/auth"));
       properConfiguration.setClientAuthenticatorType(X509ClientAuthenticator.PROVIDER_ID);
-      properConfiguration.setAttributes(Collections.singletonMap(X509ClientAuthenticator.ATTR_SUBJECT_DN, "(.*?)(?:$)"));
+      properConfiguration.setAttributes(Map.of(
+              X509ClientAuthenticator.ATTR_SUBJECT_DN, "(.*?)(?:$)",
+              X509ClientAuthenticator.ATTR_CA_SUBJECT_DN, MutualTLSUtils.CA_CERTIFICATE_SUBJECT_DN
+      ));
 
       ClientRepresentation disabledConfiguration = KeycloakModelUtils.createClient(testRealm, DISABLED_CLIENT_ID);
       disabledConfiguration.setServiceAccountsEnabled(Boolean.TRUE);
       disabledConfiguration.setRedirectUris(Arrays.asList("https://localhost:8543/auth/realms/master/app/auth"));
       disabledConfiguration.setClientAuthenticatorType(X509ClientAuthenticator.PROVIDER_ID);
-      disabledConfiguration.setAttributes(Collections.singletonMap(X509ClientAuthenticator.ATTR_SUBJECT_DN, "(.*?)(?:$)"));
+      disabledConfiguration.setAttributes(Map.of(
+              X509ClientAuthenticator.ATTR_SUBJECT_DN, "(.*?)(?:$)",
+              X509ClientAuthenticator.ATTR_CA_SUBJECT_DN, MutualTLSUtils.CA_CERTIFICATE_SUBJECT_DN
+      ));
 
       ClientRepresentation exactSubjectDNConfiguration = KeycloakModelUtils.createClient(testRealm, EXACT_SUBJECT_DN_CLIENT_ID);
       exactSubjectDNConfiguration.setServiceAccountsEnabled(Boolean.TRUE);
       exactSubjectDNConfiguration.setRedirectUris(Arrays.asList("https://localhost:8543/auth/realms/master/app/auth"));
       exactSubjectDNConfiguration.setClientAuthenticatorType(X509ClientAuthenticator.PROVIDER_ID);
-      Map<String, String> attrs = new HashMap<>();
-      attrs.put(X509ClientAuthenticator.ATTR_SUBJECT_DN, MutualTLSUtils.DEFAULT_KEYSTORE_SUBJECT_DN);
-      attrs.put(X509ClientAuthenticator.ATTR_ALLOW_REGEX_PATTERN_COMPARISON, "false");
-      exactSubjectDNConfiguration.setAttributes(attrs);
+      exactSubjectDNConfiguration.setAttributes(Map.of(
+              X509ClientAuthenticator.ATTR_SUBJECT_DN, MutualTLSUtils.DEFAULT_KEYSTORE_SUBJECT_DN,
+              X509ClientAuthenticator.ATTR_ALLOW_REGEX_PATTERN_COMPARISON, Boolean.FALSE.toString(),
+              X509ClientAuthenticator.ATTR_CA_SUBJECT_DN, MutualTLSUtils.CA_CERTIFICATE_SUBJECT_DN
+      ));
 
       ClientRepresentation issuerSubjectDNConfiguration = KeycloakModelUtils.createClient(testRealm, ISSUER_SUBJECT_DN_CLIENT_ID);
       issuerSubjectDNConfiguration.setServiceAccountsEnabled(Boolean.TRUE);
       issuerSubjectDNConfiguration.setRedirectUris(Arrays.asList("https://localhost:8543/auth/realms/master/app/auth"));
       issuerSubjectDNConfiguration.setClientAuthenticatorType(X509ClientAuthenticator.PROVIDER_ID);
-      attrs = new HashMap<>();
-      attrs.put(X509ClientAuthenticator.ATTR_SUBJECT_DN, ISSUER_CERTIFICATE_SUBJECT_DN);
-      attrs.put(X509ClientAuthenticator.ATTR_ALLOW_REGEX_PATTERN_COMPARISON, "false");
-      issuerSubjectDNConfiguration.setAttributes(attrs);
+      issuerSubjectDNConfiguration.setAttributes(Map.of(
+              X509ClientAuthenticator.ATTR_SUBJECT_DN, ISSUER_CERTIFICATE_SUBJECT_DN,
+              X509ClientAuthenticator.ATTR_ALLOW_REGEX_PATTERN_COMPARISON, Boolean.FALSE.toString(),
+              X509ClientAuthenticator.ATTR_CA_SUBJECT_DN, MutualTLSUtils.CA_CERTIFICATE_SUBJECT_DN
+      ));
 
       ClientRepresentation obbSubjectDNConfiguration = KeycloakModelUtils.createClient(testRealm, OBB_SUBJECT_DN_CLIENT_ID);
       obbSubjectDNConfiguration.setServiceAccountsEnabled(Boolean.TRUE);
       obbSubjectDNConfiguration.setRedirectUris(Arrays.asList("https://localhost:8543/auth/realms/master/app/auth"));
       obbSubjectDNConfiguration.setClientAuthenticatorType(X509ClientAuthenticator.PROVIDER_ID);
-      obbSubjectDNConfiguration.setAttributes(Collections.singletonMap(X509ClientAuthenticator.ATTR_ALLOW_REGEX_PATTERN_COMPARISON, "false"));
-      // ATTR_SUBJECT_DN will be set in the individual tests based on the requested Subject DN Format
+      obbSubjectDNConfiguration.setAttributes(Map.of(
+              X509ClientAuthenticator.ATTR_SUBJECT_DN, ISSUER_CERTIFICATE_SUBJECT_DN,
+              X509ClientAuthenticator.ATTR_ALLOW_REGEX_PATTERN_COMPARISON, Boolean.FALSE.toString(),
+              X509ClientAuthenticator.ATTR_CA_SUBJECT_DN, MutualTLSUtils.CA_CERTIFICATE_SUBJECT_DN)
+      );
    }
 
    @BeforeClass

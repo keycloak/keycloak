@@ -1,5 +1,7 @@
 package org.keycloak.testframework.https;
 
+import java.nio.file.Path;
+
 import org.keycloak.common.util.KeystoreUtil;
 
 public class CertificatesConfigBuilder {
@@ -7,6 +9,10 @@ public class CertificatesConfigBuilder {
     private KeystoreUtil.KeystoreFormat keystoreFormat = KeystoreUtil.KeystoreFormat.JKS;
     private boolean tlsEnabled = false;
     private boolean mTlsEnabled = false;
+    private Path serverKeystore;
+    private Path serverTruststore;
+    private Path clientKeystore;
+    private Path clientTruststore;
 
     public CertificatesConfigBuilder() {
     }
@@ -54,5 +60,38 @@ public class CertificatesConfigBuilder {
 
     public boolean isMTlsEnabled() {
         return mTlsEnabled;
+    }
+
+    public Path getServerKeystore() {
+        return serverKeystore;
+    }
+
+    public Path getServerTruststore() {
+        return serverTruststore;
+    }
+
+    public Path getClientKeystore() {
+        return clientKeystore;
+    }
+
+    public Path getClientTruststore() {
+        return clientTruststore;
+    }
+
+    /**
+     * Configure manually the stores using files in the classpath.
+     *
+     * @param serverKeystore
+     * @param serverTruststore
+     * @param clientKeystore
+     * @param clientTruststore
+     * @return this
+     */
+    public CertificatesConfigBuilder stores(String serverKeystore, String serverTruststore, String clientKeystore, String clientTruststore) {
+        this.serverKeystore = ManagedCertificates.checkPath(serverKeystore);
+        this.serverTruststore = ManagedCertificates.checkPath(serverTruststore);
+        this.clientKeystore = ManagedCertificates.checkPath(clientKeystore);
+        this.clientTruststore = ManagedCertificates.checkPath(clientTruststore);
+        return this;
     }
 }
