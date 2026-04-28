@@ -23,6 +23,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -139,7 +140,10 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
     @Override
     public void close() {
         logger.debug("Closing provider");
-        shutdownManager.onShutdown();
+        if (shutdownManager != null) {
+            shutdownManager.onShutdown();
+            shutdownManager = null;
+        }
         runWithWriteLockOnCacheManager(() -> {
             if (cacheManager != null) {
                 cacheManager.stop();
@@ -195,7 +199,7 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
     }
 
     private void addShutdownListeners() {
-        shutdownManager = new ShutdownManager(getShutdownDelay().toMillis(), getShutdownTimeout().toMillis());
+        var sm = new ShutdownManager(getShutdownDelay().toMillis(), getShutdownTimeout().toMillis());
         for (var name : CLUSTERED_CACHE_NAMES) {
             if (!cacheManager.cacheConfigurationExists(name)) {
                 logger.debugf("Cache '%s' not defined; skipping the shutdown listener", name);
@@ -218,8 +222,9 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
                 continue;
             }
             var listener = TopologyChangeCacheListener.waitForStableTopology(cache);
-            shutdownManager.addListener(listener);
+            sm.addListener(listener);
         }
+        shutdownManager = sm;
     }
 
     private Duration getShutdownTimeout() {
@@ -356,10 +361,7 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
         if (event instanceof PostMigrationEvent pme) {
             KeycloakModelUtils.runJobInTransaction(pme.getFactory(), this::registerSystemWideListeners);
         } else if (event instanceof ShutdownDelayInitiatedEvent se) {
-            var manager = shutdownManager;
-            if (manager != null) {
-                manager.onShutdownStarted(se.timestamp());
-            }
+            Optional.ofNullable(shutdownManager).ifPresent(sm -> sm.onShutdownStarted(se.timestamp()));
         }
     }
 
