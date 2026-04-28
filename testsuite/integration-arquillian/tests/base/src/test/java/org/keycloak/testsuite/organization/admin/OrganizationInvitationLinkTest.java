@@ -199,6 +199,37 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
     }
 
     @Test
+    public void testInviteExistingUserWithEmailCustomClientAndRedirectUri() throws IOException, MessagingException {
+        UserRepresentation user = createUser("invitedWithMatchingEmailCustomClient", "invitedWithMatchingEmailCustomClient@myemail.com");
+
+        OrganizationResource organization = managedRealm.admin().organizations().get(createOrganization().getId());
+
+        try (Response response = organization.members().inviteUser(user.getEmail(), "Homer", "Simpson", "broker-app", OAuthClient.APP_AUTH_ROOT)) {
+            assertThat(response.getStatus(), equalTo(Response.Status.NO_CONTENT.getStatusCode()));
+
+            acceptInvitation(organization, user, "AUTH_RESPONSE");
+        }
+    }
+
+    @Test
+    public void testInviteExistingUserWithEmailCustomClient() throws IOException, MessagingException {
+        UserRepresentation user = createUser("invitedWithMatchingEmailCustomClientOnly", "invitedWithMatchingEmailCustomClientOnly@myemail.com");
+
+        OrganizationResource organization = managedRealm.admin().organizations().get(createOrganization().getId());
+
+        try (
+            ClientAttributeUpdater cau = ClientAttributeUpdater.forClient(adminClient, TEST_REALM_NAME, "broker-app")
+                .setBaseUrl(OAuthClient.APP_AUTH_ROOT)
+                .update();
+            Response response = organization.members().inviteUser(user.getEmail(), "Homer", "Simpson", "broker-app", null)
+        ) {
+            assertThat(response.getStatus(), equalTo(Response.Status.NO_CONTENT.getStatusCode()));
+
+            acceptInvitation(organization, user, "AUTH_RESPONSE");
+        }
+    }
+
+    @Test
     public void testInviteWithAccountClientCustomBaseUrl() throws IOException, MessagingException {
         UserRepresentation user = createUser("invited", "invited@myemail.com");
 
@@ -369,6 +400,38 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
             getCleanup().addCleanup(() -> managedRealm.admin().users().get(users.get(0).getId()).remove());
 
             // authenticated to the app
+            assertThat(driver.getTitle(), containsString("AUTH_RESPONSE"));
+        }
+    }
+
+    @Test
+    public void testInviteNewUserRegistrationCustomClientAndRedirectUri() throws IOException, MessagingException {
+        String email = "invitedcustomclient@email";
+        String firstName = "Homer";
+        String lastName = "Simpson";
+
+        OrganizationResource organization = managedRealm.admin().organizations().get(createOrganization().getId());
+
+        try (Response response = organization.members().inviteUser(email, firstName, lastName, "broker-app", OAuthClient.APP_AUTH_ROOT)) {
+            assertThat(response.getStatus(), equalTo(Response.Status.NO_CONTENT.getStatusCode()));
+
+            URI link = URI.create(getInvitationLinkFromEmail());
+            NameValuePair clientIdParam = URLEncodedUtils.parse(link, StandardCharsets.UTF_8).stream()
+                    .filter((np) -> Constants.CLIENT_ID.equals(np.getName()))
+                    .findAny().orElse(null);
+
+            assertThat(clientIdParam, notNullValue());
+            assertThat(clientIdParam.getValue(), equalTo("broker-app"));
+
+            registerUser(organization, email);
+
+            List<UserRepresentation> users = managedRealm.admin().users().searchByEmail(email, true);
+            assertThat(users, not(empty()));
+            MemberRepresentation member = organization.members().member(users.get(0).getId()).toRepresentation();
+            Assertions.assertNotNull(member);
+            assertThat(member.getMembershipType(), equalTo(MembershipType.MANAGED));
+            getCleanup().addCleanup(() -> managedRealm.admin().users().get(users.get(0).getId()).remove());
+
             assertThat(driver.getTitle(), containsString("AUTH_RESPONSE"));
         }
     }

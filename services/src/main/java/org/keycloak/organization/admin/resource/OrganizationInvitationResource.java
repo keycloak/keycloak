@@ -52,6 +52,7 @@ import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
+import org.keycloak.protocol.oidc.utils.RedirectUtils;
 import org.keycloak.representations.idm.OrganizationInvitationRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.ServicesLogger;
@@ -97,6 +98,10 @@ public class OrganizationInvitationResource {
     }
 
     public Response inviteUser(String email, String firstName, String lastName) {
+        return inviteUser(email, firstName, lastName, null, null);
+    }
+
+    public Response inviteUser(String email, String firstName, String lastName, String clientId, String redirectUri) {
         auth.orgs().requireManage();
 
         if (!organization.isEnabled()) {
@@ -111,6 +116,8 @@ public class OrganizationInvitationResource {
         if (!Validation.isEmailValid(email)) {
             throw ErrorResponse.error("Invalid email format", Status.BAD_REQUEST);
         }
+
+        InvitationTarget invitationTarget = resolveInvitationTarget(clientId, redirectUri);
 
         OrganizationProvider invitationProvider = session.getProvider(OrganizationProvider.class);
         InvitationManager invitationManager = invitationProvider.getInvitationManager();
@@ -131,7 +138,7 @@ public class OrganizationInvitationResource {
                 throw ErrorResponse.error("User already a member of the organization", Status.CONFLICT);
             }
 
-            return sendInvitation(user);
+            return sendInvitation(user, invitationTarget);
         }
 
         // Create temporary user for new registrations
@@ -143,7 +150,7 @@ public class OrganizationInvitationResource {
             user.setLastName(lastName);
         }
 
-        return sendInvitation(user);
+        return sendInvitation(user, invitationTarget);
     }
 
     public Response inviteExistingUser(String id) {
@@ -167,10 +174,10 @@ public class OrganizationInvitationResource {
             throw ErrorResponse.error("User does not have an email address", Status.BAD_REQUEST);
         }
 
-        return sendInvitation(user);
+        return sendInvitation(user, resolveInvitationTarget(null, null));
     }
 
-    private Response sendInvitation(UserModel user) {
+    private Response sendInvitation(UserModel user, InvitationTarget invitationTarget) {
         OrganizationProvider provider = session.getProvider(OrganizationProvider.class);
         InvitationManager invitationManager = provider.getInvitationManager();
         // Create persistent invitation record
@@ -182,8 +189,8 @@ public class OrganizationInvitationResource {
         );
 
         String link = user.getId() == null ?
-            createRegistrationLink(user, invitation) :
-            createInvitationLink(user, invitation);
+            createRegistrationLink(user, invitation, invitationTarget) :
+            createInvitationLink(user, invitation, invitationTarget);
         invitation.setInviteLink(link);
 
         try {
@@ -205,46 +212,89 @@ public class OrganizationInvitationResource {
         return realm.getActionTokenGeneratedByAdminLifespan();
     }
 
-    private String createInvitationLink(UserModel user, OrganizationInvitationModel invitation) {
+    private String createInvitationLink(UserModel user, OrganizationInvitationModel invitation, InvitationTarget invitationTarget) {
         return LoginActionsService.actionTokenProcessor(session.getContext().getUri())
-                .queryParam("key", createToken(user, invitation))
+                .queryParam("key", createToken(user, invitation, invitationTarget))
                 .build(realm.getName()).toString();
     }
 
-    private String createRegistrationLink(UserModel user, OrganizationInvitationModel invitation) {
+    private String createRegistrationLink(UserModel user, OrganizationInvitationModel invitation, InvitationTarget invitationTarget) {
         return OIDCLoginProtocolService.registrationsUrl(session.getContext().getUri().getBaseUriBuilder())
                 .queryParam(OAuth2Constants.RESPONSE_TYPE, OIDCResponseType.CODE)
-                .queryParam(Constants.CLIENT_ID, Constants.ACCOUNT_MANAGEMENT_CLIENT_ID)
-                .queryParam(Constants.TOKEN, createToken(user, invitation))
+                .queryParam(Constants.CLIENT_ID, invitationTarget.clientId)
+                .queryParam(Constants.TOKEN, createToken(user, invitation, invitationTarget))
                 .buildFromMap(Map.of("realm", realm.getName(), "protocol", OIDCLoginProtocol.LOGIN_PROTOCOL)).toString();
     }
 
-    private String createToken(UserModel user, OrganizationInvitationModel invitation) {
-        InviteOrgActionToken token = new InviteOrgActionToken(user.getId(), invitation.getExpiresAt(), user.getEmail(), Constants.ACCOUNT_MANAGEMENT_CLIENT_ID);
+    private String createToken(UserModel user, OrganizationInvitationModel invitation, InvitationTarget invitationTarget) {
+        InviteOrgActionToken token = new InviteOrgActionToken(user.getId(), invitation.getExpiresAt(), user.getEmail(), invitationTarget.clientId);
 
         token.setOrgId(organization.getId());
         token.id(invitation.getId());
-
-        if (organization.getRedirectUrl() == null || organization.getRedirectUrl().isBlank()) {
-            token.setRedirectUri(resolveAccountClientBaseUrl());
-        } else {
-            token.setRedirectUri(organization.getRedirectUrl());
-        }
+        token.setRedirectUri(invitationTarget.redirectUri);
 
         return token.serialize(session, realm, session.getContext().getUri());
     }
 
-    private String resolveAccountClientBaseUrl() {
-        ClientModel accountClient = realm.getClientByClientId(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID);
+    private InvitationTarget resolveInvitationTarget(String clientId, String redirectUri) {
+        clientId = StringUtil.isBlank(clientId) ? Constants.ACCOUNT_MANAGEMENT_CLIENT_ID : clientId.trim();
+        redirectUri = StringUtil.isBlank(redirectUri) ? null : redirectUri.trim();
 
-        if (accountClient != null) {
-            String baseUrl = accountClient.getBaseUrl();
-            if (baseUrl != null && !baseUrl.isBlank()) {
-                return ResolveRelative.resolveRelativeUri(session, accountClient.getRootUrl(), baseUrl);
-            }
+        ClientModel client = realm.getClientByClientId(clientId);
+
+        if (client == null) {
+            throw ErrorResponse.error("Client doesn't exist", Status.BAD_REQUEST);
         }
 
-        return Urls.accountBase(session.getContext().getUri().getBaseUri()).path("/").build(realm.getName()).toString();
+        if (!client.isEnabled()) {
+            throw ErrorResponse.error("Client is not enabled", Status.BAD_REQUEST);
+        }
+
+        return new InvitationTarget(client.getClientId(), resolveRedirectUri(client, redirectUri));
+    }
+
+    private String resolveRedirectUri(ClientModel client, String redirectUri) {
+        if (redirectUri != null) {
+            String verifiedRedirectUri = RedirectUtils.verifyRedirectUri(session, redirectUri, client);
+
+            if (verifiedRedirectUri == null) {
+                throw ErrorResponse.error("Invalid redirect uri.", Status.BAD_REQUEST);
+            }
+
+            return verifiedRedirectUri;
+        }
+
+        if (!StringUtil.isBlank(organization.getRedirectUrl())) {
+            return organization.getRedirectUrl();
+        }
+
+        String baseUrl = client.getBaseUrl();
+
+        if (!StringUtil.isBlank(baseUrl)) {
+            return ResolveRelative.resolveRelativeUri(session, client.getRootUrl(), baseUrl);
+        }
+
+        String defaultRedirectUri = RedirectUtils.verifyRedirectUri(session, null, client, false);
+
+        if (defaultRedirectUri != null) {
+            return defaultRedirectUri;
+        }
+
+        if (Constants.ACCOUNT_MANAGEMENT_CLIENT_ID.equals(client.getClientId())) {
+            return Urls.accountBase(session.getContext().getUri().getBaseUri()).path("/").build(realm.getName()).toString();
+        }
+
+        return null;
+    }
+
+    private static class InvitationTarget {
+        final String clientId;
+        final String redirectUri;
+
+        private InvitationTarget(String clientId, String redirectUri) {
+            this.clientId = clientId;
+            this.redirectUri = redirectUri;
+        }
     }
 
     @GET
