@@ -55,7 +55,6 @@ import org.keycloak.util.JsonSerialization;
 import org.openqa.selenium.firefox.FirefoxDriver;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -85,12 +84,6 @@ public class WebAuthnRegisterAndLoginTest extends AbstractWebAuthnVirtualTest {
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
         RealmRepresentation realmRepresentation = AbstractAdminTest.loadJson(getClass().getResourceAsStream("/webauthn/testrealm-webauthn.json"), RealmRepresentation.class);
-
-        List<String> acceptableAaguids = new ArrayList<>();
-        acceptableAaguids.add("00000000-0000-0000-0000-000000000000");
-        acceptableAaguids.add("6d44ba9b-f6ec-2e49-b930-0c8fe920cb73");
-
-        realmRepresentation.setWebAuthnPolicyAcceptableAaguids(acceptableAaguids);
 
         testRealms.add(realmRepresentation);
         configureTestRealm(realmRepresentation);
@@ -506,8 +499,7 @@ public class WebAuthnRegisterAndLoginTest extends AbstractWebAuthnVirtualTest {
                 .setWebAuthnPolicyAuthenticatorAttachment("cross-platform")
                 .setWebAuthnPolicyRequireResidentKey("No")
                 .setWebAuthnPolicyRpId(null)
-                .setWebAuthnPolicyUserVerificationRequirement("preferred")
-                .setWebAuthnPolicyAcceptableAaguids(Collections.singletonList(ALL_ZERO_AAGUID));
+                .setWebAuthnPolicyUserVerificationRequirement("preferred");
     }
 
     /**
