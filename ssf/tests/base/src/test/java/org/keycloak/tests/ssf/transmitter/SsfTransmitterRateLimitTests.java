@@ -32,6 +32,7 @@ import org.keycloak.testframework.annotations.InjectKeycloakUrls;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.InjectSimpleHttp;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
@@ -252,12 +253,15 @@ public class SsfTransmitterRateLimitTests {
             realm.name("ssf-transmitter-rate-limit");
             realm.attribute(Ssf.SSF_TRANSMITTER_ENABLED_KEY, "true");
 
-            realm.addClient(RECEIVER_ID)
-                    .secret(RECEIVER_SECRET)
-                    .serviceAccountsEnabled(true)
-                    .directAccessGrantsEnabled(false)
-                    .publicClient(false)
-                    .attribute(ClientStreamStore.SSF_ENABLED_KEY, "true");
+            realm.clients(
+                    ClientBuilder.create(RECEIVER_ID)
+                            .secret(RECEIVER_SECRET)
+                            .serviceAccountsEnabled(true)
+                            .directAccessGrantsEnabled(false)
+                            .publicClient(false)
+                            .attribute(ClientStreamStore.SSF_ENABLED_KEY, "true")
+                            .build()
+            );
 
             return realm;
         }

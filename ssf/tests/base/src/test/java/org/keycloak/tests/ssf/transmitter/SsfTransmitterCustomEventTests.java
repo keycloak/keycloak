@@ -27,6 +27,7 @@ import org.keycloak.testframework.annotations.InjectKeycloakUrls;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.InjectSimpleHttp;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
@@ -247,19 +248,22 @@ public class SsfTransmitterCustomEventTests {
             realm.name("ssf-transmitter-custom-event");
             realm.attribute(Ssf.SSF_TRANSMITTER_ENABLED_KEY, "true");
 
-            realm.addClient(RECEIVER_ID)
-                    .secret(RECEIVER_SECRET)
-                    .serviceAccountsEnabled(true)
-                    .directAccessGrantsEnabled(false)
-                    .publicClient(false)
-                    .attribute(ClientStreamStore.SSF_ENABLED_KEY, "true")
-                    // Opt into the custom test event. Without an explicit
-                    // ssf.supportedEvents attribute, the transmitter falls
-                    // back to getDefaultSupportedEvents() which is a
-                    // hardcoded set of built-in CAEP events and would
-                    // exclude any custom SPI-contributed events.
-                    .attribute(ClientStreamStore.SSF_STREAM_SUPPORTED_EVENTS_KEY,
-                            TestSsfEvent.class.getSimpleName());
+            realm.clients(
+                    ClientBuilder.create(RECEIVER_ID)
+                            .secret(RECEIVER_SECRET)
+                            .serviceAccountsEnabled(true)
+                            .directAccessGrantsEnabled(false)
+                            .publicClient(false)
+                            .attribute(ClientStreamStore.SSF_ENABLED_KEY, "true")
+                            // Opt into the custom test event. Without an explicit
+                            // ssf.supportedEvents attribute, the transmitter falls
+                            // back to getDefaultSupportedEvents() which is a
+                            // hardcoded set of built-in CAEP events and would
+                            // exclude any custom SPI-contributed events.
+                            .attribute(ClientStreamStore.SSF_STREAM_SUPPORTED_EVENTS_KEY,
+                                    TestSsfEvent.class.getSimpleName())
+                            .build()
+            );
 
             return realm;
         }

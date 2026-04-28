@@ -40,6 +40,7 @@ import org.keycloak.testframework.annotations.InjectSimpleHttp;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
+import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
@@ -783,22 +784,28 @@ public class SsfTransmitterEventEmitterTests {
             realm.adminEventsEnabled(true);
             realm.eventsListeners("jboss-logging", "ssf-events");
 
-            UserBuilder tester = realm.addUser(TEST_USER);
-            tester.email(TEST_EMAIL);
-            tester.firstName("Emit");
-            tester.lastName("Tester");
-            tester.enabled(true);
-            tester.password(TEST_PASSWORD);
+            realm.users(
+                    UserBuilder.create(TEST_USER)
+                            .email(TEST_EMAIL)
+                            .firstName("Emit")
+                            .lastName("Tester")
+                            .enabled(true)
+                            .password(TEST_PASSWORD)
+                            .build()
+            );
 
             // Receiver: opt-in attributes are set in @BeforeEach so each
             // test can override them via setReceiverAttributes.
-            realm.addClient(RECEIVER)
-                    .secret(RECEIVER_SECRET)
-                    .serviceAccountsEnabled(true)
-                    .directAccessGrantsEnabled(false)
-                    .publicClient(false)
-                    .attribute(ClientStreamStore.SSF_ENABLED_KEY, "true")
-                    .attribute(ClientStreamStore.SSF_DEFAULT_SUBJECTS_KEY, "NONE");
+            realm.clients(
+                    ClientBuilder.create(RECEIVER)
+                            .secret(RECEIVER_SECRET)
+                            .serviceAccountsEnabled(true)
+                            .directAccessGrantsEnabled(false)
+                            .publicClient(false)
+                            .attribute(ClientStreamStore.SSF_ENABLED_KEY, "true")
+                            .attribute(ClientStreamStore.SSF_DEFAULT_SUBJECTS_KEY, "NONE")
+                            .build()
+            );
 
             // Management client that will be granted the emitter role
             // in @BeforeEach. fullScopeEnabled is required so the token
@@ -806,21 +813,27 @@ public class SsfTransmitterEventEmitterTests {
             // claim — AdminAuth.hasAppRole checks both user.hasRole and
             // client.hasScope, and the latter fails for fullScope=false
             // unless the role is explicitly scope-mapped.
-            realm.addClient(MGMT_EMITTER)
-                    .secret(MGMT_EMITTER_SECRET)
-                    .serviceAccountsEnabled(true)
-                    .directAccessGrantsEnabled(false)
-                    .publicClient(false)
-                    .fullScopeEnabled(true);
+            realm.clients(
+                    ClientBuilder.create(MGMT_EMITTER)
+                            .secret(MGMT_EMITTER_SECRET)
+                            .serviceAccountsEnabled(true)
+                            .directAccessGrantsEnabled(false)
+                            .publicClient(false)
+                            .fullScopeEnabled(true)
+                            .build()
+            );
 
             // Management client that never gets the role — covers the
             // emit_role_missing branch.
-            realm.addClient(MGMT_NO_ROLE)
-                    .secret(MGMT_NO_ROLE_SECRET)
-                    .serviceAccountsEnabled(true)
-                    .directAccessGrantsEnabled(false)
-                    .publicClient(false)
-                    .fullScopeEnabled(true);
+            realm.clients(
+                    ClientBuilder.create(MGMT_NO_ROLE)
+                            .secret(MGMT_NO_ROLE_SECRET)
+                            .serviceAccountsEnabled(true)
+                            .directAccessGrantsEnabled(false)
+                            .publicClient(false)
+                            .fullScopeEnabled(true)
+                            .build()
+            );
 
             return realm;
         }
