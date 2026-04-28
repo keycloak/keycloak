@@ -29,7 +29,11 @@ import { useRealm } from "../context/realm-context/RealmContext";
 import { toDashboard } from "../dashboard/routes/Dashboard";
 import type { Environment } from "../environment";
 import helpUrls from "../help-urls";
-import { convertFormValuesToObject, convertToFormValues } from "../util";
+import {
+  convertFormValuesToObject,
+  convertToFormValues,
+  resolveDisplayName,
+} from "../util";
 import { getAuthorizationHeaders } from "../utils/getAuthorizationHeaders";
 import { joinPath } from "../utils/joinPath";
 import useIsFeatureEnabled, { Feature } from "../utils/useIsFeatureEnabled";
@@ -123,6 +127,7 @@ const RealmSettingsHeader = ({
       />
       <ViewHeader
         titleKey={realmName}
+        noTranslate
         subKey="realmSettingsExplain"
         helpUrl={helpUrls.realmSettingsUrl}
         divider={false}
@@ -323,7 +328,7 @@ export const RealmSettingsTabs = () => {
           <RealmSettingsHeader
             value={field.value}
             onChange={field.onChange}
-            realmName={realmName}
+            realmName={resolveDisplayName(t, realm?.displayName, realmName)}
             refresh={refreshHeader}
             save={() => save(getValues())}
           />
