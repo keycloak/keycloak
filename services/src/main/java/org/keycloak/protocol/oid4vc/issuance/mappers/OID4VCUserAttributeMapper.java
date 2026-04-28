@@ -37,8 +37,6 @@ import org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.utils.JsonUtils;
 
-import org.apache.commons.collections4.ListUtils;
-
 /**
  * Allows adding user properties to the credential subject
  *
@@ -144,7 +142,8 @@ public class OID4VCUserAttributeMapper extends OID4VCMapper {
     @Override
     public List<String> getMetadataAttributePath() {
         String claimName = mapperModel.getConfig().get(CLAIM_NAME);
-        final String userAttributeName = mapperModel.getConfig().get(USER_ATTRIBUTE_KEY);
+        String userAttributeName = mapperModel.getConfig().get(USER_ATTRIBUTE_KEY);
+
         // Split claim name into path segments for metadata endpoint.
         final List<String> claimPath = Optional.ofNullable(claimName)
                 .map(JsonUtils::splitClaimPath)
@@ -154,6 +153,16 @@ public class OID4VCUserAttributeMapper extends OID4VCMapper {
         if (claimPath.isEmpty()) {
             return Collections.emptyList();
         }
-        return ListUtils.union(getAttributePrefix(), claimPath);
+        return prefixMetadataAttributePath(claimPath);
+    }
+
+    @Override
+    protected List<String> getClaimLookupPath() {
+        String claimName = Optional.ofNullable(mapperModel.getConfig().get(CLAIM_NAME))
+                .orElse(mapperModel.getConfig().get(USER_ATTRIBUTE_KEY));
+        if (claimName == null) {
+            return Collections.emptyList();
+        }
+        return JsonUtils.splitClaimPath(claimName);
     }
 }

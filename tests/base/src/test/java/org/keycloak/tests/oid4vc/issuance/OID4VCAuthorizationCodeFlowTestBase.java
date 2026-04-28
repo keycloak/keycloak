@@ -1,6 +1,5 @@
 package org.keycloak.tests.oid4vc.issuance;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -66,11 +65,8 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerTe
     /** Returns the credential scope configured for this test's format. */
     protected abstract CredentialScopeRepresentation getCredentialScope();
 
-    /**
-     * Returns the claim name (last segment of the path) used when building mandatory-claim
-     * authorization details for this format.
-     */
-    protected abstract String getExpectedClaimPath();
+    /** Returns the claim path used when building mandatory-claim authorization details for this format. */
+    protected abstract List<Object> getExpectedClaimPath();
 
     /** Returns the name of the firstName protocol mapper in the credential scope. */
     protected abstract String getFirstNameProtocolMapperName();
@@ -858,13 +854,7 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerTe
      */
     protected List<ClaimsDescription> mandatoryLastNameClaims() {
         ClaimsDescription claim = new ClaimsDescription();
-        List<Object> claimPath;
-        if ("sd_jwt_vc".equals(getCredentialFormat())) {
-            claimPath = Collections.singletonList(getExpectedClaimPath());
-        } else {
-            claimPath = Arrays.asList("credentialSubject", getExpectedClaimPath());
-        }
-        claim.setPath(claimPath);
+        claim.setPath(getExpectedClaimPath());
         claim.setMandatory(true);
         return List.of(claim);
     }

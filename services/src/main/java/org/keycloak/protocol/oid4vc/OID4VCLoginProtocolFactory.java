@@ -24,6 +24,7 @@ import jakarta.ws.rs.core.Response;
 
 import org.keycloak.Config;
 import org.keycloak.VCFormat;
+import org.keycloak.common.Profile;
 import org.keycloak.constants.OID4VCIConstants;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.models.ClientModel;
@@ -51,6 +52,8 @@ import org.keycloak.services.ErrorResponseException;
 import org.jboss.logging.Logger;
 
 import static org.keycloak.OID4VCConstants.CLAIM_NAME_SUBJECT_ID;
+import static org.keycloak.OID4VCConstants.CRYPTOGRAPHIC_BINDING_METHOD_COSE_KEY;
+import static org.keycloak.VCFormat.MSO_MDOC;
 import static org.keycloak.VCFormat.SD_JWT_VC;
 import static org.keycloak.constants.OID4VCIConstants.OID4VC_PROTOCOL;
 import static org.keycloak.models.ClientScopeModel.INCLUDE_IN_TOKEN_SCOPE;
@@ -167,7 +170,7 @@ public class OID4VCLoginProtocolFactory implements LoginProtocolFactory, OID4VCE
             clientScope.setAttributes(new HashMap<>());
         }
         
-        clientScope.getAttributes().computeIfAbsent(VC_FORMAT, k -> VCFormat.getFromScope(scopeName));
+        clientScope.getAttributes().computeIfAbsent(VC_FORMAT, k -> getFormatFromScope(scopeName));
         String format = clientScope.getAttributes().get(VC_FORMAT);
 
         int idx = scopeName.lastIndexOf(VCFormat.getScopeSuffix(format));
@@ -183,7 +186,7 @@ public class OID4VCLoginProtocolFactory implements LoginProtocolFactory, OID4VCE
         clientScope.getAttributes().putIfAbsent(VC_SUPPORTED_TYPES, credentialType);
         clientScope.getAttributes().putIfAbsent(VC_CONTEXTS, credentialType);
         clientScope.getAttributes().putIfAbsent(VCT, credentialType);
-        clientScope.getAttributes().putIfAbsent(VC_CRYPTOGRAPHIC_BINDING_METHODS, CRYPTOGRAPHIC_BINDING_METHODS_DEFAULT);
+        clientScope.getAttributes().putIfAbsent(VC_CRYPTOGRAPHIC_BINDING_METHODS, getDefaultCryptographicBindingMethod(format));
         clientScope.getAttributes().putIfAbsent(VC_BUILD_CONFIG_HASH_ALGORITHM, VC_BUILD_CONFIG_HASH_ALGORITHM_DEFAULT);
         clientScope.getAttributes().putIfAbsent(VC_BUILD_CONFIG_TOKEN_JWS_TYPE, getDefaultTokenJwsTypeForFormat(format));
         clientScope.getAttributes().putIfAbsent(VC_EXPIRY_IN_SECONDS, String.valueOf(VC_EXPIRY_IN_SECONDS_DEFAULT));
@@ -192,6 +195,18 @@ public class OID4VCLoginProtocolFactory implements LoginProtocolFactory, OID4VCE
             clientScope.getAttributes().putIfAbsent(VC_SD_JWT_NUMBER_OF_DECOYS, String.valueOf(VC_SD_JWT_NUMBER_OF_DECOYS_DEFAULT));
             clientScope.getAttributes().putIfAbsent(VC_BUILD_CONFIG_SD_JWT_VISIBLE_CLAIMS, VC_BUILD_CONFIG_SD_JWT_VISIBLE_CLAIMS_DEFAULT);
         }
+    }
+
+    private static String getFormatFromScope(String scopeName) {
+        String format = VCFormat.getFromScope(scopeName);
+        if (MSO_MDOC.equals(format) && !Profile.isFeatureEnabled(Profile.Feature.OID4VC_VCI_MDOC)) {
+            return SD_JWT_VC;
+        }
+        return format;
+    }
+
+    private static String getDefaultCryptographicBindingMethod(String format) {
+        return MSO_MDOC.equals(format) ? CRYPTOGRAPHIC_BINDING_METHOD_COSE_KEY : CRYPTOGRAPHIC_BINDING_METHODS_DEFAULT;
     }
 
     @Override

@@ -28,6 +28,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
+import org.keycloak.VCFormat;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.Time;
 import org.keycloak.crypto.CryptoUtils;
@@ -56,6 +57,9 @@ import org.keycloak.util.JsonSerialization;
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.jboss.logging.Logger;
 
+import static org.keycloak.OID4VCConstants.CRYPTOGRAPHIC_BINDING_METHOD_COSE_KEY;
+import static org.keycloak.OID4VCConstants.CRYPTOGRAPHIC_BINDING_METHOD_JWK;
+
 /**
  * Validates the conformance and authenticity of presented JWT proofs.
  *
@@ -66,7 +70,6 @@ public class JwtProofValidator extends AbstractProofValidator {
     private static final Logger LOGGER = Logger.getLogger(JwtProofValidator.class);
 
     public static final String PROOF_JWT_TYP = "openid4vci-proof+jwt";
-    private static final String CRYPTOGRAPHIC_BINDING_METHOD_JWK = "jwk";
     private static final String KEY_ATTESTATION_CLAIM = "key_attestation";
     // JOSE private JWK parameters across RSA/EC/OKP/oct key types. TODO: This is not very reliable and should be either removed or improved to cover the cases when other algorithms are introduced in the future
     private static final Set<String> JWK_PRIVATE_KEY_CLAIMS = Set.of("d", "p", "q", "dp", "dq", "qi", "oth", "k");
@@ -213,11 +216,21 @@ public class JwtProofValidator extends AbstractProofValidator {
             return;
         }
 
-        // If binding is required, this implementation currently only supports the "jwk" method.
-        if (!vcIssuanceContext.getCredentialConfig().getCryptographicBindingMethodsSupported()
-                .contains(CRYPTOGRAPHIC_BINDING_METHOD_JWK)) {
-            throw new IllegalStateException("This SD-JWT implementation only supports jwk as cryptographic binding method");
+        String expectedBindingMethod = getExpectedCryptographicBindingMethod(vcIssuanceContext.getCredentialConfig());
+        if (!vcIssuanceContext.getCredentialConfig().getCryptographicBindingMethodsSupported().contains(expectedBindingMethod)) {
+            throw new IllegalStateException("JWT proof validation only supports "
+                    + expectedBindingMethod + " cryptographic binding for credential format "
+                    + vcIssuanceContext.getCredentialConfig().getFormat());
         }
+    }
+
+    private static String getExpectedCryptographicBindingMethod(SupportedCredentialConfiguration credentialConfiguration) {
+        // OID4VCI 1.0 Appendix F.1 defines JWT proof key transport as JOSE (jwk, kid, or x5c). This metadata value
+        // is different: Section 12.2.4 describes the representation used inside the issued credential.
+        if (VCFormat.MSO_MDOC.equals(credentialConfiguration.getFormat())) {
+            return CRYPTOGRAPHIC_BINDING_METHOD_COSE_KEY;
+        }
+        return CRYPTOGRAPHIC_BINDING_METHOD_JWK;
     }
 
     private Optional<List<String>> getProofFromContext(VCIssuanceContext vcIssuanceContext) throws VCIssuerException {
@@ -247,7 +260,10 @@ public class JwtProofValidator extends AbstractProofValidator {
 
         Map<String, SupportedProofTypeData> supportedProofTypes = proofTypesSupported.getSupportedProofTypes();
         Optional.ofNullable(supportedProofTypes.get(ProofType.JWT))
-                .orElseThrow(() -> new VCIssuerException(ErrorType.INVALID_PROOF, "SD-JWT supports only jwt proof type."));
+                .orElseThrow(() -> new VCIssuerException(ErrorType.INVALID_PROOF, String.format(
+                        "%s credentials do not support jwt proof type.",
+                        config.getFormat()
+                )));
 
         // At this point, JWT is an explicitly supported proof type and must be enforced.
         if (proofs == null || proofs.getJwt() == null || proofs.getJwt().isEmpty()) {

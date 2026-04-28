@@ -32,6 +32,8 @@ import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.UriBuilder;
 import jakarta.ws.rs.core.UriInfo;
 
+import org.keycloak.VCFormat;
+import org.keycloak.common.Profile;
 import org.keycloak.common.util.Time;
 import org.keycloak.constants.OID4VCIConstants;
 import org.keycloak.crypto.CryptoUtils;
@@ -450,6 +452,8 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
                 keycloakSession.clientScopes()
                         .getClientScopesByProtocol(realm, OID4VCIConstants.OID4VC_PROTOCOL)
                         .map(CredentialScopeModel::new)
+                        .filter(credentialScope -> Profile.isFeatureEnabled(Profile.Feature.OID4VC_VCI_MDOC)
+                                || !VCFormat.MSO_MDOC.equals(credentialScope.getFormat()))
                         .map(credentialScope -> {
                             SupportedCredentialConfiguration config = SupportedCredentialConfiguration.parse(keycloakSession,
                                     credentialScope,

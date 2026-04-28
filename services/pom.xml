@@ -261,6 +261,11 @@
             <artifactId>webauthn4j-core</artifactId>
         </dependency>
         <dependency>
+            <groupId>com.authlete</groupId>
+            <artifactId>cbor</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>com.github.ua-parser</groupId>
             <artifactId>uap-java</artifactId>
         </dependency>

@@ -70,6 +70,8 @@ public class OID4VCConstants {
     public static final String OPENID_CREDENTIAL = "openid_credential";
     public static final String CREDENTIAL_IDENTIFIERS = "credential_identifiers";
     public static final String CREDENTIAL_CONFIGURATION_ID = "credential_configuration_id";
+    public static final String CRYPTOGRAPHIC_BINDING_METHOD_JWK = "jwk";
+    public static final String CRYPTOGRAPHIC_BINDING_METHOD_COSE_KEY = "cose_key";
 
     private OID4VCConstants() {
     }

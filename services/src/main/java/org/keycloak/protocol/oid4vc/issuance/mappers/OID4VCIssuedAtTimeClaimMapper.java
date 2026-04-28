@@ -36,6 +36,8 @@ import org.keycloak.provider.ProviderConfigProperty;
 
 import org.jboss.logging.Logger;
 
+import static org.keycloak.VCFormat.MSO_MDOC;
+
 /**
  * Map issuance date to the credential, under the default claim name "iat"
  * <p>
@@ -105,11 +107,16 @@ public class OID4VCIssuedAtTimeClaimMapper extends OID4VCMapper {
                        .orElse(false);
     }
 
+    @Override
+    public boolean supportsCredentialFormat(String credentialFormat) {
+        // mDoc carries issuance timing in the MSO validityInfo instead of a VC-level iat claim.
+        return !MSO_MDOC.equals(credentialFormat);
+    }
+
     public void setClaim(VerifiableCredential verifiableCredential,
                          UserSessionModel userSessionModel) {
         // Set the value
-        List<String> attributePath = getMetadataAttributePath();
-        String propertyName = attributePath.get(attributePath.size() - 1);
+        String propertyName = getClaimName("iat");
         if (propertyName == null) {
             log.errorf("Invalid configuration: missing config-property '%s' for mapper '%s' of type '%s'. Mapper is ignored.",
                       CLAIM_NAME,

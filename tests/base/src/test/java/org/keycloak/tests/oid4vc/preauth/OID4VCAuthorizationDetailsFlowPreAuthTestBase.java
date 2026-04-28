@@ -17,6 +17,7 @@
 
 package org.keycloak.tests.oid4vc.preauth;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -24,6 +25,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.keycloak.OAuth2Constants;
+import org.keycloak.VCFormat;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
 import org.keycloak.models.oid4vci.CredentialScopeModel;
@@ -106,10 +108,12 @@ public abstract class OID4VCAuthorizationDetailsFlowPreAuthTestBase extends OID4
 
     /**
      * Get the expected claim path for this test implementation.
-     *
-     * @return the claim path as a string
      */
-    protected abstract String getExpectedClaimPath();
+    protected abstract List<Object> getExpectedClaimPath();
+
+    protected String getClaimsNamespace() {
+        return null;
+    }
 
     protected Oid4vcTestContext prepareOid4vcTestContext(String token) throws Exception {
         Oid4vcTestContext ctx = new Oid4vcTestContext();
@@ -212,16 +216,7 @@ public abstract class OID4VCAuthorizationDetailsFlowPreAuthTestBase extends OID4
         // Create claims description for a claim that should be supported
         ClaimsDescription claim = new ClaimsDescription();
 
-        // Construct claim path based on credential format
-        List<Object> claimPath;
-        if ("sd_jwt_vc".equals(getCredentialFormat())) {
-            // SD-JWT doesn't use credentialSubject prefix
-            claimPath = Arrays.asList(getExpectedClaimPath());
-        } else {
-            // JWT and other formats use credentialSubject prefix
-            claimPath = Arrays.asList("credentialSubject", getExpectedClaimPath());
-        }
-        claim.setPath(claimPath);
+        claim.setPath(getExpectedClaimPath());
         claim.setMandatory(true);
 
         OID4VCAuthorizationDetail authDetail = new OID4VCAuthorizationDetail();
@@ -249,13 +244,7 @@ public abstract class OID4VCAuthorizationDetailsFlowPreAuthTestBase extends OID4
         assertEquals(1, authDetailResponse.getClaims().size());
         ClaimsDescription responseClaim = authDetailResponse.getClaims().get(0);
 
-        List<Object> expectedClaimPath;
-        if ("sd_jwt_vc".equals(getCredentialFormat())) {
-            expectedClaimPath = Arrays.asList(getExpectedClaimPath());
-        } else {
-            expectedClaimPath = Arrays.asList("credentialSubject", getExpectedClaimPath());
-        }
-        assertEquals(expectedClaimPath, responseClaim.getPath());
+        assertEquals(getExpectedClaimPath(), responseClaim.getPath());
         assertTrue(responseClaim.isMandatory());
 
         // Verify that credential identifiers are present
@@ -271,7 +260,7 @@ public abstract class OID4VCAuthorizationDetailsFlowPreAuthTestBase extends OID4
 
         // Create claims description for a claim that should NOT be supported
         ClaimsDescription claim = new ClaimsDescription();
-        claim.setPath(Arrays.asList("credentialSubject", "unsupportedClaim"));
+        claim.setPath(buildClaimPath("unsupportedClaim"));
         claim.setMandatory(false);
 
         OID4VCAuthorizationDetail authDetail = new OID4VCAuthorizationDetail();
@@ -302,7 +291,7 @@ public abstract class OID4VCAuthorizationDetailsFlowPreAuthTestBase extends OID4
 
         // Create claims description for a mandatory claim
         ClaimsDescription claim = new ClaimsDescription();
-        claim.setPath(Arrays.asList("credentialSubject", "mandatoryClaim"));
+        claim.setPath(buildClaimPath("mandatoryClaim"));
         claim.setMandatory(true);
 
         OID4VCAuthorizationDetail authDetail = new OID4VCAuthorizationDetail();
@@ -333,7 +322,7 @@ public abstract class OID4VCAuthorizationDetailsFlowPreAuthTestBase extends OID4
 
         // Create claims description with complex path
         ClaimsDescription claim = new ClaimsDescription();
-        claim.setPath(Arrays.asList("credentialSubject", "address", "street"));
+        claim.setPath(buildClaimPath("address", "street"));
         claim.setMandatory(false);
 
         OID4VCAuthorizationDetail authDetail = new OID4VCAuthorizationDetail();
@@ -719,14 +708,7 @@ public abstract class OID4VCAuthorizationDetailsFlowPreAuthTestBase extends OID4
         // This tests that requested claims are validated and present in the final credential
         ClaimsDescription claim = new ClaimsDescription();
 
-        // Construct claim path based on credential format
-        List<Object> claimPath;
-        if ("sd_jwt_vc".equals(getCredentialFormat())) {
-            claimPath = Arrays.asList(getExpectedClaimPath());
-        } else {
-            claimPath = Arrays.asList("credentialSubject", getExpectedClaimPath());
-        }
-        claim.setPath(claimPath);
+        claim.setPath(getExpectedClaimPath());
         claim.setMandatory(true);
 
         OID4VCAuthorizationDetail authDetail = new OID4VCAuthorizationDetail();
@@ -900,6 +882,22 @@ public abstract class OID4VCAuthorizationDetailsFlowPreAuthTestBase extends OID4
     protected void verifyCredentialStructure(Object credentialObj) {
         // Default implementation - subclasses should override
         assertNotNull(credentialObj, "Credential object should not be null");
+    }
+
+    private List<Object> buildClaimPath(String... relativePath) {
+        if ("sd_jwt_vc".equals(getCredentialFormat())) {
+            return Arrays.stream(relativePath).map(path -> (Object) path).toList();
+        }
+        if (VCFormat.MSO_MDOC.equals(getCredentialFormat())) {
+            List<Object> claimPath = new ArrayList<>();
+            claimPath.add(getClaimsNamespace());
+            claimPath.addAll(Arrays.asList(relativePath));
+            return claimPath;
+        }
+        List<Object> claimPath = new ArrayList<>();
+        claimPath.add("credentialSubject");
+        claimPath.addAll(Arrays.asList(relativePath));
+        return claimPath;
     }
 
     private String getCredentialIssuerFromAuthDetails(AccessTokenResponse tokenResponse) {

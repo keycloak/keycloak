@@ -22,7 +22,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -42,7 +41,6 @@ import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.util.JsonSerialization;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import org.apache.commons.collections4.ListUtils;
 import org.jboss.logging.Logger;
 
 /**
@@ -94,9 +92,12 @@ public class OID4VCTargetRoleMapper extends OID4VCMapper {
 
 	@Override
 	public List<String> getMetadataAttributePath() {
-		return ListUtils.union(getAttributePrefix(),
-				List.of(Optional.ofNullable(mapperModel.getConfig().get(CLAIM_NAME))
-						.orElse(DEFAULT_CLAIM_NAME)));
+		return getMetadataAttributePath(getClaimName(DEFAULT_CLAIM_NAME));
+	}
+
+	@Override
+	protected List<String> getClaimLookupPath() {
+		return getClaimLookupPath(getClaimName(DEFAULT_CLAIM_NAME));
 	}
 
 	@Override
@@ -151,11 +152,7 @@ public class OID4VCTargetRoleMapper extends OID4VCMapper {
 	@Override
 	public void setClaim(Map<String, Object> claims,
 						 UserSessionModel userSessionModel) {
-		List<String> attributePath = getMetadataAttributePath();
-		if (attributePath.isEmpty()) {
-			return;
-		}
-		String propertyName = attributePath.get(attributePath.size() - 1);
+		String propertyName = getClaimName(DEFAULT_CLAIM_NAME);
 		String client = mapperModel.getConfig().get(CLIENT_CONFIG_KEY);
 		ClientModel clientModel = userSessionModel.getRealm().getClientByClientId(client);
 		if (clientModel == null) {

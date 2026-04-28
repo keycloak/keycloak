@@ -23,14 +23,17 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.keycloak.VCFormat;
+import org.keycloak.mdoc.MdocAlgorithm;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.oid4vci.CredentialScopeModel;
-import org.keycloak.utils.StringUtil;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.jboss.logging.Logger;
+
+import static org.keycloak.OID4VCConstants.CRYPTOGRAPHIC_BINDING_METHOD_COSE_KEY;
+import static org.keycloak.OID4VCConstants.CRYPTOGRAPHIC_BINDING_METHOD_JWK;
 
 /**
  * A supported credential, as used in the Credentials Issuer Metadata in OID4VCI
@@ -54,6 +57,8 @@ public class SupportedCredentialConfiguration {
     @JsonIgnore
     public static final String VERIFIABLE_CREDENTIAL_TYPE_KEY = "vct";
     @JsonIgnore
+    public static final String DOC_TYPE_KEY = "doctype";
+    @JsonIgnore
     private static final String CREDENTIAL_DEFINITION_KEY = "credential_definition";
     @JsonIgnore
     public static final String CREDENTIAL_BUILD_CONFIG_KEY = "credential_build_config";
@@ -73,10 +78,13 @@ public class SupportedCredentialConfiguration {
     private List<String> cryptographicBindingMethodsSupported;
 
     @JsonProperty(CREDENTIAL_SIGNING_ALG_VALUES_SUPPORTED_KEY)
-    private List<String> credentialSigningAlgValuesSupported;
+    private List<Object> credentialSigningAlgValuesSupported;
 
     @JsonProperty(VERIFIABLE_CREDENTIAL_TYPE_KEY)
     private String vct;
+
+    @JsonProperty(DOC_TYPE_KEY)
+    private String docType;
 
     @JsonProperty(CREDENTIAL_DEFINITION_KEY)
     private CredentialDefinition credentialDefinition;
@@ -117,9 +125,12 @@ public class SupportedCredentialConfiguration {
         List<String> requiredProofTypes = credentialScope.getRequiredProofTypes();
         List<String> configuredBindingMethods = credentialScope.getCryptographicBindingMethods();
 
-        // Normalize and validate binding methods and proof types against what the server actually supports.
-        // This prevents unknown values configured via the admin UI or API from leaking into issuer metadata.
-        List<String> allowedBindingMethods = List.of(CredentialScopeModel.CRYPTOGRAPHIC_BINDING_METHODS_DEFAULT);
+        // OID4VCI 1.0 Section 12.2.4 defines binding methods as the key-material representation in the issued
+        // credential: "jwk" for JWK and "cose_key" for COSE_Key, which is the representation used by ISO mdoc.
+        // Normalize configured values so unsupported admin/API configuration does not leak into issuer metadata.
+        List<String> allowedBindingMethods = VCFormat.MSO_MDOC.equals(format)
+                ? List.of(CRYPTOGRAPHIC_BINDING_METHOD_COSE_KEY)
+                : List.of(CRYPTOGRAPHIC_BINDING_METHOD_JWK);
         List<String> effectiveBindingMethods = Optional.ofNullable(configuredBindingMethods)
                 .orElse(Collections.emptyList())
                 .stream()
@@ -172,11 +183,20 @@ public class SupportedCredentialConfiguration {
             credentialConfiguration.setCryptographicBindingMethodsSupported(effectiveBindingMethods);
         }
 
-        // Return single configured value for the signature algorithm if any
-        String signingAlgSupported = credentialScope.getSigningAlg();
-        List<String> signingAlgsSupported = StringUtil.isBlank(signingAlgSupported) ? globalSupportedSigningAlgorithms :
-                Collections.singletonList(signingAlgSupported);
-        credentialConfiguration.setCredentialSigningAlgValuesSupported(signingAlgsSupported);
+        // Return single configured value for the signature algorithm if any.
+        List<String> signingAlgsSupported = CredentialSigningAlgorithmResolver.resolveMetadataSigningAlgorithms(
+                keycloakSession,
+                credentialScope,
+                format,
+                globalSupportedSigningAlgorithms
+        );
+        if (signingAlgsSupported.isEmpty()) {
+            LOGGER.warnf("No compatible signing algorithm is available for credential configuration '%s' with format '%s'.",
+                    credentialConfigurationId, format);
+        }
+        credentialConfiguration.setCredentialSigningAlgValuesSupported(
+                toCredentialSigningAlgValuesSupported(format, signingAlgsSupported)
+        );
 
         // Parse credential metadata (includes display and claims)
         CredentialMetadata credentialMetadata = CredentialMetadata.parse(keycloakSession, credentialScope);
@@ -191,11 +211,8 @@ public class SupportedCredentialConfiguration {
     }
 
     /**
-     * Return the verifiable credential type. Sort of confusing in the specification. For sdjwt, we have a "vct" claim.
-     * See: https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html#name-credential-request-6
-     * <p>
-     * For iso mdl (not yet supported) we have a "doctype" See:
-     * https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html#name-credential-request-5
+     * Return the format-specific credential type identifier. For SD-JWT VC it is emitted as "vct"; for mDoc it is
+     * emitted as "doctype".
      * <p>
      * For jwt_vc and ldp_vc, we will be inferring from the "credential_definition" See:
      * https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html#name-credential-request-3
@@ -219,6 +236,15 @@ public class SupportedCredentialConfiguration {
 
     public SupportedCredentialConfiguration setFormat(String format) {
         this.format = format;
+        return this;
+    }
+
+    public String getDocType() {
+        return docType;
+    }
+
+    public SupportedCredentialConfiguration setDocType(String docType) {
+        this.docType = docType;
         return this;
     }
 
@@ -249,13 +275,29 @@ public class SupportedCredentialConfiguration {
         return this;
     }
 
-    public List<String> getCredentialSigningAlgValuesSupported() {
+    public List<Object> getCredentialSigningAlgValuesSupported() {
         return credentialSigningAlgValuesSupported;
     }
 
-    public SupportedCredentialConfiguration setCredentialSigningAlgValuesSupported(List<String> credentialSigningAlgValuesSupported) {
+    public SupportedCredentialConfiguration setCredentialSigningAlgValuesSupported(List<Object> credentialSigningAlgValuesSupported) {
         this.credentialSigningAlgValuesSupported = Collections.unmodifiableList(credentialSigningAlgValuesSupported);
         return this;
+    }
+
+    private static List<Object> toCredentialSigningAlgValuesSupported(String format, List<String> signingAlgorithmsSupported) {
+        if (!VCFormat.MSO_MDOC.equals(format)) {
+            return List.copyOf(signingAlgorithmsSupported);
+        }
+
+        // OID4VCI 1.0 Appendix A.2.2 uses numeric COSE algorithm identifiers for mDoc issuer metadata, while
+        // Keycloak key providers are configured with JOSE names. Convert only the mDoc metadata representation here.
+        return signingAlgorithmsSupported.stream()
+                .map(SupportedCredentialConfiguration::toMdocCredentialSigningAlgorithm)
+                .collect(Collectors.toList());
+    }
+
+    private static Integer toMdocCredentialSigningAlgorithm(String algorithm) {
+        return MdocAlgorithm.fromJoseAlgorithm(algorithm).getCoseAlgorithmIdentifier();
     }
 
     public String getVct() {
@@ -308,11 +350,11 @@ public class SupportedCredentialConfiguration {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         SupportedCredentialConfiguration that = (SupportedCredentialConfiguration) o;
-        return Objects.equals(id, that.id) && Objects.equals(format, that.format) && Objects.equals(scope, that.scope) && Objects.equals(cryptographicBindingMethodsSupported, that.cryptographicBindingMethodsSupported) && Objects.equals(credentialSigningAlgValuesSupported, that.credentialSigningAlgValuesSupported) && Objects.equals(vct, that.vct) && Objects.equals(credentialDefinition, that.credentialDefinition) && Objects.equals(proofTypesSupported, that.proofTypesSupported) && Objects.equals(credentialMetadata, that.credentialMetadata) && Objects.equals(credentialBuildConfig, that.credentialBuildConfig);
+        return Objects.equals(id, that.id) && Objects.equals(format, that.format) && Objects.equals(scope, that.scope) && Objects.equals(cryptographicBindingMethodsSupported, that.cryptographicBindingMethodsSupported) && Objects.equals(credentialSigningAlgValuesSupported, that.credentialSigningAlgValuesSupported) && Objects.equals(vct, that.vct) && Objects.equals(docType, that.docType) && Objects.equals(credentialDefinition, that.credentialDefinition) && Objects.equals(proofTypesSupported, that.proofTypesSupported) && Objects.equals(credentialMetadata, that.credentialMetadata) && Objects.equals(credentialBuildConfig, that.credentialBuildConfig);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, format, scope, cryptographicBindingMethodsSupported, credentialSigningAlgValuesSupported, vct, credentialDefinition, proofTypesSupported, credentialMetadata, credentialBuildConfig);
+        return Objects.hash(id, format, scope, cryptographicBindingMethodsSupported, credentialSigningAlgValuesSupported, vct, docType, credentialDefinition, proofTypesSupported, credentialMetadata, credentialBuildConfig);
     }
 }

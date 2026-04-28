@@ -127,11 +127,7 @@ public class OID4VCSubjectIdMapper extends OID4VCMapper {
     @Override
     public void setClaim(Map<String, Object> claims, UserSessionModel userSessionModel) {
         UserModel userModel = userSessionModel.getUser();
-        List<String> attributePath = getMetadataAttributePath();
-        if (attributePath.isEmpty()) {
-            return;
-        }
-        String propertyName = attributePath.get(attributePath.size() - 1);
+        String propertyName = getClaimName(CLAIM_NAME_SUBJECT_ID);
         String userAttributeName = mapperModel.getConfig().get(OID4VCMapper.USER_ATTRIBUTE_KEY);
         Consumer<String> userIdConsumer = (val) -> claims.put(propertyName, val);
         if (UserModel.ID.equals(userAttributeName)) {
@@ -142,6 +138,16 @@ public class OID4VCSubjectIdMapper extends OID4VCMapper {
                     .findFirst()
                     .ifPresent(userIdConsumer);
         }
+    }
+
+    @Override
+    public List<String> getMetadataAttributePath() {
+        return getMetadataAttributePath(getClaimName(CLAIM_NAME_SUBJECT_ID));
+    }
+
+    @Override
+    protected List<String> getClaimLookupPath() {
+        return getClaimLookupPath(getClaimName(CLAIM_NAME_SUBJECT_ID));
     }
 
     @Override
