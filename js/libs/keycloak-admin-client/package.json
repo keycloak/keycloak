@@ -25,7 +25,8 @@
     "build": {
       "command": "tsc --pretty",
       "dependencies": [
-        "generate:openapi"
+        "generate:openapi",
+        "verify:doc-examples"
       ],
       "files": [
         "src",
@@ -35,10 +36,29 @@
         "lib"
       ]
     },
-    "generate:openapi": {
-      "command": "kiota generate -l typescript -d openapi.yaml -c AdminClient -n ApiSdk -o ./src/generated --clean-output",
+    "generate:doc-examples": {
+      "command": "node --loader ts-node/esm scripts/generate-doc-examples.ts",
+      "dependencies": [
+        "generate:openapi"
+      ],
       "files": [
-        "openapi.yaml"
+        "openapi.json",
+        "scripts/generate-doc-examples.ts"
+      ],
+      "output": [
+        "src/generated/doc-examples"
+      ]
+    },
+    "verify:doc-examples": {
+      "command": "tsc -p src/generated/doc-examples/tsconfig.doc-check.json",
+      "dependencies": [
+        "generate:doc-examples"
+      ]
+    },
+    "generate:openapi": {
+      "command": "kiota generate -l typescript -d openapi.json -c AdminClient -n ApiSdk -o ./src/generated --clean-output",
+      "files": [
+        "openapi.json"
       ],
       "output": [
         "src/generated"

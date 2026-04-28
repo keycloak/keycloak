@@ -1,0 +1,77 @@
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/kc.adoc" as kc>
+
+<@tmpl.guide
+title="Admin API v2"
+summary="REST API for managing Keycloak resources. Experimental feature.">
+
+== Prerequisites
+
+The Admin API v2 requires the `client-admin-api-v2` feature:
+
+[source,bash]
+----
+bin/kc.sh start --features=client-admin-api-v2
+----
+
+== Client Setup
+
+=== Java
+
+Add the dependency to your project:
+
+[source,xml]
+----
+<dependency>
+    <groupId>org.keycloak</groupId>
+    <artifactId>keycloak-admin-client</artifactId>
+    <version>${version}</version>
+</dependency>
+----
+
+[source,java]
+----
+import org.keycloak.admin.client.Keycloak;
+
+Keycloak adminClient = Keycloak.getInstance("http://localhost:8080", "master", "admin", "password", "admin-cli");
+----
+
+=== JavaScript
+
+[source,bash]
+----
+npm install @keycloak/keycloak-admin-client
+----
+
+[source,javascript]
+----
+import KcAdminClient from "@keycloak/keycloak-admin-client";
+
+const kcAdminClient = new KcAdminClient({ baseUrl: "http://localhost:8080" });
+await kcAdminClient.auth({ username: "admin", password: "admin", grantType: "password", clientId: "admin-cli" });
+----
+
+=== CLI
+
+The Admin API v2 uses the same CLI tool described in the {adminguide_link}#admin-cli[{adminguide_name}] with the `--v2` flag:
+
+<@kc.admin parameters="--v2 config credentials --server http://localhost:8080 --realm master --user admin"/>
+
+== Available Resources
+
+<#if ctx.adminApiV2.hasEndpoints()>
+<#import "/templates/api.adoc" as api>
+<#list ctx.adminApiV2.categories as category>
+=== ${category?cap_first}
+
+<@api.endpoints category=category/>
+</#list>
+<#else>
+API documentation metadata is not available in this build.
+</#if>
+
+== Models
+
+<@api.schemas/>
+
+</@tmpl.guide>

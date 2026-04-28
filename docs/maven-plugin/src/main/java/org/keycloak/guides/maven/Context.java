@@ -14,11 +14,13 @@ public class Context {
 
     private final Options options;
     private final Features features;
+    private final AdminApiV2 adminApiV2;
     private final List<Guide> guides;
 
-    public Context(Path srcPath) throws IOException {
+    public Context(Path srcPath, Path docFile, Path cliExamplesFile, Path jsExamplesFile) throws IOException {
         this.options = new Options();
         this.features = new Features();
+        this.adminApiV2 = new AdminApiV2(docFile, cliExamplesFile, jsExamplesFile);
         this.guides = new LinkedList<>();
 
         Path partials = srcPath.resolve("partials");
@@ -79,6 +81,10 @@ public class Context {
 
     public Features getFeatures() {
         return features;
+    }
+
+    public AdminApiV2 getAdminApiV2() {
+        return adminApiV2;
     }
 
     public List<Guide> getGuides() {

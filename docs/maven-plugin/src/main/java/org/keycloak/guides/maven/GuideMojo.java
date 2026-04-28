@@ -24,6 +24,15 @@ public class GuideMojo extends AbstractMojo {
     @Parameter(property = "project.build.directory")
     private String targetDir;
 
+    @Parameter(defaultValue = "${maven.multiModuleProjectDirectory}/rest/admin-v2/services/target/admin-v2-doc.json")
+    private String docFile;
+
+    @Parameter(defaultValue = "${maven.multiModuleProjectDirectory}/integration/client-cli/admin-cli/target/admin-v2-cli-examples.json")
+    private String cliExamplesFile;
+
+    @Parameter(defaultValue = "${maven.multiModuleProjectDirectory}/js/libs/keycloak-admin-client/src/generated/doc-examples/admin-v2-js-examples.json")
+    private String jsExamplesFile;
+
     @Parameter(defaultValue = "${project}", readonly = true, required = true)
     private MavenProject project;
 
@@ -45,7 +54,11 @@ public class GuideMojo extends AbstractMojo {
                     log.info("Guide dir: " + srcDir);
                     log.info("Target dir: " + targetDir);
 
-                    GuideBuilder g = new GuideBuilder(srcDir, targetDir, log, project.getProperties());
+                    Path docPath = docFile != null ? Paths.get(docFile) : null;
+                    Path cliExamplesPath = cliExamplesFile != null ? Paths.get(cliExamplesFile) : null;
+                    Path jsExamplesPath = jsExamplesFile != null ? Paths.get(jsExamplesFile) : null;
+                    GuideBuilder g = new GuideBuilder(srcDir, targetDir, log, project.getProperties(),
+                            docPath, cliExamplesPath, jsExamplesPath);
                     g.build();
                 }
             }

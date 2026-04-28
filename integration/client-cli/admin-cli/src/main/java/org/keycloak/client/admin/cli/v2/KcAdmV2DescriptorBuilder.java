@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import org.keycloak.client.admin.cli.KcAdmMain;
 import org.keycloak.client.admin.cli.v2.KcAdmV2CommandDescriptor.OptionDescriptor;
 import org.keycloak.client.cli.util.OutputUtil;
 
@@ -44,6 +45,8 @@ public class KcAdmV2DescriptorBuilder {
             PathItem.HttpMethod.DELETE, "delete",
             PathItem.HttpMethod.PUT, "apply"
     );
+
+    private static final String SP = " ";
 
     public static KcAdmV2CommandDescriptor convert(OpenAPI openApi) {
         String version = openApi.getInfo() != null ? openApi.getInfo().getVersion() : "unknown";
@@ -95,6 +98,7 @@ public class KcAdmV2DescriptorBuilder {
                 cmd.setDescription(description);
                 cmd.setRequiresId(hasId);
                 cmd.setHasResponseBody(hasResponseBody(operation));
+                cmd.setOperationId(operation.getOperationId());
                 populateOptionsAndVariants(cmd, operation, openApi);
 
                 resourceCommands.computeIfAbsent(resourceName, k -> new ArrayList<>()).add(cmd);
@@ -399,7 +403,7 @@ public class KcAdmV2DescriptorBuilder {
     };
 
     /**
-     * Build-time entry point: reads OpenAPI from classpath, writes descriptor to output directory.
+     * Build-time entry point: reads OpenAPI from classpath, writes descriptor and CLI examples to output directory.
      */
     public static void main(String[] args) throws IOException {
         if (args.length != 1) {
@@ -412,5 +416,36 @@ public class KcAdmV2DescriptorBuilder {
 
         KcAdmV2CommandDescriptor descriptor = convert(openApi);
         writeDescriptor(descriptor, Path.of(args[0], "kcadm-v2-commands.json"));
+        writeCliExamples(descriptor, Path.of(args[0]).getParent().resolve("admin-v2-cli-examples.json"));
+    }
+
+    /**
+     * Generates {@code admin-v2-cli-examples.json} from the descriptor.
+     * Used by the docs build pipeline to render CLI usage examples.
+     */
+    private static void writeCliExamples(KcAdmV2CommandDescriptor descriptor, Path outputFile) throws IOException {
+        Map<String, Map<String, String>> examples = new LinkedHashMap<>();
+        for (KcAdmV2CommandDescriptor.ResourceDescriptor resource : descriptor.getResources()) {
+            for (KcAdmV2CommandDescriptor.CommandDescriptor cmd : resource.getCommands()) {
+                String operationId = cmd.getOperationId();
+                if (operationId != null) {
+                    examples.put(operationId, Map.of("example", buildCliExample(resource.getName(), cmd)));
+                }
+            }
+        }
+        Files.createDirectories(outputFile.getParent());
+        OutputUtil.MAPPER.writeValue(outputFile.toFile(), examples);
+    }
+
+    private static String buildCliExample(String resourceName, KcAdmV2CommandDescriptor.CommandDescriptor cmd) {
+        StringBuilder sb = new StringBuilder(KcAdmMain.CMD + SP + KcAdmMain.V2_FLAG + SP);
+        sb.append(resourceName).append(SP).append(cmd.getName());
+        if (cmd.isRequiresId()) {
+            sb.append(SP).append(resourceName.toUpperCase()).append("_ID");
+        }
+        if (cmd.hasRequestBody()) {
+            sb.append(SP).append(KcAdmV2CommandBuilder.OPT_FILE).append(SP).append(resourceName).append(".json");
+        }
+        return sb.toString();
     }
 }

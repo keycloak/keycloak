@@ -2,6 +2,8 @@ package org.keycloak.client.admin.cli.v2;
 
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 /**
  * Compact descriptor for v2 CLI commands.
  * Produced at build time from OpenAPI spec, cached per-server at runtime.
@@ -60,6 +62,18 @@ public class KcAdmV2CommandDescriptor {
         private List<OptionDescriptor> options;
         private List<VariantDescriptor> variants;
 
+        /** Populated during conversion but not serialized — only used for doc example generation. */
+        @JsonIgnore
+        private String operationId;
+
+        public String getOperationId() {
+            return operationId;
+        }
+
+        public void setOperationId(String operationId) {
+            this.operationId = operationId;
+        }
+
         public String getName() {
             return name;
         }
@@ -106,6 +120,10 @@ public class KcAdmV2CommandDescriptor {
 
         public void setRequiresId(boolean requiresId) {
             this.requiresId = requiresId;
+        }
+
+        public boolean hasRequestBody() {
+            return (options != null && !options.isEmpty()) || hasVariants();
         }
 
         public boolean isHasResponseBody() {

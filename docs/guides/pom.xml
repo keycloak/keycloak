@@ -239,6 +239,17 @@
                             <preserveDirectories>true</preserveDirectories>
                         </configuration>
                     </execution>
+                    <execution>
+                        <id>api-asciidoc-to-html</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>process-asciidoc</goal>
+                        </goals>
+                        <configuration>
+                            <sourceDirectory>${basedir}/target/generated-guides/api</sourceDirectory>
+                            <outputDirectory>${project.build.directory}/generated-docs/api</outputDirectory>
+                        </configuration>
+                    </execution>
                 </executions>
             </plugin>
             <plugin>
