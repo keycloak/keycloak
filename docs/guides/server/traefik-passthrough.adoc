@@ -5,7 +5,7 @@
 This {section} describes how to configure link:https://traefik.io/[Traefik] as a TLS passthrough load balancer in front of {project_name}.
 
 In TLS passthrough mode, Traefik forwards the raw TLS connection directly to {project_name} without terminating it.
-Traefik operates at the TCP layer and has no visibility into the HTTP content.
+Traefik operates at the TCP layer (Layer 4) and has no visibility into the HTTP content.
 The TLS handshake occurs between the client and {project_name}, preserving end-to-end encryption.
 
 For a general overview of TLS passthrough and how it compares to re-encrypt, see the <@links.server id="reverseproxy"/> {section}.
