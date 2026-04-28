@@ -682,7 +682,7 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerTestBase {
                     "jwt_vc_json credentials should not have @context in credential_definition");
         }
 
-        List<String> signingAlgsSupported = supportedConfig.getCredentialSigningAlgValuesSupported();
+        List<?> signingAlgsSupported = supportedConfig.getCredentialSigningAlgValuesSupported();
         ProofTypesSupported proofTypesSupported = supportedConfig.getProofTypesSupported();
         if (!bindingRequired) {
             assertNull(proofTypesSupported, "proof_types_supported should be omitted when binding is optional");
@@ -761,7 +761,7 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerTestBase {
         compareClaims(expectedFormat, supportedConfig.getCredentialMetadata().getClaims(), credScope.getProtocolMappers());
     }
 
-    private static List<String> getAllAsymmetricAlgorithms() {
+    public static List<String> getAllAsymmetricAlgorithms() {
         return List.of(
                 Algorithm.PS256, Algorithm.PS384, Algorithm.PS512,
                 Algorithm.RS256, Algorithm.RS384, Algorithm.RS512,
@@ -839,6 +839,16 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerTestBase {
                 }
             }
         });
+    }
+
+    public static void assertHasClaimPath(SupportedCredentialConfiguration supportedConfig, List<String> expectedPath) {
+        assertNotNull(supportedConfig.getCredentialMetadata());
+        assertNotNull(supportedConfig.getCredentialMetadata().getClaims());
+        List<List<String>> actualPaths = supportedConfig.getCredentialMetadata().getClaims().stream()
+                .map(Claim::getPath)
+                .toList();
+        assertTrue(actualPaths.stream().anyMatch(expectedPath::equals),
+                "Missing claim path " + expectedPath + " in " + actualPaths);
     }
 
     private void testBatchSizeValidation(String batchSize, boolean shouldBePresent, Integer expectedValue) {

@@ -127,12 +127,11 @@ public class OID4VCSubjectIdMapper extends OID4VCMapper {
     @Override
     public void setClaim(Map<String, Object> claims, UserSessionModel userSessionModel) {
         UserModel userModel = userSessionModel.getUser();
-        List<String> attributePath = getMetadataAttributePath();
-        if (attributePath.isEmpty()) {
+        String userAttributeName = mapperModel.getConfig().get(OID4VCMapper.USER_ATTRIBUTE_KEY);
+        String propertyName = getClaimName(userAttributeName);
+        if (propertyName == null) {
             return;
         }
-        String propertyName = attributePath.get(attributePath.size() - 1);
-        String userAttributeName = mapperModel.getConfig().get(OID4VCMapper.USER_ATTRIBUTE_KEY);
         Consumer<String> userIdConsumer = (val) -> claims.put(propertyName, val);
         if (UserModel.ID.equals(userAttributeName)) {
             userIdConsumer.accept(userModel.getId());
@@ -142,6 +141,22 @@ public class OID4VCSubjectIdMapper extends OID4VCMapper {
                     .findFirst()
                     .ifPresent(userIdConsumer);
         }
+    }
+
+    // the configured user attribute serves as fallback claim name to stay compatible with mappers that were
+    // created without an explicit claim name
+    private String resolveClaimName() {
+        return getClaimName(mapperModel.getConfig().get(OID4VCMapper.USER_ATTRIBUTE_KEY));
+    }
+
+    @Override
+    public List<String> getMetadataAttributePath() {
+        return getMetadataAttributePath(resolveClaimName());
+    }
+
+    @Override
+    protected List<String> getClaimLookupPath() {
+        return getClaimLookupPath(resolveClaimName());
     }
 
     @Override

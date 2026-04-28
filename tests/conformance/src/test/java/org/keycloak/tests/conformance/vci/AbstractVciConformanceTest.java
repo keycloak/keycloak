@@ -33,6 +33,7 @@ abstract class AbstractVciConformanceTest extends AbstractConformanceTest {
     protected JsonNode suiteConfig(ConformanceModuleVariant module) {
         return VciSuiteConfig.create(
                 OpenIdConformanceSuite.KEYCLOAK_BASE_URI,
+                VciConformanceRealmConfig.credentialConfigurationId(module.planVariant().get("credential_format")),
                 VciConformanceRealmConfig.attesterJwks(),
                 VciTestSigningKey.caCertificatePem(),
                 module.browserInteraction()).toJson();
