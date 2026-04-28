@@ -45,7 +45,7 @@ import picocli.CommandLine.Parameters;
 public class BuildPasswordDenylist extends AbstractCommand {
 
     public static final String NAME = "build-password-denylist";
-    public static final String HEADER = "Pre-compute a password denylist to speed up server startup and reload.";
+    public static final String HEADER = "Pre-compute a Bloom filter for a password denylist.";
 
     @Parameters(index = "0",
             paramLabel = "DENYLIST_FILE",
