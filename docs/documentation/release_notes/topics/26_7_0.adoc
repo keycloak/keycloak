@@ -27,3 +27,13 @@ As part of this change, the `displayName` attribute has been promoted from a rea
 
 Before migrating, check the current value of the `displayName` attribute for your realms. If the current value of `displayName` attribute
 exceeds 255 characters, it will be truncated during migration.
+
+= Observability
+
+== Option to replace empty metric tags in user event metrics
+
+By default, user event metrics may contain empty label values (e.g. `idp=""`), which some monitoring systems reject as non-compliant with the Prometheus Remote-Write specification.
+
+A new option `event-metrics-user-allow-empty-tags` allows replacing empty tag values with `none`.
+
+For more information, see the https://www.keycloak.org/observability/event-metrics[Monitoring user activities with event metrics] guide.

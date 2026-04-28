@@ -26,4 +26,11 @@ public class EventOptions {
             .deprecatedMetadata(DeprecatedMetadata.deprecateValues("Use `remove_credential` instead of `remove_totp`, and `update_credential` instead of `update_totp` and `update_password`.", "remove_totp", "update_totp", "update_password"))
             .build();
 
+    public static final Option<Boolean> USER_EVENT_METRICS_ALLOW_EMPTY_TAGS = new OptionBuilder<>("event-metrics-user-allow-empty-tags", Boolean.class)
+            .category(OptionCategory.EVENTS)
+            .description("If set to 'false', empty metric tag values are replaced with 'none' to comply with the Prometheus Remote-Write specification. By default, empty tags are allowed for backward compatibility.")
+            .buildTime(false)
+            .defaultValue(Boolean.TRUE)
+            .deprecatedValues("The default will change to 'false' in Keycloak 27.0.0. Empty tags will be replaced with 'none' by default.", Boolean.TRUE)
+            .build();
 }
