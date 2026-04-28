@@ -14,7 +14,7 @@ import {
   useAlerts,
   useFetch,
 } from "@keycloak/keycloak-ui-shared";
-import type { SsfClientTab } from "./routes/ClientSsfTab";
+import type { SsfClientTab } from "../routes/ClientSsfTab";
 import {
   ActionGroup,
   AlertVariant,
@@ -45,27 +45,27 @@ import {
   SyncAltIcon,
   TimesCircleIcon,
 } from "@patternfly/react-icons";
-import { CopyToClipboardButton } from "../components/copy-to-clipboard-button/CopyToClipboardButton";
-import { DefaultSwitchControl } from "../components/SwitchControl";
+import { CopyToClipboardButton } from "../../components/copy-to-clipboard-button/CopyToClipboardButton";
+import { DefaultSwitchControl } from "../../components/SwitchControl";
 import {
   AddRoleButton,
   AddRoleMappingModal,
   FilterType,
-} from "../components/role-mapping/AddRoleMappingModal";
-import { ServiceRole } from "../components/role-mapping/RoleMapping";
+} from "../../components/role-mapping/AddRoleMappingModal";
+import { ServiceRole } from "../../components/role-mapping/RoleMapping";
 import { useState } from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { useAdminClient } from "../admin-client";
-import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
-import { FormAccess } from "../components/form/FormAccess";
-import { useRealm } from "../context/realm-context/RealmContext";
-import { addTrailingSlash, convertAttributeNameToForm } from "../util";
-import { getAuthorizationHeaders } from "../utils/getAuthorizationHeaders";
-import useFormatDate from "../utils/useFormatDate";
-import type { FormFields, SaveOptions } from "./ClientDetails";
-import { TimeSelector } from "../components/time-selector/TimeSelector";
-import CodeEditor from "../components/form/CodeEditor";
+import { useAdminClient } from "../../admin-client";
+import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
+import { FormAccess } from "../../components/form/FormAccess";
+import { useRealm } from "../../context/realm-context/RealmContext";
+import { addTrailingSlash, convertAttributeNameToForm } from "../../util";
+import { getAuthorizationHeaders } from "../../utils/getAuthorizationHeaders";
+import useFormatDate from "../../utils/useFormatDate";
+import type { FormFields, SaveOptions } from "../ClientDetails";
+import { TimeSelector } from "../../components/time-selector/TimeSelector";
+import CodeEditor from "../../components/form/CodeEditor";
 
 const FALLBACK_DEFAULT_SUPPORTED_EVENTS =
   "CaepCredentialChange,CaepSessionRevoked";
