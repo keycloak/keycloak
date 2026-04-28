@@ -13,6 +13,7 @@ import org.keycloak.common.crypto.FipsMode;
 import org.keycloak.config.HttpOptions;
 import org.keycloak.config.OptionsUtil;
 import org.keycloak.config.SecurityOptions;
+import org.keycloak.cookie.DefaultCookieProviderFactory;
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.Messages;
 import org.keycloak.quarkus.runtime.cli.ExecutionExceptionHandler;
@@ -184,6 +185,11 @@ public final class HttpPropertyMappers implements PropertyMapperGrouping {
                 fromFeature(Profile.Feature.HTTP_OPTIMIZED_SERIALIZERS)
                         .to("quarkus.rest.jackson.optimization.enable-reflection-free-serializers")
                         .build(),
+                fromOption(HttpOptions.HTTP_COOKIE_PREFIX)
+                        .to("kc.spi-cookie--default--cookie-prefix")
+                        .paramLabel("prefix")
+                        .validator(HttpPropertyMappers::validateCookiePrefix)
+                        .build(),
                 fromOption(HttpOptions.HTTP_ACCEPT_NON_NORMALIZED_PATHS)
                         .build(),
                 fromOption(HttpOptions.SHUTDOWN_TIMEOUT)
@@ -261,6 +267,14 @@ public final class HttpPropertyMappers implements PropertyMapperGrouping {
             return String.valueOf(Math.max(MIN_MAX_THREADS, 4 * Runtime.getRuntime().availableProcessors()));
         }
         return value;
+    }
+
+    private static void validateCookiePrefix(String value) {
+        try {
+            DefaultCookieProviderFactory.validateCookiePrefix(value);
+        } catch (IllegalArgumentException e) {
+            throw new PropertyException(e.getMessage());
+        }
     }
 
     private static void validateShutdownDuration(String value) {

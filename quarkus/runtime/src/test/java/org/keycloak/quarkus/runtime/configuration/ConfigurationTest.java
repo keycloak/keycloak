@@ -1010,6 +1010,23 @@ public class ConfigurationTest extends AbstractConfigurationTest {
     }
 
     @Test
+    public void testHttpCookiePrefixMapsToSpiProperty() {
+        ConfigArgsConfigSource.setCliArgs("--http-cookie-prefix=KC26_");
+        SmallRyeConfig config = createConfig();
+        assertEquals("KC26_", config.getConfigValue("kc.spi-cookie--default--cookie-prefix").getValue());
+    }
+
+    @Test
+    public void testHttpCookiePrefixDefaultEmpty() {
+        ConfigArgsConfigSource.setCliArgs("");
+        SmallRyeConfig config = createConfig();
+        assertEquals("", config.getConfigValue("kc.spi-cookie--default--cookie-prefix").getValue());
+    }
+
+    @Test
+    public void testHttpCookiePrefixViaSpiArgument() {
+        ConfigArgsConfigSource.setCliArgs("--spi-cookie-default-cookie-prefix=BLUE_");
+        assertEquals("BLUE_", initConfig("cookie", "default").get("cookie-prefix"));
     public void testRawEnvVarPreservesDoubleDollar() {
         putEnvVar("KCRAW_DB_PASSWORD", "my$$password");
         SmallRyeConfig config = createConfig();
