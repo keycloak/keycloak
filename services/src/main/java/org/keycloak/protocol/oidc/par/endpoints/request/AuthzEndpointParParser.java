@@ -46,8 +46,7 @@ public class AuthzEndpointParParser extends AuthzEndpointRequestParser {
 
     private final KeycloakSession session;
     private final ClientModel client;
-    private Map<String, String> requestParams;
-    private String invalidRequestMessage = null;
+    private final Map<String, String> requestParams;
 
     public AuthzEndpointParParser(KeycloakSession session, ClientModel client, String requestUri) {
         super(session);
@@ -87,7 +86,7 @@ public class AuthzEndpointParParser extends AuthzEndpointRequestParser {
 
         if (requestParam != null) {
             // parses the request object if PAR was registered using JAR
-            // parameters from requets object have precedence over those sent directly in the request
+            // parameters from request object have precedence over those sent directly in the request
             new ParEndpointRequestObjectParser(session, requestParam, client).parseRequest(request);
         } else {
             super.parseRequest(request);
@@ -103,10 +102,6 @@ public class AuthzEndpointParParser extends AuthzEndpointRequestParser {
     protected Integer getIntParameter(String paramName) {
         String paramVal = requestParams.get(paramName);
         return paramVal == null ? null : Integer.valueOf(paramVal);
-    }
-
-    public String getInvalidRequestMessage() {
-        return invalidRequestMessage;
     }
 
     @Override
