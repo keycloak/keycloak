@@ -50,7 +50,7 @@ import useToggle from "../utils/useToggle";
 import { AdvancedTab } from "./AdvancedTab";
 import { ClientSessions } from "./ClientSessions";
 import { ClientSettings } from "./ClientSettings";
-import { SsfTab } from "./SsfTab";
+import { SsfTab } from "./ssf/SsfTab";
 import { AuthorizationEvaluate } from "./authorization/AuthorizationEvaluate";
 import { AuthorizationExport } from "./authorization/AuthorizationExport";
 import { AuthorizationPermissions } from "./authorization/Permissions";
@@ -196,7 +196,7 @@ export default function ClientDetails() {
 
   const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
-  const { realm } = useRealm();
+  const { realm, realmRepresentation } = useRealm();
   const { hasAccess } = useAccess();
   const isFeatureEnabled = useIsFeatureEnabled();
 
@@ -231,6 +231,18 @@ export default function ClientDetails() {
     control: form.control,
     name: convertAttributeNameToForm<FormFields>("attributes.ssf.enabled"),
   });
+
+  // Gate every SSF surface on three conditions: server feature flag,
+  // realm-level transmitter toggle, and per-client opt-in. Missing any
+  // one means SSF endpoints aren't available — surfacing the tab would
+  // crash on the first API call (the original bug from the review).
+  const isSsfFeatureEnabled = isFeatureEnabled(Feature.Ssf);
+  const isSsfRealmEnabled =
+    realmRepresentation?.attributes?.["ssf.transmitterEnabled"] === "true";
+  const showSsfTab =
+    isSsfFeatureEnabled &&
+    isSsfRealmEnabled &&
+    ssfEnabled?.toString() === "true";
 
   const [client, setClient] = useState<ClientRepresentation>();
 
@@ -709,7 +721,7 @@ export default function ClientDetails() {
             </Tab>
             {client.protocol === "openid-connect" &&
               !client.publicClient &&
-              ssfEnabled?.toString() === "true" && (
+              showSsfTab && (
                 <Tab
                   id="ssf"
                   data-testid="ssfTab"
