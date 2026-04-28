@@ -17,7 +17,6 @@
 package org.keycloak.tests.webauthn;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -53,7 +52,6 @@ import org.keycloak.util.JsonSerialization;
 
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.keycloak.models.AuthenticationExecutionModel.Requirement.ALTERNATIVE;
@@ -79,15 +77,6 @@ public class WebAuthnRegisterAndLoginTest extends AbstractWebAuthnVirtualTest {
 
     @InjectPage
     SelectAuthenticatorPage selectAuthenticatorPage;
-
-    @BeforeEach
-    public void customizeWebAuthnTestRealm() {
-        List<String> acceptableAaguids = new ArrayList<>();
-        acceptableAaguids.add("00000000-0000-0000-0000-000000000000");
-        acceptableAaguids.add("6d44ba9b-f6ec-2e49-b930-0c8fe920cb73");
-
-        managedRealm.updateWithCleanup(r -> r.webAuthnPolicyAcceptableAaguids(acceptableAaguids));
-    }
 
     @Test
     public void registerUserSuccess() {
@@ -481,13 +470,12 @@ public class WebAuthnRegisterAndLoginTest extends AbstractWebAuthnVirtualTest {
     }
 
     private void updateRealmWithDefaultWebAuthnSettings() {
-        managedRealm.updateWithCleanup(r -> r.webAuthnPolicySignatureAlgorithms(List.of("ES256")));
-        managedRealm.updateWithCleanup(r -> r.webAuthnPolicyAttestationConveyancePreference("none"));
-        managedRealm.updateWithCleanup(r -> r.webAuthnPolicyAuthenticatorAttachment("cross-platform"));
-        managedRealm.updateWithCleanup(r -> r.webAuthnPolicyRequireResidentKey("No"));
-        managedRealm.updateWithCleanup(r -> r.webAuthnPolicyRpId(null));
-        managedRealm.updateWithCleanup(r -> r.webAuthnPolicyUserVerificationRequirement("preferred"));
-        managedRealm.updateWithCleanup(r -> r.webAuthnPolicyAcceptableAaguids(List.of(ALL_ZERO_AAGUID)));
+        managedRealm.updateWithCleanup(r -> r.webAuthnPolicySignatureAlgorithms(List.of("ES256"))
+                .webAuthnPolicyAttestationConveyancePreference("none")
+                .webAuthnPolicyAuthenticatorAttachment("cross-platform")
+                .webAuthnPolicyRequireResidentKey("No")
+                .webAuthnPolicyRpId(null)
+                .webAuthnPolicyUserVerificationRequirement("preferred"));
     }
 
     /**

@@ -1,6 +1,5 @@
 package org.keycloak.models.workflow;
 
-import java.time.Duration;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -15,6 +14,7 @@ import jakarta.ws.rs.BadRequestException;
 
 import org.keycloak.common.util.DurationConverter;
 import org.keycloak.common.util.MultivaluedHashMap;
+import org.keycloak.common.util.Time;
 import org.keycloak.component.ComponentFactory;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSession;
@@ -26,7 +26,6 @@ import org.keycloak.representations.workflows.StepExecutionStatus;
 import org.keycloak.representations.workflows.WorkflowConstants;
 import org.keycloak.representations.workflows.WorkflowRepresentation;
 import org.keycloak.representations.workflows.WorkflowStepRepresentation;
-import org.keycloak.services.scheduled.ClusterAwareScheduledTaskRunner;
 import org.keycloak.timer.TimerProvider;
 
 import org.jboss.logging.Logger;
@@ -36,6 +35,7 @@ import static java.util.Optional.ofNullable;
 public class DefaultWorkflowProvider implements WorkflowProvider {
 
     private static final Logger log = Logger.getLogger(DefaultWorkflowProvider.class);
+    private static final Logger scheduleLog = Logger.getLogger("org.keycloak.workflow.schedule");
 
     private final KeycloakSession session;
     private final WorkflowStateProvider stateProvider;
@@ -108,10 +108,11 @@ public class DefaultWorkflowProvider implements WorkflowProvider {
 
             // finally, update the workflow's config along with the steps' configs
             workflow.updateConfig(representation.getConfig(), newSteps);
-        }
 
-        cancelScheduledWorkflow(workflow);
-        scheduleWorkflow(workflow);
+            cancelScheduledWorkflow(workflow);
+            scheduleWorkflow(workflow);
+            notifyScheduleChange(workflow, false);
+        }
     }
 
     @Override
@@ -122,6 +123,7 @@ public class DefaultWorkflowProvider implements WorkflowProvider {
         realm.removeComponent(component);
         stateProvider.removeByWorkflow(workflow.getId());
         cancelScheduledWorkflow(workflow);
+        notifyScheduleChange(workflow, true);
     }
 
     @Override
@@ -472,27 +474,61 @@ public class DefaultWorkflowProvider implements WorkflowProvider {
         workflow = new Workflow(session, realm.addComponentModel(model));
 
         scheduleWorkflow(workflow);
+        notifyScheduleChange(workflow, false);
 
         return workflow;
     }
 
     private void scheduleWorkflow(Workflow workflow) {
-        // only start the task if the workflow is enabled and has a schedule configured
         String scheduled = workflow.getConfig().getFirst(WorkflowConstants.CONFIG_SCHEDULE_AFTER);
 
         if (workflow.isEnabled() && scheduled != null) {
-            Duration duration = DurationConverter.parseDuration(scheduled);
+            initLastScheduleRun(workflow);
+            int intervalSecs = (int) DurationConverter.parseDuration(scheduled).toSeconds();
+            int initialDelaySecs = ScheduledWorkflowRunner.computeInitialDelay(workflow, intervalSecs);
             TimerProvider timer = session.getProvider(TimerProvider.class);
-            timer.schedule(new ClusterAwareScheduledTaskRunner(sessionFactory, new ScheduledWorkflowRunner(workflow.getId(), realm.getId()), duration.toMillis()), duration.toMillis());
+            ScheduledWorkflowRunner runner = new ScheduledWorkflowRunner(workflow.getId(), realm.getId(), intervalSecs);
+            timer.scheduleTask(runner, initialDelaySecs * 1000L, intervalSecs * 1000L);
+            scheduleLog.debugf("Scheduled workflow '%s' with interval %d s, initial delay %d s", workflow.getName(), intervalSecs, initialDelaySecs);
+        }
+    }
+
+    private void initLastScheduleRun(Workflow workflow) {
+        if (ScheduledWorkflowRunner.getLastScheduleRun(workflow) <= 0) {
+            ComponentModel component = realm.getComponent(workflow.getId());
+            component.put(WorkflowConstants.CONFIG_LAST_SCHEDULE_RUN, String.valueOf(Time.currentTime()));
+            realm.updateComponent(component);
         }
     }
 
     void cancelScheduledWorkflow(Workflow workflow) {
-        session.getProvider(TimerProvider.class).cancelTask(new ScheduledWorkflowRunner(workflow.getId(), realm.getId()).getTaskName());
+        session.getProvider(TimerProvider.class).cancelTask(ScheduledWorkflowRunner.taskName(workflow.getId()));
     }
 
     void rescheduleWorkflow(Workflow workflow) {
         cancelScheduledWorkflow(workflow);
         scheduleWorkflow(workflow);
+    }
+
+    private void notifyScheduleChange(Workflow workflow, boolean removed) {
+        DefaultWorkflowProviderFactory factory = (DefaultWorkflowProviderFactory) sessionFactory
+                .getProviderFactory(WorkflowProvider.class, DefaultWorkflowProviderFactory.ID);
+        WorkflowScheduleEventListener listener = factory.getScheduleEventListener();
+
+        if (listener != null) {
+            int intervalSecs = 0;
+            int lastScheduleRun = 0;
+
+            if (!removed) {
+                String scheduled = workflow.getConfig().getFirst(WorkflowConstants.CONFIG_SCHEDULE_AFTER);
+
+                if (workflow.isEnabled() && scheduled != null) {
+                    intervalSecs = (int) DurationConverter.parseDuration(scheduled).toSeconds();
+                    lastScheduleRun = ScheduledWorkflowRunner.getLastScheduleRun(workflow);
+                }
+            }
+
+            listener.notifyCluster(session, realm.getId(), workflow.getId(), removed, intervalSecs, lastScheduleRun);
+        }
     }
 }

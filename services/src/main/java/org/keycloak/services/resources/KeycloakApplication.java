@@ -18,6 +18,7 @@ package org.keycloak.services.resources;
 
 import java.io.File;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -26,6 +27,7 @@ import jakarta.ws.rs.core.Application;
 
 import org.keycloak.common.Profile;
 import org.keycloak.common.crypto.CryptoIntegration;
+import org.keycloak.common.util.Time;
 import org.keycloak.exportimport.ExportImportConfig;
 import org.keycloak.exportimport.ExportImportManager;
 import org.keycloak.models.KeycloakSession;
@@ -144,6 +146,13 @@ public abstract class KeycloakApplication extends Application {
             sessionFactory.close();
             sessionFactory = null;
         }
+    }
+
+    protected synchronized void shutdownDelayInitiated() {
+        if (sessionFactory == null) {
+            return;
+        }
+        sessionFactory.publish(new ShutdownDelayInitiatedEvent(Instant.ofEpochMilli(Time.currentTimeMillis())));
     }
 
     // Bootstrap master realm, import realms and create admin user.

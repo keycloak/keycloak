@@ -169,19 +169,66 @@ public class WebAuthnOtherSettingsTest extends AbstractWebAuthnVirtualTest {
     @Test
     @IgnoreBrowserDriver(FirefoxDriver.class) // See https://github.com/keycloak/keycloak/issues/10368
     public void excludeCredentials() throws IOException {
-        List<String> acceptableAaguids = Collections.singletonList(ALL_ONE_AAGUID);
+        List<String> acceptableAaguids = Collections.singletonList(ALL_ZERO_AAGUID);
+
+        try (Closeable u = getWebAuthnRealmUpdater()
+                .setWebAuthnPolicyAcceptableAaguids(acceptableAaguids)
+                .setWebAuthnPolicyAttestationConveyancePreference(AttestationConveyancePreference.DIRECT.getValue())
+                .update()) {
+            // webauthn virtual emulator in chrome sets a self signed certificate every time, truststore needs to be disabled
+            testingClient.testing().disableTruststoreSpi();
+
+            WebAuthnRealmData realmData = new WebAuthnRealmData(managedRealm.admin().toRepresentation(), isPasswordless());
+            assertThat(realmData.getAcceptableAaguids(), Matchers.contains(ALL_ZERO_AAGUID));
+
+            registerDefaultUser();
+
+            webAuthnErrorPage.assertCurrent();
+            assertThat(webAuthnErrorPage.getError(), allOf(containsString("not acceptable aaguid"), containsString(CHROME_AAGUID)));
+        } finally {
+            testingClient.testing().reenableTruststoreSpi();
+        }
+    }
+
+    @Test
+    @IgnoreBrowserDriver(FirefoxDriver.class) // See https://github.com/keycloak/keycloak/issues/10368
+    public void excludeCredentialsSuccess() throws IOException {
+        List<String> acceptableAaguids = Collections.singletonList(CHROME_AAGUID);
+
+        try (Closeable u = getWebAuthnRealmUpdater()
+                .setWebAuthnPolicyAcceptableAaguids(acceptableAaguids)
+                .setWebAuthnPolicyAttestationConveyancePreference(AttestationConveyancePreference.DIRECT.getValue())
+                .update()) {
+            // webauthn virtual emulator in chrome sets a self signed certificate every time, truststore needs to be disabled
+            testingClient.testing().disableTruststoreSpi();
+
+            WebAuthnRealmData realmData = new WebAuthnRealmData(managedRealm.admin().toRepresentation(), isPasswordless());
+            assertThat(realmData.getAcceptableAaguids(), Matchers.contains(CHROME_AAGUID));
+
+            registerDefaultUser();
+
+            appPage.assertCurrent();
+        } finally {
+            testingClient.testing().reenableTruststoreSpi();
+        }
+    }
+
+    @Test
+    @IgnoreBrowserDriver(FirefoxDriver.class) // See https://github.com/keycloak/keycloak/issues/10368
+    public void excludeCredentialsUsingNone() throws IOException {
+        List<String> acceptableAaguids = Collections.singletonList(ALL_ZERO_AAGUID);
 
         try (Closeable u = getWebAuthnRealmUpdater()
                 .setWebAuthnPolicyAcceptableAaguids(acceptableAaguids)
                 .update()) {
 
             WebAuthnRealmData realmData = new WebAuthnRealmData(managedRealm.admin().toRepresentation(), isPasswordless());
-            assertThat(realmData.getAcceptableAaguids(), Matchers.contains(ALL_ONE_AAGUID));
+            assertThat(realmData.getAcceptableAaguids(), Matchers.contains(ALL_ZERO_AAGUID));
 
             registerDefaultUser();
 
             webAuthnErrorPage.assertCurrent();
-            assertThat(webAuthnErrorPage.getError(), allOf(containsString("not acceptable aaguid"), containsString(ALL_ZERO_AAGUID)));
+            assertThat(webAuthnErrorPage.getError(), containsString("Acceptable AAGUIDs require an attestation format other than 'none'."));
         }
     }
 }

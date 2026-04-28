@@ -28,6 +28,7 @@ import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.Constants;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.authorization.DecisionStrategy;
@@ -258,6 +259,46 @@ public class PermissionRESTTest extends AbstractPermissionTest {
                 .resources(Set.of(AdminPermissionsSchema.ROLES.getType()))
                 .scopes(AdminPermissionsSchema.ROLES.getScopes())
                 .build());
+    }
+
+    @Test
+    public void testResourceTypeMixingNotAllowed() {
+        // Create a Users permission for alice — this creates an authz resource with alice's UUID as its name
+        createPermission(client, PermissionBuilder.create()
+                .resourceType(AdminPermissionsSchema.USERS.getType())
+                .resources(Set.of(userAlice.getUsername()))
+                .scopes(AdminPermissionsSchema.USERS.getScopes())
+                .build());
+
+        ResourceRepresentation aliceResource = client.admin().authorization().resources().searchByName(userAlice.getId());
+        assertThat(aliceResource, notNullValue());
+        String aliceAuthzResourceId = aliceResource.getId();
+
+        // Create a group and a Groups permission — this creates an authz resource with the group's UUID as its name
+        GroupRepresentation group = createGroup("test-resource-type-group");
+        createPermission(client, PermissionBuilder.create()
+                .resourceType(AdminPermissionsSchema.GROUPS.getType())
+                .resources(Set.of(group.getId()))
+                .scopes(AdminPermissionsSchema.GROUPS.getScopes())
+                .build());
+
+        ResourceRepresentation groupResource = client.admin().authorization().resources().searchByName(group.getId());
+        assertThat(groupResource, notNullValue());
+        String groupAuthzResourceId = groupResource.getId();
+
+        // Attempting to create a Groups permission using the alice authz resource ID (a Users resource) must fail
+        createPermission(client, PermissionBuilder.create()
+                .resourceType(AdminPermissionsSchema.GROUPS.getType())
+                .resources(Set.of(aliceAuthzResourceId))
+                .scopes(AdminPermissionsSchema.GROUPS.getScopes())
+                .build(), Response.Status.BAD_REQUEST);
+
+        // Attempting to create a Users permission using the group authz resource ID (a Groups resource) must fail
+        createPermission(client, PermissionBuilder.create()
+                .resourceType(AdminPermissionsSchema.USERS.getType())
+                .resources(Set.of(groupAuthzResourceId))
+                .scopes(AdminPermissionsSchema.USERS.getScopes())
+                .build(), Response.Status.BAD_REQUEST);
     }
 
     @Test

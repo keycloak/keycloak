@@ -99,6 +99,7 @@ import org.keycloak.models.sessions.infinispan.stream.SessionUnwrapMapper;
 import org.keycloak.models.sessions.infinispan.stream.SessionWrapperPredicate;
 import org.keycloak.models.sessions.infinispan.stream.UserSessionPredicate;
 import org.keycloak.models.sessions.infinispan.stream.ValueIdentityBiFunction;
+import org.keycloak.models.workflow.WorkflowScheduleClusterEvent;
 import org.keycloak.sessions.CommonClientSessionModel;
 import org.keycloak.storage.UserStorageProviderClusterEvent;
 import org.keycloak.storage.UserStorageProviderModel;
@@ -233,6 +234,9 @@ import org.infinispan.protostream.types.java.CommonTypes;
                 RemoveKeyConsumer.class,
                 ValueIdentityBiFunction.class,
                 LoginFailuresLifespanUpdate.class,
+
+                // workflow package
+                WorkflowScheduleClusterEvent.class,
 
                 // infinispan.module.certificates
                 ReloadCertificateFunction.class,

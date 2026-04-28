@@ -19,6 +19,8 @@ package org.keycloak.tests.oid4vc;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -93,6 +95,7 @@ import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvide
 import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider.SIGNED_METADATA_ALG_ATTR;
 import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider.SIGNED_METADATA_LIFESPAN_ATTR;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
@@ -142,6 +145,9 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerTestBase {
 
             assertEquals(HttpStatus.SC_OK, response.getStatusCode());
             assertEquals(MediaType.APPLICATION_JSON, response.getHeader(HttpHeaders.CONTENT_TYPE));
+            assertNotNull(response.getHeader(HttpHeaders.DATE), "Date header must be present");
+            assertDoesNotThrow(() -> ZonedDateTime.parse(response.getHeader(HttpHeaders.DATE), DateTimeFormatter.RFC_1123_DATE_TIME),
+                    "Date header must be RFC1123 formatted");
 
             CredentialIssuer issuer = response.getMetadata();
             assertNotNull(issuer, "Response should be a CredentialIssuer object");

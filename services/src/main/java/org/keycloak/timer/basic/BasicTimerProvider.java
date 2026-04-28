@@ -77,6 +77,12 @@ public class BasicTimerProvider implements TimerProvider {
     }
 
     @Override
+    public void scheduleTask(ScheduledTask scheduledTask, long initialDelayMillis, long intervalMillis, String taskName) {
+        ScheduledTaskRunner scheduledTaskRunner = new ScheduledTaskRunner(session.getKeycloakSessionFactory(), scheduledTask, transactionTimeout);
+        this.schedule(scheduledTaskRunner, initialDelayMillis, intervalMillis, taskName);
+    }
+
+    @Override
     public TimerTaskContext cancelTask(String taskName) {
         TimerTaskContextImpl existingTask = factory.removeTask(taskName);
         if (existingTask != null) {

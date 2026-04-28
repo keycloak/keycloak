@@ -1,80 +1,86 @@
-import { base64url } from "rfc4648";
-import { returnSuccess, signal } from "./webauthnAuthenticate.js";
+import { doAuthenticate, returnSuccess } from "./webauthnAuthenticate.js";
 
-export function initAuthenticate(input, availableCallback = (available) => {}) {
+const PASSKEY_MODAL_DISMISSED = 'kc_passkey_modal_dismissed';
+
+/**
+ * Returns the current cookie KC_AUTH_SESSION_HASH value if present.
+ * Undefined if not present.
+ */
+function getModalDismissedHash() {
+    for (const cookie of document.cookie.split(';')) {
+        const [key, value] = cookie.trim().split('=');
+        if (key === 'KC_AUTH_SESSION_HASH' && value) {
+            return value;
+        }
+    }
+    return undefined;
+}
+
+/**
+ * Entry point for passkey authentication on page load.
+ *
+ * Calls navigator.credentials.get() once with the mediation value configured
+ * in the WebAuthn Passwordless Policy (conditional/none/optional/required/silent).
+ * For "none", unsupported browsers, or an already-identified user, nothing is
+ * attempted automatically — the user can always initiate via the button.
+ *
+ * For modal mediations (optional/required), the dialog is shown at most once
+ * per authentication session: if the user dismisses it, it will not reappear
+ * on subsequent page loads (e.g. after a failed password attempt).
+ */
+export async function initAuthenticate(input, availableCallback = () => {}) {
     // Check if WebAuthn is supported by this browser
     if (!window.PublicKeyCredential) {
         // Fail silently as WebAuthn Conditional UI is not required
         return;
     }
-    if (input.isUserIdentified || typeof PublicKeyCredential.isConditionalMediationAvailable === "undefined") {
+
+    const mediation = input.mediation ?? 'conditional';
+
+    if (input.isUserIdentified || mediation === 'none') {
         availableCallback(false);
-    } else {
-        tryAutoFillUI(input, availableCallback);
-    }
-}
-
-function doAuthenticate(input) {
-    // Check if WebAuthn is supported by this browser
-    if (!window.PublicKeyCredential) {
-        // Fail silently as WebAuthn Conditional UI is not required
         return;
     }
 
-    const publicKey = {
-        rpId : input.rpId,
-        challenge: base64url.parse(input.challenge, { loose: true })
-    };
-
-    publicKey.allowCredentials = !input.isUserIdentified ? [] : getAllowCredentials();
-
-    if (input.createTimeout !== 0) {
-        publicKey.timeout = input.createTimeout * 1000;
-    }
-
-    if (input.userVerification !== 'not specified') {
-        publicKey.userVerification = input.userVerification;
-    }
-
-    return navigator.credentials.get({
-        publicKey: publicKey,
-        signal: signal(),
-        ...input.additionalOptions
-    });
-}
-
-async function tryAutoFillUI(input, availableCallback = (available) => {}) {
-    const isConditionalMediationAvailable = await PublicKeyCredential.isConditionalMediationAvailable();
-    if (isConditionalMediationAvailable) {
+    // The isConditionalMediationAvailable() check is only relevant for
+    // conditional (autofill) mediation — other modes do not depend on it.
+    if (mediation === 'conditional') {
+        if (typeof PublicKeyCredential.isConditionalMediationAvailable === 'undefined') {
+            availableCallback(false);
+            return;
+        }
+        const isAvailable = await PublicKeyCredential.isConditionalMediationAvailable();
+        if (!isAvailable) {
+            // Treat unavailable conditional UI the same as 'none'
+            availableCallback(false);
+            return;
+        }
         availableCallback(true);
-        input.additionalOptions = { mediation: 'conditional'};
-        try {
-            const result = await doAuthenticate(input);
-            returnSuccess(result);
-        } catch {
-            // Fail silently as WebAuthn Conditional UI is not required
-        }
     } else {
         availableCallback(false);
     }
-}
 
-function getAllowCredentials() {
-    const allowCredentials = [];
-    const authnUse = document.forms['authn_select'].authn_use_chk;
-    if (authnUse !== undefined) {
-        if (authnUse.length === undefined) {
-            allowCredentials.push({
-                id: base64url.parse(authnUse.value, {loose: true}),
-                type: 'public-key',
-            });
-        } else {
-            authnUse.forEach((entry) =>
-                allowCredentials.push({
-                    id: base64url.parse(entry.value, {loose: true}),
-                    type: 'public-key',
-                }));
+    // For modal mediations, skip if the user already dismissed the dialog in
+    // this authentication session — avoids re-interrupting on every page load.
+    const modalDismissedHash = getModalDismissedHash();
+    if ((!modalDismissedHash || modalDismissedHash === sessionStorage.getItem(PASSKEY_MODAL_DISMISSED)) &&
+            (mediation === 'optional' || mediation === 'required')) {
+        return;
+    }
+
+    try {
+        const result = await doAuthenticate({
+            ...input,
+            allowCredentials: [],
+            additionalOptions: { mediation },
+        });
+        if (result) returnSuccess(result);
+    } catch (err) {
+        // If the user explicitly dismissed the modal, remember it so it is not
+        // shown again during the same authentication session.
+        if ((mediation === 'optional' || mediation === 'required') &&
+                (err?.name === 'NotAllowedError' || err?.name === 'AbortError')) {
+            sessionStorage.setItem(PASSKEY_MODAL_DISMISSED, modalDismissedHash);
         }
     }
-    return allowCredentials;
 }

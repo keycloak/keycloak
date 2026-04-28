@@ -19,6 +19,8 @@ package org.keycloak.tests.oid4vc;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -112,6 +114,7 @@ import static org.keycloak.tests.oid4vc.OID4VCProofTestUtils.generateJwtProofWit
 import static org.keycloak.tests.oid4vc.OID4VCProofTestUtils.generateJwtProofWithKidNoAttestation;
 import static org.keycloak.tests.oid4vc.OID4VCProofTestUtils.jwtProofs;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
@@ -210,6 +213,21 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
                 throw new RuntimeException(e);
             }
         });
+    }
+
+    @Test
+    public void testJwtVcIssuerWellKnownContainsDateHeader() {
+        String metadataUrl = oauth.getBaseUrl() + "/.well-known/jwt-vc-issuer/realms/" + oauth.getRealm();
+        try (Client restClient = Keycloak.getClientProvider().newRestEasyClient(null, null, true)) {
+            WebTarget target = restClient.target(metadataUrl);
+            try (Response response = target.request().get()) {
+                assertEquals(Response.Status.OK.getStatusCode(), response.getStatus(), "JWT VC issuer metadata should return 200");
+                String dateHeader = response.getHeaderString(HttpHeaders.DATE);
+                assertNotNull(dateHeader, "Date header must be present");
+                assertDoesNotThrow(() -> ZonedDateTime.parse(dateHeader, DateTimeFormatter.RFC_1123_DATE_TIME),
+                        "Date header must be RFC1123 formatted");
+            }
+        }
     }
 
     @Test

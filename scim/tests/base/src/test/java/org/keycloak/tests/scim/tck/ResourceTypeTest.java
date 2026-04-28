@@ -29,14 +29,17 @@ public class ResourceTypeTest extends AbstractScimTest {
         assertNotNull(response);
         assertEquals(2, response.getResources().size());
 
-        assertResourceType(response, User.class, List.of(ENTERPRISE_USER_SCHEMA));
-        assertResourceType(response, Group.class, List.of());
+        assertResourceType(response, User.class, "User Account", List.of(ENTERPRISE_USER_SCHEMA));
+        assertResourceType(response, Group.class, "Group", List.of());
     }
 
-    private static void assertResourceType(ListResponse<ResourceType> response, Class<? extends ResourceTypeRepresentation> resourceType, List<String> expectedSchemaExtensions) {
+    private static void assertResourceType(ListResponse<ResourceType> response, Class<? extends ResourceTypeRepresentation> resourceType,
+            String expectedDescription, List<String> expectedSchemaExtensions) {
         ResourceType representation = response.getResources().stream().filter(r -> r.getName().equals(resourceType.getSimpleName())).findAny().orElse(null);
 
         assertNotNull(representation);
+        assertEquals(resourceType.getSimpleName(), representation.getId());
+        assertEquals(expectedDescription, representation.getDescription());
         assertEquals("/" + representation.getName() + "s", representation.getEndpoint());
         assertEquals(getCoreSchema(resourceType), representation.getSchema());
 
