@@ -193,4 +193,52 @@ public class OrganizationAdapter implements OrganizationModel {
     public int hashCode() {
         return getId().hashCode();
     }
+
+    @Override
+    public Integer getSessionIdleTimeout() {
+        if (isUpdated()) return updated.getSessionIdleTimeout();
+        return cached.getSessionIdleTimeout();
+    }
+
+    @Override
+    public void setSessionIdleTimeout(Integer timeout) {
+        getDelegateForUpdate();
+        updated.setSessionIdleTimeout(timeout);
+    }
+
+    @Override
+    public Integer getSessionMaxLifespan() {
+        if (isUpdated()) return updated.getSessionMaxLifespan();
+        return cached.getSessionMaxLifespan();
+    }
+
+    @Override
+    public void setSessionMaxLifespan(Integer timeout) {
+        getDelegateForUpdate();
+        updated.setSessionMaxLifespan(timeout);
+    }
+
+    @Override
+    public Integer getSessionIdleTimeoutRememberMe() {
+        if (isUpdated()) return updated.getSessionIdleTimeoutRememberMe();
+        return cached.getSessionIdleTimeoutRememberMe();
+    }
+
+    @Override
+    public void setSessionIdleTimeoutRememberMe(Integer timeout) {
+        getDelegateForUpdate();
+        updated.setSessionIdleTimeoutRememberMe(timeout);
+    }
+
+    @Override
+    public Integer getSessionMaxLifespanRememberMe() {
+        if (isUpdated()) return updated.getSessionMaxLifespanRememberMe();
+        return cached.getSessionMaxLifespanRememberMe();
+    }
+
+    @Override
+    public void setSessionMaxLifespanRememberMe(Integer timeout) {
+        getDelegateForUpdate();
+        updated.setSessionMaxLifespanRememberMe(timeout);
+    }
 }

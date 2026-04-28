@@ -839,10 +839,10 @@ public class AuthenticationManager {
             token.setSessionId(session.getId());
         }
 
-        if (session != null && session.isRememberMe() && realm.getSsoSessionMaxLifespanRememberMe() > 0) {
-            token.exp((long) Time.currentTime() + realm.getSsoSessionMaxLifespanRememberMe());
-        } else if (realm.getSsoSessionMaxLifespan() > 0) {
-            token.exp((long) Time.currentTime() + realm.getSsoSessionMaxLifespan());
+        if (session != null && session.isRememberMe() && SessionExpirationUtils.getSsoSessionMaxLifespanRememberMe(realm, session, keycloakSession) > 0) {
+            token.exp((long) Time.currentTime() + SessionExpirationUtils.getSsoSessionMaxLifespanRememberMe(realm, session, keycloakSession));
+        } else if (SessionExpirationUtils.getSsoSessionMaxLifespan(realm, session, keycloakSession) > 0) {
+            token.exp((long) Time.currentTime() + SessionExpirationUtils.getSsoSessionMaxLifespan(realm, session, keycloakSession));
         }
 
         String stateChecker = (String) keycloakSession.getAttribute(STATE_CHECKER);
@@ -862,7 +862,7 @@ public class AuthenticationManager {
         String encoded = keycloakSession.tokens().encode(identityCookieToken);
         int maxAge = NewCookie.DEFAULT_MAX_AGE;
         if (session.isRememberMe()) {
-            maxAge = realm.getSsoSessionMaxLifespanRememberMe() > 0 ? realm.getSsoSessionMaxLifespanRememberMe() : realm.getSsoSessionMaxLifespan();
+            maxAge = SessionExpirationUtils.getSsoSessionMaxLifespanRememberMe(realm, session, keycloakSession) > 0 ? SessionExpirationUtils.getSsoSessionMaxLifespanRememberMe(realm, session, keycloakSession) : SessionExpirationUtils.getSsoSessionMaxLifespan(realm, session, keycloakSession);
         }
         keycloakSession.getProvider(CookieProvider.class).set(CookieType.IDENTITY, encoded, maxAge);
 
@@ -870,7 +870,7 @@ public class AuthenticationManager {
 
         // THIS SHOULD NOT BE A HTTPONLY COOKIE!  It is used for OpenID Connect Iframe Session support!
         // Max age should be set to the max lifespan of the session as it's used to invalidate old-sessions on re-login
-        int sessionCookieMaxAge = session.isRememberMe() && realm.getSsoSessionMaxLifespanRememberMe() > 0 ? realm.getSsoSessionMaxLifespanRememberMe() : realm.getSsoSessionMaxLifespan();
+        int sessionCookieMaxAge = session.isRememberMe() && SessionExpirationUtils.getSsoSessionMaxLifespanRememberMe(realm, session, keycloakSession) > 0 ? SessionExpirationUtils.getSsoSessionMaxLifespanRememberMe(realm, session, keycloakSession) : SessionExpirationUtils.getSsoSessionMaxLifespan(realm, session, keycloakSession);
         keycloakSession.getProvider(CookieProvider.class).set(CookieType.SESSION, sessionCookieValue, sessionCookieMaxAge);
     }
 

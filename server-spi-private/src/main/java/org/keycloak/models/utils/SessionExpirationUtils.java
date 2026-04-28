@@ -20,7 +20,12 @@ import java.util.concurrent.TimeUnit;
 
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
+import org.keycloak.models.UserSessionModel;
+import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.utils.StringUtil;
 
@@ -184,6 +189,81 @@ public class SessionExpirationUtils {
             idle = Constants.DEFAULT_OFFLINE_SESSION_IDLE_TIMEOUT;
         }
         return idle;
+    }
+
+    /**
+     * Gets the SSO session max lifespan, preferring organization-specific value if available.
+     * @param realm The realm model
+     * @param userSession The user session (may be null)
+     * @param session The keycloak session
+     * @return The SSO session max lifespan in seconds
+     */
+    public static int getSsoSessionMaxLifespan(RealmModel realm, UserSessionModel userSession, KeycloakSession session) {
+        OrganizationModel org = getOrganizationForSession(userSession, session);
+        if (org != null && org.getSessionMaxLifespan() > 0) {
+            return org.getSessionMaxLifespan();
+        }
+        return getSsoSessionMaxLifespan(realm);
+    }
+
+    /**
+     * Gets the SSO session idle timeout, preferring organization-specific value if available.
+     * @param realm The realm model
+     * @param userSession The user session (may be null)
+     * @param session The keycloak session
+     * @return The SSO session idle timeout in seconds
+     */
+    public static int getSsoSessionIdleTimeout(RealmModel realm, UserSessionModel userSession, KeycloakSession session) {
+        OrganizationModel org = getOrganizationForSession(userSession, session);
+        if (org != null && org.getSessionIdleTimeout() > 0) {
+            return org.getSessionIdleTimeout();
+        }
+        return getSsoSessionIdleTimeout(realm);
+    }
+
+    /**
+     * Gets the SSO session max lifespan for remember me, preferring organization-specific value if available.
+     * @param realm The realm model
+     * @param userSession The user session (may be null)
+     * @param session The keycloak session
+     * @return The SSO session max lifespan for remember me in seconds
+     */
+    public static int getSsoSessionMaxLifespanRememberMe(RealmModel realm, UserSessionModel userSession, KeycloakSession session) {
+        OrganizationModel org = getOrganizationForSession(userSession, session);
+        if (org != null && org.getSessionMaxLifespanRememberMe() > 0) {
+            return org.getSessionMaxLifespanRememberMe();
+        }
+        return realm.getSsoSessionMaxLifespanRememberMe();
+    }
+
+    /**
+     * Gets the SSO session idle timeout for remember me, preferring organization-specific value if available.
+     * @param realm The realm model
+     * @param userSession The user session (may be null)
+     * @param session The keycloak session
+     * @return The SSO session idle timeout for remember me in seconds
+     */
+    public static int getSsoSessionIdleTimeoutRememberMe(RealmModel realm, UserSessionModel userSession, KeycloakSession session) {
+        OrganizationModel org = getOrganizationForSession(userSession, session);
+        if (org != null && org.getSessionIdleTimeoutRememberMe() > 0) {
+            return org.getSessionIdleTimeoutRememberMe();
+        }
+        return realm.getSsoSessionIdleTimeoutRememberMe();
+    }
+
+    /**
+     * Retrieves the organization for a user session.
+     * @param userSession The user session
+     * @param session The keycloak session
+     * @return The organization model if found, null otherwise
+     */
+    private static OrganizationModel getOrganizationForSession(UserSessionModel userSession, KeycloakSession session) {
+        if (userSession == null) return null;
+        OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
+        if (orgProvider == null) return null;
+        UserModel user = userSession.getUser();
+        if (user == null) return null;
+        return orgProvider.getByMember(user).findFirst().orElse(null);
     }
 
     private static long getClientAttributeTimeout(ClientModel client, String attr) {

@@ -1104,7 +1104,7 @@ public class TokenManager {
         ClientScopeModel offlineAccessScope = KeycloakModelUtils.getClientScopeByName(realm, OAuth2Constants.OFFLINE_ACCESS);
         boolean offlineTokenRequested = offlineAccessScope == null ? false
                 : clientSessionCtx.getClientScopeIds().contains(offlineAccessScope.getId());
-        token.exp(getTokenExpiration(realm, client, userSession, clientSession, offlineTokenRequested));
+        token.exp(getTokenExpiration(session, realm, client, userSession, clientSession, offlineTokenRequested));
 
         // Tracing
         var tracing = session.getProvider(TracingProvider.class);
@@ -1118,7 +1118,7 @@ public class TokenManager {
         return token;
     }
 
-    private Long getTokenExpiration(RealmModel realm, ClientModel client, UserSessionModel userSession,
+    private Long getTokenExpiration(KeycloakSession session, RealmModel realm, ClientModel client, UserSessionModel userSession,
         AuthenticatedClientSessionModel clientSession, boolean offlineTokenRequested) {
         boolean implicitFlow = false;
         String responseType = clientSession.getNote(OIDCLoginProtocol.RESPONSE_TYPE_PARAM);
@@ -1142,9 +1142,9 @@ public class TokenManager {
         long expiration;
         if (tokenLifespan == -1) {
             expiration = TimeUnit.SECONDS.toMillis(userSession.getStarted() +
-                    (userSession.isRememberMe() && realm.getSsoSessionMaxLifespanRememberMe() > 0
-                            ? realm.getSsoSessionMaxLifespanRememberMe()
-                            : realm.getSsoSessionMaxLifespan()));
+                    (userSession.isRememberMe() && SessionExpirationUtils.getSsoSessionMaxLifespanRememberMe(realm, userSession, session) > 0
+                            ? SessionExpirationUtils.getSsoSessionMaxLifespanRememberMe(realm, userSession, session)
+                            : SessionExpirationUtils.getSsoSessionMaxLifespan(realm, userSession, session)));
         } else {
             expiration = Time.currentTimeMillis() + TimeUnit.SECONDS.toMillis(tokenLifespan);
         }

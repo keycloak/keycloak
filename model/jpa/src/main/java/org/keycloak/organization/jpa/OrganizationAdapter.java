@@ -201,7 +201,6 @@ public final class OrganizationAdapter implements OrganizationModel, JpaModel<Or
             }
         }
 
-        // create the remaining domains.
         for (OrganizationDomainModel model : modelMap.values()) {
             OrganizationDomainEntity domainEntity = new OrganizationDomainEntity();
             domainEntity.setId(KeycloakModelUtils.generateId());
@@ -264,6 +263,50 @@ public final class OrganizationAdapter implements OrganizationModel, JpaModel<Or
 
     private OrganizationDomainModel toModel(OrganizationDomainEntity entity) {
         return new OrganizationDomainModel(entity.getName(), entity.isVerified());
+    }
+
+    @Override
+        public Integer getSessionIdleTimeout() {
+        Integer v = entity.getSessionIdleTimeout();
+        return v != null ? v : -1;
+    }
+
+    @Override
+    public void setSessionIdleTimeout(Integer timeout) {
+        entity.setSessionIdleTimeout(timeout);
+    }
+
+    @Override
+    public Integer getSessionMaxLifespan() {
+        Integer v = entity.getSessionMaxLifespan();
+        return v != null ? v : -1;
+    }
+
+    @Override
+    public void setSessionMaxLifespan(Integer timeout) {
+        entity.setSessionMaxLifespan(timeout);
+    }
+
+    @Override
+    public Integer getSessionIdleTimeoutRememberMe() {
+        Integer v = entity.getSessionIdleTimeoutRememberMe();
+        return v != null ? v : -1;
+    }
+
+    @Override
+    public void setSessionIdleTimeoutRememberMe(Integer timeout) {
+        entity.setSessionIdleTimeoutRememberMe(timeout);
+    }
+
+    @Override
+    public Integer getSessionMaxLifespanRememberMe() {
+        Integer v = entity.getSessionMaxLifespanRememberMe();
+        return v != null ? v : -1;
+    }
+
+    @Override
+    public void setSessionMaxLifespanRememberMe(Integer timeout) {
+        entity.setSessionMaxLifespanRememberMe(timeout);
     }
 
     /**
