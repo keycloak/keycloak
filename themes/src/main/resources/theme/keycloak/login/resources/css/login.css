@@ -127,6 +127,10 @@ div.kc-logo-text span {
     padding-top: 8px;
 }
 
+#kc-form-webauthn {
+    gap: 0.875rem;
+}
+
 #kc-form-webauthn .select-auth-box-parent {
     pointer-events: none;
 }

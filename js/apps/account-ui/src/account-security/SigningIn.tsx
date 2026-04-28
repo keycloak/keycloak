@@ -103,14 +103,48 @@ export const SigningIn = () => {
     const maxWidth = {
       "--pf-v5-u-max-width--MaxWidth": "300px",
     } as CSSProperties;
+    const icon = credMetadata.iconLight || credMetadata.iconDark;
+    const authenticatorProvider = credMetadata.infoProperties?.find(
+      (p) => p.key === "webauthn-authenticator-provider",
+    )?.parameters?.[0];
     const items = [
+      ...(icon
+        ? [
+            <DataListCell
+              key="icon"
+              data-testrole="icon"
+              className="pf-v5-c-data-list__cell pf-m-icon pf-v5-u-display-flex pf-v5-u-align-items-center pf-v5-u-pt-0"
+            >
+              <picture>
+                {credMetadata.iconDark && (
+                  <source
+                    srcSet={credMetadata.iconDark}
+                    media="(prefers-color-scheme: dark)"
+                  />
+                )}
+                <img
+                  src={icon}
+                  alt=""
+                  width="40"
+                  height="40"
+                  style={{ maxWidth: "none" }}
+                />
+              </picture>
+            </DataListCell>,
+          ]
+        : []),
       <DataListCell
         key="title"
         data-testrole="label"
-        className="pf-v5-u-max-width"
+        className="pf-v5-u-max-width pf-v5-u-pt-0"
         style={maxWidth}
       >
-        {t(credential.userLabel) || t(credential.type as TFuncKey)}
+        <div>{t(credential.userLabel) || t(credential.type as TFuncKey)}</div>
+        {authenticatorProvider && (
+          <div className="pf-v5-u-color-200 pf-v5-u-font-size-sm">
+            {authenticatorProvider}
+          </div>
+        )}
       </DataListCell>,
     ];
 
@@ -119,6 +153,7 @@ export const SigningIn = () => {
         <DataListCell
           key={"created" + credential.id}
           data-testrole="created-at"
+          className="pf-v5-u-pt-0"
         >
           <Trans
             i18nKey="credentialCreatedAt"
@@ -170,14 +205,21 @@ export const SigningIn = () => {
                       "2xl": "15ch",
                     }}
                   >
-                    {credMetadata.infoProperties.map((prop) => (
-                      <DescriptionListGroup key={prop.key}>
-                        <DescriptionListTerm>{t(prop.key)}</DescriptionListTerm>
-                        <DescriptionListDescription>
-                          {prop.parameters ? prop.parameters[0] : ""}
-                        </DescriptionListDescription>
-                      </DescriptionListGroup>
-                    ))}
+                    {credMetadata.infoProperties
+                      .filter(
+                        (prop) =>
+                          prop.key !== "webauthn-authenticator-provider",
+                      )
+                      .map((prop) => (
+                        <DescriptionListGroup key={prop.key}>
+                          <DescriptionListTerm>
+                            {t(prop.key)}
+                          </DescriptionListTerm>
+                          <DescriptionListDescription>
+                            {prop.parameters ? prop.parameters[0] : ""}
+                          </DescriptionListDescription>
+                        </DescriptionListGroup>
+                      ))}
                   </DescriptionList>
                 </SplitItem>
               </Split>
@@ -290,7 +332,7 @@ export const SigningIn = () => {
                     <DataListItem key={meta.credential.id}>
                       <DataListItemRow id={`cred-${meta.credential.id}`}>
                         <DataListItemCells
-                          className="pf-v5-u-py-0"
+                          className="pf-v5-u-py-0 pf-v5-u-align-items-center"
                           dataListCells={[
                             ...credentialRowCells(meta),
                             <DataListAction
