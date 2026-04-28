@@ -48,6 +48,7 @@ import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AbstractChangeImportedUserPasswordsTest;
 import org.keycloak.testsuite.ActionURIUtils;
+import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.pages.AppPage;
@@ -884,10 +885,15 @@ public class MultipleTabsLoginTest extends AbstractChangeImportedUserPasswordsTe
             tabUtil.closeTab(1);
             assertThat(tabUtil.getCountOfTabs(), Matchers.equalTo(1));
 
-            //replace clientData param injecting a different redirect uri
+            // Replace clientData param injecting:
+            // A different redirect uri
+            // response_type=token
+            // response_mode=query
             String currentClientDataString = ActionURIUtils.parseQueryParamsFromActionURI(oauth.getDriver().getCurrentUrl()).get(CLIENT_DATA);
             ClientData clientData = ClientData.decodeClientDataFromParameter(currentClientDataString);
             clientData.setRedirectUri(redirectUriInject);
+            clientData.setResponseType(OIDCResponseType.TOKEN);
+            clientData.setResponseMode(OIDCResponseMode.QUERY.value());
 
             String injectedUrl = UriBuilder.fromUri(oauth.getDriver().getCurrentUrl())
                     .replaceQueryParam(CLIENT_DATA, clientData.encode())
@@ -896,14 +902,89 @@ public class MultipleTabsLoginTest extends AbstractChangeImportedUserPasswordsTe
             oauth.getDriver().navigate().to(injectedUrl);
 
             loginPage.assertCurrent();
-            Assertions.assertEquals("Your login attempt timed out. Login will start from the beginning.", loginPage.getError());
+            Assert.assertEquals("Your login attempt timed out. Login will start from the beginning.", loginPage.getError());
             events.clear();
 
             loginPage.assertCurrent();
             loginSuccessAndDoRequiredActions();
 
-            //injected redirected url should be ignored
-            Assertions.assertTrue(driver.getCurrentUrl().startsWith(redirectUri2));
+            String finalUrl = driver.getCurrentUrl();
+
+            // Verify injected redirect_uri was ignored (should use redirectUri2 from tab2)
+            Assert.assertTrue(finalUrl.startsWith(redirectUri2), "Injected redirect_uri should be ignored");
+
+            Assert.assertTrue(finalUrl.contains("code="));
+            Assert.assertFalse(finalUrl.contains("access_token="));
+        }
+    }
+
+    @Test
+    public void testInjectValidRedirectUriButIgnoreResponseTypeAndMode() throws IOException {
+
+        try (BrowserTabUtil tabUtil = BrowserTabUtil.getInstanceAndSetEnv(driver)) {
+
+            String redirectUri1 = String.format("%s/auth/realms/master/app/auth/suffix1", getAuthServerContextRoot());
+            String redirectUri2 = String.format("%s/auth/realms/master/app/auth/suffix2", getAuthServerContextRoot());
+            String validRedirectUriInject = String.format("%s/auth/realms/master/app/auth/suffix12", getAuthServerContextRoot());
+
+            //open tab 1 with redirect uri 1
+            assertThat(tabUtil.getCountOfTabs(), Matchers.is(1));
+            oauth.redirectUri(redirectUri1);
+            oauth.openLoginForm();
+            loginPage.assertCurrent();
+            getLogger().info("URL in tab1: " + driver.getCurrentUrl());
+
+            //login with wrong credentials to move to authenticate page with clientData param
+            loginPage.login("wrong", "wrong");
+
+            //open tab 2
+            oauth.redirectUri(redirectUri2);
+            tabUtil.newTab(oauth.loginForm().build());
+            assertThat(tabUtil.getCountOfTabs(), Matchers.equalTo(2));
+            loginPage.assertCurrent();
+            getLogger().info("URL in tab2: " + driver.getCurrentUrl());
+
+            // Wait until authentication session expires
+            timeOffSet.set(7200000);
+
+            //triggers the postponed function in authChecker.js to check if the auth session cookie has changed
+            WaitUtils.pause(2000);
+
+            // Go back to tab1
+            tabUtil.closeTab(1);
+            assertThat(tabUtil.getCountOfTabs(), Matchers.equalTo(1));
+
+            // Replace clientData param injecting:
+            // A VALID redirect uri (this one will be accepted)
+            // response_type=token
+            // response_mode=fragment
+            String currentClientDataString = ActionURIUtils.parseQueryParamsFromActionURI(oauth.getDriver().getCurrentUrl()).get(CLIENT_DATA);
+            ClientData clientData = ClientData.decodeClientDataFromParameter(currentClientDataString);
+            clientData.setRedirectUri(validRedirectUriInject);
+            clientData.setResponseType(OIDCResponseType.TOKEN);
+            clientData.setResponseMode(OIDCResponseMode.FRAGMENT.value());
+
+            String injectedUrl = UriBuilder.fromUri(oauth.getDriver().getCurrentUrl())
+                    .replaceQueryParam(CLIENT_DATA, clientData.encode())
+                    .build().toString();
+
+            oauth.getDriver().navigate().to(injectedUrl);
+
+            loginPage.assertCurrent();
+            Assert.assertEquals("Your login attempt timed out. Login will start from the beginning.", loginPage.getError());
+            events.clear();
+
+            loginPage.assertCurrent();
+            loginSuccessAndDoRequiredActions();
+
+            String finalUrl = driver.getCurrentUrl();
+
+            // Verify injected redirect_uri WAS accepted (valid redirect_uri)
+            Assert.assertTrue(finalUrl.startsWith(validRedirectUriInject), "Injected valid redirect_uri should be accepted");
+
+            // Verify response_type and response_mode were IGNORED even though redirect_uri was accepted
+            Assert.assertTrue(finalUrl.contains("code="));
+            Assert.assertFalse(finalUrl.contains("access_token="));
         }
     }
 
