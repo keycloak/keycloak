@@ -70,6 +70,8 @@ public class OID4VCConstants {
     public static final String OPENID_CREDENTIAL = "openid_credential";
     public static final String CREDENTIAL_IDENTIFIERS = "credential_identifiers";
     public static final String CREDENTIAL_CONFIGURATION_ID = "credential_configuration_id";
+    public static final String CRYPTOGRAPHIC_BINDING_METHOD_JWK = "jwk";
+    public static final String CRYPTOGRAPHIC_BINDING_METHOD_COSE_KEY = "cose_key";
 
     // OID4VP - https://openid.net/specs/openid-4-verifiable-presentations-1_0.html
     public static final String VP_TOKEN = "vp_token";
