@@ -27,3 +27,5 @@ org.keycloak.storage.ldap.mappers.msad.MSADUserAccountControlStorageMapperFactor
 org.keycloak.storage.ldap.mappers.msadlds.MSADLDSUserAccountControlStorageMapperFactory
 org.keycloak.storage.ldap.mappers.UserAttributeLDAPStorageMapperFactory
 org.keycloak.storage.ldap.mappers.CertificateLDAPStorageMapperFactory
+org.keycloak.storage.ldap.mappers.RequiredActionLDAPGroupStorageMapperFactory
+
