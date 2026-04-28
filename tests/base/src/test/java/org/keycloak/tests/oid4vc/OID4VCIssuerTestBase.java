@@ -9,6 +9,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.cert.Certificate;
+import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -33,6 +34,7 @@ import org.keycloak.common.util.KeyUtils;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.common.util.SecretGenerator;
+import org.keycloak.common.util.Time;
 import org.keycloak.constants.OID4VCIConstants;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
@@ -126,6 +128,13 @@ public abstract class OID4VCIssuerTestBase {
     public static final String jwtTypeCredentialConfigurationIdName = "jwt-credential-config-id";
     public static final String minimalJwtTypeCredentialScopeName = "vc-with-minimal-config";
     public static final String minimalJwtTypeCredentialConfigurationIdName = "vc-with-minimal-config-id";
+
+    public static final String CONTEXT_URL = "https://www.w3.org/2018/credentials/v1";
+    protected static final URI TEST_DID = ISSUER_DID;
+    protected static final List<String> TEST_TYPES = List.of("VerifiableCredential");
+    protected static final Instant TEST_EXPIRATION_DATE = Instant.ofEpochMilli(Time.currentTimeMillis())
+            .plus(365, ChronoUnit.DAYS)
+            .truncatedTo(ChronoUnit.SECONDS);
 
     @InjectRealm(config = VCTestRealmConfig.class)
     protected ManagedRealm testRealm;
