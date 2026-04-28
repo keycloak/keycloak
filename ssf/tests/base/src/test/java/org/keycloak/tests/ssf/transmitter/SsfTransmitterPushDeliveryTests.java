@@ -46,6 +46,7 @@ import org.keycloak.testframework.annotations.InjectSimpleHttp;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
+import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
@@ -571,37 +572,49 @@ public class SsfTransmitterPushDeliveryTests {
             // Test user used by the password grant + logout flow in each
             // test. Creating a password grant for this user implicitly
             // creates a user session that the subsequent logout terminates.
-            UserBuilder tester = realm.addUser(TEST_USER);
-            tester.email(TEST_USER + "@local.test");
-            tester.firstName("Theo");
-            tester.lastName("Tester");
-            tester.enabled(true);
-            tester.password(TEST_PASSWORD);
+            realm.users(
+                    UserBuilder.create(TEST_USER)
+                            .email(TEST_USER + "@local.test")
+                            .firstName("Theo")
+                            .lastName("Tester")
+                            .enabled(true)
+                            .password(TEST_PASSWORD)
+                            .build()
+            );
 
-            realm.addClient(RECEIVER_SSF)
-                    .secret(RECEIVER_SSF_SECRET)
-                    .serviceAccountsEnabled(true)
-                    .directAccessGrantsEnabled(false)
-                    .publicClient(false)
-                    .attribute(ClientStreamStore.SSF_ENABLED_KEY, "true")
-                    .attribute(ClientStreamStore.SSF_DEFAULT_SUBJECTS_KEY, "ALL");
+            realm.clients(
+                    ClientBuilder.create(RECEIVER_SSF)
+                            .secret(RECEIVER_SSF_SECRET)
+                            .serviceAccountsEnabled(true)
+                            .directAccessGrantsEnabled(false)
+                            .publicClient(false)
+                            .attribute(ClientStreamStore.SSF_ENABLED_KEY, "true")
+                            .attribute(ClientStreamStore.SSF_DEFAULT_SUBJECTS_KEY, "ALL")
+                            .build()
+            );
 
-            realm.addClient(RECEIVER_SSE_CAEP)
-                    .secret(RECEIVER_SSE_CAEP_SECRET)
-                    .serviceAccountsEnabled(true)
-                    .directAccessGrantsEnabled(false)
-                    .publicClient(false)
-                    .attribute(ClientStreamStore.SSF_ENABLED_KEY, "true")
-                    .attribute(ClientStreamStore.SSF_DEFAULT_SUBJECTS_KEY, "ALL")
-                    .attribute(ClientStreamStore.SSF_PROFILE_KEY, SsfProfile.SSE_CAEP.name());
+            realm.clients(
+                    ClientBuilder.create(RECEIVER_SSE_CAEP)
+                            .secret(RECEIVER_SSE_CAEP_SECRET)
+                            .serviceAccountsEnabled(true)
+                            .directAccessGrantsEnabled(false)
+                            .publicClient(false)
+                            .attribute(ClientStreamStore.SSF_ENABLED_KEY, "true")
+                            .attribute(ClientStreamStore.SSF_DEFAULT_SUBJECTS_KEY, "ALL")
+                            .attribute(ClientStreamStore.SSF_PROFILE_KEY, SsfProfile.SSE_CAEP.name())
+                            .build()
+            );
 
-            realm.addClient(RECEIVER_CRED_ONLY)
-                    .secret(RECEIVER_CRED_ONLY_SECRET)
-                    .serviceAccountsEnabled(true)
-                    .directAccessGrantsEnabled(false)
-                    .publicClient(false)
-                    .attribute(ClientStreamStore.SSF_ENABLED_KEY, "true")
-                    .attribute(ClientStreamStore.SSF_DEFAULT_SUBJECTS_KEY, "ALL");
+            realm.clients(
+                    ClientBuilder.create(RECEIVER_CRED_ONLY)
+                            .secret(RECEIVER_CRED_ONLY_SECRET)
+                            .serviceAccountsEnabled(true)
+                            .directAccessGrantsEnabled(false)
+                            .publicClient(false)
+                            .attribute(ClientStreamStore.SSF_ENABLED_KEY, "true")
+                            .attribute(ClientStreamStore.SSF_DEFAULT_SUBJECTS_KEY, "ALL")
+                            .build()
+            );
 
             return realm;
         }

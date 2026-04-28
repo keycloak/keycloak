@@ -29,6 +29,7 @@ import org.keycloak.testframework.annotations.InjectKeycloakUrls;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.InjectSimpleHttp;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
@@ -917,28 +918,37 @@ public class SsfTransmitterStreamManagementTests {
             // admin REST API from a @BeforeEach hook instead of declaring
             // them here as optionalClientScopes(...).
 
-            realm.addClient(RECEIVER_RW)
-                    .secret(RECEIVER_RW_SECRET)
-                    .serviceAccountsEnabled(true)
-                    .directAccessGrantsEnabled(false)
-                    .publicClient(false)
-                    .attribute(ClientStreamStore.SSF_ENABLED_KEY, "true");
+            realm.clients(
+                    ClientBuilder.create(RECEIVER_RW)
+                            .secret(RECEIVER_RW_SECRET)
+                            .serviceAccountsEnabled(true)
+                            .directAccessGrantsEnabled(false)
+                            .publicClient(false)
+                            .attribute(ClientStreamStore.SSF_ENABLED_KEY, "true")
+                            .build()
+            );
 
-            realm.addClient(RECEIVER_RO)
-                    .secret(RECEIVER_RO_SECRET)
-                    .serviceAccountsEnabled(true)
-                    .directAccessGrantsEnabled(false)
-                    .publicClient(false)
-                    .attribute(ClientStreamStore.SSF_ENABLED_KEY, "true");
+            realm.clients(
+                    ClientBuilder.create(RECEIVER_RO)
+                            .secret(RECEIVER_RO_SECRET)
+                            .serviceAccountsEnabled(true)
+                            .directAccessGrantsEnabled(false)
+                            .publicClient(false)
+                            .attribute(ClientStreamStore.SSF_ENABLED_KEY, "true")
+                            .build()
+            );
 
-            realm.addClient(RECEIVER_SCOPED)
-                    .secret(RECEIVER_SCOPED_SECRET)
-                    .serviceAccountsEnabled(true)
-                    .directAccessGrantsEnabled(false)
-                    .publicClient(false)
-                    .attribute(ClientStreamStore.SSF_ENABLED_KEY, "true")
-                    .attribute(ClientStreamStore.SSF_STREAM_SUPPORTED_EVENTS_KEY,
-                            CaepSessionRevoked.class.getSimpleName());
+            realm.clients(
+                    ClientBuilder.create(RECEIVER_SCOPED)
+                            .secret(RECEIVER_SCOPED_SECRET)
+                            .serviceAccountsEnabled(true)
+                            .directAccessGrantsEnabled(false)
+                            .publicClient(false)
+                            .attribute(ClientStreamStore.SSF_ENABLED_KEY, "true")
+                            .attribute(ClientStreamStore.SSF_STREAM_SUPPORTED_EVENTS_KEY,
+                                    CaepSessionRevoked.class.getSimpleName())
+                            .build()
+            );
 
             return realm;
         }

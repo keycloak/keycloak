@@ -35,6 +35,7 @@ import org.keycloak.testframework.annotations.InjectSimpleHttp;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
+import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
@@ -466,32 +467,41 @@ public class SsfSubjectRemovalGraceTests {
             realm.adminEventsEnabled(true);
             realm.eventsListeners("jboss-logging", "ssf-events");
 
-            UserBuilder tester = realm.addUser(TEST_USER);
-            tester.email(TEST_EMAIL);
-            tester.firstName("Grace");
-            tester.lastName("Tester");
-            tester.enabled(true);
-            tester.password(TEST_PASSWORD);
+            realm.users(
+                    UserBuilder.create(TEST_USER)
+                            .email(TEST_EMAIL)
+                            .firstName("Grace")
+                            .lastName("Tester")
+                            .enabled(true)
+                            .password(TEST_PASSWORD)
+                            .build()
+            );
 
             // Receiver A: inherits the transmitter-wide grace.
-            realm.addClient(RECEIVER_GRACE)
-                    .secret(RECEIVER_GRACE_SECRET)
-                    .serviceAccountsEnabled(true)
-                    .directAccessGrantsEnabled(false)
-                    .publicClient(false)
-                    .attribute(ClientStreamStore.SSF_ENABLED_KEY, "true")
-                    .attribute(ClientStreamStore.SSF_DEFAULT_SUBJECTS_KEY, "NONE");
+            realm.clients(
+                    ClientBuilder.create(RECEIVER_GRACE)
+                            .secret(RECEIVER_GRACE_SECRET)
+                            .serviceAccountsEnabled(true)
+                            .directAccessGrantsEnabled(false)
+                            .publicClient(false)
+                            .attribute(ClientStreamStore.SSF_ENABLED_KEY, "true")
+                            .attribute(ClientStreamStore.SSF_DEFAULT_SUBJECTS_KEY, "NONE")
+                            .build()
+            );
 
             // Receiver B: explicit per-receiver override of 0 — opts
             // OUT of the transmitter-wide grace.
-            realm.addClient(RECEIVER_NO_GRACE)
-                    .secret(RECEIVER_NO_GRACE_SECRET)
-                    .serviceAccountsEnabled(true)
-                    .directAccessGrantsEnabled(false)
-                    .publicClient(false)
-                    .attribute(ClientStreamStore.SSF_ENABLED_KEY, "true")
-                    .attribute(ClientStreamStore.SSF_DEFAULT_SUBJECTS_KEY, "NONE")
-                    .attribute(ClientStreamStore.SSF_SUBJECT_REMOVAL_GRACE_SECONDS_KEY, "0");
+            realm.clients(
+                    ClientBuilder.create(RECEIVER_NO_GRACE)
+                            .secret(RECEIVER_NO_GRACE_SECRET)
+                            .serviceAccountsEnabled(true)
+                            .directAccessGrantsEnabled(false)
+                            .publicClient(false)
+                            .attribute(ClientStreamStore.SSF_ENABLED_KEY, "true")
+                            .attribute(ClientStreamStore.SSF_DEFAULT_SUBJECTS_KEY, "NONE")
+                            .attribute(ClientStreamStore.SSF_SUBJECT_REMOVAL_GRACE_SECONDS_KEY, "0")
+                            .build()
+            );
 
             return realm;
         }

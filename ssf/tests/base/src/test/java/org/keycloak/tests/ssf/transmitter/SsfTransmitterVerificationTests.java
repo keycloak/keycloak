@@ -38,6 +38,7 @@ import org.keycloak.testframework.annotations.InjectKeycloakUrls;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.InjectSimpleHttp;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
@@ -396,24 +397,30 @@ public class SsfTransmitterVerificationTests {
             // Default verification trigger is RECEIVER_INITIATED; this client
             // exercises the /verify endpoint and the min verification interval
             // enforcement.
-            realm.addClient(RECEIVER_RCV_INITIATED)
-                    .secret(RECEIVER_RCV_INITIATED_SECRET)
-                    .serviceAccountsEnabled(true)
-                    .directAccessGrantsEnabled(false)
-                    .publicClient(false)
-                    .attribute(ClientStreamStore.SSF_ENABLED_KEY, "true");
+            realm.clients(
+                    ClientBuilder.create(RECEIVER_RCV_INITIATED)
+                            .secret(RECEIVER_RCV_INITIATED_SECRET)
+                            .serviceAccountsEnabled(true)
+                            .directAccessGrantsEnabled(false)
+                            .publicClient(false)
+                            .attribute(ClientStreamStore.SSF_ENABLED_KEY, "true")
+                            .build()
+            );
 
             // TRANSMITTER_INITIATED fires an automatic verification push after
             // a short delay following stream creation.
-            realm.addClient(RECEIVER_TXMIT_INITIATED)
-                    .secret(RECEIVER_TXMIT_INITIATED_SECRET)
-                    .serviceAccountsEnabled(true)
-                    .directAccessGrantsEnabled(false)
-                    .publicClient(false)
-                    .attribute(ClientStreamStore.SSF_ENABLED_KEY, "true")
-                    .attribute(ClientStreamStore.SSF_VERIFICATION_TRIGGER_KEY,
-                            VerificationTrigger.TRANSMITTER_INITIATED.name())
-                    .attribute(ClientStreamStore.SSF_VERIFICATION_DELAY_MILLIS_KEY, "200");
+            realm.clients(
+                    ClientBuilder.create(RECEIVER_TXMIT_INITIATED)
+                            .secret(RECEIVER_TXMIT_INITIATED_SECRET)
+                            .serviceAccountsEnabled(true)
+                            .directAccessGrantsEnabled(false)
+                            .publicClient(false)
+                            .attribute(ClientStreamStore.SSF_ENABLED_KEY, "true")
+                            .attribute(ClientStreamStore.SSF_VERIFICATION_TRIGGER_KEY,
+                                    VerificationTrigger.TRANSMITTER_INITIATED.name())
+                            .attribute(ClientStreamStore.SSF_VERIFICATION_DELAY_MILLIS_KEY, "200")
+                            .build()
+            );
 
             return realm;
         }

@@ -35,6 +35,7 @@ import org.keycloak.testframework.annotations.InjectSimpleHttp;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
+import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
@@ -365,20 +366,26 @@ public class SsfSubjectManagementTests {
             realm.adminEventsEnabled(true);
             realm.eventsListeners("jboss-logging", "ssf-events");
 
-            UserBuilder tester = realm.addUser(TEST_USER);
-            tester.email(TEST_EMAIL);
-            tester.firstName("Subject");
-            tester.lastName("Tester");
-            tester.enabled(true);
-            tester.password(TEST_PASSWORD);
+            realm.users(
+                    UserBuilder.create(TEST_USER)
+                    .email(TEST_EMAIL)
+                    .firstName("Subject")
+                    .lastName("Tester")
+                    .enabled(true)
+                    .password(TEST_PASSWORD)
+                    .build()
+            );
 
-            realm.addClient(RECEIVER)
+            realm.clients(
+                    ClientBuilder.create(RECEIVER)
                     .secret(RECEIVER_SECRET)
                     .serviceAccountsEnabled(true)
                     .directAccessGrantsEnabled(false)
                     .publicClient(false)
                     .attribute(ClientStreamStore.SSF_ENABLED_KEY, "true")
-                    .attribute(ClientStreamStore.SSF_DEFAULT_SUBJECTS_KEY, "NONE");
+                    .attribute(ClientStreamStore.SSF_DEFAULT_SUBJECTS_KEY, "NONE")
+                    .build()
+            );
 
             return realm;
         }

@@ -42,6 +42,7 @@ import org.keycloak.testframework.annotations.InjectSimpleHttp;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
+import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
@@ -414,25 +415,31 @@ public class SsfTransmitterManualOnlyEventsTests {
             realm.adminEventsEnabled(true);
             realm.eventsListeners("jboss-logging", "ssf-events");
 
-            UserBuilder tester = realm.addUser(TEST_USER);
-            tester.email(TEST_USER + "@local.test");
-            tester.firstName("Mona");
-            tester.lastName("OnlyTester");
-            tester.enabled(true);
-            tester.password(TEST_PASSWORD);
+            realm.users(
+                    UserBuilder.create(TEST_USER)
+                            .email(TEST_USER + "@local.test")
+                            .firstName("Mona")
+                            .lastName("OnlyTester")
+                            .enabled(true)
+                            .password(TEST_PASSWORD)
+                            .build()
+            );
 
-            realm.addClient(RECEIVER)
-                    .secret(RECEIVER_SECRET)
-                    .serviceAccountsEnabled(true)
-                    .directAccessGrantsEnabled(false)
-                    .publicClient(false)
-                    .attribute(ClientStreamStore.SSF_ENABLED_KEY, "true")
-                    // ALL keeps the subject filter out of the picture so
-                    // the only suppression in play is manualOnlyEvents.
-                    .attribute(ClientStreamStore.SSF_DEFAULT_SUBJECTS_KEY, "ALL")
-                    // The headline configuration: session-revoked is
-                    // supported but never auto-emitted.
-                    .attribute(ClientStreamStore.SSF_MANUAL_ONLY_EVENTS_KEY, "CaepSessionRevoked");
+            realm.clients(
+                    ClientBuilder.create(RECEIVER)
+                            .secret(RECEIVER_SECRET)
+                            .serviceAccountsEnabled(true)
+                            .directAccessGrantsEnabled(false)
+                            .publicClient(false)
+                            .attribute(ClientStreamStore.SSF_ENABLED_KEY, "true")
+                            // ALL keeps the subject filter out of the picture so
+                            // the only suppression in play is manualOnlyEvents.
+                            .attribute(ClientStreamStore.SSF_DEFAULT_SUBJECTS_KEY, "ALL")
+                            // The headline configuration: session-revoked is
+                            // supported but never auto-emitted.
+                            .attribute(ClientStreamStore.SSF_MANUAL_ONLY_EVENTS_KEY, "CaepSessionRevoked")
+                            .build()
+            );
 
             return realm;
         }

@@ -38,6 +38,7 @@ import org.keycloak.testframework.annotations.InjectSimpleHttp;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
+import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
@@ -734,59 +735,77 @@ public class SsfTransmitterPollDeliveryTests {
             realm.adminEventsEnabled(true);
             realm.eventsListeners("jboss-logging", "ssf-events");
 
-            UserBuilder tester = realm.addUser(TEST_USER);
-            tester.email(TEST_USER + "@local.test");
-            tester.firstName("Polly");
-            tester.lastName("Tester");
-            tester.enabled(true);
-            tester.password(TEST_PASSWORD);
+            realm.users(
+                    UserBuilder.create(TEST_USER)
+                            .email(TEST_USER + "@local.test")
+                            .firstName("Polly")
+                            .lastName("Tester")
+                            .enabled(true)
+                            .password(TEST_PASSWORD)
+                            .build()
+            );
 
-            UserBuilder unsubscribed = realm.addUser(UNSUBSCRIBED_USER);
-            unsubscribed.email(UNSUBSCRIBED_USER + "@local.test");
-            unsubscribed.firstName("Unsub");
-            unsubscribed.lastName("Tester");
-            unsubscribed.enabled(true);
-            unsubscribed.password(UNSUBSCRIBED_PASSWORD);
+            realm.users(
+                    UserBuilder.create(UNSUBSCRIBED_USER)
+                            .email(UNSUBSCRIBED_USER + "@local.test")
+                            .firstName("Unsub")
+                            .lastName("Tester")
+                            .enabled(true)
+                            .password(UNSUBSCRIBED_PASSWORD)
+                            .build()
+            );
 
             // POLL receiver, default ALL — the dispatcher's subject
             // filter is permissive so happy-path tests don't have to
             // pre-subscribe the test user.
-            realm.addClient(RECEIVER_POLL)
-                    .secret(RECEIVER_POLL_SECRET)
-                    .serviceAccountsEnabled(true)
-                    .directAccessGrantsEnabled(false)
-                    .publicClient(false)
-                    .attribute(ClientStreamStore.SSF_ENABLED_KEY, "true")
-                    .attribute(ClientStreamStore.SSF_DEFAULT_SUBJECTS_KEY, "ALL");
+            realm.clients(
+                    ClientBuilder.create(RECEIVER_POLL)
+                            .secret(RECEIVER_POLL_SECRET)
+                            .serviceAccountsEnabled(true)
+                            .directAccessGrantsEnabled(false)
+                            .publicClient(false)
+                            .attribute(ClientStreamStore.SSF_ENABLED_KEY, "true")
+                            .attribute(ClientStreamStore.SSF_DEFAULT_SUBJECTS_KEY, "ALL")
+                            .build()
+            );
 
             // Second POLL receiver — used only by the cross-receiver
             // ownership tests.
-            realm.addClient(RECEIVER_POLL_OTHER)
-                    .secret(RECEIVER_POLL_OTHER_SECRET)
-                    .serviceAccountsEnabled(true)
-                    .directAccessGrantsEnabled(false)
-                    .publicClient(false)
-                    .attribute(ClientStreamStore.SSF_ENABLED_KEY, "true")
-                    .attribute(ClientStreamStore.SSF_DEFAULT_SUBJECTS_KEY, "ALL");
+            realm.clients(
+                    ClientBuilder.create(RECEIVER_POLL_OTHER)
+                            .secret(RECEIVER_POLL_OTHER_SECRET)
+                            .serviceAccountsEnabled(true)
+                            .directAccessGrantsEnabled(false)
+                            .publicClient(false)
+                            .attribute(ClientStreamStore.SSF_ENABLED_KEY, "true")
+                            .attribute(ClientStreamStore.SSF_DEFAULT_SUBJECTS_KEY, "ALL")
+                            .build()
+            );
 
             // POLL receiver with default_subjects=NONE — used only by
             // the subject-filter test.
-            realm.addClient(RECEIVER_POLL_NONE)
-                    .secret(RECEIVER_POLL_NONE_SECRET)
-                    .serviceAccountsEnabled(true)
-                    .directAccessGrantsEnabled(false)
-                    .publicClient(false)
-                    .attribute(ClientStreamStore.SSF_ENABLED_KEY, "true")
-                    .attribute(ClientStreamStore.SSF_DEFAULT_SUBJECTS_KEY, "NONE");
+            realm.clients(
+                    ClientBuilder.create(RECEIVER_POLL_NONE)
+                            .secret(RECEIVER_POLL_NONE_SECRET)
+                            .serviceAccountsEnabled(true)
+                            .directAccessGrantsEnabled(false)
+                            .publicClient(false)
+                            .attribute(ClientStreamStore.SSF_ENABLED_KEY, "true")
+                            .attribute(ClientStreamStore.SSF_DEFAULT_SUBJECTS_KEY, "NONE")
+                            .build()
+            );
 
             // PUSH receiver — used only by the mixed-delivery test.
-            realm.addClient(RECEIVER_PUSH_MIXED)
-                    .secret(RECEIVER_PUSH_MIXED_SECRET)
-                    .serviceAccountsEnabled(true)
-                    .directAccessGrantsEnabled(false)
-                    .publicClient(false)
-                    .attribute(ClientStreamStore.SSF_ENABLED_KEY, "true")
-                    .attribute(ClientStreamStore.SSF_DEFAULT_SUBJECTS_KEY, "ALL");
+            realm.clients(
+                    ClientBuilder.create(RECEIVER_PUSH_MIXED)
+                            .secret(RECEIVER_PUSH_MIXED_SECRET)
+                            .serviceAccountsEnabled(true)
+                            .directAccessGrantsEnabled(false)
+                            .publicClient(false)
+                            .attribute(ClientStreamStore.SSF_ENABLED_KEY, "true")
+                            .attribute(ClientStreamStore.SSF_DEFAULT_SUBJECTS_KEY, "ALL")
+                            .build()
+            );
 
             return realm;
         }
