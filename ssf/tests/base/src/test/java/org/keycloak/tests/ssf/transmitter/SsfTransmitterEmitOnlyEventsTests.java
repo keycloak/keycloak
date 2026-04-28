@@ -66,17 +66,17 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /**
- * Integration tests for the per-receiver {@code ssf.manualOnlyEvents}
- * gate ({@link SsfTransmitterEventListener#isManualOnlyForStream}).
+ * Integration tests for the per-receiver {@code ssf.emitOnlyEvents}
+ * gate ({@link SsfTransmitterEventListener#isEmitOnlyEventForReceiver}).
  *
  * <p>The gate runs in the native-listener path only — when the listener
  * resolves a Keycloak event into an SSF event whose type appears in the
- * receiver's manual-only set, the token is dropped before it ever
+ * receiver's emit-only set, the token is dropped before it ever
  * reaches the dispatcher / outbox. The synthetic-emit endpoint
  * deliberately bypasses this gate; that's its whole purpose.
  *
  * <p>Tests use a single receiver configured with
- * {@code ssf.manualOnlyEvents=CaepSessionRevoked} and
+ * {@code ssf.emitOnlyEvents=CaepSessionRevoked} and
  * {@code ssf.defaultSubjects=ALL} (so the subject filter doesn't
  * confuse the picture), plus a registered push stream pointing at a
  * mock HTTP receiver. Three branches are exercised:
@@ -91,22 +91,22 @@ import org.junit.jupiter.api.Test;
  *         {@code CaepSessionRevoked} type and the SET arrives at the
  *         mock receiver.</li>
  *     <li><b>Gate is event-type-specific.</b> A credential-update event
- *         (not in the manual-only set) still auto-emits as
+ *         (not in the emit-only set) still auto-emits as
  *         {@code CaepCredentialChange}.</li>
  * </ol>
  */
-@KeycloakIntegrationTest(config = SsfTransmitterManualOnlyEventsTests.ManualOnlyServerConfig.class)
-public class SsfTransmitterManualOnlyEventsTests {
+@KeycloakIntegrationTest(config = SsfTransmitterEmitOnlyEventsTests.EmitOnlyServerConfig.class)
+public class SsfTransmitterEmitOnlyEventsTests {
 
-    static final String RECEIVER = "ssf-receiver-manual-only";
-    static final String RECEIVER_SECRET = "receiver-manual-only-secret";
+    static final String RECEIVER = "ssf-receiver-emit-only";
+    static final String RECEIVER_SECRET = "receiver-emit-only-secret";
 
-    static final String TEST_USER = "manual-only-tester";
+    static final String TEST_USER = "emit-only-tester";
     static final String TEST_PASSWORD = "test";
 
-    static final String PUSH_CONTEXT_PATH = "/ssf/push-manual-only";
+    static final String PUSH_CONTEXT_PATH = "/ssf/push-emit-only";
     static final String MOCK_PUSH_ENDPOINT = "http://127.0.0.1:8500" + PUSH_CONTEXT_PATH;
-    static final String PUSH_AUTH_HEADER = "Bearer dummy-manual-only-receiver";
+    static final String PUSH_AUTH_HEADER = "Bearer dummy-emit-only-receiver";
 
     /**
      * Wait for an expected push. Long enough to give the outbox drainer
@@ -122,7 +122,7 @@ public class SsfTransmitterManualOnlyEventsTests {
      */
     static final long NO_PUSH_WAIT_SECONDS = 3;
 
-    @InjectRealm(config = ManualOnlyRealm.class)
+    @InjectRealm(config = EmitOnlyRealm.class)
     ManagedRealm realm;
 
     @InjectOAuthClient
@@ -180,20 +180,20 @@ public class SsfTransmitterManualOnlyEventsTests {
     }
 
     @Test
-    public void manualOnlyEvent_userLogout_skipsAutoEmit() throws Exception {
-        // The receiver's ssf.manualOnlyEvents contains CaepSessionRevoked
+    public void emitOnlyEvent_userLogout_skipsAutoEmit() throws Exception {
+        // The receiver's ssf.emitOnlyEvents contains CaepSessionRevoked
         // (set via the realm config). A real LOGOUT must therefore not
         // produce any push — the listener drops the token before it can
         // reach the outbox. This is the ASM use case.
         triggerUserLogout();
 
         Assertions.assertNull(pushes.poll(NO_PUSH_WAIT_SECONDS, TimeUnit.SECONDS),
-                "LOGOUT must not auto-emit when the resolved event type is in ssf.manualOnlyEvents");
+                "LOGOUT must not auto-emit when the resolved event type is in ssf.emitOnlyEvents");
     }
 
     @Test
-    public void manualOnlyEvent_syntheticEmit_stillDelivers() throws Exception {
-        // Synthetic emit bypasses the manual-only gate — that's the
+    public void emitOnlyEvent_syntheticEmit_stillDelivers() throws Exception {
+        // Synthetic emit bypasses the emit-only gate — that's the
         // whole point of having both knobs. An admin caller uses the
         // canManage bypass to skip allowEmitEvents / role checks; the
         // gate we care about here is purely event-type based.
@@ -204,7 +204,7 @@ public class SsfTransmitterManualOnlyEventsTests {
             Assertions.assertEquals(200, res.getStatus(),
                     () -> "synthetic emit should succeed; got body: " + safeBody(res));
             Assertions.assertEquals("dispatched", res.asJson().get("status").asText(),
-                    "manualOnlyEvents must not gate the synthetic-emit path");
+                    "emitOnlyEvents must not gate the synthetic-emit path");
         }
 
         String push = pushes.poll(PUSH_WAIT_SECONDS, TimeUnit.SECONDS);
@@ -217,16 +217,16 @@ public class SsfTransmitterManualOnlyEventsTests {
     }
 
     @Test
-    public void nonManualEvent_credentialChange_stillAutoEmits() throws Exception {
+    public void nonEmitOnlyEvent_credentialChange_stillAutoEmits() throws Exception {
         // Sanity check: the gate is event-type-specific. CaepSessionRevoked
-        // is in the manual-only set, but CaepCredentialChange is NOT, so
+        // is in the emit-only set, but CaepCredentialChange is NOT, so
         // a credential-update event must still flow through the listener
         // → mapper → dispatcher → push pipeline as usual.
         triggerCredentialEvent(EventType.UPDATE_CREDENTIAL, "password");
 
         String push = pushes.poll(PUSH_WAIT_SECONDS, TimeUnit.SECONDS);
         Assertions.assertNotNull(push,
-                "credential-change is not in manualOnlyEvents — auto-emit must still fire");
+                "credential-change is not in emitOnlyEvents — auto-emit must still fire");
 
         JsonNode set = decodeSet(push);
         Assertions.assertTrue(set.path("events").has(CaepCredentialChange.TYPE),
@@ -385,7 +385,7 @@ public class SsfTransmitterManualOnlyEventsTests {
 
     // --- config ----------------------------------------------------------
 
-    public static class ManualOnlyServerConfig extends DefaultKeycloakServerConfig {
+    public static class EmitOnlyServerConfig extends DefaultKeycloakServerConfig {
         @Override
         public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
             KeycloakServerConfigBuilder configured = super.configure(config);
@@ -404,11 +404,11 @@ public class SsfTransmitterManualOnlyEventsTests {
         }
     }
 
-    public static class ManualOnlyRealm implements RealmConfig {
+    public static class EmitOnlyRealm implements RealmConfig {
 
         @Override
         public RealmBuilder configure(RealmBuilder realm) {
-            realm.name("ssf-transmitter-manual-only");
+            realm.name("ssf-transmitter-emit-only");
             realm.attribute(Ssf.SSF_TRANSMITTER_ENABLED_KEY, "true");
 
             realm.eventsEnabled(true);
@@ -433,11 +433,11 @@ public class SsfTransmitterManualOnlyEventsTests {
                             .publicClient(false)
                             .attribute(ClientStreamStore.SSF_ENABLED_KEY, "true")
                             // ALL keeps the subject filter out of the picture so
-                            // the only suppression in play is manualOnlyEvents.
+                            // the only suppression in play is emitOnlyEvents.
                             .attribute(ClientStreamStore.SSF_DEFAULT_SUBJECTS_KEY, "ALL")
                             // The headline configuration: session-revoked is
                             // supported but never auto-emitted.
-                            .attribute(ClientStreamStore.SSF_MANUAL_ONLY_EVENTS_KEY, "CaepSessionRevoked")
+                            .attribute(ClientStreamStore.SSF_EMIT_ONLY_EVENTS_KEY, "CaepSessionRevoked")
                             .build()
             );
 
