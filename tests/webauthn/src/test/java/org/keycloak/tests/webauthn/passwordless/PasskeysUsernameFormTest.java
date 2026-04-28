@@ -223,6 +223,33 @@ public class PasskeysUsernameFormTest extends AbstractWebAuthnVirtualTest {
                     .details(WebAuthnConstants.USER_VERIFICATION_CHECKED, "true");
 
             logout();
+            events.clear();
+
+            // set authenticatorAttachment to platform with modal mediation;
+            // no platform authenticator is available so the modal must not be shown
+            managedRealm.updateWithCleanup(r -> r.webAuthnPolicyPasswordlessAuthenticatorAttachment("platform")
+                    .webAuthnPolicyPasswordlessMediation("optional"));
+
+            oAuthClient.openLoginForm();
+
+            loginPage.assertCurrent();
+            MatcherAssert.assertThat(loginPage.getUsernameAutocomplete(), Matchers.is("username webauthn"));
+            MatcherAssert.assertThat(driver.findElement(By.xpath("//form[@id='webauth']")), Matchers.notNullValue());
+
+            // no modal was shown, force login using webauthn link
+            webAuthnLoginPage.clickAuthenticate();
+            Assertions.assertNotNull(oAuthClient.parseLoginResponse().getCode());
+
+            EventAssertion.assertSuccess(events.poll())
+                    .type(EventType.LOGIN)
+                    .hasSessionId()
+                    .userId(user.getId())
+                    .isCodeId()
+                    .details(Details.USERNAME, user.getUsername())
+                    .details(Details.CREDENTIAL_TYPE, WebAuthnCredentialModel.TYPE_PASSWORDLESS)
+                    .details(WebAuthnConstants.USER_VERIFICATION_CHECKED, "true");
+
+            logout();
         }
     }
 
