@@ -22,6 +22,7 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.http.HttpRequest;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.services.cors.Cors;
@@ -29,20 +30,20 @@ import org.keycloak.services.cors.Cors;
 public class RealmsAdminResourcePreflight extends RealmsAdminResource {
 
     private HttpRequest request;
+    private final ClientModel adminConsole;
 
-    public RealmsAdminResourcePreflight(KeycloakSession session, AdminAuth auth, TokenManager tokenManager) {
-        super(session, auth, tokenManager);
-    }
-
-    public RealmsAdminResourcePreflight(KeycloakSession session, AdminAuth auth, TokenManager tokenManager, HttpRequest request) {
+    public RealmsAdminResourcePreflight(KeycloakSession session, AdminAuth auth, TokenManager tokenManager,
+                                        HttpRequest request, ClientModel adminConsole) {
         super(session, auth, tokenManager);
         this.request = request;
+        this.adminConsole = adminConsole;
     }
 
     @Path("{any:.*}")
     @OPTIONS
     public Response preFlight() {
-        return Cors.builder().preflight().allowedMethods("GET", "PUT", "POST", "DELETE").auth().add(Response.ok());
+        return Cors.builder().preflight().allowedMethods("GET", "PUT", "POST", "DELETE").auth()
+                .allowedOrigins(session, adminConsole).add(Response.ok());
     }
 
 }

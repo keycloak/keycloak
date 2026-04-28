@@ -77,6 +77,8 @@ public interface Cors extends Provider {
 
     Cors allowedOrigins(AccessToken token);
 
+    Cors allowedOrigins(AccessToken token, KeycloakSession session, ClientModel fallbackClient);
+
     Cors allowedOrigins(String... allowedOrigins);
 
     Cors allowedOrigins(List<String> allowedOrigins);
