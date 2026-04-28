@@ -16,6 +16,7 @@
  */
 package org.keycloak.authorization.authzen;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -53,8 +54,6 @@ import org.keycloak.util.JsonSerialization;
 
 public class AuthZenResource {
 
-    private static final Response DECISION_FALSE = jakarta.ws.rs.core.Response.ok(new AuthZen.EvaluationResponse(false)).build();
-
     private final KeycloakSession session;
 
     public AuthZenResource(KeycloakSession session) {
@@ -70,6 +69,64 @@ public class AuthZenResource {
         if (token == null) {
             throw new NotAuthorizedException("Bearer");
         }
+        return Response.ok(evaluateSingle(request, token)).build();
+    }
+
+    @POST
+    @Path(AuthZen.EVALUATIONS_PATH)
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response evaluations(AuthZen.EvaluationsRequest request) {
+        AccessToken token = Tokens.getAccessToken(session);
+        if (token == null) {
+            throw new NotAuthorizedException("Bearer");
+        }
+
+        if (request.evaluations() == null || request.evaluations().isEmpty()) {
+            // AuthZen 1.0 Section 7.1
+            // "If an evaluations array is NOT present or is empty, the Access Evaluations Request behaves in a
+            // backwards-compatible manner with the (single) Access Evaluation API Request (Section 6.1)."
+            AuthZen.EvaluationRequest single = new AuthZen.EvaluationRequest(
+                  request.subject(), request.resource(), request.action(), request.context());
+            return Response.ok(evaluateSingle(single, token)).build();
+        }
+
+        AuthZen.EvaluationsSemantic semantic = AuthZen.EvaluationsSemantic.EXECUTE_ALL;
+        if (request.options() != null && request.options().evaluationsSemantic() != null) {
+            semantic = request.options().evaluationsSemantic();
+        }
+
+        List<AuthZen.EvaluationResponse> results = new ArrayList<>(request.evaluations().size());
+        for (AuthZen.EvaluationItem item : request.evaluations()) {
+            AuthZen.EvaluationRequest merged = mergeDefaults(request, item);
+            AuthZen.EvaluationResponse itemResponse = evaluateSingle(merged, token);
+
+            if (semantic == AuthZen.EvaluationsSemantic.DENY_ON_FIRST_DENY && !itemResponse.decision()) {
+                results.add(new AuthZen.EvaluationResponse(false, Map.of("reason", "deny_on_first_deny")));
+                break;
+            }
+
+            results.add(itemResponse);
+
+            if (semantic == AuthZen.EvaluationsSemantic.PERMIT_ON_FIRST_PERMIT && itemResponse.decision()) {
+                break;
+            }
+        }
+        return Response.ok(new AuthZen.EvaluationsResponse(results)).build();
+    }
+
+    private static AuthZen.EvaluationRequest mergeDefaults(AuthZen.EvaluationsRequest defaults, AuthZen.EvaluationItem item) {
+        AuthZen.Subject subject = item.subject() != null ? item.subject() : defaults.subject();
+        AuthZen.Resource resource = item.resource() != null ? item.resource() : defaults.resource();
+        AuthZen.Action action = item.action() != null ? item.action() : defaults.action();
+        Map<String, Object> context = item.context() != null ? item.context() : defaults.context();
+        return new AuthZen.EvaluationRequest(subject, resource, action, context);
+    }
+
+    private AuthZen.EvaluationResponse evaluateSingle(AuthZen.EvaluationRequest request, AccessToken token) {
+        if (request.subject() == null || request.resource() == null || request.action() == null) {
+            return new AuthZen.EvaluationResponse(false);
+        }
 
         RealmModel realm = session.getContext().getRealm();
         AuthorizationProvider authorization = session.getProvider(AuthorizationProvider.class);
@@ -78,7 +135,7 @@ public class AuthZenResource {
         ClientModel client;
         if (request.subject().type() == AuthZen.SubjectType.CLIENT) {
             if (!request.subject().id().equals(token.getIssuedFor())) {
-                return DECISION_FALSE;
+                return new AuthZen.EvaluationResponse(false);
             }
             client = realm.getClientByClientId(request.subject().id());
         } else {
@@ -86,34 +143,34 @@ public class AuthZenResource {
         }
 
         if (client == null || !client.isEnabled()) {
-            return DECISION_FALSE;
+            return new AuthZen.EvaluationResponse(false);
         }
 
         ResourceServer resourceServer = storeFactory.getResourceServerStore().findByClient(client);
         if (resourceServer == null) {
-            return DECISION_FALSE;
+            return new AuthZen.EvaluationResponse(false);
         }
 
         Identity identity = resolveSubjectIdentity(realm, request);
         if (identity == null) {
-            return DECISION_FALSE;
+            return new AuthZen.EvaluationResponse(false);
         }
 
         ResourceStore resourceStore = storeFactory.getResourceStore();
         Resource resource = resourceStore.findByName(resourceServer, request.resource().id());
         if (resource == null) {
-            return DECISION_FALSE;
+            return new AuthZen.EvaluationResponse(false);
         }
 
         String keycloakType = resource.getType() != null ? resource.getType() : "";
         if (!keycloakType.equals(request.resource().type())) {
-            return DECISION_FALSE;
+            return new AuthZen.EvaluationResponse(false);
         }
 
         ScopeStore scopeStore = storeFactory.getScopeStore();
         Scope scope = scopeStore.findByName(resourceServer, request.action().name());
         if (scope == null) {
-            return DECISION_FALSE;
+            return new AuthZen.EvaluationResponse(false);
         }
 
         Map<String, List<String>> claims = null;
@@ -135,15 +192,14 @@ public class AuthZenResource {
               .from(List.of(permission), context)
               .evaluate(resourceServer, null);
 
-        boolean decision = !granted.isEmpty();
-        return Response.ok(new AuthZen.EvaluationResponse(decision)).build();
+        return new AuthZen.EvaluationResponse(!granted.isEmpty());
     }
 
     private Identity resolveSubjectIdentity(RealmModel realm, AuthZen.EvaluationRequest request) {
         AuthZen.Subject subject = request.subject();
         Identity identity = switch (subject.type()) {
             case USER -> {
-                UserModel user = session.users().getUserById(realm, subject.id());
+                UserModel user = session.users().getUserByUsername(realm, subject.id());
                 yield user != null ? new UserModelIdentity(realm, user) : null;
             }
             case CLIENT -> {

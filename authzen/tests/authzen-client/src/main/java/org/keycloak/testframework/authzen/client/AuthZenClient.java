@@ -17,7 +17,9 @@
 package org.keycloak.testframework.authzen.client;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import jakarta.ws.rs.core.HttpHeaders;
@@ -28,6 +30,7 @@ import org.keycloak.http.simple.SimpleHttp;
 import org.keycloak.http.simple.SimpleHttpRequest;
 import org.keycloak.http.simple.SimpleHttpResponse;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 
@@ -46,12 +49,42 @@ public class AuthZenClient {
     }
 
     public EvaluationResult evaluate(AuthZen.EvaluationRequest request) throws IOException {
+        return evaluate((Object) request);
+    }
+
+    public EvaluationResult evaluate(JsonNode request) throws IOException {
+        return evaluate((Object) request);
+    }
+
+    private EvaluationResult evaluate(Object req) throws IOException {
         String url = realmUrl + "/authzen/access/v1/evaluation";
 
-        try (SimpleHttpResponse response = req(simpleHttp.doPost(url).json(request))) {
+        try (SimpleHttpResponse response = req(simpleHttp.doPost(url).json(req))) {
             int status = response.getStatus();
-            AuthZen.EvaluationResponse body = response.asJson(AuthZen.EvaluationResponse.class);
+            AuthZen.EvaluationResponse body = status == 200
+                  ? response.asJson(AuthZen.EvaluationResponse.class)
+                  : null;
             return new EvaluationResult(status, body);
+        }
+    }
+
+    public EvaluationsResult evaluations(AuthZen.EvaluationsRequest request) throws IOException {
+        return evaluations((Object) request);
+    }
+
+    public EvaluationsResult evaluations(JsonNode request) throws IOException {
+        return evaluations((Object) request);
+    }
+
+    private EvaluationsResult evaluations(Object req) throws IOException {
+        String url = realmUrl + "/authzen/access/v1/evaluations";
+
+        try (SimpleHttpResponse response = req(simpleHttp.doPost(url).json(req))) {
+            int status = response.getStatus();
+            AuthZen.EvaluationsResponse body = status == 200
+                    ? response.asJson(AuthZen.EvaluationsResponse.class)
+                    : null;
+            return new EvaluationsResult(status, body);
         }
     }
 
@@ -98,8 +131,23 @@ public class AuthZenClient {
         }
     }
 
+    public record EvaluationsResult(int statusCode, AuthZen.EvaluationsResponse response) {
+
+        public List<AuthZen.EvaluationResponse> evaluations() {
+            return response.evaluations();
+        }
+    }
+
     public static EvaluationRequestBuilder evaluationRequest() {
         return new EvaluationRequestBuilder();
+    }
+
+    public static EvaluationsRequestBuilder evaluationsRequest() {
+        return new EvaluationsRequestBuilder();
+    }
+
+    public static EvaluationItemBuilder evaluationItem() {
+        return new EvaluationItemBuilder();
     }
 
     public static final class EvaluationRequestBuilder {
@@ -161,6 +209,116 @@ public class AuthZenClient {
             AuthZen.Subject subject = subjectSet ? new AuthZen.Subject(subjectType, subjectId, subjectProperties) : null;
             AuthZen.Resource resource = resourceSet ? new AuthZen.Resource(resourceType, resourceId, resourceProperties) : null;
             return new AuthZen.EvaluationRequest(subject, resource, action, contextProperties);
+        }
+    }
+
+    public static final class EvaluationItemBuilder {
+        private AuthZen.SubjectType subjectType;
+        private String subjectId;
+        private boolean subjectSet;
+        private String resourceType;
+        private String resourceId;
+        private Map<String, Object> resourceProperties;
+        private boolean resourceSet;
+        private AuthZen.Action action;
+        private Map<String, Object> contextProperties;
+
+        public EvaluationItemBuilder subject(AuthZen.SubjectType type, String id) {
+            this.subjectType = type;
+            this.subjectId = id;
+            this.subjectSet = true;
+            return this;
+        }
+
+        public EvaluationItemBuilder resource(String type, String id) {
+            this.resourceType = type;
+            this.resourceId = id;
+            this.resourceSet = true;
+            return this;
+        }
+
+        public EvaluationItemBuilder resourceProperty(String key, Object value) {
+            if (resourceProperties == null) {
+                resourceProperties = new HashMap<>();
+            }
+            resourceProperties.put(key, value);
+            return this;
+        }
+
+        public EvaluationItemBuilder action(String name) {
+            this.action = new AuthZen.Action(name);
+            return this;
+        }
+
+        public EvaluationItemBuilder contextProperty(String key, Object value) {
+            if (contextProperties == null) {
+                contextProperties = new HashMap<>();
+            }
+            contextProperties.put(key, value);
+            return this;
+        }
+
+        public AuthZen.EvaluationItem build() {
+            AuthZen.Subject subject = subjectSet ? new AuthZen.Subject(subjectType, subjectId, null) : null;
+            AuthZen.Resource resource = resourceSet ? new AuthZen.Resource(resourceType, resourceId, resourceProperties) : null;
+            return new AuthZen.EvaluationItem(subject, resource, action, contextProperties);
+        }
+    }
+
+    public static final class EvaluationsRequestBuilder {
+        private AuthZen.SubjectType subjectType;
+        private String subjectId;
+        private boolean subjectSet;
+        private String resourceType;
+        private String resourceId;
+        private boolean resourceSet;
+        private AuthZen.Action action;
+        private Map<String, Object> contextProperties;
+        private AuthZen.EvaluationsSemantic evaluationsSemantic;
+        private final List<AuthZen.EvaluationItem> evaluations = new ArrayList<>();
+
+        public EvaluationsRequestBuilder subject(AuthZen.SubjectType type, String id) {
+            this.subjectType = type;
+            this.subjectId = id;
+            this.subjectSet = true;
+            return this;
+        }
+
+        public EvaluationsRequestBuilder resource(String type, String id) {
+            this.resourceType = type;
+            this.resourceId = id;
+            this.resourceSet = true;
+            return this;
+        }
+
+        public EvaluationsRequestBuilder action(String name) {
+            this.action = new AuthZen.Action(name);
+            return this;
+        }
+
+        public EvaluationsRequestBuilder contextProperty(String key, Object value) {
+            if (contextProperties == null) {
+                contextProperties = new HashMap<>();
+            }
+            contextProperties.put(key, value);
+            return this;
+        }
+
+        public EvaluationsRequestBuilder evaluationsSemantic(AuthZen.EvaluationsSemantic semantic) {
+            this.evaluationsSemantic = semantic;
+            return this;
+        }
+
+        public EvaluationsRequestBuilder addEvaluation(AuthZen.EvaluationItem evaluation) {
+            evaluations.add(evaluation);
+            return this;
+        }
+
+        public AuthZen.EvaluationsRequest build() {
+            AuthZen.Subject subject = subjectSet ? new AuthZen.Subject(subjectType, subjectId, null) : null;
+            AuthZen.Resource resource = resourceSet ? new AuthZen.Resource(resourceType, resourceId, null) : null;
+            AuthZen.Options options = evaluationsSemantic != null ? new AuthZen.Options(evaluationsSemantic) : null;
+            return new AuthZen.EvaluationsRequest(subject, resource, action, contextProperties, options, evaluations);
         }
     }
 }
