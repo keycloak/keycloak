@@ -59,7 +59,7 @@ import org.keycloak.services.clientpolicy.condition.AnyClientConditionFactory;
 import org.keycloak.services.clientpolicy.condition.ClientAccessTypeConditionFactory;
 import org.keycloak.services.clientpolicy.executor.UseLightweightAccessTokenExecutorFactory;
 import org.keycloak.testframework.realm.ManagedRealm;
-import org.keycloak.tests.utils.runonserver.RunOnServerHelpers;
+import org.keycloak.testsuite.util.RunOnServerHelpers;
 import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.client.policies.AbstractClientPoliciesTest;

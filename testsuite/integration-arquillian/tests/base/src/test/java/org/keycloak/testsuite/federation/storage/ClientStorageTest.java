@@ -50,7 +50,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.storage.CacheableStorageProviderModel;
 import org.keycloak.storage.client.ClientStorageProvider;
 import org.keycloak.storage.client.ClientStorageProviderModel;
-import org.keycloak.tests.utils.runonserver.RunOnServerHelpers;
+import org.keycloak.testsuite.util.RunOnServerHelpers;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;

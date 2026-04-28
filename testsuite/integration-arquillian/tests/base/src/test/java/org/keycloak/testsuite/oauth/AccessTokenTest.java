@@ -78,7 +78,7 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.RoleBuilder;
 import org.keycloak.testframework.realm.UserBuilder;
-import org.keycloak.tests.utils.runonserver.RunOnServerHelpers;
+import org.keycloak.testsuite.util.RunOnServerHelpers;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.ActionURIUtils;
 import org.keycloak.testsuite.AssertEvents;

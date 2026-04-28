@@ -42,7 +42,7 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testframework.realm.ClientBuilder;
-import org.keycloak.tests.utils.runonserver.RunOnServerHelpers;
+import org.keycloak.testsuite.util.RunOnServerHelpers;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.AdminApiUtil;

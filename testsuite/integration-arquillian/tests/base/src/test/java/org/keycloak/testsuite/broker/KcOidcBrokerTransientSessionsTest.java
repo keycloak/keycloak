@@ -55,7 +55,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.UserSessionRepresentation;
-import org.keycloak.tests.utils.runonserver.RunOnServerHelpers;
+import org.keycloak.testsuite.util.RunOnServerHelpers;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.broker.util.SimpleHttpDefault;

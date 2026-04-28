@@ -1,4 +1,4 @@
-package org.keycloak.tests.utils.runonserver;
+package org.keycloak.testsuite.util;
 
 import jakarta.ws.rs.NotFoundException;
 

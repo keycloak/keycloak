@@ -79,7 +79,7 @@ import org.keycloak.services.Urls;
 import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RoleBuilder;
-import org.keycloak.tests.utils.runonserver.RunOnServerHelpers;
+import org.keycloak.testsuite.util.RunOnServerHelpers;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
