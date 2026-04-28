@@ -139,6 +139,7 @@
         <!-- json-ld processing for oid4vci ld-proofs -->
         <com.apicatalog.titanium-json-ld.version>1.3.3</com.apicatalog.titanium-json-ld.version>
         <io.setl.rdf-urdna.version>1.1</io.setl.rdf-urdna.version>
+        <authlete.cbor.version>1.21</authlete.cbor.version>
 
         <servlet.api.30.version>1.0.2.Final</servlet.api.30.version>
         <servlet.api.40.version>2.0.0.Final</servlet.api.40.version>
@@ -348,6 +349,11 @@
                 <groupId>com.thoughtworks.xstream</groupId>
                 <artifactId>xstream</artifactId>
                 <version>${xstream.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.authlete</groupId>
+                <artifactId>cbor</artifactId>
+                <version>${authlete.cbor.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.snakeyaml</groupId>

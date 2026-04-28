@@ -138,6 +138,10 @@
             <groupId>io.setl</groupId>
             <artifactId>rdf-urdna</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.authlete</groupId>
+            <artifactId>cbor</artifactId>
+        </dependency>
 
         <!-- Hibernate validator -->
         <dependency>

@@ -677,7 +677,7 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerTestBase {
                     "jwt_vc_json credentials should not have @context in credential_definition");
         }
 
-        List<String> signingAlgsSupported = supportedConfig.getCredentialSigningAlgValuesSupported();
+        List<?> signingAlgsSupported = supportedConfig.getCredentialSigningAlgValuesSupported();
         ProofTypesSupported proofTypesSupported = supportedConfig.getProofTypesSupported();
         if (!bindingRequired) {
             assertNull(proofTypesSupported, "proof_types_supported should be omitted when binding is optional");
