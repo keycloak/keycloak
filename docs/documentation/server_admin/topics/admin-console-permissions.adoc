@@ -1,5 +1,5 @@
-[[_admin_permissions]]
 
+[[_admin_permissions]]
 == Managing access to realm resources
 
 Each realm created on the {project_name} has a dedicated Admin Console from which that realm can be managed.

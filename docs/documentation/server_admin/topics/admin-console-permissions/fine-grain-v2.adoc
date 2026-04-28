@@ -1,5 +1,5 @@
-[[_fine_grained_permissions]]
 
+[[_fine_grained_permissions]]
 === Delegating realm administration using permissions
 
 You can delegate realm management to other administrators, the realm administrators, using the fine-grained admin permissions
