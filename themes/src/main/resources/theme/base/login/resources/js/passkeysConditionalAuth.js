@@ -42,6 +42,12 @@ export async function initAuthenticate(input, availableCallback = () => {}) {
         return;
     }
 
+    if (input.authenticatorAttachment === 'platform'
+            && !await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable()) {
+        availableCallback(false);
+        return;
+    }
+
     // The isConditionalMediationAvailable() check is only relevant for
     // conditional (autofill) mediation — other modes do not depend on it.
     if (mediation === 'conditional') {
