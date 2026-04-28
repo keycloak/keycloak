@@ -58,13 +58,11 @@ import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.UmaPermissionRepresentation;
 import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.GroupBuilder;
-import org.keycloak.testframework.realm.RoleBuilder;
+import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
 import org.keycloak.testsuite.runonserver.RunOnServer;
-import org.keycloak.testsuite.util.RealmBuilder;
-import org.keycloak.testsuite.util.RolesBuilder;
 
 import org.junit.Test;
 
@@ -85,39 +83,31 @@ public class UserManagedPermissionServiceTest extends AbstractResourceServerTest
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
         testRealms.add(RealmBuilder.create().name(REALM_NAME)
-                .roles(RolesBuilder.create()
-                        .realmRole(RoleBuilder.create().name("uma_authorization").build())
-                        .realmRole(RoleBuilder.create().name("uma_protection").build())
-                        .realmRole(RoleBuilder.create().name("role_a").build())
-                        .realmRole(RoleBuilder.create().name("role_b").build())
-                        .realmRole(RoleBuilder.create().name("role_c").build())
-                        .realmRole(RoleBuilder.create().name("role_d").build())
-                )
-                .group(GroupBuilder.create().name("group_a")
-                        .subGroups(GroupBuilder.create().name("group_b"))
-                        .build())
-                .group(GroupBuilder.create().name("group_c").build())
-                .group(GroupBuilder.create().name("group_remove").build())
-                .user(UserBuilder.create().username("marta").password("password")
-                        .roles("uma_authorization", "uma_protection")
+                .realmRoles("uma_authorization", "uma_protection", "role_a", "role_b", "role_c", "role_d")
+                .groups(GroupBuilder.create().name("group_a")
+                        .subGroups(GroupBuilder.create().name("group_b")))
+                .groups(GroupBuilder.create().name("group_c"))
+                .groups(GroupBuilder.create().name("group_remove"))
+                .users(UserBuilder.create().username("marta").password("password")
+                        .realmRoles("uma_authorization", "uma_protection")
                         .clientRoles("resource-server-test", "uma_protection"))
-                .user(UserBuilder.create().username("alice").password("password")
-                        .roles("uma_authorization", "uma_protection")
+                .users(UserBuilder.create().username("alice").password("password")
+                        .realmRoles("uma_authorization", "uma_protection")
                         .clientRoles("resource-server-test", "uma_protection"))
-                .user(UserBuilder.create().username("kolo").password("password")
-                        .roles("role_a")
+                .users(UserBuilder.create().username("kolo").password("password")
+                        .realmRoles("role_a")
                         .groups("group_a"))
-                .client(ClientBuilder.create().clientId("resource-server-test")
+                .clients(ClientBuilder.create().clientId("resource-server-test")
                         .secret("secret")
                         .authorizationServicesEnabled(true)
                         .redirectUris("http://localhost/resource-server-test")
                         .defaultRoles("uma_protection")
                         .directAccessGrantsEnabled()
                         .serviceAccountsEnabled(true))
-                .client(ClientBuilder.create().clientId("client-a")
+                .clients(ClientBuilder.create().clientId("client-a")
                         .redirectUris("http://localhost/resource-server-test")
                         .publicClient())
-                .client(ClientBuilder.create().clientId("client-remove")
+                .clients(ClientBuilder.create().clientId("client-remove")
                         .redirectUris("http://localhost/resource-server-test")
                         .publicClient())
                 .build());

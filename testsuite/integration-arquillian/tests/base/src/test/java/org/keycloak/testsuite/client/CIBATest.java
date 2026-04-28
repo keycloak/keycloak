@@ -156,7 +156,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
                 .email("schwarz@test.example.com")
                 .enabled(true)
                 .password("passwort-schwarz")
-                .roles("user", "offline_access")
+                .realmRoles("user", "offline_access")
                 .build();
         realm.getUsers().add(user);
 
@@ -165,7 +165,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
                 .email("rot@test.example.com")
                 .enabled(true)
                 .password("passwort-rot")
-                .roles("user", "offline_access")
+                .realmRoles("user", "offline_access")
                 .build();
         realm.getUsers().add(user);
 
@@ -174,7 +174,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
                 .email("gelb@test.example.com")
                 .enabled(true)
                 .password("passwort-gelb")
-                .roles("user", "offline_access")
+                .realmRoles("user", "offline_access")
                 .build();
         realm.getUsers().add(user);
 
@@ -183,7 +183,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
                 .email("deaktiviert@test.example.com")
                 .enabled(false)
                 .password("passwort-deaktiviert")
-                .roles("user", "offline_access")
+                .realmRoles("user", "offline_access")
                 .build();
         realm.getUsers().add(user);
 

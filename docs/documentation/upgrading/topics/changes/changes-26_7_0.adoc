@@ -14,7 +14,17 @@ the shorter suffix `Builder` to keep things consistently.
 
 Additionally, some methods where updated for consistency across the builders:
 
-* `RoleBuilder` method `setSingleAttribute` was renamed to `attribute`
+* `RoleBuilder` method `setSingleAttribute` renamed to `attribute`
+* `UserBuilder` method `roles` renamed to `realmRoles`
+* `RealmBuilder` method `client` and `addClient` replaced with `clients`
+* `RealmBuilder` method `user` and `addUser` replaced with `users`
+* `RealmBuilder` method `addRole` replaced with `realmRoles`
+* `RealmBuilder` method `addClientRole` replaced with `clientRoles`
+* `RealmBuilder` method `addAuthenticationFlow` replaced with `authenticationFlows`
+* `RealmBuilder` method `addClientScope` replaced with `clientScopes`
+* `RealmBuilder` method `identityProvider` renamed to `identityProviders`
+* `RealmBuilder` method `identityProviderMapper` renamed to `identityProviderMappers`
+* `RealmBuilder` method `requiredAction` renamed to `requiredActions`
 
 === Identity Provider alias is now immutable
 

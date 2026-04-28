@@ -17,10 +17,10 @@
 package org.keycloak.testsuite.forms;
 
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testframework.realm.IdentityProviderBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.pages.LoginPage;
-import org.keycloak.testsuite.util.IdentityProviderBuilder;
 
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Test;

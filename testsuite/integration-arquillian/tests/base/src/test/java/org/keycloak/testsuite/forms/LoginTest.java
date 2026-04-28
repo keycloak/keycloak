@@ -51,6 +51,7 @@ import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AbstractChangeImportedUserPasswordsTest;
 import org.keycloak.testsuite.AssertEvents;
@@ -70,7 +71,6 @@ import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.testsuite.util.ContainerAssume;
 import org.keycloak.testsuite.util.InfinispanTestTimeServiceRule;
 import org.keycloak.testsuite.util.Matchers;
-import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.TokenSignatureUtil;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
@@ -131,10 +131,10 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
         clientRoles.put("realm-management", Arrays.asList("realm-admin"));
         admin.setClientRoles(clientRoles);
 
-        RealmBuilder.edit(testRealm)
-                    .user(user)
-                    .user(user2)
-                    .user(admin);
+        RealmBuilder.update(testRealm)
+                    .users(user)
+                    .users(user2)
+                    .users(admin);
     }
 
     @Rule

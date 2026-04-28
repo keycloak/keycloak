@@ -33,7 +33,7 @@ import org.keycloak.representations.idm.authorization.DecisionStrategy;
 import org.keycloak.representations.idm.authorization.Logic;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.testframework.realm.ClientBuilder;
-import org.keycloak.testsuite.util.RealmBuilder;
+import org.keycloak.testframework.realm.RealmBuilder;
 
 import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
@@ -51,12 +51,12 @@ public class ClientPolicyManagementTest extends AbstractPolicyManagementTest {
     @Override
     protected RealmBuilder createTestRealm() {
         return super.createTestRealm()
-                .client(ClientBuilder.create().clientId("Client A"))
-                .client(ClientBuilder.create().clientId("Client B"))
-                .client(ClientBuilder.create().clientId("Client C"))
-                .client(ClientBuilder.create().clientId("Client D"))
-                .client(ClientBuilder.create().clientId("Client E"))
-                .client(ClientBuilder.create().clientId("Client F"));
+                .clients(ClientBuilder.create().clientId("Client A"))
+                .clients(ClientBuilder.create().clientId("Client B"))
+                .clients(ClientBuilder.create().clientId("Client C"))
+                .clients(ClientBuilder.create().clientId("Client D"))
+                .clients(ClientBuilder.create().clientId("Client E"))
+                .clients(ClientBuilder.create().clientId("Client F"));
     }
 
     @Test

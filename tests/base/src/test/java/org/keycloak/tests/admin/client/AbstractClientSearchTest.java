@@ -5,6 +5,7 @@ import java.util.stream.Collectors;
 
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
@@ -43,17 +44,17 @@ public class AbstractClientSearchTest {
 
         @Override
         public RealmBuilder configure(RealmBuilder realm) {
-            realm.addClient(CLIENT_ID_1)
+            realm.clients(ClientBuilder.create(CLIENT_ID_1)
                     .attribute(ATTR_ORG_NAME, ATTR_ORG_VAL)
-                    .attribute(ATTR_URL_NAME, ATTR_URL_VAL);
+                    .attribute(ATTR_URL_NAME, ATTR_URL_VAL));
 
-            realm.addClient(CLIENT_ID_2)
+            realm.clients(ClientBuilder.create(CLIENT_ID_2)
                     .attribute(ATTR_URL_NAME, ATTR_URL_VAL)
-                    .attribute(ATTR_FILTERED_NAME, ATTR_FILTERED_VAL);
+                    .attribute(ATTR_FILTERED_NAME, ATTR_FILTERED_VAL));
 
-            realm.addClient(CLIENT_ID_3)
+            realm.clients(ClientBuilder.create(CLIENT_ID_3)
                     .attribute(ATTR_ORG_NAME, "fake val")
-                    .attribute(ATTR_QUOTES_NAME, ATTR_QUOTES_VAL);
+                    .attribute(ATTR_QUOTES_NAME, ATTR_QUOTES_VAL));
 
             return realm;
         }

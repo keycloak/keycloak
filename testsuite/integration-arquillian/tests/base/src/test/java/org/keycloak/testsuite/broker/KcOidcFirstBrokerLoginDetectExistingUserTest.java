@@ -12,8 +12,8 @@ import org.keycloak.representations.idm.AuthenticationExecutionRepresentation;
 import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.realm.AuthenticationExecutionBuilder;
 import org.keycloak.testsuite.util.AccountHelper;
-import org.keycloak.testsuite.util.ExecutionBuilder;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -63,7 +63,7 @@ public class KcOidcFirstBrokerLoginDetectExistingUserTest extends AbstractInitia
     }
 
     private void addExecution(AuthenticationManagementResource authMgmtResource, String flowId, String providerId, int priority) {
-        AuthenticationExecutionRepresentation exec = ExecutionBuilder.create()
+        AuthenticationExecutionRepresentation exec = AuthenticationExecutionBuilder.create()
                 .parentFlow(flowId)
                 .requirement(AuthenticationExecutionModel.Requirement.REQUIRED.toString())
                 .authenticator(providerId)

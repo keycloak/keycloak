@@ -550,7 +550,7 @@ public class UserCreateTest extends AbstractUserTest {
         managedRealm.admin().roles().create(RoleBuilder.create().name("realm-role").build());
 
         try {
-            UserRepresentation userRep = UserBuilder.create().username("alice").password("password").roles("realm-role")
+            UserRepresentation userRep = UserBuilder.create().username("alice").password("password").realmRoles("realm-role")
                     .build();
             String userId = ApiUtil.getCreatedId(managedRealm.admin().users().create(userRep));
             UserResource user = managedRealm.admin().users().get(userId);

@@ -49,6 +49,7 @@ import org.keycloak.testframework.realm.ManagedClient;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.server.KeycloakUrls;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
@@ -749,20 +750,20 @@ public class AuthZenEvaluationTest {
     public static class TestRealmConfig implements RealmConfig {
         @Override
         public RealmBuilder configure(RealmBuilder realm) {
-            realm.addRole("admin");
+            realm.realmRoles("admin");
 
-            realm.addUser("admin-user")
+            realm.users(UserBuilder.create("admin-user")
                   .id(ADMIN_USER_ID)
                   .name("Admin", "User")
                   .email("admin@localhost")
                   .password("password")
-                  .roles("admin");
+                  .realmRoles("admin"));
 
-            realm.addUser("regular-user")
+            realm.users(UserBuilder.create("regular-user")
                   .id(REGULAR_USER_ID)
                   .name("Regular", "User")
                   .email("regular@localhost")
-                  .password("password");
+                  .password("password"));
 
             return realm;
         }

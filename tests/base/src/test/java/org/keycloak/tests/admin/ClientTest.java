@@ -1077,11 +1077,11 @@ public class ClientTest {
         @Override
         public RealmBuilder configure(RealmBuilder realm) {
 
-            realm.addUser("test-user@localhost")
+            realm.users(UserBuilder.create("test-user@localhost")
                     .enabled(true)
                     .email("test-user@localhost")
                     .name("Tom", "Brady")
-                    .password("password");
+                    .password("password"));
             return realm;
         }
     }

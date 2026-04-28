@@ -52,14 +52,15 @@ import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testframework.realm.ClientBuilder;
+import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
+import org.keycloak.testsuite.events.TestEventsListenerProviderFactory;
 import org.keycloak.testsuite.util.ClientManager;
-import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.RealmManager;
 import org.keycloak.testsuite.util.TokenSignatureUtil;
 import org.keycloak.testsuite.util.UserManager;
@@ -106,7 +107,7 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
         RealmBuilder realm = RealmBuilder.create().name("test")
-                .testEventListener();
+                .eventsListeners(TestEventsListenerProviderFactory.PROVIDER_ID);
 
 
         ClientRepresentation app = ClientBuilder.create()
@@ -115,7 +116,7 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
                 .directAccessGrantsEnabled()
                 .secret("secret")
                 .build();
-        realm.client(app);
+        realm.clients(app);
 
         ClientRepresentation app2 = ClientBuilder.create()
                 .id(KeycloakModelUtils.generateId())
@@ -123,32 +124,32 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
                 .directAccessGrantsEnabled()
                 .publicClient()
                 .build();
-        realm.client(app2);
+        realm.clients(app2);
 
         ClientRepresentation app3 = ClientBuilder.create().id(KeycloakModelUtils.generateId())
             .clientId("resource-owner-refresh").directAccessGrantsEnabled().secret("secret").build();
         OIDCAdvancedConfigWrapper.fromClientRepresentation(app3).setUseRefreshToken(false);
-        realm.client(app3);
+        realm.clients(app3);
 
         UserBuilder defaultUser = UserBuilder.create()
                 .id(KeycloakModelUtils.generateId())
                 .username("test-user@localhost")
                 .password("password");
-        realm.user(defaultUser);
+        realm.users(defaultUser);
 
         UserRepresentation user = UserBuilder.create()
                 .username("direct-login")
                 .email("direct-login@localhost")
                 .password("password")
                 .build();
-        realm.user(user);
+        realm.users(user);
 
         UserRepresentation user2 = UserBuilder.create()
                 .username("direct-login-otp")
                 .password("password")
                 .totpSecret("totpSecret")
                 .build();
-        realm.user(user2);
+        realm.users(user2);
 
         UserBuilder userBuilderMultipleOTPs = UserBuilder.create()
                 .id(userIdMultipleOTPs)
@@ -156,7 +157,7 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
                 .password("password")
                 .totpSecret("firstOTPIsPreferredCredential");
         for (int i = 2; i <= 10; i++) userBuilderMultipleOTPs.totpSecret(String.format("%s-th OTP authenticator", i));
-        realm.user(userBuilderMultipleOTPs.build());
+        realm.users(userBuilderMultipleOTPs.build());
 
         testRealms.add(realm.build());
     }

@@ -91,6 +91,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.util.CertificateInfoHelper;
 import org.keycloak.testframework.realm.ClientBuilder;
+import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
@@ -98,10 +99,10 @@ import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.auth.page.AuthRealm;
 import org.keycloak.testsuite.client.resources.TestApplicationResourceUrls;
 import org.keycloak.testsuite.client.resources.TestOIDCEndpointsApplicationResource;
+import org.keycloak.testsuite.events.TestEventsListenerProviderFactory;
 import org.keycloak.testsuite.rest.resource.TestingOIDCEndpointsApplicationResource;
 import org.keycloak.testsuite.util.ClientManager;
 import org.keycloak.testsuite.util.KeystoreUtils;
-import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.SignatureSignerUtil;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
@@ -172,7 +173,7 @@ public abstract class AbstractClientAuthSignedJWTTest extends AbstractKeycloakTe
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
         RealmBuilder realmBuilder = RealmBuilder.create().name("test")
-                .testEventListener();
+                .eventsListeners(TestEventsListenerProviderFactory.PROVIDER_ID);
 
         app1 = ClientBuilder.create()
                 .id(KeycloakModelUtils.generateId())
@@ -183,7 +184,7 @@ public abstract class AbstractClientAuthSignedJWTTest extends AbstractKeycloakTe
                 .serviceAccountsEnabled(true)
                 .build();
 
-        realmBuilder.client(app1);
+        realmBuilder.clients(app1);
 
         app2 = ClientBuilder.create()
                 .id(KeycloakModelUtils.generateId())
@@ -195,7 +196,7 @@ public abstract class AbstractClientAuthSignedJWTTest extends AbstractKeycloakTe
                 .authenticatorType(JWTClientAuthenticator.PROVIDER_ID)
                 .build();
 
-        realmBuilder.client(app2);
+        realmBuilder.clients(app2);
 
         defaultUser = UserBuilder.create()
                 .id(KeycloakModelUtils.generateId())
@@ -203,7 +204,7 @@ public abstract class AbstractClientAuthSignedJWTTest extends AbstractKeycloakTe
                 .username("test-user@localhost")
                 .password("password")
                 .build();
-        realmBuilder.user(defaultUser);
+        realmBuilder.users(defaultUser);
 
         client1SAUserId = KeycloakModelUtils.generateId();
 
@@ -212,7 +213,7 @@ public abstract class AbstractClientAuthSignedJWTTest extends AbstractKeycloakTe
                 .username(ServiceAccountConstants.SERVICE_ACCOUNT_USER_PREFIX + app1.getClientId())
                 .serviceAccountId(app1.getClientId())
                 .build();
-        realmBuilder.user(serviceAccountUser);
+        realmBuilder.users(serviceAccountUser);
 
         testRealm = realmBuilder.build();
         testRealms.add(testRealm);

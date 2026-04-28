@@ -23,6 +23,7 @@ import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.tests.utils.admin.AdminApiUtil;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.PkceGenerator;
@@ -212,31 +213,27 @@ public class AccountRestServiceRolesTest {
     public static class AccountRolesRealmConfig implements RealmConfig {
         @Override
         public RealmBuilder configure(RealmBuilder realm) {
-            realm.addUser("manage-account-user")
-                    .name("Manage", "Account")
-                    .email("manage-account@localhost")
-                    .password(PASSWORD)
-                    .clientRoles(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID, AccountRoles.MANAGE_ACCOUNT, AccountRoles.VIEW_PROFILE);
-
-            realm.addUser("view-applications-user")
-                    .name("View", "Applications")
-                    .email("view-applications@localhost")
-                    .password(PASSWORD)
-                    .clientRoles(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID, AccountRoles.VIEW_APPLICATIONS, AccountRoles.VIEW_PROFILE);
-
-            realm.addUser("view-groups-user")
-                    .name("View", "Groups")
-                    .email("view-groups@localhost")
-                    .password(PASSWORD)
-                    .clientRoles(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID, AccountRoles.VIEW_GROUPS, AccountRoles.VIEW_PROFILE);
-
-            realm.addUser("no-access-user")
-                    .name("No", "Access")
-                    .email("no-access@localhost")
-                    .password(PASSWORD)
-                    .clientRoles(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID, AccountRoles.VIEW_PROFILE);
-
-            return realm;
+            return realm.users(
+                    UserBuilder.create("manage-account-user")
+                        .name("Manage", "Account")
+                        .email("manage-account@localhost")
+                        .password(PASSWORD)
+                        .clientRoles(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID, AccountRoles.MANAGE_ACCOUNT, AccountRoles.VIEW_PROFILE),
+                    UserBuilder.create("view-applications-user")
+                        .name("View", "Applications")
+                        .email("view-applications@localhost")
+                        .password(PASSWORD)
+                        .clientRoles(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID, AccountRoles.VIEW_APPLICATIONS, AccountRoles.VIEW_PROFILE),
+                    UserBuilder.create("view-groups-user")
+                        .name("View", "Groups")
+                        .email("view-groups@localhost")
+                        .password(PASSWORD)
+                        .clientRoles(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID, AccountRoles.VIEW_GROUPS, AccountRoles.VIEW_PROFILE),
+                    UserBuilder.create("no-access-user")
+                        .name("No", "Access")
+                        .email("no-access@localhost")
+                        .password(PASSWORD)
+                        .clientRoles(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID, AccountRoles.VIEW_PROFILE));
         }
     }
 }
