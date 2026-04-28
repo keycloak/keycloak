@@ -39,7 +39,7 @@ import org.keycloak.testsuite.broker.AbstractBrokerTest;
 import org.keycloak.testsuite.broker.AbstractInitializedBaseBrokerTest;
 import org.keycloak.testsuite.pages.LoginConfigTotpPage;
 import org.keycloak.testsuite.pages.LoginTotpPage;
-import org.keycloak.testsuite.runonserver.RunOnServer;
+import org.keycloak.testframework.remote.providers.runonserver.RunOnServer;
 import org.keycloak.testsuite.util.AccountHelper;
 
 import org.hamcrest.Matchers;
