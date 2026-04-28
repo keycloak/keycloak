@@ -30,6 +30,10 @@ import {
 import { AttributeAnnotations } from "./user-profile/attribute/AttributeAnnotations";
 import { AttributeGeneralSettings } from "./user-profile/attribute/AttributeGeneralSettings";
 import { AttributePermission } from "./user-profile/attribute/AttributePermission";
+import {
+  AttributeScimSettings,
+  SCIM_ANNOTATION_KEY,
+} from "./user-profile/attribute/AttributeScimSettings";
 import { AttributeValidations } from "./user-profile/attribute/AttributeValidations";
 
 import "./realm-settings-section.css";
@@ -104,6 +108,7 @@ const CreateAttributeFormContent = ({
           { title: t("permission"), panel: <AttributePermission /> },
           { title: t("validations"), panel: <AttributeValidations /> },
           { title: t("annotations"), panel: <AttributeAnnotations /> },
+          { title: t("scimSettings"), panel: <AttributeScimSettings /> },
         ]}
       />
       <Form onSubmit={form.handleSubmit(save)}>
@@ -208,10 +213,12 @@ export default function NewAttributeSettings() {
       {} as Record<string, unknown>,
     );
 
-    const annotations = formFields.annotations.reduce(
-      (obj, item) => Object.assign(obj, { [item.key]: item.value }),
-      {},
-    );
+    const annotations = formFields.annotations
+      .filter((item) => !(item.key === SCIM_ANNOTATION_KEY && !item.value))
+      .reduce(
+        (obj, item) => Object.assign(obj, { [item.key]: item.value }),
+        {},
+      );
 
     const patchAttributes = () =>
       (config?.attributes || []).map((attribute) => {
