@@ -10,3 +10,7 @@ The WebAuthn policy presents the option **Acceptable AAGUIDs** to restrict the a
 Since this release, when this option is set up, the attestation is required to be present and signed with a valid certificate for the {project_name} trust-store. The `None` attestation format is explicitly not permitted. Previously, there were some corner cases in which a self attestation was accepted. The change is expected to be harmless, but maybe there are combinations of authenticators and WebAuthn policies that can present issues.
 
 See chapter link:{adminguide_link}#_webauthn-policy[Managing policy] in the {adminguide_name} for more information.
+
+=== Workflow schedule synchronization across cluster nodes
+
+A new cluster event was introduced to synchronize workflow scheduled settings across cluster nodes. You might see errors when updating workflow definitions during a rolling update when upgrading from 26.6.x. Defer updating workflow definitions until the rolling update has completed.
