@@ -66,7 +66,7 @@ public class ClientStreamStore implements SsfStreamStore {
      * {@link #SSF_STREAM_SUPPORTED_EVENTS_KEY}. Empty/absent =
      * everything supported is auto-emitted (current default behaviour).
      */
-    public static final String SSF_MANUAL_ONLY_EVENTS_KEY = "ssf.manualOnlyEvents";
+    public static final String SSF_EMIT_ONLY_EVENTS_KEY = "ssf.emitOnlyEvents";
     public static final String SSF_PUSH_ENDPOINT_CONNECT_TIMEOUT_MILLIS_KEY = "ssf.pushEndpointConnectTimeoutMillis";
     public static final String SSF_PUSH_ENDPOINT_SOCKET_TIMEOUT_MILLIS_KEY = "ssf.pushEndpointSocketTimeoutMillis";
     public static final String SSF_STREAM_SIGNATURE_ALGORITHM_KEY = "ssf.signatureAlgorithm";
@@ -546,11 +546,11 @@ public class ClientStreamStore implements SsfStreamStore {
         // listener-side comparison can match against the URI it gets
         // off the SET. Unknown aliases are silently dropped — same
         // forgiveness pattern as supportedEvents above.
-        String manualOnly = client.getAttribute(SSF_MANUAL_ONLY_EVENTS_KEY);
-        if (manualOnly != null && !manualOnly.isBlank()) {
+        String emitOnly = client.getAttribute(SSF_EMIT_ONLY_EVENTS_KEY);
+        if (emitOnly != null && !emitOnly.isBlank()) {
             SsfEventRegistry registry = Ssf.events().getRegistry();
             Set<String> resolved = new TreeSet<>();
-            for (String candidate : SsfEventRegistry.parseEventTypeAliases(manualOnly)) {
+            for (String candidate : SsfEventRegistry.parseEventTypeAliases(emitOnly)) {
                 String eventType = registry.resolveEventTypeForAlias(candidate);
                 if (eventType == null && registry.getEventClassByType(candidate).isPresent()) {
                     eventType = candidate;
@@ -560,7 +560,7 @@ public class ClientStreamStore implements SsfStreamStore {
                 }
             }
             if (!resolved.isEmpty()) {
-                streamConfig.setManualOnlyEvents(resolved);
+                streamConfig.setEmitOnlyEvents(resolved);
             }
         }
     }

@@ -107,8 +107,8 @@ public class SsfTransmitterEventListener implements EventListenerProvider {
                 log.debugf("Could not generate SSF Security Event Token for User Event. id=%s", event.getId());
                 continue;
             }
-            if (isManualOnlyForStream(securityEventToken, stream)) {
-                log.debugf("Skipping native auto-emit — event type is in stream's manualOnlyEvents set. "
+            if (isAnyEventEmitOnlyForReceiver(securityEventToken, stream)) {
+                log.debugf("Skipping native auto-emit — event type is in receiver's emitOnlyEvents set. "
                                 + "streamId=%s clientId=%s jti=%s",
                         stream.getStreamId(), stream.getClientClientId(), securityEventToken.getJti());
                 continue;
@@ -137,22 +137,30 @@ public class SsfTransmitterEventListener implements EventListenerProvider {
 
     /**
      * Returns {@code true} when the receiver has marked the event type
-     * as manual-only ({@code ssf.manualOnlyEvents} contains it). The
-     * native event listener honours the gate; the synthetic-emit
-     * endpoint deliberately does not — its whole purpose is to fire
-     * exactly these events on demand.
+     * as emit-only ({@code ssf.emitOnlyEvents} contains it). The native
+     * event listener honours the gate; the synthetic-emit endpoint
+     * deliberately does not — its whole purpose is to fire exactly
+     * these events on demand.
      */
-    protected boolean isManualOnlyForStream(SsfSecurityEventToken token, StreamConfig stream) {
-        var manualOnly = stream.getManualOnlyEvents();
-        if (manualOnly == null || manualOnly.isEmpty()) {
-            return false;
-        }
+    protected boolean isEmitOnlyEventForReceiver(String eventType, StreamConfig stream) {
+        var emitOnly = stream.getEmitOnlyEvents();
+        return emitOnly != null && emitOnly.contains(eventType);
+    }
+
+    /**
+     * True when any event entry in the token is emit-only for the
+     * receiver. Tokens almost always carry a single event in practice,
+     * but {@link SsfSecurityEventToken#getEvents()} is a Map keyed by
+     * event-type URI, so guard the iteration: a single match anywhere
+     * is enough to skip — partial delivery would be confusing.
+     */
+    protected boolean isAnyEventEmitOnlyForReceiver(SsfSecurityEventToken token, StreamConfig stream) {
         var events = token.getEvents();
         if (events == null || events.isEmpty()) {
             return false;
         }
         for (String eventType : events.keySet()) {
-            if (manualOnly.contains(eventType)) {
+            if (isEmitOnlyEventForReceiver(eventType, stream)) {
                 return true;
             }
         }

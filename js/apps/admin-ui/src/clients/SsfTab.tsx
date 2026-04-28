@@ -208,7 +208,7 @@ export const SsfTab = ({ save, client, activeTab }: SsfTabProps) => {
     null,
   );
   const [supportedEventsOpen, setSupportedEventsOpen] = useState(false);
-  const [manualOnlyEventsOpen, setManualOnlyEventsOpen] = useState(false);
+  const [emitOnlyEventsOpen, setEmitOnlyEventsOpen] = useState(false);
   const [streamFetchKey, setStreamFetchKey] = useState(0);
   const [configFetchKey, setConfigFetchKey] = useState(0);
 
@@ -878,10 +878,10 @@ export const SsfTab = ({ save, client, activeTab }: SsfTabProps) => {
     convertAttributeNameToForm<FormFields>("attributes.ssf.allowEmitEvents"),
   );
 
-  // Drive the manual-only multi-select options off the live value of
+  // Drive the emit-only multi-select options off the live value of
   // supportedEvents so adding / removing a supported event immediately
-  // adjusts what the operator can mark manual-only. No standalone
-  // registry list — the manual-only set is a strict subset.
+  // adjusts what the operator can mark emit-only. No standalone
+  // registry list — the emit-only set is a strict subset.
   const ssfSupportedEvents = watch(
     convertAttributeNameToForm<FormFields>("attributes.ssf.supportedEvents"),
   );
@@ -900,7 +900,7 @@ export const SsfTab = ({ save, client, activeTab }: SsfTabProps) => {
       "ssf.description",
       "ssf.streamAudience",
       "ssf.supportedEvents",
-      "ssf.manualOnlyEvents",
+      "ssf.emitOnlyEvents",
       "ssf.profile",
       "ssf.userSubjectFormat",
       "ssf.defaultSubjects",
@@ -1431,18 +1431,18 @@ export const SsfTab = ({ save, client, activeTab }: SsfTabProps) => {
                           stringify
                         />
                         <FormGroup
-                          label={t("ssfManualOnlyEvents")}
-                          fieldId="ssfManualOnlyEvents"
+                          label={t("ssfEmitOnlyEvents")}
+                          fieldId="ssfEmitOnlyEvents"
                           labelIcon={
                             <HelpItem
-                              helpText={t("ssfManualOnlyEventsHelp")}
-                              fieldLabelId="ssfManualOnlyEvents"
+                              helpText={t("ssfEmitOnlyEventsHelp")}
+                              fieldLabelId="ssfEmitOnlyEvents"
                             />
                           }
                         >
                           <Controller
                             name={convertAttributeNameToForm<FormFields>(
-                              "attributes.ssf.manualOnlyEvents",
+                              "attributes.ssf.emitOnlyEvents",
                             )}
                             control={control}
                             defaultValue=""
@@ -1454,17 +1454,17 @@ export const SsfTab = ({ save, client, activeTab }: SsfTabProps) => {
                               ).filter((e) => supportedEvents.includes(e));
                               return (
                                 <KeycloakSelect
-                                  toggleId="ssfManualOnlyEvents"
-                                  data-testid="ssfManualOnlyEvents"
+                                  toggleId="ssfEmitOnlyEvents"
+                                  data-testid="ssfEmitOnlyEvents"
                                   variant={SelectVariant.typeaheadMulti}
                                   chipGroupProps={{
                                     numChips: 5,
                                     expandedText: t("hide"),
                                     collapsedText: t("showRemaining"),
                                   }}
-                                  typeAheadAriaLabel={t("ssfManualOnlyEvents")}
-                                  onToggle={setManualOnlyEventsOpen}
-                                  isOpen={manualOnlyEventsOpen}
+                                  typeAheadAriaLabel={t("ssfEmitOnlyEvents")}
+                                  onToggle={setEmitOnlyEventsOpen}
+                                  isOpen={emitOnlyEventsOpen}
                                   selections={selected}
                                   onSelect={(value) => {
                                     const option = value.toString();

@@ -242,10 +242,10 @@ public class StreamConfig {
      * skips them. Stores resolved event-type URIs (canonical form),
      * not aliases. Empty/null = current default behaviour (every
      * supported event auto-emits). Populated from the receiver
-     * client's {@code ssf.manualOnlyEvents} attribute.
+     * client's {@code ssf.emitOnlyEvents} attribute.
      */
     @JsonIgnore
-    protected Set<String> manualOnlyEvents;
+    protected Set<String> emitOnlyEvents;
 
     public StreamConfig() {
     }
@@ -289,7 +289,7 @@ public class StreamConfig {
         this.signatureAlgorithm = other.signatureAlgorithm;
         this.userSubjectFormat = other.userSubjectFormat;
         this.subjectRemovalGraceSeconds = other.subjectRemovalGraceSeconds;
-        this.manualOnlyEvents = other.manualOnlyEvents == null ? null : new HashSet<>(other.manualOnlyEvents);
+        this.emitOnlyEvents = other.emitOnlyEvents == null ? null : new HashSet<>(other.emitOnlyEvents);
     }
 
     public String getStreamId() {
@@ -492,11 +492,11 @@ public class StreamConfig {
         this.subjectRemovalGraceSeconds = subjectRemovalGraceSeconds;
     }
 
-    public Set<String> getManualOnlyEvents() {
-        return manualOnlyEvents;
+    public Set<String> getEmitOnlyEvents() {
+        return emitOnlyEvents;
     }
 
-    public void setManualOnlyEvents(Set<String> manualOnlyEvents) {
-        this.manualOnlyEvents = manualOnlyEvents;
+    public void setEmitOnlyEvents(Set<String> emitOnlyEvents) {
+        this.emitOnlyEvents = emitOnlyEvents;
     }
 }
