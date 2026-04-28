@@ -105,8 +105,8 @@ import org.keycloak.saml.processing.core.saml.v2.util.SAMLMetadataUtil;
 import org.keycloak.saml.processing.core.util.KeycloakKeySamlExtensionGenerator;
 import org.keycloak.saml.validators.DestinationValidator;
 import org.keycloak.sessions.AuthenticationSessionModel;
-import org.keycloak.util.Booleans;
 import org.keycloak.util.JsonSerialization;
+import org.keycloak.util.Strings;
 import org.keycloak.util.TokenUtil;
 
 import org.jboss.logging.Logger;
@@ -165,7 +165,7 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
 
             Integer attributeConsumingServiceIndex = getConfig().getAttributeConsumingServiceIndex();
 
-            String loginHint = Booleans.isTrue(getConfig().isLoginHint()) ? request.getAuthenticationSession().getClientNote(OIDCLoginProtocol.LOGIN_HINT_PARAM) : null;
+            String loginHint = request.getAuthenticationSession().getClientNote(OIDCLoginProtocol.LOGIN_HINT_PARAM);
             Boolean allowCreate = null;
             if (getConfig().getConfig().get(SAMLIdentityProviderConfig.ALLOW_CREATE) == null || getConfig().isAllowCreate())
                 allowCreate = Boolean.TRUE;
@@ -183,8 +183,10 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
                         .format(nameIDPolicyFormat)
                         .setAllowCreate(allowCreate))
                     .attributeConsumingServiceIndex(attributeConsumingServiceIndex)
-                    .requestedAuthnContext(requestedAuthnContext)
-                    .subject(loginHint);
+                    .requestedAuthnContext(requestedAuthnContext);
+
+            if (getConfig().isLoginHint() && !Strings.isEmpty(loginHint))
+                authnRequestBuilder.subject(loginHint);
 
             JaxrsSAML2BindingBuilder binding = new JaxrsSAML2BindingBuilder(session)
                     .relayState(request.getState().getEncoded());
@@ -209,6 +211,16 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
 
             if (authnRequest.getDestination() != null) {
                 destinationUrl = authnRequest.getDestination().toString();
+            }
+
+            // Append login_hint as query parameter to destination URL if enabled
+            // Even though SAML 2.0 does not define a login_hint query parameter, it is often used by IdPs such as Entra
+            // see https://learn.microsoft.com/en-us/entra/identity-platform/single-sign-on-saml-protocol
+            if (getConfig().isLoginQueryHint() && !Strings.isEmpty(loginHint)) {
+                destinationUrl = UriBuilder.fromUri(destinationUrl)
+                        .queryParam(OIDCLoginProtocol.LOGIN_HINT_PARAM, loginHint)
+                        .build()
+                        .toString();
             }
 
             // Save the current RequestID in the Auth Session as we need to verify it against the ID returned from the IdP
