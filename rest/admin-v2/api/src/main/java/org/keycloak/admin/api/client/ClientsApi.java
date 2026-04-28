@@ -1,5 +1,6 @@
 package org.keycloak.admin.api.client;
 
+import java.util.Set;
 import java.util.stream.Stream;
 
 import jakarta.validation.Valid;
@@ -9,6 +10,7 @@ import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
@@ -20,6 +22,7 @@ import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
@@ -35,7 +38,7 @@ public interface ClientsApi {
     @APIResponses(value = {
         @APIResponse(responseCode = "200", content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = BaseClientRepresentation.class)))
     })
-    Stream<BaseClientRepresentation> getClients();
+    Stream<BaseClientRepresentation> getClients(@Parameter(description = "Set of fields to include in the response. Must be top-level fields on one of the client types. If omitted or empty, all fields will be populated.") @QueryParam("fields") Set<String> fields);
 
     @POST
     @Consumes(MediaType.APPLICATION_JSON)

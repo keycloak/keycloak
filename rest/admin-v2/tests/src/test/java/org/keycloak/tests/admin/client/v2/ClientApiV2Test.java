@@ -99,7 +99,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
 
     @InjectClient(realmRef = "master")
     ManagedClient testClient;
-
+    
     @Test
     public void getClient() {
         var client = clients(testRealm.getName()).client("account").getClient();
@@ -297,7 +297,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
         }
 
         // Get all clients - this should work with mixed protocols
-        try (Stream<BaseClientRepresentation> baseClientRepresentationStream = clients(testRealm.getName()).getClients()) {
+        try (Stream<BaseClientRepresentation> baseClientRepresentationStream = clients(testRealm.getName()).getClients(null)) {
             List<BaseClientRepresentation> clients = baseClientRepresentationStream.toList();
 
             // Verify OIDC client with protocol-specific fields
@@ -308,6 +308,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
                     .orElse(null);
 
             assertThat("OIDC client should be in the list", foundOidc, is(notNullValue()));
+            assertThat(foundOidc.getDescription(), notNullValue());
             assertThat(foundOidc.getLoginFlows(), is(Set.of(OIDCClientRepresentation.Flow.STANDARD, OIDCClientRepresentation.Flow.DIRECT_GRANT)));
             assertThat(foundOidc.getWebOrigins(), is(Set.of("http://localhost:3000", "http://localhost:4000")));
 
@@ -319,6 +320,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
                     .orElse(null);
 
             assertThat("SAML client should be in the list", foundSaml, is(notNullValue()));
+            assertThat(foundSaml.getDescription(), notNullValue());
             assertThat(foundSaml.getNameIdFormat(), is("email"));
             assertThat(foundSaml.getSignDocuments(), is(true));
             assertThat(foundSaml.getSignAssertions(), is(true));
@@ -342,6 +344,21 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
         assertThat(samlClient.getSignAssertions(), is(true));
         assertThat(samlClient.getForcePostBinding(), is(true));
         assertThat(samlClient.getFrontChannelLogout(), is(false));
+        
+        // test projecting only id and protocol
+        try (Stream<BaseClientRepresentation> baseClientRepresentationStream = clients(testRealm.getName()).getClients(Set.of("clientId", "protocol"))) {
+            List<BaseClientRepresentation> clients = baseClientRepresentationStream.toList();
+            for (BaseClientRepresentation client : clients) {
+                BaseClientRepresentation toCompare = null;
+                if (client.getProtocol().equals(OIDCClientRepresentation.PROTOCOL)) {
+                    toCompare = new OIDCClientRepresentation();
+                } else {
+                    toCompare = new SAMLClientRepresentation();
+                }
+                toCompare.setClientId(client.getClientId());
+                assertThat(client, Matchers.samePropertyValuesAs(toCompare));
+            }
+        }
     }
 
     @Test
