@@ -32,11 +32,13 @@ import org.jboss.logging.Logger;
 public class ReservedCharValidator {
     protected static final Logger logger = Logger.getLogger(ReservedCharValidator.class);
 
-    // https://tools.ietf.org/html/rfc3986#section-2.2
-    private static final Pattern RESERVED_CHARS_PATTERN = Pattern.compile("[:/?#@!$&()*+,;=\\[\\]\\\\]");
+    // https://tools.ietf.org/html/rfc3986#section-2.2 + all ANSI control characters including TAB, CR, LF
+    private static final Pattern RESERVED_CHARS_PATTERN = Pattern.compile("[\u0000-\u001F:/?#@!$&()*+,;=\\[\\]\\\\]");
 
     // KEYCLOAK-14231 - Supported Locales: Three new characters were added on top of this RFC: "{", "}", "%"
-    private static final Pattern RESERVED_CHARS_LOCALES_PATTERN = Pattern.compile("[:/?#@!$&()*+,;=\\[\\]\\\\{}%]");
+    private static final Pattern RESERVED_CHARS_LOCALES_PATTERN = Pattern.compile("[\u0000-\u001F:/?#@!$&()*+,;=\\[\\]\\\\{}%]");
+    private static final Pattern NEWLINE_PATTERN = Pattern.compile("\\n");
+    private static final String SPACE_PATTERN = "\\s";
 
     private ReservedCharValidator() {}
 
@@ -50,7 +52,13 @@ public class ReservedCharValidator {
         Matcher matcher = pattern.matcher(str);
         if (matcher.find()) {
             if(message == null) {
-                message = "Character '" + matcher.group() + "' not allowed.";
+                String c = matcher.group();
+                if (c.length() == 1 && c.getBytes()[0] < 32) {
+                    c = "0x" + Integer.toHexString(c.getBytes()[0]);
+                } else {
+                    c = "'" + c + "'";
+                }
+                message = "Character " + c + " not allowed.";
             }
             logger.warn(message);
             throw new ReservedCharException(message);
@@ -58,7 +66,7 @@ public class ReservedCharValidator {
     }
 
     public static void validateNoSpace(String str) {
-        validate(str, Pattern.compile("\\s"), "Empty Space not allowed.");
+        validate(str, Pattern.compile(SPACE_PATTERN), "Empty Space not allowed.");
         validate(str, RESERVED_CHARS_PATTERN);
     }
 
@@ -78,8 +86,8 @@ public class ReservedCharValidator {
         if (headers == null) return;
 
         for (Map.Entry<String, String> entry : headers.entrySet()) {
-            validate(entry.getKey(), Pattern.compile("\\n"), "Newline not allowed.");
-            validate(entry.getValue(), Pattern.compile("\\n"), "Newline not allowed.");
+            validate(entry.getKey(), NEWLINE_PATTERN, "Newline not allowed.");
+            validate(entry.getValue(), NEWLINE_PATTERN, "Newline not allowed.");
         }
     }
 

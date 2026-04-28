@@ -63,6 +63,7 @@ import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
 import org.keycloak.services.resources.admin.fgap.AdminPermissionManagement;
 import org.keycloak.services.resources.admin.fgap.AdminPermissions;
 import org.keycloak.utils.ProfileHelper;
+import org.keycloak.utils.ReservedCharValidator;
 
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
@@ -193,6 +194,8 @@ public class IdentityProviderResource {
         if (!identityProviderModel.getInternalId().equals(providerRep.getInternalId())) {
             providerRep.setInternalId(identityProviderModel.getInternalId());
         }
+
+        ReservedCharValidator.validateNoSpace(providerRep.getAlias());
 
         String oldProviderAlias = identityProviderModel.getAlias();
         if (providerRep.getAlias() != null && !oldProviderAlias.equals(providerRep.getAlias())) {

@@ -61,3 +61,25 @@ As part of this change, the `displayName` attribute has been promoted from a rea
 
 Before migrating, check the current value of the `displayName` attribute for your realms. If the current value of `displayName` attribute
 exceeds 255 characters, it will be truncated during migration.
+
+=== Valid characters for identifiers
+
+Identifiers like realm names, client scopes and client IDs can no longer contain characters that are also used as ANSI control characters. The character range 0x00-0x1F is no longer allowed.
+Update your identifiers before upgrading.
+
+=== <TODO>
+
+// ------------------------ Deprecated features ------------------------ //
+== Deprecated features
+
+The following sections provide details on deprecated features.
+
+=== <TODO>
+
+// ------------------------ Removed features ------------------------ //
+== Removed features
+
+The following features have been removed from this release.
+
+=== <TODO>
+
