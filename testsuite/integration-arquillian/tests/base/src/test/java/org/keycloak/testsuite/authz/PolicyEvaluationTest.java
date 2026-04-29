@@ -106,7 +106,7 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
                 .realmRoles("uma_authorization", "role-a", "role-b")
                 .groups(GroupBuilder.create().name("Group A")
                         .subGroups(GroupBuilder.create("Group B").subGroups("Group C", "Group E"))
-                        .subGroups(GroupBuilder.create("Group D")))
+                        .subGroups(GroupBuilder.create("Group D").realmRoles("role-a")))
                 .groups(GroupBuilder.create().name("Group E"))
                 .users(UserBuilder.create().username("marta").password("password").realmRoles("uma_authorization", "role-a").groups("Group A"))
                 .users(UserBuilder.create().username("alice").password("password").realmRoles("uma_authorization").groups("/Group A/Group B/Group E"))
