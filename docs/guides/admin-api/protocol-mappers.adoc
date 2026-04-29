@@ -1,0 +1,61 @@
+<#import "/templates/guide.adoc" as tmpl>
+
+<@tmpl.guide
+title="Protocol Mappers"
+summary="Provided ProtocolMapper implementations.">
+
+A {project_name} `ProtocolMapper` is a service provider interface (SPI) component used to map user data (attributes, roles, session notes)
+into tokens for OpenID Connect or SAML protocols. They enable customizing token contents to include specific information
+required by client applications.
+
+Protocol mappers can be created and managed via the {project_name} REST API using the
+link:https://www.keycloak.org/docs-api/latest/rest-api/index.html#_post_adminrealmsrealmclient_scopesclient_scope_idprotocol_mappersmodels[Create protocol mapper] endpoint.
+When creating a `ProtocolMapperRepresentation`, the `config` field is a key-value map whose available entries
+depend on the specific mapper type. This page serves as a reference for the expected configuration options
+available in `ProtocolMapperRepresentation.config` for each `ProtocolMapper` implementation.
+
+<#assign mappers = ctx.protocolMappers.getMappers() />
+<#list mappers as protocol, categoryMap>
+
+== ${protocol}
+
+The following section contains all `ProtocolMapper` implementation associated with the ${protocol} protocol.
+
+<#list categoryMap as category, mapperList>
+
+=== ${category}
+
+<#list mapperList as mapper>
+
+==== ${mapper.displayType()}
+
+${(mapper.helpText())!"_No description available._"}
+
+ID:: `${mapper.id()}`
+Implementation:: `${mapper.implementationClass()}`
+
+<#if mapper.configProperties()?has_content>
+.${mapper.displayType()} Configuration Properties
+[cols="1,1,1,1,2",options="header"]
+|===
+|Name |Property |Type |Default |Description
+
+<#list mapper.configProperties() as prop>
+<#if prop.getName()??>
+|${ctx.protocolMappers.resolveLabel(prop.getLabel()!prop.getName())}
+|`${prop.getName()}`
+|`${prop.getType()!"String"}`
+|<#if prop.getDefaultValue()??>`${prop.getDefaultValue()?string}`<#else>_None_</#if>
+|${ctx.protocolMappers.resolveTooltip((prop.getHelpText())!"")}
+
+</#if>
+</#list>
+|===
+</#if>
+
+'''
+</#list>
+</#list>
+</#list>
+
+</@tmpl.guide>
