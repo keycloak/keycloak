@@ -26,8 +26,7 @@ public class KeycloakCompatibilityMetadataProvider implements CompatibilityMetad
 
     @Override
     public Map<String, String> metadata() {
-        return Map.of(VERSION_KEY, version,
-                "new cluster event", "WorkflowScheduleClusterEvent");
+        return Map.of(VERSION_KEY, version);
     }
 
     @Override
