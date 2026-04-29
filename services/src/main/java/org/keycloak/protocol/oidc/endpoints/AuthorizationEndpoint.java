@@ -203,6 +203,7 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
         try {
             checker.checkParRequired();
             checker.checkInvalidRequestMessage();
+            checker.checkParRedirectUri();
             checker.checkAuthorizationDetails();
             checker.checkOIDCRequest();
             checker.checkValidScope();
