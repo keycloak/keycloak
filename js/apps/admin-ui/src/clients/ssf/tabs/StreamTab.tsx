@@ -157,7 +157,12 @@ export const StreamTab = ({
   const receiverSupportedEvents = (ssfSupportedEvents ?? defaultSupportedEvents)
     .split(",")
     .map((s) => s.trim())
-    .filter((s) => s.length > 0);
+    .filter((s) => s.length > 0)
+    // Storage order is whatever the operator picked when configuring the
+    // receiver — sort here so the create-stream dropdown is alphabetical
+    // and matches the deterministic order the backend now returns for
+    // availableSupportedEvents.
+    .sort((a, b) => a.localeCompare(b));
 
   // Admin-side create-stream form state — used by the empty-state form
   // when no stream is registered yet. Kept as plain useState because the

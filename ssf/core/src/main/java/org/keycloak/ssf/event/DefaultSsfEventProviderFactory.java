@@ -88,15 +88,40 @@ public class DefaultSsfEventProviderFactory implements SsfEventProviderFactory, 
     }
 
     /**
-     * Subset of {@link #STANDARD_EVENT_FACTORIES} that {@code SecurityEventTokenMapper}
-     * actually produces from Keycloak events. Every other built-in event in
-     * the map is contributed to the registry only so that the receiver-side
-     * parser can decode incoming SETs of that type.
+     * Subset of {@link #STANDARD_EVENT_FACTORIES} the transmitter can ship out
+     * — either {@code SecurityEventTokenMapper} produces them from Keycloak
+     * events, or operators can raise them on demand via the admin emit API.
+     * Every other built-in event in the map is contributed to the registry
+     * only so the receiver-side parser can decode incoming SETs of that type.
+     *
+     * <p>The three types here are the use-cases enumerated by the OpenID CAEP
+     * Interoperability Profile 1.0: {@code session-revoked},
+     * {@code credential-change}, and {@code device-compliance-change}.
+     * The profile is opt-in per use-case ("Implementations MAY choose to
+     * support one or more …"), so supporting any one of them is enough to
+     * count as interoperable. We surface all three as emittable so operators
+     * can wire whichever subset their deployment needs — even though today
+     * only the first two have native listener wiring (see
+     * {@link #NATIVELY_EMITTED_EVENT_TYPES}); the third is reachable via
+     * the admin emit API.
+     *
+     * @see <a href="https://openid.github.io/sharedsignals/openid-caep-interoperability-profile-1_0.html">OpenID CAEP Interoperability Profile 1.0</a>
      */
     public static final Set<String> EMITTABLE_EVENT_TYPES = Set.of(
             CaepCredentialChange.TYPE,
             CaepSessionRevoked.TYPE,
             CaepDeviceComplianceChange.TYPE);
+
+    /**
+     * Subset of {@link #EMITTABLE_EVENT_TYPES} that {@code SecurityEventTokenMapper}
+     * actually produces natively from Keycloak listener events. Drives the
+     * "natively emitted" badge in the admin UI. CaepDeviceComplianceChange is
+     * deliberately absent: Keycloak has no device-compliance state of its own,
+     * so the only way to ship one is via the admin emit API.
+     */
+    public static final Set<String> NATIVELY_EMITTED_EVENT_TYPES = Set.of(
+            CaepCredentialChange.TYPE,
+            CaepSessionRevoked.TYPE);
 
     private volatile SsfEventRegistry registry;
 
@@ -113,6 +138,11 @@ public class DefaultSsfEventProviderFactory implements SsfEventProviderFactory, 
     @Override
     public Set<String> getEmittableEventTypes() {
         return EMITTABLE_EVENT_TYPES;
+    }
+
+    @Override
+    public Set<String> getNativelyEmittedEventTypes() {
+        return NATIVELY_EMITTED_EVENT_TYPES;
     }
 
     @Override

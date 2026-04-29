@@ -2,6 +2,7 @@ package org.keycloak.ssf.transmitter;
 
 import java.util.LinkedHashSet;
 import java.util.Set;
+import java.util.TreeSet;
 
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.ssf.Ssf;
@@ -234,7 +235,7 @@ public class DefaultSsfTransmitterProvider implements SsfTransmitterProvider {
 
     @Override
     public Set<String> getNativelyEmittedEventAliases() {
-        return toAliases(registry(), registry().getEmittableEventTypes());
+        return toAliases(registry(), registry().getNativelyEmittedEventTypes());
     }
 
     /**
@@ -242,9 +243,15 @@ public class DefaultSsfTransmitterProvider implements SsfTransmitterProvider {
      * aliases. Falls back to the URI for any type without a registered
      * alias so unknown / custom types stay visible in the UI rather
      * than being silently dropped.
+     *
+     * <p>Returns a {@link TreeSet} so the alias order is deterministic
+     * (alphabetical) across calls. The underlying registry sources
+     * the URI list from a {@link java.util.HashMap}, whose iteration
+     * order can shift between processes; without the sort, admin-UI
+     * dropdowns would shuffle on every restart.
      */
     protected Set<String> toAliases(SsfEventRegistry registry, Set<String> eventTypes) {
-        Set<String> aliases = new LinkedHashSet<>(eventTypes.size());
+        Set<String> aliases = new TreeSet<>();
         for (String eventType : eventTypes) {
             String alias = registry.resolveAliasForEventType(eventType);
             aliases.add(alias != null ? alias : eventType);
