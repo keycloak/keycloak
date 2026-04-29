@@ -17,4 +17,5 @@ public @interface ProtocolUnmodified {
     String message() default "protocol cannot be changed for an existing client";
     Class<?>[] groups() default {};
     Class<? extends Payload>[] payload() default {};
+    String[] affectedFieldNames() default { "protocol" };
 }
