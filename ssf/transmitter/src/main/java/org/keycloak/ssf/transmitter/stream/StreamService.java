@@ -64,7 +64,8 @@ public class StreamService {
 
     protected final KeycloakSession session;
 
-    private final SsfTransmitterProvider transmitterProvider;
+    protected final SsfTransmitterProvider transmitterProvider;
+
     protected final SsfStreamStore streamStore;
 
     protected final TransmitterMetadataService transmitterService;
@@ -268,8 +269,10 @@ public class StreamService {
         try {
             return SsfProfile.valueOf(profileValue);
         } catch (IllegalArgumentException e) {
-            log.warnf("Unknown ssf.profile '%s' on client %s — defaulting to SSF_1_0",
-                    profileValue, receiverClient.getClientId());
+            log.warnf("Unknown ssf.profile '%s' defaulting to SSF_1_0. realm=%s client=%s",
+                    profileValue,
+                    session.getContext().getRealm().getName(),
+                    receiverClient.getClientId());
             return SsfProfile.SSF_1_0;
         }
     }
@@ -367,10 +370,13 @@ public class StreamService {
 
         TransmitterMetadata transmitterMetadata = transmitterProvider.metadataService().getTransmitterMetadata();
 
-        log.debugf("Scheduling Verification request after stream creation for stream %s", streamConfig.getStreamId());
-
         String realmId = session.getContext().getRealm().getId();
+        String realmName = session.getContext().getRealm().getName();
         String clientId = session.getContext().getClient().getClientId();
+
+        log.debugf("Scheduling Verification request after stream creation. realm=%s client=%s streamId=%s",
+                realmName, clientId, streamConfig.getStreamId());
+
         HttpRequest httpRequest = session.getContext().getHttpRequest();
         KeycloakSessionFactory keycloakSessionFactory = session.getKeycloakSessionFactory();
 
@@ -389,10 +395,12 @@ public class StreamService {
 
                 KeycloakSessionUtil.setKeycloakSession(subSession);
                 try {
-                    log.debugf("Sending transmitter initiated Verification request after stream creation for stream %s", streamConfig.getStreamId());
+                    log.debugf("Sending transmitter initiated Verification request after stream creation. realm=%s client=%s streamId=%s",
+                            realmName, clientId, streamConfig.getStreamId());
                     boolean verificationSent = triggerTransmitterInitiatedStreamVerification(streamConfig, subSession, verificationRequest);
                     if (verificationSent) {
-                        log.debugf("Verification transmitter initiated request sent after stream creation for stream %s", streamConfig.getStreamId());
+                        log.debugf("Verification transmitter initiated request sent after stream creation. realm=%s client=%s streamId=%s",
+                                realmName, clientId, streamConfig.getStreamId());
                     }
                     subSession.getTransactionManager().commit();
                 } finally {
@@ -400,7 +408,8 @@ public class StreamService {
                 }
 
             } catch (Exception e) {
-                log.errorf(e, "Failed to send transmitter initiated verification request after stream creation for stream %s", streamConfig.getStreamId());
+                log.errorf(e, "Failed to send transmitter initiated verification request after stream creation. realm=%s client=%s streamId=%s",
+                        realmName, clientId, streamConfig.getStreamId());
             } finally {
                 executor.shutdown();
             }
@@ -637,7 +646,8 @@ public class StreamService {
             return null;
         }
 
-        ClientModel receiverClient = session.getContext().getClient();
+        ClientModel client = session.getContext().getClient();
+        ClientModel receiverClient = client;
         SsfProfile profile = resolveReceiverProfile(receiverClient);
         validateLegacyFieldsForProfile(streamUpdate, profile);
 
@@ -666,6 +676,12 @@ public class StreamService {
         if (eventsRequestedChanged) {
             SsfEventsConfig eventsConfig = streamStore.getEventsConfig(receiverClient, draft.getEventsRequested());
             draft.setEventsDelivered(eventsConfig.eventsDelivered());
+            // Already-queued non-terminal outbox rows whose event type
+            // is no longer in events_delivered would otherwise be shipped
+            // by the drainer / poll endpoint (neither rechecks the live
+            // events_requested). Drop them so a narrowing PATCH actually
+            // takes effect on the wire.
+            evictPendingEventsOutsideDeliveredSet(receiverClient, draft.getEventsDelivered(), draft.getStreamId());
         }
 
         applySignatureAlgorithmFromClient(draft, receiverClient);
@@ -675,8 +691,9 @@ public class StreamService {
 
         streamStore.saveStream(draft);
 
+        RealmModel realm = session.getContext().getRealm();
         log.debugf("Stream updated. realm=%s client=%s streamId=%s",
-                session.getContext().getRealm().getName(), session.getContext().getClient().getClientId(), streamUpdate.getStreamId());
+                realm.getName(), client.getClientId(), streamUpdate.getStreamId());
 
         return resolveStreamForResponse(draft);
     }
@@ -706,7 +723,8 @@ public class StreamService {
             return null;
         }
 
-        ClientModel receiverClient = session.getContext().getClient();
+        ClientModel client = session.getContext().getClient();
+        ClientModel receiverClient = client;
         SsfProfile profile = resolveReceiverProfile(receiverClient);
         validateLegacyFieldsForProfile(streamUpdate, profile);
 
@@ -734,6 +752,9 @@ public class StreamService {
 
         SsfEventsConfig eventsConfig = streamStore.getEventsConfig(receiverClient, draft.getEventsRequested());
         draft.setEventsDelivered(eventsConfig.eventsDelivered());
+        // PUT replaces the entire receiver-writable subset, so always
+        // evict pending rows for event types the receiver no longer wants.
+        evictPendingEventsOutsideDeliveredSet(receiverClient, draft.getEventsDelivered(), draft.getStreamId());
 
         applySignatureAlgorithmFromClient(draft, receiverClient);
         applyUserSubjectFormatFromClient(draft, receiverClient);
@@ -742,8 +763,9 @@ public class StreamService {
 
         streamStore.saveStream(draft);
 
+        RealmModel realm = session.getContext().getRealm();
         log.debugf("Stream replaced. realm=%s client=%s streamId=%s",
-                session.getContext().getRealm().getName(), session.getContext().getClient().getClientId(), streamUpdate.getStreamId());
+                realm.getName(), client.getClientId(), streamUpdate.getStreamId());
 
         return resolveStreamForResponse(draft);
     }
@@ -831,8 +853,44 @@ public class StreamService {
         int migrated = eventStore.migrateDeliveryMethodForClient(
                 streamConfig.getClientId(), newMethodColumn);
         if (migrated > 0) {
-            log.debugf("Retargeted %d queued outbox row(s) on delivery method change %s → %s. streamId=%s",
-                    migrated, previousDeliveryMethodUri, newMethodUri, streamConfig.getStreamId());
+            RealmModel realm = session.getContext().getRealm();
+            log.debugf("Retargeted %d queued outbox row(s) on delivery method change %s → %s. realm=%s client=%s streamId=%s",
+                    migrated, previousDeliveryMethodUri, newMethodUri,
+                    realm.getName(), receiverClient.getClientId(), streamConfig.getStreamId());
+        }
+    }
+
+    /**
+     * Parks queued non-terminal outbox rows for the receiver whose
+     * event type is not in the supplied {@code allowedEventTypes}
+     * (the freshly recomputed {@code events_delivered} set) as
+     * {@code DEAD_LETTER}. Called after a stream PATCH/PUT narrows
+     * {@code events_requested}, so already-signed SETs of dropped
+     * event types stop being delivered to the receiver later —
+     * neither the push drainer nor the poll endpoint re-checks the
+     * live {@code events_requested} per row. We dead-letter rather
+     * than delete so the rows remain available for audit; the
+     * standard dead-letter retention purge will eventually evict them.
+     *
+     * <p>An empty {@code allowedEventTypes} means the receiver no
+     * longer accepts any events; every queued row is dead-lettered
+     * for the same reason.
+     */
+    protected void evictPendingEventsOutsideDeliveredSet(ClientModel receiverClient,
+                                                         Set<String> allowedEventTypes,
+                                                         String streamId) {
+        if (receiverClient == null) {
+            return;
+        }
+        SsfEventStore eventStore = eventStoreFactory.apply(session);
+        int parked = eventStore.deadLetterUndeliveredForClientNotIn(
+                receiverClient.getId(),
+                allowedEventTypes != null ? allowedEventTypes : Set.of(),
+                SsfEventStore.DEAD_LETTER_REASON_EVENT_TYPE_NO_LONGER_REQUESTED);
+        if (parked > 0) {
+            RealmModel realm = session.getContext().getRealm();
+            log.debugf("Dead-lettered %d queued outbox row(s) on events_requested narrow. realm=%s client=%s streamId=%s",
+                    parked, realm.getName(), receiverClient.getClientId(), streamId);
         }
     }
 
@@ -917,16 +975,19 @@ public class StreamService {
         // (clientId, jti) inserts are fresh, so over-deleting can't
         // strand a legitimate row.
         String clientId = existingStream.getClientId();
+        RealmModel realm = session.getContext().getRealm();
         if (clientId != null) {
             SsfEventStore eventStore = eventStoreFactory.apply(session);
             int purged = (int) eventStore.deleteByClient(clientId);
             if (purged > 0) {
-                log.debugf("Stream delete cascade: purged %d outbox rows for client %s", purged, clientId);
+                log.debugf("Stream delete cascade: purged %d outbox rows. realm=%s client=%s streamId=%s",
+                        purged, realm.getName(), clientId, streamId);
             }
         }
 
+        ClientModel client = session.getContext().getClient();
         log.debugf("Stream deleted. realm=%s client=%s streamId=%s",
-                session.getContext().getRealm().getName(), session.getContext().getClient().getClientId(), streamId);
+                realm.getName(), client.getClientId(), streamId);
 
         return true;
     }
@@ -989,8 +1050,10 @@ public class StreamService {
         // Update stream status
         StreamStatus streamStatus = streamStore.updateStreamStatus(streamId, newStreamStatus);
 
+        RealmModel realm = session.getContext().getRealm();
+        ClientModel client = session.getContext().getClient();
         log.debugf("Stream status updated. realm=%s client=%s streamId=%s status_old=%s status_new=%s",
-                session.getContext().getRealm().getName(), session.getContext().getClient().getClientId(), streamId,
+                realm.getName(), client.getClientId(), streamId,
                 currentStreamStatus.getStatus(), streamStatus.getStatus()
         );
 
@@ -1025,8 +1088,8 @@ public class StreamService {
                 pendingStore.holdPendingForClient(stream.getClientId());
             }
         } catch (Exception e) {
-            log.warnf(e, "Failed to align outbox backlog with new stream status. streamId=%s newStatus=%s",
-                    streamId, newStatusCode);
+            log.warnf(e, "Failed to align outbox backlog with new stream status. realm=%s client=%s streamId=%s newStatus=%s",
+                    realm.getName(), client.getClientId(), streamId, newStatusCode);
         }
 
         // SSF §8.1.2: notify the receiver of the new status with a
@@ -1054,7 +1117,8 @@ public class StreamService {
             // dispatch failure as a warning rather than rolling back
             // the status change itself; the receiver can re-derive
             // the current status via GET /streams/status.
-            log.warnf(e, "Failed to dispatch stream-updated SET. streamId=%s", streamId);
+            log.warnf(e, "Failed to dispatch stream-updated SET. realm=%s client=%s streamId=%s",
+                    realm.getName(), client.getClientId(), streamId);
         }
 
         return streamStatus;

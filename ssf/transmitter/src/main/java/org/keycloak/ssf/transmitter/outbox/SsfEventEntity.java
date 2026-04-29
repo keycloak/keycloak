@@ -209,6 +209,32 @@ import jakarta.persistence.UniqueConstraint;
                         + " WHERE e.clientId = :clientId"
                         + "   AND e.deliveryMethod <> :newMethod"
                         + "   AND e.status IN :statuses"),
+        // Stream PATCH/PUT that narrows events_requested: park the
+        // already-queued non-terminal rows whose event type is no
+        // longer in the receiver's events_delivered set as
+        // DEAD_LETTER with a reason, so the drainer / poll endpoint
+        // don't ship events the receiver has just opted out of.
+        // We don't DELETE because the rows represent real Keycloak-
+        // side events and an audit trail is more useful than silent
+        // loss; the standard dead-letter retention purge (driven by
+        // SsfOutboxCleanupTask) eventually evicts them. PENDING +
+        // HELD only — DELIVERED and DEAD_LETTER are terminal and
+        // skipped.
+        @NamedQuery(
+                name = "SsfEventEntity.deadLetterUndeliveredForClient",
+                query = "UPDATE SsfEventEntity e"
+                        + " SET e.status = :deadLetterStatus,"
+                        + "     e.lastError = :reason"
+                        + " WHERE e.clientId = :clientId"
+                        + "   AND e.status IN :statuses"),
+        @NamedQuery(
+                name = "SsfEventEntity.deadLetterUndeliveredForClientNotIn",
+                query = "UPDATE SsfEventEntity e"
+                        + " SET e.status = :deadLetterStatus,"
+                        + "     e.lastError = :reason"
+                        + " WHERE e.clientId = :clientId"
+                        + "   AND e.eventType NOT IN :allowedEventTypes"
+                        + "   AND e.status IN :statuses"),
         // Per-receiver TTL housekeeping pre-scan: enumerates the
         // (realmId, clientId) pairs that own at least one
         // non-DELIVERED row, so the drainer's per-client purge loop

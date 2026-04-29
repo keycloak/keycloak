@@ -5,6 +5,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.ClientResource;
@@ -18,6 +19,9 @@ import org.keycloak.ssf.event.caep.CaepCredentialChange;
 import org.keycloak.ssf.event.caep.CaepSessionRevoked;
 import org.keycloak.ssf.transmitter.SsfScopes;
 import org.keycloak.ssf.transmitter.admin.SsfClientStreamRepresentation;
+import org.keycloak.ssf.transmitter.outbox.SsfEventEntity;
+import org.keycloak.ssf.transmitter.outbox.SsfEventStatus;
+import org.keycloak.ssf.transmitter.store.SsfEventStore;
 import org.keycloak.ssf.transmitter.stream.StreamConfig;
 import org.keycloak.ssf.transmitter.stream.StreamConfigInputRepresentation;
 import org.keycloak.ssf.transmitter.stream.StreamConfigUpdateRepresentation;
@@ -29,6 +33,8 @@ import org.keycloak.testframework.annotations.InjectKeycloakUrls;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.InjectSimpleHttp;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
+import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmBuilder;
@@ -91,6 +97,9 @@ public class SsfTransmitterStreamManagementTests {
 
     @InjectKeycloakUrls
     KeycloakUrls keycloakUrls;
+
+    @InjectRunOnServer
+    RunOnServerClient runOnServer;
 
     @BeforeEach
     public void assignSsfScopesToReceiverClients() {
@@ -245,6 +254,134 @@ public class SsfTransmitterStreamManagementTests {
             Assertions.assertFalse(updated.getEventsDelivered().contains(CaepCredentialChange.TYPE),
                     "events_delivered should no longer include the dropped event");
         }
+    }
+
+    @Test
+    public void testPatchStreamWidensRequestedEvents() throws IOException {
+
+        // Mirror of testPatchStreamNarrowsRequestedEvents in the other
+        // direction: a PATCH that ADDS an event to events_requested must
+        // recompute events_delivered to include the newly-requested
+        // type, since that's the set the dispatcher gates on.
+        String token = obtainManageToken(RECEIVER_RW, RECEIVER_RW_SECRET);
+        StreamConfigUpdateRepresentation request = buildPushStreamRequest(Set.of(
+                CaepSessionRevoked.TYPE));
+
+        String streamId;
+        try (SimpleHttpResponse response = postStream(token, request)) {
+            Assertions.assertEquals(201, response.getStatus());
+            StreamConfig created = response.asJson(StreamConfig.class);
+            streamId = created.getStreamId();
+            Assertions.assertEquals(Set.of(CaepSessionRevoked.TYPE), created.getEventsRequested(),
+                    "events_requested should match the create body");
+            Assertions.assertTrue(created.getEventsDelivered().contains(CaepSessionRevoked.TYPE));
+            Assertions.assertFalse(created.getEventsDelivered().contains(CaepCredentialChange.TYPE),
+                    "events_delivered must not include events not yet requested");
+        }
+
+        StreamConfigUpdateRepresentation patch = buildPushStreamRequest(Set.of(
+                CaepSessionRevoked.TYPE,
+                CaepCredentialChange.TYPE));
+        patch.setStreamId(streamId);
+
+        try (SimpleHttpResponse response = patchStream(token, patch)) {
+            Assertions.assertEquals(200, response.getStatus(), "PATCH should succeed");
+            StreamConfig updated = response.asJson(StreamConfig.class);
+            Assertions.assertEquals(
+                    Set.of(CaepSessionRevoked.TYPE, CaepCredentialChange.TYPE),
+                    updated.getEventsRequested(),
+                    "events_requested should be widened to include the added event");
+            Assertions.assertTrue(updated.getEventsDelivered().contains(CaepSessionRevoked.TYPE),
+                    "events_delivered must keep the previously-requested event");
+            Assertions.assertTrue(updated.getEventsDelivered().contains(CaepCredentialChange.TYPE),
+                    "events_delivered must include the newly-requested event after recompute");
+        }
+    }
+
+    @Test
+    public void testPatchNarrowDeadLettersQueuedRowsForRemovedEventTypes() throws IOException {
+
+        // When a PATCH narrows events_requested, already-queued
+        // non-terminal outbox rows whose event type is no longer in
+        // events_delivered must stop being delivered — neither the
+        // push drainer nor the poll endpoint re-checks
+        // events_requested per row, so without this transition the
+        // receiver would still receive events it has just opted out
+        // of. We dead-letter rather than delete so the audit trail
+        // for real Keycloak-side events is preserved; standard
+        // dead-letter retention purges them eventually.
+        String token = obtainManageToken(RECEIVER_RW, RECEIVER_RW_SECRET);
+        StreamConfigUpdateRepresentation request = buildPushStreamRequest(Set.of(
+                CaepCredentialChange.TYPE,
+                CaepSessionRevoked.TYPE));
+
+        final String streamId;
+        try (SimpleHttpResponse response = postStream(token, request)) {
+            Assertions.assertEquals(201, response.getStatus());
+            streamId = response.asJson(StreamConfig.class).getStreamId();
+        }
+
+        // Seed one PENDING outbox row of each event type via runOnServer
+        // (using the server-side SsfEventStore so we don't rely on a
+        // failing push to land rows in PENDING). Use unique jtis so we
+        // can identify them after the PATCH.
+        final String credJti = "test-evict-cred-" + UUID.randomUUID();
+        final String sessJti = "test-evict-sess-" + UUID.randomUUID();
+        runOnServer.run(session -> {
+            var serverRealm = session.getContext().getRealm();
+            var receiver = serverRealm.getClientByClientId(RECEIVER_RW);
+            SsfEventStore store = new SsfEventStore(session);
+            store.enqueuePendingPush(serverRealm.getId(), receiver.getId(), streamId,
+                    credJti, CaepCredentialChange.TYPE, "encoded-cred");
+            store.enqueuePendingPush(serverRealm.getId(), receiver.getId(), streamId,
+                    sessJti, CaepSessionRevoked.TYPE, "encoded-sess");
+        });
+
+        // Pre-condition sanity: both rows are present and PENDING.
+        runOnServer.run(session -> {
+            var serverRealm = session.getContext().getRealm();
+            var receiver = serverRealm.getClientByClientId(RECEIVER_RW);
+            SsfEventStore store = new SsfEventStore(session);
+            SsfEventEntity credRow = store.findByClientAndJti(receiver.getId(), credJti);
+            SsfEventEntity sessRow = store.findByClientAndJti(receiver.getId(), sessJti);
+            Assertions.assertNotNull(credRow, "seeded credential-change row should be present");
+            Assertions.assertEquals(SsfEventStatus.PENDING, credRow.getStatus(),
+                    "seed should land as PENDING");
+            Assertions.assertNotNull(sessRow, "seeded session-revoked row should be present");
+            Assertions.assertEquals(SsfEventStatus.PENDING, sessRow.getStatus(),
+                    "seed should land as PENDING");
+        });
+
+        // PATCH narrows events_requested to drop CaepCredentialChange.
+        StreamConfigUpdateRepresentation patch = buildPushStreamRequest(Set.of(CaepSessionRevoked.TYPE));
+        patch.setStreamId(streamId);
+        try (SimpleHttpResponse response = patchStream(token, patch)) {
+            Assertions.assertEquals(200, response.getStatus(), "PATCH should succeed");
+            StreamConfig updated = response.asJson(StreamConfig.class);
+            Assertions.assertFalse(updated.getEventsDelivered().contains(CaepCredentialChange.TYPE),
+                    "events_delivered should no longer include the dropped event");
+        }
+
+        // The credential-change row must have been parked as
+        // DEAD_LETTER with the documented reason; the session-revoked
+        // row stays PENDING.
+        runOnServer.run(session -> {
+            var serverRealm = session.getContext().getRealm();
+            var receiver = serverRealm.getClientByClientId(RECEIVER_RW);
+            SsfEventStore store = new SsfEventStore(session);
+            SsfEventEntity credRow = store.findByClientAndJti(receiver.getId(), credJti);
+            SsfEventEntity sessRow = store.findByClientAndJti(receiver.getId(), sessJti);
+            Assertions.assertNotNull(credRow,
+                    "credential-change row must be retained for audit, not deleted");
+            Assertions.assertEquals(SsfEventStatus.DEAD_LETTER, credRow.getStatus(),
+                    "credential-change row should be parked as DEAD_LETTER on PATCH narrow");
+            Assertions.assertEquals("event_type_no_longer_requested", credRow.getLastError(),
+                    "DEAD_LETTER reason should identify the cause");
+            Assertions.assertNotNull(sessRow,
+                    "session-revoked row must be preserved (still in events_delivered)");
+            Assertions.assertEquals(SsfEventStatus.PENDING, sessRow.getStatus(),
+                    "session-revoked row must remain PENDING");
+        });
     }
 
     @Test
