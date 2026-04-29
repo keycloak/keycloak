@@ -16,6 +16,7 @@
  */
 package org.keycloak.services.resources.admin;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
@@ -24,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -31,8 +33,10 @@ import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.DefaultValue;
+import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.FormParam;
 import jakarta.ws.rs.GET;
+import jakarta.ws.rs.InternalServerErrorException;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.PUT;
@@ -47,6 +51,7 @@ import jakarta.ws.rs.core.Response.Status;
 import jakarta.ws.rs.core.StreamingOutput;
 
 import org.keycloak.Config;
+import org.keycloak.Config.Scope;
 import org.keycloak.KeyPairVerifier;
 import org.keycloak.authentication.CredentialRegistrator;
 import org.keycloak.authentication.RequiredActionProvider;
@@ -55,6 +60,7 @@ import org.keycloak.common.ClientConnection;
 import org.keycloak.common.Profile;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.PemUtils;
+import org.keycloak.config.database.Database;
 import org.keycloak.email.EmailAuthenticator;
 import org.keycloak.email.EmailException;
 import org.keycloak.email.EmailTemplateProvider;
@@ -67,7 +73,9 @@ import org.keycloak.events.admin.ResourceType;
 import org.keycloak.exportimport.ClientDescriptionConverter;
 import org.keycloak.exportimport.ClientDescriptionConverterFactory;
 import org.keycloak.exportimport.ExportAdapter;
+import org.keycloak.exportimport.ExportImportConfig;
 import org.keycloak.exportimport.ExportOptions;
+import org.keycloak.exportimport.ExportProvider;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.Constants;
@@ -100,6 +108,7 @@ import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.ResourceAdminManager;
+import org.keycloak.services.resources.KeycloakApplication;
 import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.ext.AdminRealmResourceProvider;
 import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
@@ -128,6 +137,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.reactive.NoCache;
 
+import static org.keycloak.exportimport.ExportImportConfig.PROVIDER_DEFAULT;
 import static org.keycloak.util.JsonSerialization.readValue;
 
 /**
@@ -292,9 +302,9 @@ public class RealmAdminResource {
         if (clientScope == null) {
             throw new NotFoundException("Client scope not found");
         }
-        
+
         ClientResource.validateClientScopeAssignment(session, clientScope, defaultScope, realm);
-        
+
         realm.addDefaultClientScope(clientScope, defaultScope);
 
         adminEvent.operation(OperationType.CREATE).resource(ResourceType.CLIENT_SCOPE).resourcePath(session.getContext().getUri()).success();
@@ -1397,6 +1407,41 @@ public class RealmAdminResource {
             }
         });
         return response.build();
+    }
+
+    @POST
+    @Path("dev-export")
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
+    @Operation(summary = "Full export of existing realm into a JSON file. Only for dev (H2) databases.")
+    @APIResponses(value = {
+            @APIResponse(responseCode = "204", description = "Success"),
+            @APIResponse(responseCode = "403", description = "Forbidden")
+        })
+    public Response devExport() {
+        auth.requireRealmAdmin();
+        Scope exportScope = Config.scope("export");
+        String db = exportScope.root().get("db");
+        if (Database.getVendor(db).filter(Database.Vendor.H2::equals).isEmpty()) {
+            throw new ForbiddenException("Export endpoint is only for dev (H2) databases.");
+        }
+        try (KeycloakSession override = session.getKeycloakSessionFactory().create()) {
+            Map<String, String> config = Map.of(ExportImportConfig.DIR_OPTION,
+                    KeycloakApplication.getTmpDirectory() + "/" + realm.getName(), ExportImportConfig.REALM_NAME_OPTION,
+                    realm.getName());
+            BiFunction<String, String, String> func = config::getOrDefault;
+            override.setAttribute(ExportImportConfig.CONFIG_OVERRIDE_ATTRIBUTE, func);
+            ExportProvider exportProvider = override.getKeycloakSessionFactory()
+                    .getProviderFactory(ExportProvider.class, exportScope.get("exporter", PROVIDER_DEFAULT))
+                    .create(override);
+            try {
+                exportProvider.exportModel();
+            } catch (IOException e) {
+                throw new InternalServerErrorException(e);
+            } finally {
+                exportProvider.close();
+            }
+        }
+        return Response.noContent().build();
     }
 
     @Path("keys")

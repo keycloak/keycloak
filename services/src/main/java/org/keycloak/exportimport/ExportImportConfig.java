@@ -36,11 +36,14 @@ public class ExportImportConfig {
     public static final String PROVIDER = PREFIX + "provider";
     public static final String PROVIDER_DEFAULT = "dir";
 
-    // Name of the realm to export. If null, then full export will be triggered
-    public static final String REALM_NAME = PREFIX + "realmName";
+    public static final String REALM_NAME_OPTION = "realmName";
 
+    // Name of the realm to export. If null, then full export will be triggered
+    public static final String REALM_NAME = PREFIX + REALM_NAME_OPTION;
+
+    public static final String DIR_OPTION = "dir";
     // used for "dir" provider
-    public static final String DIR = PREFIX + "dir";
+    public static final String DIR = PREFIX + DIR_OPTION;
 
     // used for "singleFile" provider
     public static final String FILE = PREFIX + "file";
@@ -59,6 +62,8 @@ public class ExportImportConfig {
     // Strategy used during import data
     public static final String STRATEGY = PREFIX + "strategy";
     public static final Strategy DEFAULT_STRATEGY = Strategy.OVERWRITE_EXISTING;
+
+    public static final String CONFIG_OVERRIDE_ATTRIBUTE = "importExportSessionOverride";
 
     public static String getAction() {
         return System.getProperty(ACTION);
