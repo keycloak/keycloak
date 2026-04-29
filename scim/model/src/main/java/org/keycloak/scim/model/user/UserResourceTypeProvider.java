@@ -53,6 +53,11 @@ public class UserResourceTypeProvider extends AbstractScimResourceTypeProvider<U
     }
 
     @Override
+    public String getDescription() {
+        return "User Account";
+    }
+
+    @Override
     public User onCreate(User resource) {
         UserProfileProvider provider = session.getProvider(UserProfileProvider.class);
         String userName = resource.getUserName();
