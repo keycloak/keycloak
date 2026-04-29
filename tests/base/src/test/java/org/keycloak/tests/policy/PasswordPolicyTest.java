@@ -18,7 +18,9 @@
 package org.keycloak.tests.policy;
 
 import java.io.File;
+import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.file.Paths;
 
 import org.keycloak.models.ModelException;
 import org.keycloak.models.PasswordPolicy;
@@ -229,7 +231,6 @@ public class PasswordPolicyTest {
     public void testInvalidPolicyName() {
         runOnServer.run(session -> {
             RealmModel realmModel = session.getContext().getRealm();
-            PasswordPolicyManagerProvider policyManager = session.getProvider(PasswordPolicyManagerProvider.class);
 
             try {
                 realmModel.setPasswordPolicy(PasswordPolicy.parse(session, "noSuchPolicy"));
@@ -246,7 +247,6 @@ public class PasswordPolicyTest {
             RealmModel realmModel = session.getContext().getRealm();
             PasswordPolicyManagerProvider policyManager = session.getProvider(PasswordPolicyManagerProvider.class);
 
-            PasswordPolicy policy = null;
             try {
                 realmModel.setPasswordPolicy(PasswordPolicy.parse(session, "regexPattern"));
                 fail("Expected NullPointerException: Regex Pattern cannot be null.");
@@ -333,12 +333,17 @@ public class PasswordPolicyTest {
     public static class PasswordPolicyServerConfig implements KeycloakServerConfig {
         @Override
         public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
-            URL resourceUrl = PasswordPolicyTest.class.getResource("/password-blacklists");
-            if (resourceUrl == null) {
-                throw new IllegalStateException("Password blacklist test resource not found in classpath");
+            try {
+                URL resourceUrl = PasswordPolicyTest.class.getResource("/password-blacklists");
+                if (resourceUrl == null) {
+                    throw new RuntimeException("Unable to find the password-blacklists file in the classpath for PasswordPolicyTest");
+                }
+                String resourcePath = Paths.get(resourceUrl.toURI()).toString();
+                return config.spiOption("password-policy", "password-blacklist", "blacklists-path", resourcePath);
+
+            } catch (URISyntaxException e) {
+                throw new RuntimeException(e);
             }
-            String resourcePath = resourceUrl.getPath();
-            return config.spiOption("password-policy", "password-blacklist", "blacklists-path", resourcePath);
         }
     }
 
