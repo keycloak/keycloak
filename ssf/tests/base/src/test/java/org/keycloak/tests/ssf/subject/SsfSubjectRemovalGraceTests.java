@@ -295,7 +295,7 @@ public class SsfSubjectRemovalGraceTests {
 
     protected void adminRemove(String clientId, String email) throws IOException {
         try (SimpleHttpResponse res = adminSubjectRequest(clientId, "subjects/remove", "user-email", email)) {
-            Assertions.assertEquals(204, res.getStatus(),
+            Assertions.assertEquals(200, res.getStatus(),
                     "admin subjects/remove should succeed for " + clientId);
         }
     }

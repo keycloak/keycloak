@@ -483,7 +483,7 @@ public class SsfAdminResource {
         AdminSubjectResult result = subjectManagementService().addSubjectByAdmin(client.getId(), request.getType(), request.getValue());
 
         if (result.result() == SubjectManagementResult.OK) {
-            return Response.ok(new SsfAdminSubjectResponse("added", result.entityType(), result.entityId())).build();
+            return Response.ok(new SsfAdminSubjectResponse("notified", result.entityType(), result.entityId())).build();
         }
         if (result.result() == SubjectManagementResult.SUBJECT_NOT_FOUND) {
             throw new NotFoundException("Subject not found");
@@ -504,13 +504,14 @@ public class SsfAdminResource {
     @POST
     @Path("clients/{clientId}/subjects/remove")
     @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.SSF)
     @Operation(
             summary = "Remove subject from client notification scope",
             description = "Removes a subject from a receiver client's notification scope. Resolves the subject and clears the ssf.notify.<clientId> attribute from the resolved entity."
     )
     @APIResponses(value = {
-            @APIResponse(responseCode = "204", description = "No Content"),
+            @APIResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = SsfAdminSubjectResponse.class))),
             @APIResponse(responseCode = "400", description = "Bad Request"),
             @APIResponse(responseCode = "404", description = "Client or subject not found")
     })
@@ -534,7 +535,7 @@ public class SsfAdminResource {
         AdminSubjectResult result = subjectManagementService().removeSubjectByAdmin(client.getId(), request.getType(), request.getValue());
 
         if (result.result() == SubjectManagementResult.OK) {
-            return Response.noContent().build();
+            return Response.ok(new SsfAdminSubjectResponse("not_notified", result.entityType(), result.entityId())).build();
         }
         if (result.result() == SubjectManagementResult.SUBJECT_NOT_FOUND) {
             throw new NotFoundException("Subject not found");

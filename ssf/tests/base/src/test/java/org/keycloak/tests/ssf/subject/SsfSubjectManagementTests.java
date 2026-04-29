@@ -134,7 +134,7 @@ public class SsfSubjectManagementTests {
                 "user-email", TEST_EMAIL)) {
             Assertions.assertEquals(200, res.getStatus());
             var body = res.asJson();
-            Assertions.assertEquals("added", body.get("status").asText());
+            Assertions.assertEquals("notified", body.get("status").asText());
             Assertions.assertEquals("user", body.get("entity_type").asText());
             Assertions.assertNotNull(body.get("entity_id").asText());
         }
@@ -155,13 +155,17 @@ public class SsfSubjectManagementTests {
     }
 
     @Test
-    public void adminRemoveSubject_returns204() throws IOException {
+    public void adminRemoveSubject_returns200() throws IOException {
 
         try (SimpleHttpResponse ignored = adminSubjectRequest(RECEIVER, "subjects/add",
                 "user-email", TEST_EMAIL)) {}
         try (SimpleHttpResponse res = adminSubjectRequest(RECEIVER, "subjects/remove",
                 "user-email", TEST_EMAIL)) {
-            Assertions.assertEquals(204, res.getStatus());
+            Assertions.assertEquals(200, res.getStatus());
+            var body = res.asJson();
+            Assertions.assertEquals("not_notified", body.get("status").asText());
+            Assertions.assertEquals("user", body.get("entity_type").asText());
+            Assertions.assertNotNull(body.get("entity_id").asText());
         }
     }
 
@@ -192,7 +196,7 @@ public class SsfSubjectManagementTests {
                 "user-username", TEST_USER)) {
             Assertions.assertEquals(200, res.getStatus());
             var body = res.asJson();
-            Assertions.assertEquals("added", body.get("status").asText());
+            Assertions.assertEquals("notified", body.get("status").asText());
             Assertions.assertEquals("user", body.get("entity_type").asText());
         }
     }
