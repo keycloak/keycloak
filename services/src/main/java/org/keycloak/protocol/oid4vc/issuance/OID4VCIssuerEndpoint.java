@@ -977,11 +977,13 @@ public class OID4VCIssuerEndpoint {
                 .detail(Details.VERIFIABLE_CREDENTIALS_ISSUED, String.valueOf(responseVO.getCredentials().size()));
         eventBuilder.success();
 
-        // Clean up offer state after successful credential issuance
-        // This prevents memory leaks while ensuring the state remains available during the request
-        if (offerState != null) {
+        // Keep pre-authorized offer state after successful issuance.
+        // Per OID4VCI Section 14.3 ("Multiple Accesses to the Credential Endpoint"),
+        // the credential endpoint may be accessed multiple times with the same access token.
+        // For authorization_code offers we preserve one-time offer fetch behavior and remove state.
+        if (offerState != null && !offerState.getCredentialsOffer().hasPreAuthorizedGrant()) {
             offerStorage.removeOfferState(offerState);
-            LOGGER.debugf("Removed credential offer state after successful issuance");
+            LOGGER.debugf("Removed authorization_code credential offer state after successful issuance");
         }
 
         return response;
