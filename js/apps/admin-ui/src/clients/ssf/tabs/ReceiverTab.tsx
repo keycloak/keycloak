@@ -81,10 +81,12 @@ export const ReceiverTab = ({
   reset,
 }: ReceiverTabProps) => {
   const { t } = useTranslation();
-  const { control, watch } = useFormContext<FormFields>();
+  const { control, watch, setValue } = useFormContext<FormFields>();
 
   const [supportedEventsOpen, setSupportedEventsOpen] = useState(false);
+  const [supportedEventsFilter, setSupportedEventsFilter] = useState("");
   const [emitOnlyEventsOpen, setEmitOnlyEventsOpen] = useState(false);
+  const [emitOnlyEventsFilter, setEmitOnlyEventsFilter] = useState("");
 
   // --- SSF Required Role picker state ---
   const [rolePickerOpen, setRolePickerOpen] = useState(false);
@@ -129,6 +131,16 @@ export const ReceiverTab = ({
   // registry list — the emit-only set is a strict subset.
   const ssfSupportedEvents = watch(
     convertAttributeNameToForm<FormFields>("attributes.ssf.supportedEvents"),
+  );
+  const ssfEmitOnlyEvents = watch(
+    convertAttributeNameToForm<FormFields>("attributes.ssf.emitOnlyEvents"),
+  );
+
+  const supportedEventsSelected = splitSupportedEvents(
+    ssfSupportedEvents ?? defaultSupportedEvents,
+  );
+  const emitOnlyEventsSelected = splitSupportedEvents(ssfEmitOnlyEvents).filter(
+    (e) => supportedEventsSelected.includes(e),
   );
 
   return (
@@ -539,56 +551,69 @@ export const ReceiverTab = ({
                         />
                       }
                     >
-                      <Controller
-                        name={convertAttributeNameToForm<FormFields>(
-                          "attributes.ssf.supportedEvents",
-                        )}
-                        control={control}
-                        defaultValue={defaultSupportedEvents}
-                        render={({ field }) => {
-                          const selected = splitSupportedEvents(field.value);
-                          return (
-                            <KeycloakSelect
-                              toggleId="ssfSupportedEvents"
-                              data-testid="ssfSupportedEvents"
-                              variant={SelectVariant.typeaheadMulti}
-                              chipGroupProps={{
-                                numChips: 5,
-                                expandedText: t("hide"),
-                                collapsedText: t("showRemaining"),
-                              }}
-                              typeAheadAriaLabel={t("ssfSupportedEvents")}
-                              onToggle={setSupportedEventsOpen}
-                              isOpen={supportedEventsOpen}
-                              selections={selected}
-                              onSelect={(value) => {
-                                const option = value.toString();
-                                if (!option) return;
-                                const next = selected.includes(option)
-                                  ? selected.filter((s) => s !== option)
-                                  : [...selected, option];
-                                field.onChange(next.join(","));
-                              }}
-                              onClear={() => field.onChange("")}
-                            >
-                              {availableSupportedEvents.map((event) => (
-                                <SelectOption key={event} value={event}>
-                                  {event}
-                                  {nativelyEmittedEvents.includes(event) && (
-                                    <Label
-                                      color="blue"
-                                      isCompact
-                                      className="pf-v5-u-ml-sm"
-                                    >
-                                      {t("ssfNativelyEmittedBadge")}
-                                    </Label>
-                                  )}
-                                </SelectOption>
-                              ))}
-                            </KeycloakSelect>
-                          );
+                      <KeycloakSelect
+                        toggleId="ssfSupportedEvents"
+                        data-testid="ssfSupportedEvents"
+                        variant={SelectVariant.typeaheadMulti}
+                        chipGroupProps={{
+                          numChips: 5,
+                          expandedText: t("hide"),
+                          collapsedText: t("showRemaining"),
                         }}
-                      />
+                        typeAheadAriaLabel={t("ssfSupportedEvents")}
+                        onToggle={setSupportedEventsOpen}
+                        isOpen={supportedEventsOpen}
+                        selections={supportedEventsSelected}
+                        onSelect={(value) => {
+                          const option = value.toString();
+                          if (!option) return;
+                          const next = supportedEventsSelected.includes(option)
+                            ? supportedEventsSelected.filter(
+                                (s) => s !== option,
+                              )
+                            : [...supportedEventsSelected, option];
+                          setValue(
+                            convertAttributeNameToForm<FormFields>(
+                              "attributes.ssf.supportedEvents",
+                            ),
+                            next.join(","),
+                            { shouldDirty: true },
+                          );
+                          setSupportedEventsFilter("");
+                        }}
+                        onClear={() => {
+                          setValue(
+                            convertAttributeNameToForm<FormFields>(
+                              "attributes.ssf.supportedEvents",
+                            ),
+                            "",
+                            { shouldDirty: true },
+                          );
+                          setSupportedEventsFilter("");
+                        }}
+                        onFilter={setSupportedEventsFilter}
+                      >
+                        {availableSupportedEvents
+                          .filter((event) =>
+                            event
+                              .toLowerCase()
+                              .includes(supportedEventsFilter.toLowerCase()),
+                          )
+                          .map((event) => (
+                            <SelectOption key={event} value={event}>
+                              {event}
+                              {nativelyEmittedEvents.includes(event) && (
+                                <Label
+                                  color="blue"
+                                  isCompact
+                                  className="pf-v5-u-ml-sm"
+                                >
+                                  {t("ssfNativelyEmittedBadge")}
+                                </Label>
+                              )}
+                            </SelectOption>
+                          ))}
+                      </KeycloakSelect>
                     </FormGroup>
                     <DefaultSwitchControl
                       name={convertAttributeNameToForm<FormFields>(
@@ -608,52 +633,59 @@ export const ReceiverTab = ({
                         />
                       }
                     >
-                      <Controller
-                        name={convertAttributeNameToForm<FormFields>(
-                          "attributes.ssf.emitOnlyEvents",
-                        )}
-                        control={control}
-                        defaultValue=""
-                        render={({ field }) => {
-                          const supportedEvents =
-                            splitSupportedEvents(ssfSupportedEvents);
-                          const selected = splitSupportedEvents(
-                            field.value,
-                          ).filter((e) => supportedEvents.includes(e));
-                          return (
-                            <KeycloakSelect
-                              toggleId="ssfEmitOnlyEvents"
-                              data-testid="ssfEmitOnlyEvents"
-                              variant={SelectVariant.typeaheadMulti}
-                              chipGroupProps={{
-                                numChips: 5,
-                                expandedText: t("hide"),
-                                collapsedText: t("showRemaining"),
-                              }}
-                              typeAheadAriaLabel={t("ssfEmitOnlyEvents")}
-                              onToggle={setEmitOnlyEventsOpen}
-                              isOpen={emitOnlyEventsOpen}
-                              selections={selected}
-                              onSelect={(value) => {
-                                const option = value.toString();
-                                if (!option) return;
-                                const next = selected.includes(option)
-                                  ? selected.filter((s) => s !== option)
-                                  : [...selected, option];
-                                field.onChange(next.join(","));
-                              }}
-                              onClear={() => field.onChange("")}
-                              isDisabled={supportedEvents.length === 0}
-                            >
-                              {supportedEvents.map((event) => (
-                                <SelectOption key={event} value={event}>
-                                  {event}
-                                </SelectOption>
-                              ))}
-                            </KeycloakSelect>
-                          );
+                      <KeycloakSelect
+                        toggleId="ssfEmitOnlyEvents"
+                        data-testid="ssfEmitOnlyEvents"
+                        variant={SelectVariant.typeaheadMulti}
+                        chipGroupProps={{
+                          numChips: 5,
+                          expandedText: t("hide"),
+                          collapsedText: t("showRemaining"),
                         }}
-                      />
+                        typeAheadAriaLabel={t("ssfEmitOnlyEvents")}
+                        onToggle={setEmitOnlyEventsOpen}
+                        isOpen={emitOnlyEventsOpen}
+                        selections={emitOnlyEventsSelected}
+                        onSelect={(value) => {
+                          const option = value.toString();
+                          if (!option) return;
+                          const next = emitOnlyEventsSelected.includes(option)
+                            ? emitOnlyEventsSelected.filter((s) => s !== option)
+                            : [...emitOnlyEventsSelected, option];
+                          setValue(
+                            convertAttributeNameToForm<FormFields>(
+                              "attributes.ssf.emitOnlyEvents",
+                            ),
+                            next.join(","),
+                            { shouldDirty: true },
+                          );
+                          setEmitOnlyEventsFilter("");
+                        }}
+                        onClear={() => {
+                          setValue(
+                            convertAttributeNameToForm<FormFields>(
+                              "attributes.ssf.emitOnlyEvents",
+                            ),
+                            "",
+                            { shouldDirty: true },
+                          );
+                          setEmitOnlyEventsFilter("");
+                        }}
+                        onFilter={setEmitOnlyEventsFilter}
+                        isDisabled={supportedEventsSelected.length === 0}
+                      >
+                        {supportedEventsSelected
+                          .filter((event) =>
+                            event
+                              .toLowerCase()
+                              .includes(emitOnlyEventsFilter.toLowerCase()),
+                          )
+                          .map((event) => (
+                            <SelectOption key={event} value={event}>
+                              {event}
+                            </SelectOption>
+                          ))}
+                      </KeycloakSelect>
                     </FormGroup>
                     {String(ssfAllowEmitEvents) === "true" && (
                       <FormGroup

@@ -697,6 +697,53 @@ public class SsfTransmitterStreamManagementTests {
     }
 
     @Test
+    public void testCreateStreamRejectsMalformedEndpointUrl() throws IOException {
+
+        // delivery.endpoint_url that isn't a parseable URI must be rejected
+        // up front rather than dead-lettering every queued event for that
+        // receiver on first push attempt.
+        String token = obtainManageToken(RECEIVER_RW, RECEIVER_RW_SECRET);
+        StreamConfigUpdateRepresentation request = buildPushStreamRequest(Set.of(CaepCredentialChange.TYPE));
+        request.getDelivery().setEndpointUrl("not a url");
+
+        try (SimpleHttpResponse response = postStream(token, request)) {
+            Assertions.assertEquals(400, response.getStatus(),
+                    "malformed delivery.endpoint_url must be rejected");
+        }
+    }
+
+    @Test
+    public void testCreateStreamRejectsNonHttpEndpointUrl() throws IOException {
+
+        // The push transport is HTTP-only; receivers can't supply ftp://,
+        // file://, javascript:, etc. — those would just dead-letter on
+        // first push attempt. Reject the scheme up front.
+        String token = obtainManageToken(RECEIVER_RW, RECEIVER_RW_SECRET);
+        StreamConfigUpdateRepresentation request = buildPushStreamRequest(Set.of(CaepCredentialChange.TYPE));
+        request.getDelivery().setEndpointUrl("ftp://example.com/push");
+
+        try (SimpleHttpResponse response = postStream(token, request)) {
+            Assertions.assertEquals(400, response.getStatus(),
+                    "non-http(s) delivery.endpoint_url must be rejected");
+        }
+    }
+
+    @Test
+    public void testCreateStreamRejectsRelativeEndpointUrl() throws IOException {
+
+        // A relative URL like "/ssf/push" has no scheme/host the
+        // transmitter can reach, so it must be rejected.
+        String token = obtainManageToken(RECEIVER_RW, RECEIVER_RW_SECRET);
+        StreamConfigUpdateRepresentation request = buildPushStreamRequest(Set.of(CaepCredentialChange.TYPE));
+        request.getDelivery().setEndpointUrl("/ssf/push");
+
+        try (SimpleHttpResponse response = postStream(token, request)) {
+            Assertions.assertEquals(400, response.getStatus(),
+                    "relative delivery.endpoint_url must be rejected");
+        }
+    }
+
+    @Test
     public void testCreateStreamRejectsOversizedAuthorizationHeader() throws IOException {
 
         // delivery.authorization_header > 1024 characters must be rejected with 400.

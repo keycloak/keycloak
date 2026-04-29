@@ -1,5 +1,7 @@
 package org.keycloak.ssf.transmitter.stream;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -496,6 +498,7 @@ public class StreamService {
                 if (delivery.getEndpointUrl() == null) {
                     throw new SsfException("Invalid stream configuration: missing delivery endpoint push URL");
                 }
+                validatePushEndpointUrl(delivery.getEndpointUrl());
             }
             case Ssf.DELIVERY_METHOD_POLL_URI, Ssf.DELIVERY_METHOD_RISC_POLL_URI -> {
                 // Poll endpoint_url is owned by the transmitter per SSF
@@ -508,6 +511,35 @@ public class StreamService {
                 // previously-saved stream config don't get a 400.
             }
             default -> throw new SsfException("Invalid stream configuration: unsupported delivery method");
+        }
+    }
+
+    /**
+     * Validates that a receiver-supplied push endpoint URL is well-formed
+     * and uses an http(s) scheme. Without this guard, the field would
+     * accept arbitrary strings like {@code "not-a-url"} or
+     * {@code "javascript:alert(1)"} — they'd persist, only to fail on
+     * first push attempt and dead-letter every queued event for that
+     * receiver. Reject up front so receivers / admins get a 400 with a
+     * clear reason instead of mysterious wire-time failures later.
+     */
+    protected void validatePushEndpointUrl(String endpointUrl) {
+        URI uri;
+        try {
+            uri = new URI(endpointUrl);
+        } catch (URISyntaxException e) {
+            throw new SsfException("Invalid stream configuration: delivery.endpoint_url is not a valid URI");
+        }
+        if (!uri.isAbsolute()) {
+            throw new SsfException("Invalid stream configuration: delivery.endpoint_url must be absolute");
+        }
+        String scheme = uri.getScheme();
+        if (scheme == null
+                || !(scheme.equalsIgnoreCase("http") || scheme.equalsIgnoreCase("https"))) {
+            throw new SsfException("Invalid stream configuration: delivery.endpoint_url must use http or https");
+        }
+        if (uri.getHost() == null || uri.getHost().isBlank()) {
+            throw new SsfException("Invalid stream configuration: delivery.endpoint_url must include a host");
         }
     }
 

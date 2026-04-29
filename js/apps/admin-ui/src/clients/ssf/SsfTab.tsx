@@ -278,7 +278,7 @@ export const SsfTab = ({ save, client, activeTab }: SsfTabProps) => {
           client={client}
           clientStream={clientStream}
           setClientStream={setClientStream}
-          availableSupportedEvents={availableSupportedEvents}
+          defaultSupportedEvents={defaultSupportedEvents}
           nativelyEmittedEvents={nativelyEmittedEvents}
           defaultPushConnectTimeoutMillis={defaultPushConnectTimeoutMillis}
           defaultPushSocketTimeoutMillis={defaultPushSocketTimeoutMillis}
