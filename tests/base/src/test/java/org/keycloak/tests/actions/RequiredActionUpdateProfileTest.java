@@ -1,20 +1,4 @@
-/*
- * Copyright 2016 Red Hat, Inc. and/or its affiliates
- * and other contributors as indicated by the @author tags.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-package org.keycloak.testsuite.actions;
+package org.keycloak.tests.actions;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -30,71 +14,80 @@ import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.ClientRepresentation;
-import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.userprofile.config.UPAttribute;
 import org.keycloak.representations.userprofile.config.UPAttributePermissions;
 import org.keycloak.representations.userprofile.config.UPConfig;
+import org.keycloak.testframework.annotations.InjectEvents;
+import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.events.EventAssertion;
+import org.keycloak.testframework.events.Events;
+import org.keycloak.testframework.oauth.OAuthClient;
+import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
+import org.keycloak.testframework.realm.ClientBuilder;
+import org.keycloak.testframework.realm.ClientConfig;
+import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.realm.RealmBuilder;
+import org.keycloak.testframework.realm.RealmConfig;
 import org.keycloak.testframework.realm.UserBuilder;
-import org.keycloak.testsuite.AbstractChangeImportedUserPasswordsTest;
-import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.admin.AdminApiUtil;
-import org.keycloak.testsuite.arquillian.annotation.IgnoreBrowserDriver;
-import org.keycloak.testsuite.pages.AppPage;
-import org.keycloak.testsuite.pages.AppPage.RequestType;
-import org.keycloak.testsuite.pages.ErrorPage;
-import org.keycloak.testsuite.pages.LoginPage;
-import org.keycloak.testsuite.pages.LoginUpdateProfileEditUsernameAllowedPage;
+import org.keycloak.testframework.ui.annotations.InjectPage;
+import org.keycloak.testframework.ui.annotations.InjectWebDriver;
+import org.keycloak.testframework.ui.page.ErrorPage;
+import org.keycloak.testframework.ui.page.LoginPage;
+import org.keycloak.testframework.ui.page.LoginUpdateProfilePage;
+import org.keycloak.testframework.ui.webdriver.BrowserType;
+import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
+import org.keycloak.tests.utils.PasswordGenerateUtil;
+import org.keycloak.tests.utils.admin.AdminApiUtil;
 import org.keycloak.userprofile.UserProfileContext;
 import org.keycloak.utils.StringUtil;
 
 import org.hamcrest.Matchers;
-import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Assumptions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.openqa.selenium.ElementClickInterceptedException;
-import org.openqa.selenium.htmlunit.HtmlUnitDriver;
 
 import static org.keycloak.userprofile.config.UPConfigUtils.ROLE_ADMIN;
 import static org.keycloak.userprofile.config.UPConfigUtils.ROLE_USER;
 
+import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.anyOf;
 import static org.hamcrest.Matchers.containsString;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
-/**
- * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
- */
-public class RequiredActionUpdateProfileTest extends AbstractChangeImportedUserPasswordsTest {
+@KeycloakIntegrationTest
+public class RequiredActionUpdateProfileTest {
 
-    @Rule
-    public AssertEvents events = new AssertEvents(this);
+    @InjectRealm(config = RequiredActionUpdateProfileRealmConfig.class)
+    ManagedRealm realm;
 
-    @Page
-    protected AppPage appPage;
+    @InjectWebDriver
+    ManagedWebDriver driver;
 
-    @Page
+    @InjectOAuthClient(config = RequiredActionUpdateProfileClientConfig.class)
+    OAuthClient oauth;
+
+    @InjectEvents
+    Events events;
+
+    @InjectPage
     protected LoginPage loginPage;
 
-    @Page
-    protected LoginUpdateProfileEditUsernameAllowedPage updateProfilePage;
+    @InjectPage
+    protected LoginUpdateProfilePage updateProfilePage;
 
-    @Page
+    @InjectPage
     protected ErrorPage errorPage;
 
-    @Override
-    public void configureTestRealm(RealmRepresentation testRealm) {
-        super.configureTestRealm(testRealm);
-        ActionUtil.addRequiredActionForUser(testRealm, "test-user@localhost", UserModel.RequiredAction.UPDATE_PROFILE.name());
-        ActionUtil.addRequiredActionForUser(testRealm, "john-doh@localhost", UserModel.RequiredAction.UPDATE_PROFILE.name());
-    }
-
-    @Before
+    @BeforeEach
     public void beforeTest() {
-        AdminApiUtil.removeUserByUsername(managedRealm.admin(), "test-user@localhost");
+        AdminApiUtil.removeUserByUsername(realm.admin(), "test-user@localhost");
         UserRepresentation user = UserBuilder.create().enabled(true)
                 .username("test-user@localhost")
                 .email("test-user@localhost")
@@ -102,9 +95,9 @@ public class RequiredActionUpdateProfileTest extends AbstractChangeImportedUserP
                 .lastName("Brady")
                 .emailVerified(true)
                 .requiredActions(UserModel.RequiredAction.UPDATE_PROFILE.name()).build();
-        AdminApiUtil.createUserAndResetPasswordWithAdminClient(managedRealm.admin(), user, generatePassword("test-user@localhost"));
+        AdminApiUtil.createUserAndResetPasswordWithAdminClient(realm.admin(), user, PasswordGenerateUtil.generatePassword());
 
-        AdminApiUtil.removeUserByUsername(managedRealm.admin(), "john-doh@localhost");
+        AdminApiUtil.removeUserByUsername(realm.admin(), "john-doh@localhost");
         user = UserBuilder.create().enabled(true)
                 .username("john-doh@localhost")
                 .email("john-doh@localhost")
@@ -112,32 +105,39 @@ public class RequiredActionUpdateProfileTest extends AbstractChangeImportedUserP
                 .lastName("Doh")
                 .emailVerified(true)
                 .requiredActions(UserModel.RequiredAction.UPDATE_PROFILE.name()).build();
-        AdminApiUtil.createUserAndResetPasswordWithAdminClient(managedRealm.admin(), user, generatePassword("john-doh@localhost"));
+        AdminApiUtil.createUserAndResetPasswordWithAdminClient(realm.admin(), user, PasswordGenerateUtil.generatePassword());
     }
 
     @Test
     public void updateProfile() {
         oauth.openLoginForm();
-        UserRepresentation user = ActionUtil.findUserWithAdminClient(adminClient, "test-user@localhost");
+        UserRepresentation user = AdminApiUtil.findUserByUsername(realm.admin(), "test-user@localhost");
         user.setEmailVerified(true);
-        adminClient.realm("test").users().get(user.getId()).update(user);
-        loginPage.login("test-user@localhost", getPassword("test-user@localhost"));
+        realm.admin().users().get(user.getId()).update(user);
+
+        String password = resetPassword("test-user@localhost");
+        loginPage.fillLogin("test-user@localhost", password);
+        loginPage.submit();
 
         updateProfilePage.assertCurrent();
         assertFalse(updateProfilePage.isCancelDisplayed());
 
         updateProfilePage.prepareUpdate().username("test-user@localhost").firstName("New first").lastName("New last").email("new@email.com").submit();
 
-        events.expectRequiredAction(EventType.UPDATE_PROFILE).detail(Details.PREVIOUS_FIRST_NAME, "Tom").detail(Details.UPDATED_FIRST_NAME, "New first")
-                .detail(Details.PREVIOUS_LAST_NAME, "Brady").detail(Details.UPDATED_LAST_NAME, "New last")
-                .detail(Details.PREVIOUS_EMAIL, "test-user@localhost").detail(Details.UPDATED_EMAIL, "new@email.com")
-                .assertEvent();
-        Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        EventAssertion.assertSuccess(events.poll())
+                .type(EventType.UPDATE_PROFILE)
+                .details(Details.PREVIOUS_FIRST_NAME, "Tom")
+                .details(Details.UPDATED_FIRST_NAME, "New first")
+                .details(Details.PREVIOUS_LAST_NAME, "Brady")
+                .details(Details.UPDATED_LAST_NAME, "New last")
+                .details(Details.PREVIOUS_EMAIL, "test-user@localhost")
+                .details(Details.UPDATED_EMAIL, "new@email.com");
+        assertThat(oauth.parseLoginResponse().getCode(), notNullValue());
 
-        events.expectLogin().assertEvent();
+        EventAssertion.assertSuccess(events.poll()).type(EventType.LOGIN);
 
         // assert user is really updated in persistent store
-        user = ActionUtil.findUserWithAdminClient(adminClient, "test-user@localhost");
+        user = AdminApiUtil.findUserByUsername(realm.admin(), "test-user@localhost");
         Assertions.assertEquals("New first", user.getFirstName());
         Assertions.assertEquals("New last", user.getLastName());
         Assertions.assertEquals("new@email.com", user.getEmail());
@@ -150,39 +150,48 @@ public class RequiredActionUpdateProfileTest extends AbstractChangeImportedUserP
     public void updateUsername() {
         oauth.openLoginForm();
 
-        loginPage.login("john-doh@localhost", getPassword("john-doh@localhost"));
+        String password = resetPassword("john-doh@localhost");
+        loginPage.fillLogin("john-doh@localhost", password);
+        loginPage.submit();
 
-        String userId = ActionUtil.findUserWithAdminClient(adminClient, "john-doh@localhost").getId();
+        String userId = AdminApiUtil.findUserByUsername(realm.admin(), "john-doh@localhost").getId();
 
         updateProfilePage.assertCurrent();
 
         updateProfilePage.prepareUpdate().username("new").firstName("New first").lastName("New last").email("john-doh@localhost").submit();
 
-        events.expectLogin().event(EventType.UPDATE_PROFILE).detail(Details.UPDATED_FIRST_NAME, "New first").user(userId).session(Matchers.nullValue(String.class)).removeDetail(Details.CONSENT)
-                .detail(Details.UPDATED_LAST_NAME, "New last").user(userId).session(Matchers.nullValue(String.class)).removeDetail(Details.CONSENT)
-                .detail(Details.USERNAME, "john-doh@localhost")
-                .assertEvent();
+        EventAssertion.assertSuccess(events.poll())
+                .type(EventType.UPDATE_PROFILE)
+                .userId(userId)
+                .details(Details.UPDATED_FIRST_NAME, "New first")
+                .details(Details.UPDATED_LAST_NAME, "New last")
+                .details(Details.USERNAME, "john-doh@localhost");
 
-        Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        assertThat(oauth.parseLoginResponse().getCode(), notNullValue());
 
-        events.expectLogin().detail(Details.USERNAME, "john-doh@localhost").user(userId).assertEvent();
+        EventAssertion.assertSuccess(events.poll())
+                .type(EventType.LOGIN)
+                .userId(userId)
+                .details(Details.USERNAME, "john-doh@localhost");
 
         // assert user is really updated in persistent store
-        UserRepresentation user = ActionUtil.findUserWithAdminClient(adminClient, "new");
+        UserRepresentation user = AdminApiUtil.findUserByUsername(realm.admin(), "new");
         Assertions.assertEquals("New first", user.getFirstName());
         Assertions.assertEquals("New last", user.getLastName());
         Assertions.assertEquals("john-doh@localhost", user.getEmail());
         Assertions.assertEquals("new", user.getUsername());
         // email not changed so verify that emailVerified flag is NOT reset
         Assertions.assertEquals(true, user.isEmailVerified());
-        getCleanup().addUserId(user.getId());
+        realm.cleanup().add(r -> r.users().get(user.getId()).remove());
     }
 
     @Test
     public void updateProfileMissingFirstName() {
         oauth.openLoginForm();
 
-        loginPage.login("test-user@localhost", getPassword("test-user@localhost"));
+        String password = resetPassword("test-user@localhost");
+        loginPage.fillLogin("test-user@localhost", password);
+        loginPage.submit();
 
         updateProfilePage.assertCurrent();
 
@@ -196,14 +205,16 @@ public class RequiredActionUpdateProfileTest extends AbstractChangeImportedUserP
         Assertions.assertEquals("new@email.com", updateProfilePage.getEmail());
         Assertions.assertEquals("Please specify this field.", updateProfilePage.getInputErrors().getFirstNameError());
 
-        events.assertEmpty();
+        assertNoMoreEvents();
     }
 
     @Test
     public void updateProfileMissingLastName() {
         oauth.openLoginForm();
 
-        loginPage.login("test-user@localhost", getPassword("test-user@localhost"));
+        String password = resetPassword("test-user@localhost");
+        loginPage.fillLogin("test-user@localhost", password);
+        loginPage.submit();
 
         updateProfilePage.assertCurrent();
 
@@ -218,14 +229,16 @@ public class RequiredActionUpdateProfileTest extends AbstractChangeImportedUserP
 
         Assertions.assertEquals("Please specify this field.", updateProfilePage.getInputErrors().getLastNameError());
 
-        events.assertEmpty();
+        assertNoMoreEvents();
     }
 
     @Test
     public void updateProfileMissingEmail() {
         oauth.openLoginForm();
 
-        loginPage.login("test-user@localhost", getPassword("test-user@localhost"));
+        String password = resetPassword("test-user@localhost");
+        loginPage.fillLogin("test-user@localhost", password);
+        loginPage.submit();
 
         updateProfilePage.assertCurrent();
 
@@ -244,19 +257,21 @@ public class RequiredActionUpdateProfileTest extends AbstractChangeImportedUserP
                 containsString("Please specify this field")
         ));
 
-        events.assertEmpty();
+        assertNoMoreEvents();
     }
 
     @Test
     public void updateProfileInvalidEmail() {
         oauth.openLoginForm();
 
-        loginPage.login("test-user@localhost", getPassword("test-user@localhost"));
+        String password = resetPassword("test-user@localhost");
+        loginPage.fillLogin("test-user@localhost", password);
+        loginPage.submit();
 
         updateProfilePage.assertCurrent();
 
         updateProfilePage.prepareUpdate().username("invalid").firstName("New first").lastName("New last")
-                        .email("invalidemail").submit();
+                .email("invalidemail").submit();
 
         updateProfilePage.assertCurrent();
 
@@ -267,14 +282,16 @@ public class RequiredActionUpdateProfileTest extends AbstractChangeImportedUserP
 
         Assertions.assertEquals("Invalid email address.", updateProfilePage.getInputErrors().getEmailError());
 
-        events.assertEmpty();
+        assertNoMoreEvents();
     }
 
     @Test
     public void updateProfileMissingUsername() {
         oauth.openLoginForm();
 
-        loginPage.login("john-doh@localhost", getPassword("john-doh@localhost"));
+        String password = resetPassword("john-doh@localhost");
+        loginPage.fillLogin("john-doh@localhost", password);
+        loginPage.submit();
 
         updateProfilePage.assertCurrent();
 
@@ -290,14 +307,16 @@ public class RequiredActionUpdateProfileTest extends AbstractChangeImportedUserP
 
         Assertions.assertEquals("Please specify username.", updateProfilePage.getInputErrors().getUsernameError());
 
-        events.assertEmpty();
+        assertNoMoreEvents();
     }
 
     @Test
     public void updateProfileDuplicateUsername() {
         oauth.openLoginForm();
 
-        loginPage.login("john-doh@localhost", getPassword("john-doh@localhost"));
+        String password = resetPassword("john-doh@localhost");
+        loginPage.fillLogin("john-doh@localhost", password);
+        loginPage.submit();
 
         updateProfilePage.assertCurrent();
 
@@ -313,14 +332,16 @@ public class RequiredActionUpdateProfileTest extends AbstractChangeImportedUserP
 
         Assertions.assertEquals("Username already exists.", updateProfilePage.getInputErrors().getUsernameError());
 
-        events.assertEmpty();
+        assertNoMoreEvents();
     }
 
     @Test
     public void updateProfileDuplicatedEmail() {
         oauth.openLoginForm();
 
-        loginPage.login("test-user@localhost", getPassword("test-user@localhost"));
+        String password = resetPassword("test-user@localhost");
+        loginPage.fillLogin("test-user@localhost", password);
+        loginPage.submit();
 
         updateProfilePage.assertCurrent();
 
@@ -336,16 +357,19 @@ public class RequiredActionUpdateProfileTest extends AbstractChangeImportedUserP
 
         Assertions.assertEquals("Email already exists.", updateProfilePage.getInputErrors().getEmailError());
 
-        events.assertEmpty();
+        assertNoMoreEvents();
     }
 
     @Test
     public void updateProfileDuplicateUsernameWithEmail() {
-        getCleanup().addUserId(createUser(TEST_REALM_NAME, "user1@local.com", generatePassword("user1@local.com"), "user1", "user1", "user1@local.org"));
+        String userId = createUser("user1@local.com", "user1", "user1", "user1@local.org");
+        realm.cleanup().add(r -> r.users().get(userId).remove());
 
         oauth.openLoginForm();
 
-        loginPage.login("john-doh@localhost", getPassword("john-doh@localhost"));
+        String password = resetPassword("john-doh@localhost");
+        loginPage.fillLogin("john-doh@localhost", password);
+        loginPage.submit();
 
         updateProfilePage.assertCurrent();
 
@@ -361,16 +385,19 @@ public class RequiredActionUpdateProfileTest extends AbstractChangeImportedUserP
 
         Assertions.assertEquals("Username already exists.", updateProfilePage.getInputErrors().getUsernameError());
 
-        events.assertEmpty();
+        assertNoMoreEvents();
     }
 
     @Test
     public void updateProfileDuplicatedEmailWithUsername() {
-        getCleanup().addUserId(createUser(TEST_REALM_NAME, "user1@local.com", generatePassword("user1@local.com"), "user1", "user1", "user1@local.org"));
+        String userId = createUser("user1@local.com", "user1", "user1", "user1@local.org");
+        realm.cleanup().add(r -> r.users().get(userId).remove());
 
         oauth.openLoginForm();
 
-        loginPage.login("test-user@localhost", getPassword("test-user@localhost"));
+        String password = resetPassword("test-user@localhost");
+        loginPage.fillLogin("test-user@localhost", password);
+        loginPage.submit();
 
         updateProfilePage.assertCurrent();
 
@@ -386,38 +413,40 @@ public class RequiredActionUpdateProfileTest extends AbstractChangeImportedUserP
 
         Assertions.assertEquals("Email already exists.", updateProfilePage.getInputErrors().getEmailError());
 
-        events.assertEmpty();
+        assertNoMoreEvents();
     }
 
     @Test
     public void updateProfileExpiredCookies() {
         oauth.openLoginForm();
-        loginPage.login("john-doh@localhost", getPassword("john-doh@localhost"));
+        String password = resetPassword("john-doh@localhost");
+        loginPage.fillLogin("john-doh@localhost", password);
+        loginPage.submit();
 
         updateProfilePage.assertCurrent();
 
         // Expire cookies and assert the page with "back to application" link present
-        driver.manage().deleteAllCookies();
+        driver.cookies().deleteAll();
 
         updateProfilePage.prepareUpdate().username("test-user@localhost").firstName("New first").lastName("New last").email("keycloak-user@localhost").submit();
         errorPage.assertCurrent();
 
         String backToAppLink = errorPage.getBackToApplicationLink();
 
-        ClientRepresentation client = AdminApiUtil.findClientByClientId(adminClient.realm("test"), "test-app").toRepresentation();
+        ClientRepresentation client = AdminApiUtil.findClientByClientId(realm.admin(), "test-app").toRepresentation();
         Assertions.assertEquals(backToAppLink, client.getBaseUrl());
     }
 
     @Test
     public void updateProfileWithoutRemoveCustomAttributes() {
-        UserProfileResource upResource = adminClient.realm("test").users().userProfile();
+        UserProfileResource upResource = realm.admin().users().userProfile();
         UPConfig upConfig = upResource.getConfiguration();
         upConfig.setUnmanagedAttributePolicy(UPConfig.UnmanagedAttributePolicy.ADMIN_EDIT);
         upResource.update(upConfig);
 
         try {
-            UserRepresentation userRep = ActionUtil.findUserWithAdminClient(adminClient, "test-user@localhost");
-            UserResource user = adminClient.realm("test").users().get(userRep.getId());
+            UserRepresentation userRep = AdminApiUtil.findUserByUsername(realm.admin(), "test-user@localhost");
+            UserResource user = realm.admin().users().get(userRep.getId());
 
             userRep.setAttributes(new HashMap<>());
             userRep.getAttributes().put("custom", Arrays.asList("custom"));
@@ -426,21 +455,27 @@ public class RequiredActionUpdateProfileTest extends AbstractChangeImportedUserP
 
             oauth.openLoginForm();
 
-            loginPage.login("test-user@localhost", getPassword("test-user@localhost"));
+            String password = resetPassword("test-user@localhost");
+            loginPage.fillLogin("test-user@localhost", password);
+            loginPage.submit();
 
             updateProfilePage.assertCurrent();
             assertFalse(updateProfilePage.isCancelDisplayed());
 
             updateProfilePage.prepareUpdate().username("test-user@localhost").firstName("New first").lastName("New last").email("new@email.com").submit();
 
-            events.expectRequiredAction(EventType.UPDATE_PROFILE).detail(Details.CONTEXT, UserProfileContext.UPDATE_PROFILE.name()).detail(Details.PREVIOUS_EMAIL, "test-user@localhost").detail(Details.UPDATED_EMAIL, "new@email.com").assertEvent();
+            EventAssertion.assertSuccess(events.poll())
+                    .type(EventType.UPDATE_PROFILE)
+                    .details(Details.CONTEXT, UserProfileContext.UPDATE_PROFILE.name())
+                    .details(Details.PREVIOUS_EMAIL, "test-user@localhost")
+                    .details(Details.UPDATED_EMAIL, "new@email.com");
 
-            Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+            assertThat(oauth.parseLoginResponse().getCode(), notNullValue());
 
-            events.expectLogin().assertEvent();
+            EventAssertion.assertSuccess(events.poll()).type(EventType.LOGIN);
 
             // assert user is really updated in persistent store
-            userRep = ActionUtil.findUserWithAdminClient(adminClient, "test-user@localhost");
+            userRep = AdminApiUtil.findUserByUsername(realm.admin(), "test-user@localhost");
             Assertions.assertEquals("New first", userRep.getFirstName());
             Assertions.assertEquals("New last", userRep.getLastName());
             Assertions.assertEquals("new@email.com", userRep.getEmail());
@@ -454,9 +489,10 @@ public class RequiredActionUpdateProfileTest extends AbstractChangeImportedUserP
     }
 
     @Test
-    @IgnoreBrowserDriver(HtmlUnitDriver.class) // we can't yet run modern JavaScript using HtmlUnit
     public void testMultivaluedAttributes() {
-        UserProfileResource userProfile = managedRealm.admin().users().userProfile();
+        Assumptions.assumeFalse(driver.getBrowserType().equals(BrowserType.HTML_UNIT)); // we can't yet run modern JavaScript using HtmlUnit
+
+        UserProfileResource userProfile = realm.admin().users().userProfile();
         UPConfig configuration = userProfile.getConfiguration();
 
         try {
@@ -474,7 +510,9 @@ public class RequiredActionUpdateProfileTest extends AbstractChangeImportedUserP
             userProfile.update(testUpConfig);
 
             oauth.openLoginForm();
-            loginPage.login("john-doh@localhost", getPassword("john-doh@localhost"));
+            String password = resetPassword("john-doh@localhost");
+            loginPage.fillLogin("john-doh@localhost", password);
+            loginPage.submit();
             updateProfilePage.assertCurrent();
 
             for (String attribute : attributes) {
@@ -487,12 +525,12 @@ public class RequiredActionUpdateProfileTest extends AbstractChangeImportedUserP
                     updateProfilePage.clickAddAttributeValue(elementId);
                 }
                 updateProfilePage.update("f", "l", "e@keycloak.org");
-                UserRepresentation userRep = ActionUtil.findUserWithAdminClient(adminClient, "john-doh@localhost");
+                UserRepresentation userRep = AdminApiUtil.findUserByUsername(realm.admin(), "john-doh@localhost");
                 assertThat(userRep.getAttributes().get(attribute), Matchers.containsInAnyOrder(values.toArray()));
 
                 // make sure multiple values are properly rendered
                 userRep.setRequiredActions(List.of(UserModel.RequiredAction.UPDATE_PROFILE.name()));
-                managedRealm.admin().users().get(userRep.getId()).update(userRep);
+                realm.admin().users().get(userRep.getId()).update(userRep);
                 oauth.openLoginForm();
                 assertThat(IntStream.range(0, 5).mapToObj(value -> updateProfilePage.getAttribute(attribute + "-" + value)).collect(Collectors.toSet()), Matchers.equalTo(valuesSet));
 
@@ -509,13 +547,13 @@ public class RequiredActionUpdateProfileTest extends AbstractChangeImportedUserP
                     }
                 }
                 updateProfilePage.update("f", "l", "e@keycloak.org");
-                userRep = ActionUtil.findUserWithAdminClient(adminClient, "john-doh@localhost");
+                userRep = AdminApiUtil.findUserByUsername(realm.admin(), "john-doh@localhost");
                 assertThat(userRep.getAttributes().get(attribute), Matchers.hasSize(1));
                 assertThat(userRep.getAttributes().get(attribute).get(0), Matchers.in(values));
 
                 // make sure adding/removing within the same context works
                 userRep.setRequiredActions(List.of(UserModel.RequiredAction.UPDATE_PROFILE.name()));
-                managedRealm.admin().users().get(userRep.getId()).update(userRep);
+                realm.admin().users().get(userRep.getId()).update(userRep);
                 oauth.openLoginForm();
                 for (String value : values) {
                     String elementId = attribute + "-" + value;
@@ -539,13 +577,13 @@ public class RequiredActionUpdateProfileTest extends AbstractChangeImportedUserP
                     updateProfilePage.setAttribute(attribute + "-0", lastValue);
                 }
                 updateProfilePage.update("f", "l", "e@keycloak.org");
-                userRep = ActionUtil.findUserWithAdminClient(adminClient, "john-doh@localhost");
+                userRep = AdminApiUtil.findUserByUsername(realm.admin(), "john-doh@localhost");
                 assertThat(userRep.getAttributes().get(attribute), Matchers.hasSize(1));
                 assertThat(userRep.getAttributes().get(attribute).get(0), Matchers.in(values));
 
                 // at the end the attribute is set with multiple values
                 userRep.setRequiredActions(List.of(UserModel.RequiredAction.UPDATE_PROFILE.name()));
-                managedRealm.admin().users().get(userRep.getId()).update(userRep);
+                realm.admin().users().get(userRep.getId()).update(userRep);
                 oauth.openLoginForm();
                 for (String value : values) {
                     String elementId = attribute + "-" + value;
@@ -555,13 +593,13 @@ public class RequiredActionUpdateProfileTest extends AbstractChangeImportedUserP
                 updateProfilePage.update("f", "l", "e@keycloak.org");
 
                 // restart the update profile flow
-                userRep = ActionUtil.findUserWithAdminClient(adminClient, "john-doh@localhost");
+                userRep = AdminApiUtil.findUserByUsername(realm.admin(), "john-doh@localhost");
                 userRep.setRequiredActions(List.of(UserModel.RequiredAction.UPDATE_PROFILE.name()));
-                managedRealm.admin().users().get(userRep.getId()).update(userRep);
+                realm.admin().users().get(userRep.getId()).update(userRep);
                 oauth.openLoginForm();
             }
 
-            UserRepresentation userRep = ActionUtil.findUserWithAdminClient(adminClient, "john-doh@localhost");
+            UserRepresentation userRep = AdminApiUtil.findUserByUsername(realm.admin(), "john-doh@localhost");
 
             // all attributes should be set with multiple values
             for (String attribute : attributes) {
@@ -572,4 +610,62 @@ public class RequiredActionUpdateProfileTest extends AbstractChangeImportedUserP
         }
     }
 
+    private String resetPassword(String username) {
+        UserRepresentation user = AdminApiUtil.findUserByUsername(realm.admin(), username);
+        String password = PasswordGenerateUtil.generatePassword();
+        AdminApiUtil.resetUserPassword(realm.admin().users().get(user.getId()), password, false);
+        return password;
+    }
+
+    private String createUser(String username, String firstName, String lastName, String email) {
+        UserRepresentation user = UserBuilder.create().enabled(true)
+                .username(username)
+                .email(email)
+                .firstName(firstName)
+                .lastName(lastName)
+                .emailVerified(true)
+                .build();
+        return AdminApiUtil.createUserAndResetPasswordWithAdminClient(realm.admin(), user, PasswordGenerateUtil.generatePassword());
+    }
+
+    private void assertNoMoreEvents() {
+        EventRepresentation event = events.poll();
+        assertNull(event, "Expected no more events but got: " + (event != null ? event.getType() : null));
+    }
+
+    public static class RequiredActionUpdateProfileRealmConfig implements RealmConfig {
+
+        @Override
+        public RealmBuilder configure(RealmBuilder realm) {
+            realm.editUsernameAllowed(true);
+            realm.users(UserBuilder.create("test-user@localhost")
+                    .email("test-user@localhost")
+                    .name("Tom", "Brady")
+                    .password("password")
+                    .emailVerified(true));
+            realm.users(UserBuilder.create("john-doh@localhost")
+                    .email("john-doh@localhost")
+                    .name("John", "Doh")
+                    .password("password")
+                    .emailVerified(true));
+            realm.users(UserBuilder.create("keycloak-user@localhost")
+                    .email("keycloak-user@localhost")
+                    .name("keycloak", "User")
+                    .password("password")
+                    .emailVerified(true));
+            return realm;
+        }
+    }
+
+    public static class RequiredActionUpdateProfileClientConfig implements ClientConfig {
+
+        @Override
+        public ClientBuilder configure(ClientBuilder client) {
+            return client.clientId("test-app")
+                    .secret("test-secret")
+                    .serviceAccountsEnabled(true)
+                    .directAccessGrantsEnabled(true)
+                    .baseUrl("http://localhost:8180/auth/realms/master/app/auth");
+        }
+    }
 }
