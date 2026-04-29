@@ -11,7 +11,8 @@ import { addTrailingSlash, convertAttributeNameToForm } from "../../util";
 import { getAuthorizationHeaders } from "../../utils/getAuthorizationHeaders";
 import type { FormFields, SaveOptions } from "../ClientDetails";
 import type { SsfClientTab } from "../routes/ClientSsfTab";
-import { EventsTab } from "./tabs/EventsTab";
+import { EmitEventsTab } from "./tabs/EmitEventsTab";
+import { EventSearchTab } from "./tabs/EventSearchTab";
 import { ReceiverTab } from "./tabs/ReceiverTab";
 import { StreamTab, type SsfClientStream } from "./tabs/StreamTab";
 import { SubjectsTab } from "./tabs/SubjectsTab";
@@ -288,8 +289,9 @@ export const SsfTab = ({ save, client, activeTab }: SsfTabProps) => {
         />
       )}
       {activeTab === "subjects" && <SubjectsTab client={client} />}
-      {activeTab === "pending-events" && (
-        <EventsTab
+      {activeTab === "event-search" && <EventSearchTab client={client} />}
+      {activeTab === "emit-events" && (
+        <EmitEventsTab
           client={client}
           availableSupportedEvents={availableSupportedEvents}
           nativelyEmittedEvents={nativelyEmittedEvents}

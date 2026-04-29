@@ -294,7 +294,8 @@ export default function ClientDetails() {
   const ssfReceiverTab = useRoutableTab(ssfTabRoute("receiver"));
   const ssfStreamTab = useRoutableTab(ssfTabRoute("stream"));
   const ssfSubjectsTab = useRoutableTab(ssfTabRoute("subjects"));
-  const ssfPendingEventsTab = useRoutableTab(ssfTabRoute("pending-events"));
+  const ssfEventSearchTab = useRoutableTab(ssfTabRoute("event-search"));
+  const ssfEmitEventsTab = useRoutableTab(ssfTabRoute("emit-events"));
 
   const authorizationTabRoute = (tab: AuthorizationTab) =>
     toAuthorizationTab({
@@ -766,17 +767,31 @@ export default function ClientDetails() {
                       />
                     </Tab>
                     <Tab
-                      id="ssfPendingEventsTab"
-                      data-testid="ssfPendingEventsTab"
+                      id="ssfEventSearchTab"
+                      data-testid="ssfEventSearchTab"
                       title={
-                        <TabTitleText>{t("ssfTabPendingEvents")}</TabTitleText>
+                        <TabTitleText>{t("ssfTabEventSearch")}</TabTitleText>
                       }
-                      {...ssfPendingEventsTab}
+                      {...ssfEventSearchTab}
                     >
                       <SsfTab
                         save={save}
                         client={client}
-                        activeTab="pending-events"
+                        activeTab="event-search"
+                      />
+                    </Tab>
+                    <Tab
+                      id="ssfEmitEventsTab"
+                      data-testid="ssfEmitEventsTab"
+                      title={
+                        <TabTitleText>{t("ssfTabEmitEvents")}</TabTitleText>
+                      }
+                      {...ssfEmitEventsTab}
+                    >
+                      <SsfTab
+                        save={save}
+                        client={client}
+                        activeTab="emit-events"
                       />
                     </Tab>
                   </RoutableTabs>
