@@ -293,7 +293,7 @@ export const SsfTab = ({ save, client, activeTab }: SsfTabProps) => {
       {activeTab === "emit-events" && (
         <EmitEventsTab
           client={client}
-          availableSupportedEvents={availableSupportedEvents}
+          clientStream={clientStream}
           nativelyEmittedEvents={nativelyEmittedEvents}
         />
       )}
