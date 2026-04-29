@@ -77,6 +77,7 @@ import org.keycloak.testsuite.util.TestCleanup;
 import org.keycloak.testsuite.util.TestEventsLogger;
 import org.keycloak.testsuite.util.WaitUtils;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
+import org.keycloak.testsuite.util.runonserver.RunHelpers;
 
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.PropertiesConfiguration;
@@ -92,9 +93,6 @@ import org.junit.FixMethodOrder;
 import org.junit.runner.RunWith;
 import org.junit.runners.MethodSorters;
 import org.junit.runners.model.TestTimedOutException;
-
-import org.keycloak.testsuite.util.runonserver.RunHelpers;
-
 import org.openqa.selenium.WebDriver;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;

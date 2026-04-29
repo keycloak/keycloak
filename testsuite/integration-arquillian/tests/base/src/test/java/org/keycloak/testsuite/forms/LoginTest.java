@@ -74,6 +74,7 @@ import org.keycloak.testsuite.util.Matchers;
 import org.keycloak.testsuite.util.TokenSignatureUtil;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
+import org.keycloak.testsuite.util.runonserver.RunHelpers;
 
 import org.apache.commons.lang3.RandomStringUtils;
 import org.hamcrest.MatcherAssert;
@@ -81,9 +82,6 @@ import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
-
-import org.keycloak.testsuite.util.runonserver.RunHelpers;
-
 import org.openqa.selenium.Cookie;
 import org.openqa.selenium.JavascriptExecutor;
 

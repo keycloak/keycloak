@@ -62,6 +62,7 @@ import org.keycloak.testsuite.util.Matchers;
 import org.keycloak.testsuite.util.URLUtils;
 import org.keycloak.testsuite.util.WaitUtils;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.runonserver.RunHelpers;
 
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
@@ -73,9 +74,6 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
-
-import org.keycloak.testsuite.util.runonserver.RunHelpers;
-
 import org.openqa.selenium.NoSuchElementException;
 
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlEquals;
