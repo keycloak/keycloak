@@ -18,8 +18,8 @@ import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
+import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.ClientConfig;
-import org.keycloak.testframework.realm.ClientConfigBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.server.KeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
@@ -136,9 +136,8 @@ public class OID4VPIdentityProviderTest {
     public static class OID4VPClientConfig implements ClientConfig {
 
         @Override
-        public ClientConfigBuilder configure(ClientConfigBuilder client) {
-            return client.clientId(CLIENT_ID)
-                    .secret(CLIENT_SECRET);
+        public ClientBuilder configure(ClientBuilder client) {
+            return client.clientId(CLIENT_ID).secret(CLIENT_SECRET);
         }
     }
 
