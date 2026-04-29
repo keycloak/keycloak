@@ -29,7 +29,6 @@ import org.keycloak.ssf.transmitter.SsfTransmitterConfig;
 import org.keycloak.ssf.transmitter.stream.StreamConfig;
 import org.keycloak.ssf.transmitter.stream.StreamDeliveryConfig;
 import org.keycloak.ssf.transmitter.stream.StreamVerificationRequest;
-import org.keycloak.ssf.transmitter.stream.VerificationTrigger;
 import org.keycloak.ssf.transmitter.stream.storage.client.ClientStreamStore;
 import org.keycloak.ssf.transmitter.support.SsfTransmitterUrls;
 import org.keycloak.testframework.annotations.InjectAdminClient;
@@ -70,12 +69,10 @@ import org.junit.jupiter.api.Test;
  *
  * <p>Two receiver clients are registered by {@link VerificationRealm}:
  * <ul>
- *     <li>{@link #RECEIVER_RCV_INITIATED} — default verification trigger
- *         ({@link VerificationTrigger#RECEIVER_INITIATED}); used to test
- *         the {@code /verify} endpoint and the 60 s min verification interval
- *         enforcement.</li>
- *     <li>{@link #RECEIVER_TXMIT_INITIATED} — configured with
- *         {@link VerificationTrigger#TRANSMITTER_INITIATED} and a 200 ms
+ *     <li>{@link #RECEIVER_RCV_INITIATED} — auto-verify disabled (the default);
+ *         used to exercise the {@code /verify} endpoint and the min-verification-
+ *         interval rate limit.</li>
+ *     <li>{@link #RECEIVER_TXMIT_INITIATED} — auto-verify enabled with a 200 ms
  *         dispatch delay; used to test that the transmitter proactively
  *         dispatches a verification SET shortly after stream creation.</li>
  * </ul>
@@ -394,9 +391,9 @@ public class SsfTransmitterVerificationTests {
             realm.name("ssf-transmitter-verification");
             realm.attribute(Ssf.SSF_TRANSMITTER_ENABLED_KEY, "true");
 
-            // Default verification trigger is RECEIVER_INITIATED; this client
-            // exercises the /verify endpoint and the min verification interval
-            // enforcement.
+            // Auto-verify defaults to off; this client exercises the
+            // /verify endpoint and the min-verification-interval rate
+            // limit without a post-create auto-fire.
             realm.clients(
                     ClientBuilder.create(RECEIVER_RCV_INITIATED)
                             .secret(RECEIVER_RCV_INITIATED_SECRET)
@@ -407,8 +404,9 @@ public class SsfTransmitterVerificationTests {
                             .build()
             );
 
-            // TRANSMITTER_INITIATED fires an automatic verification push after
-            // a short delay following stream creation.
+            // Auto-verify enabled with a short dispatch delay; tests that
+            // the transmitter proactively dispatches a verification SET
+            // shortly after stream creation.
             realm.clients(
                     ClientBuilder.create(RECEIVER_TXMIT_INITIATED)
                             .secret(RECEIVER_TXMIT_INITIATED_SECRET)
@@ -416,8 +414,7 @@ public class SsfTransmitterVerificationTests {
                             .directAccessGrantsEnabled(false)
                             .publicClient(false)
                             .attribute(ClientStreamStore.SSF_ENABLED_KEY, "true")
-                            .attribute(ClientStreamStore.SSF_VERIFICATION_TRIGGER_KEY,
-                                    VerificationTrigger.TRANSMITTER_INITIATED.name())
+                            .attribute(ClientStreamStore.SSF_AUTO_VERIFY_STREAM_KEY, "true")
                             .attribute(ClientStreamStore.SSF_VERIFICATION_DELAY_MILLIS_KEY, "200")
                             .build()
             );

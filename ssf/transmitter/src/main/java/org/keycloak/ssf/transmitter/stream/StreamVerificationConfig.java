@@ -1,10 +1,15 @@
 package org.keycloak.ssf.transmitter.stream;
 
 /**
- * @param verificationTrigger Indicates how the verification is triggered.
- * @param verificationDelayMillis The verification delay in milliseconds, in case the transmitter triggers the verification.
+ * @param autoVerifyStream When {@code true}, the transmitter
+ * dispatches a stream-verification SET shortly after stream creation.
+ * When {@code false} the receiver drives verification on demand via
+ * the {@code /verify} endpoint.
+ * @param verificationDelayMillis Delay in milliseconds before the
+ * transmitter dispatches the post-create verification SET. Only
+ * applies when {@code autoVerifyStream} is {@code true}.
  */
 public record StreamVerificationConfig(
-        VerificationTrigger verificationTrigger,
+        boolean autoVerifyStream,
         int verificationDelayMillis) {
 }
