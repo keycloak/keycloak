@@ -697,9 +697,30 @@ public class ClientStreamStore implements SsfStreamStore {
 
         Set<String> supportedEvents = getSupportedEvents(session, client);
 
-        // TODO compute events delivered for current realm
-        Set<String> eventsDelivered = new HashSet<>(eventsRequested);
-        eventsDelivered.retainAll(supportedEvents);
+        // events_delivered = events_requested ∩ events_supported, but the two
+        // sides aren't directly comparable: supportedEvents is canonical URIs
+        // (resolved in getSupportedEvents from the stored aliases), while
+        // eventsRequested may be either aliases (admin UI sends those) or
+        // canonical URIs (what an external receiver sends per spec). Resolve
+        // each requested entry through the registry, then keep the receiver's
+        // original form in the delivered set so events_requested and
+        // events_delivered display consistently in the admin UI.
+        SsfEventRegistry registry = Ssf.events().getRegistry();
+        Set<String> eventsDelivered = new TreeSet<>();
+        if (eventsRequested != null) {
+            for (String requested : eventsRequested) {
+                if (requested == null) {
+                    continue;
+                }
+                String canonical = registry.resolveEventTypeForAlias(requested);
+                if (canonical == null && registry.getEventClassByType(requested).isPresent()) {
+                    canonical = requested;
+                }
+                if (canonical != null && supportedEvents.contains(canonical)) {
+                    eventsDelivered.add(requested);
+                }
+            }
+        }
 
         return new SsfEventsConfig(supportedEvents, eventsRequested, eventsDelivered);
     }
