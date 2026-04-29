@@ -938,6 +938,53 @@ public class DPoPTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
+    public void testDPoPBlocksImplicitAndHybridFlows() {
+        modifyClient(TEST_PUBLIC_CLIENT_ID, (clientRepresentation, configWrapper) -> {
+            clientRepresentation.setImplicitFlowEnabled(true);
+        });
+
+        String errorMessage = "DPoP is not supported for implicit and hybrid flows. Client requires DPoP bound access tokens.";
+
+        oauth.client(TEST_PUBLIC_CLIENT_ID);
+
+        // Test implicit flow with response_type=token
+        oauth.responseType("token");
+        oauth.loginForm().open();
+
+        AuthorizationEndpointResponse response = new AuthorizationEndpointResponse(oauth);
+        assertEquals(OAuthErrorException.UNAUTHORIZED_CLIENT, response.getError());
+        assertEquals(errorMessage, response.getErrorDescription());
+
+        // Test implicit flow with response_type=id_token token
+        oauth.responseType("id_token token");
+        oauth.loginForm().open();
+
+        response = new AuthorizationEndpointResponse(oauth);
+        assertEquals(OAuthErrorException.UNAUTHORIZED_CLIENT, response.getError());
+        assertEquals(errorMessage, response.getErrorDescription());
+
+        // Test hybrid flow with response_type=code token
+        oauth.responseType("code token");
+        oauth.loginForm().open();
+
+        response = new AuthorizationEndpointResponse(oauth);
+        assertEquals(OAuthErrorException.UNAUTHORIZED_CLIENT, response.getError());
+        assertEquals(errorMessage, response.getErrorDescription());
+
+        // Test hybrid flow with response_type=code id_token token
+        oauth.responseType("code id_token token");
+        oauth.loginForm().open();
+
+        response = new AuthorizationEndpointResponse(oauth);
+        assertEquals(OAuthErrorException.UNAUTHORIZED_CLIENT, response.getError());
+        assertEquals(errorMessage, response.getErrorDescription());
+
+        modifyClient(TEST_PUBLIC_CLIENT_ID, (clientRepresentation, configWrapper) -> {
+            clientRepresentation.setImplicitFlowEnabled(false);
+        });
+    }
+
+    @Test
     public void testDPoPProofWithResourceOwnerPasswordCredentialsGrant() throws Exception {
         modifyClient(TEST_CONFIDENTIAL_CLIENT_ID, (clientRepresentation, configWrapper) -> {
             clientRepresentation.setDirectAccessGrantsEnabled(true);
