@@ -863,13 +863,14 @@ export const SsfTab = ({ save, client, activeTab }: SsfTabProps) => {
     [client.id, streamFetchKey],
   );
 
-  const ssfVerificationTrigger = watch(
-    convertAttributeNameToForm<FormFields>(
-      "attributes.ssf.verificationTrigger",
-    ),
-  );
   const ssfDelivery = watch(
     convertAttributeNameToForm<FormFields>("attributes.ssf.delivery"),
+  );
+  // DefaultSwitchControl with stringify persists "true" / "false" —
+  // compare as string so the delay-millis input toggles in sync with
+  // the switch rather than interpreting the raw boolean.
+  const ssfAutoVerifyStream = watch(
+    convertAttributeNameToForm<FormFields>("attributes.ssf.autoVerifyStream"),
   );
   // DefaultSwitchControl with stringify persists "true" / "false" —
   // compare as string so the role picker toggles in sync with the
@@ -910,7 +911,7 @@ export const SsfTab = ({ save, client, activeTab }: SsfTabProps) => {
       "ssf.allowEmitEvents",
       "ssf.emitEventsRole",
       "ssf.minVerificationInterval",
-      "ssf.verificationTrigger",
+      "ssf.autoVerifyStream",
       "ssf.verificationDelayMillis",
       "ssf.status",
       "ssf.delivery",
@@ -1148,27 +1149,15 @@ export const SsfTab = ({ save, client, activeTab }: SsfTabProps) => {
                             )}
                           />
                         </FormGroup>
-                        <SelectControl
+                        <DefaultSwitchControl
                           name={convertAttributeNameToForm<FormFields>(
-                            "attributes.ssf.verificationTrigger",
+                            "attributes.ssf.autoVerifyStream",
                           )}
-                          label={t("ssfVerification")}
-                          labelIcon={t("ssfVerificationHelp")}
-                          controller={{
-                            defaultValue: "RECEIVER_INITIATED",
-                          }}
-                          options={[
-                            {
-                              key: "RECEIVER_INITIATED",
-                              value: t("ssfVerification.RECEIVER_INITIATED"),
-                            },
-                            {
-                              key: "TRANSMITTER_INITIATED",
-                              value: t("ssfVerification.TRANSMITTER_INITIATED"),
-                            },
-                          ]}
+                          label={t("ssfAutoVerifyStream")}
+                          labelIcon={t("ssfAutoVerifyStreamHelp")}
+                          stringify
                         />
-                        {ssfVerificationTrigger === "TRANSMITTER_INITIATED" && (
+                        {ssfAutoVerifyStream === "true" && (
                           <NumberControl
                             name={convertAttributeNameToForm<FormFields>(
                               "attributes.ssf.verificationDelayMillis",

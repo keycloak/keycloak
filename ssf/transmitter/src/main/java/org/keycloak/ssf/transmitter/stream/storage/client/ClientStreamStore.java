@@ -25,7 +25,6 @@ import org.keycloak.ssf.transmitter.stream.SsfEventsConfig;
 import org.keycloak.ssf.transmitter.stream.StreamConfig;
 import org.keycloak.ssf.transmitter.stream.StreamDeliveryConfig;
 import org.keycloak.ssf.transmitter.stream.StreamVerificationConfig;
-import org.keycloak.ssf.transmitter.stream.VerificationTrigger;
 import org.keycloak.ssf.transmitter.stream.storage.SsfStreamStore;
 import org.keycloak.util.JsonSerialization;
 
@@ -38,7 +37,7 @@ public class ClientStreamStore implements SsfStreamStore {
     // ----- Receiver-level configuration (survives stream delete) -------------
     public static final String SSF_ENABLED_KEY = "ssf.enabled";
     public static final String SSF_PROFILE_KEY = "ssf.profile";
-    public static final String SSF_VERIFICATION_TRIGGER_KEY = "ssf.verificationTrigger";
+    public static final String SSF_AUTO_VERIFY_STREAM_KEY = "ssf.autoVerifyStream";
     public static final String SSF_VERIFICATION_DELAY_MILLIS_KEY = "ssf.verificationDelayMillis";
     public static final String SSF_LAST_VERIFIED_AT_KEY = "ssf.lastVerifiedAt";
     public static final String SSF_STREAM_AUDIENCE_KEY = "ssf.streamAudience";
@@ -678,11 +677,11 @@ public class ClientStreamStore implements SsfStreamStore {
 
     @Override
     public StreamVerificationConfig getStreamVerificationConfig(String streamId, ClientModel client) {
+        return new StreamVerificationConfig(isAutoVerifyStream(client), getVerificationDelayMillis(client));
+    }
 
-        VerificationTrigger verificationTrigger = getVerificationTrigger(client);
-        int verificationDelayMillis = getVerificationDelayMillis(client);
-
-        return new StreamVerificationConfig(verificationTrigger, verificationDelayMillis);
+    protected boolean isAutoVerifyStream(ClientModel client) {
+        return Boolean.parseBoolean(client.getAttribute(SSF_AUTO_VERIFY_STREAM_KEY));
     }
 
     protected int getVerificationDelayMillis(ClientModel client) {
@@ -691,10 +690,6 @@ public class ClientStreamStore implements SsfStreamStore {
         }
         // Fallback to the transmitter-wide default configured via SPI
         return session.getProvider(SsfTransmitterProvider.class).getConfig().getTransmitterInitiatedVerificationDelayMillis();
-    }
-
-    protected VerificationTrigger getVerificationTrigger(ClientModel client) {
-        return client.getAttribute(SSF_VERIFICATION_TRIGGER_KEY) != null ? VerificationTrigger.valueOf(client.getAttribute(SSF_VERIFICATION_TRIGGER_KEY)) : null;
     }
 
     @Override

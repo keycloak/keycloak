@@ -199,7 +199,7 @@ public class StreamService {
                 session.getContext().getRealm().getName(), receiverClient.getClientId(), streamConfig.getStreamId());
 
         StreamVerificationConfig streamVerificationConfig = streamStore.getStreamVerificationConfig(streamConfig.getStreamId(), receiverClient);
-        if (streamVerificationConfig.verificationTrigger() == VerificationTrigger.TRANSMITTER_INITIATED) {
+        if (streamVerificationConfig.autoVerifyStream()) {
             scheduleTransmitterInitiatedAsyncStreamVerification(streamConfig, streamVerificationConfig, session);
         }
 
