@@ -29,6 +29,7 @@ import { useRealm } from "../../../context/realm-context/RealmContext";
 import { addTrailingSlash } from "../../../util";
 import { getAuthorizationHeaders } from "../../../utils/getAuthorizationHeaders";
 import { toSsfClientTab } from "../../routes/ClientSsfTab";
+import type { SsfClientStream } from "./StreamTab";
 
 type SsfEmitResult = {
   status: string;
@@ -49,18 +50,26 @@ const substitutePayloadPlaceholders = (raw: string): string =>
 
 export type EmitEventsTabProps = {
   client: ClientRepresentation;
-  availableSupportedEvents: string[];
+  clientStream: SsfClientStream | null;
   nativelyEmittedEvents: string[];
 };
 
 export const EmitEventsTab = ({
   client,
-  availableSupportedEvents,
+  clientStream,
   nativelyEmittedEvents,
 }: EmitEventsTabProps) => {
   const { t } = useTranslation();
   const { adminClient } = useAdminClient();
   const { realm } = useRealm();
+
+  // Constrain the emit dropdown to events_delivered — the
+  // authoritative set the dispatcher will actually push to this
+  // receiver. It's already the intersection of receiver-side
+  // events_requested and what the realm registry supports, so
+  // listing anything outside it would just produce filter-dropped
+  // emissions.
+  const emittableEvents = clientStream?.eventsDelivered ?? [];
 
   const [emitEventType, setEmitEventType] = useState("");
   const [emitEventTypeOpen, setEmitEventTypeOpen] = useState(false);
@@ -222,7 +231,7 @@ export const EmitEventsTab = ({
               }}
               onFilter={setEmitEventTypeFilter}
             >
-              {availableSupportedEvents
+              {emittableEvents
                 .filter((eventType) =>
                   eventType
                     .toLowerCase()
