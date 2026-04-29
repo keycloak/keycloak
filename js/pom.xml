@@ -16,10 +16,10 @@
     <description>Parent of all JavaScript related code.</description>
 
     <modules>
-        <module>apps/account-ui</module>
-        <module>apps/admin-ui</module>
+        <module>apps/account-ui-pf6</module>
+        <module>apps/admin-ui-pf6</module>
         <module>libs/keycloak-admin-client</module>
-        <module>libs/ui-shared</module>
+        <module>libs/ui-shared-pf6</module>
         <module>themes-vendor</module>
     </modules>
 
@@ -84,10 +84,10 @@
                 <configuration>
                     <filesets>
                         <fileset>
-                            <directory>apps/account-ui/target</directory>
+                            <directory>apps/account-ui-pf6/target</directory>
                         </fileset>
                         <fileset>
-                            <directory>apps/admin-ui/target</directory>
+                            <directory>apps/admin-ui-pf6/target</directory>
                         </fileset>
                         <fileset>
                             <directory>themes-vendor/target</directory>

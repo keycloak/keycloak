@@ -39,7 +39,7 @@ jobs:
       - build-keycloak
     runs-on: ubuntu-latest
     env:
-      WORKSPACE: "@keycloak/keycloak-account-ui"
+      WORKSPACE: "@keycloak/keycloak-account-ui-pf6"
     strategy:
       matrix:
         browser: [chromium, firefox]
@@ -81,7 +81,7 @@ jobs:
         if: failure()
         with:
           name: account-ui-playwright-report-${{ matrix.browser }}
-          path: js/apps/account-ui/playwright-report
+          path: js/apps/account-ui-pf6/playwright-report
           retention-days: 7
 
       - name: Upload server logs
@@ -98,7 +98,7 @@ jobs:
       - build-keycloak
     runs-on: ubuntu-latest
     env:
-      WORKSPACE: "@keycloak/keycloak-admin-ui"
+      WORKSPACE: "@keycloak/keycloak-admin-ui-pf6"
     strategy:
       matrix:
         browser: [chromium, firefox]
@@ -142,7 +142,7 @@ jobs:
         if: failure()
         with:
           name: admin-ui-playwright-report-${{ matrix.browser }}
-          path: js/apps/admin-ui/playwright-report
+          path: js/apps/admin-ui-pf6/playwright-report
           retention-days: 7
 
       - name: Upload server logs

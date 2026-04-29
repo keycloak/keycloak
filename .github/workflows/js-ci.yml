@@ -87,7 +87,7 @@ jobs:
     if: needs.conditional.outputs.js-ci == 'true'
     runs-on: ubuntu-latest
     env:
-      WORKSPACE: "@keycloak/keycloak-ui-shared"
+      WORKSPACE: "@keycloak/keycloak-ui-shared-pf6"
     steps:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
 
@@ -105,7 +105,7 @@ jobs:
     if: needs.conditional.outputs.js-ci == 'true'
     runs-on: ubuntu-latest
     env:
-      WORKSPACE: "@keycloak/keycloak-account-ui"
+      WORKSPACE: "@keycloak/keycloak-account-ui-pf6"
     steps:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
 
@@ -123,7 +123,7 @@ jobs:
     if: needs.conditional.outputs.js-ci == 'true'
     runs-on: ubuntu-latest
     env:
-      WORKSPACE: keycloak-admin-ui
+      WORKSPACE: "@keycloak/keycloak-admin-ui-pf6"
     steps:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
 
@@ -146,7 +146,7 @@ jobs:
     if: needs.conditional.outputs.js-ci == 'true'
     runs-on: ubuntu-latest
     env:
-      WORKSPACE: "@keycloak/keycloak-account-ui"
+      WORKSPACE: "@keycloak/keycloak-account-ui-pf6"
     strategy:
       matrix:
         browser: [chromium, firefox]
@@ -188,7 +188,7 @@ jobs:
         if: always()
         with:
           name: account-ui-playwright-report-${{ matrix.browser }}
-          path: js/apps/account-ui/playwright-report
+          path: js/apps/account-ui-pf6/playwright-report
           retention-days: 30
 
       - name: Upload server logs
@@ -206,7 +206,7 @@ jobs:
     if: needs.conditional.outputs.js-ci == 'true'
     runs-on: ubuntu-latest
     env:
-      WORKSPACE: "@keycloak/keycloak-admin-ui"
+      WORKSPACE: "@keycloak/keycloak-admin-ui-pf6"
       RETRY_COUNT: 3
     strategy:
       matrix:
@@ -251,7 +251,7 @@ jobs:
         if: always()
         with:
           name: admin-ui-playwright-report-${{ matrix.browser }}
-          path: js/apps/admin-ui/playwright-report
+          path: js/apps/admin-ui-pf6/playwright-report
           retention-days: 30
 
       - name: Upload server logs

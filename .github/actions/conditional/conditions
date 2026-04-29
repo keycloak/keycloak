@@ -43,8 +43,9 @@ js/                                         js
 rest/admin-ui-ext/                          js
 services/                                   js
 themes/                                     js
-js/apps/account-ui/                         ci ci-webauthn
-js/libs/ui-shared/                          ci ci-webauthn
+js/apps/account-ui-pf6/                     ci ci-webauthn
+js/apps/admin-ui-pf6/                      ci ci-webauthn
+js/libs/ui-shared-pf6/                     ci ci-webauthn
 
 # The sections below contain a sub-set of files existing in the project which are supported languages by CodeQL.
 # See: https://codeql.github.com/docs/codeql-overview/supported-languages-and-frameworks/
