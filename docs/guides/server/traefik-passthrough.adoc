@@ -3,7 +3,7 @@
 <#import "/templates/options.adoc" as opts>
 <#import "/templates/links.adoc" as links>
 
-<@tmpl.guide title="Traefik with TLS passthrough" summary="Configure Traefik as a TLS passthrough load balancer for {project_name}." includedOptions="proxy-protocol-enabled metrics-enabled health-enabled" tileVisible="false">
+<@tmpl.guide title="Traefik with TLS passthrough" summary="Configure Traefik as a TLS passthrough load balancer for {project_name}." includedOptions="proxy-protocol-enabled metrics-enabled health-enabled http-management-scheme" tileVisible="false">
 
 This {section} describes how to configure link:https://traefik.io/[Traefik] as a TLS passthrough load balancer in front of {project_name}.
 
@@ -67,7 +67,7 @@ tcp:
     keycloak-service:
       loadBalancer:
         serversTransport: kc-passthrough # <5>
-        # Use JSON syntax to have explicit CR/LF encoding for send/expect.
+        # The inline YAML syntax is required so that \r\n is interpreted literally.
         healthCheck: { # <6>
           interval: "5s",
           timeout: "3s",
@@ -81,6 +81,8 @@ tcp:
 ----
 
 <1> Matches all TLS connections regardless of the SNI hostname.
+This is suitable when Traefik is dedicated to {project_name} only.
+If Traefik handles multiple backend services, use a specific hostname instead of a wildcard (for example, `HostSNI(`keycloak.example.com`)`) to avoid routing unintended traffic to {project_name}.
 <2> Ensures this router takes precedence over any other TCP routers that may be defined.
 <3> Instructs Traefik to forward the raw TLS stream without terminating it.
 {project_name} handles TLS termination directly.
@@ -109,7 +111,8 @@ The JSON syntax is required so that `\r\n` is encoded as a literal carriage-retu
 +
 NOTE: The `expect` string must match the full HTTP response headers exactly, including the `content-type` charset.
 Any change to the {project_name} response format may break this check.
-A simple TCP connect check (omitting `send` and `expect`) is less fragile but would not detect split-brain, database connectivity failures, or an overloaded node — it would only detect a dead process.
+A simple TCP connect check (omitting `send` and `expect`) is less fragile but only detects a dead process.
+It would not detect split-brain, database connectivity failures, or an overloaded node.
 Native HTTP health checks for TCP services are not yet supported in Traefik; track upstream progress at link:https://github.com/traefik/traefik/pull/12606[traefik/traefik#12606].
 
 <7> Defines the two {project_name} backend servers.
@@ -146,11 +149,14 @@ This is safe because the management port is only reachable on the internal backe
 With TLS passthrough, Traefik cannot signal a connection close at the HTTP level.
 The health check timing directly determines how long it takes Traefik to detect that a {project_name} instance is shutting down and stop routing new connections to it.
 
-With the health check settings from the configuration above (`interval: 5s`, `timeout: 3s`), it may take several seconds for Traefik to mark a {project_name} instance as down.
+With the health check settings from the configuration above (`interval: 5s`, `timeout: 3s`), it takes up to 8 seconds (`interval + timeout`) for Traefik to mark a {project_name} instance as down.
 During this period, {project_name} must remain running to serve in-flight requests.
 Therefore, configure the `--shutdown-delay` to be at least as long as the detection time:
 
 <@kc.start parameters="--proxy-protocol-enabled true --health-enabled true --metrics-enabled true --http-management-scheme=http --shutdown-delay=30s"/>
+
+NOTE: The 30-second delay accounts for both the detection time (~8 seconds) and draining existing open TCP connections, which Traefik cannot close at the HTTP level in passthrough mode.
+A `--shutdown-delay=16s` (2x the maximum detection time) is sufficient if TCP connection draining is not a concern.
 
 For a detailed explanation of shutdown phases and how to tune the delay and timeout values, see the Graceful HTTP shutdown section in the <@links.server id="reverseproxy"/> {section}.
 
