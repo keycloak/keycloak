@@ -19,6 +19,12 @@ The `manage-realm` role continues to implicitly grant full organization manageme
 
 For per-organization granularity, organizations are now a first-class resource type in Fine-Grained Admin Permissions. Administrators can create permissions to control which specific organizations a delegated administrator can view or manage — for example, granting access to manage one organization without giving access to all organizations in the realm. When Fine-Grained Admin Permissions is enabled, organization member queries also respect user-level permissions, returning only members the administrator is permitted to view.
 
+== Role mappings on organization groups
+
+Organization groups now support realm and client role assignments. Roles assigned to organization groups are automatically included in `realm_access` and `resource_access` token claims for group members. Additionally, the *Organization Group Membership* protocol mapper (OIDC and SAML) can optionally include these roles within the `organization` claim, organized per organization, by enabling the *Add group role mappings* configuration option.
+
+For more details, see the link:{adminguide_link}#pass:a[_managing_groups_][Managing organization groups] guide.
+
 == Realm search now matches by display name
 
 When searching for realms in the admin console, the search now also matches against the realm's display name in addition to the realm name.

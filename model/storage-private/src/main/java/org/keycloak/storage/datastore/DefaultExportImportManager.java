@@ -1734,7 +1734,7 @@ public class DefaultExportImportManager implements ExportImportManager {
                 }
 
                 for (GroupRepresentation groupRep : Optional.ofNullable(orgRep.getGroups()).orElse(Collections.emptyList())) {
-                    importOrganizationGroup(provider, orgModel, groupRep, null);
+                    importOrganizationGroup(provider, orgModel, newRealm, groupRep, null);
                 }
 
                 for (MemberRepresentation member : Optional.ofNullable(orgRep.getMembers()).orElse(Collections.emptyList())) {
@@ -1771,7 +1771,7 @@ public class DefaultExportImportManager implements ExportImportManager {
         }
     }
 
-    private void importOrganizationGroup(OrganizationProvider provider, OrganizationModel organization, GroupRepresentation groupRep, GroupModel parent) {
+    private void importOrganizationGroup(OrganizationProvider provider, OrganizationModel organization, RealmModel realm, GroupRepresentation groupRep, GroupModel parent) {
         GroupModel group = provider.createGroup(organization, groupRep.getId(), groupRep.getName(), parent);
 
         if (groupRep.getAttributes() != null) {
@@ -1780,9 +1780,34 @@ public class DefaultExportImportManager implements ExportImportManager {
             }
         }
 
+        if (groupRep.getRealmRoles() != null) {
+            for (String roleString : groupRep.getRealmRoles()) {
+                RoleModel role = realm.getRole(roleString.trim());
+                if (role == null) {
+                    role = realm.addRole(roleString.trim());
+                }
+                group.grantRole(role);
+            }
+        }
+        if (groupRep.getClientRoles() != null) {
+            for (Map.Entry<String, List<String>> entry : groupRep.getClientRoles().entrySet()) {
+                ClientModel client = realm.getClientByClientId(entry.getKey());
+                if (client == null) {
+                    throw new RuntimeException("Unable to find client role mappings for client: " + entry.getKey());
+                }
+                for (String roleName : entry.getValue()) {
+                    RoleModel role = client.getRole(roleName.trim());
+                    if (role == null) {
+                        role = client.addRole(roleName.trim());
+                    }
+                    group.grantRole(role);
+                }
+            }
+        }
+
         if (groupRep.getSubGroups() != null) {
             for (GroupRepresentation subGroup : groupRep.getSubGroups()) {
-                importOrganizationGroup(provider, organization, subGroup, group);
+                importOrganizationGroup(provider, organization, realm, subGroup, group);
             }
         }
     }
