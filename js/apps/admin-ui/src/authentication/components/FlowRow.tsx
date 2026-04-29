@@ -1,6 +1,7 @@
 import type { AuthenticationProviderRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/authenticatorConfigRepresentation";
-import { Button, Draggable, Tooltip } from "@patternfly/react-core";
-import { TrashIcon } from "@patternfly/react-icons";
+import { useDraggable } from "@dnd-kit/core";
+import { Button, Tooltip } from "@patternfly/react-core";
+import { GripVerticalIcon, TrashIcon } from "@patternfly/react-icons";
 import { Td, TreeRowWrapper } from "@patternfly/react-table";
 import { useTranslation } from "react-i18next";
 import type { ExpandableExecution } from "../execution-model";
@@ -13,9 +14,22 @@ import type { Flow } from "./modals/AddSubFlowModal";
 
 import "./flow-row.css";
 
+export type DropMode =
+  | "reorder"
+  | "reorder-before"
+  | "reorder-after"
+  | "drop-into";
+
+type DropInfo = {
+  targetId: string | null;
+  mode: DropMode;
+};
+
 type FlowRowProps = {
   builtIn: boolean;
   execution: ExpandableExecution;
+  dropInfo?: DropInfo;
+  activeId?: string | null;
   onRowClick: (execution: ExpandableExecution) => void;
   onRowChange: (execution: ExpandableExecution) => void;
   onAddExecution: (
@@ -44,6 +58,8 @@ const convertToType = (execution: ExpandableExecution): FlowType => {
 export const FlowRow = ({
   builtIn,
   execution,
+  dropInfo,
+  activeId,
   onRowClick,
   onRowChange,
   onAddExecution,
@@ -52,6 +68,11 @@ export const FlowRow = ({
 }: FlowRowProps) => {
   const { t } = useTranslation();
   const hasSubList = !!execution.executionList?.length;
+  const isSubflow = execution.authenticationFlow;
+
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
+    id: execution.id!,
+  });
 
   const treeRow = {
     onCollapse: () => onRowClick(execution),
@@ -64,75 +85,92 @@ export const FlowRow = ({
     },
   };
 
+  const isDropTarget = dropInfo?.targetId === execution.id;
+  const dropMode = isDropTarget ? dropInfo?.mode : undefined;
+  const isBeingDragged = isDragging || activeId === execution.id;
+
+  const getDropClassName = () => {
+    const classes = ["keycloak__authentication__flow-row"];
+    if (isBeingDragged) classes.push("is-dragging");
+    return classes.join(" ");
+  };
+
   return (
     <>
-      <Draggable key={`draggable-${execution.id}`} hasNoWrapper>
-        <TreeRowWrapper
-          row={{ props: treeRow.props }}
-          className="keycloak__authentication__flow-row"
-        >
-          <Td
-            draggableRow={{
-              id: execution.id!,
-            }}
+      <TreeRowWrapper
+        row={{ props: treeRow.props }}
+        className={getDropClassName()}
+        data-execution-id={execution.id}
+        data-is-subflow={isSubflow ? "true" : "false"}
+        data-drop-mode={dropMode}
+      >
+        <Td className="keycloak__authentication__drag-cell">
+          <div
+            ref={setNodeRef}
+            {...listeners}
+            {...attributes}
+            className="keycloak__authentication__drag-handle"
+            aria-label={t("dragHandle")}
+          >
+            <GripVerticalIcon />
+          </div>
+        </Td>
+        <Td treeRow={treeRow}>
+          <FlowTitle
+            id={execution.id}
+            type={convertToType(execution)}
+            key={execution.id}
+            subtitle={
+              (execution.authenticationFlow
+                ? execution.description
+                : execution.alias) || ""
+            }
+            providerId={execution.providerId!}
+            title={execution.displayName!}
           />
-          <Td treeRow={treeRow}>
-            <FlowTitle
-              id={execution.id}
-              type={convertToType(execution)}
-              key={execution.id}
-              subtitle={
-                (execution.authenticationFlow
-                  ? execution.description
-                  : execution.alias) || ""
-              }
-              providerId={execution.providerId!}
-              title={execution.displayName!}
-            />
-          </Td>
-          <Td>
-            <FlowRequirementDropdown flow={execution} onChange={onRowChange} />
-          </Td>
-          {(!execution.authenticationFlow || builtIn) && (
-            <>
-              <Td isActionCell />
-              <Td isActionCell />
-            </>
-          )}
-          <Td isActionCell>
-            <ExecutionConfigModal execution={execution} />
-          </Td>
+        </Td>
+        <Td>
+          <FlowRequirementDropdown flow={execution} onChange={onRowChange} />
+        </Td>
+        {(!execution.authenticationFlow || builtIn) && (
+          <>
+            <Td isActionCell />
+            <Td isActionCell />
+          </>
+        )}
+        <Td isActionCell>
+          <ExecutionConfigModal execution={execution} />
+        </Td>
 
-          {execution.authenticationFlow && !builtIn && (
-            <>
-              <Td isActionCell>
-                <AddFlowDropdown
-                  execution={execution}
-                  onAddExecution={onAddExecution}
-                  onAddFlow={onAddFlow}
-                />
-              </Td>
-              <Td isActionCell>
-                <EditFlow execution={execution} onRowChange={onRowChange} />
-              </Td>
-            </>
+        {execution.authenticationFlow && !builtIn && (
+          <>
+            <Td isActionCell>
+              <AddFlowDropdown
+                execution={execution}
+                onAddExecution={onAddExecution}
+                onAddFlow={onAddFlow}
+              />
+            </Td>
+            <Td isActionCell>
+              <EditFlow execution={execution} onRowChange={onRowChange} />
+            </Td>
+          </>
+        )}
+        <Td isActionCell>
+          {!builtIn && (
+            <Tooltip content={t("delete")}>
+              <Button
+                variant="plain"
+                data-testid={`${execution.displayName}-delete`}
+                aria-label={t("delete")}
+                onClick={() => onDelete(execution)}
+              >
+                <TrashIcon />
+              </Button>
+            </Tooltip>
           )}
-          <Td isActionCell>
-            {!builtIn && (
-              <Tooltip content={t("delete")}>
-                <Button
-                  variant="plain"
-                  data-testid={`${execution.displayName}-delete`}
-                  aria-label={t("delete")}
-                  onClick={() => onDelete(execution)}
-                >
-                  <TrashIcon />
-                </Button>
-              </Tooltip>
-            )}
-          </Td>
-        </TreeRowWrapper>
-      </Draggable>
+        </Td>
+      </TreeRowWrapper>
       {!execution.isCollapsed &&
         hasSubList &&
         execution.executionList?.map((ex) => (
@@ -140,6 +178,8 @@ export const FlowRow = ({
             builtIn={builtIn}
             key={ex.id}
             execution={ex}
+            dropInfo={dropInfo}
+            activeId={activeId}
             onRowClick={onRowClick}
             onRowChange={onRowChange}
             onAddExecution={onAddExecution}

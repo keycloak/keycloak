@@ -1,3 +1,78 @@
 .pf-v5-c-table__tr:hover {
   background-color: var(--pf-v5-global--BackgroundColor--200);
 }
+
+tr[data-drop-mode="drop-into"] {
+  outline: 4px solid var(--pf-v5-global--active-color--100) !important;
+  outline-offset: -4px;
+  background-color: var(--pf-v5-global--palette--blue-100) !important;
+  position: relative;
+  z-index: 100;
+}
+
+tr[data-drop-mode="reorder-before"] {
+  box-shadow: inset 0 4px 0 0 var(--pf-v5-global--active-color--100) !important;
+}
+
+tr[data-drop-mode="reorder-after"] {
+  box-shadow: inset 0 -4px 0 0 var(--pf-v5-global--active-color--100) !important;
+}
+
+.keycloak__authentication__flow-row.is-dragging {
+  opacity: 0.5;
+}
+
+.keycloak__authentication__drag-cell {
+  padding: 0 !important;
+  vertical-align: middle;
+}
+
+.keycloak__authentication__drag-handle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--pf-v5-global--spacer--md);
+  cursor: grab;
+  color: var(--pf-v5-global--Color--200);
+}
+
+.keycloak__authentication__drag-handle:hover {
+  color: var(--pf-v5-global--Color--100);
+  background-color: var(--pf-v5-global--BackgroundColor--200);
+}
+
+.keycloak__authentication__drag-handle:active {
+  cursor: grabbing;
+}
+
+.keycloak__authentication__drag-overlay {
+  display: flex;
+  align-items: center;
+  gap: var(--pf-v5-global--spacer--sm);
+  min-width: 300px;
+  padding: var(--pf-v5-global--spacer--md) var(--pf-v5-global--spacer--lg);
+  background-color: var(--pf-v5-global--BackgroundColor--100);
+  border: 2px solid var(--pf-v5-global--active-color--100);
+  border-radius: var(--pf-v5-global--BorderRadius--sm);
+  box-shadow: var(--pf-v5-global--BoxShadow--lg);
+  font-size: var(--pf-v5-global--FontSize--md);
+  white-space: nowrap;
+  cursor: grabbing;
+}
+
+.keycloak__authentication__drag-overlay-handle {
+  color: var(--pf-v5-global--Color--200);
+  display: flex;
+  align-items: center;
+}
+
+.keycloak__authentication__drag-overlay-icon {
+  color: var(--pf-v5-global--active-color--100);
+  display: flex;
+  align-items: center;
+}
+
+.keycloak__authentication__drag-overlay-text {
+  font-weight: var(--pf-v5-global--FontWeight--bold);
+  color: var(--pf-v5-global--Color--100);
+}
