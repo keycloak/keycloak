@@ -33,6 +33,7 @@ export const MultiInputComponent = ({
       addButtonLabel={t("addMultivaluedLabel", {
         fieldLabel: labelAttribute(t, attribute),
       })}
+      isDisabled={attribute.readOnly}
       {...rest}
     />
   </UserProfileGroup>
