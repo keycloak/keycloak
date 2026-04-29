@@ -538,6 +538,10 @@ public class PermissionsTest extends AbstractPermissionsTest {
         invoke(realm -> realm.partialExport(false, false), clients.get("manage-realm"), true);
         invoke(realm -> realm.partialExport(true, false), clients.get("manage-realm"), false);
         invoke(realm -> realm.partialExport(false, true), clients.get("manage-realm"), false);
+        invoke(realm -> realm.partialExport(false, false), clients.get("export-realm"), true);
+        invoke(realm -> realm.partialExport(true, false), clients.get("export-realm"), true);
+        invoke(realm -> realm.partialExport(false, true), clients.get("export-realm"), true);
+        invoke(realm -> realm.partialExport(true, true), clients.get("export-realm"), true);
         invoke(realm -> realm.partialExport(true, true), clients.get("multi"), true);
         invoke(realm -> realm.partialExport(false, false), clients.get("none"), false);
     }
