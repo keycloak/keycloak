@@ -27,7 +27,7 @@ export type RealmLoAMappingType = { acr: string; uri?: string; loa: string };
 export const RealmLoAMapping = ({
   name,
   label = "attributes",
-  uri = false,
+  uri,
 }: RealmLoAMappingProps) => {
   const { t } = useTranslation();
   const {

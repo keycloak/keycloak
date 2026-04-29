@@ -128,13 +128,13 @@ export default function EditUser() {
         adminClient.users.findOne({
           id: id!,
           userProfileMetadata: true,
-        }) as UIUserRepresentation | undefined,
+        }) as Promise<UIUserRepresentation | undefined>,
         adminClient.attackDetection.findOne({ id: id! }),
         adminClient.users.getUnmanagedAttributes({ id: id! }),
         adminClient.users.getProfile({ realm: realmName }),
         showOrganizations
           ? adminClient.organizations.find({ first: 0, max: 1 })
-          : [],
+          : Promise.resolve([]),
       ]),
     ([
       userData,
