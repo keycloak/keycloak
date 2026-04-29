@@ -59,6 +59,7 @@ import org.keycloak.services.clientpolicy.condition.AnyClientConditionFactory;
 import org.keycloak.services.clientpolicy.condition.ClientAccessTypeConditionFactory;
 import org.keycloak.services.clientpolicy.executor.UseLightweightAccessTokenExecutorFactory;
 import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.remote.providers.runonserver.RunOnServerException;
 import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.client.policies.AbstractClientPoliciesTest;
@@ -655,7 +656,10 @@ public class LightWeightAccessTokenTest extends AbstractClientPoliciesTest {
         testingClient.testing().removeExpired(REALM_NAME);
         try {
             runOnServer.run(RunHelpers.removeUserSession(REALM_NAME, sessionId));
-        } catch (NotFoundException nfe) {
+        } catch (RunOnServerException nfe) {
+            if (!(nfe.getCause() instanceof NotFoundException)) {
+                throw nfe;
+            }
             // Ignore
         }
     }

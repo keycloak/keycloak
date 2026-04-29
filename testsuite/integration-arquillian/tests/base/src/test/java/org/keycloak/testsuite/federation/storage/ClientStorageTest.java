@@ -50,6 +50,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.storage.CacheableStorageProviderModel;
 import org.keycloak.storage.client.ClientStorageProvider;
 import org.keycloak.storage.client.ClientStorageProviderModel;
+import org.keycloak.testframework.remote.providers.runonserver.RunOnServerException;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
@@ -501,7 +502,10 @@ public class ClientStorageTest extends AbstractTestRealmKeycloakTest {
         testingClient.testing().removeExpired("test");
         try {
             runOnServer.run(RunHelpers.removeUserSession("test", sessionId));
-        } catch (NotFoundException nfe) {
+        } catch (RunOnServerException nfe) {
+            if (!(nfe.getCause() instanceof NotFoundException)) {
+                throw nfe;
+            }
             // Ignore
         }
 

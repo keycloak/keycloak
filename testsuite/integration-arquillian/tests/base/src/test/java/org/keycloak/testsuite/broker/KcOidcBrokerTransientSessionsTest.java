@@ -55,6 +55,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.UserSessionRepresentation;
+import org.keycloak.testframework.remote.providers.runonserver.RunOnServerException;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.broker.util.SimpleHttpDefault;
@@ -657,7 +658,10 @@ public final class KcOidcBrokerTransientSessionsTest extends AbstractAdvancedBro
         testingClient.testing().removeExpired(bc.consumerRealmName());
         try {
             runOnServer.run(RunHelpers.removeUserSession(bc.consumerRealmName(), sessionId));
-        } catch (NotFoundException nfe) {
+        } catch (RunOnServerException nfe) {
+            if (!(nfe.getCause() instanceof NotFoundException)) {
+                throw nfe;
+            }
             // Ignore
         }
 
