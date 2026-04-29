@@ -55,21 +55,54 @@ public class JWTClientSecretAuthenticator extends AbstractClientAuthenticator {
     public static final String PROVIDER_ID = "client-secret-jwt";
 
     @Override
-    public void authenticateClient(ClientAuthenticationFlowContext context) {
-        context.attempted();
-
+    public ClientModel lookupClient(ClientAuthenticationFlowContext context) {
         try {
             ClientAssertionState clientAssertionState = context.getState(ClientAssertionState.class, ClientAssertionState.supplier());
             JsonWebToken jwt = clientAssertionState.getToken();
 
-            if (jwt != null) {
-                // Ignore for client assertions signed by third-parties
+            if (jwt == null) {
+                return null;
+            }
+
+            // Only handle self-signed client assertions (issuer == subject)
+            if (!Objects.equals(jwt.getIssuer(), jwt.getSubject())) {
+                return null;
+            }
+
+            ClientModel client = context.getRealm().getClientByClientId(jwt.getSubject());
+            clientAssertionState.setClient(client);
+            return client;
+        } catch (Exception e) {
+            ServicesLogger.LOGGER.errorValidatingAssertion(e);
+            return null;
+        }
+    }
+
+    @Override
+    public void authenticateClient(ClientAuthenticationFlowContext context) {
+        try {
+            ClientAssertionState clientAssertionState = context.getState(ClientAssertionState.class, ClientAssertionState.supplier());
+
+            // Legacy path: if client not yet set on context, do lookup
+            if (context.getClient() == null) {
+                context.attempted();
+                JsonWebToken jwt = clientAssertionState.getToken();
+
+                if (jwt == null) {
+                    return;
+                }
+
                 if (!Objects.equals(jwt.getIssuer(), jwt.getSubject())) {
                     return;
                 }
 
                 if (clientAssertionState.getClient() == null) {
                     clientAssertionState.setClient(context.getRealm().getClientByClientId(jwt.getSubject()));
+                }
+            } else {
+                // Two-phase path: ensure ClientAssertionState has the client
+                if (clientAssertionState.getClient() == null) {
+                    clientAssertionState.setClient(context.getClient());
                 }
             }
 

@@ -57,77 +57,82 @@ public class ClientIdAndSecretAuthenticator extends AbstractClientAuthenticator 
     public static final String PROVIDER_ID = "client-secret";
 
     @Override
+    public ClientModel lookupClient(ClientAuthenticationFlowContext context) {
+        String client_id = extractClientId(context);
+        if (client_id == null) {
+            return null;
+        }
+
+        return context.getSession().clients().getClientByClientId(context.getRealm(), client_id);
+    }
+
+    @Override
     public void authenticateClient(ClientAuthenticationFlowContext context) {
-        String client_id = null;
-        String clientSecret = null;
+        ClientModel client = context.getClient();
 
-        String authorizationHeader = context.getHttpRequest().getHttpHeaders().getRequestHeaders().getFirst(HttpHeaders.AUTHORIZATION);
+        if (client == null) {
+            // Legacy path: client not yet identified, extract and look up
+            String client_id = extractClientId(context);
 
-        MediaType mediaType = context.getHttpRequest().getHttpHeaders().getMediaType();
-        boolean hasFormData = mediaType != null && mediaType.isCompatible(MediaType.APPLICATION_FORM_URLENCODED_TYPE);
+            if (client_id == null) {
+                String authorizationHeader = context.getHttpRequest().getHttpHeaders().getRequestHeaders().getFirst(HttpHeaders.AUTHORIZATION);
+                MediaType mediaType = context.getHttpRequest().getHttpHeaders().getMediaType();
+                boolean hasFormData = mediaType != null && mediaType.isCompatible(MediaType.APPLICATION_FORM_URLENCODED_TYPE);
+                MultivaluedMap<String, String> formData = hasFormData ? context.getHttpRequest().getDecodedFormParameters() : null;
 
-        MultivaluedMap<String, String> formData = hasFormData ? context.getHttpRequest().getDecodedFormParameters() : null;
-
-        String clientSecretRetrievalUsedMethod = null; // Tracks how was client_secret obtained
-
-        if (authorizationHeader != null) {
-            String[] usernameSecret = BasicAuthHelper.RFC6749.parseHeader(authorizationHeader);
-            if (usernameSecret != null) {
-                client_id = usernameSecret[0];
-                clientSecret = usernameSecret[1];
-                clientSecretRetrievalUsedMethod = OIDCLoginProtocol.CLIENT_SECRET_BASIC;
-            } else {
-
-                // Don't send 401 if client_id parameter was sent in request. For example IE may automatically send "Authorization: Negotiate" in XHR requests even for public clients
-                if (formData != null && !formData.containsKey(OAuth2Constants.CLIENT_ID)) {
+                if (authorizationHeader != null && BasicAuthHelper.RFC6749.parseHeader(authorizationHeader) == null
+                        && (formData == null || !formData.containsKey(OAuth2Constants.CLIENT_ID))) {
                     Response challengeResponse = Response.status(Response.Status.UNAUTHORIZED).header(HttpHeaders.WWW_AUTHENTICATE, "Basic realm=\"" + context.getRealm().getName() + "\"").build();
                     context.challenge(challengeResponse);
                     return;
                 }
+
+                Response challengeResponse = ClientAuthUtil.errorResponse(Response.Status.BAD_REQUEST.getStatusCode(), "invalid_client", "Missing client_id parameter");
+                context.challenge(challengeResponse);
+                return;
             }
-        }
 
-        if (formData != null) {
-            // even if basic challenge response exist, we check if client id was explicitly set in the request as a form param,
-            // so we can also support clients overriding flows and using challenges (e.g: basic) to authenticate their users
-            if (formData.containsKey(OAuth2Constants.CLIENT_ID)) {
-                client_id = formData.getFirst(OAuth2Constants.CLIENT_ID);
+            context.getEvent().client(client_id);
+
+            client = context.getSession().clients().getClientByClientId(context.getRealm(), client_id);
+            if (client == null) {
+                context.failure(AuthenticationFlowError.CLIENT_NOT_FOUND, null);
+                return;
             }
-            if (formData.containsKey(OAuth2Constants.CLIENT_SECRET)) {
-                clientSecret = formData.getFirst(OAuth2Constants.CLIENT_SECRET);
-                clientSecretRetrievalUsedMethod = OIDCLoginProtocol.CLIENT_SECRET_POST;
+
+            context.setClient(client);
+
+            if (!client.isEnabled()) {
+                context.failure(AuthenticationFlowError.CLIENT_DISABLED, null);
+                return;
             }
-        }
-
-        if (client_id == null) {
-            client_id = context.getSession().getAttribute("client_id", String.class);
-        }
-
-        if (client_id == null) {
-            Response challengeResponse = ClientAuthUtil.errorResponse(Response.Status.BAD_REQUEST.getStatusCode(), "invalid_client", "Missing client_id parameter");
-            context.challenge(challengeResponse);
-            return;
-        }
-
-        context.getEvent().client(client_id);
-
-        ClientModel client = context.getSession().clients().getClientByClientId(context.getRealm(), client_id);
-        if (client == null) {
-            context.failure(AuthenticationFlowError.CLIENT_NOT_FOUND, null);
-            return;
-        }
-
-        context.setClient(client);
-
-        if (!client.isEnabled()) {
-            context.failure(AuthenticationFlowError.CLIENT_DISABLED, null);
-            return;
         }
 
         // Skip client_secret validation for public client
         if (client.isPublicClient()) {
             context.success();
             return;
+        }
+
+        String clientSecret = null;
+        String clientSecretRetrievalUsedMethod = null;
+
+        String authorizationHeader = context.getHttpRequest().getHttpHeaders().getRequestHeaders().getFirst(HttpHeaders.AUTHORIZATION);
+        if (authorizationHeader != null) {
+            String[] usernameSecret = BasicAuthHelper.RFC6749.parseHeader(authorizationHeader);
+            if (usernameSecret != null) {
+                clientSecret = usernameSecret[1];
+                clientSecretRetrievalUsedMethod = OIDCLoginProtocol.CLIENT_SECRET_BASIC;
+            }
+        }
+
+        MediaType mediaType = context.getHttpRequest().getHttpHeaders().getMediaType();
+        boolean hasFormData = mediaType != null && mediaType.isCompatible(MediaType.APPLICATION_FORM_URLENCODED_TYPE);
+        MultivaluedMap<String, String> formData = hasFormData ? context.getHttpRequest().getDecodedFormParameters() : null;
+
+        if (formData != null && formData.containsKey(OAuth2Constants.CLIENT_SECRET)) {
+            clientSecret = formData.getFirst(OAuth2Constants.CLIENT_SECRET);
+            clientSecretRetrievalUsedMethod = OIDCLoginProtocol.CLIENT_SECRET_POST;
         }
 
         if (clientSecret == null) {
@@ -164,6 +169,38 @@ public class ClientIdAndSecretAuthenticator extends AbstractClientAuthenticator 
         }
 
         context.success();
+    }
+
+    /**
+     * Extracts the client_id from the request. Checks the Authorization header (Basic auth),
+     * form parameters, and session attributes in order.
+     */
+    private String extractClientId(ClientAuthenticationFlowContext context) {
+        String client_id = null;
+
+        String authorizationHeader = context.getHttpRequest().getHttpHeaders().getRequestHeaders().getFirst(HttpHeaders.AUTHORIZATION);
+        if (authorizationHeader != null) {
+            String[] usernameSecret = BasicAuthHelper.RFC6749.parseHeader(authorizationHeader);
+            if (usernameSecret != null) {
+                client_id = usernameSecret[0];
+            }
+        }
+
+        MediaType mediaType = context.getHttpRequest().getHttpHeaders().getMediaType();
+        boolean hasFormData = mediaType != null && mediaType.isCompatible(MediaType.APPLICATION_FORM_URLENCODED_TYPE);
+        MultivaluedMap<String, String> formData = hasFormData ? context.getHttpRequest().getDecodedFormParameters() : null;
+
+        if (formData != null && formData.containsKey(OAuth2Constants.CLIENT_ID)) {
+            // even if basic challenge response exist, we check if client id was explicitly set in the request as a form param,
+            // so we can also support clients overriding flows and using challenges (e.g: basic) to authenticate their users
+            client_id = formData.getFirst(OAuth2Constants.CLIENT_ID);
+        }
+
+        if (client_id == null) {
+            client_id = context.getSession().getAttribute("client_id", String.class);
+        }
+
+        return client_id;
     }
 
     @Override

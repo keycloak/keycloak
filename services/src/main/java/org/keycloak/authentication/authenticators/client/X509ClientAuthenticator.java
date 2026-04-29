@@ -55,6 +55,16 @@ public class X509ClientAuthenticator extends AbstractClientAuthenticator {
     }
 
     @Override
+    public ClientModel lookupClient(ClientAuthenticationFlowContext context) {
+        String client_id = extractClientId(context);
+        if (client_id == null) {
+            return null;
+        }
+
+        return context.getRealm().getClientByClientId(client_id);
+    }
+
+    @Override
     public void authenticateClient(ClientAuthenticationFlowContext context) {
 
         X509ClientCertificateLookup provider = context.getSession().getProvider(X509ClientCertificateLookup.class);
@@ -64,51 +74,47 @@ public class X509ClientAuthenticator extends AbstractClientAuthenticator {
             return;
         }
 
+        ClientModel client = context.getClient();
         X509Certificate[] certs = null;
-        ClientModel client = null;
-        try {
-            certs = provider.getCertificateChain(context.getHttpRequest());
-            String client_id = null;
-            MediaType mediaType = context.getHttpRequest().getHttpHeaders().getMediaType();
-            boolean hasFormData = mediaType != null && mediaType.isCompatible(MediaType.APPLICATION_FORM_URLENCODED_TYPE);
 
-            MultivaluedMap<String, String> formData = hasFormData ? context.getHttpRequest().getDecodedFormParameters() : null;
-            MultivaluedMap<String, String> queryParams = context.getSession().getContext().getUri().getQueryParameters();
+        if (client == null) {
+            // Legacy path: client not yet identified, extract and look up
+            try {
+                certs = provider.getCertificateChain(context.getHttpRequest());
+                String client_id = extractClientId(context);
 
-            if (formData != null) {
-                client_id = formData.getFirst(OAuth2Constants.CLIENT_ID);
-            }
+                if (client_id == null) {
+                    Response challengeResponse = ClientAuthUtil.errorResponse(Response.Status.BAD_REQUEST.getStatusCode(), "invalid_client", "Missing client_id parameter");
+                    context.challenge(challengeResponse);
+                    return;
+                }
 
-            if (client_id == null && queryParams != null) {
-                client_id = queryParams.getFirst(OAuth2Constants.CLIENT_ID);
-            }
+                client = context.getRealm().getClientByClientId(client_id);
+                if (client == null) {
+                    context.failure(AuthenticationFlowError.CLIENT_NOT_FOUND, null);
+                    return;
+                }
+                context.getEvent().client(client_id);
+                context.setClient(client);
 
-            if (client_id == null) {
-                client_id = context.getSession().getAttribute("client_id", String.class);
-            }
-
-            if (client_id == null) {
-                Response challengeResponse = ClientAuthUtil.errorResponse(Response.Status.BAD_REQUEST.getStatusCode(), "invalid_client", "Missing client_id parameter");
-                context.challenge(challengeResponse);
+                if (!client.isEnabled()) {
+                    context.failure(AuthenticationFlowError.CLIENT_DISABLED, null);
+                    return;
+                }
+            } catch (GeneralSecurityException e) {
+                logger.errorf("[X509ClientCertificateAuthenticator:authenticate] Exception: %s", e.getMessage());
+                context.attempted();
                 return;
             }
-
-            client = context.getRealm().getClientByClientId(client_id);
-            if (client == null) {
-                context.failure(AuthenticationFlowError.CLIENT_NOT_FOUND, null);
+        } else {
+            // Two-phase path: client already identified, just get the certs
+            try {
+                certs = provider.getCertificateChain(context.getHttpRequest());
+            } catch (GeneralSecurityException e) {
+                logger.errorf("[X509ClientCertificateAuthenticator:authenticate] Exception: %s", e.getMessage());
+                context.failure(AuthenticationFlowError.INVALID_CLIENT_CREDENTIALS, null);
                 return;
             }
-            context.getEvent().client(client_id);
-            context.setClient(client);
-
-            if (!client.isEnabled()) {
-                context.failure(AuthenticationFlowError.CLIENT_DISABLED, null);
-                return;
-            }
-        } catch (GeneralSecurityException e) {
-            logger.errorf("[X509ClientCertificateAuthenticator:authenticate] Exception: %s", e.getMessage());
-            context.attempted();
-            return;
         }
 
         if (certs == null || certs.length == 0) {
@@ -159,6 +165,32 @@ public class X509ClientAuthenticator extends AbstractClientAuthenticator {
             logger.debug("[X509ClientCertificateAuthenticator:authenticate] Matched " + certificate.getSubjectDN().getName() + " certificate.");
             context.success();
         }
+    }
+
+    /**
+     * Extracts the client_id from form parameters, query parameters, or session attributes.
+     */
+    private String extractClientId(ClientAuthenticationFlowContext context) {
+        String client_id = null;
+
+        MediaType mediaType = context.getHttpRequest().getHttpHeaders().getMediaType();
+        boolean hasFormData = mediaType != null && mediaType.isCompatible(MediaType.APPLICATION_FORM_URLENCODED_TYPE);
+        MultivaluedMap<String, String> formData = hasFormData ? context.getHttpRequest().getDecodedFormParameters() : null;
+        MultivaluedMap<String, String> queryParams = context.getSession().getContext().getUri().getQueryParameters();
+
+        if (formData != null) {
+            client_id = formData.getFirst(OAuth2Constants.CLIENT_ID);
+        }
+
+        if (client_id == null && queryParams != null) {
+            client_id = queryParams.getFirst(OAuth2Constants.CLIENT_ID);
+        }
+
+        if (client_id == null) {
+            client_id = context.getSession().getAttribute("client_id", String.class);
+        }
+
+        return client_id;
     }
 
     public String getDisplayType() {

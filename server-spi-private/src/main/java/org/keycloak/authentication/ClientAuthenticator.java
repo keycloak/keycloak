@@ -17,6 +17,7 @@
 
 package org.keycloak.authentication;
 
+import org.keycloak.models.ClientModel;
 import org.keycloak.provider.Provider;
 
 /**
@@ -34,11 +35,38 @@ import org.keycloak.provider.Provider;
 public interface ClientAuthenticator extends Provider {
 
     /**
-     * Initial call for the authenticator.  This method should check the current HTTP request to determine if the request
-     * satisfies the ClientAuthenticator's requirements.  If it doesn't, it should send back a challenge response by calling
-     * the ClientAuthenticationFlowContext.challenge(Response).
+     * Attempts to identify and look up the client from the current HTTP request.
      *
-     * @param context
+     * <p>This method should extract the client identity from the request (e.g., from parameters,
+     * headers, or tokens) and look up the corresponding {@link ClientModel}. It must not validate
+     * client credentials or mutate the authentication flow status (i.e., do not call
+     * {@code context.success()}, {@code context.failure()}, or {@code context.challenge()}).</p>
+     *
+     * <p>The default implementation returns {@code null}, which signals the authentication flow
+     * to fall back to the legacy single-pass behavior where {@link #authenticateClient} handles
+     * both client lookup and credential validation. Custom authenticator implementations should
+     * override this method to benefit from the two-phase authentication flow.</p>
+     *
+     * @param context the client authentication flow context providing access to the HTTP request, realm, and session
+     * @return the identified {@link ClientModel}, or {@code null} if this authenticator cannot identify a client from the request
+     */
+    default ClientModel lookupClient(ClientAuthenticationFlowContext context) {
+        return null;
+    }
+
+    /**
+     * Validates the client credentials from the current HTTP request.
+     *
+     * <p>When used with the two-phase authentication flow, the client will already be identified
+     * and set on the context via {@link ClientAuthenticationFlowContext#getClient()} before this
+     * method is called. Implementations should validate the client's credentials and call
+     * {@code context.success()} or {@code context.failure()} accordingly.</p>
+     *
+     * <p>For backward compatibility, if {@link #lookupClient} is not overridden, this method
+     * may still be called with no client set on the context, in which case it should handle
+     * both client lookup and credential validation (legacy behavior).</p>
+     *
+     * @param context the client authentication flow context
      */
     void authenticateClient(ClientAuthenticationFlowContext context);
 

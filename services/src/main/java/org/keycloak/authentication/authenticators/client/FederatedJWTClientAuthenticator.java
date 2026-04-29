@@ -71,43 +71,110 @@ public class FederatedJWTClientAuthenticator extends AbstractClientAuthenticator
     }
 
     @Override
-    public void authenticateClient(ClientAuthenticationFlowContext context) {
+    public ClientModel lookupClient(ClientAuthenticationFlowContext context) {
         try {
-            // Mark it as attempted for all items that return directly
-            context.attempted();
-
             ClientAssertionState clientAssertionState = context.getState(ClientAssertionState.class, ClientAssertionState.supplier());
             if (clientAssertionState == null || clientAssertionState.getClientAssertionType() == null) {
-                return;
+                return null;
             }
 
             JsonWebToken jwt = clientAssertionState.getToken();
 
             // Ignore for self-signed client assertions
             if (jwt != null && Objects.equals(jwt.getIssuer(), jwt.getSubject())) {
-                return;
+                return null;
             }
 
             ClientAssertionIdentityProviderFactory.ClientAssertionStrategy strategy = findStrategy(clientAssertionState.getClientAssertionType());
             if (strategy == null) {
-                return;
+                return null;
             }
 
             ClientAssertionIdentityProviderFactory.LookupResult lookup = strategy.lookup(context);
             if (lookup == null || lookup.identityProviderModel() == null || !lookup.identityProviderModel().isEnabled() || lookup.clientModel() == null) {
-                return;
+                return null;
             }
 
-            ClientAssertionIdentityProvider<?> identityProvider = getClientAssertionIdentityProvider(context.getSession(), lookup.identityProviderModel());
             ClientModel client = lookup.clientModel();
             clientAssertionState.setClient(client);
+            return client;
+        } catch (Exception e) {
+            LOGGER.warn("Client lookup failed", e);
+            return null;
+        }
+    }
 
-            if (!PROVIDER_ID.equals(client.getClientAuthenticatorType())) return;
+    @Override
+    public void authenticateClient(ClientAuthenticationFlowContext context) {
+        try {
+            ClientAssertionState clientAssertionState = context.getState(ClientAssertionState.class, ClientAssertionState.supplier());
 
-            if (identityProvider.verifyClientAssertion(context)) {
-                context.success();
+            ClientModel client = context.getClient();
+            if (client == null) {
+                // Legacy path: client not yet identified, do full lookup and auth
+                context.attempted();
+
+                if (clientAssertionState == null || clientAssertionState.getClientAssertionType() == null) {
+                    return;
+                }
+
+                JsonWebToken jwt = clientAssertionState.getToken();
+
+                // Ignore for self-signed client assertions
+                if (jwt != null && Objects.equals(jwt.getIssuer(), jwt.getSubject())) {
+                    return;
+                }
+
+                ClientAssertionIdentityProviderFactory.ClientAssertionStrategy strategy = findStrategy(clientAssertionState.getClientAssertionType());
+                if (strategy == null) {
+                    return;
+                }
+
+                ClientAssertionIdentityProviderFactory.LookupResult lookup = strategy.lookup(context);
+                if (lookup == null || lookup.identityProviderModel() == null || !lookup.identityProviderModel().isEnabled() || lookup.clientModel() == null) {
+                    return;
+                }
+
+                ClientAssertionIdentityProvider<?> identityProvider = getClientAssertionIdentityProvider(context.getSession(), lookup.identityProviderModel());
+                client = lookup.clientModel();
+                clientAssertionState.setClient(client);
+
+                if (!PROVIDER_ID.equals(client.getClientAuthenticatorType())) return;
+
+                if (identityProvider.verifyClientAssertion(context)) {
+                    context.success();
+                } else {
+                    context.failure(AuthenticationFlowError.INVALID_CLIENT_CREDENTIALS);
+                }
             } else {
-                context.failure(AuthenticationFlowError.INVALID_CLIENT_CREDENTIALS);
+                // Two-phase path: client already identified, just verify the assertion
+                if (clientAssertionState == null || clientAssertionState.getClientAssertionType() == null) {
+                    context.failure(AuthenticationFlowError.INVALID_CLIENT_CREDENTIALS);
+                    return;
+                }
+
+                ClientAssertionIdentityProviderFactory.ClientAssertionStrategy strategy = findStrategy(clientAssertionState.getClientAssertionType());
+                if (strategy == null) {
+                    context.failure(AuthenticationFlowError.INVALID_CLIENT_CREDENTIALS);
+                    return;
+                }
+
+                ClientAssertionIdentityProviderFactory.LookupResult lookup = strategy.lookup(context);
+                if (lookup == null || lookup.identityProviderModel() == null || !lookup.identityProviderModel().isEnabled()) {
+                    context.failure(AuthenticationFlowError.INVALID_CLIENT_CREDENTIALS);
+                    return;
+                }
+
+                ClientAssertionIdentityProvider<?> identityProvider = getClientAssertionIdentityProvider(context.getSession(), lookup.identityProviderModel());
+                if (clientAssertionState.getClient() == null) {
+                    clientAssertionState.setClient(client);
+                }
+
+                if (identityProvider.verifyClientAssertion(context)) {
+                    context.success();
+                } else {
+                    context.failure(AuthenticationFlowError.INVALID_CLIENT_CREDENTIALS);
+                }
             }
         } catch (Exception e) {
             logger.warn("Authentication failed", e);
