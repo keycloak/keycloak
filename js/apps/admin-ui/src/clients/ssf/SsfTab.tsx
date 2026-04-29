@@ -26,6 +26,9 @@ import {
   CardTitle,
   Chip,
   FormGroup,
+  FormHelperText,
+  HelperText,
+  HelperTextItem,
   InputGroup,
   InputGroupItem,
   Label,
@@ -289,6 +292,9 @@ export const SsfTab = ({ save, client, activeTab }: SsfTabProps) => {
     message: string;
   } | null>(null);
   const [subjectLoading, setSubjectLoading] = useState(false);
+  const [subjectValueError, setSubjectValueError] = useState<string | null>(
+    null,
+  );
 
   const ssfNotifyKey = `ssf.notify.${client.clientId}`;
 
@@ -354,47 +360,50 @@ export const SsfTab = ({ save, client, activeTab }: SsfTabProps) => {
     }
 
     const values = attrs[ssfNotifyKey];
-    if (!values) return "absent";
+    if (!values) return "not_notified";
     if (values.includes("true")) return "notified";
     if (values.includes("false")) return "ignored";
-    return "absent";
+    return "not_notified";
+  };
+
+  type SubjectState = "notified" | "ignored" | "not_notified";
+
+  const applySubjectState = (state: SubjectState) => {
+    if (state === "notified") {
+      setSubjectStatus({
+        variant: "success",
+        message: t("ssfSubjectIsNotified"),
+      });
+    } else if (state === "ignored") {
+      setSubjectStatus({
+        variant: "danger",
+        message: t("ssfSubjectIsIgnored"),
+      });
+    } else {
+      setSubjectStatus({
+        variant: "info",
+        message: t("ssfSubjectIsNotNotified"),
+      });
+    }
   };
 
   const handleSubjectAction = async (
     action: "add" | "remove" | "ignore" | "check",
   ) => {
     if (!subjectValue.trim()) {
-      setSubjectStatus({
-        variant: "danger",
-        message: t("ssfSubjectValueRequired"),
-      });
+      setSubjectValueError(t("ssfSubjectValueRequired"));
       return;
     }
+    setSubjectValueError(null);
     setSubjectLoading(true);
     setSubjectStatus(null);
     try {
       if (action === "check") {
-        const status = await checkSubjectViaAdminApi();
-        if (status === null) {
-          setSubjectStatus({
-            variant: "danger",
-            message: t("ssfSubjectNotFound"),
-          });
-        } else if (status === "notified") {
-          setSubjectStatus({
-            variant: "success",
-            message: t("ssfSubjectIsNotified"),
-          });
-        } else if (status === "ignored") {
-          setSubjectStatus({
-            variant: "danger",
-            message: t("ssfSubjectIsIgnored"),
-          });
+        const state = await checkSubjectViaAdminApi();
+        if (state === null) {
+          setSubjectValueError(t("ssfSubjectNotFound"));
         } else {
-          setSubjectStatus({
-            variant: "info",
-            message: t("ssfSubjectIsNotNotified"),
-          });
+          applySubjectState(state);
         }
         return;
       }
@@ -408,10 +417,7 @@ export const SsfTab = ({ save, client, activeTab }: SsfTabProps) => {
       const res = await callSubjectAdminEndpoint(endpoint);
 
       if (res.status === 404) {
-        setSubjectStatus({
-          variant: "danger",
-          message: t("ssfSubjectNotFound"),
-        });
+        setSubjectValueError(t("ssfSubjectNotFound"));
         return;
       }
       if (!res.ok) {
@@ -419,20 +425,22 @@ export const SsfTab = ({ save, client, activeTab }: SsfTabProps) => {
         throw new Error(`${res.status} ${body || res.statusText}`);
       }
 
-      setSubjectStatus({
-        variant: "success",
-        message:
-          action === "add"
-            ? t("ssfSubjectAdded")
-            : action === "ignore"
-              ? t("ssfSubjectIgnored")
-              : t("ssfSubjectRemoved"),
-      });
+      const data = await res.json();
+      const state = data?.status as SubjectState | undefined;
+      if (state) {
+        applySubjectState(state);
+      }
+
+      addAlert(
+        action === "add"
+          ? t("ssfSubjectAdded")
+          : action === "ignore"
+            ? t("ssfSubjectIgnored")
+            : t("ssfSubjectRemoved"),
+        AlertVariant.success,
+      );
     } catch (error) {
-      setSubjectStatus({
-        variant: "danger",
-        message: String(error),
-      });
+      addError("ssfSubjectActionError", error);
     } finally {
       setSubjectLoading(false);
     }
@@ -2226,8 +2234,21 @@ export const SsfTab = ({ save, client, activeTab }: SsfTabProps) => {
               role="manage-clients"
               fineGrainedAccess={client.access?.configure}
               isHorizontal
+              onSubmit={(e) => {
+                e.preventDefault();
+                void handleSubjectAction("check");
+              }}
             >
-              <FormGroup label={t("ssfSubjectType")} fieldId="ssfSubjectType">
+              <FormGroup
+                label={t("ssfSubjectType")}
+                fieldId="ssfSubjectType"
+                labelIcon={
+                  <HelpItem
+                    helpText={t("ssfSubjectTypeHelp")}
+                    fieldLabelId="ssfSubjectType"
+                  />
+                }
+              >
                 <select
                   id="ssfSubjectType"
                   data-testid="ssfSubjectType"
@@ -2260,7 +2281,13 @@ export const SsfTab = ({ save, client, activeTab }: SsfTabProps) => {
                       id="ssfSubjectValue"
                       data-testid="ssfSubjectValue"
                       value={subjectValue}
-                      onChange={(_e, value) => setSubjectValue(value)}
+                      validated={subjectValueError ? "error" : "default"}
+                      onChange={(_e, value) => {
+                        setSubjectValue(value);
+                        if (subjectValueError) {
+                          setSubjectValueError(null);
+                        }
+                      }}
                       placeholder={
                         subjectType === "user-email"
                           ? "user@example.com"
@@ -2273,9 +2300,50 @@ export const SsfTab = ({ save, client, activeTab }: SsfTabProps) => {
                     />
                   </InputGroupItem>
                 </InputGroup>
+                {subjectValueError && (
+                  <FormHelperText>
+                    <HelperText>
+                      <HelperTextItem
+                        variant="error"
+                        data-testid="ssfSubjectValueError"
+                      >
+                        {subjectValueError}
+                      </HelperTextItem>
+                    </HelperText>
+                  </FormHelperText>
+                )}
               </FormGroup>
+              {subjectStatus && (
+                <FormGroup
+                  label={t("ssfSubjectStatusLabel")}
+                  fieldId="ssfSubjectStatus"
+                >
+                  <Label
+                    color={
+                      subjectStatus.variant === "success"
+                        ? "green"
+                        : subjectStatus.variant === "danger"
+                          ? "red"
+                          : "grey"
+                    }
+                    icon={
+                      subjectStatus.variant === "success" ? (
+                        <CheckCircleIcon />
+                      ) : subjectStatus.variant === "danger" ? (
+                        <TimesCircleIcon />
+                      ) : (
+                        <InfoCircleIcon />
+                      )
+                    }
+                    data-testid="ssfSubjectStatus"
+                  >
+                    {subjectStatus.message}
+                  </Label>
+                </FormGroup>
+              )}
               <ActionGroup>
                 <Button
+                  type="button"
                   variant="primary"
                   onClick={() => handleSubjectAction("add")}
                   isDisabled={subjectLoading}
@@ -2284,6 +2352,7 @@ export const SsfTab = ({ save, client, activeTab }: SsfTabProps) => {
                   {t("ssfSubjectAdd")}
                 </Button>
                 <Button
+                  type="button"
                   variant="secondary"
                   onClick={() => handleSubjectAction("ignore")}
                   isDisabled={subjectLoading}
@@ -2292,6 +2361,7 @@ export const SsfTab = ({ save, client, activeTab }: SsfTabProps) => {
                   {t("ssfSubjectIgnore")}
                 </Button>
                 <Button
+                  type="button"
                   variant="secondary"
                   onClick={() => handleSubjectAction("remove")}
                   isDisabled={subjectLoading}
@@ -2300,6 +2370,7 @@ export const SsfTab = ({ save, client, activeTab }: SsfTabProps) => {
                   {t("ssfSubjectRemove")}
                 </Button>
                 <Button
+                  type="button"
                   variant="tertiary"
                   onClick={() => handleSubjectAction("check")}
                   isDisabled={subjectLoading}
@@ -2308,20 +2379,6 @@ export const SsfTab = ({ save, client, activeTab }: SsfTabProps) => {
                   {t("ssfSubjectCheck")}
                 </Button>
               </ActionGroup>
-              {subjectStatus && (
-                <Text
-                  className={`pf-v5-u-mt-md ${
-                    subjectStatus.variant === "success"
-                      ? "pf-v5-u-color-status-success--100"
-                      : subjectStatus.variant === "danger"
-                        ? "pf-v5-u-color-status-danger--100"
-                        : "pf-v5-u-color-status-info--100"
-                  }`}
-                  data-testid="ssfSubjectStatus"
-                >
-                  {subjectStatus.message}
-                </Text>
-              )}
             </FormAccess>
           </CardBody>
         </Card>
