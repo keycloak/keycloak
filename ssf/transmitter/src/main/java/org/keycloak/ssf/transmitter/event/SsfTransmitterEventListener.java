@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.keycloak.common.Profile;
 import org.keycloak.events.Details;
 import org.keycloak.events.Event;
 import org.keycloak.events.EventListenerProvider;
@@ -14,6 +15,7 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.ssf.Ssf;
 import org.keycloak.ssf.event.token.SsfSecurityEventToken;
 import org.keycloak.ssf.metadata.DefaultSubjects;
@@ -46,14 +48,17 @@ public class SsfTransmitterEventListener implements EventListenerProvider {
             return;
         }
 
-        // Auto-tag users on login for SSF receivers with autoNotifyOnLogin
-        if (EventType.LOGIN.equals(event.getType())) {
-            autoNotifyOnLogin(event);
-        }
-
         SsfTransmitterProvider transmitter = session.getProvider(SsfTransmitterProvider.class);
         if (transmitter == null) {
             return;
+        }
+
+        // Auto-tag users on login for SSF receivers with autoNotifyOnLogin.
+        // Runs after the transmitter lookup so we don't write per-user
+        // attributes when SSF isn't actually wired in this realm — the
+        // realm-attribute gate in shouldIgnoreEvent is a coarser check.
+        if (EventType.LOGIN.equals(event.getType())) {
+            autoNotifyOnLogin(event, transmitter);
         }
 
         // Ask the mapper first whether this event could even produce a SET.
@@ -182,7 +187,7 @@ public class SsfTransmitterEventListener implements EventListenerProvider {
      * {@code ssf.notify.<clientId>} attribute on the user so future
      * events for that user are delivered to the receiver's stream.
      */
-    protected void autoNotifyOnLogin(Event event) {
+    protected void autoNotifyOnLogin(Event event, SsfTransmitterProvider transmitter) {
         String eventClientId = event.getClientId();
         if (eventClientId == null || event.getUserId() == null) {
             return;
@@ -220,8 +225,12 @@ public class SsfTransmitterEventListener implements EventListenerProvider {
         // attribute or an external policy) doesn't get redundant
         // attribute writes layered on top. The write side stays on the
         // canonical user attribute via SsfNotifyAttributes.setForUser.
-        SsfTransmitterProvider transmitter = session.getProvider(SsfTransmitterProvider.class);
-        if (!isUserNotified(transmitter, user, client)) {
+        // Organization membership counts as inclusion too — the
+        // dispatcher's subject filter already honors org-level
+        // ssf.notify.<clientId>, so a user who's notified via their
+        // org doesn't need a redundant per-user attribute.
+        if (!isUserNotified(transmitter, user, client)
+                && !isAnyOrganizationNotified(transmitter, user, client)) {
             markAsNotified(user, client);
             log.debugf("SSF auto-notify on login: tagged user %s for receiver client %s",
                     user.getId(), client.getClientId());
@@ -234,6 +243,29 @@ public class SsfTransmitterEventListener implements EventListenerProvider {
 
     protected boolean isUserNotified(SsfTransmitterProvider transmitter, UserModel user, ClientModel client) {
         return transmitter.subjectInclusionResolver().isUserNotified(session, user, client.getClientId());
+    }
+
+    /**
+     * Mirrors the org-membership leg of the dispatcher's subject filter:
+     * a user is effectively subscribed when any of their organizations
+     * carries the {@code ssf.notify.<clientId>} attribute. We use the
+     * same {@link SsfTransmitterProvider#subjectInclusionResolver()}
+     * pluggable resolver as the dispatcher, so an extension that
+     * defines org-inclusion differently stays the single source of
+     * truth for both the auto-notify guard and the dispatch gate.
+     */
+    protected boolean isAnyOrganizationNotified(SsfTransmitterProvider transmitter, UserModel user, ClientModel client) {
+        if (!Profile.isFeatureEnabled(Profile.Feature.ORGANIZATION)) {
+            return false;
+        }
+        OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
+        if (orgProvider == null) {
+            return false;
+        }
+        String receiverClientId = client.getClientId();
+        return orgProvider.getByMember(user)
+                .anyMatch(org -> transmitter.subjectInclusionResolver()
+                        .isOrganizationNotified(session, org, receiverClientId));
     }
 
     protected boolean shouldIgnoreEvent(Event event) {
