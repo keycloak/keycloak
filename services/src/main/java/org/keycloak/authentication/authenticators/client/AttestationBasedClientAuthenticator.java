@@ -20,6 +20,7 @@ package org.keycloak.authentication.authenticators.client;
 
 import java.nio.charset.StandardCharsets;
 import java.security.PublicKey;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -50,6 +51,8 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.OIDCWellKnownProviderFactory;
+import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.JsonWebToken;
@@ -57,6 +60,7 @@ import org.keycloak.saml.RandomSecret;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.util.Strings;
+import org.keycloak.wellknown.WellKnownProvider;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -446,7 +450,10 @@ public class AttestationBasedClientAuthenticator extends AbstractClientAuthentic
         };
 
         TokenVerifier.Predicate<JsonWebToken> audCheck = (t) -> {
-            if (t.getAudience() == null || t.getAudience().length == 0)
+            WellKnownProvider oidcProvider = session.getProvider(WellKnownProvider.class, OIDCWellKnownProviderFactory.PROVIDER_ID);
+            OIDCConfigurationRepresentation oidcConfig = (OIDCConfigurationRepresentation) oidcProvider.getConfig();
+            List<String> audiences = Optional.ofNullable(t.getAudience()).map(Arrays::asList).orElse(List.of());
+            if (!audiences.contains(oidcConfig.getIssuer()))
                 throw new TokenVerificationException(t, "The aud (audience) claim MUST specify a value that identifies the authorization server as an intended audience.");
             return true;
         };
@@ -474,7 +481,6 @@ public class AttestationBasedClientAuthenticator extends AbstractClientAuthentic
             throw new TokenSignatureInvalidException(attestationPoPJwt, "Invalid token signature");
         }
 
-        // [TODO] The aud (audience) claim MUST specify a value that identifies the authorization server as an intended audience
         // [TODO] The authorization server can utilize the jti value for replay attack detection
         // [TODO] The authorization server may reject JWTs with an "iat" claim value that is unreasonably far in the past
 
