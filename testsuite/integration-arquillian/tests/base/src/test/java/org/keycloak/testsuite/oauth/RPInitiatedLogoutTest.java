@@ -59,7 +59,6 @@ import org.keycloak.testsuite.updaters.UserAttributeUpdater;
 import org.keycloak.testsuite.util.ClientManager;
 import org.keycloak.testsuite.util.InfinispanTestTimeServiceRule;
 import org.keycloak.testsuite.util.Matchers;
-import org.keycloak.testsuite.util.runonserver.RunOnServerHelpers;
 import org.keycloak.testsuite.util.URLUtils;
 import org.keycloak.testsuite.util.WaitUtils;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
@@ -74,6 +73,9 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
+
+import org.keycloak.testsuite.util.runonserver.RunHelpers;
+
 import org.openqa.selenium.NoSuchElementException;
 
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlEquals;
@@ -303,7 +305,7 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
             String sessionId = events.expectLogin().assertEvent().getSessionId();
 
             // Expire session
-            runOnServer.run(RunOnServerHelpers.removeUserSession("test", sessionId));
+            runOnServer.run(RunHelpers.removeUserSession("test", sessionId));
 
             // Assert rememberMe checked and username/email prefilled
             oauth.openLoginForm();

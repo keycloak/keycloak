@@ -59,9 +59,9 @@ import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.util.AdminClientUtil;
-import org.keycloak.testsuite.util.runonserver.RunOnServerHelpers;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
+import org.keycloak.testsuite.util.runonserver.RunHelpers;
 import org.keycloak.util.BasicAuthHelper;
 import org.keycloak.util.TokenUtil;
 
@@ -500,7 +500,7 @@ public class ClientStorageTest extends AbstractTestRealmKeycloakTest {
         // Assert userSession expired
         testingClient.testing().removeExpired("test");
         try {
-            runOnServer.run(RunOnServerHelpers.removeUserSession("test", sessionId));
+            runOnServer.run(RunHelpers.removeUserSession("test", sessionId));
         } catch (NotFoundException nfe) {
             // Ignore
         }

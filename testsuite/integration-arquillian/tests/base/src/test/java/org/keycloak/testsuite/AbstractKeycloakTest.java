@@ -73,7 +73,6 @@ import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
 import org.keycloak.testsuite.util.BrowserTabUtil;
 import org.keycloak.testsuite.util.CryptoInitRule;
 import org.keycloak.testsuite.util.DroneUtils;
-import org.keycloak.testsuite.util.runonserver.RunOnServerHelpers;
 import org.keycloak.testsuite.util.TestCleanup;
 import org.keycloak.testsuite.util.TestEventsLogger;
 import org.keycloak.testsuite.util.WaitUtils;
@@ -93,6 +92,9 @@ import org.junit.FixMethodOrder;
 import org.junit.runner.RunWith;
 import org.junit.runners.MethodSorters;
 import org.junit.runners.model.TestTimedOutException;
+
+import org.keycloak.testsuite.util.runonserver.RunHelpers;
+
 import org.openqa.selenium.WebDriver;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -248,7 +250,7 @@ public abstract class AbstractKeycloakTest {
         } else {
             log.info("calling all TestCleanup");
             // Remove all sessions
-            testContext.getTestRealmReps().stream().forEach((r)->runOnServer.run(RunOnServerHelpers.removeUserSessions(r.getRealm())));
+            testContext.getTestRealmReps().stream().forEach((r)->runOnServer.run(RunHelpers.removeUserSessions(r.getRealm())));
 
             // Cleanup objects
             for (TestCleanup cleanup : testContext.getCleanups().values()) {

@@ -87,12 +87,12 @@ import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.testsuite.util.ClientManager;
 import org.keycloak.testsuite.util.RealmManager;
-import org.keycloak.testsuite.util.runonserver.RunOnServerHelpers;
 import org.keycloak.testsuite.util.TokenSignatureUtil;
 import org.keycloak.testsuite.util.UserInfoClientUtil;
 import org.keycloak.testsuite.util.UserManager;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.UserInfoResponse;
+import org.keycloak.testsuite.util.runonserver.RunHelpers;
 import org.keycloak.util.BasicAuthHelper;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.util.TokenUtil;
@@ -404,7 +404,7 @@ public class AccessTokenTest extends AbstractKeycloakTest {
         String sessionId = loginEvent.getSessionId();
 
 
-        runOnServer.run(RunOnServerHelpers.removeUserSession("test", sessionId));
+        runOnServer.run(RunHelpers.removeUserSession("test", sessionId));
         String code = oauth.parseLoginResponse().getCode();
 
         AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);

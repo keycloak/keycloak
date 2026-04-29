@@ -67,11 +67,11 @@ import org.keycloak.testsuite.util.ClientManager;
 import org.keycloak.testsuite.util.ClientPoliciesUtil;
 import org.keycloak.testsuite.util.KeycloakModelUtils;
 import org.keycloak.testsuite.util.ProtocolMapperUtil;
-import org.keycloak.testsuite.util.runonserver.RunOnServerHelpers;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.keycloak.testsuite.util.oauth.PkceGenerator;
+import org.keycloak.testsuite.util.runonserver.RunHelpers;
 import org.keycloak.util.JsonSerialization;
 
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -654,7 +654,7 @@ public class LightWeightAccessTokenTest extends AbstractClientPoliciesTest {
     private void removeSession(final String sessionId) {
         testingClient.testing().removeExpired(REALM_NAME);
         try {
-            runOnServer.run(RunOnServerHelpers.removeUserSession(REALM_NAME, sessionId));
+            runOnServer.run(RunHelpers.removeUserSession(REALM_NAME, sessionId));
         } catch (NotFoundException nfe) {
             // Ignore
         }

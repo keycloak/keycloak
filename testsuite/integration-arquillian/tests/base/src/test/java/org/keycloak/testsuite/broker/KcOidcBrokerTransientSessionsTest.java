@@ -62,10 +62,10 @@ import org.keycloak.testsuite.pages.UpdateAccountInformationPage;
 import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.updaters.Creator;
 import org.keycloak.testsuite.util.AccountHelper;
-import org.keycloak.testsuite.util.runonserver.RunOnServerHelpers;
 import org.keycloak.testsuite.util.WaitUtils;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
+import org.keycloak.testsuite.util.runonserver.RunHelpers;
 import org.keycloak.util.TokenUtil;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -656,7 +656,7 @@ public final class KcOidcBrokerTransientSessionsTest extends AbstractAdvancedBro
         // Assert userSession expired
         testingClient.testing().removeExpired(bc.consumerRealmName());
         try {
-            runOnServer.run(RunOnServerHelpers.removeUserSession(bc.consumerRealmName(), sessionId));
+            runOnServer.run(RunHelpers.removeUserSession(bc.consumerRealmName(), sessionId));
         } catch (NotFoundException nfe) {
             // Ignore
         }
