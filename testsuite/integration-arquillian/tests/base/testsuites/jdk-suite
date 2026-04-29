@@ -7,7 +7,6 @@ KerberosLdapTest
 LDAPUserLoginTest
 LoginTest
 MutualTLSClientTest
-PasswordPolicyTest
 SSOTest
 SamlClientTest
 X509BrowserLoginTest
