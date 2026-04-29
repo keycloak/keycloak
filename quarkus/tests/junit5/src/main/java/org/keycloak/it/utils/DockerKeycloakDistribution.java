@@ -105,10 +105,10 @@ public final class DockerKeycloakDistribution implements KeycloakDistribution {
                 .withEnv(envVars)
                 .withExposedPorts(exposedPorts)
                 .withStartupAttempts(1)
-                .withStartupTimeout(Duration.ofSeconds(STARTUP_TIMEOUT_SECONDS))
                 .waitingFor(new WaitAllStrategy()
                         .withStrategy(Wait.forLogMessage(".*Bootstrap completed.*", 1))
                         .withStrategy(Wait.forListeningPorts(8080))
+                        .withStartupTimeout(Duration.ofSeconds(STARTUP_TIMEOUT_SECONDS))
                 );
     }
 
