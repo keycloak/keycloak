@@ -5,7 +5,6 @@ import {
   ListEmptyState,
   NumberControl,
   PasswordInput,
-  SelectControl,
   SelectVariant,
   useAlerts,
 } from "@keycloak/keycloak-ui-shared";
@@ -27,7 +26,13 @@ import {
   TextContent,
   TextInput,
 } from "@patternfly/react-core";
-import { SyncAltIcon } from "@patternfly/react-icons";
+import {
+  CheckCircleIcon,
+  InfoCircleIcon,
+  PauseCircleIcon,
+  SyncAltIcon,
+  TimesCircleIcon,
+} from "@patternfly/react-icons";
 import { useState } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -102,7 +107,7 @@ export const StreamTab = ({
   const { t } = useTranslation();
   const { adminClient } = useAdminClient();
   const { realm } = useRealm();
-  const { control } = useFormContext<FormFields>();
+  const { control, setValue } = useFormContext<FormFields>();
   const { addAlert, addError } = useAlerts();
   const formatDate = useFormatDate();
 
@@ -130,6 +135,67 @@ export const StreamTab = ({
   const [createStreamEventsOpen, setCreateStreamEventsOpen] = useState(false);
   const [createStreamSubmitting, setCreateStreamSubmitting] = useState(false);
   const [createStreamFormOpen, setCreateStreamFormOpen] = useState(false);
+
+  const [statusActionLoading, setStatusActionLoading] = useState(false);
+
+  /**
+   * Drives the admin stream-status endpoint
+   * (POST /admin/realms/{realm}/ssf/clients/{clientId}/stream/status).
+   * The backend funnels through StreamService.updateStreamStatus, so
+   * this triggers the spec-mandated stream-updated SET dispatch and
+   * the outbox HELD ↔ PENDING alignment that a generic client-save
+   * doesn't.
+   */
+  const triggerStreamStatusUpdate = async (
+    targetStatus: "enabled" | "paused" | "disabled",
+  ) => {
+    if (!client.id || !clientStream?.streamId) {
+      return;
+    }
+    setStatusActionLoading(true);
+    try {
+      const response = await fetch(
+        `${addTrailingSlash(
+          adminClient.baseUrl,
+        )}admin/realms/${realm}/ssf/clients/${client.clientId}/stream/status`,
+        {
+          method: "POST",
+          headers: {
+            ...getAuthorizationHeaders(await adminClient.getAccessToken()),
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            stream_id: clientStream.streamId,
+            status: targetStatus,
+          }),
+        },
+      );
+      if (!response.ok) {
+        const text = await response.text();
+        throw new Error(
+          text ||
+            `${response.status} ${response.statusText || "Request failed"}`,
+        );
+      }
+      // Keep the form-bound status field in sync immediately so a
+      // subsequent generic Save doesn't clobber the just-applied
+      // backend status with a stale form value (the parent's
+      // useFetch refresh below is async and races the click).
+      setValue(
+        convertAttributeNameToForm<FormFields>("attributes.ssf.status"),
+        targetStatus,
+        { shouldDirty: false },
+      );
+      addAlert(t("ssfStreamStatusUpdateSuccess"), AlertVariant.success);
+      // Refresh so the read-only status indicator + lastVerifiedAt /
+      // updatedAt in the UI reflect the new state.
+      refresh();
+    } catch (error) {
+      addError("ssfStreamStatusUpdateError", error);
+    } finally {
+      setStatusActionLoading(false);
+    }
+  };
 
   const triggerVerifyStream = async () => {
     if (!client.id) {
@@ -732,24 +798,88 @@ export const StreamTab = ({
                     </InputGroup>
                   </FormGroup>
                 )}
-              <SelectControl
-                name={convertAttributeNameToForm<FormFields>(
-                  "attributes.ssf.status",
-                )}
+              <FormGroup
                 label={t("ssfStreamStatus")}
-                labelIcon={t("ssfStreamStatusHelp")}
-                controller={{
-                  defaultValue: "enabled",
-                }}
-                options={[
-                  { key: "enabled", value: t("ssfStreamStatus.enabled") },
-                  { key: "paused", value: t("ssfStreamStatus.paused") },
-                  {
-                    key: "disabled",
-                    value: t("ssfStreamStatus.disabled"),
-                  },
-                ]}
-              />
+                fieldId="ssfStreamStatusIndicator"
+                labelIcon={
+                  <HelpItem
+                    helpText={t("ssfStreamStatusHelp")}
+                    fieldLabelId="ssfStreamStatus"
+                  />
+                }
+              >
+                {clientStream.status === "enabled" && (
+                  <Label
+                    color="green"
+                    icon={<CheckCircleIcon />}
+                    data-testid="ssfStreamStatusIndicator.enabled"
+                  >
+                    {t("ssfStreamStatus.enabled")}
+                  </Label>
+                )}
+                {clientStream.status === "paused" && (
+                  <Label
+                    color="orange"
+                    icon={<PauseCircleIcon />}
+                    data-testid="ssfStreamStatusIndicator.paused"
+                  >
+                    {t("ssfStreamStatus.paused")}
+                  </Label>
+                )}
+                {clientStream.status === "disabled" && (
+                  <Label
+                    color="red"
+                    icon={<TimesCircleIcon />}
+                    data-testid="ssfStreamStatusIndicator.disabled"
+                  >
+                    {t("ssfStreamStatus.disabled")}
+                  </Label>
+                )}
+                {!clientStream.status && (
+                  <Label
+                    color="blue"
+                    icon={<InfoCircleIcon />}
+                    data-testid="ssfStreamStatusIndicator.unknown"
+                  >
+                    {t("ssfStreamStatus.enabled")}
+                  </Label>
+                )}
+              </FormGroup>
+              <ActionGroup>
+                {clientStream.status !== "enabled" && (
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={() => triggerStreamStatusUpdate("enabled")}
+                    isDisabled={statusActionLoading}
+                    data-testid="ssfStreamStatusEnable"
+                  >
+                    {t("ssfStreamStatusEnable")}
+                  </Button>
+                )}
+                {clientStream.status !== "paused" && (
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={() => triggerStreamStatusUpdate("paused")}
+                    isDisabled={statusActionLoading}
+                    data-testid="ssfStreamStatusPause"
+                  >
+                    {t("ssfStreamStatusPause")}
+                  </Button>
+                )}
+                {clientStream.status !== "disabled" && (
+                  <Button
+                    type="button"
+                    variant="danger"
+                    onClick={() => triggerStreamStatusUpdate("disabled")}
+                    isDisabled={statusActionLoading}
+                    data-testid="ssfStreamStatusDisable"
+                  >
+                    {t("ssfStreamStatusDisable")}
+                  </Button>
+                )}
+              </ActionGroup>
               <FormGroup
                 label={t("ssfStreamStatusReason")}
                 fieldId="ssfStreamStatusReason"

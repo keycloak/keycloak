@@ -27,6 +27,7 @@ import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.AdminEventBuilder;
 import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
 import org.keycloak.ssf.SsfException;
+import org.keycloak.ssf.stream.StreamStatus;
 import org.keycloak.ssf.subject.ComplexSubjectId;
 import org.keycloak.ssf.subject.SubjectId;
 import org.keycloak.ssf.subject.SubjectIds;
@@ -385,6 +386,85 @@ public class SsfAdminResource {
         // consistent timestamp.
 
         return Response.noContent().build();
+    }
+
+    /**
+     * Admin status-update for a receiver's registered stream. Funnels
+     * through the same {@code StreamService.updateStreamStatus} path
+     * the receiver-side {@code POST /streams/status} hits, so the
+     * SSF spec-mandated {@code stream-updated} SET dispatch and the
+     * outbox HELD ↔ PENDING alignment fire here too. Without this,
+     * an admin flipping status from the console would just persist
+     * the {@code ssf.status} client attribute and the receiver would
+     * silently observe paused / enabled state on next poll without
+     * the spec's transition signal.
+     *
+     * <p>If the request body's {@code reason} is null or blank we
+     * substitute a stable {@code "Transmitter status override"}
+     * marker so receivers can correlate the stream-updated SET with
+     * a transmitter-side decision (vs. a receiver-driven status
+     * update). The marker is intentionally written from the receiver's
+     * perspective — receivers only see "the transmitter changed it",
+     * not which actor on the transmitter side initiated the change.
+     *
+     * <p>Auth: {@code manage-clients} on the receiver — same surface
+     * as every other admin SSF endpoint.
+     *
+     * <p>The endpoint is available via
+     * {@code $KC_ADMIN_URL/admin/realms/{realm}/ssf/clients/{clientId}/stream/status}.
+     */
+    @POST
+    @Path("clients/{clientId}/stream/status")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.SSF)
+    @Operation(
+            summary = "Update SSF stream status for client",
+            description = "Admin-initiated stream status update. Funnels through the same StreamService.updateStreamStatus path as the receiver-side endpoint so the stream-updated SET dispatch and outbox alignment fire."
+    )
+    @APIResponses(value = {
+            @APIResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = StreamStatus.class))),
+            @APIResponse(responseCode = "400", description = "Bad Request — missing or invalid status"),
+            @APIResponse(responseCode = "404", description = "Client not found or no SSF stream registered")
+    })
+    public Response updateClientStreamStatus(
+            @Parameter(description = "OAuth client_id of the receiver")
+            @PathParam("clientId") String clientId,
+            StreamStatus newStatus) {
+
+        ClientModel client = realm.getClientByClientId(clientId);
+        if (client == null) {
+            throw new NotFoundException("Client not found");
+        }
+        auth.clients().requireManage(client);
+
+        if (newStatus == null || newStatus.getStatus() == null || newStatus.getStatus().isBlank()) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(new SsfErrorRepresentation("invalid_request", "status is required"))
+                    .build();
+        }
+
+        StreamConfig streamConfig = streamStore().getStreamForClient(client);
+        if (streamConfig == null) {
+            throw new NotFoundException("No SSF stream registered for client");
+        }
+
+        // The receiver-side endpoint takes streamId from the body so a
+        // single receiver could (in principle) target multiple streams
+        // — admins always operate on the single registered stream for
+        // the path-supplied client, so we stamp the streamId from
+        // storage rather than trusting the body. Default the reason
+        // when the admin didn't supply one.
+        newStatus.setStreamId(streamConfig.getStreamId());
+        if (newStatus.getReason() == null || newStatus.getReason().isBlank()) {
+            newStatus.setReason("Transmitter status override");
+        }
+
+        StreamStatus updated = transmitter.streamService().updateStreamStatusAsAdmin(newStatus, client);
+        if (updated == null) {
+            throw new NotFoundException("No SSF stream registered for client");
+        }
+        return Response.ok(updated).build();
     }
 
     /**

@@ -33,12 +33,12 @@ import org.keycloak.testframework.annotations.InjectKeycloakUrls;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.InjectSimpleHttp;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
-import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
-import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
+import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
+import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testframework.server.DefaultKeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 import org.keycloak.testframework.server.KeycloakUrls;
@@ -295,6 +295,67 @@ public class SsfTransmitterStreamManagementTests {
                     "events_delivered must keep the previously-requested event");
             Assertions.assertTrue(updated.getEventsDelivered().contains(CaepCredentialChange.TYPE),
                     "events_delivered must include the newly-requested event after recompute");
+        }
+    }
+
+    @Test
+    public void testAdminUpdateStreamStatusPersistsAndDefaultsReason() throws IOException {
+
+        // The admin stream-status endpoint funnels through
+        // StreamService.updateStreamStatusAsAdmin → updateStreamStatus,
+        // which is the same path receiver-side POST /streams/status
+        // hits — so the spec-mandated stream-updated SET dispatch
+        // and outbox alignment fire here too. This test covers the
+        // wiring + the default-reason behaviour. The actual SET
+        // dispatch path is covered by the existing receiver-side
+        // status tests (e.g. SsfTransmitterPushDeliveryTests
+        // .testDisabledStreamDoesNotReceivePush) since both paths
+        // share updateStreamStatus.
+        String token = obtainManageToken(RECEIVER_RW, RECEIVER_RW_SECRET);
+        StreamConfigUpdateRepresentation request = buildPushStreamRequest(Set.of(
+                CaepCredentialChange.TYPE));
+
+        try (SimpleHttpResponse response = postStream(token, request)) {
+            Assertions.assertEquals(201, response.getStatus());
+        }
+
+        String adminStatusUrl = keycloakUrls.getAdmin() + "/realms/" + realm.getName()
+                + "/ssf/clients/" + RECEIVER_RW + "/stream/status";
+
+        // Caller omits reason — the endpoint should default it to the
+        // documented "Transmitter status override" marker (written
+        // from the receiver's perspective: receivers only see the
+        // transmitter as the actor, not which actor on the
+        // transmitter side initiated the change).
+        try (SimpleHttpResponse response = http.doPost(adminStatusUrl)
+                .json(Map.of("status", "paused"))
+                .auth(adminClient.tokenManager().getAccessTokenString())
+                .acceptJson()
+                .asResponse()) {
+            Assertions.assertEquals(200, response.getStatus());
+            var body = response.asJson();
+            Assertions.assertEquals("paused", body.get("status").asText(),
+                    "response should echo the new status");
+            Assertions.assertEquals("Transmitter status override", body.get("reason").asText(),
+                    "missing reason should be defaulted to the transmitter marker");
+        }
+
+        // Verify the new status is persisted by reading via the admin GET.
+        SsfClientStreamRepresentation stored = fetchAdminStreamRepresentation(RECEIVER_RW);
+        Assertions.assertEquals("paused", stored.getStatus(),
+                "stream status should be persisted as paused");
+
+        // Caller-supplied reason must win.
+        try (SimpleHttpResponse response = http.doPost(adminStatusUrl)
+                .json(Map.of("status", "enabled", "reason", "manual recovery"))
+                .auth(adminClient.tokenManager().getAccessTokenString())
+                .acceptJson()
+                .asResponse()) {
+            Assertions.assertEquals(200, response.getStatus());
+            var body = response.asJson();
+            Assertions.assertEquals("enabled", body.get("status").asText());
+            Assertions.assertEquals("manual recovery", body.get("reason").asText(),
+                    "caller-supplied reason must not be overwritten");
         }
     }
 
