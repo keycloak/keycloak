@@ -341,17 +341,20 @@ public class AttestationBasedClientAuthenticator extends AbstractClientAuthentic
                 .orElseThrow(() -> new IllegalArgumentException("Required header " + OAUTH_CLIENT_ATTESTATION_HEADER + " is missing"));
 
         MultivaluedMap<String, String> formParams = context.getHttpRequest().getDecodedFormParameters();
+        String clientIdParam = formParams.getFirst(CLIENT_ID);
 
         JWSInput jws = new JWSInput(headerValue);
         String jwsType = jws.getHeader().getType();
         if (!OAUTH_CLIENT_ATTESTATION_JWT_TYPE.equals(jwsType))
             throw new IllegalArgumentException("The JWS type MUST be " + OAUTH_CLIENT_ATTESTATION_JWT_TYPE + " instead of " + jwsType);
 
-        // Get the client model from the JWT subject
         ClientAttestationJwt attestationJwt = jws.readJsonContent(ClientAttestationJwt.class);
-        ClientModel clientModel = Optional.ofNullable(attestationJwt.getSubject())
+        String clientId = Optional.ofNullable(clientIdParam).orElse(attestationJwt.getSubject());
+
+        // Get the client model from the given client_id
+        ClientModel clientModel = Optional.ofNullable(clientId)
                 .map(realmModel::getClientByClientId)
-                .orElseThrow(() -> new TokenVerificationException(attestationJwt, "The sub (subject) claim MUST identify a known client_id"));
+                .orElseThrow(() -> new TokenVerificationException(attestationJwt, "No such client: " + clientId));
 
         // Set the target client in the context before we attempt signature verification
         context.setClient(clientModel);
@@ -360,7 +363,6 @@ public class AttestationBasedClientAuthenticator extends AbstractClientAuthentic
         //
 
         TokenVerifier.Predicate<JsonWebToken> subCheck = (t) -> {
-            String clientIdParam = formParams.getFirst(CLIENT_ID);
             if (clientIdParam != null && !clientIdParam.equals(t.getSubject()))
                 throw new TokenVerificationException(t, "The sub claim (subject) MUST match the client_id parameter");
             return true;
