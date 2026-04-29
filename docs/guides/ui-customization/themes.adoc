@@ -403,11 +403,14 @@ The contents of `META-INF/keycloak-themes.json` in this case would be:
 {
     "themes": [{
         "name" : "mytheme",
+        "renderedName" : "My Theme",
         "types": [ "login", "email" ]
     }]
 }
 ----
 +
+`renderedName` is optional. If present, Keycloak uses it as the user-facing label in theme selection dropdowns, while `name` remains the canonical theme id used for resolution and resource loading.
+
 A single archive can contain multiple themes and each theme can support one or more types.
 
 To deploy the archive to {project_name}, add it to the `providers/` directory of
