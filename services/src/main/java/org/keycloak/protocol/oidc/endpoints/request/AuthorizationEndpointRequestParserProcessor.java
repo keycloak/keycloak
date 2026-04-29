@@ -85,7 +85,11 @@ public class AuthorizationEndpointRequestParserProcessor {
                 // Defined, if the request is `PAR` or `Request Object`.
                 RequestUriType requestUriType = getRequestUriType(requestUriParam);
                 if (requestUriType == RequestUriType.PAR) {
+                    String redirectUri = request.getRedirectUriParam();
                     new AuthzEndpointParParser(session, client, requestUriParam).parseRequest(request);
+                    if (redirectUri != null && request.getRedirectUriParam() == null) {
+                        throw new RuntimeException("PAR is required to have a 'redirect_uri' parameter");
+                    }
                 } else {
                     // Validate "requestUriParam" with allowed requestUris
                     List<String> requestUris = OIDCAdvancedConfigWrapper.fromClientModel(client).getRequestUris();
