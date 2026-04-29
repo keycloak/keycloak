@@ -33,6 +33,21 @@ public class SsfEventStore {
 
     private static final Logger log = Logger.getLogger(SsfEventStore.class);
 
+    /**
+     * Stable identifiers written to {@link SsfEventEntity#getLastError()
+     * last_error} when the store transitions a row to
+     * {@link SsfEventStatus#DEAD_LETTER}. Kept short and underscore-cased
+     * so consumers (admin queries, Prometheus relabeling, custom
+     * extensions) can group on them. Ad-hoc descriptive strings written
+     * by the push drainer (e.g. {@code "realm no longer exists: …"})
+     * carry per-row context and intentionally don't have a stable form.
+     *
+     * <p>Externally-relevant reasons get a {@code public static final}
+     * constant here so extensions don't have to hard-code the literal.
+     */
+    public static final String DEAD_LETTER_REASON_EVENT_TYPE_NO_LONGER_REQUESTED =
+            "event_type_no_longer_requested";
+
     protected final KeycloakSession session;
 
     public SsfEventStore(KeycloakSession session) {
@@ -440,6 +455,77 @@ public class SsfEventStore {
             log.debugf("SSF outbox discarded %d undelivered rows for client %s", deleted, clientId);
         }
         return deleted;
+    }
+
+    /**
+     * Parks queued non-terminal outbox rows for the receiver whose
+     * event type is no longer in the supplied allow-list as
+     * {@link SsfEventStatus#DEAD_LETTER DEAD_LETTER} with the supplied
+     * reason. Invoked from {@code StreamService.updateStream /
+     * replaceStream} when the receiver narrows {@code events_requested}
+     * so that already-signed SETs of dropped event types stop being
+     * delivered (the drainer / poll endpoint don't re-check
+     * {@code events_requested} per row) without losing the audit
+     * trail. The standard dead-letter retention purge driven by
+     * {@code SsfOutboxCleanupTask} eventually evicts them.
+     * DELIVERED + DEAD_LETTER rows are terminal and left alone.
+     *
+     * <p>An empty {@code allowedEventTypes} means "the receiver
+     * accepts no events"; this method falls back to
+     * {@link #deadLetterUndeliveredForClient(String, String)} in
+     * that case, since SQL {@code NOT IN ()} is implementation-defined.
+     *
+     * @return the number of rows whose status was transitioned to DEAD_LETTER.
+     */
+    public int deadLetterUndeliveredForClientNotIn(String clientId,
+                                                   java.util.Collection<String> allowedEventTypes,
+                                                   String reason) {
+        Objects.requireNonNull(clientId, "clientId");
+        Objects.requireNonNull(allowedEventTypes, "allowedEventTypes");
+        Objects.requireNonNull(reason, "reason");
+        if (allowedEventTypes.isEmpty()) {
+            return deadLetterUndeliveredForClient(clientId, reason);
+        }
+        int updated = getEntityManager()
+                .createNamedQuery("SsfEventEntity.deadLetterUndeliveredForClientNotIn")
+                .setParameter("clientId", clientId)
+                .setParameter("allowedEventTypes", allowedEventTypes)
+                .setParameter("deadLetterStatus", SsfEventStatus.DEAD_LETTER)
+                .setParameter("reason", truncateError(reason))
+                .setParameter("statuses",
+                        java.util.List.of(SsfEventStatus.PENDING, SsfEventStatus.HELD))
+                .executeUpdate();
+        if (updated > 0) {
+            log.debugf("SSF outbox dead-lettered %d row(s) for client %s with event types outside the allow-list", updated, clientId);
+        }
+        return updated;
+    }
+
+    /**
+     * Parks every PENDING / HELD outbox row owned by the receiver as
+     * {@link SsfEventStatus#DEAD_LETTER DEAD_LETTER}. Used as the
+     * empty-allow-list fall-back of
+     * {@link #deadLetterUndeliveredForClientNotIn} — when the receiver
+     * has emptied its {@code events_requested} set, every queued event
+     * type is no longer wanted.
+     *
+     * @return the number of rows whose status was transitioned to DEAD_LETTER.
+     */
+    public int deadLetterUndeliveredForClient(String clientId, String reason) {
+        Objects.requireNonNull(clientId, "clientId");
+        Objects.requireNonNull(reason, "reason");
+        int updated = getEntityManager()
+                .createNamedQuery("SsfEventEntity.deadLetterUndeliveredForClient")
+                .setParameter("clientId", clientId)
+                .setParameter("deadLetterStatus", SsfEventStatus.DEAD_LETTER)
+                .setParameter("reason", truncateError(reason))
+                .setParameter("statuses",
+                        java.util.List.of(SsfEventStatus.PENDING, SsfEventStatus.HELD))
+                .executeUpdate();
+        if (updated > 0) {
+            log.debugf("SSF outbox dead-lettered %d undelivered row(s) for client %s", updated, clientId);
+        }
+        return updated;
     }
 
     /**
