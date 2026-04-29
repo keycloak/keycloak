@@ -90,6 +90,13 @@ This option is used when {project_name} server and adapter provide the IDP and S
 We recommend the use of some more secure algorithm instead of `*_SHA1`. Also, with `*_SHA1` algorithms, verifying signatures
 do not work if the SAML client runs on Java 17 or higher.
 
+*SAML signing key*:: Select a specific realm key to sign SAML responses and assertions for this client. If not set, the realm's active signing key is used. This setting is useful for <<_rotating-keys-gradually,rotating keys gradually>>.
++
+[NOTE]
+====
+If the selected key is passive, disabled, or not found, {project_name} falls back to the realm's active signing key.
+====
+
 *SAML Signature Key Name*:: Signed SAML documents sent using POST binding contain the identification of the signing key in the *KeyName* element. This action can be controlled by the *SAML Signature Key Name* option. This option controls the contents of the *Keyname*.
 +
 --

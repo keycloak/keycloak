@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { HelpItem, SelectControl } from "@keycloak/keycloak-ui-shared";
 import { FormAccess } from "../../components/form/FormAccess";
 import { MultiLineInput } from "../../components/multi-line-input/MultiLineInput";
+import { SigningKeySelect } from "../../components/signing-key/SigningKeySelect";
 import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
 import { convertAttributeNameToForm, sortProviders } from "../../util";
 import { FormFields } from "../ClientDetails";
@@ -60,6 +61,14 @@ export const FineGrainOpenIdConnect = ({
         }}
         options={prependEmpty(clientSignatureProviders!)}
       />
+      <SigningKeySelect
+        name={convertAttributeNameToForm<FormFields>(
+          "attributes.access.token.signed.response.kid",
+        )}
+        protocol="openid-connect"
+        label={t("signingKeyAccessTokenLabel")}
+        labelIcon={t("signingKeyAccessTokenHelp")}
+      />
       <FormGroup
         label={t("useRfc9068AccessTokenType")}
         fieldId="useRfc9068AccessTokenType"
@@ -99,6 +108,14 @@ export const FineGrainOpenIdConnect = ({
           defaultValue: "",
         }}
         options={prependEmpty(clientSignatureProviders!)}
+      />
+      <SigningKeySelect
+        name={convertAttributeNameToForm<FormFields>(
+          "attributes.id.token.signed.response.kid",
+        )}
+        protocol="openid-connect"
+        label={t("signingKeyIdTokenLabel")}
+        labelIcon={t("signingKeyIdTokenHelp")}
       />
       <SelectControl
         name={convertAttributeNameToForm<FormFields>(
@@ -161,6 +178,14 @@ export const FineGrainOpenIdConnect = ({
           defaultValue: "",
         }}
         options={prependEmpty(signatureProviders!)}
+      />
+      <SigningKeySelect
+        name={convertAttributeNameToForm<FormFields>(
+          "attributes.user.info.response.signature.kid",
+        )}
+        protocol="openid-connect"
+        label={t("signingKeyUserInfoLabel")}
+        labelIcon={t("signingKeyUserInfoHelp")}
       />
       <SelectControl
         name={convertAttributeNameToForm<FormFields>(
@@ -265,6 +290,14 @@ export const FineGrainOpenIdConnect = ({
           defaultValue: "",
         }}
         options={prependEmpty(signatureProviders!)}
+      />
+      <SigningKeySelect
+        name={convertAttributeNameToForm<FormFields>(
+          "attributes.authorization.signed.response.kid",
+        )}
+        protocol="openid-connect"
+        label={t("signingKeyAuthorizationLabel")}
+        labelIcon={t("signingKeyAuthorizationHelp")}
       />
       <SelectControl
         name={convertAttributeNameToForm<FormFields>(

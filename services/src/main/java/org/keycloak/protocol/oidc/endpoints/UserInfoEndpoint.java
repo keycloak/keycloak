@@ -37,6 +37,7 @@ import org.keycloak.common.ClientConnection;
 import org.keycloak.common.VerificationException;
 import org.keycloak.crypto.CekManagementProvider;
 import org.keycloak.crypto.ContentEncryptionProvider;
+import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.crypto.SignatureProvider;
 import org.keycloak.crypto.SignatureSignerContext;
@@ -60,6 +61,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
+import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.protocol.oidc.TokenManager.NotBeforeCheck;
@@ -78,12 +80,15 @@ import org.keycloak.util.TokenUtil;
 import org.keycloak.utils.MediaType;
 import org.keycloak.utils.OAuth2Error;
 
+import org.jboss.logging.Logger;
 import org.jboss.resteasy.reactive.NoCache;
 
 /**
  * @author pedroigor
  */
 public class UserInfoEndpoint {
+
+    private static final Logger logger = Logger.getLogger(UserInfoEndpoint.class);
 
     private final HttpRequest request;
 
@@ -296,7 +301,7 @@ public class UserInfoEndpoint {
             String signatureAlgorithm = session.tokens().signatureAlgorithm(TokenCategory.USERINFO);
 
             SignatureProvider signatureProvider = session.getProvider(SignatureProvider.class, signatureAlgorithm);
-            SignatureSignerContext signer = signatureProvider.signer();
+            SignatureSignerContext signer = getSignerForUserInfo(signatureProvider, signatureAlgorithm, clientModel);
 
             String signedUserInfo = new JWSBuilder().type("JWT").jsonContent(claims).sign(signer);
 
@@ -384,6 +389,29 @@ public class UserInfoEndpoint {
                 throw error.cors(cors.allowAllOrigins()).invalidRequest("More than one method used for including an access token");
             }
         }
+    }
+
+    private SignatureSignerContext getSignerForUserInfo(SignatureProvider provider, String algorithm, ClientModel client) {
+        String signingKeyId = client.getAttribute(OIDCConfigAttributes.USER_INFO_RESPONSE_SIGNATURE_KID);
+        if (signingKeyId == null || signingKeyId.isEmpty()) {
+            return provider.signer();
+        }
+
+        KeyWrapper key = session.keys().getKey(realm, signingKeyId, KeyUse.SIG, algorithm);
+
+        if (key == null) {
+            logger.debugf("UserInfo signing key '%s' is not available (disabled or not found) for client '%s', using realm's active signing key",
+                signingKeyId, client.getClientId());
+            return provider.signer();
+        }
+
+        if (!key.getStatus().isActive()) {
+            logger.debugf("UserInfo signing key '%s' is passive for client '%s', using realm's active signing key",
+                signingKeyId, client.getClientId());
+            return provider.signer();
+        }
+
+        return provider.signer(key);
     }
 
     public static class TokenForUserInfo {

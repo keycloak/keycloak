@@ -12,6 +12,7 @@ export interface KeyMetadataRepresentation {
   kid?: string;
   status?: string;
   type?: string;
+  use?: string;
   algorithm?: string;
   publicKey?: string;
   certificate?: string;

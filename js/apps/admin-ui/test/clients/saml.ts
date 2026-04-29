@@ -6,6 +6,8 @@ import {
   switchOn,
 } from "../utils/form.ts";
 
+const REALM_ACTIVE_KEY_TEXT = "Use default (realm's active signing key)";
+
 function getTermsOfServiceUrl(page: Page) {
   return page.getByTestId("attributes.tosUri");
 }
@@ -198,4 +200,38 @@ export async function assertEncryptionMaskGenerationFunctionInputVisible(
     getKeyForEncryptionMaskGenerationFunctionInput(page),
     visible,
   );
+}
+
+function getSigningKeyIdSelect(page: Page) {
+  return page.locator("#attributes\\.saml🍺server🍺signature🍺kid");
+}
+
+export async function assertSigningKeyDropdownVisible(page: Page) {
+  await expect(getSigningKeyIdSelect(page)).toBeVisible();
+}
+
+export async function selectSigningKey(page: Page, keyId: string) {
+  const field = getSigningKeyIdSelect(page);
+  await field.click();
+  // Find option that contains the keyId (format: "algorithm - kid")
+  await page
+    .getByRole("option")
+    .filter({ hasText: new RegExp(`- ${keyId}$`) })
+    .click();
+}
+
+export async function assertSigningKeyValue(page: Page, expectedValue: string) {
+  const field = getSigningKeyIdSelect(page);
+  if (expectedValue === "") {
+    await expect(field).toHaveText(REALM_ACTIVE_KEY_TEXT);
+  } else {
+    await expect(field).toHaveText(new RegExp(`- ${expectedValue}$`));
+  }
+}
+
+export async function assertSamlSigningKeyDisplayText(
+  page: Page,
+  expectedText: string | RegExp,
+) {
+  await expect(getSigningKeyIdSelect(page)).toHaveText(expectedText);
 }

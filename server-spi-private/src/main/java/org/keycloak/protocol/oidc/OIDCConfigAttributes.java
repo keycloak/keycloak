@@ -19,6 +19,7 @@ package org.keycloak.protocol.oidc;
 public final class OIDCConfigAttributes {
 
     public static final String USER_INFO_RESPONSE_SIGNATURE_ALG = "user.info.response.signature.alg";
+    public static final String USER_INFO_RESPONSE_SIGNATURE_KID = "user.info.response.signature.kid";
     public static final String USER_INFO_ENCRYPTED_RESPONSE_ALG = "user.info.encrypted.response.alg";
     public static final String USER_INFO_ENCRYPTED_RESPONSE_ENC = "user.info.encrypted.response.enc";
 
@@ -50,11 +51,15 @@ public final class OIDCConfigAttributes {
 
     public static final String ID_TOKEN_SIGNED_RESPONSE_ALG = "id.token.signed.response.alg";
 
+    public static final String ID_TOKEN_SIGNED_RESPONSE_KID = "id.token.signed.response.kid";
+
     public static final String ID_TOKEN_ENCRYPTED_RESPONSE_ALG = "id.token.encrypted.response.alg";
 
     public static final String ID_TOKEN_ENCRYPTED_RESPONSE_ENC = "id.token.encrypted.response.enc";
 
     public static final String ACCESS_TOKEN_SIGNED_RESPONSE_ALG = "access.token.signed.response.alg";
+
+    public static final String ACCESS_TOKEN_SIGNED_RESPONSE_KID = "access.token.signed.response.kid";
 
     public static final String ACCESS_TOKEN_LIFESPAN = "access.token.lifespan";
     public static final String CLIENT_SESSION_IDLE_TIMEOUT = "client.session.idle.timeout";
@@ -85,6 +90,7 @@ public final class OIDCConfigAttributes {
     public static final String ID_TOKEN_AS_DETACHED_SIGNATURE  = "id.token.as.detached.signature";
 
     public static final String AUTHORIZATION_SIGNED_RESPONSE_ALG = "authorization.signed.response.alg";
+    public static final String AUTHORIZATION_SIGNED_RESPONSE_KID = "authorization.signed.response.kid";
     public static final String AUTHORIZATION_ENCRYPTED_RESPONSE_ALG = "authorization.encrypted.response.alg";
     public static final String AUTHORIZATION_ENCRYPTED_RESPONSE_ENC = "authorization.encrypted.response.enc";
     public static final String FRONT_CHANNEL_LOGOUT_URI = "frontchannel.logout.url";
@@ -106,6 +112,7 @@ public final class OIDCConfigAttributes {
     public static final String TOS_URI = "tosUri";
     public static final String POLICY_URI = "policyUri";
     public static final String SECTOR_IDENTIFIER_URI = "sectorIdentifierUri";
+
     private OIDCConfigAttributes() {
     }
 
