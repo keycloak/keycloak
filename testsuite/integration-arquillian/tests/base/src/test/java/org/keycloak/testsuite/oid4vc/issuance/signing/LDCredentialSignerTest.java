@@ -39,11 +39,12 @@ import org.keycloak.protocol.oid4vc.model.CredentialSubject;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.protocol.oid4vc.model.vcdm.LdProof;
 import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.testsuite.runonserver.RunOnServerException;
 
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
+
+import org.keycloak.testframework.remote.providers.runonserver.RunOnServerException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
