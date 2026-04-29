@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.protocol.oid4vp.model;
+package org.keycloak.protocol.oid4vc.model.presentation;
 
 import java.util.List;
 
@@ -22,17 +22,17 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class OID4VPDcqlCredentialMeta {
+public class DcqlQuery {
 
-    @JsonProperty("vct_values")
-    private List<String> vctValues;
+    @JsonProperty("credentials")
+    private List<DcqlCredentialQuery> credentials;
 
-    public List<String> getVctValues() {
-        return vctValues;
+    public List<DcqlCredentialQuery> getCredentials() {
+        return credentials;
     }
 
-    public OID4VPDcqlCredentialMeta setVctValues(List<String> vctValues) {
-        this.vctValues = vctValues;
+    public DcqlQuery setCredentials(List<DcqlCredentialQuery> credentials) {
+        this.credentials = credentials;
         return this;
     }
 }

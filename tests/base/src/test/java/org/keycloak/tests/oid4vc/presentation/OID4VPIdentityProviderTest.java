@@ -1,4 +1,4 @@
-package org.keycloak.tests.oid4vp;
+package org.keycloak.tests.oid4vc.presentation;
 
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
@@ -6,12 +6,12 @@ import java.util.HashMap;
 
 import jakarta.ws.rs.core.Response;
 
-import org.keycloak.broker.oid4vp.OID4VPIdentityProviderConfig;
-import org.keycloak.broker.oid4vp.OID4VPIdentityProviderFactory;
+import org.keycloak.protocol.oid4vc.presentation.OID4VPIdentityProviderConfig;
+import org.keycloak.protocol.oid4vc.presentation.OID4VPIdentityProviderFactory;
 import org.keycloak.common.Profile;
-import org.keycloak.protocol.oid4vp.OID4VPConstants;
-import org.keycloak.protocol.oid4vp.model.OID4VPAuthorizationRequest;
-import org.keycloak.protocol.oid4vp.model.OID4VPDirectPostResponse;
+import org.keycloak.protocol.oid4vc.presentation.OID4VPConstants;
+import org.keycloak.protocol.oid4vc.model.presentation.AuthorizationRequest;
+import org.keycloak.protocol.oid4vc.model.presentation.DirectPostResponse;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
@@ -82,7 +82,7 @@ public class OID4VPIdentityProviderTest {
         assertNotNull(walletRequest.getRequestUri(), "No request_uri");
 
         // The wallet fetches the Request Object from the verifier.
-        OID4VPAuthorizationRequest authorizationRequest = wallet.fetchAuthorizationRequest(walletRequest);
+        AuthorizationRequest authorizationRequest = wallet.fetchAuthorizationRequest(walletRequest);
         assertEquals(OID4VPConstants.RESPONSE_TYPE_VP_TOKEN, authorizationRequest.getResponseType());
         assertEquals(OID4VPConstants.RESPONSE_MODE_DIRECT_POST, authorizationRequest.getResponseMode());
         assertEquals(OID4VPConstants.AUD_SELF_ISSUED_V2, authorizationRequest.getAudience());
@@ -93,7 +93,7 @@ public class OID4VPIdentityProviderTest {
         assertEquals(1, authorizationRequest.getDcqlQuery().getCredentials().size());
 
         // The wallet sends a background direct_post response and receives a redirect URI for the browser.
-        OID4VPDirectPostResponse directPostResponse = wallet.submitDirectPost(authorizationRequest, "dummy-vp-token");
+        DirectPostResponse directPostResponse = wallet.submitDirectPost(authorizationRequest, "dummy-vp-token");
         assertNotNull(directPostResponse.getRedirectUri(), "No redirect_uri");
         assertThat(directPostResponse.getRedirectUri(), startsWith(realm.getBaseUrl() + "/broker/" + IDP_ALIAS + "/endpoint/continue"));
         assertEquals(authorizationRequest.getState(), getQueryParam(directPostResponse.getRedirectUri(), OID4VPConstants.STATE));
@@ -112,8 +112,8 @@ public class OID4VPIdentityProviderTest {
         OID4VPBasicWallet.WalletAuthorizationRequest walletRequest = wallet.browserAuthorizationRequest(IDP_ALIAS);
 
         // The wallet processes the request object and performs a background direct_post callback.
-        OID4VPAuthorizationRequest authorizationRequest = wallet.fetchAuthorizationRequest(walletRequest);
-        OID4VPDirectPostResponse directPostResponse = wallet.submitDirectPost(authorizationRequest, "dummy-vp-token");
+        AuthorizationRequest authorizationRequest = wallet.fetchAuthorizationRequest(walletRequest);
+        DirectPostResponse directPostResponse = wallet.submitDirectPost(authorizationRequest, "dummy-vp-token");
 
         // The browser resumes the login flow by following the redirect URI returned to the wallet.
         AuthorizationEndpointResponse authorizationResponse = wallet.continueInBrowser(directPostResponse);

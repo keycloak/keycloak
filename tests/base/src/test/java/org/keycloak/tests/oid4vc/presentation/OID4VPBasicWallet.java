@@ -1,4 +1,4 @@
-package org.keycloak.tests.oid4vp;
+package org.keycloak.tests.oid4vc.presentation;
 
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
@@ -10,9 +10,9 @@ import org.keycloak.http.simple.SimpleHttp;
 import org.keycloak.http.simple.SimpleHttpRequest;
 import org.keycloak.http.simple.SimpleHttpResponse;
 import org.keycloak.jose.jws.JWSInput;
-import org.keycloak.protocol.oid4vp.OID4VPConstants;
-import org.keycloak.protocol.oid4vp.model.OID4VPAuthorizationRequest;
-import org.keycloak.protocol.oid4vp.model.OID4VPDirectPostResponse;
+import org.keycloak.protocol.oid4vc.presentation.OID4VPConstants;
+import org.keycloak.protocol.oid4vc.model.presentation.AuthorizationRequest;
+import org.keycloak.protocol.oid4vc.model.presentation.DirectPostResponse;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.ui.page.LoginPage;
 import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
@@ -63,25 +63,25 @@ public class OID4VPBasicWallet {
         }
     }
 
-    public OID4VPAuthorizationRequest fetchAuthorizationRequest(WalletAuthorizationRequest walletRequest) throws Exception {
+    public AuthorizationRequest fetchAuthorizationRequest(WalletAuthorizationRequest walletRequest) throws Exception {
         try (SimpleHttpResponse requestObjectResponse = redirectlessHttp.doGet(walletRequest.getRequestUri()).asResponse()) {
             if (requestObjectResponse.getStatus() != 200) {
                 throw new IllegalStateException("Unexpected request object status: " + requestObjectResponse.getStatus());
             }
 
             byte[] requestObjectContent = new JWSInput(requestObjectResponse.asString()).getContent();
-            return JsonSerialization.readValue(requestObjectContent, OID4VPAuthorizationRequest.class);
+            return JsonSerialization.readValue(requestObjectContent, AuthorizationRequest.class);
         }
     }
 
-    public OID4VPDirectPostResponse submitDirectPost(OID4VPAuthorizationRequest authorizationRequest, String vpToken) throws Exception {
+    public DirectPostResponse submitDirectPost(AuthorizationRequest authorizationRequest, String vpToken) throws Exception {
         return redirectlessHttp.doPost(authorizationRequest.getResponseUri())
                 .param(OID4VPConstants.STATE, authorizationRequest.getState())
                 .param(OID4VPConstants.VP_TOKEN, vpToken)
-                .asJson(OID4VPDirectPostResponse.class);
+                .asJson(DirectPostResponse.class);
     }
 
-    public AuthorizationEndpointResponse continueInBrowser(OID4VPDirectPostResponse directPostResponse) {
+    public AuthorizationEndpointResponse continueInBrowser(DirectPostResponse directPostResponse) {
         requireBrowser();
         driver.open(directPostResponse.getRedirectUri());
         driver.waiting().until(d -> {

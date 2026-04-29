@@ -14,10 +14,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.broker.oid4vp;
+package org.keycloak.protocol.oid4vc.presentation;
 
 import org.keycloak.models.IdentityProviderModel;
-import org.keycloak.protocol.oid4vp.OID4VPConstants;
 
 public class OID4VPIdentityProviderConfig extends IdentityProviderModel {
 

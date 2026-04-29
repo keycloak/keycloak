@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.protocol.oid4vp.model;
+package org.keycloak.protocol.oid4vc.model.presentation;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -22,7 +22,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class OID4VPAuthorizationRequest {
+public class AuthorizationRequest {
 
     @JsonProperty("jti")
     private String jti;
@@ -58,13 +58,13 @@ public class OID4VPAuthorizationRequest {
     private String nonce;
 
     @JsonProperty("dcql_query")
-    private OID4VPDcqlQuery dcqlQuery;
+    private DcqlQuery dcqlQuery;
 
     public String getJti() {
         return jti;
     }
 
-    public OID4VPAuthorizationRequest setJti(String jti) {
+    public AuthorizationRequest setJti(String jti) {
         this.jti = jti;
         return this;
     }
@@ -73,7 +73,7 @@ public class OID4VPAuthorizationRequest {
         return issuer;
     }
 
-    public OID4VPAuthorizationRequest setIssuer(String issuer) {
+    public AuthorizationRequest setIssuer(String issuer) {
         this.issuer = issuer;
         return this;
     }
@@ -82,7 +82,7 @@ public class OID4VPAuthorizationRequest {
         return audience;
     }
 
-    public OID4VPAuthorizationRequest setAudience(String audience) {
+    public AuthorizationRequest setAudience(String audience) {
         this.audience = audience;
         return this;
     }
@@ -91,7 +91,7 @@ public class OID4VPAuthorizationRequest {
         return issuedAt;
     }
 
-    public OID4VPAuthorizationRequest setIssuedAt(Long issuedAt) {
+    public AuthorizationRequest setIssuedAt(Long issuedAt) {
         this.issuedAt = issuedAt;
         return this;
     }
@@ -100,7 +100,7 @@ public class OID4VPAuthorizationRequest {
         return expiration;
     }
 
-    public OID4VPAuthorizationRequest setExpiration(Long expiration) {
+    public AuthorizationRequest setExpiration(Long expiration) {
         this.expiration = expiration;
         return this;
     }
@@ -109,7 +109,7 @@ public class OID4VPAuthorizationRequest {
         return clientId;
     }
 
-    public OID4VPAuthorizationRequest setClientId(String clientId) {
+    public AuthorizationRequest setClientId(String clientId) {
         this.clientId = clientId;
         return this;
     }
@@ -118,7 +118,7 @@ public class OID4VPAuthorizationRequest {
         return responseType;
     }
 
-    public OID4VPAuthorizationRequest setResponseType(String responseType) {
+    public AuthorizationRequest setResponseType(String responseType) {
         this.responseType = responseType;
         return this;
     }
@@ -127,7 +127,7 @@ public class OID4VPAuthorizationRequest {
         return responseMode;
     }
 
-    public OID4VPAuthorizationRequest setResponseMode(String responseMode) {
+    public AuthorizationRequest setResponseMode(String responseMode) {
         this.responseMode = responseMode;
         return this;
     }
@@ -136,7 +136,7 @@ public class OID4VPAuthorizationRequest {
         return responseUri;
     }
 
-    public OID4VPAuthorizationRequest setResponseUri(String responseUri) {
+    public AuthorizationRequest setResponseUri(String responseUri) {
         this.responseUri = responseUri;
         return this;
     }
@@ -145,7 +145,7 @@ public class OID4VPAuthorizationRequest {
         return state;
     }
 
-    public OID4VPAuthorizationRequest setState(String state) {
+    public AuthorizationRequest setState(String state) {
         this.state = state;
         return this;
     }
@@ -154,16 +154,16 @@ public class OID4VPAuthorizationRequest {
         return nonce;
     }
 
-    public OID4VPAuthorizationRequest setNonce(String nonce) {
+    public AuthorizationRequest setNonce(String nonce) {
         this.nonce = nonce;
         return this;
     }
 
-    public OID4VPDcqlQuery getDcqlQuery() {
+    public DcqlQuery getDcqlQuery() {
         return dcqlQuery;
     }
 
-    public OID4VPAuthorizationRequest setDcqlQuery(OID4VPDcqlQuery dcqlQuery) {
+    public AuthorizationRequest setDcqlQuery(DcqlQuery dcqlQuery) {
         this.dcqlQuery = dcqlQuery;
         return this;
     }
