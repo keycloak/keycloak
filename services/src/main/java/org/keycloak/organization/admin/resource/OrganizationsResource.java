@@ -23,6 +23,7 @@ import java.util.stream.Stream;
 
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DefaultValue;
+import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
@@ -33,6 +34,7 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 
+import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.KeycloakSession;
@@ -100,7 +102,7 @@ public class OrganizationsResource {
     })
     public Response create(OrganizationRepresentation organization) {
         auth.orgs().requireManage();
-        Organizations.checkEnabled(provider);
+        Organizations.checkEnabled(provider, auth);
 
         if (organization == null) {
             throw ErrorResponse.error("Organization cannot be null.", Response.Status.BAD_REQUEST);
@@ -154,9 +156,10 @@ public class OrganizationsResource {
             @Parameter(description = "if false, return the full representation. Otherwise, only the basic fields are returned.") @QueryParam("briefRepresentation") @DefaultValue("true") boolean briefRepresentation
     ) {
         auth.orgs().requireQuery();
-        Organizations.checkEnabled(provider);
+        Organizations.checkEnabled(provider, auth);
 
-        if (!auth.orgs().canView()) {
+        // if a dedicated admin can query, but cannot view (and FGAP is not enabled) - we can return empty list right away to save a roundtrip to the DB
+        if (!AdminPermissionsSchema.SCHEMA.isAdminPermissionsEnabled(session.getContext().getRealm()) && !auth.orgs().canView()) {
             return Stream.empty();
         }
 
@@ -174,8 +177,7 @@ public class OrganizationsResource {
      */
     @Path("{org-id}")
     public OrganizationResource get(@PathParam("org-id") String orgId) {
-        auth.orgs().requireView();
-        Organizations.checkEnabled(provider);
+        Organizations.checkEnabled(provider, auth);
 
         if (StringUtil.isBlank(orgId)) {
             throw ErrorResponse.error("Id cannot be null.", Response.Status.BAD_REQUEST);
@@ -184,9 +186,12 @@ public class OrganizationsResource {
         OrganizationModel organizationModel = provider.getById(orgId);
 
         if (organizationModel == null) {
-            throw ErrorResponse.error("Organization not found.", Response.Status.NOT_FOUND);
+            throw (auth.orgs().canQuery()) ?
+                    ErrorResponse.error("Organization not found.", Response.Status.NOT_FOUND) :
+                    new ForbiddenException();
         }
 
+        auth.orgs().requireView(organizationModel);
         session.getContext().setOrganization(organizationModel);
 
         return new OrganizationResource(session, organizationModel, adminEvent, auth);
@@ -213,10 +218,11 @@ public class OrganizationsResource {
             @Parameter(description = "Boolean which defines whether the param 'search' must match exactly or not") @QueryParam("exact") Boolean exact
     ) {
         auth.orgs().requireQuery();
-        Organizations.checkEnabled(provider);
+        Organizations.checkEnabled(provider, auth);
 
-        if (!auth.orgs().canView()) {
-            return 0;
+        // if a dedicated admin can query, but cannot view (and FGAP is not enabled) - we can return 0L right away to save a roundtrip to the DB
+        if (!AdminPermissionsSchema.SCHEMA.isAdminPermissionsEnabled(session.getContext().getRealm()) && !auth.orgs().canView()) {
+            return 0L;
         }
 
         if (StringUtil.isNotBlank(searchQuery)) {
@@ -243,11 +249,7 @@ public class OrganizationsResource {
             @QueryParam("briefRepresentation") @DefaultValue("true") boolean briefRepresentation
     ) {
         auth.orgs().requireQuery();
-        Organizations.checkEnabled(provider);
-
-        if (!auth.orgs().canView()) {
-            return Stream.empty();
-        }
+        Organizations.checkEnabled(provider, auth);
 
         return new OrganizationMemberResource(session, null, adminEvent, auth).getOrganizations(memberId, briefRepresentation);
     }

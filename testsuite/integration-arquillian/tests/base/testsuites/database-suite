@@ -7,7 +7,6 @@ KcOidcBrokerTest
 LDAPUserLoginTest
 LoginTest
 RequiredActionUpdateProfileTest
-SSOTest
 SamlClientTest
 UserProfileTest
 OidcAdvancedClaimToGroupMapperTest
