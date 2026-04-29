@@ -28,6 +28,7 @@ import org.keycloak.admin.client.resource.OrganizationResource;
 import org.keycloak.representations.idm.OrganizationInvitationRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.updaters.OrganizationAttributeUpdater;
 import org.keycloak.testsuite.util.MailServer;
 
@@ -390,6 +391,33 @@ public class OrganizationInvitationManagementTest extends AbstractOrganizationTe
                 assertThat(response.getStatus(), equalTo(400));
                 assertThat(response.readEntity(String.class), containsString("Organization is disabled"));
             }
+        }
+    }
+
+    @Test
+    public void testSendInvitationWithInvalidClient() {
+        try (Response response = organization.members().inviteUser("user@test-org.com", "John", "Doe", "missing-client", null)) {
+            assertThat(response.getStatus(), equalTo(400));
+            assertThat(response.readEntity(String.class), containsString("Client doesn't exist"));
+        }
+    }
+
+    @Test
+    public void testSendInvitationWithDisabledClient() throws Exception {
+        try (
+                ClientAttributeUpdater cau = ClientAttributeUpdater.forClient(adminClient, TEST_REALM_NAME, "broker-app").setEnabled(false).update();
+                Response response = organization.members().inviteUser("user@test-org.com", "John", "Doe", "broker-app", null)
+        ) {
+            assertThat(response.getStatus(), equalTo(400));
+            assertThat(response.readEntity(String.class), containsString("Client is not enabled"));
+        }
+    }
+
+    @Test
+    public void testSendInvitationWithInvalidRedirectUri() {
+        try (Response response = organization.members().inviteUser("user@test-org.com", "John", "Doe", "broker-app", "https://invalid.example.com/callback")) {
+            assertThat(response.getStatus(), equalTo(400));
+            assertThat(response.readEntity(String.class), containsString("Invalid redirect uri."));
         }
     }
 
