@@ -211,10 +211,7 @@ public class Keycloak {
             if (!initSys(args.toArray(String[]::new))) {
                 return this;
             }
-            System.setProperty(Environment.KC_TEST_REBUILD, "true");
             StartupAction startupAction = action.createInitialRuntimeApplication();
-            System.getProperties().remove(Environment.KC_TEST_REBUILD);
-
             application = startupAction.runMainClass(args.toArray(new String[0]));
 
             return this;
