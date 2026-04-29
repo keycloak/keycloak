@@ -9,8 +9,8 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.sessions.CommonClientSessionModel;
+import org.keycloak.testframework.remote.providers.runonserver.FetchOnServer;
 import org.keycloak.testsuite.client.KeycloakTestingClient;
-import org.keycloak.testsuite.runonserver.FetchOnServer;
 
 import org.infinispan.util.function.SerializableConsumer;
 import org.infinispan.util.function.SerializableFunction;

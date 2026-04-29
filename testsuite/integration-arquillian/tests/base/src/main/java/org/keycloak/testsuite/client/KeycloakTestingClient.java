@@ -22,13 +22,13 @@ import java.util.Set;
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.common.Profile;
+import org.keycloak.testframework.remote.providers.runonserver.FetchOnServer;
+import org.keycloak.testframework.remote.providers.runonserver.FetchOnServerWrapper;
 import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.client.resources.TestApplicationResource;
 import org.keycloak.testsuite.client.resources.TestExampleCompanyResource;
 import org.keycloak.testsuite.client.resources.TestSamlApplicationResource;
 import org.keycloak.testsuite.client.resources.TestingResource;
-import org.keycloak.testsuite.runonserver.FetchOnServer;
-import org.keycloak.testsuite.runonserver.FetchOnServerWrapper;
 import org.keycloak.testframework.remote.providers.runonserver.RunOnServer;
 import org.keycloak.testsuite.runonserver.RunOnServerException;
 import org.keycloak.testsuite.runonserver.SerializationUtil;
