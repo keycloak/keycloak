@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.broker.oid4vp;
+package org.keycloak.protocol.oid4vc.presentation;
 
 import java.net.URI;
 import java.util.Map;
@@ -41,10 +41,9 @@ import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.protocol.oid4vp.OID4VPConstants;
-import org.keycloak.protocol.oid4vp.model.OID4VPAuthorizationRequest;
-import org.keycloak.protocol.oid4vp.model.OID4VPDirectPostRequest;
-import org.keycloak.protocol.oid4vp.model.OID4VPDirectPostResponse;
+import org.keycloak.protocol.oid4vc.model.presentation.AuthorizationRequest;
+import org.keycloak.protocol.oid4vc.model.presentation.DirectPostRequest;
+import org.keycloak.protocol.oid4vc.model.presentation.DirectPostResponse;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
 import org.keycloak.util.JsonSerialization;
@@ -81,7 +80,7 @@ public class OID4VPEndpoint {
 
         String responseUri = provider.getVerifierEndpoint(realm);
 
-        OID4VPAuthorizationRequest authorizationRequest = provider.createAuthorizationRequest(realm, responseUri, handleReference.getState(), responseUri);
+        AuthorizationRequest authorizationRequest = provider.createAuthorizationRequest(realm, responseUri, handleReference.getState(), responseUri);
         String requestObject = new JWSBuilder()
                 .type(OID4VPConstants.REQUEST_OBJECT_TYPE)
                 .jsonContent(authorizationRequest)
@@ -90,7 +89,7 @@ public class OID4VPEndpoint {
     }
 
     @POST
-    public Response directPost(@BeanParam OID4VPDirectPostRequest directPostRequest) {
+    public Response directPost(@BeanParam DirectPostRequest directPostRequest) {
         if (!directPostRequest.isValid()) {
             return Response.status(Response.Status.BAD_REQUEST).build();
         }
@@ -126,7 +125,7 @@ public class OID4VPEndpoint {
                 .queryParam(OID4VPConstants.RESPONSE_CODE, responseCode)
                 .build();
 
-        return Response.ok(new OID4VPDirectPostResponse().setRedirectUri(redirectUri.toString()))
+        return Response.ok(new DirectPostResponse().setRedirectUri(redirectUri.toString()))
                 .type(MediaType.APPLICATION_JSON_TYPE)
                 .build();
     }
@@ -152,7 +151,7 @@ public class OID4VPEndpoint {
             return callback.error(provider.getConfig(), "Mismatched direct_post result");
         }
 
-        OID4VPDirectPostRequest authorizationResponse = result.getAuthorizationResponse();
+        DirectPostRequest authorizationResponse = result.getAuthorizationResponse();
         if (authorizationResponse == null) {
             return callback.error(provider.getConfig(), "Missing direct_post authorization response");
         }
@@ -230,7 +229,7 @@ public class OID4VPEndpoint {
     static class OID4VPDirectPostResult {
 
         private String state;
-        private OID4VPDirectPostRequest authorizationResponse;
+        private DirectPostRequest authorizationResponse;
 
         public String getState() {
             return state;
@@ -241,11 +240,11 @@ public class OID4VPEndpoint {
             return this;
         }
 
-        public OID4VPDirectPostRequest getAuthorizationResponse() {
+        public DirectPostRequest getAuthorizationResponse() {
             return authorizationResponse;
         }
 
-        public OID4VPDirectPostResult setAuthorizationResponse(OID4VPDirectPostRequest authorizationResponse) {
+        public OID4VPDirectPostResult setAuthorizationResponse(DirectPostRequest authorizationResponse) {
             this.authorizationResponse = authorizationResponse;
             return this;
         }

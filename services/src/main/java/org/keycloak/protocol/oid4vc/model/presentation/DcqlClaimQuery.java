@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.protocol.oid4vp.model;
+package org.keycloak.protocol.oid4vc.model.presentation;
 
 import java.util.List;
 
@@ -22,7 +22,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class OID4VPDcqlClaimQuery {
+public class DcqlClaimQuery {
 
     @JsonProperty("path")
     private List<String> path;
@@ -31,7 +31,7 @@ public class OID4VPDcqlClaimQuery {
         return path;
     }
 
-    public OID4VPDcqlClaimQuery setPath(List<String> path) {
+    public DcqlClaimQuery setPath(List<String> path) {
         this.path = path;
         return this;
     }

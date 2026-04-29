@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.protocol.oid4vp.model;
+package org.keycloak.protocol.oid4vc.model.presentation;
 
 import java.util.List;
 
@@ -22,7 +22,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class OID4VPDcqlCredentialQuery {
+public class DcqlCredentialQuery {
 
     @JsonProperty("id")
     private String id;
@@ -31,16 +31,16 @@ public class OID4VPDcqlCredentialQuery {
     private String format;
 
     @JsonProperty("meta")
-    private OID4VPDcqlCredentialMeta meta;
+    private DcqlCredentialMeta meta;
 
     @JsonProperty("claims")
-    private List<OID4VPDcqlClaimQuery> claims;
+    private List<DcqlClaimQuery> claims;
 
     public String getId() {
         return id;
     }
 
-    public OID4VPDcqlCredentialQuery setId(String id) {
+    public DcqlCredentialQuery setId(String id) {
         this.id = id;
         return this;
     }
@@ -49,25 +49,25 @@ public class OID4VPDcqlCredentialQuery {
         return format;
     }
 
-    public OID4VPDcqlCredentialQuery setFormat(String format) {
+    public DcqlCredentialQuery setFormat(String format) {
         this.format = format;
         return this;
     }
 
-    public OID4VPDcqlCredentialMeta getMeta() {
+    public DcqlCredentialMeta getMeta() {
         return meta;
     }
 
-    public OID4VPDcqlCredentialQuery setMeta(OID4VPDcqlCredentialMeta meta) {
+    public DcqlCredentialQuery setMeta(DcqlCredentialMeta meta) {
         this.meta = meta;
         return this;
     }
 
-    public List<OID4VPDcqlClaimQuery> getClaims() {
+    public List<DcqlClaimQuery> getClaims() {
         return claims;
     }
 
-    public OID4VPDcqlCredentialQuery setClaims(List<OID4VPDcqlClaimQuery> claims) {
+    public DcqlCredentialQuery setClaims(List<DcqlClaimQuery> claims) {
         this.claims = claims;
         return this;
     }

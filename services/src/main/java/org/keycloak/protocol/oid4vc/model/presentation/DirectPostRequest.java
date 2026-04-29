@@ -14,18 +14,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.protocol.oid4vp.model;
+package org.keycloak.protocol.oid4vc.model.presentation;
 
 import jakarta.ws.rs.FormParam;
 
-import org.keycloak.protocol.oid4vp.OID4VPConstants;
+import org.keycloak.protocol.oid4vc.presentation.OID4VPConstants;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class OID4VPDirectPostRequest {
+public class DirectPostRequest {
 
     @FormParam(OID4VPConstants.VP_TOKEN)
     @JsonProperty(OID4VPConstants.VP_TOKEN)
@@ -51,7 +51,7 @@ public class OID4VPDirectPostRequest {
         return vpToken;
     }
 
-    public OID4VPDirectPostRequest setVpToken(String vpToken) {
+    public DirectPostRequest setVpToken(String vpToken) {
         this.vpToken = vpToken;
         return this;
     }
@@ -60,7 +60,7 @@ public class OID4VPDirectPostRequest {
         return idToken;
     }
 
-    public OID4VPDirectPostRequest setIdToken(String idToken) {
+    public DirectPostRequest setIdToken(String idToken) {
         this.idToken = idToken;
         return this;
     }
@@ -69,7 +69,7 @@ public class OID4VPDirectPostRequest {
         return state;
     }
 
-    public OID4VPDirectPostRequest setState(String state) {
+    public DirectPostRequest setState(String state) {
         this.state = state;
         return this;
     }
@@ -78,7 +78,7 @@ public class OID4VPDirectPostRequest {
         return error;
     }
 
-    public OID4VPDirectPostRequest setError(String error) {
+    public DirectPostRequest setError(String error) {
         this.error = error;
         return this;
     }
@@ -87,7 +87,7 @@ public class OID4VPDirectPostRequest {
         return errorDescription;
     }
 
-    public OID4VPDirectPostRequest setErrorDescription(String errorDescription) {
+    public DirectPostRequest setErrorDescription(String errorDescription) {
         this.errorDescription = errorDescription;
         return this;
     }

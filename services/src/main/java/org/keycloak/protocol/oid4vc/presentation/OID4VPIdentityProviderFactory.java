@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.broker.oid4vp;
+package org.keycloak.protocol.oid4vc.presentation;
 
 import java.util.List;
 
@@ -23,7 +23,6 @@ import org.keycloak.broker.provider.AbstractIdentityProviderFactory;
 import org.keycloak.common.Profile;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.protocol.oid4vp.OID4VPConstants;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 

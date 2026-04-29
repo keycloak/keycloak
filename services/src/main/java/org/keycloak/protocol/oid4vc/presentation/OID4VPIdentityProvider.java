@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.broker.oid4vp;
+package org.keycloak.protocol.oid4vc.presentation;
 
 import java.net.URI;
 import java.net.URLEncoder;
@@ -32,12 +32,13 @@ import org.keycloak.events.EventBuilder;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.protocol.oid4vp.OID4VPConstants;
-import org.keycloak.protocol.oid4vp.model.OID4VPAuthorizationRequest;
-import org.keycloak.protocol.oid4vp.model.OID4VPDcqlClaimQuery;
-import org.keycloak.protocol.oid4vp.model.OID4VPDcqlCredentialMeta;
-import org.keycloak.protocol.oid4vp.model.OID4VPDcqlCredentialQuery;
-import org.keycloak.protocol.oid4vp.model.OID4VPDcqlQuery;
+import org.keycloak.models.UserModel;
+import org.keycloak.models.UserSessionModel;
+import org.keycloak.protocol.oid4vc.model.presentation.AuthorizationRequest;
+import org.keycloak.protocol.oid4vc.model.presentation.DcqlClaimQuery;
+import org.keycloak.protocol.oid4vc.model.presentation.DcqlCredentialMeta;
+import org.keycloak.protocol.oid4vc.model.presentation.DcqlCredentialQuery;
+import org.keycloak.protocol.oid4vc.model.presentation.DcqlQuery;
 import org.keycloak.services.Urls;
 import org.keycloak.util.JsonSerialization;
 
@@ -94,9 +95,14 @@ public class OID4VPIdentityProvider extends AbstractIdentityProvider<OID4VPIdent
         return exchangeNotSupported();
     }
 
-    OID4VPAuthorizationRequest createAuthorizationRequest(RealmModel realm, String clientId, String state, String responseUri) {
+    @Override
+    public Response retrieveToken(KeycloakSession session, FederatedIdentityModel identity, UserSessionModel userSession, UserModel user) {
+        return exchangeNotSupported();
+    }
+
+    AuthorizationRequest createAuthorizationRequest(RealmModel realm, String clientId, String state, String responseUri) {
         int now = Time.currentTime();
-        return new OID4VPAuthorizationRequest()
+        return new AuthorizationRequest()
                 .setJti(UUID.randomUUID().toString())
                 .setIssuer(Urls.realmIssuer(session.getContext().getUri().getBaseUri(), realm.getName()))
                 .setAudience(OID4VPConstants.AUD_SELF_ISSUED_V2)
@@ -122,18 +128,18 @@ public class OID4VPIdentityProvider extends AbstractIdentityProvider<OID4VPIdent
                 .toString();
     }
 
-    private OID4VPDcqlQuery createStaticDcqlQuery() {
+    private DcqlQuery createStaticDcqlQuery() {
         // TODO: Replace this hardcoded DCQL query with configurable verifier policy input.
-        return new OID4VPDcqlQuery().setCredentials(List.of(
-                new OID4VPDcqlCredentialQuery()
+        return new DcqlQuery().setCredentials(List.of(
+                new DcqlCredentialQuery()
                         .setId("keycloak-oid4vp-credential")
                         .setFormat("dc+sd-jwt")
-                        .setMeta(new OID4VPDcqlCredentialMeta()
+                        .setMeta(new DcqlCredentialMeta()
                                 .setVctValues(List.of("urn:keycloak:oid4vp:credential")))
                         .setClaims(List.of(
-                                new OID4VPDcqlClaimQuery().setPath(List.of("sub")),
-                                new OID4VPDcqlClaimQuery().setPath(List.of("given_name")),
-                                new OID4VPDcqlClaimQuery().setPath(List.of("family_name"))))));
+                                new DcqlClaimQuery().setPath(List.of("sub")),
+                                new DcqlClaimQuery().setPath(List.of("given_name")),
+                                new DcqlClaimQuery().setPath(List.of("family_name"))))));
     }
 
     static String storageKey(String prefix, String value) {

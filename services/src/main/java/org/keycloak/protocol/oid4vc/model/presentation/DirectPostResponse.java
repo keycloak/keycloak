@@ -14,13 +14,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.protocol.oid4vp.model;
+package org.keycloak.protocol.oid4vc.model.presentation;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class OID4VPDirectPostResponse {
+public class DirectPostResponse {
 
     @JsonProperty("redirect_uri")
     private String redirectUri;
@@ -29,7 +29,7 @@ public class OID4VPDirectPostResponse {
         return redirectUri;
     }
 
-    public OID4VPDirectPostResponse setRedirectUri(String redirectUri) {
+    public DirectPostResponse setRedirectUri(String redirectUri) {
         this.redirectUri = redirectUri;
         return this;
     }
