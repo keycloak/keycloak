@@ -251,7 +251,6 @@ export const SsfTab = ({ save, client, activeTab }: SsfTabProps) => {
       "ssf.minVerificationInterval",
       "ssf.autoVerifyStream",
       "ssf.verificationDelayMillis",
-      "ssf.status",
       "ssf.delivery",
       "ssf.pushEndpointConnectTimeoutMillis",
       "ssf.pushEndpointSocketTimeoutMillis",

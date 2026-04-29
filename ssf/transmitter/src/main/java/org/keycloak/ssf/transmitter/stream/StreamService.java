@@ -1019,6 +1019,28 @@ public class StreamService {
      * @param newStreamStatus The updated stream status
      * @return The updated stream status, or null if not found
      */
+    /**
+     * Admin-initiated status update: same flow as
+     * {@link #updateStreamStatus(StreamStatus)} but explicitly
+     * associated with a receiver client that the admin selected from
+     * the admin UI. Temporarily rewrites
+     * {@code session.getContext().getClient()} to the target receiver
+     * so the downstream code (ClientStreamStore reads the receiver
+     * from session context, the stream-updated SET dispatch reads it
+     * for log context) sees the correct client. Restored in a
+     * finally so the admin's own session context isn't left pointing
+     * at the receiver.
+     */
+    public StreamStatus updateStreamStatusAsAdmin(StreamStatus newStreamStatus, ClientModel receiverClient) {
+        ClientModel previousClient = session.getContext().getClient();
+        session.getContext().setClient(receiverClient);
+        try {
+            return updateStreamStatus(newStreamStatus);
+        } finally {
+            session.getContext().setClient(previousClient);
+        }
+    }
+
     public StreamStatus updateStreamStatus(StreamStatus newStreamStatus) {
 
         if (newStreamStatus == null) {
