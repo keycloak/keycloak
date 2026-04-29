@@ -57,7 +57,7 @@ import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
 import org.keycloak.testsuite.client.resources.TestingExportImportResource;
-import org.keycloak.testsuite.runonserver.RunHelpers;
+import org.keycloak.testsuite.util.runonserver.RunHelpers;
 import org.keycloak.testsuite.util.JsonTestUtils;
 import org.keycloak.testsuite.util.userprofile.UserProfileUtil;
 import org.keycloak.userprofile.DeclarativeUserProfileProvider;

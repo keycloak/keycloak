@@ -1,4 +1,4 @@
-package org.keycloak.testsuite.runonserver;
+package org.keycloak.testsuite.util.runonserver;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -60,7 +60,6 @@ public class RunHelpers {
                     UserModel user = session.users().getUserByUsername(realm, username);
                     List<CredentialModel> storedCredentialsByType = user.credentialManager().getStoredCredentialsByTypeStream(CredentialRepresentation.PASSWORD)
                             .collect(Collectors.toList());
-                    System.out.println(storedCredentialsByType.size());
                     return storedCredentialsByType.get(0);
                 };
             }
