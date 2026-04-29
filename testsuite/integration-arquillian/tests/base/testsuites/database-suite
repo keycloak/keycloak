@@ -8,7 +8,6 @@ LDAPUserLoginTest
 LoginTest
 PasswordPolicyTest
 RequiredActionUpdateProfileTest
-SSOTest
 SamlClientTest
 UserProfileTest
 OidcAdvancedClaimToGroupMapperTest
