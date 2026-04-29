@@ -1,0 +1,6 @@
+.keycloak_groups_treeview .pf-v6-c-tree-view__node-text {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: block;
+}

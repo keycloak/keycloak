@@ -185,7 +185,7 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
         assertThat("Login theme modified for test purposes", rep.getLoginTheme(), anyOf(nullValue(), equalTo(PREFERRED_DEFAULT_LOGIN_THEME)));
         Assertions.assertNull(rep.getEmailTheme(), "Email theme was not modified");
         // there should be either new default or left null if not set
-        assertThat("Account theme was not modified", rep.getAccountTheme(), anyOf(equalTo("keycloak.v2"), nullValue()));
+        assertThat("Account theme was not modified", rep.getAccountTheme(), anyOf(equalTo("keycloak.v4"), nullValue()));
         // check the client theme is also removed
         List<ClientRepresentation> client = realm.clients().findByClientId("migration-saml-client");
         Assertions.assertNotNull(client, "migration-saml-client client is missing");

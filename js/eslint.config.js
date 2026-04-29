@@ -137,7 +137,7 @@ export default tseslint.config(
   },
   {
     ...playwright.configs["flat/recommended"],
-    files: ["apps/account-ui/test/**", "apps/admin-ui/test/**"],
+    files: ["apps/account-ui-pf6/test/**", "apps/admin-ui-pf6/test/**"],
   },
   {
     files: ["libs/keycloak-admin-client/test/**"],

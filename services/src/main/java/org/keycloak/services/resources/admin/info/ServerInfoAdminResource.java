@@ -286,12 +286,16 @@ public class ServerInfoAdminResource {
             filteredNames.remove("keycloak.v2");
             filteredNames.remove("rh-sso.v2");
         }
+        if (filterAdminV2) {
+            filteredNames.remove("keycloak.v4");
+        }
 
         boolean filterAccountV3 = (type == Theme.Type.ACCOUNT) &&
             !Profile.isFeatureEnabled(Profile.Feature.ACCOUNT_V3);
 
         if (filterAccountV3) {
             filteredNames.remove("keycloak.v3");
+            filteredNames.remove("keycloak.v4");
         }
 
         return filteredNames;

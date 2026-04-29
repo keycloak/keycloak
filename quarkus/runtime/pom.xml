@@ -381,7 +381,7 @@
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-account-ui</artifactId>
+            <artifactId>keycloak-account-ui-pf6</artifactId>
             <exclusions>
                 <exclusion>
                     <groupId>*</groupId>
@@ -391,7 +391,7 @@
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-admin-ui</artifactId>
+            <artifactId>keycloak-admin-ui-pf6</artifactId>
             <exclusions>
                 <exclusion>
                     <groupId>*</groupId>

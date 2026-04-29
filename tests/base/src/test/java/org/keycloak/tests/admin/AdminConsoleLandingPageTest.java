@@ -35,7 +35,7 @@ public class AdminConsoleLandingPageTest {
         Assertions.assertEquals(keycloakUrls.getBaseUrl().toString()+ "", authUrl);
 
         String resourceUrl = config.get("resourceUrl");
-        Assertions.assertTrue(resourceUrl.matches("/resources/[^/]*/admin/keycloak.v2"));
+        Assertions.assertTrue(resourceUrl.matches("/resources/[^/]*/admin/keycloak.v4"));
 
         String consoleBaseUrl = config.get("consoleBaseUrl");
         Assertions.assertEquals(consoleBaseUrl, "/admin/master/console/");

@@ -10,10 +10,10 @@
   "wireit": {
     "build": {
       "dependencies": [
-        "./apps/account-ui:build",
-        "./apps/admin-ui:build",
+        "./apps/account-ui-pf6:build",
+        "./apps/admin-ui-pf6:build",
         "./libs/keycloak-admin-client:build",
-        "./libs/ui-shared:build",
+        "./libs/ui-shared-pf6:build",
         "./themes-vendor:build"
       ]
     }

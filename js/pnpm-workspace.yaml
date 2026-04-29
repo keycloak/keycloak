@@ -1,5 +1,6 @@
 packages:
   - apps/*
+  - "!apps/onboarding-ui"
   - libs/*
   - themes-vendor
 
