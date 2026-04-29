@@ -78,12 +78,43 @@ public class SdJwtCredentialSigner extends AbstractCredentialSigner<String> {
      * @param sdJwtCredentialBody The SD-JWT credential body to add x5c to
      * @param signer              The signer context containing the certificate(s) for the signing key
      */
-    private void addX5cHeader(SdJwtCredentialBody sdJwtCredentialBody, SignatureSignerContext signer) {
+    private void addX5cHeader(SdJwtCredentialBody sdJwtCredentialBody, SignatureSignerContext signer) throws CredentialSignerException {
         List<X509Certificate> certificateChain = signer.getCertificateChain();
 
         if (certificateChain != null && !certificateChain.isEmpty()) {
-            List<String> x5cList = certificateChain.stream()
+            // Copy and remove any trailing self-signed certificate(s) (trust anchors) to satisfy HAIP-6.1.1,
+            // which requires that the trust anchor is NOT included in the x5c chain.
+            List<X509Certificate> filteredChain = certificateChain.stream()
                     .filter(Objects::nonNull)
+                    .collect(Collectors.toList());
+
+            // Per HAIP-6.1.1: "The X.509 certificate signing the request MUST NOT be self-signed."
+            // Check if the first certificate (signing certificate) is self-signed
+            if (!filteredChain.isEmpty()) {
+                X509Certificate signingCert = filteredChain.get(0);
+                if (signingCert.getSubjectX500Principal().equals(signingCert.getIssuerX500Principal())) {
+                    throw new CredentialSignerException("HAIP-6.1.1 violation: signing certificate MUST NOT be self-signed.");
+                }
+            }
+
+            // Remove trailing self-signed certificates (trust anchors) from the chain
+            // Per HAIP-6.1.1: "The X.509 certificate of the trust anchor MUST NOT be included in the x5c JOSE header"
+            while (!filteredChain.isEmpty()) {
+                X509Certificate last = filteredChain.get(filteredChain.size() - 1);
+                if (last.getSubjectX500Principal().equals(last.getIssuerX500Principal())) {
+                    // Last certificate is self-signed (trust anchor) -> drop it from x5c
+                    filteredChain.remove(filteredChain.size() - 1);
+                } else {
+                    break;
+                }
+            }
+
+            // If all certificates were self-signed (trust anchors), issuance is not HAIP-compliant
+            if (filteredChain.isEmpty()) {
+                throw new CredentialSignerException("HAIP-6.1.1 violation: x5c chain is empty after removing trust anchor certificates.");
+            }
+
+            List<String> x5cList = filteredChain.stream()
                     .map(cert -> {
                         try {
                             return Base64.getEncoder().encodeToString(cert.getEncoded());
@@ -96,10 +127,10 @@ public class SdJwtCredentialSigner extends AbstractCredentialSigner<String> {
             if (!x5cList.isEmpty()) {
                 sdJwtCredentialBody.getIssuerSignedJWT().getJwsHeader().setX5c(x5cList);
             } else {
-                LOGGER.debugf("No valid certificates found in certificate chain for x5c header in SD-JWT credential.");
+                throw new CredentialSignerException("HAIP-6.1.1 violation: no valid certificates available for x5c header.");
             }
         } else {
-            LOGGER.debugf("No certificate or certificate chain available for x5c header in SD-JWT credential.");
+            throw new CredentialSignerException("HAIP-6.1.1 violation: no certificate chain available for SD-JWT x5c header.");
         }
     }
 }
