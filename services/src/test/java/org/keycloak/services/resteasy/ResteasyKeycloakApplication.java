@@ -72,7 +72,7 @@ public class ResteasyKeycloakApplication extends KeycloakApplication {
 
     @Override
     protected String getDataDir() {
-        return System.getProperty("project.build.directory");
+        return System.getProperty("jboss.server.data.dir");
     }
 
     @Override

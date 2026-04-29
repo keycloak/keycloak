@@ -19,6 +19,7 @@ package org.keycloak.services.resources;
 import java.io.File;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -55,7 +56,6 @@ public abstract class KeycloakApplication extends Application {
 
     public KeycloakApplication() {
         try {
-            initTmpDirectory();
             logger.debugv("Application: {0}", this.getClass().getName());
             initAndStart();
         } catch (Throwable t) {
@@ -63,20 +63,21 @@ public abstract class KeycloakApplication extends Application {
         }
     }
 
+    /**
+     * Get the temp directory as initialized by the current KeycloakApplication.
+     * <br>
+     * The directory is not guaranteed to exist
+     */
     public static String getTmpDirectory() {
-        return System.getProperty(KC_TMPDIR, System.getProperty("java.io.tmpdir"));
+        return Optional.ofNullable(System.getProperty(KC_TMPDIR)).orElseThrow(() -> new RuntimeException("No temporary directory was configured."));
     }
 
     protected void initTmpDirectory() {
         String dataDir = getDataDir();
-        File tmpDir = new File(dataDir, "tmp");
-        tmpDir.mkdirs();
-        if (tmpDir.isDirectory()) {
-            logger.debugf("Using server tmp directory: %s", tmpDir.getAbsolutePath());
-        } else {
-            logger.warnf("Temporary directory %s does not exist and it was not possible to create it.", tmpDir.getAbsolutePath());
+        if (dataDir != null) {
+            File tmpDir = new File(dataDir, "tmp");
+            System.setProperty(KC_TMPDIR, tmpDir.getAbsolutePath());
         }
-        System.setProperty(KC_TMPDIR, tmpDir.getAbsolutePath());
     }
 
     protected abstract void exit(Throwable t);
@@ -84,6 +85,7 @@ public abstract class KeycloakApplication extends Application {
     protected abstract String getDataDir();
 
     protected void startup() {
+        initTmpDirectory();
         Profile.getInstance().logUnsupportedFeatures();
         CryptoIntegration.init(KeycloakApplication.class.getClassLoader());
         KeycloakApplication.sessionFactory = createSessionFactory();

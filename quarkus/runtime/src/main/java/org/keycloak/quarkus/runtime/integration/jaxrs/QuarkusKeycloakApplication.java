@@ -60,8 +60,8 @@ public class QuarkusKeycloakApplication extends KeycloakApplication {
     @Override
     protected String getDataDir() {
         return Environment.getDataDir().orElseGet(() -> {
-            logger.warnf("%s is not set, the system temporary directory will be used as the Keycloak data directory.", Environment.KC_HOME_DIR);
-            return System.getProperty("java.io.tmpdir");
+            logger.warnf("%s is not set", Environment.KC_HOME_DIR);
+            return null;
         });
     }
 
