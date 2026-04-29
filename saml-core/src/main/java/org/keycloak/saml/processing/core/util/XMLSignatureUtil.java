@@ -780,7 +780,7 @@ public class XMLSignatureUtil {
         if (includeKeyInfoInSignature) {
             ki = createKeyInfo(keyName, publicKey, x509Certificate);
         } else {
-            ki = createKeyInfo(keyName, null, null);
+            ki = null;
         }
         XMLSignature signature = fac.newXMLSignature(si, ki);
 
