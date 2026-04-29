@@ -40,6 +40,10 @@ public class SsfRealmResourceProviderFactory implements RealmResourceProviderFac
         keycloakSessionFactory.register(event -> {
             if (event instanceof RealmModel.RealmPostCreateEvent realmPostCreateEvent) {
                 SsfBootstrap.addSsfSupport(realmPostCreateEvent.getCreatedRealm());
+            } else if (event instanceof RealmModel.RealmAttributeUpdateEvent attrUpdateEvent
+                    && Ssf.SSF_TRANSMITTER_ENABLED_KEY.equals(attrUpdateEvent.getAttributeName())
+                    && Boolean.parseBoolean(attrUpdateEvent.getAttributeValue())) {
+                SsfBootstrap.addSsfSupport(attrUpdateEvent.getRealm());
             }
         });
     }

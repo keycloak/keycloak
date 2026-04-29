@@ -6,8 +6,9 @@ import org.keycloak.ssf.transmitter.SsfScopes;
 public class SsfBootstrap {
 
     public static void addSsfSupport(RealmModel realm) {
-
-        // FIXME this might be expensive if done for many realms
+        if (realm == null) {
+            return;
+        }
         SsfScopes.createDefaultClientScopes(realm);
     }
 }
