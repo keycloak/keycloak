@@ -42,7 +42,7 @@
 
         <dependency>
             <groupId>org.keycloak.testframework</groupId>
-            <artifactId>keycloak-test-framework-remote-providers</artifactId>
+            <artifactId>keycloak-test-framework-remote-runonserver</artifactId>
             <version>999.0.0-SNAPSHOT</version>
         </dependency>
         <dependency>

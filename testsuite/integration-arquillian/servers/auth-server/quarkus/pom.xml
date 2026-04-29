@@ -242,7 +242,7 @@
                                 </artifactItem>
                                 <artifactItem>
                                     <groupId>org.keycloak.testframework</groupId>
-                                    <artifactId>keycloak-test-framework-remote-providers</artifactId>
+                                    <artifactId>keycloak-test-framework-remote-runonserver</artifactId>
                                     <version>${project.version}</version>
                                     <type>jar</type>
                                     <overWrite>false</overWrite>

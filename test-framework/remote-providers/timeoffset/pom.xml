@@ -20,33 +20,47 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
-        <artifactId>keycloak-test-framework-parent</artifactId>
+        <artifactId>keycloak-test-framework-remote-providers</artifactId>
         <groupId>org.keycloak.testframework</groupId>
         <version>999.0.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>keycloak-test-framework-remote</artifactId>
-    <name>Keycloak Test Framework - Remote testing utils</name>
+    <artifactId>keycloak-test-framework-remote-timeoffset</artifactId>
+    <name>Keycloak Test Framework - Remote Time Offset Provider</name>
     <packaging>jar</packaging>
-    <description>Utility Keycloak server Suppliers for the Keycloak Test Framework</description>
+    <description>Time offset provider for test framework</description>
 
     <dependencies>
-        <dependency>
-            <groupId>org.keycloak.testframework</groupId>
-            <artifactId>keycloak-test-framework-core</artifactId>
-            <version>${project.version}</version>
-        </dependency>
         <dependency>
             <groupId>org.keycloak.testframework</groupId>
             <artifactId>keycloak-test-framework-remote-runonserver</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>org.keycloak.testframework</groupId>
-            <artifactId>keycloak-test-framework-remote-timeoffset</artifactId>
-            <version>${project.version}</version>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-core</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-server-spi</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-server-spi-private</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-model-infinispan</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.ws.rs</groupId>
+            <artifactId>jakarta.ws.rs-api</artifactId>
         </dependency>
     </dependencies>
 </project>
