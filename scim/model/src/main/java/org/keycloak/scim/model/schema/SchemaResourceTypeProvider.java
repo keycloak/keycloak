@@ -22,6 +22,7 @@ import org.keycloak.scim.resource.schema.Schema;
 import org.keycloak.scim.resource.schema.Schema.Attribute;
 import org.keycloak.scim.resource.spi.ScimResourceTypeProvider;
 
+
 /**
  * Provider for SCIM Schema resources. This provider exposes the supported SCIM schemas
  * for discovery by SCIM clients via the /Schemas endpoint.
@@ -50,8 +51,7 @@ public class SchemaResourceTypeProvider implements ScimResourceTypeProvider<Sche
                         || providerFactory instanceof ServiceProviderConfigResourceTypeProvider)
                 ).flatMap((Function<ProviderFactory, Stream<ModelSchema>>) factory -> {
                     ScimResourceTypeProvider provider = session.getProvider(ScimResourceTypeProvider.class, factory.getId());
-                    List<ModelSchema> modelSchemas = provider.getSchemas();
-                    return modelSchemas.stream();
+                    return provider.getSchemas().stream();
                 }).forEach(this::buildSchema);
     }
 
@@ -72,6 +72,11 @@ public class SchemaResourceTypeProvider implements ScimResourceTypeProvider<Sche
             }
 
             String parentName = attribute.getParentName();
+
+            if (!modelSchema.isCore()) {
+                // extensions attributes should be set in a top-level attribute with the schema name as the name
+                parentName = attribute.getSchema();
+            }
 
             if (parentName != null && !parentName.equals(name)) {
                 // This is a sub-attribute — strip the parent prefix to get the relative path
@@ -140,38 +145,56 @@ public class SchemaResourceTypeProvider implements ScimResourceTypeProvider<Sche
                     subAttributes.add(subAttr);
                 } else {
                     // Extension schema simple sub-attribute (e.g., "enterpriseUser.employeeNumber" → "employeeNumber")
-                    topLevelAttributes.computeIfAbsent(relativeName, k -> {
-                        Attribute attr = new Attribute();
-                        attr.setName(k);
-                        attr.setType(attribute.getType());
-                        attr.setMultiValued(attribute.isMultivalued());
-                        attr.setReturned(attribute.getReturned());
-                        attr.setMutability(attribute.isImmutable() ? "immutable" : "readWrite");
-                        attr.setRequired(attribute.isRequired());
-                        attr.setCaseExact(attribute.isCaseExact());
-                        attr.setUniqueness(attribute.getUniqueness());
-                        return attr;
-                    });
+                    topLevelAttributes.computeIfAbsent(relativeName, createExtensionAttribute(modelSchema, parentName, attribute));
                 }
             } else {
                 // Top-level attribute — only add if not already created as a parent
-                topLevelAttributes.computeIfAbsent(name, k -> {
-                    Attribute attr = new Attribute();
-                    attr.setName(k);
-                    attr.setType(attribute.getType());
-                    attr.setMultiValued(attribute.isMultivalued());
-                    attr.setReturned(attribute.getReturned());
-                    attr.setMutability(attribute.isImmutable() ? "immutable" : "readWrite");
-                    attr.setRequired(attribute.isRequired());
-                    attr.setCaseExact(attribute.isCaseExact());
-                    attr.setUniqueness(attribute.getUniqueness());
-                    return attr;
-                });
+                topLevelAttributes.computeIfAbsent(name, k -> createTopLevelAttribute(attribute, k));
             }
         }
 
         rep.setAttributes(List.copyOf(topLevelAttributes.values()));
-        schemas.put(modelSchema.getId(), rep);
+
+        if (!modelSchema.isInternal()) {
+            schemas.put(modelSchema.getId(), rep);
+        }
+    }
+
+    private Function<String, Attribute> createExtensionAttribute(ModelSchema<?, ?> modelSchema, String schemaName, org.keycloak.scim.resource.schema.attribute.Attribute<?, ?> attribute) {
+        return k -> {
+            Attribute attr = createTopLevelAttribute(attribute, k);
+
+            if (modelSchema.isCore()) {
+                return attr;
+            }
+
+            schemas.computeIfAbsent(schemaName, n -> {
+                Schema schema = new Schema();
+
+                schema.setName(n);
+                schema.setId(n);
+                schema.setAttributes(new ArrayList<>());
+
+                return schema;
+            }).getAttributes().add(attr);
+
+            return attr;
+        };
+    }
+
+    private Attribute createTopLevelAttribute(org.keycloak.scim.resource.schema.attribute.Attribute<?, ?> attribute, String name) {
+        Attribute attr = new Attribute();
+
+        attr.setName(name);
+        attr.setType(attribute.getType());
+        attr.setMultiValued(attribute.isMultivalued());
+        attr.setReturned(attribute.getReturned());
+        attr.setMutability(attribute.isImmutable() ? "immutable" : "readWrite");
+        attr.setRequired(attribute.isRequired());
+        attr.setCaseExact(attribute.isCaseExact());
+        attr.setUniqueness(attribute.getUniqueness());
+
+        return attr;
     }
 
 
