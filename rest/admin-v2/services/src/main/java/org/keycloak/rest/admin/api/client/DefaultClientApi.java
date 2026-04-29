@@ -4,7 +4,6 @@ import java.io.InputStream;
 
 import jakarta.annotation.Nonnull;
 import jakarta.ws.rs.DELETE;
-import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.PATCH;
@@ -45,21 +44,9 @@ public class DefaultClientApi implements ClientApi {
         this.clientService = new DefaultClientService(session, realm, permissions, realmAdminResource);
     }
 
-    /**
-     * When the path {@code clientId} does not resolve, return 403 if the caller cannot list clients
-     * (anti client-ID phishing), matching {@code ClientsResource#getClient} for Admin API v1.
-     * Not applied to PUT upsert so {@code manage} without {@code list} can create by clientId.
-     */
-    private void enforceAntiPhishingIfClientMissing() {
-        if (realm.getClientByClientId(clientId) == null && !permissions.clients().canList()) {
-            throw new ForbiddenException();
-        }
-    }
-
     @GET
     @Override
     public BaseClientRepresentation getClient() {
-        enforceAntiPhishingIfClientMissing();
         try {
             return clientService.getClient(realm, clientId)
                     .orElseThrow(() -> new NotFoundException("Cannot find the specified client"));
@@ -78,7 +65,6 @@ public class DefaultClientApi implements ClientApi {
     @PATCH
     @Override
     public BaseClientRepresentation patchClient(InputStream patch) {
-        enforceAntiPhishingIfClientMissing();
         String contentType = session.getContext().getHttpRequest().getHttpHeaders().getHeaderString(HttpHeaders.CONTENT_TYPE);
         PatchType patchType = PatchType.getByMediaType(contentType)
                 .orElseThrow(() -> new WebApplicationException("Unsupported media type", Response.Status.UNSUPPORTED_MEDIA_TYPE));
@@ -89,7 +75,6 @@ public class DefaultClientApi implements ClientApi {
     @DELETE
     @Override
     public Response deleteClient() {
-        enforceAntiPhishingIfClientMissing();
         clientService.deleteClient(realm, clientId);
         return Response.noContent().build();
     }
