@@ -8,7 +8,7 @@ import {
   assertNotificationMessage,
   selectActionToggleItem,
 } from "../utils/masthead.ts";
-import { confirmModal } from "../utils/modal.ts";
+import { confirmModal, typeDeleteConfirmation } from "../utils/modal.ts";
 import { goToClients, goToRealmSettings } from "../utils/sidebar.ts";
 import { assertRowExists } from "../utils/table.ts";
 import {
@@ -87,6 +87,7 @@ test.describe.serial("Realm tests", () => {
 
     await goToRealmSettings(page);
     await selectActionToggleItem(page, "Delete");
+    await typeDeleteConfirmation(page, testDisabledName);
     await confirmModal(page);
 
     await assertNotificationMessage(page, "The realm has been deleted");
