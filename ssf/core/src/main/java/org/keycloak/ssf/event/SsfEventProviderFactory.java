@@ -45,23 +45,39 @@ public interface SsfEventProviderFactory extends ProviderFactory<SsfEventProvide
     }
 
     /**
-     * Returns the subset of {@link #getContributedEventFactories()} that this
-     * extension actively emits from the transmitter (i.e. a Keycloak
-     * event or other transmitter-side trigger is wired to produce an
-     * SSF Security Event Token carrying the returned event type URI).
+     * Returns the subset of {@link #getContributedEventFactories()} that the
+     * transmitter can actually ship out — either because a Keycloak listener
+     * / transmitter-side trigger produces them automatically, or because they
+     * can be raised on demand via the admin emit API. Combined, the
+     * contributions of every registered factory drive both the default
+     * {@code events_supported} set advertised to receiver clients and the
+     * whitelist of types the emit API will accept.
      *
      * <p>Events contributed purely for inbound parsing on the receiver
-     * side MUST NOT be returned here. The transmitter aggregates the
-     * contributions of every registered factory into the "default
-     * supported events" set advertised to receiver clients that do
-     * not configure their own
-     * {@code ssf.supportedEvents} attribute. Advertising an event that
-     * the transmitter cannot actually emit would mislead receivers.
+     * side MUST NOT be returned here. Advertising an event the transmitter
+     * cannot ship would mislead receivers.
      *
      * <p>The default implementation returns an empty set.
      */
     default Set<String> getEmittableEventTypes() {
         return Set.of();
+    }
+
+    /**
+     * Returns the further subset of {@link #getEmittableEventTypes()} that the
+     * transmitter emits natively — i.e. driven by Keycloak listener / trigger
+     * logic rather than only by an explicit admin-API call. The admin UI
+     * surfaces this set as the "built-in" badge on event entries: events the
+     * operator does not have to script anything to receive.
+     *
+     * <p>Events that are emittable but only via the admin emit API
+     * (no listener wiring on the transmitter side) MUST NOT be returned here.
+     *
+     * <p>The default implementation falls back to {@link #getEmittableEventTypes()}
+     * so existing factories that don't distinguish keep their previous behaviour.
+     */
+    default Set<String> getNativelyEmittedEventTypes() {
+        return getEmittableEventTypes();
     }
 
     @Override

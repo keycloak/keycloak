@@ -36,19 +36,23 @@ public final class SsfEventRegistry {
 
     private final Set<String> emittableEventTypes;
 
+    private final Set<String> nativelyEmittedEventTypes;
+
     SsfEventRegistry(
             Map<String, Class<? extends SsfEvent>> classByEventType,
             Map<String, Class<? extends SsfEvent>> classByAlias,
             Map<String, String> aliasByEventType,
             Map<String, String> eventTypeByAlias,
             Map<String, Supplier<? extends SsfEvent>> factoryByEventType,
-            Set<String> emittableEventTypes) {
+            Set<String> emittableEventTypes,
+            Set<String> nativelyEmittedEventTypes) {
         this.classByEventType = Collections.unmodifiableMap(classByEventType);
         this.classByAlias = Collections.unmodifiableMap(classByAlias);
         this.aliasByEventType = Collections.unmodifiableMap(aliasByEventType);
         this.eventTypeByAlias = Collections.unmodifiableMap(eventTypeByAlias);
         this.factoryByEventType = Collections.unmodifiableMap(factoryByEventType);
         this.emittableEventTypes = Collections.unmodifiableSet(emittableEventTypes);
+        this.nativelyEmittedEventTypes = Collections.unmodifiableSet(nativelyEmittedEventTypes);
     }
 
     /**
@@ -63,6 +67,7 @@ public final class SsfEventRegistry {
         Map<String, String> eventTypeByAlias = new HashMap<>();
         Map<String, Supplier<? extends SsfEvent>> factoryByEventType = new HashMap<>();
         Set<String> emittableEventTypes = new LinkedHashSet<>();
+        Set<String> nativelyEmittedEventTypes = new LinkedHashSet<>();
 
         for (SsfEventProviderFactory factory : factories) {
             for (Map.Entry<String, Supplier<? extends SsfEvent>> entry
@@ -88,10 +93,12 @@ public final class SsfEventRegistry {
                 factoryByEventType.put(eventType, eventFactory);
             }
             emittableEventTypes.addAll(factory.getEmittableEventTypes());
+            nativelyEmittedEventTypes.addAll(factory.getNativelyEmittedEventTypes());
         }
 
         return new SsfEventRegistry(classByEventType, classByAlias, aliasByEventType,
-                eventTypeByAlias, factoryByEventType, emittableEventTypes);
+                eventTypeByAlias, factoryByEventType, emittableEventTypes,
+                nativelyEmittedEventTypes);
     }
 
     /**
@@ -195,20 +202,30 @@ public final class SsfEventRegistry {
 
     /**
      * Returns the subset of {@link #getReceiverRequestableEventTypes()}
-     * that some registered {@link SsfEventProviderFactory} declares as
-     * <em>natively emitted</em> via
-     * {@link SsfEventProviderFactory#getEmittableEventTypes()}.
+     * the transmitter can ship out — either via a Keycloak listener / trigger
+     * or via the admin emit API. Aggregates contributions from every
+     * registered {@link SsfEventProviderFactory#getEmittableEventTypes()}.
      *
-     * <p><b>Not an enforcement gate.</b> The synthetic emit endpoint
-     * can fire any registered (non-lifecycle) event type, including
-     * ones outside this set. The set is purely informational metadata
-     * — used by the admin UI to badge entries with "natively emitted"
-     * so operators understand which event types fire automatically
-     * from Keycloak vs which require the synthetic emit endpoint or
-     * a custom mapper.
+     * <p>Drives the default {@code events_supported} set advertised to receiver
+     * clients and the whitelist of types the admin emit API will accept.
      */
     public Set<String> getEmittableEventTypes() {
         return emittableEventTypes;
+    }
+
+    /**
+     * Returns the subset of {@link #getEmittableEventTypes()} that the
+     * transmitter emits natively via Keycloak listener / trigger logic, as
+     * declared by every registered
+     * {@link SsfEventProviderFactory#getNativelyEmittedEventTypes()}.
+     *
+     * <p><b>Not an enforcement gate.</b> Purely informational — the admin UI
+     * uses it to surface the "built-in" badge on event entries so operators
+     * see which event types fire automatically from Keycloak vs which only
+     * ship when something explicitly invokes the emit API.
+     */
+    public Set<String> getNativelyEmittedEventTypes() {
+        return nativelyEmittedEventTypes;
     }
 
     public static Set<String> parseEventTypeAliases(String eventAliases) {
