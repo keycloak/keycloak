@@ -979,6 +979,46 @@ public class MultipleTabsLoginTest extends AbstractChangeImportedUserPasswordsTe
         }
     }
 
+    @Test
+    public void testLogoutInAnotherTabIfUserIsDisabled() {
+        try (BrowserTabUtil util = BrowserTabUtil.getInstanceAndSetEnv(driver)) {
+            // Given
+            String username = "disabled-test";
+            UserRepresentation disabledUser = UserBuilder.create()
+                .username(username)
+                .email(String.format("%s@test.com", username))
+                .enabled(true)
+                .build();
+            var disabledUserId = ApiUtil.createUserAndResetPasswordWithAdminClient(testRealm(), disabledUser, generatePassword(username), false);
+            getCleanup().addUserId(disabledUserId);
+            // User is enabled, User can Login
+            oauth.openLoginForm();
+            String tab1WindowHandle = util.getActualWindowHandle();
+            loginPage.login(username, getPassword(username));
+            appPage.assertCurrent();
+            String code = oauth.parseLoginResponse().getCode();
+            AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
+            AccessToken accessToken = oauth.verifyToken(tokenResponse.getAccessToken());
+            // User is successfully authenticated
+
+            // Admin API disables User (could be any other method)
+            UserRepresentation user = ApiUtil.findUserByUsername(testRealm(), username);
+            user.setEnabled(false);
+            testRealm().users().get(user.getId()).update(user);
+            events.clear();
+
+            // seamless login in the second tab, user already authenticated
+            util.newTab(oauth.loginForm().build());
+            oauth.openLoginForm();
+
+            assertThat(testRealm().users().get(user.getId()).getUserSessions(), Matchers.hasSize(0));
+            events.expect(EventType.LOGOUT)
+                .user(userId)
+                .session(accessToken.getSessionId())
+                .assertEvent();
+        }
+    }
+
     private void waitForAppPage(Runnable htmlUnitAction) {
         if (driver instanceof HtmlUnitDriver) {
             // authChecker.js javascript does not work with HtmlUnitDriver. So need to "refresh" the current browser tab by running the last action in order to simulate "already_logged_in"

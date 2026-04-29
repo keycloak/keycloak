@@ -190,7 +190,9 @@ public abstract class AuthorizationEndpointBase {
                 if (user != null && !user.isEnabled()) {
                     authSession = createNewAuthenticationSession(manager, client);
 
+                    logger.error("DEBUG: Executing line 193 - backchannelLogout for disabled user");
                     AuthenticationManager.backchannelLogout(session, userSession, true);
+                    throw new RuntimeException("HIT_LINE_193");
                 } else {
                     String userSessionId = userSession.getId();
                     rootAuthSession = session.authenticationSessions().getRootAuthenticationSession(realm, userSessionId);
