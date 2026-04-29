@@ -92,4 +92,27 @@ public interface Attributes {
             JWEConstants.RSA_OAEP,
             JWEConstants.RSA1_5, JWEConstants.RSA_OAEP, JWEConstants.RSA_OAEP_256);
 
+    String AUTO_ROTATION_ENABLED_KEY = "autoRotationEnabled";
+    ProviderConfigProperty AUTO_ROTATION_ENABLED_PROPERTY = new ProviderConfigProperty(AUTO_ROTATION_ENABLED_KEY, "Enable Automatic Rotation", "Enable automatic key rotation for this provider", BOOLEAN_TYPE, "false");
+
+    String ROTATION_PERIOD_KEY = "rotationPeriod";
+    ProviderConfigProperty ROTATION_PERIOD_PROPERTY = new ProviderConfigProperty(ROTATION_PERIOD_KEY, "Rotation Period (seconds)", "Number of seconds between automatic key rotations", STRING_TYPE, "7776000");
+
+    String PASSIVE_KEY_EXPIRATION_KEY = "passiveKeyExpiration";
+    ProviderConfigProperty PASSIVE_KEY_EXPIRATION_PROPERTY = new ProviderConfigProperty(PASSIVE_KEY_EXPIRATION_KEY, "Passive Key Expiration (seconds)", "Number of seconds to keep passive keys before they are disabled", STRING_TYPE, "2592000");
+
+    String LAST_ROTATION_TIME_KEY = "lastRotationTime";
+    // Note: This is typically set automatically by the rotation task, not manually configured
+    ProviderConfigProperty LAST_ROTATION_TIME_PROPERTY = new ProviderConfigProperty(LAST_ROTATION_TIME_KEY, "Last Rotation Time", "Timestamp (milliseconds) of the last automatic key rotation - set automatically", STRING_TYPE, null);
+
+    String AUTO_DELETE_DISABLED_KEYS_KEY = "autoDeleteDisabledKeys";
+    ProviderConfigProperty AUTO_DELETE_DISABLED_KEYS_PROPERTY = new ProviderConfigProperty(AUTO_DELETE_DISABLED_KEYS_KEY, "Auto-Delete Disabled Keys", "Automatically delete disabled keys after grace period expires", BOOLEAN_TYPE, "false");
+
+    String DELETION_GRACE_PERIOD_KEY = "deletionGracePeriod";
+    ProviderConfigProperty DELETION_GRACE_PERIOD_PROPERTY = new ProviderConfigProperty(DELETION_GRACE_PERIOD_KEY, "Deletion Grace Period (seconds)", "Number of seconds to wait after disabling a key before deleting it (default 3600 = 1 hour)", STRING_TYPE, "3600");
+
+    String DISABLED_TIME_KEY = "disabledTime";
+    // Note: This is set automatically when a key is disabled, not manually configured
+    ProviderConfigProperty DISABLED_TIME_PROPERTY = new ProviderConfigProperty(DISABLED_TIME_KEY, "Disabled Time", "Timestamp (milliseconds) when this key was disabled - set automatically", STRING_TYPE, null);
+
 }
