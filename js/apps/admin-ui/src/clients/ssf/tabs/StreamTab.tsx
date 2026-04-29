@@ -631,6 +631,27 @@ export const StreamTab = ({
                   }
                 />
               </FormGroup>
+              <FormGroup
+                label={t("ssfDelivery")}
+                fieldId="ssfDelivery"
+                labelIcon={
+                  <HelpItem
+                    helpText={t("ssfDeliveryHelp")}
+                    fieldLabelId="ssfDelivery"
+                  />
+                }
+              >
+                <TextInput
+                  id="ssfDelivery"
+                  data-testid="ssfDelivery"
+                  readOnlyVariant="default"
+                  value={
+                    isPollDeliveryMethod(clientStream.delivery?.method)
+                      ? t("ssfDelivery.POLL")
+                      : t("ssfDelivery.PUSH")
+                  }
+                />
+              </FormGroup>
               {clientStream.delivery?.endpoint_url && (
                 <FormGroup
                   label={
@@ -831,27 +852,6 @@ export const StreamTab = ({
                     value={t("ssfEventsDeliveredEmpty")}
                   />
                 )}
-              </FormGroup>
-              <FormGroup
-                label={t("ssfDelivery")}
-                fieldId="ssfDelivery"
-                labelIcon={
-                  <HelpItem
-                    helpText={t("ssfDeliveryHelp")}
-                    fieldLabelId="ssfDelivery"
-                  />
-                }
-              >
-                <TextInput
-                  id="ssfDelivery"
-                  data-testid="ssfDelivery"
-                  readOnlyVariant="default"
-                  value={
-                    isPollDeliveryMethod(clientStream.delivery?.method)
-                      ? t("ssfDelivery.POLL")
-                      : t("ssfDelivery.PUSH")
-                  }
-                />
               </FormGroup>
               {/* Push timeouts only apply when Keycloak makes outbound
                 HTTP push requests. POLL is inbound (receivers call
