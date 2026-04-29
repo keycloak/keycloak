@@ -38,7 +38,6 @@ import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.protocol.oidc.endpoints.request.AuthorizationEndpointRequest;
-import org.keycloak.protocol.oidc.endpoints.request.AuthorizationEndpointRequestParserProcessor;
 import org.keycloak.protocol.oidc.endpoints.request.RequestUriType;
 import org.keycloak.protocol.oidc.rar.AuthorizationDetailsProcessorManager;
 import org.keycloak.protocol.oidc.resourceindicators.ResourceIndicatorConstants;
@@ -58,6 +57,7 @@ import org.keycloak.utils.StringUtil;
 import org.jboss.logging.Logger;
 
 import static org.keycloak.OAuth2Constants.AUTHORIZATION_DETAILS;
+import static org.keycloak.protocol.oidc.endpoints.request.AuthorizationEndpointRequestParserProcessor.getRequestUriType;
 
 /**
  * Implements some checks typical for OIDC Authorization Endpoint. Useful to consolidate various checks on single place to avoid duplicated
@@ -331,7 +331,7 @@ public class AuthorizationEndpointChecker {
             return;
         }
         String requestUriParam = params.getFirst(OIDCLoginProtocol.REQUEST_URI_PARAM);
-        if (requestUriParam != null && AuthorizationEndpointRequestParserProcessor.getRequestUriType(requestUriParam) == RequestUriType.PAR) {
+        if (requestUriParam != null && getRequestUriType(requestUriParam) == RequestUriType.PAR) {
             return;
         }
         ServicesLogger.LOGGER.missingParameter(OIDCLoginProtocol.REQUEST_URI_PARAM);
@@ -339,6 +339,19 @@ public class AuthorizationEndpointChecker {
         event.detail(Details.REASON, errorMessage);
         event.error(Errors.INVALID_REQUEST);
         throw new AuthorizationCheckException(Response.Status.BAD_REQUEST, OAuthErrorException.INVALID_REQUEST, errorMessage);
+    }
+
+    public void checkParRedirectUri() throws AuthorizationCheckException {
+        String requestUriParam = params.getFirst(OIDCLoginProtocol.REQUEST_URI_PARAM);
+        if (requestUriParam != null && getRequestUriType(requestUriParam) == RequestUriType.PAR) {
+            String requestRedirectUriParam = params.getFirst(OIDCLoginProtocol.REDIRECT_URI_PARAM);
+            if (requestRedirectUriParam != null && request.getRedirectUriParam() == null) {
+                String errorMessage = "PAR is required to have a 'redirect_uri' parameter";
+                event.detail(Details.REASON, errorMessage);
+                event.error(Errors.INVALID_REQUEST);
+                throw new AuthorizationCheckException(Response.Status.BAD_REQUEST, OAuthErrorException.INVALID_REQUEST, errorMessage);
+            }
+        }
     }
 
     public void checkParDPoPParams() throws AuthorizationCheckException {
