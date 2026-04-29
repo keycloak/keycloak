@@ -71,6 +71,7 @@ import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.managers.Auth;
+import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.UserConsentManager;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.account.resources.ResourcesService;
@@ -328,6 +329,33 @@ public class AccountRestService {
         UserConsentManager.revokeConsentToClient(session, client, user);
         event.detail(Details.REVOKED_CLIENT, client.getClientId()).success();
 
+        return Response.noContent().build();
+    }
+
+    /**
+     * Terminates all active sessions for the client with the given client id.
+     *
+     * @param clientId client id to terminate sessions for
+     * @return returns 204 if sessions were terminated
+     */
+    @Path("/applications/{clientId}/sessions")
+    @DELETE
+    public Response revokeApplicationSessions(final @PathParam("clientId") String clientId) {
+        checkAccountApiEnabled();
+        auth.require(AccountRoles.MANAGE_ACCOUNT);
+
+        event.event(EventType.LOGOUT);
+        ClientModel client = realm.getClientByClientId(clientId);
+        if (client == null) {
+            String msg = String.format("No client with clientId: %s found.", clientId);
+            event.error(msg);
+            throw ErrorResponse.error(msg, Response.Status.NOT_FOUND);
+        }
+
+        AuthenticationManager.backchannelLogoutUserFromClient(session, realm, user, client,
+                session.getContext().getUri(), headers);
+
+        event.detail(Details.REVOKED_CLIENT, client.getClientId()).success();
         return Response.noContent().build();
     }
 

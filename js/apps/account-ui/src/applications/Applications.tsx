@@ -29,7 +29,11 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { AccountEnvironment } from "..";
-import { deleteConsent, getApplications } from "../api/methods";
+import {
+  deleteApplicationSessions,
+  deleteConsent,
+  getApplications,
+} from "../api/methods";
 import { ClientRepresentation } from "../api/representations";
 import { Page } from "../components/page/Page";
 import type { TFuncKey } from "../i18n-type";
@@ -74,6 +78,16 @@ export const Applications = () => {
     }
   };
 
+  const signOutApplication = async (id: string, name: string) => {
+    try {
+      await deleteApplicationSessions(context, id);
+      refresh();
+      addAlert(t("signOutApplicationSuccess", { name }));
+    } catch (error) {
+      addError("signOutApplicationError", error);
+    }
+  };
+
   if (!applications) {
     return <Spinner />;
   }
@@ -115,6 +129,11 @@ export const Applications = () => {
                 >
                   <strong>{t("status")}</strong>
                 </DataListCell>,
+                <DataListCell
+                  key="applications-list-action-header"
+                  width={1}
+                  className="pf-v5-u-pt-md"
+                />,
               ]}
             />
           </DataListItemRow>
@@ -171,6 +190,33 @@ export const Applications = () => {
                   </DataListCell>,
                   <DataListCell width={2} key={`status${application.clientId}`}>
                     {application.inUse ? t("inUse") : t("notInUse")}
+                  </DataListCell>,
+                  <DataListCell width={1} key={`action${application.clientId}`}>
+                    {application.inUse && (
+                      <ContinueCancelModal
+                        buttonTitle={t("signOut")}
+                        modalTitle={t("signOut")}
+                        continueLabel={t("confirm")}
+                        cancelLabel={t("cancel")}
+                        buttonVariant="secondary"
+                        onContinue={() =>
+                          signOutApplication(
+                            application.clientId,
+                            label(
+                              t,
+                              application.clientName || application.clientId,
+                            ),
+                          )
+                        }
+                      >
+                        {t("signOutApplicationMessage", {
+                          name: label(
+                            t,
+                            application.clientName || application.clientId,
+                          ),
+                        })}
+                      </ContinueCancelModal>
+                    )}
                   </DataListCell>,
                 ]}
               />

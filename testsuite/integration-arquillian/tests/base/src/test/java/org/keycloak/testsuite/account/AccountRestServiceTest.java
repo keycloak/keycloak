@@ -2085,6 +2085,92 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         }
     }
 
+    @Test
+    public void revokeApplicationSessions() throws Exception {
+        // Create a session for "in-use-client" via direct grant
+        oauth.client("in-use-client", "secret1");
+        AccessTokenResponse tokenResponse = oauth.doPasswordGrantRequest("manage-account-access", "password");
+        assertNull(tokenResponse.getErrorDescription());
+
+        tokenUtil = new TokenUtil("manage-account-access", "password");
+
+        // Verify the client is "in use"
+        List<ClientRepresentation> apps = SimpleHttpDefault
+                .doGet(getAccountUrl("applications"), httpClient)
+                .header("Accept", "application/json")
+                .auth(tokenUtil.getToken())
+                .asJson(new TypeReference<List<ClientRepresentation>>() {});
+        Map<String, ClientRepresentation> appMap = apps.stream()
+                .collect(Collectors.toMap(ClientRepresentation::getClientId, x -> x));
+        assertTrue(appMap.get("in-use-client").isInUse());
+
+        // Delete the application sessions
+        try (SimpleHttpResponse response = SimpleHttpDefault
+                .doDelete(getAccountUrl("applications/in-use-client/sessions"), httpClient)
+                .header("Accept", "application/json")
+                .auth(tokenUtil.getToken())
+                .asResponse()) {
+            assertEquals(204, response.getStatus());
+        }
+
+        // Verify the client is no longer "in use"
+        apps = SimpleHttpDefault
+                .doGet(getAccountUrl("applications"), httpClient)
+                .header("Accept", "application/json")
+                .auth(tokenUtil.getToken())
+                .asJson(new TypeReference<List<ClientRepresentation>>() {});
+        appMap = apps.stream()
+                .collect(Collectors.toMap(ClientRepresentation::getClientId, x -> x));
+        assertFalse(appMap.containsKey("in-use-client") && appMap.get("in-use-client").isInUse());
+    }
+
+    @Test
+    public void revokeApplicationSessionsForNotExistingClient() throws IOException {
+        tokenUtil = new TokenUtil("manage-account-access", "password");
+        try (SimpleHttpResponse response = SimpleHttpDefault
+                .doDelete(getAccountUrl("applications/not-existing/sessions"), httpClient)
+                .header("Accept", "application/json")
+                .auth(tokenUtil.getToken())
+                .asResponse()) {
+            assertEquals(404, response.getStatus());
+        }
+    }
+
+    @Test
+    public void revokeApplicationSessionsWithoutPermission() throws IOException {
+        tokenUtil = new TokenUtil("view-account-access", "password");
+        try (SimpleHttpResponse response = SimpleHttpDefault
+                .doDelete(getAccountUrl("applications/in-use-client/sessions"), httpClient)
+                .header("Accept", "application/json")
+                .auth(tokenUtil.getToken())
+                .asResponse()) {
+            assertEquals(403, response.getStatus());
+        }
+    }
+
+    @Test
+    public void revokeApplicationSessionsIdempotent() throws IOException {
+        tokenUtil = new TokenUtil("manage-account-access", "password");
+
+        // Delete sessions when there are none -- should still return 204
+        try (SimpleHttpResponse response = SimpleHttpDefault
+                .doDelete(getAccountUrl("applications/in-use-client/sessions"), httpClient)
+                .header("Accept", "application/json")
+                .auth(tokenUtil.getToken())
+                .asResponse()) {
+            assertEquals(204, response.getStatus());
+        }
+
+        // Call again -- still 204
+        try (SimpleHttpResponse response = SimpleHttpDefault
+                .doDelete(getAccountUrl("applications/in-use-client/sessions"), httpClient)
+                .header("Accept", "application/json")
+                .auth(tokenUtil.getToken())
+                .asResponse()) {
+            assertEquals(204, response.getStatus());
+        }
+    }
+
     protected void setUserProfileConfiguration(String configuration) {
         UserProfileUtil.setUserProfileConfiguration(managedRealm.admin(), configuration);
     }
