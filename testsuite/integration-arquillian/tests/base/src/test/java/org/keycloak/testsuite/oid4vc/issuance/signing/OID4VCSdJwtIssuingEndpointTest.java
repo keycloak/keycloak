@@ -17,6 +17,11 @@
 package org.keycloak.testsuite.oid4vc.issuance.signing;
 
 import java.io.IOException;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.PrivateKey;
+import java.security.PublicKey;
+import java.security.cert.X509Certificate;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -28,7 +33,11 @@ import org.keycloak.TokenVerifier;
 import org.keycloak.VCFormat;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.Base64Url;
+import org.keycloak.common.util.CertificateUtils;
 import org.keycloak.constants.OID4VCIConstants;
+import org.keycloak.crypto.Algorithm;
+import org.keycloak.crypto.KeyUse;
+import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -121,6 +130,10 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
 
     @Test
     public void testRequestTestCredentialWithKeybinding() {
+        // Ensure SD-JWT signing uses a non-self-signed leaf cert for HAIP-6.1.1 compliance.
+        testingClient.server(TEST_REALM_NAME).run(session ->
+                ensureHaipCompliantCertificateChains(session));
+
         String cNonce = getCNonce();
         String scopeName = sdJwtTypeCredentialClientScope.getName();
         String credConfigId = sdJwtTypeCredentialClientScope.getAttributes().get(CredentialScopeModel.VC_CONFIGURATION_ID);
@@ -339,6 +352,9 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
                                                      String token, Proofs proof, String credentialIdentifier)
             throws VerificationException, IOException {
 
+        // HAIP-6.1.1: ensure signing cert is not self-signed and trust anchor is not emitted in x5c.
+        ensureHaipCompliantCertificateChains(session);
+
         AppAuthManager.BearerTokenAuthenticator authenticator = new AppAuthManager.BearerTokenAuthenticator(session);
         authenticator.setTokenString(token);
         OID4VCIssuerEndpoint issuerEndpoint = prepareIssuerEndpoint(session, authenticator);
@@ -363,6 +379,66 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
         return SdJwtVP.of(credentialResponseVO.getCredentials().get(0).getCredential().toString());
     }
 
+    private static void ensureHaipCompliantCertificateChain(KeyWrapper keyWrapper) {
+        if (keyWrapper == null) {
+            throw new RuntimeException("Signing key is null");
+        }
+        if (keyWrapper.getPublicKey() == null || keyWrapper.getPrivateKey() == null) {
+            throw new RuntimeException("Signing key missing key material for certificate generation. kid=" + keyWrapper.getKid());
+        }
+
+        List<X509Certificate> existingChain = keyWrapper.getCertificateChain();
+        if (existingChain != null && !existingChain.isEmpty()) {
+            X509Certificate signingCert = existingChain.get(0);
+            if (signingCert != null
+                    && !signingCert.getSubjectX500Principal().equals(signingCert.getIssuerX500Principal())) {
+                return;
+            }
+        }
+
+        try {
+            KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA");
+            kpg.initialize(2048);
+            KeyPair caKeyPair = kpg.generateKeyPair();
+            X509Certificate caCert = CertificateUtils.generateV1SelfSignedCertificate(caKeyPair, "Test CA");
+
+            KeyPair leafKeyPair = new KeyPair(
+                    (PublicKey) keyWrapper.getPublicKey(),
+                    (PrivateKey) keyWrapper.getPrivateKey()
+            );
+            X509Certificate leafCert = CertificateUtils.generateV3Certificate(
+                    leafKeyPair,
+                    caKeyPair.getPrivate(),
+                    caCert,
+                    "TestKey"
+            );
+
+            keyWrapper.setCertificateChain(List.of(leafCert, caCert));
+            keyWrapper.setCertificate(leafCert);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to prepare HAIP-compliant certificate chain", e);
+        }
+    }
+
+    private static void ensureHaipCompliantCertificateChains(KeycloakSession session) {
+        RealmModel realm = session.getContext().getRealm();
+        KeyWrapper activeRs256 = session.keys().getActiveKey(realm, KeyUse.SIG, Algorithm.RS256);
+        if (activeRs256 != null) {
+            ensureHaipCompliantCertificateChain(activeRs256);
+            return;
+        }
+
+        // Fallback for environments without an explicit active RS256 key.
+        KeyWrapper fallback = session.keys()
+                .getKeysStream(realm)
+                .filter(k -> KeyUse.SIG.equals(k.getUse()))
+                .filter(k -> Algorithm.RS256.equals(k.getAlgorithm()))
+                .filter(k -> k.getPublicKey() != null && k.getPrivateKey() != null)
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("No usable RS256 signing key configured in realm"));
+        ensureHaipCompliantCertificateChain(fallback);
+    }
+
     // Tests the complete flow from
     // 1. Retrieving the credential-offer-uri
     // 2. Using the uri to get the actual credential offer
@@ -372,6 +448,9 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
     // 6. Get the credential
     @Test
     public void testCredentialIssuance() throws Exception {
+        // Ensure SD-JWT signing uses a non-self-signed leaf cert for HAIP-6.1.1 compliance.
+        testingClient.server(TEST_REALM_NAME).run(session ->
+                ensureHaipCompliantCertificateChains(session));
 
         ClientScopeRepresentation clientScope = sdJwtTypeCredentialClientScope;
         String token = getBearerToken(oauth, client, clientScope.getName());

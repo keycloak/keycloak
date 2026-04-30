@@ -55,16 +55,13 @@ public class JwtCredentialBuilderTest extends CredentialBuilderTest {
         VerifiableCredential verifiableCredential = getTestCredential(exampleCredentialClaims());
         CredentialBuildConfig credentialBuildConfig = new CredentialBuildConfig().setTokenJwsType("JWT");
 
-        // Build
         JwtCredentialBody jwtCredentialBody = builder
                 .buildCredentialBody(verifiableCredential, credentialBuildConfig);
 
-        // Sign and parse JWS string
         String jws = jwtCredentialBody.sign(exampleSigner());
         JWSInput jwsInput = new JWSInput(jws);
         JsonNode credentialSubject = parseCredentialSubject(jwsInput);
 
-        // Assert
         assertEquals("JWT", jwsInput.getHeader().getType());
         assertEquals(10, credentialSubject.get("issuanceDate").asInt());
         assertEquals("randomValue", credentialSubject.get("randomKey").asText());
@@ -77,16 +74,13 @@ public class JwtCredentialBuilderTest extends CredentialBuilderTest {
         VerifiableCredential verifiableCredential = getTestCredential(exampleCredentialClaimsWithoutIssuanceDate());
         CredentialBuildConfig credentialBuildConfig = new CredentialBuildConfig().setTokenJwsType("JWT");
 
-        // Build
         JwtCredentialBody jwtCredentialBody = builderWithoutSession
                 .buildCredentialBody(verifiableCredential, credentialBuildConfig);
 
-        // Sign and parse JWS string
         String jws = jwtCredentialBody.sign(exampleSigner());
         JWSInput jwsInput = new JWSInput(jws);
         JsonNode payload = jwsInput.readJsonContent(JsonNode.class);
 
-        // Assert that nbf is set to the normalized (minute-truncated) current time when no issuance date is supplied
         long expectedNormalizedNbf = Instant.ofEpochSecond(timeProvider.currentTimeSeconds())
                 .truncatedTo(ChronoUnit.MINUTES)
                 .getEpochSecond();
