@@ -90,6 +90,9 @@ import org.junit.runners.MethodSorters;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import org.openqa.selenium.Cookie;
+import java.util.stream.Stream;
+
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
@@ -1700,6 +1703,67 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
             // Need to remove double quotes from server response
             Assertions.assertEquals(origKeycloakUserId.replace("\"",""), newKeycloakUserId);
         });
+    }
+
+    @Test
+    public void testReadOnlyUserLocaleCookiePersistence() {
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            RealmModel appRealm = ctx.getRealm();
+
+            // Set to READ_ONLY to trigger the bug scenario
+            ctx.getLdapModel().getConfig().putSingle(
+                LDAPConstants.EDIT_MODE,
+                UserStorageProvider.EditMode.READ_ONLY.toString()
+            );
+            appRealm.updateComponent(ctx.getLdapModel());
+
+            // Enable I18N so the locale logic actually runs
+            appRealm.setInternationalizationEnabled(true);
+            appRealm.setSupportedLocales(Stream.of("en", "de", "fr").collect(Collectors.toSet()));
+            appRealm.setDefaultLocale("en");
+        });
+
+        try {
+            oauth.realm("test");
+            loginPage.open();
+
+            // 1. Switch Language using the Page Object helper
+            loginPage.openLanguage("Deutsch");
+            loginPage.assertCurrent();
+
+            // 2. Immediate check to verify cookie creation in the current realm path
+            Cookie localeCookie = driver.manage().getCookieNamed("KEYCLOAK_LOCALE");
+            Assert.assertNotNull("Locale cookie should be set after language selection", localeCookie);
+            Assert.assertEquals("de", localeCookie.getValue());
+
+            // 3. Perform Login as the READ_ONLY user
+            // This triggers the UpdateUserLocaleAction logic
+            loginPage.login("johnkeycloak", "Password1");
+
+            // 4. Navigate back to the realm context
+            // Headless browsers (HtmlUnit) require being on the correct Path to see the cookie
+            String checkUrl = oauth.AUTH_SERVER_ROOT + "/realms/test/account";
+            driver.navigate().to(checkUrl);
+            org.keycloak.testsuite.util.WaitUtils.pause(2000);
+
+            // 5. Final verification: The cookie must persist (proves the fix works)
+            localeCookie = driver.manage().getCookieNamed("KEYCLOAK_LOCALE");
+            Assert.assertNotNull("Locale cookie should persist after login within the realm path", localeCookie);
+            Assert.assertEquals("de", localeCookie.getValue());
+
+        } finally {
+            // Reset Realm to original state
+            testingClient.server().run(session -> {
+                LDAPTestContext ctx = LDAPTestContext.init(session);
+                ctx.getLdapModel().put(
+                    LDAPConstants.EDIT_MODE,
+                    UserStorageProvider.EditMode.WRITABLE.toString()
+                );
+                ctx.getRealm().updateComponent(ctx.getLdapModel());
+                ctx.getRealm().setInternationalizationEnabled(false);
+            });
+        }
     }
 
 }

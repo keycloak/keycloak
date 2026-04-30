@@ -49,11 +49,11 @@ public class DefaultLocaleUpdaterProvider implements LocaleUpdaterProvider {
                         .detail(Details.PREF_PREVIOUS + UserModel.LOCALE, previousLocale)
                         .detail(Details.PREF_UPDATED + UserModel.LOCALE, locale);
                 user.setSingleAttribute(UserModel.LOCALE, locale);
-                updateLocaleCookie(locale);
                 event.success();
             } catch (ReadOnlyException e) {
                 logger.debug("Attempt to store 'locale' attribute to read only user model. Ignoring exception", e);
             }
+             updateLocaleCookie(locale);
         }
         logger.debugv("Setting locale for user {0} to {1}", user.getUsername(), locale);
     }
