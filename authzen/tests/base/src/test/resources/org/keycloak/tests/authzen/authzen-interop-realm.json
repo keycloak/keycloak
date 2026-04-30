@@ -9,8 +9,7 @@
     },
     "users": [
         {
-            "id": "fd0614d3-c39a-4781-b7bd-8b96f5a5100d",
-            "username": "rick",
+            "username": "CiRmZDA2MTRkMy1jMzlhLTQ3ODEtYjdiZC04Yjk2ZjVhNTEwMGQSBWxvY2Fs",
             "enabled": true,
             "firstName": "Rick",
             "lastName": "Sanchez",
@@ -21,8 +20,7 @@
             "realmRoles": ["admin"]
         },
         {
-            "id": "fd1614d3-c39a-4781-b7bd-8b96f5a5100d",
-            "username": "morty",
+            "username": "CiRmZDE2MTRkMy1jMzlhLTQ3ODEtYjdiZC04Yjk2ZjVhNTEwMGQSBWxvY2Fs",
             "enabled": true,
             "firstName": "Morty",
             "lastName": "Smith",
@@ -33,8 +31,7 @@
             "realmRoles": ["editor"]
         },
         {
-            "id": "fd2614d3-c39a-4781-b7bd-8b96f5a5100d",
-            "username": "summer",
+            "username": "CiRmZDI2MTRkMy1jMzlhLTQ3ODEtYjdiZC04Yjk2ZjVhNTEwMGQSBWxvY2Fs",
             "enabled": true,
             "firstName": "Summer",
             "lastName": "Smith",
@@ -45,8 +42,7 @@
             "realmRoles": ["editor"]
         },
         {
-            "id": "fd3614d3-c39a-4781-b7bd-8b96f5a5100d",
-            "username": "beth",
+            "username": "CiRmZDM2MTRkMy1jMzlhLTQ3ODEtYjdiZC04Yjk2ZjVhNTEwMGQSBWxvY2Fs",
             "enabled": true,
             "firstName": "Beth",
             "lastName": "Smith",
@@ -57,8 +53,7 @@
             "realmRoles": ["viewer"]
         },
         {
-            "id": "fd4614d3-c39a-4781-b7bd-8b96f5a5100d",
-            "username": "jerry",
+            "username": "CiRmZDQ2MTRkMy1jMzlhLTQ3ODEtYjdiZC04Yjk2ZjVhNTEwMGQSBWxvY2Fs",
             "enabled": true,
             "firstName": "Jerry",
             "lastName": "Smith",

@@ -100,7 +100,7 @@ public class ResourcesRestServiceTest extends AbstractRestServiceTest {
         testRealm.getUsers().add(createUser("jdoe", "password", "John", "Doe", "jdoe@localhost"));
         testRealm.getUsers().add(createUser("bob", "password", "Bob", "B", "bob@localhost"));
         testRealm.getUsers().add(UserBuilder.create().username("test-authz-user@localhost").password("password")
-                .roles("uma_authorization", "uma_protection")
+                .realmRoles("uma_authorization", "uma_protection")
                 .clientRoles("my-resource-server", "uma_protection")
                 .clientRoles("account", AccountRoles.MANAGE_ACCOUNT)
                 .build());

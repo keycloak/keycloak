@@ -29,6 +29,7 @@ import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testframework.realm.ClientBuilder;
+import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testsuite.AbstractAuthTest;
 import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.auth.page.AuthRealm;
@@ -37,7 +38,6 @@ import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.RegisterPage;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
-import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 
 import org.jboss.arquillian.graphene.page.Page;
@@ -134,7 +134,7 @@ public class PasswordAgePolicyTest extends AbstractAuthTest {
     public void addTestRealms(List<RealmRepresentation> testRealms) {
         testRealms.add(RealmBuilder.create()
                 .name(AuthRealm.TEST)
-                .client(ClientBuilder.create()
+                .clients(ClientBuilder.create()
                         .clientId("test-app")
                         .redirectUris(
                                 "http://localhost:8180/auth/realms/master/app/auth/*",

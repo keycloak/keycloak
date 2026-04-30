@@ -28,6 +28,7 @@ import org.keycloak.http.simple.SimpleHttp;
 import org.keycloak.http.simple.SimpleHttpRequest;
 import org.keycloak.http.simple.SimpleHttpResponse;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 
@@ -46,9 +47,17 @@ public class AuthZenClient {
     }
 
     public EvaluationResult evaluate(AuthZen.EvaluationRequest request) throws IOException {
+        return evaluate((Object) request);
+    }
+
+    public EvaluationResult evaluate(JsonNode request) throws IOException {
+        return evaluate((Object) request);
+    }
+
+    private EvaluationResult evaluate(Object req) throws IOException {
         String url = realmUrl + "/authzen/access/v1/evaluation";
 
-        try (SimpleHttpResponse response = req(simpleHttp.doPost(url).json(request))) {
+        try (SimpleHttpResponse response = req(simpleHttp.doPost(url).json(req))) {
             int status = response.getStatus();
             AuthZen.EvaluationResponse body = response.asJson(AuthZen.EvaluationResponse.class);
             return new EvaluationResult(status, body);

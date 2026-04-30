@@ -41,7 +41,6 @@ import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserSessionRepresentation;
 import org.keycloak.representations.idm.authorization.AuthorizationRequest;
 import org.keycloak.representations.idm.authorization.AuthorizationResponse;
@@ -54,10 +53,9 @@ import org.keycloak.representations.idm.authorization.ResourcePermissionRepresen
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
 import org.keycloak.testframework.realm.ClientBuilder;
+import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.admin.AdminApiUtil;
-import org.keycloak.testsuite.util.RealmBuilder;
-import org.keycloak.testsuite.util.RolesBuilder;
 import org.keycloak.util.JsonSerialization;
 
 import org.junit.Before;
@@ -377,10 +375,10 @@ public class AuthzClientCredentialsTest extends AbstractAuthzTest {
 
     private RealmBuilder configureRealm(RealmBuilder builder, ClientBuilder clientBuilder) {
         return builder
-                .roles(RolesBuilder.create().realmRole(new RoleRepresentation("uma_authorization", "", false)))
-                .user(UserBuilder.create().username("marta").password("password").roles("uma_authorization"))
-                .user(UserBuilder.create().username("kolo").password("password"))
-                .client(clientBuilder.clientId("resource-server-test")
+                .realmRoles("uma_authorization")
+                .users(UserBuilder.create().username("marta").password("password").realmRoles("uma_authorization"))
+                .users(UserBuilder.create().username("kolo").password("password"))
+                .clients(clientBuilder.clientId("resource-server-test")
                         .authorizationServicesEnabled(true)
                         .redirectUris("http://localhost/resource-server-test")
                         .defaultRoles("uma_protection")

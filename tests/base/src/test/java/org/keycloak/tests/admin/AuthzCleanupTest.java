@@ -31,6 +31,7 @@ import org.keycloak.representations.idm.authorization.ResourceServerRepresentati
 import org.keycloak.representations.idm.authorization.RolePolicyRepresentation;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
@@ -106,7 +107,7 @@ public class AuthzCleanupTest {
 
         @Override
         public RealmBuilder configure(RealmBuilder realm) {
-            realm.addClient(clientId).secret(clientSecret).authorizationServicesEnabled(true).redirectUris("http://localhost/myclient");
+            realm.clients(ClientBuilder.create(clientId).secret(clientSecret).authorizationServicesEnabled(true).redirectUris("http://localhost/myclient"));
             realm.roles("client-role-1",
                     "client-role-2",
                     "Acme administrator",

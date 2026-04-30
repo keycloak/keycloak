@@ -9,6 +9,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.cert.Certificate;
+import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -33,6 +34,7 @@ import org.keycloak.common.util.KeyUtils;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.common.util.SecretGenerator;
+import org.keycloak.common.util.Time;
 import org.keycloak.constants.OID4VCIConstants;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
@@ -126,6 +128,13 @@ public abstract class OID4VCIssuerTestBase {
     public static final String jwtTypeCredentialConfigurationIdName = "jwt-credential-config-id";
     public static final String minimalJwtTypeCredentialScopeName = "vc-with-minimal-config";
     public static final String minimalJwtTypeCredentialConfigurationIdName = "vc-with-minimal-config-id";
+
+    public static final String CONTEXT_URL = "https://www.w3.org/2018/credentials/v1";
+    protected static final URI TEST_DID = ISSUER_DID;
+    protected static final List<String> TEST_TYPES = List.of("VerifiableCredential");
+    protected static final Instant TEST_EXPIRATION_DATE = Instant.ofEpochMilli(Time.currentTimeMillis())
+            .plus(365, ChronoUnit.DAYS)
+            .truncatedTo(ChronoUnit.SECONDS);
 
     @InjectRealm(config = VCTestRealmConfig.class)
     protected ManagedRealm testRealm;
@@ -432,7 +441,7 @@ public abstract class OID4VCIssuerTestBase {
 
             CryptoIntegration.init(this.getClass().getClassLoader());
             realm.verifiableCredentialsEnabled(true);
-            realm.addRole(CREDENTIAL_OFFER_CREATE);
+            realm.realmRoles(CREDENTIAL_OFFER_CREATE);
 
             // Allow the default client scopes to be added as well
             realm.attribute(CREATE_DEFAULT_CLIENT_SCOPES, "true");
@@ -454,7 +463,7 @@ public abstract class OID4VCIssuerTestBase {
             sdJwtAttrs.put(VC_BINDING_REQUIRED_PROOF_TYPES, "jwt");
             sdJwtAttrs.put(VC_CRYPTOGRAPHIC_BINDING_METHODS, CRYPTOGRAPHIC_BINDING_METHODS_DEFAULT);
             sdJwtScope.setAttributes(sdJwtAttrs);
-            realm.addClientScope(sdJwtScope);
+            realm.clientScopes(sdJwtScope);
 
             CredentialScopeRepresentation jwtVcScope = createCredentialScope(
                     jwtTypeCredentialScopeName,
@@ -471,9 +480,9 @@ public abstract class OID4VCIssuerTestBase {
             jwtVcAttrs.put(VC_BINDING_REQUIRED_PROOF_TYPES, "jwt,attestation");
             jwtVcAttrs.put(VC_CRYPTOGRAPHIC_BINDING_METHODS, CRYPTOGRAPHIC_BINDING_METHODS_DEFAULT);
             jwtVcScope.setAttributes(jwtVcAttrs);
-            realm.addClientScope(jwtVcScope);
+            realm.clientScopes(jwtVcScope);
 
-            realm.addClientScope(createCredentialScope(
+            realm.clientScopes(createCredentialScope(
                     minimalJwtTypeCredentialScopeName,
                     null,
                     minimalJwtTypeCredentialConfigurationIdName,
@@ -484,8 +493,8 @@ public abstract class OID4VCIssuerTestBase {
                     null
             ));
 
-            realm.addUser(getUserRepresentation("John Doe", Map.of("did", "did:key:1234"), List.of(CREDENTIAL_OFFER_CREATE.getName()), Collections.emptyMap()));
-            realm.addUser(getUserRepresentation("Alice Wonderland", Map.of("did", "did:key:5678"), List.of(), Map.of()));
+            realm.users(getUserRepresentation("John Doe", Map.of("did", "did:key:1234"), List.of(CREDENTIAL_OFFER_CREATE.getName()), Collections.emptyMap()));
+            realm.users(getUserRepresentation("Alice Wonderland", Map.of("did", "did:key:5678"), List.of(), Map.of()));
 
             return realm;
         }
@@ -558,15 +567,15 @@ public abstract class OID4VCIssuerTestBase {
                     .password(TEST_PASSWORD)
                     .attribute("address_street_address", "221B Baker Street")
                     .attribute("address_locality", "London")
-                    .roles("account", "manage-account", "view-profile");
+                    .realmRoles("account", "manage-account", "view-profile");
 
             attributes.forEach(userBuilder::attribute);
 
             // When Keycloak issues a token for a user and client:
             //  1. It looks up all effective realm roles and all effective client roles assigned to the user.
             //  2. The token includes only those roles that the user actually has.
-            realmRoles.forEach(userBuilder::roles);
-            clientRoles.forEach((cid, roles) -> roles.forEach(role -> userBuilder.roles(cid, role)));
+            realmRoles.forEach(userBuilder::realmRoles);
+            clientRoles.forEach((cid, roles) -> roles.forEach(role -> userBuilder.realmRoles(cid, role)));
 
             return userBuilder.build();
         }

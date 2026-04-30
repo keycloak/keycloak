@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.oid4vc.issuance.credentialbuilder;
+package org.keycloak.tests.oid4vc.issuance.credentialbuilder;
 
 import java.util.List;
 import java.util.Map;
@@ -31,9 +31,11 @@ import org.keycloak.sdjwt.IssuerSignedJWT;
 import org.keycloak.sdjwt.IssuerSignedJwtVerificationOpts;
 import org.keycloak.sdjwt.SdJwt;
 import org.keycloak.sdjwt.vp.SdJwtVP;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.tests.oid4vc.OID4VCIssuerTestBase;
 
 import com.fasterxml.jackson.databind.node.ArrayNode;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import static org.keycloak.OID4VCConstants.CLAIM_NAME_ISSUER;
 import static org.keycloak.OID4VCConstants.CLAIM_NAME_SD;
@@ -46,6 +48,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * @author <a href="mailto:Ingrid.Kamga@adorsys.com">Ingrid Kamga</a>
  */
+@KeycloakIntegrationTest(config = OID4VCIssuerTestBase.VCTestServerConfig.class)
 public class SdJwtCredentialBuilderTest extends CredentialBuilderTest {
 
     @Test
@@ -90,7 +93,7 @@ public class SdJwtCredentialBuilderTest extends CredentialBuilderTest {
         );
     }
 
-    public static void testSignSDJwtCredential(Map<String, Object> claims, int decoys, List<String> visibleClaims)
+    public void testSignSDJwtCredential(Map<String, Object> claims, int decoys, List<String> visibleClaims)
             throws VerificationException {
         String issuerDid = TEST_DID.toString();
         CredentialBuildConfig credentialBuildConfig = new CredentialBuildConfig()

@@ -188,7 +188,8 @@ public class AccountConsole implements AccountResourceProvider {
             AccountRoleChecker roleChecker = new AccountRoleChecker(session, realm, user);
             // the 'manage-account' role works on the API level (for the 'account' client) as some kind of composite role
             deleteAccountAllowed = roleChecker.hasOneOfRole(AccountRoles.MANAGE_ACCOUNT, AccountRoles.DELETE_ACCOUNT) && realm.getRequiredActionProviderByAlias(DeleteAccount.PROVIDER_ID).isEnabled();
-            isViewGroupsEnabled = roleChecker.hasOneOfRole(AccountRoles.MANAGE_ACCOUNT, AccountRoles.VIEW_GROUPS);
+            isViewGroupsEnabled = roleChecker.hasOneOfRole(AccountRoles.MANAGE_ACCOUNT, AccountRoles.VIEW_GROUPS)
+                    && user.getGroupsCount() > 0;
             isViewApplicationsEnabled = roleChecker.hasOneOfRole(AccountRoles.MANAGE_ACCOUNT, AccountRoles.VIEW_APPLICATIONS);
         }
 

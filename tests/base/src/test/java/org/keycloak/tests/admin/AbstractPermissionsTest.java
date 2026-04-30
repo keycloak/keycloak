@@ -20,6 +20,7 @@ import org.keycloak.testframework.annotations.InjectAdminClient;
 import org.keycloak.testframework.annotations.InjectAdminClientFactory;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
@@ -245,41 +246,41 @@ public class AbstractPermissionsTest {
         @Override
         public RealmBuilder configure(RealmBuilder realm) {
             realm.name(REALM_NAME);
-            realm.addClient("test-client")
+            realm.clients(ClientBuilder.create("test-client")
                     .enabled(true)
                     .publicClient(true)
-                    .directAccessGrantsEnabled(true);
+                    .directAccessGrantsEnabled(true));
 
-            realm.addUser(AdminRoles.REALM_ADMIN)
+            realm.users(UserBuilder.create(AdminRoles.REALM_ADMIN)
                     .name("realm-admin", "realm-admin")
                     .email("realmadmin@localhost.com")
                     .password("password")
-                    .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.REALM_ADMIN);
+                    .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.REALM_ADMIN));
 
-            realm.addUser("multi")
+            realm.users(UserBuilder.create("multi")
                     .name("multi", "multi")
                     .email("multi@localhost.com")
                     .password("password")
-                    .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.QUERY_GROUPS, AdminRoles.MANAGE_REALM, AdminRoles.VIEW_CLIENTS);
+                    .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.QUERY_GROUPS, AdminRoles.MANAGE_REALM, AdminRoles.VIEW_CLIENTS));
 
-            realm.addUser("none")
+            realm.users(UserBuilder.create("none")
                     .name("none", "none")
                     .email("none@localhost.com")
-                    .password("password");
+                    .password("password"));
 
             for (String role : AdminRoles.ALL_REALM_ROLES) {
-                realm.addUser(role)
+                realm.users(UserBuilder.create(role)
                         .name(role, role)
                         .email(role + "@localhost.com")
                         .password("password")
-                        .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID, role);
+                        .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID, role));
             }
 
-            realm.addUser("admin")
+            realm.users(UserBuilder.create("admin")
                     .name("admin", "admin")
                     .email("admin" + "@localhost.com")
                     .password("password")
-                    .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.REALM_ADMIN);
+                    .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.REALM_ADMIN));
 
             realm.smtp(MailServerConfiguration.HOST, Integer.parseInt(MailServerConfiguration.PORT), MailServerConfiguration.FROM);
 
@@ -292,15 +293,15 @@ public class AbstractPermissionsTest {
         public RealmBuilder configure(RealmBuilder realm) {
             realm.name(REALM_2_NAME);
 
-            realm.addClient("test-client")
+            realm.clients(ClientBuilder.create("test-client")
                     .publicClient(true)
-                    .directAccessGrantsEnabled(true);
+                    .directAccessGrantsEnabled(true));
 
-            realm.addUser("admin")
+            realm.users(UserBuilder.create("admin")
                     .name("admin", "admin")
                     .email("admin" + "@localhost.com")
                     .password("password")
-                    .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.REALM_ADMIN);
+                    .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.REALM_ADMIN));
 
             return realm;
         }

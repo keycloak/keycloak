@@ -70,7 +70,7 @@ public class OIDCDynamicScopeTest extends OIDCScopeTest {
                 .firstName("John")
                 .lastName("Dynamic")
                 .password("password")
-                .roles("dynamic-scope-role")
+                .realmRoles("dynamic-scope-role")
                 .build();
         testRealm.getUsers().add(user);
 
@@ -78,7 +78,7 @@ public class OIDCDynamicScopeTest extends OIDCScopeTest {
                 .username("JohnNormal")
                 .enabled(true)
                 .password("password")
-                .roles("role-1")
+                .realmRoles("role-1")
                 .build();
         testRealm.getUsers().add(user);
 

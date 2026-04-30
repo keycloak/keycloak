@@ -40,7 +40,6 @@ public final class Environment {
 
     public static final String KC_CONFIG_REBUILD_CHECK = "kc.config.rebuild-check";
     public static final String KC_CONFIG_BUILT = "kc.config.built";
-    public static final String KC_TEST_REBUILD = "kc.test.rebuild";
     public static final String KC_HOME_DIR = "kc.home.dir";
     public static final String PROFILE ="kc.profile";
     public static final String ENV_PROFILE ="KC_PROFILE";

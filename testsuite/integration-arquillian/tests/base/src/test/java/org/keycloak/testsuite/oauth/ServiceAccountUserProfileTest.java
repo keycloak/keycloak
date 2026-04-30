@@ -36,9 +36,10 @@ import org.keycloak.representations.userprofile.config.UPAttribute;
 import org.keycloak.representations.userprofile.config.UPAttributeRequired;
 import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.testframework.realm.ClientBuilder;
+import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AbstractKeycloakTest;
-import org.keycloak.testsuite.util.RealmBuilder;
+import org.keycloak.testsuite.events.TestEventsListenerProviderFactory;
 import org.keycloak.userprofile.UserProfileConstants;
 import org.keycloak.validate.validators.EmailValidator;
 
@@ -64,7 +65,7 @@ public class ServiceAccountUserProfileTest extends AbstractKeycloakTest {
     public void addTestRealms(List<RealmRepresentation> testRealms) {
 
         RealmBuilder realm = RealmBuilder.create().name("test")
-                .testEventListener();
+                .eventsListeners(TestEventsListenerProviderFactory.PROVIDER_ID);
 
         ClientRepresentation enabledApp = ClientBuilder.create()
                 .id(KeycloakModelUtils.generateId())
@@ -74,7 +75,7 @@ public class ServiceAccountUserProfileTest extends AbstractKeycloakTest {
                 .attribute(OIDCConfigAttributes.USE_REFRESH_TOKEN_FOR_CLIENT_CREDENTIALS_GRANT, "true")
                 .build();
 
-        realm.client(enabledApp);
+        realm.clients(enabledApp);
 
         ClientRepresentation enabledAppWithSkipRefreshToken = ClientBuilder.create()
                 .id(KeycloakModelUtils.generateId())
@@ -83,7 +84,7 @@ public class ServiceAccountUserProfileTest extends AbstractKeycloakTest {
                 .serviceAccountsEnabled(true)
                 .build();
 
-        realm.client(enabledAppWithSkipRefreshToken);
+        realm.clients(enabledAppWithSkipRefreshToken);
 
         ClientRepresentation disabledApp = ClientBuilder.create()
                 .id(KeycloakModelUtils.generateId())
@@ -91,7 +92,7 @@ public class ServiceAccountUserProfileTest extends AbstractKeycloakTest {
                 .secret("secret1")
                 .build();
 
-        realm.client(disabledApp);
+        realm.clients(disabledApp);
 
         ClientRepresentation secretsWithSpecialCharacterClient = ClientBuilder.create()
             .id(KeycloakModelUtils.generateId())
@@ -100,12 +101,12 @@ public class ServiceAccountUserProfileTest extends AbstractKeycloakTest {
             .serviceAccountsEnabled(true)
             .build();
 
-        realm.client(secretsWithSpecialCharacterClient);
+        realm.clients(secretsWithSpecialCharacterClient);
 
         UserBuilder defaultUser = UserBuilder.create()
                 .id(KeycloakModelUtils.generateId())
                 .username("test-user@localhost");
-        realm.user(defaultUser);
+        realm.users(defaultUser);
 
         userName = ServiceAccountConstants.SERVICE_ACCOUNT_USER_PREFIX + enabledApp.getClientId();
 
@@ -113,7 +114,7 @@ public class ServiceAccountUserProfileTest extends AbstractKeycloakTest {
                 .id(KeycloakModelUtils.generateId())
                 .username(userName)
                 .serviceAccountId(enabledApp.getClientId());
-        realm.user(serviceAccountUser);
+        realm.users(serviceAccountUser);
 
         RealmRepresentation realmRep = realm.build();
         testRealms.add(realmRep);

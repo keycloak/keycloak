@@ -49,7 +49,7 @@ public class AccessTokenResponseTest extends AbstractKeycloakTest {
         UserBuilder user = UserBuilder.create()
                 .id(KeycloakModelUtils.generateId())
                 .username("no-permissions")
-                .roles("user")
+                .realmRoles("user")
                 .password("password");
         realm.getUsers().add(user.build());
 

@@ -58,6 +58,7 @@ export { UserProfileFields } from "./user-profile/UserProfileFields";
 export {
   beerify,
   debeerify,
+  isBundleKey,
   isUserProfileError,
   label,
   setUserProfileServerError,

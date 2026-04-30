@@ -15,17 +15,14 @@ import com.fasterxml.jackson.databind.JsonNode;
  *
  * @author rmartinc
  */
-public class ClientProfileBuilder {
-
-    private final ClientProfileRepresentation rep;
+public class ClientProfileBuilder extends Builder<ClientProfileRepresentation> {
 
     private ClientProfileBuilder(ClientProfileRepresentation rep) {
-        this.rep = rep;
+        super(rep);
     }
 
     public static ClientProfileBuilder create() {
-        ClientProfileRepresentation rep = new ClientProfileRepresentation();
-        return new ClientProfileBuilder(rep);
+        return new ClientProfileBuilder(new ClientProfileRepresentation());
     }
 
     public static ClientProfileBuilder update(ClientProfileRepresentation rep) {
@@ -62,7 +59,4 @@ public class ClientProfileBuilder {
         return this;
     }
 
-    public ClientProfileRepresentation build() {
-        return rep;
-    }
 }

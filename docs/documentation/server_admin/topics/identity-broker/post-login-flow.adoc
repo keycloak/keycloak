@@ -1,5 +1,5 @@
-[[_identity_broker_post_login_flow]]
 
+[[_identity_broker_post_login_flow]]
 === Post login flow
 
 Post login flow is useful for the situations when you want to trigger some additional authentication actions after every login with the particular identity provider.

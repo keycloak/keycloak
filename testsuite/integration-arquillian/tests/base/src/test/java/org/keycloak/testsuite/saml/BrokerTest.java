@@ -61,8 +61,8 @@ import org.keycloak.saml.processing.core.parsers.saml.xmldsig.XmlDSigQNames;
 import org.keycloak.saml.processing.core.parsers.util.HasQName;
 import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
 import org.keycloak.saml.processing.core.saml.v2.util.XMLTimeUtil;
+import org.keycloak.testframework.realm.IdentityProviderBuilder;
 import org.keycloak.testsuite.updaters.IdentityProviderCreator;
-import org.keycloak.testsuite.util.IdentityProviderBuilder;
 import org.keycloak.testsuite.util.SamlClientBuilder;
 import org.keycloak.testsuite.util.saml.SamlBackchannelArtifactResolveReceiver;
 
@@ -97,14 +97,14 @@ public class BrokerTest extends AbstractSamlTest {
           .providerId(SAMLIdentityProviderFactory.PROVIDER_ID)
           .alias(SAML_BROKER_ALIAS)
           .displayName("SAML")
-          .setAttribute(SAMLIdentityProviderConfig.SINGLE_SIGN_ON_SERVICE_URL, samlEndpoint)
-          .setAttribute(SAMLIdentityProviderConfig.ARTIFACT_RESOLUTION_SERVICE_URL, samlEndpoint)
-          .setAttribute(SAMLIdentityProviderConfig.SINGLE_LOGOUT_SERVICE_URL, samlEndpoint)
-          .setAttribute(SAMLIdentityProviderConfig.NAME_ID_POLICY_FORMAT, JBossSAMLURIConstants.NAMEID_FORMAT_EMAIL.get())
-          .setAttribute(SAMLIdentityProviderConfig.POST_BINDING_RESPONSE, "false")
-          .setAttribute(SAMLIdentityProviderConfig.POST_BINDING_AUTHN_REQUEST, "false")
-          .setAttribute(SAMLIdentityProviderConfig.BACKCHANNEL_SUPPORTED, "false")
-          .setAttribute(SAMLIdentityProviderConfig.ARTIFACT_BINDING_RESPONSE, "false")
+          .attribute(SAMLIdentityProviderConfig.SINGLE_SIGN_ON_SERVICE_URL, samlEndpoint)
+          .attribute(SAMLIdentityProviderConfig.ARTIFACT_RESOLUTION_SERVICE_URL, samlEndpoint)
+          .attribute(SAMLIdentityProviderConfig.SINGLE_LOGOUT_SERVICE_URL, samlEndpoint)
+          .attribute(SAMLIdentityProviderConfig.NAME_ID_POLICY_FORMAT, JBossSAMLURIConstants.NAMEID_FORMAT_EMAIL.get())
+          .attribute(SAMLIdentityProviderConfig.POST_BINDING_RESPONSE, "false")
+          .attribute(SAMLIdentityProviderConfig.POST_BINDING_AUTHN_REQUEST, "false")
+          .attribute(SAMLIdentityProviderConfig.BACKCHANNEL_SUPPORTED, "false")
+          .attribute(SAMLIdentityProviderConfig.ARTIFACT_BINDING_RESPONSE, "false")
           .build();
         return identityProvider;
     }

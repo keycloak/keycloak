@@ -41,12 +41,12 @@ import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.testframework.realm.CredentialBuilder;
+import org.keycloak.testframework.realm.IdentityProviderBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
 import org.keycloak.testframework.util.ApiUtil;
-import org.keycloak.testsuite.util.CredentialBuilder;
-import org.keycloak.testsuite.util.IdentityProviderBuilder;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -170,7 +170,7 @@ public abstract class AbstractOrganizationTest {
 
         if (isSetCredentials) {
             realm.admin().users().get(expected.getId()).resetPassword(
-                    CredentialBuilder.create().password(memberPassword).build());
+                    CredentialBuilder.password(memberPassword).build());
         }
 
         String userId = expected.getId();
@@ -237,9 +237,9 @@ public abstract class AbstractOrganizationTest {
         return IdentityProviderBuilder.create()
                 .providerId(OIDCIdentityProviderFactory.PROVIDER_ID)
                 .alias(orgName + "-identity-provider")
-                .setAttribute("clientId", "broker-app")
-                .setAttribute("clientSecret", "broker-secret")
-                .setAttribute(IdentityProviderModel.SYNC_MODE, "IMPORT")
+                .attribute("clientId", "broker-app")
+                .attribute("clientSecret", "broker-secret")
+                .attribute(IdentityProviderModel.SYNC_MODE, "IMPORT")
                 .hideOnLoginPage()
                 .build();
     }

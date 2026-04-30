@@ -5,9 +5,7 @@ ClientRegistrationTest
 ExportImportTest
 KcOidcBrokerTest
 LDAPUserLoginTest
-PasswordPolicyTest
 RequiredActionUpdateProfileTest
-SSOTest
 SamlClientTest
 UserProfileTest
 OidcAdvancedClaimToGroupMapperTest

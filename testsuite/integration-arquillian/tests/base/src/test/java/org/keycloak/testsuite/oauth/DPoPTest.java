@@ -184,7 +184,7 @@ public class DPoPTest extends AbstractTestRealmKeycloakTest {
                 .username("test-admin@localhost")
                 .password("password")
                 .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.REALM_ADMIN)
-                .roles(OAuth2Constants.OFFLINE_ACCESS);
+                .realmRoles(OAuth2Constants.OFFLINE_ACCESS);
         testRealm.getUsers().add(testAdmin.build());
     }
 
@@ -195,7 +195,7 @@ public class DPoPTest extends AbstractTestRealmKeycloakTest {
 
         get = new HttpGet(oauth.getEndpoints().getUserInfo());
         get.addHeader("Accept", MediaType.APPLICATION_JSON);
-        String authorization = "DPoP" + " " + response.getAccessToken();
+        String authorization = TokenUtil.TOKEN_TYPE_DPOP + " " + response.getAccessToken();
         get.addHeader(HttpHeaders.AUTHORIZATION, authorization);
         get.addHeader(HttpHeaders.AUTHORIZATION, authorization);
 
@@ -214,7 +214,7 @@ public class DPoPTest extends AbstractTestRealmKeycloakTest {
 
         get = new HttpGet(oauth.getEndpoints().getUserInfo());
         get.addHeader("Accept", MediaType.APPLICATION_JSON);
-        String authorization = "Bearer" + " " + response.getAccessToken();
+        String authorization = TokenUtil.TOKEN_TYPE_BEARER + " " + response.getAccessToken();
         get.addHeader(HttpHeaders.AUTHORIZATION, authorization);
 
         UserInfoResponse userInfoResponse = new UserInfoResponse(oauth.httpClient().get().execute(get));
@@ -223,6 +223,21 @@ public class DPoPTest extends AbstractTestRealmKeycloakTest {
         oauth.doLogout(response.getRefreshToken());
     }
 
+    @Test
+    public void testDPoPAccessTokenBearerAuthorizationCaseSensitivity() throws Exception {
+        KeyPair rsaKeyPair = KeyUtils.generateRsaKeyPair(2048);
+        AccessTokenResponse response = getDPoPBindAccessToken(rsaKeyPair);
+
+        get = new HttpGet(oauth.getEndpoints().getUserInfo());
+        get.addHeader("Accept", MediaType.APPLICATION_JSON);
+        String authorization = "BeArEr" + " " + response.getAccessToken();
+        get.addHeader(HttpHeaders.AUTHORIZATION, authorization);
+
+        UserInfoResponse userInfoResponse = new UserInfoResponse(oauth.httpClient().get().execute(get));
+        assertEquals(401, userInfoResponse.getStatusCode());
+
+        oauth.doLogout(response.getRefreshToken());
+    }
 
     @Test
     public void testDPoPByPublicClientWithDpopJkt() throws Exception {

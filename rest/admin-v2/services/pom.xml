@@ -68,6 +68,18 @@
             <scope>provided</scope>
             <optional>true</optional>
         </dependency>
+
+        <!-- Test dependencies -->
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.smallrye</groupId>
+            <artifactId>smallrye-open-api-core</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>

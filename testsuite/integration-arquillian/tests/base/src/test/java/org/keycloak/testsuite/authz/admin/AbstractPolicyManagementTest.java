@@ -35,10 +35,10 @@ import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
 import org.keycloak.testframework.realm.ClientBuilder;
+import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.ProfileAssume;
-import org.keycloak.testsuite.util.RealmBuilder;
 
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -67,9 +67,9 @@ public abstract class AbstractPolicyManagementTest extends AbstractKeycloakTest 
 
     protected RealmBuilder createTestRealm() {
         return RealmBuilder.create().name("authz-test")
-                .user(UserBuilder.create().username("marta").password("password"))
-                .user(UserBuilder.create().username("kolo").password("password"))
-                .client(ClientBuilder.create().clientId("resource-server-test")
+                .users(UserBuilder.create().username("marta").password("password"))
+                .users(UserBuilder.create().username("kolo").password("password"))
+                .clients(ClientBuilder.create().clientId("resource-server-test")
                         .secret("secret")
                         .authorizationServicesEnabled(true)
                         .redirectUris("http://localhost/resource-server-test")

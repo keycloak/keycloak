@@ -112,9 +112,9 @@ public class CrossRealmPermissionsTest {
 
         @Override
         public RealmBuilder configure(RealmBuilder realm) {
-            realm.addUser(AdminRoles.REALM_ADMIN)
+            realm.users(UserBuilder.create(AdminRoles.REALM_ADMIN)
                     .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.REALM_ADMIN)
-                    .password("password");
+                    .password("password"));
 
             return realm;
         }

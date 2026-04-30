@@ -6,8 +6,6 @@ KcOidcBrokerTest
 KerberosLdapTest
 LDAPUserLoginTest
 MutualTLSClientTest
-PasswordPolicyTest
-SSOTest
 SamlClientTest
 X509BrowserLoginTest
 ThemeResourceProviderTest

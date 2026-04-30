@@ -39,6 +39,9 @@ import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.provider.ScriptProviderDescriptor;
+import org.keycloak.testframework.realm.AuthenticationExecutionBuilder;
+import org.keycloak.testframework.realm.AuthenticationFlowBuilder;
+import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AbstractAuthenticationTest;
 import org.keycloak.testsuite.AssertEvents;
@@ -47,9 +50,6 @@ import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.forms.AbstractFlowTest;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.util.ContainerAssume;
-import org.keycloak.testsuite.util.ExecutionBuilder;
-import org.keycloak.testsuite.util.FlowBuilder;
-import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.util.JsonSerialization;
 
 import org.jboss.arquillian.container.test.api.Deployment;
@@ -122,9 +122,9 @@ public class DeployedScriptAuthenticatorTest extends AbstractFlowTest {
                 .password("password")
                 .build();
 
-        RealmBuilder.edit(testRealm)
-                .user(failUser)
-                .user(okayUser);
+        RealmBuilder.update(testRealm)
+                .users(failUser)
+                .users(okayUser);
     }
 
     public void configureFlows() throws Exception {
@@ -134,7 +134,7 @@ public class DeployedScriptAuthenticatorTest extends AbstractFlowTest {
 
         String scriptFlow = "scriptBrowser";
 
-        AuthenticationFlowRepresentation scriptBrowserFlow = FlowBuilder.create()
+        AuthenticationFlowRepresentation scriptBrowserFlow = AuthenticationFlowBuilder.create()
                 .alias(scriptFlow)
                 .description("dummy pass through registration")
                 .providerId("basic-flow")
@@ -152,14 +152,14 @@ public class DeployedScriptAuthenticatorTest extends AbstractFlowTest {
 
         this.flow = findFlowByAlias(scriptFlow);
 
-        AuthenticationExecutionRepresentation usernamePasswordFormExecution = ExecutionBuilder.create()
+        AuthenticationExecutionRepresentation usernamePasswordFormExecution = AuthenticationExecutionBuilder.create()
                 .id("username password form")
                 .parentFlow(this.flow.getId())
                 .requirement(AuthenticationExecutionModel.Requirement.REQUIRED.name())
                 .authenticator(UsernamePasswordFormFactory.PROVIDER_ID)
                 .build();
 
-        AuthenticationExecutionRepresentation authScriptExecution = ExecutionBuilder.create()
+        AuthenticationExecutionRepresentation authScriptExecution = AuthenticationExecutionBuilder.create()
                 .id(EXECUTION_ID)
                 .parentFlow(this.flow.getId())
                 .requirement(AuthenticationExecutionModel.Requirement.REQUIRED.name())

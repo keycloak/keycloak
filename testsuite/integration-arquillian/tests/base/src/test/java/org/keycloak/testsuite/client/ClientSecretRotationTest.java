@@ -127,7 +127,7 @@ public class ClientSecretRotationTest extends AbstractRestServiceTest {
 
         UserRepresentation user = UserBuilder.create().enabled(Boolean.TRUE)
                 .username(ADMIN_USER_NAME)
-                .password(USER_PASSWORD).roles(new String[]{AdminRoles.MANAGE_CLIENTS}).build();
+                .password(USER_PASSWORD).realmRoles(new String[]{AdminRoles.MANAGE_CLIENTS}).build();
         users.add(user);
 
         UserRepresentation commonUser = UserBuilder.create().id(COMMON_USER_ID)

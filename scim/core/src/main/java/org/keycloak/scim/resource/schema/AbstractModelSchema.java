@@ -25,6 +25,8 @@ import com.fasterxml.jackson.databind.node.NullNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 
+import static java.util.Optional.ofNullable;
+
 import static org.keycloak.scim.resource.schema.AbstractModelSchema.Operation.ADD;
 import static org.keycloak.scim.resource.schema.AbstractModelSchema.Operation.REMOVE;
 import static org.keycloak.scim.resource.schema.AbstractModelSchema.Operation.SET;
@@ -52,15 +54,14 @@ public abstract class AbstractModelSchema<M extends Model, R extends ResourceTyp
     @Override
     public Map<String, Attribute<M, R>> getAttributes() {
         if (attributes == null) {
-            attributes = doGetAttributes();
+            attributes = getAttributeMappers();
         }
         return attributes;
     }
 
-    protected abstract Map<String, Attribute<M,R>> doGetAttributes();
-
     @Override
     public void populate(M model, R representation) {
+        validate(representation);
         populateModel(model, representation);
         representation.setId(model.getId());
     }
@@ -78,7 +79,7 @@ public abstract class AbstractModelSchema<M extends Model, R extends ResourceTyp
     }
 
     @Override
-    public void validate(R representation) throws SchemaValidationException {
+    public void validate(R representation) throws ModelValidationException {
         // validate here the schema
     }
 
@@ -125,7 +126,8 @@ public abstract class AbstractModelSchema<M extends Model, R extends ResourceTyp
     }
 
     /**
-     * Returns the names of the attributes from the given {@code model}.
+     * Returns the names of the attributes from the given {@code model}, if provided. The {@code model} provides
+     * additional context when resolving model attributes, in case attributes depend on the current model being processed.
      *
      * @return the names of the attributes defined in the model
      */
@@ -149,83 +151,70 @@ public abstract class AbstractModelSchema<M extends Model, R extends ResourceTyp
     protected abstract String getAttributeSchemaName(String name);
 
     private void populateModel(M model, R resource) {
-        ObjectNode objectNode;
+        ObjectNode resourceNode;
 
         try {
-            objectNode = JsonSerialization.createObjectNode(resource);
+            resourceNode = JsonSerialization.createObjectNode(resource);
         } catch (Exception e) {
             throw new RuntimeException("Failed to convert representation to JSON", e);
         }
 
-        for (String name : getModelAttributeNames()) {
-            Attribute<M, R> attribute = getAttributeMapperByModelAttribute(name);
+        for (Entry<String, Attribute<M, R>> entry : getAttributeMappers().entrySet()) {
+            Attribute<M, R> attribute = entry.getValue();
+            String scimName = attribute.getName();
+            ObjectNode valueNode = resourceNode;
 
-            if (attribute == null) {
-                continue;
-            }
+            if (attribute.isExtension()) {
+                JsonNode node = ofNullable(resourceNode.get(attribute.getSchema())).orElse(NullNode.getInstance());
 
-            Object value = getJsonValue(objectNode, attribute.getName());
-
-            if (value == null) {
-                String attributeName = attribute.getName();
-
-                if (attributeName.indexOf('.') > 0) {
-                    attributeName = attributeName.substring(attributeName.indexOf('.') + 1);
-                    List<String> paths = new ArrayList<>();
-                    paths.add(getId());
-                    paths.addAll(List.of(attributeName.split("\\.")));
-                    value = getJsonValue(objectNode, paths);
+                if (!node.isObject()) {
+                    continue;
                 }
+
+                valueNode = (ObjectNode) node;
+                scimName = attribute.getSimpleName();
             }
 
-            if (value == null) {
-                JsonNode schemaExtension = objectNode.get(getId());
-                value = getJsonValue(schemaExtension, attribute.getName());
-            }
+            Object value = getJsonValue(valueNode, scimName);
 
             if (value != null) {
-                if (value instanceof Collection<?> values) {
-                    if (attribute.isMultivalued()) {
-                        ArrayNode nodes = JsonNodeFactory.instance.arrayNode();
-
-                        for (Object v : values) {
-                            if (v instanceof JsonNode jsonNode) {
-                                nodes.add(jsonNode);
-                            } else {
-                                nodes.add(TextNode.valueOf(v.toString()));
-                            }
-                        }
-
-                        setValue(model, attribute, nodes);
-                    } else {
-                        for (Object v : values) {
-                            if (v instanceof JsonNode jsonNode) {
-                                setValue(model, attribute, resolveAttributeValue(attribute, jsonNode));
-                            }
-                            // no support for multivalued attributes for now, so we take the first value as the value of the attribute
-                            break;
-                        }
-                    }
-                } else {
-                    attribute.set(model, TextNode.valueOf(value.toString()));
-                }
+                setValue(model, attribute, value);
             }
         }
     }
 
     private void populateResourceType(R resource, M model, List<String> requestedAttributes, List<String> excludedAttributes) {
-        for (String name : getModelAttributeNames()) {
-            Attribute<M, R> attribute = getAttributeMapperByModelAttribute(name);
+        for (Entry<String, Attribute<M, R>> entry : getAttributeMappers().entrySet()) {
+            Attribute<M, R> attribute = entry.getValue();
 
-            if (attribute != null && !attribute.isExcluded(this, requestedAttributes, excludedAttributes)) {
-                Object value = getAttributeValue(model, name);
+            if (!attribute.isExcluded(this, requestedAttributes, excludedAttributes)) {
+                String modelAttributeName = attribute.getModelAttributeName();
+                Object value = getAttributeValue(model, modelAttributeName);
+
                 attribute.set(resource, value);
-                resource.addSchema(this.id);
+
+                if (!isInternal()) {
+                    resource.addSchema(this.id);
+                }
             }
         }
     }
 
-    private Attribute<M, R> getAttributeMapperByModelAttribute(String name) {
+    protected Map<String, Attribute<M,R>> getAttributeMappers() {
+        Map<String, Attribute<M,R>> mappers = new HashMap<>();
+
+        for (String name : getModelAttributeNames()) {
+            Attribute<M, R> attribute = getAttributeMapperByModelAttribute(name);
+
+            if (attribute != null) {
+                mappers.put(name, attribute);
+            }
+        }
+
+        return mappers;
+    }
+
+    protected Attribute<M, R> getAttributeMapperByModelAttribute(String name) {
         String scimName = getAttributeSchemaName(name);
 
         if (scimName == null) {
@@ -323,27 +312,25 @@ public abstract class AbstractModelSchema<M extends Model, R extends ResourceTyp
             return false;
         }
 
-        return getPaths(attribute).stream().anyMatch(path::equalsIgnoreCase);
+        return resolvePaths(attribute).stream().anyMatch(path::equalsIgnoreCase);
     }
 
-    private List<String> getPaths(Attribute<M, R> attr) {
+    private List<String> resolvePaths(Attribute<M, R> attr) {
         List<String> paths = new ArrayList<>();
 
         // the name of the attribute itself is always a valid path
         paths.add(attr.getName());
 
-        if (!isCore()) {
-            // if processing an extension schema try to resolve the attribute based on parent name and alias as well
-            String parent = attr.getParentName();
+        if (attr.isExtension()) {
+            paths.add(attr.getSchema() + ":" + attr.getSimpleName());
+        }
 
-            if (parent != null) {
-                paths.add(getId() + attr.getName().replace(parent + ".", ":"));
-                paths.add(getId() + attr.getName().replace(parent, ""));
-            }
+        if (attr.getName().endsWith(".value")) {
+            paths.add(attr.getSchema() + ":" + attr.getSimpleName().substring(0, attr.getSimpleName().length() - 6));
+        }
 
-            if (attr.getAlias() != null) {
-                paths.add(getId() + ":" + attr.getAlias());
-            }
+        if (attr.getAlias() != null) {
+            paths.add(getId() + ":" + attr.getAlias());
         }
 
         Class<?> complexType = attr.getComplexType();
@@ -357,25 +344,50 @@ public abstract class AbstractModelSchema<M extends Model, R extends ResourceTyp
         return paths;
     }
 
-    public void setValue(M model, Attribute<M, R> resolved, JsonNode value) {
-        setValue(model, resolved, value, SET);
+    private void setValue(M model, Attribute<M, R> attribute, Object value) {
+        setValue(model, attribute, value, SET);
     }
 
-    private void setValue(M model, Attribute<M, R> attribute, JsonNode value, Operation operation) {
+    private void setValue(M model, Attribute<M, R> attribute, Object value, Operation operation) {
         Objects.requireNonNull(model, "model cannot be null");
         Objects.requireNonNull(attribute, "attribute cannot be null");
-        Objects.requireNonNull(value, "value cannot be null");
         Objects.requireNonNull(operation, "operation cannot be null");
 
+        JsonNode jsonValue = toJsonNode(value);
+
         switch (operation) {
-            case SET -> attribute.set(model, value);
-            case ADD -> attribute.add(model, value);
-            case REMOVE -> attribute.remove(model, value);
+            case SET -> attribute.set(model, jsonValue);
+            case ADD -> attribute.add(model, jsonValue);
+            case REMOVE -> attribute.remove(model, jsonValue);
             default -> throw new ModelException("Invalid operation: " + operation);
         }
     }
 
-    private JsonNode resolveAttributeValue(Attribute<M, R> attribute,JsonNode jsonNode) {
+    private JsonNode toJsonNode(Object value) {
+        if (value == null) {
+            return null;
+        }
+
+        if (value instanceof JsonNode) {
+            return (JsonNode) value;
+        } else if (value instanceof Collection<?> values) {
+            ArrayNode nodes = JsonNodeFactory.instance.arrayNode();
+
+            for (Object v : values) {
+                if (v instanceof JsonNode jsonNode) {
+                    nodes.add(jsonNode);
+                } else {
+                    nodes.add(TextNode.valueOf(v.toString()));
+                }
+            }
+
+            return nodes;
+        }
+
+        return TextNode.valueOf(value.toString());
+    }
+
+    private JsonNode resolveAttributeValue(Attribute<M, R> attribute, JsonNode jsonNode) {
         if (jsonNode.isValueNode()) {
             Class<?> complexType = attribute.getComplexType();
 

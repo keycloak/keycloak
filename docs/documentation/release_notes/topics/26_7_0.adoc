@@ -5,11 +5,11 @@ This release features new capabilities for users and administrators of {project_
 
 = Administration
 
-== Dedicated admin roles for organization management
+== Delegated administration for organizations
 
-{project_name} now provides dedicated realm admin roles for managing organizations: `manage-organizations`, `view-organizations`, and `query-organizations`.
+{project_name} now supports delegated organization administration without requiring the broad `manage-realm` role. This is achieved through new dedicated admin roles and Fine-Grained Admin Permissions support for organizations.
 
-Previously, managing organizations required the `manage-realm` role, which grants broad administrative access. The new roles allow administrators to be granted organization-specific permissions without requiring full realm management privileges.
+New realm admin roles provide coarse-grained delegation:
 
 * `manage-organizations` — grants full read and write access to organizations, including creating, updating, and deleting organizations and their members.
 * `view-organizations` — grants read-only access to organizations and their members (also requires `view-users` or Fine-Grained Admin Permissions for user visibility).
@@ -17,7 +17,7 @@ Previously, managing organizations required the `manage-realm` role, which grant
 
 The `manage-realm` role continues to implicitly grant full organization management access for backward compatibility.
 
-When Fine-Grained Admin Permissions is enabled, organization member queries respect user-level permissions, returning only members the administrator is permitted to view.
+For per-organization granularity, organizations are now a first-class resource type in Fine-Grained Admin Permissions. Administrators can create permissions to control which specific organizations a delegated administrator can view or manage — for example, granting access to manage one organization without giving access to all organizations in the realm. When Fine-Grained Admin Permissions is enabled, organization member queries also respect user-level permissions, returning only members the administrator is permitted to view.
 
 == Realm search now matches by display name
 
