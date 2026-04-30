@@ -44,6 +44,7 @@ import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.representations.idm.oid4vc.UserVerifiableCredentialRepresentation;
 import org.keycloak.services.resources.admin.AdminAuth.Resource;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
@@ -425,6 +426,13 @@ public class PermissionsTest extends AbstractPermissionsTest {
         invoke(realm -> realm.users().get(user.getId()).removeFederatedIdentity("nosuch"), Resource.USER, true);
         invoke(realm -> realm.users().get(user.getId()).getConsents(), Resource.USER, false);
         invoke(realm -> realm.users().get(user.getId()).revokeConsent("testclient"), Resource.USER, true);
+
+        invoke(realm -> realm.users().get(user.getId()).verifiableCredentials().getCredentials(), Resource.USER, false);
+        UserVerifiableCredentialRepresentation verifCred = new UserVerifiableCredentialRepresentation();
+        verifCred.setCredentialScopeName("nosuch");
+        invoke(realm -> realm.users().get(user.getId()).verifiableCredentials().createCredential(verifCred), Resource.USER, true);
+        invoke(realm -> realm.users().get(user.getId()).verifiableCredentials().revokeCredential("nosuch"), Resource.USER, true);
+
         invoke(realm -> realm.users().get(user.getId()).logout(), Resource.USER, true);
         invoke(realm -> realm.users().get(user.getId()).resetPassword(CredentialBuilder.password("password").build()),
                 Resource.USER, true);
