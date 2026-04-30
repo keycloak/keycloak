@@ -45,6 +45,8 @@ export interface CredentialMetadataRepresentation {
   warningMessageTitle: CredentialMetadataRepresentationMessage;
   warningMessageDescription: CredentialMetadataRepresentationMessage;
   credential: CredentialRepresentation;
+  iconLight?: string;
+  iconDark?: string;
 }
 
 export interface DeviceRepresentation {

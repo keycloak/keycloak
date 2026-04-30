@@ -799,6 +799,8 @@ public class ModelToRepresentation {
                 .toList());
         rep.setWarningMessageDescription(toLocalizedMessage(credentialMetadata.getWarningMessageDescription()));
         rep.setWarningMessageTitle(toLocalizedMessage(credentialMetadata.getWarningMessageTitle()));
+        rep.setIconLight(credentialMetadata.getIconLight());
+        rep.setIconDark(credentialMetadata.getIconDark());
         return rep;
     }
 
