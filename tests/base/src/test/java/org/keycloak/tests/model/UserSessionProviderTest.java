@@ -52,6 +52,7 @@ import org.keycloak.testframework.remote.providers.timeoffset.InfinispanTimeUtil
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 
+import org.awaitility.Awaitility;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
@@ -357,8 +358,11 @@ public class UserSessionProviderTest {
         var user1 = session.users().getUserByUsername(realm, "user1");
         var user2 = session.users().getUserByUsername(realm, "user2");
 
-        assertEquals(0, session.sessions().getUserSessionsStream(realm, user1).count());
-        assertEquals(0, session.sessions().getUserSessionsStream(realm, user2).count());
+        Awaitility.await().untilAsserted(() -> {
+            // Event is handled asynchronously, might take a short while to be picked up
+            assertEquals(0, session.sessions().getUserSessionsStream(realm, user1).count());
+            assertEquals(0, session.sessions().getUserSessionsStream(realm, user2).count());
+        });
     }
 
     @TestOnServer
