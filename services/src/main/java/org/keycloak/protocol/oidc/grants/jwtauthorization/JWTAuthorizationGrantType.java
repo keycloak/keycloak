@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.protocol.oidc.grants;
+package org.keycloak.protocol.oidc.grants.jwtauthorization;
 
 import java.util.List;
 
@@ -30,16 +30,24 @@ import org.keycloak.cache.AlternativeLookupProvider;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
+import org.keycloak.jose.jws.JWSInput;
+import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.IdentityProviderType;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.protocol.oidc.JWTAuthorizationGrantValidator;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.TokenManager;
+import org.keycloak.protocol.oidc.grants.OAuth2GrantTypeBase;
+import org.keycloak.protocol.oidc.grants.jwtauthorization.validator.DefaultJWTAuthorizationGrantValidator;
+import org.keycloak.protocol.oidc.grants.jwtauthorization.validator.JWTAuthorizationGrantValidatorBase;
+import org.keycloak.representations.JsonWebToken;
 import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.services.Urls;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
@@ -60,8 +68,33 @@ public class JWTAuthorizationGrantType extends OAuth2GrantTypeBase {
 
         try {
 
-            JWTAuthorizationGrantValidator authorizationGrantContext = JWTAuthorizationGrantValidator.createValidator(
-                    context.getSession(), client, assertion, formParams.getFirst(OAuth2Constants.SCOPE));
+            if (assertion == null) {
+                throw new IllegalArgumentException("Missing parameter:" + OAuth2Constants.ASSERTION);
+            }
+            
+            JWSInput jws;
+            JsonWebToken jwt;
+            try {
+                jws = new JWSInput(assertion);
+                jwt = jws.readJsonContent(JsonWebToken.class);
+            } catch (JWSInputException e) {
+                throw new RuntimeException("The provided assertion is not a valid JWT");
+            }
+
+            ClientAssertionState clientAssertionState = new ClientAssertionState(OAuth2Constants.JWT_AUTHORIZATION_GRANT, assertion, jws, jwt);   
+            clientAssertionState.setClient(client);
+            
+            String jwtTokenType = jws.getHeader().getType();
+            JWTAuthorizationGrantValidatorBase authorizationGrantContext = 
+                            (JWTAuthorizationGrantValidatorBase) session.getProvider(JWTAuthorizationGrantValidator.class, jwtTokenType);            
+            if( authorizationGrantContext == null){
+                authorizationGrantContext = createDefaultValidator(
+                    context.getSession(), formParams.getFirst(OAuth2Constants.SCOPE), clientAssertionState);
+            } else {
+                authorizationGrantContext.setClientAssertionState(clientAssertionState);
+                authorizationGrantContext.setScopeParam(formParams.getFirst(OAuth2Constants.SCOPE));
+            }
+            
             event.detail(Details.IDENTITY_PROVIDER_ISSUER, authorizationGrantContext.getIssuer());
             event.detail(Details.IDENTITY_PROVIDER_USER_ID, authorizationGrantContext.getSubject());
 
@@ -175,6 +208,10 @@ public class JWTAuthorizationGrantType extends OAuth2GrantTypeBase {
         authSession.setClientNote(OIDCLoginProtocol.ISSUER, Urls.realmIssuer(session.getContext().getUri().getBaseUri(), realm.getName()));
         authSession.setClientNote(OIDCLoginProtocol.SCOPE_PARAM, scope);
         return authSession;
+    }
+
+    protected JWTAuthorizationGrantValidatorBase createDefaultValidator(KeycloakSession session, String scope, ClientAssertionState clientAssertionState) {
+        return new DefaultJWTAuthorizationGrantValidator(session, scope, clientAssertionState);
     }
 
     @Override

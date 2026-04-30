@@ -113,3 +113,4 @@ org.keycloak.models.workflow.WorkflowSpi
 org.keycloak.protocol.oidc.rar.AuthorizationDetailsProcessorSpi
 org.keycloak.cache.AlternativeLookupSPI
 org.keycloak.cache.LocalCacheSPI
+org.keycloak.protocol.oidc.JWTAuthorizationGrantValidatorSpi
