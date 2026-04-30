@@ -4,7 +4,9 @@ import java.util.stream.Stream;
 
 import jakarta.annotation.Nonnull;
 import jakarta.validation.Valid;
+import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.GET;
+import jakarta.ws.rs.HttpMethod;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
@@ -55,9 +57,23 @@ public class DefaultClientsApi implements ClientsApi {
                 .build();
     }
 
+    /**
+     * When the path {@code clientId} does not resolve, return 403 if the caller cannot list clients
+     * (anti client-ID phishing), matching {@code ClientsResource#getClient} for Admin API v1.
+     * Not applied to PUT upsert so {@code manage} without {@code list} can create by clientId.
+     */
+    private void enforceAntiPhishingIfClientMissing(String clientId) {
+        if (realm.getClientByClientId(clientId) == null && !permissions.clients().canList()) {
+            throw new ForbiddenException();
+        }
+    }
+
     @Path("{id}")
     @Override
     public ClientApi client(@PathParam("id") String clientId) {
+        if (!HttpMethod.PUT.equals(session.getContext().getHttpRequest().getHttpMethod())) {
+            enforceAntiPhishingIfClientMissing(clientId);
+        }
         return new DefaultClientApi(session, realm, clientId, permissions, realmAdminResource);
     }
 
