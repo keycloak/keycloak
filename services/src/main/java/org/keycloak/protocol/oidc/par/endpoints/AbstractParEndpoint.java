@@ -21,6 +21,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
+import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.OAuthErrorException;
@@ -68,11 +69,13 @@ public abstract class AbstractParEndpoint {
 
             this.event.client(client);
 
-            cors.allowedOrigins(session, client);
+            cors.checkAllowedOrigins(session, client);
 
             if (client == null) {
                 throw throwErrorResponseException(OAuthErrorException.INVALID_REQUEST, "Client not allowed.", Response.Status.FORBIDDEN);
             }
+        } catch (ForbiddenException e) {
+            throw e;
         } catch (Exception e) {
             throw throwErrorResponseException(OAuthErrorException.INVALID_REQUEST, "Authentication failed.", Response.Status.UNAUTHORIZED);
         }
