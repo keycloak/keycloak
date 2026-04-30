@@ -51,7 +51,7 @@
         </dependency>
         <dependency>
             <groupId>org.keycloak.testframework</groupId>
-            <artifactId>keycloak-test-framework-remote-providers</artifactId>
+            <artifactId>keycloak-test-framework-remote-runonserver</artifactId>
             <scope>compile</scope>
         </dependency>
         <dependency>

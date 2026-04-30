@@ -111,6 +111,9 @@ import org.keycloak.services.scheduled.ClearExpiredUserSessions;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.datastore.PeriodicEventInvalidation;
+import org.keycloak.testframework.remote.providers.runonserver.FetchOnServer;
+import org.keycloak.testframework.remote.providers.runonserver.RunOnServer;
+import org.keycloak.testframework.remote.providers.runonserver.SerializationUtil;
 import org.keycloak.testsuite.components.amphibian.TestAmphibianProvider;
 import org.keycloak.testsuite.events.TestEventsListenerProvider;
 import org.keycloak.testsuite.federation.DummyUserFederationProviderFactory;
@@ -121,9 +124,6 @@ import org.keycloak.testsuite.rest.representation.AuthenticatorState;
 import org.keycloak.testsuite.rest.resource.TestCacheResource;
 import org.keycloak.testsuite.rest.resource.TestLDAPResource;
 import org.keycloak.testsuite.rest.resource.TestingExportImportResource;
-import org.keycloak.testsuite.runonserver.FetchOnServer;
-import org.keycloak.testsuite.runonserver.RunOnServer;
-import org.keycloak.testsuite.runonserver.SerializationUtil;
 import org.keycloak.testsuite.util.FeatureDeployerUtil;
 import org.keycloak.timer.TimerProvider;
 import org.keycloak.truststore.FileTruststoreProvider;
@@ -165,6 +165,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
     @POST
     @Path("/remove-user-session")
     @Produces(MediaType.APPLICATION_JSON)
+    @Deprecated
     public Response removeUserSession(@QueryParam("realm") final String name, @QueryParam("session") final String sessionId) {
         RealmModel realm = getRealmByName(name);
 
@@ -180,6 +181,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
     @POST
     @Path("/remove-user-sessions")
     @Produces(MediaType.APPLICATION_JSON)
+    @Deprecated
     public Response removeUserSessions(@QueryParam("realm") final String realmName) {
         RealmModel realm = getRealmByName(realmName);
 

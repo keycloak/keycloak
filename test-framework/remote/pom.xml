@@ -40,7 +40,12 @@
         </dependency>
         <dependency>
             <groupId>org.keycloak.testframework</groupId>
-            <artifactId>keycloak-test-framework-remote-providers</artifactId>
+            <artifactId>keycloak-test-framework-remote-runonserver</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak.testframework</groupId>
+            <artifactId>keycloak-test-framework-remote-timeoffset</artifactId>
             <version>${project.version}</version>
         </dependency>
     </dependencies>

@@ -29,33 +29,11 @@
 
     <artifactId>keycloak-test-framework-remote-providers</artifactId>
     <name>Keycloak Test Framework - Remote providers</name>
-    <packaging>jar</packaging>
+    <packaging>pom</packaging>
     <description>Utility Keycloak server Providers for the Keycloak Test Framework</description>
 
-    <dependencies>
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-core</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-server-spi</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-server-spi-private</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-model-infinispan</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>jakarta.ws.rs</groupId>
-            <artifactId>jakarta.ws.rs-api</artifactId>
-        </dependency>
-    </dependencies>
+    <modules>
+        <module>runonserver</module>
+        <module>timeoffset</module>
+    </modules>
 </project>
