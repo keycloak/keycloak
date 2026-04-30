@@ -352,7 +352,7 @@ public class Picocli {
                 if (newValue == null || oldValue == null) {
                     changed = true;
                 } else if (!warnedTimestampChanged && timestampChanged(oldValue, newValue)) {
-                    if (Configuration.getOptionalBooleanKcValue("run-in-container").orElse(false)) {
+                    if (Environment.isRunInContainer()) {
                         warnedTimestampChanged = true;
                         warn(PROVIDER_TIMESTAMP_WARNING);
                     } else {

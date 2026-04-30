@@ -38,7 +38,9 @@ import io.smallrye.config.SmallRyeConfig;
 
 public final class Environment {
 
+    public static final String KC_RUN_IN_CONTAINER = "KC_RUN_IN_CONTAINER";
     public static final String KC_CONFIG_REBUILD_CHECK = "kc.config.rebuild-check";
+    public static final String KC_SCRIPT_PID = "kc.script.pid";
     public static final String KC_CONFIG_BUILT = "kc.config.built";
     public static final String KC_HOME_DIR = "kc.home.dir";
     public static final String PROFILE ="kc.profile";
@@ -208,5 +210,16 @@ public final class Environment {
 
     public static void setRebuild() {
         System.setProperty("quarkus.launch.rebuild", "true");
+    }
+    
+    /**
+     * The process id of the script used to launch the server. Will be null if a script other than kc.sh is used
+     */
+    public static Optional<String> getScriptPid() {
+        return Optional.ofNullable(System.getProperty(KC_SCRIPT_PID));
+    }
+    
+    public static boolean isRunInContainer() {
+        return Configuration.getOptionalBooleanKcValue("run-in-container").orElse(false);
     }
 }
