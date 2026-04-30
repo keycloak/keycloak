@@ -20,7 +20,7 @@ import {
   StackItem,
 } from "@patternfly/react-core";
 import { useEffect, useState } from "react";
-import { Controller, FormProvider, useForm } from "react-hook-form";
+import { Controller, FormProvider, useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useAdminClient } from "../admin-client";
 import { DefaultSwitchControl } from "../components/SwitchControl";
@@ -120,6 +120,15 @@ function RealmSettingsGeneralTabForm({
     Feature.StepUpAuthenticationSaml,
   );
   const isScimApiEnabled = isFeatureEnabled(Feature.ScimApi);
+
+  const isSsfEnabled = isFeatureEnabled(Feature.Ssf);
+
+  const ssfTransmitterEnabled = useWatch({
+    control,
+    name: convertAttributeNameToForm<FormFields>(
+      "attributes.ssf.transmitterEnabled",
+    ) as any,
+  });
 
   const setupForm = () => {
     convertToFormValues(realm, setValue);
@@ -271,6 +280,16 @@ function RealmSettingsGeneralTabForm({
               labelIcon={t("scimApiEnabledHelp")}
             />
           )}
+          {isSsfEnabled && (
+            <DefaultSwitchControl
+              name={convertAttributeNameToForm<FormFields>(
+                "attributes.ssf.transmitterEnabled",
+              )}
+              label={t("ssfTransmitterEnabled")}
+              labelIcon={t("ssfTransmitterEnabledHelp")}
+              stringify
+            />
+          )}
           <SelectControl
             name="unmanagedAttributePolicy"
             label={t("unmanagedAttributes")}
@@ -341,6 +360,16 @@ function RealmSettingsGeneralTabForm({
                       serverBaseUrl,
                     )}realms/${realmName}/scim/v2`}
                     title={t("SCIM Endpoint")}
+                  />
+                </StackItem>
+              )}
+              {isSsfEnabled && ssfTransmitterEnabled?.toString() === "true" && (
+                <StackItem>
+                  <FormattedLink
+                    href={`${addTrailingSlash(
+                      serverBaseUrl,
+                    )}realms/${realmName}/.well-known/ssf-configuration`}
+                    title={t("ssfConfigurationMetadata")}
                   />
                 </StackItem>
               )}

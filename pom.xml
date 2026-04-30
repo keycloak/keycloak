@@ -314,6 +314,7 @@
         <module>tests</module>
         <module>quarkus</module>
         <module>scim</module>
+        <module>ssf</module>
         <module>authzen</module>
     </modules>
 
@@ -1350,6 +1351,23 @@
             <dependency>
                 <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-scim-model</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <!-- SSF -->
+            <dependency>
+                <groupId>org.keycloak</groupId>
+                <artifactId>keycloak-ssf-core</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.keycloak</groupId>
+                <artifactId>keycloak-ssf-transmitter</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.keycloak</groupId>
+                <artifactId>keycloak-ssf-services</artifactId>
                 <version>${project.version}</version>
             </dependency>
         </dependencies>
