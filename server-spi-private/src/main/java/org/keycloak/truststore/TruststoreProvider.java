@@ -47,4 +47,14 @@ public interface TruststoreProvider extends Provider {
      * @return intermediate certificates from the configured truststore as a map where the key is the X500Principal of the corresponding X509Certificate
      */
     Map<X500Principal, List<X509Certificate>> getIntermediateCertificates();
+
+    /**
+     * Returns the truststore used for mTLS
+     * @return The mTLS truststore
+     */
+    KeyStore getHttpsTruststore();
+
+    Map<X500Principal, List<X509Certificate>> getHttpsRootCertificates();
+
+    Map<X500Principal, List<X509Certificate>> getHttpsIntermediateCertificates();
 }

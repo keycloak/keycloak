@@ -20,6 +20,7 @@ import jakarta.ws.rs.core.Response;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.ClientAuthenticationFlowContext;
+import org.keycloak.authentication.authenticators.x509.CertificateValidator;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
@@ -27,12 +28,14 @@ import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.services.x509.X509ClientCertificateLookup;
+import org.keycloak.utils.StringUtil;
 
 public class X509ClientAuthenticator extends AbstractClientAuthenticator {
 
     public static final String PROVIDER_ID = "client-x509";
     public static final String ATTR_PREFIX = "x509";
     public static final String ATTR_SUBJECT_DN = ATTR_PREFIX + ".subjectdn";
+    public static final String ATTR_CA_SUBJECT_DN = ATTR_PREFIX + ".casubjectdn";
 
     public static final String ATTR_ALLOW_REGEX_PATTERN_COMPARISON = ATTR_PREFIX + ".allow.regex.pattern.comparison";
 
@@ -121,43 +124,102 @@ public class X509ClientAuthenticator extends AbstractClientAuthenticator {
 
         OIDCAdvancedConfigWrapper clientCfg = OIDCAdvancedConfigWrapper.fromClientModel(client);
         String subjectDNRegexp = client.getAttribute(ATTR_SUBJECT_DN);
-        if (subjectDNRegexp == null || subjectDNRegexp.length() == 0) {
-            logger.errorf("[X509ClientCertificateAuthenticator:authenticate] " + ATTR_SUBJECT_DN + " is null or empty");
+        if (StringUtil.isBlank(subjectDNRegexp)) {
+            logger.errorf("[X509ClientCertificateAuthenticator:authenticate] %s is null or empty", ATTR_SUBJECT_DN);
             context.attempted();
             return;
         }
 
         // Testing only 1st certificate in the chain to match with configured subject
         X509Certificate certificate = certs[0];
-        boolean matchedCertificate = false;
-
-        if (clientCfg.getAllowRegexPatternComparison()) {
-            Pattern subjectDNPattern = Pattern.compile(subjectDNRegexp);
-
-            String subjectdn = certificate.getSubjectDN().getName();
-            matchedCertificate = subjectDNPattern.matcher(subjectdn).matches();
-        } else {
-            // OIDC/OAuth2 does not use regex comparison as it expects exact DN given in the format according to RFC4514. See RFC8705 for the details.
-            // We allow custom OIDs attributes to be "expanded" or not expanded in the given Subject DN
-            X500Principal expectedDNPrincipal = new X500Principal(subjectDNRegexp, CUSTOM_OIDS_REVERSED);
-
-            matchedCertificate = (expectedDNPrincipal.getName(X500Principal.RFC2253, CUSTOM_OIDS).equals(certificate.getSubjectX500Principal().getName(X500Principal.RFC2253, CUSTOM_OIDS)));
-        }
+        boolean matchedCertificate = checkSubjectDN(certificate, subjectDNRegexp, clientCfg.getAllowRegexPatternComparison());
 
         if (!matchedCertificate) {
             // We do quite expensive operation here, so better check the logging level beforehand.
             if (logger.isDebugEnabled()) {
-                logger.debug("[X509ClientCertificateAuthenticator:authenticate] Couldn't match any certificate for expected Subject DN '" + subjectDNRegexp + "' with allow regex pattern '" + clientCfg.getAllowRegexPatternComparison() + "'.");
-                logger.debug("[X509ClientCertificateAuthenticator:authenticate] Checked Subject DN: " + certificate.getSubjectDN().getName());
-                logger.debug("[X509ClientCertificateAuthenticator:authenticate] All SubjectDNs from the certificate chain: " +
+                logger.debugf("[X509ClientCertificateAuthenticator:authenticate] Couldn't match any certificate for expected Subject DN '%s' with allow regex pattern '%s'.", subjectDNRegexp, clientCfg.getAllowRegexPatternComparison());
+                logger.debugf("[X509ClientCertificateAuthenticator:authenticate] Checked Subject DN: %s", certificate.getSubjectDN().getName());
+                logger.debugf("[X509ClientCertificateAuthenticator:authenticate] All SubjectDNs from the certificate chain: %s",
                         Arrays.stream(certs)
                                 .map(cert -> cert.getSubjectDN().getName())
                                 .collect(Collectors.toList()));
             }
             context.attempted();
-        } else {
-            logger.debug("[X509ClientCertificateAuthenticator:authenticate] Matched " + certificate.getSubjectDN().getName() + " certificate.");
+            return;
+        }
+
+        // get the name of the CA to check
+        String caSubjectDN = client.getAttribute(ATTR_CA_SUBJECT_DN);
+        if (StringUtil.isBlank(caSubjectDN)) {
+            logger.warnf("[X509ClientCertificateAuthenticator:authenticate] %s is null or empty, please configure it for better security", ATTR_CA_SUBJECT_DN);
+            // if the attribute is not present, return success for backwards compatibility
             context.success();
+            return;
+        }
+
+        // validate the certificate against the CA
+        X509Certificate ca = validateCertificateChain(context.getSession(), certs);
+        if (ca == null) {
+            logger.debugf("[X509ClientCertificateAuthenticator:authenticate] Cert '%s' is not trusted by keycloak.", certificate.getSubjectDN().getName());
+            context.attempted();
+            return;
+        }
+
+        // check the ca name matches one of the configured DNs
+        if (!checkSubjectDNExact(ca, caSubjectDN)) {
+            if (logger.isDebugEnabled()) {
+                logger.debugf("[X509ClientCertificateAuthenticator:authenticate] Couldn't match CA certificate for expected Subject DNx %s with allow regex pattern '%s'.", caSubjectDN, clientCfg.getAllowRegexPatternComparison());
+                logger.debugf("[X509ClientCertificateAuthenticator:authenticate] CA Subject DN: %s", ca.getSubjectDN().getName());
+            }
+            context.attempted();
+            return;
+        }
+
+        logger.debugf("[X509ClientCertificateAuthenticator:authenticate] Matched %s certificate.", certificate.getSubjectDN().getName());
+        context.success();
+    }
+
+    private boolean checkSubjectDN(X509Certificate certificate, String subjectDN, boolean isRegExp){
+        if (isRegExp) {
+            return checkSubjectDNRegex(certificate, subjectDN);
+        } else {
+            return checkSubjectDNExact(certificate, subjectDN);
+        }
+    }
+
+    private boolean checkSubjectDNRegex(X509Certificate certificate, String subjectDN) {
+        Pattern subjectDNPattern = Pattern.compile(subjectDN);
+
+        // getSubjectDN is deprecated and says should not be relied upon by portable code, we are deprecating regex comparison
+        logger.warn("Regex comparison is deprecated. Please configure the X.509 client authenticator to use exact Subject DN.");
+        String subjectdn = certificate.getSubjectDN().getName();
+        return subjectDNPattern.matcher(subjectdn).matches();
+    }
+
+    private boolean checkSubjectDNExact(X509Certificate certificate, String subjectDN) {
+        // OIDC/OAuth2 does not use regex comparison as it expects exact DN given in the format according to RFC4514. See RFC8705 for the details.
+        // We allow custom OIDs attributes to be "expanded" or not expanded in the given Subject DN
+        X500Principal expectedDNPrincipal = new X500Principal(subjectDN, CUSTOM_OIDS_REVERSED);
+
+        return (expectedDNPrincipal.getName(X500Principal.RFC2253, CUSTOM_OIDS).equals(certificate.getSubjectX500Principal().getName(X500Principal.RFC2253, CUSTOM_OIDS)));
+    }
+
+    private X509Certificate validateCertificateChain(KeycloakSession session, X509Certificate[] certs) {
+        try {
+            CertificateValidator validator = new CertificateValidator.CertificateValidatorBuilder()
+                    .session(session)
+                    .trustValidation()
+                        .enabled(true)
+                    .timestampValidation()
+                        .enabled(true)
+                    .build(certs);
+            validator.checkRevocationStatus()
+                    .validateTimestamps()
+                    .validateTrust();
+            return validator.getCertPathBuilderResult().getTrustAnchor().getTrustedCert();
+        } catch (GeneralSecurityException e) {
+            logger.warnf(e, "Invalid certificate %s", certs[0].getSubjectX500Principal().getName(X500Principal.RFC2253, CUSTOM_OIDS));
+            return null;
         }
     }
 
