@@ -369,6 +369,13 @@ public class RegistrationUserCreation implements FormAction, FormActionFactory {
                 // Delete the invitation since it has been used
                 InvitationManager invitationManager = provider.getInvitationManager();
                 invitationManager.remove(token.getId());
+
+                context.getEvent()
+                    .clone()
+                    .event(EventType.INVITE_ORG)
+                    .user(user)
+                    .detail(Details.USERNAME, user.getUsername())
+                    .success();
             }
         }
     }
