@@ -27,10 +27,8 @@ import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.GroupBuilder;
-import org.keycloak.testframework.realm.RoleBuilder;
+import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.UserBuilder;
-import org.keycloak.testsuite.util.RealmBuilder;
-import org.keycloak.testsuite.util.RolesBuilder;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -51,17 +49,15 @@ public class GroupPathWithoutGroupClaimPolicyTest extends GroupPathPolicyTest {
         groupProtocolMapper.setConfig(config);
 
         testRealms.add(RealmBuilder.create().name("authz-test")
-                .roles(RolesBuilder.create()
-                        .realmRole(RoleBuilder.create().name("uma_authorization").build())
-                )
-                .group(GroupBuilder.create().name("Group A")
+                .realmRoles("uma_authorization")
+                .groups(GroupBuilder.create().name("Group A")
                     .subGroups(GroupBuilder.create("Group B").subGroups("Group C", "Group E"))
-                    .subGroups("Group D").build())
-                .group(GroupBuilder.create().name("Group E").build())
-                .user(UserBuilder.create().username("marta").password("password").roles("uma_authorization").groups("Group A"))
-                .user(UserBuilder.create().username("alice").password("password").roles("uma_authorization"))
-                .user(UserBuilder.create().username("kolo").password("password").roles("uma_authorization"))
-                .client(ClientBuilder.create().clientId("resource-server-test")
+                    .subGroups("Group D"))
+                .groups(GroupBuilder.create().name("Group E"))
+                .users(UserBuilder.create().username("marta").password("password").realmRoles("uma_authorization").groups("Group A"))
+                .users(UserBuilder.create().username("alice").password("password").realmRoles("uma_authorization"))
+                .users(UserBuilder.create().username("kolo").password("password").realmRoles("uma_authorization"))
+                .clients(ClientBuilder.create().clientId("resource-server-test")
                     .secret("secret")
                     .authorizationServicesEnabled(true)
                     .redirectUris("http://localhost/resource-server-test")

@@ -44,12 +44,12 @@ import org.keycloak.representations.workflows.WorkflowRepresentation;
 import org.keycloak.representations.workflows.WorkflowScheduleRepresentation;
 import org.keycloak.representations.workflows.WorkflowStepRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.realm.IdentityProviderBuilder;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.remote.providers.runonserver.RunOnServer;
 import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.tests.workflow.AbstractWorkflowTest;
 import org.keycloak.tests.workflow.config.WorkflowsBlockingServerConfig;
-import org.keycloak.testsuite.util.IdentityProviderBuilder;
 
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
@@ -247,14 +247,14 @@ public class IdpLinkConditionWorkflowTest extends AbstractWorkflowTest {
     private void setupIdentityProvider() {
         IdentityProviderRepresentation rep = IdentityProviderBuilder.create().alias(IDP_OIDC_ALIAS).providerId(IDP_OIDC_PROVIDER_ID)
                 .displayName(IDP_OIDC_PROVIDER_ID)
-                .setAttribute("clientId", "test-client")
-                .setAttribute("clientSecret", "secret")
-                .setAttribute("authorizationUrl", "http://localhost:8080/realms/" + DEFAULT_REALM_NAME + "/protocol/openid-connect/auth")
-                .setAttribute("tokenUrl", "http://localhost:8080/realms/" + DEFAULT_REALM_NAME + "/protocol/openid-connect/token")
-                .setAttribute("logoutUrl", "http://localhost:8080/realms/" + DEFAULT_REALM_NAME + "/protocol/openid-connect/logout")
-                .setAttribute("userInfoUrl", "http://localhost:8080/realms/" + DEFAULT_REALM_NAME + "/protocol/openid-connect/userinfo")
-                .setAttribute("defaultScope", "email profile")
-                .setAttribute("backchannelSupported", "true")
+                .attribute("clientId", "test-client")
+                .attribute("clientSecret", "secret")
+                .attribute("authorizationUrl", "http://localhost:8080/realms/" + DEFAULT_REALM_NAME + "/protocol/openid-connect/auth")
+                .attribute("tokenUrl", "http://localhost:8080/realms/" + DEFAULT_REALM_NAME + "/protocol/openid-connect/token")
+                .attribute("logoutUrl", "http://localhost:8080/realms/" + DEFAULT_REALM_NAME + "/protocol/openid-connect/logout")
+                .attribute("userInfoUrl", "http://localhost:8080/realms/" + DEFAULT_REALM_NAME + "/protocol/openid-connect/userinfo")
+                .attribute("defaultScope", "email profile")
+                .attribute("backchannelSupported", "true")
                 .build();
 
         managedRealm.admin().identityProviders().create(rep).close();

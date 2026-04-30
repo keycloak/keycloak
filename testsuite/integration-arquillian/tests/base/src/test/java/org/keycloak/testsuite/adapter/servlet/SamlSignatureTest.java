@@ -45,6 +45,8 @@ import org.keycloak.saml.common.constants.JBossSAMLConstants;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.processing.core.util.XMLEncryptionUtil;
 import org.keycloak.testframework.realm.ClientBuilder;
+import org.keycloak.testframework.realm.IdentityProviderBuilder;
+import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RoleBuilder;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.adapter.AbstractAdapterTest;
@@ -54,10 +56,7 @@ import org.keycloak.testsuite.adapter.page.SalesPostEncServlet;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
 import org.keycloak.testsuite.saml.AbstractSamlTest;
 import org.keycloak.testsuite.updaters.Creator;
-import org.keycloak.testsuite.util.IdentityProviderBuilder;
 import org.keycloak.testsuite.util.Matchers;
-import org.keycloak.testsuite.util.RealmBuilder;
-import org.keycloak.testsuite.util.RolesBuilder;
 import org.keycloak.testsuite.util.SamlClient.Binding;
 import org.keycloak.testsuite.util.SamlClientBuilder;
 import org.keycloak.testsuite.utils.arquillian.ContainerConstants;
@@ -294,10 +293,10 @@ public class SamlSignatureTest extends AbstractAdapterTest {
           .name(REALM_NAME)
           .publicKey(REALM_PUBLIC_KEY)
           .privateKey(REALM_PRIVATE_KEY)
-          .client(salesPostClient)
-          .client(salesPostEncClient)
-          .client(brokerRealmIdPClient)
-          .roles(RolesBuilder.create().realmRole(REQUIRED_ROLE))
+          .clients(salesPostClient)
+          .clients(salesPostEncClient)
+          .clients(brokerRealmIdPClient)
+          .realmRoles(REQUIRED_ROLE)
           .build()
         );
 
@@ -305,18 +304,18 @@ public class SamlSignatureTest extends AbstractAdapterTest {
           .name(BROKER)
           .publicKey(REALM_PUBLIC_KEY)
           .privateKey(REALM_PRIVATE_KEY)
-          .client(salesPostClient)
-          .identityProvider(IdentityProviderBuilder.create()
+          .clients(salesPostClient)
+          .identityProviders(IdentityProviderBuilder.create()
             .alias(REALM_NAME)
             .providerId(SAMLIdentityProviderFactory.PROVIDER_ID)
-            .setAttribute(SAMLIdentityProviderConfig.SINGLE_SIGN_ON_SERVICE_URL, getAuthServerRoot() + "realms/" + REALM_NAME + "/protocol/saml")
-            .setAttribute(SAMLIdentityProviderConfig.POST_BINDING_AUTHN_REQUEST, "true")
-            .setAttribute(SAMLIdentityProviderConfig.POST_BINDING_RESPONSE, "true")
-            .setAttribute(SAMLIdentityProviderConfig.SIGNING_CERTIFICATE_KEY, REALM_SIGNING_CERTIFICATE)
-            .setAttribute(SAMLIdentityProviderConfig.WANT_ASSERTIONS_SIGNED, "true")
-            .setAttribute(SAMLIdentityProviderConfig.VALIDATE_SIGNATURE, "true")
+            .attribute(SAMLIdentityProviderConfig.SINGLE_SIGN_ON_SERVICE_URL, getAuthServerRoot() + "realms/" + REALM_NAME + "/protocol/saml")
+            .attribute(SAMLIdentityProviderConfig.POST_BINDING_AUTHN_REQUEST, "true")
+            .attribute(SAMLIdentityProviderConfig.POST_BINDING_RESPONSE, "true")
+            .attribute(SAMLIdentityProviderConfig.SIGNING_CERTIFICATE_KEY, REALM_SIGNING_CERTIFICATE)
+            .attribute(SAMLIdentityProviderConfig.WANT_ASSERTIONS_SIGNED, "true")
+            .attribute(SAMLIdentityProviderConfig.VALIDATE_SIGNATURE, "true")
           )
-          .roles(RolesBuilder.create().realmRole(REQUIRED_ROLE))
+          .realmRoles(REQUIRED_ROLE)
           .build()
         );
     }

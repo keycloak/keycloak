@@ -82,6 +82,8 @@ The *Passkey Mediation* setting in the *WebAuthn Passwordless Policy* controls h
 [NOTE]
 ====
 The behavior of the `mediation` option, although defined in the specification, can vary between browsers and authenticators. {project_name} simply passes this option during the registration process. The actual final behavior is beyond its control. For example, the support for `required` and `silent` mediation are known to be different among browsers. Refer to your target browser's documentation before relying on these values in production.
+
+When the *Authenticator Attachment* in the policy is set to `platform` and the device does not have a user-verifying platform authenticator available, the automatic passkey flow on page load is skipped regardless of the mediation value. The user can still authenticate using the *Sign in with Passkey* button or fall back to password login.
 ====
 
 ==== Setup

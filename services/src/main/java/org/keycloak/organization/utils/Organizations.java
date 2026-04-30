@@ -24,6 +24,7 @@ import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
+import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
 
@@ -50,6 +51,7 @@ import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.organization.protocol.mappers.oidc.OrganizationScope;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.Urls;
+import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
 import org.keycloak.sessions.AuthenticationSessionModel;
 
 import static java.util.Optional.of;
@@ -150,9 +152,11 @@ public class Organizations {
         return isEnabledAndOrganizationsPresent(provider);
     }
 
-    public static void checkEnabled(OrganizationProvider provider) {
+    public static void checkEnabled(OrganizationProvider provider, AdminPermissionEvaluator auth) {
         if (provider == null || !provider.isEnabled()) {
-            throw ErrorResponse.error("Organizations not enabled for this realm.", Response.Status.NOT_FOUND);
+            throw auth.orgs().canQuery() ?
+                    ErrorResponse.error("Organizations not enabled for this realm.", Response.Status.NOT_FOUND) :
+                    new ForbiddenException();
         }
     }
 

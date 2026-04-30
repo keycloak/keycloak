@@ -12,9 +12,9 @@ import org.keycloak.broker.saml.SAMLIdentityProviderFactory;
 import org.keycloak.client.cli.config.FileConfigHandler;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
+import org.keycloak.testframework.realm.IdentityProviderBuilder;
 import org.keycloak.testsuite.cli.KcAdmExec;
 import org.keycloak.testsuite.updaters.IdentityProviderCreator;
-import org.keycloak.testsuite.util.IdentityProviderBuilder;
 import org.keycloak.testsuite.util.TempFileResource;
 import org.keycloak.util.JsonSerialization;
 
@@ -43,14 +43,14 @@ public class KcAdmUpdateTest extends AbstractAdmCliTest {
                 .providerId(SAMLIdentityProviderFactory.PROVIDER_ID)
                 .alias("idpAlias")
                 .displayName("SAML")
-                .setAttribute(SAMLIdentityProviderConfig.SINGLE_SIGN_ON_SERVICE_URL, "https://saml.idp/saml")
-                .setAttribute(SAMLIdentityProviderConfig.ARTIFACT_RESOLUTION_SERVICE_URL, "https://saml.idp/saml")
-                .setAttribute(SAMLIdentityProviderConfig.SINGLE_LOGOUT_SERVICE_URL, "https://saml.idp/saml")
-                .setAttribute(SAMLIdentityProviderConfig.NAME_ID_POLICY_FORMAT, "urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress")
-                .setAttribute(SAMLIdentityProviderConfig.POST_BINDING_RESPONSE, "false")
-                .setAttribute(SAMLIdentityProviderConfig.POST_BINDING_AUTHN_REQUEST, "false")
-                .setAttribute(SAMLIdentityProviderConfig.BACKCHANNEL_SUPPORTED, "false")
-                .setAttribute(SAMLIdentityProviderConfig.ARTIFACT_BINDING_RESPONSE, "false")
+                .attribute(SAMLIdentityProviderConfig.SINGLE_SIGN_ON_SERVICE_URL, "https://saml.idp/saml")
+                .attribute(SAMLIdentityProviderConfig.ARTIFACT_RESOLUTION_SERVICE_URL, "https://saml.idp/saml")
+                .attribute(SAMLIdentityProviderConfig.SINGLE_LOGOUT_SERVICE_URL, "https://saml.idp/saml")
+                .attribute(SAMLIdentityProviderConfig.NAME_ID_POLICY_FORMAT, "urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress")
+                .attribute(SAMLIdentityProviderConfig.POST_BINDING_RESPONSE, "false")
+                .attribute(SAMLIdentityProviderConfig.POST_BINDING_AUTHN_REQUEST, "false")
+                .attribute(SAMLIdentityProviderConfig.BACKCHANNEL_SUPPORTED, "false")
+                .attribute(SAMLIdentityProviderConfig.ARTIFACT_BINDING_RESPONSE, "false")
                 .build();
 
         try (Closeable ipc = new IdentityProviderCreator(realmResource, identityProvider)) {

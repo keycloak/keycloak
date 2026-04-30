@@ -19,24 +19,26 @@ package org.keycloak.tests.organization.authz;
 
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.Constants;
+import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
+import org.keycloak.testframework.realm.UserBuilder;
 
 public class OrganizationAdminPermissionsConfig implements RealmConfig {
 
     @Override
     public RealmBuilder configure(RealmBuilder realm) {
-        realm.addUser("myadmin")
+        realm.users(UserBuilder.create("myadmin")
                 .name("My", "Admin")
                 .email("myadmin@localhost")
                 .emailVerified(true)
                 .password("password")
                 .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID,
                         AdminRoles.QUERY_USERS,
-                        AdminRoles.MANAGE_ORGANIZATIONS);
-        realm.addClient("myclient")
+                        AdminRoles.MANAGE_ORGANIZATIONS));
+        realm.clients(ClientBuilder.create("myclient")
                 .secret("mysecret")
-                .directAccessGrantsEnabled(true);
+                .directAccessGrantsEnabled(true));
         return realm
                 .adminPermissionsEnabled(true)
                 .organizationsEnabled(true);

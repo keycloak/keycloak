@@ -45,9 +45,11 @@ import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testframework.events.Events;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
+import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.ui.annotations.InjectPage;
 import org.keycloak.testframework.ui.page.LoginPage;
 import org.keycloak.tests.suites.DatabaseTest;
@@ -591,15 +593,15 @@ public class IdentityProviderOidcTest extends AbstractIdentityProviderTest {
         public RealmBuilder configure(RealmBuilder realm) {
             realm.name("external-realm");
 
-            realm.addClient("test-client")
+            realm.clients(ClientBuilder.create("test-client")
                     .secret("password")
-                    .redirectUris("*");
+                    .redirectUris("*"));
 
-            realm.addUser("testuser")
+            realm.users(UserBuilder.create("testuser")
                     .name("Test", "User")
                     .email("test@localhost")
                     .emailVerified(Boolean.TRUE)
-                    .password("password");
+                    .password("password"));
 
             return realm;
         }

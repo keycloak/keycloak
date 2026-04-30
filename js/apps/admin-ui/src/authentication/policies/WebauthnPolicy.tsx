@@ -1,4 +1,5 @@
 import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
+import type { FieldValues } from "react-hook-form";
 import {
   ActionGroup,
   AlertVariant,
@@ -12,7 +13,7 @@ import {
 } from "@patternfly/react-core";
 import { QuestionCircleIcon } from "@patternfly/react-icons";
 import { useEffect } from "react";
-import { FormProvider, useForm } from "react-hook-form";
+import { FormProvider, useForm, Validate } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import {
   HelpItem,
@@ -79,6 +80,7 @@ type WeauthnSelectProps = {
   options: readonly string[];
   labelPrefix?: string;
   isMultiSelect?: boolean;
+  validate?: Validate<any, FieldValues>;
 };
 
 const WebauthnSelect = ({
@@ -88,6 +90,7 @@ const WebauthnSelect = ({
   options,
   labelPrefix,
   isMultiSelect = false,
+  validate,
 }: WeauthnSelectProps) => {
   const { t } = useTranslation();
   return (
@@ -96,7 +99,7 @@ const WebauthnSelect = ({
       label={label}
       labelIcon={labelIcon}
       variant={isMultiSelect ? "typeaheadMulti" : "single"}
-      controller={{ defaultValue: options[0] }}
+      controller={{ defaultValue: options[0], rules: { validate: validate } }}
       options={options.map((option) => ({
         key: option,
         value: labelPrefix ? t(`${labelPrefix}.${option}`) : option,
@@ -152,6 +155,7 @@ export const WebauthnPolicy = ({
   };
 
   const isFeatureEnabled = useIsFeatureEnabled();
+  const acceptableAAGUIDs = watch(`${namePrefix}AcceptableAaguids`, []);
 
   return (
     <PageSection variant="light">
@@ -196,6 +200,18 @@ export const WebauthnPolicy = ({
             labelIcon={t("webAuthnPolicyAttestationConveyancePreferenceHelp")}
             options={ATTESTATION_PREFERENCE}
             labelPrefix="attestationPreference"
+            validate={(value) => {
+              const hasValidAAGUIDs = acceptableAAGUIDs.some(
+                (guid: string) => guid?.trim().length > 0,
+              );
+
+              if (
+                (value === "none" || value === "not specified") &&
+                hasValidAAGUIDs
+              ) {
+                return t("acceptableAAGUIDsRequiresAttestation");
+              }
+            }}
           />
           <WebauthnSelect
             name={`${namePrefix}AuthenticatorAttachment`}

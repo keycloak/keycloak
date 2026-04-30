@@ -27,11 +27,11 @@ import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.UserSessionRepresentation;
+import org.keycloak.testframework.realm.CredentialBuilder;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.broker.AbstractNestedBrokerTest;
 import org.keycloak.testsuite.broker.NestedBrokerConfiguration;
 import org.keycloak.testsuite.broker.OidcBackchannelLogoutBrokerConfiguration;
-import org.keycloak.testsuite.util.CredentialBuilder;
 import org.keycloak.testsuite.util.LogoutTokenUtil;
 import org.keycloak.testsuite.util.RealmManager;
 import org.keycloak.testsuite.util.SecondBrowser;
@@ -317,7 +317,7 @@ public class BackchannelLogoutTest extends AbstractNestedBrokerTest {
         logInAsUserInIDP(OidcBackchannelLogoutBrokerConfiguration.CONSUMER_CLIENT_ID);
         String userIdConsumerRealm = getUserIdConsumerRealm();
         adminClient.realm(nbc.consumerRealmName()).users().get(userIdConsumerRealm)
-                .resetPassword(CredentialBuilder.create().password(USER_PASSWORD_CONSUMER_REALM).build());
+                .resetPassword(CredentialBuilder.password(USER_PASSWORD_CONSUMER_REALM).build());
 
         String sessionId1ProviderRealm = assertProviderLoginEventIdpClient(userIdProviderRealm);
         String sessionId1ConsumerRealm = assertConsumerLoginEventAccountManagement(userIdConsumerRealm);
@@ -356,7 +356,7 @@ public class BackchannelLogoutTest extends AbstractNestedBrokerTest {
         logInAsUserInIDP(OidcBackchannelLogoutBrokerConfiguration.CONSUMER_CLIENT_ID);
         String userIdConsumerRealm = getUserIdConsumerRealm();
         adminClient.realm(nbc.consumerRealmName()).users().get(userIdConsumerRealm)
-                .resetPassword(CredentialBuilder.create().password(USER_PASSWORD_CONSUMER_REALM).build());
+                .resetPassword(CredentialBuilder.password(USER_PASSWORD_CONSUMER_REALM).build());
 
         String sessionId1ProviderRealm = assertProviderLoginEventIdpClient(userIdProviderRealm);
         String sessionId1ConsumerRealm = assertConsumerLoginEventAccountManagement(userIdConsumerRealm);

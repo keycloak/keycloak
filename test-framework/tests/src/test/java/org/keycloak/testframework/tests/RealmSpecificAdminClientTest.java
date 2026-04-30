@@ -18,9 +18,11 @@ import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testframework.events.Events;
+import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
+import org.keycloak.testframework.realm.UserBuilder;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -85,16 +87,16 @@ public class RealmSpecificAdminClientTest {
 
         @Override
         public RealmBuilder configure(RealmBuilder realm) {
-            realm.addClient("myclient")
+            realm.clients(ClientBuilder.create("myclient")
                     .secret("mysecret")
-                    .directAccessGrantsEnabled(true);
+                    .directAccessGrantsEnabled(true));
 
-            realm.addUser("myadmin")
+            realm.users(UserBuilder.create("myadmin")
                     .name("My", "Admin")
                     .email("myadmin@localhost")
                     .emailVerified(true)
                     .password("mypassword")
-                    .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.REALM_ADMIN);
+                    .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.REALM_ADMIN));
 
             return realm;
         }
@@ -109,12 +111,12 @@ public class RealmSpecificAdminClientTest {
     private static class CustomRealmConf implements RealmConfig {
         @Override
         public RealmBuilder configure(RealmBuilder realm) {
-            realm.addUser("realmuser")
+            realm.users(UserBuilder.create("realmuser")
                     .password("realmuser")
                     .name("Realm", "User").email("realm@user").emailVerified(true)
-                    .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.REALM_ADMIN);
-            realm.addClient("realmclient")
-                    .secret("realmclientsecret").directAccessGrantsEnabled(true);
+                    .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.REALM_ADMIN));
+            realm.clients(ClientBuilder.create("realmclient")
+                    .secret("realmclientsecret").directAccessGrantsEnabled(true));
             return realm;
         }
     }

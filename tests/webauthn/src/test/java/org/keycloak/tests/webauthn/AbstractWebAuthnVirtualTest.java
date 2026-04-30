@@ -42,10 +42,12 @@ import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.TestApp;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectTestApp;
+import org.keycloak.testframework.realm.AuthenticationExecutionExportBuilder;
 import org.keycloak.testframework.realm.AuthenticationFlowBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.ui.annotations.InjectPage;
 import org.keycloak.testframework.ui.annotations.InjectWebDriver;
 import org.keycloak.testframework.ui.page.ErrorPage;
@@ -399,48 +401,46 @@ public abstract class AbstractWebAuthnVirtualTest implements UseVirtualAuthentic
         public RealmBuilder configure(RealmBuilder builder) {
             builder.name("webauthn").registrationAllowed(true);
 
-            AuthenticationFlowBuilder flowBuilder1 = builder
-                    .addAuthenticationFlow("browser-webauthn", "browser based authentication", "basic-flow", true, false);
-                    flowBuilder1.addAuthenticationExecutionWithAuthenticator("auth-cookie", "ALTERNATIVE", 10, false);
-                    flowBuilder1.addAuthenticationExecutionWithAuthenticator("auth-spnego", "DISABLED", 20, false);
-                    flowBuilder1.addAuthenticationExecutionWithAuthenticator("identity-provider-redirector", "DISABLED", 25, false);
-                    flowBuilder1.addAuthenticationExecutionWithAliasFlow("browser-webauthn-organization", "ALTERNATIVE", 26, false);
-                    flowBuilder1.addAuthenticationExecutionWithAliasFlow("browser-webauthn-forms","ALTERNATIVE", 30, false);
+            builder.authenticationFlows(
+                    AuthenticationFlowBuilder.create("browser-webauthn", "browser based authentication", "basic-flow", true, false)
+                            .authenticationExecutions(AuthenticationExecutionExportBuilder.authenticator("auth-cookie", "ALTERNATIVE", 10, false),
+                                    AuthenticationExecutionExportBuilder.authenticator("auth-spnego", "DISABLED", 20, false),
+                                    AuthenticationExecutionExportBuilder.authenticator("identity-provider-redirector", "DISABLED", 25, false),
+                                    AuthenticationExecutionExportBuilder.alias("browser-webauthn-organization", "ALTERNATIVE", 26, false),
+                                    AuthenticationExecutionExportBuilder.alias("browser-webauthn-forms","ALTERNATIVE", 30, false)),
 
-            builder.addAuthenticationFlow("browser-webauthn-organization", "", "basic-flow", false, true)
-                .addAuthenticationExecutionWithAliasFlow("browser-webauthn-conditional-organization", "CONDITIONAL", 10, false);
+                    AuthenticationFlowBuilder.create("browser-webauthn-organization", "", "basic-flow", false, true)
+                            .authenticationExecutions(AuthenticationExecutionExportBuilder.alias("browser-webauthn-conditional-organization", "CONDITIONAL", 10, false)),
 
-            AuthenticationFlowBuilder flowBuilder2 = builder.addAuthenticationFlow("browser-webauthn-conditional-organization", "Flow to determine if the organization identity-first login is to be used", "basic-flow", false, true);
-            flowBuilder2.addAuthenticationExecutionWithAuthenticator("conditional-user-configured", "REQUIRED", 10, false);
-            flowBuilder2.addAuthenticationExecutionWithAuthenticator("organization", "ALTERNATIVE" , 20, false);
+                    AuthenticationFlowBuilder.create("browser-webauthn-conditional-organization", "Flow to determine if the organization identity-first login is to be used", "basic-flow", false, true)
+                            .authenticationExecutions(AuthenticationExecutionExportBuilder.authenticator("conditional-user-configured", "REQUIRED", 10, false),
+                                    AuthenticationExecutionExportBuilder.authenticator("organization", "ALTERNATIVE" , 20, false)),
 
-            AuthenticationFlowBuilder flowBuilder3 = builder.addAuthenticationFlow("browser-webauthn-forms", "Username, password, otp and other auth forms.", "basic-flow", false,false);
-            flowBuilder3.addAuthenticationExecutionWithAuthenticator("auth-username-password-form", "REQUIRED", 10, false);
-            flowBuilder3.addAuthenticationExecutionWithAuthenticator("auth-otp-form", "DISABLED" , 20, false);
-            flowBuilder3.addAuthenticationExecutionWithAuthenticator("webauthn-authenticator", "REQUIRED", 21, false);
+                    AuthenticationFlowBuilder.create("browser-webauthn-forms", "Username, password, otp and other auth forms.", "basic-flow", false,false)
+                            .authenticationExecutions(AuthenticationExecutionExportBuilder.authenticator("auth-username-password-form", "REQUIRED", 10, false),
+                                    AuthenticationExecutionExportBuilder.authenticator("auth-otp-form", "DISABLED" , 20, false),
+                                    AuthenticationExecutionExportBuilder.authenticator("webauthn-authenticator", "REQUIRED", 21, false)),
 
-            AuthenticationFlowBuilder flowBuilder4 = builder.addAuthenticationFlow("browser-webauthn-passwordless", "browser based authentication", "basic-flow", true, false);
-            flowBuilder4.addAuthenticationExecutionWithAuthenticator("auth-cookie", "ALTERNATIVE", 10, false);
-            flowBuilder4.addAuthenticationExecutionWithAliasFlow("browser-webauthn-passwordless-forms", "ALTERNATIVE", 30, false);
+                    AuthenticationFlowBuilder.create("browser-webauthn-passwordless", "browser based authentication", "basic-flow", true, false)
+                            .authenticationExecutions(AuthenticationExecutionExportBuilder.authenticator("auth-cookie", "ALTERNATIVE", 10, false),
+                                AuthenticationExecutionExportBuilder.alias("browser-webauthn-passwordless-forms", "ALTERNATIVE", 30, false)),
 
-            AuthenticationFlowBuilder flowBuilder5 = builder.addAuthenticationFlow("browser-webauthn-passwordless-forms", "Username, password, otp and other auth forms.", "basic-flow", false, false);
-            flowBuilder5.addAuthenticationExecutionWithAuthenticator("auth-username-password-form", "REQUIRED", 10, false);
-            flowBuilder5.addAuthenticationExecutionWithAuthenticator("webauthn-authenticator", "REQUIRED", 20, false);
-            flowBuilder5.addAuthenticationExecutionWithAuthenticator("webauthn-authenticator-passwordless", "REQUIRED", 30, false);
+                    AuthenticationFlowBuilder.create("browser-webauthn-passwordless-forms", "Username, password, otp and other auth forms.", "basic-flow", false, false)
+                            .authenticationExecutions(AuthenticationExecutionExportBuilder.authenticator("auth-username-password-form", "REQUIRED", 10, false),
+                                AuthenticationExecutionExportBuilder.authenticator("webauthn-authenticator", "REQUIRED", 20, false),
+                                AuthenticationExecutionExportBuilder.authenticator("webauthn-authenticator-passwordless", "REQUIRED", 30, false)),
 
-            // passkeys-username-forms
-            AuthenticationFlowBuilder flowBuilder6 = builder.addAuthenticationFlow("passkeys-username-forms", "Username, password, otp and other auth forms.", "basic-flow", false,false);
-            flowBuilder6.addAuthenticationExecutionWithAuthenticator("auth-username-form", "REQUIRED", 10, false);
-            flowBuilder6.addAuthenticationExecutionWithAuthenticator("auth-password-form", "REQUIRED" , 20, false);
+                    AuthenticationFlowBuilder.create("passkeys-username-forms", "Username, password, otp and other auth forms.", "basic-flow", false,false)
+                            .authenticationExecutions(AuthenticationExecutionExportBuilder.authenticator("auth-username-form", "REQUIRED", 10, false),
+                                AuthenticationExecutionExportBuilder.authenticator("auth-password-form", "REQUIRED" , 20, false)),
 
-            // flow for passkeys-username
-            AuthenticationFlowBuilder flowBuilder7 = builder
-                    .addAuthenticationFlow("passkeys-username", "passkeys username", "basic-flow", true, false);
-            flowBuilder7.addAuthenticationExecutionWithAuthenticator("auth-cookie", "ALTERNATIVE", 10, false);
-            flowBuilder7.addAuthenticationExecutionWithAuthenticator("auth-spnego", "DISABLED", 20, false);
-            flowBuilder7.addAuthenticationExecutionWithAuthenticator("identity-provider-redirector", "DISABLED", 25, false);
-            flowBuilder7.addAuthenticationExecutionWithAliasFlow("browser-webauthn-organization", "ALTERNATIVE", 26, false);
-            flowBuilder7.addAuthenticationExecutionWithAliasFlow("passkeys-username-forms", "ALTERNATIVE", 30, false);
+                    AuthenticationFlowBuilder.create("passkeys-username", "passkeys username", "basic-flow", true, false)
+                            .authenticationExecutions(AuthenticationExecutionExportBuilder.authenticator("auth-cookie", "ALTERNATIVE", 10, false),
+                                AuthenticationExecutionExportBuilder.authenticator("auth-spnego", "DISABLED", 20, false),
+                                AuthenticationExecutionExportBuilder.authenticator("identity-provider-redirector", "DISABLED", 25, false),
+                                AuthenticationExecutionExportBuilder.alias("browser-webauthn-organization", "ALTERNATIVE", 26, false),
+                                AuthenticationExecutionExportBuilder.alias("passkeys-username-forms", "ALTERNATIVE", 30, false))
+            );
 
             RequiredActionProviderRepresentation actionRep1 = new RequiredActionProviderRepresentation();
             actionRep1.setAlias("webauthn-register");
@@ -451,7 +451,7 @@ public abstract class AbstractWebAuthnVirtualTest implements UseVirtualAuthentic
             actionRep1.setPriority(51);
             actionRep1.setConfig(Collections.emptyMap());
 
-            builder.requiredAction(actionRep1);
+            builder.requiredActions(actionRep1);
 
             RequiredActionProviderRepresentation actionRep2 = new RequiredActionProviderRepresentation();
             actionRep2.setAlias("webauthn-register-passwordless");
@@ -462,7 +462,7 @@ public abstract class AbstractWebAuthnVirtualTest implements UseVirtualAuthentic
             actionRep2.setPriority(52);
             actionRep2.setConfig(Collections.emptyMap());
 
-            builder.requiredAction(actionRep2);
+            builder.requiredActions(actionRep2);
 
             builder.webAuthnPolicySignatureAlgorithms(List.of("ES256", "RS256", "RS1"))
                 .webAuthnPolicyAttestationConveyancePreference("not specified")
@@ -484,14 +484,14 @@ public abstract class AbstractWebAuthnVirtualTest implements UseVirtualAuthentic
 
             builder.browserFlow("browser-webauthn");
 
-            builder.addUser(USERNAME).password(PASSWORD).name("WebAuthn", "User")
-                    .email("webauthn-user@localhost").emailVerified(true);
+            builder.users(UserBuilder.create(USERNAME).password(PASSWORD).name("WebAuthn", "User")
+                    .email("webauthn-user@localhost").emailVerified(true));
 
-            builder.addUser("test-user@localhost")
+            builder.users(UserBuilder.create("test-user@localhost")
                     .enabled(true)
                     .email("test-user@localhost")
                     .name("Tom", "Brady")
-                    .password(PASSWORD);
+                    .password(PASSWORD));
 
             return builder;
         }

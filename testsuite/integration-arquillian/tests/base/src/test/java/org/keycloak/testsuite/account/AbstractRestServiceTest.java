@@ -84,10 +84,10 @@ public abstract class AbstractRestServiceTest extends AbstractTestRealmKeycloakT
     public void configureTestRealm(RealmRepresentation testRealm) {
         testRealm.getUsers().add(UserBuilder.create().username("no-account-access").password("password").build());
         testRealm.getUsers().add(UserBuilder.create().username("view-account-access").clientRoles("account", "view-profile").password("password").build());
-        testRealm.getUsers().add(UserBuilder.create().username("view-applications-access").roles("user", "offline_access").clientRoles("account", "view-applications").clientRoles("account", "manage-consent").password("password").build());
+        testRealm.getUsers().add(UserBuilder.create().username("view-applications-access").realmRoles("user", "offline_access").clientRoles("account", "view-applications").clientRoles("account", "manage-consent").password("password").build());
         testRealm.getUsers().add(UserBuilder.create().username("view-consent-access").clientRoles("account", "view-consent").password("password").build());
         testRealm.getUsers().add(UserBuilder.create().username("manage-consent-access").clientRoles("account", "manage-consent").clientRoles("account", "view-profile").password("password").build());
-        testRealm.getUsers().add(UserBuilder.create().username("manage-account-access").clientRoles("account", "view-profile").clientRoles("account", "manage-account").roles("user", "offline_access").password("password").build());
+        testRealm.getUsers().add(UserBuilder.create().username("manage-account-access").clientRoles("account", "view-profile").clientRoles("account", "manage-account").realmRoles("user", "offline_access").password("password").build());
 
         org.keycloak.representations.idm.ClientRepresentation inUseApp = ClientBuilder.create().clientId("in-use-client")
                 .id(KeycloakModelUtils.generateId())

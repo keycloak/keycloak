@@ -3,7 +3,6 @@ package org.keycloak.scim.resource.schema.attribute;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 
 import org.keycloak.common.util.TriConsumer;
@@ -24,13 +23,13 @@ public class AttributeMapper<M extends Model, R extends ResourceTypeRepresentati
     private final TriConsumer<M, String, ?> modelSetter;
     private TriConsumer<M, String, ?> modelRemover;
     private TriConsumer<M, String, ?> modelAdder;
-    private final BiConsumer<R, ?> representationSetter;
+    private final TriConsumer<Attribute<M, R>, R, ?> representationSetter;
 
-    AttributeMapper(TriConsumer<M, String, ?> modelSetter, BiConsumer<R, ?> representationSetter) {
+    AttributeMapper(TriConsumer<M, String, ?> modelSetter, TriConsumer<Attribute<M, R>, R, ?> representationSetter) {
         this(modelSetter, representationSetter, null, null);
     }
 
-    AttributeMapper(TriConsumer<M, String, ?> modelSetter, BiConsumer<R, ?> representationSetter, TriConsumer<M, String, ?> modelRemover, TriConsumer<M, String, ?> modelAdder) {
+    AttributeMapper(TriConsumer<M, String, ?> modelSetter, TriConsumer<Attribute<M, R>, R, ?> representationSetter, TriConsumer<M, String, ?> modelRemover, TriConsumer<M, String, ?> modelAdder) {
         this.modelSetter = modelSetter;
         this.representationSetter = representationSetter;
         this.modelRemover = modelRemover;
@@ -39,7 +38,7 @@ public class AttributeMapper<M extends Model, R extends ResourceTypeRepresentati
 
     public void setValue(R representation, Object value) {
         if (representationSetter != null) {
-            ((BiConsumer<R, Object>) representationSetter).accept(representation, value);
+            ((TriConsumer<Attribute<M, R>, R, Object>) representationSetter).accept(attribute, representation, value);
         }
     }
 

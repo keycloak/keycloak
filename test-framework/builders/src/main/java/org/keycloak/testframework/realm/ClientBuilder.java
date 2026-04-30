@@ -1,7 +1,6 @@
 package org.keycloak.testframework.realm;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -149,8 +148,8 @@ public class ClientBuilder extends Builder<ClientRepresentation> {
         return this;
     }
 
-    public ClientBuilder removeAttributes(String... key) {
-        rep.setAttributes(removeKeys(rep.getAttributes(), key));
+    public ClientBuilder removeAttributes(String... keys) {
+        rep.setAttributes(removeKeys(rep.getAttributes(), keys));
         return this;
     }
 
@@ -161,12 +160,6 @@ public class ClientBuilder extends Builder<ClientRepresentation> {
 
     public ClientBuilder optionalClientScopes(String... optionalClientScopes) {
         rep.setOptionalClientScopes(combine(rep.getOptionalClientScopes(), optionalClientScopes));
-        return this;
-    }
-
-    @Deprecated
-    public ClientBuilder protocolMappers(List<ProtocolMapperRepresentation> mappers) {
-        rep.setProtocolMappers(combine(rep.getProtocolMappers(), mappers));
         return this;
     }
 

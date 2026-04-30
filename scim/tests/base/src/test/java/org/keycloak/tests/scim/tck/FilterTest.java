@@ -706,6 +706,8 @@ public class FilterTest extends AbstractScimTest {
         user.setFirstName(givenName);
         user.setLastName(familyName);
         user = client.users().create(user);
+        assertNotNull(user);
+        user = client.users().get(user.getId());
         userIdsToRemove.add(user.getId());
         return user;
     }

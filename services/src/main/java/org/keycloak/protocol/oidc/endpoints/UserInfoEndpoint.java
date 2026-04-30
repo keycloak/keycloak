@@ -150,7 +150,7 @@ public class UserInfoEndpoint {
                 MultivaluedMap<String, String> formParams = request.getDecodedFormParameters();
                 checkAccessTokenDuplicated(formParams);
                 String accessToken = formParams.getFirst(OAuth2Constants.ACCESS_TOKEN);
-                authHeader = accessToken == null ? null : new AppAuthManager.AuthHeader(AppAuthManager.BEARER, accessToken);
+                authHeader = accessToken == null ? null : new AppAuthManager.AuthHeader(TokenUtil.TOKEN_TYPE_BEARER, accessToken);
                 authorization(authHeader);
             }
         } catch (IllegalArgumentException e) {

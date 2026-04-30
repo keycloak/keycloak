@@ -52,6 +52,7 @@ import org.keycloak.representations.userprofile.config.UPAttribute;
 import org.keycloak.representations.userprofile.config.UPAttributePermissions;
 import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.testframework.realm.ClientBuilder;
+import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
@@ -66,7 +67,6 @@ import org.keycloak.testsuite.util.AdminEventPaths;
 import org.keycloak.testsuite.util.AssertAdminEvents;
 import org.keycloak.testsuite.util.DroneUtils;
 import org.keycloak.testsuite.util.HtmlUnitBrowser;
-import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.WaitUtils;
 import org.keycloak.userprofile.UserProfileConstants;
 
@@ -341,9 +341,9 @@ public abstract class AbstractX509AuthenticationTest extends AbstractTestRealmKe
         testRealm.setBruteForceProtected(true);
         testRealm.setFailureFactor(2);
 
-        RealmBuilder.edit(testRealm)
-                .user(user)
-                .client(app);
+        RealmBuilder.update(testRealm)
+                .users(user)
+                .clients(app);
     }
 
     @Override

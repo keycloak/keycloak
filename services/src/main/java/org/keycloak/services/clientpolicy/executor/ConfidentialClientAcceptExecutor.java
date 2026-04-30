@@ -58,13 +58,13 @@ public class ConfidentialClientAcceptExecutor implements ClientPolicyExecutorPro
     private void checkIsConfidentialClient() throws ClientPolicyException {
         ClientModel client = session.getContext().getClient();
         if (client == null) {
-            throw new ClientPolicyException(OAuthErrorException.INVALID_CLIENT, "invalid client access type");
+            throw new ClientPolicyException(OAuthErrorException.INVALID_CLIENT, "no client in context");
         }
         if (client.isPublicClient()) {
-            throw new ClientPolicyException(OAuthErrorException.INVALID_CLIENT, "invalid client access type");
+            throw new ClientPolicyException(OAuthErrorException.INVALID_CLIENT, "invalid client access type: public");
         }
         if (client.isBearerOnly()) {
-            throw new ClientPolicyException(OAuthErrorException.INVALID_CLIENT, "invalid client access type");
+            throw new ClientPolicyException(OAuthErrorException.INVALID_CLIENT, "invalid client access type: bearer only");
         }
     }
 }

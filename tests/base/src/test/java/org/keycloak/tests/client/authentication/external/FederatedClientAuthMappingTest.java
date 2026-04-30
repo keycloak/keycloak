@@ -15,10 +15,10 @@ import org.keycloak.testframework.oauth.OAuthIdentityProvider;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthIdentityProvider;
 import org.keycloak.testframework.realm.ClientBuilder;
+import org.keycloak.testframework.realm.IdentityProviderBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
-import org.keycloak.testsuite.util.IdentityProviderBuilder;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
 import org.junit.jupiter.api.Assertions;
@@ -84,29 +84,31 @@ public class FederatedClientAuthMappingTest {
 
         @Override
         public RealmBuilder configure(RealmBuilder realm) {
-            realm.identityProvider(
+            realm.identityProviders(
                     IdentityProviderBuilder.create()
                             .providerId(OIDCIdentityProviderFactory.PROVIDER_ID)
                             .alias(IDP_ALIAS)
-                            .setAttribute("issuer", "http://127.0.0.1:8500")
-                            .setAttribute(OIDCIdentityProviderConfig.USE_JWKS_URL, "true")
-                            .setAttribute(OIDCIdentityProviderConfig.JWKS_URL, "http://127.0.0.1:8500/idp/jwks")
-                            .setAttribute(OIDCIdentityProviderConfig.VALIDATE_SIGNATURE, "true")
-                            .setAttribute(OIDCIdentityProviderConfig.SUPPORTS_CLIENT_ASSERTIONS, "true")
+                            .attribute("issuer", "http://127.0.0.1:8500")
+                            .attribute(OIDCIdentityProviderConfig.USE_JWKS_URL, "true")
+                            .attribute(OIDCIdentityProviderConfig.JWKS_URL, "http://127.0.0.1:8500/idp/jwks")
+                            .attribute(OIDCIdentityProviderConfig.VALIDATE_SIGNATURE, "true")
+                            .attribute(OIDCIdentityProviderConfig.SUPPORTS_CLIENT_ASSERTIONS, "true")
                             .build());
 
-            createClient(realm.addClient("internal-simple-1"), "external-simple-1");
-            createClient(realm.addClient("internal-simple-2"), "external-simple-2");
-            createClient(realm.addClient("internal-urn"), "spiffe://client/urn");
-            createClient(realm.addClient("internal-uuid"), "bf4c696e-89dc-4e40-a833-90fa5f8786e0");
-            createClient(realm.addClient("internal-duplicated-1"), "external-duplicated");
-            createClient(realm.addClient("internal-duplicated-2"), "external-duplicated");
+            realm.clients(
+                    createClient("internal-simple-1", "external-simple-1"),
+                    createClient("internal-simple-2", "external-simple-2"),
+                    createClient("internal-urn", "spiffe://client/urn"),
+                    createClient("internal-uuid", "bf4c696e-89dc-4e40-a833-90fa5f8786e0"),
+                    createClient("internal-duplicated-1", "external-duplicated"),
+                    createClient("internal-duplicated-2", "external-duplicated")
+            );
 
             return realm;
         }
 
-        private static void createClient(ClientBuilder client, String externalId) {
-            client.serviceAccountsEnabled(true)
+        private static ClientBuilder createClient(String clientId, String externalId) {
+            return ClientBuilder.create(clientId).serviceAccountsEnabled(true)
                     .authenticatorType(FederatedJWTClientAuthenticator.PROVIDER_ID)
                     .attribute(FederatedJWTClientAuthenticator.JWT_CREDENTIAL_ISSUER_KEY, IDP_ALIAS)
                     .attribute(FederatedJWTClientAuthenticator.JWT_CREDENTIAL_SUBJECT_KEY, externalId);

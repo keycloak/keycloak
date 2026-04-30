@@ -22,6 +22,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Stream;
 
+import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
@@ -260,6 +261,10 @@ public class InfinispanOrganizationProvider implements OrganizationProvider {
 
     @Override
     public Stream<OrganizationModel> getByMember(UserModel member) {
+        if (AdminPermissionsSchema.SCHEMA.isAdminPermissionsEnabled(getRealm())) {
+            return getCacheDelegates(getDelegate().getByMember(member));
+        }
+
         if (userCache == null) {
             return getDelegate().getByMember(member);
         }

@@ -39,6 +39,8 @@ import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.realm.AuthenticationExecutionBuilder;
+import org.keycloak.testframework.realm.AuthenticationFlowBuilder;
 import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AssertEvents;
@@ -52,8 +54,6 @@ import org.keycloak.testsuite.pages.RegisterPage;
 import org.keycloak.testsuite.pages.TermsAndConditionsPage;
 import org.keycloak.testsuite.rest.representation.AuthenticatorState;
 import org.keycloak.testsuite.updaters.Creator;
-import org.keycloak.testsuite.util.ExecutionBuilder;
-import org.keycloak.testsuite.util.FlowBuilder;
 import org.keycloak.testsuite.util.RealmRepUtil;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
@@ -106,7 +106,7 @@ public class CustomFlowTest extends AbstractFlowTest {
             return;
         }
 
-        AuthenticationFlowRepresentation flow = FlowBuilder.create()
+        AuthenticationFlowRepresentation flow = AuthenticationFlowBuilder.create()
                                                            .alias("dummy")
                                                            .description("dummy pass through flow")
                                                            .providerId("basic-flow")
@@ -123,7 +123,7 @@ public class CustomFlowTest extends AbstractFlowTest {
         // refresh flow to find its id
         flow = findFlowByAlias(flow.getAlias());
 
-        AuthenticationExecutionRepresentation execution = ExecutionBuilder.create()
+        AuthenticationExecutionRepresentation execution = AuthenticationExecutionBuilder.create()
                                                             .parentFlow(flow.getId())
                                                             .requirement(AuthenticationExecutionModel.Requirement.REQUIRED.toString())
                                                             .authenticator(PassThroughAuthenticator.PROVIDER_ID)
@@ -132,7 +132,7 @@ public class CustomFlowTest extends AbstractFlowTest {
                                                             .build();
         managedRealm.admin().flows().addExecution(execution);
 
-        flow = FlowBuilder.create()
+        flow = AuthenticationFlowBuilder.create()
                         .alias("dummy registration")
                         .description("dummy pass through registration")
                         .providerId("basic-flow")
@@ -146,7 +146,7 @@ public class CustomFlowTest extends AbstractFlowTest {
         // refresh flow to find its id
         flow = findFlowByAlias(flow.getAlias());
 
-        execution = ExecutionBuilder.create()
+        execution = AuthenticationExecutionBuilder.create()
                         .parentFlow(flow.getId())
                         .requirement(AuthenticationExecutionModel.Requirement.REQUIRED.toString())
                         .authenticator(PassThroughRegistration.PROVIDER_ID)
@@ -155,7 +155,7 @@ public class CustomFlowTest extends AbstractFlowTest {
                         .build();
         managedRealm.admin().flows().addExecution(execution);
 
-        AuthenticationFlowRepresentation clientFlow = FlowBuilder.create()
+        AuthenticationFlowRepresentation clientFlow = AuthenticationFlowBuilder.create()
                                                            .alias("client-dummy")
                                                            .description("dummy pass through flow")
                                                            .providerId(AuthenticationFlow.CLIENT_FLOW)
@@ -171,7 +171,7 @@ public class CustomFlowTest extends AbstractFlowTest {
         // refresh flow to find its id
         clientFlow = findFlowByAlias(clientFlow.getAlias());
 
-        execution = ExecutionBuilder.create()
+        execution = AuthenticationExecutionBuilder.create()
                         .parentFlow(clientFlow.getId())
                         .requirement(AuthenticationExecutionModel.Requirement.REQUIRED.toString())
                         .authenticator(PassThroughClientAuthenticator.PROVIDER_ID)
@@ -227,7 +227,7 @@ public class CustomFlowTest extends AbstractFlowTest {
             response.close();
         }
 
-        AuthenticationExecutionRepresentation execution = ExecutionBuilder.create()
+        AuthenticationExecutionRepresentation execution = AuthenticationExecutionBuilder.create()
                 .parentFlow(flowId)
                 .requirement(AuthenticationExecutionModel.Requirement.REQUIRED.toString())
                 .authenticator(ClickThroughAuthenticator.PROVIDER_ID)

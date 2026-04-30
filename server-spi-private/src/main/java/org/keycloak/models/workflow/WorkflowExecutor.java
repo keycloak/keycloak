@@ -34,6 +34,8 @@ final class WorkflowExecutor {
                 .whenComplete((result, error) -> {
                     if (error instanceof TimeoutException) {
                         log.warnf("Timeout occurred while processing workflow task: %s", task);
+                    } else if (error != null) {
+                        log.warnf(error, "Error processing workflow task: %s", task);
                     }
                     task.cancel(error);
                 });

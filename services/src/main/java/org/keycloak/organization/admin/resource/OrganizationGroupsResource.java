@@ -101,7 +101,7 @@ public class OrganizationGroupsResource {
         @APIResponse(responseCode = "409", description = "Conflict")
     })
     public Response addTopLevelGroup(GroupRepresentation rep) {
-        auth.orgs().requireManage();
+        auth.orgs().requireManage(organization);
         try {
             String groupName = rep.getName();
 
@@ -195,6 +195,8 @@ public class OrganizationGroupsResource {
                                                  @QueryParam("briefRepresentation") @DefaultValue("true") boolean briefRepresentation,
                                                  @QueryParam("populateHierarchy") @DefaultValue("false") boolean populateHierarchy,
                                                  @QueryParam("subGroupsCount") @DefaultValue("false") boolean subGroupsCount) {
+        auth.orgs().requireView(organization);
+
         Stream<GroupModel> groups;
         if (Objects.nonNull(searchQuery)) {
             Map<String, String> attributes = SearchQueryUtils.getFields(searchQuery);
@@ -236,6 +238,8 @@ public class OrganizationGroupsResource {
     })
     public GroupRepresentation getGroupByPath(@PathParam("path") String path,
                                               @Parameter(description = "Whether to return the count of subgroups (default: false)") @QueryParam("subGroupsCount") @DefaultValue("false") boolean subGroupsCount) {
+        auth.orgs().requireView(organization);
+
         GroupModel found = KeycloakModelUtils.findGroupByPath(session, realm, organization, path);
         if (found == null) {
             throw new NotFoundException("Group path does not exist");
@@ -249,6 +253,8 @@ public class OrganizationGroupsResource {
 
     @Path("{group-id}")
     public OrganizationGroupResource getGroupById(@PathParam("group-id") String id) {
+        auth.orgs().requireView(organization);
+
         GroupModel group = realm.getGroupById(id);
 
         if (group == null) {

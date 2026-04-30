@@ -1,6 +1,5 @@
 package org.keycloak.testframework.realm;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -65,7 +64,8 @@ public class GroupBuilder extends Builder<GroupRepresentation> {
     }
 
     public GroupBuilder subGroups(String... subGroups) {
-        return subGroups(Arrays.stream(subGroups).map(GroupBuilder::create).toArray(GroupBuilder[]::new));
+        rep.setSubGroups(combine(GroupBuilder::create, rep.getSubGroups(), subGroups));
+        return this;
     }
 
 }

@@ -41,10 +41,9 @@ import org.keycloak.representations.idm.authorization.PermissionRequest;
 import org.keycloak.representations.idm.authorization.ResourceOwnerRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.testframework.realm.ClientBuilder;
-import org.keycloak.testframework.realm.RoleBuilder;
+import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.UserBuilder;
-import org.keycloak.testsuite.util.RealmBuilder;
-import org.keycloak.testsuite.util.RolesBuilder;
+import org.keycloak.testsuite.events.TestEventsListenerProviderFactory;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -60,31 +59,28 @@ public abstract class AbstractResourceServerTest extends AbstractAuthzTest {
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
         testRealms.add(RealmBuilder.create().name(REALM_NAME)
-                .roles(RolesBuilder.create()
-                        .realmRole(RoleBuilder.create().name("uma_authorization").build())
-                        .realmRole(RoleBuilder.create().name("uma_protection").build())
-                )
-                .user(UserBuilder.create().username("marta").password("password")
-                        .roles("uma_authorization", "uma_protection")
+                .realmRoles("uma_authorization", "uma_protection")
+                .users(UserBuilder.create().username("marta").password("password")
+                        .realmRoles("uma_authorization", "uma_protection")
                         .clientRoles("resource-server-test", "uma_protection"))
-                .user(UserBuilder.create().username("alice").password("password")
-                        .roles("uma_authorization", "uma_protection")
+                .users(UserBuilder.create().username("alice").password("password")
+                        .realmRoles("uma_authorization", "uma_protection")
                         .clientRoles("resource-server-test", "uma_protection"))
-                .user(UserBuilder.create().username("kolo").password("password")
-                        .roles("uma_authorization", "uma_protection")
+                .users(UserBuilder.create().username("kolo").password("password")
+                        .realmRoles("uma_authorization", "uma_protection")
                         .clientRoles("resource-server-test", "uma_protection")
                 )
-                .client(ClientBuilder.create().clientId("resource-server-test")
+                .clients(ClientBuilder.create().clientId("resource-server-test")
                         .secret("secret")
                         .authorizationServicesEnabled(true)
                         .redirectUris("http://localhost/resource-server-test")
                         .defaultRoles("uma_protection")
                         .directAccessGrantsEnabled()
                         .serviceAccountsEnabled(true))
-                .client(ClientBuilder.create().clientId("test-app")
+                .clients(ClientBuilder.create().clientId("test-app")
                         .redirectUris("http://localhost:8180/auth/realms/master/app/auth", "https://localhost:8543/auth/realms/master/app/auth")
                         .publicClient())
-                .testEventListener()
+                .eventsListeners(TestEventsListenerProviderFactory.PROVIDER_ID)
                 .build());
     }
 

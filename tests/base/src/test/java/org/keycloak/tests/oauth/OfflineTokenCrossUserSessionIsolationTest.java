@@ -23,9 +23,11 @@ import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
+import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testframework.ui.annotations.InjectPage;
@@ -70,24 +72,24 @@ public class OfflineTokenCrossUserSessionIsolationTest {
         public RealmBuilder configure(RealmBuilder realm) {
             realm.eventsEnabled(true);
 
-            realm.addClient("offline-client")
+            realm.clients(ClientBuilder.create("offline-client")
                     .secret("secret1")
                     .redirectUris("*")
-                    .directAccessGrantsEnabled(true);
+                    .directAccessGrantsEnabled(true));
 
-            realm.addUser("test-user@localhost")
+            realm.users(UserBuilder.create("test-user@localhost")
                     .name("Test", "User")
                     .email("test-user@localhost")
                     .emailVerified(true)
                     .password("password")
-                    .roles("offline_access");
+                    .realmRoles("offline_access"));
 
-            realm.addUser("offline-user2@localhost")
+            realm.users(UserBuilder.create("offline-user2@localhost")
                     .name("Offline", "User2")
                     .email("offline-user2@localhost")
                     .emailVerified(true)
                     .password("password")
-                    .roles("offline_access");
+                    .realmRoles("offline_access"));
 
             return realm;
         }

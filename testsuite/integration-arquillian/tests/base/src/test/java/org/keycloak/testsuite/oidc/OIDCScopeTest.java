@@ -87,7 +87,7 @@ public class OIDCScopeTest extends AbstractOIDCScopeTest {
                 .password("password")
                 .clientRoles("account", "manage-account")
                 .clientRoles("account", "view-profile")
-                .roles("role-1", "role-2")
+                .realmRoles("role-1", "role-2")
                 .build();
 
         user.setEmailVerified(true);
@@ -126,7 +126,7 @@ public class OIDCScopeTest extends AbstractOIDCScopeTest {
                 .username("role-1-user")
                 .enabled(true)
                 .password("password")
-                .roles("role-1")
+                .realmRoles("role-1")
                 .build();
         testRealm.getUsers().add(user);
 
@@ -134,7 +134,7 @@ public class OIDCScopeTest extends AbstractOIDCScopeTest {
                 .username("role-2-user")
                 .enabled(true)
                 .password("password")
-                .roles("role-2")
+                .realmRoles("role-2")
                 .build();
         testRealm.getUsers().add(user);
 
@@ -142,7 +142,7 @@ public class OIDCScopeTest extends AbstractOIDCScopeTest {
                 .username("role-parent-user")
                 .enabled(true)
                 .password("password")
-                .roles("role-parent")
+                .realmRoles("role-parent")
                 .build();
         testRealm.getUsers().add(user);
 

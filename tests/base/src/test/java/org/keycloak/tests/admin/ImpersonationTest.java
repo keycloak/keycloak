@@ -63,6 +63,7 @@ import org.keycloak.testframework.oauth.TestApp;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectTestApp;
 import org.keycloak.testframework.realm.ClientBuilder;
+import org.keycloak.testframework.realm.CredentialBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.ManagedUser;
 import org.keycloak.testframework.realm.RealmBuilder;
@@ -80,7 +81,6 @@ import org.keycloak.testframework.ui.page.LoginPage;
 import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.tests.utils.admin.AdminApiUtil;
-import org.keycloak.testsuite.util.CredentialBuilder;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpUriRequest;
@@ -154,7 +154,7 @@ public class ImpersonationTest {
         }
 
         UserResource user = masterRealm.admin().users().get(userId);
-        user.resetPassword(CredentialBuilder.create().password("password").build());
+        user.resetPassword(CredentialBuilder.password("password").build());
 
         ClientResource testRealmClient = AdminApiUtil.findClientByClientId(masterRealm.admin(), managedRealm.getName() + "-realm");
 
@@ -477,22 +477,22 @@ public class ImpersonationTest {
 
         @Override
         public RealmBuilder configure(RealmBuilder config) {
-            config.addClient("myclient").clientId("myclient")
-                    .publicClient(true).directAccessGrantsEnabled(true);
+            config.clients(ClientBuilder.create("myclient").clientId("myclient")
+                    .publicClient(true).directAccessGrantsEnabled(true));
 
-            config.addUser("realm-admin")
+            config.users(UserBuilder.create("realm-admin")
                     .password("password").name("My", "Test Admin")
                     .email("my-test-admin@email.org").emailVerified(true)
-                    .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.REALM_ADMIN);
-            config.addUser("impersonator")
+                    .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.REALM_ADMIN));
+            config.users(UserBuilder.create("impersonator")
                     .password("password").name("My", "Test Impersonator")
                     .email("my-test-impersonator@email.org").emailVerified(true)
                     .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.IMPERSONATION)
-                    .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.VIEW_USERS);
-            config.addUser("bad-impersonator")
+                    .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.VIEW_USERS));
+            config.users(UserBuilder.create("bad-impersonator")
                     .password("password").name("My", "Test Bad Impersonator")
                     .email("my-test-bad-impersonator@email.org").emailVerified(true)
-                    .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.MANAGE_USERS);
+                    .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.MANAGE_USERS));
 
             return config;
         }

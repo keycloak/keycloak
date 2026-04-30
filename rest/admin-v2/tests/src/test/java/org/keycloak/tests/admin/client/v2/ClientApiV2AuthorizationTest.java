@@ -29,10 +29,12 @@ import org.keycloak.testframework.annotations.InjectHttpClient;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.annotations.TestSetup;
+import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.ManagedClient;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.server.KeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 
@@ -698,76 +700,73 @@ public class ClientApiV2AuthorizationTest extends AbstractClientApiV2Test {
         public RealmBuilder configure(RealmBuilder realm) {
             realm.name("authztest");
             realm.adminPermissionsEnabled(true);
-            realm.addClient("test-client")
-                    .secret("test-secret")
-                    .directAccessGrantsEnabled(true);
+            realm.clients(ClientBuilder.create("test-client").secret("test-secret").directAccessGrantsEnabled(true));
 
             // Role: realm-admin
-            realm.addUser("realm-admin")
+            realm.users(UserBuilder.create("realm-admin")
                     .name("Realm", "Admin")
                     .email("realmadmin@localhost")
                     .emailVerified(true)
                     .password("password")
-                    .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.REALM_ADMIN);
+                    .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.REALM_ADMIN));
             CURRENT_USERS.add("realm-admin");
 
             // Role: view-clients
-            realm.addUser("view-clients")
+            realm.users(UserBuilder.create("view-clients")
                     .name("View", "Clients")
                     .email("viewclients@localhost")
                     .emailVerified(true)
                     .password("password")
-                    .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.VIEW_CLIENTS);
+                    .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.VIEW_CLIENTS));
             CURRENT_USERS.add("view-clients");
 
             // Role: manage-clients
-            realm.addUser("manage-clients")
+            realm.users(UserBuilder.create("manage-clients")
                     .name("Manage", "Clients")
                     .email("manageclients@localhost")
                     .emailVerified(true)
                     .password("password")
-                    .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.MANAGE_CLIENTS);
+                    .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.MANAGE_CLIENTS));
             CURRENT_USERS.add("manage-clients");
 
             // Role: query-clients
-            realm.addUser("query-clients")
+            realm.users(UserBuilder.create("query-clients")
                     .name("Query", "Clients")
                     .email("queryclients@localhost")
                     .emailVerified(true)
                     .password("password")
-                    .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.QUERY_CLIENTS);
+                    .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.QUERY_CLIENTS));
             CURRENT_USERS.add("query-clients");
 
             // NO role
-            realm.addUser("no-access")
+            realm.users(UserBuilder.create("no-access")
                     .name("No", "Access")
                     .email("noaccess@localhost")
                     .emailVerified(true)
-                    .password("password");
+                    .password("password"));
             CURRENT_USERS.add("no-access");
 
             // Role: manage-realm
-            realm.addUser("manage-realm")
+            realm.users(UserBuilder.create("manage-realm")
                     .name("Manage", "Realm")
                     .email("managerealm@localhost")
                     .emailVerified(true)
                     .password("password")
-                    .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.MANAGE_REALM);
+                    .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.MANAGE_REALM));
             CURRENT_USERS.add("manage-realm");
 
             // FGAP v2
             // fgap-user has QUERY_CLIENTS role but will be granted fine-grained permissions for specific clients
-            realm.addUser("fgap-user")
+            realm.users(UserBuilder.create("fgap-user")
                     .id(FGAP_USER_ID)
                     .name("FGAP", "User")
                     .email("fgapuser@localhost")
                     .emailVerified(true)
                     .password("password")
-                    .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.QUERY_CLIENTS);
+                    .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.QUERY_CLIENTS));
             CURRENT_USERS.add("fgap-user");
 
-            realm.addClient("fgap-denied-client")
-                    .enabled(true);
+            realm.clients(ClientBuilder.create("fgap-denied-client").enabled(true));
 
             return realm;
         }

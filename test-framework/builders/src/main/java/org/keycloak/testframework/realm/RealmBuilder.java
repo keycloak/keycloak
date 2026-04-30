@@ -1,19 +1,16 @@
 package org.keycloak.testframework.realm;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
 import org.keycloak.representations.idm.ClientPoliciesRepresentation;
 import org.keycloak.representations.idm.ClientPolicyRepresentation;
 import org.keycloak.representations.idm.ClientProfileRepresentation;
 import org.keycloak.representations.idm.ClientProfilesRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
-import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -21,24 +18,24 @@ import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.RolesRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.testframework.util.Collections;
 
-public class RealmBuilder {
-
-    private final RealmRepresentation rep;
+public class RealmBuilder extends Builder<RealmRepresentation> {
 
     private RealmBuilder(RealmRepresentation rep) {
-        this.rep = rep;
+        super(rep);
     }
 
     public static RealmBuilder create() {
-        RealmRepresentation rep = new RealmRepresentation();
-        rep.setEnabled(true);
-        return new RealmBuilder(rep);
+        return new RealmBuilder(new RealmRepresentation()).enabled(true);
     }
 
     public static RealmBuilder update(RealmRepresentation rep) {
         return new RealmBuilder(rep);
+    }
+
+    public RealmBuilder enabled(boolean enabled) {
+        rep.setEnabled(enabled);
+        return this;
     }
 
     public RealmBuilder id(String id) {
@@ -56,63 +53,107 @@ public class RealmBuilder {
         return this;
     }
 
-    public RealmBuilder client(ClientRepresentation client) {
-        rep.setClients(Collections.combine(rep.getClients(), client));
+    @Deprecated
+    public RealmBuilder publicKey(String publicKey) {
+        rep.setPublicKey(publicKey);
         return this;
     }
 
-    public ClientBuilder addClient(String clientId) {
-        ClientRepresentation client = new ClientRepresentation();
-        rep.setClients(Collections.combine(rep.getClients(), client));
-        return ClientBuilder.update(client).enabled(true).clientId(clientId);
+    @Deprecated
+    public RealmBuilder privateKey(String privateKey) {
+        rep.setPrivateKey(privateKey);
+        return this;
     }
 
-    public UserBuilder addUser(String username) {
-        UserRepresentation user = new UserRepresentation();
-        rep.setUsers(Collections.combine(rep.getUsers(), user));
-        return UserBuilder.update(user).enabled(true).username(username);
+    public RealmBuilder clients(ClientRepresentation... clients) {
+        rep.setClients(combine(rep.getClients(), clients));
+        return this;
     }
 
-    public UserBuilder addUser(UserRepresentation user) {
-        rep.setUsers(Collections.combine(rep.getUsers(), user));
-        return UserBuilder.update(user);
+    public RealmBuilder clients(ClientBuilder... clients) {
+        rep.setClients(combine(rep.getClients(), clients));
+        return this;
     }
 
-    public GroupBuilder addGroup(String name) {
-        GroupRepresentation group = new GroupRepresentation();
-        rep.setGroups(Collections.combine(rep.getGroups(), group));
-        return GroupBuilder.update(group).name(name);
+    public RealmBuilder users(UserRepresentation... users) {
+        rep.setUsers(combine(rep.getUsers(), users));
+        return this;
     }
 
-    public RoleBuilder addRole(String name) {
-        RoleRepresentation role = new RoleRepresentation();
-        role.setName(name);
-        return addRole(role);
+    public RealmBuilder users(UserBuilder... users) {
+        rep.setUsers(combine(rep.getUsers(), users));
+        return this;
     }
 
-    public RoleBuilder addRole(RoleRepresentation roleRepresentation) {
-        if (rep.getRoles() == null) {
-            rep.setRoles(new RolesRepresentation());
-        }
-
-        rep.getRoles().setRealm(Collections.combine(rep.getRoles().getRealm(), roleRepresentation));
-        return RoleBuilder.update(roleRepresentation).name(roleRepresentation.getName());
+    public RealmBuilder groups(String... groups) {
+        rep.setGroups(combine(GroupBuilder::create, rep.getGroups(), groups));
+        return this;
     }
 
-    public RoleBuilder addClientRole(String clientName, String roleName) {
-        if (rep.getRoles() == null) {
-            rep.setRoles(new RolesRepresentation());
-        }
-
-        RoleRepresentation role = new RoleRepresentation();
-        rep.getRoles().setClient(Collections.combine(rep.getRoles().getClient(), clientName, role));
-        return RoleBuilder.update(role).name(roleName);
+    public RealmBuilder groups(GroupBuilder... groups) {
+        rep.setGroups(combine(rep.getGroups(), groups));
+        return this;
     }
 
-    public AuthenticationFlowBuilder addAuthenticationFlow(String alias, String description, String providerId, boolean topLevel, boolean builtIn) {
-        AuthenticationFlowRepresentation flow = new AuthenticationFlowRepresentation();
-        rep.setAuthenticationFlows(Collections.combine(rep.getAuthenticationFlows(), flow));
-        return AuthenticationFlowBuilder.update(flow).alias(alias).description(description).providerId(providerId).topLevel(topLevel).builtIn(builtIn);
+    public RealmBuilder defaultGroups(String... groupsNames) {
+        rep.setDefaultGroups(combine(rep.getDefaultGroups(), groupsNames));
+        return this;
+    }
+
+    public RealmBuilder roles(String... roleNames) {
+        rep.setRoles(createIfNull(rep.getRoles(), RolesRepresentation::new));
+        rep.getRoles().setRealm(combine(RoleBuilder::create, rep.getRoles().getRealm(), roleNames));
+        return this;
+    }
+
+    public RealmBuilder realmRoles(String... realmRoles) {
+        rep.setRoles(createIfNull(rep.getRoles(), RolesRepresentation::new));
+        rep.getRoles().setRealm(combine(RoleBuilder::create, rep.getRoles().getRealm(), realmRoles));
+        return this;
+    }
+
+    public RealmBuilder realmRoles(RoleBuilder... realmRoles) {
+        rep.setRoles(createIfNull(rep.getRoles(), RolesRepresentation::new));
+        rep.getRoles().setRealm(combine(rep.getRoles().getRealm(), realmRoles));
+        return this;
+    }
+
+    public RealmBuilder realmRoles(RoleRepresentation... realmRoles) {
+        rep.setRoles(createIfNull(rep.getRoles(), RolesRepresentation::new));
+        rep.getRoles().setRealm(combine(rep.getRoles().getRealm(), realmRoles));
+        return this;
+    }
+
+    public RealmBuilder clientRoles(String client, String... clientRoles) {
+        rep.setRoles(createIfNull(rep.getRoles(), RolesRepresentation::new));
+        rep.getRoles().setClient(combine(RoleBuilder::create, rep.getRoles().getClient(), client, clientRoles));
+        return this;
+    }
+
+    public RealmBuilder clientRoles(String client, RoleBuilder... clientRoles) {
+        rep.setRoles(createIfNull(rep.getRoles(), RolesRepresentation::new));
+        rep.getRoles().setClient(combine(rep.getRoles().getClient(), client, clientRoles));
+        return this;
+    }
+
+    public RealmBuilder authenticationFlows(AuthenticationFlowBuilder... authenticationFlows) {
+        rep.setAuthenticationFlows(combine(rep.getAuthenticationFlows(), authenticationFlows));
+        return this;
+    }
+
+    public RealmBuilder identityProviders(IdentityProviderRepresentation... identityProviders) {
+        rep.setIdentityProviders(combine(rep.getIdentityProviders(), identityProviders));
+        return this;
+    }
+
+    public RealmBuilder identityProviders(IdentityProviderBuilder... identityProviders) {
+        rep.setIdentityProviders(combine(rep.getIdentityProviders(), identityProviders));
+        return this;
+    }
+
+    public RealmBuilder identityProviderMappers(IdentityProviderMapperRepresentation... identityProviderMappers) {
+        rep.setIdentityProviderMappers(combine(rep.getIdentityProviderMappers(), identityProviderMappers));
+        return this;
     }
 
     public RealmBuilder registrationEmailAsUsername(boolean registrationEmailAsUsername) {
@@ -161,60 +202,32 @@ public class RealmBuilder {
     }
 
     public RealmBuilder enabledEventTypes(String... enabledEventTypes) {
-        rep.setEnabledEventTypes(Collections.combine(rep.getEnabledEventTypes(), enabledEventTypes));
+        rep.setEnabledEventTypes(combine(rep.getEnabledEventTypes(), enabledEventTypes));
         return this;
     }
 
-    public RealmBuilder setEnabledEventTypes(String... enabledEventTypes) {
-        rep.setEnabledEventTypes(List.of(enabledEventTypes));
+    public RealmBuilder setEnabledEventTypes(List<String> enabledEventTypes) {
+        rep.setEnabledEventTypes(enabledEventTypes);
         return this;
     }
 
     public RealmBuilder eventsListeners(String... eventListeners) {
-        rep.setEventsListeners(Collections.combine(rep.getEventsListeners(), eventListeners));
+        rep.setEventsListeners(combine(rep.getEventsListeners(), eventListeners));
         return this;
     }
 
-    public RealmBuilder overwriteEventsListeners(String... eventListeners) {
-        rep.setEventsListeners(List.of(eventListeners));
+    public RealmBuilder removeEventListeners(String... eventListeners) {
+        rep.setEventsListeners(removeValues(rep.getEventsListeners(), eventListeners));
+        return this;
+    }
+
+    public RealmBuilder setEventsListeners(List<String> eventListeners) {
+        rep.setEventsListeners(eventListeners);
         return this;
     }
 
     public RealmBuilder eventsExpiration(long eventsExpiration) {
         rep.setEventsExpiration(eventsExpiration);
-        return this;
-    }
-
-    public RealmBuilder roles(String... roleNames) {
-        if (rep.getRoles() == null) {
-            rep.setRoles(new RolesRepresentation());
-        }
-        rep.getRoles().setRealm(Collections.combine(
-                rep.getRoles().getRealm(),
-                Arrays.stream(roleNames).map(r -> Representations.toRole(r, false))
-        ));
-        return this;
-    }
-
-    public RealmBuilder clientRoles(String client, String... clientRoles) {
-        if (rep.getRoles() == null) {
-            rep.setRoles(new RolesRepresentation());
-        }
-        rep.getRoles().setClient(Collections.combine(
-                rep.getRoles().getClient(),
-                client,
-                Arrays.stream(clientRoles).map(r -> Representations.toRole(r, true))
-        ));
-        return this;
-    }
-
-    public RealmBuilder groups(String... groupsNames) {
-        rep.setGroups(Collections.combine(rep.getGroups(), Arrays.stream(groupsNames).map(Representations::toGroup)));
-        return this;
-    }
-
-    public RealmBuilder defaultGroups(String... groupsNames) {
-        rep.setDefaultGroups(Collections.combine(rep.getDefaultGroups(), groupsNames));
         return this;
     }
 
@@ -224,7 +237,7 @@ public class RealmBuilder {
     }
 
     public RealmBuilder supportedLocales(String... supportedLocales) {
-        rep.setSupportedLocales(Collections.combine(rep.getSupportedLocales(), supportedLocales));
+        rep.setSupportedLocales(combine(rep.getSupportedLocales(), supportedLocales));
         return this;
     }
 
@@ -257,6 +270,11 @@ public class RealmBuilder {
         return this;
     }
 
+    public RealmBuilder accessTokenLifespan(int accessTokenLifespan) {
+        rep.setAccessTokenLifespan(accessTokenLifespan);
+        return this;
+    }
+
     public RealmBuilder ssoSessionIdleTimeout(Integer ssoSessionIdleTimeout) {
         rep.setSsoSessionIdleTimeout(ssoSessionIdleTimeout);
         return this;
@@ -282,8 +300,88 @@ public class RealmBuilder {
         return this;
     }
 
+    public RealmBuilder offlineSessionIdleTimeout(int offlineSessionIdleTimeout) {
+        rep.setOfflineSessionIdleTimeout(offlineSessionIdleTimeout);
+        return this;
+    }
+
+    public RealmBuilder offlineSessionMaxLifespan(int offlineSessionMaxLifespan) {
+        rep.setOfflineSessionMaxLifespan(offlineSessionMaxLifespan);
+        return this;
+    }
+
+    public RealmBuilder offlineSessionMaxLifespanEnabled(boolean offlineSessionMaxLifespanEnabled) {
+        rep.setOfflineSessionMaxLifespanEnabled(offlineSessionMaxLifespanEnabled);
+        return this;
+    }
+
+    public RealmBuilder accessCodeLifespan(int accessCodeLifespan) {
+        rep.setAccessCodeLifespan(accessCodeLifespan);
+        return this;
+    }
+
+    public RealmBuilder accessCodeLifespanUserAction(int accessCodeLifespanUserAction) {
+        rep.setAccessCodeLifespanUserAction(accessCodeLifespanUserAction);
+        return this;
+    }
+
     public RealmBuilder clientSessionIdleTimeout(Integer clientSessionIdleTimeout) {
         rep.setClientSessionIdleTimeout(clientSessionIdleTimeout);
+        return this;
+    }
+
+    public RealmBuilder clientSessionMaxLifespan(int clientSessionMaxLifespan) {
+        rep.setClientSessionMaxLifespan(clientSessionMaxLifespan);
+        return this;
+    }
+
+    public RealmBuilder clientOfflineSessionIdleTimeout(int clientOfflineSessionIdleTimeout) {
+        rep.setClientOfflineSessionIdleTimeout(clientOfflineSessionIdleTimeout);
+        return this;
+    }
+
+    public RealmBuilder clientOfflineSessionMaxLifespan(int clientOfflineSessionMaxLifespan) {
+        rep.setClientOfflineSessionMaxLifespan(clientOfflineSessionMaxLifespan);
+        return this;
+    }
+
+    public RealmBuilder notBefore(int i) {
+        rep.setNotBefore(i);
+        return this;
+    }
+
+    public RealmBuilder otpDigits(int i) {
+        rep.setOtpPolicyDigits(i);
+        return this;
+    }
+
+    public RealmBuilder otpPeriod(int i) {
+        rep.setOtpPolicyPeriod(i);
+        return this;
+    }
+
+    public RealmBuilder otpType(String type) {
+        rep.setOtpPolicyType(type);
+        return this;
+    }
+
+    public RealmBuilder otpAlgorithm(String algorithm) {
+        rep.setOtpPolicyAlgorithm(algorithm);
+        return this;
+    }
+
+    public RealmBuilder otpInitialCounter(int i) {
+        rep.setOtpPolicyInitialCounter(i);
+        return this;
+    }
+
+    public RealmBuilder otpLookAheadWindow(int i) {
+        rep.setOtpPolicyLookAheadWindow(i);
+        return this;
+    }
+
+    public RealmBuilder passwordPolicy(String passwordPolicy) {
+        rep.setPasswordPolicy(passwordPolicy);
         return this;
     }
 
@@ -304,16 +402,6 @@ public class RealmBuilder {
 
     public RealmBuilder sslRequired(String sslRequired) {
         rep.setSslRequired(sslRequired);
-        return this;
-    }
-
-    public RealmBuilder identityProvider(IdentityProviderRepresentation identityProvider) {
-        rep.addIdentityProvider(identityProvider);
-        return this;
-    }
-
-    public RealmBuilder identityProviderMapper(IdentityProviderMapperRepresentation identityProviderMapper) {
-        rep.addIdentityProviderMapper(identityProviderMapper);
         return this;
     }
 
@@ -364,8 +452,8 @@ public class RealmBuilder {
         return this;
     }
 
-    public RealmBuilder requiredAction(RequiredActionProviderRepresentation requiredAction) {
-        rep.setRequiredActions(Collections.combine(rep.getRequiredActions(), requiredAction));
+    public RealmBuilder requiredActions(RequiredActionProviderRepresentation... requiredActions) {
+        rep.setRequiredActions(combine(rep.getRequiredActions(), requiredActions));
         return this;
     }
 
@@ -479,18 +567,25 @@ public class RealmBuilder {
         return this;
     }
 
-    public void attribute(String key, String value) {
-        if (rep.getAttributes() == null) {
-            rep.setAttributes(new HashMap<>());
-        }
+    public RealmBuilder attribute(String key, String value) {
+        rep.setAttributes(createIfNull(rep.getAttributes(), HashMap::new));
         rep.getAttributes().put(key, value);
+        return this;
     }
 
-    public void addClientScope(ClientScopeRepresentation clientScope) {
-        if (rep.getClientScopes() == null) {
-            rep.setClientScopes(new ArrayList<>());
-        }
-        rep.getClientScopes().add(clientScope);
+    public RealmBuilder attributes(RealmAttributesBuilder attributes) {
+        combineMap(rep.getAttributes(), attributes.build());
+        return this;
+    }
+
+    public RealmBuilder clientScopes(ClientScopeRepresentation... clientScopes) {
+        rep.setClientScopes(combine(rep.getClientScopes(), clientScopes));
+        return this;
+    }
+
+    public RealmBuilder clientScopes(ClientScopeBuilder... clientScopes) {
+        rep.setClientScopes(combine(rep.getClientScopes(), clientScopes));
+        return this;
     }
 
     /**

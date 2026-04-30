@@ -1,6 +1,7 @@
 package org.keycloak.validation.jakarta;
 
 import jakarta.validation.ConstraintValidatorContext;
+import jakarta.validation.constraints.NotNull;
 
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -10,6 +11,10 @@ import org.hibernate.validator.constraintvalidation.HibernateConstraintValidator
 /**
  * Context object passed to constraint validators via Hibernate Validator's
  * constraint validator payload mechanism.
+ * <p>
+ * Record components are annotated with Jakarta Validation so documentation tooling
+ * (for example the Admin API v2 OpenAPI {@code ValidationAnnotationScanner}) can surface
+ * the same constraints in schema descriptions as for representation types.
  * <p>
  * Custom constraint validators can access this context by unwrapping the
  * {@link jakarta.validation.ConstraintValidatorContext} to
@@ -27,10 +32,10 @@ import org.hibernate.validator.constraintvalidation.HibernateConstraintValidator
  * }
  * }</pre>
  *
- * @param session the Keycloak session
- * @param realm the realm model being validated against
+ * @param session the Keycloak session (required)
+ * @param realm the realm model being validated against (required)
  */
-public record ValidationContext(KeycloakSession session, RealmModel realm) {
+public record ValidationContext(@NotNull KeycloakSession session, @NotNull RealmModel realm) {
 
     public ValidationContext {
         if (session == null) {

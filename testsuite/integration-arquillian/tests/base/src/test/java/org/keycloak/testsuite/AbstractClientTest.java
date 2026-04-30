@@ -27,12 +27,12 @@ import org.keycloak.events.admin.ResourceType;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.events.TestEventsListenerProviderFactory;
 import org.keycloak.testsuite.util.AdminEventPaths;
 import org.keycloak.testsuite.util.AssertAdminEvents;
-import org.keycloak.testsuite.util.RealmBuilder;
 
 import org.junit.After;
 import org.junit.Before;
@@ -61,14 +61,14 @@ public abstract class AbstractClientTest extends AbstractAuthTest {
     public void setupAdminEvents() {
         RealmRepresentation realm = testRealmResource().toRepresentation();
         if (realm.getEventsListeners() == null || !realm.getEventsListeners().contains(TestEventsListenerProviderFactory.PROVIDER_ID)) {
-            realm = RealmBuilder.edit(testRealmResource().toRepresentation()).testEventListener().build();
+            realm = RealmBuilder.update(testRealmResource().toRepresentation()).eventsListeners(TestEventsListenerProviderFactory.PROVIDER_ID).build();
             testRealmResource().update(realm);
         }
     }
 
     @After
     public void tearDownAdminEvents() {
-        RealmRepresentation realm = RealmBuilder.edit(testRealmResource().toRepresentation()).removeTestEventListener().build();
+        RealmRepresentation realm = RealmBuilder.update(testRealmResource().toRepresentation()).removeEventListeners(TestEventsListenerProviderFactory.PROVIDER_ID).build();
         testRealmResource().update(realm);
     }
 

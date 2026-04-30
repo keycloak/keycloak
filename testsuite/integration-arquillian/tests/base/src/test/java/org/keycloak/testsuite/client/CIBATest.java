@@ -156,7 +156,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
                 .email("schwarz@test.example.com")
                 .enabled(true)
                 .password("passwort-schwarz")
-                .roles("user", "offline_access")
+                .realmRoles("user", "offline_access")
                 .build();
         realm.getUsers().add(user);
 
@@ -165,7 +165,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
                 .email("rot@test.example.com")
                 .enabled(true)
                 .password("passwort-rot")
-                .roles("user", "offline_access")
+                .realmRoles("user", "offline_access")
                 .build();
         realm.getUsers().add(user);
 
@@ -174,7 +174,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
                 .email("gelb@test.example.com")
                 .enabled(true)
                 .password("passwort-gelb")
-                .roles("user", "offline_access")
+                .realmRoles("user", "offline_access")
                 .build();
         realm.getUsers().add(user);
 
@@ -183,7 +183,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
                 .email("deaktiviert@test.example.com")
                 .enabled(false)
                 .password("passwort-deaktiviert")
-                .roles("user", "offline_access")
+                .realmRoles("user", "offline_access")
                 .build();
         realm.getUsers().add(user);
 
@@ -2348,7 +2348,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
         AuthenticationRequestAcknowledgement response = oauth.ciba().backchannelAuthenticationRequest(username).bindingMessage(bindingMessage).additionalParams(additionalParameters).send();
         assertThat(response.getStatusCode(), is(equalTo(400)));
         assertThat(response.getError(), is(OAuthErrorException.INVALID_CLIENT));
-        assertThat(response.getErrorDescription(), is("invalid client access type"));
+        assertThat(response.getErrorDescription(), is("invalid client access type: public"));
 
         String clientConfidentialId = generateSuffixedName("confidential-app");
         String clientConfidentialSecret = "app-secret";
@@ -2376,7 +2376,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
         AccessTokenResponse tokenRes = oauth.ciba().doBackchannelAuthenticationTokenRequest(response.getAuthReqId());
         assertThat(tokenRes.getStatusCode(), is(equalTo(400)));
         assertThat(tokenRes.getError(), is(OAuthErrorException.INVALID_GRANT));
-        assertThat(tokenRes.getErrorDescription(), is("invalid client access type"));
+        assertThat(tokenRes.getErrorDescription(), is("invalid client access type: public"));
     }
 
     @Test

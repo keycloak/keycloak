@@ -60,14 +60,14 @@ public class JpaWorkflowStateProvider implements WorkflowStateProvider {
         return entity != null ? toScheduledStep(entity) : null;
     }
 
+    private static final Duration DEFAULT_STEP_DURATION = Duration.ofMinutes(1);
+
     @Override
     public ScheduleResult scheduleStep(Workflow workflow, WorkflowStep step, String resourceId, String executionId) {
         WorkflowStateEntity entity = em.find(WorkflowStateEntity.class, executionId);
         Duration duration = DurationConverter.parseDuration(step.getAfter());
         if (duration == null) {
-            // shouldn't happen as the step duration should have been validated before
-            throw new IllegalArgumentException("Invalid duration (%s) found when scheduling step %s in workflow %s"
-                    .formatted(step.getAfter(), step.getProviderId(), workflow.getName()));
+            duration = DEFAULT_STEP_DURATION;
         }
 
         if (entity == null) {

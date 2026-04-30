@@ -33,12 +33,14 @@ import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
+import org.keycloak.testframework.realm.ClientBuilder;
+import org.keycloak.testframework.realm.IdentityProviderBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.ui.annotations.InjectPage;
 import org.keycloak.testframework.ui.page.LoginPage;
-import org.keycloak.testsuite.util.IdentityProviderBuilder;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.IntrospectionResponse;
 
@@ -76,9 +78,9 @@ public class AuthChainingAcrossDomainsTest {
             realm.name("domaina");
 
             // client for the IdP in domainb
-            realm.addClient("http://localhost:8080/realms/domainb")
+            realm.clients(ClientBuilder.create("http://localhost:8080/realms/domainb")
                     .redirectUris("http://localhost:8080/realms/domainb/broker/domaina/endpoint/*")
-                    .secret("password");
+                    .secret("password"));
 
             // mapper to add audience for domainb in clienta
             ProtocolMapperRepresentation domainbAudience = new ProtocolMapperRepresentation();
@@ -90,18 +92,18 @@ public class AuthChainingAcrossDomainsTest {
             domainbAudience.getConfig().put(AudienceProtocolMapper.INCLUDED_CLIENT_AUDIENCE, "http://localhost:8080/realms/domainb");
 
             // test client to request the Token exchange in domaina
-            realm.addClient("clienta")
+            realm.clients(ClientBuilder.create("clienta")
                     .secret("password")
                     .redirectUris("*")
                     .attribute(OIDCConfigAttributes.STANDARD_TOKEN_EXCHANGE_ENABLED, Boolean.TRUE.toString())
-                    .protocolMappers(domainbAudience);
+                    .protocolMappers(domainbAudience));
 
             // test user in domaina
-            realm.addUser("testuser")
+            realm.users(UserBuilder.create("testuser")
                     .name("Test", "User")
                     .email("test@localhost")
                     .emailVerified(Boolean.TRUE)
-                    .password("password");
+                    .password("password"));
 
             return realm;
         }
@@ -114,30 +116,30 @@ public class AuthChainingAcrossDomainsTest {
             realm.name("domainb");
 
             // idp for domaina
-            realm.identityProvider(IdentityProviderBuilder.create()
+            realm.identityProviders(IdentityProviderBuilder.create()
                     .providerId(OIDCIdentityProviderFactory.PROVIDER_ID)
                     .alias("domaina")
-                    .setAttribute(IdentityProviderModel.ISSUER, "http://localhost:8080/realms/domaina")
-                    .setAttribute(OIDCIdentityProviderConfig.USE_JWKS_URL, Boolean.TRUE.toString())
-                    .setAttribute("validateSignature", Boolean.TRUE.toString())
-                    .setAttribute(OIDCIdentityProviderConfig.JWKS_URL, "http://localhost:8080/realms/domaina/protocol/openid-connect/certs")
-                    .setAttribute("authorizationUrl", "http://localhost:8080/realms/domaina/protocol/openid-connect/auth")
-                    .setAttribute(OAuth2IdentityProviderConfig.TOKEN_ENDPOINT_URL, "http://localhost:8080/realms/domaina/protocol/openid-connect/token")
-                    .setAttribute(OAuth2IdentityProviderConfig.TOKEN_INTROSPECTION_URL, "http://localhost:8080/realms/domaina/protocol/openid-connect/token/introspect")
-                    .setAttribute("userInfoUrl", "http://localhost:8080/realms/domaina/protocol/openid-connect/userinfo")
-                    .setAttribute("logoutUrl", "http://localhost:8080/realms/domaina/protocol/openid-connect/logout")
-                    .setAttribute("backchannelSupported", Boolean.TRUE.toString())
-                    .setAttribute("clientId", "http://localhost:8080/realms/domainb")
-                    .setAttribute("clientSecret", "password")
-                    .setAttribute(JWTAuthorizationGrantConfig.JWT_AUTHORIZATION_GRANT_ENABLED, Boolean.TRUE.toString())
+                    .attribute(IdentityProviderModel.ISSUER, "http://localhost:8080/realms/domaina")
+                    .attribute(OIDCIdentityProviderConfig.USE_JWKS_URL, Boolean.TRUE.toString())
+                    .attribute("validateSignature", Boolean.TRUE.toString())
+                    .attribute(OIDCIdentityProviderConfig.JWKS_URL, "http://localhost:8080/realms/domaina/protocol/openid-connect/certs")
+                    .attribute("authorizationUrl", "http://localhost:8080/realms/domaina/protocol/openid-connect/auth")
+                    .attribute(OAuth2IdentityProviderConfig.TOKEN_ENDPOINT_URL, "http://localhost:8080/realms/domaina/protocol/openid-connect/token")
+                    .attribute(OAuth2IdentityProviderConfig.TOKEN_INTROSPECTION_URL, "http://localhost:8080/realms/domaina/protocol/openid-connect/token/introspect")
+                    .attribute("userInfoUrl", "http://localhost:8080/realms/domaina/protocol/openid-connect/userinfo")
+                    .attribute("logoutUrl", "http://localhost:8080/realms/domaina/protocol/openid-connect/logout")
+                    .attribute("backchannelSupported", Boolean.TRUE.toString())
+                    .attribute("clientId", "http://localhost:8080/realms/domainb")
+                    .attribute("clientSecret", "password")
+                    .attribute(JWTAuthorizationGrantConfig.JWT_AUTHORIZATION_GRANT_ENABLED, Boolean.TRUE.toString())
                     .build());
 
             // test client to request jwt auth grant in domainb
-            realm.addClient("clientb")
+            realm.clients(ClientBuilder.create("clientb")
                     .secret("password")
                     .redirectUris("*")
                     .attribute(OIDCConfigAttributes.JWT_AUTHORIZATION_GRANT_ENABLED, Boolean.TRUE.toString())
-                    .attribute(OIDCConfigAttributes.JWT_AUTHORIZATION_GRANT_IDP, "domaina");
+                    .attribute(OIDCConfigAttributes.JWT_AUTHORIZATION_GRANT_IDP, "domaina"));
 
             return realm;
         }

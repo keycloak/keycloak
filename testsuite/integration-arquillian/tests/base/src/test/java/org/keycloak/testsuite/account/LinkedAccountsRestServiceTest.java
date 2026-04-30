@@ -32,11 +32,11 @@ import org.keycloak.representations.idm.FederatedIdentityRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.realm.IdentityProviderBuilder;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.broker.util.SimpleHttpDefault;
-import org.keycloak.testsuite.util.IdentityProviderBuilder;
 import org.keycloak.testsuite.util.TokenUtil;
 
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -101,7 +101,7 @@ public class LinkedAccountsRestServiceTest extends AbstractTestRealmKeycloakTest
                     .providerId(idpInfo[0])
                     .alias(idpInfo.length == 1 ? idpInfo[0] : idpInfo[1])
                     .displayName(idpInfo.length == 1 ? null : idpInfo[2])
-                    .setAttribute("guiOrder", String.valueOf(i))
+                    .attribute("guiOrder", String.valueOf(i))
                     .build());
         }
 

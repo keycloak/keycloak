@@ -14,7 +14,17 @@ the shorter suffix `Builder` to keep things consistently.
 
 Additionally, some methods where updated for consistency across the builders:
 
-* `RoleBuilder` method `setSingleAttribute` was renamed to `attribute`
+* `RoleBuilder` method `setSingleAttribute` renamed to `attribute`
+* `UserBuilder` method `roles` renamed to `realmRoles`
+* `RealmBuilder` method `client` and `addClient` replaced with `clients`
+* `RealmBuilder` method `user` and `addUser` replaced with `users`
+* `RealmBuilder` method `addRole` replaced with `realmRoles`
+* `RealmBuilder` method `addClientRole` replaced with `clientRoles`
+* `RealmBuilder` method `addAuthenticationFlow` replaced with `authenticationFlows`
+* `RealmBuilder` method `addClientScope` replaced with `clientScopes`
+* `RealmBuilder` method `identityProvider` renamed to `identityProviders`
+* `RealmBuilder` method `identityProviderMapper` renamed to `identityProviderMappers`
+* `RealmBuilder` method `requiredAction` renamed to `requiredActions`
 
 === Identity Provider alias is now immutable
 
@@ -42,6 +52,16 @@ For the details, see the link:{adminguide_link}[{adminguide_name}].
 In relation to the previous point, the required actions *Configure OTP* and *Update password* are moved in the order of required actions after *Verify Email*
 required action. This is done automatically for new realm or during server update. If you prefer the old order, you can manually move required actions per your preference.
 
+=== Shutdown timeout extended
+
+Previous versions waited for one second for HTTP requests to finish during the shutdown of a node.
+
+The current version extends the timeout to ten seconds by default. In setups that use distributed caches, it now also waits for caches to rebalance before shutting down, preventing a possible data loss.
+When there are no ongoing HTTP requests, and caches are already rebalanced, the shutdown will finish immediately as before. With that, we expect most customers to not observe a change in the behavior of {project_name}.
+
+As before, for any rolling update or scaling up or down, we require to do this one node at a time for all clustered setups of {project_name}.
+
+Use the `shutdown-timeout` option to adjust the timeout to your environment. Restore the original behavior by setting it to `1s`.
 
 === Realm search now matches by display name
 

@@ -17,9 +17,11 @@ import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.saml.SignatureAlgorithm;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
+import org.keycloak.testframework.realm.ClientBuilder;
+import org.keycloak.testframework.realm.IdentityProviderBuilder;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
-import org.keycloak.testsuite.util.IdentityProviderBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 
 /**
  *
@@ -36,29 +38,29 @@ public interface InterfaceSamlIdentityProviderStoreTokenTest extends InterfaceId
 
         @Override
         public RealmBuilder configure(RealmBuilder realm) {
-            realm.identityProvider(IdentityProviderBuilder.create()
+            realm.identityProviders(IdentityProviderBuilder.create()
                     .providerId(SAMLIdentityProviderFactory.PROVIDER_ID)
                     .alias(IDP_ALIAS)
-                    .setAttribute(IdentityProviderModel.SYNC_MODE, "IMPORT")
-                    .setAttribute(SAMLIdentityProviderConfig.ENTITY_ID, "http://localhost:8080/realms/default")
-                    .setAttribute(SAMLIdentityProviderConfig.IDP_ENTITY_ID, "http://localhost:8080/realms/" + EXTERNAL_REALM_NAME)
-                    .setAttribute(SAMLIdentityProviderConfig.SINGLE_SIGN_ON_SERVICE_URL, "http://localhost:8080/realms/" + EXTERNAL_REALM_NAME + "/protocol/saml")
-                    .setAttribute(SAMLIdentityProviderConfig.SINGLE_LOGOUT_SERVICE_URL, "http://localhost:8080/realms/" + EXTERNAL_REALM_NAME + "/protocol/saml")
-                    .setAttribute(SAMLIdentityProviderConfig.USE_METADATA_DESCRIPTOR_URL, Boolean.TRUE.toString())
-                    .setAttribute(SAMLIdentityProviderConfig.WANT_AUTHN_REQUESTS_SIGNED, Boolean.TRUE.toString())
-                    .setAttribute(SAMLIdentityProviderConfig.BACKCHANNEL_SUPPORTED, Boolean.TRUE.toString())
-                    .setAttribute(SAMLIdentityProviderConfig.NAME_ID_POLICY_FORMAT, JBossSAMLURIConstants.NAMEID_FORMAT_UNSPECIFIED.get())
-                    .setAttribute(SAMLIdentityProviderConfig.SIGNATURE_ALGORITHM, SignatureAlgorithm.RSA_SHA256.name())
-                    .setAttribute(SAMLIdentityProviderConfig.VALIDATE_SIGNATURE, Boolean.TRUE.toString())
-                    .setAttribute(SAMLIdentityProviderConfig.POST_BINDING_AUTHN_REQUEST, Boolean.TRUE.toString())
-                    .setAttribute(SAMLIdentityProviderConfig.POST_BINDING_RESPONSE, Boolean.TRUE.toString())
-                    .setAttribute(IdentityProviderModel.METADATA_DESCRIPTOR_URL, "http://localhost:8080/realms/" + EXTERNAL_REALM_NAME + "/protocol/saml/descriptor")
+                    .attribute(IdentityProviderModel.SYNC_MODE, "IMPORT")
+                    .attribute(SAMLIdentityProviderConfig.ENTITY_ID, "http://localhost:8080/realms/default")
+                    .attribute(SAMLIdentityProviderConfig.IDP_ENTITY_ID, "http://localhost:8080/realms/" + EXTERNAL_REALM_NAME)
+                    .attribute(SAMLIdentityProviderConfig.SINGLE_SIGN_ON_SERVICE_URL, "http://localhost:8080/realms/" + EXTERNAL_REALM_NAME + "/protocol/saml")
+                    .attribute(SAMLIdentityProviderConfig.SINGLE_LOGOUT_SERVICE_URL, "http://localhost:8080/realms/" + EXTERNAL_REALM_NAME + "/protocol/saml")
+                    .attribute(SAMLIdentityProviderConfig.USE_METADATA_DESCRIPTOR_URL, Boolean.TRUE.toString())
+                    .attribute(SAMLIdentityProviderConfig.WANT_AUTHN_REQUESTS_SIGNED, Boolean.TRUE.toString())
+                    .attribute(SAMLIdentityProviderConfig.BACKCHANNEL_SUPPORTED, Boolean.TRUE.toString())
+                    .attribute(SAMLIdentityProviderConfig.NAME_ID_POLICY_FORMAT, JBossSAMLURIConstants.NAMEID_FORMAT_UNSPECIFIED.get())
+                    .attribute(SAMLIdentityProviderConfig.SIGNATURE_ALGORITHM, SignatureAlgorithm.RSA_SHA256.name())
+                    .attribute(SAMLIdentityProviderConfig.VALIDATE_SIGNATURE, Boolean.TRUE.toString())
+                    .attribute(SAMLIdentityProviderConfig.POST_BINDING_AUTHN_REQUEST, Boolean.TRUE.toString())
+                    .attribute(SAMLIdentityProviderConfig.POST_BINDING_RESPONSE, Boolean.TRUE.toString())
+                    .attribute(IdentityProviderModel.METADATA_DESCRIPTOR_URL, "http://localhost:8080/realms/" + EXTERNAL_REALM_NAME + "/protocol/saml/descriptor")
                     .storeToken(true)
                     .addReadTokenRoleOnCreate(true)
                     .build());
-            realm.identityProviderMapper(createMapper("email"))
-                    .identityProviderMapper(createMapper("firstName"))
-                    .identityProviderMapper(createMapper("lastName"));
+            realm.identityProviderMappers(createMapper("email"))
+                    .identityProviderMappers(createMapper("firstName"))
+                    .identityProviderMappers(createMapper("lastName"));
             return realm;
         }
 
@@ -82,7 +84,7 @@ public interface InterfaceSamlIdentityProviderStoreTokenTest extends InterfaceId
 
         @Override
         public RealmBuilder configure(RealmBuilder realm) {
-            realm.addClient("http://localhost:8080/realms/default")
+            realm.clients(ClientBuilder.create("http://localhost:8080/realms/default")
                     .name("saml-client")
                     .protocol(SamlProtocol.LOGIN_PROTOCOL)
                     .adminUrl("http://localhost:8080/realms/default/broker/" + IDP_ALIAS + "/endpoint")
@@ -95,12 +97,12 @@ public interface InterfaceSamlIdentityProviderStoreTokenTest extends InterfaceId
                     .attribute(SamlConfigAttributes.SAML_NAME_ID_FORMAT_ATTRIBUTE, "username")
                     .attribute(SamlConfigAttributes.SAML_USE_METADATA_DESCRIPTOR_URL, Boolean.TRUE.toString())
                     .attribute(SamlConfigAttributes.SAML_METADATA_DESCRIPTOR_URL, "http://localhost:8080/realms/default/broker/" + IDP_ALIAS + "/endpoint/descriptor")
-                    .protocolMappers(createMapper("email"), createMapper("firstName"), createMapper("lastName"));
-            realm.addUser("testuser")
+                    .protocolMappers(createMapper("email"), createMapper("firstName"), createMapper("lastName")));
+            realm.users(UserBuilder.create("testuser")
                     .name("Test", "User")
                     .email("test@localhost")
                     .emailVerified(Boolean.TRUE)
-                    .password("password");
+                    .password("password"));
             return realm;
         }
 

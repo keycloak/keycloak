@@ -51,6 +51,7 @@ import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.events.AdminEventAssertion;
+import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.RoleBuilder;
 import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.tests.suites.DatabaseTest;
@@ -458,10 +459,10 @@ public class ClientScopeTest extends AbstractClientScopeTest {
 
         // Add client with the clientScope
         managedRealm.updateWithCleanup(r -> {
-            r.addClient("bar-client")
+            r.clients(ClientBuilder.create("bar-client")
                     .name("bar-client")
                     .protocol("openid-connect")
-                    .defaultClientScopes("foo-scope");
+                    .defaultClientScopes("foo-scope"));
             return r;
         });
         adminEvents.skip();

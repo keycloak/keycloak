@@ -1,7 +1,7 @@
 import FeatureRepresentation, {
   FeatureType,
 } from "@keycloak/keycloak-admin-client/lib/defs/featureRepresentation";
-import { HelpItem, label, useEnvironment } from "@keycloak/keycloak-ui-shared";
+import { HelpItem, useEnvironment } from "@keycloak/keycloak-ui-shared";
 import {
   ActionList,
   ActionListItem,
@@ -41,6 +41,7 @@ import {
 import { useRealm } from "../context/realm-context/RealmContext";
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
 import helpUrls from "../help-urls";
+import { resolveDisplayName } from "../util";
 import useLocaleSort, { mapByKey } from "../utils/useLocaleSort";
 import { ProviderInfo } from "./ProviderInfo";
 import { DashboardTab, toDashboard } from "./routes/Dashboard";
@@ -53,7 +54,7 @@ const EmptyDashboard = () => {
   const { t } = useTranslation();
   const { realm, realmRepresentation: realmInfo } = useRealm();
   const brandImage = environment.logo ? environment.logo : "/icon.svg";
-  const realmDisplayInfo = label(t, realmInfo?.displayName, realm);
+  const realmDisplayInfo = resolveDisplayName(t, realmInfo?.displayName, realm);
 
   return (
     <PageSection variant="light">
@@ -132,7 +133,7 @@ const Dashboard = () => {
       }),
     );
 
-  const realmDisplayInfo = label(t, realmInfo?.displayName, realm);
+  const realmDisplayInfo = resolveDisplayName(t, realmInfo?.displayName, realm);
 
   const welcomeTab = useTab("welcome");
   const infoTab = useTab("info");

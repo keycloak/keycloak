@@ -18,6 +18,8 @@ import org.keycloak.userprofile.UserProfileProvider;
 
 import static java.util.Optional.ofNullable;
 
+import static org.keycloak.scim.resource.schema.attribute.Attribute.getSchema;
+
 public abstract class AbstractUserModelSchema extends AbstractModelSchema<UserModel ,User> {
 
     public static final String ANNOTATION_SCIM_SCHEMA_ATTRIBUTE = "kc.scim.schema.attribute";
@@ -30,11 +32,13 @@ public abstract class AbstractUserModelSchema extends AbstractModelSchema<UserMo
 
     @Override
     protected Set<String> getModelAttributeNames() {
-        UserProfile profile = session.getProvider(UserProfileProvider.class).create(UserProfileContext.SCIM, Map.of());
+        UserProfile profile = getUserProfile();
         Attributes attributes = profile.getAttributes();
         Set<String> names = new HashSet<>(attributes.nameSet());
+
         names.add(UserModel.ENABLED);
         names.add("groups");
+
         return names;
     }
 
@@ -94,5 +98,13 @@ public abstract class AbstractUserModelSchema extends AbstractModelSchema<UserMo
         }
 
         return null;
+    }
+
+    protected boolean hasSchema(String attributeName) {
+        return getId().equals(getSchema(attributeName));
+    }
+
+    protected UserProfile getUserProfile() {
+        return session.getProvider(UserProfileProvider.class).create(UserProfileContext.SCIM, Map.of());
     }
 }

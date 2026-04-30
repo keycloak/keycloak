@@ -14,9 +14,11 @@ import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
+import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.server.KeycloakUrls;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
@@ -128,17 +130,17 @@ public class AppAuthManagerTest {
         @Override
         public RealmBuilder configure(RealmBuilder realm) {
             realm.internationalizationEnabled(false);
-            realm.addUser("test-admin")
+            realm.users(UserBuilder.create("test-admin")
                     .password("password")
                     .name("Test", "Admin")
                     .email("locale-off@email.org")
                     .emailVerified(true)
-                    .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.REALM_ADMIN);
-            realm.addClient(Constants.ADMIN_CLI_CLIENT_ID)
+                    .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.REALM_ADMIN));
+            realm.clients(ClientBuilder.create(Constants.ADMIN_CLI_CLIENT_ID)
                     .name(Constants.ADMIN_CLI_CLIENT_ID)
                     .secret("secret")
                     .attribute(Constants.SECURITY_ADMIN_CONSOLE_ATTR, "true")
-                    .directAccessGrantsEnabled(true);
+                    .directAccessGrantsEnabled(true));
             return realm;
         }
     }

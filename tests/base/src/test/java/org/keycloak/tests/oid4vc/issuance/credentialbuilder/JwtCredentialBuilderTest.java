@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.oid4vc.issuance.credentialbuilder;
+package org.keycloak.tests.oid4vc.issuance.credentialbuilder;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -31,9 +31,11 @@ import org.keycloak.protocol.oid4vc.issuance.credentialbuilder.JwtCredentialBody
 import org.keycloak.protocol.oid4vc.issuance.credentialbuilder.JwtCredentialBuilder;
 import org.keycloak.protocol.oid4vc.model.CredentialBuildConfig;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.tests.oid4vc.OID4VCIssuerTestBase;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import static org.keycloak.OID4VCConstants.CREDENTIAL_SUBJECT;
 
@@ -42,6 +44,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 /**
  * @author <a href="mailto:Ingrid.Kamga@adorsys.com">Ingrid Kamga</a>
  */
+@KeycloakIntegrationTest(config = OID4VCIssuerTestBase.VCTestServerConfig.class)
 public class JwtCredentialBuilderTest extends CredentialBuilderTest {
 
     TimeProvider timeProvider = new StaticTimeProvider(1000);

@@ -17,17 +17,17 @@ import com.fasterxml.jackson.databind.JsonNode;
  *
  * @author rmartinc
  */
-public class ClientPolicyBuilder {
-
-    private final ClientPolicyRepresentation rep;
+public class ClientPolicyBuilder extends Builder<ClientPolicyRepresentation> {
 
     private ClientPolicyBuilder(ClientPolicyRepresentation rep) {
-        this.rep = rep;
+        super(rep);
     }
 
     public static ClientPolicyBuilder create() {
-        ClientPolicyRepresentation rep = new ClientPolicyRepresentation();
-        rep.setEnabled(true);
+        return new ClientPolicyBuilder(new ClientPolicyRepresentation()).enabled(true);
+    }
+
+    public static ClientPolicyBuilder update(ClientPolicyRepresentation rep) {
         return new ClientPolicyBuilder(rep);
     }
 
@@ -47,10 +47,6 @@ public class ClientPolicyBuilder {
             config.setIdentityProviderAliases(List.of(aliases));
         }
         return config;
-    }
-
-    public static ClientPolicyBuilder update(ClientPolicyRepresentation rep) {
-        return new ClientPolicyBuilder(rep);
     }
 
     public ClientPolicyBuilder enabled(boolean enabled) {
@@ -98,7 +94,4 @@ public class ClientPolicyBuilder {
         return this;
     }
 
-    public ClientPolicyRepresentation build() {
-        return rep;
-    }
 }

@@ -403,7 +403,7 @@ public class BrokeredUserLifecycleWorkflowTest extends AbstractWorkflowTest {
 
         @Override
         public RealmBuilder configure(RealmBuilder builder) {
-            builder.identityProvider(setUpIdentityProvider());
+            builder.identityProviders(setUpIdentityProvider());
             return builder;
         }
     }

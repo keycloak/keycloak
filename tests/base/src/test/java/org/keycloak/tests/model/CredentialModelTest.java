@@ -19,6 +19,7 @@ import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.remote.annotations.TestOnServer;
 
 import org.junit.jupiter.api.Assertions;
@@ -222,7 +223,7 @@ public class CredentialModelTest {
         @Override
         public RealmBuilder configure(RealmBuilder realm) {
             realm.name("test");
-            realm.addUser("test-user@localhost").password("password");
+            realm.users(UserBuilder.create("test-user@localhost").password("password"));
             return realm;
         }
     }

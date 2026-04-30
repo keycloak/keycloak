@@ -49,7 +49,12 @@ import static org.keycloak.utils.StreamsUtil.closing;
 public class UserResourceTypeProvider extends AbstractScimResourceTypeProvider<UserModel, User> implements ScimAttributeJpaExpressionResolver {
 
     public UserResourceTypeProvider(KeycloakSession session) {
-        super(session, new UserCoreModelSchema(session), List.of(new UserEnterpriseModelSchema(session)));
+        super(session, new UserCoreModelSchema(session), List.of(new UserEnterpriseModelSchema(session), new UserExtensionModelSchema(session)));
+    }
+
+    @Override
+    public String getDescription() {
+        return "User Account";
     }
 
     @Override

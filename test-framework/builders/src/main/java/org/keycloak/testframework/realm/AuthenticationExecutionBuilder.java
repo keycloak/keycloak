@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.util;
+package org.keycloak.testframework.realm;
 
 
 import org.keycloak.representations.idm.AuthenticationExecutionRepresentation;
@@ -23,49 +23,44 @@ import org.keycloak.representations.idm.AuthenticationExecutionRepresentation;
 /**
  * @author Stan Silvert ssilvert@redhat.com (C) 2016 Red Hat Inc.
  */
-public class ExecutionBuilder {
+public class AuthenticationExecutionBuilder extends Builder<AuthenticationExecutionRepresentation> {
 
-    private AuthenticationExecutionRepresentation rep = new AuthenticationExecutionRepresentation();
-
-    public static ExecutionBuilder create() {
-        return new ExecutionBuilder();
+    private AuthenticationExecutionBuilder(AuthenticationExecutionRepresentation rep) {
+        super(rep);
     }
 
-    private ExecutionBuilder() {
+    public static AuthenticationExecutionBuilder create() {
+        return new AuthenticationExecutionBuilder(new AuthenticationExecutionRepresentation());
     }
 
-    public ExecutionBuilder id(String id) {
+    public AuthenticationExecutionBuilder id(String id) {
         rep.setId(id);
         return this;
     }
 
-    public ExecutionBuilder parentFlow(String parentFlow) {
+    public AuthenticationExecutionBuilder parentFlow(String parentFlow) {
         rep.setParentFlow(parentFlow);
         return this;
     }
 
-    public ExecutionBuilder requirement(String requirement) {
+    public AuthenticationExecutionBuilder requirement(String requirement) {
         rep.setRequirement(requirement);
         return this;
     }
 
-    public ExecutionBuilder authenticator(String authenticator) {
+    public AuthenticationExecutionBuilder authenticator(String authenticator) {
         rep.setAuthenticator(authenticator);
         return this;
     }
 
-    public ExecutionBuilder priority(int priority) {
+    public AuthenticationExecutionBuilder priority(int priority) {
         rep.setPriority(priority);
         return this;
     }
 
-    public ExecutionBuilder authenticatorFlow(boolean authenticatorFlow) {
+    public AuthenticationExecutionBuilder authenticatorFlow(boolean authenticatorFlow) {
         rep.setAuthenticatorFlow(authenticatorFlow);
         return this;
-    }
-
-    public AuthenticationExecutionRepresentation build() {
-        return rep;
     }
 
 }

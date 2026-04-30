@@ -44,6 +44,7 @@ import org.keycloak.testframework.annotations.InjectClient;
 import org.keycloak.testframework.annotations.InjectHttpClient;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.ManagedClient;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmBuilder;
@@ -1017,9 +1018,9 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
 
         @Override
         public RealmBuilder configure(RealmBuilder realm) {
-            realm.addClient("myclient")
+            realm.clients(ClientBuilder.create("myclient")
                     .secret("mysecret")
-                    .serviceAccountsEnabled(true);
+                    .serviceAccountsEnabled(true));
             return realm;
         }
     }

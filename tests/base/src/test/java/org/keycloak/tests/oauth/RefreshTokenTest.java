@@ -158,11 +158,11 @@ public class RefreshTokenTest {
 
         @Override
         public RealmBuilder configure(RealmBuilder realm) {
-            realm.addClient("service-account-app")
+            realm.clients(ClientBuilder.create("service-account-app")
                     .serviceAccountsEnabled(true)
                     .attribute(OIDCConfigAttributes.USE_REFRESH_TOKEN_FOR_CLIENT_CREDENTIALS_GRANT, "true")
-                    .secret("secret");
-            realm.addRole("user");
+                    .secret("secret"));
+            realm.realmRoles("user");
             return realm;
         }
     }
@@ -489,13 +489,13 @@ public class RefreshTokenTest {
                             .firstName("alice")
                             .lastName("alice")
                             .email("alice@keycloak.org")
-                            .password("alice").roles("offline_access").build()).close();
+                            .password("alice").realmRoles("offline_access").build()).close();
             realmResource.users()
                     .create(UserBuilder.create().username("bob")
                             .firstName("bob")
                             .lastName("bob")
                             .email("bob@keycloak.org")
-                            .password("bob").roles("offline_access").build()).close();
+                            .password("bob").realmRoles("offline_access").build()).close();
 
             oauth.realm(realmName);
             oauth.client("public-client");
@@ -555,13 +555,13 @@ public class RefreshTokenTest {
                             .firstName("alice")
                             .lastName("alice")
                             .email("alice@keycloak.org")
-                            .password("alice").roles("offline_access").build()).close();
+                            .password("alice").realmRoles("offline_access").build()).close();
             realmResource.users()
                     .create(UserBuilder.create().username("bob")
                             .firstName("bob")
                             .lastName("bob")
                             .email("bob@keycloak.org")
-                            .password("bob").roles("offline_access").build()).close();
+                            .password("bob").realmRoles("offline_access").build()).close();
 
             oauth.realm(realmName);
             oauth.client("public-client");

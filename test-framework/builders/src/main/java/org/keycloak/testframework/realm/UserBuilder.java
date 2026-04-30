@@ -17,6 +17,10 @@ public class UserBuilder extends Builder<UserRepresentation> {
         return new UserBuilder(new UserRepresentation()).enabled(true);
     }
 
+    public static UserBuilder create(String username) {
+        return create().username(username);
+    }
+
     public static UserBuilder update(UserRepresentation rep) {
         return new UserBuilder(rep);
     }
@@ -81,7 +85,7 @@ public class UserBuilder extends Builder<UserRepresentation> {
         return credential(CredentialBuilder.hotp(hotpSecret));
     }
 
-    public UserBuilder roles(String... roles) {
+    public UserBuilder realmRoles(String... roles) {
         rep.setRealmRoles(combine(rep.getRealmRoles(), roles));
         return this;
     }

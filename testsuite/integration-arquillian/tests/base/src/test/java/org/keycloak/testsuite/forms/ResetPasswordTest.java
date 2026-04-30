@@ -57,6 +57,8 @@ import org.keycloak.storage.StorageId;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageProviderModel;
 import org.keycloak.testframework.realm.ClientBuilder;
+import org.keycloak.testframework.realm.RealmAttributesBuilder;
+import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
@@ -81,12 +83,10 @@ import org.keycloak.testsuite.util.GreenMailRule;
 import org.keycloak.testsuite.util.InfinispanTestTimeServiceRule;
 import org.keycloak.testsuite.util.KerberosUtils;
 import org.keycloak.testsuite.util.MailUtils;
-import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.SecondBrowser;
 import org.keycloak.testsuite.util.TestAppHelper;
 import org.keycloak.testsuite.util.UIUtils;
 import org.keycloak.testsuite.util.URLUtils;
-import org.keycloak.testsuite.util.UserActionTokenBuilder;
 import org.keycloak.testsuite.util.WaitUtils;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
@@ -131,8 +131,8 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
 
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
-        RealmBuilder.edit(testRealm)
-                .client(ClientBuilder.create().clientId("client-user").serviceAccountsEnabled());
+        RealmBuilder.update(testRealm)
+                .clients(ClientBuilder.create().clientId("client-user").serviceAccountsEnabled());
     }
 
     @Before
@@ -746,7 +746,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
         RealmRepresentation realmRep = managedRealm.admin().toRepresentation();
         Map<String, String> originalAttributes = Map.copyOf(realmRep.getAttributes());
 
-        realmRep.setAttributes(UserActionTokenBuilder.create().resetCredentialsLifespan(60).build());
+        realmRep.setAttributes(RealmAttributesBuilder.create().resetCredentialsLifespan(60).build());
         managedRealm.admin().update(realmRep);
 
         try {
@@ -785,7 +785,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
         Map<String, String> originalAttributes = Map.copyOf(realmRep.getAttributes());
 
         //Make sure that one attribute settings won't affect the other
-        realmRep.setAttributes(UserActionTokenBuilder.create().resetCredentialsLifespan(60).verifyEmailLifespan(300).build());
+        realmRep.setAttributes(RealmAttributesBuilder.create().resetCredentialsLifespan(60).verifyEmailLifespan(300).build());
 
         managedRealm.admin().update(realmRep);
 
@@ -869,7 +869,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
         RealmRepresentation realmRep = managedRealm.admin().toRepresentation();
         Map<String, String> originalAttributes = Map.copyOf(realmRep.getAttributes());
 
-        realmRep.setAttributes(UserActionTokenBuilder.create().resetCredentialsLifespan(60).build());
+        realmRep.setAttributes(RealmAttributesBuilder.create().resetCredentialsLifespan(60).build());
         managedRealm.admin().update(realmRep);
 
         try {
@@ -913,7 +913,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
         Map<String, String> originalAttributes = Map.copyOf(realmRep.getAttributes());
 
         //Make sure that one attribute settings won't affect the other
-        realmRep.setAttributes(UserActionTokenBuilder.create().resetCredentialsLifespan(60).verifyEmailLifespan(300).build());
+        realmRep.setAttributes(RealmAttributesBuilder.create().resetCredentialsLifespan(60).verifyEmailLifespan(300).build());
         managedRealm.admin().update(realmRep);
 
         try {
@@ -1006,7 +1006,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
         RealmRepresentation realmRep = managedRealm.admin().toRepresentation();
         Map<String, String> originalAttributes = Map.copyOf(realmRep.getAttributes());
 
-        realmRep.setAttributes(UserActionTokenBuilder.create().resetCredentialsLifespan(60).build());
+        realmRep.setAttributes(RealmAttributesBuilder.create().resetCredentialsLifespan(60).build());
         managedRealm.admin().update(realmRep);
 
         try {
@@ -1055,7 +1055,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
         Map<String, String> originalAttributes = Map.copyOf(realmRep.getAttributes());
 
         //Make sure that one attribute settings won't affect the other
-        realmRep.setAttributes(UserActionTokenBuilder.create().resetCredentialsLifespan(60).verifyEmailLifespan(300).build());
+        realmRep.setAttributes(RealmAttributesBuilder.create().resetCredentialsLifespan(60).verifyEmailLifespan(300).build());
         managedRealm.admin().update(realmRep);
 
         try {

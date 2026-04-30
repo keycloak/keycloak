@@ -35,6 +35,7 @@ import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.AdminApiUtil;
@@ -43,7 +44,6 @@ import org.keycloak.testsuite.pages.LoginTotpPage;
 import org.keycloak.testsuite.pages.RegisterPage;
 import org.keycloak.testsuite.pages.SetupRecoveryAuthnCodesPage;
 import org.keycloak.testsuite.util.AccountHelper;
-import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
 import org.jboss.arquillian.graphene.page.Page;
@@ -480,7 +480,7 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
     public void setupOtpPolicyChangedTotp8Digits() {
         // set policy to 8 digits
         RealmRepresentation realmRep = adminClient.realm("test").toRepresentation();
-        RealmBuilder.edit(realmRep)
+        RealmBuilder.update(realmRep)
                     .otpLookAheadWindow(1)
                     .otpDigits(8)
                     .otpPeriod(30)
@@ -533,7 +533,7 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
 
         // Revert
         realmRep = adminClient.realm("test").toRepresentation();
-        RealmBuilder.edit(realmRep)
+        RealmBuilder.update(realmRep)
                 .otpDigits(6);
         adminClient.realm("test").update(realmRep);
     }
@@ -541,7 +541,7 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
     @Test
     public void setupOtpPolicyChangedHotp() {
         RealmRepresentation realmRep = adminClient.realm("test").toRepresentation();
-        RealmBuilder.edit(realmRep)
+        RealmBuilder.update(realmRep)
                     .otpLookAheadWindow(0)
                     .otpDigits(6)
                     .otpPeriod(30)
@@ -592,7 +592,7 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
 
         // test lookAheadWindow
         realmRep = adminClient.realm("test").toRepresentation();
-        RealmBuilder.edit(realmRep)
+        RealmBuilder.update(realmRep)
                     .otpLookAheadWindow(5)
                     .otpDigits(6)
                     .otpPeriod(30)
@@ -614,7 +614,7 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
 
         // Revert
         realmRep = adminClient.realm("test").toRepresentation();
-        RealmBuilder.edit(realmRep)
+        RealmBuilder.update(realmRep)
                 .otpLookAheadWindow(1)
                 .otpDigits(6)
                 .otpPeriod(30)

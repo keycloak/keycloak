@@ -459,7 +459,7 @@ public abstract class OID4VCTest extends AbstractTestRealmKeycloakTest {
         //  1. It looks up all effective realm roles and all effective client roles assigned to the user.
         //  2. The token includes only those roles that the user actually has.
         //
-        realmRoles.forEach(userBuilder::roles);
+        realmRoles.forEach(userBuilder::realmRoles);
         clientRoles.forEach((cid, roles) -> roles.forEach(role -> userBuilder.clientRoles(cid, role)));
         return userBuilder.build();
     }

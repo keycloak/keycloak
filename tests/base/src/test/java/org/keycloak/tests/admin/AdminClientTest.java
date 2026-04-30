@@ -42,9 +42,11 @@ import org.keycloak.testframework.https.CertificatesConfig;
 import org.keycloak.testframework.https.CertificatesConfigBuilder;
 import org.keycloak.testframework.https.InjectCertificates;
 import org.keycloak.testframework.https.ManagedCertificates;
+import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.remote.timeoffset.InjectTimeOffSet;
 import org.keycloak.testframework.remote.timeoffset.TimeOffSet;
 import org.keycloak.testframework.util.ApiUtil;
@@ -307,40 +309,40 @@ public class AdminClientTest {
 
         @Override
         public RealmBuilder configure(RealmBuilder realm) {
-            realm.addUser(TEST_USER_USERNAME)
+            realm.users(UserBuilder.create(TEST_USER_USERNAME)
                     .name("test", "user")
                     .email("testuser@localhost.com")
                     .emailVerified(true)
                     .password(TEST_USER_PASSWORD)
                     .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.REALM_ADMIN)
-                    .roles(OAuth2Constants.OFFLINE_ACCESS);
+                    .realmRoles(OAuth2Constants.OFFLINE_ACCESS));
 
-            realm.addClient(CLIENT_ID)
+            realm.clients(ClientBuilder.create(CLIENT_ID)
                     .secret(CLIENT_SECRET)
-                    .serviceAccountsEnabled(true);
+                    .serviceAccountsEnabled(true));
 
-            realm.addUser(ServiceAccountConstants.SERVICE_ACCOUNT_USER_PREFIX + CLIENT_ID)
+            realm.users(UserBuilder.create(ServiceAccountConstants.SERVICE_ACCOUNT_USER_PREFIX + CLIENT_ID)
                     .name("serviceAccount", "user")
                     .email("serviceAccountUser@localhost.com")
                     .serviceAccountId(CLIENT_ID)
-                    .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.REALM_ADMIN);
+                    .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.REALM_ADMIN));
 
-            realm.addClient(X509_CLIENT_ID)
+            realm.clients(ClientBuilder.create(X509_CLIENT_ID)
                     .serviceAccountsEnabled(true)
                     .authenticatorType(X509ClientAuthenticator.PROVIDER_ID)
                     .attribute(X509ClientAuthenticator.ATTR_SUBJECT_DN, "(.*?)(?:$)")
-                    .attribute(X509ClientAuthenticator.ATTR_ALLOW_REGEX_PATTERN_COMPARISON, "true");
+                    .attribute(X509ClientAuthenticator.ATTR_ALLOW_REGEX_PATTERN_COMPARISON, "true"));
 
             // This user is associated with the x509-client-sa service account above and
             // give the service account a service account role "realm-management:realm-admin".
             // Without the "realm-management:realm-admin" role we won't be able to test any actual
             // admin call.
-            realm.addUser(ServiceAccountConstants.SERVICE_ACCOUNT_USER_PREFIX + X509_CLIENT_ID)
+            realm.users(UserBuilder.create(ServiceAccountConstants.SERVICE_ACCOUNT_USER_PREFIX + X509_CLIENT_ID)
                     .name("x509ServiceAccount", "user")
                     .email("x509ServiceAccountUser@localhost.com")
                     .emailVerified(true)
                     .serviceAccountId(X509_CLIENT_ID)
-                    .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.REALM_ADMIN);
+                    .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.REALM_ADMIN));
 
             return realm;
         }

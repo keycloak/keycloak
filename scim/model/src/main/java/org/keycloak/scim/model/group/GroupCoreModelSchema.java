@@ -25,6 +25,8 @@ import org.keycloak.scim.resource.schema.AbstractModelSchema;
 import org.keycloak.scim.resource.schema.attribute.Attribute;
 import org.keycloak.utils.KeycloakSessionUtil;
 
+import static org.keycloak.utils.StringUtil.isBlank;
+
 public final class GroupCoreModelSchema extends AbstractModelSchema<GroupModel, Group> {
 
     public GroupCoreModelSchema() {
@@ -76,7 +78,7 @@ public final class GroupCoreModelSchema extends AbstractModelSchema<GroupModel, 
     }
 
     @Override
-    protected Map<String, Attribute<GroupModel, Group>> doGetAttributes() {
+    protected Map<String, Attribute<GroupModel, Group>> getAttributeMappers() {
         List<Attribute<GroupModel, Group>> attributes = new ArrayList<>(Attribute.<GroupModel, Group>simple("displayName")
                     .notCaseExact()
                     .modelAttributeResolver((attribute) -> {
@@ -161,6 +163,13 @@ public final class GroupCoreModelSchema extends AbstractModelSchema<GroupModel, 
     public void populate(Group resource, GroupModel model, List<String> requestedAttributes, List<String> excludedAttributes) {
         super.populate(resource, model, requestedAttributes, excludedAttributes);
         setTimestamps(resource, model);
+    }
+
+    @Override
+    public void validate(Group representation) throws ModelValidationException {
+        if (isBlank(representation.getDisplayName())) {
+            throw new ModelValidationException("Display name is required");
+        }
     }
 
     private void setTimestamps(Group resource, GroupModel model) {
