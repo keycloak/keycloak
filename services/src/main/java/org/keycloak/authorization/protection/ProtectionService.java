@@ -59,7 +59,7 @@ public class ProtectionService {
         KeycloakIdentity identity = createIdentity(true);
         ResourceServer resourceServer = getResourceServer(identity);
         ResourceSetService resourceManager = new ResourceSetService(this.session, resourceServer, this.authorization, null, createAdminEventBuilder(identity, resourceServer));
-        return new ResourceService(this.session, resourceServer, identity, resourceManager);
+        return new ResourceService(authorization, resourceServer, identity, resourceManager);
     }
 
     private AdminEventBuilder createAdminEventBuilder(KeycloakIdentity identity, ResourceServer resourceServer) {

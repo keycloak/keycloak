@@ -126,8 +126,10 @@ public abstract class AbstractAuthorizationTest extends AbstractClientTest {
 
     private RealmBuilder createTestRealm() {
         return RealmBuilder.create().name("authz-test")
-                .user(UserBuilder.create().username("marta").password("password"))
-                .user(UserBuilder.create().username("kolo").password("password"))
+                .user(UserBuilder.create().username("marta").password("password")
+                        .role(RESOURCE_SERVER_CLIENT_ID, "uma_protection"))
+                .user(UserBuilder.create().username("kolo").password("password")
+                        .role(RESOURCE_SERVER_CLIENT_ID, "uma_protection"))
                 .client(ClientBuilder.create().clientId(RESOURCE_SERVER_CLIENT_ID)
                         .name(RESOURCE_SERVER_CLIENT_ID)
                         .secret("secret")
