@@ -1959,7 +1959,7 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
     public void testCredentialRequestWithOptionalClientScope() {
         ClientScopeRepresentation optionalScope = createOptionalClientScope(
                 "optional-jwt-credential",
-                ISSUER_DID.toString(),
+                TEST_ISSUER_DID,
                 "optional-jwt-credential-config-id",
                 null, null,
                 VCFormat.JWT_VC,
@@ -2016,7 +2016,7 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
     public void testCannotAssignOid4vciScopeAsDefaultToClient() {
         ClientScopeRepresentation oid4vciScope = createOptionalClientScope(
                 "test-oid4vci-scope",
-                ISSUER_DID.toString(),
+                TEST_ISSUER_DID,
                 "test-oid4vci-config-id",
                 null, null,
                 VCFormat.JWT_VC,
@@ -2041,7 +2041,7 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
     public void testCannotAssignOid4vciScopeAsDefaultToRealm() {
         ClientScopeRepresentation oid4vciScope = createOptionalClientScope(
                 "test-oid4vci-realm-scope",
-                ISSUER_DID.toString(),
+                TEST_ISSUER_DID,
                 "test-oid4vci-realm-config-id",
                 null, null,
                 VCFormat.JWT_VC,
@@ -2064,7 +2064,7 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
     public void testCannotAssignOid4vciScopeWhenRealmDisabled() {
         ClientScopeRepresentation oid4vciScope = createOptionalClientScope(
                 "test-oid4vci-disabled-scope",
-                ISSUER_DID.toString(),
+                TEST_ISSUER_DID,
                 "test-oid4vci-disabled-config-id",
                 null, null,
                 VCFormat.JWT_VC,
