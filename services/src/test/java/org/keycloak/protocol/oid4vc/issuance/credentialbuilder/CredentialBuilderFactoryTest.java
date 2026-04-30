@@ -2,6 +2,7 @@ package org.keycloak.protocol.oid4vc.issuance.credentialbuilder;
 
 import java.util.List;
 
+import org.keycloak.VCFormat;
 import org.keycloak.common.Profile;
 import org.keycloak.common.Profile.Feature;
 import org.keycloak.common.crypto.CryptoIntegration;
@@ -12,6 +13,7 @@ import org.keycloak.protocol.oid4vc.issuance.signing.CredentialSigner;
 import org.keycloak.services.resteasy.ResteasyKeycloakSession;
 import org.keycloak.services.resteasy.ResteasyKeycloakSessionFactory;
 
+import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -33,6 +35,11 @@ public class CredentialBuilderFactoryTest {
         ResteasyKeycloakSessionFactory factory = new ResteasyKeycloakSessionFactory();
         factory.init();
         session = new ResteasyKeycloakSession(factory);
+    }
+
+    @AfterClass
+    public static void afterClass() {
+        Profile.reset();
     }
 
     @Test
@@ -67,5 +74,22 @@ public class CredentialBuilderFactoryTest {
                 .toList();
 
         assertThat(signerIds, not(hasItem("ldp_vc")));
+    }
+
+    @Test
+    public void testMdocFactoriesDisabledWithoutExperimentalFeature() {
+        List<String> builderIds = session.getKeycloakSessionFactory()
+                .getProviderFactoriesStream(CredentialBuilder.class)
+                .map(f -> f.getId())
+                .toList();
+
+        assertThat(builderIds, not(hasItem(VCFormat.MSO_MDOC)));
+
+        List<String> signerIds = session.getKeycloakSessionFactory()
+                .getProviderFactoriesStream(CredentialSigner.class)
+                .map(f -> f.getId())
+                .toList();
+
+        assertThat(signerIds, not(hasItem(VCFormat.MSO_MDOC)));
     }
 }
