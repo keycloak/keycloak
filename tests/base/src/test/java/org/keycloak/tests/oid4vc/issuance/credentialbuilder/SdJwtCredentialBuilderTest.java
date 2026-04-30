@@ -95,9 +95,8 @@ public class SdJwtCredentialBuilderTest extends CredentialBuilderTest {
 
     public void testSignSDJwtCredential(Map<String, Object> claims, int decoys, List<String> visibleClaims)
             throws VerificationException {
-        String issuerDid = TEST_DID.toString();
         CredentialBuildConfig credentialBuildConfig = new CredentialBuildConfig()
-                .setCredentialIssuer(issuerDid)
+                .setCredentialIssuer(TEST_ISSUER_DID)
                 .setCredentialType("https://credentials.example.com/test-credential")
                 .setTokenJwsType("example+sd-jwt")
                 .setHashAlgorithm(OID4VCConstants.SD_HASH_DEFAULT_ALGORITHM)
@@ -113,7 +112,7 @@ public class SdJwtCredentialBuilderTest extends CredentialBuilderTest {
 
         IssuerSignedJWT jwt = sdJwt.getIssuerSignedJWT();
 
-        assertEquals(issuerDid,
+        assertEquals(TEST_ISSUER_DID,
                 jwt.getPayload().get(CLAIM_NAME_ISSUER).asText(),
                 "The issuer should be set in the token.");
 

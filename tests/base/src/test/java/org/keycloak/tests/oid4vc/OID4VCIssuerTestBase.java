@@ -124,9 +124,10 @@ public abstract class OID4VCIssuerTestBase {
 
     protected final Logger log = Logger.getLogger(getClass());
 
-    public static final String OID4VCI_CLIENT_ID = "oid4vci-test";
-    public static final String OID4VCI_PUBLIC_CLIENT_ID = "oid4vci-test-pub";
-    public static final URI ISSUER_DID = URI.create("did:web:test.org");
+    public static final String OID4VCI_CLIENT_ID = "oid4vci-client";
+    public static final String OID4VCI_PUBLIC_CLIENT_ID = "oid4vci-client-pub";
+
+    public static final String TEST_ISSUER_DID = "did:web:test.org";
     public static final String TEST_CREDENTIAL_MAPPERS_FILE = "/oid4vc/test-credential-mappers.json";
     public static final String TEST_USER = "john";
     public static final String TEST_PASSWORD = "password";
@@ -144,7 +145,6 @@ public abstract class OID4VCIssuerTestBase {
     public static final String minimalJwtTypeCredentialConfigurationIdName = "vc-with-minimal-config-id";
 
     public static final String CONTEXT_URL = "https://www.w3.org/2018/credentials/v1";
-    protected static final URI TEST_DID = ISSUER_DID;
     protected static final List<String> TEST_TYPES = List.of("VerifiableCredential");
     protected static final Instant TEST_EXPIRATION_DATE = Instant.ofEpochMilli(Time.currentTimeMillis())
             .plus(365, ChronoUnit.DAYS)
@@ -154,7 +154,7 @@ public abstract class OID4VCIssuerTestBase {
     @InjectRealm(config = VCTestRealmConfig.class)
     protected ManagedRealm testRealm;
 
-    @InjectClient(ref = "oid4vci-client", config = PrivateOID4VCIClient.class)
+    @InjectClient(ref = OID4VCI_CLIENT_ID, config = ConfidentialOID4VCIClient.class)
     protected ManagedClient managedClient;
 
     @InjectClient(ref = OID4VCI_PUBLIC_CLIENT_ID, config = PublicOID4VCIClient.class)
@@ -193,6 +193,7 @@ public abstract class OID4VCIssuerTestBase {
 
     @TestSetup
     public void configureTestRealm() {
+
         RealmResource realmResource = testRealm.admin();
         UPConfig upConfig = realmResource.users().userProfile().getConfiguration();
         upConfig.setUnmanagedAttributePolicy(UPConfig.UnmanagedAttributePolicy.ADMIN_EDIT);
@@ -266,7 +267,7 @@ public abstract class OID4VCIssuerTestBase {
         testCredential.setId(URI.create(String.format("uri:uuid:%s", UUID.randomUUID())));
         testCredential.setContext(List.of(CONTEXT_URL));
         testCredential.setType(TEST_TYPES);
-        testCredential.setIssuer(TEST_DID);
+        testCredential.setIssuer(TEST_ISSUER_DID);
         testCredential.setExpirationDate(TEST_EXPIRATION_DATE);
         if (claims.containsKey("issuanceDate")) {
             testCredential.setIssuanceDate((Instant) claims.get("issuanceDate"));
@@ -541,7 +542,7 @@ public abstract class OID4VCIssuerTestBase {
 
             CredentialScopeRepresentation jwtVcScope = createCredentialScope(
                     jwtTypeCredentialScopeName,
-                    ISSUER_DID.toString(),
+                    TEST_ISSUER_DID,
                     jwtTypeCredentialConfigurationIdName,
                     jwtTypeCredentialScopeName,
                     null,
@@ -697,7 +698,7 @@ public abstract class OID4VCIssuerTestBase {
         }
     }
 
-    public static class PrivateOID4VCIClient implements ClientConfig {
+    public static class ConfidentialOID4VCIClient implements ClientConfig {
 
         @Override
         public ClientBuilder configure(ClientBuilder client) {
