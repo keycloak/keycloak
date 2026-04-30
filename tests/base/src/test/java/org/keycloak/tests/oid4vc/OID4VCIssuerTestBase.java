@@ -9,6 +9,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.cert.Certificate;
+import java.security.cert.X509Certificate;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -36,6 +37,7 @@ import org.keycloak.common.util.PemUtils;
 import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.common.util.Time;
 import org.keycloak.constants.OID4VCIConstants;
+import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.events.EventType;
@@ -197,6 +199,7 @@ public abstract class OID4VCIssuerTestBase {
 
         oauth.client(client.getClientId(), client.getSecret());
         enableVerifiableCredentialEvents(testRealm);
+        ensureHaipCompliantSdJwtSigningConfiguration();
 
         wallet = new OID4VCBasicWallet(keycloak, oauth);
     }
@@ -371,6 +374,20 @@ public abstract class OID4VCIssuerTestBase {
         clientScopeResource.update(clientScope);
     }
 
+    /**
+     * Persistently configure SD-JWT scopes to use a dedicated signing key with a
+     * non-self-signed leaf certificate, so HAIP-6.1.1 is satisfied across requests.
+     */
+    protected void ensureHaipCompliantSdJwtSigningConfiguration() {
+        KeyWrapper signingKey = getRsaKey(KeyUse.SIG, Algorithm.RS256, "haip-sdjwt-signing-key");
+        ComponentRepresentation provider = createRsaKeyProviderComponentWithNonSelfSignedLeaf(
+                signingKey,
+                "haip-sdjwt-signing-key-provider",
+                200
+        );
+        testRealm.admin().components().add(provider).close();
+    }
+
     // Private ---------------------------------------------------------------------------------------------------------
 
     private ComponentRepresentation createRsaKeyProviderComponent(KeyWrapper keyWrapper, String name, int priority) {
@@ -394,6 +411,45 @@ public abstract class OID4VCIssuerTestBase {
         )));
 
         return component;
+    }
+
+    private ComponentRepresentation createRsaKeyProviderComponentWithNonSelfSignedLeaf(KeyWrapper keyWrapper, String name, int priority) {
+        ComponentRepresentation component = new ComponentRepresentation();
+        component.setProviderType(KeyProvider.class.getName());
+        component.setName(name);
+        component.setId(UUID.randomUUID().toString());
+        component.setProviderId("rsa");
+
+        try {
+            KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA");
+            kpg.initialize(2048);
+            KeyPair caKeyPair = kpg.generateKeyPair();
+            X509Certificate caCert = CertificateUtils.generateV1SelfSignedCertificate(caKeyPair, "Test CA");
+
+            KeyPair leafKeyPair = new KeyPair(
+                    (PublicKey) keyWrapper.getPublicKey(),
+                    (PrivateKey) keyWrapper.getPrivateKey()
+            );
+            X509Certificate leafCert = CertificateUtils.generateV3Certificate(
+                    leafKeyPair,
+                    caKeyPair.getPrivate(),
+                    caCert,
+                    "TestKey"
+            );
+
+            component.setConfig(new MultivaluedHashMap<>(Map.of(
+                    "privateKey", List.of(PemUtils.encodeKey(keyWrapper.getPrivateKey())),
+                    "certificate", List.of(PemUtils.encodeCertificate(leafCert)),
+                    "active", List.of("true"),
+                    "priority", List.of(String.valueOf(priority)),
+                    "enabled", List.of("true"),
+                    "algorithm", List.of(keyWrapper.getAlgorithm()),
+                    "keyUse", List.of(keyWrapper.getUse().name())
+            )));
+            return component;
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to create HAIP-compliant SD-JWT signing key provider", e);
+        }
     }
 
     private void enableVerifiableCredentialEvents(ManagedRealm realm) {
