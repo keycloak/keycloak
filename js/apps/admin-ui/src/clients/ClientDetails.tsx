@@ -232,6 +232,14 @@ export default function ClientDetails() {
     name: convertAttributeNameToForm<FormFields>("attributes.ssf.enabled"),
   });
 
+  const ssfAllowEmitEvents = useWatch({
+    control: form.control,
+    name: convertAttributeNameToForm<FormFields>(
+      "attributes.ssf.allowEmitEvents",
+    ),
+  });
+  const showSsfEmitEventsTab = ssfAllowEmitEvents?.toString() === "true";
+
   // Gate every SSF surface on three conditions: server feature flag,
   // realm-level transmitter toggle, and per-client opt-in. Missing any
   // one means SSF endpoints aren't available — surfacing the tab would
@@ -780,20 +788,22 @@ export default function ClientDetails() {
                         activeTab="event-search"
                       />
                     </Tab>
-                    <Tab
-                      id="ssfEmitEventsTab"
-                      data-testid="ssfEmitEventsTab"
-                      title={
-                        <TabTitleText>{t("ssfTabEmitEvents")}</TabTitleText>
-                      }
-                      {...ssfEmitEventsTab}
-                    >
-                      <SsfTab
-                        save={save}
-                        client={client}
-                        activeTab="emit-events"
-                      />
-                    </Tab>
+                    {showSsfEmitEventsTab && (
+                      <Tab
+                        id="ssfEmitEventsTab"
+                        data-testid="ssfEmitEventsTab"
+                        title={
+                          <TabTitleText>{t("ssfTabEmitEvents")}</TabTitleText>
+                        }
+                        {...ssfEmitEventsTab}
+                      >
+                        <SsfTab
+                          save={save}
+                          client={client}
+                          activeTab="emit-events"
+                        />
+                      </Tab>
+                    )}
                   </RoutableTabs>
                 </Tab>
               )}
