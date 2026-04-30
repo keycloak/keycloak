@@ -221,7 +221,7 @@ public abstract class AuthzEndpointRequestParser {
     }
 
     protected <T> T replaceIfNotNull(T previousVal, T newVal) {
-        return newVal==null ? previousVal : newVal;
+        return newVal == null ? previousVal : newVal;
     }
 
     protected String getAndValidateParameter(String paramName) {
