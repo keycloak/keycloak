@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.client;
+package org.keycloak.tests.client;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -38,6 +38,7 @@ import java.util.stream.Collectors;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response;
 
+import org.keycloak.admin.client.Keycloak;
 import org.keycloak.client.registration.Auth;
 import org.keycloak.client.registration.ClientRegistration;
 import org.keycloak.client.registration.ClientRegistrationException;
@@ -45,6 +46,7 @@ import org.keycloak.client.registration.HttpErrorException;
 import org.keycloak.common.constants.ServiceAccountConstants;
 import org.keycloak.common.util.CollectionUtil;
 import org.keycloak.events.Errors;
+import org.keycloak.models.AdminRoles;
 import org.keycloak.models.Constants;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
@@ -53,6 +55,7 @@ import org.keycloak.protocol.saml.SamlProtocol;
 import org.keycloak.representations.idm.ClientInitialAccessCreatePresentation;
 import org.keycloak.representations.idm.ClientInitialAccessPresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
@@ -60,8 +63,20 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
-import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
+import org.keycloak.testframework.annotations.InjectAdminClient;
+import org.keycloak.testframework.annotations.InjectKeycloakUrls;
+import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.oauth.OAuthClient;
+import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
+import org.keycloak.testframework.realm.ClientBuilder;
+import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.realm.RealmBuilder;
+import org.keycloak.testframework.realm.RealmConfig;
+import org.keycloak.testframework.realm.UserBuilder;
+import org.keycloak.testframework.server.KeycloakUrls;
+import org.keycloak.testframework.util.ApiUtil;
+import org.keycloak.tests.suites.DatabaseTest;
 import org.keycloak.util.JsonSerialization;
 
 import org.apache.http.Header;
@@ -73,8 +88,10 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.util.EntityUtils;
 import org.hamcrest.CoreMatchers;
-import org.hamcrest.Matchers;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static java.util.Arrays.asList;
 
@@ -87,62 +104,117 @@ import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.core.Is.is;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class ClientRegistrationTest extends AbstractClientRegistrationTest {
+@KeycloakIntegrationTest
+public class ClientRegistrationTest {
 
     private static final String CLIENT_ID = "test-client";
     private static final String CLIENT_SECRET = "test-client-secret";
+    public static final String REALM_NAME = "test";
 
-    private ClientRepresentation buildClient() {
-    	ClientRepresentation client = new ClientRepresentation();
-        client.setClientId(CLIENT_ID);
-        client.setSecret(CLIENT_SECRET);
+    @InjectKeycloakUrls
+    KeycloakUrls keycloakUrls;
 
-        return client;
+    @InjectRealm(config = ClientRegistrationTest.ClientRegistrationRealmConfig.class)
+    ManagedRealm realm;
+
+    @InjectOAuthClient
+    OAuthClient oauth;
+
+    @InjectAdminClient
+    Keycloak adminClient;
+
+    ClientRegistration reg;
+
+    @BeforeEach
+    public void before() throws Exception {
+        reg = ClientRegistration.create()
+                .url(keycloakUrls.getBase(), REALM_NAME)
+                .build();
     }
 
-    private ClientRepresentation registerClient() throws ClientRegistrationException {
-    	return registerClient(buildClient());
-    }
+    @AfterEach
+    public void after() throws Exception {
+        // Clean up any test client that might have been created
+        try {
+            if (reg != null) {
+                authManageClients();
+                reg.delete(CLIENT_ID);
+            }
+        } catch (Exception e) {
+            // Ignore - client may not exist
+        }
 
-    private ClientRepresentation registerClient(ClientRepresentation client) throws ClientRegistrationException {
-        ClientRepresentation createdClient = reg.create(client);
-        assertEquals(CLIENT_ID, createdClient.getClientId());
-
-        client = adminClient.realm(REALM_NAME).clients().get(createdClient.getId()).toRepresentation();
-        assertEquals(CLIENT_ID, client.getClientId());
-
-        // Remove this client after test
-        getCleanup().addClientUuid(createdClient.getId());
-
-        return createdClient;
+        if (reg != null) {
+            reg.close();
+        }
     }
 
     @Test
+    @DatabaseTest
     public void registerClientAsAdmin() throws ClientRegistrationException {
         authManageClients();
-        registerClient();
+
+        // Register the client
+        ClientRepresentation client = buildClient();
+        ClientRepresentation createdClient = registerClient(client);
+
+        // Verify client was created
+        assertNotNull(createdClient);
+        assertEquals(CLIENT_ID, createdClient.getClientId());
+
+        // Verify via admin API
+        ClientRepresentation adminClient = this.adminClient.realm(REALM_NAME)
+                .clients()
+                .get(createdClient.getId())
+                .toRepresentation();
+        assertEquals(CLIENT_ID, adminClient.getClientId());
+
+        this.adminClient.realm(REALM_NAME)
+                .clients()
+                .get(createdClient.getId())
+                .remove();
+    }
+
+    @Test
+    @DatabaseTest
+    public void registerClientAsAdminWithCreateOnly() throws ClientRegistrationException {
+        authCreateClients();
+
+        ClientRepresentation client = buildClient();
+        ClientRepresentation createdClient = registerClient(client);
+
+        assertNotNull(createdClient);
+        assertEquals(CLIENT_ID, createdClient.getClientId());
+
+        this.adminClient.realm(REALM_NAME)
+                .clients()
+                .get(createdClient.getId())
+                .remove();
     }
 
     // KEYCLOAK-5907
     @Test
+    @DatabaseTest
     public void withServiceAccount() throws ClientRegistrationException {
         authManageClients();
         ClientRepresentation clientRep = buildClient();
         clientRep.setServiceAccountsEnabled(true);
 
         ClientRepresentation rep = registerClient(clientRep);
+        assertNotNull(rep);
+        assertEquals(CLIENT_ID, rep.getClientId());
 
-        UserRepresentation serviceAccountUser = adminClient.realm("test").clients().get(rep.getId()).getServiceAccountUser();
+        UserRepresentation serviceAccountUser = adminClient.realm(REALM_NAME).clients().get(rep.getId()).getServiceAccountUser();
 
         assertNotNull(serviceAccountUser);
 
@@ -156,6 +228,7 @@ public class ClientRegistrationTest extends AbstractClientRegistrationTest {
     }
 
     @Test
+    @DatabaseTest
     public void updateServiceAccount() throws Exception {
         authManageClients();
         ClientRepresentation client = buildClient();
@@ -173,11 +246,13 @@ public class ClientRegistrationTest extends AbstractClientRegistrationTest {
         client = reg.update(client);
         assertFalse(client.isServiceAccountsEnabled());
         assertTrue(adminClient.realm(REALM_NAME).users().search(ServiceAccountConstants.SERVICE_ACCOUNT_USER_PREFIX + client.getClientId(), true).isEmpty());
+        deleteClient(createdClient);
     }
 
     @Test
+    @DatabaseTest
     public void registerClientInMasterRealm() throws Exception {
-        ClientRegistration masterReg = ClientRegistration.create().url(suiteContext.getAuthServerInfo().getContextRoot() + "/auth", "master").build();
+        ClientRegistration masterReg = ClientRegistration.create().url(keycloakUrls.getBase(), "master").build();
 
         String token = oauth.realm("master").client(Constants.ADMIN_CLI_CLIENT_ID).doPasswordGrantRequest( "admin", "admin").getAccessToken();
         masterReg.auth(Auth.token(token));
@@ -193,17 +268,20 @@ public class ClientRegistrationTest extends AbstractClientRegistrationTest {
     }
 
     @Test
+    @DatabaseTest
     public void registerClientWithoutProtocol() throws ClientRegistrationException {
         authCreateClients();
-        ClientRepresentation clientRepresentation = registerClient();
+        ClientRepresentation client = buildClient();
+        ClientRepresentation clientRepresentation = registerClient(client);
+
+        assertNotNull(clientRepresentation);
+        assertEquals(CLIENT_ID, clientRepresentation.getClientId());
 
         assertEquals("openid-connect", clientRepresentation.getProtocol());
-    }
 
-    @Test
-    public void registerClientAsAdminWithCreateOnly() throws ClientRegistrationException {
-        authCreateClients();
-        registerClient();
+        // Cleanup
+        authManageClients();
+        deleteClient(clientRepresentation);
     }
 
     /**
@@ -211,21 +289,25 @@ public class ClientRegistrationTest extends AbstractClientRegistrationTest {
      * Attempting to create a client with protocol "oid4vc" should be rejected.
      */
     @Test
+    @DatabaseTest
     public void registerOid4vcClientShouldBeRejected() {
         authManageClients();
 
         ClientRepresentation client = buildClient();
         client.setProtocol("oid4vc");
 
-        Response response = adminClient.realm(REALM_NAME).clients().create(client);
-        assertEquals(400, response.getStatus(), "Creating a client with OID4VC protocol should be rejected as it is not a valid protocol for clients.");
+        try(Response response = adminClient.realm(REALM_NAME).clients().create(client)) {
+            Assertions.assertEquals(400, response.getStatus() , "Creating a client with OID4VC protocol should be rejected as it is not a valid protocol for clients.");
+        }
     }
 
     @Test
-    public void registerClientAsAdminWithNoAccess() throws ClientRegistrationException {
+    @DatabaseTest
+    public void registerClientAsAdminWithNoAccess() {
         authNoAccess();
         try {
-            registerClient();
+            ClientRepresentation client = buildClient();
+            registerClient(client);
             fail("Expected 403");
         } catch (ClientRegistrationException e) {
             assertEquals(403, ((HttpErrorException) e.getCause()).getStatusLine().getStatusCode());
@@ -233,6 +315,7 @@ public class ClientRegistrationTest extends AbstractClientRegistrationTest {
     }
 
     @Test
+    @DatabaseTest
     public void registerClientUsingRevokedToken() throws Exception {
         reg.auth(Auth.token(getToken("manage-clients", "password")));
 
@@ -262,39 +345,53 @@ public class ClientRegistrationTest extends AbstractClientRegistrationTest {
             OAuth2ErrorRepresentation error = cause.toErrorRepresentation();
             assertEquals(Errors.INVALID_TOKEN, error.getError());
             assertEquals("Failed decode token", error.getErrorDescription());
+        } finally {
+            // Cleanup myclient
+            reg.auth(Auth.token(getToken("manage-clients", "password")));
+            try {
+                reg.delete("myclient");
+            } catch (Exception e) {
+                // Ignore
+            }
         }
     }
 
     @Test
+    @DatabaseTest
     public void registerClientWithNonAsciiChars() throws ClientRegistrationException {
-    	authCreateClients();
-    	ClientRepresentation client = buildClient();
-    	String name = "Cli\u00EBnt";
-		client.setName(name);
+        authCreateClients();
+        ClientRepresentation client = buildClient();
+        String name = "Cli\u00EBnt";
+        client.setName(name);
 
-    	ClientRepresentation createdClient = registerClient(client);
-    	assertEquals(name, createdClient.getName());
+        ClientRepresentation createdClient = registerClient(client);
+        assertEquals(name, createdClient.getName());
+
+        authManageClients();
+        deleteClient(createdClient);
     }
 
     @Test
+    @DatabaseTest
     public void clientWithDefaultRoles() throws ClientRegistrationException {
         authCreateClients();
         ClientRepresentation client = buildClient();
         client.setDefaultRoles(new String[]{"test-default-role"});
 
         ClientRepresentation createdClient = registerClient(client);
-        assertThat(createdClient.getDefaultRoles(), Matchers.arrayContaining("test-default-role"));
+        assertArrayEquals(new String[]{"test-default-role"}, createdClient.getDefaultRoles());
 
         authManageClients();
         ClientRepresentation obtainedClient = reg.get(CLIENT_ID);
-        assertThat(obtainedClient.getDefaultRoles(), Matchers.arrayContaining("test-default-role"));
+        assertArrayEquals(new String[]{"test-default-role"}, obtainedClient.getDefaultRoles());
 
         client.setDefaultRoles(new String[]{"test-default-role1","test-default-role2"});
         ClientRepresentation updatedClient = reg.update(client);
-        assertThat(updatedClient.getDefaultRoles(), Matchers.arrayContainingInAnyOrder("test-default-role1","test-default-role2"));
+        assertThat(Arrays.asList(updatedClient.getDefaultRoles()), containsInAnyOrder("test-default-role1", "test-default-role2"));
     }
 
     @Test
+    @DatabaseTest
     public void updateClientScopes() throws ClientRegistrationException {
         authManageClients();
         ClientRepresentation client = buildClient();
@@ -323,6 +420,7 @@ public class ClientRegistrationTest extends AbstractClientRegistrationTest {
     }
 
     @Test
+    @DatabaseTest
     public void testInvalidUrlClientValidation() {
         testClientUriValidation("Root URL is not a valid URL",
                 "Base URL is not a valid URL",
@@ -332,6 +430,7 @@ public class ClientRegistrationTest extends AbstractClientRegistrationTest {
     }
 
     @Test
+    @DatabaseTest
     public void testIllegalSchemeClientValidation() {
         testClientUriValidation("Root URL uses an illegal scheme",
                 "Base URL uses an illegal scheme",
@@ -344,6 +443,7 @@ public class ClientRegistrationTest extends AbstractClientRegistrationTest {
 
     // KEYCLOAK-3421
     @Test
+    @DatabaseTest
     public void testFragmentProhibitedClientValidation() {
         testClientUriValidation("Root URL must not contain an URL fragment",
                 null,
@@ -354,55 +454,21 @@ public class ClientRegistrationTest extends AbstractClientRegistrationTest {
     }
 
     @Test
+    @DatabaseTest
     public void testSamlSpecificUrls() throws ClientRegistrationException {
         testSamlSpecificUrls(true, "javascript:alert('TEST')", "data:text/html;base64,PHNjcmlwdD5jb25maXJtKGRvY3VtZW50LmRvbWFpbik7PC9zY3JpcHQ+");
         testSamlSpecificUrls(false, "javascript:alert('TEST')", "data:text/html;base64,PHNjcmlwdD5jb25maXJtKGRvY3VtZW50LmRvbWFpbik7PC9zY3JpcHQ+");
     }
 
-    private void testSamlSpecificUrls(boolean register, String... testUrls) throws ClientRegistrationException {
-        ClientRepresentation rep = buildClient();
-        rep.setProtocol(SamlProtocol.LOGIN_PROTOCOL);
-        if (register) {
-            authCreateClients();
-        } else {
-            authManageClients();
-            registerClient(rep);
-            rep = reg.get(CLIENT_ID);
-        }
-        rep.setAttributes(new HashMap<>());
-
-        Map<String, String> attrs = Map.of(
-                    SamlProtocol.SAML_ASSERTION_CONSUMER_URL_POST_ATTRIBUTE, "Assertion Consumer Service POST Binding URL",
-                    SamlProtocol.SAML_ASSERTION_CONSUMER_URL_REDIRECT_ATTRIBUTE, "Assertion Consumer Service Redirect Binding URL",
-                    SamlProtocol.SAML_ASSERTION_CONSUMER_URL_ARTIFACT_ATTRIBUTE, "Artifact Binding URL",
-                    SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_POST_ATTRIBUTE, "Logout Service POST Binding URL",
-                    SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_ARTIFACT_ATTRIBUTE, "Logout Service ARTIFACT Binding URL",
-                    SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_REDIRECT_ATTRIBUTE, "Logout Service Redirect Binding URL",
-                    SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_SOAP_ATTRIBUTE, "Logout Service SOAP Binding URL",
-                    SamlProtocol.SAML_ARTIFACT_RESOLUTION_SERVICE_URL_ATTRIBUTE, "Artifact Resolution Service");
-
-        for (String testUrl : testUrls) {
-            // admin url
-            rep.setAdminUrl(testUrl);
-            registerOrUpdateClientExpectingValidationErrors(rep, register, false, "Master SAML Processing URL uses an illegal scheme");
-            rep.setAdminUrl(null);
-            // attributes
-            for (Map.Entry<String, String> entry : attrs.entrySet()) {
-                rep.getAttributes().put(entry.getKey(), testUrl);
-                registerOrUpdateClientExpectingValidationErrors(rep, register, false, entry.getValue() + " uses an illegal scheme");
-                rep.getAttributes().remove(entry.getKey());
-            }
-        }
-    }
-
     @Test
+    @DatabaseTest
     public void testUpdateAuthorizationSettings() throws ClientRegistrationException {
         authManageClients();
         ClientRepresentation clientRep = buildClient();
         clientRep.setAuthorizationServicesEnabled(true);
 
         ClientRepresentation rep = registerClient(clientRep);
-        rep = adminClient.realm("test").clients().get(rep.getId()).toRepresentation();
+        rep = adminClient.realm(REALM_NAME).clients().get(rep.getId()).toRepresentation();
 
         assertTrue(rep.getAuthorizationServicesEnabled());
 
@@ -422,11 +488,504 @@ public class ClientRegistrationTest extends AbstractClientRegistrationTest {
         rep.setAuthorizationSettings(authzSettings);
 
         reg.update(rep);
-        authzSettings = adminClient.realm("test").clients().get(rep.getId()).authorization().exportSettings();
+        authzSettings = adminClient.realm(REALM_NAME).clients().get(rep.getId()).authorization().exportSettings();
 
         assertFalse(authzSettings.getResources().isEmpty());
         assertFalse(authzSettings.getScopes().isEmpty());
         assertFalse(authzSettings.getPolicies().isEmpty());
+    }
+
+    @Test
+    @DatabaseTest
+    public void getClientAsAdmin() throws ClientRegistrationException {
+        setupClientAsAdmin();
+        ClientRepresentation rep = reg.get(CLIENT_ID);
+        assertNotNull(rep);
+    }
+
+    @Test
+    @DatabaseTest
+    public void getClientAsAdminWithCreateOnly() throws ClientRegistrationException {
+        setupClientAsAdmin();
+        authCreateClients();
+        try {
+            reg.get(CLIENT_ID);
+            fail("Expected 403");
+        } catch (ClientRegistrationException e) {
+            assertEquals(403, ((HttpErrorException) e.getCause()).getStatusLine().getStatusCode());
+        }
+    }
+
+    @Test
+    @DatabaseTest
+    public void getClientAsAdminWithNoAccess() throws ClientRegistrationException {
+        setupClientAsAdmin();
+        authNoAccess();
+        try {
+            reg.get(CLIENT_ID);
+            fail("Expected 403");
+        } catch (ClientRegistrationException e) {
+            assertEquals(403, ((HttpErrorException) e.getCause()).getStatusLine().getStatusCode());
+        }
+    }
+
+    @Test
+    public void getClientNotFound() throws ClientRegistrationException {
+        authManageClients();
+        Assertions.assertNull(reg.get("invalid"));
+    }
+
+    @Test
+    public void getClientNotFoundNoAccess() {
+        authNoAccess();
+        try {
+            reg.get("invalid");
+            fail("Expected 403");
+        } catch (ClientRegistrationException e) {
+            assertEquals(403, ((HttpErrorException) e.getCause()).getStatusLine().getStatusCode());
+        }
+    }
+
+    @Test
+    @DatabaseTest
+    public void updateClientAsAdmin() throws ClientRegistrationException {
+        setupClientAsAdmin();
+
+        authManageClients();
+        updateClient();
+    }
+
+    @Test
+    @DatabaseTest
+    public void updateClientSecret() throws ClientRegistrationException {
+        authManageClients();
+        registerClient(buildClient());
+
+        ClientRepresentation client = reg.get(CLIENT_ID);
+        assertNotNull(client.getSecret());
+        client.setSecret("mysecret");
+
+        reg.update(client);
+
+        ClientRepresentation updatedClient = reg.get(CLIENT_ID);
+
+        assertEquals("mysecret", updatedClient.getSecret());
+    }
+
+    @Test
+    @DatabaseTest
+    public void addClientProtcolMappers() throws ClientRegistrationException {
+        authManageClients();
+
+        ClientRepresentation initialClient = buildClient();
+
+        registerClient(initialClient);
+        ClientRepresentation client = reg.get(CLIENT_ID);
+
+        addProtocolMapper(client, "mapperA");
+        reg.update(client);
+
+        ClientRepresentation updatedClient = reg.get(CLIENT_ID);
+        assertThat("Adding protocolMapper failed", updatedClient.getProtocolMappers().size(), is(1));
+    }
+
+    @Test
+    @DatabaseTest
+    public void removeClientProtcolMappers() throws ClientRegistrationException {
+        authManageClients();
+
+        ClientRepresentation initialClient = buildClient();
+        addProtocolMapper(initialClient, "mapperA");
+        registerClient(initialClient);
+        ClientRepresentation client = reg.get(CLIENT_ID);
+        client.setProtocolMappers(new ArrayList<>());
+        reg.update(client);
+
+        ClientRepresentation updatedClient = reg.get(CLIENT_ID);
+        assertThat("Removing protocolMapper failed", updatedClient.getProtocolMappers(), nullValue());
+    }
+
+    @Test
+    @DatabaseTest
+    public void updateClientProtcolMappers() throws ClientRegistrationException {
+        authManageClients();
+
+        ClientRepresentation initialClient = buildClient();
+        addProtocolMapper(initialClient, "mapperA");
+        registerClient(initialClient);
+        ClientRepresentation client = reg.get(CLIENT_ID);
+        client.getProtocolMappers().get(0).getConfig().put("claim.name", "updatedClaimName");
+        reg.update(client);
+
+        ClientRepresentation updatedClient = reg.get(CLIENT_ID);
+        assertThat("Updating protocolMapper failed", updatedClient.getProtocolMappers().get(0).getConfig().get("claim.name"), is("updatedClaimName"));
+    }
+
+    @Test
+    @DatabaseTest
+    public void updateClientAsAdminWithCreateOnly() {
+        authCreateClients();
+        try {
+            updateClient();
+            fail("Expected 403");
+        } catch (ClientRegistrationException e) {
+            assertEquals(403, ((HttpErrorException) e.getCause()).getStatusLine().getStatusCode());
+        }
+    }
+
+    @Test
+    @DatabaseTest
+    public void updateClientAsAdminWithNoAccess() {
+        authNoAccess();
+        try {
+            updateClient();
+            fail("Expected 403");
+        } catch (ClientRegistrationException e) {
+            assertEquals(403, ((HttpErrorException) e.getCause()).getStatusLine().getStatusCode());
+        }
+    }
+
+    @Test
+    @DatabaseTest
+    public void updateClientNotFound() {
+        authManageClients();
+        try {
+            ClientRepresentation client = new ClientRepresentation();
+            client.setClientId("invalid");
+
+            reg.update(client);
+
+            fail("Expected 404");
+        } catch (ClientRegistrationException e) {
+            assertEquals(404, ((HttpErrorException) e.getCause()).getStatusLine().getStatusCode());
+        }
+    }
+
+    @Test
+    @DatabaseTest
+    public void updateClientWithNonAsciiChars() throws ClientRegistrationException {
+        authCreateClients();
+        registerClient(buildClient());
+
+        authManageClients();
+        ClientRepresentation client = reg.get(CLIENT_ID);
+        String name = "Cli\u00EBnt";
+        client.setName(name);
+
+        ClientRepresentation updatedClient = reg.update(client);
+        assertEquals(name, updatedClient.getName());
+    }
+
+    @Test
+    @DatabaseTest
+    public void deleteClientAsAdmin() throws ClientRegistrationException {
+        authCreateClients();
+        ClientRepresentation client = registerClient(buildClient());
+
+        authManageClients();
+        deleteClient(client);
+    }
+
+    @Test
+    @DatabaseTest
+    public void deleteClientAsAdminWithCreateOnly() throws ClientRegistrationException {
+        authManageClients();
+        ClientRepresentation client = registerClient(buildClient());
+        try {
+            authCreateClients();
+            deleteClient(client);
+            fail("Expected 403");
+        } catch (ClientRegistrationException e) {
+            assertEquals(403, ((HttpErrorException) e.getCause()).getStatusLine().getStatusCode());
+        }
+    }
+
+    @Test
+    @DatabaseTest
+    public void deleteClientAsAdminWithNoAccess() throws ClientRegistrationException {
+        authManageClients();
+        ClientRepresentation client = registerClient(buildClient());
+        try {
+            authNoAccess();
+            deleteClient(client);
+            fail("Expected 403");
+        } catch (ClientRegistrationException e) {
+            assertEquals(403, ((HttpErrorException) e.getCause()).getStatusLine().getStatusCode());
+        }
+    }
+
+    @Test
+    @DatabaseTest
+    public void registerClientAsAdminWithScope() throws ClientRegistrationException {
+        authManageClients();
+        ClientRepresentation client = new ClientRepresentation();
+        client.setClientId(CLIENT_ID);
+        client.setSecret(CLIENT_SECRET);
+        ArrayList<String> optionalClientScopes = new ArrayList<>(Arrays.asList("address","phone"));
+        client.setOptionalClientScopes(optionalClientScopes);
+
+        ClientRepresentation createdClient = reg.create(client);
+        assertEquals(CLIENT_ID, createdClient.getClientId());
+        client = adminClient.realm(REALM_NAME).clients().get(createdClient.getId()).toRepresentation();
+        assertEquals(CLIENT_ID, client.getClientId());
+        // Remove this client after test
+
+        deleteClient(createdClient);
+
+        Set<String> requestedClientScopes = new HashSet<>(optionalClientScopes);
+        Set<String> registeredClientScopes = new HashSet<>(client.getOptionalClientScopes());
+        assertEquals(requestedClientScopes, registeredClientScopes);
+        assertTrue(CollectionUtil.collectionEquals(client.getDefaultClientScopes(), Set.of("basic")));
+    }
+
+    @Test
+    @DatabaseTest
+    public void registerClientAsAdminWithoutScope() throws ClientRegistrationException {
+        Set<String> realmDefaultClientScopes = adminClient.realm(REALM_NAME).getDefaultDefaultClientScopes().stream()
+                .filter(scope -> Objects.equals(scope.getProtocol(), OIDCLoginProtocol.LOGIN_PROTOCOL))
+                .map(ClientScopeRepresentation::getName).collect(Collectors.toSet());
+        Set<String> realmOptionalClientScopes = adminClient.realm(REALM_NAME).getDefaultOptionalClientScopes().stream()
+                .filter(scope -> Objects.equals(scope.getProtocol(), OIDCLoginProtocol.LOGIN_PROTOCOL))
+                .map(ClientScopeRepresentation::getName).collect(Collectors.toSet());
+
+        authManageClients();
+        ClientRepresentation client = new ClientRepresentation();
+        client.setClientId(CLIENT_ID);
+        client.setSecret(CLIENT_SECRET);
+
+        ClientRepresentation createdClient = reg.create(client);
+        assertEquals(CLIENT_ID, createdClient.getClientId());
+        client = adminClient.realm(REALM_NAME).clients().get(createdClient.getId()).toRepresentation();
+        assertEquals(CLIENT_ID, client.getClientId());
+        // Remove this client after test
+        deleteClient(createdClient);
+
+        assertEquals(realmDefaultClientScopes, new HashSet<>(client.getDefaultClientScopes()));
+        assertEquals(realmOptionalClientScopes, new HashSet<>(client.getOptionalClientScopes()));
+    }
+
+    @Test
+    public void registerClientAsAdminWithNotDefinedScope() {
+        authManageClients();
+        ClientRepresentation client = new ClientRepresentation();
+        client.setClientId(CLIENT_ID);
+        client.setSecret(CLIENT_SECRET);
+        client.setOptionalClientScopes(new ArrayList<>(Arrays.asList("notdefinedscope","phone")));
+        try {
+            registerClient(client);
+            fail("Expected 403");
+        } catch (ClientRegistrationException e) {
+            assertEquals(403, ((HttpErrorException) e.getCause()).getStatusLine().getStatusCode());
+        }
+    }
+
+    @Test
+    public void registerClientWithWrongCharacters() throws IOException {
+        try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
+            HttpPost post = new HttpPost(keycloakUrls.getBaseBuilder().path("/realms/master/clients-registrations/openid-connect").build());
+            post.setEntity(new StringEntity("{\"<img src=alert(1)>\":1}"));
+            post.setHeader("Content-Type", APPLICATION_JSON);
+
+            try (CloseableHttpResponse response = client.execute(post)) {
+                assertThat(response.getStatusLine().getStatusCode(),is(400));
+
+                Header header = response.getFirstHeader("Content-Type");
+                assertThat(header, notNullValue());
+
+                // Verify the Content-Type is not text/html
+                assertThat(Arrays.stream(header.getElements())
+                        .map(HeaderElement::getName)
+                        .filter(Objects::nonNull)
+                        .anyMatch(f -> f.equals(APPLICATION_JSON)), is(true));
+
+                // The alert is not executed
+                assertThat(EntityUtils.toString(response.getEntity()), CoreMatchers.containsString("Unrecognized field \\\"<img src=alert(1)>\\\""));
+            }
+        }
+    }
+
+    @Test
+    @DatabaseTest
+    public void registerMultipleClients() {
+
+        int concurrentThreads = 5;
+        int iterations = 10;
+        int initialTokenCounts = 2;
+
+        ClientInitialAccessCreatePresentation clientInitialAccessCreatePresentation = new ClientInitialAccessCreatePresentation();
+        clientInitialAccessCreatePresentation.setCount(initialTokenCounts);
+        clientInitialAccessCreatePresentation.setExpiration(10000);
+        ClientInitialAccessPresentation response = adminClient.realm(REALM_NAME).clientInitialAccess().create(clientInitialAccessCreatePresentation);
+
+        ExecutorService threadPool = Executors.newFixedThreadPool(concurrentThreads);
+        AtomicInteger createdCount = new AtomicInteger();
+        try {
+            Collection<Callable<Void>> futures = new LinkedList<>();
+            for (int i = 0; i < iterations; i ++) {
+                final int j = i;
+
+                Callable<Void> f = () -> {
+                    ClientRegistration client = ClientRegistration.create().url(keycloakUrls.getBase(), REALM_NAME).build();
+                    client.auth(Auth.token(response));
+                    ClientRepresentation rep = new ClientRepresentation();
+                    rep.setClientId("test-" + j);
+                    rep = client.create(rep);
+                    if(rep.getId() != null && rep.getClientId().equals("test-" + j)) {
+                        createdCount.getAndIncrement();
+                    }
+                    return null;
+                };
+                futures.add(f);
+            }
+            threadPool.invokeAll(futures);
+
+        } catch (Exception ex) {
+            fail(ex.getMessage());
+        }
+
+        //controls the number of uses of the initial access token
+        assertEquals(initialTokenCounts, createdCount.get());
+    }
+
+    @Test
+    @DatabaseTest
+    public void registerWithLightweightAccessTokenAndTransientSession() throws Exception {
+
+        String TEST_ADMIN_CLIENT = "test-admin-client";
+        ClientRepresentation testAdminClient = new ClientRepresentation();
+        testAdminClient.setClientId(TEST_ADMIN_CLIENT);
+        testAdminClient.setSecret(TEST_ADMIN_CLIENT);
+        testAdminClient.setServiceAccountsEnabled(true);
+        testAdminClient.setAttributes(new HashMap<>());
+        testAdminClient.getAttributes().put(Constants.USE_LIGHTWEIGHT_ACCESS_TOKEN_ENABLED, Boolean.TRUE.toString());
+
+        Response response = adminClient.realm("master").clients().create(testAdminClient);
+        testAdminClient = adminClient.realm("master").clients().get( ApiUtil.getCreatedId(response)).toRepresentation();
+
+        UserRepresentation serviceAccountUser = adminClient.realm("master").clients().get(testAdminClient.getId()).getServiceAccountUser();
+        RoleRepresentation adminRole =  adminClient.realm("master").roles().get("admin").toRepresentation();
+        adminClient.realm("master").users().get(serviceAccountUser.getId()).roles().realmLevel().add(List.of(adminRole));
+
+        oauth.client(TEST_ADMIN_CLIENT, TEST_ADMIN_CLIENT);
+        oauth.realm("master");
+        String token = oauth.doClientCredentialsGrantAccessTokenRequest().getAccessToken();
+        ClientRegistration masterReg = ClientRegistration.create().url(keycloakUrls.getBase(), "master").build();
+        masterReg.auth(Auth.token(token));
+
+        ClientRepresentation client = new ClientRepresentation();
+        client.setClientId(CLIENT_ID);
+        client.setSecret(CLIENT_SECRET);
+
+        ClientRepresentation createdClient = masterReg.create(client);
+        assertNotNull(createdClient);
+
+        adminClient.realm("master").clients().get(testAdminClient.getId()).remove();
+        adminClient.realm("master").clients().get(createdClient.getId()).remove();
+    }
+
+    // ========== Realm Configuration ==========
+
+    public static class ClientRegistrationRealmConfig implements RealmConfig {
+        @Override
+        public RealmBuilder configure(RealmBuilder realm) {
+            realm.name(REALM_NAME)
+                    .clients(ClientBuilder.create("myclient-test")
+                            .publicClient(true)
+                            .directAccessGrantsEnabled(true));
+
+            UserBuilder manage_client_user_builder =  UserBuilder.create()
+                                                                 .username("manage-clients")
+                                                                 .name("manage", "clients")
+                                                                 .enabled(true)
+                                                                 .password("password")
+                                                                 .email("manage-clients@test.com")
+                                                                 .emailVerified(true)
+                                                                 .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.MANAGE_CLIENTS);
+
+            UserBuilder create_client_user_builder =  UserBuilder.create()
+                                                                 .username("create-clients")
+                                                                 .name("create", "clients")
+                                                                 .enabled(true)
+                                                                 .password("password")
+                                                                 .email("create-clients@test.com")
+                                                                 .emailVerified(true)
+                                                                 .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.CREATE_CLIENT);
+
+            UserBuilder no_access_user_builder =   UserBuilder.create()
+                                                              .username("no-access")
+                                                              .name("no", "access")
+                                                              .enabled(true)
+                                                              .password("password")
+                                                              .email("no-access@test.com")
+                                                              .emailVerified(true);
+            realm.users(manage_client_user_builder, create_client_user_builder, no_access_user_builder);
+            return realm;
+        }
+    }
+
+    // ========== Helper Methods ==========
+
+    private ClientRepresentation buildClient() {
+        ClientRepresentation client = new ClientRepresentation();
+        client.setClientId(CLIENT_ID);
+        client.setSecret(CLIENT_SECRET);
+        return client;
+    }
+
+    private ClientRepresentation registerClient(ClientRepresentation client) throws ClientRegistrationException {
+        ClientRepresentation createdClient = reg.create(client);
+        assertEquals(CLIENT_ID, createdClient.getClientId());
+        return createdClient;
+    }
+
+    private void authManageClients() {
+        String token = getToken("manage-clients", "password");
+        reg.auth(Auth.token(token));
+    }
+
+    private void authCreateClients() {
+        String token = getToken("create-clients", "password");
+        reg.auth(Auth.token(token));
+    }
+
+    private void authNoAccess() {
+        String token = getToken("no-access", "password");
+        reg.auth(Auth.token(token));
+    }
+
+    private String getToken(String username, String password) {
+        try {
+            org.keycloak.testsuite.util.oauth.AccessTokenResponse response = oauth.realm(REALM_NAME)
+                    .client(Constants.ADMIN_CLI_CLIENT_ID)
+                    .doPasswordGrantRequest(username, password);
+
+            if (response.getStatusCode() != 200) {
+                throw new RuntimeException("Token request failed. Status: " + response.getStatusCode() +
+                        ", Error: " + response.getError() +
+                        ", Description: " + response.getErrorDescription());
+            }
+
+            return response.getAccessToken();
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to get token for user: " + username, e);
+        }
+    }
+
+    private void deleteClient(ClientRepresentation client) throws ClientRegistrationException {
+        reg.delete(CLIENT_ID);
+        try {
+            adminClient.realm(REALM_NAME).clients().get(client.getId()).toRepresentation();
+            Assertions.fail("Expected 403");
+        } catch (NotFoundException e) {
+        }
+    }
+
+    private String getToken(String clientId, String clientSecret, String username, String password) {
+        try {
+            return oauth.client(clientId, clientSecret).doPasswordGrantRequest(username, password).getAccessToken();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private void testClientUriValidation(String expectedRootUrlError, String expectedBaseUrlError, String expectedBackchannelLogoutUrlError, String expectedRedirectUrisError, String... testUrls) {
@@ -442,7 +1001,7 @@ public class ClientRegistrationTest extends AbstractClientRegistrationTest {
         }
         else {
             try {
-                registerClientAsAdmin();
+                setupClientAsAdmin();
                 rep = reg.get(CLIENT_ID);
             }
             catch (ClientRegistrationException e) {
@@ -486,6 +1045,12 @@ public class ClientRegistrationTest extends AbstractClientRegistrationTest {
         }
     }
 
+    private ClientRepresentation setupClientAsAdmin() throws ClientRegistrationException {
+        authManageClients();
+        ClientRepresentation client = buildClient();
+        return registerClient(client);
+    }
+
     private void registerOrUpdateClientExpectingValidationErrors(ClientRepresentation rep, boolean register, boolean redirectUris, String... expectedErrors) {
         HttpErrorException errorException = null;
         try {
@@ -495,7 +1060,7 @@ public class ClientRegistrationTest extends AbstractClientRegistrationTest {
             else {
                 reg.update(rep);
             }
-            fail("Expected exception");
+            Assertions.fail("Expected exception");
         }
         catch (ClientRegistrationException e) {
             errorException = (HttpErrorException) e.getCause();
@@ -503,7 +1068,7 @@ public class ClientRegistrationTest extends AbstractClientRegistrationTest {
 
         expectedErrors = Arrays.stream(expectedErrors).filter(Objects::nonNull).toArray(String[]::new);
 
-        assertEquals(errorException.getStatusLine().getStatusCode(), 400);
+        assertEquals(400, errorException.getStatusLine().getStatusCode());
         OAuth2ErrorRepresentation errorRep;
         try {
             errorRep = JsonSerialization.readValue(errorException.getErrorResponse(), OAuth2ErrorRepresentation.class);
@@ -513,54 +1078,42 @@ public class ClientRegistrationTest extends AbstractClientRegistrationTest {
         }
         List<String> actualErrors = asList(errorRep.getErrorDescription().split("; "));
         assertThat(actualErrors, containsInAnyOrder(expectedErrors));
-        assertEquals(redirectUris ? INVALID_REDIRECT_URI : INVALID_CLIENT_METADATA, errorRep.getError());
+        Assertions.assertEquals(redirectUris ? INVALID_REDIRECT_URI : INVALID_CLIENT_METADATA, errorRep.getError());
     }
 
-    @Test
-    public void getClientAsAdmin() throws ClientRegistrationException {
-        registerClientAsAdmin();
-        ClientRepresentation rep = reg.get(CLIENT_ID);
-        assertNotNull(rep);
-    }
-
-    @Test
-    public void getClientAsAdminWithCreateOnly() throws ClientRegistrationException {
-        registerClientAsAdmin();
-        authCreateClients();
-        try {
-            reg.get(CLIENT_ID);
-            fail("Expected 403");
-        } catch (ClientRegistrationException e) {
-            assertEquals(403, ((HttpErrorException) e.getCause()).getStatusLine().getStatusCode());
+    private void testSamlSpecificUrls(boolean register, String... testUrls) throws ClientRegistrationException {
+        ClientRepresentation rep = buildClient();
+        rep.setProtocol(SamlProtocol.LOGIN_PROTOCOL);
+        if (register) {
+            authCreateClients();
+        } else {
+            authManageClients();
+            registerClient(rep);
+            rep = reg.get(CLIENT_ID);
         }
-    }
+        rep.setAttributes(new HashMap<>());
 
-    @Test
-    public void getClientAsAdminWithNoAccess() throws ClientRegistrationException {
-        registerClientAsAdmin();
-        authNoAccess();
-        try {
-            reg.get(CLIENT_ID);
-            fail("Expected 403");
-        } catch (ClientRegistrationException e) {
-            assertEquals(403, ((HttpErrorException) e.getCause()).getStatusLine().getStatusCode());
-        }
-    }
+        Map<String, String> attrs = Map.of(
+                SamlProtocol.SAML_ASSERTION_CONSUMER_URL_POST_ATTRIBUTE, "Assertion Consumer Service POST Binding URL",
+                SamlProtocol.SAML_ASSERTION_CONSUMER_URL_REDIRECT_ATTRIBUTE, "Assertion Consumer Service Redirect Binding URL",
+                SamlProtocol.SAML_ASSERTION_CONSUMER_URL_ARTIFACT_ATTRIBUTE, "Artifact Binding URL",
+                SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_POST_ATTRIBUTE, "Logout Service POST Binding URL",
+                SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_ARTIFACT_ATTRIBUTE, "Logout Service ARTIFACT Binding URL",
+                SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_REDIRECT_ATTRIBUTE, "Logout Service Redirect Binding URL",
+                SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_SOAP_ATTRIBUTE, "Logout Service SOAP Binding URL",
+                SamlProtocol.SAML_ARTIFACT_RESOLUTION_SERVICE_URL_ATTRIBUTE, "Artifact Resolution Service");
 
-    @Test
-    public void getClientNotFound() throws ClientRegistrationException {
-        authManageClients();
-        assertNull(reg.get("invalid"));
-    }
-
-    @Test
-    public void getClientNotFoundNoAccess() throws ClientRegistrationException {
-        authNoAccess();
-        try {
-            reg.get("invalid");
-            fail("Expected 403");
-        } catch (ClientRegistrationException e) {
-            assertEquals(403, ((HttpErrorException) e.getCause()).getStatusLine().getStatusCode());
+        for (String testUrl : testUrls) {
+            // admin url
+            rep.setAdminUrl(testUrl);
+            registerOrUpdateClientExpectingValidationErrors(rep, register, false, "Master SAML Processing URL uses an illegal scheme");
+            rep.setAdminUrl(null);
+            // attributes
+            for (Map.Entry<String, String> entry : attrs.entrySet()) {
+                rep.getAttributes().put(entry.getKey(), testUrl);
+                registerOrUpdateClientExpectingValidationErrors(rep, register, false, entry.getValue() + " uses an illegal scheme");
+                rep.getAttributes().remove(entry.getKey());
+            }
         }
     }
 
@@ -574,78 +1127,6 @@ public class ClientRegistrationTest extends AbstractClientRegistrationTest {
 
         assertEquals(1, updatedClient.getRedirectUris().size());
         assertEquals("http://localhost:8080/app", updatedClient.getRedirectUris().get(0));
-    }
-
-
-    @Test
-    public void updateClientAsAdmin() throws ClientRegistrationException {
-        registerClientAsAdmin();
-
-        authManageClients();
-        updateClient();
-    }
-
-    @Test
-    public void updateClientSecret() throws ClientRegistrationException {
-        authManageClients();
-
-        registerClient();
-
-        ClientRepresentation client = reg.get(CLIENT_ID);
-        assertNotNull(client.getSecret());
-        client.setSecret("mysecret");
-
-        reg.update(client);
-
-        ClientRepresentation updatedClient = reg.get(CLIENT_ID);
-
-        assertEquals("mysecret", updatedClient.getSecret());
-    }
-
-    @Test
-    public void addClientProtcolMappers() throws ClientRegistrationException {
-        authManageClients();
-
-        ClientRepresentation initialClient = buildClient();
-
-        registerClient(initialClient);
-        ClientRepresentation client = reg.get(CLIENT_ID);
-
-        addProtocolMapper(client, "mapperA");
-        reg.update(client);
-
-        ClientRepresentation updatedClient = reg.get(CLIENT_ID);
-        assertThat("Adding protocolMapper failed", updatedClient.getProtocolMappers().size(), is(1));
-    }
-
-    @Test
-    public void removeClientProtcolMappers() throws ClientRegistrationException {
-        authManageClients();
-
-        ClientRepresentation initialClient = buildClient();
-        addProtocolMapper(initialClient, "mapperA");
-        registerClient(initialClient);
-        ClientRepresentation client = reg.get(CLIENT_ID);
-        client.setProtocolMappers(new ArrayList<>());
-        reg.update(client);
-
-        ClientRepresentation updatedClient = reg.get(CLIENT_ID);
-        assertThat("Removing protocolMapper failed", updatedClient.getProtocolMappers(), nullValue());
-    }
-
-    @Test
-    public void updateClientProtcolMappers() throws ClientRegistrationException {
-        authManageClients();
-
-        ClientRepresentation initialClient = buildClient();
-        addProtocolMapper(initialClient, "mapperA");
-        registerClient(initialClient);
-        ClientRepresentation client = reg.get(CLIENT_ID);
-        client.getProtocolMappers().get(0).getConfig().put("claim.name", "updatedClaimName");
-        reg.update(client);
-
-        ClientRepresentation updatedClient = reg.get(CLIENT_ID);
-        assertThat("Updating protocolMapper failed", updatedClient.getProtocolMappers().get(0).getConfig().get("claim.name"), is("updatedClaimName"));
     }
 
     private void addProtocolMapper(ClientRepresentation client, String mapperName) {
@@ -662,265 +1143,5 @@ public class ClientRegistrationTest extends AbstractClientRegistrationTest {
 
         client.setProtocolMappers(new ArrayList<>());
         client.getProtocolMappers().add(mapper);
-    }
-
-    @Test
-    public void updateClientAsAdminWithCreateOnly() throws ClientRegistrationException {
-        authCreateClients();
-        try {
-            updateClient();
-            fail("Expected 403");
-        } catch (ClientRegistrationException e) {
-            assertEquals(403, ((HttpErrorException) e.getCause()).getStatusLine().getStatusCode());
-        }
-    }
-
-    @Test
-    public void updateClientAsAdminWithNoAccess() throws ClientRegistrationException {
-        authNoAccess();
-        try {
-            updateClient();
-            fail("Expected 403");
-        } catch (ClientRegistrationException e) {
-            assertEquals(403, ((HttpErrorException) e.getCause()).getStatusLine().getStatusCode());
-        }
-    }
-
-    @Test
-    public void updateClientNotFound() throws ClientRegistrationException {
-        authManageClients();
-        try {
-            ClientRepresentation client = new ClientRepresentation();
-            client.setClientId("invalid");
-
-            reg.update(client);
-
-            fail("Expected 404");
-        } catch (ClientRegistrationException e) {
-            assertEquals(404, ((HttpErrorException) e.getCause()).getStatusLine().getStatusCode());
-        }
-    }
-
-    @Test
-    public void updateClientWithNonAsciiChars() throws ClientRegistrationException {
-    	authCreateClients();
-    	registerClient();
-
-    	authManageClients();
-    	ClientRepresentation client = reg.get(CLIENT_ID);
-    	String name = "Cli\u00EBnt";
-		client.setName(name);
-
-    	ClientRepresentation updatedClient = reg.update(client);
-    	assertEquals(name, updatedClient.getName());
-    }
-
-    private void deleteClient(ClientRepresentation client) throws ClientRegistrationException {
-        reg.delete(CLIENT_ID);
-        try {
-            adminClient.realm("test").clients().get(client.getId()).toRepresentation();
-            fail("Expected 403");
-        } catch (NotFoundException e) {
-        }
-    }
-
-    @Test
-    public void deleteClientAsAdmin() throws ClientRegistrationException {
-        authCreateClients();
-        ClientRepresentation client = registerClient();
-
-        authManageClients();
-        deleteClient(client);
-    }
-
-    @Test
-    public void deleteClientAsAdminWithCreateOnly() throws ClientRegistrationException {
-        authManageClients();
-        ClientRepresentation client = registerClient();
-        try {
-            authCreateClients();
-            deleteClient(client);
-            fail("Expected 403");
-        } catch (ClientRegistrationException e) {
-            assertEquals(403, ((HttpErrorException) e.getCause()).getStatusLine().getStatusCode());
-        }
-    }
-
-    @Test
-    public void deleteClientAsAdminWithNoAccess() throws ClientRegistrationException {
-        authManageClients();
-        ClientRepresentation client = registerClient();
-        try {
-            authNoAccess();
-            deleteClient(client);
-            fail("Expected 403");
-        } catch (ClientRegistrationException e) {
-            assertEquals(403, ((HttpErrorException) e.getCause()).getStatusLine().getStatusCode());
-        }
-    }
-
-    @Test
-    public void registerClientAsAdminWithScope() throws ClientRegistrationException {
-        authManageClients();
-        ClientRepresentation client = new ClientRepresentation();
-        client.setClientId(CLIENT_ID);
-        client.setSecret(CLIENT_SECRET);
-        ArrayList<String> optionalClientScopes = new ArrayList<>(Arrays.asList("address","phone"));
-        client.setOptionalClientScopes(optionalClientScopes);
-
-        ClientRepresentation createdClient = reg.create(client);
-        assertEquals(CLIENT_ID, createdClient.getClientId());
-        client = adminClient.realm(REALM_NAME).clients().get(createdClient.getId()).toRepresentation();
-        assertEquals(CLIENT_ID, client.getClientId());
-        // Remove this client after test
-        getCleanup().addClientUuid(createdClient.getId());
-
-        Set<String> requestedClientScopes = new HashSet<>(optionalClientScopes);
-        Set<String> registeredClientScopes = new HashSet<>(client.getOptionalClientScopes());
-        assertTrue(requestedClientScopes.equals(registeredClientScopes));
-        assertTrue(CollectionUtil.collectionEquals(client.getDefaultClientScopes(), Set.of("basic")));
-    }
-
-    @Test
-    public void registerClientAsAdminWithoutScope() throws ClientRegistrationException {
-        Set<String> realmDefaultClientScopes = new HashSet<>(adminClient.realm(REALM_NAME).getDefaultDefaultClientScopes().stream()
-                .filter(scope -> Objects.equals(scope.getProtocol(), OIDCLoginProtocol.LOGIN_PROTOCOL))
-                .map(i->i.getName()).collect(Collectors.toList()));
-        Set<String> realmOptionalClientScopes = new HashSet<>(adminClient.realm(REALM_NAME).getDefaultOptionalClientScopes().stream()
-                .filter(scope -> Objects.equals(scope.getProtocol(), OIDCLoginProtocol.LOGIN_PROTOCOL))
-                .map(i->i.getName()).collect(Collectors.toList()));
-
-        authManageClients();
-        ClientRepresentation client = new ClientRepresentation();
-        client.setClientId(CLIENT_ID);
-        client.setSecret(CLIENT_SECRET);
-
-        ClientRepresentation createdClient = reg.create(client);
-        assertEquals(CLIENT_ID, createdClient.getClientId());
-        client = adminClient.realm(REALM_NAME).clients().get(createdClient.getId()).toRepresentation();
-        assertEquals(CLIENT_ID, client.getClientId());
-        // Remove this client after test
-        getCleanup().addClientUuid(createdClient.getId());
-
-        assertTrue(realmDefaultClientScopes.equals(new HashSet<>(client.getDefaultClientScopes())));
-        assertTrue(realmOptionalClientScopes.equals(new HashSet<>(client.getOptionalClientScopes())));
-    }
-
-    @Test
-    public void registerClientAsAdminWithNotDefinedScope() throws ClientRegistrationException {
-        authManageClients();
-        ClientRepresentation client = new ClientRepresentation();
-        client.setClientId(CLIENT_ID);
-        client.setSecret(CLIENT_SECRET);
-        client.setOptionalClientScopes(new ArrayList<>(Arrays.asList("notdefinedscope","phone")));
-        try {
-            registerClient(client);
-            fail("Expected 403");
-        } catch (ClientRegistrationException e) {
-            assertEquals(403, ((HttpErrorException) e.getCause()).getStatusLine().getStatusCode());
-        }
-    }
-
-    @Test
-    @UncaughtServerErrorExpected
-    public void registerClientWithWrongCharacters() throws IOException {
-        try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
-            HttpPost post = new HttpPost(suiteContext.getAuthServerInfo().getUriBuilder().path("/auth/realms/master/clients-registrations/openid-connect").build());
-            post.setEntity(new StringEntity("{\"<img src=alert(1)>\":1}"));
-            post.setHeader("Content-Type", APPLICATION_JSON);
-
-            try (CloseableHttpResponse response = client.execute(post)) {
-                assertThat(response.getStatusLine().getStatusCode(),is(400));
-
-                Header header = response.getFirstHeader("Content-Type");
-                assertThat(header, notNullValue());
-
-                // Verify the Content-Type is not text/html
-                assertThat(Arrays.stream(header.getElements())
-                        .map(HeaderElement::getName)
-                        .filter(Objects::nonNull)
-                        .anyMatch(f -> f.equals(APPLICATION_JSON)), is(true));
-
-                // The alert is not executed
-                assertThat(EntityUtils.toString(response.getEntity()), CoreMatchers.containsString("Unrecognized field \\\"<img src=alert(1)>\\\""));
-            }
-        }
-    }
-
-    @Test
-    public void registerMultipleClients() {
-
-        int concurrentThreads = 5;
-        int iterations = 10;
-        int initialTokenCounts = 2;
-
-        ClientInitialAccessCreatePresentation clientInitialAccessCreatePresentation = new ClientInitialAccessCreatePresentation();
-        clientInitialAccessCreatePresentation.setCount(initialTokenCounts);
-        clientInitialAccessCreatePresentation.setExpiration(10000);
-        ClientInitialAccessPresentation response = adminClient.realm(REALM_NAME).clientInitialAccess().create(clientInitialAccessCreatePresentation);
-
-        ExecutorService threadPool = Executors.newFixedThreadPool(concurrentThreads);
-        AtomicInteger createdCount = new AtomicInteger();
-        try {
-            Collection<Callable<Void>> futures = new LinkedList<>();
-            for (int i = 0; i < iterations; i ++) {
-                final int j = i;
-
-                Callable<Void> f = () -> {
-                    ClientRegistration client = ClientRegistration.create().url(suiteContext.getAuthServerInfo().getContextRoot() + "/auth", "test").build();
-                    client.auth(Auth.token(response));
-                    ClientRepresentation rep = new ClientRepresentation();
-                    rep.setClientId("test-" + j);
-                    rep = client.create(rep);
-                    if(rep.getId() != null && rep.getClientId().equals("test-" + j)) {
-                        createdCount.getAndIncrement();
-                    }
-                    return null;
-                };
-                futures.add(f);
-            }
-            threadPool.invokeAll(futures);
-
-        } catch (Exception ex) {
-            fail(ex.getMessage());
-        }
-
-        //controls the number of uses of the initial access token
-        assertEquals(initialTokenCounts, createdCount.get());
-    }
-
-    @Test
-    public void registerWithLightweightAccessTokenAndTransientSession() throws Exception {
-
-        String TEST_ADMIN_CLIENT = "test-admin-client";
-        ClientRepresentation testAdminClient = new ClientRepresentation();
-        testAdminClient.setClientId(TEST_ADMIN_CLIENT);
-        testAdminClient.setSecret(TEST_ADMIN_CLIENT);
-        testAdminClient.setServiceAccountsEnabled(true);
-        testAdminClient.setAttributes(new HashMap<>());
-        testAdminClient.getAttributes().put(Constants.USE_LIGHTWEIGHT_ACCESS_TOKEN_ENABLED, Boolean.TRUE.toString());
-
-        Response response = adminClient.realm("master").clients().create(testAdminClient);
-        testAdminClient = adminClient.realm("master").clients().get( ApiUtil.getCreatedId(response)).toRepresentation();
-
-        UserRepresentation serviceAccountUser = adminClient.realm("master").clients().get(testAdminClient.getId()).getServiceAccountUser();
-        RoleRepresentation adminRole =  adminClient.realm("master").roles().get("admin").toRepresentation();
-        adminClient.realm("master").users().get(serviceAccountUser.getId()).roles().realmLevel().add(List.of(adminRole));
-
-        oauth.client(TEST_ADMIN_CLIENT, TEST_ADMIN_CLIENT);
-        oauth.realm("master");
-        String token = oauth.doClientCredentialsGrantAccessTokenRequest().getAccessToken();
-        ClientRegistration masterReg = ClientRegistration.create().url(suiteContext.getAuthServerInfo().getContextRoot() + "/auth", "master").build();
-        masterReg.auth(Auth.token(token));
-
-        ClientRepresentation client = new ClientRepresentation();
-        client.setClientId(CLIENT_ID);
-        client.setSecret(CLIENT_SECRET);
-
-        ClientRepresentation createdClient = masterReg.create(client);
-        assertNotNull(createdClient);
-
-        adminClient.realm("master").clients().get(testAdminClient.getId()).remove();
-        adminClient.realm("master").clients().get(createdClient.getId()).remove();
     }
 }
