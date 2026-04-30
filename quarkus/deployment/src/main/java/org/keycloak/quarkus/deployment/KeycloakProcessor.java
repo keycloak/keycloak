@@ -74,7 +74,7 @@ import org.keycloak.connections.jpa.JpaConnectionSpi;
 import org.keycloak.connections.jpa.updater.liquibase.LiquibaseJpaUpdaterProviderFactory;
 import org.keycloak.connections.jpa.updater.liquibase.conn.DefaultLiquibaseConnectionProvider;
 import org.keycloak.infinispan.util.InfinispanUtils;
-import org.keycloak.policy.BlacklistPasswordPolicyProviderFactory;
+import org.keycloak.policy.DenylistPasswordPolicyProviderFactory;
 import org.keycloak.protocol.ProtocolMapperSpi;
 import org.keycloak.protocol.oidc.mappers.DeployedScriptOIDCProtocolMapper;
 import org.keycloak.protocol.saml.mappers.DeployedScriptSAMLProtocolMapper;
@@ -212,7 +212,7 @@ class KeycloakProcessor {
             LiquibaseJpaUpdaterProviderFactory.class,
             FilesKeystoreVaultProviderFactory.class,
             FilesPlainTextVaultProviderFactory.class,
-            BlacklistPasswordPolicyProviderFactory.class,
+            DenylistPasswordPolicyProviderFactory.class,
             ClasspathThemeResourceProviderFactory.class,
             JarThemeProviderFactory.class);
 

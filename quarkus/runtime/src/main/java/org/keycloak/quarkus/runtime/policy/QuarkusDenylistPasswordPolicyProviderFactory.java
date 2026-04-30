@@ -19,20 +19,20 @@ package org.keycloak.quarkus.runtime.policy;
 
 import java.io.File;
 
-import org.keycloak.policy.BlacklistPasswordPolicyProviderFactory;
+import org.keycloak.policy.DenylistPasswordPolicyProviderFactory;
 import org.keycloak.quarkus.runtime.Environment;
 
 /**
- * <p>Quarkus implementation of the BlacklistPasswordPolicyProviderFactory. The
+ * <p>Quarkus implementation of the DenylistPasswordPolicyProviderFactory. The
  * default path for the list files is calculated using the quarkus environment
  * class, in order to obtain the correct <em>data</em> directory.
  *
  * @author rmartinc
  */
-public class QuarkusBlacklistPasswordPolicyProviderFactory extends BlacklistPasswordPolicyProviderFactory {
+public class QuarkusDenylistPasswordPolicyProviderFactory extends DenylistPasswordPolicyProviderFactory {
 
     @Override
-    public String getDefaultBlacklistsBasePath() {
+    public String getDefaultDenylistsBasePath() {
         return Environment.getDataDir().map(d -> d + File.separator + PASSWORD_BLACKLISTS_FOLDER).orElse(null);
     }
 }
