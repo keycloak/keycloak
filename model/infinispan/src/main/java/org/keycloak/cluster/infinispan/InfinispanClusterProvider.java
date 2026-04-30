@@ -243,14 +243,8 @@ public class InfinispanClusterProvider implements ClusterProvider {
         List<ClusterListener> myListeners = listeners.get(eventKey);
         if (myListeners != null) {
             localExecutor.execute(() -> {
-                try {
-                    // One could try to synchronize on myListeners to prevent concurrent processing,
-                    // but I would leave that for each individual listener to decide.
-                    for (var e : event.getDelegateEvents()) {
-                        myListeners.forEach(e);
-                    }
-                } catch (Exception e) {
-                    logger.error("unable to finish listener", e);
+                for (var e : event.getDelegateEvents()) {
+                    myListeners.forEach(e);
                 }
             });
         }

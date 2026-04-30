@@ -21,7 +21,8 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.ForkJoinWorkerThread;
 import java.util.stream.Collectors;
 
 import org.keycloak.Config;
@@ -62,11 +63,25 @@ public class InfinispanClusterProviderFactory implements ClusterProviderFactory,
     private volatile Cache<String, Object> workCache;
     private volatile ClusterProvider clusterProvider;
 
-    private final ExecutorService localExecutor = Executors.newCachedThreadPool(r -> {
-        Thread thread = Executors.defaultThreadFactory().newThread(r);
-        thread.setName(this.getClass().getName() + "-" + thread.getName());
-        return thread;
-    });
+    private final ExecutorService localExecutor = new ForkJoinPool
+            (
+                    // Limit the number of running threads.
+                    // Unfortunately we don't know if those threads would do - they could actually call any Keycloak,
+                    // functionality, so we should not use virtual threads in JDK21 or earlier.
+                    Math.max(8, Runtime.getRuntime().availableProcessors()),
+                    // Override the thread factory to have descriptive thread names
+                    pool -> {
+                        ForkJoinWorkerThread thread = ForkJoinPool.defaultForkJoinWorkerThreadFactory.newThread(pool);
+                        thread.setName(this.getClass().getName() + "-" + thread.getName());
+                        return thread;
+                    },
+                    // All unexpected exceptions should be logged
+                    (t, e) -> {
+                        logger.error("unable to finish listener", e);
+                    },
+                    // async mode = true ensures a first-in-first-out mode
+                    true
+            );
 
     private ViewChangeListener workCacheListener;
 
