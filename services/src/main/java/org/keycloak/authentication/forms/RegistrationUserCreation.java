@@ -363,12 +363,19 @@ public class RegistrationUserCreation implements FormAction, FormActionFactory {
                 OrganizationProvider provider = session.getProvider(OrganizationProvider.class);
                 OrganizationModel orgModel = provider.getById(token.getOrgId());
                 provider.addManagedMember(orgModel, user);
-                context.getEvent().detail(Details.ORG_ID, orgModel.getId());
                 context.getAuthenticationSession().setRedirectUri(token.getRedirectUri());
 
                 // Delete the invitation since it has been used
                 InvitationManager invitationManager = provider.getInvitationManager();
                 invitationManager.remove(token.getId());
+
+                context.getEvent()
+                    .clone()
+                    .event(EventType.INVITE_ORG)
+                    .user(user)
+                    .detail(Details.USERNAME, user.getUsername())
+                    .detail(Details.ORG_ID, orgModel.getId())
+                    .success();
             }
         }
     }
