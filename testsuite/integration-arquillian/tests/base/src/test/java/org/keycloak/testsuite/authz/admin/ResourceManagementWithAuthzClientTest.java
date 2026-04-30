@@ -32,6 +32,8 @@ import java.util.stream.Collectors;
 import org.hamcrest.Matchers;
 import org.junit.Test;
 import org.keycloak.authorization.client.AuthzClient;
+import org.keycloak.authorization.client.resource.ProtectionResource;
+import org.keycloak.representations.idm.authorization.ResourceOwnerRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 
@@ -236,7 +238,16 @@ public class ResourceManagementWithAuthzClientTest extends ResourceManagementTes
         ResourceRepresentation resource = toResourceRepresentation(newResource);
 
         AuthzClient authzClient = getAuthzClient();
-        ResourceRepresentation response = authzClient.protection().resource().create(resource);
+        ResourceOwnerRepresentation owner = newResource.getOwner();
+        ProtectionResource protection;
+
+        if  (owner == null) {
+            protection = authzClient.protection();
+        } else {
+            protection = authzClient.protection(owner.getId(), "password");
+        }
+
+        ResourceRepresentation response = protection.resource().create(resource);
 
         return toResourceRepresentation(authzClient, response.getId());
     }
