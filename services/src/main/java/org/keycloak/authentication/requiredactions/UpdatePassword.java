@@ -199,11 +199,6 @@ public class UpdatePassword implements RequiredActionProvider, RequiredActionFac
     }
 
     @Override
-    public boolean isOneTimeAction() {
-        return true;
-    }
-
-    @Override
     public int getMaxAuthAge(KeycloakSession session) {
         if (session == null) {
             // session is null, support for legacy implementation, fallback to default maxAuthAge

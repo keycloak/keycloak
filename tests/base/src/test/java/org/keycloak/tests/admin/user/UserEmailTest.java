@@ -19,6 +19,7 @@ import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testframework.annotations.InjectClient;
 import org.keycloak.testframework.annotations.InjectKeycloakUrls;
@@ -41,6 +42,7 @@ import org.keycloak.testframework.ui.page.ErrorPage;
 import org.keycloak.testframework.ui.page.InfoPage;
 import org.keycloak.testframework.ui.page.LoginPasswordUpdatePage;
 import org.keycloak.testframework.ui.page.ProceedPage;
+import org.keycloak.testframework.ui.page.TermsAndConditionsPage;
 import org.keycloak.tests.utils.admin.AdminEventPaths;
 import org.keycloak.tests.utils.admin.ApiUtil;
 import org.keycloak.tests.utils.MailUtils;
@@ -85,6 +87,9 @@ public class UserEmailTest extends AbstractUserTest {
 
     @InjectPage
     LoginPasswordUpdatePage passwordUpdatePage;
+
+    @InjectPage
+    TermsAndConditionsPage termsPage;
 
     @InjectPage
     InfoPage infoPage;
@@ -203,6 +208,57 @@ public class UserEmailTest extends AbstractUserTest {
         driver.navigate().to(link);
 
         errorPage.assertCurrent();
+        assertEquals("Action expired. Please continue with login now.", errorPage.getError());
+    }
+
+    @Test
+    public void sendTermsAndConditionsEmailSuccess() throws IOException {
+        RequiredActionProviderRepresentation termsAndConds = managedRealm.admin().flows().getRequiredAction(UserModel.RequiredAction.TERMS_AND_CONDITIONS.name());
+        termsAndConds.setEnabled(true);
+        managedRealm.admin().flows().updateRequiredAction(termsAndConds.getAlias(), termsAndConds);
+        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.UPDATE,
+                AdminEventPaths.authRequiredActionPath(termsAndConds.getAlias()), termsAndConds, ResourceType.REQUIRED_ACTION);
+        termsAndConds.setEnabled(false);
+        managedRealm.cleanup().add(r -> r.flows().updateRequiredAction(termsAndConds.getAlias(), termsAndConds));
+
+        UserRepresentation userRep = UserConfigBuilder.create()
+                .username("user1").name("User", "One").email("user1@test.com").build();
+
+        String id = createUser(userRep);
+
+        UserResource user = managedRealm.admin().users().get(id);
+        List<String> actions = new LinkedList<>();
+        actions.add(UserModel.RequiredAction.TERMS_AND_CONDITIONS.name());
+        user.executeActionsEmail(actions);
+        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.ACTION, AdminEventPaths.userResourcePath(id) + "/execute-actions-email", ResourceType.USER);
+
+        Assertions.assertEquals(1, mailServer.getReceivedMessages().length);
+
+        MimeMessage message = mailServer.getReceivedMessages()[0];
+
+        MailUtils.EmailBody body = MailUtils.getBody(message);
+
+        assertTrue(body.getText().contains("Terms and Conditions"));
+        assertTrue(body.getText().contains("your Default account"));
+        assertTrue(body.getText().contains("This link will expire within 12 hours"));
+
+        String link = MailUtils.getPasswordResetEmailLink(body);
+
+        driver.navigate().to(link);
+
+        proceedPage.assertCurrent();
+        assertThat(proceedPage.getInfo(), Matchers.containsString("Terms and Conditions"));
+        proceedPage.clickProceedLink();
+        termsPage.assertCurrent();
+
+        termsPage.acceptTerms();
+        assertThat(driver.getCurrentUrl(), Matchers.containsString("client_id=" + Constants.ACCOUNT_MANAGEMENT_CLIENT_ID));
+        assertEquals("Your account has been updated.", infoPage.getInfo());
+
+        driver.navigate().to(link);
+
+        errorPage.assertCurrent();
+        assertEquals("Action expired. Please continue with login now.", errorPage.getError());
     }
 
     @Test
