@@ -17,6 +17,7 @@
 package org.keycloak.tests.authzen;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -25,6 +26,7 @@ import jakarta.ws.rs.core.Response;
 import org.keycloak.admin.client.resource.AuthorizationResource;
 import org.keycloak.http.simple.SimpleHttp;
 import org.keycloak.http.simple.SimpleHttpResponse;
+import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.RegexPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ResourcePermissionRepresentation;
@@ -648,6 +650,223 @@ public class AuthZenEvaluationTest {
             assertEquals(400, response.getStatus());
             assertEquals(requestId, response.getFirstHeader(X_REQUEST_ID));
         }
+    }
+
+    @Test
+    public void testUsernameNamespaceResolvesUser() throws IOException {
+        EvaluationResult result = authzenClient("admin-user", "password")
+              .evaluate(AuthZenClient.evaluationRequest()
+                    .subject(USER, "username:" + ADMIN_USER)
+                    .action("read")
+                    .resource("endpoint", "/admin")
+                    .build());
+
+        assertEquals(200, result.statusCode());
+        assertTrue(result.decision());
+    }
+
+    @Test
+    public void testIdNamespaceResolvesUser() throws IOException {
+        String userId = lookupUserId(ADMIN_USER);
+
+        EvaluationResult result = authzenClient("admin-user", "password")
+              .evaluate(AuthZenClient.evaluationRequest()
+                    .subject(USER, "id:" + userId)
+                    .action("read")
+                    .resource("endpoint", "/admin")
+                    .build());
+
+        assertEquals(200, result.statusCode());
+        assertTrue(result.decision());
+    }
+
+    @Test
+    public void testEmailNamespaceResolvesUser() throws IOException {
+        EvaluationResult result = authzenClient("admin-user", "password")
+              .evaluate(AuthZenClient.evaluationRequest()
+                    .subject(USER, "email:admin@localhost")
+                    .action("read")
+                    .resource("endpoint", "/admin")
+                    .build());
+
+        assertEquals(200, result.statusCode());
+        assertTrue(result.decision());
+    }
+
+    @Test
+    public void testEmailNamespaceResolvesCorrectUser() throws IOException {
+        EvaluationResult result = authzenClient("admin-user", "password")
+              .evaluate(AuthZenClient.evaluationRequest()
+                    .subject(USER, "email:regular@localhost")
+                    .action("read")
+                    .resource("endpoint", "/admin")
+                    .build());
+
+        assertEquals(200, result.statusCode());
+        assertFalse(result.decision());
+    }
+
+    @Test
+    public void testNoNamespaceUUIDFallsBackToIdLookup() throws IOException {
+        String userId = lookupUserId(ADMIN_USER);
+
+        EvaluationResult result = authzenClient("admin-user", "password")
+              .evaluate(AuthZenClient.evaluationRequest()
+                    .subject(USER, userId)
+                    .action("read")
+                    .resource("endpoint", "/admin")
+                    .build());
+
+        assertEquals(200, result.statusCode());
+        assertTrue(result.decision());
+    }
+
+    @Test
+    public void testNoNamespaceNonUUIDFallsBackToUsernameLookup() throws IOException {
+        EvaluationResult result = authzenClient("admin-user", "password")
+              .evaluate(AuthZenClient.evaluationRequest()
+                    .subject(USER, ADMIN_USER)
+                    .action("read")
+                    .resource("endpoint", "/admin")
+                    .build());
+
+        assertEquals(200, result.statusCode());
+        assertTrue(result.decision());
+    }
+
+    @Test
+    public void testEmailNamespaceWithDuplicateEmailsReturnsBadRequest() throws IOException {
+        realm.updateWithCleanup(r -> r.duplicateEmailsAllowed(true));
+
+        EvaluationResult result = authzenClient("admin-user", "password")
+              .evaluate(AuthZenClient.evaluationRequest()
+                    .subject(USER, "email:admin@localhost")
+                    .action("read")
+                    .resource("endpoint", "/admin")
+                    .build());
+
+        assertEquals(400, result.statusCode());
+    }
+
+    @Test
+    public void testUsernameNamespaceUnknownUserReturnsDenied() throws IOException {
+        EvaluationResult result = authzenClient("admin-user", "password")
+              .evaluate(AuthZenClient.evaluationRequest()
+                    .subject(USER, "username:nonexistent-user")
+                    .action("read")
+                    .resource("endpoint", "/admin")
+                    .build());
+
+        assertEquals(200, result.statusCode());
+        assertFalse(result.decision());
+    }
+
+    @Test
+    public void testIdNamespaceUnknownUserReturnsDenied() throws IOException {
+        EvaluationResult result = authzenClient("admin-user", "password")
+              .evaluate(AuthZenClient.evaluationRequest()
+                    .subject(USER, "id:00000000-0000-0000-0000-000000000000")
+                    .action("read")
+                    .resource("endpoint", "/admin")
+                    .build());
+
+        assertEquals(200, result.statusCode());
+        assertFalse(result.decision());
+    }
+
+    @Test
+    public void testEmailNamespaceUnknownUserReturnsDenied() throws IOException {
+        EvaluationResult result = authzenClient("admin-user", "password")
+              .evaluate(AuthZenClient.evaluationRequest()
+                    .subject(USER, "email:nonexistent@localhost")
+                    .action("read")
+                    .resource("endpoint", "/admin")
+                    .build());
+
+        assertEquals(200, result.statusCode());
+        assertFalse(result.decision());
+    }
+
+    @Test
+    public void testNoNamespaceUUIDUnknownUserReturnsDenied() throws IOException {
+        EvaluationResult result = authzenClient("admin-user", "password")
+              .evaluate(AuthZenClient.evaluationRequest()
+                    .subject(USER, "f81d4fae-7dec-11d0-a765-00a0c91e6bf6")
+                    .action("read")
+                    .resource("endpoint", "/admin")
+                    .build());
+
+        assertEquals(200, result.statusCode());
+        assertFalse(result.decision());
+    }
+
+    @Test
+    public void testEmptyIdNamespaceReturnsBadRequest() throws IOException {
+        EvaluationResult result = authzenClient("admin-user", "password")
+              .evaluate(AuthZenClient.evaluationRequest()
+                    .subject(USER, "id:")
+                    .action("read")
+                    .resource("endpoint", "/admin")
+                    .build());
+
+        assertEquals(400, result.statusCode());
+    }
+
+    @Test
+    public void testEmptyUsernameNamespaceReturnsBadRequest() throws IOException {
+        EvaluationResult result = authzenClient("admin-user", "password")
+              .evaluate(AuthZenClient.evaluationRequest()
+                    .subject(USER, "username:")
+                    .action("read")
+                    .resource("endpoint", "/admin")
+                    .build());
+
+        assertEquals(400, result.statusCode());
+    }
+
+    @Test
+    public void testEmptyEmailNamespaceReturnsBadRequest() throws IOException {
+        EvaluationResult result = authzenClient("admin-user", "password")
+              .evaluate(AuthZenClient.evaluationRequest()
+                    .subject(USER, "email:")
+                    .action("read")
+                    .resource("endpoint", "/admin")
+                    .build());
+
+        assertEquals(400, result.statusCode());
+    }
+
+    @Test
+    public void testMixedCaseNamespaceFallsBackToUsernameLookup() throws IOException {
+        EvaluationResult result = authzenClient("admin-user", "password")
+              .evaluate(AuthZenClient.evaluationRequest()
+                    .subject(USER, "Email:admin@localhost")
+                    .action("read")
+                    .resource("endpoint", "/admin")
+                    .build());
+
+        assertEquals(200, result.statusCode());
+        // "Email:admin@localhost" is treated as a username, which won't exist
+        assertFalse(result.decision());
+    }
+
+    @Test
+    public void testIdNamespaceWithNonUUIDReturnsDenied() throws IOException {
+        EvaluationResult result = authzenClient("admin-user", "password")
+              .evaluate(AuthZenClient.evaluationRequest()
+                    .subject(USER, "id:not-a-uuid")
+                    .action("read")
+                    .resource("endpoint", "/admin")
+                    .build());
+
+        assertEquals(200, result.statusCode());
+        assertFalse(result.decision());
+    }
+
+    private String lookupUserId(String username) {
+        List<UserRepresentation> users = realm.admin().users().search(username, true);
+        assertEquals(1, users.size(), "Expected exactly one user with username: " + username);
+        return users.get(0).getId();
     }
 
     private String realmUrl() {
