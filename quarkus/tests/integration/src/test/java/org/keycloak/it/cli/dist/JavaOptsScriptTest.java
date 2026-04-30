@@ -21,6 +21,7 @@ import org.keycloak.it.junit5.extension.DistributionTest;
 import org.keycloak.it.junit5.extension.DryRun;
 import org.keycloak.it.junit5.extension.RawDistOnly;
 import org.keycloak.it.junit5.extension.WithEnvVars;
+import org.keycloak.quarkus.runtime.Environment;
 
 import io.quarkus.test.junit.main.Launch;
 import io.quarkus.test.junit.main.LaunchResult;
@@ -128,6 +129,7 @@ public class JavaOptsScriptTest {
     @WithEnvVars({"KC_RUN_IN_CONTAINER", "true"})
     @EnabledOnOs(value = { OS.LINUX, OS.MAC }, disabledReason = "kc.sh is not used on Windows")
     void testContainerNonPid1Warning(LaunchResult result) {
+        assertThat(result.getOutput(), containsString("-D" + Environment.KC_SCRIPT_PID));
         assertThat(result.getOutput(), containsString("WARNING: Keycloak is running inside a container, but is not PID 1."));
     }
 

@@ -67,9 +67,7 @@ do
           OPT=$(esceval "$1")
           case "$1" in
             -D*) SERVER_OPTS="$SERVER_OPTS ${OPT}";;
-            -*) CONFIG_ARGS="$CONFIG_ARGS ${OPT}";;
             *) CONFIG_ARGS="$CONFIG_ARGS ${OPT}"
-               [ -z "$KC_CMD" ] && KC_CMD="$1"
                ;;
           esac
           ;;
@@ -155,17 +153,13 @@ esceval_args() {
 
 JAVA_RUN_OPTS=$(echo "$JAVA_OPTS" | xargs printf '%s\n' | esceval_args)
 
+# Capture the pid so that we can wWarn if running in a container without being PID 1, as signals may not be forwarded correctly and graceful shutdown may not work
 # The property 'java.util.concurrent.ForkJoinPool.common.threadFactory' is set here, as a Java Agent or enabling JMX might initialize the factory before Quarkus can set the property in JDK21+.
-JAVA_RUN_OPTS="-Djava.util.concurrent.ForkJoinPool.common.threadFactory=io.quarkus.bootstrap.forkjoin.QuarkusForkJoinWorkerThreadFactory $JAVA_RUN_OPTS $SERVER_OPTS -cp $CLASSPATH_OPTS io.quarkus.bootstrap.runner.QuarkusEntryPoint ${CONFIG_ARGS#?}"
+JAVA_RUN_OPTS="-Dkc.script.pid=$$ -Djava.util.concurrent.ForkJoinPool.common.threadFactory=io.quarkus.bootstrap.forkjoin.QuarkusForkJoinWorkerThreadFactory $JAVA_RUN_OPTS $SERVER_OPTS -cp $CLASSPATH_OPTS io.quarkus.bootstrap.runner.QuarkusEntryPoint ${CONFIG_ARGS#?}"
 
 if [ "$PRINT_ENV" = "true" ]; then
   echo "Using JAVA_OPTS: $JAVA_OPTS"
   echo "Using JAVA_RUN_OPTS: $JAVA_RUN_OPTS"
-fi
-
-# Warn if running in a container without being PID 1, as signals may not be forwarded correctly and graceful shutdown may not work
-if [ "$KC_RUN_IN_CONTAINER" = "true" ] && [ "$$" != "1" ] && { [ "$KC_CMD" = "start" ] || [ "$KC_CMD" = "start-dev" ]; }; then
-    echo "WARNING: Keycloak is running inside a container, but is not PID 1. Graceful shutdown may not work. Use 'exec' in your entrypoint script to ensure signals are forwarded correctly. See https://www.keycloak.org/server/containers for more details."
 fi
 
 # trap the signals that should be forwarded to the java process
