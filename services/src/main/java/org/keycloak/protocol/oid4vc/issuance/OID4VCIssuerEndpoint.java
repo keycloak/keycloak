@@ -107,7 +107,7 @@ import org.keycloak.protocol.oid4vc.model.Proofs;
 import org.keycloak.protocol.oid4vc.model.SupportedCredentialConfiguration;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.protocol.oid4vc.utils.ClaimsPathPointer;
-import org.keycloak.protocol.oid4vc.utils.CredentialScopeModelUtils;
+import org.keycloak.protocol.oid4vc.utils.CredentialScopeUtils;
 import org.keycloak.protocol.oid4vc.utils.OID4VCUtil;
 import org.keycloak.protocol.oidc.grants.PreAuthorizedCodeGrantType;
 import org.keycloak.protocol.oidc.rar.AuthorizationDetailsProcessor;
@@ -910,7 +910,7 @@ public class OID4VCIssuerEndpoint {
 
         // Find credential client scope by requested/authorized credential_configuration_id
         //
-        CredentialScopeModel authorizedCredentialScope = CredentialScopeModelUtils.findCredentialScopeModelByConfigurationId(
+        CredentialScopeModel authorizedCredentialScope = CredentialScopeUtils.findCredentialScopeModelByConfigurationId(
                 realmModel, () -> clientModel.getClientScopes(false).values().stream(), authorizedCredentialConfigurationId);
 
         if (authorizedCredentialScope == null) {

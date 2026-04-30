@@ -42,7 +42,7 @@ import org.keycloak.protocol.oid4vc.issuance.credentialoffer.CredentialOfferStor
 import org.keycloak.protocol.oid4vc.model.CredentialScopeRepresentation;
 import org.keycloak.protocol.oid4vc.model.CredentialsOffer;
 import org.keycloak.protocol.oid4vc.model.IssuerState;
-import org.keycloak.protocol.oid4vc.utils.CredentialScopeModelUtils;
+import org.keycloak.protocol.oid4vc.utils.CredentialScopeUtils;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
@@ -140,7 +140,7 @@ public class AuthorizationEndpointChecker {
     }
 
     public void checkRedirectUri() throws AuthorizationCheckException {
-        String redirectUriParam = request.getRedirectUriParam();
+        String redirectUriParam = request.getRedirectUri();
         boolean isOIDCRequest = TokenUtil.isOIDCRequest(request.getScope());
 
         event.detail(Details.REDIRECT_URI, redirectUriParam);
@@ -364,7 +364,7 @@ public class AuthorizationEndpointChecker {
 
         // Get the list of requested credential scopes that are associated with this client
         //
-        List<CredentialScopeModel> credScopes = CredentialScopeModelUtils.getCredentialScopesForAuthorization(client, request);
+        List<CredentialScopeModel> credScopes = CredentialScopeUtils.getCredentialScopesForAuthorization(client, request);
 
         // Proceed when there are requested credential scopes
         //

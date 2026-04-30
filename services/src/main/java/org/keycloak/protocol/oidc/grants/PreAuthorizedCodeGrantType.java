@@ -49,7 +49,7 @@ import org.keycloak.protocol.oid4vc.model.CredentialsOffer;
 import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
 import org.keycloak.protocol.oid4vc.model.PreAuthCodeCtx;
 import org.keycloak.protocol.oid4vc.model.PreAuthorizedCodeGrant;
-import org.keycloak.protocol.oid4vc.utils.CredentialScopeModelUtils;
+import org.keycloak.protocol.oid4vc.utils.CredentialScopeUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.TokenManager.AccessTokenResponseBuilder;
 import org.keycloak.representations.AccessToken;
@@ -207,7 +207,7 @@ public class PreAuthorizedCodeGrantType extends OAuth2GrantTypeBase {
 
         // Add the scope referenced by the credential from specified credential offer to the token scopes
         String credConfigId = authDetails.getCredentialConfigurationId();
-        CredentialScopeModel credScope = CredentialScopeModelUtils.findCredentialScopeModelByConfigurationId(realm,
+        CredentialScopeModel credScope = CredentialScopeUtils.findCredentialScopeModelByConfigurationId(realm,
                 () -> session.clientScopes().getClientScopesStream(realm), credConfigId);
         if (credScope == null) {
             String errorMessage = "Credential client scope was not found for credential_configuration_id: " + credConfigId;
