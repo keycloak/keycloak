@@ -69,11 +69,14 @@ import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
+import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.server.KeycloakUrls;
 import org.keycloak.testframework.util.ApiUtil;
+import org.keycloak.tests.suites.DatabaseTest;
 import org.keycloak.util.JsonSerialization;
 
 import org.apache.http.Header;
@@ -157,6 +160,7 @@ public class ClientRegistrationTest {
     }
 
     @Test
+    @DatabaseTest
     public void registerClientAsAdmin() throws ClientRegistrationException {
         authManageClients();
 
@@ -182,8 +186,8 @@ public class ClientRegistrationTest {
     }
 
     @Test
+    @DatabaseTest
     public void registerClientAsAdminWithCreateOnly() throws ClientRegistrationException {
-
         authCreateClients();
 
         ClientRepresentation client = buildClient();
@@ -200,6 +204,7 @@ public class ClientRegistrationTest {
 
     // KEYCLOAK-5907
     @Test
+    @DatabaseTest
     public void withServiceAccount() throws ClientRegistrationException {
         authManageClients();
         ClientRepresentation clientRep = buildClient();
@@ -223,6 +228,7 @@ public class ClientRegistrationTest {
     }
 
     @Test
+    @DatabaseTest
     public void updateServiceAccount() throws Exception {
         authManageClients();
         ClientRepresentation client = buildClient();
@@ -244,6 +250,7 @@ public class ClientRegistrationTest {
     }
 
     @Test
+    @DatabaseTest
     public void registerClientInMasterRealm() throws Exception {
         ClientRegistration masterReg = ClientRegistration.create().url(keycloakUrls.getBase(), "master").build();
 
@@ -261,6 +268,7 @@ public class ClientRegistrationTest {
     }
 
     @Test
+    @DatabaseTest
     public void registerClientWithoutProtocol() throws ClientRegistrationException {
         authCreateClients();
         ClientRepresentation client = buildClient();
@@ -281,6 +289,7 @@ public class ClientRegistrationTest {
      * Attempting to create a client with protocol "oid4vc" should be rejected.
      */
     @Test
+    @DatabaseTest
     public void registerOid4vcClientShouldBeRejected() {
         authManageClients();
 
@@ -293,6 +302,7 @@ public class ClientRegistrationTest {
     }
 
     @Test
+    @DatabaseTest
     public void registerClientAsAdminWithNoAccess() {
         authNoAccess();
         try {
@@ -305,6 +315,7 @@ public class ClientRegistrationTest {
     }
 
     @Test
+    @DatabaseTest
     public void registerClientUsingRevokedToken() throws Exception {
         reg.auth(Auth.token(getToken("manage-clients", "password")));
 
@@ -346,6 +357,7 @@ public class ClientRegistrationTest {
     }
 
     @Test
+    @DatabaseTest
     public void registerClientWithNonAsciiChars() throws ClientRegistrationException {
         authCreateClients();
         ClientRepresentation client = buildClient();
@@ -360,6 +372,7 @@ public class ClientRegistrationTest {
     }
 
     @Test
+    @DatabaseTest
     public void clientWithDefaultRoles() throws ClientRegistrationException {
         authCreateClients();
         ClientRepresentation client = buildClient();
@@ -378,6 +391,7 @@ public class ClientRegistrationTest {
     }
 
     @Test
+    @DatabaseTest
     public void updateClientScopes() throws ClientRegistrationException {
         authManageClients();
         ClientRepresentation client = buildClient();
@@ -406,6 +420,7 @@ public class ClientRegistrationTest {
     }
 
     @Test
+    @DatabaseTest
     public void testInvalidUrlClientValidation() {
         testClientUriValidation("Root URL is not a valid URL",
                 "Base URL is not a valid URL",
@@ -415,6 +430,7 @@ public class ClientRegistrationTest {
     }
 
     @Test
+    @DatabaseTest
     public void testIllegalSchemeClientValidation() {
         testClientUriValidation("Root URL uses an illegal scheme",
                 "Base URL uses an illegal scheme",
@@ -427,6 +443,7 @@ public class ClientRegistrationTest {
 
     // KEYCLOAK-3421
     @Test
+    @DatabaseTest
     public void testFragmentProhibitedClientValidation() {
         testClientUriValidation("Root URL must not contain an URL fragment",
                 null,
@@ -437,12 +454,14 @@ public class ClientRegistrationTest {
     }
 
     @Test
+    @DatabaseTest
     public void testSamlSpecificUrls() throws ClientRegistrationException {
         testSamlSpecificUrls(true, "javascript:alert('TEST')", "data:text/html;base64,PHNjcmlwdD5jb25maXJtKGRvY3VtZW50LmRvbWFpbik7PC9zY3JpcHQ+");
         testSamlSpecificUrls(false, "javascript:alert('TEST')", "data:text/html;base64,PHNjcmlwdD5jb25maXJtKGRvY3VtZW50LmRvbWFpbik7PC9zY3JpcHQ+");
     }
 
     @Test
+    @DatabaseTest
     public void testUpdateAuthorizationSettings() throws ClientRegistrationException {
         authManageClients();
         ClientRepresentation clientRep = buildClient();
@@ -477,6 +496,7 @@ public class ClientRegistrationTest {
     }
 
     @Test
+    @DatabaseTest
     public void getClientAsAdmin() throws ClientRegistrationException {
         setupClientAsAdmin();
         ClientRepresentation rep = reg.get(CLIENT_ID);
@@ -484,6 +504,7 @@ public class ClientRegistrationTest {
     }
 
     @Test
+    @DatabaseTest
     public void getClientAsAdminWithCreateOnly() throws ClientRegistrationException {
         setupClientAsAdmin();
         authCreateClients();
@@ -496,6 +517,7 @@ public class ClientRegistrationTest {
     }
 
     @Test
+    @DatabaseTest
     public void getClientAsAdminWithNoAccess() throws ClientRegistrationException {
         setupClientAsAdmin();
         authNoAccess();
@@ -525,6 +547,7 @@ public class ClientRegistrationTest {
     }
 
     @Test
+    @DatabaseTest
     public void updateClientAsAdmin() throws ClientRegistrationException {
         setupClientAsAdmin();
 
@@ -533,6 +556,7 @@ public class ClientRegistrationTest {
     }
 
     @Test
+    @DatabaseTest
     public void updateClientSecret() throws ClientRegistrationException {
         authManageClients();
         registerClient(buildClient());
@@ -549,6 +573,7 @@ public class ClientRegistrationTest {
     }
 
     @Test
+    @DatabaseTest
     public void addClientProtcolMappers() throws ClientRegistrationException {
         authManageClients();
 
@@ -565,6 +590,7 @@ public class ClientRegistrationTest {
     }
 
     @Test
+    @DatabaseTest
     public void removeClientProtcolMappers() throws ClientRegistrationException {
         authManageClients();
 
@@ -580,6 +606,7 @@ public class ClientRegistrationTest {
     }
 
     @Test
+    @DatabaseTest
     public void updateClientProtcolMappers() throws ClientRegistrationException {
         authManageClients();
 
@@ -595,6 +622,7 @@ public class ClientRegistrationTest {
     }
 
     @Test
+    @DatabaseTest
     public void updateClientAsAdminWithCreateOnly() {
         authCreateClients();
         try {
@@ -606,6 +634,7 @@ public class ClientRegistrationTest {
     }
 
     @Test
+    @DatabaseTest
     public void updateClientAsAdminWithNoAccess() {
         authNoAccess();
         try {
@@ -617,6 +646,7 @@ public class ClientRegistrationTest {
     }
 
     @Test
+    @DatabaseTest
     public void updateClientNotFound() {
         authManageClients();
         try {
@@ -632,6 +662,7 @@ public class ClientRegistrationTest {
     }
 
     @Test
+    @DatabaseTest
     public void updateClientWithNonAsciiChars() throws ClientRegistrationException {
         authCreateClients();
         registerClient(buildClient());
@@ -646,6 +677,7 @@ public class ClientRegistrationTest {
     }
 
     @Test
+    @DatabaseTest
     public void deleteClientAsAdmin() throws ClientRegistrationException {
         authCreateClients();
         ClientRepresentation client = registerClient(buildClient());
@@ -655,6 +687,7 @@ public class ClientRegistrationTest {
     }
 
     @Test
+    @DatabaseTest
     public void deleteClientAsAdminWithCreateOnly() throws ClientRegistrationException {
         authManageClients();
         ClientRepresentation client = registerClient(buildClient());
@@ -668,6 +701,7 @@ public class ClientRegistrationTest {
     }
 
     @Test
+    @DatabaseTest
     public void deleteClientAsAdminWithNoAccess() throws ClientRegistrationException {
         authManageClients();
         ClientRepresentation client = registerClient(buildClient());
@@ -681,6 +715,7 @@ public class ClientRegistrationTest {
     }
 
     @Test
+    @DatabaseTest
     public void registerClientAsAdminWithScope() throws ClientRegistrationException {
         authManageClients();
         ClientRepresentation client = new ClientRepresentation();
@@ -704,6 +739,7 @@ public class ClientRegistrationTest {
     }
 
     @Test
+    @DatabaseTest
     public void registerClientAsAdminWithoutScope() throws ClientRegistrationException {
         Set<String> realmDefaultClientScopes = adminClient.realm(REALM_NAME).getDefaultDefaultClientScopes().stream()
                 .filter(scope -> Objects.equals(scope.getProtocol(), OIDCLoginProtocol.LOGIN_PROTOCOL))
@@ -769,6 +805,7 @@ public class ClientRegistrationTest {
     }
 
     @Test
+    @DatabaseTest
     public void registerMultipleClients() {
 
         int concurrentThreads = 5;
@@ -811,6 +848,7 @@ public class ClientRegistrationTest {
     }
 
     @Test
+    @DatabaseTest
     public void registerWithLightweightAccessTokenAndTransientSession() throws Exception {
 
         String TEST_ADMIN_CLIENT = "test-admin-client";
@@ -851,34 +889,36 @@ public class ClientRegistrationTest {
         @Override
         public RealmBuilder configure(RealmBuilder realm) {
             realm.name(REALM_NAME)
-                    .addClient("myclient-test")
-                    .clientId("myclient-test")
-                    .publicClient(true)
-                    .directAccessGrantsEnabled(true);
+                    .clients(ClientBuilder.create("myclient-test")
+                            .publicClient(true)
+                            .directAccessGrantsEnabled(true));
 
-            realm.addUser("manage-clients")
-                    .name("manage", "clients")
-                    .enabled(true)
-                    .password("password")
-                    .email("manage-clients@test.com")
-                    .emailVerified(true)
-                    .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.MANAGE_CLIENTS);
+            UserBuilder manage_client_user_builder =  UserBuilder.create()
+                                                                 .username("manage-clients")
+                                                                 .name("manage", "clients")
+                                                                 .enabled(true)
+                                                                 .password("password")
+                                                                 .email("manage-clients@test.com")
+                                                                 .emailVerified(true)
+                                                                 .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.MANAGE_CLIENTS);
 
-            realm.addUser("create-clients")
-                    .name("create", "clients")
-                    .enabled(true)
-                    .password("password")
-                    .email("create-clients@test.com")
-                    .emailVerified(true)
-                    .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.CREATE_CLIENT);
+            UserBuilder create_client_user_builder =  UserBuilder.create()
+                                                                 .username("create-clients")
+                                                                 .name("create", "clients")
+                                                                 .enabled(true)
+                                                                 .password("password")
+                                                                 .email("create-clients@test.com")
+                                                                 .emailVerified(true)
+                                                                 .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.CREATE_CLIENT);
 
-            realm.addUser("no-access")
-                    .name("no", "access")
-                    .enabled(true)
-                    .password("password")
-                    .email("no-access@test.com")
-                    .emailVerified(true);
-
+            UserBuilder no_access_user_builder =   UserBuilder.create()
+                                                              .username("no-access")
+                                                              .name("no", "access")
+                                                              .enabled(true)
+                                                              .password("password")
+                                                              .email("no-access@test.com")
+                                                              .emailVerified(true);
+            realm.users(manage_client_user_builder, create_client_user_builder, no_access_user_builder);
             return realm;
         }
     }
