@@ -250,6 +250,25 @@ Or to use directly in HTML templates add the following to a custom HTML template
 <img src="${r"${url.resourcesPath}"}/img/image.jpg" alt="My image description">
 ----
 
+[[_theme_custom_header]]
+=== Adding a custom header to a login theme
+
+In order to use a custom header, create a `header.ftl` file in your custom login theme with the desired content.
+
+An example for a custom `header.ftl` may look like this:
+
+[source]
+----
+<#noparse>
+<#macro content>
+<#-- header at the top of the login box -->
+<div>
+    <h1>My Custom Header</h1>
+</div>
+</#macro>
+</#noparse>
+----
+
 [[_theme_custom_footer]]
 === Adding a custom footer to a login theme
 
