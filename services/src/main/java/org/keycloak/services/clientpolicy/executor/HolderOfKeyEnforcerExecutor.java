@@ -28,6 +28,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.RefreshToken;
+import org.keycloak.representations.dpop.DPoP;
 import org.keycloak.representations.idm.ClientPolicyExecutorConfigurationRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
@@ -37,6 +38,7 @@ import org.keycloak.services.clientpolicy.context.LogoutRequestContext;
 import org.keycloak.services.clientpolicy.context.TokenRefreshContext;
 import org.keycloak.services.clientpolicy.context.TokenRevokeContext;
 import org.keycloak.services.clientpolicy.context.UserInfoRequestContext;
+import org.keycloak.services.util.DPoPUtil;
 import org.keycloak.services.util.MtlsHoKTokenUtil;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -91,9 +93,10 @@ public class HolderOfKeyEnforcerExecutor implements ClientPolicyExecutorProvider
             case TOKEN_REQUEST:
             case SERVICE_ACCOUNT_TOKEN_REQUEST:
             case BACKCHANNEL_TOKEN_REQUEST:
+                DPoP dpop = session.getAttribute(DPoPUtil.DPOP_SESSION_ATTRIBUTE, DPoP.class);
                 AccessToken.Confirmation certConf = MtlsHoKTokenUtil.bindTokenWithClientCertificate(request, session);
-                if (certConf == null) {
-                    throw new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, "Client Certification missing for MTLS HoK Token Binding");
+                if (dpop == null && certConf == null) {
+                    throw new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, "Holder of Key Proof required (e.g. mTLS, DPoP)");
                 }
                 break;
             case TOKEN_REFRESH:
