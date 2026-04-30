@@ -15,10 +15,12 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.policy;
+package org.keycloak.tests.policy;
 
 import java.io.File;
-import java.util.List;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.nio.file.Paths;
 
 import org.keycloak.models.ModelException;
 import org.keycloak.models.PasswordPolicy;
@@ -29,12 +31,19 @@ import org.keycloak.policy.MaximumLengthPasswordPolicyProviderFactory;
 import org.keycloak.policy.PasswordPolicyManagerProvider;
 import org.keycloak.policy.PasswordPolicyProvider;
 import org.keycloak.provider.ProviderFactory;
-import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmBuilder;
-import org.keycloak.testsuite.AbstractKeycloakTest;
+import org.keycloak.testframework.realm.RealmConfig;
+import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
+import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
+import org.keycloak.testframework.server.KeycloakServerConfig;
+import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
+import org.keycloak.tests.suites.DatabaseTest;
 
-import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -48,11 +57,19 @@ import static org.junit.jupiter.api.Assertions.fail;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class PasswordPolicyTest extends AbstractKeycloakTest {
+@KeycloakIntegrationTest(config = PasswordPolicyTest.PasswordPolicyServerConfig.class)
+@DatabaseTest
+public class PasswordPolicyTest {
+
+    @InjectRealm(config = PasswordPolicyRealmConfig.class)
+    ManagedRealm managedRealm;
+
+    @InjectRunOnServer
+    RunOnServerClient runOnServer;
 
     @Test
     public void testLength() {
-        testingClient.server("passwordPolicy").run(session -> {
+        runOnServer.run(session -> {
             RealmModel realmModel = session.getContext().getRealm();
             PasswordPolicyManagerProvider policyManager = session.getProvider(PasswordPolicyManagerProvider.class);
 
@@ -72,7 +89,7 @@ public class PasswordPolicyTest extends AbstractKeycloakTest {
 
     @Test
     public void testMaximumLength() {
-        testingClient.server("passwordPolicy").run(session -> {
+        runOnServer.run(session -> {
             RealmModel realmModel = session.getContext().getRealm();
             PasswordPolicyManagerProvider policyManager = session.getProvider(PasswordPolicyManagerProvider.class);
 
@@ -96,7 +113,7 @@ public class PasswordPolicyTest extends AbstractKeycloakTest {
 
     @Test
     public void testDigits() {
-        testingClient.server("passwordPolicy").run(session -> {
+        runOnServer.run(session -> {
             RealmModel realmModel = session.getContext().getRealm();
             PasswordPolicyManagerProvider policyManager = session.getProvider(PasswordPolicyManagerProvider.class);
 
@@ -114,7 +131,7 @@ public class PasswordPolicyTest extends AbstractKeycloakTest {
 
     @Test
     public void testLowerCase() {
-        testingClient.server("passwordPolicy").run(session -> {
+        runOnServer.run(session -> {
             RealmModel realmModel = session.getContext().getRealm();
             PasswordPolicyManagerProvider policyManager = session.getProvider(PasswordPolicyManagerProvider.class);
 
@@ -132,7 +149,7 @@ public class PasswordPolicyTest extends AbstractKeycloakTest {
 
     @Test
     public void testUpperCase() {
-        testingClient.server("passwordPolicy").run(session -> {
+        runOnServer.run(session -> {
             RealmModel realmModel = session.getContext().getRealm();
             PasswordPolicyManagerProvider policyManager = session.getProvider(PasswordPolicyManagerProvider.class);
 
@@ -150,7 +167,7 @@ public class PasswordPolicyTest extends AbstractKeycloakTest {
 
     @Test
     public void testSpecialChars() {
-        testingClient.server("passwordPolicy").run(session -> {
+        runOnServer.run(session -> {
             RealmModel realmModel = session.getContext().getRealm();
             PasswordPolicyManagerProvider policyManager = session.getProvider(PasswordPolicyManagerProvider.class);
 
@@ -170,8 +187,8 @@ public class PasswordPolicyTest extends AbstractKeycloakTest {
      * KEYCLOAK-5244
      */
     @Test
-    public void testBlacklistPasswordPolicyWithTestBlacklist() throws Exception {
-        testingClient.server("passwordPolicy").run(session -> {
+    public void testBlacklistPasswordPolicyWithTestBlacklist() {
+        runOnServer.run(session -> {
 
             RealmModel realmModel = session.getContext().getRealm();
             PasswordPolicyManagerProvider policyManager = session.getProvider(PasswordPolicyManagerProvider.class);
@@ -186,10 +203,10 @@ public class PasswordPolicyTest extends AbstractKeycloakTest {
     }
 
     @Test
-    public void testBlacklistPasswordPolicyDefaultPath() throws Exception {
+    public void testBlacklistPasswordPolicyDefaultPath() {
         final String SEPARATOR = File.separator;
 
-        testingClient.server("passwordPolicy").run(session -> {
+        runOnServer.run(session -> {
             ProviderFactory<PasswordPolicyProvider> passPolicyFact = session.getKeycloakSessionFactory().getProviderFactory(
                     PasswordPolicyProvider.class, BlacklistPasswordPolicyProviderFactory.ID);
             assertThat(passPolicyFact, instanceOf(BlacklistPasswordPolicyProviderFactory.class));
@@ -200,7 +217,7 @@ public class PasswordPolicyTest extends AbstractKeycloakTest {
 
     @Test
     public void testNotUsername() {
-        testingClient.server("passwordPolicy").run(session -> {
+        runOnServer.run(session -> {
             RealmModel realmModel = session.getContext().getRealm();
             PasswordPolicyManagerProvider policyManager = session.getProvider(PasswordPolicyManagerProvider.class);
 
@@ -212,9 +229,8 @@ public class PasswordPolicyTest extends AbstractKeycloakTest {
 
     @Test
     public void testInvalidPolicyName() {
-        testingClient.server("passwordPolicy").run(session -> {
+        runOnServer.run(session -> {
             RealmModel realmModel = session.getContext().getRealm();
-            PasswordPolicyManagerProvider policyManager = session.getProvider(PasswordPolicyManagerProvider.class);
 
             try {
                 realmModel.setPasswordPolicy(PasswordPolicy.parse(session, "noSuchPolicy"));
@@ -227,11 +243,10 @@ public class PasswordPolicyTest extends AbstractKeycloakTest {
 
     @Test
     public void testRegexPatterns() {
-        testingClient.server("passwordPolicy").run(session -> {
+        runOnServer.run(session -> {
             RealmModel realmModel = session.getContext().getRealm();
             PasswordPolicyManagerProvider policyManager = session.getProvider(PasswordPolicyManagerProvider.class);
 
-            PasswordPolicy policy = null;
             try {
                 realmModel.setPasswordPolicy(PasswordPolicy.parse(session, "regexPattern"));
                 fail("Expected NullPointerException: Regex Pattern cannot be null.");
@@ -257,7 +272,7 @@ public class PasswordPolicyTest extends AbstractKeycloakTest {
             realmModel.setPasswordPolicy(PasswordPolicy.parse(session, "regexPattern(jdoe) and regexPattern(j*d)"));
             Assertions.assertEquals("invalidPasswordRegexPatternMessage", policyManager.validate("jdoe", "jdoe").getMessage());
 
-            ////Fails to match all of the regex patterns
+            //Fails to match all of the regex patterns
             realmModel.setPasswordPolicy(PasswordPolicy.parse(session, "regexPattern(j*p) and regexPattern(j*d) and regexPattern(adoe)"));
             Assertions.assertEquals("invalidPasswordRegexPatternMessage", policyManager.validate("jdoe", "jdoe").getMessage());
 
@@ -274,7 +289,7 @@ public class PasswordPolicyTest extends AbstractKeycloakTest {
 
     @Test
     public void testComplex() {
-        testingClient.server("passwordPolicy").run(session -> {
+        runOnServer.run(session -> {
             RealmModel realmModel = session.getContext().getRealm();
             PasswordPolicyManagerProvider policyManager = session.getProvider(PasswordPolicyManagerProvider.class);
 
@@ -293,10 +308,10 @@ public class PasswordPolicyTest extends AbstractKeycloakTest {
 
     @Test
     public void testBuilder() {
-        testingClient.server("passwordPolicy").run(session -> {
+        runOnServer.run(session -> {
             PasswordPolicy.Builder builder = PasswordPolicy.parse(session, "hashIterations(20000)").toBuilder();
             assertFalse(builder.contains(PasswordPolicy.HASH_ALGORITHM_ID));
-            assertTrue("20000".equals(builder.get(PasswordPolicy.HASH_ITERATIONS_ID)));
+            assertEquals("20000", builder.get(PasswordPolicy.HASH_ITERATIONS_ID));
 
             builder.remove(PasswordPolicy.HASH_ITERATIONS_ID);
 
@@ -315,9 +330,27 @@ public class PasswordPolicyTest extends AbstractKeycloakTest {
         });
     }
 
-    @Override
-    public void addTestRealms(List<RealmRepresentation> testRealms) {
-        testRealms.add(RealmBuilder.create().name("passwordPolicy").build());
+    public static class PasswordPolicyServerConfig implements KeycloakServerConfig {
+        @Override
+        public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
+            try {
+                URL resourceUrl = PasswordPolicyTest.class.getResource("/password-blacklists");
+                if (resourceUrl == null) {
+                    throw new RuntimeException("Unable to find the password-blacklists file in the classpath for PasswordPolicyTest");
+                }
+                String resourcePath = Paths.get(resourceUrl.toURI()).toString();
+                return config.spiOption("password-policy", "password-blacklist", "blacklists-path", resourcePath);
+
+            } catch (URISyntaxException e) {
+                throw new RuntimeException(e);
+            }
+        }
     }
 
+    public static class PasswordPolicyRealmConfig implements RealmConfig {
+        @Override
+        public RealmBuilder configure(RealmBuilder realm) {
+            return realm.name("passwordPolicy");
+        }
+    }
 }

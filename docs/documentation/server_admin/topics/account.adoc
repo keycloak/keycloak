@@ -1,5 +1,5 @@
-[[_account-service]]
 
+[[_account-service]]
 == Account Console
 
 {project_name} users can manage their accounts through the Account Console. They can configure their profiles, add two-factor authentication, include identity provider accounts, and oversee device activity.
