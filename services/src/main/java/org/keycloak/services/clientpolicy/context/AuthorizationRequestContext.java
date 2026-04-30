@@ -56,7 +56,7 @@ public class AuthorizationRequestContext implements ClientPolicyContext, ClientM
         return ClientPolicyEvent.AUTHORIZATION_REQUEST;
     }
 
-    public OIDCResponseType getparsedResponseType() {
+    public OIDCResponseType getParsedResponseType() {
         return parsedResponseType;
     }
 

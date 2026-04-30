@@ -101,7 +101,7 @@ public class SecureResponseTypeExecutor implements ClientPolicyExecutorProvider<
                 break;
             case AUTHORIZATION_REQUEST:
                 AuthorizationRequestContext authorizationRequestContext = (AuthorizationRequestContext)context;
-                executeOnAuthorizationRequest(authorizationRequestContext.getparsedResponseType(),
+                executeOnAuthorizationRequest(authorizationRequestContext.getParsedResponseType(),
                     authorizationRequestContext.getAuthorizationEndpointRequest(),
                     authorizationRequestContext.getRedirectUri());
                 break;

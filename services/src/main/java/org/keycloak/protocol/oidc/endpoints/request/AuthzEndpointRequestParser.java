@@ -130,7 +130,7 @@ public abstract class AuthzEndpointRequestParser {
         }
 
         request.responseMode = replaceIfNotNull(request.responseMode, getAndValidateParameter(OIDCLoginProtocol.RESPONSE_MODE_PARAM));
-        request.redirectUriParam = replaceIfNotNull(request.redirectUriParam, getAndValidateParameter(OIDCLoginProtocol.REDIRECT_URI_PARAM));
+        request.redirectUri = replaceIfNotNull(request.redirectUri, getAndValidateParameter(OIDCLoginProtocol.REDIRECT_URI_PARAM));
         request.state = replaceIfNotNull(request.state, getAndValidateParameter(OIDCLoginProtocol.STATE_PARAM));
         request.scope = replaceIfNotNull(request.scope, getAndValidateParameter(OIDCLoginProtocol.SCOPE_PARAM));
         request.resource = replaceIfNotNull(request.resource, getAndValidateParameter(OIDCLoginProtocol.RESOURCE_PARAM));

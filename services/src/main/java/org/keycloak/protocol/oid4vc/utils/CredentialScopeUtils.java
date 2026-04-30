@@ -22,12 +22,12 @@ import org.jboss.logging.Logger;
 
 import static org.keycloak.constants.OID4VCIConstants.OID4VC_PROTOCOL;
 
-public class CredentialScopeModelUtils {
+public class CredentialScopeUtils {
 
-    private static final Logger log = Logger.getLogger(CredentialScopeModelUtils.class);
+    private static final Logger log = Logger.getLogger(CredentialScopeUtils.class);
 
     // Hide ctor
-    private CredentialScopeModelUtils() {}
+    private CredentialScopeUtils() {}
 
     public static CredentialScopeModel findCredentialScopeModelByConfigurationId(RealmModel realmModel, Supplier<Stream<ClientScopeModel>> supplier, String credConfigId) {
         if (Strings.isEmpty(credConfigId)) {

@@ -12,7 +12,7 @@ import org.keycloak.protocol.oid4vc.issuance.credentialoffer.CredentialOfferStat
 import org.keycloak.protocol.oid4vc.issuance.credentialoffer.CredentialOfferStorage;
 import org.keycloak.protocol.oid4vc.model.CredentialsOffer;
 import org.keycloak.protocol.oid4vc.model.IssuerState;
-import org.keycloak.protocol.oid4vc.utils.CredentialScopeModelUtils;
+import org.keycloak.protocol.oid4vc.utils.CredentialScopeUtils;
 import org.keycloak.protocol.oidc.endpoints.request.AuthorizationEndpointRequest;
 import org.keycloak.representations.idm.ClientPolicyExecutorConfigurationRepresentation;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
@@ -54,7 +54,7 @@ public class CredentialClientPolicyExecutor implements ClientPolicyExecutorProvi
         // Get the list of requested credential scopes that are associated with this client
         //
         AuthorizationEndpointRequest request = context.getAuthorizationEndpointRequest();
-        List<CredentialScopeModel> credScopes = CredentialScopeModelUtils.getCredentialScopesForAuthorization(client, request);
+        List<CredentialScopeModel> credScopes = CredentialScopeUtils.getCredentialScopesForAuthorization(client, request);
 
         // Proceed when there are requested credential scopes
         //

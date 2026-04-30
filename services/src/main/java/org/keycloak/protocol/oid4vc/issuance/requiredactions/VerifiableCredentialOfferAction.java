@@ -29,7 +29,7 @@ import org.keycloak.protocol.oid4vc.issuance.TimeProvider;
 import org.keycloak.protocol.oid4vc.issuance.credentialoffer.CredentialOfferProvider;
 import org.keycloak.protocol.oid4vc.issuance.credentialoffer.CredentialOfferState;
 import org.keycloak.protocol.oid4vc.issuance.credentialoffer.CredentialOfferStorage;
-import org.keycloak.protocol.oid4vc.utils.CredentialScopeModelUtils;
+import org.keycloak.protocol.oid4vc.utils.CredentialScopeUtils;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.util.JsonSerialization;
 
@@ -120,7 +120,7 @@ public class VerifiableCredentialOfferAction implements RequiredActionProvider, 
         }
         String credentialConfigId = actionConfig.getCredentialConfigurationId();
 
-        CredentialScopeModel credScope = CredentialScopeModelUtils.findCredentialScopeModelByConfigurationId(
+        CredentialScopeModel credScope = CredentialScopeUtils.findCredentialScopeModelByConfigurationId(
                 realm, () -> session.clientScopes().getClientScopesStream(realm), credentialConfigId);
         if (credScope == null) {
             event.detail(Details.CREDENTIAL_TYPE, credentialConfigId);
@@ -147,7 +147,7 @@ public class VerifiableCredentialOfferAction implements RequiredActionProvider, 
 
         LoginFormsProvider form = context.form();
         try {
-            String displayName = CredentialScopeModelUtils.getCredentialDisplayName(context.getSession(), context.getUser(), credScope);
+            String displayName = CredentialScopeUtils.getCredentialDisplayName(context.getSession(), context.getUser(), credScope);
             form.setAttribute("credentialOffer", new CredentialOfferBean(context.getSession(), nonce));
             form.setAttribute("credentialDisplayName", displayName);
         } catch (WriterException | IOException ex) {

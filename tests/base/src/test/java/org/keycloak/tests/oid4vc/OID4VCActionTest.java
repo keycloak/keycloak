@@ -251,7 +251,7 @@ public class OID4VCActionTest extends OID4VCIssuerTestBase {
         //
         AccessTokenResponse tokenResponse = wallet.accessTokenRequest(ctx, authCode).send();
         assertNull(tokenResponse.getAccessToken());
-        assertEquals("Credential offer target client 'oid4vci-test-pub' different from login client 'oid4vci-test'", tokenResponse.getErrorDescription());
+        assertEquals("Credential offer target client 'oid4vci-client-pub' different from login client 'oid4vci-client'", tokenResponse.getErrorDescription());
     }
 
 
