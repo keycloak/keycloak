@@ -386,7 +386,8 @@ public class LoggingDistTest {
         cliResult.assertStartedDevMode();
         cliResult.assertMessage("opentelemetry");
         cliResult.assertMessage("service.name=\"keycloak\"");
-        cliResult.assertMessage("Failed to export LogsRequestMarshaler.");
+        cliResult.assertMessage("Failed to export");
+        cliResult.assertMessage("error message: Connection refused");
     }
 
     @Test
@@ -443,10 +444,10 @@ public class LoggingDistTest {
 
         // Verify that sensitive cookie values are masked in the access log
         cliResult.assertMessage("[org.keycloak.http.access-log]");
-        cliResult.assertMessage("Authorization: Bearer ...");
-        cliResult.assertMessage("Authorization: DPoP ...");
+        cliResult.assertMessage("Authorization: Bearer <hidden>");
+        cliResult.assertMessage("Authorization: DPoP <hidden>");
         cliResult.assertMessage("Cookie: SOMETHING=something-not-sensitive");
         cliResult.assertMessage("Content-Language: cs");
-        HttpAccessLogOptions.DEFAULT_HIDDEN_COOKIES.forEach(cookie -> cliResult.assertMessage("Cookie: %s=...".formatted(cookie)));
+        HttpAccessLogOptions.DEFAULT_HIDDEN_COOKIES.forEach(cookie -> cliResult.assertMessage("Cookie: %s=<hidden>".formatted(cookie)));
     }
 }
