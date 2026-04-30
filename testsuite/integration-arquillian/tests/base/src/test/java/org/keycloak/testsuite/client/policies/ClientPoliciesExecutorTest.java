@@ -1647,10 +1647,10 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
         oauth.client(clientBetaId);
         oauth.loginForm().state("randomstatesomething").requestUri(requestUri).open();
         assertTrue(errorPage.isCurrent());
-        assertEquals("PAR request did not include necessary parameters", errorPage.getError());
-        events.expectClientPolicyError(EventType.LOGIN_ERROR, OAuthErrorException.INVALID_REQUEST,
-                        Details.CLIENT_POLICY_ERROR, OAuthErrorException.INVALID_REQUEST,
-                        "PAR request did not include necessary parameters").client((String) null)
+        assertEquals("PAR request did not include query parameter: state", errorPage.getError());
+        events.expectClientPolicyError(EventType.LOGIN_ERROR, OAuthErrorException.INVALID_REQUEST_OBJECT,
+                        Details.CLIENT_POLICY_ERROR, OAuthErrorException.INVALID_REQUEST_OBJECT,
+                        "PAR request did not include query parameter: state").client((String) null)
                 .user((String) null).assertEvent();
 
         oauth.client(clientBetaId, "secretBeta");
@@ -1696,10 +1696,10 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
         // only query parameters include state parameter
         oauth.loginForm().requestUri(requestUri).state("mystate2").open();
         assertTrue(errorPage.isCurrent());
-        assertEquals("PAR request did not include necessary parameters", errorPage.getError());
-        events.expectClientPolicyError(EventType.LOGIN_ERROR, OAuthErrorException.INVALID_REQUEST,
-                        Details.CLIENT_POLICY_ERROR, OAuthErrorException.INVALID_REQUEST,
-                        "PAR request did not include necessary parameters").client((String) null)
+        assertEquals("PAR request did not include query parameter: state", errorPage.getError());
+        events.expectClientPolicyError(EventType.LOGIN_ERROR, OAuthErrorException.INVALID_REQUEST_OBJECT,
+                        Details.CLIENT_POLICY_ERROR, OAuthErrorException.INVALID_REQUEST_OBJECT,
+                        "PAR request did not include query parameter: state").client((String) null)
                 .user((String) null).assertEvent();
 
         // Pushed Authorization Request with state parameter

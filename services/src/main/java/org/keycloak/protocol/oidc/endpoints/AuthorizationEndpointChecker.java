@@ -134,13 +134,12 @@ public class AuthorizationEndpointChecker {
         event.detail(Details.REDIRECT_URI, redirectUriParam);
 
         // redirect_uri parameter is required per OpenID Connect, but optional per OAuth2
-        this.redirectUri = RedirectUtils.verifyRedirectUri(session, redirectUriParam, client, isOIDCRequest);
+        redirectUri = RedirectUtils.verifyRedirectUri(session, redirectUriParam, client, isOIDCRequest);
         if (redirectUri == null) {
             event.error(Errors.INVALID_REDIRECT_URI);
             throw new AuthorizationCheckException(Response.Status.BAD_REQUEST, Messages.INVALID_PARAMETER, OIDCLoginProtocol.REDIRECT_URI_PARAM);
         }
     }
-
 
     public void checkResponseType() throws AuthorizationCheckException {
         String responseType = request.getResponseType();
@@ -163,9 +162,9 @@ public class AuthorizationEndpointChecker {
             throw new AuthorizationCheckException(Response.Status.BAD_REQUEST, OAuthErrorException.UNSUPPORTED_RESPONSE_TYPE, null);
         }
 
-        OIDCResponseMode parsedResponseMode = null;
+        OIDCResponseMode responseMode;
         try {
-            parsedResponseMode = OIDCResponseMode.parse(request.getResponseMode(), parsedResponseType);
+            responseMode = OIDCResponseMode.parse(request.getResponseMode(), parsedResponseType);
         } catch (IllegalArgumentException iae) {
             ServicesLogger.LOGGER.invalidParameter(OIDCLoginProtocol.RESPONSE_MODE_PARAM);
             String errorMessage = "Invalid parameter: " + OIDCLoginProtocol.RESPONSE_MODE_PARAM;
@@ -174,10 +173,10 @@ public class AuthorizationEndpointChecker {
             throw new AuthorizationCheckException(Response.Status.BAD_REQUEST, OAuthErrorException.INVALID_REQUEST, errorMessage);
         }
 
-        event.detail(Details.RESPONSE_MODE, parsedResponseMode.toString().toLowerCase());
+        event.detail(Details.RESPONSE_MODE, responseMode.toString().toLowerCase());
 
         // Disallowed by OIDC specs
-        if (parsedResponseType.isImplicitOrHybridFlow() && parsedResponseMode == OIDCResponseMode.QUERY) {
+        if (parsedResponseType.isImplicitOrHybridFlow() && responseMode == OIDCResponseMode.QUERY) {
             ServicesLogger.LOGGER.responseModeQueryNotAllowed();
             String errorMessage = "Response_mode 'query' not allowed for implicit or hybrid flow";
             event.detail(Details.REASON, errorMessage);
@@ -185,7 +184,18 @@ public class AuthorizationEndpointChecker {
             throw new AuthorizationCheckException(Response.Status.BAD_REQUEST, OAuthErrorException.INVALID_REQUEST, errorMessage);
         }
 
-        this.parsedResponseMode = parsedResponseMode;
+        this.parsedResponseMode = responseMode;
+
+        // Not allowed by FAPI2 Security Profile as it would return an id_token via the browser where it may be leaked.
+        // Only the authorization code flow ('response_type=code') is permitted.
+        // https://github.com/keycloak/keycloak/issues/48067
+        if (Profile.isFeatureEnabled(Profile.Feature.OID4VC_HAIP) && !parsedResponseType.hasSingleResponseType(OIDCResponseType.CODE)) {
+            ServicesLogger.LOGGER.flowNotAllowed("Non Standard");
+            String errorMessage = "Non standard response type (i.e. other than 'code') not allowed by FAPI 2.0 Security Profile";
+            event.detail(Details.REASON, errorMessage);
+            event.error(Errors.NOT_ALLOWED);
+            throw new AuthorizationCheckException(Response.Status.BAD_REQUEST, OAuthErrorException.INVALID_REQUEST, errorMessage);
+        }
 
         if (parsedResponseType.isImplicitOrHybridFlow() && parsedResponseMode == OIDCResponseMode.QUERY_JWT &&
                 (!StringUtil.isNotBlank(client.getAttribute(OIDCConfigAttributes.AUTHORIZATION_ENCRYPTED_RESPONSE_ALG)) ||
@@ -214,7 +224,7 @@ public class AuthorizationEndpointChecker {
         }
     }
 
-    public boolean isInvalidResponseType(AuthorizationEndpointChecker.AuthorizationCheckException ex) {
+    public boolean isInvalidResponseType(AuthorizationCheckException ex) {
         return "Missing parameter: response_type".equals(ex.getErrorDescription()) || OAuthErrorException.UNSUPPORTED_RESPONSE_TYPE.equals(ex.getError());
     }
 
@@ -427,35 +437,12 @@ public class AuthorizationEndpointChecker {
         }
     }
 
+    public void throwAsErrorPageException(AuthenticationSessionModel authenticationSession, AuthorizationCheckException ex) {
+        throw new ErrorPageException(session, authenticationSession, ex.getStatus(), ex.getError(), ex.getErrorDescription());
+    }
 
-    // Exception propagated to the caller, which will allow caller to send proper error response based on the context (Browser OIDC Authorization Endpoint, PAR etc)
-    public class AuthorizationCheckException extends Exception {
-
-        private final Response.Status status;
-        private final String error;
-        private final String errorDescription;
-
-        public AuthorizationCheckException(Response.Status status, String error, String errorDescription) {
-            this.status = status;
-            this.error = error;
-            this.errorDescription = errorDescription;
-        }
-
-        public void throwAsErrorPageException(AuthenticationSessionModel authenticationSession) {
-            throw new ErrorPageException(session, authenticationSession, status, error, errorDescription);
-        }
-
-        public void throwAsCorsErrorResponseException(Cors cors) {
-            AuthorizationEndpointChecker.this.event.detail("detail", errorDescription).error(error);
-            throw new CorsErrorResponseException(cors, error, errorDescription, status);
-        }
-
-        public String getError() {
-            return error;
-        }
-
-        public String getErrorDescription() {
-            return errorDescription;
-        }
+    public void throwAsCorsErrorResponseException(Cors cors, AuthorizationCheckException ex) {
+        event.detail("detail", ex.getErrorDescription()).error(ex.getError());
+        throw new CorsErrorResponseException(cors, ex.getError(), ex.getErrorDescription(), ex.getStatus());
     }
 }

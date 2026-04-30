@@ -21,12 +21,10 @@ import java.util.HashSet;
 import java.util.List;
 
 import jakarta.ws.rs.core.MultivaluedMap;
-import jakarta.ws.rs.core.Response;
 
 import org.keycloak.OAuth2Constants;
 import org.keycloak.common.Profile;
 import org.keycloak.connections.httpclient.HttpClientProvider;
-import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.models.ClientModel;
@@ -36,9 +34,7 @@ import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.par.endpoints.request.AuthzEndpointParParser;
 import org.keycloak.protocol.oidc.utils.RedirectUtils;
-import org.keycloak.services.ErrorPageException;
 import org.keycloak.services.ServicesLogger;
-import org.keycloak.services.messages.Messages;
 import org.keycloak.services.util.AuthorizationContextUtil;
 import org.keycloak.util.TokenUtil;
 
@@ -52,16 +48,14 @@ public class AuthorizationEndpointRequestParserProcessor {
     private static final Logger logger = Logger.getLogger(AuthorizationEndpointRequestParserProcessor.class);
 
     public static AuthorizationEndpointRequest parseRequest(EventBuilder event, KeycloakSession session, ClientModel client, MultivaluedMap<String, String> requestParams, EndpointType endpointType) {
+        AuthorizationEndpointRequest request = new AuthorizationEndpointRequest();
         try {
-            AuthorizationEndpointRequest request = new AuthorizationEndpointRequest();
             boolean isResponseTypeParameterRequired = isResponseTypeParameterRequired(requestParams, endpointType);
             AuthzEndpointQueryStringParser parser = new AuthzEndpointQueryStringParser(session, requestParams, isResponseTypeParameterRequired);
             parser.parseRequest(request);
 
             if (parser.getInvalidRequestMessage() != null) {
-                request.invalidRequestMessage = parser.getInvalidRequestMessage();
-            }
-            if (request.getInvalidRequestMessage() != null) {
+                request.setInvalidRequestMessage(parser.getInvalidRequestMessage());
                 return request;
             }
 
@@ -88,7 +82,7 @@ public class AuthorizationEndpointRequestParserProcessor {
             if (requestParam != null) {
                 new AuthzEndpointRequestObjectParser(session, requestParam, client).parseRequest(request);
             } else if (requestUriParam != null) {
-                // Define, if the request is `PAR` or usual `Request Object`.
+                // Defined, if the request is `PAR` or `Request Object`.
                 RequestUriType requestUriType = getRequestUriType(requestUriParam);
                 if (requestUriType == RequestUriType.PAR) {
                     new AuthzEndpointParParser(session, client, requestUriParam).parseRequest(request);
@@ -107,27 +101,13 @@ public class AuthorizationEndpointRequestParserProcessor {
             if (Profile.isFeatureEnabled(Profile.Feature.DYNAMIC_SCOPES)) {
                 request.authorizationRequestContext = AuthorizationContextUtil.getAuthorizationRequestContextFromScopes(session, request.getScope());
             }
-
-            return request;
-
-        } catch (Exception e) {
-            ServicesLogger.LOGGER.invalidRequest(e);
+        } catch (Exception ex) {
             event.error(Errors.INVALID_REQUEST);
-            throw new ErrorPageException(session, Response.Status.BAD_REQUEST, Messages.INVALID_REQUEST);
+            ServicesLogger.LOGGER.invalidRequest(ex);
+            request.setInvalidRequestMessage(ex.getMessage());
         }
-    }
 
-    public static String getClientId(EventBuilder event, KeycloakSession session, MultivaluedMap<String, String> requestParams) {
-        List<String> clientParam = requestParams.get(OIDCLoginProtocol.CLIENT_ID_PARAM);
-        if (clientParam != null && clientParam.size() == 1) {
-            return clientParam.get(0);
-        } else {
-            String errorMessage = "Parameter 'client_id' not present or present multiple times in the HTTP request parameters";
-            logger.warnf(errorMessage);
-            event.detail(Details.REASON, errorMessage);
-            event.error(Errors.INVALID_REQUEST);
-            throw new ErrorPageException(session, Response.Status.BAD_REQUEST, Messages.INVALID_REQUEST);
-        }
+        return request;
     }
 
     public static RequestUriType getRequestUriType(String requestUri) {
