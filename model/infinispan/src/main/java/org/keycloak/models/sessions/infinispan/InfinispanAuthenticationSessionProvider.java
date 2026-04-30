@@ -19,6 +19,7 @@ package org.keycloak.models.sessions.infinispan;
 
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Objects;
 
 import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.common.util.Time;
@@ -44,6 +45,7 @@ import org.infinispan.Cache;
 import org.infinispan.commons.util.concurrent.CompletionStages;
 import org.infinispan.factories.ComponentRegistry;
 import org.infinispan.persistence.manager.PersistenceManager;
+import org.jboss.logging.Logger;
 
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.AUTHENTICATION_SESSIONS_CACHE_NAME;
 
@@ -56,6 +58,7 @@ public class InfinispanAuthenticationSessionProvider implements AuthenticationSe
     private final int authSessionsLimit;
     protected final InfinispanChangelogBasedTransaction<String, RootAuthenticationSessionEntity> sessionTx;
     protected final SessionEventsSenderTransaction clusterEventsSenderTx;
+    private static final Logger log = Logger.getLogger(InfinispanAuthenticationSessionProvider.class);
 
     public InfinispanAuthenticationSessionProvider(KeycloakSession session,
                                                    InfinispanChangelogBasedTransaction<String, RootAuthenticationSessionEntity> sessionTx, int authSessionsLimit) {
@@ -147,6 +150,10 @@ public class InfinispanAuthenticationSessionProvider implements AuthenticationSe
     @Override
     public RootAuthenticationSessionModel getRootAuthenticationSession(RealmModel realm, String authenticationSessionId) {
         RootAuthenticationSessionEntity entity = getRootAuthenticationSessionEntity(authenticationSessionId);
+        if (entity != null && !Objects.equals(entity.getRealmId(), realm.getId())) {
+            log.warnf("authentication session %s looked up for realm %s instead of %s", authenticationSessionId, entity.getRealmId(), realm.getId());
+            entity = null;
+        }
         return wrap(realm, entity);
     }
 

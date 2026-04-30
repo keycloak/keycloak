@@ -20,6 +20,7 @@ package org.keycloak.tests.model;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.keycloak.common.util.Time;
+import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.infinispan.util.InfinispanUtils;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
@@ -46,6 +47,7 @@ import org.keycloak.testframework.remote.providers.timeoffset.InfinispanTimeUtil
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 
+import org.infinispan.Cache;
 import org.testcontainers.shaded.org.awaitility.Awaitility;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -239,8 +241,7 @@ public class AuthenticationSessionProviderTest {
         AtomicReference<String> authSessionID = new AtomicReference<>();
         AtomicReference<String> authSessionID2 = new AtomicReference<>();
 
-        KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession sesRealmRemoved1) -> {
-            KeycloakSession currentSession = sesRealmRemoved1;
+        KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession currentSession) -> {
             RealmModel realm = currentSession.realms().getRealmByName("test");
             RealmModel fooRealm = currentSession.realms().createRealm("foo-realm");
             fooRealm.setDefaultRole(currentSession.roles().addRealmRole(fooRealm, Constants.DEFAULT_ROLES_ROLE_PREFIX  + "-" + fooRealm.getName()));
@@ -251,24 +252,27 @@ public class AuthenticationSessionProviderTest {
             authSessionID2.set(currentSession.authenticationSessions().createRootAuthenticationSession(fooRealm).getId());
         });
 
-        KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession sesRealmRemoved2) -> {
-            KeycloakSession currentSession = sesRealmRemoved2;
+        KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession currentSession) -> {
             RealmModel fooRealm = currentSession.realms().getRealmByName("foo-realm");
             currentSession.getContext().setRealm(fooRealm);
             new RealmManager(currentSession).removeRealm(fooRealm);
         });
 
-        KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession sesRealmRemoved3) -> {
-            KeycloakSession currentSession = sesRealmRemoved3;
+        KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession currentSession) -> {
             RealmModel realm = currentSession.realms().getRealmByName("test");
 
             RootAuthenticationSessionModel authSession = currentSession.authenticationSessions().getRootAuthenticationSession(realm, authSessionID.get());
 
             assertThat(authSession, notNullValue());
             // Realm removal is handled asynchronously when clearing caches
-            Awaitility.await().untilAsserted(() ->
-                    assertThat(currentSession.authenticationSessions().getRootAuthenticationSession(realm, authSessionID2.get()), nullValue())
-            );
+            Awaitility.await().forever().untilAsserted(() -> {
+                InfinispanConnectionProvider provider = currentSession.getProvider(InfinispanConnectionProvider.class);
+                if (provider != null) {
+                    Cache<Object, Object> cache = provider.getCache(InfinispanConnectionProvider.AUTHENTICATION_SESSIONS_CACHE_NAME);
+                    Object cacheEntry = cache.get(authSessionID2.get());
+                    assertThat(cacheEntry, nullValue());
+                }
+            });
         });
     }
 
