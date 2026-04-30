@@ -26,6 +26,7 @@ package org.keycloak.representations.info;
 public class ThemeInfoRepresentation {
 
     private String name;
+    private String renderedName;
     private String[] locales;
     private String description;
 
@@ -35,6 +36,14 @@ public class ThemeInfoRepresentation {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public String getRenderedName() {
+        return renderedName;
+    }
+
+    public void setRenderedName(String renderedName) {
+        this.renderedName = renderedName;
     }
 
     public String[] getLocales() {

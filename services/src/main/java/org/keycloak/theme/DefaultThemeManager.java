@@ -194,6 +194,11 @@ public class DefaultThemeManager implements ThemeManager {
         }
 
         @Override
+        public String getRenderedName() {
+            return themes.get(0).getRenderedName();
+        }
+
+        @Override
         public String getParentName() {
             return themes.get(0).getParentName();
         }
