@@ -28,15 +28,32 @@ import org.keycloak.sessions.AuthenticationSessionModel;
  */
 public class ErrorPageException extends WebApplicationException {
 
+    private String errorMessage;
+    private Object[] parameters;
+
     public ErrorPageException(KeycloakSession session, Response.Status status, String errorMessage, Object... parameters) {
-        super(errorMessage, ErrorPage.error(session, null, status, errorMessage, parameters));
+        this(session, null, status, errorMessage, parameters);
     }
 
     public ErrorPageException(KeycloakSession session, AuthenticationSessionModel authSession, Response.Status status, String errorMessage, Object... parameters) {
         super(errorMessage, ErrorPage.error(session, authSession, status, errorMessage, parameters));
+        this.errorMessage = errorMessage;
+        this.parameters = parameters;
     }
 
     public ErrorPageException(Response response) {
         super((Throwable) null, response);
+    }
+
+    public Response.Status getStatus() {
+        return Response.Status.fromStatusCode(getResponse().getStatus());
+    }
+
+    public String getErrorMessage() {
+        return errorMessage;
+    }
+
+    public Object[] getParameters() {
+        return parameters;
     }
 }
