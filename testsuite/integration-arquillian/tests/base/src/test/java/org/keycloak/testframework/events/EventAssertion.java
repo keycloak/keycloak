@@ -113,7 +113,7 @@ public class EventAssertion {
 
     /**
      * Assert the event has a userId set
-     *
+     * 
      * @return
      */
     public EventAssertion hasUserId() {

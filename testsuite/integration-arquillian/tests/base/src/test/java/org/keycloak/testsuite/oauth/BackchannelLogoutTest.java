@@ -27,6 +27,7 @@ import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.UserSessionRepresentation;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testframework.realm.CredentialBuilder;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.broker.AbstractNestedBrokerTest;
@@ -639,14 +640,14 @@ public class BackchannelLogoutTest extends AbstractNestedBrokerTest {
 
         if (loginEventOptional.isPresent()) {
             EventRepresentation loginEvent = loginEventOptional.get();
-            this.events.expectLogin()
-                    .realm(realmId)
-                    .client(clientId)
-                    .user(userId)
-                    .removeDetail(Details.CODE_ID)
-                    .removeDetail(Details.REDIRECT_URI)
-                    .removeDetail(Details.CONSENT)
-                    .assertEvent(loginEvent);
+            EventAssertion.assertSuccess(loginEvent)
+                    .type(EventType.LOGIN)
+                    .isCodeId()
+                    .hasSessionId()
+                    .hasIpAddress()
+                    .clientId(clientId)
+                    .userId(userId);
+
             sessionId = loginEvent.getSessionId();
         } else {
             fail("No Login event found for user " + userId);

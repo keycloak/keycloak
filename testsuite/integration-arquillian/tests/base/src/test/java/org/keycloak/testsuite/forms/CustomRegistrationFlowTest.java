@@ -20,6 +20,7 @@ import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.representations.idm.AuthenticationExecutionRepresentation;
 import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testframework.realm.AuthenticationExecutionBuilder;
 import org.keycloak.testframework.realm.AuthenticationFlowBuilder;
 import org.keycloak.testsuite.AssertEvents;
@@ -99,7 +100,7 @@ public class CustomRegistrationFlowTest extends AbstractFlowTest {
         Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
         String userId = events.expectRegister(PassThroughRegistration.username, PassThroughRegistration.email).assertEvent().getUserId();
-        events.expectLogin().detail("username", PassThroughRegistration.username).user(userId).assertEvent();
+        EventAssertion.expectLoginSuccess(events.poll()).details("username", PassThroughRegistration.username).userId(userId);
     }
 
 

@@ -105,7 +105,7 @@ public class LoginEventsTest {
                 .details(Details.AUTH_METHOD, "openid-connect")
                 .details(Details.AUTH_TYPE, "code")
                 .details(Details.USERNAME, "bad")
-                .details(Details.REDIRECT_URI, "http://127.0.0.1:8500/callback/oauth");
+                .details(Details.REDIRECT_URI, oAuthClient.getRedirectUri());
     }
 
     @Test

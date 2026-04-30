@@ -32,6 +32,7 @@ import org.keycloak.rar.AuthorizationRequestSource;
 import org.keycloak.representations.AuthorizationDetailsJSONRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
@@ -54,9 +55,8 @@ public class DynamicScopesRARParseTest extends AbstractRARParserTest {
         oauth.openLoginForm();
         oauth.scope("openid");
         oauth.doLogin("rar-test", "password");
-        events.expectLogin()
-                .user(userId)
-                .assertEvent();
+        EventAssertion.expectLoginSuccess(events.poll())
+                .userId(userId);
         AuthorizationRequestContextHolder contextHolder = fetchAuthorizationRequestContextHolder(userId);
         List<AuthorizationRequestContextHolder.AuthorizationRequestHolder> authorizationRequestHolders = contextHolder.getAuthorizationRequestHolders().stream()
                 .filter(authorizationRequestHolder -> authorizationRequestHolder.getSource().equals(AuthorizationRequestSource.SCOPE))
@@ -89,9 +89,8 @@ public class DynamicScopesRARParseTest extends AbstractRARParserTest {
         oauth.openLoginForm();
         oauth.scope("openid static-scope");
         oauth.doLogin("rar-test", "password");
-        events.expectLogin()
-                .user(userId)
-                .assertEvent();
+        EventAssertion.expectLoginSuccess(events.poll())
+                .userId(userId);
 
         AuthorizationRequestContextHolder contextHolder = fetchAuthorizationRequestContextHolder(userId);
         List<AuthorizationRequestContextHolder.AuthorizationRequestHolder> authorizationRequestHolders = contextHolder.getAuthorizationRequestHolders().stream()
@@ -127,9 +126,8 @@ public class DynamicScopesRARParseTest extends AbstractRARParserTest {
         oauth.openLoginForm();
         oauth.scope("openid dynamic-scope:param");
         oauth.doLogin("rar-test", "password");
-        events.expectLogin()
-                .user(userId)
-                .assertEvent();
+        EventAssertion.expectLoginSuccess(events.poll())
+                .userId(userId);
 
         AuthorizationRequestContextHolder contextHolder = fetchAuthorizationRequestContextHolder(userId);
         List<AuthorizationRequestContextHolder.AuthorizationRequestHolder> authorizationRequestHolders = contextHolder.getAuthorizationRequestHolders().stream()
