@@ -47,6 +47,7 @@ import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
 import org.keycloak.quarkus.runtime.integration.QuarkusKeycloakSessionFactory;
 import org.keycloak.quarkus.runtime.services.RejectNonNormalizedPathFilter;
+import org.keycloak.quarkus.runtime.services.RejectSourceMapFilter;
 import org.keycloak.quarkus.runtime.storage.database.liquibase.FastServiceLocator;
 import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.theme.ClasspathThemeProviderFactory;
@@ -124,6 +125,10 @@ public class KeycloakRecorder {
 
     public Handler<RoutingContext> getRejectNonNormalizedPathFilter() {
         return !Configuration.isTrue(HttpOptions.HTTP_ACCEPT_NON_NORMALIZED_PATHS) ? new RejectNonNormalizedPathFilter() : null;
+    }
+
+    public Handler<RoutingContext> getRejectSourceMapFilter() {
+        return !Environment.isDevMode() ? new RejectSourceMapFilter() : null;
     }
 
     public void configureTruststore() {
