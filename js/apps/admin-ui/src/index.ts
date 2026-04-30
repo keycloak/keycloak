@@ -324,7 +324,12 @@ export { PageNotFoundSection } from "./PageNotFoundSection";
 export { App as AdminUi } from "./App";
 export type { Environment as AdminEnvironment } from "./environment";
 export { KeycloakProvider, useEnvironment } from "@keycloak/keycloak-ui-shared";
-export { AdminClientContext, initAdminClient } from "./admin-client";
+export {
+  AdminClientContext,
+  AdminClientProvider,
+  initAdminClient,
+  useAdminClient,
+} from "./admin-client";
 export { AppContexts } from "./App";
 export * as PermissionsConfigurationSection from "./permissions-configuration/PermissionsConfigurationSection";
 export { routes } from "./routes";
