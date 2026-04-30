@@ -43,6 +43,7 @@ import static org.keycloak.services.clientpolicy.executor.SecureRedirectUrisEnfo
 import static org.keycloak.services.clientpolicy.executor.SecureRedirectUrisEnforcerExecutorFactory.ALLOW_PERMITTED_DOMAINS;
 import static org.keycloak.services.clientpolicy.executor.SecureRedirectUrisEnforcerExecutorFactory.ALLOW_PRIVATE_USE_URI_SCHEME;
 import static org.keycloak.services.clientpolicy.executor.SecureRedirectUrisEnforcerExecutorFactory.ALLOW_WILDCARD_CONTEXT_PATH;
+import static org.keycloak.services.clientpolicy.executor.SecureRedirectUrisEnforcerExecutorFactory.ALLOW_WILDCARD_SUBDOMAIN;
 import static org.keycloak.services.clientpolicy.executor.SecureRedirectUrisEnforcerExecutorFactory.OAUTH_2_1_COMPLIANT;
 
 import static org.junit.Assert.assertEquals;
@@ -76,6 +77,7 @@ public class SecureRedirectUrisEnforcerExecutorTest {
         assertFalse(configuration.isAllowPrivateUseUriScheme());
         assertFalse(configuration.isAllowHttpScheme());
         assertFalse(configuration.isAllowWildcardContextPath());
+        assertFalse(configuration.isAllowWildcardSubdomain());
         assertFalse(configuration.isOAuth2_1Compliant());
         assertFalse(configuration.isAllowOpenRedirect());
 
@@ -292,6 +294,35 @@ public class SecureRedirectUrisEnforcerExecutorTest {
     }
 
     @Test
+    public void failWildcardSubdomainNormalUri() {
+        checkFail("https://*.example.org/callback", false, SecureRedirectUrisEnforcerExecutor.ERR_WILDCARD_SUBDOMAIN);
+
+        enable(ALLOW_WILDCARD_SUBDOMAIN);
+        checkFail("https://*.*.example.org/callback", false, SecureRedirectUrisEnforcerExecutor.ERR_WILDCARD_SUBDOMAIN);
+
+        permittedDomains("example\\.org");
+        checkFail("https://*.example.org/callback", false, SecureRedirectUrisEnforcerExecutor.ERR_WILDCARD_SUBDOMAIN_WITH_PERMITTED_DOMAINS);
+
+        disable(ALLOW_WILDCARD_SUBDOMAIN);
+        enable(OAUTH_2_1_COMPLIANT);
+        checkFail("https://*.example.org/callback", false, SecureRedirectUrisEnforcerExecutor.ERR_WILDCARD_SUBDOMAIN);
+    }
+
+    @Test
+    public void successWildcardSubdomainNormalUri() {
+        enable(ALLOW_WILDCARD_SUBDOMAIN);
+        Stream.of(
+                "https://*.example.org/callback",
+                "https://*-preview.example.org/callback",
+                "https://tenant*.example.org/callback"
+        ).forEach(i -> checkSuccess(i, false));
+
+        enable(ALLOW_WILDCARD_CONTEXT_PATH);
+        checkSuccess("https://*.example.org/app/*", false);
+        checkFail("https://*.example.org/app?query=*", false, SecureRedirectUrisEnforcerExecutor.ERR_NORMALURI);
+    }
+
+    @Test
     public void successDefaultConfiguration() {
         Stream.of(
                 "https://example.org/realms/master",
@@ -305,6 +336,7 @@ public class SecureRedirectUrisEnforcerExecutorTest {
         // except ALLOW_OPEN_REDIRECT
         enable(
                 ALLOW_WILDCARD_CONTEXT_PATH,
+                ALLOW_WILDCARD_SUBDOMAIN,
                 ALLOW_IPV4_LOOPBACK_ADDRESS,
                 ALLOW_IPV6_LOOPBACK_ADDRESS,
                 ALLOW_HTTP_SCHEME,
@@ -325,6 +357,7 @@ public class SecureRedirectUrisEnforcerExecutorTest {
     public void successAllConfigurationDisabled() {
         disable(
                 ALLOW_WILDCARD_CONTEXT_PATH,
+                ALLOW_WILDCARD_SUBDOMAIN,
                 ALLOW_IPV4_LOOPBACK_ADDRESS,
                 ALLOW_IPV6_LOOPBACK_ADDRESS,
                 ALLOW_HTTP_SCHEME,

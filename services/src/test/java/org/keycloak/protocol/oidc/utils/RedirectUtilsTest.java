@@ -222,21 +222,71 @@ public class RedirectUtilsTest {
     public void testUserInfo() {
         Set<String> set = Stream.of(
                 "https://keycloak.org/*",
-                "https://test*",
+                "https://*.test.com/*",
                 "https://something@keycloak.com/exact"
         ).collect(Collectors.toSet());
 
         Assert.assertEquals("https://keycloak.org/index.html", RedirectUtils.verifyRedirectUri(session, null, "https://keycloak.org/index.html", set, false));
-        Assert.assertEquals("https://test.com/index.html", RedirectUtils.verifyRedirectUri(session, null, "https://test.com/index.html", set, false));
+        Assert.assertEquals("https://app.test.com/index.html", RedirectUtils.verifyRedirectUri(session, null, "https://app.test.com/index.html", set, false));
         Assert.assertEquals("https://something@keycloak.com/exact", RedirectUtils.verifyRedirectUri(session, null, "https://something@keycloak.com/exact", set, false));
 
         Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, "https://something@other.com/", set, false));
         Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, "https://keycloak.org@other.com", set, false));
         Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, "https://keycloak.org%2F@other.com", set, false));
-        Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, "https://test@other.com", set, false));
+        Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, "https://app.test.com@other.com", set, false));
         Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, "https://test.com@other.com", set, false));
         Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, "https://something@keycloak.org/path", set, false));
-        Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, "https://some%20thing@test.com/path", set, false));
+        Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, "https://some%20thing@app.test.com/path", set, false));
+    }
+
+    @Test
+    public void testWildcardSubdomainRedirectUri() {
+        Set<String> set = Stream.of(
+                "https://*.example.com/callback",
+                "https://*-preview.example.com/callback",
+                "https://tenant*.example.com/callback",
+                "https://*.example.com/app/*"
+        ).collect(Collectors.toSet());
+
+        Assert.assertEquals("https://foo.example.com/callback", RedirectUtils.verifyRedirectUri(session, null, "https://foo.example.com/callback", set, false));
+        Assert.assertEquals("https://app-preview.example.com/callback", RedirectUtils.verifyRedirectUri(session, null, "https://app-preview.example.com/callback", set, false));
+        Assert.assertEquals("https://tenant-123.example.com/callback", RedirectUtils.verifyRedirectUri(session, null, "https://tenant-123.example.com/callback", set, false));
+        Assert.assertEquals("https://foo.example.com/app/child?query=test", RedirectUtils.verifyRedirectUri(session, null, "https://foo.example.com/app/child?query=test", set, false));
+
+        Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, "https://foo.bar.example.com/callback", set, false));
+        Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, "https://foo-preview.other.com/callback", set, false));
+        Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, "https://tenant.foo.example.com/callback", set, false));
+        Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, "http://foo.example.com/callback", set, false));
+        Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, "https://foo.example.com/callback/child", set, false));
+    }
+
+    @Test
+    public void testSingleRedirectUriWithoutRedirectParameterRejectsWildcardSubdomain() {
+        Set<String> exactRedirect = Stream.of("https://example.com/callback").collect(Collectors.toSet());
+        Set<String> pathWildcardRedirect = Stream.of("https://example.com/app/*").collect(Collectors.toSet());
+        Set<String> hostWildcardRedirect = Stream.of("https://*.example.com/callback").collect(Collectors.toSet());
+        Set<String> hostAndPathWildcardRedirect = Stream.of("https://*.example.com/app/*").collect(Collectors.toSet());
+
+        Assert.assertEquals("https://example.com/callback", RedirectUtils.verifyRedirectUri(session, null, null, exactRedirect, false));
+        Assert.assertEquals("https://example.com/app", RedirectUtils.verifyRedirectUri(session, null, null, pathWildcardRedirect, false));
+        Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, null, hostWildcardRedirect, false));
+        Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, null, hostAndPathWildcardRedirect, false));
+    }
+
+    @Test
+    public void testWildcardSubdomainOrigins() {
+        Set<String> set = Stream.of(
+                "https://*.example.com",
+                "https://*-preview.example.com"
+        ).collect(Collectors.toSet());
+
+        Assert.assertTrue(RedirectUtils.matchesOrigin(set, "https://foo.example.com"));
+        Assert.assertTrue(RedirectUtils.matchesOrigin(set, "https://app-preview.example.com"));
+
+        Assert.assertFalse(RedirectUtils.matchesOrigin(set, "https://foo.bar.example.com"));
+        Assert.assertFalse(RedirectUtils.matchesOrigin(set, "https://foo-preview.other.com"));
+        Assert.assertFalse(RedirectUtils.matchesOrigin(set, "https://foo.example.com:8443"));
+        Assert.assertFalse(RedirectUtils.matchesOrigin(set, "http://foo.example.com"));
     }
 
     @Test

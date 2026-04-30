@@ -32,6 +32,7 @@ import org.keycloak.http.HttpRequest;
 import org.keycloak.http.HttpResponse;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.protocol.oidc.utils.RedirectUtils;
 import org.keycloak.protocol.oidc.utils.WebOriginsUtils;
 import org.keycloak.representations.AccessToken;
 
@@ -169,7 +170,7 @@ public class DefaultCors implements Cors {
             return;
         }
 
-        if (!preflight && (allowedOrigins == null || (!allowedOrigins.contains(origin) && !allowedOrigins.contains(ACCESS_CONTROL_ALLOW_ORIGIN_WILDCARD)))) {
+        if (!preflight && (allowedOrigins == null || !RedirectUtils.matchesOrigin(allowedOrigins, origin))) {
             String requestOrigin = UriUtils.getOrigin(session.getContext().getUri().getRequestUri());
             if (!origin.equals(requestOrigin) && logger.isDebugEnabled()) {
                 logger.debugv("Invalid CORS request: origin {0} not in allowed origins {1}", origin, allowedOrigins);

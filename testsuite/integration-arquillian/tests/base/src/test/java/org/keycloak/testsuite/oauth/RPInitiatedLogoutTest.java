@@ -228,6 +228,45 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
+    public void postLogoutRedirectWildcardSubdomain() throws Exception {
+        AccessTokenResponse tokenResponse = loginUser();
+        String sessionId = tokenResponse.getSessionState();
+
+        String redirectUri = replaceOrigin(APP_REDIRECT_URI + "?wildcard_post_logout", "http://preview.localtest.me:8180");
+        String wildcardRedirectUri = replaceOrigin(APP_REDIRECT_URI + "?wildcard_post_logout", "http://*.localtest.me:8180");
+        List<String> postLogoutRedirectUris = Collections.singletonList(wildcardRedirectUri);
+        ClientManager.realm(adminClient.realm("test")).clientId("test-app").setPostLogoutRedirectUri(postLogoutRedirectUris);
+
+        try {
+            String logoutUrl = oauth.logoutForm()
+                    .postLogoutRedirectUri(redirectUri)
+                    .idTokenHint(tokenResponse.getIdToken())
+                    .build();
+
+            try (CloseableHttpClient c = HttpClientBuilder.create().disableRedirectHandling().build();
+                 CloseableHttpResponse response = c.execute(new HttpGet(logoutUrl))) {
+                assertThat(response, Matchers.statusCodeIsHC(Response.Status.FOUND));
+                assertThat(response.getFirstHeader(HttpHeaders.LOCATION).getValue(), is(redirectUri));
+            }
+
+            events.expectLogout(sessionId).detail(Details.REDIRECT_URI, redirectUri).assertEvent();
+            MatcherAssert.assertThat(false, is(isSessionActive(sessionId)));
+
+            AccessTokenResponse secondTokenResponse = loginUser();
+            String invalidRedirectUri = replaceOrigin(APP_REDIRECT_URI + "?wildcard_post_logout", "http://foo.bar.localtest.me:8180");
+
+            oauth.logoutForm().postLogoutRedirectUri(invalidRedirectUri).idTokenHint(secondTokenResponse.getIdToken()).open();
+            errorPage.assertCurrent();
+            events.expectLogoutError(OAuthErrorException.INVALID_REDIRECT_URI)
+                    .detail(Details.REDIRECT_URI, invalidRedirectUri)
+                    .assertEvent();
+            MatcherAssert.assertThat(true, is(isSessionActive(secondTokenResponse.getSessionState())));
+        } finally {
+            ClientManager.realm(adminClient.realm("test")).clientId("test-app").setPostLogoutRedirectUri(Collections.singletonList("+"));
+        }
+    }
+
+    @Test
     public void logoutRedirectWithIdTokenHintPointToDifferentSession() {
         AccessTokenResponse tokenResponse = loginUser();
         String sessionId = tokenResponse.getSessionState();
@@ -1131,5 +1170,9 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
 
             // We don't need to go further as the intent is that other tests will cover redirection
         }
+    }
+
+    private String replaceOrigin(String uri, String newOrigin) {
+        return newOrigin + uri.substring(UriUtils.getOrigin(uri).length());
     }
 }
