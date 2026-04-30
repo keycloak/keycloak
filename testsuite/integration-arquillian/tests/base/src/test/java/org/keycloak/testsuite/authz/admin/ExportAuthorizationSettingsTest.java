@@ -21,11 +21,20 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import jakarta.persistence.EntityManager;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 
 import org.keycloak.admin.client.resource.AuthorizationResource;
 import org.keycloak.admin.client.resource.ClientResource;
+import org.keycloak.authorization.AuthorizationProvider;
+import org.keycloak.authorization.jpa.entities.PolicyEntity;
+import org.keycloak.authorization.jpa.entities.ResourceServerEntity;
+import org.keycloak.authorization.model.ResourceServer;
+import org.keycloak.authorization.store.StoreFactory;
+import org.keycloak.connections.jpa.JpaConnectionProvider;
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
@@ -177,5 +186,50 @@ public class ExportAuthorizationSettingsTest extends AbstractAuthorizationTest {
         List<ClientRepresentation> findByClientId = testRealmResource().clients().findByClientId(clientId);
         Assertions.assertTrue(findByClientId.size() == 1);
         return findByClientId.get(0);
+    }
+
+    // https://github.com/keycloak/keycloak/issues/27431
+    @Test
+    public void testExportWithUnregisteredPolicyProvider() {
+        String policyName = "policy-with-unregistered-type-for-export-test";
+        String unregisteredType = "unregistered-policy-type-for-export-test";
+
+        AuthorizationResource authorizationResource = getClientResource().authorization();
+
+        // Insert the policy entity directly via JPA: AuthorizationProvider.getPolicyStore().create()
+        // throws for unregistered types, and a create-then-mutate approach would leave a stale
+        // Infinispan cache entry that the export would read instead of the updated DB value.
+        testingClient.server().run(session -> {
+            session.getContext().setRealm(session.realms().getRealmByName("authz-test"));
+            AuthorizationProvider authorization = session.getProvider(AuthorizationProvider.class);
+            ClientModel clientModel = session.clients().getClientByClientId(
+                    session.getContext().getRealm(), RESOURCE_SERVER_CLIENT_ID);
+            StoreFactory storeFactory = authorization.getStoreFactory();
+            ResourceServer resourceServer = storeFactory.getResourceServerStore().findByClient(clientModel);
+
+            EntityManager em = session.getProvider(JpaConnectionProvider.class).getEntityManager();
+            ResourceServerEntity rsEntity = em.find(ResourceServerEntity.class, resourceServer.getId());
+
+            PolicyEntity entity = new PolicyEntity();
+            entity.setId(KeycloakModelUtils.generateId());
+            entity.setType(unregisteredType);
+            entity.setName(policyName);
+            entity.setResourceServer(rsEntity);
+            em.persist(entity);
+        });
+
+        // Export should succeed even if the provider for a stored policy type is missing
+        ResourceServerRepresentation exportSettings = authorizationResource.exportSettings();
+
+        boolean found = false;
+        for (PolicyRepresentation p : exportSettings.getPolicies()) {
+            if (policyName.equals(p.getName())) {
+                found = true;
+                Assertions.assertEquals(unregisteredType, p.getType());
+            }
+        }
+        Assertions.assertTrue(found,
+            "Policy \"" + policyName + "\" was not found in exported settings. Available policies: " +
+                exportSettings.getPolicies().stream().map(PolicyRepresentation::getName).toList());
     }
 }
