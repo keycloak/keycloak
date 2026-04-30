@@ -261,17 +261,11 @@ public class InfinispanClusterProvider implements ClusterProvider {
         TaskCallback callback = taskCallbacks.remove(taskKey);
 
         if (callback != null) {
-            localExecutor.execute(() -> {
-                try {
-                    if (logger.isDebugEnabled()) {
-                        logger.debugf("Finished task '%s' with '%b'", taskKey, true);
-                    }
-                    callback.setSuccess(true);
-                    callback.getTaskCompletedLatch().countDown();
-                } catch (Exception e) {
-                    logger.error("unable to finish task", e);
-                }
-            });
+            if (logger.isDebugEnabled()) {
+                logger.debugf("Finished task '%s' with '%b'", taskKey, true);
+            }
+            callback.setSuccess(true);
+            callback.getTaskCompletedLatch().countDown();
         }
     }
 }
