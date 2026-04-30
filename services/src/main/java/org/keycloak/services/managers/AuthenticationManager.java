@@ -106,6 +106,7 @@ import org.keycloak.protocol.oidc.encode.AccessTokenContext;
 import org.keycloak.protocol.oidc.encode.TokenContextEncoderProvider;
 import org.keycloak.rar.AuthorizationDetails;
 import org.keycloak.representations.AccessToken;
+import org.keycloak.representations.RefreshToken;
 import org.keycloak.services.ErrorPage;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.ServicesLogger;
@@ -1532,13 +1533,21 @@ public class AuthenticationManager {
 
     public static AuthResult verifyIdentityToken(KeycloakSession session, RealmModel realm, UriInfo uriInfo, ClientConnection connection, boolean checkActive, boolean checkTokenType,
                                                  String checkAudience, boolean isCookie, String tokenString, HttpHeaders headers, Consumer<TokenVerifier<AccessToken>> verifierConsumer) {
+        return verifyIdentityToken(session, realm, uriInfo, connection, checkActive, checkTokenType, checkAudience, isCookie, tokenString, false, headers, verifierConsumer);
+    }
+    public static AuthResult verifyIdentityToken(KeycloakSession session, RealmModel realm, UriInfo uriInfo, ClientConnection connection, boolean checkActive, boolean checkTokenType,
+                                                 String checkAudience, boolean isCookie, String tokenString, boolean isRefreshToken, HttpHeaders headers, Consumer<TokenVerifier<AccessToken>> verifierConsumer) {
         try {
-            TokenVerifier<AccessToken> verifier = TokenVerifier.create(tokenString, AccessToken.class)
+            @SuppressWarnings("unchecked")
+            TokenVerifier<AccessToken> verifier = (TokenVerifier<AccessToken>) (isRefreshToken ? TokenVerifier.create(tokenString, RefreshToken.class) : TokenVerifier.create(tokenString, AccessToken.class))
               .withDefaultChecks()
               .realmUrl(Urls.realmIssuer(uriInfo.getBaseUri(), realm.getName()))
               .checkActive(checkActive)
               .checkTokenType(checkTokenType);
 
+            if(isRefreshToken){
+                verifier.tokenType(List.of(TokenUtil.TOKEN_TYPE_REFRESH));
+            }
             verifierConsumer.accept(verifier);
 
             if (checkAudience != null) {
