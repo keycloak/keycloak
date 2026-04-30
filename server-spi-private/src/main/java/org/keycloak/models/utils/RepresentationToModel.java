@@ -1745,7 +1745,6 @@ public class RepresentationToModel {
         model.setAttributes(rep.getAttributes());
         model.setDomains(ofNullable(rep.getDomains()).orElse(Set.of()).stream()
                 .filter(Objects::nonNull)
-                .filter(domain -> StringUtil.isNotBlank(domain.getName()))
                 .map(RepresentationToModel::toModel)
                 .collect(Collectors.toSet()));
 

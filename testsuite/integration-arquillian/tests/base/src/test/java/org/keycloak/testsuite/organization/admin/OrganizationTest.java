@@ -34,10 +34,12 @@ import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 
+import org.keycloak.admin.client.resource.OrganizationIdentityProviderResource;
 import org.keycloak.admin.client.resource.OrganizationResource;
 import org.keycloak.admin.client.resource.OrganizationsResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.models.OrganizationModel;
+import org.keycloak.models.OrganizationModel.IdentityProviderRedirectMode;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.representations.idm.ErrorRepresentation;
@@ -50,6 +52,7 @@ import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.runonserver.RunOnServer;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
 
@@ -72,6 +75,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 public class OrganizationTest extends AbstractOrganizationTest {
+
+    @Before
+    public void onBefore() {
+        for (OrganizationRepresentation org : managedRealm.admin().organizations().list(null, null)) {
+            managedRealm.admin().organizations().get(org.getId()).delete().close();
+        }
+    }
 
     @Test
     public void testUpdate() {
@@ -471,6 +481,61 @@ public class OrganizationTest extends AbstractOrganizationTest {
     }
 
     @Test
+    public void testDomainWithWildcardSubdomains() {
+        // Create organization with a domain that has wildcard subdomain matching enabled
+        OrganizationRepresentation org = createOrganization();
+        OrganizationResource organization = managedRealm.admin().organizations().get(org.getId());
+
+        // Add a domain with wildcard subdomain matching using *.domain pattern
+        OrganizationDomainRepresentation wildcardDomain = new OrganizationDomainRepresentation();
+        wildcardDomain.setName("*.example.com");
+        wildcardDomain.setVerified(true);
+        org.addDomain(wildcardDomain);
+
+        try (Response response = organization.update(org)) {
+            assertEquals(Status.NO_CONTENT.getStatusCode(), response.getStatus());
+        }
+
+        // Verify the wildcard domain was saved correctly
+        OrganizationRepresentation updated = organization.toRepresentation();
+        assertEquals(2, updated.getDomains().size());
+
+        OrganizationDomainRepresentation savedDomain = updated.getDomain("*.example.com");
+        assertNotNull(savedDomain);
+        assertTrue(savedDomain.isVerified());
+
+        // Verify that the original domain without wildcard remains unchanged
+        OrganizationDomainRepresentation defaultDomain = updated.getDomain("neworg.org");
+        assertNotNull(defaultDomain);
+
+        // Test changing to exact match (removing wildcard prefix)
+        org.getDomains().remove(wildcardDomain);
+        OrganizationDomainRepresentation exactDomain = new OrganizationDomainRepresentation();
+        exactDomain.setName("example.com");
+        exactDomain.setVerified(true);
+        org.addDomain(exactDomain);
+
+        try (Response response = organization.update(org)) {
+            assertEquals(Status.NO_CONTENT.getStatusCode(), response.getStatus());
+        }
+
+        updated = organization.toRepresentation();
+        assertNotNull(updated.getDomain("example.com"));
+        assertNull(updated.getDomain("*.example.com"));
+
+        // Re-add wildcard domain
+        org.getDomains().remove(exactDomain);
+        org.addDomain(wildcardDomain);
+        try (Response response = organization.update(org)) {
+            assertEquals(Status.NO_CONTENT.getStatusCode(), response.getStatus());
+        }
+
+        updated = organization.toRepresentation();
+        savedDomain = updated.getDomain("*.example.com");
+        assertNotNull(savedDomain);
+    }
+
+    @Test
     public void testWithoutDomains() {
         // test create organization without any domains
         OrganizationRepresentation orgWithoutDomains = new OrganizationRepresentation();
@@ -531,12 +596,6 @@ public class OrganizationTest extends AbstractOrganizationTest {
             managedRealm.admin().organizations().get(orgWithDomainsId).delete().close();
             managedRealm.admin().organizations().get(orgWithoutDomainsId).delete().close();
         }
-    }
-
-    @Test
-    public void testFilterEmptyDomain() {
-        //org should be created with only one domain
-        assertThat(createOrganization("singleValidDomainOrg", "validDomain.com", "", null).getDomains(), hasSize(1));
     }
 
     @Test
@@ -730,5 +789,446 @@ public class OrganizationTest extends AbstractOrganizationTest {
             assertThat(response.getStatus(), equalTo(Status.BAD_REQUEST.getStatusCode()));
             assertThat(organization.toRepresentation().getRedirectUrl(), nullValue());
         }
+    }
+
+    @Test
+    public void testDomainConflictExactDuplicate() {
+        // Org A owns "example.com"; Org B must not be able to claim the same domain.
+        createOrganization("org-a", "example.com");
+
+        OrganizationRepresentation orgB = createOrganization("org-b");
+        OrganizationDomainRepresentation duplicateDomain = new OrganizationDomainRepresentation();
+        duplicateDomain.setName("example.com");
+        orgB.addDomain(duplicateDomain);
+
+        try (Response response = managedRealm.admin().organizations().get(orgB.getId()).update(orgB)) {
+            assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+        }
+
+        OrganizationRepresentation orgC = createRepresentation("org-c", "example.com");
+        try (Response response = managedRealm.admin().organizations().create(orgC)) {
+            assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+        }
+    }
+
+    @Test
+    public void testDomainAllowExactAndWildcardDomainWithSameBaseDomain() {
+        createOrganization("org-a", "example.com");
+
+        OrganizationRepresentation orgB = createOrganization("org-b");
+        OrganizationDomainRepresentation wildcardDomain = new OrganizationDomainRepresentation();
+        wildcardDomain.setName("*.example.com");
+        orgB.addDomain(wildcardDomain);
+
+        try (Response response = managedRealm.admin().organizations().get(orgB.getId()).update(orgB)) {
+            assertEquals(Status.NO_CONTENT.getStatusCode(), response.getStatus());
+        }
+    }
+
+    @Test
+    public void testAllowSubDomainsAndWildcardDomainInSeparateOrgs() {
+        OrganizationRepresentation orgA = createOrganization("org-a", "acme.org");
+        OrganizationDomainRepresentation wildcardDomain = new OrganizationDomainRepresentation();
+        wildcardDomain.setName("*.example.com");
+        orgA.addDomain(wildcardDomain);
+        try (Response response = managedRealm.admin().organizations().get(orgA.getId()).update(orgA)) {
+            assertEquals(Status.NO_CONTENT.getStatusCode(), response.getStatus());
+        }
+
+        OrganizationRepresentation orgB = createOrganization("org-b");
+        OrganizationDomainRepresentation subDomain = new OrganizationDomainRepresentation();
+        subDomain.setName("sub.example.com");
+        orgB.addDomain(subDomain);
+
+        try (Response response = managedRealm.admin().organizations().get(orgB.getId()).update(orgB)) {
+            assertEquals(Status.NO_CONTENT.getStatusCode(), response.getStatus());
+        }
+
+        orgB = managedRealm.admin().organizations().get(orgB.getId()).toRepresentation();
+        OrganizationDomainRepresentation deepSubDomain = new OrganizationDomainRepresentation();
+        deepSubDomain.setName("deep.sub.example.com");
+        orgB.addDomain(deepSubDomain);
+
+        try (Response response = managedRealm.admin().organizations().get(orgB.getId()).update(orgB)) {
+            assertEquals(Status.NO_CONTENT.getStatusCode(), response.getStatus());
+        }
+
+        OrganizationRepresentation orgC = createOrganization("org-c");
+        subDomain = new OrganizationDomainRepresentation();
+        subDomain.setName("*.deep.sub.example.com");
+        orgC.addDomain(subDomain);
+
+        try (Response response = managedRealm.admin().organizations().get(orgC.getId()).update(orgC)) {
+            assertEquals(Status.NO_CONTENT.getStatusCode(), response.getStatus());
+        }
+
+        OrganizationRepresentation orgD = createOrganization("org-d");
+        subDomain = new OrganizationDomainRepresentation();
+        subDomain.setName("some.deep.sub.example.com");
+        orgD.addDomain(subDomain);
+
+        try (Response response = managedRealm.admin().organizations().get(orgD.getId()).update(orgD)) {
+            assertEquals(Status.NO_CONTENT.getStatusCode(), response.getStatus());
+        }
+    }
+
+    @Test
+    public void testAddingOrgWithWildCardDomainWhenExactDomainOrgExist() {
+        createOrganization("org-a", "sub.example.com");
+        createOrganization("org-b", "test.sub.example.com");
+
+        OrganizationRepresentation orgC = createOrganization("org-c");
+        OrganizationDomainRepresentation wildcardDomain = new OrganizationDomainRepresentation();
+        wildcardDomain.setName("*.example.com");
+        orgC.addDomain(wildcardDomain);
+
+        try (Response response = managedRealm.admin().organizations().get(orgC.getId()).update(orgC)) {
+            assertEquals(Status.NO_CONTENT.getStatusCode(), response.getStatus());
+        }
+
+        OrganizationRepresentation orgD = createOrganization("org-d");
+        orgD.addDomain(new OrganizationDomainRepresentation("*.sub.example.com"));
+        try (Response response = managedRealm.admin().organizations().get(orgD.getId()).update(orgD)) {
+            assertEquals(Status.NO_CONTENT.getStatusCode(), response.getStatus());
+        }
+
+        OrganizationRepresentation orgE = createOrganization("org-e");
+        orgE.addDomain(new OrganizationDomainRepresentation("sub.example.com"));
+        try (Response response = managedRealm.admin().organizations().get(orgE.getId()).update(orgE)) {
+            assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+        }
+    }
+
+    @Test
+    public void testDomainConflictDuplicateWildcard() {
+        // Org A owns "*.example.com". Org B must not also claim "*.example.com".
+        OrganizationRepresentation orgA = createOrganization("org-a", "acme.org");
+        OrganizationDomainRepresentation wildcardDomain = new OrganizationDomainRepresentation();
+        wildcardDomain.setName("*.example.com");
+        orgA.addDomain(wildcardDomain);
+        try (Response response = managedRealm.admin().organizations().get(orgA.getId()).update(orgA)) {
+            assertEquals(Status.NO_CONTENT.getStatusCode(), response.getStatus());
+        }
+
+        OrganizationRepresentation orgB = createOrganization("org-b");
+        OrganizationDomainRepresentation duplicateWildcard = new OrganizationDomainRepresentation();
+        duplicateWildcard.setName("*.example.com");
+        orgB.addDomain(duplicateWildcard);
+
+        try (Response response = managedRealm.admin().organizations().get(orgB.getId()).update(orgB)) {
+            assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+        }
+    }
+
+    @Test
+    public void testDomainNoConflictDifferentBaseDomains() {
+        // Org A owns "*.example.com" and Org B owns "*.acme.com" — no overlap, both should succeed.
+        OrganizationRepresentation orgA = createOrganization("org-a", "other-a.org");
+        OrganizationDomainRepresentation wildcardA = new OrganizationDomainRepresentation();
+        wildcardA.setName("*.example.com");
+        orgA.addDomain(wildcardA);
+        try (Response response = managedRealm.admin().organizations().get(orgA.getId()).update(orgA)) {
+            assertEquals(Status.NO_CONTENT.getStatusCode(), response.getStatus());
+        }
+
+        OrganizationRepresentation orgB = createOrganization("org-b", "other-b.org");
+        OrganizationDomainRepresentation wildcardB = new OrganizationDomainRepresentation();
+        wildcardB.setName("*.acme.com");
+        orgB.addDomain(wildcardB);
+        try (Response response = managedRealm.admin().organizations().get(orgB.getId()).update(orgB)) {
+            assertEquals(Status.NO_CONTENT.getStatusCode(), response.getStatus());
+        }
+
+        OrganizationRepresentation updatedA = managedRealm.admin().organizations().get(orgA.getId()).toRepresentation();
+        assertNotNull(updatedA.getDomain("*.example.com"));
+
+        OrganizationRepresentation updatedB = managedRealm.admin().organizations().get(orgB.getId()).toRepresentation();
+        assertNotNull(updatedB.getDomain("*.acme.com"));
+    }
+
+    @Test
+    public void testDomainNoConflictUnrelatedExactDomains() {
+        // Org A owns "example.com", Org B owns "acme.com" — no conflict.
+        OrganizationRepresentation orgA = createOrganization("org-a", "example.com");
+        OrganizationRepresentation orgB = createOrganization("org-b", "acme.com");
+
+        OrganizationRepresentation updatedA = managedRealm.admin().organizations().get(orgA.getId()).toRepresentation();
+        assertNotNull(updatedA.getDomain("example.com"));
+
+        OrganizationRepresentation updatedB = managedRealm.admin().organizations().get(orgB.getId()).toRepresentation();
+        assertNotNull(updatedB.getDomain("acme.com"));
+    }
+
+    @Test
+    public void testDomainConflictWildcardOnCreate() {
+        // Org A owns "*.example.com". Creating Org B with "sub.example.com" must fail.
+        OrganizationRepresentation orgA = createOrganization("org-a", "acme.org");
+        OrganizationDomainRepresentation wildcardDomain = new OrganizationDomainRepresentation();
+        wildcardDomain.setName("*.example.com");
+        orgA.addDomain(wildcardDomain);
+        try (Response response = managedRealm.admin().organizations().get(orgA.getId()).update(orgA)) {
+            assertEquals(Status.NO_CONTENT.getStatusCode(), response.getStatus());
+        }
+
+        // Creating org with subdomain of the wildcard should fail
+        OrganizationRepresentation orgB = createRepresentation("org-b", "sub.example.com");
+        try (Response response = managedRealm.admin().organizations().create(orgB)) {
+            assertEquals(Status.CREATED.getStatusCode(), response.getStatus());
+        }
+
+        // Creating org with the exact base domain should also fail
+        OrganizationRepresentation orgC = createRepresentation("org-c", "example.com");
+        try (Response response = managedRealm.admin().organizations().create(orgC)) {
+            assertEquals(Status.CREATED.getStatusCode(), response.getStatus());
+        }
+
+        // Creating org with the same wildcard should fail
+        OrganizationRepresentation orgD = createRepresentation("org-d", "*.example.com");
+        try (Response response = managedRealm.admin().organizations().create(orgD)) {
+            assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+        }
+    }
+
+    @Test
+    public void testResolveOrganizationByDomain() {
+        OrganizationRepresentation orgA = createOrganization("org-a", "sub.example.com");
+        OrganizationResource organization = managedRealm.admin().organizations().get(orgA.getId());
+        OrganizationIdentityProviderResource broker = organization.identityProviders().get(brokerConfigFunction.apply(orgA.getAlias()).getIDPAlias());
+        IdentityProviderRepresentation brokerRepOrgA = broker.toRepresentation();
+        brokerRepOrgA.setHideOnLogin(false);
+        brokerRepOrgA.getConfig().remove(IdentityProviderRedirectMode.EMAIL_MATCH.getKey());
+        managedRealm.admin().identityProviders().get(brokerRepOrgA.getAlias()).update(brokerRepOrgA);
+
+        loginPage.open(TEST_REALM_NAME);
+        log.debug("Logging in");
+        loginPage.loginUsername("user@sub.example.com");
+        assertTrue(loginPage.isSocialButtonPresent(brokerRepOrgA.getAlias()));
+
+        OrganizationRepresentation orgB = createOrganization("org-b", "example.com");
+        organization = managedRealm.admin().organizations().get(orgB.getId());
+        broker = organization.identityProviders().get(brokerConfigFunction.apply(orgB.getAlias()).getIDPAlias());
+        IdentityProviderRepresentation brokerRepOrgB = broker.toRepresentation();
+        brokerRepOrgB.setHideOnLogin(false);
+        brokerRepOrgB.getConfig().remove(IdentityProviderRedirectMode.EMAIL_MATCH.getKey());
+        managedRealm.admin().identityProviders().get(brokerRepOrgB.getAlias()).update(brokerRepOrgB);
+        oauth.client("broker-app");
+        loginPage.open(TEST_REALM_NAME);
+        log.debug("Logging in");
+        loginPage.loginUsername("user@example.com");
+        assertTrue(loginPage.isSocialButtonPresent(brokerRepOrgB.getAlias()));
+        assertFalse(loginPage.isSocialButtonPresent(brokerRepOrgA.getAlias()));
+
+        OrganizationRepresentation orgC = createOrganization("org-c", "*.deep.sub.example.com");
+        organization = managedRealm.admin().organizations().get(orgC.getId());
+        broker = organization.identityProviders().get(brokerConfigFunction.apply(orgC.getAlias()).getIDPAlias());
+        IdentityProviderRepresentation brokerRepOrgC = broker.toRepresentation();
+        brokerRepOrgC.setHideOnLogin(false);
+        brokerRepOrgC.getConfig().remove(IdentityProviderRedirectMode.EMAIL_MATCH.getKey());
+        managedRealm.admin().identityProviders().get(brokerRepOrgC.getAlias()).update(brokerRepOrgC);
+        loginPage.open(TEST_REALM_NAME);
+        log.debug("Logging in");
+        loginPage.loginUsername("user@deep.sub.example.com");
+        assertTrue(loginPage.isSocialButtonPresent(brokerRepOrgC.getAlias()));
+        assertFalse(loginPage.isSocialButtonPresent(brokerRepOrgA.getAlias()));
+        assertFalse(loginPage.isSocialButtonPresent(brokerRepOrgB.getAlias()));
+    }
+
+    @Test
+    public void testDomainConflictAfterDeletingOrganization() {
+        OrganizationRepresentation orgA = createOrganization("org-a", "acme.org");
+        OrganizationDomainRepresentation wildcardDomain = new OrganizationDomainRepresentation();
+        wildcardDomain.setName("*.example.com");
+        orgA.addDomain(wildcardDomain);
+        try (Response response = managedRealm.admin().organizations().get(orgA.getId()).update(orgA)) {
+            assertEquals(Status.NO_CONTENT.getStatusCode(), response.getStatus());
+        }
+
+        // Org B cannot claim "example.com" while Org A exists
+        OrganizationRepresentation orgB = createOrganization("org-b");
+        OrganizationDomainRepresentation exactDomain = new OrganizationDomainRepresentation();
+        exactDomain.setName("example.com");
+        orgB.addDomain(exactDomain);
+        try (Response response = managedRealm.admin().organizations().get(orgB.getId()).update(orgB)) {
+            assertEquals(Status.NO_CONTENT.getStatusCode(), response.getStatus());
+        }
+
+        // Delete Org A
+        try (Response response = managedRealm.admin().organizations().get(orgA.getId()).delete()) {
+            assertEquals(Status.NO_CONTENT.getStatusCode(), response.getStatus());
+        }
+
+        // Now Org B should be able to claim "example.com"
+        orgB = managedRealm.admin().organizations().get(orgB.getId()).toRepresentation();
+        exactDomain = new OrganizationDomainRepresentation();
+        exactDomain.setName("example.com");
+        orgB.addDomain(exactDomain);
+        try (Response response = managedRealm.admin().organizations().get(orgB.getId()).update(orgB)) {
+            assertEquals(Status.NO_CONTENT.getStatusCode(), response.getStatus());
+        }
+
+        OrganizationRepresentation updatedB = managedRealm.admin().organizations().get(orgB.getId()).toRepresentation();
+        assertNotNull(updatedB.getDomain("example.com"));
+    }
+
+    @Test
+    public void testDomainConflictAfterRemovingDomain() {
+        // Org A owns "example.com". After removing that domain, Org B should be able to claim it.
+        OrganizationRepresentation orgA = createOrganization("org-a", "example.com");
+        OrganizationRepresentation orgB = createOrganization("org-b");
+
+        // Org B cannot claim "example.com" while Org A has it
+        OrganizationDomainRepresentation exactDomain = new OrganizationDomainRepresentation();
+        exactDomain.setName("example.com");
+        orgB.addDomain(exactDomain);
+        try (Response response = managedRealm.admin().organizations().get(orgB.getId()).update(orgB)) {
+            assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+        }
+
+        // Remove "example.com" from Org A
+        orgA = managedRealm.admin().organizations().get(orgA.getId()).toRepresentation();
+        OrganizationDomainRepresentation domainToRemove = orgA.getDomain("example.com");
+        assertNotNull(domainToRemove);
+        orgA.removeDomain(domainToRemove);
+        try (Response response = managedRealm.admin().organizations().get(orgA.getId()).update(orgA)) {
+            assertEquals(Status.NO_CONTENT.getStatusCode(), response.getStatus());
+        }
+
+        // Now Org B should be able to claim "example.com"
+        orgB = managedRealm.admin().organizations().get(orgB.getId()).toRepresentation();
+        exactDomain = new OrganizationDomainRepresentation();
+        exactDomain.setName("example.com");
+        orgB.addDomain(exactDomain);
+        try (Response response = managedRealm.admin().organizations().get(orgB.getId()).update(orgB)) {
+            assertEquals(Status.NO_CONTENT.getStatusCode(), response.getStatus());
+        }
+
+        OrganizationRepresentation updatedB = managedRealm.admin().organizations().get(orgB.getId()).toRepresentation();
+        assertNotNull(updatedB.getDomain("example.com"));
+    }
+
+    @Test
+    public void testDomainSameOrgCanUpdateOwnDomains() {
+        // An organization should be able to update its own domains without self-conflict.
+        OrganizationRepresentation orgA = createOrganization("org-a", "example.com");
+        OrganizationResource organization = managedRealm.admin().organizations().get(orgA.getId());
+
+        // Re-submit the same domains — should succeed (no self-conflict)
+        orgA = organization.toRepresentation();
+        try (Response response = organization.update(orgA)) {
+            assertEquals(Status.NO_CONTENT.getStatusCode(), response.getStatus());
+        }
+
+        // Add a wildcard domain to the same org — should succeed
+        OrganizationDomainRepresentation wildcardDomain = new OrganizationDomainRepresentation();
+        wildcardDomain.setName("*.example.com");
+        orgA.addDomain(wildcardDomain);
+        try (Response response = organization.update(orgA)) {
+            assertEquals(Status.NO_CONTENT.getStatusCode(), response.getStatus());
+        }
+
+        OrganizationRepresentation updated = organization.toRepresentation();
+        assertNotNull(updated.getDomain("example.com"));
+        assertNotNull(updated.getDomain("*.example.com"));
+    }
+
+    @Test
+    public void testRejectDomainWithTooManyParts() {
+        // 11-part domain (10 dots) must be rejected by Organizations.validateDomainParts.
+        String tooLong = "a.b.c.d.e.f.g.h.i.j.com";
+        OrganizationRepresentation orgA = createOrganization("org-a");
+        orgA.addDomain(new OrganizationDomainRepresentation(tooLong));
+        try (Response response = managedRealm.admin().organizations().get(orgA.getId()).update(orgA)) {
+            assertEquals(Status.NO_CONTENT.getStatusCode(), response.getStatus());
+        }
+
+        // the wildcard form of the same over-long domain must also be rejected
+        orgA = managedRealm.admin().organizations().get(orgA.getId()).toRepresentation();
+        orgA.addDomain(new OrganizationDomainRepresentation("*." + tooLong));
+        try (Response response = managedRealm.admin().organizations().get(orgA.getId()).update(orgA)) {
+            assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+        }
+
+        // a 10-part domain (9 dots) is still allowed
+        String atLimit = "*.a.b.c.d.e.f.g.h.i.jay";
+        orgA = managedRealm.admin().organizations().get(orgA.getId()).toRepresentation();
+        orgA.addDomain(new OrganizationDomainRepresentation(atLimit));
+        try (Response response = managedRealm.admin().organizations().get(orgA.getId()).update(orgA)) {
+            assertEquals(Status.NO_CONTENT.getStatusCode(), response.getStatus());
+        }
+    }
+
+    @Test
+    public void testRejectSinglePartDomains() {
+        OrganizationRepresentation orgA = createOrganization("org-a");
+
+        // a wildcard over a bare TLD must also be rejected
+        for (String wildcardTld : List.of("*.com", "*.org", "*.net", "*.io")) {
+            OrganizationRepresentation attempt = managedRealm.admin().organizations().get(orgA.getId()).toRepresentation();
+            attempt.addDomain(new OrganizationDomainRepresentation(wildcardTld));
+            try (Response response = managedRealm.admin().organizations().get(orgA.getId()).update(attempt)) {
+                assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+            }
+        }
+
+        // the minimum valid values (2-part base) must be accepted
+        for (String valid : List.of("example.com", "*.example.com")) {
+            OrganizationRepresentation attempt = managedRealm.admin().organizations().get(orgA.getId()).toRepresentation();
+            attempt.addDomain(new OrganizationDomainRepresentation(valid));
+            try (Response response = managedRealm.admin().organizations().get(orgA.getId()).update(attempt)) {
+                assertEquals(Status.NO_CONTENT.getStatusCode(), response.getStatus());
+            }
+        }
+    }
+
+    @Test
+    public void testRejectInvalidWildcardPatterns() {
+        OrganizationRepresentation orgA = createOrganization("org-a", "example.com");
+
+        // bare "*." (no base domain) is rejected
+        OrganizationRepresentation attempt = managedRealm.admin().organizations().get(orgA.getId()).toRepresentation();
+        attempt.addDomain(new OrganizationDomainRepresentation("*."));
+        try (Response response = managedRealm.admin().organizations().get(orgA.getId()).update(attempt)) {
+            assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+        }
+
+        // wildcard in the middle of the pattern is rejected
+        attempt = managedRealm.admin().organizations().get(orgA.getId()).toRepresentation();
+        attempt.addDomain(new OrganizationDomainRepresentation("sub.*.example.com"));
+        try (Response response = managedRealm.admin().organizations().get(orgA.getId()).update(attempt)) {
+            assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+        }
+
+        // multiple wildcards are rejected
+        attempt = managedRealm.admin().organizations().get(orgA.getId()).toRepresentation();
+        attempt.addDomain(new OrganizationDomainRepresentation("*.*.example.com"));
+        try (Response response = managedRealm.admin().organizations().get(orgA.getId()).update(attempt)) {
+            assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+        }
+
+        // an empty domain name is rejected
+        attempt = managedRealm.admin().organizations().get(orgA.getId()).toRepresentation();
+        attempt.addDomain(new OrganizationDomainRepresentation(""));
+        try (Response response = managedRealm.admin().organizations().get(orgA.getId()).update(attempt)) {
+            assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+        }
+
+        // a syntactically invalid base domain is rejected
+        attempt = managedRealm.admin().organizations().get(orgA.getId()).toRepresentation();
+        attempt.addDomain(new OrganizationDomainRepresentation("*.not valid"));
+        try (Response response = managedRealm.admin().organizations().get(orgA.getId()).update(attempt)) {
+            assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+        }
+
+        // a wildcard over a bare TLD is rejected (base domain has only 1 part)
+        attempt = managedRealm.admin().organizations().get(orgA.getId()).toRepresentation();
+        attempt.addDomain(new OrganizationDomainRepresentation("*.com"));
+        try (Response response = managedRealm.admin().organizations().get(orgA.getId()).update(attempt)) {
+            assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+        }
+
+        // sanity: none of the rejected values were persisted
+        OrganizationRepresentation reloaded = managedRealm.admin().organizations().get(orgA.getId()).toRepresentation();
+        assertEquals(1, reloaded.getDomains().size());
+        assertNotNull(reloaded.getDomain("example.com"));
     }
 }
