@@ -14,25 +14,48 @@ When creating a `ProtocolMapperRepresentation`, the `config` field is a key-valu
 depend on the specific mapper type. This page serves as a reference for the expected configuration options
 available in `ProtocolMapperRepresentation.config` for each `ProtocolMapper` implementation.
 
-<#assign mappers = ctx.protocolMappers.getMappers() />
+[discrete]
+== Index
+
+The below table is an index of all available `ProtocolMapper` implementations provided by {project_name},
+grouped by the associated protocol.
+
+
+.ProtocolMapper Index
+[cols="1,2",options="header"]
+|===
+|ID |Description
+<#list ctx.protocolMappers.getMappersByProtocol(["openid-connect", "oid4vc", "saml", "docker-v2"]) as protocol, categoryMap>
+
+2+a|**${protocol}**
+<#list categoryMap as category, mapperList>
+<#list mapperList as mapper>
+|<<${mapper.id()},${mapper.id()}>>
+|${(mapper.helpText())!"_No description available._"}
+</#list>
+</#list>
+</#list>
+
+|===
+
+'''
+
+<#assign mappers = ctx.protocolMappers.getMappersByProtocol(["openid-connect", "oid4vc", "saml", "docker-v2"]) />
 <#list mappers as protocol, categoryMap>
 
-== ${protocol}
+=== ${protocol}
 
-The following section contains all `ProtocolMapper` implementation associated with the ${protocol} protocol.
+The following section contains detailed configuration about all `ProtocolMapper` implementation associated with the ${protocol} protocol.
 
 <#list categoryMap as category, mapperList>
-
-=== ${category}
-
 <#list mapperList as mapper>
 
-==== ${mapper.displayType()}
+[#${mapper.id()}]
+=== ${mapper.displayType()}
 
 ${(mapper.helpText())!"_No description available._"}
 
-ID:: `${mapper.id()}`
-Implementation:: `${mapper.implementationClass()}`
+*ID*: `${mapper.id()}`
 
 <#if mapper.configProperties()?has_content>
 .${mapper.displayType()} Configuration Properties

@@ -55,8 +55,15 @@ public class ProtocolMappers {
                 .orElse(Map.of());
     }
 
-    public Map<String, Map<String, List<ProtocolMapperInfo>>> getMappers() {
-        return mappers;
+    public Map<String, Map<String, List<ProtocolMapperInfo>>> getMappersByProtocol(List<String> protocols) {
+        Map<String, Map<String, List<ProtocolMapperInfo>>> ordered = new LinkedHashMap<>();
+        for (String protocol : protocols) {
+            Map<String, List<ProtocolMapperInfo>> categoryMap = mappers.get(protocol);
+            if (categoryMap != null) {
+                ordered.put(protocol, categoryMap);
+            }
+        }
+        return ordered;
     }
 
     public String resolveLabel(String label) {
