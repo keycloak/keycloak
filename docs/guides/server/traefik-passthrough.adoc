@@ -1,0 +1,167 @@
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/kc.adoc" as kc>
+<#import "/templates/options.adoc" as opts>
+<#import "/templates/links.adoc" as links>
+
+<@tmpl.guide title="Traefik with TLS passthrough" summary="Configure Traefik as a TLS passthrough load balancer for {project_name}." includedOptions="proxy-protocol-enabled metrics-enabled health-enabled http-management-scheme" tileVisible="false">
+
+This {section} describes how to configure link:https://traefik.io/[Traefik] as a TLS passthrough load balancer in front of {project_name}.
+
+In TLS passthrough mode, Traefik forwards the raw TLS connection directly to {project_name} without terminating it.
+Traefik operates at the TCP layer (Layer 4) and has no visibility into the HTTP content.
+The TLS handshake occurs between the client and {project_name}, preserving end-to-end encryption.
+
+For a general overview of TLS passthrough and how it compares to re-encrypt, see the <@links.server id="reverseproxy"/> {section}.
+
+A ready-to-run example with Docker Compose is available in the link:https://github.com/keycloak/keycloak-quickstarts/tree/main/proxy/traefik/passthrough[quickstart repository].
+
+== Traefik configuration
+
+Traefik separates its configuration into two files:
+
+* `traefik.yaml` — static configuration loaded at startup (entry points, dashboard, and providers).
+* `keycloak.yaml` — dynamic configuration for runtime routing rules, services, and health checks.
+
+=== Static configuration (`traefik.yaml`)
+
+The following `traefik.yaml` configures the entry point for TLS traffic and enables the dashboard.
+
+[source,yaml]
+----
+entryPoints:
+  websecure:
+    address: ":8443" # <1>
+
+api:
+  insecure: true # <2>
+----
+
+<1> Defines the entry point on port `8443` where Traefik accepts incoming TCP/TLS connections.
+Clients connect to this port, and Traefik forwards the raw TCP stream to the backend.
+<2> Enables the Traefik dashboard on port `8080` without authentication.
+This is intended for local development and debugging only and must never be used in production.
+
+=== Dynamic configuration (`keycloak.yaml`)
+
+The following `keycloak.yaml` configures the TCP router, load balancer, and health checks.
+
+[source,yaml]
+----
+tcp:
+  routers:
+    keycloak-router:
+      rule: "HostSNI(`*`)" # <1>
+      service: "keycloak-service"
+      priority: 100 # <2>
+      entryPoints:
+        - "websecure"
+      tls:
+        passthrough: true # <3>
+
+  serversTransports:
+    kc-passthrough:
+      proxyProtocol:
+        version: 2 # <4>
+
+  services:
+    keycloak-service:
+      loadBalancer:
+        serversTransport: kc-passthrough # <5>
+        # The inline YAML syntax is required so that \r\n is interpreted literally.
+        healthCheck: { # <6>
+          interval: "5s",
+          timeout: "3s",
+          port: 9000,
+          send: "HEAD /health/ready HTTP/1.0\r\n\r\n",
+          expect: "HTTP/1.0 200 OK\r\ncontent-type: application/json; charset=UTF-8\r\ncache-control: no-store\r\n\r\n"
+        }
+        servers:
+          - address: "keycloak1:8443" # <7>
+          - address: "keycloak2:8443"
+----
+
+<1> Matches all TLS connections regardless of the SNI hostname.
+This is suitable when Traefik is dedicated to {project_name} only.
+If Traefik handles multiple backend services, use a specific hostname instead of a wildcard (for example, ``HostSNI(`keycloak.example.com`)``) to avoid routing unintended traffic to {project_name}.
+<2> Ensures this router takes precedence over any other TCP routers that may be defined.
+<3> Instructs Traefik to forward the raw TLS stream without terminating it.
+{project_name} handles TLS termination directly.
+<4> Enables link:https://doc.traefik.io/traefik/reference/routing-configuration/tcp/serverstransport/#proxyprotocolversion[PROXY protocol v2] on all backend connections.
+This allows {project_name} to read the real client IP address from the PROXY protocol header added by Traefik.
+This requires {project_name} to be configured with `--proxy-protocol-enabled=true` (see <<keycloak-configuration>>).
+<5> Links the load balancer to the named transport above, activating PROXY protocol v2 for all connections to the backend servers.
+<6> Configures a link:https://doc.traefik.io/traefik/reference/routing-configuration/tcp/service/#health-check[TCP-level health check] against {project_name}'s management port (`9000`).
+
+The health check parameters are explained below:
+
+`interval` / `timeout`::
+Traefik checks each backend every `5s`, marking a server as unhealthy if it does not respond within `3s`.
+Unhealthy backends are automatically removed from the load balancer rotation and re-added once they recover.
+These values affect how quickly Traefik detects that a {project_name} instance is shutting down (see <<graceful-shutdown-considerations>>).
+
+`port: 9000`::
+Directs health checks to the management port (`9000`), which is separate from the main application port (`8443`).
+The management port is configured to use plain HTTP via `--http-management-scheme=http` (see <<keycloak-configuration>>), which is required because Traefik cannot perform an HTTPS health check on a TCP passthrough service.
+This is safe because the management port is only reachable on the internal backend network and is not exposed to clients.
+For details on the management port, see the <@links.server id="management-interface"/> {section}.
+
+`send` / `expect`::
+Since Traefik operates at the TCP layer, health checks work by sending raw bytes and matching the response.
+The JSON syntax is required so that `\r\n` is encoded as a literal carriage-return and line-feed rather than a backslash-n string.
++
+NOTE: The `expect` string must match the full HTTP response headers exactly, including the `content-type` charset.
+Any change to the {project_name} response format may break this check.
+A simple TCP connect check (omitting `send` and `expect`) is less fragile but only detects a dead process.
+It would not detect split-brain, database connectivity failures, or an overloaded node.
+
+<7> Defines the two {project_name} backend servers.
+Traffic is distributed across both instances using round-robin load balancing.
+
+NOTE: Native HTTP health checks for TCP services are not yet supported in Traefik.
+Until then, the send/expect workaround described above is required.
+Track upstream progress at link:https://github.com/traefik/traefik/pull/12606[traefik/traefik#12606].
+
+[[keycloak-configuration]]
+== {project_name} configuration
+
+With TLS passthrough, {project_name} requires the following configuration:
+
+<@kc.start parameters="--proxy-protocol-enabled true --health-enabled true --metrics-enabled true --http-management-scheme=http"/>
+
+`--proxy-protocol-enabled true`::
+Enables the PROXY protocol so that {project_name} can read the real client IP address from the PROXY protocol header added by Traefik.
+Do not set `--proxy-headers` when using TLS passthrough because Traefik cannot inject HTTP headers into the encrypted traffic.
+The `--proxy-protocol-enabled` option and the `--proxy-headers` option are mutually exclusive.
+
+`--health-enabled true`::
+Enables the health check endpoints on the management port (`9000`).
+Without this, the health endpoint that Traefik polls will not be available, and Traefik will mark all {project_name} instances as down.
+
+`--metrics-enabled true`::
+Enables the metrics endpoints on the management port.
+Enabling metrics also enables an additional status check for the database, so it is recommended to enable metrics.
+
+`--http-management-scheme=http`::
+Configures the management port (`9000`) to use plain HTTP instead of HTTPS.
+Traefik does not support native HTTP health checks for TCP services; it can only send and match raw bytes over a plain TCP connection.
+Disabling TLS on the management port allows the raw `send`/`expect` health check (see the health check configuration above) to communicate with {project_name} in plain HTTP.
+This is safe because the management port is only reachable on the internal backend network and is not exposed to clients.
+
+[[graceful-shutdown-considerations]]
+== Graceful shutdown considerations
+
+With TLS passthrough, Traefik cannot signal a connection close at the HTTP level.
+The health check timing directly determines how long it takes Traefik to detect that a {project_name} instance is shutting down and stop routing new connections to it.
+
+With the health check settings from the configuration above (`interval: 5s`, `timeout: 3s`), it takes up to 8 seconds (`interval + timeout`) for Traefik to mark a {project_name} instance as down.
+During this period, {project_name} must remain running to serve in-flight requests.
+Therefore, configure the `--shutdown-delay` to be at least as long as the detection time:
+
+<@kc.start parameters="--proxy-protocol-enabled true --health-enabled true --metrics-enabled true --http-management-scheme=http --shutdown-delay=30s"/>
+
+NOTE: The 30-second delay accounts for both the detection time (~8 seconds) and draining existing open TCP connections, which Traefik cannot close at the HTTP level in passthrough mode.
+A `--shutdown-delay=16s` (2x the maximum detection time) is sufficient if TCP connection draining is not a concern.
+
+For a detailed explanation of shutdown phases and how to tune the delay and timeout values, see the Graceful HTTP shutdown section in the <@links.server id="reverseproxy"/> {section}.
+
+</@tmpl.guide>

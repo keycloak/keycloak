@@ -138,6 +138,7 @@ Setting both will result in a configuration error.
 === Blueprints
 
 * <@links.server id="haproxy-passthrough"/>
+* <@links.server id="traefik-passthrough"/>
 
 == {project_name} with TLS reencrypt
 

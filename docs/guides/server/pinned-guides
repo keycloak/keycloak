@@ -8,6 +8,7 @@ enabletls
 hostname
 reverseproxy
 haproxy-passthrough
+traefik-passthrough
 db
 caching
 outgoinghttp
