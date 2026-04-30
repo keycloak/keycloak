@@ -397,7 +397,7 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
         AuthorizationEndpointResponse response = oauth.parseLoginResponse();
 
         assertEquals("invalid_request", response.getError());
-        assertEquals("duplicated parameter", response.getErrorDescription());
+        assertEquals("duplicate parameter: scope", response.getErrorDescription());
 
         events.expectLogin().error(Errors.INVALID_REQUEST).user((String) null).session((String) null).clearDetails().assertEvent();
     }

@@ -53,8 +53,6 @@ public class ParEndpointRequestParserProcessor {
 
             if (parser.getInvalidRequestMessage() != null) {
                 request.setInvalidRequestMessage(parser.getInvalidRequestMessage());
-            }
-            if (request.getInvalidRequestMessage() != null) {
                 return request;
             }
 

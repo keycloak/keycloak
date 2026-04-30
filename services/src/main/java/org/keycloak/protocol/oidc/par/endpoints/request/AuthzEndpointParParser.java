@@ -21,6 +21,7 @@ package org.keycloak.protocol.oidc.par.endpoints.request;
 import java.util.Map;
 import java.util.Set;
 
+import org.keycloak.common.Profile;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -46,8 +47,7 @@ public class AuthzEndpointParParser extends AuthzEndpointRequestParser {
 
     private final KeycloakSession session;
     private final ClientModel client;
-    private Map<String, String> requestParams;
-    private String invalidRequestMessage = null;
+    private final Map<String, String> requestParams;
 
     public AuthzEndpointParParser(KeycloakSession session, ClientModel client, String requestUri) {
         super(session);
@@ -87,7 +87,7 @@ public class AuthzEndpointParParser extends AuthzEndpointRequestParser {
 
         if (requestParam != null) {
             // parses the request object if PAR was registered using JAR
-            // parameters from requets object have precedence over those sent directly in the request
+            // parameters from request object have precedence over those sent directly in the request
             new ParEndpointRequestObjectParser(session, requestParam, client).parseRequest(request);
         } else {
             super.parseRequest(request);
@@ -105,13 +105,18 @@ public class AuthzEndpointParParser extends AuthzEndpointRequestParser {
         return paramVal == null ? null : Integer.valueOf(paramVal);
     }
 
-    public String getInvalidRequestMessage() {
-        return invalidRequestMessage;
-    }
-
     @Override
     protected Set<String> keySet() {
         return requestParams.keySet();
     }
 
+    protected <T> T replaceIfNotNull(T previousVal, T newVal) {
+        // FAPI says only parameters inside the request object should be used
+        // https://github.com/keycloak/keycloak/issues/48047
+        if (Profile.isFeatureEnabled(Profile.Feature.OID4VC_HAIP)) {
+            return newVal;
+        } else {
+            return super.replaceIfNotNull(previousVal, newVal);
+        }
+    }
 }
