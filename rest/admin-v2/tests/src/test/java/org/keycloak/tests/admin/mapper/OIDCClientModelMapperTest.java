@@ -230,6 +230,33 @@ public class OIDCClientModelMapperTest {
     }
 
     @TestOnServer
+    public void fromModel_mapsServiceAccountClientRoles(KeycloakSession session) {
+        RealmModel realm = session.realms().getRealmByName("master");
+        session.getContext().setRealm(realm);
+
+        ClientModel clientModel = realm.addClient("test-sa-client-role-mapper");
+        try {
+            setupBasicClientModel(clientModel);
+            clientModel.setServiceAccountsEnabled(true);
+            RoleModel clientRole = clientModel.addRole("mapper-client-sa-role");
+
+            String username = "service-account-" + clientModel.getClientId();
+            UserModel serviceAccount = session.users().addUser(realm, username);
+            serviceAccount.setEnabled(true);
+            serviceAccount.setServiceAccountClientLink(clientModel.getId());
+
+            serviceAccount.grantRole(clientRole);
+
+            OIDCClientModelMapper mapper = (OIDCClientModelMapper) session.getProvider(ClientModelMapper.class, OIDCClientRepresentation.PROTOCOL);
+            OIDCClientRepresentation rep = (OIDCClientRepresentation) mapper.fromModel(clientModel);
+
+            assertThat(rep.getServiceAccountRoles(), hasItems("mapper-client-sa-role"));
+        } finally {
+            realm.removeClient(clientModel.getId());
+        }
+    }
+
+    @TestOnServer
     public void fromModel_emptyServiceAccountRolesWhenServiceAccountDisabled(KeycloakSession session) {
         RealmModel realm = session.realms().getRealmByName("master");
         session.getContext().setRealm(realm);

@@ -511,6 +511,43 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
     }
 
     @Test
+    public void declarativeServiceAccountClientRoleManagement() {
+        String defaultRealmRoles = "default-roles-%s".formatted(testRealm.getName());
+        OIDCClientRepresentation rep = new OIDCClientRepresentation();
+        rep.setClientId("sa-client-role-test");
+        rep.setEnabled(true);
+        rep.setRoles(Set.of("my-client-role"));
+        rep.setLoginFlows(Set.of(OIDCClientRepresentation.Flow.SERVICE_ACCOUNT));
+        rep.setServiceAccountRoles(Set.of(defaultRealmRoles, "offline_access"));
+
+        OIDCClientRepresentation.Auth auth = new OIDCClientRepresentation.Auth();
+        auth.setMethod(ClientIdAndSecretAuthenticator.PROVIDER_ID);
+        rep.setAuth(auth);
+
+        try (var response = clients(testRealm.getName()).createClient(rep)) {
+            assertEquals(201, response.getStatus());
+            OIDCClientRepresentation created = response.readEntity(OIDCClientRepresentation.class);
+            assertThat(created.getRoles(), is(Set.of("my-client-role")));
+            assertThat(created.getServiceAccountRoles(), is(Set.of(defaultRealmRoles, "offline_access")));
+        }
+
+        rep.setServiceAccountRoles(Set.of(defaultRealmRoles, "offline_access", "my-client-role"));
+        try (var response = clients(testRealm.getName()).client("sa-client-role-test").createOrUpdateClient(rep)) {
+            assertEquals(200, response.getStatus());
+            OIDCClientRepresentation updated = response.readEntity(OIDCClientRepresentation.class);
+            assertThat(updated.getServiceAccountRoles(), is(Set.of(defaultRealmRoles, "offline_access", "my-client-role")));
+        }
+
+        rep.setServiceAccountRoles(Set.of(defaultRealmRoles, "offline_access"));
+        try (var response = clients(testRealm.getName()).client("sa-client-role-test").createOrUpdateClient(rep)) {
+            assertEquals(200, response.getStatus());
+            OIDCClientRepresentation updated = response.readEntity(OIDCClientRepresentation.class);
+            assertThat(updated.getServiceAccountRoles(), is(Set.of(defaultRealmRoles, "offline_access")));
+            assertThat(updated.getRoles(), is(Set.of("my-client-role")));
+        }
+    }
+
+    @Test
     public void versionedClientsApi() throws Exception {
         final var ADMIN_API_URL = "http://localhost:8080/admin/api/master";
 

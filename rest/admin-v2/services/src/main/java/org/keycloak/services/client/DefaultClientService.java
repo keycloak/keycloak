@@ -2,6 +2,7 @@ package org.keycloak.services.client;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -13,7 +14,6 @@ import java.util.stream.Stream;
 
 import jakarta.annotation.Nonnull;
 import jakarta.validation.groups.Default;
-import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
@@ -26,6 +26,7 @@ import org.keycloak.models.ModelException;
 import org.keycloak.models.ModelValidationException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.models.mapper.ClientModelMapper;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
@@ -49,7 +50,6 @@ import org.keycloak.services.clientpolicy.context.AdminClientViewContext;
 import org.keycloak.services.managers.ClientManager;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resources.admin.AdminEventBuilder;
-import org.keycloak.services.resources.admin.RealmAdminResource;
 import org.keycloak.services.resources.admin.RoleContainerResource;
 import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
 import org.keycloak.services.util.ObjectMapperResolver;
@@ -78,18 +78,15 @@ public class DefaultClientService implements ClientService {
 
     private final KeycloakSession session;
     private final AdminPermissionEvaluator permissions;
-    private final RealmAdminResource realmResource;
     private final AdminEventBuilder adminEventBuilder;
     private final JakartaValidatorProvider validator;
     private final RolesService rolesService;
 
     public DefaultClientService(@Nonnull KeycloakSession session,
                                 @Nonnull RealmModel realm,
-                                @Nonnull AdminPermissionEvaluator permissions,
-                                @Nonnull RealmAdminResource realmResource) {
+                                @Nonnull AdminPermissionEvaluator permissions) {
         this.session = session;
         this.permissions = permissions;
-        this.realmResource = realmResource;
         this.adminEventBuilder = new AdminEventV2Builder(realm, permissions.adminAuth(), session, session.getContext().getConnection()).resource(ResourceType.CLIENT);
         this.validator = new HibernateValidatorProvider(new ValidationContext(session, realm));
         this.rolesService = new RolesService(session, realm, permissions, adminEventBuilder);
@@ -246,12 +243,11 @@ public class DefaultClientService implements ClientService {
                     case PUT, PATCH -> {
                         // Check permissions, execute validations and trigger client policies
                         permissions.clients().requireConfigure(model);
+                        // Must run before bean validation: PutClient requires a non-blank secret for client-secret methods
+                        generateClientSecretIfNeeded(client, model);
                         validator.validate(client, strategy.getValidationGroup(), Default.class);
                         var proposedRepresentation = getProposedOldRepresentation(realm, client, mapper);
                         session.clientPolicy().triggerOnEvent(new AdminClientUpdateContext(proposedRepresentation, model, permissions.adminAuth()));
-
-                        // Generate random secret if applicable
-                        generateClientSecretIfNeeded(client, model);
 
                         // Update model
                         model = mapper.toModel(client, model);
@@ -297,7 +293,7 @@ public class DefaultClientService implements ClientService {
 
         // OIDC specific
         if (client instanceof OIDCClientRepresentation oidcClient) {
-            handleServiceAccount(clientRoles, rolesService.resource(realm), model, oidcClient);
+            handleServiceAccount(model, oidcClient);
         }
 
         fireAdminEvent(alreadyExists ? OperationType.UPDATE : OperationType.CREATE, mapper.fromModel(model));
@@ -344,7 +340,12 @@ public class DefaultClientService implements ClientService {
         if (client.getProtocol().equals(OIDCClientRepresentation.PROTOCOL)) {
             var auth = ((OIDCClientRepresentation) client).getAuth();
             if (auth != null && isClientSecret(auth.getMethod()) && isBlank(auth.getSecret())) {
-                auth.setSecret(KeycloakModelUtils.generateSecret(model));
+                // On PUT the client often omits the secret; reuse the persisted secret before bean validation (PutClient).
+                if (!isBlank(model.getSecret())) {
+                    auth.setSecret(model.getSecret());
+                } else {
+                    auth.setSecret(KeycloakModelUtils.generateSecret(model));
+                }
             }
         }
     }
@@ -391,9 +392,10 @@ public class DefaultClientService implements ClientService {
     /**
      * Declaratively manage service account - enables/disables it and ensures it has exactly the roles specified (realm and client roles)
      * <p>
-     * Reuses API v1 logic
+     * Applies mappings on the {@link UserModel} with the same permission checks as the Admin REST role-mapping resources, but without
+     * routing through nested JAX-RS resources (which are not suited for in-process service calls).
      */
-    protected void handleServiceAccount(RoleContainerResource clientRoleResource, RoleContainerResource realmRoleResource, ClientModel model, OIDCClientRepresentation rep) {
+    protected void handleServiceAccount(ClientModel model, OIDCClientRepresentation rep) {
         boolean serviceAccountEnabled = rep.getLoginFlows().contains(OIDCClientRepresentation.Flow.SERVICE_ACCOUNT);
 
         ClientManager.updateClientServiceAccount(session, model, serviceAccountEnabled);
@@ -402,48 +404,47 @@ public class DefaultClientService implements ClientService {
             return;
         }
 
-        var serviceAccountUser = new ClientManager(new RealmManager(session)).getServiceAccountUser(model)
+        UserModel serviceAccountUser = new ClientManager(new RealmManager(session)).getServiceAccountUser(model)
                 .orElseThrow(() -> new ServiceException("Cannot find service account user", Response.Status.BAD_REQUEST));
-        var serviceAccountRoleResource = realmResource.users().user(serviceAccountUser.getId()).getRoleMappings();
 
+        RealmModel realm = model.getRealm();
         Set<String> desiredRoleNames = Optional.ofNullable(rep.getServiceAccountRoles()).orElse(Collections.emptySet());
         Set<RoleModel> currentRoles = serviceAccountUser.getRoleMappingsStream().collect(Collectors.toSet());
         Set<String> currentRoleNames = currentRoles.stream().map(RoleModel::getName).collect(Collectors.toSet());
 
-        // Get missing roles (in desired but not in current)
-        List<RoleRepresentation> missingRoles = desiredRoleNames.stream()
-                .filter(roleName -> !currentRoleNames.contains(roleName))
-                .map(roleName -> {
-                    try {
-                        return clientRoleResource.getRole(roleName); // client role
-                    } catch (NotFoundException e) {
-                        try {
-                            return realmRoleResource.getRole(roleName); // realm role
-                        } catch (NotFoundException e2) {
-                            throw new ServiceException("Cannot assign role to the service account (field 'serviceAccount.roles') as it does not exist", Response.Status.BAD_REQUEST);
-                        }
-                    }
-                })
-                .toList();
-
-        // Add missing roles (in desired but not in current)
-        if (!missingRoles.isEmpty()) {
-            serviceAccountRoleResource.addRealmRoleMappings(missingRoles);
+        // serviceAccountRoles are plain names; client roles on this client are resolved before realm roles (name collisions favor the client).
+        List<RoleModel> rolesToAdd = new ArrayList<>();
+        for (String roleName : desiredRoleNames) {
+            if (currentRoleNames.contains(roleName)) {
+                continue;
+            }
+            RoleModel clientRole = model.getRole(roleName);
+            RoleModel resolved = clientRole != null ? clientRole : realm.getRole(roleName);
+            if (resolved == null) {
+                throw new ServiceException("Cannot assign role to the service account (field 'serviceAccount.roles') as it does not exist", Response.Status.BAD_REQUEST);
+            }
+            rolesToAdd.add(resolved);
         }
 
-        // Get extra roles (in current but not in desired)
-        List<RoleRepresentation> extraRoles = currentRoles.stream()
-                .filter(role -> !desiredRoleNames.contains(role.getName()))
-                .map(ModelToRepresentation::toRepresentation)
-                .toList();
-
-        // Remove extra roles (in current but not in desired)
-        if (!extraRoles.isEmpty()) {
-            try {
-                serviceAccountRoleResource.deleteRealmRoleMappings(extraRoles);
-            } catch (NotFoundException e) {
-                throw new ServiceException("Cannot unassign role from the service account (field 'serviceAccount.roles') as it does not exist", Response.Status.BAD_REQUEST);
+        List<RoleModel> rolesToRemove = new ArrayList<>();
+        for (RoleModel role : currentRoles) {
+            if (!desiredRoleNames.contains(role.getName())) {
+                rolesToRemove.add(role);
             }
+        }
+
+        if (rolesToAdd.isEmpty() && rolesToRemove.isEmpty()) {
+            return;
+        }
+
+        permissions.users().requireMapRoles(serviceAccountUser);
+        for (RoleModel role : rolesToAdd) {
+            permissions.roles().requireMapRole(role);
+            serviceAccountUser.grantRole(role);
+        }
+        for (RoleModel role : rolesToRemove) {
+            permissions.roles().requireMapRole(role);
+            serviceAccountUser.deleteRoleMapping(role);
         }
     }
 

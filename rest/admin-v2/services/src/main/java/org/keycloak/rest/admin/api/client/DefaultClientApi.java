@@ -20,7 +20,6 @@ import org.keycloak.services.PatchType;
 import org.keycloak.services.ServiceException;
 import org.keycloak.services.client.ClientService;
 import org.keycloak.services.client.DefaultClientService;
-import org.keycloak.services.resources.admin.RealmAdminResource;
 import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
 
 
@@ -33,13 +32,11 @@ public class DefaultClientApi implements ClientApi {
     public DefaultClientApi(@Nonnull KeycloakSession session,
                             @Nonnull RealmModel realm,
                             @Nonnull String clientId,
-                            @Nonnull AdminPermissionEvaluator permissions,
-                            // remove v1 resource once we are not attached to API v1
-                            @Nonnull RealmAdminResource realmAdminResource) {
+                            @Nonnull AdminPermissionEvaluator permissions) {
         this.session = session;
         this.clientId = clientId;
         this.realm = realm;
-        this.clientService = new DefaultClientService(session, realm, permissions, realmAdminResource);
+        this.clientService = new DefaultClientService(session, realm, permissions);
     }
 
     @GET
