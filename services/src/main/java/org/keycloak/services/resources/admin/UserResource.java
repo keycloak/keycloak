@@ -94,7 +94,6 @@ import org.keycloak.organization.utils.Organizations;
 import org.keycloak.policy.PasswordPolicyNotMetException;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.utils.RedirectUtils;
-import org.keycloak.provider.ProviderFactory;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.representations.idm.FederatedIdentityRepresentation;
@@ -305,18 +304,14 @@ public class UserResource {
         List<String> reqActions = rep.getRequiredActions();
 
         if (reqActions != null) {
-            session.getKeycloakSessionFactory()
-                    .getProviderFactoriesStream(RequiredActionProvider.class)
-                    .map(ProviderFactory::getId)
-                    .distinct()
-                    .sorted()
-                    .forEach(action -> {
-                        if (reqActions.contains(action)) {
-                            user.addRequiredAction(action);
-                        } else if (removeMissingRequiredActions) {
-                            user.removeRequiredAction(action);
-                        }
-                    });
+            if (removeMissingRequiredActions) {
+                user.getRequiredActionsStream().toList().forEach(user::removeRequiredAction);
+            }
+
+            reqActions.stream()
+                    .filter(action -> session.getKeycloakSessionFactory()
+                            .getProviderFactory(RequiredActionProvider.class, action) != null)
+                    .forEach(user::addRequiredAction);
         }
 
         List<CredentialRepresentation> credentials = rep.getCredentials();
