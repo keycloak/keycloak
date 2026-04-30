@@ -23,6 +23,10 @@
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-account-ui-lit</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
             <artifactId>keycloak-themes-vendor</artifactId>
         </dependency>
     </dependencies>

@@ -1,0 +1,10 @@
+{
+  "themes": [
+    {
+      "name": "keycloak.v4",
+      "types": [
+        "account"
+      ]
+    }
+  ]
+}

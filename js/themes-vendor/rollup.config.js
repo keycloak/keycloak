@@ -12,12 +12,12 @@ const plugins = [
   }),
   replace({
     preventAssignment: true,
-    // React depends on process.env.NODE_ENV to determine which code to include for production.
-    // This ensures that no additional code meant for development is included in the build.
     "process.env.NODE_ENV": '"production"',
   }),
   terser(),
 ];
+
+const litPlugins = [nodeResolve(), terser()];
 
 const targetDir = "target/classes/theme/keycloak/common/resources/vendor";
 
@@ -31,6 +31,7 @@ function onwarn(warning, defaultHandler) {
 }
 
 export default defineConfig([
+  // React
   {
     input: [
       "node_modules/react/cjs/react.production.min.js",
@@ -53,6 +54,7 @@ export default defineConfig([
     plugins,
     onwarn,
   },
+  // Web Crypto Shim
   {
     input: "src/main/js/web-crypto-shim.js",
     output: {
@@ -60,6 +62,47 @@ export default defineConfig([
       format: "es",
     },
     plugins,
+    onwarn,
+  },
+  // Lit - bundled with all dependencies
+  {
+    input: "src/main/js/lit-bundle.js",
+    output: {
+      file: path.join(targetDir, "lit/lit.js"),
+      format: "es",
+    },
+    plugins: litPlugins,
+    onwarn,
+  },
+  // @lit/context
+  {
+    input: "src/main/js/lit-context.js",
+    output: {
+      file: path.join(targetDir, "lit-context/context.js"),
+      format: "es",
+    },
+    external: ["lit"],
+    plugins: litPlugins,
+    onwarn,
+  },
+  // keycloak-js
+  {
+    input: "src/main/js/keycloak-js-bundle.js",
+    output: {
+      file: path.join(targetDir, "keycloak-js/keycloak.js"),
+      format: "es",
+    },
+    plugins: litPlugins,
+    onwarn,
+  },
+  // i18next
+  {
+    input: "src/main/js/i18next-bundle.js",
+    output: {
+      file: path.join(targetDir, "i18next/i18next.js"),
+      format: "es",
+    },
+    plugins: litPlugins,
     onwarn,
   },
 ]);

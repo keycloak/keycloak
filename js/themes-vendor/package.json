@@ -16,14 +16,26 @@
       "output": [
         "target/classes/theme/keycloak/common/resources/vendor/react",
         "target/classes/theme/keycloak/common/resources/vendor/react-dom",
-        "target/classes/theme/keycloak/common/resources/vendor/web-crypto-shim"
+        "target/classes/theme/keycloak/common/resources/vendor/web-crypto-shim",
+        "target/classes/theme/keycloak/common/resources/vendor/lit",
+        "target/classes/theme/keycloak/common/resources/vendor/lit-context",
+        "target/classes/theme/keycloak/common/resources/vendor/keycloak-js",
+        "target/classes/theme/keycloak/common/resources/vendor/i18next"
       ]
     }
   },
   "dependencies": {
+    "@lit/context": "^1.1.0",
+    "@lit/reactive-element": "^2.0.0",
     "@noble/hashes": "^2.0.1",
-    "@patternfly-v5/patternfly": "npm:@patternfly/patternfly@^5.4.2",
     "@patternfly/patternfly": "^4.224.5",
+    "@patternfly-v5/patternfly": "npm:@patternfly/patternfly@^5.4.2",
+    "@patternfly-v6/patternfly": "npm:@patternfly/patternfly@^6.0.0",
+    "i18next": "^24.0.0",
+    "keycloak-js": "^26.2.2",
+    "lit": "^3.1.0",
+    "lit-element": "^4.0.0",
+    "lit-html": "^3.1.0",
     "patternfly": "^3.59.5",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",

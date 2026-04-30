@@ -1,0 +1,59 @@
+[
+  {
+    "label": "personalInfo",
+    "path": "",
+    "component": "kc-personal-info",
+    "modulePath": "./pages/personal-info.js"
+  },
+  {
+    "label": "accountSecurity",
+    "children": [
+      {
+        "label": "signingIn",
+        "path": "account-security/signing-in",
+        "component": "kc-signing-in",
+        "modulePath": "./pages/signing-in.js"
+      },
+      {
+        "label": "deviceActivity",
+        "path": "account-security/device-activity",
+        "component": "kc-device-activity",
+        "modulePath": "./pages/device-activity.js"
+      },
+      {
+        "label": "linkedAccounts",
+        "path": "account-security/linked-accounts",
+        "component": "kc-linked-accounts",
+        "modulePath": "./pages/linked-accounts.js",
+        "isVisible": "isLinkedAccountsEnabled"
+      }
+    ]
+  },
+  {
+    "label": "applications",
+    "path": "applications",
+    "component": "kc-applications",
+    "modulePath": "./pages/applications.js"
+  },
+  {
+    "label": "groups",
+    "path": "groups",
+    "component": "kc-groups",
+    "modulePath": "./pages/groups.js",
+    "isVisible": "isViewGroupsEnabled"
+  },
+  {
+    "label": "organizations",
+    "path": "organizations",
+    "component": "kc-organizations",
+    "modulePath": "./pages/organizations.js",
+    "isVisible": "isViewOrganizationsEnabled"
+  },
+  {
+    "label": "resources",
+    "path": "resources",
+    "component": "kc-resources",
+    "modulePath": "./pages/resources.js",
+    "isVisible": "isMyResourcesEnabled"
+  }
+]
