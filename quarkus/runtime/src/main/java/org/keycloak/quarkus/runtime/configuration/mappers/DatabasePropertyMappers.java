@@ -4,6 +4,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -18,6 +19,7 @@ import org.keycloak.config.DatabaseOptions;
 import org.keycloak.config.Option;
 import org.keycloak.config.OptionsUtil;
 import org.keycloak.config.TransactionOptions;
+import org.keycloak.config.WildcardOptionsUtil;
 import org.keycloak.config.database.Database;
 import org.keycloak.config.database.Database.Vendor;
 import org.keycloak.quarkus.runtime.cli.Picocli;
@@ -32,6 +34,7 @@ import io.smallrye.config.ConfigValue;
 import org.jboss.logging.Logger;
 
 import static org.keycloak.config.DatabaseOptions.DB;
+import static org.keycloak.config.DatabaseOptions.DB_KIND;
 import static org.keycloak.config.DatabaseOptions.DB_MTLS_KEY_STORE_FILE;
 import static org.keycloak.config.DatabaseOptions.DB_MTLS_KEY_STORE_PASSWORD;
 import static org.keycloak.config.DatabaseOptions.DB_MTLS_KEY_STORE_TYPE;
@@ -42,10 +45,6 @@ import static org.keycloak.config.DatabaseOptions.DB_TLS_TRUST_STORE_FILE;
 import static org.keycloak.config.DatabaseOptions.DB_TLS_TRUST_STORE_PASSWORD;
 import static org.keycloak.config.DatabaseOptions.DB_TLS_TRUST_STORE_TYPE;
 import static org.keycloak.config.DatabaseOptions.DB_URL;
-import static org.keycloak.config.DatabaseOptions.Datasources.OPTIONS_DATASOURCES;
-import static org.keycloak.config.DatabaseOptions.Datasources.getDatasourceOption;
-import static org.keycloak.config.DatabaseOptions.Datasources.getKeyForDatasource;
-import static org.keycloak.config.DatabaseOptions.Datasources.getNamedKey;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.getOptionalKcValue;
 import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX;
 import static org.keycloak.quarkus.runtime.configuration.mappers.DatabasePropertyMappers.Datasources.appendDatasourceMappers;
@@ -72,7 +71,7 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
 
     @Override
     public List<PropertyMapper<?>> getPropertyMappers() {
-        List<PropertyMapper<?>> mappers = List.of(
+        List<PropertyMapper<?>> allSourceMappers = List.of(
                 fromOption(DatabaseOptions.DB_DIALECT)
                         .mapFrom(DB, DatabasePropertyMappers::transformDialect)
                         .build(),
@@ -80,11 +79,6 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
                         .mapFrom(DB, DatabasePropertyMappers::getXaOrNonXaDriver)
                         .to("quarkus.datasource.jdbc.driver")
                         .paramLabel("driver")
-                        .build(),
-                fromOption(DB)
-                        .to("quarkus.datasource.db-kind")
-                        .transformer(DatabasePropertyMappers::toDatabaseKind)
-                        .paramLabel("vendor")
                         .build(),
                 fromOption(DatabaseOptions.DB_URL)
                         .to("quarkus.datasource.jdbc.url")
@@ -149,18 +143,10 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
                         .to("quarkus.datasource.jdbc.max-size")
                         .paramLabel("size")
                         .build(),
-                fromOption(DatabaseOptions.DB_POOL_MAX_LIFETIME)
-                        .to("quarkus.datasource.jdbc.max-lifetime")
-                        .mapFrom(DB, DatabasePropertyMappers::transformPoolMaxLifetime)
-                        .paramLabel("duration")
-                        .build(),
                 fromOption(DatabaseOptions.DB_SQL_JPA_DEBUG)
                         .build(),
                 fromOption(DatabaseOptions.DB_SQL_LOG_SLOW_QUERIES)
                         .paramLabel("milliseconds")
-                        .build(),
-                fromOption(DatabaseOptions.DB_ENABLED_DATASOURCE)
-                        .to("quarkus.datasource.\"<datasource>\".active")
                         .build(),
                 // Database TLS configuration
                 fromOption(DB_TLS_MODE)
@@ -240,16 +226,33 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
                 setInputTlsJdbcProperty(DB_MTLS_KEY_STORE_PASSWORD, "sslpassword", EnumSet.of(Database.Vendor.POSTGRES))
         );
 
-        List<PropertyMapper<?>> result = appendDatasourceMappers(mappers, Map.of(
+        List<PropertyMapper<?>> result = appendDatasourceMappers(allSourceMappers, Map.of(
                 // Inherit options from the DB mappers
-                DB, PropertyMapper.Builder::removeMapFrom,
                 DB_POOL_INITIAL_SIZE, mapper -> mapper.mapFrom(DB_POOL_INITIAL_SIZE),
                 DB_POOL_MAX_SIZE, mapper -> mapper.mapFrom(DB_POOL_MAX_SIZE)
         ));
 
-        // finally add mappers that aren't intended to work with other datasources
+        // finally add mappers that aren't intended to work with all datasources
         // - also this usage of isEnabled won't work correctly with wildcard mappers
         result.addAll(List.of(
+                fromOption(DB)
+                        .to("quarkus.datasource.db-kind")
+                        .transformer(DatabasePropertyMappers::toDatabaseKind)
+                        .paramLabel("vendor")
+                        .build(),
+                fromOption(DB_KIND)
+                        .to("quarkus.datasource.\"<datasource>\".db-kind")
+                        .transformer(DatabasePropertyMappers::toDatabaseKind)
+                        .paramLabel("vendor")
+                        .build(),
+                fromOption(DatabaseOptions.DB_POOL_MAX_LIFETIME)
+                        .to("quarkus.datasource.jdbc.max-lifetime")
+                        .mapFrom(DB, DatabasePropertyMappers::transformPoolMaxLifetime)
+                        .paramLabel("duration")
+                        .build(),
+                fromOption(DatabaseOptions.DB_ENABLED_DATASOURCE)
+                        .to("quarkus.datasource.\"<datasource>\".active")
+                        .build(),
                 fromOption(SYNTHETIC_RUNTIME_DB_OPTION).mapFrom(DB, (name, value, context) -> "primary")
                         .to(PG_TARGET_SERVER_TYPE)
                         .isEnabled(DatabasePropertyMappers::isPostgresqlTargetServerTypeEnabled)
@@ -362,62 +365,8 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
         return String.valueOf(DurationConverter.parseDuration(value).toSeconds());
     }
 
-    /**
-     * Starting with H2 version 2.x, marking "VALUE" as a non-keyword is necessary as some columns are named "VALUE" in the Keycloak schema.
-     * <p />
-     * Alternatives considered and rejected:
-     * <ul>
-     * <li>customizing H2 Database dialect -&gt; wouldn't work for existing Liquibase scripts.</li>
-     * <li>adding quotes to <code>@Column(name="VALUE")</code> annotations -&gt; would require testing for all DBs, wouldn't work for existing Liquibase scripts.</li>
-     * </ul>
-     * Downsides of this solution: Release notes needed to point out that any H2 JDBC URL parameter with <code>NON_KEYWORDS</code> needs to add the keyword <code>VALUE</code> manually.
-     * @return JDBC URL with <code>NON_KEYWORDS=VALUE</code> appended if the URL doesn't contain <code>NON_KEYWORDS=</code> yet
-     */
-    private static String addH2NonKeywords(String jdbcUrl) {
-        if (!jdbcUrl.contains("NON_KEYWORDS=")) {
-            jdbcUrl = jdbcUrl + ";NON_KEYWORDS=VALUE";
-        }
-        return jdbcUrl;
-    }
-
-    /**
-     * Required so that the H2 db instance is closed only when the Agroal connection pool is closed during
-     * Keycloak shutdown. We cannot rely on the default H2 ShutdownHook as this can result in the DB being
-     * closed before dependent resources, e.g. JDBC_PING2, are shutdown gracefully. This solution also
-     * requires the Agroal min-pool connection size to be at least 1.
-     */
-    private static String addH2CloseOnExit(String jdbcUrl) {
-        if (!jdbcUrl.contains("DB_CLOSE_ON_EXIT=")) {
-            jdbcUrl = jdbcUrl + ";DB_CLOSE_ON_EXIT=FALSE";
-        }
-        if (!jdbcUrl.contains("DB_CLOSE_DELAY=")) {
-            jdbcUrl = jdbcUrl + ";DB_CLOSE_DELAY=0";
-        }
-        return jdbcUrl;
-    }
-
-    private static String amendH2(String jdbcUrl) {
-        return addH2CloseOnExit(addH2NonKeywords(jdbcUrl));
-    }
-
-    private static String getDatabaseUrl(String name, String value, ConfigSourceInterceptorContext c) {
-        String url = Database.getDefaultUrl(name, value).orElse(null);
-        if (isDevModeDatabase(value)) {
-            String key = Optional.ofNullable(name).map(
-                            n -> DatabaseOptions.Datasources.getNamedKey(DatabaseOptions.DB_URL_PROPERTIES, n).orElseThrow())
-                    .orElse(DatabaseOptions.DB_URL_PROPERTIES.getKey());
-            String urlProps = Configuration.getKcConfigValue(key).getValue();
-            if (urlProps != null) {
-                url += urlProps;
-            }
-            url = amendH2(url);
-        } else if (Database.getVendor(value).filter(Vendor.ORACLE::equals).isPresent()) {
-            var tlsMode = getDatabaseTlsMode(name);
-            if (tlsMode != DatabaseOptions.DatabaseTlsMode.DISABLED) {
-                url = Database.ORACLE_URL_PREFIX + "tcps:" + url.substring(Database.ORACLE_URL_PREFIX.length());
-            }
-        }
-        return url;
+    private static String getDatabaseUrl(String name, String value, ConfigSourceInterceptorContext c) {        
+        return Database.getDefaultUrl(option -> getDatasourceOptionValue(option, name).orElse(null), name, value).orElse(null);
     }
 
     private static String getXaOrNonXaDriver(String name, String value, ConfigSourceInterceptorContext context) {
@@ -458,31 +407,33 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
         };
     }
 
-    public static final class Datasources {
+    public static final class Datasources extends org.keycloak.config.DatabaseOptions.Datasources {
 
         /**
          * Automatically create mappers for datasource options
          */
         static List<PropertyMapper<?>> appendDatasourceMappers(List<PropertyMapper<?>> mappers, Map<Option<?>, Consumer<PropertyMapper.Builder<?>>> transformDatasourceMappers) {
-            List<PropertyMapper<?>> datasourceMappers = new ArrayList<>(OPTIONS_DATASOURCES.size() + mappers.size());
+            List<PropertyMapper<?>> datasourceMappers = new ArrayList<>(mappers.size() * 2);
 
+            Map<String, Option<?>> cachedDatasourceOptions = new HashMap<>();
+            cachedDatasourceOptions.put(DB.getKey(), DB_KIND);
+            mappers.stream().map(PropertyMapper::getOption).forEach(o -> cachedDatasourceOptions.computeIfAbsent(o.getKey(), k -> getDatasourceOption(o)));
+            
             for (var parent : mappers) {
                 var parentOption = parent.getOption();
 
-                var datasourceOption = getDatasourceOption(parentOption);
-                if (datasourceOption.isEmpty()) {
-                    log.debugf("No datasource option found for '%s'", parentOption.getKey());
-                    continue;
-                }
+                var datasourceOption = cachedDatasourceOptions.get(parentOption.getKey());
 
-                var created = fromOption(datasourceOption.get())
+                var created = fromOption(datasourceOption)
                         .isMasked(parent.isMask())
                         .transformer(parent.getMapper());
 
                 if (parent.getMapFrom() != null) {
-                    var wildcardMapFromOption = getKeyForDatasource(parent.getMapFrom())
-                            .orElseThrow(() -> new IllegalArgumentException("Option '%s' in mapFrom() method for mapper '%s' does not have any associated wildcard option".formatted(parent.getMapFrom(), datasourceOption.get().getKey())));
-                    created.wildcardMapFrom(wildcardMapFromOption, parent.getParentMapper() != null ? (name, value, context) -> parent.getParentMapper().map(name, value, context) : null);
+                    Option<?> mapFrom = cachedDatasourceOptions.get(parent.getMapFrom());
+                    if (mapFrom == null) {
+                        throw new IllegalArgumentException("Option '%s' in mapFrom() method for mapper '%s' does not have any associated wildcard option".formatted(parent.getMapFrom(), datasourceOption.getKey()));
+                    }
+                    created.wildcardMapFrom(mapFrom, parent.getParentMapper() != null ? (name, value, context) -> parent.getParentMapper().map(name, value, context) : null);
                 }
 
                 if (parent.getParamLabel() != null) {
@@ -499,7 +450,7 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
                     customTransformer.accept(created);
                 }
 
-                Option<String> primaryOption = getDatasourceOption(DB).orElseThrow();
+                Option<String> primaryOption = DB_KIND;
 
                 PropertyMapper<?> mapper = created.build();
                 // if we're not the DB option, nor mapped directly from the DB option, then
@@ -613,12 +564,11 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
         return findTlsTrustStoreFile(datasource).isEmpty() ? value : null;
     }
 
-    private static Optional<String> getDatasourceOptionValue(Option<?> opt, String datasource) {
-        var option = datasource == null ?
-                Optional.of(opt.getKey()) :
-                getNamedKey(opt, datasource);
-        return option.map(Configuration::getKcConfigValue)
-                .map(ConfigValue::getValue);
+    public static Optional<String> getDatasourceOptionValue(Option<?> opt, String datasource) {
+        if (datasource == null) {
+            return Configuration.getOptionalKcValue(opt);
+        }
+        return opt.getWildcardKey().map(k -> WildcardOptionsUtil.getWildcardNamedKey(k, datasource)).flatMap(Configuration::getOptionalKcValue);
     }
 
     private static Optional<String> findDatabaseUrl(String datasource) {
@@ -631,7 +581,6 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
 
     private static DatabaseOptions.DatabaseTlsMode getDatabaseTlsMode(String datasource) {
         return getDatasourceOptionValue(DB_TLS_MODE, datasource)
-                .map(String::toUpperCase)
                 .map(DatabaseOptions.DatabaseTlsMode::fromCliValue)
                 .orElse(DatabaseOptions.DatabaseTlsMode.DISABLED);
     }

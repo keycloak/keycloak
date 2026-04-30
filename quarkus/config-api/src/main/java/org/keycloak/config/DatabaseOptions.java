@@ -2,17 +2,10 @@ package org.keycloak.config;
 
 import java.io.File;
 import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.function.Consumer;
-import java.util.stream.Stream;
 
 import org.keycloak.config.database.Database;
 
 import static org.keycloak.config.OptionsUtil.DURATION_DESCRIPTION;
-import static org.keycloak.config.WildcardOptionsUtil.getWildcardNamedKey;
 
 public class DatabaseOptions {
 
@@ -27,12 +20,21 @@ public class DatabaseOptions {
             .description("The fully qualified class name of the JDBC driver. If not set, a default driver is set accordingly to the chosen database.")
             .buildTime(true)
             .build();
+    
+    public static final Option<String> DB_KIND = new OptionBuilder<>("db-kind-<datasource>", String.class)
+            .category(OptionCategory.DATABASE_DATASOURCES)
+            .description("Used for named <datasource>. The database vendor.")
+            .expectedValues(Database.getDatabaseAliases())
+            .connectedOptions(TransactionOptions.TRANSACTION_XA_ENABLED_DATASOURCE)
+            .buildTime(true)
+            .build();
 
     public static final Option<String> DB = new OptionBuilder<>("db", String.class)
             .category(OptionCategory.DATABASE)
             .description("The database vendor. In production mode the default value of 'dev-file' is deprecated, you should explicitly specify the db instead.")
             .defaultValue("dev-file")
             .expectedValues(Database.getDatabaseAliases())
+            .wildcardKey(DB_KIND.getKey())
             .buildTime(true)
             .build();
 
@@ -40,6 +42,7 @@ public class DatabaseOptions {
             .category(OptionCategory.DATABASE)
             .description("The full database JDBC URL. If not provided, a default URL is set based on the selected database vendor. " +
                     "For instance, if using 'postgres', the default JDBC URL would be 'jdbc:postgresql://localhost/keycloak'. ")
+            .wildcardKey("db-url-full-<datasource>")
             .build();
 
     public static final Option<String> DB_URL_HOST = new OptionBuilder<>("db-url-host", String.class)
@@ -165,57 +168,7 @@ public class DatabaseOptions {
             .description("The type of the keystore file. Common values include 'JKS' (Java KeyStore) and 'PKCS12'. If not specified, it uses the driver's default.")
             .build();
 
-    public static final class Datasources {
-        /**
-         * Options that have their sibling for a named datasource
-         * Example: for `db-dialect`, `db-dialect-<datasource>` is created
-         */
-        public static final List<String> OPTIONS_DATASOURCES = Stream.of(
-                DB_CONNECT_TIMEOUT,
-                DB_DIALECT,
-                DB_DRIVER,
-                DB,
-                DB_URL,
-                DB_URL_HOST,
-                DB_URL_DATABASE,
-                DB_URL_PORT,
-                DB_URL_PROPERTIES,
-                DB_USERNAME,
-                DB_PASSWORD,
-                DB_SCHEMA,
-                DB_POOL_INITIAL_SIZE,
-                DB_POOL_MIN_SIZE,
-                DB_POOL_MAX_SIZE,
-                DB_SQL_JPA_DEBUG,
-                DB_SQL_LOG_SLOW_QUERIES,
-                DB_TLS_MODE,
-                DB_TLS_TRUST_STORE_FILE,
-                DB_TLS_TRUST_STORE_PASSWORD,
-                DB_TLS_TRUST_STORE_TYPE,
-                DB_MTLS_KEY_STORE_FILE,
-                DB_MTLS_KEY_STORE_PASSWORD,
-                DB_MTLS_KEY_STORE_TYPE
-        ).map(Option::getKey).toList();
-
-        /**
-         * In order to avoid ambiguity, we need to have unique option names for wildcard options.
-         * This map controls overriding option name to be unique for wildcard option.
-         */
-        private static final Map<String, String> DATASOURCES_OVERRIDES_SUFFIX = Map.of(
-                DatabaseOptions.DB.getKey(), "-kind", // db-kind
-                DatabaseOptions.DB_URL.getKey(), "-full"  // db-url-full
-        );
-
-        /**
-         * You can override some {@link OptionBuilder} methods for additional datasources in this map
-         */
-        private static final Map<Option<?>, Consumer<OptionBuilder<?>>> DATASOURCES_OVERRIDES_OPTIONS = Map.of(
-                DatabaseOptions.DB, builder -> builder
-                        .defaultValue(Optional.empty()) // no default value for DB kind for datasources
-                        .connectedOptions(TransactionOptions.TRANSACTION_XA_ENABLED_DATASOURCE)
-        );
-
-        private static final Map<String, Option<?>> cachedDatasourceOptions = new HashMap<>();
+    public static class Datasources {
 
         /**
          * Get datasource option containing named datasource mapped to parent DB options.
@@ -224,72 +177,22 @@ public class DatabaseOptions {
          * <ul>
          *     <li>{@code db-url-host --> db-url-host-<datasource>}</li>
          *     <li>{@code db-username --> db-username-<datasource>}</li>
-         *     <li>{@code db --> db-kind-<datasource>}</li>
          * </ul>
          */
         @SuppressWarnings("unchecked")
-        public static <T> Optional<Option<T>> getDatasourceOption(Option<T> parentOption) {
-            if (!OPTIONS_DATASOURCES.contains(parentOption.getKey())) {
-                return Optional.empty();
+        protected static <T> Option<T> getDatasourceOption(Option<T> parentOption) {
+            var key = parentOption.getWildcardKey().orElse(parentOption.getKey().concat("-<datasource>"));
+            var builder = parentOption.toBuilder()
+                    .key(key)
+                    .category(OptionCategory.DATABASE_DATASOURCES);
+
+            if (!parentOption.isHidden()) {
+                builder.description("Used for named <datasource>. " + parentOption.getDescription());
             }
 
-            var key = getKeyForDatasource(parentOption);
-            if (key.isEmpty()) {
-                return Optional.empty();
-            }
-
-            // check if we already created the same option and return it from the cache
-            Option<?> option = cachedDatasourceOptions.get(key.get());
-
-            if (option == null) {
-                var builder = parentOption.toBuilder()
-                        .key(key.get())
-                        .category(OptionCategory.DATABASE_DATASOURCES);
-
-                if (!parentOption.isHidden()) {
-                    builder.description("Used for named <datasource>. " + parentOption.getDescription());
-                }
-
-                // override some settings for options
-                var override = DATASOURCES_OVERRIDES_OPTIONS.get(parentOption);
-                if (override != null) {
-                    override.accept(builder);
-                }
-
-                option = builder.build();
-                parentOption.setWildcardKey(option.getKey());
-                cachedDatasourceOptions.put(key.get(), option);
-            }
-            return Optional.of((Option<T>) option);
-        }
-
-        /**
-         * Get mapped datasource key based on DB option {@param option}
-         */
-        public static Optional<String> getKeyForDatasource(Option<?> option) {
-            return getKeyForDatasource(option.getKey());
-        }
-
-    /**
-     * Get mapped datasource key based on DB option {@param option}
-     */
-    public static Optional<String> getKeyForDatasource(String option) {
-        return Optional.of(option)
-                .filter(OPTIONS_DATASOURCES::contains)
-                .map(key -> key.concat(DATASOURCES_OVERRIDES_SUFFIX.getOrDefault(key, "")))
-                .map(key -> key.concat("-<datasource>"));
-    }
-
-        /**
-         * Returns datasource option based on DB option {@code option} with actual wildcard value.
-         * It replaces the {@code <datasource>} with actual value in {@code namedProperty}.
-         * <p>
-         * f.e. Consider {@code option}={@link DatabaseOptions#DB_DRIVER}, and {@code namedProperty}=my-store.
-         * <p>
-         * Result: {@code db-driver-my-store}
-         */
-        public static Optional<String> getNamedKey(Option<?> option, String namedProperty) {
-            return getKeyForDatasource(option).map(key -> getWildcardNamedKey(key, namedProperty));
+            Option<?> option = builder.build();
+            parentOption.setWildcardKey(option.getKey());
+            return (Option<T>)option;
         }
     }
 

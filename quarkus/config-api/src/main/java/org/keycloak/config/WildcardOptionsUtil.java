@@ -75,27 +75,4 @@ public class WildcardOptionsUtil {
         return prefix != null ? prefix.concat(value) : null;
     }
 
-    /**
-     * Extracts the name that replaces the wildcard placeholder from a fully qualified configuration key.
-     * <p>
-     * Examples:
-     * <pre>{@code
-     * getWildcardValue(TracingOptions.TRACING_HEADER, "tracing-header-Authorization") → "Authorization"
-     * getWildcardValue(DatabaseOptions.DB_ENABLED_DATASOURCE, "db-enabled-my-store") → "my-store"
-     * getWildcardValue(DatabaseOptions.DB_ENABLED_DATASOURCE, "kc.db-enabled-my-store") → "my-store"
-     * }</pre>
-     *
-     * @param option   the option containing a wildcard key
-     * @param namedKey the fully qualified (resolved) configuration key
-     * @return the part of {@code namedKey} that replaces the wildcard in {@code option.getKey()}, otherwise {@code null}
-     */
-    public static String getWildcardValue(Option<?> option, String namedKey) {
-        if (option == null || namedKey == null) {
-            return null;
-        }
-
-        String key = namedKey.startsWith("kc.") ? namedKey.substring("kc.".length()) : namedKey;
-        String prefix = getWildcardPrefix(option.getKey());
-        return prefix != null && key.startsWith(prefix) ? key.substring(prefix.length()) : null;
-    }
 }
