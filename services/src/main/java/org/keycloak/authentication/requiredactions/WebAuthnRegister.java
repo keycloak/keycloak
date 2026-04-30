@@ -248,7 +248,7 @@ public class WebAuthnRegister implements RequiredActionProvider, CredentialRegis
                 .collect(Collectors.toSet());
         allOrigins.add(origin);
         Challenge challenge = new DefaultChallenge(context.getAuthenticationSession().getAuthNote(WebAuthnConstants.AUTH_CHALLENGE_NOTE));
-        ServerProperty serverProperty = new ServerProperty(allOrigins, rpId, challenge, null);
+        ServerProperty serverProperty = new ServerProperty(allOrigins, rpId, challenge);
         // check User Verification by considering a malicious user might modify the result of calling WebAuthn API
         boolean isUserVerificationRequired = policy.getUserVerificationRequirement().equals(Constants.WEBAUTHN_POLICY_OPTION_REQUIRED);
 
