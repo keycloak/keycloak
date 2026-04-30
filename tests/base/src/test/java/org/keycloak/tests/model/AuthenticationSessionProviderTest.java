@@ -46,6 +46,8 @@ import org.keycloak.testframework.remote.providers.timeoffset.InfinispanTimeUtil
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 
+import org.testcontainers.shaded.org.awaitility.Awaitility;
+
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
@@ -263,7 +265,10 @@ public class AuthenticationSessionProviderTest {
             RootAuthenticationSessionModel authSession = currentSession.authenticationSessions().getRootAuthenticationSession(realm, authSessionID.get());
 
             assertThat(authSession, notNullValue());
-            assertThat(currentSession.authenticationSessions().getRootAuthenticationSession(realm, authSessionID2.get()), nullValue());
+            // Realm removal is handled asynchronously when clearing caches
+            Awaitility.await().untilAsserted(() ->
+                    assertThat(currentSession.authenticationSessions().getRootAuthenticationSession(realm, authSessionID2.get()), nullValue())
+            );
         });
     }
 
