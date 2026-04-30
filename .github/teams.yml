@@ -1,4 +1,5 @@
 team/cloud-native:
+  - area/admin/api-v2
   - area/admin/cli
   - area/dist/quarkus
   - area/operator
