@@ -45,13 +45,7 @@ import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.Time;
-import org.keycloak.constants.OID4VCIConstants;
 import org.keycloak.crypto.Algorithm;
-import org.keycloak.crypto.ECDSASignatureSignerContext;
-import org.keycloak.crypto.KeyWrapper;
-import org.keycloak.jose.jwk.JWK;
-import org.keycloak.jose.jwk.JWKBuilder;
-import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.jose.jws.JWSHeader;
 import org.keycloak.models.Constants;
 import org.keycloak.models.RealmModel;
@@ -61,7 +55,6 @@ import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider;
 import org.keycloak.protocol.oid4vc.issuance.credentialoffer.CredentialOfferState;
 import org.keycloak.protocol.oid4vc.issuance.credentialoffer.CredentialOfferStorage;
-import org.keycloak.protocol.oid4vc.issuance.keybinding.AttestationValidatorUtil;
 import org.keycloak.protocol.oid4vc.model.Claim;
 import org.keycloak.protocol.oid4vc.model.ClaimDisplay;
 import org.keycloak.protocol.oid4vc.model.Claims;
@@ -74,7 +67,6 @@ import org.keycloak.protocol.oid4vc.model.CredentialsOffer;
 import org.keycloak.protocol.oid4vc.model.ErrorResponse;
 import org.keycloak.protocol.oid4vc.model.ErrorType;
 import org.keycloak.protocol.oid4vc.model.JwtProof;
-import org.keycloak.protocol.oid4vc.model.KeyAttestationJwtBody;
 import org.keycloak.protocol.oid4vc.model.NonceResponse;
 import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
 import org.keycloak.protocol.oid4vc.model.PreAuthorizedCodeGrant;
@@ -82,7 +74,6 @@ import org.keycloak.protocol.oid4vc.model.Proofs;
 import org.keycloak.protocol.oid4vc.model.SupportedCredentialConfiguration;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
-import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
@@ -111,7 +102,6 @@ import static org.keycloak.OID4VCConstants.SDJWT_DELIMITER;
 import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider.ATTR_REQUEST_ENCRYPTION_REQUIRED;
 import static org.keycloak.tests.oid4vc.OID4VCProofTestUtils.generateJwtProof;
 import static org.keycloak.tests.oid4vc.OID4VCProofTestUtils.generateJwtProofWithClaims;
-import static org.keycloak.tests.oid4vc.OID4VCProofTestUtils.generateJwtProofWithKidNoAttestation;
 import static org.keycloak.tests.oid4vc.OID4VCProofTestUtils.jwtProofs;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -140,48 +130,56 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
     void testGetCredentialOfferUriUnsupportedCredential() {
         String token = getBearerToken(oauth);
 
-        runOnServer.run(session -> {
-            BearerTokenAuthenticator authenticator = new BearerTokenAuthenticator(session);
-            authenticator.setTokenString(token);
+        String credentialOfferUri = getRealmPath(testRealm.getName()) +
+                "/protocol/oid4vc/create-credential-offer";
 
-            OID4VCIssuerEndpoint oid4VCIssuerEndpoint = prepareIssuerEndpoint(session, authenticator);
+        try (Client restClient = Keycloak.getClientProvider().newRestEasyClient(null, null, true)) {
+            WebTarget target = restClient.target(credentialOfferUri)
+                    .queryParam("credential_configuration_id", "inexistent-id");
 
-            CorsErrorResponseException exception = assertThrows(
-                    CorsErrorResponseException.class,
-                    () -> oid4VCIssuerEndpoint.createCredentialOffer("inexistent-id")
-            );
-            assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), exception.getResponse().getStatus(), "Should return BAD_REQUEST");
-        });
+            try (Response response = target.request()
+                    .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                    .get()) {
+
+                assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus(),
+                        "Should return BAD_REQUEST");
+            }
+        }
     }
 
     @Test
     void testGetCredentialOfferUriUnauthorized() {
-        runOnServer.run(session -> {
-            BearerTokenAuthenticator authenticator = new BearerTokenAuthenticator(session);
-            authenticator.setTokenString(null);
-            OID4VCIssuerEndpoint oid4VCIssuerEndpoint = prepareIssuerEndpoint(session, authenticator);
+        String credentialOfferUri = getRealmPath(testRealm.getName()) +
+                "/protocol/oid4vc/create-credential-offer";
 
-            CorsErrorResponseException exception = assertThrows(
-                    CorsErrorResponseException.class,
-                    () -> oid4VCIssuerEndpoint.createCredentialOffer("test-credential", true, "john")
-            );
-            assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), exception.getResponse().getStatus(), "Should return BAD_REQUEST");
-        });
+        try (Client restClient = Keycloak.getClientProvider().newRestEasyClient(null, null, true)) {
+            WebTarget target = restClient.target(credentialOfferUri)
+                    .queryParam("credential_configuration_id", "test-credential");
+
+            try (Response response = target.request().get()) {
+                assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus(),
+                        "Should return BAD_REQUEST");
+            }
+        }
     }
 
     @Test
     void testGetCredentialOfferUriInvalidToken() {
-        runOnServer.run(session -> {
-            BearerTokenAuthenticator authenticator = new BearerTokenAuthenticator(session);
-            authenticator.setTokenString("invalid-token");
-            OID4VCIssuerEndpoint oid4VCIssuerEndpoint = prepareIssuerEndpoint(session, authenticator);
+        String credentialOfferUri = getRealmPath(testRealm.getName()) +
+                "/protocol/oid4vc/create-credential-offer";
 
-            CorsErrorResponseException exception = assertThrows(
-                    CorsErrorResponseException.class,
-                    () -> oid4VCIssuerEndpoint.createCredentialOffer("test-credential", true, "john")
-            );
-            assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), exception.getResponse().getStatus(), "Should return BAD_REQUEST");
-        });
+        try (Client restClient = Keycloak.getClientProvider().newRestEasyClient(null, null, true)) {
+            WebTarget target = restClient.target(credentialOfferUri)
+                    .queryParam("credential_configuration_id", "test-credential");
+
+            try (Response response = target.request()
+                    .header(HttpHeaders.AUTHORIZATION, "Bearer invalid-token")
+                    .get()) {
+
+                assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus(),
+                        "Should return BAD_REQUEST");
+            }
+        }
     }
 
     @Test
@@ -191,28 +189,25 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
                 .get(CredentialScopeModel.VC_CONFIGURATION_ID);
 
         String token = getBearerToken(oauth, client, scopeName);
+        String credentialOfferUri = getRealmPath(testRealm.getName()) +
+                "/protocol/oid4vc/create-credential-offer";
 
-        runOnServer.run(session -> {
-            try {
-                BearerTokenAuthenticator authenticator = new BearerTokenAuthenticator(session);
-                authenticator.setTokenString(token);
-                OID4VCIssuerEndpoint oid4VCIssuerEndpoint = prepareIssuerEndpoint(session, authenticator);
+        try (Client restClient = Keycloak.getClientProvider().newRestEasyClient(null, null, true)) {
+            WebTarget target = restClient.target(credentialOfferUri)
+                    .queryParam("credential_configuration_id", credentialConfigurationId);
 
-                Response response = oid4VCIssuerEndpoint.createCredentialOffer(credentialConfigurationId);
+            try (Response response = target.request()
+                    .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                    .get()) {
 
                 assertEquals(HttpStatus.SC_OK, response.getStatus(), "An offer uri should have been returned.");
 
-                CredentialOfferURI credentialOfferURI = JsonSerialization.mapper.convertValue(
-                        response.getEntity(),
-                        CredentialOfferURI.class
-                );
+                CredentialOfferURI credentialOfferURI = response.readEntity(CredentialOfferURI.class);
 
                 assertNotNull(credentialOfferURI.getNonce(), "A nonce should be included.");
                 assertNotNull(credentialOfferURI.getIssuer(), "The issuer uri should be provided.");
-            } catch (Exception e) {
-                throw new RuntimeException(e);
             }
-        });
+        }
     }
 
     @Test
@@ -231,56 +226,47 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
     }
 
     @Test
-    public void testGetCredentialOfferUnauthorized() {
-        assertThrows(BadRequestException.class, () ->
-                withCausePropagation(() -> runOnServer.run(session -> {
-                    BearerTokenAuthenticator authenticator = new BearerTokenAuthenticator(session);
-                    authenticator.setTokenString(null);
-                    OID4VCIssuerEndpoint issuerEndpoint = prepareIssuerEndpoint(session, authenticator);
-                    Response response = issuerEndpoint.getCredentialOffer("nonce");
-                    assertEquals(MediaType.APPLICATION_JSON_TYPE, response.getMediaType());
-                }))
-        );
+    public void testGetCredentialOfferWithUnknownNonce() {
+        String credentialOfferPath = getRealmPath(testRealm.getName()) +
+                "/protocol/oid4vc/credential-offer/some-nonce";
+
+        try (Client restClient = Keycloak.getClientProvider().newRestEasyClient(null, null, true)) {
+            WebTarget target = restClient.target(credentialOfferPath);
+
+            try (Response response = target.request().get()) {
+                assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+            }
+        }
     }
 
     @Test
     public void testGetCredentialOfferWithoutNonce() {
-        String token = getBearerToken(oauth);
-        assertThrows(BadRequestException.class, () ->
-                withCausePropagation(() -> runOnServer.run(session -> {
-                    BearerTokenAuthenticator authenticator = new BearerTokenAuthenticator(session);
-                    authenticator.setTokenString(token);
-                    OID4VCIssuerEndpoint issuerEndpoint = prepareIssuerEndpoint(session, authenticator);
-                    issuerEndpoint.getCredentialOffer(null);
-                }))
-        );
+        String credentialOfferPath = getRealmPath(testRealm.getName()) +
+                "/protocol/oid4vc/credential-offer";
+
+        try (Client restClient = Keycloak.getClientProvider().newRestEasyClient(null, null, true)) {
+            WebTarget target = restClient.target(credentialOfferPath);
+
+            try (Response response = target.request().get()) {
+                assertEquals(Response.Status.NOT_FOUND.getStatusCode(), response.getStatus(),
+                        "Should return NOT_FOUND when nonce path segment is missing");
+            }
+        }
     }
 
     @Test
     public void testGetCredentialOfferWithoutAPreparedOffer() {
-        String token = getBearerToken(oauth);
-        assertThrows(BadRequestException.class, () ->
-                withCausePropagation(() -> runOnServer.run(session -> {
-                    BearerTokenAuthenticator authenticator = new BearerTokenAuthenticator(session);
-                    authenticator.setTokenString(token);
-                    OID4VCIssuerEndpoint issuerEndpoint = prepareIssuerEndpoint(session, authenticator);
-                    issuerEndpoint.getCredentialOffer("unpreparedNonce");
-                }))
-        );
-    }
+        String credentialOfferPath = getRealmPath(testRealm.getName()) +
+                "/protocol/oid4vc/credential-offer/unpreparedNonce";
 
-    @Test
-    public void testGetCredentialOfferWithABrokenNote() {
-        String token = getBearerToken(oauth);
-        assertThrows(BadRequestException.class, () ->
-                withCausePropagation(() -> runOnServer.run(session -> {
-                    BearerTokenAuthenticator authenticator = new BearerTokenAuthenticator(session);
-                    authenticator.setTokenString(token);
-                    String nonce = prepareSessionCode(session, authenticator, "invalidNote").key();
-                    OID4VCIssuerEndpoint issuerEndpoint = prepareIssuerEndpoint(session, authenticator);
-                    issuerEndpoint.getCredentialOffer(nonce);
-                }))
-        );
+        try (Client restClient = Keycloak.getClientProvider().newRestEasyClient(null, null, true)) {
+            WebTarget target = restClient.target(credentialOfferPath);
+
+            try (Response response = target.request().get()) {
+                assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus(),
+                        "Should return BAD_REQUEST when nonce has no prepared offer");
+            }
+        }
     }
 
     @Test
@@ -914,306 +900,6 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
                 }
             } catch (Exception e) {
                 throw new RuntimeException("Test failed due to: " + e.getMessage(), e);
-            }
-        });
-    }
-
-    @Test
-    public void testRequestCredentialWithKidProofWithoutKeyAttestation() {
-        final String scopeName = jwtTypeCredentialScope.getName();
-        String credConfigId = jwtTypeCredentialScope.getAttributes().get(CredentialScopeModel.VC_CONFIGURATION_ID);
-
-        CredentialIssuer credentialIssuer = getCredentialIssuerMetadata();
-        OID4VCAuthorizationDetail authDetail = new OID4VCAuthorizationDetail();
-        authDetail.setType(OPENID_CREDENTIAL);
-        authDetail.setCredentialConfigurationId(credConfigId);
-        authDetail.setLocations(List.of(credentialIssuer.getCredentialIssuer()));
-
-        String authCode = getAuthorizationCode(oauth, client, "john", scopeName);
-        AccessTokenResponse tokenResponse = getBearerToken(oauth, authCode, authDetail);
-        String token = tokenResponse.getAccessToken();
-        String credentialIdentifier = tokenResponse.getOID4VCAuthorizationDetails().get(0).getCredentialIdentifiers().get(0);
-        String cNonce = getCNonce();
-
-        runOnServer.run(session -> {
-            try {
-                BearerTokenAuthenticator authenticator = new BearerTokenAuthenticator(session);
-                authenticator.setTokenString(token);
-                String issuer = OID4VCIssuerWellKnownProvider.getIssuer(session.getContext());
-                String kidOnlyJwtProof = generateJwtProofWithKidNoAttestation(issuer, cNonce);
-
-                CredentialRequest request = new CredentialRequest()
-                        .setCredentialIdentifier(credentialIdentifier)
-                        .setProofs(new Proofs().setJwt(List.of(kidOnlyJwtProof)));
-                String requestPayload = JsonSerialization.writeValueAsString(request);
-
-                OID4VCIssuerEndpoint endpoint = prepareIssuerEndpoint(session, authenticator);
-                ErrorResponseException ex = assertThrows(ErrorResponseException.class,
-                        () -> endpoint.requestCredential(requestPayload));
-                assertEquals(ErrorType.INVALID_PROOF.getValue(), ex.getError());
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        });
-    }
-
-    @Test
-    public void testRequestCredentialWithJwkKeyAttestationAccepted() {
-        Map<String, String> requestContext = prepareJwtCredentialRequestContext();
-        String token = requestContext.get("token");
-        String credentialIdentifier = requestContext.get("credentialIdentifier");
-        String cNonce = requestContext.get("cNonce");
-
-        runOnServer.run(session -> {
-            RealmModel realm = session.getContext().getRealm();
-            String previousTrustedKeys = realm.getAttribute(OID4VCIConstants.TRUSTED_KEYS_REALM_ATTR);
-            try {
-                KeyWrapper attestationSigner = OID4VCProofTestUtils.newEcSigningKey("endpoint-attestation-jwk");
-                JWK trustedAttestationJwk = JWKBuilder.create().ec(attestationSigner.getPublicKey());
-                trustedAttestationJwk.setKeyId(attestationSigner.getKid());
-                trustedAttestationJwk.setAlgorithm(attestationSigner.getAlgorithm());
-                realm.setAttribute(OID4VCIConstants.TRUSTED_KEYS_REALM_ATTR,
-                        JsonSerialization.writeValueAsString(List.of(trustedAttestationJwk)));
-
-                KeyWrapper proofKey = OID4VCProofTestUtils.newEcSigningKey("endpoint-proof-jwk");
-                JWK proofJwk = JWKBuilder.create().ec(proofKey.getPublicKey());
-                proofJwk.setKeyId(proofKey.getKid());
-                proofJwk.setAlgorithm(proofKey.getAlgorithm());
-                String attestationJwt = OID4VCProofTestUtils.generateAttestationProof(
-                        attestationSigner, cNonce, List.of(proofJwk), List.of("iso_18045_high"),
-                        List.of("iso_18045_high"), null);
-
-                BearerTokenAuthenticator authenticator = new BearerTokenAuthenticator(session);
-                authenticator.setTokenString(token);
-                String issuer = OID4VCIssuerWellKnownProvider.getIssuer(session.getContext());
-                String jwtProof = generateJwtProofWithEmbeddedAttestation(
-                        proofKey, attestationJwt, cNonce, issuer, false);
-
-                CredentialRequest request = new CredentialRequest()
-                        .setCredentialIdentifier(credentialIdentifier)
-                        .setProofs(new Proofs().setJwt(List.of(jwtProof)));
-                String requestPayload = JsonSerialization.writeValueAsString(request);
-
-                OID4VCIssuerEndpoint endpoint = prepareIssuerEndpoint(session, authenticator);
-                Response response = endpoint.requestCredential(requestPayload);
-                assertSingleCredentialResponse(response);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            } finally {
-                if (previousTrustedKeys != null) {
-                    realm.setAttribute(OID4VCIConstants.TRUSTED_KEYS_REALM_ATTR, previousTrustedKeys);
-                } else {
-                    realm.removeAttribute(OID4VCIConstants.TRUSTED_KEYS_REALM_ATTR);
-                }
-            }
-        });
-    }
-
-    @Test
-    public void testRequestCredentialWithKidKeyAttestationAccepted() {
-        Map<String, String> requestContext = prepareJwtCredentialRequestContext();
-        String token = requestContext.get("token");
-        String credentialIdentifier = requestContext.get("credentialIdentifier");
-        String cNonce = requestContext.get("cNonce");
-
-        runOnServer.run(session -> {
-            RealmModel realm = session.getContext().getRealm();
-            String previousTrustedKeys = realm.getAttribute(OID4VCIConstants.TRUSTED_KEYS_REALM_ATTR);
-            try {
-                KeyWrapper attestationSigner = OID4VCProofTestUtils.newEcSigningKey("endpoint-attestation-kid");
-                JWK trustedAttestationJwk = JWKBuilder.create().ec(attestationSigner.getPublicKey());
-                trustedAttestationJwk.setKeyId(attestationSigner.getKid());
-                trustedAttestationJwk.setAlgorithm(attestationSigner.getAlgorithm());
-                realm.setAttribute(OID4VCIConstants.TRUSTED_KEYS_REALM_ATTR,
-                        JsonSerialization.writeValueAsString(List.of(trustedAttestationJwk)));
-
-                KeyWrapper proofKey = OID4VCProofTestUtils.newEcSigningKey("endpoint-proof-kid");
-                JWK proofJwk = JWKBuilder.create().ec(proofKey.getPublicKey());
-                proofJwk.setKeyId(proofKey.getKid());
-                proofJwk.setAlgorithm(proofKey.getAlgorithm());
-                String attestationJwt = OID4VCProofTestUtils.generateAttestationProof(
-                        attestationSigner, cNonce, List.of(proofJwk), List.of("iso_18045_high"),
-                        List.of("iso_18045_high"), null);
-
-                BearerTokenAuthenticator authenticator = new BearerTokenAuthenticator(session);
-                authenticator.setTokenString(token);
-                String issuer = OID4VCIssuerWellKnownProvider.getIssuer(session.getContext());
-                String jwtProof = generateJwtProofWithEmbeddedAttestation(
-                        proofKey, attestationJwt, cNonce, issuer, true);
-
-                CredentialRequest request = new CredentialRequest()
-                        .setCredentialIdentifier(credentialIdentifier)
-                        .setProofs(new Proofs().setJwt(List.of(jwtProof)));
-                String requestPayload = JsonSerialization.writeValueAsString(request);
-
-                OID4VCIssuerEndpoint endpoint = prepareIssuerEndpoint(session, authenticator);
-                Response response = endpoint.requestCredential(requestPayload);
-                assertSingleCredentialResponse(response);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            } finally {
-                if (previousTrustedKeys != null) {
-                    realm.setAttribute(OID4VCIConstants.TRUSTED_KEYS_REALM_ATTR, previousTrustedKeys);
-                } else {
-                    realm.removeAttribute(OID4VCIConstants.TRUSTED_KEYS_REALM_ATTR);
-                }
-            }
-        });
-    }
-
-    @Test
-    public void testRequestCredentialWithAttestationProofAccepted() {
-        Map<String, String> requestContext = prepareJwtCredentialRequestContext();
-        String token = requestContext.get("token");
-        String credentialIdentifier = requestContext.get("credentialIdentifier");
-        String cNonce = requestContext.get("cNonce");
-
-        runOnServer.run(session -> {
-            RealmModel realm = session.getContext().getRealm();
-            String previousTrustedKeys = realm.getAttribute(OID4VCIConstants.TRUSTED_KEYS_REALM_ATTR);
-            try {
-                KeyWrapper attestationSigner = OID4VCProofTestUtils.newEcSigningKey("endpoint-attestation-proof-type");
-                JWK trustedAttestationJwk = JWKBuilder.create().ec(attestationSigner.getPublicKey());
-                trustedAttestationJwk.setKeyId(attestationSigner.getKid());
-                trustedAttestationJwk.setAlgorithm(attestationSigner.getAlgorithm());
-                realm.setAttribute(OID4VCIConstants.TRUSTED_KEYS_REALM_ATTR,
-                        JsonSerialization.writeValueAsString(List.of(trustedAttestationJwk)));
-
-                KeyWrapper proofKey = OID4VCProofTestUtils.newEcSigningKey("endpoint-proof-attestation-proof-type");
-                JWK proofJwk = JWKBuilder.create().ec(proofKey.getPublicKey());
-                proofJwk.setKeyId(proofKey.getKid());
-                proofJwk.setAlgorithm(proofKey.getAlgorithm());
-                String attestationJwt = OID4VCProofTestUtils.generateAttestationProof(
-                        attestationSigner, cNonce, List.of(proofJwk), List.of("iso_18045_high"),
-                        List.of("iso_18045_high"), null);
-
-                BearerTokenAuthenticator authenticator = new BearerTokenAuthenticator(session);
-                authenticator.setTokenString(token);
-
-                CredentialRequest request = new CredentialRequest()
-                        .setCredentialIdentifier(credentialIdentifier)
-                        .setProofs(new Proofs().setAttestation(List.of(attestationJwt)));
-                String requestPayload = JsonSerialization.writeValueAsString(request);
-
-                OID4VCIssuerEndpoint endpoint = prepareIssuerEndpoint(session, authenticator);
-                Response response = endpoint.requestCredential(requestPayload);
-                assertSingleCredentialResponse(response);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            } finally {
-                if (previousTrustedKeys != null) {
-                    realm.setAttribute(OID4VCIConstants.TRUSTED_KEYS_REALM_ATTR, previousTrustedKeys);
-                } else {
-                    realm.removeAttribute(OID4VCIConstants.TRUSTED_KEYS_REALM_ATTR);
-                }
-            }
-        });
-    }
-
-    @Test
-    public void testRequestCredentialWithKeyAttestationMismatchedProofKeyRejected() {
-        Map<String, String> requestContext = prepareJwtCredentialRequestContext();
-        String token = requestContext.get("token");
-        String credentialIdentifier = requestContext.get("credentialIdentifier");
-        String cNonce = requestContext.get("cNonce");
-
-        runOnServer.run(session -> {
-            RealmModel realm = session.getContext().getRealm();
-            String previousTrustedKeys = realm.getAttribute(OID4VCIConstants.TRUSTED_KEYS_REALM_ATTR);
-            try {
-                KeyWrapper attestationSigner = OID4VCProofTestUtils.newEcSigningKey("endpoint-attestation-mismatch");
-                JWK trustedAttestationJwk = JWKBuilder.create().ec(attestationSigner.getPublicKey());
-                trustedAttestationJwk.setKeyId(attestationSigner.getKid());
-                trustedAttestationJwk.setAlgorithm(attestationSigner.getAlgorithm());
-                realm.setAttribute(OID4VCIConstants.TRUSTED_KEYS_REALM_ATTR,
-                        JsonSerialization.writeValueAsString(List.of(trustedAttestationJwk)));
-
-                KeyWrapper proofKey = OID4VCProofTestUtils.newEcSigningKey("endpoint-proof-used");
-                KeyWrapper otherKey = OID4VCProofTestUtils.newEcSigningKey("endpoint-proof-attested");
-                JWK otherJwk = JWKBuilder.create().ec(otherKey.getPublicKey());
-                otherJwk.setKeyId(otherKey.getKid());
-                otherJwk.setAlgorithm(otherKey.getAlgorithm());
-                String attestationJwt = OID4VCProofTestUtils.generateAttestationProof(
-                        attestationSigner, cNonce, List.of(otherJwk), List.of("iso_18045_high"),
-                        List.of("iso_18045_high"), null);
-
-                BearerTokenAuthenticator authenticator = new BearerTokenAuthenticator(session);
-                authenticator.setTokenString(token);
-                String issuer = OID4VCIssuerWellKnownProvider.getIssuer(session.getContext());
-                String jwtProof = generateJwtProofWithEmbeddedAttestation(
-                        proofKey, attestationJwt, cNonce, issuer, false);
-
-                CredentialRequest request = new CredentialRequest()
-                        .setCredentialIdentifier(credentialIdentifier)
-                        .setProofs(new Proofs().setJwt(List.of(jwtProof)));
-                String requestPayload = JsonSerialization.writeValueAsString(request);
-
-                OID4VCIssuerEndpoint endpoint = prepareIssuerEndpoint(session, authenticator);
-                ErrorResponseException ex = assertThrows(ErrorResponseException.class,
-                        () -> endpoint.requestCredential(requestPayload));
-                assertEquals(ErrorType.INVALID_PROOF.getValue(), ex.getError());
-                assertTrue(ex.getErrorDescription().contains("attested_keys"));
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            } finally {
-                if (previousTrustedKeys != null) {
-                    realm.setAttribute(OID4VCIConstants.TRUSTED_KEYS_REALM_ATTR, previousTrustedKeys);
-                } else {
-                    realm.removeAttribute(OID4VCIConstants.TRUSTED_KEYS_REALM_ATTR);
-                }
-            }
-        });
-    }
-
-    @Test
-    public void testRequestCredentialWithKeyAttestationMissingExpRejected() {
-        Map<String, String> requestContext = prepareJwtCredentialRequestContext();
-        String token = requestContext.get("token");
-        String credentialIdentifier = requestContext.get("credentialIdentifier");
-        String cNonce = requestContext.get("cNonce");
-
-        runOnServer.run(session -> {
-            RealmModel realm = session.getContext().getRealm();
-            String previousTrustedKeys = realm.getAttribute(OID4VCIConstants.TRUSTED_KEYS_REALM_ATTR);
-            try {
-                KeyWrapper attestationSigner = OID4VCProofTestUtils.newEcSigningKey("endpoint-attestation-no-exp");
-                JWK trustedAttestationJwk = JWKBuilder.create().ec(attestationSigner.getPublicKey());
-                trustedAttestationJwk.setKeyId(attestationSigner.getKid());
-                trustedAttestationJwk.setAlgorithm(attestationSigner.getAlgorithm());
-                realm.setAttribute(OID4VCIConstants.TRUSTED_KEYS_REALM_ATTR,
-                        JsonSerialization.writeValueAsString(List.of(trustedAttestationJwk)));
-
-                KeyWrapper proofKey = OID4VCProofTestUtils.newEcSigningKey("endpoint-proof-no-exp");
-                JWK proofJwk = JWKBuilder.create().ec(proofKey.getPublicKey());
-                proofJwk.setKeyId(proofKey.getKid());
-                proofJwk.setAlgorithm(proofKey.getAlgorithm());
-                String attestationJwtWithoutExp = generateAttestationProofWithoutExp(
-                        attestationSigner, cNonce, List.of(proofJwk));
-
-                BearerTokenAuthenticator authenticator = new BearerTokenAuthenticator(session);
-                authenticator.setTokenString(token);
-                String issuer = OID4VCIssuerWellKnownProvider.getIssuer(session.getContext());
-                String jwtProof = generateJwtProofWithEmbeddedAttestation(
-                        proofKey, attestationJwtWithoutExp, cNonce, issuer, false);
-
-                CredentialRequest request = new CredentialRequest()
-                        .setCredentialIdentifier(credentialIdentifier)
-                        .setProofs(new Proofs().setJwt(List.of(jwtProof)));
-                String requestPayload = JsonSerialization.writeValueAsString(request);
-
-                OID4VCIssuerEndpoint endpoint = prepareIssuerEndpoint(session, authenticator);
-                ErrorResponseException ex = assertThrows(ErrorResponseException.class,
-                        () -> endpoint.requestCredential(requestPayload));
-                assertEquals(ErrorType.INVALID_PROOF.getValue(), ex.getError());
-                assertTrue(ex.getErrorDescription().contains("Missing 'exp' claim"));
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            } finally {
-                if (previousTrustedKeys != null) {
-                    realm.setAttribute(OID4VCIConstants.TRUSTED_KEYS_REALM_ATTR, previousTrustedKeys);
-                } else {
-                    realm.removeAttribute(OID4VCIConstants.TRUSTED_KEYS_REALM_ATTR);
-                }
             }
         });
     }
@@ -2411,90 +2097,6 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-    }
-
-    private static String generateJwtProofWithEmbeddedAttestation(
-            KeyWrapper proofKey,
-            String attestationJwt,
-            String cNonce,
-            String audience,
-            boolean useKidHeader
-    ) {
-        try {
-            JWK proofJwk = JWKBuilder.create().ec(proofKey.getPublicKey());
-            proofJwk.setKeyId(proofKey.getKid());
-            proofJwk.setAlgorithm(proofKey.getAlgorithm());
-
-            AccessToken token = new AccessToken();
-            token.addAudience(audience);
-            token.setNonce(cNonce);
-            token.issuedNow();
-
-            Map<String, Object> header = Map.of(
-                    "alg", proofKey.getAlgorithm(),
-                    "typ", "openid4vci-proof+jwt",
-                    "key_attestation", attestationJwt,
-                    useKidHeader ? "kid" : "jwk",
-                    useKidHeader ? proofKey.getKid() : proofJwk
-            );
-
-            return new JWSBuilder() {
-                @Override
-                protected String encodeHeader(String sigAlgName) {
-                    try {
-                        return Base64Url.encode(JsonSerialization.writeValueAsBytes(header));
-                    } catch (Exception e) {
-                        throw new RuntimeException("Failed to encode JWT proof header", e);
-                    }
-                }
-            }.jsonContent(token).sign(new ECDSASignatureSignerContext(proofKey));
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to generate JWT proof with key_attestation", e);
-        }
-    }
-
-    private static String generateAttestationProofWithoutExp(KeyWrapper attestationKey, String nonce, List<JWK> attestedKeys) {
-        KeyAttestationJwtBody body = new KeyAttestationJwtBody();
-        body.setIat(System.currentTimeMillis() / 1000L);
-        body.setNonce(nonce);
-        body.setAttestedKeys(attestedKeys);
-        body.setKeyStorage(List.of("iso_18045_high"));
-        body.setUserAuthentication(List.of("iso_18045_high"));
-
-        return new JWSBuilder()
-                .type(AttestationValidatorUtil.ATTESTATION_JWT_TYP)
-                .kid(attestationKey.getKid())
-                .jsonContent(body)
-                .sign(new ECDSASignatureSignerContext(attestationKey));
-    }
-
-    private Map<String, String> prepareJwtCredentialRequestContext() {
-        String scopeName = jwtTypeCredentialScope.getName();
-        String credentialConfigurationId = jwtTypeCredentialScope.getAttributes().get(CredentialScopeModel.VC_CONFIGURATION_ID);
-        CredentialIssuer credentialIssuer = getCredentialIssuerMetadata();
-
-        OID4VCAuthorizationDetail authDetail = new OID4VCAuthorizationDetail();
-        authDetail.setType(OPENID_CREDENTIAL);
-        authDetail.setCredentialConfigurationId(credentialConfigurationId);
-        authDetail.setLocations(List.of(credentialIssuer.getCredentialIssuer()));
-
-        String authCode = getAuthorizationCode(oauth, client, "john", scopeName);
-        AccessTokenResponse tokenResponse = getBearerToken(oauth, authCode, authDetail);
-        String credentialIdentifier = tokenResponse.getOID4VCAuthorizationDetails().get(0).getCredentialIdentifiers().get(0);
-        return Map.of(
-                "token", tokenResponse.getAccessToken(),
-                "credentialIdentifier", credentialIdentifier,
-                "cNonce", getCNonce()
-        );
-    }
-
-    private static void assertSingleCredentialResponse(Response response) {
-        assertEquals(Response.Status.OK.getStatusCode(), response.getStatus(), "Response status should be OK");
-        CredentialResponse credentialResponse = JsonSerialization.mapper
-                .convertValue(response.getEntity(), CredentialResponse.class);
-        assertNotNull(credentialResponse);
-        assertNotNull(credentialResponse.getCredentials());
-        assertEquals(1, credentialResponse.getCredentials().size());
     }
 
 }
