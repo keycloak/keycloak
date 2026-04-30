@@ -28,7 +28,7 @@ import org.keycloak.rar.AuthorizationRequestContext;
  */
 public class AuthorizationEndpointRequest {
 
-    String invalidRequestMessage;
+    private String invalidRequestMessage;
 
     String clientId;
     String redirectUriParam;
@@ -152,8 +152,10 @@ public class AuthorizationEndpointRequest {
         return invalidRequestMessage;
     }
 
-    public void setInvalidRequestMessage(String invalidRequestMessage) {
-        this.invalidRequestMessage = invalidRequestMessage;
+    public void setInvalidRequestMessage(String message) {
+        if (invalidRequestMessage == null) {
+            invalidRequestMessage = message;
+        }
     }
 
     public String getUiLocales() {
