@@ -22,7 +22,8 @@ class KcAdmV2CommandBuilder {
     private static final String OPT_HELP = "--help";
     static final String OPT_FILE = "-f";
     static final String OPT_COMPRESSED = "--compressed";
-
+    private static final String CONNECTION_OPTIONS_HEADING = "%nConnection options:%n";
+    private static final String CMD_EDIT = "edit";
 
     static void addCommands(CommandLine cli, KcAdmV2CommandDescriptor descriptor) {
         for (ResourceDescriptor resource : descriptor.getResources()) {
@@ -35,8 +36,20 @@ class KcAdmV2CommandBuilder {
             CommandLine groupCli = new CommandLine(groupSpec);
             groupCommand.setSpec(groupSpec);
 
+            CommandDescriptor getDescriptor = null;
+            CommandDescriptor putDescriptor = null;
+
             for (CommandDescriptor cmd : resource.getCommands()) {
                 groupCli.addSubcommand(cmd.getName(), buildSubcommand(cmd));
+                if (KcAdmV2DescriptorBuilder.CMD_NAME_GET.equals(cmd.getName())) {
+                    getDescriptor = cmd;
+                } else if (KcAdmV2DescriptorBuilder.CMD_NAME_APPLY.equals(cmd.getName())) {
+                    putDescriptor = cmd;
+                }
+            }
+
+            if (getDescriptor != null && putDescriptor != null) {
+                groupCli.addSubcommand(CMD_EDIT, buildEditCommand(getDescriptor, putDescriptor));
             }
 
             cli.addSubcommand(resource.getName(), groupCli);
@@ -70,7 +83,7 @@ class KcAdmV2CommandBuilder {
         CommandSpec spec = CommandSpec.forAnnotatedObject(executor);
         spec.name(variant != null ? variant.getName() : cmd.getName());
         spec.usageMessage().description(cmd.getDescription());
-        spec.usageMessage().optionListHeading("%nConnection options:%n");
+        spec.usageMessage().optionListHeading(CONNECTION_OPTIONS_HEADING);
 
         // Replace inherited --help with usageHelp=true so PicoCLI skips
         // required parameter validation when --help is present
@@ -82,13 +95,7 @@ class KcAdmV2CommandBuilder {
         }
 
         if (!isVariantParent && cmd.isRequiresId()) {
-            spec.addPositional(PositionalParamSpec.builder()
-                    .index("0")
-                    .paramLabel("<id>")
-                    .description("Resource identifier")
-                    .required(true)
-                    .type(String.class)
-                    .build());
+            addIdPositional(spec, cmd.getResourceName());
         }
 
         boolean hasFieldOptions = options != null && !options.isEmpty();
@@ -145,6 +152,33 @@ class KcAdmV2CommandBuilder {
                 .paramLabel("<file>")
                 .description(description)
                 .build();
+    }
+
+    private static CommandLine buildEditCommand(CommandDescriptor getCmd, CommandDescriptor putCmd) {
+        String resourceName = getCmd.getResourceName();
+
+        KcAdmV2EditCmd executor = new KcAdmV2EditCmd(getCmd, putCmd);
+        CommandSpec spec = CommandSpec.forAnnotatedObject(executor);
+        spec.name(CMD_EDIT);
+        spec.usageMessage().description(KcAdmV2EditCmd.createDescription(resourceName));
+        spec.usageMessage().optionListHeading(CONNECTION_OPTIONS_HEADING);
+
+        spec.remove(spec.findOption(OPT_HELP));
+        addHelpOption(spec);
+        addOutputGroup(spec);
+        addIdPositional(spec, resourceName);
+
+        return new CommandLine(spec);
+    }
+
+    private static void addIdPositional(CommandSpec spec, String resourceName) {
+        spec.addPositional(PositionalParamSpec.builder()
+                .index("0")
+                .paramLabel("<id>")
+                .description(capitalize(resourceName) + " identifier")
+                .required(true)
+                .type(String.class)
+                .build());
     }
 
     private static void addOutputGroup(CommandSpec spec) {

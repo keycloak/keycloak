@@ -90,6 +90,67 @@ class KcAdmV2RequestExecutor extends AbstractTargetAuthOptionsCmd {
         }
     }
 
+    protected record RequestContext(ConfigData configData, String token) {}
+
+    protected final RequestContext prepareRequest() {
+        processOptions();
+
+        ConfigData configData = loadConfig();
+
+        // Apply CLI overrides onto config
+        if (server != null) {
+            configData.setServerUrl(server);
+        }
+        if (realm != null) {
+            configData.setRealm(realm);
+        }
+        if (externalToken != null) {
+            configData.setExternalToken(externalToken);
+        }
+
+        // Default realm to master if not set anywhere
+        if (configData.getRealm() == null) {
+            configData.setRealm(DEFAULT_REALM);
+        }
+
+        String v2Cmd = KcAdmMain.CMD + " " + KcAdmMain.V2_FLAG;
+
+        if (configData.getServerUrl() == null) {
+            throw new RuntimeException(
+                    "No server URL configured. Use --server or '" + v2Cmd + " config credentials' first.");
+        }
+        if (!configData.getServerUrl().startsWith("http://") && !configData.getServerUrl().startsWith("https://")) {
+            throw new RuntimeException(
+                    "Invalid server URL: " + configData.getServerUrl() + ". URL must start with http:// or https://");
+        }
+
+        setupTruststore(configData);
+
+        // Set fields so ensureAuthInfo/BaseConfigCredentialsCmd can use them
+        if (server == null) {
+            server = configData.getServerUrl();
+        }
+        if (realm == null) {
+            realm = configData.getRealm();
+        }
+
+        configData = ensureAuthInfo(configData);
+        configData = copyWithServerInfo(configData);
+
+        String token = null;
+        if (credentialsAvailable(configData)) {
+            token = ensureToken(configData);
+        }
+
+        String requestRealm = getTargetRealm(configData);
+        if (requestRealm == null) {
+            requestRealm = DEFAULT_REALM;
+        }
+        configData.setRealm(requestRealm);
+
+        return new RequestContext(configData, token);
+    }
+
     @Override
     public void run() {
         if (Globals.help) {
@@ -100,89 +161,22 @@ class KcAdmV2RequestExecutor extends AbstractTargetAuthOptionsCmd {
         PrintWriter out = spec.commandLine().getOut();
 
         try {
-            processOptions();
-
-            ConfigData configData = loadConfig();
-
-            // Apply CLI overrides onto config
-            if (server != null) {
-                configData.setServerUrl(server);
-            }
-            if (realm != null) {
-                configData.setRealm(realm);
-            }
-            if (externalToken != null) {
-                configData.setExternalToken(externalToken);
-            }
-
-            // Default realm to master if not set anywhere
-            if (configData.getRealm() == null) {
-                configData.setRealm(DEFAULT_REALM);
-            }
-
-            String v2Cmd = KcAdmMain.CMD + " " + KcAdmMain.V2_FLAG;
-
-            if (configData.getServerUrl() == null) {
-                throw new RuntimeException(
-                        "No server URL configured. Use --server or '" + v2Cmd + " config credentials' first.");
-            }
-            if (!configData.getServerUrl().startsWith("http://") && !configData.getServerUrl().startsWith("https://")) {
-                throw new RuntimeException(
-                        "Invalid server URL: " + configData.getServerUrl() + ". URL must start with http:// or https://");
-            }
-
-            setupTruststore(configData);
-
-            // Set fields so ensureAuthInfo/BaseConfigCredentialsCmd can use them
-            if (server == null) {
-                server = configData.getServerUrl();
-            }
-            if (realm == null) {
-                realm = configData.getRealm();
-            }
-
-            configData = ensureAuthInfo(configData);
-            configData = copyWithServerInfo(configData);
-
-            String token = null;
-            if (credentialsAvailable(configData)) {
-                token = ensureToken(configData);
-            }
-
-            String requestRealm = getTargetRealm(configData);
-            if (requestRealm == null) {
-                requestRealm = DEFAULT_REALM;
-            }
-            configData.setRealm(requestRealm);
+            RequestContext ctx = prepareRequest();
 
             String body = buildRequestBody();
             if (body == null && isVariantParent()) {
                 throw new RuntimeException(
                         "No file specified. Use -f/--file to provide a request body.");
             }
-            String url = buildUrl(configData, body);
+            String url = buildUrl(ctx.configData(), body);
 
-            Headers headers = new Headers();
-            if (token != null) {
-                headers.add(HttpHeaders.AUTHORIZATION, "Bearer " + token);
-            }
-            headers.add(HttpHeaders.ACCEPT, APPLICATION_JSON);
+            String contentType = body != null
+                    ? ("PATCH".equals(descriptor.getHttpMethod()) ? MERGE_PATCH_JSON : APPLICATION_JSON)
+                    : null;
 
-            InputStream bodyStream = null;
-            if (body != null) {
-                String contentType = "PATCH".equals(descriptor.getHttpMethod())
-                        ? MERGE_PATCH_JSON : APPLICATION_JSON;
-                headers.add(HttpHeaders.CONTENT_TYPE, contentType);
-                bodyStream = new ByteArrayInputStream(body.getBytes(StandardCharsets.UTF_8));
-            }
+            HeadersBodyStatus response = executeRequest(descriptor.getHttpMethod().toLowerCase(), url, ctx.token(), body,
+                    contentType);
 
-            HeadersBodyStatus response = HttpUtil.doRequest(
-                    descriptor.getHttpMethod().toLowerCase(),
-                    url,
-                    new HeadersBody(headers, bodyStream),
-                    true);
-
-            response.checkSuccess();
             String responseBody = response.getBody() != null ? readFully(response.getBody()) : "";
 
             if (!responseBody.isBlank()) {
@@ -198,7 +192,26 @@ class KcAdmV2RequestExecutor extends AbstractTargetAuthOptionsCmd {
         }
     }
 
-    private String buildUrl(ConfigData configData, String body) {
+    protected final HeadersBodyStatus executeRequest(String method, String url, String token,
+                                               String body, String contentType) throws IOException {
+        Headers headers = new Headers();
+        if (token != null) {
+            headers.add(HttpHeaders.AUTHORIZATION, "Bearer " + token);
+        }
+        headers.add(HttpHeaders.ACCEPT, APPLICATION_JSON);
+
+        InputStream bodyStream = null;
+        if (body != null) {
+            headers.add(HttpHeaders.CONTENT_TYPE, contentType);
+            bodyStream = new ByteArrayInputStream(body.getBytes(StandardCharsets.UTF_8));
+        }
+
+        HeadersBodyStatus response = HttpUtil.doRequest(method, url, new HeadersBody(headers, bodyStream), true);
+        response.checkSuccess();
+        return response;
+    }
+
+    protected final String buildUrl(ConfigData configData, String body) {
         String path = descriptor.getPath()
                 .replace("{realmName}", HttpUtil.urlencode(configData.getRealm()))
                 .replace("{version}", API_VERSION);
@@ -323,7 +336,7 @@ class KcAdmV2RequestExecutor extends AbstractTargetAuthOptionsCmd {
         return file != null ? file : parentFile;
     }
 
-    private String formatOutput(String json) {
+    protected final String formatOutput(String json) {
         try {
             var parseResult = spec.commandLine().getParseResult();
             boolean compressed = parseResult.matchedOptionValue(KcAdmV2CommandBuilder.OPT_COMPRESSED, false);
