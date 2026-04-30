@@ -68,11 +68,12 @@ public class ClientAttributesCondition extends AbstractClientPolicyConditionProv
     @Override
     public ClientPolicyVote applyPolicy(ClientPolicyContext context) throws ClientPolicyException {
         switch (context.getEvent()) {
-            case PRE_AUTHORIZATION_REQUEST:
+            case PRE_AUTHORIZATION_REQUEST: {
                 PreAuthorizationRequestContext paContext = (PreAuthorizationRequestContext) context;
                 ClientModel client = session.getContext().getRealm().getClientByClientId(paContext.getClientId());
                 if (isAttributesMatched(client)) return ClientPolicyVote.YES;
                 return ClientPolicyVote.NO;
+            }
             case AUTHORIZATION_REQUEST:
             case TOKEN_REQUEST:
             case TOKEN_RESPONSE:
@@ -95,8 +96,10 @@ public class ClientAttributesCondition extends AbstractClientPolicyConditionProv
             case JWT_AUTHORIZATION_GRANT:
             case SAML_AUTHN_REQUEST:
             case SAML_LOGOUT_REQUEST:
-                if (isAttributesMatched(session.getContext().getClient())) return ClientPolicyVote.YES;
-                return ClientPolicyVote.NO;
+            case CREDENTIAL_OFFER_CREATE: {
+                boolean attributesMatched = isAttributesMatched(session.getContext().getClient());
+                return attributesMatched ? ClientPolicyVote.YES : ClientPolicyVote.NO;
+            }
             default:
                 return ClientPolicyVote.ABSTAIN;
         }

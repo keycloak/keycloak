@@ -43,6 +43,7 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.oid4vci.CredentialScopeModel;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider;
+import org.keycloak.protocol.oid4vc.issuance.credentialoffer.CredentialOfferState;
 import org.keycloak.protocol.oid4vc.issuance.credentialoffer.CredentialOfferStorage;
 import org.keycloak.protocol.oid4vc.issuance.credentialoffer.preauth.PreAuthCodeHandler;
 import org.keycloak.protocol.oid4vc.model.CredentialsOffer;
@@ -89,8 +90,6 @@ public class PreAuthorizedCodeGrantType extends OAuth2GrantTypeBase {
         // Get token request parameters
         // https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html#name-token-request
         String preAuthCode = formParams.getFirst(PreAuthorizedCodeGrant.CODE_REQUEST_PARAM);
-        String txCode = formParams.getFirst(PreAuthorizedCodeGrant.TX_CODE_PARAM);
-
         if (preAuthCode == null) {
             // See: https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html#name-token-request
             String errorMessage = "Missing parameter: " + PRE_AUTH_GRANT_TYPE;
@@ -101,39 +100,7 @@ public class PreAuthorizedCodeGrantType extends OAuth2GrantTypeBase {
 
         // Verify the pre-auth code and recover the public context associated with it.
         // The verification logic is delegated to the configured PreAuthCodeHandler provider.
-        PreAuthCodeCtx ctx = verifyPreAuthCode(preAuthCode);
-
-        // Recover matching credential offer state in storage
-        var offerStorage = session.getProvider(CredentialOfferStorage.class);
-        var offerState = offerStorage.getOfferStateById(ctx.getCredentialsOfferId());
-        if (offerState == null) {
-            var errorMessage = "No credential offer state for pre-auth code: " + preAuthCode;
-            event.detail(REASON, errorMessage).error(Errors.INVALID_CODE);
-            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST,
-                    errorMessage, Response.Status.BAD_REQUEST);
-        }
-
-        if (offerState.isExpired()) {
-            event.error(Errors.EXPIRED_CODE);
-            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT,
-                    "Code is expired", Response.Status.BAD_REQUEST);
-        }
-
-        String expTxCode = offerState.getTxCode();
-        if (expTxCode != null) {
-            if (Strings.isEmpty(txCode)) {
-                event.error(Errors.MISSING_TX_CODE);
-                throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT,
-                        "Missing TxCode", Response.Status.BAD_REQUEST);
-            }
-            // Prevent timing attacks - execution time does not depend on where the first difference occurs
-            if (!MessageDigest.isEqual(expTxCode.getBytes(), txCode.getBytes())) {
-                event.error(Errors.INVALID_TX_CODE);
-                throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT,
-                        "Invalid TxCode", Response.Status.BAD_REQUEST);
-            }
-        }
-
+        CredentialOfferState offerState = verifyPreAuthCode(preAuthCode);
         CredentialsOffer credOffer = offerState.getCredentialsOffer();
 
         var targetUserId = offerState.getTargetUserId();
@@ -278,11 +245,14 @@ public class PreAuthorizedCodeGrantType extends OAuth2GrantTypeBase {
         return audiences != null && audiences.length == 1 && expectedAudience.equals(audiences[0]);
     }
 
+    // Private ---------------------------------------------------------------------------------------------------------
+
     /**
      * Runs the pre-auth code verification logic using the configured PreAuthCodeHandler provider.
-     * A public, partial view of the CredentialOfferState is returned upon successful verification.
+     * @return CredentialOfferState upon successful verification
      */
-    private PreAuthCodeCtx verifyPreAuthCode(String code) {
+    private CredentialOfferState verifyPreAuthCode(String preAuthCode) {
+
         PreAuthCodeHandler preAuthCodeHandler = session.getProvider(PreAuthCodeHandler.class);
         if (preAuthCodeHandler == null) {
             throw new IllegalStateException("No PreAuthCodeHandler provider available");
@@ -290,7 +260,7 @@ public class PreAuthorizedCodeGrantType extends OAuth2GrantTypeBase {
 
         PreAuthCodeCtx preAuthCodeCtx;
         try {
-            preAuthCodeCtx = preAuthCodeHandler.verifyPreAuthCode(code);
+            preAuthCodeCtx = preAuthCodeHandler.verifyPreAuthCode(preAuthCode);
         } catch (VerificationException e) {
             String errorType = Optional.ofNullable(e.getErrorType()).orElse(Errors.INVALID_CODE);
             String errorMessage = String.format("Pre-authorized code failed handler verification (%s)", errorType);
@@ -302,10 +272,43 @@ public class PreAuthorizedCodeGrantType extends OAuth2GrantTypeBase {
                             : OAuthErrorException.EXPIRED_TOKEN,
                     errorMessage, Response.Status.BAD_REQUEST);
         }
+        String credOfferId = preAuthCodeCtx.getCredentialsOfferId();
+
+        // Get matching credential offer state from storage
+        var offerStorage = session.getProvider(CredentialOfferStorage.class);
+        var offerState = offerStorage.getOfferStateById(credOfferId);
+        if (offerState == null) {
+            var errorMessage = "No credential offer state: " + credOfferId;
+            event.detail(REASON, errorMessage).error(Errors.INVALID_CODE);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST,
+                    errorMessage, Response.Status.BAD_REQUEST);
+        }
+
+        if (offerState.isExpired()) {
+            event.error(Errors.EXPIRED_CODE);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT,
+                    "Code is expired", Response.Status.BAD_REQUEST);
+        }
+        String txCode = formParams.getFirst(PreAuthorizedCodeGrant.TX_CODE_PARAM);
+
+        String expTxCode = offerState.getTxCode();
+        if (expTxCode != null) {
+            if (Strings.isEmpty(txCode)) {
+                event.error(Errors.MISSING_TX_CODE);
+                throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT,
+                        "Missing TxCode", Response.Status.BAD_REQUEST);
+            }
+            // Prevent timing attacks - execution time does not depend on where the first difference occurs
+            if (!MessageDigest.isEqual(expTxCode.getBytes(), txCode.getBytes())) {
+                event.error(Errors.INVALID_TX_CODE);
+                throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT,
+                        "Invalid TxCode", Response.Status.BAD_REQUEST);
+            }
+        }
 
         // Pre-auth code is valid, but let's prevent replay attacks (for the remaining validity period)
         SingleUseObjectProvider singleUseStore = session.singleUseObjects();
-        String key = getPreAuthCodeSingleObjectKey(code);
+        String key = getPreAuthCodeSingleObjectKey(preAuthCode);
         long expiresIn = preAuthCodeCtx.getExpiresAt() - Time.currentTime();
         boolean firstInsertion = singleUseStore.putIfAbsent(key, expiresIn);
         if (!firstInsertion) {
@@ -315,11 +318,11 @@ public class PreAuthorizedCodeGrantType extends OAuth2GrantTypeBase {
                     errorMessage, Response.Status.BAD_REQUEST);
         }
 
-        return preAuthCodeCtx;
+        return offerState;
     }
 
-    private static String getPreAuthCodeSingleObjectKey(String code) {
-        String hash = HashUtils.sha256UrlEncodedHash(code.trim(), StandardCharsets.UTF_8);
+    private static String getPreAuthCodeSingleObjectKey(String preAuthCode) {
+        String hash = HashUtils.sha256UrlEncodedHash(preAuthCode.trim(), StandardCharsets.UTF_8);
         String fqcn = PreAuthorizedCodeGrantType.class.getName().toLowerCase();
         return fqcn + "." + hash;
     }

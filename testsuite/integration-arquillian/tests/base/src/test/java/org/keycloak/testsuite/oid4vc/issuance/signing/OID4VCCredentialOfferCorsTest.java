@@ -28,7 +28,6 @@ import jakarta.ws.rs.core.HttpHeaders;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.Time;
 import org.keycloak.events.Details;
-import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
 import org.keycloak.protocol.oid4vc.issuance.credentialoffer.CredentialOfferState;
 import org.keycloak.protocol.oid4vc.issuance.credentialoffer.CredentialOfferStorage;
@@ -312,7 +311,7 @@ public class OID4VCCredentialOfferCorsTest extends OID4VCIssuerEndpointTest {
                 .client(clientId)
                 .user(AssertEvents.isUUID())
                 .session(AssertEvents.isSessionId())
-                .error(Errors.INVALID_REQUEST)
+                .error(ErrorType.INVALID_REQUEST.getValue())
                 .assertEvent();
     }
 
@@ -332,7 +331,7 @@ public class OID4VCCredentialOfferCorsTest extends OID4VCIssuerEndpointTest {
             CredentialOfferStorage offerStorage = session.getProvider(CredentialOfferStorage.class);
             // Create offer with expiration time just 1 second in the past
             // This ensures it's still findable in storage but marked as expired
-            CredentialOfferState offerState = new CredentialOfferState(credOffer, null, null, Time.currentTime() - 1, null);
+            CredentialOfferState offerState = new CredentialOfferState(credOffer, null, null, false, Time.currentTime() - 1, null);
             offerStorage.putOfferState(offerState);
             session.getTransactionManager().commit();
             return offerState.getNonce();

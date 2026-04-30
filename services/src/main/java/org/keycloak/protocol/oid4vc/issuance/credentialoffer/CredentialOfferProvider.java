@@ -20,6 +20,7 @@ import java.util.List;
 
 import org.keycloak.models.UserModel;
 import org.keycloak.provider.Provider;
+import org.keycloak.services.clientpolicy.ClientPolicyException;
 
 /**
  * A provider for OID4VCI Credential Offers.
@@ -81,8 +82,9 @@ public interface CredentialOfferProvider extends Provider {
             List<String> credentialConfigurationIds,
             String targetClientId,
             String targetUserId,
+            Boolean withTxCode,
             Integer expireAt
-    );
+    ) throws ClientPolicyException;
 
     @Override
     default void close() {

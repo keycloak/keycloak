@@ -72,7 +72,7 @@ public class JwtPreAuthCodeHandlerTest extends OID4VCIssuerTestBase {
         assertPreAuthCodeCtx(preAuthCodeCtx);
 
         // Ensure that the pre-auth code can be exchanged for an access token
-        AccessTokenResponse resp = wallet.accessTokenRequestPreAuth(ctx, preAuthCode).send();
+        AccessTokenResponse resp = wallet.accessTokenRequestPreAuth(ctx, preAuthCode, null).send();
         assertEquals(HttpStatus.SC_OK, resp.getStatusCode());
         assertNotNull(resp.getAccessToken(), "Access token must not be null");
     }
@@ -106,7 +106,7 @@ public class JwtPreAuthCodeHandlerTest extends OID4VCIssuerTestBase {
         });
 
         // Ensure that it cannot be exchanged for an access token
-        AccessTokenResponse resp = wallet.accessTokenRequestPreAuth(ctx, imposterPreAuthCode).send();
+        AccessTokenResponse resp = wallet.accessTokenRequestPreAuth(ctx, imposterPreAuthCode, null).send();
         assertEquals(HttpStatus.SC_BAD_REQUEST, resp.getStatusCode());
         assertEquals("Pre-authorized code failed handler verification (invalid_code)",
                 resp.getErrorDescription());
@@ -156,11 +156,11 @@ public class JwtPreAuthCodeHandlerTest extends OID4VCIssuerTestBase {
         assertValidPreAuthCodeJwt(preAuthCode);
 
         // First use: the pre-auth code can be exchanged for an access token
-        AccessTokenResponse resp = wallet.accessTokenRequestPreAuth(ctx, preAuthCode).send();
+        AccessTokenResponse resp = wallet.accessTokenRequestPreAuth(ctx, preAuthCode, null).send();
         assertEquals(HttpStatus.SC_OK, resp.getStatusCode());
 
         // Second use: the same pre-auth code must be rejected as replayed
-        AccessTokenResponse replayResp = wallet.accessTokenRequestPreAuth(ctx, preAuthCode).send();
+        AccessTokenResponse replayResp = wallet.accessTokenRequestPreAuth(ctx, preAuthCode, null).send();
         assertEquals(HttpStatus.SC_BAD_REQUEST, replayResp.getStatusCode());
         assertEquals("Pre-authorized code has already been used", replayResp.getErrorDescription());
     }

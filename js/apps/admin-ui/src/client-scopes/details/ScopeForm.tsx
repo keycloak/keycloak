@@ -395,6 +395,17 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
               label={t("credentialIdentifier")}
               labelIcon={t("credentialIdentifierHelp")}
             />
+            <DefaultSwitchControl
+              name={convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
+                "attributes.vc.policy.offer.required",
+              )}
+              defaultValue={
+                clientScope?.attributes?.["vc.policy.offer.required"] ?? "false"
+              }
+              label={t("credentialOfferRequired")}
+              labelIcon={t("credentialOfferRequiredHelp")}
+              stringify
+            />
             <TextControl
               name={convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
                 "attributes.vc.issuer_did",

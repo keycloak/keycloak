@@ -20,12 +20,15 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import org.keycloak.OAuthErrorException;
 import org.keycloak.common.Profile;
 import org.keycloak.events.Errors;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.oid4vci.CredentialScopeModel;
+import org.keycloak.protocol.oid4vc.clientpolicy.CredentialClientPolicyContext;
+import org.keycloak.protocol.oid4vc.clientpolicy.PredicateCredentialClientPolicy;
 import org.keycloak.protocol.oid4vc.issuance.CredentialOfferException;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCAuthorizationDetailsProcessor;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider;
@@ -36,11 +39,16 @@ import org.keycloak.protocol.oid4vc.model.IssuerState;
 import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
 import org.keycloak.protocol.oid4vc.model.PreAuthCodeCtx;
 import org.keycloak.protocol.oid4vc.model.PreAuthorizedCodeGrant;
-import org.keycloak.protocol.oid4vc.utils.CredentialScopeModelUtils;
+import org.keycloak.representations.idm.ClientPolicyRepresentation;
+import org.keycloak.services.clientpolicy.ClientPolicyEvent;
+import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.util.Strings;
 
 import static org.keycloak.constants.OID4VCIConstants.CREDENTIAL_OFFER_CREATE;
+import static org.keycloak.protocol.oid4vc.clientpolicy.CredentialClientPolicies.VC_POLICY_CREDENTIAL_OFFER_PREAUTH_ALLOWED;
+import static org.keycloak.protocol.oid4vc.clientpolicy.CredentialClientPolicyExecutor.findClientPolicyByName;
 import static org.keycloak.protocol.oid4vc.model.PreAuthorizedCodeGrant.PRE_AUTH_GRANT_TYPE;
+import static org.keycloak.protocol.oid4vc.utils.CredentialScopeModelUtils.findCredentialScopeModelByConfigurationId;
 
 /**
  * Default implementation of {@link CredentialOfferProvider}.
@@ -62,7 +70,8 @@ class DefaultCredentialOfferProvider implements CredentialOfferProvider {
             List<String> credentialConfigurationIds,
             String targetClientId,
             String targetUsername,
-            Integer expireAt) {
+            Boolean withTxCode,
+            Integer expireAt) throws ClientPolicyException {
 
         // Checks whether `--feature=oid4vc_vci_preauth_code` is enabled
         //
@@ -78,7 +87,7 @@ class DefaultCredentialOfferProvider implements CredentialOfferProvider {
             throw new CredentialOfferException(Errors.INVALID_REQUEST, "No credentialConfigurationIds");
         }
 
-        RealmModel realmModel = this.session.getContext().getRealm();
+        RealmModel realmModel = session.getContext().getRealm();
 
         // Validate the target user
         //
@@ -94,10 +103,10 @@ class DefaultCredentialOfferProvider implements CredentialOfferProvider {
 
         // Create the CredentialOfferState
         //
-        CredentialOfferState offerState = new CredentialOfferState(credOffer, targetClientId, targetUserId, expireAt, credOffersId -> {
+        CredentialOfferState offerState = new CredentialOfferState(credOffer, targetClientId, targetUserId, withTxCode, expireAt, credOffersId -> {
             List<OID4VCAuthorizationDetail> authDetails = new ArrayList<>();
             for (String credConfigId : credentialConfigurationIds) {
-                CredentialScopeModel credScope = CredentialScopeModelUtils.findCredentialScopeModelByConfigurationId(
+                CredentialScopeModel credScope = findCredentialScopeModelByConfigurationId(
                         realmModel, () -> session.clientScopes().getClientScopesStream(realmModel), credConfigId);
                 if (credScope == null) {
                     throw new CredentialOfferException(Errors.INVALID_REQUEST, "No credential scope model for: " + credConfigId);
@@ -114,6 +123,38 @@ class DefaultCredentialOfferProvider implements CredentialOfferProvider {
         } else {
             IssuerState issuerState = new IssuerState().setCredentialsOfferId(offerState.getCredentialsOfferId());
             credOffer.addGrant(new AuthorizationCodeGrant().setIssuerState(issuerState.encodeToString()));
+        }
+
+        // Check associated credential client policies
+        //
+        for (String credConfigId : credentialConfigurationIds) {
+
+            // Create the ClientPolicyContext
+            //
+            CredentialScopeModel credScope = Optional.ofNullable(findCredentialScopeModelByConfigurationId(
+                    realmModel, () -> session.clientScopes().getClientScopesStream(realmModel), credConfigId))
+                    .orElseThrow(() -> new ClientPolicyException(OAuthErrorException.INVALID_SCOPE, "No client scope"));
+
+            var context = new CredentialClientPolicyContext(ClientPolicyEvent.CREDENTIAL_OFFER_CREATE)
+                    .setCredentialScopeModel(credScope)
+                    .setCredentialOfferState(offerState);
+
+            // Trigger ClientPolicyExecutors
+            //
+            session.clientPolicy().triggerOnEvent(context);
+
+            // The executor is not called when the policy is disabled or not installed at all
+            //
+            if (!context.isEvaluatedOnEvent()) {
+                PredicateCredentialClientPolicy preAuthPolicy = VC_POLICY_CREDENTIAL_OFFER_PREAUTH_ALLOWED;
+                ClientPolicyRepresentation clientPolicy = findClientPolicyByName(session, preAuthPolicy.getName());
+
+                // Currently, we are permissive when the policy is not installed
+                if (clientPolicy != null) {
+                    throw new ClientPolicyException(Errors.NOT_ALLOWED,
+                            "Pre-Authorized code grant rejected by policy " + preAuthPolicy.getName() + " for scope " + credScope.getName());
+                }
+            }
         }
 
         return offerState;
