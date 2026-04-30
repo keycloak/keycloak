@@ -17,6 +17,7 @@ import org.keycloak.tests.utils.admin.AdminEventPaths;
 
 import org.infinispan.Cache;
 import org.junit.jupiter.api.Test;
+import org.testcontainers.shaded.org.awaitility.Awaitility;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -41,12 +42,14 @@ public class RealmCacheTest extends AbstractRealmTest {
 
         managedRealm.admin().clearRealmCache();
 
-        // Using master realm to verify that managedRealm cache is empty.
-        assertFalse(masterRunOnServer.fetch(s -> {
-            InfinispanConnectionProvider provider = s.getProvider(InfinispanConnectionProvider.class);
-            Cache<Object, Object> cache = provider.getCache("realms");
-            return cache.containsKey(realmId);
-        }, Boolean.class));
+        Awaitility.await().untilAsserted(() -> {
+            // Using master realm to verify that managedRealm cache is empty.
+            assertFalse(masterRunOnServer.fetch(s -> {
+                InfinispanConnectionProvider provider = s.getProvider(InfinispanConnectionProvider.class);
+                Cache<Object, Object> cache = provider.getCache("realms");
+                return cache.containsKey(realmId);
+            }, Boolean.class));
+        });
 
         // The Admin event must be checked after the verification, because the event poll recreates the cache!
         AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.ACTION, "clear-realm-cache", ResourceType.REALM);
