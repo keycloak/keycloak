@@ -71,3 +71,11 @@ As part of this change, the `displayName` attribute has been promoted from a rea
 
 Before migrating, check the current value of the `displayName` attribute for your realms. If the current value of `displayName` attribute
 exceeds 255 characters, it will be truncated during migration.
+
+=== Token Exchange with Sender-constrained tokens allowed for scope changes
+
+Standard Token Exchange now accepts sender-constrained tokens when a client is requesting an exchange of their own token.
+This change allows token audience changes and up/down scoping and is applicable to both DPoP-bound tokens and X.509 certificate-bound tokens (mTLS).
+
+If you attempt to exchange a sender-constrained token using a different client, the request will be rejected with an `invalid_request` error.
+For more details, see the link:{securing_apps_token_exchange_link}[Token Exchange] guide.
