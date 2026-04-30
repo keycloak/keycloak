@@ -134,13 +134,12 @@ public class AuthorizationEndpointChecker {
         event.detail(Details.REDIRECT_URI, redirectUriParam);
 
         // redirect_uri parameter is required per OpenID Connect, but optional per OAuth2
-        this.redirectUri = RedirectUtils.verifyRedirectUri(session, redirectUriParam, client, isOIDCRequest);
+        redirectUri = RedirectUtils.verifyRedirectUri(session, redirectUriParam, client, isOIDCRequest);
         if (redirectUri == null) {
             event.error(Errors.INVALID_REDIRECT_URI);
             throw new AuthorizationCheckException(Response.Status.BAD_REQUEST, Messages.INVALID_PARAMETER, OIDCLoginProtocol.REDIRECT_URI_PARAM);
         }
     }
-
 
     public void checkResponseType() throws AuthorizationCheckException {
         String responseType = request.getResponseType();
@@ -214,7 +213,7 @@ public class AuthorizationEndpointChecker {
         }
     }
 
-    public boolean isInvalidResponseType(AuthorizationEndpointChecker.AuthorizationCheckException ex) {
+    public boolean isInvalidResponseType(AuthorizationCheckException ex) {
         return "Missing parameter: response_type".equals(ex.getErrorDescription()) || OAuthErrorException.UNSUPPORTED_RESPONSE_TYPE.equals(ex.getError());
     }
 
@@ -427,35 +426,12 @@ public class AuthorizationEndpointChecker {
         }
     }
 
+    public void throwAsErrorPageException(AuthenticationSessionModel authenticationSession, AuthorizationCheckException ex) {
+        throw new ErrorPageException(session, authenticationSession, ex.getStatus(), ex.getError(), ex.getErrorDescription());
+    }
 
-    // Exception propagated to the caller, which will allow caller to send proper error response based on the context (Browser OIDC Authorization Endpoint, PAR etc)
-    public class AuthorizationCheckException extends Exception {
-
-        private final Response.Status status;
-        private final String error;
-        private final String errorDescription;
-
-        public AuthorizationCheckException(Response.Status status, String error, String errorDescription) {
-            this.status = status;
-            this.error = error;
-            this.errorDescription = errorDescription;
-        }
-
-        public void throwAsErrorPageException(AuthenticationSessionModel authenticationSession) {
-            throw new ErrorPageException(session, authenticationSession, status, error, errorDescription);
-        }
-
-        public void throwAsCorsErrorResponseException(Cors cors) {
-            AuthorizationEndpointChecker.this.event.detail("detail", errorDescription).error(error);
-            throw new CorsErrorResponseException(cors, error, errorDescription, status);
-        }
-
-        public String getError() {
-            return error;
-        }
-
-        public String getErrorDescription() {
-            return errorDescription;
-        }
+    public void throwAsCorsErrorResponseException(Cors cors, AuthorizationCheckException ex) {
+        event.detail("detail", ex.getErrorDescription()).error(ex.getError());
+        throw new CorsErrorResponseException(cors, ex.getError(), ex.getErrorDescription(), ex.getStatus());
     }
 }

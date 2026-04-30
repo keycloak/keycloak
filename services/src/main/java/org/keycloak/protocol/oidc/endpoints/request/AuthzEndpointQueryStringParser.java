@@ -38,7 +38,7 @@ public class AuthzEndpointQueryStringParser extends AuthzEndpointRequestParser {
 
     private final boolean isResponseTypeParameterRequired;
 
-    private String invalidRequestMessage = null;
+    private String invalidRequestMessage;
 
     public AuthzEndpointQueryStringParser(KeycloakSession keycloakSession, MultivaluedMap<String, String> requestParams, boolean isResponseTypeParameterRequired) {
         super(keycloakSession);
@@ -51,7 +51,7 @@ public class AuthzEndpointQueryStringParser extends AuthzEndpointRequestParser {
         // response_type parameter is required in the query string even if present in 'request' object. This is per OIDC core specification
         if (isResponseTypeParameterRequired && responseTypeParameter == null) {
             logger.warn("Missing parameter 'response_type' in the OAuth 2.0 request parameters");
-            invalidRequestMessage = "Missing parameter: response_type";
+            setInvalidRequestMessage("Missing parameter: response_type");
         }
 
         super.validateResponseTypeParameter(responseTypeParameter, request);
@@ -74,17 +74,20 @@ public class AuthzEndpointQueryStringParser extends AuthzEndpointRequestParser {
         return invalidRequestMessage;
     }
 
+    public void setInvalidRequestMessage(String message) {
+        if (invalidRequestMessage == null) {
+            invalidRequestMessage = message;
+        }
+    }
+
     @Override
     protected Set<String> keySet() {
         return requestParams.keySet();
     }
 
     private void checkDuplicated(MultivaluedMap<String, String> requestParams, String paramName) {
-        if (invalidRequestMessage == null) {
-            if (requestParams.get(paramName) != null && requestParams.get(paramName).size() != 1) {
-                invalidRequestMessage = "duplicated parameter";
-            }
+        if (requestParams.get(paramName) != null && requestParams.get(paramName).size() != 1) {
+            setInvalidRequestMessage("duplicate parameter: " + paramName);
         }
     }
-
 }
