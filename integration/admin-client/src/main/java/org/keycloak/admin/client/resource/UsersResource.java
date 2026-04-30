@@ -160,6 +160,13 @@ public interface UsersResource {
     @Produces(MediaType.APPLICATION_JSON)
     List<UserRepresentation> searchByLastName(@QueryParam("lastName") String email, @QueryParam("exact") Boolean exact);
 
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    List<UserRepresentation> searchByUserAccounts(@QueryParam("search") String search,
+                                                  @QueryParam("enabled") Boolean enabled,
+                                                  @QueryParam("includeServiceAccounts") Boolean includeServiceAccounts);
+
+
     /**
      * Search for users based on the given filters.
      *
@@ -344,6 +351,21 @@ public interface UsersResource {
     Integer count(@QueryParam("search") String search);
 
     /**
+     * Returns the users that can be viewed and match the given filters.
+     *
+     * @param search criteria to search for
+     * @param enabled Boolean representing if user is enabled or not
+     * @param includeServiceAccounts Boolean, which defines whether result list should include service accounts
+     * @return number of users matching the search criteria
+     */
+    @Path("count")
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    Integer count(@QueryParam("search") String search,
+                  @QueryParam("enabled") Boolean enabled,
+                  @QueryParam("includeServiceAccounts") Boolean includeServiceAccounts);
+
+    /**
      * Returns the number of users that can be viewed and match the given filters.
      * If none of the filters is specified this is equivalent to {{@link #count()}}.
      *
@@ -484,6 +506,7 @@ public interface UsersResource {
      * @param searchQuery   A query to search for custom attributes
      * @param createdAfter  only count users created after (inclusive) the given date, in ISO-8601 format (yyyy-MM-dd) or epoch milliseconds
      * @param createdBefore only count users created before (inclusive) the given date, in ISO-8601 format (yyyy-MM-dd) or epoch milliseconds
+     * @param includeServiceAccounts Boolean, which defines whether result list should include service accounts
      * @return number of users matching the given filters
      */
     @Path("count")
@@ -501,7 +524,8 @@ public interface UsersResource {
                   @QueryParam("exact") Boolean exact,
                   @QueryParam("q") String searchQuery,
                   @QueryParam("createdAfter") String createdAfter,
-                  @QueryParam("createdBefore") String createdBefore);
+                  @QueryParam("createdBefore") String createdBefore,
+                  @QueryParam("includeServiceAccounts") Boolean includeServiceAccounts);
 
     /**
      * Returns the number of users with the given status for emailVerified.
