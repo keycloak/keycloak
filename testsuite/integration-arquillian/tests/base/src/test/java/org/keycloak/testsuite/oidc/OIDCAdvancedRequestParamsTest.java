@@ -1303,7 +1303,8 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
             }
 
             oauth.doLogout(accessTokenResponse.getRefreshToken());
-            events.expectLogout(accessTokenResponse.getSessionState()).client("test-app").clearDetails().assertEvent();
+            EventAssertion.assertSuccess(events.poll()).type(EventType.LOGOUT)
+                    .sessionId(accessTokenResponse.getSessionState()).clientId(oauth.getClientId()).withoutDetails(Details.REDIRECT_URI);
 
 
             claims = ImmutableMap.of(

@@ -1374,7 +1374,8 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
     protected void successfulLoginAndLogout(String clientId, String clientSecret, String nonce, String state) {
         AccessTokenResponse res = successfulLogin(clientId, clientSecret, nonce, state);
         oauth.doLogout(res.getRefreshToken());
-        events.expectLogout(res.getSessionState()).client(clientId).clearDetails().assertEvent();
+        EventAssertion.assertSuccess(events.poll()).type(EventType.LOGOUT)
+                .sessionId(res.getSessionState()).clientId(clientId).withoutDetails(Details.REDIRECT_URI);
     }
 
     protected AccessTokenResponse successfulLogin(String clientId, String clientSecret) {

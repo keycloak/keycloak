@@ -454,7 +454,8 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
 
         LogoutResponse logoutResponse = oauth.doLogout(response.getRefreshToken());
         assertTrue(logoutResponse.isSuccess());
-        events.expectLogout(accessToken.getSessionState()).client("resource-owner").removeDetail(Details.REDIRECT_URI).assertEvent();
+        EventAssertion.assertSuccess(events.poll()).type(EventType.LOGOUT)
+                .sessionId(accessToken.getSessionState()).clientId("resource-owner").withoutDetails(Details.REDIRECT_URI);
 
         response = oauth.doRefreshTokenRequest(response.getRefreshToken());
         assertEquals(400, response.getStatusCode());

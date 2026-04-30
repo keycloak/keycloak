@@ -263,11 +263,12 @@ public class WebAuthnIdlessTest extends AbstractWebAuthnVirtualTest {
 
         events.clear();
         logout();
-        events.expectLogout(sessionId)
-                .removeDetail(Details.REDIRECT_URI)
-                .user(userId)
-                .client("account")
-                .assertEvent();
+        EventAssertion.assertSuccess(events.poll())
+                .type(EventType.LOGOUT)
+                .sessionId(sessionId)
+                .userId(userId)
+                .clientId("account")
+                .withoutDetails(Details.REDIRECT_URI);
         return credentialId2;
     }
 
@@ -321,11 +322,12 @@ public class WebAuthnIdlessTest extends AbstractWebAuthnVirtualTest {
 
         events.clear();
         logout();
-        events.expectLogout(sessionId)
-                .removeDetail(Details.REDIRECT_URI)
-                .user(userId)
-                .client("account")
-                .assertEvent();
+        EventAssertion.assertSuccess(events.poll())
+                .type(EventType.LOGOUT)
+                .sessionId(sessionId)
+                .userId(userId)
+                .clientId("account")
+                .withoutDetails(Details.REDIRECT_URI);
     }
 
     protected void usernameAndWebAuthnPasswordlessAuthentication(String username, String credentialId) {
@@ -353,11 +355,12 @@ public class WebAuthnIdlessTest extends AbstractWebAuthnVirtualTest {
 
         events.clear();
         logout();
-        events.expectLogout(sessionId)
-                .removeDetail(Details.REDIRECT_URI)
-                .user(userId)
-                .client("account")
-                .assertEvent();
+        EventAssertion.assertSuccess(events.poll())
+                .type(EventType.LOGOUT)
+                .sessionId(sessionId)
+                .userId(userId)
+                .clientId("account")
+                .withoutDetails(Details.REDIRECT_URI);
     }
 
     protected void idlessAuthentication(String username, String credentialId, boolean tryAnotherMethod, boolean shouldSuccess) {
@@ -388,11 +391,12 @@ public class WebAuthnIdlessTest extends AbstractWebAuthnVirtualTest {
 
             events.clear();
             logout();
-            events.expectLogout(sessionId)
-                    .removeDetail(Details.REDIRECT_URI)
-                    .user(userId)
-                    .client("account")
-                    .assertEvent();
+            EventAssertion.assertSuccess(events.poll())
+                    .type(EventType.LOGOUT)
+                    .sessionId(sessionId)
+                    .userId(userId)
+                    .clientId("account")
+                    .withoutDetails(Details.REDIRECT_URI);
         }
         else {
             loginPage.assertCurrent();
