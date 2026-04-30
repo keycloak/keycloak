@@ -91,20 +91,20 @@ This allows {project_name} to read the real client IP address from the PROXY pro
 This requires {project_name} to be configured with `--proxy-protocol-enabled=true` (see <<keycloak-configuration>>).
 <5> Links the load balancer to the named transport above, activating PROXY protocol v2 for all connections to the backend servers.
 <6> Configures a link:https://doc.traefik.io/traefik/reference/routing-configuration/tcp/service/#health-check[TCP-level health check] against {project_name}'s management port (`9000`).
-
++
 The health check parameters are explained below:
-
++
 `interval` / `timeout`::
 Traefik checks each backend every `5s`, marking a server as unhealthy if it does not respond within `3s`.
 Unhealthy backends are automatically removed from the load balancer rotation and re-added once they recover.
 These values affect how quickly Traefik detects that a {project_name} instance is shutting down (see <<graceful-shutdown-considerations>>).
-
++
 `port: 9000`::
 Directs health checks to the management port (`9000`), which is separate from the main application port (`8443`).
 The management port is configured to use plain HTTP via `--http-management-scheme=http` (see <<keycloak-configuration>>), which is required because Traefik cannot perform an HTTPS health check on a TCP passthrough service.
 This is safe because the management port is only reachable on the internal backend network and is not exposed to clients.
 For details on the management port, see the <@links.server id="management-interface"/> {section}.
-
++
 `send` / `expect`::
 Since Traefik operates at the TCP layer, health checks work by sending raw bytes and matching the response.
 The JSON syntax is required so that `\r\n` is encoded as a literal carriage-return and line-feed rather than a backslash-n string.
@@ -113,13 +113,14 @@ NOTE: The `expect` string must match the full HTTP response headers exactly, inc
 Any change to the {project_name} response format may break this check.
 A simple TCP connect check (omitting `send` and `expect`) is less fragile but only detects a dead process.
 It would not detect split-brain, database connectivity failures, or an overloaded node.
++
+NOTE: Native HTTP health checks for TCP services are not yet supported in Traefik.
+Until then, the send/expect workaround described above is required.
+Track upstream progress at link:https://github.com/traefik/traefik/pull/12606[traefik/traefik#12606].
 
 <7> Defines the two {project_name} backend servers.
 Traffic is distributed across both instances using round-robin load balancing.
 
-NOTE: Native HTTP health checks for TCP services are not yet supported in Traefik.
-Until then, the send/expect workaround described above is required.
-Track upstream progress at link:https://github.com/traefik/traefik/pull/12606[traefik/traefik#12606].
 
 [[keycloak-configuration]]
 == {project_name} configuration
@@ -141,7 +142,7 @@ Without this, the health endpoint that Traefik polls will not be available, and 
 Enables the metrics endpoints on the management port.
 Enabling metrics also enables an additional status check for the database, so it is recommended to enable metrics.
 
-`--http-management-scheme=http`::
+`--http-management-scheme http`::
 Configures the management port (`9000`) to use plain HTTP instead of HTTPS.
 Traefik does not support native HTTP health checks for TCP services; it can only send and match raw bytes over a plain TCP connection.
 Disabling TLS on the management port allows the raw `send`/`expect` health check (see the health check configuration above) to communicate with {project_name} in plain HTTP.
