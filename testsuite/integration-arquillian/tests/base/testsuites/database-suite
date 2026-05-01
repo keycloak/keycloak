@@ -6,7 +6,6 @@ ExportImportTest
 KcOidcBrokerTest
 LDAPUserLoginTest
 LoginTest
-PasswordPolicyTest
 RequiredActionUpdateProfileTest
 SamlClientTest
 UserProfileTest

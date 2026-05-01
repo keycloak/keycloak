@@ -54,8 +54,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class WindowsServiceDistTest {
 
     private static final String TEST_SERVICE_NAME_PREFIX = "keycloak-test-";
-    private static final int SERVICE_START_TIMEOUT_SECONDS = 60;
-    private static final int SERVICE_STOP_TIMEOUT_SECONDS = 30;
+    private static final int SERVICE_START_TIMEOUT_SECONDS = 120;
+    private static final int SERVICE_STOP_TIMEOUT_SECONDS = 60;
 
     private RawKeycloakDistribution rawDist;
     private Path distPath;

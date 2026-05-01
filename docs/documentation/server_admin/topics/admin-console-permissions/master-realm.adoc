@@ -1,5 +1,5 @@
-[[_master_realm_access_control]]
 
+[[_master_realm_access_control]]
 === Master realm access control
 
 The `master` realm in {project_name} is a special realm and treated differently than other realms.
@@ -11,10 +11,10 @@ It's possible to create multiple superusers,  as well as users that can only man
 ==== Global roles
 
 There are two realm-level roles in the `master` realm.
-These are: 
+These are:
 
 * admin
-* create-realm        
+* create-realm
 
 Users with the `admin` role are superusers and have full access to manage any realm on the server.  Users with the `create-realm` role
 are allowed to create new realms.  They will be granted full access to any new realm they create.
@@ -28,7 +28,7 @@ Each realm in {project_name} is represented by a client in the `master` realm.
 The name of the client is `<realm name>-realm`.  These clients each have client-level roles defined which define varying
 level of access to manage an individual realm.
 
-The roles available are: 
+The roles available are:
 
 * create-client
 * impersonation
