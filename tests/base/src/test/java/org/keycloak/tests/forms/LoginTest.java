@@ -784,7 +784,6 @@ public class LoginTest {
 
     //KEYCLOAK-2741
     @Test
-    @DatabaseTest
     public void loginAgainWithoutRememberMe() {
         setRememberMe(true);
 
