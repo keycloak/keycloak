@@ -91,6 +91,17 @@ public class RealmRolesCRUDTest extends AbstractRealmRolesTest {
     }
 
     @Test
+    public void updateRoleWithoutNameReturnsBadRequest() {
+        RoleResource roleResource = managedRealm.admin().roles().get("role-a");
+
+        RoleRepresentation update = new RoleRepresentation();
+        update.setDescription("Role A updated description");
+        update.setAttributes(Collections.singletonMap("attrKey", Collections.singletonList("attrValue")));
+
+        Assertions.assertThrows(BadRequestException.class, () -> roleResource.update(update));
+    }
+
+    @Test
     public void deleteRole() {
         assertNotNull(managedRealm.admin().roles().get("role-a"));
         managedRealm.admin().roles().deleteRole("role-a");
