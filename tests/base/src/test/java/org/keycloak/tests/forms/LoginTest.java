@@ -17,6 +17,7 @@
 package org.keycloak.tests.forms;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -68,6 +69,7 @@ import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.remote.providers.timeoffset.InfinispanTimeUtil;
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
@@ -84,6 +86,7 @@ import org.keycloak.testframework.ui.page.LoginPasswordUpdatePage;
 import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.tests.forms.page.LoginConfigTotpPage;
+import org.keycloak.tests.suites.DatabaseTest;
 import org.keycloak.tests.utils.matchers.Matchers;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
@@ -200,6 +203,7 @@ public class LoginTest {
     }
 
     @Test
+    @DatabaseTest
     public void testContentSecurityPolicyReportOnlyBrowserSecurityHeader() {
         final String expectedCspReportOnlyValue = "default-src 'none'";
         final String cspReportOnlyAttr = "contentSecurityPolicyReportOnly";
@@ -246,6 +250,7 @@ public class LoginTest {
     }
 
     @Test
+    @DatabaseTest
     public void loginWithLongRedirectUri() {
         RealmRepresentation rep = adminClient.realm(REALM_NAME).toRepresentation();
         boolean eventsEnabled = rep.isEventsEnabled();
@@ -354,6 +359,7 @@ public class LoginTest {
     }
 
     @Test
+    @DatabaseTest
     public void loginInvalidPasswordDisabledUser() {
         setUserEnabled(userId, false);
 
@@ -384,6 +390,7 @@ public class LoginTest {
     }
 
     @Test
+    @DatabaseTest
     public void loginDisabledUser() {
         setUserEnabled(userId, false);
 
@@ -414,6 +421,7 @@ public class LoginTest {
     }
 
     @Test
+    @DatabaseTest
     public void loginDifferentUserAfterDisabledUserThrownOut() {
         String testUserId = adminClient.realm(REALM_NAME).users().search("test-user@localhost", true).get(0).getId();
 
@@ -520,6 +528,7 @@ public class LoginTest {
     }
 
     @Test
+    @DatabaseTest
     public void loginSuccessRealmSigningAlgorithms() throws JWSInputException {
         // Skip test if not SSL
         Assumptions.assumeTrue(AUTH_SERVER_SSL_REQUIRED, "Test Skipped - Only works with the SSL configured");
@@ -595,6 +604,7 @@ public class LoginTest {
     }
 
     @Test
+    @DatabaseTest
     public void loginWithForcePasswordChangePolicy() {
         setPasswordPolicy("forceExpiredPasswordChange(1)");
 
@@ -615,8 +625,6 @@ public class LoginTest {
 
             timeOffSet.set(0);
 
-            // Skip UPDATE_PASSWORD and UPDATE_CREDENTIAL events - they may not be fired in new framework
-            // or may be part of LOGIN event details
             events.poll(); // UPDATE_PASSWORD
             events.poll(); // UPDATE_CREDENTIAL (or might be null)
 
@@ -636,6 +644,7 @@ public class LoginTest {
     }
 
     @Test
+    @DatabaseTest
     public void loginWithoutForcePasswordChangePolicy() {
         setPasswordPolicy("forceExpiredPasswordChange(1)");
 
@@ -711,6 +720,7 @@ public class LoginTest {
     }
 
     @Test
+    @DatabaseTest
     public void loginWithRememberMe() {
         setRememberMe(true);
 
@@ -774,6 +784,7 @@ public class LoginTest {
 
     //KEYCLOAK-2741
     @Test
+    @DatabaseTest
     public void loginAgainWithoutRememberMe() {
         setRememberMe(true);
 
@@ -863,6 +874,7 @@ public class LoginTest {
     }
 
     @Test
+    @DatabaseTest
     public void testLoginAfterDisablingRememberMeInRealmSettings() {
         setRememberMe(true);
 
@@ -946,6 +958,7 @@ public class LoginTest {
     }
 
     @Test
+    @DatabaseTest
     public void loginAfterExpiredTimeout() {
         RealmRepresentation realmRep = adminClient.realm(REALM_NAME).toRepresentation();
         Integer originalMaxLifespan = realmRep.getSsoSessionMaxLifespan();
@@ -1019,6 +1032,7 @@ public class LoginTest {
     }
 
     @Test
+    @DatabaseTest
     public void loginWithClientDisabledInActiveAuthenticationSession() {
         ClientResource clientResource = findClientByClientId("test-app");
         assert clientResource != null;
@@ -1126,6 +1140,7 @@ public class LoginTest {
     }
 
     @Test
+    @DatabaseTest
     public void loginRememberMeExpiredIdle() {
         RealmRepresentation realmRep = adminClient.realm(REALM_NAME).toRepresentation();
         Integer originalIdleRememberMe = realmRep.getSsoSessionIdleTimeoutRememberMe();
@@ -1171,6 +1186,7 @@ public class LoginTest {
     }
 
     @Test
+    @DatabaseTest
     public void loginRememberMeExpiredMaxLifespan() {
         RealmRepresentation realmRep = adminClient.realm(REALM_NAME).toRepresentation();
         Integer originalMaxLifespanRememberMe = realmRep.getSsoSessionMaxLifespanRememberMe();
@@ -1211,6 +1227,7 @@ public class LoginTest {
     }
 
     @Test
+    @DatabaseTest
     public void loginSuccessfulWithDynamicScope() {
         // Skip if DYNAMIC_SCOPES feature is not enabled
         Assumptions.assumeTrue(isFeatureEnabled(Profile.Feature.DYNAMIC_SCOPES), "DYNAMIC_SCOPES feature must be enabled");
@@ -1255,6 +1272,7 @@ public class LoginTest {
     }
 
     @Test
+    @DatabaseTest
     public void testExecuteActionIfSessionExists() {
         oauth.openLoginForm();
         loginPage.fillLogin("test-user@localhost", getPassword("test-user@localhost"));
@@ -1318,56 +1336,75 @@ public class LoginTest {
             realm.name(REALM_NAME)
                     .eventsEnabled(true);
 
+
             // Add third-party client for loginExpiredCodeAndExpiredCookies test
-            realm.addClient("third-party")
-                    .enabled(true)
-                    .secret("password")
-                    .baseUrl("http://localhost:8180/app")
-                    .redirectUris("http://localhost:8180/app/*")
-                    .directAccessGrantsEnabled(true);
 
-            // Add root-url-client for openLoginFormWithDifferentApplication test
-            realm.addClient("root-url-client")
-                    .enabled(true)
-                    .secret("password")
-                    .redirectUris("http://localhost:8080/foo/bar/*", "https://localhost:8543/foo/bar/*")
-                    .directAccessGrantsEnabled(true);
+            realm.clients(
+                    org.keycloak.testframework.realm.ClientBuilder.create("third-party")
+                                                                  .enabled(true)
+                                                                  .secret("password")
+                                                                  .baseUrl("http://localhost:8180/app")
+                                                                  .redirectUris("http://localhost:8180/app/*")
+                                                                  .directAccessGrantsEnabled(true),
 
-            realm.addUser("login-test")
-                    .email("login@test.com")
-                    .firstName("Login")
-                    .lastName("Test")
-                    .enabled(true)
-                    .password(generatePasswordForUser("login-test"));
+                    // Add root-url-client for openLoginFormWithDifferentApplication test
+                    org.keycloak.testframework.realm.ClientBuilder.create("root-url-client")
+                                                                  .enabled(true)
+                                                                  .secret("password")
+                                                                  .redirectUris("http://localhost:8080/foo/bar/*", "https://localhost:8543/foo/bar/*")
+                                                                  .directAccessGrantsEnabled(true)
+            );
 
-            realm.addUser("login-test2")
-                    .email("login2@test.com")
-                    .firstName("Login2")
-                    .lastName("Test2")
-                    .enabled(true)
-                    .password(generatePasswordForUser("login2-test"));
+            realm.users(
+                         UserBuilder.create("login-test")
+                                    .email("login@test.com")
+                                    .firstName("Login")
+                                    .lastName("Test")
+                                    .enabled(true)
+                                    .password(generatePasswordForUser("login-test")),
 
-            realm.addUser("admin")
-                    .password(generatePasswordForUser("admin"))
-                    .enabled(true)
-                    .clientRoles("realm-management", "realm-admin");
+                         UserBuilder.create("login-test2")
+                                   .email("login2@test.com")
+                                   .firstName("Login2")
+                                   .lastName("Test2")
+                                   .enabled(true)
+                                   .password(generatePasswordForUser("login2-test")),
 
-            realm.addUser("test-user@localhost")
-                    .email("test-user@localhost")
-                    .firstName("Test")
-                    .lastName("User")
-                    .enabled(true)
-                    .password(generatePasswordForUser("test-user@localhost"));
+                        UserBuilder.create("admin")
+                                   .password(generatePasswordForUser("admin"))
+                                   .enabled(true)
+                                   .clientRoles("realm-management", "realm-admin"),
 
-            realm.addUser("keycloak-user@localhost")
-                    .email("keycloak-user@localhost")
-                    .firstName("Keycloak")
-                    .lastName("User")
-                    .enabled(true)
-                    .password(generatePasswordForUser("keycloak-user@localhost"))
-                    .requiredActions("UPDATE_PASSWORD");
+                        UserBuilder.create("test-user@localhost")
+                                   .email("test-user@localhost")
+                                   .firstName("Test")
+                                   .lastName("User")
+                                   .enabled(true)
+                                   .password(generatePasswordForUser("test-user@localhost")),
 
+                        UserBuilder.create("keycloak-user@localhost")
+                                   .email("keycloak-user@localhost")
+                                   .firstName("Keycloak")
+                                   .lastName("User")
+                                   .enabled(true)
+                                   .password(generatePasswordForUser("keycloak-user@localhost"))
+                                   .requiredActions("UPDATE_PASSWORD")
+                    );
             return realm;
+        }
+
+        static UserBuilder createUserBuilder(String username, String firstname, String lastname, String email,List<String> requiredActions ,String... clientRoles) {
+
+           return UserBuilder.create()
+                                              .username(username)
+                                              .name(firstname, lastname)
+                                              .email(email)
+                                              .clientRoles(Arrays.toString(clientRoles))
+                                              .requiredActions(String.valueOf(requiredActions))
+                                              .password(generatePasswordForUser(username));
+
+
+
         }
 
         static String generatePasswordForUser(String username) {
@@ -1450,11 +1487,7 @@ public class LoginTest {
     }
 
     private void removeUserSession(String sessionId) {
-        runOnServer.run(session -> {
-            RealmModel realm = session.realms().getRealmByName(REALM_NAME);
-            session.getContext().setRealm(realm);
-            session.sessions().removeUserSession(realm, session.sessions().getUserSession(realm, sessionId));
-        });
+        adminClient.realm(REALM_NAME).deleteSession(sessionId, false);
     }
 
 }

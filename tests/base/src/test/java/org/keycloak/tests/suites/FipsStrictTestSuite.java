@@ -10,6 +10,7 @@ import org.keycloak.testframework.server.KeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 import org.keycloak.tests.admin.ServerInfoTest;
 import org.keycloak.tests.admin.client.CredentialsTest;
+import org.keycloak.tests.forms.LoginTest;
 import org.keycloak.tests.keys.JavaKeystoreKeyProviderTest;
 
 import org.junit.platform.suite.api.AfterSuite;
@@ -21,7 +22,8 @@ import org.junit.platform.suite.api.Suite;
 @SelectClasses({
         CredentialsTest.class,
         JavaKeystoreKeyProviderTest.class,
-        ServerInfoTest.class
+        ServerInfoTest.class,
+        LoginTest.class
 })
 public class FipsStrictTestSuite {
 
