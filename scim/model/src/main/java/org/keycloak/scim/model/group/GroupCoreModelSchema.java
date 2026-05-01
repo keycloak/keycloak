@@ -87,7 +87,11 @@ public final class GroupCoreModelSchema extends AbstractModelSchema<GroupModel, 
                         }
                         return null;
                     })
-                    .withModelSetter(GroupModel::setName)
+                    .withModelSetter((m, name) -> {
+                        if (name != null) {
+                            m.setName(name);
+                        }
+                    })
                     .build());
         attributes.addAll(Attribute.<GroupModel, Group>simple("externalId")
                 .immutable()

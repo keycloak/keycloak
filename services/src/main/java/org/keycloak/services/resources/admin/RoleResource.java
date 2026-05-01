@@ -38,6 +38,8 @@ import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
 
+import static org.keycloak.utils.StringUtil.isBlank;
+
 /**
  * @resource Roles
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -63,7 +65,7 @@ public abstract class RoleResource {
     protected void updateRole(RoleRepresentation rep, RoleModel role, RealmModel realm,
             KeycloakSession session) {
         String newName = rep.getName();
-        if (newName == null) {
+        if (isBlank(newName)) {
             throw new BadRequestException("role has no name");
         }
         String previousName = role.getName();

@@ -97,7 +97,9 @@ public class RealmRolesCRUDTest extends AbstractRealmRolesTest {
         RoleRepresentation update = new RoleRepresentation();
         update.setDescription("Role A updated description");
         update.setAttributes(Collections.singletonMap("attrKey", Collections.singletonList("attrValue")));
+        Assertions.assertThrows(BadRequestException.class, () -> roleResource.update(update));
 
+        update.setName(" ");
         Assertions.assertThrows(BadRequestException.class, () -> roleResource.update(update));
     }
 
