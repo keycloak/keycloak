@@ -22,7 +22,7 @@ import io.vertx.ext.web.RoutingContext;
 import org.jboss.logging.Logger;
 
 /**
- * Blocks HTTP requests for JavaScript source map files (.js.map) in production mode.
+ * Blocks HTTP requests for JavaScript source map files (.js.map) when not running in dev mode.
  * Source maps are retained on disk for support diagnostics but must not be served
  * to clients in production, as they can expose internal implementation details of
  * customized themes.
@@ -35,9 +35,9 @@ public class RejectSourceMapFilter implements Handler<RoutingContext> {
 
     @Override
     public void handle(RoutingContext routingContext) {
-        String path = routingContext.request().path();
+        String path = routingContext.normalizedPath();
 
-        if (path != null && path.endsWith(".js.map")) {
+        if (path.endsWith(".js.map")) {
             LOGGER.debugf("Blocked source map request: %s", path);
             routingContext.fail(404);
             return;
