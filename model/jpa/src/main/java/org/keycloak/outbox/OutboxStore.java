@@ -17,10 +17,13 @@
 package org.keycloak.outbox;
 
 import java.time.Instant;
+import java.util.Collection;
 import java.util.EnumMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.UUID;
 
 import jakarta.persistence.EntityManager;
@@ -271,6 +274,262 @@ public class OutboxStore {
             oldest.put((OutboxEntryStatus) row[0], (Instant) row[1]);
         }
         return oldest;
+    }
+
+    // -- Receiver-driven reads (POLL) --------------------------------------
+
+    /**
+     * Locks up to {@code limit} PENDING rows for a receiver-driven
+     * read (e.g. SSF POLL). Uses {@code FOR UPDATE SKIP LOCKED} so a
+     * concurrent receiver request to the same owner doesn't block.
+     * Unlike {@link #lockDueForDrain(String, int)} this does not gate
+     * on {@code next_attempt_at} — receiver-pulled rows are served
+     * on demand regardless of any backoff schedule.
+     */
+    public List<OutboxEntryEntity> lockPendingForOwner(String entryKind, String ownerId, int limit) {
+        Objects.requireNonNull(entryKind, "entryKind");
+        Objects.requireNonNull(ownerId, "ownerId");
+        if (limit <= 0) {
+            throw new IllegalArgumentException("limit must be positive, got " + limit);
+        }
+        var query = getEntityManager()
+                .createNamedQuery("OutboxEntryEntity.findPendingForOwner", OutboxEntryEntity.class)
+                .setParameter("entryKind", entryKind)
+                .setParameter("ownerId", ownerId)
+                .setParameter("status", OutboxEntryStatus.PENDING)
+                .setMaxResults(limit)
+                .setLockMode(LockModeType.PESSIMISTIC_WRITE);
+        try {
+            query.unwrap(SelectionQuery.class).setHibernateLockMode(LockMode.UPGRADE_SKIPLOCKED);
+        } catch (RuntimeException e) {
+            log.debugf(e, "Could not set UPGRADE_SKIPLOCKED on owner-pending query — proceeding without skip-locked");
+        }
+        return query.getResultList();
+    }
+
+    /**
+     * Counts an owner's rows in a given status. Used by receiver-driven
+     * read paths to decide whether to advertise more available items
+     * after returning a short batch.
+     */
+    public long countForOwnerByStatus(String entryKind, String ownerId, OutboxEntryStatus status) {
+        Objects.requireNonNull(entryKind, "entryKind");
+        Objects.requireNonNull(ownerId, "ownerId");
+        Objects.requireNonNull(status, "status");
+        return getEntityManager()
+                .createNamedQuery("OutboxEntryEntity.countByEntryKindOwnerStatus", Long.class)
+                .setParameter("entryKind", entryKind)
+                .setParameter("ownerId", ownerId)
+                .setParameter("status", status)
+                .getSingleResult();
+    }
+
+    /**
+     * Receiver-driven ACK for the supplied correlation ids. Matching
+     * PENDING rows owned by the given owner transition to DELIVERED.
+     * Idempotent and silently scoped: ids the receiver doesn't own
+     * (different owner) and ids already terminal don't appear in the
+     * lookup result, so no error and no leakage of row existence.
+     *
+     * @return the set of correlation ids that were transitioned to
+     *         DELIVERED.
+     */
+    public Set<String> ackPendingForOwner(String entryKind, String ownerId, Collection<String> correlationIds) {
+        Objects.requireNonNull(entryKind, "entryKind");
+        Objects.requireNonNull(ownerId, "ownerId");
+        if (correlationIds == null || correlationIds.isEmpty()) {
+            return Set.of();
+        }
+        List<OutboxEntryEntity> rows = getEntityManager()
+                .createNamedQuery("OutboxEntryEntity.findPendingForOwnerByCorrelationIds", OutboxEntryEntity.class)
+                .setParameter("entryKind", entryKind)
+                .setParameter("ownerId", ownerId)
+                .setParameter("correlationIds", correlationIds)
+                .setParameter("status", OutboxEntryStatus.PENDING)
+                .getResultList();
+        if (rows.isEmpty()) {
+            return Set.of();
+        }
+        Set<String> acked = new LinkedHashSet<>(rows.size());
+        for (OutboxEntryEntity row : rows) {
+            markDelivered(row);
+            acked.add(row.getCorrelationId());
+        }
+        log.debugf("Outbox ack. entryKind=%s ownerId=%s ackedCount=%d", entryKind, ownerId, acked.size());
+        return acked;
+    }
+
+    /**
+     * Receiver-driven NACK. Matching PENDING rows owned by the given
+     * owner transition to DEAD_LETTER carrying the receiver-supplied
+     * reason. For receiver-pulled flows, DEAD_LETTER is reached only
+     * via this explicit NACK path (no transmitter-side retry-exhaustion
+     * counter to bump). Idempotent and silently scoped, like
+     * {@link #ackPendingForOwner}.
+     *
+     * @return the set of correlation ids that were transitioned to
+     *         DEAD_LETTER.
+     */
+    public Set<String> nackPendingForOwner(String entryKind, String ownerId, Map<String, String> reasonByCorrelationId) {
+        Objects.requireNonNull(entryKind, "entryKind");
+        Objects.requireNonNull(ownerId, "ownerId");
+        if (reasonByCorrelationId == null || reasonByCorrelationId.isEmpty()) {
+            return Set.of();
+        }
+        List<OutboxEntryEntity> rows = getEntityManager()
+                .createNamedQuery("OutboxEntryEntity.findPendingForOwnerByCorrelationIds", OutboxEntryEntity.class)
+                .setParameter("entryKind", entryKind)
+                .setParameter("ownerId", ownerId)
+                .setParameter("correlationIds", reasonByCorrelationId.keySet())
+                .setParameter("status", OutboxEntryStatus.PENDING)
+                .getResultList();
+        if (rows.isEmpty()) {
+            return Set.of();
+        }
+        Set<String> nacked = new LinkedHashSet<>(rows.size());
+        for (OutboxEntryEntity row : rows) {
+            String reason = reasonByCorrelationId.get(row.getCorrelationId());
+            markDeadLetter(row, reason != null ? reason : "receiver nack");
+            nacked.add(row.getCorrelationId());
+        }
+        log.debugf("Outbox nack. entryKind=%s ownerId=%s nackedCount=%d", entryKind, ownerId, nacked.size());
+        return nacked;
+    }
+
+    // -- Owner-scoped lifecycle (pause/resume/disable/migrate) -------------
+
+    /**
+     * Bulk-transitions every {@link OutboxEntryStatus#HELD HELD} row
+     * for the owner back to {@link OutboxEntryStatus#PENDING PENDING}
+     * with {@code next_attempt_at = now} so the drainer picks them up
+     * on its next tick. Symmetric to {@link #holdPendingForOwner}.
+     *
+     * @return the number of rows that transitioned out of HELD.
+     */
+    public int releaseHeldForOwner(String entryKind, String ownerId) {
+        Objects.requireNonNull(entryKind, "entryKind");
+        Objects.requireNonNull(ownerId, "ownerId");
+        int released = getEntityManager()
+                .createNamedQuery("OutboxEntryEntity.releaseHeldForOwner")
+                .setParameter("entryKind", entryKind)
+                .setParameter("ownerId", ownerId)
+                .setParameter("pending", OutboxEntryStatus.PENDING)
+                .setParameter("held", OutboxEntryStatus.HELD)
+                .setParameter("now", Instant.now())
+                .executeUpdate();
+        if (released > 0) {
+            log.debugf("Outbox released %d held row(s) for entryKind=%s ownerId=%s", released, entryKind, ownerId);
+        }
+        return released;
+    }
+
+    /**
+     * Bulk-transitions every PENDING row for the owner to HELD —
+     * "park" the queue when the upstream channel pauses (e.g. SSF
+     * stream paused / disabled).
+     *
+     * @return the number of rows that transitioned PENDING → HELD.
+     */
+    public int holdPendingForOwner(String entryKind, String ownerId) {
+        Objects.requireNonNull(entryKind, "entryKind");
+        Objects.requireNonNull(ownerId, "ownerId");
+        int held = getEntityManager()
+                .createNamedQuery("OutboxEntryEntity.holdPendingForOwner")
+                .setParameter("entryKind", entryKind)
+                .setParameter("ownerId", ownerId)
+                .setParameter("held", OutboxEntryStatus.HELD)
+                .setParameter("pending", OutboxEntryStatus.PENDING)
+                .executeUpdate();
+        if (held > 0) {
+            log.debugf("Outbox held %d pending row(s) for entryKind=%s ownerId=%s", held, entryKind, ownerId);
+        }
+        return held;
+    }
+
+    /**
+     * Dead-letters every queued (PENDING + HELD) row for the owner
+     * with the supplied reason. Used when the upstream forbids
+     * holding (e.g. SSF stream disabled) and the rows must be
+     * discarded rather than parked.
+     */
+    public int deadLetterQueuedForOwner(String entryKind, String ownerId, String reason) {
+        Objects.requireNonNull(entryKind, "entryKind");
+        Objects.requireNonNull(ownerId, "ownerId");
+        Objects.requireNonNull(reason, "reason");
+        int updated = getEntityManager()
+                .createNamedQuery("OutboxEntryEntity.deadLetterQueuedForOwner")
+                .setParameter("entryKind", entryKind)
+                .setParameter("ownerId", ownerId)
+                .setParameter("dead", OutboxEntryStatus.DEAD_LETTER)
+                .setParameter("statuses", OutboxEntryStatus.QUEUED)
+                .setParameter("reason", truncateError(reason))
+                .executeUpdate();
+        if (updated > 0) {
+            log.debugf("Outbox dead-lettered %d queued row(s) for entryKind=%s ownerId=%s", updated, entryKind, ownerId);
+        }
+        return updated;
+    }
+
+    /**
+     * Dead-letters queued rows for the owner whose {@code entryType}
+     * is not in {@code allowedTypes}. Used when the upstream narrows
+     * its accepted-type set (e.g. SSF receiver narrowing
+     * {@code events_requested}) so already-signed rows of dropped
+     * types stop being delivered without losing the audit trail.
+     *
+     * <p>If {@code allowedTypes} is empty, this method falls back to
+     * {@link #deadLetterQueuedForOwner} since SQL {@code NOT IN ()}
+     * is implementation-defined.
+     */
+    public int deadLetterQueuedForOwnerNotMatchingTypes(String entryKind, String ownerId,
+                                                        Collection<String> allowedTypes,
+                                                        String reason) {
+        Objects.requireNonNull(entryKind, "entryKind");
+        Objects.requireNonNull(ownerId, "ownerId");
+        Objects.requireNonNull(allowedTypes, "allowedTypes");
+        Objects.requireNonNull(reason, "reason");
+        if (allowedTypes.isEmpty()) {
+            return deadLetterQueuedForOwner(entryKind, ownerId, reason);
+        }
+        int updated = getEntityManager()
+                .createNamedQuery("OutboxEntryEntity.deadLetterQueuedForOwnerNotMatchingTypes")
+                .setParameter("entryKind", entryKind)
+                .setParameter("ownerId", ownerId)
+                .setParameter("dead", OutboxEntryStatus.DEAD_LETTER)
+                .setParameter("statuses", OutboxEntryStatus.QUEUED)
+                .setParameter("allowedTypes", allowedTypes)
+                .setParameter("reason", truncateError(reason))
+                .executeUpdate();
+        if (updated > 0) {
+            log.debugf("Outbox dead-lettered %d queued row(s) for entryKind=%s ownerId=%s with entryType outside the allow-list",
+                    updated, entryKind, ownerId);
+        }
+        return updated;
+    }
+
+    /**
+     * Migrates queued rows for the owner from one entryKind to another
+     * (e.g. SSF receiver flipping push ↔ poll). Terminal rows
+     * (DELIVERED, DEAD_LETTER) are left under the previous kind — they
+     * are audit / dedup artifacts of the old channel.
+     *
+     * @return the number of rows whose entryKind was migrated.
+     */
+    public int migrateEntryKindForOwner(String currentKind, String newKind, String ownerId) {
+        Objects.requireNonNull(currentKind, "currentKind");
+        Objects.requireNonNull(newKind, "newKind");
+        Objects.requireNonNull(ownerId, "ownerId");
+        int migrated = getEntityManager()
+                .createNamedQuery("OutboxEntryEntity.migrateEntryKindForOwner")
+                .setParameter("currentKind", currentKind)
+                .setParameter("newKind", newKind)
+                .setParameter("ownerId", ownerId)
+                .setParameter("statuses", OutboxEntryStatus.QUEUED)
+                .executeUpdate();
+        if (migrated > 0) {
+            log.debugf("Outbox migrated %d row(s) for ownerId=%s from %s to %s", migrated, ownerId, currentKind, newKind);
+        }
+        return migrated;
     }
 
     // -- Admin / cascade deletes -------------------------------------------

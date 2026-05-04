@@ -177,7 +177,75 @@ import jakarta.persistence.Table;
                         + "    SET e.status = :dead, e.lastError = :reason"
                         + "  WHERE e.entryKind = :entryKind"
                         + "    AND e.status IN :statuses"
-                        + "    AND e.createdAt < :olderThan")
+                        + "    AND e.createdAt < :olderThan"),
+        // Receiver-driven read paths (e.g. SSF POLL endpoint). The
+        // per-owner read is on-demand — no next_attempt_at gate; the
+        // ack/nack lookup additionally filters by correlation id set
+        // so receivers can't poke at rows they don't own.
+        @NamedQuery(
+                name = "OutboxEntryEntity.findPendingForOwner",
+                query = "SELECT e FROM OutboxEntryEntity e"
+                        + " WHERE e.entryKind = :entryKind"
+                        + "   AND e.ownerId = :ownerId"
+                        + "   AND e.status = :status"
+                        + " ORDER BY e.createdAt ASC"),
+        @NamedQuery(
+                name = "OutboxEntryEntity.findPendingForOwnerByCorrelationIds",
+                query = "SELECT e FROM OutboxEntryEntity e"
+                        + " WHERE e.entryKind = :entryKind"
+                        + "   AND e.ownerId = :ownerId"
+                        + "   AND e.correlationId IN :correlationIds"
+                        + "   AND e.status = :status"),
+        @NamedQuery(
+                name = "OutboxEntryEntity.countByEntryKindOwnerStatus",
+                query = "SELECT COUNT(e) FROM OutboxEntryEntity e"
+                        + " WHERE e.entryKind = :entryKind"
+                        + "   AND e.ownerId = :ownerId"
+                        + "   AND e.status = :status"),
+        // Owner-scoped lifecycle: stream pause/resume, stream disable,
+        // narrowed events_requested. Mirrors the SSF stream lifecycle
+        // operations on SsfEventStore.
+        @NamedQuery(
+                name = "OutboxEntryEntity.releaseHeldForOwner",
+                query = "UPDATE OutboxEntryEntity e"
+                        + "    SET e.status = :pending, e.nextAttemptAt = :now"
+                        + "  WHERE e.entryKind = :entryKind"
+                        + "    AND e.ownerId = :ownerId"
+                        + "    AND e.status = :held"),
+        @NamedQuery(
+                name = "OutboxEntryEntity.holdPendingForOwner",
+                query = "UPDATE OutboxEntryEntity e"
+                        + "    SET e.status = :held"
+                        + "  WHERE e.entryKind = :entryKind"
+                        + "    AND e.ownerId = :ownerId"
+                        + "    AND e.status = :pending"),
+        @NamedQuery(
+                name = "OutboxEntryEntity.deadLetterQueuedForOwner",
+                query = "UPDATE OutboxEntryEntity e"
+                        + "    SET e.status = :dead, e.lastError = :reason"
+                        + "  WHERE e.entryKind = :entryKind"
+                        + "    AND e.ownerId = :ownerId"
+                        + "    AND e.status IN :statuses"),
+        @NamedQuery(
+                name = "OutboxEntryEntity.deadLetterQueuedForOwnerNotMatchingTypes",
+                query = "UPDATE OutboxEntryEntity e"
+                        + "    SET e.status = :dead, e.lastError = :reason"
+                        + "  WHERE e.entryKind = :entryKind"
+                        + "    AND e.ownerId = :ownerId"
+                        + "    AND e.status IN :statuses"
+                        + "    AND e.entryType NOT IN :allowedTypes"),
+        // Migrating an owner's queued rows to a different entryKind
+        // (e.g. SSF receiver flipping push <-> poll). Terminal rows
+        // (DELIVERED, DEAD_LETTER) are left alone — they're audit/dedup
+        // artifacts of the previous channel and migrating them would
+        // confuse correlation-id dedup on the new channel.
+        @NamedQuery(
+                name = "OutboxEntryEntity.migrateEntryKindForOwner",
+                query = "UPDATE OutboxEntryEntity e"
+                        + "    SET e.entryKind = :newKind"
+                        + "  WHERE e.entryKind = :currentKind"
+                        + "    AND e.ownerId = :ownerId"
+                        + "    AND e.status IN :statuses")
 })
 public class OutboxEntryEntity {
 
