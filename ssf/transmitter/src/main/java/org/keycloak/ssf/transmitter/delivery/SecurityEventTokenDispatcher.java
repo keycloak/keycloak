@@ -4,6 +4,7 @@ import java.util.function.Function;
 
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserModel;
+import org.keycloak.outbox.OutboxStore;
 import org.keycloak.ssf.Ssf;
 import org.keycloak.ssf.SsfProfile;
 import org.keycloak.ssf.event.token.SecurityEventToken;
@@ -16,7 +17,7 @@ import org.keycloak.ssf.transmitter.delivery.push.PushDeliveryService;
 import org.keycloak.ssf.transmitter.event.SecurityEventTokenEncoder;
 import org.keycloak.ssf.transmitter.event.SsfSignatureAlgorithms;
 import org.keycloak.ssf.transmitter.metrics.SsfMetricsBinder;
-import org.keycloak.ssf.transmitter.store.SsfEventStore;
+import org.keycloak.ssf.transmitter.outbox.SsfOutboxKinds;
 import org.keycloak.ssf.transmitter.stream.StreamConfig;
 import org.keycloak.ssf.transmitter.subject.SsfSubjectInclusionResolver;
 import org.keycloak.ssf.transmitter.subject.SubjectSubscriptionFilter;
@@ -44,7 +45,7 @@ public class SecurityEventTokenDispatcher {
 
     protected final SsfTransmitterConfig transmitterConfig;
 
-    protected final Function<KeycloakSession, SsfEventStore> eventStoreFactory;
+    protected final Function<KeycloakSession, OutboxStore> outboxStoreFactory;
 
     protected final SubjectSubscriptionFilter subjectSubscriptionFilter;
 
@@ -56,8 +57,8 @@ public class SecurityEventTokenDispatcher {
                                         SecurityEventTokenEncoder securityEventTokenEncoder,
                                         PushDeliveryService pushDeliveryService,
                                         SsfTransmitterConfig transmitterConfig,
-                                        Function<KeycloakSession, SsfEventStore> eventStoreFactory) {
-        this(session, securityEventTokenEncoder, pushDeliveryService, transmitterConfig, eventStoreFactory,
+                                        Function<KeycloakSession, OutboxStore> outboxStoreFactory) {
+        this(session, securityEventTokenEncoder, pushDeliveryService, transmitterConfig, outboxStoreFactory,
                 SsfMetricsBinder.NOOP, null);
     }
 
@@ -65,9 +66,9 @@ public class SecurityEventTokenDispatcher {
                                         SecurityEventTokenEncoder securityEventTokenEncoder,
                                         PushDeliveryService pushDeliveryService,
                                         SsfTransmitterConfig transmitterConfig,
-                                        Function<KeycloakSession, SsfEventStore> eventStoreFactory,
+                                        Function<KeycloakSession, OutboxStore> outboxStoreFactory,
                                         SsfMetricsBinder metricsBinder) {
-        this(session, securityEventTokenEncoder, pushDeliveryService, transmitterConfig, eventStoreFactory,
+        this(session, securityEventTokenEncoder, pushDeliveryService, transmitterConfig, outboxStoreFactory,
                 metricsBinder, null);
     }
 
@@ -75,14 +76,14 @@ public class SecurityEventTokenDispatcher {
                                         SecurityEventTokenEncoder securityEventTokenEncoder,
                                         PushDeliveryService pushDeliveryService,
                                         SsfTransmitterConfig transmitterConfig,
-                                        Function<KeycloakSession, SsfEventStore> eventStoreFactory,
+                                        Function<KeycloakSession, OutboxStore> outboxStoreFactory,
                                         SsfMetricsBinder metricsBinder,
                                         SsfSubjectInclusionResolver subjectInclusionResolver) {
         this.session = session;
         this.securityEventTokenEncoder = securityEventTokenEncoder;
         this.pushDeliveryService = pushDeliveryService;
         this.transmitterConfig = transmitterConfig;
-        this.eventStoreFactory = eventStoreFactory;
+        this.outboxStoreFactory = outboxStoreFactory;
         this.subjectInclusionResolver = subjectInclusionResolver;
         this.subjectSubscriptionFilter = createSubjectSubscriptionFilter();
         this.metricsBinder = metricsBinder == null ? SsfMetricsBinder.NOOP : metricsBinder;
@@ -231,11 +232,11 @@ public class SecurityEventTokenDispatcher {
 
     /**
      * Holds an event for a paused stream by signing it and writing it to
-     * the outbox in {@link org.keycloak.ssf.transmitter.outbox.SsfEventStatus#HELD HELD}
-     * status. The drainer/poll endpoint skip HELD rows; they're released
-     * to {@code PENDING} when the stream is resumed
-     * ({@link org.keycloak.ssf.transmitter.store.SsfEventStore#releaseHeldForClient
-     * releaseHeldForClient}).
+     * the outbox in
+     * {@link org.keycloak.models.jpa.entities.OutboxEntryStatus#HELD HELD}
+     * status. The drainer / POLL endpoint skip HELD rows; they're
+     * released to {@code PENDING} when the stream is resumed
+     * ({@link org.keycloak.outbox.OutboxStore#releaseHeldForOwner releaseHeldForOwner}).
      */
     protected void holdEvent(SsfSecurityEventToken eventToken, StreamConfig stream) {
         var delivery = stream.getDelivery();
@@ -255,12 +256,12 @@ public class SecurityEventTokenDispatcher {
                 eventType = "<unknown>";
             }
 
-            var eventStore = eventStoreFactory.apply(session);
+            OutboxStore outboxStore = outboxStoreFactory.apply(session);
             switch (deliveryMethod) {
                 case PUSH, RISC_PUSH ->
-                        eventStore.enqueueHeldPush(realmId, clientId, streamId, jti, eventType, encodedEvent);
+                        outboxStore.enqueueHeld(SsfOutboxKinds.PUSH, realmId, clientId, streamId, jti, eventType, encodedEvent, null);
                 case POLL, RISC_POLL ->
-                        eventStore.enqueueHeldPoll(realmId, clientId, streamId, jti, eventType, encodedEvent);
+                        outboxStore.enqueueHeld(SsfOutboxKinds.POLL, realmId, clientId, streamId, jti, eventType, encodedEvent, null);
             }
 
             // HELD is a distinct outcome from normal delivery — we
@@ -279,7 +280,7 @@ public class SecurityEventTokenDispatcher {
 
     /**
      * Asynchronously delivers an event to the receiver by enqueuing the
-     * signed SET into the durable {@link SsfEventStore push outbox}.
+     * signed SET into the durable {@link OutboxStore push outbox}.
      * The cluster-aware drainer picks the row up on its next tick and
      * pushes it to the receiver's endpoint, retrying with exponential
      * backoff and dead-lettering after the configured attempt budget is
@@ -406,8 +407,8 @@ public class SecurityEventTokenDispatcher {
             eventType = "<unknown>";
         }
 
-        var eventStore = eventStoreFactory.apply(session);
-        eventStore.enqueuePendingPush(realmId, clientId, streamId, jti, eventType, encodedEvent);
+        OutboxStore outboxStore = outboxStoreFactory.apply(session);
+        outboxStore.enqueuePending(SsfOutboxKinds.PUSH, realmId, clientId, streamId, jti, eventType, encodedEvent, null);
         metricsBinder.recordEnqueued(currentRealmName(), stream.getClientClientId(), "PUSH",
                 resolveEventAlias(eventType));
     }
@@ -432,8 +433,8 @@ public class SecurityEventTokenDispatcher {
             eventType = "<unknown>";
         }
 
-        var eventStore = eventStoreFactory.apply(session);
-        eventStore.enqueuePendingPoll(realmId, clientId, streamId, jti, eventType, encodedEvent);
+        OutboxStore outboxStore = outboxStoreFactory.apply(session);
+        outboxStore.enqueuePending(SsfOutboxKinds.POLL, realmId, clientId, streamId, jti, eventType, encodedEvent, null);
         metricsBinder.recordEnqueued(currentRealmName(), stream.getClientClientId(), "POLL",
                 resolveEventAlias(eventType));
     }

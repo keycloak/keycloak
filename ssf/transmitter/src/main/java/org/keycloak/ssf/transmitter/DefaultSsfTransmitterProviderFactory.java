@@ -232,7 +232,7 @@ public class DefaultSsfTransmitterProviderFactory implements SsfTransmitterProvi
                 provider.securityEventTokenEncoder(),
                 provider.pushDeliveryService(),
                 ctx.config(),
-                ctx.eventStoreFactory(),
+                ctx.outboxStoreFactory(),
                 ctx.metrics(),
                 provider.subjectInclusionResolver());
     }
