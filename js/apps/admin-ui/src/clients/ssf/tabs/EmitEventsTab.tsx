@@ -19,7 +19,8 @@ import {
   TextContent,
   TextInput,
 } from "@patternfly/react-core";
-import { useState } from "react";
+import debouncePromise from "p-debounce";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 
@@ -95,6 +96,25 @@ export const EmitEventsTab = ({
   const [emitResult, setEmitResult] = useState<SsfEmitResult | null>(null);
   const [emitError, setEmitError] = useState<string | null>(null);
   const [emitLoading, setEmitLoading] = useState(false);
+
+  // Debounce the live JSON parse so a fast typist doesn't pay
+  // JSON.parse on every keystroke against a large payload. 250ms
+  // matches the cadence at which the validation error feels
+  // "instant" without flickering as the user types mid-token.
+  const debouncedValidatePayload = useMemo(
+    () =>
+      debouncePromise((value: string) => {
+        try {
+          JSON.parse(substitutePayloadPlaceholders(value));
+          setEmitPayloadParseError(null);
+        } catch (error) {
+          setEmitPayloadParseError(
+            t("ssfEmitPayloadInvalidJson", { error: String(error) }),
+          );
+        }
+      }, 250),
+    [t],
+  );
 
   /**
    * Emits a synthetic SSF event for this receiver via the admin-emit
@@ -326,22 +346,14 @@ export const EmitEventsTab = ({
                 // Live validation: substitute placeholders first
                 // (so unquoted __now__ becomes a valid numeric
                 // literal) then JSON.parse. Blank payload resolves
-                // to {} at submit time and is therefore valid.
-                const trimmed = value.trim();
-                if (trimmed === "") {
+                // to {} at submit time and is therefore valid —
+                // clear the error synchronously so the UI feedback
+                // is immediate when the user empties the field.
+                if (value.trim() === "") {
                   setEmitPayloadParseError(null);
                   return;
                 }
-                try {
-                  JSON.parse(substitutePayloadPlaceholders(value));
-                  setEmitPayloadParseError(null);
-                } catch (error) {
-                  setEmitPayloadParseError(
-                    t("ssfEmitPayloadInvalidJson", {
-                      error: String(error),
-                    }),
-                  );
-                }
+                void debouncedValidatePayload(value);
               }}
             />
             {emitPayloadParseError && (
