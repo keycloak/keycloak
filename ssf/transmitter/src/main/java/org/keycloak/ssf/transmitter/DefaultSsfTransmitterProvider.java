@@ -163,7 +163,7 @@ public class DefaultSsfTransmitterProvider implements SsfTransmitterProvider {
     @Override
     public StreamService streamService() {
         return new StreamService(session, this, streamStore(), metadataService(), verificationService(),
-                context.eventStoreFactory());
+                context.outboxStoreFactory());
     }
 
     @Override

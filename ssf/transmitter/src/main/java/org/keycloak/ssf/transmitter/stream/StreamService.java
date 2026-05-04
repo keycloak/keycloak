@@ -19,6 +19,7 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
+import org.keycloak.outbox.OutboxStore;
 import org.keycloak.ssf.Ssf;
 import org.keycloak.ssf.SsfException;
 import org.keycloak.ssf.SsfProfile;
@@ -32,8 +33,7 @@ import org.keycloak.ssf.transmitter.event.SsfSignatureAlgorithms;
 import org.keycloak.ssf.transmitter.event.SsfUserSubjectFormats;
 import org.keycloak.ssf.transmitter.metadata.TransmitterMetadataService;
 import org.keycloak.ssf.transmitter.metrics.SsfMetricsBinder;
-import org.keycloak.ssf.transmitter.outbox.SsfEventEntity;
-import org.keycloak.ssf.transmitter.store.SsfEventStore;
+import org.keycloak.ssf.transmitter.outbox.SsfOutboxKinds;
 import org.keycloak.ssf.transmitter.stream.storage.SsfStreamStore;
 import org.keycloak.ssf.transmitter.stream.storage.client.ClientStreamStore;
 import org.keycloak.ssf.transmitter.support.SsfTransmitterUrls;
@@ -74,21 +74,20 @@ public class StreamService {
 
     protected final StreamVerificationService streamVerificationService;
 
-    protected final Function<KeycloakSession, SsfEventStore> eventStoreFactory;
+    protected final Function<KeycloakSession, OutboxStore> outboxStoreFactory;
 
     public StreamService(KeycloakSession session,
                          SsfTransmitterProvider transmitterProvider,
                          SsfStreamStore streamStore,
                          TransmitterMetadataService transmitterService,
                          StreamVerificationService streamVerificationService,
-                         Function<KeycloakSession,
-                         SsfEventStore> eventStoreFactory) {
+                         Function<KeycloakSession, OutboxStore> outboxStoreFactory) {
         this.session = session;
         this.transmitterProvider = transmitterProvider;
         this.streamStore = streamStore;
         this.transmitterService = transmitterService;
         this.streamVerificationService = streamVerificationService;
-        this.eventStoreFactory = eventStoreFactory;
+        this.outboxStoreFactory = outboxStoreFactory;
     }
 
     /**
@@ -877,13 +876,17 @@ public class StreamService {
         if (newMethod == null) {
             return;
         }
-        String newMethodColumn = switch (newMethod) {
-            case PUSH, RISC_PUSH -> SsfEventEntity.DELIVERY_METHOD_PUSH;
-            case POLL, RISC_POLL -> SsfEventEntity.DELIVERY_METHOD_POLL;
+        // In the generic outbox the delivery method is encoded by the
+        // entryKind (ssf-push vs ssf-poll) rather than a column on the
+        // row. Migrating the queued backlog therefore translates to
+        // re-tagging rows from the old kind to the new one.
+        String newKind = switch (newMethod) {
+            case PUSH, RISC_PUSH -> SsfOutboxKinds.PUSH;
+            case POLL, RISC_POLL -> SsfOutboxKinds.POLL;
         };
-        SsfEventStore eventStore = eventStoreFactory.apply(session);
-        int migrated = eventStore.migrateDeliveryMethodForClient(
-                streamConfig.getClientId(), newMethodColumn);
+        String currentKind = SsfOutboxKinds.PUSH.equals(newKind) ? SsfOutboxKinds.POLL : SsfOutboxKinds.PUSH;
+        OutboxStore outboxStore = outboxStoreFactory.apply(session);
+        int migrated = outboxStore.migrateEntryKindForOwner(currentKind, newKind, streamConfig.getClientId());
         if (migrated > 0) {
             RealmModel realm = session.getContext().getRealm();
             log.debugf("Retargeted %d queued outbox row(s) on delivery method change %s → %s. realm=%s client=%s streamId=%s",
@@ -914,17 +917,29 @@ public class StreamService {
         if (receiverClient == null) {
             return;
         }
-        SsfEventStore eventStore = eventStoreFactory.apply(session);
-        int parked = eventStore.deadLetterUndeliveredForClientNotIn(
-                receiverClient.getId(),
-                allowedEventTypes != null ? allowedEventTypes : Set.of(),
-                SsfEventStore.DEAD_LETTER_REASON_EVENT_TYPE_NO_LONGER_REQUESTED);
+        OutboxStore outboxStore = outboxStoreFactory.apply(session);
+        Set<String> allowed = allowedEventTypes != null ? allowedEventTypes : Set.of();
+        int parked = outboxStore.deadLetterQueuedForOwnerNotMatchingTypes(
+                SsfOutboxKinds.PUSH, receiverClient.getId(), allowed,
+                DEAD_LETTER_REASON_EVENT_TYPE_NO_LONGER_REQUESTED);
+        parked += outboxStore.deadLetterQueuedForOwnerNotMatchingTypes(
+                SsfOutboxKinds.POLL, receiverClient.getId(), allowed,
+                DEAD_LETTER_REASON_EVENT_TYPE_NO_LONGER_REQUESTED);
         if (parked > 0) {
             RealmModel realm = session.getContext().getRealm();
             log.debugf("Dead-lettered %d queued outbox row(s) on events_requested narrow. realm=%s client=%s streamId=%s",
                     parked, realm.getName(), receiverClient.getClientId(), streamId);
         }
     }
+
+    /**
+     * Reason recorded on outbox rows dead-lettered when the receiver
+     * narrows {@code events_requested} (the row's {@code entry_type}
+     * is no longer in the allow-list). Stable string so admin dashboards
+     * filtering on {@code last_error} match.
+     */
+    public static final String DEAD_LETTER_REASON_EVENT_TYPE_NO_LONGER_REQUESTED =
+            "event type not in events_requested";
 
     protected void finalizePollEndpointUrlIfApplicable(StreamConfig streamConfig, ClientModel receiverClient) {
         StreamDeliveryConfig delivery = streamConfig.getDelivery();
@@ -1009,8 +1024,9 @@ public class StreamService {
         String clientId = existingStream.getClientId();
         RealmModel realm = session.getContext().getRealm();
         if (clientId != null) {
-            SsfEventStore eventStore = eventStoreFactory.apply(session);
-            int purged = (int) eventStore.deleteByClient(clientId);
+            OutboxStore outboxStore = outboxStoreFactory.apply(session);
+            int purged = outboxStore.deleteByOwner(SsfOutboxKinds.PUSH, clientId)
+                    + outboxStore.deleteByOwner(SsfOutboxKinds.POLL, clientId);
             if (purged > 0) {
                 log.debugf("Stream delete cascade: purged %d outbox rows. realm=%s client=%s streamId=%s",
                         purged, realm.getName(), clientId, streamId);
@@ -1131,15 +1147,22 @@ public class StreamService {
         //                        any HELD rows; harmless.
         String newStatusCode = streamStatus.getStatus();
         String oldStatusCode = currentStreamStatus.getStatus();
-        SsfEventStore pendingStore = eventStoreFactory.apply(session);
+        OutboxStore outboxStore = outboxStoreFactory.apply(session);
+        String ownerId = stream.getClientId();
         try {
             if (StreamStatusValue.disabled.getStatusCode().equals(newStatusCode)) {
-                pendingStore.deleteUndeliveredForClient(stream.getClientId());
+                // SSF spec: a disabled stream MUST NOT transmit AND
+                // "will not hold any events for later transmission".
+                // Discard PENDING+HELD across both kinds.
+                outboxStore.deleteQueuedByOwner(SsfOutboxKinds.PUSH, ownerId);
+                outboxStore.deleteQueuedByOwner(SsfOutboxKinds.POLL, ownerId);
             } else if (StreamStatusValue.enabled.getStatusCode().equals(newStatusCode)) {
-                pendingStore.releaseHeldForClient(stream.getClientId());
+                outboxStore.releaseHeldForOwner(SsfOutboxKinds.PUSH, ownerId);
+                outboxStore.releaseHeldForOwner(SsfOutboxKinds.POLL, ownerId);
             } else if (StreamStatusValue.paused.getStatusCode().equals(newStatusCode)
                     && StreamStatusValue.enabled.getStatusCode().equals(oldStatusCode)) {
-                pendingStore.holdPendingForClient(stream.getClientId());
+                outboxStore.holdPendingForOwner(SsfOutboxKinds.PUSH, ownerId);
+                outboxStore.holdPendingForOwner(SsfOutboxKinds.POLL, ownerId);
             }
         } catch (Exception e) {
             log.warnf(e, "Failed to align outbox backlog with new stream status. realm=%s client=%s streamId=%s newStatus=%s",
