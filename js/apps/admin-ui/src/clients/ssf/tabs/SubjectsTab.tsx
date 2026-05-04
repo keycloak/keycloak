@@ -12,8 +12,6 @@ import {
   FormHelperText,
   HelperText,
   HelperTextItem,
-  InputGroup,
-  InputGroupItem,
   Label,
   Text,
   TextContent,
@@ -257,31 +255,28 @@ export const SubjectsTab = ({ client }: SubjectsTabProps) => {
             fieldId="ssfSubjectValue"
             isRequired
           >
-            <InputGroup>
-              <InputGroupItem isFill>
-                <TextInput
-                  id="ssfSubjectValue"
-                  data-testid="ssfSubjectValue"
-                  value={subjectValue}
-                  validated={subjectValueError ? "error" : "default"}
-                  onChange={(_e, value) => {
-                    setSubjectValue(value);
-                    if (subjectValueError) {
-                      setSubjectValueError(null);
-                    }
-                  }}
-                  placeholder={
-                    subjectType === "user-email"
-                      ? "user@example.com"
-                      : subjectType === "user-id"
-                        ? "user-uuid"
-                        : subjectType === "user-username"
-                          ? "username"
-                          : "org-alias"
-                  }
-                />
-              </InputGroupItem>
-            </InputGroup>
+            <TextInput
+              id="ssfSubjectValue"
+              data-testid="ssfSubjectValue"
+              value={subjectValue}
+              validated={subjectValueError ? "error" : "default"}
+              onChange={(_e, value) => {
+                setSubjectValue(value);
+                if (subjectValueError) {
+                  setSubjectValueError(null);
+                }
+              }}
+              placeholder={
+                subjectType === "user-email"
+                  ? "user@example.com"
+                  : subjectType === "user-id"
+                    ? "user-uuid"
+                    : subjectType === "user-username"
+                      ? "username"
+                      : "org-alias"
+              }
+            />
+
             {subjectValueError && (
               <FormHelperText>
                 <HelperText>

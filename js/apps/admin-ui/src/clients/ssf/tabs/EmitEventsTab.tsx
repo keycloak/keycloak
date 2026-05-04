@@ -6,6 +6,7 @@ import {
 } from "@keycloak/keycloak-ui-shared";
 import {
   ActionGroup,
+  Alert,
   Button,
   Card,
   CardBody,
@@ -355,12 +356,13 @@ export const EmitEventsTab = ({
             </Button>
           </ActionGroup>
           {emitError && (
-            <Text
-              className="pf-v5-u-mt-md pf-v5-u-color-status-danger--100"
+            <Alert
+              variant="danger"
+              isInline
+              className="pf-v5-u-mt-md"
               data-testid="ssfEmitError"
-            >
-              {emitError}
-            </Text>
+              title={emitError}
+            />
           )}
           {emitResult && (
             <TextContent className="pf-v5-u-mt-md" data-testid="ssfEmitResult">

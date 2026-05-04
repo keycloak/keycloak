@@ -14,7 +14,7 @@ import {
   TextContent,
   TextInput,
 } from "@patternfly/react-core";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSearchParams } from "react-router-dom";
 
@@ -118,12 +118,9 @@ export const EventSearchTab = ({ client }: EventSearchTabProps) => {
   // the emit success panel uses this as a one-click handoff into the
   // search tab. After consuming the param, drop it from the URL so a
   // page refresh doesn't re-trigger the lookup with a now-stale value.
-  const initialJtiConsumed = useRef(false);
   useEffect(() => {
-    if (initialJtiConsumed.current) return;
     const jti = searchParams.get("jti");
     if (!jti) return;
-    initialJtiConsumed.current = true;
     void handlePendingLookup(jti);
     const next = new URLSearchParams(searchParams);
     next.delete("jti");
