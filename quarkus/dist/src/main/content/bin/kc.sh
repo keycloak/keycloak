@@ -153,7 +153,7 @@ esceval_args() {
 
 JAVA_RUN_OPTS=$(echo "$JAVA_OPTS" | xargs printf '%s\n' | esceval_args)
 
-# Capture the pid so that we can wWarn if running in a container without being PID 1, as signals may not be forwarded correctly and graceful shutdown may not work
+# Capture the pid so that we can warn if running in a container without being PID 1, as signals may not be forwarded correctly and graceful shutdown may not work
 # The property 'java.util.concurrent.ForkJoinPool.common.threadFactory' is set here, as a Java Agent or enabling JMX might initialize the factory before Quarkus can set the property in JDK21+.
 JAVA_RUN_OPTS="-Dkc.script.pid=$$ -Djava.util.concurrent.ForkJoinPool.common.threadFactory=io.quarkus.bootstrap.forkjoin.QuarkusForkJoinWorkerThreadFactory $JAVA_RUN_OPTS $SERVER_OPTS -cp $CLASSPATH_OPTS io.quarkus.bootstrap.runner.QuarkusEntryPoint ${CONFIG_ARGS#?}"
 
