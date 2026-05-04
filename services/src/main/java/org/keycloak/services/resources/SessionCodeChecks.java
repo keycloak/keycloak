@@ -168,7 +168,7 @@ public class SessionCodeChecks {
             authSession = authSessionManager.getAuthenticationSessionByEncodedIdAndClient(realm, authSessionId, client, tabId);
         AuthenticationSessionModel authSessionCookie = authSessionManager.getCurrentAuthenticationSession(realm, client, tabId);
 
-        if (authSession != null && authSessionCookie != null && !authSession.getParentSession().getId().equals(authSessionCookie.getParentSession().getId())) {
+        if (authSession != null && (authSessionCookie == null || !authSession.getParentSession().getId().equals(authSessionCookie.getParentSession().getId()))) {
             event.detail(Details.REASON, "cookie does not match auth_session query parameter");
             event.error(Errors.INVALID_CODE);
             response = ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.INVALID_CODE);
