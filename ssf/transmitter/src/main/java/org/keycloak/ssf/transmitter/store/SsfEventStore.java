@@ -6,6 +6,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.EnumMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -652,6 +653,171 @@ public class SsfEventStore {
                 .setParameter("pending", SsfEventStatus.PENDING)
                 .setParameter("cutoff", cutoff)
                 .executeUpdate();
+    }
+
+    /**
+     * Bulk-deletes every row in the realm whose status matches the
+     * supplied filter. Surfaced via the realm-settings SSF events
+     * sub-tab so operators can wipe terminal rows (DELIVERED,
+     * DEAD_LETTER) without waiting for the configured retention
+     * windows. The drainer is unaffected — it operates on PENDING.
+     *
+     * @return the number of rows deleted.
+     */
+    public int deleteByRealmAndStatus(String realmId, SsfEventStatus status) {
+        Objects.requireNonNull(realmId, "realmId");
+        Objects.requireNonNull(status, "status");
+        return getEntityManager()
+                .createNamedQuery("SsfEventEntity.deleteByRealmAndStatus")
+                .setParameter("realmId", realmId)
+                .setParameter("status", status)
+                .executeUpdate();
+    }
+
+    /**
+     * Variant of {@link #deleteByRealmAndStatus(String, SsfEventStatus)}
+     * that additionally filters on {@code createdAt < cutoff} — useful
+     * for forensic cleanup such as "purge DEAD_LETTER rows older than
+     * 7 days" beyond the configured retention windows.
+     *
+     * @return the number of rows deleted.
+     */
+    public int deleteByRealmAndStatusOlderThan(String realmId,
+                                               SsfEventStatus status,
+                                               Instant cutoff) {
+        Objects.requireNonNull(realmId, "realmId");
+        Objects.requireNonNull(status, "status");
+        Objects.requireNonNull(cutoff, "cutoff");
+        return getEntityManager()
+                .createNamedQuery("SsfEventEntity.deleteByRealmAndStatusOlderThan")
+                .setParameter("realmId", realmId)
+                .setParameter("status", status)
+                .setParameter("olderThan", cutoff)
+                .executeUpdate();
+    }
+
+    /**
+     * Per-receiver counterpart to
+     * {@link #deleteByRealmAndStatus(String, SsfEventStatus)} — forensic
+     * cleanup for a specific receiver without destroying its stream
+     * configuration. Routes through the named query rather than the
+     * batched {@link #deleteBatchByClient(String, int)} primitive
+     * because admin-driven point-in-time deletes are bounded by the
+     * size of one receiver's queue, which is typically far smaller
+     * than the cluster-removal scenarios the batched task targets.
+     *
+     * @return the number of rows deleted.
+     */
+    public int deleteByClientAndStatus(String clientId, SsfEventStatus status) {
+        Objects.requireNonNull(clientId, "clientId");
+        Objects.requireNonNull(status, "status");
+        return getEntityManager()
+                .createNamedQuery("SsfEventEntity.deleteByClientAndStatus")
+                .setParameter("clientId", clientId)
+                .setParameter("status", status)
+                .executeUpdate();
+    }
+
+    /**
+     * Variant of {@link #deleteByClientAndStatus(String, SsfEventStatus)}
+     * that additionally filters on {@code createdAt < cutoff} for
+     * forensic age-bounded cleanup of a single receiver's queue.
+     *
+     * @return the number of rows deleted.
+     */
+    public int deleteByClientAndStatusOlderThan(String clientId,
+                                                SsfEventStatus status,
+                                                Instant cutoff) {
+        Objects.requireNonNull(clientId, "clientId");
+        Objects.requireNonNull(status, "status");
+        Objects.requireNonNull(cutoff, "cutoff");
+        return getEntityManager()
+                .createNamedQuery("SsfEventEntity.deleteByClientAndStatusOlderThan")
+                .setParameter("clientId", clientId)
+                .setParameter("status", status)
+                .setParameter("olderThan", cutoff)
+                .executeUpdate();
+    }
+
+    /**
+     * Returns the row count grouped by status for a single realm.
+     * Drives the read-only status panel on the realm-settings SSF
+     * events sub-tab. Statuses with zero rows are omitted from the
+     * returned map (the SQL {@code GROUP BY} doesn't synthesize them).
+     */
+    public Map<SsfEventStatus, Long> countStatusesForRealm(String realmId) {
+        Objects.requireNonNull(realmId, "realmId");
+        @SuppressWarnings("unchecked")
+        List<Object[]> rows = getEntityManager()
+                .createNamedQuery("SsfEventEntity.countStatusesForRealm")
+                .setParameter("realmId", realmId)
+                .getResultList();
+        Map<SsfEventStatus, Long> counts = new EnumMap<>(SsfEventStatus.class);
+        for (Object[] row : rows) {
+            counts.put((SsfEventStatus) row[0], ((Number) row[1]).longValue());
+        }
+        return counts;
+    }
+
+    /**
+     * Returns the oldest {@code createdAt} per status for a single
+     * realm. Statuses with zero rows are omitted. Companion to
+     * {@link #countStatusesForRealm(String)} — together they tell
+     * operators "is the outbox draining or accumulating?" at a glance.
+     */
+    public Map<SsfEventStatus, Instant> oldestCreatedAtPerStatusForRealm(String realmId) {
+        Objects.requireNonNull(realmId, "realmId");
+        @SuppressWarnings("unchecked")
+        List<Object[]> rows = getEntityManager()
+                .createNamedQuery("SsfEventEntity.oldestCreatedAtPerStatusForRealm")
+                .setParameter("realmId", realmId)
+                .getResultList();
+        Map<SsfEventStatus, Instant> oldest = new EnumMap<>(SsfEventStatus.class);
+        for (Object[] row : rows) {
+            oldest.put((SsfEventStatus) row[0], (Instant) row[1]);
+        }
+        return oldest;
+    }
+
+    /**
+     * Per-receiver counterpart to {@link #countStatusesForRealm(String)}.
+     * Returns the row count grouped by status for a single receiver
+     * client. Lets operators answer "which receiver is contributing
+     * the most to the realm-wide backlog?" Statuses with zero rows are
+     * omitted.
+     */
+    public Map<SsfEventStatus, Long> countStatusesForClient(String clientId) {
+        Objects.requireNonNull(clientId, "clientId");
+        @SuppressWarnings("unchecked")
+        List<Object[]> rows = getEntityManager()
+                .createNamedQuery("SsfEventEntity.countStatusesForClient")
+                .setParameter("clientId", clientId)
+                .getResultList();
+        Map<SsfEventStatus, Long> counts = new EnumMap<>(SsfEventStatus.class);
+        for (Object[] row : rows) {
+            counts.put((SsfEventStatus) row[0], ((Number) row[1]).longValue());
+        }
+        return counts;
+    }
+
+    /**
+     * Per-receiver counterpart to
+     * {@link #oldestCreatedAtPerStatusForRealm(String)}. Returns the
+     * oldest {@code createdAt} per status for a single receiver
+     * client. Statuses with zero rows are omitted.
+     */
+    public Map<SsfEventStatus, Instant> oldestCreatedAtPerStatusForClient(String clientId) {
+        Objects.requireNonNull(clientId, "clientId");
+        @SuppressWarnings("unchecked")
+        List<Object[]> rows = getEntityManager()
+                .createNamedQuery("SsfEventEntity.oldestCreatedAtPerStatusForClient")
+                .setParameter("clientId", clientId)
+                .getResultList();
+        Map<SsfEventStatus, Instant> oldest = new EnumMap<>(SsfEventStatus.class);
+        for (Object[] row : rows) {
+            oldest.put((SsfEventStatus) row[0], (Instant) row[1]);
+        }
+        return oldest;
     }
 
     /**

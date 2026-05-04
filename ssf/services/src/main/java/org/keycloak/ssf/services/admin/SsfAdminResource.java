@@ -1,5 +1,8 @@
 package org.keycloak.ssf.services.admin;
 
+import java.time.Duration;
+import java.time.Instant;
+import java.time.format.DateTimeParseException;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
@@ -13,6 +16,7 @@ import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
@@ -41,12 +45,14 @@ import org.keycloak.ssf.transmitter.admin.SsfClientStreamRepresentation;
 import org.keycloak.ssf.transmitter.admin.SsfConfigRepresentation;
 import org.keycloak.ssf.transmitter.admin.SsfEmitEventRequest;
 import org.keycloak.ssf.transmitter.admin.SsfEmitEventResponse;
+import org.keycloak.ssf.transmitter.admin.SsfEventStatsRepresentation;
 import org.keycloak.ssf.transmitter.admin.SsfPendingEventRepresentation;
 import org.keycloak.ssf.transmitter.delivery.SseCaepEventConverter;
 import org.keycloak.ssf.transmitter.emit.EmitEventResult;
 import org.keycloak.ssf.transmitter.emit.EmitEventStatus;
 import org.keycloak.ssf.transmitter.metrics.SsfMetricsBinder;
 import org.keycloak.ssf.transmitter.outbox.SsfEventEntity;
+import org.keycloak.ssf.transmitter.outbox.SsfEventStatus;
 import org.keycloak.ssf.transmitter.store.SsfEventStore;
 import org.keycloak.ssf.transmitter.stream.DuplicateStreamConfigException;
 import org.keycloak.ssf.transmitter.stream.StreamConfig;
@@ -972,7 +978,7 @@ public class SsfAdminResource {
     @Tag(name = KeycloakOpenAPI.Admin.Tags.SSF)
     @Operation(
             summary = "Lookup pending SSF event by jti",
-            description = "Returns the outbox-row metadata (status, delivery method, attempts, timestamps, last error) for the SET identified by jti — scoped to the given receiver client."
+            description = "Returns the SSF events metadata (status, delivery method, attempts, timestamps, last error) for the SET identified by jti, scoped to the given receiver client."
     )
     @APIResponses(value = {
             @APIResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = SsfPendingEventRepresentation.class))),
@@ -998,6 +1004,281 @@ public class SsfAdminResource {
             throw new NotFoundException("Pending event not found");
         }
         return toPendingEventRepresentation(entity);
+    }
+
+    /**
+     * Returns realm-scoped outbox counts and oldest-{@code createdAt}
+     * timestamps grouped by status. Lets operators answer "is the
+     * outbox draining or accumulating?" without scraping Prometheus
+     * or hitting the database directly. Statuses with zero rows are
+     * omitted from the response (the underlying SQL {@code GROUP BY}
+     * doesn't synthesize zero rows).
+     */
+    @GET
+    @Path("events/stats")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.SSF)
+    @Operation(
+            summary = "SSF event stats for realm",
+            description = "Returns counts and oldest-createdAt per SSF event status (PENDING / DELIVERED / DEAD_LETTER / HELD) for this realm."
+    )
+    @APIResponses(value = {
+            @APIResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = SsfEventStatsRepresentation.class)))
+    })
+    public SsfEventStatsRepresentation getEventStats() {
+
+        auth.realm().requireViewRealm();
+
+        SsfEventStore store = new SsfEventStore(session);
+        Map<SsfEventStatus, Long> counts = store.countStatusesForRealm(realm.getId());
+        Map<SsfEventStatus, Instant> oldest = store.oldestCreatedAtPerStatusForRealm(realm.getId());
+
+        SsfEventStatsRepresentation rep = new SsfEventStatsRepresentation();
+        Map<String, SsfEventStatsRepresentation.StatusEntry> entries = new LinkedHashMap<>();
+        for (Map.Entry<SsfEventStatus, Long> entry : counts.entrySet()) {
+            entries.put(entry.getKey().name(),
+                    new SsfEventStatsRepresentation.StatusEntry(entry.getValue(), oldest.get(entry.getKey())));
+        }
+        rep.setStatuses(entries);
+        return rep;
+    }
+
+    /**
+     * Bulk-deletes events in this realm filtered by status, with
+     * an optional {@code olderThan} ISO-8601 duration that further
+     * narrows the delete to rows whose {@code createdAt} is older than
+     * {@code now - olderThan}. Surfaced for operators who want to wipe
+     * terminal rows ({@code DELIVERED} / {@code DEAD_LETTER}) without
+     * waiting for the configured retention windows.
+     *
+     * <p>The {@code status} parameter is required to keep this from
+     * accidentally functioning as a "delete everything in the realm"
+     * command — that path already exists in the form of realm removal.
+     * Requires {@code manage-realm}.
+     */
+    @DELETE
+    @Path("events")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.SSF)
+    @Operation(
+            summary = "Bulk-delete SSF events for realm",
+            description = "Deletes SSF events in this realm filtered by status, with an optional ISO-8601 olderThan duration. Returns the number of events deleted."
+    )
+    @APIResponses(value = {
+            @APIResponse(responseCode = "200", description = "OK"),
+            @APIResponse(responseCode = "400", description = "Invalid status or olderThan parameter")
+    })
+    public Response deleteEvents(
+            @Parameter(description = "Event status to delete (PENDING, HELD, DELIVERED, DEAD_LETTER). Required.")
+            @QueryParam("status") String statusParam,
+            @Parameter(description = "Optional ISO-8601 duration (e.g. PT720H). Only events whose createdAt is older than now - olderThan are deleted.")
+            @QueryParam("olderThan") String olderThanParam) {
+
+        auth.realm().requireManageRealm();
+
+        if (statusParam == null || statusParam.isBlank()) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(new SsfErrorRepresentation("invalid_request",
+                            "status query parameter is required"))
+                    .build();
+        }
+        SsfEventStatus status;
+        try {
+            status = SsfEventStatus.valueOf(statusParam.trim().toUpperCase());
+        } catch (IllegalArgumentException e) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(new SsfErrorRepresentation("invalid_request",
+                            "Unknown status: " + statusParam))
+                    .build();
+        }
+
+        Instant cutoff = null;
+        if (olderThanParam != null && !olderThanParam.isBlank()) {
+            try {
+                Duration olderThan = Duration.parse(olderThanParam.trim());
+                if (olderThan.isNegative() || olderThan.isZero()) {
+                    return Response.status(Response.Status.BAD_REQUEST)
+                            .entity(new SsfErrorRepresentation("invalid_request",
+                                    "olderThan must be a positive ISO-8601 duration"))
+                            .build();
+                }
+                cutoff = Instant.now().minus(olderThan);
+            } catch (DateTimeParseException e) {
+                return Response.status(Response.Status.BAD_REQUEST)
+                        .entity(new SsfErrorRepresentation("invalid_request",
+                                "olderThan must be an ISO-8601 duration (e.g. PT720H): " + olderThanParam))
+                        .build();
+            }
+        }
+
+        SsfEventStore store = new SsfEventStore(session);
+        int deleted = (cutoff == null)
+                ? store.deleteByRealmAndStatus(realm.getId(), status)
+                : store.deleteByRealmAndStatusOlderThan(realm.getId(), status, cutoff);
+
+        // Audit trail — the parameters and result count are all the
+        // operator needs to reconstruct what was deleted; the deleted
+        // rows themselves are gone.
+        Map<String, Object> auditRep = new LinkedHashMap<>();
+        auditRep.put("status", status.name());
+        if (olderThanParam != null) {
+            auditRep.put("olderThan", olderThanParam);
+        }
+        auditRep.put("deleted", deleted);
+        UserModel user = auth.adminAuth().getUser();
+        adminEvent.operation(OperationType.DELETE)
+                .resource(SSF_SYNTHETIC_EVENT_TYPE)
+                .resourcePath("ssf", "events")
+                .authUser(user)
+                .representation(auditRep)
+                .success();
+
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("deleted", deleted);
+        return Response.ok(body).build();
+    }
+
+    /**
+     * Per-receiver counterpart to {@link #getEventStats()}. Returns
+     * outbox counts and oldest-{@code createdAt} timestamps grouped by
+     * status for a single receiver client. Lets operators answer
+     * "which receiver is contributing to the realm-wide backlog?"
+     * without falling back to Prometheus or direct database queries.
+     */
+    @GET
+    @Path("clients/{clientId}/events/stats")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.SSF)
+    @Operation(
+            summary = "SSF event stats for receiver client",
+            description = "Returns counts and oldest-createdAt per SSF event status (PENDING / DELIVERED / DEAD_LETTER / HELD) for a single receiver client."
+    )
+    @APIResponses(value = {
+            @APIResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = SsfEventStatsRepresentation.class))),
+            @APIResponse(responseCode = "404", description = "Client not found")
+    })
+    public SsfEventStatsRepresentation getClientEventStats(
+            @Parameter(description = "OAuth client_id of the receiver")
+            @PathParam("clientId") String clientId) {
+
+        ClientModel client = realm.getClientByClientId(clientId);
+        if (client == null) {
+            throw new NotFoundException("Client not found");
+        }
+        auth.clients().requireView(client);
+
+        SsfEventStore store = new SsfEventStore(session);
+        Map<SsfEventStatus, Long> counts = store.countStatusesForClient(client.getId());
+        Map<SsfEventStatus, Instant> oldest = store.oldestCreatedAtPerStatusForClient(client.getId());
+
+        SsfEventStatsRepresentation rep = new SsfEventStatsRepresentation();
+        Map<String, SsfEventStatsRepresentation.StatusEntry> entries = new LinkedHashMap<>();
+        for (Map.Entry<SsfEventStatus, Long> entry : counts.entrySet()) {
+            entries.put(entry.getKey().name(),
+                    new SsfEventStatsRepresentation.StatusEntry(entry.getValue(), oldest.get(entry.getKey())));
+        }
+        rep.setStatuses(entries);
+        return rep;
+    }
+
+    /**
+     * Per-receiver counterpart to {@link #deleteEvents(String, String)}.
+     * Bulk-deletes SSF events for a single receiver client filtered by
+     * status, with an optional ISO-8601 {@code olderThan} duration.
+     * Useful for forensic cleanup of a single receiver's queue
+     * (e.g. wiping dead-letters for one flaky integration) without
+     * destroying the receiver's stream configuration — the existing
+     * cascade-on-stream-delete is the destructive alternative.
+     *
+     * <p>Requires {@code manage} on the receiver client.
+     */
+    @DELETE
+    @Path("clients/{clientId}/events")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.SSF)
+    @Operation(
+            summary = "Bulk-delete SSF events for receiver client",
+            description = "Deletes SSF events for the given receiver client filtered by status, with an optional ISO-8601 olderThan duration. Returns the number of events deleted."
+    )
+    @APIResponses(value = {
+            @APIResponse(responseCode = "200", description = "OK"),
+            @APIResponse(responseCode = "400", description = "Invalid status or olderThan parameter"),
+            @APIResponse(responseCode = "404", description = "Client not found")
+    })
+    public Response deleteClientEvents(
+            @Parameter(description = "OAuth client_id of the SSF Receiver client")
+            @PathParam("clientId") String clientId,
+            @Parameter(description = "Event status to delete (PENDING, HELD, DELIVERED, DEAD_LETTER). Required.")
+            @QueryParam("status") String statusParam,
+            @Parameter(description = "Optional ISO-8601 duration (e.g. PT720H). Only events whose createdAt is older than now - olderThan are deleted.")
+            @QueryParam("olderThan") String olderThanParam) {
+
+        ClientModel client = realm.getClientByClientId(clientId);
+        if (client == null) {
+            throw new NotFoundException("Client not found");
+        }
+        auth.clients().requireManage(client);
+
+        if (statusParam == null || statusParam.isBlank()) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(new SsfErrorRepresentation("invalid_request",
+                            "status query parameter is required"))
+                    .build();
+        }
+        SsfEventStatus status;
+        try {
+            status = SsfEventStatus.valueOf(statusParam.trim().toUpperCase());
+        } catch (IllegalArgumentException e) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(new SsfErrorRepresentation("invalid_request",
+                            "Unknown status: " + statusParam))
+                    .build();
+        }
+
+        Instant cutoff = null;
+        if (olderThanParam != null && !olderThanParam.isBlank()) {
+            try {
+                Duration olderThan = Duration.parse(olderThanParam.trim());
+                if (olderThan.isNegative() || olderThan.isZero()) {
+                    return Response.status(Response.Status.BAD_REQUEST)
+                            .entity(new SsfErrorRepresentation("invalid_request",
+                                    "olderThan must be a positive ISO-8601 duration"))
+                            .build();
+                }
+                cutoff = Instant.now().minus(olderThan);
+            } catch (DateTimeParseException e) {
+                return Response.status(Response.Status.BAD_REQUEST)
+                        .entity(new SsfErrorRepresentation("invalid_request",
+                                "olderThan must be an ISO-8601 duration (e.g. PT720H): " + olderThanParam))
+                        .build();
+            }
+        }
+
+        // The store filters on clientId — keep it scoped to the client's
+        // internal id (the same identifier the outbox uses), not the
+        // OAuth client_id.
+        SsfEventStore store = new SsfEventStore(session);
+        int deleted = (cutoff == null)
+                ? store.deleteByClientAndStatus(client.getId(), status)
+                : store.deleteByClientAndStatusOlderThan(client.getId(), status, cutoff);
+
+        Map<String, Object> auditRep = new LinkedHashMap<>();
+        auditRep.put("status", status.name());
+        if (olderThanParam != null) {
+            auditRep.put("olderThan", olderThanParam);
+        }
+        auditRep.put("deleted", deleted);
+        UserModel user = auth.adminAuth().getUser();
+        adminEvent.operation(OperationType.DELETE)
+                .resource(SSF_SYNTHETIC_EVENT_TYPE)
+                .resourcePath("ssf", "clients", client.getClientId(), "events")
+                .authUser(user)
+                .representation(auditRep)
+                .success();
+
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("deleted", deleted);
+        return Response.ok(body).build();
     }
 
     protected SsfPendingEventRepresentation toPendingEventRepresentation(SsfEventEntity entity) {

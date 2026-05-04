@@ -144,6 +144,61 @@ import jakarta.persistence.UniqueConstraint;
                 name = "SsfEventEntity.deleteByRealm",
                 query = "DELETE FROM SsfEventEntity e"
                         + " WHERE e.realmId = :realmId"),
+        // Admin-driven cleanup primitives surfaced via the realm-settings
+        // SSF events sub-tab. Status-scoped delete lets an operator wipe
+        // DEAD_LETTER or DELIVERED rows without waiting for the configured
+        // retention windows; the older-than variant adds an age filter for
+        // ad-hoc forensic cleanup.
+        @NamedQuery(
+                name = "SsfEventEntity.deleteByRealmAndStatus",
+                query = "DELETE FROM SsfEventEntity e"
+                        + " WHERE e.realmId = :realmId AND e.status = :status"),
+        @NamedQuery(
+                name = "SsfEventEntity.deleteByRealmAndStatusOlderThan",
+                query = "DELETE FROM SsfEventEntity e"
+                        + " WHERE e.realmId = :realmId"
+                        + "   AND e.status = :status"
+                        + "   AND e.createdAt < :olderThan"),
+        // Per-receiver counterparts to the realm-scoped pair above.
+        // Forensic cleanup for a specific receiver without destroying its
+        // stream configuration (which the existing cascade-on-stream-delete
+        // would do).
+        @NamedQuery(
+                name = "SsfEventEntity.deleteByClientAndStatus",
+                query = "DELETE FROM SsfEventEntity e"
+                        + " WHERE e.clientId = :clientId AND e.status = :status"),
+        @NamedQuery(
+                name = "SsfEventEntity.deleteByClientAndStatusOlderThan",
+                query = "DELETE FROM SsfEventEntity e"
+                        + " WHERE e.clientId = :clientId"
+                        + "   AND e.status = :status"
+                        + "   AND e.createdAt < :olderThan"),
+        // Aggregate counts and oldest-row timestamps per status, scoped to
+        // a single realm — drives the read-only status panel on the
+        // realm-settings SSF events sub-tab.
+        @NamedQuery(
+                name = "SsfEventEntity.countStatusesForRealm",
+                query = "SELECT e.status, COUNT(e) FROM SsfEventEntity e"
+                        + " WHERE e.realmId = :realmId"
+                        + " GROUP BY e.status"),
+        @NamedQuery(
+                name = "SsfEventEntity.oldestCreatedAtPerStatusForRealm",
+                query = "SELECT e.status, MIN(e.createdAt) FROM SsfEventEntity e"
+                        + " WHERE e.realmId = :realmId"
+                        + " GROUP BY e.status"),
+        // Per-receiver counterparts to the two queries above. Used by
+        // the per-client outbox stats endpoint so operators can answer
+        // "which receiver is contributing to the realm-wide backlog?"
+        @NamedQuery(
+                name = "SsfEventEntity.countStatusesForClient",
+                query = "SELECT e.status, COUNT(e) FROM SsfEventEntity e"
+                        + " WHERE e.clientId = :clientId"
+                        + " GROUP BY e.status"),
+        @NamedQuery(
+                name = "SsfEventEntity.oldestCreatedAtPerStatusForClient",
+                query = "SELECT e.status, MIN(e.createdAt) FROM SsfEventEntity e"
+                        + " WHERE e.clientId = :clientId"
+                        + " GROUP BY e.status"),
         // Batched-delete primitives for the async client / realm
         // removal cleanup: the listener submits a background task that
         // iterates these in short transactions so the admin's removal

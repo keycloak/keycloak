@@ -4,6 +4,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import jakarta.persistence.EntityManager;
@@ -390,6 +391,273 @@ public class SsfEventStoreTests {
                     "lastError must be truncated to the column width");
             Assertions.assertTrue(after.getLastError().endsWith("..."),
                     "truncated lastError must carry an ellipsis marker");
+        });
+    }
+
+    @Test
+    public void deleteByRealmAndStatus_deletesOnlyMatchingStatusInRealm() {
+        final String realmId = testRealmId;
+        final String otherRealmId = UUID.randomUUID().toString();
+        try {
+            runOnServer.run(session -> {
+                Instant now = Instant.now();
+                SsfEventEntity dl1 = persistRaw(session, realmId, "c1", "s1",
+                        "jti-dl-1", SsfEventStatus.DEAD_LETTER, 8, now, now);
+                SsfEventEntity dl2 = persistRaw(session, realmId, "c1", "s2",
+                        "jti-dl-2", SsfEventStatus.DEAD_LETTER, 8, now, now);
+                SsfEventEntity pending = persistRaw(session, realmId, "c1", "s3",
+                        "jti-pending", SsfEventStatus.PENDING, 0, now, now);
+                SsfEventEntity delivered = persistRaw(session, realmId, "c1", "s4",
+                        "jti-delivered", SsfEventStatus.DELIVERED, 1, now, now);
+                SsfEventEntity otherRealmDl = persistRaw(session, otherRealmId, "c2", "s5",
+                        "jti-other-dl", SsfEventStatus.DEAD_LETTER, 8, now, now);
+                em(session).flush();
+                em(session).clear();
+
+                int deleted = new SsfEventStore(session)
+                        .deleteByRealmAndStatus(realmId, SsfEventStatus.DEAD_LETTER);
+                Assertions.assertEquals(2, deleted,
+                        "only DEAD_LETTER rows in this realm must be deleted");
+
+                em(session).flush();
+                em(session).clear();
+
+                Assertions.assertNull(findById(session, dl1.getId()));
+                Assertions.assertNull(findById(session, dl2.getId()));
+                Assertions.assertNotNull(findById(session, pending.getId()),
+                        "rows in other statuses must survive");
+                Assertions.assertNotNull(findById(session, delivered.getId()),
+                        "rows in other statuses must survive");
+                Assertions.assertNotNull(findById(session, otherRealmDl.getId()),
+                        "DEAD_LETTER rows in other realms must survive");
+            });
+        } finally {
+            runOnServer.run(session -> new SsfEventStore(session).deleteByRealm(otherRealmId));
+        }
+    }
+
+    @Test
+    public void deleteByRealmAndStatusOlderThan_deletesOnlyOldEnoughMatchingRows() {
+        final String realmId = testRealmId;
+        runOnServer.run(session -> {
+            Instant now = Instant.now();
+
+            SsfEventEntity oldDl = persistRaw(session, realmId, "c-age", "s1",
+                    "jti-old-dl", SsfEventStatus.DEAD_LETTER, 8,
+                    now, now.minus(Duration.ofDays(10)));
+            SsfEventEntity freshDl = persistRaw(session, realmId, "c-age", "s2",
+                    "jti-fresh-dl", SsfEventStatus.DEAD_LETTER, 8,
+                    now, now.minusSeconds(60));
+            SsfEventEntity oldDelivered = persistRaw(session, realmId, "c-age", "s3",
+                    "jti-old-delivered", SsfEventStatus.DELIVERED, 1,
+                    now, now.minus(Duration.ofDays(10)));
+            em(session).flush();
+            em(session).clear();
+
+            int deleted = new SsfEventStore(session)
+                    .deleteByRealmAndStatusOlderThan(realmId, SsfEventStatus.DEAD_LETTER,
+                            now.minus(Duration.ofDays(7)));
+            Assertions.assertEquals(1, deleted,
+                    "only DEAD_LETTER rows older than the cutoff must be deleted");
+
+            em(session).flush();
+            em(session).clear();
+
+            Assertions.assertNull(findById(session, oldDl.getId()));
+            Assertions.assertNotNull(findById(session, freshDl.getId()),
+                    "DEAD_LETTER rows newer than the cutoff must survive");
+            Assertions.assertNotNull(findById(session, oldDelivered.getId()),
+                    "rows in other statuses must survive even if older than the cutoff");
+        });
+    }
+
+    @Test
+    public void deleteByClientAndStatus_deletesOnlyMatchingStatusForClient() {
+        final String realmId = testRealmId;
+        runOnServer.run(session -> {
+            Instant now = Instant.now();
+            SsfEventEntity targetDl1 = persistRaw(session, realmId, "client-target", "s1",
+                    "jti-target-dl-1", SsfEventStatus.DEAD_LETTER, 8, now, now);
+            SsfEventEntity targetDl2 = persistRaw(session, realmId, "client-target", "s2",
+                    "jti-target-dl-2", SsfEventStatus.DEAD_LETTER, 8, now, now);
+            SsfEventEntity targetPending = persistRaw(session, realmId, "client-target", "s3",
+                    "jti-target-pending", SsfEventStatus.PENDING, 0, now, now);
+            SsfEventEntity siblingDl = persistRaw(session, realmId, "client-sibling", "s4",
+                    "jti-sibling-dl", SsfEventStatus.DEAD_LETTER, 8, now, now);
+            em(session).flush();
+            em(session).clear();
+
+            int deleted = new SsfEventStore(session)
+                    .deleteByClientAndStatus("client-target", SsfEventStatus.DEAD_LETTER);
+            Assertions.assertEquals(2, deleted,
+                    "only DEAD_LETTER rows for the target client must be deleted");
+
+            em(session).flush();
+            em(session).clear();
+
+            Assertions.assertNull(findById(session, targetDl1.getId()));
+            Assertions.assertNull(findById(session, targetDl2.getId()));
+            Assertions.assertNotNull(findById(session, targetPending.getId()),
+                    "rows in other statuses for the target client must survive");
+            Assertions.assertNotNull(findById(session, siblingDl.getId()),
+                    "DEAD_LETTER rows for sibling clients in the same realm must survive");
+        });
+    }
+
+    @Test
+    public void deleteByClientAndStatusOlderThan_deletesOnlyOldEnoughMatchingRowsForClient() {
+        final String realmId = testRealmId;
+        runOnServer.run(session -> {
+            Instant now = Instant.now();
+            SsfEventEntity oldDl = persistRaw(session, realmId, "client-age", "s1",
+                    "jti-age-old-dl", SsfEventStatus.DEAD_LETTER, 8,
+                    now, now.minus(Duration.ofDays(10)));
+            SsfEventEntity freshDl = persistRaw(session, realmId, "client-age", "s2",
+                    "jti-age-fresh-dl", SsfEventStatus.DEAD_LETTER, 8,
+                    now, now.minusSeconds(60));
+            SsfEventEntity oldPending = persistRaw(session, realmId, "client-age", "s3",
+                    "jti-age-old-pending", SsfEventStatus.PENDING, 0,
+                    now, now.minus(Duration.ofDays(10)));
+            SsfEventEntity siblingOldDl = persistRaw(session, realmId, "client-age-sibling", "s4",
+                    "jti-age-sibling-dl", SsfEventStatus.DEAD_LETTER, 8,
+                    now, now.minus(Duration.ofDays(10)));
+            em(session).flush();
+            em(session).clear();
+
+            int deleted = new SsfEventStore(session)
+                    .deleteByClientAndStatusOlderThan("client-age", SsfEventStatus.DEAD_LETTER,
+                            now.minus(Duration.ofDays(7)));
+            Assertions.assertEquals(1, deleted,
+                    "only DEAD_LETTER rows for the target client older than the cutoff must be deleted");
+
+            em(session).flush();
+            em(session).clear();
+
+            Assertions.assertNull(findById(session, oldDl.getId()));
+            Assertions.assertNotNull(findById(session, freshDl.getId()),
+                    "fresh DEAD_LETTER rows must survive");
+            Assertions.assertNotNull(findById(session, oldPending.getId()),
+                    "old rows in other statuses must survive");
+            Assertions.assertNotNull(findById(session, siblingOldDl.getId()),
+                    "rows for sibling clients must survive");
+        });
+    }
+
+    @Test
+    public void countStatusesForClient_returnsGroupedCountsAndIgnoresOtherClients() {
+        final String realmId = testRealmId;
+        runOnServer.run(session -> {
+            Instant now = Instant.now();
+            persistRaw(session, realmId, "client-stats", "s", "jti-cs-p1",
+                    SsfEventStatus.PENDING, 0, now, now);
+            persistRaw(session, realmId, "client-stats", "s", "jti-cs-p2",
+                    SsfEventStatus.PENDING, 0, now, now);
+            persistRaw(session, realmId, "client-stats", "s", "jti-cs-d",
+                    SsfEventStatus.DELIVERED, 1, now, now);
+            persistRaw(session, realmId, "client-stats-other", "s", "jti-cs-other",
+                    SsfEventStatus.PENDING, 0, now, now);
+            em(session).flush();
+            em(session).clear();
+
+            Map<SsfEventStatus, Long> counts = new SsfEventStore(session)
+                    .countStatusesForClient("client-stats");
+            Assertions.assertEquals(2L, counts.get(SsfEventStatus.PENDING),
+                    "PENDING count must include only the target client's rows");
+            Assertions.assertEquals(1L, counts.get(SsfEventStatus.DELIVERED));
+            Assertions.assertNull(counts.get(SsfEventStatus.DEAD_LETTER),
+                    "statuses with zero rows must be absent");
+            Assertions.assertNull(counts.get(SsfEventStatus.HELD),
+                    "statuses with zero rows must be absent");
+        });
+    }
+
+    @Test
+    public void oldestCreatedAtPerStatusForClient_returnsEarliestCreatedAtPerStatus() {
+        final String realmId = testRealmId;
+        runOnServer.run(session -> {
+            Instant now = Instant.now();
+            Instant oldPending = now.minus(Duration.ofDays(2)).truncatedTo(ChronoUnit.MICROS);
+            Instant midPending = now.minus(Duration.ofHours(3)).truncatedTo(ChronoUnit.MICROS);
+            Instant otherClientPending = now.minus(Duration.ofDays(5)).truncatedTo(ChronoUnit.MICROS);
+
+            persistRaw(session, realmId, "client-old", "s", "jti-co-old",
+                    SsfEventStatus.PENDING, 0, now, oldPending);
+            persistRaw(session, realmId, "client-old", "s", "jti-co-mid",
+                    SsfEventStatus.PENDING, 0, now, midPending);
+            persistRaw(session, realmId, "client-old-other", "s", "jti-co-other",
+                    SsfEventStatus.PENDING, 0, now, otherClientPending);
+            em(session).flush();
+            em(session).clear();
+
+            Map<SsfEventStatus, Instant> oldest = new SsfEventStore(session)
+                    .oldestCreatedAtPerStatusForClient("client-old");
+            Assertions.assertEquals(oldPending, oldest.get(SsfEventStatus.PENDING),
+                    "PENDING oldest must be the target client's earliest createdAt — "
+                            + "rows from sibling clients (even older) must not influence the result");
+            Assertions.assertNull(oldest.get(SsfEventStatus.DEAD_LETTER),
+                    "statuses with zero rows must be absent");
+        });
+    }
+
+    @Test
+    public void countStatusesForRealm_returnsGroupedCountsAndIgnoresOtherRealms() {
+        final String realmId = testRealmId;
+        final String otherRealmId = UUID.randomUUID().toString();
+        try {
+            runOnServer.run(session -> {
+                Instant now = Instant.now();
+                persistRaw(session, realmId, "c", "s", "jti-p1",
+                        SsfEventStatus.PENDING, 0, now, now);
+                persistRaw(session, realmId, "c", "s", "jti-p2",
+                        SsfEventStatus.PENDING, 0, now, now);
+                persistRaw(session, realmId, "c", "s", "jti-d1",
+                        SsfEventStatus.DELIVERED, 1, now, now);
+                persistRaw(session, realmId, "c", "s", "jti-dl1",
+                        SsfEventStatus.DEAD_LETTER, 8, now, now);
+                persistRaw(session, otherRealmId, "c2", "s", "jti-other",
+                        SsfEventStatus.PENDING, 0, now, now);
+                em(session).flush();
+                em(session).clear();
+
+                Map<SsfEventStatus, Long> counts = new SsfEventStore(session)
+                        .countStatusesForRealm(realmId);
+                Assertions.assertEquals(2L, counts.get(SsfEventStatus.PENDING));
+                Assertions.assertEquals(1L, counts.get(SsfEventStatus.DELIVERED));
+                Assertions.assertEquals(1L, counts.get(SsfEventStatus.DEAD_LETTER));
+                Assertions.assertNull(counts.get(SsfEventStatus.HELD),
+                        "statuses with zero rows must be absent (no synthetic zero rows)");
+            });
+        } finally {
+            runOnServer.run(session -> new SsfEventStore(session).deleteByRealm(otherRealmId));
+        }
+    }
+
+    @Test
+    public void oldestCreatedAtPerStatusForRealm_returnsEarliestCreatedAtPerStatus() {
+        final String realmId = testRealmId;
+        runOnServer.run(session -> {
+            Instant now = Instant.now();
+            Instant oldPending = now.minus(Duration.ofDays(3)).truncatedTo(ChronoUnit.MICROS);
+            Instant midPending = now.minus(Duration.ofHours(6)).truncatedTo(ChronoUnit.MICROS);
+            Instant freshDelivered = now.minusSeconds(120).truncatedTo(ChronoUnit.MICROS);
+
+            persistRaw(session, realmId, "c", "s", "jti-old",
+                    SsfEventStatus.PENDING, 0, now, oldPending);
+            persistRaw(session, realmId, "c", "s", "jti-mid",
+                    SsfEventStatus.PENDING, 0, now, midPending);
+            persistRaw(session, realmId, "c", "s", "jti-delivered",
+                    SsfEventStatus.DELIVERED, 1, now, freshDelivered);
+            em(session).flush();
+            em(session).clear();
+
+            Map<SsfEventStatus, Instant> oldest = new SsfEventStore(session)
+                    .oldestCreatedAtPerStatusForRealm(realmId);
+            Assertions.assertEquals(oldPending, oldest.get(SsfEventStatus.PENDING),
+                    "PENDING must report the oldest createdAt across PENDING rows");
+            Assertions.assertEquals(freshDelivered, oldest.get(SsfEventStatus.DELIVERED),
+                    "DELIVERED must report its single createdAt");
+            Assertions.assertNull(oldest.get(SsfEventStatus.DEAD_LETTER),
+                    "statuses with zero rows must be absent");
         });
     }
 
