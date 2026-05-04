@@ -311,6 +311,11 @@ public class SsfTransmitterEventListener implements EventListenerProvider {
     }
 
     protected boolean shouldIgnoreEvent(AdminEvent adminEvent) {
+
+        if (!Ssf.isTransmitterEnabled(session.getContext().getRealm())) {
+            return true;
+        }
+
         return false;
     }
 
