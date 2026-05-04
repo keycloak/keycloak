@@ -47,6 +47,17 @@ import jakarta.persistence.Table;
  *       SSF the SET event_type; for webhooks the hook event name; etc.).</li>
  * </ul>
  *
+ * <p>Scoping columns:
+ * <ul>
+ *   <li>{@code ownerId} — primary scoping key (clientId for SSF
+ *       receivers, hookId for webhooks). Drives per-owner stats /
+ *       delete / cleanup endpoints.</li>
+ *   <li>{@code containerId} — optional sub-grouping within
+ *       {@code (entryKind, ownerId)} (the receiver's stream id for
+ *       SSF). Lets stream-scoped lifecycle operations stay
+ *       SQL-filterable rather than hidden in {@code metadata}.</li>
+ * </ul>
+ *
  * <p>The wire shape of the {@code payload} (signed JWS, JSON, opaque blob)
  * and the contents of the optional {@code metadata} JSON are owned by the
  * subsystem's {@code OutboxDeliveryHandler} — the entity treats both as
@@ -183,6 +194,17 @@ public class OutboxEntryEntity {
     @Column(name = "OWNER_ID", nullable = false, length = 64)
     protected String ownerId;
 
+    /**
+     * Optional sub-grouping within {@code (entryKind, ownerId)}.
+     * For SSF this is the receiver's stream id so operations such as
+     * "narrow events_requested for stream X" or "stream X disabled —
+     * purge its undelivered rows" stay SQL-filterable rather than
+     * hidden in {@code metadata}. Kinds that don't need a sub-group
+     * leave it null.
+     */
+    @Column(name = "CONTAINER_ID", length = 64)
+    protected String containerId;
+
     @Column(name = "CORRELATION_ID", nullable = false, length = 255)
     protected String correlationId;
 
@@ -246,6 +268,14 @@ public class OutboxEntryEntity {
 
     public void setOwnerId(String ownerId) {
         this.ownerId = ownerId;
+    }
+
+    public String getContainerId() {
+        return containerId;
+    }
+
+    public void setContainerId(String containerId) {
+        this.containerId = containerId;
     }
 
     public String getCorrelationId() {

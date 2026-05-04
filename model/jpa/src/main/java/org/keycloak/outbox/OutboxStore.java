@@ -82,6 +82,7 @@ public class OutboxStore {
     public String enqueuePending(String entryKind,
                                  String realmId,
                                  String ownerId,
+                                 String containerId,
                                  String correlationId,
                                  String entryType,
                                  String payload,
@@ -106,6 +107,7 @@ public class OutboxStore {
         entity.setEntryKind(entryKind);
         entity.setRealmId(realmId);
         entity.setOwnerId(ownerId);
+        entity.setContainerId(containerId);
         entity.setCorrelationId(correlationId);
         entity.setEntryType(entryType);
         entity.setPayload(payload);
@@ -116,8 +118,8 @@ public class OutboxStore {
         entity.setCreatedAt(now);
 
         getEntityManager().persist(entity);
-        log.debugf("Outbox enqueued. id=%s entryKind=%s realmId=%s ownerId=%s correlationId=%s entryType=%s",
-                entity.getId(), entryKind, realmId, ownerId, correlationId, entryType);
+        log.debugf("Outbox enqueued. id=%s entryKind=%s realmId=%s ownerId=%s containerId=%s correlationId=%s entryType=%s",
+                entity.getId(), entryKind, realmId, ownerId, containerId, correlationId, entryType);
         return entity.getId();
     }
 

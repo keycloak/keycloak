@@ -1,9 +1,7 @@
 package org.keycloak.ssf.transmitter.outbox;
 
-import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Map;
 import java.util.Objects;
 import java.util.function.BiFunction;
 
@@ -19,7 +17,6 @@ import org.keycloak.ssf.transmitter.SsfTransmitterProvider;
 import org.keycloak.ssf.transmitter.delivery.push.PushDeliveryService;
 import org.keycloak.ssf.transmitter.metrics.SsfMetricsBinder;
 import org.keycloak.ssf.transmitter.stream.StreamConfig;
-import org.keycloak.util.JsonSerialization;
 
 import org.jboss.logging.Logger;
 
@@ -51,9 +48,6 @@ import org.jboss.logging.Logger;
 public class SsfPushDeliveryHandler implements OutboxDeliveryHandler {
 
     private static final Logger log = Logger.getLogger(SsfPushDeliveryHandler.class);
-
-    /** Metadata key under which the receiver's stream id is stored. */
-    public static final String META_STREAM_ID = "streamId";
 
     protected final SsfTransmitterContext context;
     protected final BiFunction<KeycloakSession, SsfTransmitterContext, PushDeliveryService> pushDeliveryServiceFactory;
@@ -106,7 +100,7 @@ public class SsfPushDeliveryHandler implements OutboxDeliveryHandler {
             return OutboxDeliveryOutcome.RETRY;
         }
 
-        String expectedStreamId = readStreamIdFromMetadata(row.getMetadata());
+        String expectedStreamId = row.getContainerId();
         StreamConfig stream = transmitter.streamStore().getStreamForClient(receiverClient);
         if (stream == null
                 || (expectedStreamId != null && !expectedStreamId.equals(stream.getStreamId()))) {
@@ -161,25 +155,4 @@ public class SsfPushDeliveryHandler implements OutboxDeliveryHandler {
         }
     }
 
-    /**
-     * Reads {@link #META_STREAM_ID} out of the row's optional JSON
-     * metadata blob. Returns {@code null} when no metadata is set or
-     * the JSON can't be parsed — callers treat that as "no expected
-     * stream id" rather than as an error so the push still proceeds
-     * if the stream lookup yields a stream for the client.
-     */
-    protected String readStreamIdFromMetadata(String metadataJson) {
-        if (metadataJson == null || metadataJson.isBlank()) {
-            return null;
-        }
-        try {
-            Map<String, Object> map = JsonSerialization.readValue(metadataJson,
-                    new com.fasterxml.jackson.core.type.TypeReference<Map<String, Object>>() {});
-            Object streamId = map.get(META_STREAM_ID);
-            return streamId == null ? null : streamId.toString();
-        } catch (IOException e) {
-            log.debugf(e, "SSF push handler: ignoring malformed metadata for row, treating streamId as unknown");
-            return null;
-        }
-    }
 }

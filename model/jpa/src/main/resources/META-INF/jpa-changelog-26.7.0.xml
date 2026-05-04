@@ -86,16 +86,23 @@
                          event name; etc.).
 
         Columns intentionally generic:
-          - PAYLOAD  : opaque text body (signed JWS, JSON envelope,
-                       binary as base64). Consumers pick their own wire
-                       shape; the store treats it as bytes.
-          - METADATA : optional JSON for kind-specific extensions
-                       (SSF: streamId, deliveryMethod; webhook:
-                       signing key id; etc.) that don't justify a
-                       column.
-          - OWNER_ID : the kind's primary scoping key (clientId for
-                       SSF receivers, hookId for webhooks). Used by
-                       per-owner stats / delete / cleanup endpoints.
+          - PAYLOAD      : opaque text body (signed JWS, JSON envelope,
+                           binary as base64). Consumers pick their own
+                           wire shape; the store treats it as bytes.
+          - METADATA     : optional JSON for kind-specific extensions
+                           that don't justify a column (e.g. webhook
+                           signing key id).
+          - OWNER_ID     : the kind's primary scoping key (clientId for
+                           SSF receivers, hookId for webhooks). Used by
+                           per-owner stats / delete / cleanup endpoints.
+          - CONTAINER_ID : optional sub-grouping within (kind, owner).
+                           For SSF this is the receiver's streamId so
+                           stream-scoped operations (events_requested
+                           filter, stream-disable purge) stay
+                           SQL-filterable rather than hidden in JSON.
+                           Nullable — kinds that don't need a
+                           sub-grouping (single channel per owner)
+                           leave it unset.
 
         See:
           - org.keycloak.models.jpa.entities.OutboxEntryEntity
@@ -116,6 +123,7 @@
             <column name="OWNER_ID" type="VARCHAR(64)">
                 <constraints nullable="false"/>
             </column>
+            <column name="CONTAINER_ID" type="VARCHAR(64)"/>
             <column name="CORRELATION_ID" type="VARCHAR(255)">
                 <constraints nullable="false"/>
             </column>
@@ -176,6 +184,18 @@
             <column name="ENTRY_KIND"/>
             <column name="OWNER_ID"/>
             <column name="STATUS"/>
+        </createIndex>
+
+        <!--
+            Container-scoped reads. Used when a row's container has a
+            lifecycle event of its own (e.g. SSF stream disabled,
+            stream events_requested narrowed) and we need to bulk-act
+            on its rows without scanning the whole owner.
+        -->
+        <createIndex tableName="OUTBOX_ENTRY" indexName="IDX_OUTBOX_CONTAINER">
+            <column name="ENTRY_KIND"/>
+            <column name="OWNER_ID"/>
+            <column name="CONTAINER_ID"/>
         </createIndex>
 
     </changeSet>
