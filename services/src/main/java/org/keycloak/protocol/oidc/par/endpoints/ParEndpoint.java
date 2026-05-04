@@ -42,6 +42,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.SingleUseObjectProvider;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
+import org.keycloak.protocol.oidc.endpoints.AuthorizationCheckException;
 import org.keycloak.protocol.oidc.endpoints.AuthorizationEndpointChecker;
 import org.keycloak.protocol.oidc.endpoints.request.AuthorizationEndpointRequest;
 import org.keycloak.protocol.oidc.par.ParResponse;
@@ -123,23 +124,23 @@ public class ParEndpoint extends AbstractParEndpoint {
 
         try {
             checker.checkRedirectUri();
-        } catch (AuthorizationEndpointChecker.AuthorizationCheckException ex) {
+        } catch (AuthorizationCheckException ex) {
             throw throwErrorResponseException(OAuthErrorException.INVALID_REQUEST, "Invalid parameter: redirect_uri", Response.Status.BAD_REQUEST);
         }
 
         try {
             checker.checkResponseType();
-        } catch (AuthorizationEndpointChecker.AuthorizationCheckException ex) {
+        } catch (AuthorizationCheckException ex) {
             if (ex.getError().equals(OAuthErrorException.UNSUPPORTED_RESPONSE_TYPE)) {
                 throw throwErrorResponseException(OAuthErrorException.INVALID_REQUEST, "Unsupported response type", Response.Status.BAD_REQUEST);
             } else {
-                ex.throwAsCorsErrorResponseException(cors);
+                checker.throwAsCorsErrorResponseException(cors, ex);
             }
         }
 
         try {
             checker.checkValidScope();
-        } catch (AuthorizationEndpointChecker.AuthorizationCheckException ex) {
+        } catch (AuthorizationCheckException ex) {
             // PAR throws this as "invalid_request" error
             throw throwErrorResponseException(OAuthErrorException.INVALID_REQUEST, ex.getErrorDescription(), Response.Status.BAD_REQUEST);
         }
@@ -150,8 +151,8 @@ public class ParEndpoint extends AbstractParEndpoint {
             checker.checkOIDCParams();
             checker.checkPKCEParams();
             checker.checkParDPoPParams();
-        } catch (AuthorizationEndpointChecker.AuthorizationCheckException ex) {
-            ex.throwAsCorsErrorResponseException(cors);
+        } catch (AuthorizationCheckException ex) {
+            checker.throwAsCorsErrorResponseException(cors, ex);
         }
 
         try {
