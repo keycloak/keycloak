@@ -98,6 +98,7 @@ import org.keycloak.quarkus.runtime.integration.QuarkusKeycloakSessionFactory;
 import org.keycloak.quarkus.runtime.integration.resteasy.KeycloakHandlerChainCustomizer;
 import org.keycloak.quarkus.runtime.integration.resteasy.KeycloakTracingCustomizer;
 import org.keycloak.quarkus.runtime.logging.ClearMappedDiagnosticContextFilter;
+import org.keycloak.quarkus.runtime.services.RejectSourceMapFilter;
 import org.keycloak.quarkus.runtime.services.health.BootstrapReadyHealthCheck;
 import org.keycloak.quarkus.runtime.services.health.KeycloakClusterReadyHealthCheck;
 import org.keycloak.quarkus.runtime.services.health.KeycloakReadyHealthCheck;
@@ -310,14 +311,9 @@ class KeycloakProcessor {
         }
     }
 
-    @Record(ExecutionTime.STATIC_INIT)
-    @BuildStep
-    @Consume(ConfigBuildItem.class)
-    void filterSourceMapRequests(BuildProducer<FilterBuildItem> filters, KeycloakRecorder recorder) {
-        var filter = recorder.getRejectSourceMapFilter();
-        if (filter != null) {
-            filters.produce(new FilterBuildItem(filter, SecurityHandlerPriorities.CORS + 1));
-        }
+    @BuildStep(onlyIfNot = IsKeycloakDevMode.class)
+    void filterSourceMapRequests(BuildProducer<FilterBuildItem> filters) {
+        filters.produce(new FilterBuildItem(new RejectSourceMapFilter(), SecurityHandlerPriorities.CORS + 1));
     }
 
     @Record(ExecutionTime.STATIC_INIT)
