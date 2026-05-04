@@ -629,6 +629,32 @@ public class SsfEventStore {
     }
 
     /**
+     * Bulk-promotes every {@code PENDING} row whose {@code createdAt}
+     * is older than the supplied cutoff to {@code DEAD_LETTER}. Used by
+     * the drainer as a backstop so rows that get stuck in {@code PENDING}
+     * — for instance, because their realm has the SSF transmitter
+     * feature switched off and nothing else touches them — eventually
+     * graduate to a terminal state and are caught by the existing
+     * dead-letter retention purge.
+     *
+     * <p>Does <em>not</em> bump {@code attempts}: these rows didn't
+     * actually retry, they aged out. The {@code lastError} column
+     * captures the reason so operators have a forensic trail.
+     *
+     * @return the number of rows transitioned.
+     */
+    public int markStalePendingAsDeadLetter(Instant cutoff, String reason) {
+        Objects.requireNonNull(cutoff, "cutoff");
+        return getEntityManager()
+                .createNamedQuery("SsfEventEntity.markStalePendingAsDeadLetter")
+                .setParameter("dead", SsfEventStatus.DEAD_LETTER)
+                .setParameter("reason", truncateError(reason))
+                .setParameter("pending", SsfEventStatus.PENDING)
+                .setParameter("cutoff", cutoff)
+                .executeUpdate();
+    }
+
+    /**
      * Batched client-scoped delete: removes up to {@code batchSize}
      * rows owned by the given client per call. Used by the async
      * cleanup task driven from

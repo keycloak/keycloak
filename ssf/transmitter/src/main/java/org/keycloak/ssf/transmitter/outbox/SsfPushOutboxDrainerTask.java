@@ -16,6 +16,7 @@ import org.keycloak.ssf.Ssf;
 import org.keycloak.ssf.event.token.SsfSecurityEventToken;
 import org.keycloak.ssf.stream.StreamStatus;
 import org.keycloak.ssf.stream.StreamStatusValue;
+import org.keycloak.ssf.transmitter.DefaultSsfTransmitterProviderFactory;
 import org.keycloak.ssf.transmitter.SsfTransmitterContext;
 import org.keycloak.ssf.transmitter.SsfTransmitterProvider;
 import org.keycloak.ssf.transmitter.delivery.push.PushDeliveryService;
@@ -117,6 +118,14 @@ public class SsfPushOutboxDrainerTask implements ScheduledTask {
      */
     protected final Duration transmitterDisabledBackoff;
 
+    /**
+     * Backstop max age for {@code PENDING} rows. Any row older than
+     * this duration gets bulk-promoted to {@code DEAD_LETTER} on every
+     * drainer tick; the existing dead-letter retention then deletes
+     * them. {@code null} or a non-positive value disables the backstop.
+     */
+    protected final Duration pendingMaxAge;
+
     public SsfPushOutboxDrainerTask(SsfPushOutboxDrainerTaskConfig config,
                                     Function<KeycloakSession, SsfEventStore> pendingSsfEventStoreFactory,
                                     SsfTransmitterContext context,
@@ -130,6 +139,7 @@ public class SsfPushOutboxDrainerTask implements ScheduledTask {
         this.transmitterDisabledBackoff = (configuredBackoff == null || configuredBackoff.isNegative() || configuredBackoff.isZero())
                 ? DEFAULT_TRANSMITTER_DISABLED_BACKOFF
                 : configuredBackoff;
+        this.pendingMaxAge = config.pendingMaxAge();
         this.pendingSsfEventStoreFactory = pendingSsfEventStoreFactory;
         this.context = context;
         this.pushDeliveryServiceFactory = pushDeliveryServiceFactory;
@@ -154,6 +164,12 @@ public class SsfPushOutboxDrainerTask implements ScheduledTask {
             // ssf.maxEventAgeSeconds shed stale rows before the broader
             // global retention windows touch them.
             purgeStalePerClient(session, store);
+            // Backstop: rows stuck in PENDING beyond pendingMaxAge get
+            // bulk-promoted to DEAD_LETTER so the dead-letter retention
+            // purge below eventually deletes them. Catches stuck rows
+            // regardless of next_attempt_at so a deferred-forever bug
+            // can't leak rows.
+            promoteStalePendingToDeadLetter(store);
             purgeDeliveredOlderThanRetention(store);
             purgeDeadLetterOlderThanRetention(store);
             // SSF 1.0 §8.1.1: auto-pause streams whose receiver has
@@ -505,6 +521,19 @@ public class SsfPushOutboxDrainerTask implements ScheduledTask {
         } catch (Exception e) {
             log.warnf(e, "Failed to pause inactive stream. clientId=%s streamId=%s",
                     client.getClientId(), streamId);
+        }
+    }
+
+    protected void promoteStalePendingToDeadLetter(SsfEventStore store) {
+        if (pendingMaxAge == null || pendingMaxAge.isZero() || pendingMaxAge.isNegative()) {
+            return;
+        }
+        Instant cutoff = Instant.now().minus(pendingMaxAge);
+        int promoted = store.markStalePendingAsDeadLetter(cutoff,
+                "pending exceeded " + DefaultSsfTransmitterProviderFactory.CONFIG_OUTBOX_PENDING_MAX_AGE);
+        if (promoted > 0) {
+            log.infof("SSF outbox: promoted %d stale PENDING row(s) to DEAD_LETTER (pendingMaxAge=%s)",
+                    promoted, pendingMaxAge);
         }
     }
 

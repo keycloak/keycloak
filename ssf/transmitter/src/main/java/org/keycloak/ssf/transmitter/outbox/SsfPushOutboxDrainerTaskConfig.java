@@ -17,11 +17,20 @@ import java.time.Duration;
  * the SSF transmitter feature switched off. {@code null} or a
  * non-positive value falls back to
  * {@link SsfPushOutboxDrainerTask#DEFAULT_TRANSMITTER_DISABLED_BACKOFF}.
+ *
+ * <p>{@code pendingMaxAge} is a backstop that promotes any
+ * {@code PENDING} row older than this duration to {@code DEAD_LETTER},
+ * so rows that would otherwise get stuck (e.g. realm with transmitter
+ * disabled, no per-receiver {@code ssf.maxEventAgeSeconds}, no realm
+ * removal) eventually graduate to a terminal state and are caught by
+ * the dead-letter retention purge. {@code null} or a non-positive
+ * value disables the backstop.
  */
 public record SsfPushOutboxDrainerTaskConfig(
         int batchSize,
         SsfPushOutboxBackoff backoff,
         Duration deadLetterRetention,
         Duration deliveredRetention,
-        Duration transmitterDisabledBackoff) {
+        Duration transmitterDisabledBackoff,
+        Duration pendingMaxAge) {
 }

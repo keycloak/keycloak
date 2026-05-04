@@ -291,6 +291,109 @@ public class SsfEventStoreTests {
     }
 
     @Test
+    public void markStalePendingAsDeadLetter_promotesOnlyOldPendingRows() {
+        final String realmId = testRealmId;
+        runOnServer.run(session -> {
+            Instant now = Instant.now();
+
+            // Old PENDING — should be promoted.
+            SsfEventEntity oldPending = persistRaw(session, realmId, "client-stale", "stream-a",
+                    "jti-stale-old", SsfEventStatus.PENDING, 0,
+                    now.plusSeconds(60), now.minus(Duration.ofDays(3)));
+
+            // Fresh PENDING — survives, hasn't aged out.
+            SsfEventEntity freshPending = persistRaw(session, realmId, "client-stale", "stream-b",
+                    "jti-stale-fresh", SsfEventStatus.PENDING, 0,
+                    now.plusSeconds(60), now.minusSeconds(60));
+
+            // Old HELD — backstop only targets PENDING; HELD rows go through
+            // their own resume path, so they must be left alone.
+            SsfEventEntity oldHeld = persistRaw(session, realmId, "client-stale", "stream-c",
+                    "jti-stale-held", SsfEventStatus.HELD, 0,
+                    now.plusSeconds(60), now.minus(Duration.ofDays(3)));
+
+            // Old DELIVERED — terminal already, must not be touched.
+            SsfEventEntity oldDelivered = persistRaw(session, realmId, "client-stale", "stream-d",
+                    "jti-stale-delivered", SsfEventStatus.DELIVERED, 1,
+                    now.plusSeconds(60), now.minus(Duration.ofDays(3)));
+            oldDelivered.setDeliveredAt(now.minus(Duration.ofDays(3)));
+
+            // Old DEAD_LETTER — already in the target state, must not have its
+            // attempts or lastError clobbered by the bulk update.
+            SsfEventEntity oldDeadLetter = persistRaw(session, realmId, "client-stale", "stream-e",
+                    "jti-stale-dl", SsfEventStatus.DEAD_LETTER, 8,
+                    now.plusSeconds(60), now.minus(Duration.ofDays(3)));
+            oldDeadLetter.setLastError("original dead-letter reason");
+
+            em(session).flush();
+            em(session).clear();
+
+            int promoted = new SsfEventStore(session)
+                    .markStalePendingAsDeadLetter(now.minus(Duration.ofDays(2)),
+                            "pending exceeded outbox-pending-max-age");
+            Assertions.assertEquals(1, promoted,
+                    "only old PENDING rows must be promoted; other statuses are skipped");
+
+            em(session).flush();
+            em(session).clear();
+
+            SsfEventEntity afterOldPending = findById(session, oldPending.getId());
+            Assertions.assertEquals(SsfEventStatus.DEAD_LETTER, afterOldPending.getStatus(),
+                    "old PENDING row must transition to DEAD_LETTER");
+            Assertions.assertEquals(0, afterOldPending.getAttempts(),
+                    "stale-promotion must not bump attempts — these rows didn't actually retry");
+            Assertions.assertEquals("pending exceeded outbox-pending-max-age",
+                    afterOldPending.getLastError(),
+                    "promoted row must carry the supplied reason in lastError");
+
+            Assertions.assertEquals(SsfEventStatus.PENDING,
+                    findById(session, freshPending.getId()).getStatus(),
+                    "PENDING rows newer than the cutoff must survive");
+            Assertions.assertEquals(SsfEventStatus.HELD,
+                    findById(session, oldHeld.getId()).getStatus(),
+                    "HELD rows must not be promoted by the PENDING-only backstop");
+            Assertions.assertEquals(SsfEventStatus.DELIVERED,
+                    findById(session, oldDelivered.getId()).getStatus(),
+                    "DELIVERED rows must not be touched by the backstop");
+
+            SsfEventEntity afterOldDeadLetter = findById(session, oldDeadLetter.getId());
+            Assertions.assertEquals(SsfEventStatus.DEAD_LETTER, afterOldDeadLetter.getStatus(),
+                    "already-DEAD_LETTER rows must remain DEAD_LETTER");
+            Assertions.assertEquals("original dead-letter reason",
+                    afterOldDeadLetter.getLastError(),
+                    "already-DEAD_LETTER rows must keep their original lastError");
+        });
+    }
+
+    @Test
+    public void markStalePendingAsDeadLetter_truncatesLongReason() {
+        final String realmId = testRealmId;
+        runOnServer.run(session -> {
+            Instant now = Instant.now();
+            SsfEventEntity row = persistRaw(session, realmId, "client-stale-long", "stream-a",
+                    "jti-stale-long", SsfEventStatus.PENDING, 0,
+                    now.plusSeconds(60), now.minus(Duration.ofDays(3)));
+            em(session).flush();
+            em(session).clear();
+
+            String hugeReason = "x".repeat(3000);
+            int promoted = new SsfEventStore(session)
+                    .markStalePendingAsDeadLetter(now.minus(Duration.ofDays(2)), hugeReason);
+            Assertions.assertEquals(1, promoted);
+
+            em(session).flush();
+            em(session).clear();
+
+            SsfEventEntity after = findById(session, row.getId());
+            Assertions.assertNotNull(after.getLastError());
+            Assertions.assertTrue(after.getLastError().length() <= 2048,
+                    "lastError must be truncated to the column width");
+            Assertions.assertTrue(after.getLastError().endsWith("..."),
+                    "truncated lastError must carry an ellipsis marker");
+        });
+    }
+
+    @Test
     public void purgeDeliveredOlderThan_purgesOnlyOldDeliveredRows() {
         final String realmId = testRealmId;
         runOnServer.run(session -> {

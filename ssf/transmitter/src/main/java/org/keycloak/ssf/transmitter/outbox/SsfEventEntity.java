@@ -130,6 +130,16 @@ import jakarta.persistence.UniqueConstraint;
                 name = "SsfEventEntity.deletePurgedDeadLetter",
                 query = "DELETE FROM SsfEventEntity e"
                         + " WHERE e.status = :status AND e.createdAt < :olderThan"),
+        // Backstop for rows that would otherwise sit in PENDING forever
+        // (realm with SSF transmitter switched off, no per-receiver
+        // ssf.maxEventAgeSeconds, no realm/client removal). Bulk-promotes
+        // them to DEAD_LETTER so the deletePurgedDeadLetter purge above
+        // eventually deletes them.
+        @NamedQuery(
+                name = "SsfEventEntity.markStalePendingAsDeadLetter",
+                query = "UPDATE SsfEventEntity e"
+                        + "    SET e.status = :dead, e.lastError = :reason"
+                        + "  WHERE e.status = :pending AND e.createdAt < :cutoff"),
         @NamedQuery(
                 name = "SsfEventEntity.deleteByRealm",
                 query = "DELETE FROM SsfEventEntity e"
