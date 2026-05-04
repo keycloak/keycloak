@@ -36,7 +36,6 @@ import org.keycloak.ssf.transmitter.metadata.TransmitterMetadataService;
 import org.keycloak.ssf.transmitter.metrics.SsfMetricsBinder;
 import org.keycloak.ssf.transmitter.outbox.SsfOutboxKinds;
 import org.keycloak.ssf.transmitter.outbox.SsfPushDeliveryHandler;
-import org.keycloak.ssf.transmitter.store.SsfEventStore;
 import org.keycloak.ssf.transmitter.stream.StreamVerificationService;
 import org.keycloak.ssf.transmitter.stream.storage.client.ClientStreamStore;
 import org.keycloak.ssf.transmitter.subject.DefaultSsfSubjectInclusionResolver;
@@ -318,7 +317,6 @@ public class DefaultSsfTransmitterProviderFactory implements SsfTransmitterProvi
                 this.transmitterConfig,
                 this.configuredDefaultSupportedEventAliases,
                 this.metricsBinder,
-                this::createPendingEventStore,
                 this::createOutboxStore,
                 this::createSsfIssuerUrl,
                 this);
@@ -356,19 +354,10 @@ public class DefaultSsfTransmitterProviderFactory implements SsfTransmitterProvi
 
 
     /**
-     * Session-scoped factory for the outbox DAO. Extension point for
-     * deployments that want to plug in a custom {@link SsfEventStore}
-     * subclass (e.g. for instrumentation or schema overrides) — the
-     * default is {@code SsfEventStore::new}.
-     */
-    protected SsfEventStore createPendingEventStore(KeycloakSession session) {
-        return new SsfEventStore(session);
-    }
-
-    /**
-     * Session-scoped factory for the generic outbox DAO. Used by SSF
-     * call sites that have migrated off {@link SsfEventStore}; the
-     * legacy factory above remains during the migration.
+     * Session-scoped factory for the generic outbox DAO. Extension
+     * point for deployments that want to plug in a custom
+     * {@link OutboxStore} subclass (e.g. for instrumentation or
+     * schema overrides) — the default is {@code OutboxStore::new}.
      */
     protected OutboxStore createOutboxStore(KeycloakSession session) {
         return new OutboxStore(session);

@@ -939,7 +939,7 @@ public class StreamService {
      * filtering on {@code last_error} match.
      */
     public static final String DEAD_LETTER_REASON_EVENT_TYPE_NO_LONGER_REQUESTED =
-            "event type not in events_requested";
+            "event_type_no_longer_requested";
 
     protected void finalizePollEndpointUrlIfApplicable(StreamConfig streamConfig, ClientModel receiverClient) {
         StreamDeliveryConfig delivery = streamConfig.getDelivery();

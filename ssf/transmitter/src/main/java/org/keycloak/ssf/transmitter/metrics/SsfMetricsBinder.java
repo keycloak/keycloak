@@ -6,7 +6,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.keycloak.common.util.Time;
-import org.keycloak.ssf.transmitter.outbox.SsfEventStatus;
+import org.keycloak.models.jpa.entities.OutboxEntryStatus;
 
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Gauge;
@@ -318,7 +318,7 @@ public class SsfMetricsBinder {
     /**
      * Compound key for the outbox depth gauge map.
      */
-    public record RealmStatus(String realmId, SsfEventStatus status) {
+    public record RealmStatus(String realmId, OutboxEntryStatus status) {
     }
 
     // ---------------------------------------------------------------- record

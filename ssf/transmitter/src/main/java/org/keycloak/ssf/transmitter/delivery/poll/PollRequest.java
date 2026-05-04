@@ -28,7 +28,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * }
  * }</pre>
  * Matching outbox rows transition to
- * {@link org.keycloak.ssf.transmitter.outbox.SsfEventStatus#DEAD_LETTER DEAD_LETTER}
+ * {@link org.keycloak.models.jpa.entities.OutboxEntryStatus#DEAD_LETTER DEAD_LETTER}
  * with the receiver-supplied error message in {@code last_error}.
  */
 @JsonIgnoreProperties(ignoreUnknown = true)

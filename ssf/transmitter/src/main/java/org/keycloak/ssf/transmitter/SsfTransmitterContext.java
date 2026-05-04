@@ -6,7 +6,6 @@ import java.util.function.Function;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.outbox.OutboxStore;
 import org.keycloak.ssf.transmitter.metrics.SsfMetricsBinder;
-import org.keycloak.ssf.transmitter.store.SsfEventStore;
 
 /**
  * Factory-scoped context bundle for the SSF transmitter. Holds the
@@ -27,7 +26,6 @@ public final class SsfTransmitterContext {
     private final SsfTransmitterConfig config;
     private final Set<String> defaultSupportedEventAliases;
     private final SsfMetricsBinder metricsBinder;
-    private final Function<KeycloakSession, SsfEventStore> eventStoreFactory;
     private final Function<KeycloakSession, OutboxStore> outboxStoreFactory;
     private final Function<KeycloakSession, String> issuerUrlFactory;
     private final SsfTransmitterServiceBuilder services;
@@ -35,14 +33,12 @@ public final class SsfTransmitterContext {
     public SsfTransmitterContext(SsfTransmitterConfig config,
                                  Set<String> defaultSupportedEventAliases,
                                  SsfMetricsBinder metricsBinder,
-                                 Function<KeycloakSession, SsfEventStore> eventStoreFactory,
                                  Function<KeycloakSession, OutboxStore> outboxStoreFactory,
                                  Function<KeycloakSession, String> issuerUrlFactory,
                                  SsfTransmitterServiceBuilder services) {
         this.config = config;
         this.defaultSupportedEventAliases = defaultSupportedEventAliases;
         this.metricsBinder = metricsBinder == null ? SsfMetricsBinder.NOOP : metricsBinder;
-        this.eventStoreFactory = eventStoreFactory;
         this.outboxStoreFactory = outboxStoreFactory;
         this.issuerUrlFactory = issuerUrlFactory;
         this.services = services;
@@ -67,33 +63,19 @@ public final class SsfTransmitterContext {
     }
 
     /**
-     * Resolves an {@link SsfEventStore} for the given session.
+     * Resolves an {@link OutboxStore} for the given session.
      * Indirection so test subclasses can plug in a custom store
      * without overriding the entire context.
-     */
-    public SsfEventStore eventStore(KeycloakSession session) {
-        return eventStoreFactory.apply(session);
-    }
-
-    /**
-     * Function reference variant — passed to constructors that want a
-     * {@code Function<KeycloakSession, SsfEventStore>} (e.g.
-     * the dispatcher and the stream service for cascade purges).
-     */
-    public Function<KeycloakSession, SsfEventStore> eventStoreFactory() {
-        return eventStoreFactory;
-    }
-
-    /**
-     * Resolves an {@link OutboxStore} for the given session. SSF
-     * runtime call sites are migrating to this generic store; the
-     * legacy {@link #eventStore(KeycloakSession)} accessor remains
-     * during the migration so existing code keeps compiling.
      */
     public OutboxStore outboxStore(KeycloakSession session) {
         return outboxStoreFactory.apply(session);
     }
 
+    /**
+     * Function reference variant — passed to constructors that want a
+     * {@code Function<KeycloakSession, OutboxStore>} (e.g. the
+     * dispatcher, poll service, and stream service).
+     */
     public Function<KeycloakSession, OutboxStore> outboxStoreFactory() {
         return outboxStoreFactory;
     }

@@ -27,9 +27,7 @@ import org.jboss.logging.Logger;
  * row; this implementation resolves the realm/client/stream the row
  * targets and hands the encoded SET to {@link PushDeliveryService}.
  *
- * <p>Mirrors the resolve-then-deliver-then-classify logic of the
- * legacy {@code SsfPushOutboxDrainerTask.processPendingEvent} so the
- * cutover preserves SSF-visible behavior:
+ * <p>Resolve-then-deliver-then-classify behavior:
  *
  * <ul>
  *   <li>Realm / client / stream gone → {@link OutboxDeliveryOutcome#ORPHANED}.</li>
@@ -38,8 +36,9 @@ import org.jboss.logging.Logger;
  *       decides RETRY-vs-DEAD_LETTER based on attempts.</li>
  * </ul>
  *
- * <p>Emits the SSF push-delivery meter with the same outcomes the
- * legacy drainer did. The DEAD_LETTER metric counter is bumped here
+ * <p>Emits the {@code keycloak.ssf.push.delivery} meter on every
+ * outcome — DELIVERED / RETRY / ORPHANED. The DEAD_LETTER counter
+ * is bumped here
  * when the handler can detect attempt-exhaustion ahead of time
  * (handler returns RETRY but knows the next attempt will be the
  * final one); the drainer's escalation path ensures the row's

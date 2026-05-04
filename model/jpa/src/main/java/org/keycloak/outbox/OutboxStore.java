@@ -49,8 +49,7 @@ import org.jboss.logging.Logger;
  * <p>Read patterns (drainer, admin stats, retention purges) and write
  * patterns (enqueue, transition, bulk delete) are split here so the
  * runtime drainer / cleanup tasks compose primitives rather than
- * inlining queries. Mirrors what the SSF-specific {@code SsfEventStore}
- * established; SSF migrates to this surface in a follow-up.
+ * inlining queries.
  */
 public class OutboxStore {
 

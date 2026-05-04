@@ -19,9 +19,10 @@ import org.keycloak.ssf.event.caep.CaepCredentialChange;
 import org.keycloak.ssf.event.caep.CaepSessionRevoked;
 import org.keycloak.ssf.transmitter.SsfScopes;
 import org.keycloak.ssf.transmitter.admin.SsfClientStreamRepresentation;
-import org.keycloak.ssf.transmitter.outbox.SsfEventEntity;
-import org.keycloak.ssf.transmitter.outbox.SsfEventStatus;
-import org.keycloak.ssf.transmitter.store.SsfEventStore;
+import org.keycloak.models.jpa.entities.OutboxEntryEntity;
+import org.keycloak.models.jpa.entities.OutboxEntryStatus;
+import org.keycloak.outbox.OutboxStore;
+import org.keycloak.ssf.transmitter.outbox.SsfOutboxKinds;
 import org.keycloak.ssf.transmitter.stream.StreamConfig;
 import org.keycloak.ssf.transmitter.stream.StreamConfigInputRepresentation;
 import org.keycloak.ssf.transmitter.stream.StreamConfigUpdateRepresentation;
@@ -383,7 +384,7 @@ public class SsfTransmitterStreamManagementTests {
         }
 
         // Seed one PENDING outbox row of each event type via runOnServer
-        // (using the server-side SsfEventStore so we don't rely on a
+        // (using the server-side OutboxStore so we don't rely on a
         // failing push to land rows in PENDING). Use unique jtis so we
         // can identify them after the PATCH.
         final String credJti = "test-evict-cred-" + UUID.randomUUID();
@@ -391,25 +392,25 @@ public class SsfTransmitterStreamManagementTests {
         runOnServer.run(session -> {
             var serverRealm = session.getContext().getRealm();
             var receiver = serverRealm.getClientByClientId(RECEIVER_RW);
-            SsfEventStore store = new SsfEventStore(session);
-            store.enqueuePendingPush(serverRealm.getId(), receiver.getId(), streamId,
-                    credJti, CaepCredentialChange.TYPE, "encoded-cred");
-            store.enqueuePendingPush(serverRealm.getId(), receiver.getId(), streamId,
-                    sessJti, CaepSessionRevoked.TYPE, "encoded-sess");
+            OutboxStore store = new OutboxStore(session);
+            store.enqueuePending(SsfOutboxKinds.PUSH, serverRealm.getId(), receiver.getId(),
+                    streamId, credJti, CaepCredentialChange.TYPE, "encoded-cred", null);
+            store.enqueuePending(SsfOutboxKinds.PUSH, serverRealm.getId(), receiver.getId(),
+                    streamId, sessJti, CaepSessionRevoked.TYPE, "encoded-sess", null);
         });
 
         // Pre-condition sanity: both rows are present and PENDING.
         runOnServer.run(session -> {
             var serverRealm = session.getContext().getRealm();
             var receiver = serverRealm.getClientByClientId(RECEIVER_RW);
-            SsfEventStore store = new SsfEventStore(session);
-            SsfEventEntity credRow = store.findByClientAndJti(receiver.getId(), credJti);
-            SsfEventEntity sessRow = store.findByClientAndJti(receiver.getId(), sessJti);
+            OutboxStore store = new OutboxStore(session);
+            OutboxEntryEntity credRow = store.findByOwnerAndCorrelationId(SsfOutboxKinds.PUSH, receiver.getId(), credJti);
+            OutboxEntryEntity sessRow = store.findByOwnerAndCorrelationId(SsfOutboxKinds.PUSH, receiver.getId(), sessJti);
             Assertions.assertNotNull(credRow, "seeded credential-change row should be present");
-            Assertions.assertEquals(SsfEventStatus.PENDING, credRow.getStatus(),
+            Assertions.assertEquals(OutboxEntryStatus.PENDING, credRow.getStatus(),
                     "seed should land as PENDING");
             Assertions.assertNotNull(sessRow, "seeded session-revoked row should be present");
-            Assertions.assertEquals(SsfEventStatus.PENDING, sessRow.getStatus(),
+            Assertions.assertEquals(OutboxEntryStatus.PENDING, sessRow.getStatus(),
                     "seed should land as PENDING");
         });
 
@@ -429,18 +430,18 @@ public class SsfTransmitterStreamManagementTests {
         runOnServer.run(session -> {
             var serverRealm = session.getContext().getRealm();
             var receiver = serverRealm.getClientByClientId(RECEIVER_RW);
-            SsfEventStore store = new SsfEventStore(session);
-            SsfEventEntity credRow = store.findByClientAndJti(receiver.getId(), credJti);
-            SsfEventEntity sessRow = store.findByClientAndJti(receiver.getId(), sessJti);
+            OutboxStore store = new OutboxStore(session);
+            OutboxEntryEntity credRow = store.findByOwnerAndCorrelationId(SsfOutboxKinds.PUSH, receiver.getId(), credJti);
+            OutboxEntryEntity sessRow = store.findByOwnerAndCorrelationId(SsfOutboxKinds.PUSH, receiver.getId(), sessJti);
             Assertions.assertNotNull(credRow,
                     "credential-change row must be retained for audit, not deleted");
-            Assertions.assertEquals(SsfEventStatus.DEAD_LETTER, credRow.getStatus(),
+            Assertions.assertEquals(OutboxEntryStatus.DEAD_LETTER, credRow.getStatus(),
                     "credential-change row should be parked as DEAD_LETTER on PATCH narrow");
             Assertions.assertEquals("event_type_no_longer_requested", credRow.getLastError(),
                     "DEAD_LETTER reason should identify the cause");
             Assertions.assertNotNull(sessRow,
                     "session-revoked row must be preserved (still in events_delivered)");
-            Assertions.assertEquals(SsfEventStatus.PENDING, sessRow.getStatus(),
+            Assertions.assertEquals(OutboxEntryStatus.PENDING, sessRow.getStatus(),
                     "session-revoked row must remain PENDING");
         });
     }

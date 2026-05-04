@@ -202,9 +202,10 @@ import jakarta.persistence.Table;
                         + " WHERE e.entryKind = :entryKind"
                         + "   AND e.ownerId = :ownerId"
                         + "   AND e.status = :status"),
-        // Owner-scoped lifecycle: stream pause/resume, stream disable,
-        // narrowed events_requested. Mirrors the SSF stream lifecycle
-        // operations on SsfEventStore.
+        // Owner-scoped lifecycle: pause/resume, disable, narrowed
+        // type allow-list. Drives consumer-side lifecycle operations
+        // such as SSF stream pause / resume / disable / events_requested
+        // narrowing.
         @NamedQuery(
                 name = "OutboxEntryEntity.releaseHeldForOwner",
                 query = "UPDATE OutboxEntryEntity e"
