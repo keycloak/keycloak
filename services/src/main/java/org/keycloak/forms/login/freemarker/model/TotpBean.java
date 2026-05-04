@@ -72,7 +72,7 @@ public class TotpBean {
             this.totpSecret = secret;
         }
         this.totpSecretEncoded = TotpUtils.encode(totpSecret);
-        this.totpSecretQrCode = TotpUtils.qrCode(totpSecret, realm, user);
+        this.totpSecretQrCode = TotpUtils.qrCode(session, totpSecret, realm, user);
 
         OTPPolicy otpPolicy = realm.getOTPPolicy();
         this.supportedApplications = session.getAllProviders(OTPApplicationProvider.class).stream()

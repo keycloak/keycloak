@@ -17,14 +17,25 @@
 
 package org.keycloak.utils;
 
+import java.io.IOException;
+import java.util.Locale;
+import java.util.Properties;
+
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.Base32;
+import org.keycloak.theme.TemplatingUtil;
+import org.keycloak.theme.Theme;
+
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class TotpUtils {
+
+    private static final Logger logger = Logger.getLogger(TotpUtils.class);
 
     public static String encode(String totpSecret) {
         String encoded = Base32.encode(totpSecret.getBytes());
@@ -48,6 +59,39 @@ public class TotpUtils {
             return QRCodeUtils.encodeAsQRString(keyUri, width, height);
         } catch (Exception e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    public static String qrCode(KeycloakSession session, String totpSecret, RealmModel realm, UserModel user) {
+        if (session == null) {
+            return qrCode(totpSecret, realm, user);
+        }
+        try {
+            String issuerName = getIssuerName(session, realm, user);
+            String keyUri = realm.getOTPPolicy().getKeyURI(issuerName, user.getUsername(), totpSecret);
+
+            int width = 246;
+            int height = 246;
+
+            return QRCodeUtils.encodeAsQRString(keyUri, width, height);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static String getIssuerName(KeycloakSession session, RealmModel realm, UserModel user) {
+        String displayName = realm.getDisplayName();
+        if (StringUtil.isNullOrEmpty(displayName)) {
+            return realm.getName();
+        }
+
+        try {
+            Locale locale = session.getContext().resolveLocale(user);
+            Properties messages = session.theme().getTheme(Theme.Type.LOGIN).getEnhancedMessages(realm, locale);
+            return TemplatingUtil.resolveVariables(displayName, messages);
+        } catch (IOException e) {
+            logger.warn("Failed to load messages to resolve realm display name", e);
+            return displayName;
         }
     }
 
