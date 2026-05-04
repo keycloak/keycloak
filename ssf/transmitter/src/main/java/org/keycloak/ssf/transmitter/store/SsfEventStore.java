@@ -608,6 +608,19 @@ public class SsfEventStore {
         getEntityManager().merge(entity);
     }
 
+    /**
+     * Defers a pending row without bumping the attempt counter. Used by
+     * the drainer when a row can't make progress for a transient,
+     * non-receiver reason (e.g. SSF transmitter disabled at the realm
+     * level) and we want to free batch slots without penalising the
+     * receiver's retry budget.
+     */
+    public void recordSkip(SsfEventEntity entity, Instant nextAttemptAt, String reason) {
+        entity.setNextAttemptAt(nextAttemptAt);
+        entity.setLastError(truncateError(reason));
+        getEntityManager().merge(entity);
+    }
+
     public void markDeadLetter(SsfEventEntity entity, String lastError) {
         entity.setAttempts(entity.getAttempts() + 1);
         entity.setStatus(SsfEventStatus.DEAD_LETTER);

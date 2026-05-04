@@ -12,6 +12,7 @@ import org.keycloak.common.util.Time;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.ssf.Ssf;
 import org.keycloak.ssf.event.token.SsfSecurityEventToken;
 import org.keycloak.ssf.stream.StreamStatus;
 import org.keycloak.ssf.stream.StreamStatusValue;
@@ -45,6 +46,16 @@ import org.jboss.logging.Logger;
 public class SsfPushOutboxDrainerTask implements ScheduledTask {
 
     private static final Logger log = Logger.getLogger(SsfPushOutboxDrainerTask.class);
+
+    /**
+     * Fallback for {@link SsfPushOutboxDrainerTaskConfig#transmitterDisabledBackoff}
+     * when the config supplies {@code null} or a non-positive duration.
+     * Long enough that a backlog in a realm with the SSF transmitter
+     * feature switched off doesn't burn a batch slot every tick, short
+     * enough that flipping the flag back on resumes delivery within a
+     * reasonable window.
+     */
+    public static final Duration DEFAULT_TRANSMITTER_DISABLED_BACKOFF = Duration.ofMinutes(15);
 
     protected final int batchSize;
 
@@ -97,6 +108,15 @@ public class SsfPushOutboxDrainerTask implements ScheduledTask {
 
     protected final SsfMetricsBinder metricsBinder;
 
+    /**
+     * How far to push {@code next_attempt_at} when skipping a row whose
+     * realm has the SSF transmitter feature switched off. Sourced from
+     * {@link SsfPushOutboxDrainerTaskConfig#transmitterDisabledBackoff}
+     * with {@link #DEFAULT_TRANSMITTER_DISABLED_BACKOFF} as the fallback
+     * when the config supplies {@code null} or a non-positive duration.
+     */
+    protected final Duration transmitterDisabledBackoff;
+
     public SsfPushOutboxDrainerTask(SsfPushOutboxDrainerTaskConfig config,
                                     Function<KeycloakSession, SsfEventStore> pendingSsfEventStoreFactory,
                                     SsfTransmitterContext context,
@@ -106,6 +126,10 @@ public class SsfPushOutboxDrainerTask implements ScheduledTask {
         this.backoff = config.backoff();
         this.deadLetterRetention = config.deadLetterRetention();
         this.deliveredRetention = config.deliveredRetention();
+        Duration configuredBackoff = config.transmitterDisabledBackoff();
+        this.transmitterDisabledBackoff = (configuredBackoff == null || configuredBackoff.isNegative() || configuredBackoff.isZero())
+                ? DEFAULT_TRANSMITTER_DISABLED_BACKOFF
+                : configuredBackoff;
         this.pendingSsfEventStoreFactory = pendingSsfEventStoreFactory;
         this.context = context;
         this.pushDeliveryServiceFactory = pushDeliveryServiceFactory;
@@ -229,6 +253,18 @@ public class SsfPushOutboxDrainerTask implements ScheduledTask {
             return;
         }
         String realmLabel = realm.getName();
+
+        // SSF transmitter switched off for this realm: defer the row
+        // without bumping attempts so the receiver's retry budget stays
+        // intact, and push next_attempt_at out far enough that a backlog
+        // in such a realm doesn't fill every batch slot on every tick.
+        if (!Ssf.isTransmitterEnabled(realm)) {
+            Instant deferUntil = Instant.now().plus(transmitterDisabledBackoff);
+            store.recordSkip(row, deferUntil, "skipped: SSF transmitter disabled for realm");
+            metricsBinder.recordPushDelivery(realmLabel, row.getClientId(),
+                    SsfMetricsBinder.PushOutcome.SKIPPED, Duration.between(rowStart, Instant.now()));
+            return;
+        }
 
         ClientModel receiverClient = realm.getClientById(row.getClientId());
         if (receiverClient == null) {

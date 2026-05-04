@@ -69,6 +69,8 @@ public class DefaultSsfTransmitterProviderFactory implements SsfTransmitterProvi
 
     public static final String CONFIG_OUTBOX_DELIVERED_RETENTION = "outbox-delivered-retention";
 
+    public static final String CONFIG_OUTBOX_TRANSMITTER_DISABLED_BACKOFF = "outbox-transmitter-disabled-backoff";
+
     public static final long DEFAULT_OUTBOX_DRAINER_INTERVAL_MILLIS = Duration.ofSeconds(30).toMillis();
 
     public static final int DEFAULT_OUTBOX_DRAINER_BATCH_SIZE = 50;
@@ -90,6 +92,14 @@ public class DefaultSsfTransmitterProviderFactory implements SsfTransmitterProvi
      * indefinitely.
      */
     public static final long DEFAULT_OUTBOX_DELIVERED_RETENTION_MILLIS = Duration.ofHours(24).toMillis();
+
+    /**
+     * Default deferral applied to outbox rows whose realm has the SSF
+     * transmitter feature switched off — 15 minutes. The drainer pushes
+     * the row's {@code next_attempt_at} forward by this amount so a
+     * realm-level backlog doesn't burn batch slots on every tick.
+     */
+    public static final long DEFAULT_OUTBOX_TRANSMITTER_DISABLED_BACKOFF_MILLIS = Duration.ofMinutes(15).toMillis();
 
     /**
      * Aliases (or full URIs) of the events the transmitter advertises as
@@ -116,6 +126,8 @@ public class DefaultSsfTransmitterProviderFactory implements SsfTransmitterProvi
     protected long outboxDeadLetterRetentionMillis = DEFAULT_OUTBOX_DEAD_LETTER_RETENTION_MILLIS;
 
     protected long outboxDeliveredRetentionMillis = DEFAULT_OUTBOX_DELIVERED_RETENTION_MILLIS;
+
+    protected long outboxTransmitterDisabledBackoffMillis = DEFAULT_OUTBOX_TRANSMITTER_DISABLED_BACKOFF_MILLIS;
 
     /**
      * Shared metrics binder — constructed once at factory init time and
@@ -260,6 +272,10 @@ public class DefaultSsfTransmitterProviderFactory implements SsfTransmitterProvi
         String deliveredRetentionStr = config.get(CONFIG_OUTBOX_DELIVERED_RETENTION);
         if (deliveredRetentionStr != null) {
             this.outboxDeliveredRetentionMillis = SsfUtil.parseDurationMillis(deliveredRetentionStr, DEFAULT_OUTBOX_DELIVERED_RETENTION_MILLIS);
+        }
+        String transmitterDisabledBackoffStr = config.get(CONFIG_OUTBOX_TRANSMITTER_DISABLED_BACKOFF);
+        if (transmitterDisabledBackoffStr != null) {
+            this.outboxTransmitterDisabledBackoffMillis = SsfUtil.parseDurationMillis(transmitterDisabledBackoffStr, DEFAULT_OUTBOX_TRANSMITTER_DISABLED_BACKOFF_MILLIS);
         }
 
         // Metrics binder lifecycle. Two gates combine:
@@ -425,6 +441,12 @@ public class DefaultSsfTransmitterProviderFactory implements SsfTransmitterProvi
                 .defaultValue(DEFAULT_OUTBOX_DELIVERED_RETENTION_MILLIS + "ms")
                 .add()
                 .property()
+                .name(CONFIG_OUTBOX_TRANSMITTER_DISABLED_BACKOFF)
+                .type("string")
+                .helpText("How far the drainer pushes next_attempt_at when skipping a row whose realm has the SSF transmitter feature switched off. Long enough that a backlog in such a realm doesn't burn a batch slot every tick, short enough that flipping the flag back on resumes delivery within a reasonable window. Accepts suffixes ms, s, m, h (default 15m equivalent).")
+                .defaultValue(DEFAULT_OUTBOX_TRANSMITTER_DISABLED_BACKOFF_MILLIS + "ms")
+                .add()
+                .property()
                 .name(SsfTransmitterConfig.CONFIG_SUBJECT_MANAGEMENT_ENABLED)
                 .type("boolean")
                 .helpText("Whether the /subjects:add and /subjects:remove endpoints are exposed. When false, the endpoints are not registered and the transmitter metadata omits them. Subject subscriptions can still be managed via admin-curated ssf.notify.<clientId> attributes.")
@@ -500,10 +522,11 @@ public class DefaultSsfTransmitterProviderFactory implements SsfTransmitterProvi
             SsfPushOutboxDrainerTask task = createDrainerTask(session);
             ScheduledTaskRunner runner = createDrainerScheduledTaskRunner(factory, task);
             timer.schedule(runner, outboxDrainerIntervalMillis, outboxDrainerIntervalMillis, task.getClass().getSimpleName());
-            log.infof("SSF push outbox drainer scheduled: interval=%dms, batchSize=%d, maxAttempts=%d, deadLetterRetention=%s, deliveredRetention=%s",
+            log.infof("SSF push outbox drainer scheduled: interval=%dms, batchSize=%d, maxAttempts=%d, deadLetterRetention=%s, deliveredRetention=%s, transmitterDisabledBackoff=%s",
                     outboxDrainerIntervalMillis, outboxDrainerBatchSize, outboxDrainerMaxAttempts,
                     outboxDeadLetterRetentionMillis > 0 ? outboxDeadLetterRetentionMillis + "ms" : "disabled",
-                    outboxDeliveredRetentionMillis > 0 ? outboxDeliveredRetentionMillis + "ms" : "disabled");
+                    outboxDeliveredRetentionMillis > 0 ? outboxDeliveredRetentionMillis + "ms" : "disabled",
+                    outboxTransmitterDisabledBackoffMillis > 0 ? outboxTransmitterDisabledBackoffMillis + "ms" : "default");
         }
     }
 
@@ -535,9 +558,13 @@ public class DefaultSsfTransmitterProviderFactory implements SsfTransmitterProvi
         Duration deliveredRetention = outboxDeliveredRetentionMillis > 0
                 ? Duration.ofMillis(outboxDeliveredRetentionMillis)
                 : null;
+        Duration transmitterDisabledBackoff = outboxTransmitterDisabledBackoffMillis > 0
+                ? Duration.ofMillis(outboxTransmitterDisabledBackoffMillis)
+                : null;
 
         SsfPushOutboxDrainerTaskConfig drainerConfig = new SsfPushOutboxDrainerTaskConfig(
-                outboxDrainerBatchSize, backoff, deadLetterRetention, deliveredRetention);
+                outboxDrainerBatchSize, backoff, deadLetterRetention, deliveredRetention,
+                transmitterDisabledBackoff);
         return drainerConfig;
     }
 
