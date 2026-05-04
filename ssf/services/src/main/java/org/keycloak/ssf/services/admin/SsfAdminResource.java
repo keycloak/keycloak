@@ -998,7 +998,7 @@ public class SsfAdminResource {
         auth.clients().requireView(receiverClient);
 
         
-        SsfEventStore store = new SsfEventStore(session);
+        SsfEventStore store = transmitter.context().eventStore(session);
         SsfEventEntity entity = store.findByClientAndJti(receiverClient.getId(), jti);
         if (entity == null) {
             throw new NotFoundException("Pending event not found");
@@ -1029,7 +1029,7 @@ public class SsfAdminResource {
 
         auth.realm().requireViewRealm();
 
-        SsfEventStore store = new SsfEventStore(session);
+        SsfEventStore store = transmitter.context().eventStore(session);
         Map<SsfEventStatus, Long> counts = store.countStatusesForRealm(realm.getId());
         Map<SsfEventStatus, Instant> oldest = store.oldestCreatedAtPerStatusForRealm(realm.getId());
 
@@ -1111,7 +1111,7 @@ public class SsfAdminResource {
             }
         }
 
-        SsfEventStore store = new SsfEventStore(session);
+        SsfEventStore store = transmitter.context().eventStore(session);
         int deleted = (cutoff == null)
                 ? store.deleteByRealmAndStatus(realm.getId(), status)
                 : store.deleteByRealmAndStatusOlderThan(realm.getId(), status, cutoff);
@@ -1129,6 +1129,52 @@ public class SsfAdminResource {
         adminEvent.operation(OperationType.DELETE)
                 .resource(SSF_SYNTHETIC_EVENT_TYPE)
                 .resourcePath("ssf", "events")
+                .authUser(user)
+                .representation(auditRep)
+                .success();
+
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("deleted", deleted);
+        return Response.ok(body).build();
+    }
+
+    /**
+     * Bulk-deletes every queued SSF event for this realm in a single
+     * round-trip. "Queued" is the server-side
+     * {@link SsfEventStatus#QUEUED} set (PENDING + HELD) — events that
+     * haven't reached a terminal state. Drives the realm-settings
+     * disable-on-save flow: the admin UI calls this endpoint *before*
+     * persisting {@code ssf.transmitterEnabled=false} so the cleanup
+     * runs while the SSF admin paths are still reachable.
+     *
+     * <p>Requires {@code manage-realm}. Writes a single admin event
+     * audit entry rather than the multi-call equivalent so operators
+     * can correlate the cleanup with the realm save in one trail.
+     */
+    @DELETE
+    @Path("events/queued")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.SSF)
+    @Operation(
+            summary = "Delete queued SSF events for realm",
+            description = "Deletes every SSF event in this realm whose status is queued (PENDING or HELD) in a single transaction. Returns the number of events deleted."
+    )
+    @APIResponses(value = {
+            @APIResponse(responseCode = "200", description = "OK")
+    })
+    public Response deleteQueuedEvents() {
+
+        auth.realm().requireManageRealm();
+
+        SsfEventStore store = transmitter.context().eventStore(session);
+        int deleted = store.deleteQueuedByRealm(realm.getId());
+
+        Map<String, Object> auditRep = new LinkedHashMap<>();
+        auditRep.put("deleted", deleted);
+        UserModel user = auth.adminAuth().getUser();
+        adminEvent.operation(OperationType.DELETE)
+                .resource(SSF_SYNTHETIC_EVENT_TYPE)
+                .resourcePath("ssf", "events", "queued")
                 .authUser(user)
                 .representation(auditRep)
                 .success();
@@ -1167,7 +1213,7 @@ public class SsfAdminResource {
         }
         auth.clients().requireView(client);
 
-        SsfEventStore store = new SsfEventStore(session);
+        SsfEventStore store = transmitter.context().eventStore(session);
         Map<SsfEventStatus, Long> counts = store.countStatusesForClient(client.getId());
         Map<SsfEventStatus, Instant> oldest = store.oldestCreatedAtPerStatusForClient(client.getId());
 
@@ -1257,7 +1303,7 @@ public class SsfAdminResource {
         // The store filters on clientId — keep it scoped to the client's
         // internal id (the same identifier the outbox uses), not the
         // OAuth client_id.
-        SsfEventStore store = new SsfEventStore(session);
+        SsfEventStore store = transmitter.context().eventStore(session);
         int deleted = (cutoff == null)
                 ? store.deleteByClientAndStatus(client.getId(), status)
                 : store.deleteByClientAndStatusOlderThan(client.getId(), status, cutoff);
@@ -1272,6 +1318,54 @@ public class SsfAdminResource {
         adminEvent.operation(OperationType.DELETE)
                 .resource(SSF_SYNTHETIC_EVENT_TYPE)
                 .resourcePath("ssf", "clients", client.getClientId(), "events")
+                .authUser(user)
+                .representation(auditRep)
+                .success();
+
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("deleted", deleted);
+        return Response.ok(body).build();
+    }
+
+    /**
+     * Per-receiver counterpart to {@link #deleteQueuedEvents()}. Bulk-
+     * deletes every queued SSF event for one receiver client in a
+     * single round-trip. Useful for forensic cleanup of a single
+     * receiver's queue without destroying its stream configuration.
+     *
+     * <p>Requires {@code manage} on the receiver client.
+     */
+    @DELETE
+    @Path("clients/{clientId}/events/queued")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.SSF)
+    @Operation(
+            summary = "Delete queued SSF events for receiver client",
+            description = "Deletes every SSF event for the given receiver client whose status is queued (PENDING or HELD) in a single transaction. Returns the number of events deleted."
+    )
+    @APIResponses(value = {
+            @APIResponse(responseCode = "200", description = "OK"),
+            @APIResponse(responseCode = "404", description = "Client not found")
+    })
+    public Response deleteClientQueuedEvents(
+            @Parameter(description = "OAuth client_id of the receiver")
+            @PathParam("clientId") String clientId) {
+
+        ClientModel client = realm.getClientByClientId(clientId);
+        if (client == null) {
+            throw new NotFoundException("Client not found");
+        }
+        auth.clients().requireManage(client);
+
+        SsfEventStore store = transmitter.context().eventStore(session);
+        int deleted = store.deleteQueuedByClient(client.getId());
+
+        Map<String, Object> auditRep = new LinkedHashMap<>();
+        auditRep.put("deleted", deleted);
+        UserModel user = auth.adminAuth().getUser();
+        adminEvent.operation(OperationType.DELETE)
+                .resource(SSF_SYNTHETIC_EVENT_TYPE)
+                .resourcePath("ssf", "clients", client.getClientId(), "events", "queued")
                 .authUser(user)
                 .representation(auditRep)
                 .success();

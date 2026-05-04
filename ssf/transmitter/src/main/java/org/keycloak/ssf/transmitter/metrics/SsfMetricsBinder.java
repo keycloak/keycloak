@@ -127,8 +127,7 @@ public class SsfMetricsBinder {
         DELIVERED("delivered"),
         RETRY("retry"),
         DEAD_LETTER("dead_letter"),
-        ORPHANED("orphaned"),
-        SKIPPED("skipped");
+        ORPHANED("orphaned");
 
         private final String label;
 

@@ -210,65 +210,6 @@ public class SsfEventStoreTests {
     }
 
     @Test
-    public void recordSkip_defersRowWithoutBumpingAttemptsAndStoresReason() {
-        final String realmId = testRealmId;
-        runOnServer.run(session -> {
-            Instant now = Instant.now();
-            SsfEventEntity row = persistRaw(session, realmId, "client-skip", "stream-a",
-                    "jti-skip", SsfEventStatus.PENDING, 2,
-                    now.minusSeconds(1), now);
-            em(session).flush();
-            em(session).clear();
-
-            Instant deferUntil = now.plus(Duration.ofMinutes(15)).truncatedTo(ChronoUnit.MICROS);
-            new SsfEventStore(session)
-                    .recordSkip(findById(session, row.getId()), deferUntil,
-                            "skipped: SSF transmitter disabled for realm");
-            em(session).flush();
-            em(session).clear();
-
-            SsfEventEntity after = findById(session, row.getId());
-            Assertions.assertEquals(SsfEventStatus.PENDING, after.getStatus(),
-                    "recordSkip must keep the row in PENDING so a later tick can pick it back up");
-            Assertions.assertEquals(2, after.getAttempts(),
-                    "recordSkip must not bump attempts — the receiver's retry budget stays intact");
-            Assertions.assertEquals(deferUntil, after.getNextAttemptAt(),
-                    "recordSkip must push next_attempt_at to the supplied instant");
-            Assertions.assertEquals("skipped: SSF transmitter disabled for realm",
-                    after.getLastError(),
-                    "recordSkip must record the reason for operator visibility");
-        });
-    }
-
-    @Test
-    public void recordSkip_truncatesLongReason() {
-        final String realmId = testRealmId;
-        runOnServer.run(session -> {
-            Instant now = Instant.now();
-            SsfEventEntity row = persistRaw(session, realmId, "client-skip-long", "stream-a",
-                    "jti-skip-long", SsfEventStatus.PENDING, 0,
-                    now.minusSeconds(1), now);
-            em(session).flush();
-            em(session).clear();
-
-            String hugeReason = "x".repeat(3000);
-            new SsfEventStore(session)
-                    .recordSkip(findById(session, row.getId()),
-                            now.plus(Duration.ofMinutes(15)).truncatedTo(ChronoUnit.MICROS),
-                            hugeReason);
-            em(session).flush();
-            em(session).clear();
-
-            SsfEventEntity after = findById(session, row.getId());
-            Assertions.assertNotNull(after.getLastError());
-            Assertions.assertTrue(after.getLastError().length() <= 2048,
-                    "lastError must be truncated to the column width");
-            Assertions.assertTrue(after.getLastError().endsWith("..."),
-                    "truncated lastError must carry an ellipsis marker");
-        });
-    }
-
-    @Test
     public void markDeadLetter_setsStatusAndIncrementsAttemptsAndStoresError() {
         final String realmId = testRealmId;
         runOnServer.run(session -> {
@@ -540,6 +481,79 @@ public class SsfEventStoreTests {
                     "old rows in other statuses must survive");
             Assertions.assertNotNull(findById(session, siblingOldDl.getId()),
                     "rows for sibling clients must survive");
+        });
+    }
+
+    @Test
+    public void deleteQueuedByRealm_deletesPendingAndHeldOnlyInRealm() {
+        final String realmId = testRealmId;
+        final String otherRealmId = UUID.randomUUID().toString();
+        try {
+            runOnServer.run(session -> {
+                Instant now = Instant.now();
+                SsfEventEntity pending = persistRaw(session, realmId, "c", "s",
+                        "jti-q-pending", SsfEventStatus.PENDING, 0, now, now);
+                SsfEventEntity held = persistRaw(session, realmId, "c", "s",
+                        "jti-q-held", SsfEventStatus.HELD, 0, now, now);
+                SsfEventEntity delivered = persistRaw(session, realmId, "c", "s",
+                        "jti-q-delivered", SsfEventStatus.DELIVERED, 1, now, now);
+                SsfEventEntity deadLetter = persistRaw(session, realmId, "c", "s",
+                        "jti-q-dl", SsfEventStatus.DEAD_LETTER, 8, now, now);
+                SsfEventEntity otherRealmPending = persistRaw(session, otherRealmId, "c2", "s2",
+                        "jti-q-other", SsfEventStatus.PENDING, 0, now, now);
+                em(session).flush();
+                em(session).clear();
+
+                int deleted = new SsfEventStore(session).deleteQueuedByRealm(realmId);
+                Assertions.assertEquals(2, deleted,
+                        "deleteQueuedByRealm must remove every PENDING and HELD row in the realm");
+
+                em(session).flush();
+                em(session).clear();
+
+                Assertions.assertNull(findById(session, pending.getId()));
+                Assertions.assertNull(findById(session, held.getId()));
+                Assertions.assertNotNull(findById(session, delivered.getId()),
+                        "DELIVERED rows are terminal and must not be touched");
+                Assertions.assertNotNull(findById(session, deadLetter.getId()),
+                        "DEAD_LETTER rows are terminal and must not be touched");
+                Assertions.assertNotNull(findById(session, otherRealmPending.getId()),
+                        "rows in other realms must survive");
+            });
+        } finally {
+            runOnServer.run(session -> new SsfEventStore(session).deleteByRealm(otherRealmId));
+        }
+    }
+
+    @Test
+    public void deleteQueuedByClient_deletesPendingAndHeldOnlyForClient() {
+        final String realmId = testRealmId;
+        runOnServer.run(session -> {
+            Instant now = Instant.now();
+            SsfEventEntity targetPending = persistRaw(session, realmId, "client-q-target", "s",
+                    "jti-cq-pending", SsfEventStatus.PENDING, 0, now, now);
+            SsfEventEntity targetHeld = persistRaw(session, realmId, "client-q-target", "s",
+                    "jti-cq-held", SsfEventStatus.HELD, 0, now, now);
+            SsfEventEntity targetDelivered = persistRaw(session, realmId, "client-q-target", "s",
+                    "jti-cq-delivered", SsfEventStatus.DELIVERED, 1, now, now);
+            SsfEventEntity siblingPending = persistRaw(session, realmId, "client-q-sibling", "s",
+                    "jti-cq-sibling-pending", SsfEventStatus.PENDING, 0, now, now);
+            em(session).flush();
+            em(session).clear();
+
+            int deleted = new SsfEventStore(session).deleteQueuedByClient("client-q-target");
+            Assertions.assertEquals(2, deleted,
+                    "deleteQueuedByClient must remove every PENDING and HELD row for the target client");
+
+            em(session).flush();
+            em(session).clear();
+
+            Assertions.assertNull(findById(session, targetPending.getId()));
+            Assertions.assertNull(findById(session, targetHeld.getId()));
+            Assertions.assertNotNull(findById(session, targetDelivered.getId()),
+                    "terminal rows for the target client must survive");
+            Assertions.assertNotNull(findById(session, siblingPending.getId()),
+                    "queued rows for sibling clients must survive");
         });
     }
 

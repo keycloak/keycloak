@@ -609,19 +609,6 @@ public class SsfEventStore {
         getEntityManager().merge(entity);
     }
 
-    /**
-     * Defers a pending row without bumping the attempt counter. Used by
-     * the drainer when a row can't make progress for a transient,
-     * non-receiver reason (e.g. SSF transmitter disabled at the realm
-     * level) and we want to free batch slots without penalising the
-     * receiver's retry budget.
-     */
-    public void recordSkip(SsfEventEntity entity, Instant nextAttemptAt, String reason) {
-        entity.setNextAttemptAt(nextAttemptAt);
-        entity.setLastError(truncateError(reason));
-        getEntityManager().merge(entity);
-    }
-
     public void markDeadLetter(SsfEventEntity entity, String lastError) {
         entity.setAttempts(entity.getAttempts() + 1);
         entity.setStatus(SsfEventStatus.DEAD_LETTER);
@@ -736,6 +723,41 @@ public class SsfEventStore {
                 .setParameter("clientId", clientId)
                 .setParameter("status", status)
                 .setParameter("olderThan", cutoff)
+                .executeUpdate();
+    }
+
+    /**
+     * Bulk-deletes every row in the realm whose status is in the
+     * {@link SsfEventStatus#QUEUED} set (PENDING + HELD). Single-DML
+     * counterpart to issuing one DELETE per status — keeps the
+     * server-side definition of "queued" in one place
+     * ({@code SsfEventStatus.QUEUED}) and exposes a single endpoint
+     * surface to the realm-settings disable-on-save flow.
+     *
+     * @return the number of rows deleted.
+     */
+    public int deleteQueuedByRealm(String realmId) {
+        Objects.requireNonNull(realmId, "realmId");
+        return getEntityManager()
+                .createNamedQuery("SsfEventEntity.deleteQueuedByRealm")
+                .setParameter("realmId", realmId)
+                .setParameter("statuses", SsfEventStatus.QUEUED)
+                .executeUpdate();
+    }
+
+    /**
+     * Per-receiver counterpart to {@link #deleteQueuedByRealm(String)}.
+     * Drops every queued row for a single client without destroying
+     * the client's stream configuration.
+     *
+     * @return the number of rows deleted.
+     */
+    public int deleteQueuedByClient(String clientId) {
+        Objects.requireNonNull(clientId, "clientId");
+        return getEntityManager()
+                .createNamedQuery("SsfEventEntity.deleteQueuedByClient")
+                .setParameter("clientId", clientId)
+                .setParameter("statuses", SsfEventStatus.QUEUED)
                 .executeUpdate();
     }
 

@@ -167,6 +167,20 @@ import jakarta.persistence.UniqueConstraint;
                 name = "SsfEventEntity.deleteByClientAndStatus",
                 query = "DELETE FROM SsfEventEntity e"
                         + " WHERE e.clientId = :clientId AND e.status = :status"),
+        // "Queued" purge — drops every row whose status is in the
+        // SsfEventStatus.QUEUED set (PENDING, HELD) in a single DML.
+        // The status set is supplied by the store as a parameter so the
+        // server-side definition of "queued" stays in one place
+        // (SsfEventStatus.QUEUED) and named-query consumers don't have
+        // to know which specific statuses qualify.
+        @NamedQuery(
+                name = "SsfEventEntity.deleteQueuedByRealm",
+                query = "DELETE FROM SsfEventEntity e"
+                        + " WHERE e.realmId = :realmId AND e.status IN :statuses"),
+        @NamedQuery(
+                name = "SsfEventEntity.deleteQueuedByClient",
+                query = "DELETE FROM SsfEventEntity e"
+                        + " WHERE e.clientId = :clientId AND e.status IN :statuses"),
         @NamedQuery(
                 name = "SsfEventEntity.deleteByClientAndStatusOlderThan",
                 query = "DELETE FROM SsfEventEntity e"

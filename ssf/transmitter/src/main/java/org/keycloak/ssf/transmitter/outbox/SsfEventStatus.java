@@ -1,5 +1,8 @@
 package org.keycloak.ssf.transmitter.outbox;
 
+import java.util.EnumSet;
+import java.util.Set;
+
 /**
  * Lifecycle status of a row in the SSF push outbox ({@code SSF_EVENT}).
  *
@@ -55,5 +58,15 @@ public enum SsfEventStatus {
      * order so the receiver gets the held SETs as if the pause had
      * never happened.
      */
-    HELD
+    HELD;
+
+    /**
+     * Statuses representing events that are queued — i.e. waiting to
+     * reach a terminal state. Single source of truth for the
+     * {@code DELETE /events/queued} admin endpoints (and the
+     * realm-disable-on-save cleanup that drives them) so future
+     * additions to the pre-terminal state set automatically extend the
+     * "purge queued" semantics without API changes.
+     */
+    public static final Set<SsfEventStatus> QUEUED = EnumSet.of(PENDING, HELD);
 }

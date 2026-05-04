@@ -9,6 +9,7 @@ import {
   KeycloakSpinner,
   SelectControl,
   TextControl,
+  useAlerts,
   useEnvironment,
   useFetch,
 } from "@keycloak/keycloak-ui-shared";
@@ -38,7 +39,10 @@ import useIsFeatureEnabled, { Feature } from "../utils/useIsFeatureEnabled";
 import { UIRealmRepresentation } from "./RealmSettingsTabs";
 import { SIGNATURE_ALGORITHMS } from "../clients/add/SamlSignature";
 import type { RealmLoAMappingType } from "../components/realm-loa-mapping/RealmLoAMapping";
-import { useSsfTransmitterDisableConfirmDialog } from "./ssf/SsfTransmitterDisableConfirmDialog";
+import {
+  deleteRealmSsfQueuedEvents,
+  useSsfTransmitterDisableConfirmDialog,
+} from "./ssf/SsfTransmitterDisableConfirmDialog";
 
 type RealmSettingsGeneralTabProps = {
   realm: UIRealmRepresentation;
@@ -104,6 +108,8 @@ function RealmSettingsGeneralTabForm({
 
   const { t } = useTranslation();
   const { realm: realmName } = useRealm();
+  const { adminClient } = useAdminClient();
+  const { addAlert, addError } = useAlerts();
   const form = useForm<FormFields>();
   const {
     control,
@@ -188,6 +194,31 @@ function RealmSettingsGeneralTabForm({
         delete upConfig.unmanagedAttributePolicy;
       } else {
         upConfig.unmanagedAttributePolicy = unmanagedAttributePolicy;
+      }
+
+      // Detect a true -> false transition on the SSF Transmitter realm
+      // toggle so we can drop queued events as part of the same save
+      // flow. Compare the persisted previous state to the new form
+      // value — captured before save() so the comparison is well-defined
+      // regardless of when the actual write happens.
+      const wasSsfTransmitterEnabled =
+        realm.attributes?.["ssf.transmitterEnabled"] === "true";
+      const isSsfTransmitterEnabledAfter =
+        ssfTransmitterEnabled?.toString() === "true";
+
+      if (wasSsfTransmitterEnabled && !isSsfTransmitterEnabledAfter) {
+        // Cleanup runs BEFORE save while the SSF admin resource is
+        // still reachable. Once save() persists transmitterEnabled=false,
+        // SsfAdminRealmResourceProviderFactory gates /ssf/* off and the
+        // DELETE would 404. Best-effort: a cleanup failure surfaces as
+        // a toast but doesn't block the disable — outbox-pending-max-age
+        // backstops any leftover PENDING rows.
+        try {
+          await deleteRealmSsfQueuedEvents(adminClient, realmName);
+          addAlert(t("ssfTransmitterDisableEventsCleared"));
+        } catch (error) {
+          addError("ssfTransmitterDisableEventsClearFailed", error);
+        }
       }
 
       await save({ ...data, upConfig });

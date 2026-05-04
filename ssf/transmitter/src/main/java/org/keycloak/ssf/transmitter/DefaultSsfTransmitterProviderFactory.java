@@ -69,8 +69,6 @@ public class DefaultSsfTransmitterProviderFactory implements SsfTransmitterProvi
 
     public static final String CONFIG_OUTBOX_DELIVERED_RETENTION = "outbox-delivered-retention";
 
-    public static final String CONFIG_OUTBOX_TRANSMITTER_DISABLED_BACKOFF = "outbox-transmitter-disabled-backoff";
-
     public static final String CONFIG_OUTBOX_PENDING_MAX_AGE = "outbox-pending-max-age";
 
     public static final long DEFAULT_OUTBOX_DRAINER_INTERVAL_MILLIS = Duration.ofSeconds(30).toMillis();
@@ -94,14 +92,6 @@ public class DefaultSsfTransmitterProviderFactory implements SsfTransmitterProvi
      * indefinitely.
      */
     public static final long DEFAULT_OUTBOX_DELIVERED_RETENTION_MILLIS = Duration.ofHours(24).toMillis();
-
-    /**
-     * Default deferral applied to outbox rows whose realm has the SSF
-     * transmitter feature switched off — 15 minutes. The drainer pushes
-     * the row's {@code next_attempt_at} forward by this amount so a
-     * realm-level backlog doesn't burn batch slots on every tick.
-     */
-    public static final long DEFAULT_OUTBOX_TRANSMITTER_DISABLED_BACKOFF_MILLIS = Duration.ofMinutes(15).toMillis();
 
     /**
      * Default backstop for {@code PENDING} outbox rows - 2 days. Any
@@ -141,8 +131,6 @@ public class DefaultSsfTransmitterProviderFactory implements SsfTransmitterProvi
     protected long outboxDeadLetterRetentionMillis = DEFAULT_OUTBOX_DEAD_LETTER_RETENTION_MILLIS;
 
     protected long outboxDeliveredRetentionMillis = DEFAULT_OUTBOX_DELIVERED_RETENTION_MILLIS;
-
-    protected long outboxTransmitterDisabledBackoffMillis = DEFAULT_OUTBOX_TRANSMITTER_DISABLED_BACKOFF_MILLIS;
 
     protected long outboxPendingMaxAgeMillis = DEFAULT_OUTBOX_PENDING_MAX_AGE_MILLIS;
 
@@ -289,10 +277,6 @@ public class DefaultSsfTransmitterProviderFactory implements SsfTransmitterProvi
         String deliveredRetentionStr = config.get(CONFIG_OUTBOX_DELIVERED_RETENTION);
         if (deliveredRetentionStr != null) {
             this.outboxDeliveredRetentionMillis = SsfUtil.parseDurationMillis(deliveredRetentionStr, DEFAULT_OUTBOX_DELIVERED_RETENTION_MILLIS);
-        }
-        String transmitterDisabledBackoffStr = config.get(CONFIG_OUTBOX_TRANSMITTER_DISABLED_BACKOFF);
-        if (transmitterDisabledBackoffStr != null) {
-            this.outboxTransmitterDisabledBackoffMillis = SsfUtil.parseDurationMillis(transmitterDisabledBackoffStr, DEFAULT_OUTBOX_TRANSMITTER_DISABLED_BACKOFF_MILLIS);
         }
         String pendingMaxAgeStr = config.get(CONFIG_OUTBOX_PENDING_MAX_AGE);
         if (pendingMaxAgeStr != null) {
@@ -462,15 +446,9 @@ public class DefaultSsfTransmitterProviderFactory implements SsfTransmitterProvi
                 .defaultValue(DEFAULT_OUTBOX_DELIVERED_RETENTION_MILLIS + "ms")
                 .add()
                 .property()
-                .name(CONFIG_OUTBOX_TRANSMITTER_DISABLED_BACKOFF)
-                .type("string")
-                .helpText("How far the drainer pushes next_attempt_at when skipping a row whose realm has the SSF transmitter feature switched off. Long enough that a backlog in such a realm doesn't burn a batch slot every tick, short enough that flipping the flag back on resumes delivery within a reasonable window. Accepts suffixes ms, s, m, h (default 15m equivalent).")
-                .defaultValue(DEFAULT_OUTBOX_TRANSMITTER_DISABLED_BACKOFF_MILLIS + "ms")
-                .add()
-                .property()
                 .name(CONFIG_OUTBOX_PENDING_MAX_AGE)
                 .type("string")
-                .helpText("Backstop max age for PENDING outbox rows: any PENDING row older than this gets bulk-promoted to DEAD_LETTER on every drainer tick, so the dead-letter retention purge eventually deletes it. Bounds the worst case where rows would otherwise sit forever (realm with SSF transmitter switched off, no per-receiver ssf.maxEventAgeSeconds, no realm/client removal). Should be shorter than outbox-dead-letter-retention so promoted rows retain a meaningful forensic window, and comfortably above the natural retry-curve sum (sum of outbox-drainer-max-attempts entries) so rows in legitimate backoff aren't prematurely promoted. Accepts suffixes ms, s, m, h (default 2d equivalent). Set to 0 to disable the backstop.")
+                .helpText("Backstop max age for PENDING outbox rows: any PENDING row older than this gets bulk-promoted to DEAD_LETTER on every drainer tick, so the dead-letter retention purge eventually deletes it. Bounds the worst case where rows would otherwise sit forever (no per-receiver ssf.maxEventAgeSeconds, no realm/client removal, push attempts repeatedly blocked). Should be shorter than outbox-dead-letter-retention so promoted rows retain a meaningful forensic window, and comfortably above the natural retry-curve sum (sum of outbox-drainer-max-attempts entries) so rows in legitimate backoff aren't prematurely promoted. Accepts suffixes ms, s, m, h (default 2d equivalent). Set to 0 to disable the backstop.")
                 .defaultValue(DEFAULT_OUTBOX_PENDING_MAX_AGE_MILLIS + "ms")
                 .add()
                 .property()
@@ -549,11 +527,10 @@ public class DefaultSsfTransmitterProviderFactory implements SsfTransmitterProvi
             SsfPushOutboxDrainerTask task = createDrainerTask(session);
             ScheduledTaskRunner runner = createDrainerScheduledTaskRunner(factory, task);
             timer.schedule(runner, outboxDrainerIntervalMillis, outboxDrainerIntervalMillis, task.getClass().getSimpleName());
-            log.infof("SSF push outbox drainer scheduled: interval=%dms, batchSize=%d, maxAttempts=%d, deadLetterRetention=%s, deliveredRetention=%s, transmitterDisabledBackoff=%s, pendingMaxAge=%s",
+            log.infof("SSF push outbox drainer scheduled: interval=%dms, batchSize=%d, maxAttempts=%d, deadLetterRetention=%s, deliveredRetention=%s, pendingMaxAge=%s",
                     outboxDrainerIntervalMillis, outboxDrainerBatchSize, outboxDrainerMaxAttempts,
                     outboxDeadLetterRetentionMillis > 0 ? outboxDeadLetterRetentionMillis + "ms" : "disabled",
                     outboxDeliveredRetentionMillis > 0 ? outboxDeliveredRetentionMillis + "ms" : "disabled",
-                    outboxTransmitterDisabledBackoffMillis > 0 ? outboxTransmitterDisabledBackoffMillis + "ms" : "default",
                     outboxPendingMaxAgeMillis > 0 ? outboxPendingMaxAgeMillis + "ms" : "disabled");
         }
     }
@@ -586,16 +563,13 @@ public class DefaultSsfTransmitterProviderFactory implements SsfTransmitterProvi
         Duration deliveredRetention = outboxDeliveredRetentionMillis > 0
                 ? Duration.ofMillis(outboxDeliveredRetentionMillis)
                 : null;
-        Duration transmitterDisabledBackoff = outboxTransmitterDisabledBackoffMillis > 0
-                ? Duration.ofMillis(outboxTransmitterDisabledBackoffMillis)
-                : null;
         Duration pendingMaxAge = outboxPendingMaxAgeMillis > 0
                 ? Duration.ofMillis(outboxPendingMaxAgeMillis)
                 : null;
 
         SsfPushOutboxDrainerTaskConfig drainerConfig = new SsfPushOutboxDrainerTaskConfig(
                 outboxDrainerBatchSize, backoff, deadLetterRetention, deliveredRetention,
-                transmitterDisabledBackoff, pendingMaxAge);
+                pendingMaxAge);
         return drainerConfig;
     }
 
