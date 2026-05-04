@@ -38,6 +38,7 @@ import useIsFeatureEnabled, { Feature } from "../utils/useIsFeatureEnabled";
 import { UIRealmRepresentation } from "./RealmSettingsTabs";
 import { SIGNATURE_ALGORITHMS } from "../clients/add/SamlSignature";
 import type { RealmLoAMappingType } from "../components/realm-loa-mapping/RealmLoAMapping";
+import { useSsfTransmitterDisableConfirmDialog } from "./ssf/SsfTransmitterDisableConfirmDialog";
 
 type RealmSettingsGeneralTabProps = {
   realm: UIRealmRepresentation;
@@ -129,6 +130,29 @@ function RealmSettingsGeneralTabForm({
       "attributes.ssf.transmitterEnabled",
     ) as any,
   });
+
+  // Disabling the transmitter at the realm level has cascading effects
+  // (silent receiver pause, queued events deferred or dead-lettered after
+  // outbox-pending-max-age, all SSF endpoints 404). Surface those to the
+  // admin so the off transition is a deliberate choice rather than an
+  // accidental flip. The toggle's onChange below opens this dialog when
+  // going from on to off; cancelling reverts the field back to "true".
+  const [toggleSsfDisableDialog, SsfDisableConfirm] =
+    useSsfTransmitterDisableConfirmDialog({
+      onConfirm: () => {
+        // No-op: the inner Controller already flipped the field to "false"
+        // when the admin clicked the switch; confirming just lets that
+        // value stand until the user hits the form's Save button.
+      },
+      onCancel: () => {
+        setValue(
+          convertAttributeNameToForm<FormFields>(
+            "attributes.ssf.transmitterEnabled",
+          ) as any,
+          "true",
+        );
+      },
+    });
 
   const setupForm = () => {
     convertToFormValues(realm, setValue);
@@ -281,14 +305,24 @@ function RealmSettingsGeneralTabForm({
             />
           )}
           {isSsfEnabled && (
-            <DefaultSwitchControl
-              name={convertAttributeNameToForm<FormFields>(
-                "attributes.ssf.transmitterEnabled",
-              )}
-              label={t("ssfTransmitterEnabled")}
-              labelIcon={t("ssfTransmitterEnabledHelp")}
-              stringify
-            />
+            <>
+              <DefaultSwitchControl
+                name={convertAttributeNameToForm<FormFields>(
+                  "attributes.ssf.transmitterEnabled",
+                )}
+                label={t("ssfTransmitterEnabled")}
+                labelIcon={t("ssfTransmitterEnabledHelp")}
+                stringify
+                onChange={(_e, checked) => {
+                  // Off transition only — surface the consequences before
+                  // the admin commits the form save. Cancelling reverts.
+                  if (!checked) {
+                    toggleSsfDisableDialog();
+                  }
+                }}
+              />
+              <SsfDisableConfirm />
+            </>
           )}
           <SelectControl
             name="unmanagedAttributePolicy"
