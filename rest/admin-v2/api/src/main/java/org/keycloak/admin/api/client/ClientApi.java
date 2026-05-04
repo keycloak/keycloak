@@ -2,7 +2,6 @@ package org.keycloak.admin.api.client;
 
 import java.io.InputStream;
 
-import jakarta.validation.Valid;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
@@ -42,7 +41,7 @@ public interface ClientApi {
         @APIResponse(responseCode = "200", content = @Content(schema = @Schema(implementation = BaseClientRepresentation.class))),
         @APIResponse(responseCode = "201", description = "Created", content = @Content(schema = @Schema(implementation = BaseClientRepresentation.class)))
     })
-    Response createOrUpdateClient(@Valid BaseClientRepresentation client);
+    Response createOrUpdateClient(BaseClientRepresentation client);
 
     @PATCH
     @Consumes(PatchTypeNames.JSON_MERGE)

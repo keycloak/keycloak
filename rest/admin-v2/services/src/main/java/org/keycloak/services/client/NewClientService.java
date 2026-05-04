@@ -34,7 +34,6 @@ import org.keycloak.services.clientpolicy.context.AdminClientViewContext;
 import org.keycloak.services.managers.ClientManager;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resources.admin.AdminEventBuilder;
-import org.keycloak.services.resources.admin.RealmAdminResource;
 import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
 import org.keycloak.validation.ValidationUtil;
 import org.keycloak.validation.jakarta.HibernateValidatorProvider;
@@ -58,10 +57,8 @@ public class NewClientService extends DefaultClientService implements ClientServ
 
     public NewClientService(@Nonnull KeycloakSession session,
                             @Nonnull RealmModel realm,
-                            @Nonnull AdminPermissionEvaluator permissions,
-                            // TODO remove the v1 resource once all methods are overridden
-                            @Nonnull RealmAdminResource realmResource) {
-        super(session, realm, permissions, realmResource);
+                            @Nonnull AdminPermissionEvaluator permissions) {
+        super(session, realm, permissions);
         this.session = session;
         this.permissions = permissions;
         this.adminEventBuilder = new AdminEventV2Builder(realm, permissions.adminAuth(), session, session.getContext().getConnection()).resource(ResourceType.CLIENT);
@@ -165,6 +162,17 @@ public class NewClientService extends DefaultClientService implements ClientServ
                     case PUT, PATCH -> {
                         // Check permissions, execute validations and trigger client policies
                         permissions.clients().requireConfigure(model);
+                        // Must run before bean validation: PutClient requires a non-blank secret for client-secret methods
+                        if (client.getProtocol().equals(OIDCClientRepresentation.PROTOCOL)) {
+                            var auth = ((OIDCClientRepresentation) client).getAuth();
+                            if (auth != null && isClientSecret(auth.getMethod()) && isBlank(auth.getSecret())) {
+                                if (!isBlank(model.getSecret())) {
+                                    auth.setSecret(model.getSecret());
+                                } else {
+                                    auth.setSecret(KeycloakModelUtils.generateSecret(model));
+                                }
+                            }
+                        }
                         validator.validate(client, strategy.getValidationGroup(), Default.class);
                         var proposedRepresentation = getProposedOldRepresentation(realm, client, mapper);
                         session.clientPolicy().triggerOnEvent(new AdminClientUpdateContext(proposedRepresentation, model, permissions.adminAuth()));
@@ -219,7 +227,7 @@ public class NewClientService extends DefaultClientService implements ClientServ
 
         // OIDC specific
         if (client instanceof OIDCClientRepresentation oidcClient) {
-            handleServiceAccount(clientRoles, rolesService.resource(realm), model, oidcClient);
+            handleServiceAccount(model, oidcClient);
         }
 
         fireAdminEvent(alreadyExists ? OperationType.UPDATE : OperationType.CREATE, mapper.fromModel(model));

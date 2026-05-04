@@ -38,7 +38,7 @@ public class DefaultClientsApi implements ClientsApi {
         this.realm = realm;
         this.permissions = permissions;
         this.realmAdminResource = realmAdminResource;
-        this.clientService = new DefaultClientService(session, realm, permissions, realmAdminResource);
+        this.clientService = new DefaultClientService(session, realm, permissions);
     }
 
     @GET
@@ -58,7 +58,7 @@ public class DefaultClientsApi implements ClientsApi {
     @Path("{id}")
     @Override
     public ClientApi client(@PathParam("id") String clientId) {
-        return new DefaultClientApi(session, realm, clientId, permissions, realmAdminResource);
+        return new DefaultClientApi(session, realm, clientId, permissions);
     }
 
 }
