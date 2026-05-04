@@ -90,6 +90,38 @@ public class OutboxStore {
                                  String entryType,
                                  String payload,
                                  String metadata) {
+        return enqueueInStatus(OutboxEntryStatus.PENDING, entryKind, realmId, ownerId, containerId,
+                correlationId, entryType, payload, metadata);
+    }
+
+    /**
+     * Inserts a fresh HELD row — used when the upstream channel is in
+     * a paused state at enqueue time (e.g. SSF stream paused) and the
+     * row should not be drained until {@link #releaseHeldForOwner} is
+     * called. Same dedup contract as {@link #enqueuePending}.
+     */
+    public String enqueueHeld(String entryKind,
+                              String realmId,
+                              String ownerId,
+                              String containerId,
+                              String correlationId,
+                              String entryType,
+                              String payload,
+                              String metadata) {
+        return enqueueInStatus(OutboxEntryStatus.HELD, entryKind, realmId, ownerId, containerId,
+                correlationId, entryType, payload, metadata);
+    }
+
+    protected String enqueueInStatus(OutboxEntryStatus status,
+                                     String entryKind,
+                                     String realmId,
+                                     String ownerId,
+                                     String containerId,
+                                     String correlationId,
+                                     String entryType,
+                                     String payload,
+                                     String metadata) {
+        Objects.requireNonNull(status, "status");
         Objects.requireNonNull(entryKind, "entryKind");
         Objects.requireNonNull(realmId, "realmId");
         Objects.requireNonNull(ownerId, "ownerId");
@@ -115,14 +147,17 @@ public class OutboxStore {
         entity.setEntryType(entryType);
         entity.setPayload(payload);
         entity.setMetadata(metadata);
-        entity.setStatus(OutboxEntryStatus.PENDING);
+        entity.setStatus(status);
         entity.setAttempts(0);
+        // next_attempt_at is meaningful only for PENDING rows the
+        // drainer locks; HELD rows ignore it but the column is NOT
+        // NULL, so set it to "now" as a harmless seed.
         entity.setNextAttemptAt(now);
         entity.setCreatedAt(now);
 
         getEntityManager().persist(entity);
-        log.debugf("Outbox enqueued. id=%s entryKind=%s realmId=%s ownerId=%s containerId=%s correlationId=%s entryType=%s",
-                entity.getId(), entryKind, realmId, ownerId, containerId, correlationId, entryType);
+        log.debugf("Outbox enqueued. id=%s status=%s entryKind=%s realmId=%s ownerId=%s containerId=%s correlationId=%s entryType=%s",
+                entity.getId(), status, entryKind, realmId, ownerId, containerId, correlationId, entryType);
         return entity.getId();
     }
 

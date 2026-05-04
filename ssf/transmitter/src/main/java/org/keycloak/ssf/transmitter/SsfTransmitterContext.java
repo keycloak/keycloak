@@ -4,6 +4,7 @@ import java.util.Set;
 import java.util.function.Function;
 
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.outbox.OutboxStore;
 import org.keycloak.ssf.transmitter.metrics.SsfMetricsBinder;
 import org.keycloak.ssf.transmitter.store.SsfEventStore;
 
@@ -27,6 +28,7 @@ public final class SsfTransmitterContext {
     private final Set<String> defaultSupportedEventAliases;
     private final SsfMetricsBinder metricsBinder;
     private final Function<KeycloakSession, SsfEventStore> eventStoreFactory;
+    private final Function<KeycloakSession, OutboxStore> outboxStoreFactory;
     private final Function<KeycloakSession, String> issuerUrlFactory;
     private final SsfTransmitterServiceBuilder services;
 
@@ -34,12 +36,14 @@ public final class SsfTransmitterContext {
                                  Set<String> defaultSupportedEventAliases,
                                  SsfMetricsBinder metricsBinder,
                                  Function<KeycloakSession, SsfEventStore> eventStoreFactory,
+                                 Function<KeycloakSession, OutboxStore> outboxStoreFactory,
                                  Function<KeycloakSession, String> issuerUrlFactory,
                                  SsfTransmitterServiceBuilder services) {
         this.config = config;
         this.defaultSupportedEventAliases = defaultSupportedEventAliases;
         this.metricsBinder = metricsBinder == null ? SsfMetricsBinder.NOOP : metricsBinder;
         this.eventStoreFactory = eventStoreFactory;
+        this.outboxStoreFactory = outboxStoreFactory;
         this.issuerUrlFactory = issuerUrlFactory;
         this.services = services;
     }
@@ -78,6 +82,20 @@ public final class SsfTransmitterContext {
      */
     public Function<KeycloakSession, SsfEventStore> eventStoreFactory() {
         return eventStoreFactory;
+    }
+
+    /**
+     * Resolves an {@link OutboxStore} for the given session. SSF
+     * runtime call sites are migrating to this generic store; the
+     * legacy {@link #eventStore(KeycloakSession)} accessor remains
+     * during the migration so existing code keeps compiling.
+     */
+    public OutboxStore outboxStore(KeycloakSession session) {
+        return outboxStoreFactory.apply(session);
+    }
+
+    public Function<KeycloakSession, OutboxStore> outboxStoreFactory() {
+        return outboxStoreFactory;
     }
 
     /**

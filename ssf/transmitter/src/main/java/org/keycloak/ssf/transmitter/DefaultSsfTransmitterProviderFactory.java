@@ -14,6 +14,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
+import org.keycloak.outbox.OutboxStore;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.provider.ProviderEvent;
@@ -316,6 +317,7 @@ public class DefaultSsfTransmitterProviderFactory implements SsfTransmitterProvi
                 this.configuredDefaultSupportedEventAliases,
                 this.metricsBinder,
                 this::createPendingEventStore,
+                this::createOutboxStore,
                 this::createSsfIssuerUrl,
                 this);
     }
@@ -359,6 +361,15 @@ public class DefaultSsfTransmitterProviderFactory implements SsfTransmitterProvi
      */
     protected SsfEventStore createPendingEventStore(KeycloakSession session) {
         return new SsfEventStore(session);
+    }
+
+    /**
+     * Session-scoped factory for the generic outbox DAO. Used by SSF
+     * call sites that have migrated off {@link SsfEventStore}; the
+     * legacy factory above remains during the migration.
+     */
+    protected OutboxStore createOutboxStore(KeycloakSession session) {
+        return new OutboxStore(session);
     }
 
     protected String createSsfIssuerUrl(KeycloakSession session) {
