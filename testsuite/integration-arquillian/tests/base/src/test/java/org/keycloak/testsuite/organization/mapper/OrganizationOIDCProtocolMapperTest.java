@@ -72,6 +72,7 @@ import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
@@ -88,6 +89,7 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
     public void onBefore() {
         setMapperConfig(ProtocolMapperUtils.MULTIVALUED, null);
         setMapperConfig(OIDCAttributeMapperHelper.JSON_TYPE, null);
+        setMapperConfig(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME, null);
     }
 
     @Test
@@ -1689,6 +1691,25 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
         assertThat(organizations.contains(org.getAlias()), is(true));
         refreshToken = oauth.parseRefreshToken(response.getRefreshToken());
         assertThat(refreshToken.getScope(), containsString(orgScope));
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void testCustomClaimName() throws Exception {
+        OrganizationResource org = managedRealm.admin().organizations().get(createOrganization("acme").getId());
+        addMember(org);
+
+        setMapperConfig(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME, "my_orgs");
+
+        oauth.client("direct-grant", "password");
+        oauth.scope("openid organization");
+        AccessTokenResponse response = oauth.doPasswordGrantRequest(memberEmail, memberPassword);
+
+        AccessToken token = TokenVerifier.create(response.getAccessToken(), AccessToken.class).getToken();
+
+        assertThat(token.getOtherClaims(), not(hasKey(OAuth2Constants.ORGANIZATION)));
+        assertThat(token.getOtherClaims(), hasKey("my_orgs"));
+        assertThat(token.getOtherClaims().get("my_orgs"), notNullValue());
     }
 
     private void assertResponseMissingOrganizationScopeAndClaims(AccessTokenResponse response) {
