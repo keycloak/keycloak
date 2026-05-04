@@ -5,6 +5,7 @@ import java.time.Instant;
 import java.time.format.DateTimeParseException;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -27,6 +28,9 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.jpa.entities.OutboxEntryEntity;
+import org.keycloak.models.jpa.entities.OutboxEntryStatus;
+import org.keycloak.outbox.OutboxStore;
 import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.AdminEventBuilder;
 import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
@@ -51,9 +55,7 @@ import org.keycloak.ssf.transmitter.delivery.SseCaepEventConverter;
 import org.keycloak.ssf.transmitter.emit.EmitEventResult;
 import org.keycloak.ssf.transmitter.emit.EmitEventStatus;
 import org.keycloak.ssf.transmitter.metrics.SsfMetricsBinder;
-import org.keycloak.ssf.transmitter.outbox.SsfEventEntity;
-import org.keycloak.ssf.transmitter.outbox.SsfEventStatus;
-import org.keycloak.ssf.transmitter.store.SsfEventStore;
+import org.keycloak.ssf.transmitter.outbox.SsfOutboxKinds;
 import org.keycloak.ssf.transmitter.stream.DuplicateStreamConfigException;
 import org.keycloak.ssf.transmitter.stream.StreamConfig;
 import org.keycloak.ssf.transmitter.stream.StreamConfigInputRepresentation;
@@ -89,6 +91,16 @@ public class SsfAdminResource {
 
     private static final Logger log = Logger.getLogger(SsfAdminResource.class);
     public static final String SSF_SYNTHETIC_EVENT_TYPE = "SSF_SYNTHETIC_EVENT";
+
+    /**
+     * Outbox entry kinds the admin REST endpoints aggregate across.
+     * SSF stores PUSH and POLL deliveries under separate kinds in
+     * the generic outbox; admin operations (stats, bulk delete,
+     * queued purge) treat the pair as one logical surface so the
+     * REST shape doesn't expose the implementation split.
+     */
+    public static final List<String> SSF_OUTBOX_KINDS =
+            List.of(SsfOutboxKinds.PUSH, SsfOutboxKinds.POLL);
 
     protected final KeycloakSession session;
 
@@ -143,6 +155,50 @@ public class SsfAdminResource {
                 .entity(new SsfErrorRepresentation(errorCode,
                         message != null ? message : fallback))
                 .build();
+    }
+
+    /**
+     * Sums per-status counts from one outbox kind into the running
+     * accumulator. Used by the realm- and owner-scoped stats endpoints
+     * that aggregate across {@link #SSF_OUTBOX_KINDS}.
+     */
+    private static void mergeCounts(Map<OutboxEntryStatus, Long> accumulator,
+                                    Map<OutboxEntryStatus, Long> increment) {
+        for (Map.Entry<OutboxEntryStatus, Long> entry : increment.entrySet()) {
+            accumulator.merge(entry.getKey(), entry.getValue(), Long::sum);
+        }
+    }
+
+    /**
+     * Folds per-status oldest-{@code createdAt} timestamps from one
+     * outbox kind into the running accumulator, keeping the earlier of
+     * the two values per status.
+     */
+    private static void mergeOldest(Map<OutboxEntryStatus, Instant> accumulator,
+                                    Map<OutboxEntryStatus, Instant> increment) {
+        for (Map.Entry<OutboxEntryStatus, Instant> entry : increment.entrySet()) {
+            accumulator.merge(entry.getKey(), entry.getValue(),
+                    (a, b) -> a.isBefore(b) ? a : b);
+        }
+    }
+
+    /**
+     * Builds the wire-shape representation from the merged
+     * (count, oldestCreatedAt) maps. Statuses with zero rows aren't
+     * in the accumulator (the underlying GROUP BY doesn't synthesize
+     * zero rows) so they're naturally absent from the response.
+     */
+    private static SsfEventStatsRepresentation toEventStatsRepresentation(
+            Map<OutboxEntryStatus, Long> counts,
+            Map<OutboxEntryStatus, Instant> oldest) {
+        SsfEventStatsRepresentation rep = new SsfEventStatsRepresentation();
+        Map<String, SsfEventStatsRepresentation.StatusEntry> entries = new LinkedHashMap<>();
+        for (Map.Entry<OutboxEntryStatus, Long> entry : counts.entrySet()) {
+            entries.put(entry.getKey().name(),
+                    new SsfEventStatsRepresentation.StatusEntry(entry.getValue(), oldest.get(entry.getKey())));
+        }
+        rep.setStatuses(entries);
+        return rep;
     }
 
     /**
@@ -997,9 +1053,17 @@ public class SsfAdminResource {
 
         auth.clients().requireView(receiverClient);
 
-        
-        SsfEventStore store = transmitter.context().eventStore(session);
-        SsfEventEntity entity = store.findByClientAndJti(receiverClient.getId(), jti);
+        OutboxStore store = transmitter.context().outboxStore(session);
+        // jti uniqueness is per-(kind, owner) — look up across both
+        // SSF kinds and use whichever matches; in normal operation a
+        // given jti only exists under one kind for a given client.
+        OutboxEntryEntity entity = null;
+        for (String kind : SSF_OUTBOX_KINDS) {
+            entity = store.findByOwnerAndCorrelationId(kind, receiverClient.getId(), jti);
+            if (entity != null) {
+                break;
+            }
+        }
         if (entity == null) {
             throw new NotFoundException("Pending event not found");
         }
@@ -1029,18 +1093,14 @@ public class SsfAdminResource {
 
         auth.realm().requireViewRealm();
 
-        SsfEventStore store = transmitter.context().eventStore(session);
-        Map<SsfEventStatus, Long> counts = store.countStatusesForRealm(realm.getId());
-        Map<SsfEventStatus, Instant> oldest = store.oldestCreatedAtPerStatusForRealm(realm.getId());
-
-        SsfEventStatsRepresentation rep = new SsfEventStatsRepresentation();
-        Map<String, SsfEventStatsRepresentation.StatusEntry> entries = new LinkedHashMap<>();
-        for (Map.Entry<SsfEventStatus, Long> entry : counts.entrySet()) {
-            entries.put(entry.getKey().name(),
-                    new SsfEventStatsRepresentation.StatusEntry(entry.getValue(), oldest.get(entry.getKey())));
+        OutboxStore store = transmitter.context().outboxStore(session);
+        Map<OutboxEntryStatus, Long> counts = new java.util.EnumMap<>(OutboxEntryStatus.class);
+        Map<OutboxEntryStatus, Instant> oldest = new java.util.EnumMap<>(OutboxEntryStatus.class);
+        for (String kind : SSF_OUTBOX_KINDS) {
+            mergeCounts(counts, store.countStatusesForRealm(kind, realm.getId()));
+            mergeOldest(oldest, store.oldestCreatedAtPerStatusForRealm(kind, realm.getId()));
         }
-        rep.setStatuses(entries);
-        return rep;
+        return toEventStatsRepresentation(counts, oldest);
     }
 
     /**
@@ -1082,9 +1142,9 @@ public class SsfAdminResource {
                             "status query parameter is required"))
                     .build();
         }
-        SsfEventStatus status;
+        OutboxEntryStatus status;
         try {
-            status = SsfEventStatus.valueOf(statusParam.trim().toUpperCase());
+            status = OutboxEntryStatus.valueOf(statusParam.trim().toUpperCase());
         } catch (IllegalArgumentException e) {
             return Response.status(Response.Status.BAD_REQUEST)
                     .entity(new SsfErrorRepresentation("invalid_request",
@@ -1111,10 +1171,13 @@ public class SsfAdminResource {
             }
         }
 
-        SsfEventStore store = transmitter.context().eventStore(session);
-        int deleted = (cutoff == null)
-                ? store.deleteByRealmAndStatus(realm.getId(), status)
-                : store.deleteByRealmAndStatusOlderThan(realm.getId(), status, cutoff);
+        OutboxStore store = transmitter.context().outboxStore(session);
+        int deleted = 0;
+        for (String kind : SSF_OUTBOX_KINDS) {
+            deleted += (cutoff == null)
+                    ? store.deleteByRealmAndStatus(kind, realm.getId(), status)
+                    : store.deleteByRealmAndStatusOlderThan(kind, realm.getId(), status, cutoff);
+        }
 
         // Audit trail — the parameters and result count are all the
         // operator needs to reconstruct what was deleted; the deleted
@@ -1141,7 +1204,7 @@ public class SsfAdminResource {
     /**
      * Bulk-deletes every queued SSF event for this realm in a single
      * round-trip. "Queued" is the server-side
-     * {@link SsfEventStatus#QUEUED} set (PENDING + HELD) — events that
+     * {@link OutboxEntryStatus#QUEUED} set (PENDING + HELD) — events that
      * haven't reached a terminal state. Drives the realm-settings
      * disable-on-save flow: the admin UI calls this endpoint *before*
      * persisting {@code ssf.transmitterEnabled=false} so the cleanup
@@ -1166,8 +1229,11 @@ public class SsfAdminResource {
 
         auth.realm().requireManageRealm();
 
-        SsfEventStore store = transmitter.context().eventStore(session);
-        int deleted = store.deleteQueuedByRealm(realm.getId());
+        OutboxStore store = transmitter.context().outboxStore(session);
+        int deleted = 0;
+        for (String kind : SSF_OUTBOX_KINDS) {
+            deleted += store.deleteQueuedByRealm(kind, realm.getId());
+        }
 
         Map<String, Object> auditRep = new LinkedHashMap<>();
         auditRep.put("deleted", deleted);
@@ -1213,18 +1279,14 @@ public class SsfAdminResource {
         }
         auth.clients().requireView(client);
 
-        SsfEventStore store = transmitter.context().eventStore(session);
-        Map<SsfEventStatus, Long> counts = store.countStatusesForClient(client.getId());
-        Map<SsfEventStatus, Instant> oldest = store.oldestCreatedAtPerStatusForClient(client.getId());
-
-        SsfEventStatsRepresentation rep = new SsfEventStatsRepresentation();
-        Map<String, SsfEventStatsRepresentation.StatusEntry> entries = new LinkedHashMap<>();
-        for (Map.Entry<SsfEventStatus, Long> entry : counts.entrySet()) {
-            entries.put(entry.getKey().name(),
-                    new SsfEventStatsRepresentation.StatusEntry(entry.getValue(), oldest.get(entry.getKey())));
+        OutboxStore store = transmitter.context().outboxStore(session);
+        Map<OutboxEntryStatus, Long> counts = new java.util.EnumMap<>(OutboxEntryStatus.class);
+        Map<OutboxEntryStatus, Instant> oldest = new java.util.EnumMap<>(OutboxEntryStatus.class);
+        for (String kind : SSF_OUTBOX_KINDS) {
+            mergeCounts(counts, store.countStatusesForOwner(kind, client.getId()));
+            mergeOldest(oldest, store.oldestCreatedAtPerStatusForOwner(kind, client.getId()));
         }
-        rep.setStatuses(entries);
-        return rep;
+        return toEventStatsRepresentation(counts, oldest);
     }
 
     /**
@@ -1271,9 +1333,9 @@ public class SsfAdminResource {
                             "status query parameter is required"))
                     .build();
         }
-        SsfEventStatus status;
+        OutboxEntryStatus status;
         try {
-            status = SsfEventStatus.valueOf(statusParam.trim().toUpperCase());
+            status = OutboxEntryStatus.valueOf(statusParam.trim().toUpperCase());
         } catch (IllegalArgumentException e) {
             return Response.status(Response.Status.BAD_REQUEST)
                     .entity(new SsfErrorRepresentation("invalid_request",
@@ -1300,13 +1362,15 @@ public class SsfAdminResource {
             }
         }
 
-        // The store filters on clientId — keep it scoped to the client's
-        // internal id (the same identifier the outbox uses), not the
-        // OAuth client_id.
-        SsfEventStore store = transmitter.context().eventStore(session);
-        int deleted = (cutoff == null)
-                ? store.deleteByClientAndStatus(client.getId(), status)
-                : store.deleteByClientAndStatusOlderThan(client.getId(), status, cutoff);
+        // Owner-scoped: the OUTBOX_ENTRY OWNER_ID matches the client's
+        // internal id (the same identifier dispatcher writes use).
+        OutboxStore store = transmitter.context().outboxStore(session);
+        int deleted = 0;
+        for (String kind : SSF_OUTBOX_KINDS) {
+            deleted += (cutoff == null)
+                    ? store.deleteByOwnerAndStatus(kind, client.getId(), status)
+                    : store.deleteByOwnerAndStatusOlderThan(kind, client.getId(), status, cutoff);
+        }
 
         Map<String, Object> auditRep = new LinkedHashMap<>();
         auditRep.put("status", status.name());
@@ -1357,8 +1421,11 @@ public class SsfAdminResource {
         }
         auth.clients().requireManage(client);
 
-        SsfEventStore store = transmitter.context().eventStore(session);
-        int deleted = store.deleteQueuedByClient(client.getId());
+        OutboxStore store = transmitter.context().outboxStore(session);
+        int deleted = 0;
+        for (String kind : SSF_OUTBOX_KINDS) {
+            deleted += store.deleteQueuedByOwner(kind, client.getId());
+        }
 
         Map<String, Object> auditRep = new LinkedHashMap<>();
         auditRep.put("deleted", deleted);
@@ -1375,11 +1442,11 @@ public class SsfAdminResource {
         return Response.ok(body).build();
     }
 
-    protected SsfPendingEventRepresentation toPendingEventRepresentation(SsfEventEntity entity) {
+    protected SsfPendingEventRepresentation toPendingEventRepresentation(OutboxEntryEntity entity) {
         SsfPendingEventRepresentation rep = new SsfPendingEventRepresentation();
-        rep.setJti(entity.getJti());
-        rep.setEventType(entity.getEventType());
-        rep.setDeliveryMethod(entity.getDeliveryMethod());
+        rep.setJti(entity.getCorrelationId());
+        rep.setEventType(entity.getEntryType());
+        rep.setDeliveryMethod(deliveryMethodLabel(entity.getEntryKind()));
         if (entity.getStatus() != null) {
             rep.setStatus(entity.getStatus().name());
         }
@@ -1394,15 +1461,32 @@ public class SsfAdminResource {
             rep.setDeliveredAt(entity.getDeliveredAt().getEpochSecond());
         }
         rep.setLastError(entity.getLastError());
-        rep.setStreamId(entity.getStreamId());
-        rep.setDecodedSet(decodeSet(entity.getEncodedSet()));
+        rep.setStreamId(entity.getContainerId());
+        rep.setDecodedSet(decodeSet(entity.getPayload()));
         // Resolve the user from the same raw JWS payload. Keeps the
         // expensive decode to a single pass even though the admin
         // endpoint exposes both the full SET and the click-through
         // userId separately.
-        Map<String, Object> subjectMap = extractSubjectIdFromEncodedSet(entity.getEncodedSet());
+        Map<String, Object> subjectMap = extractSubjectIdFromEncodedSet(entity.getPayload());
         rep.setUserId(resolveUserIdFromSubject(subjectMap));
         return rep;
+    }
+
+    /**
+     * Translates the row's generic {@code entry_kind} ("ssf-push" /
+     * "ssf-poll") to the wire-shape "PUSH" / "POLL" the admin UI
+     * already shows under {@code deliveryMethod} on
+     * {@link SsfPendingEventRepresentation}. Unknown kinds fall
+     * through unchanged so future kinds remain visible.
+     */
+    protected String deliveryMethodLabel(String entryKind) {
+        if (SsfOutboxKinds.PUSH.equals(entryKind)) {
+            return "PUSH";
+        }
+        if (SsfOutboxKinds.POLL.equals(entryKind)) {
+            return "POLL";
+        }
+        return entryKind;
     }
 
     /**
