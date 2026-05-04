@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.tests.ssf.outbox;
+package org.keycloak.tests.outbox;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -25,18 +25,16 @@ import java.util.UUID;
 
 import jakarta.persistence.EntityManager;
 
-import org.keycloak.common.Profile;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
+import org.keycloak.events.outbox.OutboxCleanupTask;
+import org.keycloak.events.outbox.OutboxStore;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.jpa.entities.OutboxEntryEntity;
 import org.keycloak.models.jpa.entities.OutboxEntryStatus;
-import org.keycloak.outbox.OutboxCleanupTask;
-import org.keycloak.outbox.OutboxStore;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testframework.server.DefaultKeycloakServerConfig;
-import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
@@ -48,17 +46,19 @@ import org.junit.jupiter.api.Test;
  * the store against the actual JPA provider and the {@code OUTBOX_ENTRY}
  * schema.
  *
+ * <p>Lives at {@code tests/base} alongside the other core integration
+ * tests ({@code tests/db}, {@code tests/events}, etc.) — the outbox
+ * is core Keycloak infrastructure, not SSF-specific. Tests use the
+ * synthetic entryKinds {@code "test-kind"} and {@code "test-kind-other"}
+ * so the suite verifies generic store semantics independent of any
+ * specific consumer.
+ *
  * <p>Tests are isolated by pinning each one to a unique synthetic
  * {@code realmId}; teardown calls {@link OutboxStore#deleteByRealm}
- * for the test entryKind to remove every row enqueued during the test.
- * No real Keycloak realms / clients are created — the store treats
- * realmId / ownerId as opaque strings, so synthetic UUIDs exercise the
- * full path.
- *
- * <p>The test entryKind is a synthetic {@code "test-kind"} (rather
- * than {@code SsfOutboxKinds.PUSH/POLL}) so the tests are decoupled
- * from any specific consumer's semantics — they verify the generic
- * store, not SSF-specific behavior.
+ * for both test entryKinds to remove every row enqueued during the
+ * test. No real Keycloak realms / clients are created — the store
+ * treats realmId / ownerId as opaque strings, so synthetic UUIDs
+ * exercise the full path.
  */
 @KeycloakIntegrationTest(config = OutboxStoreTests.OutboxStoreServerConfig.class)
 public class OutboxStoreTests {
@@ -1104,8 +1104,8 @@ public class OutboxStoreTests {
                                                 int attempts,
                                                 Instant nextAttemptAt,
                                                 Instant createdAt) {
-        return persistRawWithType(session, entryKind, realmId, ownerId, "test.event",
-                correlationId, status, attempts, nextAttemptAt, createdAt);
+        return persistRawWithType(session, entryKind, realmId, ownerId, containerId,
+                "test.event", correlationId, status, attempts, nextAttemptAt, createdAt);
     }
 
     private static OutboxEntryEntity persistRawWithType(KeycloakSession session,
@@ -1118,11 +1118,27 @@ public class OutboxStoreTests {
                                                         int attempts,
                                                         Instant nextAttemptAt,
                                                         Instant createdAt) {
+        return persistRawWithType(session, entryKind, realmId, ownerId, null, entryType,
+                correlationId, status, attempts, nextAttemptAt, createdAt);
+    }
+
+    private static OutboxEntryEntity persistRawWithType(KeycloakSession session,
+                                                        String entryKind,
+                                                        String realmId,
+                                                        String ownerId,
+                                                        String containerId,
+                                                        String entryType,
+                                                        String correlationId,
+                                                        OutboxEntryStatus status,
+                                                        int attempts,
+                                                        Instant nextAttemptAt,
+                                                        Instant createdAt) {
         OutboxEntryEntity e = new OutboxEntryEntity();
         e.setId(UUID.randomUUID().toString());
         e.setEntryKind(entryKind);
         e.setRealmId(realmId);
         e.setOwnerId(ownerId);
+        e.setContainerId(containerId);
         e.setCorrelationId(correlationId);
         e.setEntryType(entryType);
         e.setPayload("encoded-" + correlationId);
@@ -1135,14 +1151,10 @@ public class OutboxStoreTests {
     }
 
     public static class OutboxStoreServerConfig extends DefaultKeycloakServerConfig {
-        @Override
-        public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
-            KeycloakServerConfigBuilder configured = super.configure(config);
-            // Outbox lives in core model/jpa now, but SSF feature is
-            // still required so the SSF transmitter SPI initialises
-            // (it's the only consumer the test framework knows about).
-            config.features(Profile.Feature.SSF);
-            return configured;
-        }
+        // Outbox infrastructure (entity, store, named queries, schema)
+        // lives in core model/jpa, so no feature flag is required to
+        // exercise it — the table exists in every server. Tests run
+        // against the synthetic TEST_KIND so no consumer registration
+        // is needed either.
     }
 }

@@ -71,7 +71,7 @@
     <!--
         Generic outbox / event-queue infrastructure.
 
-        Backs org.keycloak.outbox.OutboxStore and the OutboxDrainerTask
+        Backs org.keycloak.events.outbox.OutboxStore and the OutboxDrainerTask
         / OutboxCleanupTask machinery. The ENTRY_KIND column is a plain
         string discriminator scoping the row to a subsystem ("ssf",
         "webhook", "audit", ...) so a single shared table serves
@@ -106,8 +106,8 @@
 
         See:
           - org.keycloak.models.jpa.entities.OutboxEntryEntity
-          - org.keycloak.outbox.OutboxStore
-          - org.keycloak.outbox.OutboxDrainerTask
+          - org.keycloak.events.outbox.OutboxStore
+          - org.keycloak.events.outbox.OutboxDrainerTask
     -->
 
         <createTable tableName="OUTBOX_ENTRY">

@@ -2,9 +2,9 @@ package org.keycloak.ssf.transmitter.delivery;
 
 import java.util.function.Function;
 
+import org.keycloak.events.outbox.OutboxStore;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserModel;
-import org.keycloak.outbox.OutboxStore;
 import org.keycloak.ssf.Ssf;
 import org.keycloak.ssf.SsfProfile;
 import org.keycloak.ssf.event.token.SecurityEventToken;
@@ -236,7 +236,7 @@ public class SecurityEventTokenDispatcher {
      * {@link org.keycloak.models.jpa.entities.OutboxEntryStatus#HELD HELD}
      * status. The drainer / POLL endpoint skip HELD rows; they're
      * released to {@code PENDING} when the stream is resumed
-     * ({@link org.keycloak.outbox.OutboxStore#releaseHeldForOwner releaseHeldForOwner}).
+     * ({@link org.keycloak.events.outbox.OutboxStore#releaseHeldForOwner releaseHeldForOwner}).
      */
     protected void holdEvent(SsfSecurityEventToken eventToken, StreamConfig stream) {
         var delivery = stream.getDelivery();

@@ -142,6 +142,17 @@
             <artifactId>awaitility</artifactId>
             <scope>test</scope>
         </dependency>
+        <!--
+            OutboxStoreTests references OutboxEntryEntity / OutboxStore /
+            OutboxCleanupTask directly inside runOnServer lambdas, so the
+            test JVM needs model/jpa on the compile classpath. Test-scope
+            keeps this out of any production artifact.
+        -->
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-model-jpa</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <profiles>

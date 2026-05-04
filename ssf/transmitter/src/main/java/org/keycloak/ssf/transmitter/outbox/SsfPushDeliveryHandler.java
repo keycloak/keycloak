@@ -5,12 +5,12 @@ import java.time.Instant;
 import java.util.Objects;
 import java.util.function.BiFunction;
 
+import org.keycloak.events.outbox.OutboxDeliveryHandler;
+import org.keycloak.events.outbox.OutboxDeliveryOutcome;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.jpa.entities.OutboxEntryEntity;
-import org.keycloak.outbox.OutboxDeliveryHandler;
-import org.keycloak.outbox.OutboxDeliveryOutcome;
 import org.keycloak.ssf.event.token.SsfSecurityEventToken;
 import org.keycloak.ssf.transmitter.SsfTransmitterContext;
 import org.keycloak.ssf.transmitter.SsfTransmitterProvider;

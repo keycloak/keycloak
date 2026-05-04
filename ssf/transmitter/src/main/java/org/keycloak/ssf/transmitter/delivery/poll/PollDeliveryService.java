@@ -4,11 +4,11 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.keycloak.events.outbox.OutboxStore;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.jpa.entities.OutboxEntryEntity;
 import org.keycloak.models.jpa.entities.OutboxEntryStatus;
-import org.keycloak.outbox.OutboxStore;
 import org.keycloak.ssf.transmitter.metrics.SsfMetricsBinder;
 import org.keycloak.ssf.transmitter.outbox.SsfOutboxKinds;
 

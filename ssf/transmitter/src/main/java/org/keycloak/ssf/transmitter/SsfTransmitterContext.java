@@ -3,8 +3,8 @@ package org.keycloak.ssf.transmitter;
 import java.util.Set;
 import java.util.function.Function;
 
+import org.keycloak.events.outbox.OutboxStore;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.outbox.OutboxStore;
 import org.keycloak.ssf.transmitter.metrics.SsfMetricsBinder;
 
 /**

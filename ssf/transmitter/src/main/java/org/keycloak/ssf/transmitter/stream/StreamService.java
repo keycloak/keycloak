@@ -14,12 +14,12 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
 import org.keycloak.common.util.Time;
+import org.keycloak.events.outbox.OutboxStore;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
-import org.keycloak.outbox.OutboxStore;
 import org.keycloak.ssf.Ssf;
 import org.keycloak.ssf.SsfException;
 import org.keycloak.ssf.SsfProfile;

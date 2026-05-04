@@ -2,12 +2,12 @@ package org.keycloak.ssf.transmitter.outbox;
 
 /**
  * SSF-specific {@code entryKind} constants for the generic outbox
- * ({@link org.keycloak.outbox.OutboxStore}). Two kinds because push
+ * ({@link org.keycloak.events.outbox.OutboxStore}). Two kinds because push
  * and poll have genuinely different runtime paths:
  *
  * <ul>
  *   <li>{@link #PUSH} — drained by a server-side
- *       {@link org.keycloak.outbox.OutboxDrainerTask} that hands rows
+ *       {@link org.keycloak.events.outbox.OutboxDrainerTask} that hands rows
  *       to the receiver's HTTP endpoint.</li>
  *   <li>{@link #POLL} — never drained; rows wait until the receiver's
  *       POLL request reads them from the outbox.</li>
