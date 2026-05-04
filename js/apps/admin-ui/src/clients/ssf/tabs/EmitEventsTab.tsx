@@ -80,6 +80,7 @@ export const EmitEventsTab = ({
   const [emitSubjectType, setEmitSubjectType] = useState<
     "user-email" | "user-id" | "user-username" | "org-alias"
   >("user-email");
+  const [emitSubjectTypeOpen, setEmitSubjectTypeOpen] = useState(false);
   const [emitSubjectValue, setEmitSubjectValue] = useState("");
   // Default to an empty JSON object with a newline between the
   // braces so the caret lands on an indented line ready for typing.
@@ -251,24 +252,31 @@ export const EmitEventsTab = ({
             </KeycloakSelect>
           </FormGroup>
           <FormGroup label={t("ssfSubjectType")} fieldId="ssfEmitSubjectType">
-            <select
-              id="ssfEmitSubjectType"
+            <KeycloakSelect
+              toggleId="ssfEmitSubjectType"
               data-testid="ssfEmitSubjectType"
-              value={emitSubjectType}
-              onChange={(e) =>
-                setEmitSubjectType(e.target.value as typeof emitSubjectType)
-              }
-              className="pf-v5-c-form-control"
+              variant={SelectVariant.single}
+              onToggle={setEmitSubjectTypeOpen}
+              isOpen={emitSubjectTypeOpen}
+              selections={emitSubjectType}
+              onSelect={(value) => {
+                setEmitSubjectType(value as typeof emitSubjectType);
+                setEmitSubjectTypeOpen(false);
+              }}
             >
-              <option value="user-email">
+              <SelectOption value="user-email">
                 {t("ssfSubjectType.userEmail")}
-              </option>
-              <option value="user-id">{t("ssfSubjectType.userId")}</option>
-              <option value="user-username">
+              </SelectOption>
+              <SelectOption value="user-id">
+                {t("ssfSubjectType.userId")}
+              </SelectOption>
+              <SelectOption value="user-username">
                 {t("ssfSubjectType.userUsername")}
-              </option>
-              <option value="org-alias">{t("ssfSubjectType.orgAlias")}</option>
-            </select>
+              </SelectOption>
+              <SelectOption value="org-alias">
+                {t("ssfSubjectType.orgAlias")}
+              </SelectOption>
+            </KeycloakSelect>
           </FormGroup>
           <FormGroup
             label={t("ssfSubjectValue")}
