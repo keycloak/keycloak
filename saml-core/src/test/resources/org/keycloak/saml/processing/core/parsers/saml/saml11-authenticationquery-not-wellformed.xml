@@ -1,0 +1,17 @@
+<samlp:Request
+    xmlns:samlp="urn:oasis:names:tc:SAML:1.0:protocol"
+    xmlns:saml="urn:oasis:names:tc:SAML:1.0:assertion"
+    MajorVersion="1"
+    MinorVersion="1"
+    RequestID="_1234567890abcdef"
+    IssueInstant="2026-04-30T10:00:00Z">
+
+    <samlp:AuthenticationQuery>
+        <saml:Subject>
+            <saml:NameIdentifier
+                Format="urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress">
+                user@example.com
+            </saml:NameIdentifier>
+        </saml:Subject> problematic text
+    </samlp:AuthenticationQuery>
+</samlp:Request>

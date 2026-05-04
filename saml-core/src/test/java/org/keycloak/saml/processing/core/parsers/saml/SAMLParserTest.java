@@ -763,6 +763,27 @@ public class SAMLParserTest {
         assertParsed("saml20-entity-descriptor-idp-invalid-end-element.xml", EntityDescriptorType.class);
     }
 
+    @Test(expected = ParsingException.class)
+    public void testSaml11AssertionsNotWellFormed() throws Exception {
+        try (InputStream st = SAMLParserTest.class.getResourceAsStream("saml11-assertion-not-wellformed.xml")) {
+            parser.parse(st);
+        }
+    }
+
+    @Test(expected = ParsingException.class)
+    public void testSaml11AthorizationDecisionQueryNotWellFormed() throws Exception {
+        try (InputStream st = SAMLParserTest.class.getResourceAsStream("saml11-authorizatiodecisionquery-not-wellformed.xml")) {
+            parser.parse(st);
+        }
+    }
+
+    @Test(expected = ParsingException.class)
+    public void testSaml11AuthenticationQueryNotWellFormed() throws Exception {
+        try (InputStream st = SAMLParserTest.class.getResourceAsStream("saml11-authenticationquery-not-wellformed.xml")) {
+            parser.parse(st);
+        }
+    }
+
     @Test
     public void testMissingRequiredAttributeIDPSSODescriptorType()  throws Exception {
         testMissingAttribute("IDPSSODescriptorType", "protocolSupportEnumeration");
