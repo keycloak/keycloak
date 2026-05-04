@@ -30,13 +30,13 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.LockModeType;
 import jakarta.persistence.NoResultException;
 
-import org.hibernate.LockMode;
-import org.hibernate.query.SelectionQuery;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.jpa.entities.OutboxEntryEntity;
 import org.keycloak.models.jpa.entities.OutboxEntryStatus;
 
+import org.hibernate.LockMode;
+import org.hibernate.query.SelectionQuery;
 import org.jboss.logging.Logger;
 
 /**
