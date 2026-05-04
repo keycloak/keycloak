@@ -64,6 +64,6 @@ public class SseTransmitterMetadataWellKnownProviderFactory implements WellKnown
         if (!Profile.isFeatureEnabled(Profile.Feature.SSF)) {
             return false;
         }
-        return config.getBoolean(CONFIG_ENABLED, true);
+        return config.getBoolean(CONFIG_ENABLED, false);
     }
 }
