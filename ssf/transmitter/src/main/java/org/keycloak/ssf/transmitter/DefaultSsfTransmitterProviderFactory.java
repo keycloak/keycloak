@@ -14,6 +14,10 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
+import org.keycloak.outbox.OutboxBackoff;
+import org.keycloak.outbox.OutboxCleanupTask;
+import org.keycloak.outbox.OutboxConfig;
+import org.keycloak.outbox.OutboxDrainerTask;
 import org.keycloak.outbox.OutboxStore;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
@@ -30,10 +34,8 @@ import org.keycloak.ssf.transmitter.event.SecurityEventTokenEncoder;
 import org.keycloak.ssf.transmitter.event.SecurityEventTokenMapper;
 import org.keycloak.ssf.transmitter.metadata.TransmitterMetadataService;
 import org.keycloak.ssf.transmitter.metrics.SsfMetricsBinder;
-import org.keycloak.ssf.transmitter.outbox.SsfOutboxCleanupTask;
-import org.keycloak.ssf.transmitter.outbox.SsfPushOutboxBackoff;
-import org.keycloak.ssf.transmitter.outbox.SsfPushOutboxDrainerTask;
-import org.keycloak.ssf.transmitter.outbox.SsfPushOutboxDrainerTaskConfig;
+import org.keycloak.ssf.transmitter.outbox.SsfOutboxKinds;
+import org.keycloak.ssf.transmitter.outbox.SsfPushDeliveryHandler;
 import org.keycloak.ssf.transmitter.store.SsfEventStore;
 import org.keycloak.ssf.transmitter.stream.StreamVerificationService;
 import org.keycloak.ssf.transmitter.stream.storage.client.ClientStreamStore;
@@ -127,7 +129,7 @@ public class DefaultSsfTransmitterProviderFactory implements SsfTransmitterProvi
 
     protected int outboxDrainerBatchSize = DEFAULT_OUTBOX_DRAINER_BATCH_SIZE;
 
-    protected int outboxDrainerMaxAttempts = SsfPushOutboxBackoff.DEFAULT_MAX_ATTEMPTS;
+    protected int outboxDrainerMaxAttempts = OutboxBackoff.DEFAULT_MAX_ATTEMPTS;
 
     protected long outboxDeadLetterRetentionMillis = DEFAULT_OUTBOX_DEAD_LETTER_RETENTION_MILLIS;
 
@@ -155,11 +157,11 @@ public class DefaultSsfTransmitterProviderFactory implements SsfTransmitterProvi
 
     /**
      * Handles {@code RealmRemovedEvent} / {@code ClientRemovedEvent}
-     * by submitting a background {@link SsfOutboxCleanupTask} that
-     * drains the orphaned outbox rows in short batched transactions
-     * (REALM_ID / CLIENT_ID are not foreign keys on SSF_EVENT
-     * — the table is plugin-contributed via JpaEntityProvider, so it
-     * can't declare FKs into core Keycloak tables — and an inline
+     * by submitting a background {@link OutboxCleanupTask} that
+     * drains the orphaned outbox rows in a bounded transaction
+     * (REALM_ID / OWNER_ID are not foreign keys on OUTBOX_ENTRY
+     * — the table is shared infrastructure, so it can't declare FKs
+     * into core Keycloak tables — and an inline
      * bulk DELETE would drag the admin's removal transaction into a
      * timeout for receivers with a large backlog). Also handles
      * {@code ClientUpdatedEvent} to reject saves that would leave two
@@ -442,7 +444,7 @@ public class DefaultSsfTransmitterProviderFactory implements SsfTransmitterProvi
                 .name(CONFIG_OUTBOX_DRAINER_MAX_ATTEMPTS)
                 .type("int")
                 .helpText("Maximum number of push attempts before an outbox row is dead-lettered.")
-                .defaultValue(SsfPushOutboxBackoff.DEFAULT_MAX_ATTEMPTS)
+                .defaultValue(OutboxBackoff.DEFAULT_MAX_ATTEMPTS)
                 .add()
                 .property()
                 .name(CONFIG_OUTBOX_DEAD_LETTER_RETENTION)
@@ -535,39 +537,45 @@ public class DefaultSsfTransmitterProviderFactory implements SsfTransmitterProvi
     protected void scheduleOutboxDrainer(KeycloakSessionFactory factory) {
         try (KeycloakSession session = factory.create()) {
             TimerProvider timer = session.getProvider(TimerProvider.class);
-            SsfPushOutboxDrainerTask task = createDrainerTask(session);
+            OutboxDrainerTask task = createDrainerTask(session);
             ScheduledTaskRunner runner = createDrainerScheduledTaskRunner(factory, task);
-            timer.schedule(runner, outboxDrainerIntervalMillis, outboxDrainerIntervalMillis, task.getClass().getSimpleName());
-            log.infof("SSF push outbox drainer scheduled: interval=%dms, batchSize=%d, maxAttempts=%d, deadLetterRetention=%s, deliveredRetention=%s, pendingMaxAge=%s",
-                    outboxDrainerIntervalMillis, outboxDrainerBatchSize, outboxDrainerMaxAttempts,
+            timer.schedule(runner, outboxDrainerIntervalMillis, outboxDrainerIntervalMillis,
+                    "SsfPushOutboxDrainerTask");
+            log.infof("SSF push outbox drainer scheduled: entryKind=%s, interval=%dms, batchSize=%d, maxAttempts=%d, deadLetterRetention=%s, deliveredRetention=%s, pendingMaxAge=%s",
+                    SsfOutboxKinds.PUSH, outboxDrainerIntervalMillis,
+                    outboxDrainerBatchSize, outboxDrainerMaxAttempts,
                     outboxDeadLetterRetentionMillis > 0 ? outboxDeadLetterRetentionMillis + "ms" : "disabled",
                     outboxDeliveredRetentionMillis > 0 ? outboxDeliveredRetentionMillis + "ms" : "disabled",
                     outboxPendingMaxAgeMillis > 0 ? outboxPendingMaxAgeMillis + "ms" : "disabled");
         }
     }
 
-    protected ScheduledTaskRunner createDrainerScheduledTaskRunner(KeycloakSessionFactory factory, SsfPushOutboxDrainerTask task) {
+    protected ScheduledTaskRunner createDrainerScheduledTaskRunner(KeycloakSessionFactory factory, OutboxDrainerTask task) {
         return new ClusterAwareScheduledTaskRunner(factory, task, outboxDrainerIntervalMillis);
     }
 
-    protected SsfPushOutboxDrainerTask createDrainerTask(KeycloakSession session) {
+    protected OutboxDrainerTask createDrainerTask(KeycloakSession session) {
 
-        // Drainer constructs a fresh PushDeliveryService per row via
-        // the same SsfTransmitterServiceBuilder#createPushDelivery
+        // The drainer is generic; SSF-specific delivery semantics live
+        // on the SsfPushDeliveryHandler the drainer invokes per row.
+        // PushDeliveryService is constructed lazily inside the handler
+        // via the same SsfTransmitterServiceBuilder#createPushDelivery
         // factory method the per-session provider uses, so a custom
         // subclass that overrides it (e.g. for instrumentation or
         // tweaked timeouts) automatically applies to outbox push
         // delivery too.
-        return new SsfPushOutboxDrainerTask(
-                createSsfPushOutboxDrainerTaskConfig(),
-                this::createPendingEventStore,
-                this.context,
-                this::createPushDelivery,
-                metricsBinder);
+        return new OutboxDrainerTask(
+                createOutboxConfig(),
+                createSsfPushDeliveryHandler(),
+                this::createOutboxStore);
     }
 
-    protected SsfPushOutboxDrainerTaskConfig createSsfPushOutboxDrainerTaskConfig() {
-        SsfPushOutboxBackoff backoff = new SsfPushOutboxBackoff(outboxDrainerMaxAttempts);
+    protected SsfPushDeliveryHandler createSsfPushDeliveryHandler() {
+        return new SsfPushDeliveryHandler(this.context, this::createPushDelivery, this.metricsBinder);
+    }
+
+    protected OutboxConfig createOutboxConfig() {
+        OutboxBackoff backoff = new OutboxBackoff(outboxDrainerMaxAttempts, OutboxBackoff.DEFAULT_HTTP_PUSH_CURVE);
         Duration deadLetterRetention = outboxDeadLetterRetentionMillis > 0
                 ? Duration.ofMillis(outboxDeadLetterRetentionMillis)
                 : null;
@@ -578,10 +586,13 @@ public class DefaultSsfTransmitterProviderFactory implements SsfTransmitterProvi
                 ? Duration.ofMillis(outboxPendingMaxAgeMillis)
                 : null;
 
-        SsfPushOutboxDrainerTaskConfig drainerConfig = new SsfPushOutboxDrainerTaskConfig(
-                outboxDrainerBatchSize, backoff, deadLetterRetention, deliveredRetention,
+        return new OutboxConfig(
+                SsfOutboxKinds.PUSH,
+                outboxDrainerBatchSize,
+                backoff,
+                deadLetterRetention,
+                deliveredRetention,
                 pendingMaxAge);
-        return drainerConfig;
     }
 
 
@@ -591,10 +602,10 @@ public class DefaultSsfTransmitterProviderFactory implements SsfTransmitterProvi
             public void onEvent(ProviderEvent event) {
                 if (event instanceof RealmModel.RealmRemovedEvent ev) {
                     submitOutboxCleanup(ev.getKeycloakSession(),
-                            SsfOutboxCleanupTask.Scope.REALM, ev.getRealm().getId());
+                            OutboxCleanupTask.Scope.REALM, ev.getRealm().getId());
                 } else if (event instanceof ClientModel.ClientRemovedEvent ev) {
                     submitOutboxCleanup(ev.getKeycloakSession(),
-                            SsfOutboxCleanupTask.Scope.CLIENT, ev.getClient().getId());
+                            OutboxCleanupTask.Scope.OWNER, ev.getClient().getId());
                 } else if (event instanceof ClientModel.ClientUpdatedEvent ev) {
                     // Deliberately does not catch — a ModelDuplicateException
                     // from the validator must propagate so the offending
@@ -606,40 +617,46 @@ public class DefaultSsfTransmitterProviderFactory implements SsfTransmitterProvi
     }
 
     /**
-     * Submits a background {@link SsfOutboxCleanupTask} that drains the
-     * outbox rows owned by the removed client or realm in short batched
-     * transactions. Runs on the {@link ExecutorsProvider#getExecutor(String)
+     * Submits a background {@link OutboxCleanupTask} that drains the
+     * outbox rows owned by the removed client or realm in a bounded
+     * transaction. Runs on the {@link ExecutorsProvider#getExecutor(String)
      * ssf-cleanup} executor so the admin's removal transaction can
      * commit immediately — a receiver with a large queued backlog
      * would otherwise serialize its entire delete into the synchronous
      * client-/realm-removal transaction and risk a transaction timeout.
      *
      * <p>Fire-and-forget: if the originating node crashes before the
-     * task finishes, the push drainer's missing-resolve fast-path
-     * dead-letters orphan rows on its next tick (see
-     * {@link SsfPushOutboxDrainerTask}), and the dead-letter retention
-     * purge removes them in bounded background batches. The event is
+     * task finishes, the drainer's missing-resolve / pendingMaxAge
+     * fast-paths sweep orphan rows on subsequent ticks. The event is
      * only published on the node that handled the admin request, so
      * there's no cross-node contention to coordinate.
+     *
+     * <p>Submits one cleanup task per SSF entryKind ({@code ssf-push}
+     * and {@code ssf-poll}) so removing a realm or receiver client
+     * drops both PUSH and POLL outbox rows.
      */
     protected void submitOutboxCleanup(KeycloakSession session,
-                                       SsfOutboxCleanupTask.Scope scope,
+                                       OutboxCleanupTask.Scope scope,
                                        String scopeId) {
         try {
             ExecutorService executor = session.getProvider(ExecutorsProvider.class)
                     .getExecutor(OUTBOX_CLEANUP_EXECUTOR);
             KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
-            executor.execute(createOutboxCleanUpTask(scope, scopeId, sessionFactory));
+            executor.execute(createOutboxCleanUpTask(SsfOutboxKinds.PUSH, scope, scopeId, sessionFactory));
+            executor.execute(createOutboxCleanUpTask(SsfOutboxKinds.POLL, scope, scopeId, sessionFactory));
         } catch (RuntimeException e) {
             // Never block the originating admin transaction on
             // scheduling failures. Orphan rows will be handled by the
-            // push drainer's missing-resolve fast-path.
+            // drainer's pendingMaxAge backstop and retention purges.
             log.warnf(e, "SSF outbox cleanup scheduling failed. scope=%s id=%s", scope, scopeId);
         }
     }
 
-    protected SsfOutboxCleanupTask createOutboxCleanUpTask(SsfOutboxCleanupTask.Scope scope, String key, KeycloakSessionFactory sessionFactory) {
-        return new SsfOutboxCleanupTask(sessionFactory, this::createPendingEventStore, scope, key);
+    protected OutboxCleanupTask createOutboxCleanUpTask(String entryKind,
+                                                        OutboxCleanupTask.Scope scope,
+                                                        String key,
+                                                        KeycloakSessionFactory sessionFactory) {
+        return new OutboxCleanupTask(sessionFactory, this::createOutboxStore, entryKind, scope, key);
     }
 
     /**
