@@ -40,6 +40,7 @@ public class KcAdmV2CompleterTest {
         assertTrue("Should suggest 'patch'", candidates.contains("patch"));
         assertTrue("Should suggest 'apply'", candidates.contains("apply"));
         assertTrue("Should suggest 'delete'", candidates.contains("delete"));
+        assertTrue("Should suggest 'edit'", candidates.contains("edit"));
     }
 
     @Test
@@ -156,10 +157,27 @@ public class KcAdmV2CompleterTest {
     }
 
     @Test
+    public void testEditOptionsInAutocomplete() {
+        List<String> candidates = complete("client", "edit", "--");
+        assertTrue("Should suggest '--config'", candidates.contains("--config"));
+        assertTrue("Should suggest '--compressed'", candidates.contains("--compressed"));
+        assertFalse("Should not suggest '--file'", candidates.contains("--file"));
+        assertFalse("Should not suggest '--client-id'", candidates.contains("--client-id"));
+    }
+
+    @Test
     public void testConfigShowsSubcommands() {
         List<String> candidates = complete("config", "");
         assertTrue("Should suggest 'credentials'", candidates.contains("credentials"));
         assertTrue("Should suggest 'openapi'", candidates.contains("openapi"));
+        assertTrue("Should suggest 'editor'", candidates.contains("editor"));
+    }
+
+    @Test
+    public void testConfigEditorOptionsInAutocomplete() {
+        List<String> candidates = complete("config", "editor", "--");
+        assertTrue("Should suggest '--config': " + candidates, candidates.contains("--config"));
+        assertTrue("Should suggest '--help': " + candidates, candidates.contains("--help"));
     }
 
     @Test
