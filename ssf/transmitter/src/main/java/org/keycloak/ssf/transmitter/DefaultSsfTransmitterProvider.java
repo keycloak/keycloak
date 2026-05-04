@@ -9,6 +9,7 @@ import org.keycloak.ssf.Ssf;
 import org.keycloak.ssf.event.SsfEventRegistry;
 import org.keycloak.ssf.transmitter.delivery.SecurityEventTokenDispatcher;
 import org.keycloak.ssf.transmitter.delivery.poll.PollDeliveryService;
+import org.keycloak.ssf.transmitter.delivery.push.PushDeliveryService;
 import org.keycloak.ssf.transmitter.emit.EventEmitterService;
 import org.keycloak.ssf.transmitter.event.SecurityEventTokenEncoder;
 import org.keycloak.ssf.transmitter.event.SecurityEventTokenMapper;
@@ -52,7 +53,7 @@ public class DefaultSsfTransmitterProvider implements SsfTransmitterProvider {
     // -- lazy-built per-session services ----------------------------------
     private SecurityEventTokenEncoder encoder;
     private SecurityEventTokenMapper mapper;
-    private org.keycloak.ssf.transmitter.delivery.push.PushDeliveryService pushDelivery;
+    private PushDeliveryService pushDelivery;
     private SecurityEventTokenDispatcher dispatcher;
     private ClientStreamStore streamStore;
     private TransmitterMetadataService metadata;

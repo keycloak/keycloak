@@ -233,7 +233,7 @@ public class DefaultSsfTransmitterProviderFactory implements SsfTransmitterProvi
                 provider.securityEventTokenEncoder(),
                 provider.pushDeliveryService(),
                 ctx.config(),
-                ctx.outboxStoreFactory(),
+                this::createOutboxStore,
                 ctx.metrics(),
                 provider.subjectInclusionResolver());
     }
@@ -249,8 +249,9 @@ public class DefaultSsfTransmitterProviderFactory implements SsfTransmitterProvi
 
     @Override
     public PollDeliveryService createPollDelivery(SsfTransmitterProvider provider) {
-        return new PollDeliveryService(provider.session(),
-                provider.context().outboxStore(provider.session()),
+        KeycloakSession session = provider.session();
+        return new PollDeliveryService(session,
+                createOutboxStore(session),
                 provider.metrics());
     }
 
