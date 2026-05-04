@@ -1,0 +1,343 @@
+/*
+ * Copyright 2025 Red Hat, Inc. and/or its affiliates
+ *  and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.keycloak.models.jpa.entities;
+
+import java.time.Instant;
+import java.util.Objects;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.Id;
+import jakarta.persistence.Lob;
+import jakarta.persistence.NamedQueries;
+import jakarta.persistence.NamedQuery;
+import jakarta.persistence.Table;
+
+/**
+ * Generic durable outbox row: a single message persisted for asynchronous,
+ * at-least-once delivery by a feature-scoped drainer.
+ *
+ * <p>Backed by the {@code OUTBOX_ENTRY} table created in
+ * {@code META-INF/jpa-changelog-26.7.0.xml}. Multiple subsystems
+ * (SSF, webhooks, ...) share this table; the {@code entryKind}
+ * discriminator scopes every read and write so cross-consumer
+ * contention is eliminated by the {@code (ENTRY_KIND, ...)} compound
+ * indexes rather than by separate tables.
+ *
+ * <p>Two-axis classification on every row:
+ * <ul>
+ *   <li>{@code entryKind} — the broad subsystem ("ssf", "webhook", ...).</li>
+ *   <li>{@code entryType} — the concrete type within that subsystem (for
+ *       SSF the SET event_type; for webhooks the hook event name; etc.).</li>
+ * </ul>
+ *
+ * <p>The wire shape of the {@code payload} (signed JWS, JSON, opaque blob)
+ * and the contents of the optional {@code metadata} JSON are owned by the
+ * subsystem's {@code OutboxDeliveryHandler} — the entity treats both as
+ * opaque text.
+ */
+@Entity
+@Table(name = "OUTBOX_ENTRY")
+@NamedQueries({
+        // Drainer hot path. Uses the IDX_OUTBOX_DRAIN compound index.
+        // The store layers PESSIMISTIC_WRITE + SKIP_LOCKED on top of
+        // this select so cluster-aware drainers don't fight for the
+        // same rows.
+        @NamedQuery(
+                name = "OutboxEntryEntity.findDueForDrain",
+                query = "SELECT e FROM OutboxEntryEntity e"
+                        + " WHERE e.entryKind = :entryKind"
+                        + "   AND e.status = :status"
+                        + "   AND e.nextAttemptAt <= :now"
+                        + " ORDER BY e.nextAttemptAt ASC"),
+        @NamedQuery(
+                name = "OutboxEntryEntity.findByOwnerAndCorrelationId",
+                query = "SELECT e FROM OutboxEntryEntity e"
+                        + " WHERE e.entryKind = :entryKind"
+                        + "   AND e.ownerId = :ownerId"
+                        + "   AND e.correlationId = :correlationId"),
+        @NamedQuery(
+                name = "OutboxEntryEntity.countByEntryKindRealmAndStatus",
+                query = "SELECT e.status, COUNT(e) FROM OutboxEntryEntity e"
+                        + " WHERE e.entryKind = :entryKind"
+                        + "   AND e.realmId = :realmId"
+                        + " GROUP BY e.status"),
+        @NamedQuery(
+                name = "OutboxEntryEntity.countByEntryKindOwnerAndStatus",
+                query = "SELECT e.status, COUNT(e) FROM OutboxEntryEntity e"
+                        + " WHERE e.entryKind = :entryKind"
+                        + "   AND e.ownerId = :ownerId"
+                        + " GROUP BY e.status"),
+        @NamedQuery(
+                name = "OutboxEntryEntity.oldestCreatedAtByEntryKindRealmAndStatus",
+                query = "SELECT e.status, MIN(e.createdAt) FROM OutboxEntryEntity e"
+                        + " WHERE e.entryKind = :entryKind"
+                        + "   AND e.realmId = :realmId"
+                        + " GROUP BY e.status"),
+        @NamedQuery(
+                name = "OutboxEntryEntity.oldestCreatedAtByEntryKindOwnerAndStatus",
+                query = "SELECT e.status, MIN(e.createdAt) FROM OutboxEntryEntity e"
+                        + " WHERE e.entryKind = :entryKind"
+                        + "   AND e.ownerId = :ownerId"
+                        + " GROUP BY e.status"),
+        // Bulk DML primitives — all scoped on (feature) so multi-consumer
+        // tables stay isolated.
+        @NamedQuery(
+                name = "OutboxEntryEntity.deleteByEntryKindAndRealm",
+                query = "DELETE FROM OutboxEntryEntity e"
+                        + " WHERE e.entryKind = :entryKind AND e.realmId = :realmId"),
+        @NamedQuery(
+                name = "OutboxEntryEntity.deleteByEntryKindRealmAndStatus",
+                query = "DELETE FROM OutboxEntryEntity e"
+                        + " WHERE e.entryKind = :entryKind"
+                        + "   AND e.realmId = :realmId"
+                        + "   AND e.status = :status"),
+        @NamedQuery(
+                name = "OutboxEntryEntity.deleteByEntryKindRealmAndStatusOlderThan",
+                query = "DELETE FROM OutboxEntryEntity e"
+                        + " WHERE e.entryKind = :entryKind"
+                        + "   AND e.realmId = :realmId"
+                        + "   AND e.status = :status"
+                        + "   AND e.createdAt < :olderThan"),
+        @NamedQuery(
+                name = "OutboxEntryEntity.deleteByEntryKindAndOwner",
+                query = "DELETE FROM OutboxEntryEntity e"
+                        + " WHERE e.entryKind = :entryKind AND e.ownerId = :ownerId"),
+        @NamedQuery(
+                name = "OutboxEntryEntity.deleteByEntryKindOwnerAndStatus",
+                query = "DELETE FROM OutboxEntryEntity e"
+                        + " WHERE e.entryKind = :entryKind"
+                        + "   AND e.ownerId = :ownerId"
+                        + "   AND e.status = :status"),
+        @NamedQuery(
+                name = "OutboxEntryEntity.deleteByEntryKindOwnerAndStatusOlderThan",
+                query = "DELETE FROM OutboxEntryEntity e"
+                        + " WHERE e.entryKind = :entryKind"
+                        + "   AND e.ownerId = :ownerId"
+                        + "   AND e.status = :status"
+                        + "   AND e.createdAt < :olderThan"),
+        @NamedQuery(
+                name = "OutboxEntryEntity.deleteQueuedByEntryKindAndRealm",
+                query = "DELETE FROM OutboxEntryEntity e"
+                        + " WHERE e.entryKind = :entryKind"
+                        + "   AND e.realmId = :realmId"
+                        + "   AND e.status IN :statuses"),
+        @NamedQuery(
+                name = "OutboxEntryEntity.deleteQueuedByEntryKindAndOwner",
+                query = "DELETE FROM OutboxEntryEntity e"
+                        + " WHERE e.entryKind = :entryKind"
+                        + "   AND e.ownerId = :ownerId"
+                        + "   AND e.status IN :statuses"),
+        @NamedQuery(
+                name = "OutboxEntryEntity.purgeByEntryKindStatusOlderThanDelivered",
+                query = "DELETE FROM OutboxEntryEntity e"
+                        + " WHERE e.entryKind = :entryKind"
+                        + "   AND e.status = :status"
+                        + "   AND e.deliveredAt < :olderThan"),
+        @NamedQuery(
+                name = "OutboxEntryEntity.purgeByEntryKindStatusOlderThanCreated",
+                query = "DELETE FROM OutboxEntryEntity e"
+                        + " WHERE e.entryKind = :entryKind"
+                        + "   AND e.status = :status"
+                        + "   AND e.createdAt < :olderThan"),
+        // Backstop: promote rows that have been waiting too long to a
+        // terminal state so the dead-letter retention purge can sweep
+        // them. Bumps neither attempts nor deliveredAt — these rows
+        // never actually retried; they aged out.
+        @NamedQuery(
+                name = "OutboxEntryEntity.promoteStaleQueuedToDeadLetter",
+                query = "UPDATE OutboxEntryEntity e"
+                        + "    SET e.status = :dead, e.lastError = :reason"
+                        + "  WHERE e.entryKind = :entryKind"
+                        + "    AND e.status IN :statuses"
+                        + "    AND e.createdAt < :olderThan")
+})
+public class OutboxEntryEntity {
+
+    @Id
+    @Column(name = "ID", length = 36)
+    protected String id;
+
+    @Column(name = "ENTRY_KIND", nullable = false, length = 64)
+    protected String entryKind;
+
+    @Column(name = "REALM_ID", nullable = false, length = 36)
+    protected String realmId;
+
+    @Column(name = "OWNER_ID", nullable = false, length = 64)
+    protected String ownerId;
+
+    @Column(name = "CORRELATION_ID", nullable = false, length = 255)
+    protected String correlationId;
+
+    @Column(name = "ENTRY_TYPE", nullable = false, length = 256)
+    protected String entryType;
+
+    @Lob
+    @Column(name = "PAYLOAD", nullable = false)
+    protected String payload;
+
+    @Lob
+    @Column(name = "METADATA")
+    protected String metadata;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "STATUS", nullable = false, length = 16)
+    protected OutboxEntryStatus status;
+
+    @Column(name = "ATTEMPTS", nullable = false)
+    protected int attempts;
+
+    @Column(name = "NEXT_ATTEMPT_AT", nullable = false)
+    protected Instant nextAttemptAt;
+
+    @Column(name = "LAST_ERROR", length = 2048)
+    protected String lastError;
+
+    @Column(name = "CREATED_AT", nullable = false)
+    protected Instant createdAt;
+
+    @Column(name = "DELIVERED_AT")
+    protected Instant deliveredAt;
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
+
+    public String getEntryKind() {
+        return entryKind;
+    }
+
+    public void setEntryKind(String entryKind) {
+        this.entryKind = entryKind;
+    }
+
+    public String getRealmId() {
+        return realmId;
+    }
+
+    public void setRealmId(String realmId) {
+        this.realmId = realmId;
+    }
+
+    public String getOwnerId() {
+        return ownerId;
+    }
+
+    public void setOwnerId(String ownerId) {
+        this.ownerId = ownerId;
+    }
+
+    public String getCorrelationId() {
+        return correlationId;
+    }
+
+    public void setCorrelationId(String correlationId) {
+        this.correlationId = correlationId;
+    }
+
+    public String getEntryType() {
+        return entryType;
+    }
+
+    public void setEntryType(String entryType) {
+        this.entryType = entryType;
+    }
+
+    public String getPayload() {
+        return payload;
+    }
+
+    public void setPayload(String payload) {
+        this.payload = payload;
+    }
+
+    public String getMetadata() {
+        return metadata;
+    }
+
+    public void setMetadata(String metadata) {
+        this.metadata = metadata;
+    }
+
+    public OutboxEntryStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(OutboxEntryStatus status) {
+        this.status = status;
+    }
+
+    public int getAttempts() {
+        return attempts;
+    }
+
+    public void setAttempts(int attempts) {
+        this.attempts = attempts;
+    }
+
+    public Instant getNextAttemptAt() {
+        return nextAttemptAt;
+    }
+
+    public void setNextAttemptAt(Instant nextAttemptAt) {
+        this.nextAttemptAt = nextAttemptAt;
+    }
+
+    public String getLastError() {
+        return lastError;
+    }
+
+    public void setLastError(String lastError) {
+        this.lastError = lastError;
+    }
+
+    public Instant getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(Instant createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public Instant getDeliveredAt() {
+        return deliveredAt;
+    }
+
+    public void setDeliveredAt(Instant deliveredAt) {
+        this.deliveredAt = deliveredAt;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof OutboxEntryEntity)) return false;
+        OutboxEntryEntity that = (OutboxEntryEntity) o;
+        return Objects.equals(id, that.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(id);
+    }
+}
