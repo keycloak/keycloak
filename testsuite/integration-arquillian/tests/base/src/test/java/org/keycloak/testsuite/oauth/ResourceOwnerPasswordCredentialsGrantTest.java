@@ -36,6 +36,7 @@ import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
+import org.keycloak.events.EventType;
 import org.keycloak.jose.jws.JWSHeader;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.models.ClientScopeModel;
@@ -51,6 +52,7 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.UserBuilder;
@@ -222,18 +224,19 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
         AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
         RefreshToken refreshToken = oauth.parseRefreshToken(response.getRefreshToken());
 
-        events.expectLogin()
-                .client("resource-owner-public")
-                .user(userId)
-                .session(accessToken.getSessionState())
-                .detail(Details.GRANT_TYPE, OAuth2Constants.PASSWORD)
-                .detail(Details.TOKEN_ID, accessToken.getId())
-                .detail(Details.REFRESH_TOKEN_ID, refreshToken.getId())
-                .detail(Details.USERNAME, "direct-login")
-                .removeDetail(Details.CODE_ID)
-                .removeDetail(Details.REDIRECT_URI)
-                .removeDetail(Details.CONSENT)
-                .assertEvent();
+        EventAssertion.assertSuccess(events.poll())
+                .type(EventType.LOGIN)
+                .hasIpAddress()
+                .clientId("resource-owner-public")
+                .userId(userId)
+                .sessionId(accessToken.getSessionState())
+                .details(Details.GRANT_TYPE, OAuth2Constants.PASSWORD)
+                .details(Details.TOKEN_ID, accessToken.getId())
+                .details(Details.REFRESH_TOKEN_ID, refreshToken.getId())
+                .details(Details.USERNAME, "direct-login")
+                .withoutDetails(Details.CODE_ID)
+                .withoutDetails(Details.REDIRECT_URI)
+                .withoutDetails(Details.CONSENT);
 
         assertTrue(accessToken.getScope().contains("dynamic-scope:123"));
     }
@@ -277,13 +280,12 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
 
         assertEquals("invalid_grant", response.getError());
 
-        events.expectLogin()
-                .client("resource-owner")
-                .session((String) null)
-                .clearDetails()
+        EventAssertion.assertError(events.poll())
+                .type(EventType.LOGIN_ERROR)
+                .clientId("resource-owner")
+                .sessionId(null)
                 .error(Errors.INVALID_USER_CREDENTIALS)
-                .user(userId2)
-                .assertEvent();
+                .userId(userId2);
     }
 
     @Test
@@ -298,13 +300,12 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
 
         assertEquals("invalid_grant", response.getError());
 
-        events.expectLogin()
-                .client("resource-owner")
-                .session((String) null)
-                .clearDetails()
+        EventAssertion.assertError(events.poll())
+                .type(EventType.LOGIN_ERROR)
+                .clientId("resource-owner")
+                .sessionId(null)
                 .error(Errors.INVALID_USER_CREDENTIALS)
-                .user(userId2)
-                .assertEvent();
+                .userId(userId2);
 
         // Check that count of authSessions is same as before authentication (as authentication session was removed)
         Assertions.assertEquals(authSessionsBefore, getAuthenticationSessionsCount());
@@ -324,18 +325,19 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
         AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
         RefreshToken refreshToken = oauth.parseRefreshToken(response.getRefreshToken());
 
-        events.expectLogin()
-                .client(clientId)
-                .user(userId)
-                .session(accessToken.getSessionState())
-                .detail(Details.GRANT_TYPE, OAuth2Constants.PASSWORD)
-                .detail(Details.TOKEN_ID, accessToken.getId())
-                .detail(Details.REFRESH_TOKEN_ID, refreshToken.getId())
-                .detail(Details.USERNAME, login)
-                .removeDetail(Details.CODE_ID)
-                .removeDetail(Details.REDIRECT_URI)
-                .removeDetail(Details.CONSENT)
-                .assertEvent();
+        EventAssertion.assertSuccess(events.poll())
+                .type(EventType.LOGIN)
+                .hasIpAddress()
+                .clientId(clientId)
+                .userId(userId)
+                .sessionId(accessToken.getSessionState())
+                .details(Details.GRANT_TYPE, OAuth2Constants.PASSWORD)
+                .details(Details.TOKEN_ID, accessToken.getId())
+                .details(Details.REFRESH_TOKEN_ID, refreshToken.getId())
+                .details(Details.USERNAME, login)
+                .withoutDetails(Details.CODE_ID)
+                .withoutDetails(Details.REDIRECT_URI)
+                .withoutDetails(Details.CONSENT);
 
         Assertions.assertTrue(login.equals(accessToken.getPreferredUsername()) || login.equals(accessToken.getEmail()));
 
@@ -397,18 +399,19 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
         assertEquals("JWT", header.getType());
         assertNull(header.getContentType());
 
-        events.expectLogin()
-                .client(clientId)
-                .user(userId)
-                .session(accessToken.getSessionState())
-                .detail(Details.GRANT_TYPE, OAuth2Constants.PASSWORD)
-                .detail(Details.TOKEN_ID, accessToken.getId())
-                .detail(Details.REFRESH_TOKEN_ID, refreshToken.getId())
-                .detail(Details.USERNAME, login)
-                .removeDetail(Details.CODE_ID)
-                .removeDetail(Details.REDIRECT_URI)
-                .removeDetail(Details.CONSENT)
-                .assertEvent();
+        EventAssertion.assertSuccess(events.poll())
+                .type(EventType.LOGIN)
+                .hasIpAddress()
+                .clientId(clientId)
+                .userId(userId)
+                .sessionId(accessToken.getSessionState())
+                .details(Details.GRANT_TYPE, OAuth2Constants.PASSWORD)
+                .details(Details.TOKEN_ID, accessToken.getId())
+                .details(Details.REFRESH_TOKEN_ID, refreshToken.getId())
+                .details(Details.USERNAME, login)
+                .withoutDetails(Details.CODE_ID)
+                .withoutDetails(Details.REDIRECT_URI)
+                .withoutDetails(Details.CONSENT);
 
         Assertions.assertTrue(login.equals(accessToken.getPreferredUsername()) || login.equals(accessToken.getEmail()));
 
@@ -436,17 +439,18 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
         AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
         RefreshToken refreshToken = oauth.parseRefreshToken(response.getRefreshToken());
 
-        events.expectLogin()
-                .client("resource-owner")
-                .session(accessToken.getSessionState())
-                .detail(Details.GRANT_TYPE, OAuth2Constants.PASSWORD)
-                .detail(Details.TOKEN_ID, accessToken.getId())
-                .detail(Details.REFRESH_TOKEN_ID, refreshToken.getId())
-                .removeDetail(Details.CODE_ID)
-                .removeDetail(Details.REDIRECT_URI)
-                .removeDetail(Details.CONSENT)
-                .detail(Details.CLIENT_AUTH_METHOD, ClientIdAndSecretAuthenticator.PROVIDER_ID)
-                .assertEvent();
+        EventAssertion.assertSuccess(events.poll())
+                .type(EventType.LOGIN)
+                .hasSessionId()
+                .clientId("resource-owner")
+                .sessionId(accessToken.getSessionState())
+                .details(Details.GRANT_TYPE, OAuth2Constants.PASSWORD)
+                .details(Details.TOKEN_ID, accessToken.getId())
+                .details(Details.REFRESH_TOKEN_ID, refreshToken.getId())
+                .withoutDetails(Details.CODE_ID)
+                .withoutDetails(Details.REDIRECT_URI)
+                .withoutDetails(Details.CONSENT)
+                .details(Details.CLIENT_AUTH_METHOD, ClientIdAndSecretAuthenticator.PROVIDER_ID);
 
         LogoutResponse logoutResponse = oauth.doLogout(response.getRefreshToken());
         assertTrue(logoutResponse.isSuccess());
@@ -474,13 +478,12 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
 
         assertEquals("unauthorized_client", response.getError());
 
-        events.expectLogin()
-                .client("resource-owner")
-                .session((String) null)
-                .clearDetails()
+        EventAssertion.assertError(events.poll())
+                .type(EventType.LOGIN_ERROR)
+                .clientId("resource-owner")
+                .sessionId(null)
                 .error(Errors.INVALID_CLIENT_CREDENTIALS)
-                .user((String) null)
-                .assertEvent();
+                .userId(null);
     }
 
     @Test
@@ -493,13 +496,12 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
 
         assertEquals("unauthorized_client", response.getError());
 
-        events.expectLogin()
-                .client("resource-owner")
-                .session((String) null)
-                .clearDetails()
+        EventAssertion.assertError(events.poll())
+                .type(EventType.LOGIN_ERROR)
+                .clientId("resource-owner")
+                .sessionId(null)
                 .error(Errors.INVALID_CLIENT_CREDENTIALS)
-                .user((String) null)
-                .assertEvent();
+                .userId(null);
     }
 
     @Test
@@ -515,13 +517,12 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
 
         assertEquals(OAuthErrorException.UNAUTHORIZED_CLIENT, response.getError());
 
-        events.expectLogin()
-                .client("resource-owner")
-                .session((String) null)
-                .clearDetails()
+        EventAssertion.assertError(events.poll())
+                .type(EventType.LOGIN_ERROR)
+                .clientId("resource-owner")
+                .sessionId(null)
                 .error(Errors.NOT_ALLOWED)
-                .user((String) null)
-                .assertEvent();
+                .userId(null);
 
         ClientManager.realm(adminClient.realm("test")).clientId("resource-owner").directAccessGrant(true);
 
@@ -543,13 +544,12 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
         assertEquals("invalid_grant", response.getError());
         assertEquals("Account is not fully set up", response.getErrorDescription());
 
-        events.expectLogin()
-                .client("resource-owner")
-                .session((String) null)
-                .clearDetails()
+        EventAssertion.assertError(events.poll())
+                .type(EventType.LOGIN_ERROR)
+                .clientId("resource-owner")
+                .sessionId(null)
                 .error(Errors.RESOLVE_REQUIRED_ACTIONS)
-                .user((String) null)
-                .assertEvent();
+                .userId(null);
 
         RealmManager.realm(realmResource).verifyEmail(false);
         UserManager.realm(realmResource).username("test-user@localhost").removeRequiredAction(UserModel.RequiredAction.VERIFY_EMAIL.toString());
@@ -573,15 +573,15 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
         assertEquals("invalid_grant", response.getError());
         assertEquals("Invalid user credentials", response.getErrorDescription());
 
-        events.expectLogin()
-                .client("resource-owner")
-                .session((String) null)
-                .detail(Details.GRANT_TYPE, OAuth2Constants.PASSWORD)
-                .removeDetail(Details.CODE_ID)
-                .removeDetail(Details.REDIRECT_URI)
-                .removeDetail(Details.CONSENT)
-                .error(Errors.INVALID_USER_CREDENTIALS)
-                .assertEvent();
+        EventAssertion.assertError(events.poll())
+                .type(EventType.LOGIN_ERROR)
+                .clientId("resource-owner")
+                .sessionId(null)
+                .details(Details.GRANT_TYPE, OAuth2Constants.PASSWORD)
+                .withoutDetails(Details.CODE_ID)
+                .withoutDetails(Details.REDIRECT_URI)
+                .withoutDetails(Details.CONSENT)
+                .error(Errors.INVALID_USER_CREDENTIALS);
 
         RealmManager.realm(realmResource).verifyEmail(false);
         UserManager.realm(realmResource).username("test-user@localhost").removeRequiredAction(UserModel.RequiredAction.VERIFY_EMAIL.toString());
@@ -608,13 +608,12 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
 
             setTimeOffset(0);
 
-            events.expectLogin()
-                    .client("resource-owner")
-                    .session((String) null)
-                    .clearDetails()
+            EventAssertion.assertError(events.poll())
+                    .type(EventType.LOGIN_ERROR)
+                    .clientId("resource-owner")
+                    .sessionId(null)
                     .error(Errors.RESOLVE_REQUIRED_ACTIONS)
-                    .user((String) null)
-                    .assertEvent();
+                    .userId(null);
         } finally {
             RealmManager.realm(realmResource).passwordPolicy("");
             UserManager.realm(realmResource).username("test-user@localhost")
@@ -640,15 +639,15 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
             assertEquals("invalid_grant", response.getError());
             assertEquals("Invalid user credentials", response.getErrorDescription());
 
-            events.expectLogin()
-                    .client("resource-owner")
-                    .session((String) null)
-                    .detail(Details.GRANT_TYPE, OAuth2Constants.PASSWORD)
-                    .removeDetail(Details.CODE_ID)
-                    .removeDetail(Details.REDIRECT_URI)
-                    .removeDetail(Details.CONSENT)
-                    .error(Errors.INVALID_USER_CREDENTIALS)
-                    .assertEvent();
+            EventAssertion.assertError(events.poll())
+                    .type(EventType.LOGIN_ERROR)
+                    .clientId("resource-owner")
+                    .sessionId(null)
+                    .details(Details.GRANT_TYPE, OAuth2Constants.PASSWORD)
+                    .withoutDetails(Details.CODE_ID)
+                    .withoutDetails(Details.REDIRECT_URI)
+                    .withoutDetails(Details.CONSENT)
+                    .error(Errors.INVALID_USER_CREDENTIALS);
         } finally {
             RealmManager.realm(realmResource).passwordPolicy("");
             UserManager.realm(realmResource).username("test-user@localhost")
@@ -699,15 +698,15 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
         assertEquals("invalid_grant", response.getError());
         assertEquals("Invalid user credentials", response.getErrorDescription());
 
-        events.expectLogin()
-                .client("resource-owner")
-                .session((String) null)
-                .detail(Details.GRANT_TYPE, OAuth2Constants.PASSWORD)
-                .removeDetail(Details.CODE_ID)
-                .removeDetail(Details.REDIRECT_URI)
-                .removeDetail(Details.CONSENT)
-                .error(Errors.INVALID_USER_CREDENTIALS)
-                .assertEvent();
+        EventAssertion.assertError(events.poll())
+                .type(EventType.LOGIN_ERROR)
+                .clientId("resource-owner")
+                .sessionId(null)
+                .details(Details.GRANT_TYPE, OAuth2Constants.PASSWORD)
+                .withoutDetails(Details.CODE_ID)
+                .withoutDetails(Details.REDIRECT_URI)
+                .withoutDetails(Details.CONSENT)
+                .error(Errors.INVALID_USER_CREDENTIALS);
     }
 
     @Test
@@ -720,17 +719,17 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
 
         assertEquals("invalid_grant", response.getError());
 
-        events.expectLogin()
-                .client("resource-owner")
-                .user((String) null)
-                .session((String) null)
-                .detail(Details.GRANT_TYPE, OAuth2Constants.PASSWORD)
-                .detail(Details.USERNAME, "invalid")
-                .removeDetail(Details.CODE_ID)
-                .removeDetail(Details.REDIRECT_URI)
-                .removeDetail(Details.CONSENT)
-                .error(Errors.USER_NOT_FOUND)
-                .assertEvent();
+        EventAssertion.assertError(events.poll())
+                .type(EventType.LOGIN_ERROR)
+                .clientId("resource-owner")
+                .userId(null)
+                .sessionId(null)
+                .details(Details.GRANT_TYPE, OAuth2Constants.PASSWORD)
+                .details(Details.USERNAME, "invalid")
+                .withoutDetails(Details.CODE_ID)
+                .withoutDetails(Details.REDIRECT_URI)
+                .withoutDetails(Details.CONSENT)
+                .error(Errors.USER_NOT_FOUND);
     }
 
     @Test
@@ -789,17 +788,17 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
         assertEquals("invalid_grant", response.getError());
         assertEquals("Invalid user credentials", response.getErrorDescription());
 
-        events.expectLogin()
-                .client("resource-owner-refresh")
-                .session((String) null)
-                .user((String) null)
-                .detail(Details.GRANT_TYPE, OAuth2Constants.PASSWORD)
-                .detail(Details.REASON, "User is a service account")
-                .removeDetail(Details.CODE_ID)
-                .removeDetail(Details.REDIRECT_URI)
-                .removeDetail(Details.CONSENT)
-                .error(Errors.INVALID_USER)
-                .assertEvent();
+        EventAssertion.assertError(events.poll())
+                .type(EventType.LOGIN_ERROR)
+                .clientId("resource-owner-refresh")
+                .sessionId(null)
+                .userId(null)
+                .details(Details.GRANT_TYPE, OAuth2Constants.PASSWORD)
+                .details(Details.REASON, "User is a service account")
+                .withoutDetails(Details.CODE_ID)
+                .withoutDetails(Details.REDIRECT_URI)
+                .withoutDetails(Details.CONSENT)
+                .error(Errors.INVALID_USER);
 
         ClientManager.realm(adminClient.realm("test")).clientId("resource-owner").setServiceAccountsEnabled(false);
     }

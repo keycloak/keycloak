@@ -35,6 +35,7 @@ import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AssertEvents;
@@ -128,7 +129,7 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
         assertKcActionStatus(SUCCESS);
 
         assertEquals(authSessionId1, authSessionId2);
-        events.expectLogin().user(userId).session(authSessionId2).detail(Details.USERNAME, "setuptotp").assertEvent();
+        EventAssertion.expectLoginSuccess(events.poll()).sessionId(authSessionId2).userId(userId).details(Details.USERNAME, "setuptotp");
     }
 
     @Test
@@ -396,7 +397,7 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
         assertKcActionStatus(SUCCESS);
 
         assertEquals(authSessionId1, authSessionId2);
-        EventRepresentation loginEvent = events.expectLogin().session(authSessionId2).assertEvent();
+        EventRepresentation loginEvent = EventAssertion.expectLoginSuccess(events.poll()).sessionId(authSessionId2).getEvent();
 
         AccessTokenResponse tokenResponse = sendTokenRequestAndGetResponse(loginEvent);
         oauth.logoutForm().idTokenHint(tokenResponse.getIdToken()).withRedirect().open();
@@ -410,7 +411,7 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
 
         loginTotpPage.login(totp.generateTOTP(totpSecret));
 
-        events.expectLogin().assertEvent();
+        EventAssertion.expectLoginSuccess(events.poll());
     }
 
     @Test
@@ -444,7 +445,7 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
                 .detail(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE)
                 .detail(Details.USERNAME, "setuptotp2").assertEvent();
 
-        EventRepresentation loginEvent = events.expectLogin().user(userId).detail(Details.USERNAME, "setuptotp2").assertEvent();
+        EventRepresentation loginEvent = EventAssertion.expectLoginSuccess(events.poll()).userId(userId).details(Details.USERNAME, "setuptotp2").getEvent();
 
         // Logout
         AccessTokenResponse tokenResponse = sendTokenRequestAndGetResponse(loginEvent);
@@ -465,7 +466,7 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
 
         // Login with one-time password
         loginTotpPage.login(totp.generateTOTP(totpCode));
-        events.expectLogin().user(userId).detail(Details.USERNAME, "setupTotp2").assertEvent();
+        EventAssertion.expectLoginSuccess(events.poll()).userId(userId).details(Details.USERNAME, "setupTotp2");
 
         // Remove google authenticator
         Assertions.assertTrue(AccountHelper.deleteTotpAuthentication(managedRealm.admin(),"setupTotp2"));
@@ -511,7 +512,7 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
         assertKcActionStatus(SUCCESS);
 
         assertEquals(sessionId1, sessionId2);
-        EventRepresentation loginEvent = events.expectLogin().session(sessionId2).assertEvent();
+        EventRepresentation loginEvent = EventAssertion.expectLoginSuccess(events.poll()).sessionId(sessionId2).getEvent();
 
         AccessTokenResponse tokenResponse = sendTokenRequestAndGetResponse(loginEvent);
         oauth.logoutForm().idTokenHint(tokenResponse.getIdToken()).withRedirect().open();
@@ -529,7 +530,7 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
 
         assertKcActionStatus(null);
 
-        events.expectLogin().assertEvent();
+        EventAssertion.expectLoginSuccess(events.poll());
 
         // Revert
         realmRep = adminClient.realm("test").toRepresentation();
@@ -570,7 +571,7 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
 
         //RequestType reqType = appPage.getRequestType();
         assertKcActionStatus(SUCCESS);
-        EventRepresentation loginEvent = events.expectLogin().session(sessionId1).assertEvent();
+        EventRepresentation loginEvent = EventAssertion.expectLoginSuccess(events.poll()).sessionId(sessionId1).getEvent();
 
         AccessTokenResponse tokenResponse = sendTokenRequestAndGetResponse(loginEvent);
         oauth.logoutForm().idTokenHint(tokenResponse.getIdToken()).withRedirect().open();
@@ -584,7 +585,7 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
 
         assertKcActionStatus(null);
 
-        loginEvent = events.expectLogin().assertEvent();
+        loginEvent = EventAssertion.expectLoginSuccess(events.poll()).getEvent();
 
         tokenResponse = sendTokenRequestAndGetResponse(loginEvent);
         oauth.logoutForm().idTokenHint(tokenResponse.getIdToken()).withRedirect().open();
@@ -610,7 +611,7 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
 
         assertKcActionStatus(null);
 
-        events.expectLogin().assertEvent();
+        EventAssertion.expectLoginSuccess(events.poll());
 
         // Revert
         realmRep = adminClient.realm("test").toRepresentation();

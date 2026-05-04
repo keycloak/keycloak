@@ -43,6 +43,7 @@ import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.forms.LevelOfAssuranceFlowTest;
 import org.keycloak.testsuite.pages.LoginPage;
@@ -515,9 +516,8 @@ public class AuthenticationMethodReferenceTest extends AbstractOIDCScopeTest{
      * @return The tokens from a successful login
      */
     private Tokens assertLogin(String userId){
-        EventRepresentation loginEvent = events.expectLogin()
-                .user(userId)
-                .assertEvent();
+        EventRepresentation loginEvent = EventAssertion.expectLoginSuccess(events.poll())
+                .userId(userId).getEvent();
 
         return sendTokenRequest(loginEvent, userId, "openid", CLIENT_ID);
     }

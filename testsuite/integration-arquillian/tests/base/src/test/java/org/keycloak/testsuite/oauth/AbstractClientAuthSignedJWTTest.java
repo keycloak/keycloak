@@ -90,6 +90,7 @@ import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.util.CertificateInfoHelper;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.UserBuilder;
@@ -357,9 +358,8 @@ public abstract class AbstractClientAuthSignedJWTTest extends AbstractKeycloakTe
         // test
         oauth.realm("test").client(clientId);
         oauth.doLogin("test-user@localhost", "password");
-        EventRepresentation loginEvent = events.expectLogin()
-                .client(clientId)
-                .assertEvent();
+        EventRepresentation loginEvent = EventAssertion.expectLoginSuccess(events.poll())
+                .clientId(clientId).getEvent();
 
         String code = oauth.parseLoginResponse().getCode();
         AccessTokenResponse response = doAccessTokenRequest(code,
@@ -392,18 +392,18 @@ public abstract class AbstractClientAuthSignedJWTTest extends AbstractKeycloakTe
             AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
             RefreshToken refreshToken = oauth.parseRefreshToken(response.getRefreshToken());
 
-            events.expectLogin()
-                    .client("client2")
-                    .session(accessToken.getSessionState())
-                    .detail(Details.GRANT_TYPE, OAuth2Constants.PASSWORD)
-                    .detail(Details.TOKEN_ID, accessToken.getId())
-                    .detail(Details.REFRESH_TOKEN_ID, refreshToken.getId())
-                    .detail(Details.USERNAME, "test-user@localhost")
-                    .detail(Details.CLIENT_AUTH_METHOD, JWTClientAuthenticator.PROVIDER_ID)
-                    .removeDetail(Details.CODE_ID)
-                    .removeDetail(Details.REDIRECT_URI)
-                    .removeDetail(Details.CONSENT)
-                    .assertEvent();
+            EventAssertion.assertSuccess(events.poll())
+                    .type(EventType.LOGIN)
+                    .clientId("client2")
+                    .sessionId(accessToken.getSessionState())
+                    .details(Details.GRANT_TYPE, OAuth2Constants.PASSWORD)
+                    .details(Details.TOKEN_ID, accessToken.getId())
+                    .details(Details.REFRESH_TOKEN_ID, refreshToken.getId())
+                    .details(Details.USERNAME, "test-user@localhost")
+                    .details(Details.CLIENT_AUTH_METHOD, JWTClientAuthenticator.PROVIDER_ID)
+                    .withoutDetails(Details.CODE_ID)
+                    .withoutDetails(Details.REDIRECT_URI)
+                    .withoutDetails(Details.CONSENT);
         } finally {
             // Revert jwks_url settings
             revertJwksUriSettings(clientRepresentation, clientResource);
@@ -482,18 +482,18 @@ public abstract class AbstractClientAuthSignedJWTTest extends AbstractKeycloakTe
         AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
         RefreshToken refreshToken = oauth.parseRefreshToken(response.getRefreshToken());
 
-        events.expectLogin()
-                .client(client.getClientId())
-                .session(accessToken.getSessionState())
-                .detail(Details.GRANT_TYPE, OAuth2Constants.PASSWORD)
-                .detail(Details.TOKEN_ID, accessToken.getId())
-                .detail(Details.REFRESH_TOKEN_ID, refreshToken.getId())
-                .detail(Details.USERNAME, user.getUsername())
-                .detail(Details.CLIENT_AUTH_METHOD, JWTClientAuthenticator.PROVIDER_ID)
-                .removeDetail(Details.CODE_ID)
-                .removeDetail(Details.REDIRECT_URI)
-                .removeDetail(Details.CONSENT)
-                .assertEvent();
+        EventAssertion.assertSuccess(events.poll())
+                .type(EventType.LOGIN)
+                .clientId(client.getClientId())
+                .sessionId(accessToken.getSessionState())
+                .details(Details.GRANT_TYPE, OAuth2Constants.PASSWORD)
+                .details(Details.TOKEN_ID, accessToken.getId())
+                .details(Details.REFRESH_TOKEN_ID, refreshToken.getId())
+                .details(Details.USERNAME, user.getUsername())
+                .details(Details.CLIENT_AUTH_METHOD, JWTClientAuthenticator.PROVIDER_ID)
+                .withoutDetails(Details.CODE_ID)
+                .withoutDetails(Details.REDIRECT_URI)
+                .withoutDetails(Details.CONSENT);
     }
 
 
@@ -682,9 +682,8 @@ public abstract class AbstractClientAuthSignedJWTTest extends AbstractKeycloakTe
             // test
             oauth.client("client2");
             oauth.doLogin("test-user@localhost", "password");
-            EventRepresentation loginEvent = events.expectLogin()
-                    .client("client2")
-                    .assertEvent();
+            EventAssertion.expectLoginSuccess(events.poll())
+                    .clientId("client2");
 
             String code = oauth.parseLoginResponse().getCode();
             AccessTokenResponse response = doAccessTokenRequest(code, getClient2SignedJWT());

@@ -23,6 +23,7 @@ import java.util.List;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testframework.realm.ClientScopeBuilder;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
@@ -696,7 +697,7 @@ public class RegisterWithUserProfileTest extends AbstractTestRealmKeycloakTest {
     }
 
     private void assertUserRegistered(String userId, String username, String email, String firstName, String lastName) {
-        events.expectLogin().detail("username", username.toLowerCase()).user(userId).assertEvent();
+        EventAssertion.expectLoginSuccess(events.poll()).details("username", username.toLowerCase()).userId(userId);
 
         UserRepresentation user = getUser(userId);
         Assertions.assertNotNull(user);

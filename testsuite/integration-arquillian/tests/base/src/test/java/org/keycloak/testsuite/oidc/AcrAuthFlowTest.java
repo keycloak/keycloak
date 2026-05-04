@@ -47,6 +47,7 @@ import org.keycloak.services.clientpolicy.condition.AcrCondition;
 import org.keycloak.services.clientpolicy.condition.AcrConditionFactory;
 import org.keycloak.services.clientpolicy.executor.AuthenticationFlowSelectorExecutor;
 import org.keycloak.services.clientpolicy.executor.AuthenticationFlowSelectorExecutorFactory;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginTotpPage;
@@ -479,9 +480,8 @@ public class AcrAuthFlowTest extends AbstractOIDCScopeTest{
      * @return The tokens from a successful login
      */
     private Tokens assertLoginWithAcr(String userId, String expectedAcr){
-        EventRepresentation loginEvent = events.expectLogin()
-                .user(userId)
-                .assertEvent();
+        EventRepresentation loginEvent = EventAssertion.expectLoginSuccess(events.poll())
+                .userId(userId).getEvent();
 
         Tokens tokens = sendTokenRequest(loginEvent, userId, "openid", CLIENT_ID);
         assertAcr(tokens.idToken, expectedAcr);

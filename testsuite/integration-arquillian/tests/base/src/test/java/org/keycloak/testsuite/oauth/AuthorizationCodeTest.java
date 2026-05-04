@@ -36,6 +36,7 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.utils.OIDCResponseMode;
 import org.keycloak.representations.AuthorizationResponseToken;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.pages.ErrorPage;
@@ -99,7 +100,7 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
         Assertions.assertNull(response.getError());
         assertEquals(oauth.AUTH_SERVER_ROOT + "/realms/test", response.getIssuer());
 
-        String codeId = events.expectLogin().assertEvent().getDetails().get(Details.CODE_ID);
+        EventAssertion.expectLoginSuccess(events.poll());
     }
 
     @Test
@@ -111,7 +112,7 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
 
         installedAppPage.getSuccessCode();
 
-        events.expectLogin().detail(Details.REDIRECT_URI, oauth.AUTH_SERVER_ROOT + "/realms/test/protocol/openid-connect/oauth/oob").assertEvent().getDetails().get(Details.CODE_ID);
+        EventAssertion.expectLoginSuccess(events.poll()).details(Details.REDIRECT_URI, oauth.AUTH_SERVER_ROOT + "/realms/test/protocol/openid-connect/oauth/oob");
 
         ClientManager.realm(adminClient.realm("test")).clientId("test-app").removeRedirectUris(Constants.INSTALLED_APP_URN);
     }
@@ -142,7 +143,7 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
         assertTrue(response.isRedirected());
         Assertions.assertNotNull(response.getCode());
 
-        String codeId = events.expectLogin().assertEvent().getDetails().get(Details.CODE_ID);
+        EventAssertion.expectLoginSuccess(events.poll());
     }
 
     @Test
@@ -183,7 +184,7 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
         Assertions.assertNull(response.getError());
         assertEquals(oauth.AUTH_SERVER_ROOT + "/realms/test", response.getIssuer());
 
-        String codeId = events.expectLogin().assertEvent().getDetails().get(Details.CODE_ID);
+        EventAssertion.expectLoginSuccess(events.poll());
     }
 
     @Test
@@ -196,7 +197,7 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
         Assertions.assertEquals(errorResponse.getError(), OAuthErrorException.UNSUPPORTED_RESPONSE_TYPE);
         Assertions.assertEquals(oauth.AUTH_SERVER_ROOT + "/realms/test", errorResponse.getIssuer());
 
-        events.expectLogin().error(Errors.INVALID_REQUEST).user((String) null).session((String) null).clearDetails().detail(Details.RESPONSE_TYPE, "tokenn").assertEvent();
+        EventAssertion.assertError(events.poll()).type(EventType.LOGIN_ERROR).error(Errors.INVALID_REQUEST).userId(null).sessionId(null).details(Details.RESPONSE_TYPE, "tokenn");
     }
 
     // Issue 29866
@@ -257,7 +258,7 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
 
         assertEquals("OpenIdConnect.AuthenticationProperties=2302984sdlk", state);
 
-        String codeId = events.expectLogin().assertEvent().getDetails().get(Details.CODE_ID);
+        EventAssertion.expectLoginSuccess(events.poll());
     }
 
     @Test
@@ -273,7 +274,7 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
             errorPage.assertCurrent();
             assertEquals("Invalid parameter: redirect_uri", errorPage.getError());
 
-            events.expectLogin().error(Errors.INVALID_REDIRECT_URI).user((String) null).session((String) null).clearDetails().assertEvent();
+            EventAssertion.assertError(events.poll()).type(EventType.LOGIN_ERROR).error(Errors.INVALID_REDIRECT_URI).userId(null).sessionId(null);
         }
     }
 
@@ -355,7 +356,7 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
 
         assertEquals("\"><foo>bar_baz(2)far</foo>", state);
 
-        String codeId = events.expectLogin().assertEvent().getDetails().get(Details.CODE_ID);
+        EventAssertion.expectLoginSuccess(events.poll());
     }
 
 
@@ -399,7 +400,7 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
         assertEquals("invalid_request", response.getError());
         assertEquals("duplicated parameter", response.getErrorDescription());
 
-        events.expectLogin().error(Errors.INVALID_REQUEST).user((String) null).session((String) null).clearDetails().assertEvent();
+        EventAssertion.assertError(events.poll()).type(EventType.LOGIN_ERROR).error(Errors.INVALID_REQUEST).userId(null).sessionId(null);
     }
 
     @Test
@@ -415,7 +416,7 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
         assertTrue(errorPage.isCurrent());
         assertEquals("Invalid Request", errorPage.getError());
 
-        events.expectLogin().error(Errors.INVALID_REQUEST).user((String) null).session((String) null).client((String) null).clearDetails().assertEvent();
+        EventAssertion.assertError(events.poll()).type(EventType.LOGIN_ERROR).error(Errors.INVALID_REQUEST).userId(null).sessionId(null).clientId(null);
     }
 
 }

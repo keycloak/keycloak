@@ -30,6 +30,7 @@ import org.keycloak.representations.idm.AuthenticationExecutionRepresentation;
 import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testframework.realm.AuthenticationExecutionBuilder;
 import org.keycloak.testframework.realm.AuthenticationFlowBuilder;
 import org.keycloak.testframework.realm.RealmBuilder;
@@ -165,7 +166,7 @@ public class ScriptAuthenticatorTest extends AbstractFlowTest {
 
         loginPage.login("user", getPassword("user"));
 
-        events.expectLogin().user(userId).detail(Details.USERNAME, "user").assertEvent();
+        EventAssertion.expectLoginSuccess(events.poll()).userId(userId).details(Details.USERNAME, "user");
     }
 
     /**
@@ -200,6 +201,6 @@ public class ScriptAuthenticatorTest extends AbstractFlowTest {
 
         loginPage.login("user", getPassword("user"));
 
-        events.expectLogin().user(userId).detail(Details.USERNAME, "user").assertEvent();
+        EventAssertion.expectLoginSuccess(events.poll()).userId(userId).details(Details.USERNAME, "user");
     }
 }

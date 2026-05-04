@@ -45,6 +45,7 @@ import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testframework.realm.RoleBuilder;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.Assert;
@@ -182,9 +183,8 @@ public class OIDCScopeTest extends AbstractOIDCScopeTest {
     public void testBuiltinOptionalScopes() throws Exception {
         // Login. Assert that just 'profile' and 'email' data are there. 'Address' and 'phone' not
         oauth.doLogin("john", "password");
-        EventRepresentation loginEvent = events.expectLogin()
-                .user(userId)
-                .assertEvent();
+        EventRepresentation loginEvent = events.poll();
+        EventAssertion.expectLoginSuccess(loginEvent).userId(userId);
 
         Tokens tokens = sendTokenRequest(loginEvent, userId, "openid email profile", "test-app");
         IDToken idToken = tokens.idToken;
@@ -207,9 +207,8 @@ public class OIDCScopeTest extends AbstractOIDCScopeTest {
         // Login with optional scopes. Assert that everything is there
         oauth.scope("openid address phone microprofile-jwt");
         oauth.doLogin("john", "password");
-        loginEvent = events.expectLogin()
-                .user(userId)
-                .assertEvent();
+        loginEvent = events.poll();
+        EventAssertion.expectLoginSuccess(loginEvent).userId(userId);
         tokens = sendTokenRequest(loginEvent, userId,"openid email profile address phone microprofile-jwt", "test-app");
         idToken = tokens.idToken;
 
@@ -299,9 +298,8 @@ public class OIDCScopeTest extends AbstractOIDCScopeTest {
 
         // Login without scope parameter. Assert 'profile' and 'email' info not there
         oauth.doLogin("john", "password");
-        EventRepresentation loginEvent = events.expectLogin()
-                .user(userId)
-                .assertEvent();
+        EventRepresentation loginEvent = events.poll();
+        EventAssertion.expectLoginSuccess(loginEvent).userId(userId);
 
         Tokens tokens = sendTokenRequest(loginEvent, userId,"openid", "test-app");
         IDToken idToken = tokens.idToken;
@@ -321,9 +319,8 @@ public class OIDCScopeTest extends AbstractOIDCScopeTest {
         // Login with scope parameter. Just 'profile' is there
         oauth.scope("openid profile");
         oauth.doLogin("john", "password");
-        loginEvent = events.expectLogin()
-                .user(userId)
-                .assertEvent();
+        loginEvent = events.poll();
+        EventAssertion.expectLoginSuccess(loginEvent).userId(userId);
         tokens = sendTokenRequest(loginEvent, userId,"openid profile", "test-app");
         idToken = tokens.idToken;
 
@@ -354,11 +351,12 @@ public class OIDCScopeTest extends AbstractOIDCScopeTest {
         grantPage.assertGrants(OAuthGrantPage.PROFILE_CONSENT_TEXT, OAuthGrantPage.EMAIL_CONSENT_TEXT, OAuthGrantPage.ROLES_CONSENT_TEXT);
         grantPage.accept();
 
-        EventRepresentation loginEvent = events.expectLogin()
-                .user(userId)
-                .client("third-party")
-                .detail(Details.CONSENT, Details.CONSENT_VALUE_CONSENT_GRANTED)
-                .assertEvent();
+        EventRepresentation loginEvent = events.poll();
+        EventAssertion.expectLoginSuccess(loginEvent)
+                .userId(userId)
+                .clientId("third-party")
+                .details(Details.REDIRECT_URI, oauth.getRedirectUri())
+                .details(Details.CONSENT, Details.CONSENT_VALUE_CONSENT_GRANTED);
 
         Tokens tokens = sendTokenRequest(loginEvent, userId,"openid email profile", "third-party");
         IDToken idToken = tokens.idToken;
@@ -383,11 +381,12 @@ public class OIDCScopeTest extends AbstractOIDCScopeTest {
         grantPage.assertGrants(OAuthGrantPage.PHONE_CONSENT_TEXT);
         grantPage.accept();
 
-        loginEvent = events.expectLogin()
-                .client("third-party")
-                .detail(Details.CONSENT, Details.CONSENT_VALUE_CONSENT_GRANTED)
-                .user(userId)
-                .assertEvent();
+        loginEvent = events.poll();
+        EventAssertion.expectLoginSuccess(loginEvent)
+            .userId(userId)
+            .clientId("third-party")
+            .details(Details.REDIRECT_URI, oauth.getRedirectUri())
+            .details(Details.CONSENT, Details.CONSENT_VALUE_CONSENT_GRANTED);
         tokens = sendTokenRequest(loginEvent, userId,"openid email profile address phone", "third-party");
         idToken = tokens.idToken;
 
@@ -419,11 +418,12 @@ public class OIDCScopeTest extends AbstractOIDCScopeTest {
         grantPage.assertGrants(OAuthGrantPage.PROFILE_CONSENT_TEXT, OAuthGrantPage.EMAIL_CONSENT_TEXT, OAuthGrantPage.ROLES_CONSENT_TEXT, "ThirdParty permissions");
         grantPage.accept();
 
-        EventRepresentation loginEvent = events.expectLogin()
-                .user(userId)
-                .client("third-party")
-                .detail(Details.CONSENT, Details.CONSENT_VALUE_CONSENT_GRANTED)
-                .assertEvent();
+        EventRepresentation loginEvent = events.poll();
+        EventAssertion.expectLoginSuccess(loginEvent)
+                .userId(userId)
+                .clientId("third-party")
+                .details(Details.REDIRECT_URI, oauth.getRedirectUri())
+                .details(Details.CONSENT, Details.CONSENT_VALUE_CONSENT_GRANTED);
 
         Tokens tokens = sendTokenRequest(loginEvent, userId,"openid email profile", "third-party");
         IDToken idToken = tokens.idToken;
@@ -482,11 +482,12 @@ public class OIDCScopeTest extends AbstractOIDCScopeTest {
         grantPage.assertGrants(OAuthGrantPage.PROFILE_CONSENT_TEXT, OAuthGrantPage.EMAIL_CONSENT_TEXT, OAuthGrantPage.ROLES_CONSENT_TEXT);
         grantPage.accept();
 
-        EventRepresentation loginEvent = events.expectLogin()
-                .user(userId)
-                .client("third-party")
-                .detail(Details.CONSENT, Details.CONSENT_VALUE_CONSENT_GRANTED)
-                .assertEvent();
+        EventRepresentation loginEvent = events.poll();
+        EventAssertion.expectLoginSuccess(loginEvent)
+                .userId(userId)
+                .clientId("third-party")
+                .details(Details.REDIRECT_URI, oauth.getRedirectUri())
+                .details(Details.CONSENT, Details.CONSENT_VALUE_CONSENT_GRANTED);
 
         Tokens tokens = sendTokenRequest(loginEvent, userId,"openid email profile", "third-party");
         IDToken idToken = tokens.idToken;
@@ -568,9 +569,9 @@ public class OIDCScopeTest extends AbstractOIDCScopeTest {
         // Login with scope-role-1. Save refresh token
         oauth.scope("scope-role-1");
         oauth.doLogin("john", "password");
-        EventRepresentation loginEvent = events.expectLogin()
-                .user(userId)
-                .assertEvent();
+        EventRepresentation loginEvent = events.poll();
+        EventAssertion.expectLoginSuccess(loginEvent)
+                .userId(userId);
 
         Tokens tokens1 = sendTokenRequest(loginEvent, userId,"openid email profile scope-role-1", "test-app");
         Assertions.assertTrue(tokens1.accessToken.getRealmAccess().isUserInRole("role-1"));
@@ -579,7 +580,8 @@ public class OIDCScopeTest extends AbstractOIDCScopeTest {
         //SSO login with scope-role-2. Save refresh token
         oauth.scope("scope-role-2");
         oauth.openLoginForm();
-        loginEvent = events.expectLogin().user(userId).removeDetail(Details.USERNAME).client("test-app").assertEvent();
+        loginEvent = events.poll();
+        EventAssertion.expectLoginSuccess(loginEvent).userId(userId).clientId("test-app");
         Tokens tokens2 = sendTokenRequest(loginEvent, userId,"openid email profile scope-role-2", "test-app");
         Assertions.assertFalse(tokens2.accessToken.getRealmAccess().isUserInRole("role-1"));
         Assertions.assertTrue(tokens2.accessToken.getRealmAccess().isUserInRole("role-2"));
@@ -692,9 +694,8 @@ public class OIDCScopeTest extends AbstractOIDCScopeTest {
 
         oauth.openLoginForm();
         oauth.doLogin(username, "password");
-        EventRepresentation loginEvent = events.expectLogin()
-                .user(userId)
-                .assertEvent();
+        EventRepresentation loginEvent = events.poll();
+        EventAssertion.expectLoginSuccess(loginEvent).userId(userId);
 
         Tokens tokens = sendTokenRequest(loginEvent, userId,"openid email profile " + expectedRoleScopes, "test-app");
         Assert.assertNames(tokens.accessToken.getRealmAccess().getRoles(), expectedRoles);
