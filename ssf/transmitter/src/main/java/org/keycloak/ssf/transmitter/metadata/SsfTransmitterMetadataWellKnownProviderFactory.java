@@ -12,7 +12,8 @@ import org.keycloak.wellknown.WellKnownProviderFactory;
 /**
  * Factory implementation for creating instances of {@code SsfTransmitterMetadataWellKnownProvider}.
  * This factory integrates with Keycloak's Well-Known Provider infrastructure and is enabled only
- * when the SSF feature is activated within the system configuration profile.
+ * when the SSF feature is activated within the system configuration profile and the SSF Transmitter
+ * feature is enabled for the current realm.
  */
 public class SsfTransmitterMetadataWellKnownProviderFactory implements WellKnownProviderFactory, EnvironmentDependentProviderFactory {
 
@@ -20,10 +21,14 @@ public class SsfTransmitterMetadataWellKnownProviderFactory implements WellKnown
 
     @Override
     public WellKnownProvider create(KeycloakSession session) {
-        if (!Ssf.isTransmitterEnabled(session.getContext().getRealm())) {
+        if (!isEnabledForRealm(session)) {
             return null;
         }
         return new SsfTransmitterMetadataWellKnownProvider(session);
+    }
+
+    protected boolean isEnabledForRealm(KeycloakSession session) {
+        return Ssf.isTransmitterEnabled(session.getContext().getRealm());
     }
 
     @Override
