@@ -43,12 +43,15 @@ public class PushDeliveryService {
      *
      * @param stream       The stream configuration
      * @param encodedEvent The event to deliver
-     * @return true if the event was delivered successfully, false otherwise
+     * @return outcome of the attempt: {@code delivered=true} on 2xx;
+     *         {@code httpFailure} carrying status + response body on
+     *         non-2xx; {@code transportFailure} carrying the exception
+     *         class + message on connection-level failures.
      */
-    public boolean deliverEvent(StreamConfig stream, SecurityEventToken eventToken, String encodedEvent) {
+    public PushDeliveryOutcome deliverEvent(StreamConfig stream, SecurityEventToken eventToken, String encodedEvent) {
         if (stream == null || stream.getDelivery() == null) {
             log.warn("Invalid stream configuration for event delivery");
-            return false;
+            return PushDeliveryOutcome.invalidConfig("stream or delivery section is null");
         }
 
         String endpointUrl = stream.getDelivery().getEndpointUrl();
@@ -56,7 +59,7 @@ public class PushDeliveryService {
 
         if (endpointUrl == null) {
             log.warn("Missing endpoint URL for stream " + stream.getStreamId());
-            return false;
+            return PushDeliveryOutcome.invalidConfig("missing endpoint URL");
         }
 
         return deliverEvent(endpointUrl, authorizationHeader, eventToken, encodedEvent, stream);
@@ -70,9 +73,9 @@ public class PushDeliveryService {
      * @param eventToken          The event token
      * @param encodedEventToken   The encoded event to deliver
      * @param stream
-     * @return true if the event was delivered successfully, false otherwise
+     * @return structured outcome — see {@link PushDeliveryOutcome}.
      */
-    protected boolean deliverEvent(String endpointUrl, String authorizationHeader, SecurityEventToken eventToken, String encodedEventToken, StreamConfig stream) {
+    protected PushDeliveryOutcome deliverEvent(String endpointUrl, String authorizationHeader, SecurityEventToken eventToken, String encodedEventToken, StreamConfig stream) {
         try {
 
             if (log.isTraceEnabled()) {
@@ -96,7 +99,10 @@ public class PushDeliveryService {
                     String responseString = response.asString();
                     log.warnf("Failed to deliver event jti=%s to url %s. Got status=%s response='%s'",
                             eventToken.getJti(), endpointUrl, status, responseString);
-                } else if (status != Response.Status.OK.getStatusCode()
+                    return PushDeliveryOutcome.httpFailure(status, responseString, endpointUrl);
+                }
+
+                if (status != Response.Status.OK.getStatusCode()
                         && status != Response.Status.ACCEPTED.getStatusCode()) {
                     // 2xx but not the canonical 200/202 — log at INFO so an
                     // operator sees the receiver's exact status without it
@@ -108,11 +114,11 @@ public class PushDeliveryService {
                             eventToken.getJti(), endpointUrl, status, eventToken.getEvents());
                 }
 
-                return success;
+                return PushDeliveryOutcome.delivered(status, endpointUrl);
             }
         } catch (Exception e) {
             log.errorf(e, "Error delivering event jti=%s to url %s", eventToken.getJti(), endpointUrl);
-            return false;
+            return PushDeliveryOutcome.transportFailure(e, endpointUrl);
         }
     }
 

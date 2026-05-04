@@ -23,7 +23,7 @@ import org.keycloak.models.jpa.entities.OutboxEntryEntity;
  * Per-kind plug-in that knows how to actually deliver an
  * {@link OutboxEntryEntity}'s payload to its destination. The drainer
  * is generic — for each due row it calls {@link #deliver(KeycloakSession, OutboxEntryEntity)}
- * and transitions the row based on the returned outcome.
+ * and transitions the row based on the returned {@link OutboxDeliveryResult}.
  *
  * <p>One handler per registered {@code entryKind}; the drainer locates
  * a handler by the row's {@code entryKind} value. Implementations are
@@ -33,7 +33,7 @@ import org.keycloak.models.jpa.entities.OutboxEntryEntity;
  * <p>Synchronous by design — the handler returns when delivery has
  * either succeeded, failed retryably, or failed terminally. Long-poll
  * or fire-and-forget delivery semantics should be modelled by
- * returning {@link OutboxDeliveryOutcome#DELIVERED} as soon as the
+ * returning {@link OutboxDeliveryResult#delivered()} as soon as the
  * payload has been handed off (e.g. enqueued in an external broker).
  */
 public interface OutboxDeliveryHandler {
@@ -56,7 +56,14 @@ public interface OutboxDeliveryHandler {
      * <p>Implementations may throw {@link RuntimeException}; the
      * drainer treats an uncaught exception as
      * {@link OutboxDeliveryOutcome#RETRY} and records the exception
-     * message in {@code last_error}.
+     * class + message in {@code last_error}.
+     *
+     * <p>The returned {@link OutboxDeliveryResult}'s
+     * {@code errorMessage} (if any) is persisted into the row's
+     * {@code last_error} column. Handlers should pack as much
+     * diagnostic detail (HTTP status, response body excerpt, exception
+     * class) into that single string as fits the column
+     * ({@code VARCHAR(2048)}).
      */
-    OutboxDeliveryOutcome deliver(KeycloakSession session, OutboxEntryEntity row);
+    OutboxDeliveryResult deliver(KeycloakSession session, OutboxEntryEntity row);
 }

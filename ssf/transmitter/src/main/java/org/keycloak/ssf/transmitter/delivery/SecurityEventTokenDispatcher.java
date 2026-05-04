@@ -400,7 +400,7 @@ public class SecurityEventTokenDispatcher {
                         deliverEventAsync(stream, eventToken, encodedEvent);
                         return true;
                     }
-                    return pushDeliveryService.deliverEvent(stream, narrowedEventToken, encodedEvent);
+                    return pushDeliveryService.deliverEvent(stream, narrowedEventToken, encodedEvent).delivered();
                 } catch (Exception e) {
                     log.errorf(e, "Error delivering event via PUSH to stream. clientId=%s streamId=%s"
                             ,stream.getClientClientId(), stream.getStreamId());
