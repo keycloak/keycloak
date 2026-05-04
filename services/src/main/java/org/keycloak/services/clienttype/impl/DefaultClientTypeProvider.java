@@ -58,7 +58,6 @@ public class DefaultClientTypeProvider implements ClientTypeProvider {
             }
         }
 
-        // TODO:client-types retype configuration
         return clientType;
     }
 }

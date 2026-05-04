@@ -139,7 +139,20 @@ public class DefaultClientTypeManager implements ClientTypeManager {
     }
 
 
-    // TODO:client-types some javadoc or comment about how this method works
+    /**
+     * Validates and casts the client type configuration.
+     *
+     * This method performs validation on the client type configuration including:
+     * - Checking that the client type provider exists
+     * - Ensuring the client type name is not duplicated
+     * - Validating the configuration through the provider
+     *
+     * @param session the Keycloak session
+     * @param clientType the client type representation to validate
+     * @param currentNames set of already processed client type names (to detect duplicates)
+     * @return the validated client type representation
+     * @throws ClientTypeException if validation fails (provider not found, duplicate name, or invalid config)
+     */
     private static ClientTypeRepresentation validateAndCastConfiguration(KeycloakSession session, ClientTypeRepresentation clientType, Set<String> currentNames) {
         ClientTypeProvider clientTypeProvider = session.getProvider(ClientTypeProvider.class, clientType.getProvider());
         if (clientTypeProvider == null) {
