@@ -207,6 +207,42 @@ public class SsfTransmitterPushDeliveryTests {
         Assertions.assertTrue(subId.path("session").isObject(), "sub_id.session should describe the revoked session");
     }
 
+    /**
+     * Regression guard: an admin-UI-flavored stream (where
+     * {@code events_requested} carries event <b>aliases</b> rather than
+     * full URIs) must still receive matching pushes. Before the
+     * dispatcher's gate canonicalized both sides through
+     * {@link org.keycloak.ssf.event.SsfEventRegistry SsfEventRegistry},
+     * the URI extracted from the SET token never matched the alias-form
+     * set, every dispatch was suppressed with reason
+     * {@code EVENT_NOT_REQUESTED}, and no push ever reached the
+     * receiver — silently.
+     *
+     * <p>The receiver-facing stream-create endpoint deliberately accepts
+     * both URI and alias form (see
+     * {@link ClientStreamStore#getEventsConfig
+     * ClientStreamStore.getEventsConfig}); persisting aliases here
+     * mirrors what the admin UI sends.
+     */
+    @Test
+    public void testPushDeliveredWhenEventsRequestedUsesAliases() throws Exception {
+
+        String token = obtainReceiverToken(RECEIVER_SSF, RECEIVER_SSF_SECRET);
+        // Pass the simple-class-name aliases the admin UI sends, not
+        // CaepSessionRevoked.TYPE / CaepCredentialChange.TYPE URIs.
+        StreamConfig stream = createPushStream(token, Set.of("CaepSessionRevoked", "CaepCredentialChange"));
+
+        triggerUserLogout();
+
+        CapturedPush captured = awaitPush();
+
+        JsonNode set = decodeSet(captured);
+        Assertions.assertEquals(stream.getAudience(), extractAudience(set),
+                "aud in the SET should match the stream audience");
+        Assertions.assertTrue(set.path("events").has(CaepSessionRevoked.TYPE),
+                "SET should carry the CAEP session-revoked event even though events_requested was alias-flavored");
+    }
+
     @Test
     public void testSseCaepProfileNarrowsEventShape() throws Exception {
 

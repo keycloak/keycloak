@@ -1,5 +1,6 @@
 package org.keycloak.ssf.transmitter.delivery;
 
+import java.util.Set;
 import java.util.function.Function;
 
 import org.keycloak.events.outbox.OutboxStore;
@@ -7,6 +8,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserModel;
 import org.keycloak.ssf.Ssf;
 import org.keycloak.ssf.SsfProfile;
+import org.keycloak.ssf.event.SsfEventRegistry;
 import org.keycloak.ssf.event.token.SecurityEventToken;
 import org.keycloak.ssf.event.token.SseCaepSecurityEventToken;
 import org.keycloak.ssf.event.token.SsfSecurityEventToken;
@@ -128,7 +130,7 @@ public class SecurityEventTokenDispatcher {
         }
 
         // Check if the stream is interested in this event type
-        if (isEventEnabledForStream(eventToken, stream)){
+        if (!isEventRequestedByStream(eventToken, stream)) {
             log.debugf("Skipping event delivery for stream because of unsupported event. clientId=%s streamId=%s jti=%s events=%s",
                     stream.getClientClientId(), stream.getStreamId(), eventToken.getJti(), eventToken.getEvents());
             metricsBinder.recordSuppressed(currentRealmName(), stream.getClientClientId(),
@@ -185,6 +187,28 @@ public class SecurityEventTokenDispatcher {
     }
 
     /**
+     * Resolves the value to write into the outbox row's
+     * {@code entry_type} column. Aliases are the lingua franca elsewhere
+     * in the SSF subsystem (admin UI, client attributes, metrics labels,
+     * stream-config {@code events_delivered} when admin-created), so
+     * storing the alias keeps the outbox column consistent with the
+     * sets it is filtered against — most notably
+     * {@link org.keycloak.ssf.transmitter.stream.StreamService#evictPendingEventsOutsideDeliveredSet
+     * evictPendingEventsOutsideDeliveredSet}.
+     *
+     * <p>Falls back to the URI for custom events that have no alias
+     * registered, and to {@code <unknown>} for malformed tokens (the
+     * column is NOT NULL, so we always have to write something).
+     */
+    protected String resolveEntryType(SsfSecurityEventToken eventToken) {
+        String eventType = getEventType(eventToken);
+        if (eventType == null) {
+            return "<unknown>";
+        }
+        return resolveEventAlias(eventType);
+    }
+
+    /**
      * Subject subscription filter. Returns {@code true} if the event
      * should be delivered to the given stream based on the stream's
      * {@code default_subjects} setting and the presence of
@@ -212,11 +236,47 @@ public class SecurityEventTokenDispatcher {
         return subjectSubscriptionFilter.shouldDispatchForUser(user, stream, stream.getClientClientId(), session);
     }
 
-    protected boolean isEventEnabledForStream(SsfSecurityEventToken eventToken, StreamConfig stream) {
-        String eventType = getEventType(eventToken);
-        if (eventType != null && stream.getEventsRequested() != null &&
-            !stream.getEventsRequested().contains(eventType)) {
+    /**
+     * Returns {@code true} if the event token's type is part of the
+     * stream's {@code events_requested} set — i.e. the receiver wants
+     * this event delivered. Fail-open when either side is missing
+     * (token without event-type info, or stream that hasn't narrowed
+     * its subscription).
+     *
+     * <p>Canonicalizes each {@code events_requested} entry to its URI
+     * form before comparing with the SET token's URI, because the set
+     * may carry either form depending on who created the stream:
+     * <ul>
+     *   <li>Admin-UI-created streams store aliases (the form the UI
+     *       speaks).</li>
+     *   <li>Receiver-created streams store URIs (per the SSF/CAEP
+     *       spec).</li>
+     * </ul>
+     * Without this normalization, admin-UI-narrowed streams would
+     * never match incoming events and every dispatch would be
+     * suppressed.
+     */
+    protected boolean isEventRequestedByStream(SsfSecurityEventToken eventToken, StreamConfig stream) {
+        String eventTypeUri = getEventType(eventToken);
+        Set<String> eventsRequested = stream.getEventsRequested();
+        if (eventTypeUri == null || eventsRequested == null) {
             return true;
+        }
+        SsfEventRegistry registry = Ssf.events().getRegistry();
+        for (String requested : eventsRequested) {
+            if (requested == null) {
+                continue;
+            }
+            String canonical = registry.resolveEventTypeForAlias(requested);
+            if (canonical == null) {
+                // Either it's already a URI (resolveEventTypeForAlias
+                // only knows aliases) or a custom unregistered string;
+                // in both cases use the literal for comparison.
+                canonical = requested;
+            }
+            if (eventTypeUri.equals(canonical)) {
+                return true;
+            }
         }
         return false;
     }
@@ -251,17 +311,14 @@ public class SecurityEventTokenDispatcher {
             String clientId = stream.getClientId();
             String streamId = stream.getStreamId();
             String jti = eventToken.getJti();
-            String eventType = getEventType(eventToken);
-            if (eventType == null) {
-                eventType = "<unknown>";
-            }
+            String entryType = resolveEntryType(eventToken);
 
             OutboxStore outboxStore = outboxStoreFactory.apply(session);
             switch (deliveryMethod) {
                 case PUSH, RISC_PUSH ->
-                        outboxStore.enqueueHeld(SsfOutboxKinds.PUSH, realmId, clientId, streamId, jti, eventType, encodedEvent, null);
+                        outboxStore.enqueueHeld(SsfOutboxKinds.PUSH, realmId, clientId, streamId, jti, entryType, encodedEvent, null);
                 case POLL, RISC_POLL ->
-                        outboxStore.enqueueHeld(SsfOutboxKinds.POLL, realmId, clientId, streamId, jti, eventType, encodedEvent, null);
+                        outboxStore.enqueueHeld(SsfOutboxKinds.POLL, realmId, clientId, streamId, jti, entryType, encodedEvent, null);
             }
 
             // HELD is a distinct outcome from normal delivery — we
@@ -398,19 +455,11 @@ public class SecurityEventTokenDispatcher {
         String clientId = stream.getClientId();
         String streamId = stream.getStreamId();
         String jti = eventToken.getJti();
-        String eventType = getEventType(eventToken);
-        if (eventType == null) {
-            // EVENT_TYPE is NOT NULL in the schema; an event token with no
-            // events map shouldn't reach the dispatcher (dispatchEvent
-            // already operates on it), but guard so a malformed call can't
-            // poison the table with constraint failures.
-            eventType = "<unknown>";
-        }
+        String entryType = resolveEntryType(eventToken);
 
         OutboxStore outboxStore = outboxStoreFactory.apply(session);
-        outboxStore.enqueuePending(SsfOutboxKinds.PUSH, realmId, clientId, streamId, jti, eventType, encodedEvent, null);
-        metricsBinder.recordEnqueued(currentRealmName(), stream.getClientClientId(), "PUSH",
-                resolveEventAlias(eventType));
+        outboxStore.enqueuePending(SsfOutboxKinds.PUSH, realmId, clientId, streamId, jti, entryType, encodedEvent, null);
+        metricsBinder.recordEnqueued(currentRealmName(), stream.getClientClientId(), "PUSH", entryType);
     }
 
     /**
@@ -426,17 +475,11 @@ public class SecurityEventTokenDispatcher {
         String clientId = stream.getClientId();
         String streamId = stream.getStreamId();
         String jti = eventToken.getJti();
-        String eventType = getEventType(eventToken);
-        if (eventType == null) {
-            // EVENT_TYPE is NOT NULL in the schema — guard against
-            // malformed tokens for the same reason deliverEventAsync does.
-            eventType = "<unknown>";
-        }
+        String entryType = resolveEntryType(eventToken);
 
         OutboxStore outboxStore = outboxStoreFactory.apply(session);
-        outboxStore.enqueuePending(SsfOutboxKinds.POLL, realmId, clientId, streamId, jti, eventType, encodedEvent, null);
-        metricsBinder.recordEnqueued(currentRealmName(), stream.getClientClientId(), "POLL",
-                resolveEventAlias(eventType));
+        outboxStore.enqueuePending(SsfOutboxKinds.POLL, realmId, clientId, streamId, jti, entryType, encodedEvent, null);
+        metricsBinder.recordEnqueued(currentRealmName(), stream.getClientClientId(), "POLL", entryType);
     }
 
     protected SecurityEventToken getNarrowedEventToken(SsfSecurityEventToken eventToken, StreamConfig stream) {
