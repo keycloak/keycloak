@@ -5,6 +5,7 @@ import org.keycloak.common.Profile;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
+import org.keycloak.ssf.Ssf;
 import org.keycloak.wellknown.WellKnownProvider;
 import org.keycloak.wellknown.WellKnownProviderFactory;
 
@@ -19,12 +20,15 @@ public class SsfTransmitterMetadataWellKnownProviderFactory implements WellKnown
 
     @Override
     public WellKnownProvider create(KeycloakSession session) {
+        if (!Ssf.isTransmitterEnabled(session.getContext().getRealm())) {
+            return null;
+        }
         return new SsfTransmitterMetadataWellKnownProvider(session);
     }
 
     @Override
     public void init(Config.Scope config) {
-
+        // NOOP
     }
 
     @Override
@@ -34,12 +38,12 @@ public class SsfTransmitterMetadataWellKnownProviderFactory implements WellKnown
 
     @Override
     public void postInit(KeycloakSessionFactory factory) {
-
+        // NOOP
     }
 
     @Override
     public void close() {
-
+        // NOOP
     }
 
     @Override
