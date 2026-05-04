@@ -1,3 +1,4 @@
+import { fetchWithError } from "@keycloak/keycloak-admin-client";
 import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
 import {
   HelpItem,
@@ -21,6 +22,7 @@ import {
 } from "@patternfly/react-core";
 import debouncePromise from "p-debounce";
 import { useMemo, useState } from "react";
+import { Controller, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 
@@ -36,6 +38,15 @@ import type { SsfClientStream } from "./StreamTab";
 type SsfEmitResult = {
   status: string;
   jti?: string;
+};
+
+type EmitSubjectType = "user-email" | "user-id" | "user-username" | "org-alias";
+
+type EmitEventsFormValues = {
+  emitEventType: string;
+  emitSubjectType: EmitSubjectType;
+  emitSubjectValue: string;
+  emitPayload: string;
 };
 
 /**
@@ -73,19 +84,28 @@ export const EmitEventsTab = ({
   // emissions.
   const emittableEvents = clientStream?.eventsDelivered ?? [];
 
-  const [emitEventType, setEmitEventType] = useState("");
+  const {
+    control,
+    handleSubmit,
+    watch,
+    formState: { isSubmitting },
+  } = useForm<EmitEventsFormValues>({
+    defaultValues: {
+      emitEventType: "",
+      emitSubjectType: "user-email",
+      emitSubjectValue: "",
+      // Default to an empty JSON object with a newline between the
+      // braces so the caret lands on an indented line ready for typing.
+      emitPayload: "{\n  \n}",
+    },
+    mode: "onSubmit",
+  });
+
+  // UI-only state for the typeahead/single selects and live feedback
+  // panels — these aren't form values, so they stay in useState.
   const [emitEventTypeOpen, setEmitEventTypeOpen] = useState(false);
   const [emitEventTypeFilter, setEmitEventTypeFilter] = useState("");
-  // Same shorthand the Subjects tab takes — backend resolves via the
-  // SubjectManagementService.resolveByAdminType path.
-  const [emitSubjectType, setEmitSubjectType] = useState<
-    "user-email" | "user-id" | "user-username" | "org-alias"
-  >("user-email");
   const [emitSubjectTypeOpen, setEmitSubjectTypeOpen] = useState(false);
-  const [emitSubjectValue, setEmitSubjectValue] = useState("");
-  // Default to an empty JSON object with a newline between the
-  // braces so the caret lands on an indented line ready for typing.
-  const [emitPayload, setEmitPayload] = useState("{\n  \n}");
   // Live JSON parse-error message — updated on every change so the
   // operator sees the problem as they type rather than only after
   // hitting Emit. The submit handler also uses this to short-circuit
@@ -95,7 +115,11 @@ export const EmitEventsTab = ({
   >(null);
   const [emitResult, setEmitResult] = useState<SsfEmitResult | null>(null);
   const [emitError, setEmitError] = useState<string | null>(null);
-  const [emitLoading, setEmitLoading] = useState(false);
+
+  // Watch the subject-type so the TextInput placeholder switches
+  // from "user@example.com" to "user-uuid" / "username" / "org-alias"
+  // without re-rendering the rest of the form.
+  const emitSubjectType = watch("emitSubjectType");
 
   // Debounce the live JSON parse so a fast typist doesn't pay
   // JSON.parse on every keystroke against a large payload. 250ms
@@ -124,31 +148,23 @@ export const EmitEventsTab = ({
    * shows a "Look up this event" link that navigates to the Event
    * Search tab with the returned jti pre-filled.
    */
-  const handleEmitEvent = async () => {
+  const onSubmit = async (values: EmitEventsFormValues) => {
     if (!client.id) {
-      return;
-    }
-    if (!emitEventType) {
-      setEmitError(t("ssfEmitEventTypeRequired"));
-      return;
-    }
-    if (!emitSubjectValue.trim()) {
-      setEmitError(t("ssfEmitSubjectValueRequired"));
       return;
     }
     let parsedPayload: unknown;
     try {
       parsedPayload =
-        emitPayload.trim() === ""
+        values.emitPayload.trim() === ""
           ? {}
-          : JSON.parse(substitutePayloadPlaceholders(emitPayload));
+          : JSON.parse(substitutePayloadPlaceholders(values.emitPayload));
     } catch (error) {
       const message = t("ssfEmitPayloadInvalidJson", { error: String(error) });
       setEmitError(message);
       setEmitPayloadParseError(message);
       return;
     }
-    setEmitLoading(true);
+    setEmitError(null);
     try {
       // Send the (subjectType, subjectValue) shorthand — the admin
       // emit backend resolves it through the same path the
@@ -157,13 +173,7 @@ export const EmitEventsTab = ({
       // resulting SET matches the shape native events for this
       // receiver would have. Org subjects produce a complex tenant-
       // only subject for org-scoped routing.
-      const body = {
-        eventType: emitEventType,
-        subjectType: emitSubjectType,
-        subjectValue: emitSubjectValue.trim(),
-        event: parsedPayload,
-      };
-      const response = await fetch(
+      const response = await fetchWithError(
         `${addTrailingSlash(adminClient.baseUrl)}admin/realms/${realm}/ssf/clients/${client.clientId}/events/emit`,
         {
           method: "POST",
@@ -171,23 +181,19 @@ export const EmitEventsTab = ({
             ...getAuthorizationHeaders(await adminClient.getAccessToken()),
             "Content-Type": "application/json",
           },
-          body: JSON.stringify(body),
+          body: JSON.stringify({
+            eventType: values.emitEventType,
+            subjectType: values.emitSubjectType,
+            subjectValue: values.emitSubjectValue.trim(),
+            event: parsedPayload,
+          }),
         },
       );
-      if (!response.ok) {
-        const text = await response.text();
-        setEmitError(text || `HTTP ${response.status}`);
-        setEmitResult(null);
-        return;
-      }
       const result = (await response.json()) as SsfEmitResult;
       setEmitResult(result);
-      setEmitError(null);
     } catch (error) {
-      setEmitError(String(error));
+      setEmitError(error instanceof Error ? error.message : String(error));
       setEmitResult(null);
-    } finally {
-      setEmitLoading(false);
     }
   };
 
@@ -221,6 +227,7 @@ export const EmitEventsTab = ({
           role="manage-clients"
           fineGrainedAccess={client.access?.configure}
           isHorizontal
+          onSubmit={handleSubmit(onSubmit)}
         >
           <FormGroup
             label={t("ssfEmitEventType")}
@@ -233,70 +240,87 @@ export const EmitEventsTab = ({
             }
             isRequired
           >
-            <KeycloakSelect
-              toggleId="ssfEmitEventType"
-              data-testid="ssfEmitEventType"
-              variant={SelectVariant.typeahead}
-              typeAheadAriaLabel={t("ssfEmitEventType")}
-              placeholderText={t("ssfEmitEventTypeSelectPrompt")}
-              onToggle={setEmitEventTypeOpen}
-              isOpen={emitEventTypeOpen}
-              selections={emitEventType || undefined}
-              onSelect={(value) => {
-                setEmitEventType(value.toString());
-                setEmitEventTypeOpen(false);
-                setEmitEventTypeFilter("");
-              }}
-              onClear={() => {
-                setEmitEventType("");
-                setEmitEventTypeFilter("");
-              }}
-              onFilter={setEmitEventTypeFilter}
-            >
-              {emittableEvents
-                .filter((eventType) =>
-                  eventType
-                    .toLowerCase()
-                    .includes(emitEventTypeFilter.toLowerCase()),
-                )
-                .map((eventType) => (
-                  <SelectOption key={eventType} value={eventType}>
-                    {eventType}
-                    {nativelyEmittedEvents.includes(eventType) && (
-                      <Label color="blue" isCompact className="pf-v5-u-ml-sm">
-                        {t("ssfNativelyEmittedBadge")}
-                      </Label>
-                    )}
-                  </SelectOption>
-                ))}
-            </KeycloakSelect>
+            <Controller
+              name="emitEventType"
+              control={control}
+              rules={{ required: t("ssfEmitEventTypeRequired") }}
+              render={({ field }) => (
+                <KeycloakSelect
+                  toggleId="ssfEmitEventType"
+                  data-testid="ssfEmitEventType"
+                  variant={SelectVariant.typeahead}
+                  typeAheadAriaLabel={t("ssfEmitEventType")}
+                  placeholderText={t("ssfEmitEventTypeSelectPrompt")}
+                  onToggle={setEmitEventTypeOpen}
+                  isOpen={emitEventTypeOpen}
+                  selections={field.value || undefined}
+                  onSelect={(value) => {
+                    field.onChange(value.toString());
+                    setEmitEventTypeOpen(false);
+                    setEmitEventTypeFilter("");
+                  }}
+                  onClear={() => {
+                    field.onChange("");
+                    setEmitEventTypeFilter("");
+                  }}
+                  onFilter={setEmitEventTypeFilter}
+                >
+                  {emittableEvents
+                    .filter((eventType) =>
+                      eventType
+                        .toLowerCase()
+                        .includes(emitEventTypeFilter.toLowerCase()),
+                    )
+                    .map((eventType) => (
+                      <SelectOption key={eventType} value={eventType}>
+                        {eventType}
+                        {nativelyEmittedEvents.includes(eventType) && (
+                          <Label
+                            color="blue"
+                            isCompact
+                            className="pf-v5-u-ml-sm"
+                          >
+                            {t("ssfNativelyEmittedBadge")}
+                          </Label>
+                        )}
+                      </SelectOption>
+                    ))}
+                </KeycloakSelect>
+              )}
+            />
           </FormGroup>
           <FormGroup label={t("ssfSubjectType")} fieldId="ssfEmitSubjectType">
-            <KeycloakSelect
-              toggleId="ssfEmitSubjectType"
-              data-testid="ssfEmitSubjectType"
-              variant={SelectVariant.single}
-              onToggle={setEmitSubjectTypeOpen}
-              isOpen={emitSubjectTypeOpen}
-              selections={emitSubjectType}
-              onSelect={(value) => {
-                setEmitSubjectType(value as typeof emitSubjectType);
-                setEmitSubjectTypeOpen(false);
-              }}
-            >
-              <SelectOption value="user-email">
-                {t("ssfSubjectType.userEmail")}
-              </SelectOption>
-              <SelectOption value="user-id">
-                {t("ssfSubjectType.userId")}
-              </SelectOption>
-              <SelectOption value="user-username">
-                {t("ssfSubjectType.userUsername")}
-              </SelectOption>
-              <SelectOption value="org-alias">
-                {t("ssfSubjectType.orgAlias")}
-              </SelectOption>
-            </KeycloakSelect>
+            <Controller
+              name="emitSubjectType"
+              control={control}
+              render={({ field }) => (
+                <KeycloakSelect
+                  toggleId="ssfEmitSubjectType"
+                  data-testid="ssfEmitSubjectType"
+                  variant={SelectVariant.single}
+                  onToggle={setEmitSubjectTypeOpen}
+                  isOpen={emitSubjectTypeOpen}
+                  selections={field.value}
+                  onSelect={(value) => {
+                    field.onChange(value as EmitSubjectType);
+                    setEmitSubjectTypeOpen(false);
+                  }}
+                >
+                  <SelectOption value="user-email">
+                    {t("ssfSubjectType.userEmail")}
+                  </SelectOption>
+                  <SelectOption value="user-id">
+                    {t("ssfSubjectType.userId")}
+                  </SelectOption>
+                  <SelectOption value="user-username">
+                    {t("ssfSubjectType.userUsername")}
+                  </SelectOption>
+                  <SelectOption value="org-alias">
+                    {t("ssfSubjectType.orgAlias")}
+                  </SelectOption>
+                </KeycloakSelect>
+              )}
+            />
           </FormGroup>
           <FormGroup
             label={t("ssfSubjectValue")}
@@ -309,20 +333,30 @@ export const EmitEventsTab = ({
             }
             isRequired
           >
-            <TextInput
-              id="ssfEmitSubjectValue"
-              data-testid="ssfEmitSubjectValue"
-              value={emitSubjectValue}
-              onChange={(_e, value) => setEmitSubjectValue(value)}
-              placeholder={
-                emitSubjectType === "user-email"
-                  ? "user@example.com"
-                  : emitSubjectType === "user-id"
-                    ? "user-uuid"
-                    : emitSubjectType === "user-username"
-                      ? "username"
-                      : "org-alias"
-              }
+            <Controller
+              name="emitSubjectValue"
+              control={control}
+              rules={{
+                validate: (value) =>
+                  value.trim() !== "" || t("ssfEmitSubjectValueRequired"),
+              }}
+              render={({ field }) => (
+                <TextInput
+                  id="ssfEmitSubjectValue"
+                  data-testid="ssfEmitSubjectValue"
+                  value={field.value}
+                  onChange={(_e, value) => field.onChange(value)}
+                  placeholder={
+                    emitSubjectType === "user-email"
+                      ? "user@example.com"
+                      : emitSubjectType === "user-id"
+                        ? "user-uuid"
+                        : emitSubjectType === "user-username"
+                          ? "username"
+                          : "org-alias"
+                  }
+                />
+              )}
             />
           </FormGroup>
           <FormGroup
@@ -335,26 +369,32 @@ export const EmitEventsTab = ({
               />
             }
           >
-            <CodeEditor
-              data-testid="ssfEmitPayload"
-              aria-label={t("ssfEmitPayload")}
-              language="json"
-              height={220}
-              value={emitPayload}
-              onChange={(value) => {
-                setEmitPayload(value);
-                // Live validation: substitute placeholders first
-                // (so unquoted __now__ becomes a valid numeric
-                // literal) then JSON.parse. Blank payload resolves
-                // to {} at submit time and is therefore valid —
-                // clear the error synchronously so the UI feedback
-                // is immediate when the user empties the field.
-                if (value.trim() === "") {
-                  setEmitPayloadParseError(null);
-                  return;
-                }
-                void debouncedValidatePayload(value);
-              }}
+            <Controller
+              name="emitPayload"
+              control={control}
+              render={({ field }) => (
+                <CodeEditor
+                  data-testid="ssfEmitPayload"
+                  aria-label={t("ssfEmitPayload")}
+                  language="json"
+                  height={220}
+                  value={field.value}
+                  onChange={(value) => {
+                    field.onChange(value);
+                    // Live validation: substitute placeholders first
+                    // (so unquoted __now__ becomes a valid numeric
+                    // literal) then JSON.parse. Blank payload resolves
+                    // to {} at submit time and is therefore valid —
+                    // clear the error synchronously so the UI feedback
+                    // is immediate when the user empties the field.
+                    if (value.trim() === "") {
+                      setEmitPayloadParseError(null);
+                      return;
+                    }
+                    void debouncedValidatePayload(value);
+                  }}
+                />
+              )}
             />
             {emitPayloadParseError && (
               <Text
@@ -367,9 +407,10 @@ export const EmitEventsTab = ({
           </FormGroup>
           <ActionGroup>
             <Button
+              type="submit"
               variant="primary"
-              onClick={handleEmitEvent}
-              isDisabled={emitLoading || emitPayloadParseError !== null}
+              isLoading={isSubmitting}
+              isDisabled={isSubmitting || emitPayloadParseError !== null}
               data-testid="ssfEmitEvent"
             >
               {t("ssfEmitEvent")}
