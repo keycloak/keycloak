@@ -251,7 +251,7 @@ public class DefaultSsfTransmitterProviderFactory implements SsfTransmitterProvi
     @Override
     public PollDeliveryService createPollDelivery(SsfTransmitterProvider provider) {
         return new PollDeliveryService(provider.session(),
-                provider.context().eventStore(provider.session()),
+                provider.context().outboxStore(provider.session()),
                 provider.metrics());
     }
 

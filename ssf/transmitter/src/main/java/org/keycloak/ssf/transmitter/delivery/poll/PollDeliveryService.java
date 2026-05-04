@@ -6,10 +6,11 @@ import java.util.Map;
 
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.jpa.entities.OutboxEntryEntity;
+import org.keycloak.models.jpa.entities.OutboxEntryStatus;
+import org.keycloak.outbox.OutboxStore;
 import org.keycloak.ssf.transmitter.metrics.SsfMetricsBinder;
-import org.keycloak.ssf.transmitter.outbox.SsfEventEntity;
-import org.keycloak.ssf.transmitter.outbox.SsfEventStatus;
-import org.keycloak.ssf.transmitter.store.SsfEventStore;
+import org.keycloak.ssf.transmitter.outbox.SsfOutboxKinds;
 
 import org.jboss.logging.Logger;
 
@@ -50,13 +51,13 @@ public class PollDeliveryService {
 
     protected final KeycloakSession session;
 
-    protected final SsfEventStore eventStore;
+    protected final OutboxStore outboxStore;
 
     protected final SsfMetricsBinder metricsBinder;
 
-    public PollDeliveryService(KeycloakSession session, SsfEventStore eventStore, SsfMetricsBinder metricsBinder) {
+    public PollDeliveryService(KeycloakSession session, OutboxStore outboxStore, SsfMetricsBinder metricsBinder) {
         this.session = session;
-        this.eventStore = eventStore;
+        this.outboxStore = outboxStore;
         this.metricsBinder = metricsBinder;
     }
 
@@ -78,7 +79,7 @@ public class PollDeliveryService {
         //    inside one request.
         List<String> ack = request.getAck();
         if (ack != null && !ack.isEmpty()) {
-            eventStore.ackPendingForReceiver(receiverClient.getId(), ack);
+            outboxStore.ackPendingForOwner(SsfOutboxKinds.POLL, receiverClient.getId(), ack);
             metricsBinder.recordPollAck(realmName, labelClientId, ack.size());
         }
 
@@ -90,19 +91,20 @@ public class PollDeliveryService {
         Map<String, Map<String, Object>> setErrs = request.getSetErrs();
         Map<String, String> errorByJti = toErrorMessages(setErrs);
         if (!errorByJti.isEmpty()) {
-            eventStore.nackPendingForReceiver(receiverClient.getId(), errorByJti);
+            outboxStore.nackPendingForOwner(SsfOutboxKinds.POLL, receiverClient.getId(), errorByJti);
             metricsBinder.recordPollNack(realmName, labelClientId, errorByJti.size());
         }
 
         // 3. Read the next batch — UPGRADE_SKIPLOCKED so concurrent
         //    pollers (e.g. multiple receiver pods on the same OAuth
         //    credentials) walk disjoint rows.
-        List<SsfEventEntity> rows = eventStore.lockPendingForReceiverPoll(receiverClient.getId(), maxEvents);
+        List<OutboxEntryEntity> rows = outboxStore.lockPendingForOwner(SsfOutboxKinds.POLL,
+                receiverClient.getId(), maxEvents);
         metricsBinder.recordPollServed(realmName, labelClientId, rows.size());
 
         Map<String, String> sets = new LinkedHashMap<>(rows.size());
-        for (SsfEventEntity row : rows) {
-            sets.put(row.getJti(), row.getEncodedSet());
+        for (OutboxEntryEntity row : rows) {
+            sets.put(row.getCorrelationId(), row.getPayload());
         }
 
         // 4. moreAvailable: if we filled the batch we have to assume
@@ -111,10 +113,8 @@ public class PollDeliveryService {
         //    more available than what we just locked.
         boolean moreAvailable = false;
         if (rows.size() == maxEvents) {
-            long pending = eventStore.countByClientStatusAndMethod(
-                    receiverClient.getId(),
-                    SsfEventStatus.PENDING,
-                    SsfEventEntity.DELIVERY_METHOD_POLL);
+            long pending = outboxStore.countForOwnerByStatus(SsfOutboxKinds.POLL,
+                    receiverClient.getId(), OutboxEntryStatus.PENDING);
             moreAvailable = pending > rows.size();
         }
 
