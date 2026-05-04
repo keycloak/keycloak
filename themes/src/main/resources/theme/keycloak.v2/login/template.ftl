@@ -1,5 +1,6 @@
 <#import "field.ftl" as field>
 <#import "footer.ftl" as loginFooter>
+<#import "header.ftl" as loginHeader>
 <#macro username>
   <#assign label>
     <#if !realm.loginWithEmailAllowed>${msg("username")}<#elseif !realm.registrationEmailAsUsername>${msg("usernameOrEmail")}<#else>${msg("email")}</#if>
@@ -145,6 +146,9 @@
               class="pf-v5-c-brand">${kcSanitize(msg("loginTitleHtml",(realm.displayNameHtml!'')))?no_esc}</div>
     </header>
     <main class="${properties.kcLoginMain!}">
+      <div class="${properties.kcLoginMainHeader!}">
+        <@loginHeader.content/>
+      </div>
       <div class="${properties.kcLoginMainHeader!}">
         <h1 class="${properties.kcLoginMainTitle!}" id="kc-page-title"><#nested "header"></h1>
         <#if realm.internationalizationEnabled  && locale.supported?size gt 1>
