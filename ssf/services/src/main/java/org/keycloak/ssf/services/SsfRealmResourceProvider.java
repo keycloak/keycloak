@@ -32,6 +32,9 @@ public class SsfRealmResourceProvider implements RealmResourceProvider {
      */
     @Path(Ssf.SSF_TRANSMITTER_PATH)
     public SsfTransmitterResource transmitter() {
+        if (!Ssf.isTransmitterEnabled(session.getContext().getRealm())) {
+            return null;
+        }
         var authResult = SsfAuthUtil.authenticate();
         return new SsfTransmitterResource(session, authResult, SsfTransmitter.of(session));
     }
