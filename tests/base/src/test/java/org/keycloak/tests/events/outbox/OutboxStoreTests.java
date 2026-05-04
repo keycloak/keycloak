@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.tests.outbox;
+package org.keycloak.tests.events.outbox;
 
 import java.time.Duration;
 import java.time.Instant;
