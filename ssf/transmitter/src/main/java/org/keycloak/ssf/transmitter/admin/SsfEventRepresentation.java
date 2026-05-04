@@ -7,14 +7,13 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * Admin-facing snapshot of a single SSF outbox row, returned by the
- * "Pending Events" lookup admin endpoint. Carries the operator-visible
- * delivery metadata for a {@code (clientId, jti)} pair without
- * exposing the signed encoded SET payload — the operator's view is
- * "where is this event in the delivery pipeline", not "what does it
- * carry on the wire".
+ * admin lookup-by-jti endpoint. Covers any outbox status — PENDING,
+ * HELD, DELIVERED, DEAD_LETTER — so the operator can answer "where is
+ * this event in the delivery pipeline?" regardless of whether it's
+ * still queued, was delivered, or terminally failed.
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class SsfPendingEventRepresentation {
+public class SsfEventRepresentation {
 
     @JsonProperty("jti")
     private String jti;

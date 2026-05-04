@@ -50,7 +50,7 @@ import org.keycloak.ssf.transmitter.admin.SsfConfigRepresentation;
 import org.keycloak.ssf.transmitter.admin.SsfEmitEventRequest;
 import org.keycloak.ssf.transmitter.admin.SsfEmitEventResponse;
 import org.keycloak.ssf.transmitter.admin.SsfEventStatsRepresentation;
-import org.keycloak.ssf.transmitter.admin.SsfPendingEventRepresentation;
+import org.keycloak.ssf.transmitter.admin.SsfEventRepresentation;
 import org.keycloak.ssf.transmitter.delivery.SseCaepEventConverter;
 import org.keycloak.ssf.transmitter.emit.EmitEventResult;
 import org.keycloak.ssf.transmitter.emit.EmitEventStatus;
@@ -1019,7 +1019,7 @@ public class SsfAdminResource {
      * an admin can inspect the delivery state of a specific SET — used
      * by the admin UI's "Pending Events" tab. Returns the
      * operator-visible delivery metadata
-     * ({@link SsfPendingEventRepresentation}); the signed encoded SET
+     * ({@link SsfEventRepresentation}); the signed encoded SET
      * payload itself is intentionally not exposed because the operator
      * cares about delivery state, not wire bytes.
      *
@@ -1037,10 +1037,10 @@ public class SsfAdminResource {
             description = "Returns the SSF events metadata (status, delivery method, attempts, timestamps, last error) for the SET identified by jti, scoped to the given receiver client."
     )
     @APIResponses(value = {
-            @APIResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = SsfPendingEventRepresentation.class))),
+            @APIResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = SsfEventRepresentation.class))),
             @APIResponse(responseCode = "404", description = "Client or pending event not found")
     })
-    public SsfPendingEventRepresentation getPendingEvent(
+    public SsfEventRepresentation getPendingEvent(
             @Parameter(description = "OAuth client_id of the receiver")
             @PathParam("clientId") String clientId,
             @Parameter(description = "JWT id of the SET")
@@ -1067,7 +1067,7 @@ public class SsfAdminResource {
         if (entity == null) {
             throw new NotFoundException("Pending event not found");
         }
-        return toPendingEventRepresentation(entity);
+        return toEventRepresentation(entity);
     }
 
     /**
@@ -1442,8 +1442,8 @@ public class SsfAdminResource {
         return Response.ok(body).build();
     }
 
-    protected SsfPendingEventRepresentation toPendingEventRepresentation(OutboxEntryEntity entity) {
-        SsfPendingEventRepresentation rep = new SsfPendingEventRepresentation();
+    protected SsfEventRepresentation toEventRepresentation(OutboxEntryEntity entity) {
+        SsfEventRepresentation rep = new SsfEventRepresentation();
         rep.setJti(entity.getCorrelationId());
         rep.setEventType(entity.getEntryType());
         rep.setDeliveryMethod(deliveryMethodLabel(entity.getEntryKind()));
@@ -1476,7 +1476,7 @@ public class SsfAdminResource {
      * Translates the row's generic {@code entry_kind} ("ssf-push" /
      * "ssf-poll") to the wire-shape "PUSH" / "POLL" the admin UI
      * already shows under {@code deliveryMethod} on
-     * {@link SsfPendingEventRepresentation}. Unknown kinds fall
+     * {@link SsfEventRepresentation}. Unknown kinds fall
      * through unchanged so future kinds remain visible.
      */
     protected String deliveryMethodLabel(String entryKind) {
