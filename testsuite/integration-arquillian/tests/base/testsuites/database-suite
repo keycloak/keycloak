@@ -1,4 +1,5 @@
 AccountRestServiceTest
+AuthorizationCodeTest
 AuthorizationTest
 ClientRegistrationTest
 ExportImportTest
