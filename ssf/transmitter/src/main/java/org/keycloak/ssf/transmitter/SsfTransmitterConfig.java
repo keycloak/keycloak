@@ -62,6 +62,22 @@ public class SsfTransmitterConfig {
     public static final String CONFIG_SUBJECT_REMOVAL_GRACE_SECONDS = "subject-removal-grace-seconds";
 
     /**
+     * Whether the receiver-supplied {@code delivery.endpoint_url} on a PUSH
+     * stream is allowed to use the {@code http} scheme or resolve to a
+     * loopback / link-local / site-local / unique-local / multicast /
+     * any-local address. Default {@code false} — production-safe.
+     *
+     * <p>Set to {@code true} on closed-network deployments where the
+     * transmitter pushes to internal receivers over plaintext or RFC 1918
+     * targets, and on integration test setups that push to a local mock
+     * server. The {@code ssf.validPushUrls} per-client allowlist is still
+     * the primary SSRF gate; this flag only relaxes the
+     * scheme/host class check that runs on the URL after it matches the
+     * allowlist.
+     */
+    public static final String CONFIG_ALLOW_INSECURE_PUSH_TARGETS = "allow-insecure-push-targets";
+
+    /**
      * Default connect timeout (in milliseconds) for delivering SSF events via
      * HTTP push to a receiver's push endpoint.
      */
@@ -167,6 +183,18 @@ public class SsfTransmitterConfig {
      */
     public static final int DEFAULT_SUBJECT_REMOVAL_GRACE_SECONDS = 0;
 
+    /**
+     * Default for {@link #isAllowInsecurePushTargets()}. Always {@code false} —
+     * production-safe; receiver-supplied push URLs must be https and must
+     * not resolve to private/loopback addresses. We deliberately do NOT
+     * relax this in dev mode: a developer who tests PUSH integration in
+     * {@code start-dev} against {@code http://localhost} would otherwise
+     * never see the production-mode rejection and discover the
+     * misconfiguration only at deploy time. Test fixtures and closed-
+     * network deployments opt in via the SPI option explicitly.
+     */
+    public static final boolean DEFAULT_ALLOW_INSECURE_PUSH_TARGETS = false;
+
     private final int pushEndpointConnectTimeoutMillis;
 
     private final int pushEndpointSocketTimeoutMillis;
@@ -191,6 +219,8 @@ public class SsfTransmitterConfig {
 
     private final int subjectRemovalGraceSeconds;
 
+    private final boolean allowInsecurePushTargets;
+
     public SsfTransmitterConfig(int pushEndpointConnectTimeoutMillis,
                                 int pushEndpointSocketTimeoutMillis,
                                 int transmitterInitiatedVerificationDelayMillis,
@@ -202,7 +232,8 @@ public class SsfTransmitterConfig {
                                 boolean sseCaepEnabled,
                                 Set<String> criticalSubjectMembers,
                                 boolean metricsEnabled,
-                                int subjectRemovalGraceSeconds) {
+                                int subjectRemovalGraceSeconds,
+                                boolean allowInsecurePushTargets) {
         this.pushEndpointConnectTimeoutMillis = pushEndpointConnectTimeoutMillis;
         this.pushEndpointSocketTimeoutMillis = pushEndpointSocketTimeoutMillis;
         this.transmitterInitiatedVerificationDelayMillis = transmitterInitiatedVerificationDelayMillis;
@@ -215,6 +246,7 @@ public class SsfTransmitterConfig {
         this.criticalSubjectMembers = criticalSubjectMembers;
         this.metricsEnabled = metricsEnabled;
         this.subjectRemovalGraceSeconds = Math.max(0, subjectRemovalGraceSeconds);
+        this.allowInsecurePushTargets = allowInsecurePushTargets;
     }
 
     /**
@@ -246,7 +278,9 @@ public class SsfTransmitterConfig {
                 config.getBoolean(CONFIG_METRICS_ENABLED,
                         DEFAULT_METRICS_ENABLED),
                 config.getInt(CONFIG_SUBJECT_REMOVAL_GRACE_SECONDS,
-                        DEFAULT_SUBJECT_REMOVAL_GRACE_SECONDS));
+                        DEFAULT_SUBJECT_REMOVAL_GRACE_SECONDS),
+                config.getBoolean(CONFIG_ALLOW_INSECURE_PUSH_TARGETS,
+                        DEFAULT_ALLOW_INSECURE_PUSH_TARGETS));
     }
 
     /**
@@ -288,7 +322,8 @@ public class SsfTransmitterConfig {
                 DEFAULT_SSE_CAEP_ENABLED,
                 DEFAULT_CRITICAL_SUBJECT_MEMBERS,
                 DEFAULT_METRICS_ENABLED,
-                DEFAULT_SUBJECT_REMOVAL_GRACE_SECONDS);
+                DEFAULT_SUBJECT_REMOVAL_GRACE_SECONDS,
+                DEFAULT_ALLOW_INSECURE_PUSH_TARGETS);
     }
 
     /**
@@ -416,5 +451,20 @@ public class SsfTransmitterConfig {
      */
     public int getSubjectRemovalGraceSeconds() {
         return subjectRemovalGraceSeconds;
+    }
+
+    /**
+     * Whether the receiver-supplied push {@code delivery.endpoint_url} is
+     * permitted to use the {@code http} scheme or resolve to a loopback /
+     * link-local / site-local / unique-local / multicast / any-local
+     * address. {@code false} (the default) means the URL must be {@code https}
+     * and must resolve to a publicly routable address; {@code true} relaxes
+     * both checks for closed-network deployments and integration tests.
+     * The {@code ssf.validPushUrls} per-client allowlist remains the
+     * primary SSRF gate regardless of this flag — see
+     * {@link #CONFIG_ALLOW_INSECURE_PUSH_TARGETS} for context.
+     */
+    public boolean isAllowInsecurePushTargets() {
+        return allowInsecurePushTargets;
     }
 }

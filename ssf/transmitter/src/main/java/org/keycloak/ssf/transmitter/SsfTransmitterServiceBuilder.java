@@ -11,6 +11,7 @@ import org.keycloak.ssf.transmitter.stream.StreamVerificationService;
 import org.keycloak.ssf.transmitter.stream.storage.client.ClientStreamStore;
 import org.keycloak.ssf.transmitter.subject.SsfSubjectInclusionResolver;
 import org.keycloak.ssf.transmitter.subject.SubjectManagementService;
+import org.keycloak.ssf.transmitter.support.SsfPushUrlValidator;
 
 /**
  * Extension seam for constructing the per-session services that make
@@ -62,4 +63,8 @@ public interface SsfTransmitterServiceBuilder {
     StreamVerificationService createVerification(SsfTransmitterProvider provider);
 
     PollDeliveryService createPollDelivery(SsfTransmitterProvider provider);
+
+    default SsfPushUrlValidator createPushUrlValidator(SsfTransmitterConfig config) {
+        return new SsfPushUrlValidator(config.isAllowInsecurePushTargets());
+    }
 }

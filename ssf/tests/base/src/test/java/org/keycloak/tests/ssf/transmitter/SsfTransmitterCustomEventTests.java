@@ -17,6 +17,7 @@ import org.keycloak.ssf.event.SsfEvent;
 import org.keycloak.ssf.event.SsfEventProviderFactory;
 import org.keycloak.ssf.event.caep.CaepCredentialChange;
 import org.keycloak.ssf.transmitter.SsfScopes;
+import org.keycloak.ssf.transmitter.SsfTransmitterConfig;
 import org.keycloak.ssf.transmitter.admin.SsfConfigRepresentation;
 import org.keycloak.ssf.transmitter.stream.StreamConfig;
 import org.keycloak.ssf.transmitter.stream.StreamDeliveryConfig;
@@ -237,6 +238,12 @@ public class SsfTransmitterCustomEventTests {
             // TestSsfEventProviderFactory is discovered via META-INF/services
             // and contributes TestSsfEvent to the SSF event registry.
             config.dependency("org.keycloak.tests", "keycloak-tests-custom-providers");
+            // Test pushes to a local mock server on a loopback URL (http://127.0.0.1:NNNN/...).
+            // Relax the http-scheme + private-host gate so the mock URL is accepted; the
+            // per-client ssf.validPushUrls allow-list configured on each receiver below
+            // is still the SSRF defence.
+            config.spiOption("ssf-transmitter", "default",
+                    SsfTransmitterConfig.CONFIG_ALLOW_INSECURE_PUSH_TARGETS, "true");
             return configured;
         }
     }
@@ -255,6 +262,7 @@ public class SsfTransmitterCustomEventTests {
                             .directAccessGrantsEnabled(false)
                             .publicClient(false)
                             .attribute(ClientStreamStore.SSF_ENABLED_KEY, "true")
+                            .attribute(ClientStreamStore.SSF_VALID_PUSH_URLS_KEY, "http://127.0.0.1:65535/*")
                             // Opt into the custom test event. Without an explicit
                             // ssf.supportedEvents attribute, the transmitter falls
                             // back to getDefaultSupportedEvents() which is a

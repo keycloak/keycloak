@@ -23,6 +23,7 @@ import org.keycloak.ssf.transmitter.stream.StreamVerificationService;
 import org.keycloak.ssf.transmitter.stream.storage.SsfStreamStore;
 import org.keycloak.ssf.transmitter.subject.SsfSubjectInclusionResolver;
 import org.keycloak.ssf.transmitter.subject.SubjectManagementService;
+import org.keycloak.ssf.transmitter.support.SsfPushUrlValidator;
 
 /**
  * Provider for the SSF (Shared Signals Framework) Transmitter.
@@ -246,4 +247,15 @@ public interface SsfTransmitterProvider extends Provider {
      * store factory, and the issuer-URL factory.
      */
     SsfTransmitterContext context();
+
+    /**
+     * Returns the shared SSRF gate for receiver-supplied push URLs.
+     * Owned by the {@link SsfTransmitterContext} so a single instance
+     * is reused across every per-session provider; custom SPI
+     * implementations can plug in a different validator by overriding
+     * {@link SsfTransmitterServiceBuilder#createPushUrlValidator}.
+     */
+    default SsfPushUrlValidator pushUrlValidator() {
+        return context().pushUrlValidator();
+    }
 }

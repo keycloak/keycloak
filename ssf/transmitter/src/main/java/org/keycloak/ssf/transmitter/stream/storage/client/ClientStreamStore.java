@@ -17,6 +17,7 @@ import org.keycloak.ssf.Ssf;
 import org.keycloak.ssf.SsfProfile;
 import org.keycloak.ssf.event.SsfEventRegistry;
 import org.keycloak.ssf.metadata.DefaultSubjects;
+import org.keycloak.ssf.stream.DeliveryMethodFamily;
 import org.keycloak.ssf.stream.StreamStatus;
 import org.keycloak.ssf.stream.StreamStatusValue;
 import org.keycloak.ssf.transmitter.SsfTransmitterProvider;
@@ -84,6 +85,38 @@ public class ClientStreamStore implements SsfStreamStore {
     public static final String SSF_SUBJECT_REMOVAL_GRACE_SECONDS_KEY = "ssf.subjectRemovalGraceSeconds";
     public static final String SSF_ALLOW_EMIT_EVENTS_KEY = "ssf.allowEmitEvents";
     public static final String SSF_EMIT_EVENTS_ROLE_KEY = "ssf.emitEventsRole";
+
+    /**
+     * Per-receiver allow-list of delivery method families this receiver
+     * may use at stream-create time. Stored as {@link org.keycloak.models.Constants#CFG_DELIMITER}
+     * ({@code ##})-separated list of canonical {@link DeliveryMethodFamily}
+     * values ({@code push}, {@code poll}). Empty/absent ⇒ both PUSH and
+     * POLL are allowed (transmitter-default behaviour). Set to e.g.
+     * {@code poll} to forbid PUSH on this receiver regardless of the
+     * receiver's request.
+     */
+    public static final String SSF_ALLOWED_DELIVERY_METHODS_KEY = "ssf.allowedDeliveryMethods";
+
+    /**
+     * Per-receiver allow-list of valid push endpoint URL patterns used
+     * as the SSRF gate for receiver-supplied {@code delivery.endpoint_url}
+     * on PUSH stream-create. Stored as {@link org.keycloak.models.Constants#CFG_DELIMITER}
+     * ({@code ##})-separated entries. Each entry is matched against the
+     * receiver-supplied URL using exact match or a trailing-{@code *}
+     * suffix wildcard (e.g. {@code https://recv.example.com/feeds/*}).
+     * Bare {@code *} entries are rejected at validation time so the SSRF
+     * defence cannot be disabled with a single keystroke.
+     *
+     * <p>Required when the receiver requests PUSH delivery (or the legacy
+     * RISC PUSH variant). Ignored for POLL streams — POLL endpoint URLs
+     * are transmitter-owned and never receiver-supplied.
+     *
+     * <p>The match logic mirrors OIDC redirect-URI matching (see
+     * {@code RedirectUtils.matchesRedirects} — the implementation is
+     * deliberately copied into the SSF support package so the security
+     * surface of OIDC isn't touched by this gate).
+     */
+    public static final String SSF_VALID_PUSH_URLS_KEY = "ssf.validPushUrls";
 
     /**
      * Per-receiver outbox event TTL in seconds. Any non-{@code DELIVERED}

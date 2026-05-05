@@ -453,6 +453,12 @@ public class SsfSubjectRemovalGraceTests {
             config.spiOption("ssf-transmitter", "default",
                     SsfTransmitterConfig.CONFIG_SUBJECT_REMOVAL_GRACE_SECONDS,
                     String.valueOf(TRANSMITTER_GRACE_SECONDS));
+            // Test pushes to a local mock server on a loopback URL (http://127.0.0.1:NNNN/...).
+            // Relax the http-scheme + private-host gate so the mock URL is accepted; the
+            // per-client ssf.validPushUrls allow-list configured on each receiver below
+            // is still the SSRF defence.
+            config.spiOption("ssf-transmitter", "default",
+                    SsfTransmitterConfig.CONFIG_ALLOW_INSECURE_PUSH_TARGETS, "true");
             return configured;
         }
     }
@@ -485,6 +491,7 @@ public class SsfSubjectRemovalGraceTests {
                             .directAccessGrantsEnabled(false)
                             .publicClient(false)
                             .attribute(ClientStreamStore.SSF_ENABLED_KEY, "true")
+                            .attribute(ClientStreamStore.SSF_VALID_PUSH_URLS_KEY, "http://127.0.0.1:8500/*")
                             .attribute(ClientStreamStore.SSF_DEFAULT_SUBJECTS_KEY, "NONE")
                             .build()
             );
@@ -498,6 +505,7 @@ public class SsfSubjectRemovalGraceTests {
                             .directAccessGrantsEnabled(false)
                             .publicClient(false)
                             .attribute(ClientStreamStore.SSF_ENABLED_KEY, "true")
+                            .attribute(ClientStreamStore.SSF_VALID_PUSH_URLS_KEY, "http://127.0.0.1:8500/*")
                             .attribute(ClientStreamStore.SSF_DEFAULT_SUBJECTS_KEY, "NONE")
                             .attribute(ClientStreamStore.SSF_SUBJECT_REMOVAL_GRACE_SECONDS_KEY, "0")
                             .build()

@@ -22,10 +22,10 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.ssf.Ssf;
-import org.keycloak.ssf.transmitter.support.SsfAuthUtil;
 import org.keycloak.ssf.event.caep.CaepCredentialChange;
 import org.keycloak.ssf.event.caep.CaepSessionRevoked;
 import org.keycloak.ssf.transmitter.SsfScopes;
+import org.keycloak.ssf.transmitter.SsfTransmitterConfig;
 import org.keycloak.ssf.transmitter.admin.SsfClientStreamRepresentation;
 import org.keycloak.ssf.transmitter.outbox.SsfOutboxKinds;
 import org.keycloak.ssf.transmitter.stream.StreamConfig;
@@ -33,6 +33,7 @@ import org.keycloak.ssf.transmitter.stream.StreamConfigInputRepresentation;
 import org.keycloak.ssf.transmitter.stream.StreamConfigUpdateRepresentation;
 import org.keycloak.ssf.transmitter.stream.StreamDeliveryConfig;
 import org.keycloak.ssf.transmitter.stream.storage.client.ClientStreamStore;
+import org.keycloak.ssf.transmitter.support.SsfAuthUtil;
 import org.keycloak.ssf.transmitter.support.SsfTransmitterUrls;
 import org.keycloak.testframework.annotations.InjectAdminClient;
 import org.keycloak.testframework.annotations.InjectKeycloakUrls;
@@ -104,6 +105,16 @@ public class SsfTransmitterStreamManagementTests {
     static final String SSF_USER_PASSWORD = "ssf-user-password";
 
     static final String DUMMY_PUSH_ENDPOINT = "http://127.0.0.1:65535/ssf/push";
+
+    /**
+     * Allow-list pattern that matches {@link #DUMMY_PUSH_ENDPOINT}. Pinned
+     * on the receiver clients via {@code ssf.validPushUrls} so the SSRF
+     * gate accepts the dummy URL during test setup; the http scheme and
+     * loopback host are tolerated only because the
+     * {@code allow-insecure-push-targets} SPI flag is on in
+     * {@link StreamManagementKeycloakServerConfig}.
+     */
+    static final String DUMMY_PUSH_ALLOWLIST = "http://127.0.0.1:65535/*";
     static final String DUMMY_PUSH_AUTH_HEADER = "Bearer dummy-receiver-token";
 
     @InjectRealm(config = StreamManagementRealm.class)
@@ -149,9 +160,18 @@ public class SsfTransmitterStreamManagementTests {
         List.of(RECEIVER_RW, RECEIVER_RO, RECEIVER_SCOPED, RECEIVER_USER_AUTH)
                 .forEach(this::bestEffortDeleteStream);
         // The opt-out test flips ssf.requireServiceAccount on RECEIVER_USER_AUTH;
-        // reset to the default (attribute absent → SA required) so subsequent
-        // tests start from the documented default policy.
-        clearClientAttribute(RECEIVER_USER_AUTH, ClientStreamStore.SSF_REQUIRE_SERVICE_ACCOUNT_KEY);
+        // reset to "" rather than removing — Keycloak's admin client
+        // PUT-merge on ClientRepresentation doesn't reliably delete an
+        // attribute by omitting it from the body, so we explicitly blank
+        // it out and let the gate's null/blank check apply the default.
+        setClientAttribute(RECEIVER_USER_AUTH, ClientStreamStore.SSF_REQUIRE_SERVICE_ACCOUNT_KEY, "");
+        // The SSRF-gate tests mutate ssf.validPushUrls / ssf.allowedDeliveryMethods
+        // on RECEIVER_RW; restore both to the realm-bootstrap baseline
+        // (validPushUrls = DUMMY_PUSH_ALLOWLIST, allowedDeliveryMethods
+        // blank = both push and poll allowed) so subsequent tests start
+        // from a clean slate. Same blank-string-not-clear pattern as above.
+        setClientAttribute(RECEIVER_RW, ClientStreamStore.SSF_VALID_PUSH_URLS_KEY, DUMMY_PUSH_ALLOWLIST);
+        setClientAttribute(RECEIVER_RW, ClientStreamStore.SSF_ALLOWED_DELIVERY_METHODS_KEY, "");
     }
 
     @Test
@@ -777,6 +797,115 @@ public class SsfTransmitterStreamManagementTests {
     }
 
     @Test
+    public void testCreateStreamRejectsPushWhenValidPushUrlsEmpty() throws IOException {
+
+        // SSRF gate. Receiver clients that don't declare an
+        // ssf.validPushUrls allow-list cannot create PUSH streams —
+        // ssf.validPushUrls is the per-client SSRF defence and the
+        // transmitter refuses to push to a URL the operator hasn't
+        // explicitly approved. Migration story for existing PUSH
+        // receivers after the gate lands: admin adds at least one entry.
+        // Use the empty-string blank value (rather than clearClientAttribute)
+        // because the Keycloak admin client's PUT-merge semantics don't
+        // remove an existing attribute by omitting it — to actually wipe
+        // it we set it to "" and let readValidPushUrls treat blank as empty.
+        setClientAttribute(RECEIVER_RW, ClientStreamStore.SSF_VALID_PUSH_URLS_KEY, "");
+
+        String token = obtainManageToken(RECEIVER_RW, RECEIVER_RW_SECRET);
+        StreamConfigUpdateRepresentation request = buildPushStreamRequest(Set.of(CaepCredentialChange.TYPE));
+
+        try (SimpleHttpResponse response = postStream(token, request)) {
+            Assertions.assertEquals(400, response.getStatus(),
+                    "PUSH stream creation must be rejected when ssf.validPushUrls is empty");
+        }
+    }
+
+    @Test
+    public void testCreateStreamRejectsPushUrlOutsideAllowList() throws IOException {
+
+        // SSRF gate. Receiver-supplied URL doesn't match any
+        // ssf.validPushUrls entry → 400. The realm-bootstrap pins
+        // RECEIVER_RW to http://127.0.0.1:65535/* ; the request below
+        // tries to push to a different host, which must be refused.
+        String token = obtainManageToken(RECEIVER_RW, RECEIVER_RW_SECRET);
+        StreamConfigUpdateRepresentation request = buildPushStreamRequest(Set.of(CaepCredentialChange.TYPE));
+        request.getDelivery().setEndpointUrl("http://attacker.example.com/ssf/push");
+
+        try (SimpleHttpResponse response = postStream(token, request)) {
+            Assertions.assertEquals(400, response.getStatus(),
+                    "push URL outside the receiver's ssf.validPushUrls must be rejected");
+        }
+    }
+
+    @Test
+    public void testCreateStreamAcceptsExactMatchInValidPushUrls() throws IOException {
+
+        // Exact-match entry. Pin the receiver to a single concrete URL;
+        // the receiver requests the same URL → 201.
+        String exactUrl = "http://127.0.0.1:65535/ssf/exact-pin";
+        setClientAttribute(RECEIVER_RW, ClientStreamStore.SSF_VALID_PUSH_URLS_KEY, exactUrl);
+
+        String token = obtainManageToken(RECEIVER_RW, RECEIVER_RW_SECRET);
+        StreamConfigUpdateRepresentation request = buildPushStreamRequest(Set.of(CaepCredentialChange.TYPE));
+        request.getDelivery().setEndpointUrl(exactUrl);
+
+        try (SimpleHttpResponse response = postStream(token, request)) {
+            Assertions.assertEquals(201, response.getStatus(),
+                    "URL that exactly matches a ssf.validPushUrls entry must be accepted");
+        }
+    }
+
+    @Test
+    public void testCreateStreamAcceptsWildcardMatchInValidPushUrls() throws IOException {
+
+        // Trailing-* wildcard entry. Pin the receiver to a host[:port]
+        // prefix; receiver requests any URL underneath → 201.
+        String token = obtainManageToken(RECEIVER_RW, RECEIVER_RW_SECRET);
+        StreamConfigUpdateRepresentation request = buildPushStreamRequest(Set.of(CaepCredentialChange.TYPE));
+        request.getDelivery().setEndpointUrl("http://127.0.0.1:65535/ssf/under/wildcard/pin");
+
+        try (SimpleHttpResponse response = postStream(token, request)) {
+            Assertions.assertEquals(201, response.getStatus(),
+                    "URL that matches a trailing-* ssf.validPushUrls entry must be accepted");
+        }
+    }
+
+    @Test
+    public void testCreateStreamRejectsPushWhenAllowedDeliveryMethodsRestrictsToPoll() throws IOException {
+
+        // Capability gate. Admin restricts the receiver to POLL only;
+        // the receiver tries to register a PUSH stream → 400 with the
+        // "delivery method 'push' is not allowed" message.
+        setClientAttribute(RECEIVER_RW, ClientStreamStore.SSF_ALLOWED_DELIVERY_METHODS_KEY, "poll");
+
+        String token = obtainManageToken(RECEIVER_RW, RECEIVER_RW_SECRET);
+        StreamConfigUpdateRepresentation request = buildPushStreamRequest(Set.of(CaepCredentialChange.TYPE));
+
+        try (SimpleHttpResponse response = postStream(token, request)) {
+            Assertions.assertEquals(400, response.getStatus(),
+                    "PUSH stream creation must be rejected when ssf.allowedDeliveryMethods restricts to poll");
+        }
+    }
+
+    @Test
+    public void testCreateStreamRejectsBareWildcardInValidPushUrls() throws IOException {
+
+        // Bare-* tightening. Even if the operator tries to "open up"
+        // the allow-list with a single * entry, the validator drops it
+        // and treats the allow-list as empty — disabling the SSRF
+        // defence with one keystroke must not be possible.
+        setClientAttribute(RECEIVER_RW, ClientStreamStore.SSF_VALID_PUSH_URLS_KEY, "*");
+
+        String token = obtainManageToken(RECEIVER_RW, RECEIVER_RW_SECRET);
+        StreamConfigUpdateRepresentation request = buildPushStreamRequest(Set.of(CaepCredentialChange.TYPE));
+
+        try (SimpleHttpResponse response = postStream(token, request)) {
+            Assertions.assertEquals(400, response.getStatus(),
+                    "bare '*' entry in ssf.validPushUrls must not be honoured as a free pass");
+        }
+    }
+
+    @Test
     public void testCreateStreamRejectsOversizedAuthorizationHeader() throws IOException {
 
         // delivery.authorization_header > 1024 characters must be rejected with 400.
@@ -1239,21 +1368,6 @@ public class SsfTransmitterStreamManagementTests {
         realm.admin().clients().get(client.getId()).update(client);
     }
 
-    /**
-     * Removes the given attribute from the receiver client. Used to reset
-     * test-mutated attributes back to the documented "absent" default in
-     * the {@code @AfterEach} hook.
-     */
-    protected void clearClientAttribute(String clientId, String key) {
-        ClientRepresentation client = findClientByClientId(clientId);
-        if (client == null || client.getAttributes() == null
-                || !client.getAttributes().containsKey(key)) {
-            return;
-        }
-        client.getAttributes().remove(key);
-        realm.admin().clients().get(client.getId()).update(client);
-    }
-
     protected ClientRepresentation findClientByClientId(String clientId) {
         List<ClientRepresentation> clients = realm.admin().clients().findByClientId(clientId);
         if (clients.isEmpty()) {
@@ -1334,6 +1448,14 @@ public class SsfTransmitterStreamManagementTests {
             KeycloakServerConfigBuilder configured = super.configure(config);
             config.features(Profile.Feature.SSF);
             config.log().categoryLevel("org.keycloak.protocol.ssf", "DEBUG");
+            // The stream-management tests use a dummy loopback push URL
+            // (DUMMY_PUSH_ENDPOINT) intentionally — pushes never succeed;
+            // the assertions are about validation/storage paths. Relax the
+            // http-scheme + private-host gate so the dummy URL is accepted;
+            // the per-client ssf.validPushUrls allow-list configured on
+            // each receiver below is still the SSRF defence under test.
+            config.spiOption("ssf-transmitter", "default",
+                    SsfTransmitterConfig.CONFIG_ALLOW_INSECURE_PUSH_TARGETS, "true");
             return configured;
         }
     }
@@ -1358,6 +1480,7 @@ public class SsfTransmitterStreamManagementTests {
                             .directAccessGrantsEnabled(false)
                             .publicClient(false)
                             .attribute(ClientStreamStore.SSF_ENABLED_KEY, "true")
+                            .attribute(ClientStreamStore.SSF_VALID_PUSH_URLS_KEY, DUMMY_PUSH_ALLOWLIST)
                             .build()
             );
 
@@ -1368,6 +1491,7 @@ public class SsfTransmitterStreamManagementTests {
                             .directAccessGrantsEnabled(false)
                             .publicClient(false)
                             .attribute(ClientStreamStore.SSF_ENABLED_KEY, "true")
+                            .attribute(ClientStreamStore.SSF_VALID_PUSH_URLS_KEY, DUMMY_PUSH_ALLOWLIST)
                             .build()
             );
 
@@ -1380,6 +1504,7 @@ public class SsfTransmitterStreamManagementTests {
                             .attribute(ClientStreamStore.SSF_ENABLED_KEY, "true")
                             .attribute(ClientStreamStore.SSF_STREAM_SUPPORTED_EVENTS_KEY,
                                     CaepSessionRevoked.class.getSimpleName())
+                            .attribute(ClientStreamStore.SSF_VALID_PUSH_URLS_KEY, DUMMY_PUSH_ALLOWLIST)
                             .build()
             );
 
@@ -1395,6 +1520,7 @@ public class SsfTransmitterStreamManagementTests {
                             .directAccessGrantsEnabled(true)
                             .publicClient(false)
                             .attribute(ClientStreamStore.SSF_ENABLED_KEY, "true")
+                            .attribute(ClientStreamStore.SSF_VALID_PUSH_URLS_KEY, DUMMY_PUSH_ALLOWLIST)
                             .build()
             );
 

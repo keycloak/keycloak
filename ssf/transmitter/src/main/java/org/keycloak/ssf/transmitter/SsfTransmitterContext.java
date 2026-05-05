@@ -6,6 +6,7 @@ import java.util.function.Function;
 import org.keycloak.events.outbox.OutboxStore;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.ssf.transmitter.metrics.SsfMetricsBinder;
+import org.keycloak.ssf.transmitter.support.SsfPushUrlValidator;
 
 /**
  * Factory-scoped context bundle for the SSF transmitter. Holds the
@@ -29,6 +30,7 @@ public final class SsfTransmitterContext {
     private final Function<KeycloakSession, OutboxStore> outboxStoreFactory;
     private final Function<KeycloakSession, String> issuerUrlFactory;
     private final SsfTransmitterServiceBuilder services;
+    private final SsfPushUrlValidator pushUrlValidator;
 
     public SsfTransmitterContext(SsfTransmitterConfig config,
                                  Set<String> defaultSupportedEventAliases,
@@ -42,6 +44,11 @@ public final class SsfTransmitterContext {
         this.outboxStoreFactory = outboxStoreFactory;
         this.issuerUrlFactory = issuerUrlFactory;
         this.services = services;
+        // Stateless and config-driven — build once at factory init via
+        // the service builder so custom SPI deployments can plug in a
+        // different validator implementation. Shared across every
+        // per-session provider instance.
+        this.pushUrlValidator = services.createPushUrlValidator(config);
     }
 
     public SsfTransmitterConfig config() {
@@ -95,5 +102,15 @@ public final class SsfTransmitterContext {
 
     public SsfTransmitterServiceBuilder services() {
         return services;
+    }
+
+    /**
+     * The shared SSRF gate for receiver-supplied push URLs. Stateless and
+     * config-driven — bound at factory init to the
+     * {@link SsfTransmitterConfig#isAllowInsecurePushTargets()} flag and
+     * reused across every per-session provider instance.
+     */
+    public SsfPushUrlValidator pushUrlValidator() {
+        return pushUrlValidator;
     }
 }

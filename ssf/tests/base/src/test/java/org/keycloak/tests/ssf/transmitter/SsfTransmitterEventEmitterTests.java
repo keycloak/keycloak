@@ -769,6 +769,12 @@ public class SsfTransmitterEventEmitterTests {
                     DefaultSsfTransmitterProviderFactory.CONFIG_OUTBOX_DRAINER_INTERVAL, "500ms");
             config.spiOption("ssf-transmitter", "default",
                     SsfTransmitterConfig.CONFIG_MIN_VERIFICATION_INTERVAL_SECONDS, "0");
+            // Test pushes to a local mock server on a loopback URL (http://127.0.0.1:NNNN/...).
+            // Relax the http-scheme + private-host gate so the mock URL is accepted; the
+            // per-client ssf.validPushUrls allow-list configured on each receiver below
+            // is still the SSRF defence.
+            config.spiOption("ssf-transmitter", "default",
+                    SsfTransmitterConfig.CONFIG_ALLOW_INSECURE_PUSH_TARGETS, "true");
             return configured;
         }
     }
@@ -803,6 +809,7 @@ public class SsfTransmitterEventEmitterTests {
                             .directAccessGrantsEnabled(false)
                             .publicClient(false)
                             .attribute(ClientStreamStore.SSF_ENABLED_KEY, "true")
+                            .attribute(ClientStreamStore.SSF_VALID_PUSH_URLS_KEY, "http://127.0.0.1:8500/*")
                             .attribute(ClientStreamStore.SSF_DEFAULT_SUBJECTS_KEY, "NONE")
                             .build()
             );

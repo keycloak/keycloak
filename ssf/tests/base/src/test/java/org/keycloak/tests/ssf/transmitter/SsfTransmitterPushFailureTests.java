@@ -176,6 +176,12 @@ public class SsfTransmitterPushFailureTests {
         // unreachable port (connect should fail), one at the healthy mock
         // receiver. A single LOGOUT user event is fanned out to both.
         String unreachableEndpoint = "http://127.0.0.1:" + reserveUnusedPort() + "/ssf/push-failure-unreach";
+        // The receiver client's ssf.validPushUrls is configured for the
+        // healthy mock port at realm-bootstrap time; override here with
+        // an entry that matches the dynamically-allocated unreachable
+        // port so the SSRF gate accepts the URL the test is about to
+        // register.
+        setReceiverValidPushUrls(RECEIVER_UNREACH, unreachableEndpoint);
 
         String unreachToken = obtainReceiverToken(RECEIVER_UNREACH, RECEIVER_UNREACH_SECRET);
         createPushStream(unreachToken, unreachableEndpoint, Set.of(CaepSessionRevoked.TYPE));
@@ -205,6 +211,22 @@ public class SsfTransmitterPushFailureTests {
         try (ServerSocket ss = new ServerSocket(0)) {
             return ss.getLocalPort();
         }
+    }
+
+    /**
+     * Updates {@code ssf.validPushUrls} on the receiver client at test
+     * time. Used by tests whose push URL is computed at runtime (e.g.
+     * a dynamically allocated unreachable port) and therefore can't be
+     * pinned in the realm-bootstrap allow-list.
+     */
+    protected void setReceiverValidPushUrls(String clientId, String exactUrl) {
+        ClientRepresentation client = findClientByClientId(clientId);
+        Assertions.assertNotNull(client, () -> "expected client '" + clientId + "' to be present in realm");
+        if (client.getAttributes() == null) {
+            client.setAttributes(new java.util.HashMap<>());
+        }
+        client.getAttributes().put(ClientStreamStore.SSF_VALID_PUSH_URLS_KEY, exactUrl);
+        realm.admin().clients().get(client.getId()).update(client);
     }
 
     protected void triggerUserLogout() {
@@ -368,6 +390,12 @@ public class SsfTransmitterPushFailureTests {
             // first attempt and at least one retry within the window.
             config.spiOption("ssf-transmitter", "default",
                     DefaultSsfTransmitterProviderFactory.CONFIG_OUTBOX_DRAINER_INTERVAL, "500ms");
+            // Test pushes to a local mock server on a loopback URL (http://127.0.0.1:NNNN/...).
+            // Relax the http-scheme + private-host gate so the mock URL is accepted; the
+            // per-client ssf.validPushUrls allow-list configured on each receiver below
+            // is still the SSRF defence.
+            config.spiOption("ssf-transmitter", "default",
+                    SsfTransmitterConfig.CONFIG_ALLOW_INSECURE_PUSH_TARGETS, "true");
             return configured;
         }
     }
@@ -400,6 +428,7 @@ public class SsfTransmitterPushFailureTests {
                             .directAccessGrantsEnabled(false)
                             .publicClient(false)
                             .attribute(ClientStreamStore.SSF_ENABLED_KEY, "true")
+                            .attribute(ClientStreamStore.SSF_VALID_PUSH_URLS_KEY, "http://127.0.0.1:8500/*")
                             .attribute(ClientStreamStore.SSF_DEFAULT_SUBJECTS_KEY, "ALL")
                             .build()
             );
@@ -411,6 +440,7 @@ public class SsfTransmitterPushFailureTests {
                             .directAccessGrantsEnabled(false)
                             .publicClient(false)
                             .attribute(ClientStreamStore.SSF_ENABLED_KEY, "true")
+                            .attribute(ClientStreamStore.SSF_VALID_PUSH_URLS_KEY, "http://127.0.0.1:8500/*")
                             .attribute(ClientStreamStore.SSF_DEFAULT_SUBJECTS_KEY, "ALL")
                             .build()
             );
@@ -422,6 +452,7 @@ public class SsfTransmitterPushFailureTests {
                             .directAccessGrantsEnabled(false)
                             .publicClient(false)
                             .attribute(ClientStreamStore.SSF_ENABLED_KEY, "true")
+                            .attribute(ClientStreamStore.SSF_VALID_PUSH_URLS_KEY, "http://127.0.0.1:8500/*")
                             .attribute(ClientStreamStore.SSF_DEFAULT_SUBJECTS_KEY, "ALL")
                             .build()
             );

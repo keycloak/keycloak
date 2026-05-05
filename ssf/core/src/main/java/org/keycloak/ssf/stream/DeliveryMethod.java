@@ -44,6 +44,19 @@ public enum DeliveryMethod {
         throw new IllegalArgumentException("Unknown delivery method: " + deliveryMethod);
     }
 
+    /**
+     * Coarse-grained PUSH/POLL family. Both spec variants of each transport
+     * (RFC 8935 + legacy RISC PUSH; RFC 8936 + legacy RISC POLL) collapse to
+     * the same family so per-client allow-listing operates on the operator's
+     * mental model rather than four separate URIs.
+     */
+    public DeliveryMethodFamily family() {
+        return switch (this) {
+            case PUSH, RISC_PUSH -> DeliveryMethodFamily.PUSH;
+            case POLL, RISC_POLL -> DeliveryMethodFamily.POLL;
+        };
+    }
+
     @JsonValue
     public String getSpecUri() {
         return specUrn;

@@ -3,7 +3,9 @@ package org.keycloak.ssf.transmitter.stream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -17,6 +19,7 @@ import org.keycloak.common.util.Time;
 import org.keycloak.events.outbox.OutboxStore;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
@@ -26,6 +29,7 @@ import org.keycloak.ssf.SsfProfile;
 import org.keycloak.ssf.event.token.SsfSecurityEventToken;
 import org.keycloak.ssf.metadata.TransmitterMetadata;
 import org.keycloak.ssf.stream.DeliveryMethod;
+import org.keycloak.ssf.stream.DeliveryMethodFamily;
 import org.keycloak.ssf.stream.StreamStatus;
 import org.keycloak.ssf.stream.StreamStatusValue;
 import org.keycloak.ssf.transmitter.SsfTransmitterProvider;
@@ -36,6 +40,8 @@ import org.keycloak.ssf.transmitter.metrics.SsfMetricsBinder;
 import org.keycloak.ssf.transmitter.outbox.SsfOutboxKinds;
 import org.keycloak.ssf.transmitter.stream.storage.SsfStreamStore;
 import org.keycloak.ssf.transmitter.stream.storage.client.ClientStreamStore;
+import org.keycloak.ssf.transmitter.support.SsfPushUrlValidator;
+import org.keycloak.ssf.transmitter.support.SsfPushUrlValidator.SsfPushUrlValidationException;
 import org.keycloak.ssf.transmitter.support.SsfTransmitterUrls;
 import org.keycloak.utils.KeycloakSessionUtil;
 
@@ -155,7 +161,7 @@ public class StreamService {
         replaceReceiverFields(input, streamConfig);
         applyLegacyFields(input, streamConfig, receiverClient, profile);
 
-        validate(streamConfig);
+        validate(streamConfig, receiverClient);
 
         // Transmitter-supplied identity fields.
         streamConfig.setStreamId(createStreamId(session, streamConfig));
@@ -465,7 +471,7 @@ public class StreamService {
         target.setDelivery(input.getDelivery());
     }
 
-    protected void validate(StreamConfig streamConfig) {
+    protected void validate(StreamConfig streamConfig, ClientModel receiverClient) {
 
         StreamDeliveryConfig delivery = streamConfig.getDelivery();
         if (delivery == null) {
@@ -486,18 +492,67 @@ public class StreamService {
             throw new SsfException("Invalid stream configuration: SSE CAEP delivery methods are disabled on this transmitter");
         }
 
-        validateDeliveryMethod(streamConfig, delivery);
+        validateAllowedDeliveryMethod(delivery, receiverClient);
+        validateDeliveryMethod(streamConfig, delivery, receiverClient);
 
         validateFieldLengths(streamConfig);
     }
 
-    protected void validateDeliveryMethod(StreamConfig streamConfig, StreamDeliveryConfig delivery) {
+    /**
+     * Per-receiver allow-list gate on the delivery family. Reads
+     * {@link ClientStreamStore#SSF_ALLOWED_DELIVERY_METHODS_KEY} off the
+     * receiver client; when set, the receiver-requested method's family
+     * ({@link DeliveryMethodFamily#PUSH}/{@link DeliveryMethodFamily#POLL}) MUST be
+     * present in the allow-list. Empty/absent attribute means "both
+     * allowed" (transmitter-default behaviour preserved).
+     */
+    protected void validateAllowedDeliveryMethod(StreamDeliveryConfig delivery, ClientModel receiverClient) {
+        if (receiverClient == null) {
+            return;
+        }
+        String raw = receiverClient.getAttribute(ClientStreamStore.SSF_ALLOWED_DELIVERY_METHODS_KEY);
+        if (raw == null || raw.isBlank()) {
+            return;
+        }
+        Set<DeliveryMethodFamily> allowed = new HashSet<>();
+        for (String token : Constants.CFG_DELIMITER_PATTERN.split(raw)) {
+            DeliveryMethodFamily family = DeliveryMethodFamily.ofMethodValue(token);
+            if (family != null) {
+                allowed.add(family);
+            }
+        }
+        if (allowed.isEmpty()) {
+            // The attribute is set but parses to no recognised family.
+            // Treat as misconfiguration rather than silently falling
+            // through to the default allow-both — admins who set the
+            // attribute meant to restrict, not to allow more.
+            throw new SsfException("Invalid stream configuration: ssf.allowedDeliveryMethods is configured but contains"
+                    + " no recognised delivery family (expected push and/or poll)");
+        }
+        DeliveryMethod method;
+        try {
+            method = DeliveryMethod.valueOfUri(delivery.getMethod());
+        } catch (IllegalArgumentException e) {
+            // Unknown method URI is rejected later by validateDeliveryMethod
+            // with its own clear message; nothing to add here.
+            return;
+        }
+        DeliveryMethodFamily requested = method.family();
+        if (!allowed.contains(requested)) {
+            throw new SsfException("Invalid stream configuration: delivery method '"
+                                   + requested.getValue() + "' is not allowed for this receiver"
+                                   + " (ssf.allowedDeliveryMethods = " + allowed.stream().map(DeliveryMethodFamily::getValue).sorted().toList() + ")");
+        }
+    }
+
+    protected void validateDeliveryMethod(StreamConfig streamConfig, StreamDeliveryConfig delivery, ClientModel receiverClient) {
         switch (delivery.getMethod()) {
             case Ssf.DELIVERY_METHOD_PUSH_URI, Ssf.DELIVERY_METHOD_RISC_PUSH_URI -> {
                 if (delivery.getEndpointUrl() == null) {
                     throw new SsfException("Invalid stream configuration: missing delivery endpoint push URL");
                 }
                 validatePushEndpointUrl(delivery.getEndpointUrl());
+                validatePushEndpointAgainstReceiverAllowList(delivery.getEndpointUrl(), receiverClient);
             }
             case Ssf.DELIVERY_METHOD_POLL_URI, Ssf.DELIVERY_METHOD_RISC_POLL_URI -> {
                 // Poll endpoint_url is owned by the transmitter per SSF
@@ -511,6 +566,111 @@ public class StreamService {
             }
             default -> throw new SsfException("Invalid stream configuration: unsupported delivery method");
         }
+    }
+
+    /**
+     * SSRF gate for receiver-supplied push URLs: matches the URL against
+     * the receiver client's {@code ssf.validPushUrls} allow-list and runs
+     * the post-match scheme/host check (see {@link SsfPushUrlValidator}).
+     * Rejection produces a {@link SsfException} → HTTP 400 with a stable
+     * message identifying the failing rule.
+     *
+     * <p>The error returned to the receiver is deliberately generic — it
+     * does not echo the rejected URL or suggest an allow-list value, to
+     * avoid leaking diagnostic detail to a potentially malicious caller.
+     * Operators get the full picture in the server log: the URL the
+     * receiver tried to register and a suggested {@code ssf.validPushUrls}
+     * entry derived from it. With that information an operator can update
+     * the client attribute in one step and the receiver can retry.
+     */
+    protected void validatePushEndpointAgainstReceiverAllowList(String endpointUrl, ClientModel receiverClient) {
+        if (receiverClient == null) {
+            // No client context (admin-initiated path that didn't thread
+            // it through, defensive) — fall back to the structural URL
+            // check only. Should not happen on the receiver-facing path.
+            return;
+        }
+        Set<String> validPushUrls = readValidPushUrls(
+                receiverClient.getAttribute(ClientStreamStore.SSF_VALID_PUSH_URLS_KEY));
+        try {
+            transmitterProvider.pushUrlValidator().validate(endpointUrl, validPushUrls);
+        } catch (SsfPushUrlValidationException e) {
+            logPushUrlRejection(endpointUrl, receiverClient, e);
+            throw e;
+        }
+    }
+
+    /**
+     * Emits a WARN with the rejected URL and a suggested allow-list entry
+     * so operators can fix the {@code ssf.validPushUrls} client attribute
+     * without having to ask the receiver what URL it tried. The receiver-
+     * facing 400 stays generic (see
+     * {@link #validatePushEndpointAgainstReceiverAllowList}); this log line
+     * is the operator's side of the same failure.
+     */
+    protected void logPushUrlRejection(String endpointUrl,
+                                       ClientModel receiverClient,
+                                       SsfPushUrlValidationException cause) {
+        String suggestion = suggestValidPushUrlEntry(endpointUrl);
+        RealmModel realm = session.getContext().getRealm();
+        log.warnf("SSF push URL rejected (%s). realm=%s client=%s rejectedUrl=%s suggestedAllowListEntry=%s",
+                cause.getReason(),
+                realm != null ? realm.getName() : "(unknown)",
+                receiverClient.getClientId(),
+                endpointUrl,
+                suggestion);
+    }
+
+    /**
+     * Derives a conservative {@code ssf.validPushUrls} entry that would
+     * have allowed the rejected URL. Uses {@code scheme://host[:port]/*}
+     * — pins the origin and lets the receiver vary the path. Operators
+     * who need a tighter pin (per-tenant prefix, exact URL) can adjust
+     * after seeing the suggestion. Returns the input verbatim if it
+     * doesn't parse as a URI.
+     */
+    protected String suggestValidPushUrlEntry(String endpointUrl) {
+        if (endpointUrl == null || endpointUrl.isBlank()) {
+            return "(none — URL was missing)";
+        }
+        URI uri;
+        try {
+            uri = new URI(endpointUrl);
+        } catch (URISyntaxException e) {
+            return endpointUrl;
+        }
+        if (uri.getScheme() == null || uri.getHost() == null) {
+            return endpointUrl;
+        }
+        StringBuilder sb = new StringBuilder();
+        sb.append(uri.getScheme()).append("://");
+        sb.append(uri.getHost());
+        if (uri.getPort() != -1) {
+            sb.append(':').append(uri.getPort());
+        }
+        sb.append("/*");
+        return sb.toString();
+    }
+
+    /**
+     * Splits a raw {@code ssf.validPushUrls}-shaped client-attribute value
+     * on the {@link Constants#CFG_DELIMITER} delimiter, in the same shape
+     * as {@code SecureClientUrisExecutor#getAttributeMultivalued}. Trims
+     * whitespace, drops empty entries, preserves insertion order; {@code null}
+     * or blank input yields an empty set.
+     */
+    protected Set<String> readValidPushUrls(String rawAttributeValue) {
+        if (rawAttributeValue == null || rawAttributeValue.isBlank()) {
+            return Collections.emptySet();
+        }
+        Set<String> entries = new LinkedHashSet<>();
+        for (String entry : Constants.CFG_DELIMITER_PATTERN.split(rawAttributeValue)) {
+            String trimmed = entry.trim();
+            if (!trimmed.isEmpty()) {
+                entries.add(trimmed);
+            }
+        }
+        return entries;
     }
 
     /**
@@ -694,7 +854,7 @@ public class StreamService {
 
         // Re-run full validation against the merged result; delivery method /
         // push endpoint constraints are enforced on the combined state.
-        validate(draft);
+        validate(draft, receiverClient);
 
         // If the merge flipped the delivery channel (e.g. PUSH → POLL),
         // regenerate the poll endpoint URL if now needed and retarget
@@ -773,7 +933,7 @@ public class StreamService {
         replaceReceiverFields(streamUpdate, draft);
         applyLegacyFields(streamUpdate, draft, receiverClient, profile);
 
-        validate(draft);
+        validate(draft, receiverClient);
 
         // Delivery method may have flipped (PUSH ↔ POLL) — re-derive
         // the poll endpoint URL if the new method is POLL and retarget
