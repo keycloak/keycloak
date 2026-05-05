@@ -44,6 +44,7 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testframework.realm.ClientBuilder;
+import org.keycloak.testframework.remote.providers.runonserver.RunOnServerException;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.AdminApiUtil;
@@ -1117,10 +1118,13 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
 
     private boolean isSessionActive(String sessionId) {
         try {
-            testingClient.testing().getClientSessionsCountInUserSession("test", sessionId);
+            runOnServer.fetch(RunHelpers.getClientSessionsCountInUserSession("test", sessionId));
             return true;
-        } catch (NotFoundException nfe) {
-            return false;
+        } catch (RunOnServerException nfe) {
+            if (nfe.getCause() instanceof NotFoundException) {
+                return false;
+            }
+            throw nfe;
         }
     }
 

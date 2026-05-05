@@ -169,22 +169,6 @@ public class TestingResourceProvider implements RealmResourceProvider {
         return Response.noContent().build();
     }
 
-    @GET
-    @Path("/get-client-sessions-count")
-    @Produces(MediaType.APPLICATION_JSON)
-    public Integer getClientSessionsCountInUserSession(@QueryParam("realm") final String name, @QueryParam("session") final String sessionId) {
-
-        RealmModel realm = getRealmByName(name);
-
-        UserSessionModel sessionModel = session.sessions().getUserSession(realm, sessionId);
-        if (sessionModel == null) {
-            throw new NotFoundException("Session not found");
-        }
-
-        // TODO: Might need optimization to prevent loading client sessions from cache
-        return sessionModel.getAuthenticatedClientSessions().size();
-    }
-
     @POST
     @Path("/poll-event-queue")
     @Produces(MediaType.APPLICATION_JSON)

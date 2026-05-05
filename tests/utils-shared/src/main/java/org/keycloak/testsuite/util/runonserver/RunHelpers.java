@@ -98,6 +98,30 @@ public class RunHelpers {
         };
     }
 
+    public static FetchOnServerWrapper<Integer> getClientSessionsCountInUserSession(String realmName, String sessionId) {
+        return new FetchOnServerWrapper<>() {
+            @Override
+            public FetchOnServer getRunOnServer() {
+                return session -> {
+                    RealmModel realm = getRealmByName(session, realmName);
+
+                    UserSessionModel sessionModel = session.sessions().getUserSession(realm, sessionId);
+                    if (sessionModel == null) {
+                        throw new NotFoundException("Session not found");
+                    }
+
+                    // TODO: Might need optimization to prevent loading client sessions from cache
+                    return sessionModel.getAuthenticatedClientSessions().size();
+                };
+            }
+
+            @Override
+            public Class<Integer> getResultClass() {
+                return Integer.class;
+            }
+        };
+    }
+
     private static RealmModel getRealmByName(KeycloakSession session, String realmName) {
         RealmProvider realmProvider = session.getProvider(RealmProvider.class);
         RealmModel realm = realmProvider.getRealmByName(realmName);
