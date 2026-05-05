@@ -59,7 +59,6 @@ public class DefaultClientsApi implements ClientsApi {
     /**
      * When the path {@code clientId} does not resolve, return 403 if the caller cannot list clients
      * (anti client-ID phishing), matching {@code ClientsResource#getClient} for Admin API v1.
-     * Not applied to PUT upsert so {@code manage} without {@code list} can create by clientId.
      */
     private void enforceAntiPhishingIfClientMissing(String clientId) {
         if (realm.getClientByClientId(clientId) == null && !permissions.clients().canList()) {
