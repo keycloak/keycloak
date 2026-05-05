@@ -25,13 +25,13 @@ const SCIM_CORE_ATTRIBUTES = [
 ];
 
 const SCIM_ENTERPRISE_ATTRIBUTES = [
-  "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User.employeeNumber",
-  "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User.costCenter",
-  "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User.organization",
-  "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User.division",
-  "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User.department",
-  "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User.manager.value",
-  "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User.manager.displayName",
+  "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User:employeeNumber",
+  "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User:costCenter",
+  "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User:organization",
+  "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User:division",
+  "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User:department",
+  "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User:manager.value",
+  "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User:manager.displayName",
 ];
 
 type ScimAttributeGroup = {
