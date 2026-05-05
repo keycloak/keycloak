@@ -185,7 +185,7 @@ public class AdminConsole {
     @Path("whoami")
     @OPTIONS
     public Response whoAmIPreFlight() {
-        return new AdminCorsPreflightService().preflight();
+        return new AdminCorsPreflightService(realm.getClientByClientId(Constants.ADMIN_CONSOLE_CLIENT_ID)).preflight();
     }
 
     /**
