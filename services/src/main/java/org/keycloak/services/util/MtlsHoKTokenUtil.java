@@ -128,7 +128,9 @@ public class MtlsHoKTokenUtil {
             String DERX509Base64UrlEncoded = null;
             try {
                 DERX509Base64UrlEncoded = getCertificateThumbprintInSHA256DERX509Base64UrlEncoded(certs[i]);
-            } catch (Exception e) {}
+            } catch (Exception e) {
+                logger.tracef("Failed to get certificate thumbprint for cert[%d]: %s", i, e.getMessage());
+            }
             logger.tracef(":: certs[%d] Base64URL Encoded SHA-256 Hash of DER formatted first x509 Client Certificate in Certificate Chain = %s", i, DERX509Base64UrlEncoded);
             logger.tracef(":: certs[%d] DER Dump Bytes of first x509 Client Certificate TBScertificate in Certificate Chain = %d", i, certs[i].getTBSCertificate().length);
             logger.tracef(":: certs[%d] Signature Algorithm of first x509 Client Certificate in Certificate Chain = %s", i, certs[i].getSigAlgName());

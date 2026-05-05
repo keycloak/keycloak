@@ -29,6 +29,8 @@ import java.util.stream.Stream;
 import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+
+import org.jboss.logging.Logger;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
@@ -40,6 +42,8 @@ import org.keycloak.services.util.DPoPUtil;
  * @version $Revision: 1 $
  */
 public class ProtocolMapperUtils {
+
+    private static final Logger logger = Logger.getLogger(ProtocolMapperUtils.class);
 
     public static final String USER_ROLE = "user.role";
     public static final String USER_ATTRIBUTE = "user.attribute";
@@ -116,7 +120,8 @@ public class ProtocolMapperUtils {
         try {
             Object val = m.invoke(user);
             if (val != null) return val.toString();
-        } catch (Exception ignore) {
+        } catch (Exception e) {
+            logger.tracef("Failed to invoke method %s on user: %s", m.getName(), e.getMessage());
         }
 
         return null;

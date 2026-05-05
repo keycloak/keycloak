@@ -31,6 +31,7 @@ import org.keycloak.representations.JsonWebToken;
 import org.keycloak.util.JsonSerialization;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import org.jboss.logging.Logger;
 
 import static org.keycloak.utils.JsonUtils.splitClaimPath;
 
@@ -41,6 +42,8 @@ import static org.keycloak.utils.JsonUtils.splitClaimPath;
 public abstract class AbstractClaimMapper extends AbstractIdentityProviderMapper {
     public static final String CLAIM = "claim";
     public static final String CLAIM_VALUE = "claim.value";
+
+    private static final Logger logger = Logger.getLogger(AbstractClaimMapper.class);
 
     public static Object getClaimValue(JsonWebToken token, String claim) {
 
@@ -125,19 +128,19 @@ public abstract class AbstractClaimMapper extends AbstractIdentityProviderMapper
             try {
                 if (Double.valueOf(desiredValue).equals(value)) return true;
             } catch (Exception e) {
-
+                logger.tracef("Failed to parse desired value as Double: %s", desiredValue);
             }
         } else if (value instanceof Integer) {
             try {
                 if (Integer.valueOf(desiredValue).equals(value)) return true;
             } catch (Exception e) {
-
+                logger.tracef("Failed to parse desired value as Integer: %s", desiredValue);
             }
         } else if (value instanceof Boolean) {
             try {
                 if (Boolean.valueOf(desiredValue).equals(value)) return true;
             } catch (Exception e) {
-
+                logger.tracef("Failed to parse desired value as Boolean: %s", desiredValue);
             }
         } else if (value instanceof List) {
             List list = (List)value;
@@ -147,7 +150,8 @@ public abstract class AbstractClaimMapper extends AbstractIdentityProviderMapper
         } else if (value instanceof JsonNode) {
             try {
                 if (JsonSerialization.readValue(desiredValue, JsonNode.class).equals(value)) return true;
-            } catch (Exception ignore) {
+            } catch (Exception e) {
+                logger.tracef("Failed to parse desired value as JsonNode: %s", desiredValue);
             }
         }
         return false;
