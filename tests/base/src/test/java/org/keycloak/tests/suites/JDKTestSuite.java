@@ -4,6 +4,7 @@ import org.keycloak.tests.admin.client.CredentialsTest;
 import org.keycloak.tests.forms.SSOTest;
 import org.keycloak.tests.keys.GeneratedRsaKeyProviderTest;
 import org.keycloak.tests.keys.JavaKeystoreKeyProviderTest;
+import org.keycloak.tests.oauth.AuthorizationCodeTest;
 import org.keycloak.tests.policy.PasswordPolicyTest;
 import org.keycloak.tests.transactions.TransactionsTest;
 
@@ -17,7 +18,8 @@ import org.junit.platform.suite.api.Suite;
         JavaKeystoreKeyProviderTest.class,
         PasswordPolicyTest.class,
         SSOTest.class,
-        TransactionsTest.class
+        TransactionsTest.class,
+        AuthorizationCodeTest.class
 })
 public class JDKTestSuite {
 }
