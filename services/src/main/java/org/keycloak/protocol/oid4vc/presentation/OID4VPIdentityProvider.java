@@ -48,6 +48,7 @@ public class OID4VPIdentityProvider extends AbstractIdentityProvider<OID4VPIdent
     static final String STATE_REFERENCE_PREFIX = "oid4vp.state.";
     static final String RESPONSE_CODE_PREFIX = "oid4vp.response-code.";
     static final String ENTRY_JSON = "json";
+    static final String CREDENTIAL_QUERY_ID = "credential";
 
     public OID4VPIdentityProvider(KeycloakSession session, OID4VPIdentityProviderConfig config) {
         super(session, config);
@@ -60,8 +61,10 @@ public class OID4VPIdentityProvider extends AbstractIdentityProvider<OID4VPIdent
         String rootSessionId = request.getAuthenticationSession().getParentSession() != null
                 ? request.getAuthenticationSession().getParentSession().getId()
                 : null;
+        String nonce = UUID.randomUUID().toString();
         OID4VPRequestHandleReference handleReference = new OID4VPRequestHandleReference()
                 .setState(request.getState().getEncoded())
+                .setNonce(nonce)
                 .setRootSessionId(rootSessionId)
                 .setTabId(request.getAuthenticationSession().getTabId());
         // The request handle must remain dereferenceable for repeated request_uri fetches,
@@ -100,7 +103,7 @@ public class OID4VPIdentityProvider extends AbstractIdentityProvider<OID4VPIdent
         return exchangeNotSupported();
     }
 
-    AuthorizationRequest createAuthorizationRequest(RealmModel realm, String clientId, String state, String responseUri) {
+    AuthorizationRequest createAuthorizationRequest(RealmModel realm, String clientId, String state, String responseUri, String nonce) {
         int now = Time.currentTime();
         return new AuthorizationRequest()
                 .setJti(UUID.randomUUID().toString())
@@ -113,7 +116,7 @@ public class OID4VPIdentityProvider extends AbstractIdentityProvider<OID4VPIdent
                 .setResponseMode(OID4VPConstants.RESPONSE_MODE_DIRECT_POST)
                 .setResponseUri(responseUri)
                 .setState(state)
-                .setNonce(UUID.randomUUID().toString())
+                .setNonce(nonce)
                 .setDcqlQuery(createStaticDcqlQuery());
     }
 
@@ -132,12 +135,12 @@ public class OID4VPIdentityProvider extends AbstractIdentityProvider<OID4VPIdent
         // TODO: Replace this hardcoded DCQL query with configurable verifier policy input.
         return new DcqlQuery().setCredentials(List.of(
                 new DcqlCredentialQuery()
-                        .setId("keycloak-oid4vp-credential")
+                        .setId(CREDENTIAL_QUERY_ID)
                         .setFormat("dc+sd-jwt")
                         .setMeta(new DcqlCredentialMeta()
                                 .setVctValues(List.of("urn:keycloak:oid4vp:credential")))
                         .setClaims(List.of(
-                                new DcqlClaimQuery().setPath(List.of("sub")),
+                                new DcqlClaimQuery().setPath(List.of(getConfig().getSubjectClaimName())),
                                 new DcqlClaimQuery().setPath(List.of("given_name")),
                                 new DcqlClaimQuery().setPath(List.of("family_name"))))));
     }
@@ -153,6 +156,7 @@ public class OID4VPIdentityProvider extends AbstractIdentityProvider<OID4VPIdent
     static class OID4VPRequestHandleReference {
 
         private String state;
+        private String nonce;
         private String rootSessionId;
         private String tabId;
 
@@ -162,6 +166,15 @@ public class OID4VPIdentityProvider extends AbstractIdentityProvider<OID4VPIdent
 
         public OID4VPRequestHandleReference setState(String state) {
             this.state = state;
+            return this;
+        }
+
+        public String getNonce() {
+            return nonce;
+        }
+
+        public OID4VPRequestHandleReference setNonce(String nonce) {
+            this.nonce = nonce;
             return this;
         }
 

@@ -10,9 +10,9 @@ import org.keycloak.http.simple.SimpleHttp;
 import org.keycloak.http.simple.SimpleHttpRequest;
 import org.keycloak.http.simple.SimpleHttpResponse;
 import org.keycloak.jose.jws.JWSInput;
-import org.keycloak.protocol.oid4vc.presentation.OID4VPConstants;
 import org.keycloak.protocol.oid4vc.model.presentation.AuthorizationRequest;
 import org.keycloak.protocol.oid4vc.model.presentation.DirectPostResponse;
+import org.keycloak.protocol.oid4vc.presentation.OID4VPConstants;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.ui.page.LoginPage;
 import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
@@ -75,10 +75,22 @@ public class OID4VPBasicWallet {
     }
 
     public DirectPostResponse submitDirectPost(AuthorizationRequest authorizationRequest, String vpToken) throws Exception {
+        try (SimpleHttpResponse response = submitDirectPostResponse(authorizationRequest, vpToken)) {
+            return response.asJson(DirectPostResponse.class);
+        }
+    }
+
+    public int submitDirectPostStatus(AuthorizationRequest authorizationRequest, String vpToken) throws Exception {
+        try (SimpleHttpResponse response = submitDirectPostResponse(authorizationRequest, vpToken)) {
+            return response.getStatus();
+        }
+    }
+
+    private SimpleHttpResponse submitDirectPostResponse(AuthorizationRequest authorizationRequest, String vpToken) throws Exception {
         return redirectlessHttp.doPost(authorizationRequest.getResponseUri())
                 .param(OID4VPConstants.STATE, authorizationRequest.getState())
                 .param(OID4VPConstants.VP_TOKEN, vpToken)
-                .asJson(DirectPostResponse.class);
+                .asResponse();
     }
 
     public AuthorizationEndpointResponse continueInBrowser(DirectPostResponse directPostResponse) {

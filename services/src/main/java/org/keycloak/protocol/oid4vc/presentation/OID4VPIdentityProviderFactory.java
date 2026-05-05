@@ -56,7 +56,14 @@ public class OID4VPIdentityProviderFactory extends AbstractIdentityProviderFacto
         requestObjectLifespan.setType(ProviderConfigProperty.STRING_TYPE);
         requestObjectLifespan.setDefaultValue(Integer.toString(OID4VPIdentityProviderConfig.DEFAULT_REQUEST_OBJECT_LIFESPAN));
 
-        return List.of(walletScheme, requestObjectLifespan);
+        ProviderConfigProperty subjectClaimName = new ProviderConfigProperty();
+        subjectClaimName.setName(OID4VPIdentityProviderConfig.SUBJECT_CLAIM_NAME);
+        subjectClaimName.setLabel("Subject Claim Name");
+        subjectClaimName.setHelpText("Name of the verified credential claim to use as the brokered identity subject.");
+        subjectClaimName.setType(ProviderConfigProperty.STRING_TYPE);
+        subjectClaimName.setDefaultValue(OID4VPIdentityProviderConfig.DEFAULT_SUBJECT_CLAIM_NAME);
+
+        return List.of(walletScheme, requestObjectLifespan, subjectClaimName);
     }
 
     @Override

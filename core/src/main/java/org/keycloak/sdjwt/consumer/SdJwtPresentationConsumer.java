@@ -24,6 +24,7 @@ import org.keycloak.common.VerificationException;
 import org.keycloak.crypto.SignatureVerifierContext;
 import org.keycloak.sdjwt.IssuerSignedJWT;
 import org.keycloak.sdjwt.IssuerSignedJwtVerificationOpts;
+import org.keycloak.sdjwt.VerifiedSdJwt;
 import org.keycloak.sdjwt.vp.KeyBindingJwtVerificationOpts;
 import org.keycloak.sdjwt.vp.SdJwtVP;
 
@@ -49,7 +50,7 @@ public class SdJwtPresentationConsumer {
      * @param keyBindingJwtVerificationOpts   policy for Key-binding JWT verification
      * @throws VerificationException if the verification fails for some reason
      */
-    public void verifySdJwtPresentation(
+    public VerifiedSdJwt verifySdJwtPresentation(
             SdJwtVP sdJwtVP,
             PresentationRequirements presentationRequirements,
             List<TrustedSdJwtIssuer> trustedSdJwtIssuers,
@@ -67,12 +68,12 @@ public class SdJwtPresentationConsumer {
 
         // Verify the SD-JWT token cryptographically
         // Pass presentation requirements to enforce that the presented token meets them
-        sdJwtVP.getSdJwtVerificationContext()
+        return sdJwtVP.getSdJwtVerificationContext()
                 .verifyPresentation(
-                        issuerVerifyingKeys,
-                        issuerSignedJwtVerificationOpts,
-                        keyBindingJwtVerificationOpts,
-                        presentationRequirements
+                    issuerVerifyingKeys,
+                    issuerSignedJwtVerificationOpts,
+                    keyBindingJwtVerificationOpts,
+                    presentationRequirements
                 );
     }
 }

@@ -22,7 +22,9 @@ public class OID4VPIdentityProviderConfig extends IdentityProviderModel {
 
     public static final String REQUEST_OBJECT_LIFESPAN = "requestObjectLifespan";
     public static final String WALLET_SCHEME = "walletScheme";
+    public static final String SUBJECT_CLAIM_NAME = "subjectClaimName";
     public static final int DEFAULT_REQUEST_OBJECT_LIFESPAN = 300;
+    public static final String DEFAULT_SUBJECT_CLAIM_NAME = "sub";
 
     public OID4VPIdentityProviderConfig() {
     }
@@ -48,5 +50,10 @@ public class OID4VPIdentityProviderConfig extends IdentityProviderModel {
     public String getWalletScheme() {
         String configured = getConfig().get(WALLET_SCHEME);
         return configured == null || configured.isBlank() ? OID4VPConstants.DEFAULT_WALLET_SCHEME : configured;
+    }
+
+    public String getSubjectClaimName() {
+        String configured = getConfig().get(SUBJECT_CLAIM_NAME);
+        return configured == null || configured.isBlank() ? DEFAULT_SUBJECT_CLAIM_NAME : configured;
     }
 }

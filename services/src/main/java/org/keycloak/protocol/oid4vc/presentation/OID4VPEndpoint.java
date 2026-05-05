@@ -30,9 +30,9 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
+import org.keycloak.VCFormat;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.UserAuthenticationIdentityProvider.AuthenticationCallback;
-import org.keycloak.common.util.Time;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.crypto.SignatureProvider;
@@ -44,9 +44,16 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oid4vc.model.presentation.AuthorizationRequest;
 import org.keycloak.protocol.oid4vc.model.presentation.DirectPostRequest;
 import org.keycloak.protocol.oid4vc.model.presentation.DirectPostResponse;
+import org.keycloak.protocol.oid4vc.presentation.verification.CredentialVerificationException;
+import org.keycloak.protocol.oid4vc.presentation.verification.CredentialVerificationRequest;
+import org.keycloak.protocol.oid4vc.presentation.verification.CredentialVerificationResult;
+import org.keycloak.protocol.oid4vc.presentation.verification.CredentialVerifier;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
 import org.keycloak.util.JsonSerialization;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 
 public class OID4VPEndpoint {
 
@@ -80,7 +87,8 @@ public class OID4VPEndpoint {
 
         String responseUri = provider.getVerifierEndpoint(realm);
 
-        AuthorizationRequest authorizationRequest = provider.createAuthorizationRequest(realm, responseUri, handleReference.getState(), responseUri);
+        AuthorizationRequest authorizationRequest = provider.createAuthorizationRequest(
+                realm, responseUri, handleReference.getState(), responseUri, handleReference.getNonce());
         String requestObject = new JWSBuilder()
                 .type(OID4VPConstants.REQUEST_OBJECT_TYPE)
                 .jsonContent(authorizationRequest)
@@ -103,7 +111,18 @@ public class OID4VPEndpoint {
         }
         session.getContext().setAuthenticationSession(authSession);
 
-        // TODO: Validate and extract claims from the presented VP token instead of accepting any well-formed direct_post payload.
+        CredentialVerificationResult verificationResult = null;
+        if (!directPostRequest.isErrorResponse()) {
+            try {
+                verificationResult = verifyVpToken(
+                        directPostRequest.getVpToken(),
+                        provider.getVerifierEndpoint(realm),
+                        stateReference.getNonce());
+            } catch (CredentialVerificationException e) {
+                return Response.status(Response.Status.BAD_REQUEST).build();
+            }
+        }
+
         int lifespan = provider.getConfig().getRequestObjectLifespan();
         String responseCode = UUID.randomUUID().toString();
         session.singleUseObjects().put(
@@ -112,7 +131,8 @@ public class OID4VPEndpoint {
                 Map.of(OID4VPIdentityProvider.ENTRY_JSON, JsonSerialization.valueAsString(
                         new OID4VPDirectPostResult()
                                 .setState(directPostRequest.getState())
-                                .setAuthorizationResponse(directPostRequest))));
+                                .setAuthorizationResponse(directPostRequest)
+                                .setVerificationResult(verificationResult))));
 
         URI redirectUri = session.getContext().getUri().getBaseUriBuilder()
                 .path("realms")
@@ -161,17 +181,78 @@ public class OID4VPEndpoint {
             return callback.error(provider.getConfig(), message);
         }
 
-        // TODO: Replace this static brokered identity with data derived from a validated VP token.
-        String uniqueSuffix = authSession.getTabId() != null ? authSession.getTabId() : Integer.toString(Time.currentTime());
-        BrokeredIdentityContext identity = new BrokeredIdentityContext("dummy-subject", provider.getConfig());
+        CredentialVerificationResult verificationResult = result.getVerificationResult();
+        if (verificationResult == null) {
+            return callback.error(provider.getConfig(), "Missing credential verification result");
+        }
+
+        String subjectClaimName = provider.getConfig().getSubjectClaimName();
+        String subject = stringClaim(verificationResult, subjectClaimName);
+        if (subject == null || subject.isBlank()) {
+            return callback.error(provider.getConfig(), "Missing subject claim in verified credential: " + subjectClaimName);
+        }
+
+        BrokeredIdentityContext identity = new BrokeredIdentityContext(subject, provider.getConfig());
         identity.setIdp(provider);
         identity.setAuthenticationSession(authSession);
-        identity.setUsername("oid4vp-" + uniqueSuffix);
-        identity.setModelUsername("oid4vp-" + uniqueSuffix);
-        identity.setEmail("oid4vp-" + uniqueSuffix + "@example.org");
-        identity.setFirstName("OID4VP");
-        identity.setLastName("User");
+        identity.setUsername(subject);
+        identity.setModelUsername(subject);
+        identity.setEmail(stringClaim(verificationResult, "email"));
+        identity.setFirstName(stringClaim(verificationResult, "given_name"));
+        identity.setLastName(stringClaim(verificationResult, "family_name"));
+        identity.getContextData().put("OID4VP_VERIFIED_CREDENTIAL", verificationResult);
         return callback.authenticated(identity);
+    }
+
+    private CredentialVerificationResult verifyVpToken(String vpToken, String expectedAudience, String expectedNonce)
+            throws CredentialVerificationException {
+        CredentialVerifier verifier = session.getProvider(CredentialVerifier.class, VCFormat.SD_JWT_VC);
+        if (verifier == null) {
+            throw new CredentialVerificationException("No SD-JWT credential verifier available");
+        }
+
+        if (vpToken == null || vpToken.isBlank()) {
+            throw new CredentialVerificationException("Missing VP token");
+        }
+
+        String credential = sdJwtCredentialFromVpToken(vpToken);
+        return verifier.verify(new CredentialVerificationRequest(credential, expectedAudience, expectedNonce));
+    }
+
+    private String sdJwtCredentialFromVpToken(String vpToken) throws CredentialVerificationException {
+        JsonNode vpTokenJson;
+        try {
+            vpTokenJson = JsonSerialization.mapper.readTree(vpToken);
+        } catch (JsonProcessingException e) {
+            throw new CredentialVerificationException("VP token must be a JSON object", e);
+        } catch (Exception e) {
+            throw new CredentialVerificationException("Unable to parse VP token", e);
+        }
+
+        if (vpTokenJson == null || !vpTokenJson.isObject()) {
+            throw new CredentialVerificationException("VP token must be a JSON object");
+        }
+
+        JsonNode presentations = vpTokenJson.get(OID4VPIdentityProvider.CREDENTIAL_QUERY_ID);
+        if (presentations == null || !presentations.isArray()) {
+            throw new CredentialVerificationException("VP token is missing credential query result: "
+                    + OID4VPIdentityProvider.CREDENTIAL_QUERY_ID);
+        }
+        if (presentations.size() != 1) {
+            throw new CredentialVerificationException("Expected exactly one presentation for credential query: "
+                    + OID4VPIdentityProvider.CREDENTIAL_QUERY_ID);
+        }
+
+        JsonNode presentation = presentations.get(0);
+        if (!presentation.isTextual()) {
+            throw new CredentialVerificationException("Expected SD-JWT presentation to be a string");
+        }
+        return presentation.textValue();
+    }
+
+    private String stringClaim(CredentialVerificationResult verificationResult, String claimName) {
+        Object value = verificationResult.getClaims().get(claimName);
+        return value instanceof String string ? string : null;
     }
 
     private SignatureSignerContext getSignatureSigner() {
@@ -230,6 +311,7 @@ public class OID4VPEndpoint {
 
         private String state;
         private DirectPostRequest authorizationResponse;
+        private CredentialVerificationResult verificationResult;
 
         public String getState() {
             return state;
@@ -246,6 +328,15 @@ public class OID4VPEndpoint {
 
         public OID4VPDirectPostResult setAuthorizationResponse(DirectPostRequest authorizationResponse) {
             this.authorizationResponse = authorizationResponse;
+            return this;
+        }
+
+        public CredentialVerificationResult getVerificationResult() {
+            return verificationResult;
+        }
+
+        public OID4VPDirectPostResult setVerificationResult(CredentialVerificationResult verificationResult) {
+            this.verificationResult = verificationResult;
             return this;
         }
     }
