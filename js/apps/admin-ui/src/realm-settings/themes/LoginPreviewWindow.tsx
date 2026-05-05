@@ -1,7 +1,7 @@
 import { loginThemeProperties as properties } from "./LoginThemeProperties";
 import { usePreviewLogo } from "./LogoContext";
 import { useEnvironment } from "@keycloak/keycloak-ui-shared";
-import { Environment } from "../../environment";
+import { Environment } from "../../environment.d";
 import { usePreviewBackground } from "./BackgroundContext";
 
 type LoginPreviewWindowProps = {

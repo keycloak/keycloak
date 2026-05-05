@@ -12,7 +12,7 @@ import { NavLink, useNavigate } from "react-router-dom";
 import { useAccess } from "./context/access/Access";
 import { useRealm } from "./context/realm-context/RealmContext";
 import { useServerInfo } from "./context/server-info/ServerInfoProvider";
-import { Environment } from "./environment";
+import { Environment } from "./environment.d";
 import { toPage } from "./page/routes";
 import { routes } from "./routes";
 import { resolveDisplayName } from "./util";

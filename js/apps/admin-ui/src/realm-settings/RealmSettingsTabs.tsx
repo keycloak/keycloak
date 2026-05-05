@@ -27,7 +27,7 @@ import { ViewHeader } from "../components/view-header/ViewHeader";
 import { useAccess } from "../context/access/Access";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { toDashboard } from "../dashboard/routes/Dashboard";
-import type { Environment } from "../environment";
+import type { Environment } from "../environment.d";
 import helpUrls from "../help-urls";
 import {
   convertFormValuesToObject,
