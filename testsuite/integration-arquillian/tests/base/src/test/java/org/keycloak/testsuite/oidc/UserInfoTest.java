@@ -552,7 +552,7 @@ public class UserInfoTest extends AbstractKeycloakTest {
             AccessTokenResponse accessTokenResponse = executeGrantAccessTokenRequest(client);
 
             String realmName = "test";
-            runOnServer.run(RunHelpers.removeUserSessions(realmName));
+            runOnServerMaster.run(RunHelpers.removeUserSessions(realmName));
 
             Response response = UserInfoClientUtil.executeUserInfoRequest_getMethod(client, accessTokenResponse.getToken());
 
@@ -787,7 +787,7 @@ public class UserInfoTest extends AbstractKeycloakTest {
         try {
             AccessTokenResponse accessTokenResponse = executeGrantAccessTokenRequest(client, true, true);
 
-            testingClient.testing().removeExpired("test");
+            runOnServerMaster.run(RunHelpers.removeExpired("test"));
 
             Response response = UserInfoClientUtil.executeUserInfoRequest_getMethod(client, accessTokenResponse.getToken());
 

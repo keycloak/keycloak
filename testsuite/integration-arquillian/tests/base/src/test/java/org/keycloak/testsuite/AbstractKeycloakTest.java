@@ -100,6 +100,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 import static org.keycloak.testsuite.admin.Users.setPasswordFor;
 import static org.keycloak.testsuite.auth.page.AuthRealm.MASTER;
+import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
 import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_HOST;
 import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_PORT;
 import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_SCHEME;
@@ -138,7 +139,8 @@ public abstract class AbstractKeycloakTest {
 
     protected KeycloakTestingClient testingClient;
 
-    protected KeycloakTestingClient.Server runOnServer;
+    protected KeycloakTestingClient.Server runOnServerMaster;
+    protected KeycloakTestingClient.Server runOnServerTest;
 
     protected TimeOffSet timeOffSet = new TimeOffSet(this);
 
@@ -187,7 +189,8 @@ public abstract class AbstractKeycloakTest {
         }
 
         getTestingClient();
-        runOnServer = testingClient.server();
+        runOnServerMaster = testingClient.server();
+        runOnServerTest = testingClient.server(TEST);
 
         setDefaultPageUriParameters();
 
@@ -251,7 +254,7 @@ public abstract class AbstractKeycloakTest {
         } else {
             log.info("calling all TestCleanup");
             // Remove all sessions
-            testContext.getTestRealmReps().stream().forEach((r)->runOnServer.run(RunHelpers.removeUserSessions(r.getRealm())));
+            testContext.getTestRealmReps().stream().forEach((r)-> runOnServerMaster.run(RunHelpers.removeUserSessions(r.getRealm())));
 
             // Cleanup objects
             for (TestCleanup cleanup : testContext.getCleanups().values()) {

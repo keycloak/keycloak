@@ -360,7 +360,7 @@ public class LightWeightAccessTokenTest extends AbstractClientPoliciesTest {
             AccessToken token = oauth.verifyToken(accessToken);
             assertAccessToken(token, true, true, true);
 
-            AccessTokenContext ctx = testingClient.testing("test").getTokenContext(token.getId());
+            AccessTokenContext ctx = runOnServerTest.fetch(RunHelpers.getTokenContext(token.getId()));
             Assertions.assertEquals(ctx.getSessionType(), AccessTokenContext.SessionType.ONLINE);
             Assertions.assertEquals(ctx.getTokenType(), AccessTokenContext.TokenType.LIGHTWEIGHT);
             Assertions.assertEquals(ctx.getGrantType(), OAuth2Constants.AUTHORIZATION_CODE);
@@ -647,15 +647,15 @@ public class LightWeightAccessTokenTest extends AbstractClientPoliciesTest {
 
         // Verify lightweight token
         AccessToken token = oauth.verifyToken(response.getAccessToken());
-        AccessTokenContext ctx = testingClient.testing(REALM_NAME).getTokenContext(token.getId());
+        AccessTokenContext ctx = runOnServerTest.fetch(RunHelpers.getTokenContext(token.getId()));
         Assertions.assertEquals(AccessTokenContext.TokenType.LIGHTWEIGHT, ctx.getTokenType());
         Assertions.assertEquals(TEST_USER_PASSWORD, ctx.getGrantType());
     }
 
     private void removeSession(final String sessionId) {
-        testingClient.testing().removeExpired(REALM_NAME);
+        runOnServerMaster.run(RunHelpers.removeExpired(REALM_NAME));
         try {
-            runOnServer.run(RunHelpers.removeUserSession(REALM_NAME, sessionId));
+            runOnServerMaster.run(RunHelpers.removeUserSession(REALM_NAME, sessionId));
         } catch (RunOnServerException nfe) {
             if (!(nfe.getCause() instanceof NotFoundException)) {
                 throw nfe;

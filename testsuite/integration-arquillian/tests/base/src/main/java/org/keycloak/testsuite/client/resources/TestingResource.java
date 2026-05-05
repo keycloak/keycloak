@@ -17,7 +17,6 @@
 
 package org.keycloak.testsuite.client.resources;
 
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -33,8 +32,6 @@ import jakarta.ws.rs.core.Response;
 
 import org.keycloak.common.Profile;
 import org.keycloak.common.enums.HostnameVerificationPolicy;
-import org.keycloak.events.EventType;
-import org.keycloak.protocol.oidc.encode.AccessTokenContext;
 import org.keycloak.representations.idm.AdminEventRepresentation;
 import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
@@ -74,11 +71,6 @@ public interface TestingResource {
     @Produces(MediaType.APPLICATION_JSON)
     void clearAdminEventQueue();
 
-    @POST
-    @Path("/remove-expired")
-    @Produces(MediaType.APPLICATION_JSON)
-    void removeExpired(@QueryParam("realm") final String realm);
-
     /**
      * Will set Inifispan's {@link TimeService} that is aware of Keycloak time shifts to the infinispan {@code CacheManager} before the test.
      * This will allow infinispan expiration to be aware of Keycloak {@link org.keycloak.common.util.Time#setOffset}
@@ -92,11 +84,6 @@ public interface TestingResource {
     @Path("/revert-testing-infinispan-time-service")
     @Produces(MediaType.APPLICATION_JSON)
     void revertTestingInfinispanTimeService();
-
-    @GET
-    @Path("/get-client-sessions-count")
-    @Produces(MediaType.APPLICATION_JSON)
-    Integer getClientSessionsCountInUserSession(@QueryParam("realm") final String realmName, @QueryParam("session") final String sessionId);
 
     @Path("/cache/{cache}")
     TestingCacheResource cache(@PathParam("cache") String cacheName);
@@ -204,32 +191,6 @@ public interface TestingResource {
     void resetFeature(@PathParam("feature") String feature);
 
     /**
-     * If property-value is null, the system property will be unset (removed) on the server
-     */
-    @GET
-    @Path("/set-system-property")
-    @Consumes(MediaType.TEXT_HTML_UTF_8)
-    void setSystemPropertyOnServer(@QueryParam("property-name") String propertyName, @QueryParam("property-value") String propertyValue);
-
-    /**
-     * Re-initialize specified provider factory with system properties scope. This will allow to change providerConfig in runtime with {@link #setSystemPropertyOnServer}
-     * <p>
-     * This works just for the provider factories, which can be re-initialized without any side-effects (EG. some functionality already dependent
-     * on the previously initialized properties, which cannot be easily changed in runtime)
-     *
-     * @param providerType           fully qualified class name of provider (subclass of org.keycloak.provider.Provider)
-     * @param providerId             provider Id
-     * @param systemPropertiesPrefix prefix to be used for system properties
-     */
-    @GET
-    @Path("/reinitialize-provider-factory-with-system-properties-scope")
-    @Consumes(MediaType.TEXT_HTML_UTF_8)
-    @NoCache
-    void reinitializeProviderFactoryWithSystemPropertiesScope(@QueryParam("provider-type") String providerType, @QueryParam("provider-id") String providerId,
-                                                              @QueryParam("system-properties-prefix") String systemPropertiesPrefix);
-
-
-    /**
      * This method is here just to have all endpoints from TestingResourceProvider available here.
      * <p>
      * But usually it is requested to call this endpoint through WebDriver. See URLUtils.sendPOSTWithWebDriver for more details
@@ -239,16 +200,6 @@ public interface TestingResource {
     @Produces(MediaType.TEXT_HTML_UTF_8)
     Response simulatePostRequest(@QueryParam("postRequestUrl") String postRequestUrl,
                                  @QueryParam("encodedFormParameters") String encodedFormParameters);
-
-    /**
-     * @param providerClass Full name of class such as for example "org.keycloak.authentication.Authenticator"
-     * @param providerId    providerId referenced in particular provider factory. Can be null (in this case we're returning default provider for particular providerClass)
-     * @return fullname of provider implementation class
-     */
-    @GET
-    @Path("/get-provider-implementation-class")
-    @Produces(MediaType.APPLICATION_JSON)
-    String getProviderClassName(@QueryParam("providerClass") String providerClass, @QueryParam("providerId") String providerId);
 
     /**
      * Temporarily disables truststore SPI from the file. Useful for example to test some error scenarios, which require truststore SPI to be unset (or set incorrectly)
@@ -276,55 +227,7 @@ public interface TestingResource {
     @NoCache
     void reenableTruststoreSpi();
 
-    /**
-     * Get count of tabs (child authentication sessions) for given "root authentication session"
-     *
-     * @param realm         realm name (not ID)
-     * @param authSessionId ID of authentication session
-     * @return count of tabs. Return 0 if authentication session of given ID does not exists (or if it exists, but without any authenticationSessions attached, which should not happen with normal usage)
-     */
-    @GET
-    @Path("/get-authentication-session-tabs-count")
-    @NoCache
-    Integer getAuthenticationSessionTabsCount(@QueryParam("realm") String realm, @QueryParam("authSessionId") String authSessionId);
-
     @GET
     @Path("/no-cache-annotated-endpoint")
     Response getNoCacheAnnotatedEndpointResponse(@QueryParam("programmatic_max_age_value") Long programmaticMaxAgeValue);
-
-    /**
-     * Return a pre-authorized code for the current session.
-     *
-     * @param realmName     name of the realm to be used
-     * @param userSessionId id of the user session to get a code for
-     * @param clientId      id of the client to be used
-     * @param expiration    expiration time of the code
-     * @return the code
-     */
-    @GET
-    @Path("/pre-authorized-code")
-    String getPreAuthorizedCode(@QueryParam("realm") final String realmName, @QueryParam("userSessionId") final String userSessionId, @QueryParam("clientId") final String clientId, @QueryParam("expiration") final int expiration);
-
-    /**
-     * Adds the following types to the email event listener included list.
-     * @param events The events to be included
-     */
-    @POST
-    @Path("/email-event-listener-provide/add-events")
-    @Consumes(MediaType.APPLICATION_JSON)
-    public void addEventsToEmailEventListenerProvider(List<EventType> events);
-
-    /**
-     * Removes the following types from the email event listener included list.
-     * @param events The events to be removed
-     */
-    @POST
-    @Path("/email-event-listener-provide/remove-events")
-    @Consumes(MediaType.APPLICATION_JSON)
-    public void removeEventsToEmailEventListenerProvider(List<EventType> events);
-
-    @GET
-    @Path("/token-context")
-    @Produces(MediaType.APPLICATION_JSON)
-    AccessTokenContext getTokenContext(@QueryParam("tokenId") String tokenId);
 }

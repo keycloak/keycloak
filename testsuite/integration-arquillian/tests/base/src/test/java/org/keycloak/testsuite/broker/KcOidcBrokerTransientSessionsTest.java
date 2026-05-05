@@ -659,9 +659,9 @@ public final class KcOidcBrokerTransientSessionsTest extends AbstractAdvancedBro
         assertTrue(offlineToken.isActive());
 
         // Assert userSession expired
-        testingClient.testing().removeExpired(bc.consumerRealmName());
+        runOnServerMaster.run(RunHelpers.removeExpired(bc.consumerRealmName()));
         try {
-            runOnServer.run(RunHelpers.removeUserSession(bc.consumerRealmName(), sessionId));
+            runOnServerMaster.run(RunHelpers.removeUserSession(bc.consumerRealmName(), sessionId));
         } catch (RunOnServerException nfe) {
             if (!(nfe.getCause() instanceof NotFoundException)) {
                 throw nfe;
