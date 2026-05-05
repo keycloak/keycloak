@@ -9,7 +9,6 @@ import type Keycloak from "keycloak-js";
 import { PropsWithChildren, useEffect, useState } from "react";
 import type { Environment } from "./environment-types";
 
-
 export type AdminClientProps = {
   keycloak: Keycloak;
   adminClient: KeycloakAdminClient;

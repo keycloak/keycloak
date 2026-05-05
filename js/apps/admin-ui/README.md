@@ -29,7 +29,7 @@ import { AdminClientProvider } from "@keycloak/keycloak-admin-ui";
 </KeycloakProvider>
 ```
 
-The `environment` object must include the admin console fields expected by this library (see `Environment` in the package), not only `BaseEnvironment`.
+The `environment` object must include the admin console fields expected by this library (see `AdminEnvironment` in the package), not only `BaseEnvironment`.
 
 ### Translation
 
