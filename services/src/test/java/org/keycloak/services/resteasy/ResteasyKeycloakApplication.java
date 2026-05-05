@@ -68,16 +68,12 @@ public class ResteasyKeycloakApplication extends KeycloakApplication {
             // an endpoint for the load balancer to gather information whether this site should receive requests or not.
             classes.add(LoadBalancerResource.class);
         }
+        initAndStart();
     }
 
     @Override
     protected String getDataDir() {
         return System.getProperty("project.build.directory");
-    }
-
-    @Override
-    protected void exit(Throwable cause) {
-        throw new RuntimeException(cause);
     }
 
     @Override
@@ -108,7 +104,7 @@ public class ResteasyKeycloakApplication extends KeycloakApplication {
                 new PropertiesProfileConfigResolver(System.getProperties()),
                 new PropertiesFileProfileConfigResolver()
         );
-        startup();
+        startup().run();
     }
 
     @Override

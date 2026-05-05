@@ -19,8 +19,6 @@ package org.keycloak.services.resources;
 import java.io.File;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import jakarta.ws.rs.core.Application;
@@ -53,16 +51,6 @@ public abstract class KeycloakApplication extends Application {
 
     private static volatile DefaultKeycloakSessionFactory sessionFactory;
 
-    public KeycloakApplication() {
-        try {
-            initTmpDirectory();
-            logger.debugv("Application: {0}", this.getClass().getName());
-            initAndStart();
-        } catch (Throwable t) {
-            exit(t);
-        }
-    }
-
     public static String getTmpDirectory() {
         return System.getProperty(KC_TMPDIR, System.getProperty("java.io.tmpdir"));
     }
@@ -79,31 +67,15 @@ public abstract class KeycloakApplication extends Application {
         System.setProperty(KC_TMPDIR, tmpDir.getAbsolutePath());
     }
 
-    protected abstract void exit(Throwable t);
-
     protected abstract String getDataDir();
 
-    protected void startup() {
+    protected Runnable startup() {
+        logger.debugv("Application: {0}", this.getClass().getName());
+        initTmpDirectory();
         Profile.getInstance().logUnsupportedFeatures();
         CryptoIntegration.init(KeycloakApplication.class.getClassLoader());
         KeycloakApplication.sessionFactory = createSessionFactory();
-
-        if (supportsAsyncInitialization()) {
-            final var executor = Executors.newSingleThreadExecutor();
-            CompletableFuture.runAsync(() -> runBootstrap(KeycloakApplication.sessionFactory), executor)
-                    .exceptionally(throwable -> {
-                        exit(throwable);
-                        return null;
-                    })
-                    .thenRun(executor::shutdown);
-            return;
-        }
-
-        runBootstrap(KeycloakApplication.sessionFactory);
-    }
-
-    protected boolean supportsAsyncInitialization() {
-        return false;
+        return () -> runBootstrap(KeycloakApplication.sessionFactory);
     }
 
     private synchronized void runBootstrap(DefaultKeycloakSessionFactory keycloakSessionFactory) {
