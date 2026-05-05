@@ -43,6 +43,7 @@ import java.util.Optional;
 import java.util.Set;
 
 import org.keycloak.common.VerificationException;
+import org.keycloak.common.util.Environment;
 import org.keycloak.common.util.Time;
 import org.keycloak.crypto.CryptoUtils;
 import org.keycloak.crypto.KeyUse;
@@ -380,12 +381,14 @@ public class AttestationValidatorUtil {
             // Create a certificate path
             CertPath certPath = cf.generateCertPath(certChain);
 
-            // Check if this is a self-signed certificate (for test environments)
+            // Check if this is a self-signed certificate (for dev mode)
             X509Certificate firstCert = certChain.get(0);
             boolean isSelfSigned = firstCert.getSubjectX500Principal().equals(firstCert.getIssuerX500Principal());
 
-            // Only validate the certificate chain if it's not a self-signed certificate in a test environment
-            if (!isSelfSigned) {
+            // Only allow self-signed certificates in dev mode
+            if (isSelfSigned && !Environment.isDevMode()) {
+                throw new VCIssuerException(ErrorType.INVALID_PROOF, "Self-signed certificates are only accepted in dev mode");
+            } else if (!isSelfSigned) {
                 // Validate certificate chain
                 CertPathValidator validator = CertPathValidator.getInstance("PKIX");
                 PKIXParameters params = new PKIXParameters(getTrustAnchors());
