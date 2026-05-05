@@ -12,6 +12,8 @@ public class CredentialMetadataRepresentation {
     LocalizedMessage warningMessageDescription;
 
     private CredentialRepresentation credential;
+    private String iconLight;
+    private String iconDark;
 
 
     public CredentialRepresentation getCredential() {
@@ -52,5 +54,21 @@ public class CredentialMetadataRepresentation {
 
     public void setWarningMessageDescription(LocalizedMessage warningMessageDescription) {
         this.warningMessageDescription = warningMessageDescription;
+    }
+
+    public String getIconLight() {
+        return iconLight;
+    }
+
+    public void setIconLight(String iconLight) {
+        this.iconLight = iconLight;
+    }
+
+    public String getIconDark() {
+        return iconDark;
+    }
+
+    public void setIconDark(String iconDark) {
+        this.iconDark = iconDark;
     }
 }
