@@ -179,6 +179,17 @@ paths:
       operationId: getClients
       tags:
       - Clients (v2)
+      parameters:
+      - description: "Set of fields to include in the response. Must be top-level\
+          \ fields on one of the client types. If omitted or empty, all fields will\
+          \ be populated."
+        name: fields
+        in: query
+        schema:
+          type: array
+          uniqueItems: true
+          items:
+            type: string
       responses:
         "200":
           description: OK
