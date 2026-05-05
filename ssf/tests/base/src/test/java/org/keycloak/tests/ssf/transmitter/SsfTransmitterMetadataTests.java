@@ -41,8 +41,8 @@ import org.junit.jupiter.api.Test;
  * these defaults via SPI configuration live in
  * {@link SsfTransmitterConfigOverrideTests}.
  */
-@KeycloakIntegrationTest(config = SsfTransmitterTests.SsfTransmitterKeycloakServerConfig.class)
-public class SsfTransmitterTests {
+@KeycloakIntegrationTest(config = SsfTransmitterMetadataTests.SsfTransmitterKeycloakServerConfig.class)
+public class SsfTransmitterMetadataTests {
 
     @InjectRealm(config = SsfTransmitterRealm.class)
     ManagedRealm realm;
