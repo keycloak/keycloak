@@ -3,23 +3,23 @@ package org.keycloak.policy;
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.policy.BlacklistPasswordPolicyProviderFactory.FileBasedPasswordBlacklist;
-import org.keycloak.policy.BlacklistPasswordPolicyProviderFactory.PasswordBlacklist;
+import org.keycloak.policy.DenylistPasswordPolicyProviderFactory.FileBasedPasswordDenylist;
+import org.keycloak.policy.DenylistPasswordPolicyProviderFactory.PasswordDenylist;
 
 /**
- * Checks a password against a configured password blacklist.
+ * Checks a password against a configured password denylist.
  *
  * @author <a href="mailto:thomas.darimont@gmail.com">Thomas Darimont</a>
  */
-public class BlacklistPasswordPolicyProvider implements PasswordPolicyProvider {
+public class DenylistPasswordPolicyProvider implements PasswordPolicyProvider {
 
   public static final String ERROR_MESSAGE = "invalidPasswordBlacklistedMessage";
 
   private final KeycloakContext context;
 
-  private final BlacklistPasswordPolicyProviderFactory factory;
+  private final DenylistPasswordPolicyProviderFactory factory;
 
-  public BlacklistPasswordPolicyProvider(KeycloakContext context, BlacklistPasswordPolicyProviderFactory factory) {
+  public DenylistPasswordPolicyProvider(KeycloakContext context, DenylistPasswordPolicyProviderFactory factory) {
     this.context = context;
     this.factory = factory;
   }
@@ -34,18 +34,18 @@ public class BlacklistPasswordPolicyProvider implements PasswordPolicyProvider {
   @Override
   public PolicyError validate(String username, String password) {
 
-    Object policyConfig = context.getRealm().getPasswordPolicy().getPolicyConfig(BlacklistPasswordPolicyProviderFactory.ID);
+    Object policyConfig = context.getRealm().getPasswordPolicy().getPolicyConfig(DenylistPasswordPolicyProviderFactory.ID);
     if (policyConfig == null) {
       return null;
     }
 
-    if (!(policyConfig instanceof PasswordBlacklist)) {
+    if (!(policyConfig instanceof PasswordDenylist)) {
       return null;
     }
 
-    PasswordBlacklist blacklist = (FileBasedPasswordBlacklist) policyConfig;
+    PasswordDenylist denylist = (FileBasedPasswordDenylist) policyConfig;
 
-    if (!blacklist.contains(password.toLowerCase())) {
+    if (!denylist.contains(password.toLowerCase())) {
       return null;
     }
 
@@ -58,7 +58,7 @@ public class BlacklistPasswordPolicyProvider implements PasswordPolicyProvider {
   }
 
   /**
-   * Parses the allowed configuration for a {@link BlacklistPasswordPolicyProvider}.
+   * Parses the allowed configuration for a {@link DenylistPasswordPolicyProvider}.
    * Supported syntax is {@¢ode passwordBlacklist(fileName)}
    *
    * Example configurations:
@@ -66,17 +66,17 @@ public class BlacklistPasswordPolicyProvider implements PasswordPolicyProvider {
    *     <li>{@code passwordBlacklist(test-password-blacklist.txt)}</li>
    * </ul>
    *
-   * @param blacklistName
+   * @param denylistName
    * @return
    */
   @Override
-  public Object parseConfig(String blacklistName) {
+  public Object parseConfig(String denylistName) {
 
-    if (blacklistName == null) {
+    if (denylistName == null) {
       return null;
     }
 
-    return factory.resolvePasswordBlacklist(blacklistName);
+    return factory.resolvePasswordDenylist(denylistName);
   }
 
   @Override

@@ -42,14 +42,14 @@ import com.google.common.hash.Funnels;
 import org.jboss.logging.Logger;
 
 /**
- * Creates {@link BlacklistPasswordPolicyProvider} instances.
+ * Creates {@link DenylistPasswordPolicyProvider} instances.
  * <p>
- * Password blacklists are simple text files where every line is a blacklisted password delimited by a newline character {@code \n}.
- * <p>Blacklists can be configured via the <em>Authentication: Password Policy</em> section in the admin-console.
- * A blacklist-file is referred to by its name in the policy configuration.
+ * Password denylists are simple text files where every line is a denylisted password delimited by a newline character {@code \n}.
+ * <p>Denylists can be configured via the <em>Authentication: Password Policy</em> section in the admin-console.
+ * A denylist-file is referred to by its name in the policy configuration.
  *
- * <h1>Blacklist location</h1>
- * <p>Users can provide custom blacklists by adding a blacklist password file to the configured blacklist folder.
+ * <h1>Denylist location</h1>
+ * <p>Users can provide custom denylists by adding a denylist password file to the configured denylist folder.
  * <p>
  * <p>The location of the password-blacklists folder is derived as follows</p>
  * <ol>
@@ -58,15 +58,15 @@ import org.jboss.logging.Logger;
  * <li>otherwise {@code $KC_HOME/data/password-blacklists/} if nothing else is configured</li>
  * </ol>
  *
- * To configure the blacklist folder via CLI use {@code --spi-password-policy-password-blacklist-blacklists-path=/path/to/blacklistsFolder}
+ * To configure the denylist folder via CLI use {@code --spi-password-policy-password-blacklist-blacklists-path=/path/to/denylistsFolder}
  *
  * <p>Note that the preferred way for configuration is to copy the password file to the {@code $KC_HOME/data/password-blacklists/} folder</p>
- * <p>A password blacklist with the filename {@code 10_million_passwords.txt}
+ * <p>A password denylist with the filename {@code 10_million_passwords.txt}
  * that is located beneath {@code $KC_HOME/data/keycloak/blacklists/} can be referred to as {@code 10_million_passwords.txt} in the <em>Authentication: Password Policy</em> configuration.
  *
  * <h1>False positives</h1>
  * <p>
- * The current implementation uses a probabilistic data-structure called {@link BloomFilter} which allows for fast and memory efficient containment checks, e.g. whether a given password is contained in a blacklist,
+ * The current implementation uses a probabilistic data-structure called {@link BloomFilter} which allows for fast and memory efficient containment checks, e.g. whether a given password is contained in a denylist,
  * with the possibility for false positives. By default a false positive probability {@link #DEFAULT_FALSE_POSITIVE_PROBABILITY} is used.
  *
  * To change the false positive probability via CLI configuration use {@code --spi-password-policy-password-blacklist-false-positive-probability=0.00001}
@@ -74,9 +74,9 @@ import org.jboss.logging.Logger;
  *
  * @author <a href="mailto:thomas.darimont@gmail.com">Thomas Darimont</a>
  */
-public class BlacklistPasswordPolicyProviderFactory implements PasswordPolicyProviderFactory {
+public class DenylistPasswordPolicyProviderFactory implements PasswordPolicyProviderFactory {
 
-    private static final Logger LOG = Logger.getLogger(BlacklistPasswordPolicyProviderFactory.class);
+    private static final Logger LOG = Logger.getLogger(DenylistPasswordPolicyProviderFactory.class);
 
     public static final String ID = "passwordBlacklist";
 
@@ -96,22 +96,22 @@ public class BlacklistPasswordPolicyProviderFactory implements PasswordPolicyPro
 
     public static final String PASSWORD_BLACKLISTS_FOLDER = "password-blacklists" + File.separator;
 
-    private final ConcurrentMap<String, FileBasedPasswordBlacklist> blacklistRegistry = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, FileBasedPasswordDenylist> denylistRegistry = new ConcurrentHashMap<>();
 
-    private volatile Path blacklistsBasePath;
+    private volatile Path denylistsBasePath;
 
     private Config.Scope config;
 
     @Override
     public PasswordPolicyProvider create(KeycloakSession session) {
-        if (this.blacklistsBasePath == null) {
+        if (this.denylistsBasePath == null) {
             synchronized (this) {
-                if (this.blacklistsBasePath == null) {
-                    this.blacklistsBasePath = FileBasedPasswordBlacklist.detectBlacklistsBasePath(config, this::getDefaultBlacklistsBasePath);
+                if (this.denylistsBasePath == null) {
+                    this.denylistsBasePath = FileBasedPasswordDenylist.detectDenylistsBasePath(config, this::getDefaultDenylistsBasePath);
                 }
             }
         }
-        return new BlacklistPasswordPolicyProvider(session.getContext(), this);
+        return new DenylistPasswordPolicyProvider(session.getContext(), this);
     }
 
     @Override
@@ -160,28 +160,28 @@ public class BlacklistPasswordPolicyProviderFactory implements PasswordPolicyPro
      * @return The default path used by the provider to lookup the lists
      * when no other configuration is in place.
      */
-    public String getDefaultBlacklistsBasePath() {
+    public String getDefaultDenylistsBasePath() {
         return System.getProperty(JBOSS_SERVER_DATA_DIR) + File.separator + PASSWORD_BLACKLISTS_FOLDER;
     }
 
     /**
-     * Resolves and potentially registers a {@link PasswordBlacklist} for the given {@code blacklistName}.
+     * Resolves and potentially registers a {@link PasswordDenylist} for the given {@code blacklistName}.
      *
-     * @param blacklistName
+     * @param denylistName
      * @return
      */
-    public PasswordBlacklist resolvePasswordBlacklist(String blacklistName) {
+    public PasswordDenylist resolvePasswordDenylist(String denylistName) {
 
-        Objects.requireNonNull(blacklistName, "blacklistName");
+        Objects.requireNonNull(denylistName, "denylistName");
 
-        String listName = blacklistName.trim();
+        String listName = denylistName.trim();
         if (listName.isEmpty()) {
-            throw new IllegalArgumentException("Password blacklist name must not be empty!");
+            throw new IllegalArgumentException("Password denylist name must not be empty!");
         }
 
-        return blacklistRegistry.computeIfAbsent(listName, (name) -> {
+        return denylistRegistry.computeIfAbsent(listName, (name) -> {
             double fpp = getFalsePositiveProbability();
-            return new FileBasedPasswordBlacklist(this.blacklistsBasePath, name, fpp, getCheckIntervalSeconds() * 1000L);
+            return new FileBasedPasswordDenylist(this.denylistsBasePath, name, fpp, getCheckIntervalSeconds() * 1000L);
         });
     }
 
@@ -248,19 +248,19 @@ public class BlacklistPasswordPolicyProviderFactory implements PasswordPolicyPro
     }
 
     /**
-     * A {@link PasswordBlacklist} describes a list of too easy to guess
+     * A {@link PasswordDenylist} describes a list of too easy to guess
      * or potentially leaked passwords that users should not be able to use.
      */
-    public interface PasswordBlacklist {
+    public interface PasswordDenylist {
 
 
         /**
-         * @return the logical name of the {@link PasswordBlacklist}
+         * @return the logical name of the {@link PasswordDenylist}
          */
         String getName();
 
         /**
-         * Checks whether a given {@code password} is contained in this {@link PasswordBlacklist}.
+         * Checks whether a given {@code password} is contained in this {@link PasswordDenylist}.
          *
          * @param password
          * @return
@@ -269,15 +269,15 @@ public class BlacklistPasswordPolicyProviderFactory implements PasswordPolicyPro
     }
 
     /**
-     * A {@link FileBasedPasswordBlacklist} uses password-blacklist files as
-     * to construct a {@link PasswordBlacklist}.
+     * A {@link FileBasedPasswordDenylist} uses password-blacklist files as
+     * to construct a {@link PasswordDenylist}.
      * <p>
      * This implementation uses a dynamically sized {@link BloomFilter}
      * with a provided default false positive probability.
      *
      * @see BloomFilter
      */
-    public static class FileBasedPasswordBlacklist implements PasswordBlacklist {
+    public static class FileBasedPasswordDenylist implements PasswordDenylist {
 
         private static final int BUFFER_SIZE_IN_BYTES = 512 * 1024;
 
@@ -293,7 +293,7 @@ public class BlacklistPasswordPolicyProviderFactory implements PasswordPolicyPro
 
         private final double falsePositiveProbability;
 
-        private volatile BloomFilter<String> blacklist;
+        private volatile BloomFilter<String> denylist;
 
         private final long checkIntervalMillis;
 
@@ -303,7 +303,7 @@ public class BlacklistPasswordPolicyProviderFactory implements PasswordPolicyPro
 
         private long lastSizeBytes;
 
-        public FileBasedPasswordBlacklist(Path blacklistBasePath, String name, double falsePositiveProbability, long checkIntervalMillis) {
+        public FileBasedPasswordDenylist(Path denylistBasePath, String name, double falsePositiveProbability, long checkIntervalMillis) {
 
             if (name.contains("/")) {
                 // disallow '/' to avoid accidental filesystem traversal
@@ -311,17 +311,17 @@ public class BlacklistPasswordPolicyProviderFactory implements PasswordPolicyPro
             }
 
             this.name = name;
-            this.path = blacklistBasePath.resolve(name);
+            this.path = denylistBasePath.resolve(name);
             this.falsePositiveProbability = falsePositiveProbability;
             this.checkIntervalMillis = checkIntervalMillis;
 
             if (!Files.exists(this.path)) {
-                throw new IllegalArgumentException("Password blacklist " + name + " not found!");
+                throw new IllegalArgumentException("Password denylist " + name + " not found!");
             }
 
             this.lastModifiedMillis = path.toFile().lastModified();
             this.lastSizeBytes = path.toFile().length();
-            this.blacklist = load();
+            this.denylist = load();
             this.lastCheckedMillis = System.currentTimeMillis();
         }
 
@@ -335,7 +335,7 @@ public class BlacklistPasswordPolicyProviderFactory implements PasswordPolicyPro
 
         public boolean contains(String password) {
             reloadIfNeeded();
-            return blacklist.mightContain(password);
+            return denylist.mightContain(password);
         }
 
         /**
@@ -359,12 +359,12 @@ public class BlacklistPasswordPolicyProviderFactory implements PasswordPolicyPro
                     long currentModified = Files.getLastModifiedTime(path).toMillis();
                     long currentSize = Files.size(path);
                     if (currentModified != lastModifiedMillis || currentSize != lastSizeBytes) {
-                        blacklist = load();
+                        denylist = load();
                         lastModifiedMillis = currentModified;
                         lastSizeBytes = currentSize;
                     }
                 } catch (Exception e) {
-                    LOG.warnf("Failed to reload blacklist %s, continuing with cached version: %s", name, e.getMessage());
+                    LOG.warnf("Failed to reload denylist %s, continuing with cached version: %s", name, e.getMessage());
                 }
                 lastCheckedMillis = now;
             }
@@ -378,10 +378,10 @@ public class BlacklistPasswordPolicyProviderFactory implements PasswordPolicyPro
         private BloomFilter<String> load() {
 
             try {
-                LOG.infof("Loading blacklist start: name=%s path=%s", name, path);
+                LOG.infof("Loading denylist start: name=%s path=%s", name, path);
                 long loadStartMillis = System.currentTimeMillis();
 
-                long passwordCount = countPasswordsInBlacklistFile();
+                long passwordCount = countPasswordsInDenylistFile();
                 double fpp = getFalsePositiveProbability();
 
                 BloomFilter<String> filter = BloomFilter.create(
@@ -393,12 +393,12 @@ public class BlacklistPasswordPolicyProviderFactory implements PasswordPolicyPro
 
                 double expectedFfp = filter.expectedFpp();
                 long loadTimeMillis = System.currentTimeMillis() - loadStartMillis;
-                LOG.infof("Loading blacklist finished: name=%s passwords=%s path=%s falsePositiveProbability=%s expectedFalsePositiveProbability=%s loadTime=%dms",
+                LOG.infof("Loading denylist finished: name=%s passwords=%s path=%s falsePositiveProbability=%s expectedFalsePositiveProbability=%s loadTime=%dms",
                         name, passwordCount, path, fpp, expectedFfp, loadTimeMillis);
 
                 return filter;
             } catch (IOException e) {
-                throw new RuntimeException("Loading blacklist failed: Could not load password blacklist path=" + path, e);
+                throw new RuntimeException("Loading denylist failed: Could not load password denylist path=" + path, e);
             }
         }
 
@@ -414,7 +414,7 @@ public class BlacklistPasswordPolicyProviderFactory implements PasswordPolicyPro
          * @return number of passwords found in the blacklist file
          * @throws IOException
          */
-        private long countPasswordsInBlacklistFile() throws IOException {
+        private long countPasswordsInDenylistFile() throws IOException {
 
             /*
              * TODO find a more efficient way to determine the password count,
@@ -445,7 +445,7 @@ public class BlacklistPasswordPolicyProviderFactory implements PasswordPolicyPro
          * @return the detected blacklist path
          * @throws IllegalStateException if no blacklist folder could be detected
          */
-        private static Path detectBlacklistsBasePath(Config.Scope config, Supplier<String> defaultPathSupplier) {
+        private static Path detectDenylistsBasePath(Config.Scope config, Supplier<String> defaultPathSupplier) {
 
             String pathFromSysProperty = System.getProperty(SYSTEM_PROPERTY);
             if (pathFromSysProperty != null) {
@@ -464,7 +464,7 @@ public class BlacklistPasswordPolicyProviderFactory implements PasswordPolicyPro
 
             if (!Files.exists(Paths.get(pathFromJbossDataPath))) {
                 if (!Paths.get(pathFromJbossDataPath).toFile().mkdirs()) {
-                    LOG.errorf("Could not create folder for password blacklists: %s", pathFromJbossDataPath);
+                    LOG.errorf("Could not create folder for password denylists: %s", pathFromJbossDataPath);
                 }
             }
             return ensureExists(Paths.get(pathFromJbossDataPath));
@@ -478,7 +478,7 @@ public class BlacklistPasswordPolicyProviderFactory implements PasswordPolicyPro
                 return path;
             }
 
-            throw new IllegalStateException("Password blacklists location does not exist: " + path);
+            throw new IllegalStateException("Password denylists location does not exist: " + path);
         }
     }
 }
