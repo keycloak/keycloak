@@ -31,6 +31,16 @@ Additionally, some methods where updated for consistency across the builders:
 The alias of an Identity Provider can no longer be changed after creation via the Admin REST API. Attempts to update the alias will result in a `400 Bad Request` error.
 Previously, although the admin console UI already treated the alias as read-only, the REST API still allowed alias changes.
 
+=== X509 client authentication requires CA Subject DN
+
+Since this release, the X509 client authentication, that allows a client authenticate presenting a certificate in the mutual TLS (mTLS) handshake, requires to configure a new option called **Certificate Authority subject DN** to identify the trusted anchor CA for the client certificate. As the {project_name}'s trust-store (or mTLS store) is shared for all the realms, the new option allows to identify the correct CA of the certificate and avoids interferences with other unrelated CAs.
+
+The new option is compulsory when configuring X509 credentials for the client. Previous configurations without this option still work, but they are invalid when they are updated or imported. Please, reconfigure your installation if you were using X509 to authenticate any of your clients.
+
+Besides, the option **Allow regex pattern comparison** is deprecated. This option allows to configure a regexp instead of the exact DN of the client certificate. It is now deprecated and it will be removed in a future version. The certificate for the client should be unambiguously identified.
+
+In general, all this new configuration requires {project_name} to always revalidate the trusted anchors for the client certificate. This feature can be problematic in certain configurations (for example if a proxy is configured as a TLS termination and the certificates are passed to {project_name} using headers). The trust-store or mTLS store in {project_name} should always be configured correctly to validate the client certificate chain. Please see https://www.keycloak.org/server/reverseproxy[Using a reverse proxy] and https://www.keycloak.org/server/mutual-tls[Configuring trusted certificates for mTLS], for more information if you are using a TLS termination proxy and X509 client authentication.
+
 // ------------------------ Notable changes ------------------------ //
 == Notable changes
 

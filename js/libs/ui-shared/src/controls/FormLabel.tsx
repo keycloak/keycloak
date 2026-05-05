@@ -1,5 +1,5 @@
 import { FormGroup, FormGroupProps } from "@patternfly/react-core";
-import { PropsWithChildren, ReactNode } from "react";
+import { PropsWithChildren, ReactNode, isValidElement } from "react";
 import { FieldError, FieldValues, Merge } from "react-hook-form";
 import { FormErrorText } from "./FormErrorText";
 import { HelpItem } from "./HelpItem";
@@ -28,7 +28,9 @@ export const FormLabel = ({
     label={label || name}
     fieldId={id || name}
     labelIcon={
-      labelIcon ? (
+      isValidElement(labelIcon) ? (
+        labelIcon
+      ) : labelIcon ? (
         <HelpItem helpText={labelIcon} fieldLabelId={id || name} />
       ) : undefined
     }
