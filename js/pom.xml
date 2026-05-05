@@ -17,6 +17,7 @@
 
     <modules>
         <module>apps/account-ui</module>
+        <module>apps/account-ui-lit</module>
         <module>apps/admin-ui</module>
         <module>libs/keycloak-admin-client</module>
         <module>libs/ui-shared</module>
@@ -85,6 +86,9 @@
                     <filesets>
                         <fileset>
                             <directory>apps/account-ui/target</directory>
+                        </fileset>
+                        <fileset>
+                            <directory>apps/account-ui-lit/target</directory>
                         </fileset>
                         <fileset>
                             <directory>apps/admin-ui/target</directory>
