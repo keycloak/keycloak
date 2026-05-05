@@ -41,7 +41,7 @@ public final class TransactionalSessionHandler implements ServerRestHandler, org
             KeycloakTransactionManager transactionManager = currentSession.getTransactionManager();
             if (!transactionManager.isActive()) {
                 // This handler is always running in a blocking thread.
-                transactionManager.begin();
+                beginTransaction(currentSession);
             }
             KeycloakSessionUtil.setKeycloakSession(currentSession);
         }
