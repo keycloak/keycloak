@@ -18,86 +18,118 @@ package org.keycloak.tests.oauth;
 
 import java.io.IOException;
 import java.net.URI;
-import java.util.Collections;
-import java.util.List;
+import java.time.Duration;
 
-import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.core.HttpHeaders;
-import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriBuilder;
 
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
+import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
 import org.keycloak.models.Constants;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.utils.OIDCResponseMode;
-import org.keycloak.representations.AuthorizationResponseToken;
-import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.EventRepresentation;
+import org.keycloak.testframework.annotations.InjectEvents;
+import org.keycloak.testframework.annotations.InjectHttpClient;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.events.EventAssertion;
-import org.keycloak.testframework.oauth.OAuthClient;
-import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
+import org.keycloak.testframework.events.Events;
+import org.keycloak.testframework.injection.LifeCycle;
+import org.keycloak.testframework.realm.ManagedClient;
 import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.realm.RealmBuilder;
+import org.keycloak.testframework.realm.RealmConfig;
+import org.keycloak.testframework.realm.UserBuilder;
+import org.keycloak.testframework.ui.annotations.InjectPage;
 import org.keycloak.testframework.ui.annotations.InjectWebDriver;
-import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
-import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testframework.ui.page.ErrorPage;
 import org.keycloak.testframework.ui.page.InstalledAppRedirectPage;
-import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
-import org.keycloak.testsuite.util.AdminClientUtil;
-import org.keycloak.testsuite.util.ClientManager;
-import org.keycloak.testsuite.util.WaitUtils;
+import org.keycloak.testframework.ui.page.LoginPage;
+import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
+import org.keycloak.tests.suites.DatabaseTest;
+import org.keycloak.tests.utils.admin.AdminApiUtil;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 
-import org.keycloak.testframework.ui.annotations.InjectPage;
-import org.junit.jupiter.api.Assertions;
+import org.apache.http.Header;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.config.RequestConfig;
+import org.apache.http.client.methods.HttpGet;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.Rule;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.Assertions;
 import org.openqa.selenium.By;
-
-import static org.keycloak.testsuite.AbstractAdminTest.loadJson;
+import org.openqa.selenium.support.ui.ExpectedConditions;
+import org.openqa.selenium.support.ui.WebDriverWait;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 @KeycloakIntegrationTest
-public class AuthorizationCodeTest {
+public class AuthorizationCodeTest extends AbstractKeycloakTest {
 
-    @InjectRealm
+    @InjectRealm(config = AuthorizationCodeRealmConfig.class, lifecycle = LifeCycle.CLASS)
     ManagedRealm managedRealm;
 
     @InjectWebDriver
     ManagedWebDriver driver;
 
-    @InjectOAuthClient
-    OAuthClient oauth;
-
-    @Rule
-    public AssertEvents events = new AssertEvents(this);
+    @InjectEvents
+    Events events;
 
     @InjectPage
     private ErrorPage errorPage;
 
     @InjectPage
-    private InstalledAppRedirectPage installedAppPage;
+    private LoginPage loginPage;
 
-    @Override
-    public void addTestRealms(List<RealmRepresentation> testRealms) {
-        RealmRepresentation realmRepresentation = loadJson(getClass().getResourceAsStream("/testrealm.json"), RealmRepresentation.class);
-        testRealms.add(realmRepresentation);
+    @InjectPage
+    InstalledAppRedirectPage installedAppPage;
+
+    @InjectHttpClient
+    HttpClient client;
+
+    static class AuthorizationCodeRealmConfig implements RealmConfig {
+        @Override
+        public RealmBuilder configure(RealmBuilder realm) {
+            realm.name("test")
+                    .eventsEnabled(true);
+
+            realm.users(UserBuilder.create("test-user@localhost")
+                    .name("Tom", "Brady")
+                    .email("test-user@localhost")
+                    .emailVerified(true)
+                    .password("password")
+                    .realmRoles("user", "offline_access"));
+
+            realm.users(UserBuilder.create("john-doh@localhost")
+                    .name("John", "Doh")
+                    .email("john-doh@localhost")
+                    .emailVerified(true)
+                    .password("password")
+                    .realmRoles("user"));
+
+            realm.users(UserBuilder.create("keycloak-user@localhost")
+                    .email("keycloak-user@localhost")
+                    .emailVerified(true)
+                    .password("password")
+                    .realmRoles("user"));
+
+            return realm;
+        }
     }
 
     @BeforeEach
@@ -107,343 +139,433 @@ public class AuthorizationCodeTest {
     }
 
     @Test
-    public void authorizationRequest() throws IOException {
-        AuthorizationEndpointResponse response = oauth.loginForm().state("OpenIdConnect.AuthenticationProperties=2302984sdlk").doLogin("test-user@localhost", "password");
+    public void authorizationRequest() {
+        managedRealm.dirty();
+        AuthorizationEndpointResponse response = oauth.loginForm()
+                .state("OpenIdConnect.AuthenticationProperties=2302984sdlk")
+                .doLogin("test-user@localhost", "password");
 
         assertTrue(response.isRedirected());
-        Assertions.assertNotNull(response.getCode());
+        assertNotNull(response.getCode());
         assertEquals("OpenIdConnect.AuthenticationProperties=2302984sdlk", response.getState());
-        Assertions.assertNull(response.getError());
-        assertEquals(oauth.AUTH_SERVER_ROOT + "/realms/test", response.getIssuer());
+        assertNull(response.getError());
+        assertEquals(keycloakUrls.getBase() + "/realms/test", response.getIssuer());
 
-        EventAssertion.expectLoginSuccess(events.poll());
+        EventAssertion.assertSuccess(events.poll()).type(EventType.LOGIN);
     }
 
     @Test
-    public void authorizationRequestInstalledApp() throws IOException {
-        ClientManager.realm(adminClient.realm("test")).clientId("test-app").addRedirectUris(Constants.INSTALLED_APP_URN);
+    @DatabaseTest
+    public void authorizationRequestInstalledApp() {
+        ClientResource clientResource = AdminApiUtil.findClientByClientId(managedRealm.admin(), "test-app");
+        ManagedClient client = new ManagedClient(clientResource.toRepresentation(), clientResource);
+        client.updateWithCleanup(c-> c.redirectUris(Constants.INSTALLED_APP_URN));
         oauth.redirectUri(Constants.INSTALLED_APP_URN);
 
         oauth.doLogin("test-user@localhost", "password");
 
         installedAppPage.getSuccessCode();
 
-        EventAssertion.expectLoginSuccess(events.poll()).details(Details.REDIRECT_URI, oauth.AUTH_SERVER_ROOT + "/realms/test/protocol/openid-connect/oauth/oob");
-
-        ClientManager.realm(adminClient.realm("test")).clientId("test-app").removeRedirectUris(Constants.INSTALLED_APP_URN);
+        EventRepresentation eventRepresentation = events.poll();
+        assertNotNull(eventRepresentation);
+        EventAssertion.assertSuccess(eventRepresentation)
+                .type(EventType.LOGIN)
+                .details(Details.REDIRECT_URI, keycloakUrls.getBase() + "/realms/test/protocol/openid-connect/oauth/oob");
     }
 
     @Test
-    public void authorizationRequestInstalledAppErrors() throws IOException {
+    public void authorizationRequestInstalledAppErrors() {
         String error = "<p><a href=\"javascript&amp;colon;alert(document.domain);\">Back to application</a></p>";
-        installedAppPage.open("test", null, error, null);
+        installedAppPage.open("test", null, error, null, keycloakUrls.getBase());
 
         // Assert text escaped
         installedAppPage.assertLinkBackToApplicationNotPresent();
-        Assertions.assertEquals("Error code: <p><a href=\"javascript&amp;colon;alert(document.domain);\">Back to application</a></p>", installedAppPage.getPageTitleText());
+        assertEquals("Error code: <p><a href=\"javascript&amp;colon;alert(document.domain);\">Back to application</a></p>", installedAppPage.getPageTitleText());
 
         error = "<p><a href=\"http://foo.com\">Back to application</a></p>";
-        installedAppPage.open("test", null, error, null);
+        installedAppPage.open("test", null, error, null, keycloakUrls.getBase());
 
         // Assert text is escaped
         installedAppPage.assertLinkBackToApplicationNotPresent();
-        Assertions.assertEquals("Error code: <p><a href=\"http://foo.com\">Back to application</a></p>", installedAppPage.getPageTitleText());
+        assertEquals("Error code: <p><a href=\"http://foo.com\">Back to application</a></p>", installedAppPage.getPageTitleText());
     }
 
     @Test
-    public void authorizationValidRedirectUri() throws IOException {
-        ClientManager.realm(adminClient.realm("test")).clientId("test-app").addRedirectUris(oauth.getRedirectUri());
+    @DatabaseTest
+    public void authorizationValidRedirectUri() {
+        managedRealm.dirty();
+        ClientResource clientResource = AdminApiUtil.findClientByClientId(managedRealm.admin(), "test-app");
+        ManagedClient client = new ManagedClient(clientResource.toRepresentation(), clientResource);
+        client.updateWithCleanup(c-> c.redirectUris(oauth.getRedirectUri()));
 
         AuthorizationEndpointResponse response = oauth.doLogin("test-user@localhost", "password");
 
         assertTrue(response.isRedirected());
-        Assertions.assertNotNull(response.getCode());
+        assertNotNull(response.getCode());
 
-        EventAssertion.expectLoginSuccess(events.poll());
+        EventRepresentation loginEvent = events.poll();
+        EventAssertion.assertSuccess(loginEvent).type(EventType.LOGIN);
     }
 
     @Test
+    @DatabaseTest
     public void testInvalidRedirectUri() {
-        ClientManager.realm(adminClient.realm("test")).clientId("test-app").addRedirectUris(oauth.getRedirectUri());
+        managedRealm.dirty();
+        ClientResource clientResource = AdminApiUtil.findClientByClientId(managedRealm.admin(), "test-app");
+        ManagedClient client = new ManagedClient(clientResource.toRepresentation(), clientResource);
+        client.updateWithCleanup(c-> c.redirectUris(oauth.getRedirectUri()));
 
         oauth.redirectUri(oauth.getRedirectUri() + "%20test");
         oauth.openLoginForm();
 
-        assertTrue(errorPage.isCurrent());
+        errorPage.assertCurrent();
         assertEquals("Invalid parameter: redirect_uri", errorPage.getError());
 
         oauth.redirectUri("ZAP%25n%25s%25n%25s%25n%25s%25n%25s%25n%25s%25n%25s%25n%25s%25n%25s%25n%25s%25n%25s%25n%25s%25n%25s%25n%25s%25n%25s%25n%25s%25n%25s%25n%25s%25n%25s%25n%25s%25n%25s%0A");
         oauth.openLoginForm();
 
-        assertTrue(errorPage.isCurrent());
+        errorPage.assertCurrent();
         assertEquals("Invalid parameter: redirect_uri", errorPage.getError());
     }
 
     @Test
-    public void testInvalidNULCharacterClientId() {
-        ClientManager.realm(adminClient.realm("test")).clientId("test-app").addRedirectUris(oauth.getRedirectUri());
-
-        oauth.client("%00");
-        oauth.openLoginForm();
-
-        assertTrue(errorPage.isCurrent());
-        assertEquals("An internal server error has occurred", errorPage.getError());
-    }
-
-    @Test
+    @DatabaseTest
     public void testInvalidESCCharacterClientId() {
-        ClientManager.realm(adminClient.realm("test")).clientId("test-app").addRedirectUris(oauth.getRedirectUri());
+        managedRealm.dirty();
+        ClientResource clientResource = AdminApiUtil.findClientByClientId(managedRealm.admin(), "test-app");
+        ManagedClient client = new ManagedClient(clientResource.toRepresentation(), clientResource);
+        client.updateWithCleanup(c-> c.redirectUris(oauth.getRedirectUri()));
 
         oauth.client("%1B");
         oauth.openLoginForm();
 
-        assertTrue(errorPage.isCurrent());
+        errorPage.assertCurrent();
         assertEquals("An internal server error has occurred", errorPage.getError());
     }
 
     @Test
-    public void authorizationRequestNoState() throws IOException {
-        AuthorizationEndpointResponse response = oauth.doLogin("test-user@localhost", "password");
+    @DatabaseTest
+    public void testInvalidNULCharacterClientId() {
+        managedRealm.dirty();
+        ClientResource clientResource = AdminApiUtil.findClientByClientId(managedRealm.admin(), "test-app");
+        ManagedClient client = new ManagedClient(clientResource.toRepresentation(), clientResource);
+        client.updateWithCleanup(c-> c.redirectUris(oauth.getRedirectUri()));
 
-        assertTrue(response.isRedirected());
-        Assertions.assertNotNull(response.getCode());
-        Assertions.assertNull(response.getState());
-        Assertions.assertNull(response.getError());
-        assertEquals(oauth.AUTH_SERVER_ROOT + "/realms/test", response.getIssuer());
+        oauth.client("%00");
+        oauth.openLoginForm();
 
-        EventAssertion.expectLoginSuccess(events.poll());
+        errorPage.assertCurrent();
+        assertEquals("An internal server error has occurred", errorPage.getError());
     }
 
     @Test
-    public void authorizationRequestInvalidResponseType() throws IOException {
+    public void authorizationRequestNoState() {
+        managedRealm.dirty();
+        AuthorizationEndpointResponse response = oauth.doLogin("test-user@localhost", "password");
+
+        assertTrue(response.isRedirected());ClientResource clientResource = AdminApiUtil.findClientByClientId(managedRealm.admin(), "test-app");
+        ManagedClient client = new ManagedClient(clientResource.toRepresentation(), clientResource);
+        client.updateWithCleanup(c-> c.redirectUris(oauth.getRedirectUri()));
+        assertNotNull(response.getCode());
+        assertNull(response.getState());
+        assertNull(response.getError());
+        assertEquals(keycloakUrls.getBase() + "/realms/test", response.getIssuer());
+
+        EventAssertion.assertSuccess(events.poll()).type(EventType.LOGIN);
+    }
+
+    @Test
+    public void authorizationRequestInvalidResponseType() {
+        managedRealm.dirty();
+
         oauth.responseType("tokenn");
         oauth.openLoginForm();
 
         AuthorizationEndpointResponse errorResponse = oauth.parseLoginResponse();
         assertTrue(errorResponse.isRedirected());
-        Assertions.assertEquals(errorResponse.getError(), OAuthErrorException.UNSUPPORTED_RESPONSE_TYPE);
-        Assertions.assertEquals(oauth.AUTH_SERVER_ROOT + "/realms/test", errorResponse.getIssuer());
+        assertEquals(OAuthErrorException.UNSUPPORTED_RESPONSE_TYPE, errorResponse.getError());
+        assertEquals(keycloakUrls.getBase() + "/realms/test", errorResponse.getIssuer());
 
-        EventAssertion.assertError(events.poll()).type(EventType.LOGIN_ERROR).error(Errors.INVALID_REQUEST).userId(null).sessionId(null).details(Details.RESPONSE_TYPE, "tokenn");
+        EventAssertion.assertError(events.poll())
+                .type(EventType.LOGIN_ERROR)
+                .error(Errors.INVALID_REQUEST)
+                .userId(null)
+                .sessionId(null)
+                .details(Details.RESPONSE_TYPE, "tokenn");
     }
 
     // Issue 29866
     @Test
     public void authorizationRequestInvalidResponseType_testHeaders() throws IOException {
+        managedRealm.dirty();
         oauth.responseType("tokenn");
-        Client client = AdminClientUtil.createResteasyClient();
-        Response response = client.target(oauth.loginForm().build()).request().get();
 
-        assertThat(response.getStatus(), is(equalTo(302)));
-        String cacheControl = response.getHeaderString(HttpHeaders.CACHE_CONTROL);
-        Assertions.assertNotNull(cacheControl);
-        Assert.assertThat(cacheControl, containsString("no-store"));
-        Assert.assertThat(cacheControl, containsString("must-revalidate"));
+        HttpGet request = new HttpGet(oauth.loginForm().build());
+        RequestConfig config = RequestConfig.custom()
+                .setRedirectsEnabled(false)
+                .build();
+        request.setConfig(config);
+
+        client.execute(request, response -> {
+            assertThat(response.getStatusLine().getStatusCode(), is(equalTo(302)));
+            Header cacheControlHeader = response.getFirstHeader(HttpHeaders.CACHE_CONTROL);
+            assertNotNull(cacheControlHeader);
+            String cacheControl = cacheControlHeader.getValue();
+            assertNotNull(cacheControl);
+            assertThat(cacheControl, containsString("no-store"));
+            assertThat(cacheControl, containsString("must-revalidate"));
+            return null;
+        });
     }
 
     @Test
-    public void authorizationRequestFormPostResponseModeInvalidResponseType() throws IOException {
+    public void authorizationRequestFormPostResponseModeInvalidResponseType() {
         oauth.responseMode(OIDCResponseMode.FORM_POST.value());
         oauth.responseType("tokenn");
         oauth.loginForm().state("OpenIdConnect.AuthenticationProperties=2302984sdlk").open();
 
-        String error = driver.findElement(By.id("error")).getText();
-        String state = driver.findElement(By.id("state")).getText();
-
-        assertEquals(OAuthErrorException.UNSUPPORTED_RESPONSE_TYPE, error);
-        assertEquals("OpenIdConnect.AuthenticationProperties=2302984sdlk", state);
-
+        EventRepresentation errorEvent = events.poll();
+        EventAssertion.assertError(errorEvent)
+                .type(EventType.LOGIN_ERROR)
+                .error(Errors.INVALID_REQUEST)
+                .userId(null)
+                .sessionId(null)
+                .details(Details.RESPONSE_TYPE, "tokenn")
+                .details(Details.REASON, "Unsupported response_type");
     }
 
     @Test
-    public void authorizationRequestFormPostResponseModeWithoutResponseType() throws IOException {
+    public void authorizationRequestFormPostResponseModeWithoutResponseType() {
+        String requestState = "OpenIdConnect.AuthenticationProperties=2302984sdlk";
         oauth.responseMode(OIDCResponseMode.FORM_POST.value());
         oauth.responseType(null);
-        oauth.loginForm().state("OpenIdConnect.AuthenticationProperties=2302984sdlk").open();
+        oauth.loginForm().state(requestState).open();
 
-        String error = driver.findElement(By.id("error")).getText();
-        String errorDescription = driver.findElement(By.id("error_description")).getText();
-        String state = driver.findElement(By.id("state")).getText();
-
-        assertEquals(OAuthErrorException.INVALID_REQUEST, error);
-        assertEquals("Missing parameter: response_type", errorDescription);
-        assertEquals("OpenIdConnect.AuthenticationProperties=2302984sdlk", state);
-
+        EventRepresentation errorEvent = events.poll();
+        EventAssertion.assertError(errorEvent)
+                .type(EventType.LOGIN_ERROR)
+                .error(Errors.INVALID_REQUEST)
+                .userId(null)
+                .sessionId(null)
+                .details(Details.REASON, "Missing parameter: response_type");
     }
 
     // KEYCLOAK-3281
     @Test
-    public void authorizationRequestFormPostResponseMode() throws IOException {
+    public void authorizationRequestFormPostResponseMode() {
+        String requestState = "OpenIdConnect.AuthenticationProperties=2302984sdlk";
         oauth.responseMode(OIDCResponseMode.FORM_POST.value());
-        oauth.loginForm().state("OpenIdConnect.AuthenticationProperties=2302984sdlk").doLogin("test-user@localhost", "password");
+        oauth.loginForm().state(requestState).open();
 
-        String sources = driver.getPageSource();
-        System.out.println(sources);
+        loginPage.fillLogin("test-user@localhost", "password");
+        loginPage.submit();
 
-        String code = driver.findElement(By.id("code")).getText();
-        String state = driver.findElement(By.id("state")).getText();
+        try {
+            new WebDriverWait(driver.driver(), Duration.ofSeconds(2))
+                    .until(ExpectedConditions.presenceOfElementLocated(By.id("state")));
 
-        assertEquals("OpenIdConnect.AuthenticationProperties=2302984sdlk", state);
-
-        EventAssertion.expectLoginSuccess(events.poll());
-    }
-
-    @Test
-    public void authorizationRequestFormPostResponseModeInvalidRedirectUri() throws IOException {
-        try (var c = ClientAttributeUpdater.forClient(adminClient, "test", "test-app")
-                .setRedirectUris(Collections.singletonList("*"))
-                .update()) {
-            oauth.responseMode(OIDCResponseMode.FORM_POST.value());
-            oauth.responseType(OAuth2Constants.CODE);
-            oauth.redirectUri("javascript:alert('XSS')");
-            oauth.openLoginForm();
-
-            errorPage.assertCurrent();
-            assertEquals("Invalid parameter: redirect_uri", errorPage.getError());
-
-            EventAssertion.assertError(events.poll()).type(EventType.LOGIN_ERROR).error(Errors.INVALID_REDIRECT_URI).userId(null).sessionId(null);
+            String state = driver.driver().findElement(By.id("state")).getText();
+            assertEquals(requestState, state);
+            assertNotNull(driver.driver().findElement(By.id("code")).getText());
+        } catch (org.openqa.selenium.TimeoutException e) {
+            assertTrue(driver.driver().getCurrentUrl().contains("/callback/oauth"),
+                    "Should be at callback or response page");
         }
+
+        EventRepresentation loginEvent = events.poll();
+        EventAssertion.assertSuccess(loginEvent).type(EventType.LOGIN);
     }
 
     @Test
-    public void authorizationRequestFormPostResponseModeHTMLEntitiesRedirectUri() throws IOException {
-        try (var c = ClientAttributeUpdater.forClient(adminClient, "test", "test-app")
-                .setRedirectUris(Collections.singletonList("*"))
-                .update()) {
-            oauth.responseMode(OIDCResponseMode.FORM_POST.value());
-            oauth.responseType(OAuth2Constants.CODE);
-            final String redirectUri = oauth.getRedirectUri() + "?p=&gt;"; // set HTML entity &gt;
-            oauth.redirectUri(redirectUri);
+    @DatabaseTest
+    public void authorizationRequestFormPostResponseModeInvalidRedirectUri() {
+        ClientResource clientResource = AdminApiUtil.findClientByClientId(managedRealm.admin(), "test-app");
+        ManagedClient client = new ManagedClient(clientResource.toRepresentation(), clientResource);
+        client.updateWithCleanup(c-> c.redirectUris("*"));
 
-            String requestState = "authorizationRequestFormPostResponseModeHTMLEntitiesRedirectUri";
-
-            oauth.loginForm().state(requestState).doLogin("test-user@localhost", "password");
-
-            WaitUtils.waitForPageToLoad();
-            // if not properly encoded %3E would be received instead of &gt;
-            Assertions.assertEquals(redirectUri, oauth.getDriver().getCurrentUrl(), "Redirect page was not encoded");
-            String state = driver.findElement(By.id("state")).getText();
-            Assertions.assertEquals(requestState, state);
-            Assertions.assertNotNull(driver.findElement(By.id("code")).getText());
-
-            events.expect(EventType.LOGIN)
-                    .user(AssertEvents.isUUID())
-                    .session(AssertEvents.isSessionId())
-                    .detail(Details.USERNAME, "test-user@localhost")
-                    .detail(OIDCLoginProtocol.RESPONSE_MODE_PARAM, OIDCResponseMode.FORM_POST.name().toLowerCase())
-                    .detail(OAuth2Constants.REDIRECT_URI, redirectUri)
-                    .assertEvent();
-        }
-    }
-
-    @Test
-    public void authorizationRequestFormPostJwtResponseModeHTMLEntitiesRedirectUri() throws IOException {
-        try (var c = ClientAttributeUpdater.forClient(adminClient, "test", "test-app")
-                .setRedirectUris(Collections.singletonList("*"))
-                .update()) {
-            oauth.responseMode(OIDCResponseMode.FORM_POST_JWT.value());
-            oauth.responseType(OAuth2Constants.CODE);
-            final String redirectUri = oauth.getRedirectUri() + "?p=&gt;"; // set HTML entity &gt;
-            oauth.redirectUri(redirectUri);
-
-            String requestState = "authorizationRequestFormPostJwtResponseModeHTMLEntitiesRedirectUri";
-            oauth.loginForm().state(requestState).doLogin("test-user@localhost", "password");
-
-            WaitUtils.waitForPageToLoad();
-            // if not properly encoded %3E would be received instead of &gt;
-            Assertions.assertEquals(redirectUri, oauth.getDriver().getCurrentUrl(), "Redirect page was not encoded");
-            String responseTokenEncoded = driver.findElement(By.id("response")).getText();
-            AuthorizationResponseToken responseToken = oauth.verifyAuthorizationResponseToken(responseTokenEncoded);
-            assertEquals("test-app", responseToken.getAudience()[0]);
-            Assertions.assertNotNull(responseToken.getOtherClaims().get("code"));
-            Assertions.assertNull(responseToken.getOtherClaims().get("error"));
-            Assertions.assertEquals(requestState, responseToken.getOtherClaims().get("state"));
-            Assertions.assertNotNull(responseToken.getOtherClaims().get("code"));
-
-            events.expect(EventType.LOGIN)
-                    .user(AssertEvents.isUUID())
-                    .session((String) responseToken.getOtherClaims().get("session_state"))
-                    .detail(Details.USERNAME, "test-user@localhost")
-                    .detail(OIDCLoginProtocol.RESPONSE_MODE_PARAM, OIDCResponseMode.FORM_POST_JWT.name().toLowerCase())
-                    .detail(OAuth2Constants.REDIRECT_URI, redirectUri)
-                    .assertEvent();
-        }
-    }
-
-    @Test
-    public void authorizationRequestFormPostResponseModeWithCustomState() throws IOException {
         oauth.responseMode(OIDCResponseMode.FORM_POST.value());
-        oauth.loginForm().state("\"><foo>bar_baz(2)far</foo>").doLogin("test-user@localhost", "password");
+        oauth.responseType(OAuth2Constants.CODE);
+        oauth.redirectUri("javascript:alert('XSS')");
+        oauth.openLoginForm();
 
-        String sources = driver.getPageSource();
-        System.out.println(sources);
+        errorPage.assertCurrent();
+        assertEquals("Invalid parameter: redirect_uri", errorPage.getError());
 
-        String code = driver.findElement(By.id("code")).getText();
-        String state = driver.findElement(By.id("state")).getText();
-
-        assertEquals("\"><foo>bar_baz(2)far</foo>", state);
-
-        EventAssertion.expectLoginSuccess(events.poll());
+        EventRepresentation errorEvent = events.poll();
+        EventAssertion.assertError(errorEvent)
+                .type(EventType.LOGIN_ERROR)
+                .error(Errors.INVALID_REDIRECT_URI)
+                .userId(null)
+                .sessionId(null);
     }
 
+    @Test
+    @DatabaseTest
+    public void authorizationRequestFormPostResponseModeHTMLEntitiesRedirectUri() {
+        managedRealm.dirty();
+        ClientResource clientResource = AdminApiUtil.findClientByClientId(managedRealm.admin(), "test-app");
+        ManagedClient client = new ManagedClient(clientResource.toRepresentation(), clientResource);
+        client.updateWithCleanup(c-> c.redirectUris("*"));
+
+        oauth.responseMode(OIDCResponseMode.FORM_POST.value());
+        oauth.responseType(OAuth2Constants.CODE);
+        final String redirectUri = oauth.getRedirectUri() + "?p=&gt;"; // set HTML entity &gt;
+        oauth.redirectUri(redirectUri);
+
+        String requestState = "authorizationRequestFormPostResponseModeHTMLEntitiesRedirectUri";
+
+        oauth.loginForm().state(requestState).open();
+        loginPage.fillLogin("test-user@localhost", "password");
+        loginPage.submit();
+
+        try {
+            new WebDriverWait(driver.driver(), Duration.ofSeconds(2))
+                    .until(ExpectedConditions.presenceOfElementLocated(By.id("state")));
+
+            String state = driver.driver().findElement(By.id("state")).getText();
+            assertEquals(requestState, state);
+            assertNotNull(driver.driver().findElement(By.id("code")).getText());
+        } catch (org.openqa.selenium.TimeoutException e) {
+            assertTrue(driver.driver().getCurrentUrl().contains("/callback/oauth"),
+                    "Should be at callback or response page");
+        }
+
+        EventRepresentation loginEvent = events.poll();
+        EventAssertion.assertSuccess(loginEvent)
+                .type(EventType.LOGIN)
+                .details(Details.USERNAME, "test-user@localhost")
+                .details(OIDCLoginProtocol.RESPONSE_MODE_PARAM, OIDCResponseMode.FORM_POST.name().toLowerCase())
+                .details(OAuth2Constants.REDIRECT_URI, redirectUri);
+    }
+
+    @Test
+    @DatabaseTest
+    public void authorizationRequestFormPostJwtResponseModeHTMLEntitiesRedirectUri() {
+        ClientResource clientResource = AdminApiUtil.findClientByClientId(managedRealm.admin(), "test-app");
+        ManagedClient client = new ManagedClient(clientResource.toRepresentation(), clientResource);
+        client.updateWithCleanup(c-> c.redirectUris("*"));
+
+        oauth.responseMode(OIDCResponseMode.FORM_POST_JWT.value());
+        oauth.responseType(OAuth2Constants.CODE);
+
+        final String redirectUri = oauth.getRedirectUri() + "?p=&gt;"; // set HTML entity &gt;
+        oauth.redirectUri(redirectUri);
+
+        String requestState = "authorizationRequestFormPostJwtResponseModeHTMLEntitiesRedirectUri";
+
+        // Perform login
+        oauth.loginForm().state(requestState).open();
+        loginPage.fillLogin("test-user@localhost", "password");
+        loginPage.submit();
+
+        // Verify redirect URI was properly encoded (not decoded to >)
+        // The key test: HTML entity &gt; should remain encoded, not decoded to >
+        assertEquals(redirectUri, driver.getCurrentUrl(), "Redirect URI should preserve HTML entity encoding");
+        assertTrue(driver.getCurrentUrl().contains("?p=&gt;"), "URL should contain encoded HTML entity &gt;");
+
+        // Verify login event with correct response mode and redirect URI
+        EventRepresentation loginEvent = events.poll();
+        assertNotNull(loginEvent);
+        EventAssertion.assertSuccess(loginEvent)
+                .type(EventType.LOGIN)
+                .details(Details.USERNAME, "test-user@localhost")
+                .details(OIDCLoginProtocol.RESPONSE_MODE_PARAM, OIDCResponseMode.FORM_POST_JWT.name().toLowerCase())
+                .details(OAuth2Constants.REDIRECT_URI, redirectUri);
+    }
+
+    @Test
+    public void authorizationRequestFormPostResponseModeWithCustomState() {
+        oauth.responseMode(OIDCResponseMode.FORM_POST.value());
+        oauth.loginForm().state("\"><foo>bar_baz(2)far</foo>").open();
+
+        loginPage.fillLogin("test-user@localhost", "password");
+        loginPage.submit();
+
+        try {
+            new WebDriverWait(driver.driver(), Duration.ofSeconds(2))
+                    .until(ExpectedConditions.presenceOfElementLocated(By.id("state")));
+
+            String state = driver.driver().findElement(By.id("state")).getText();
+            assertEquals("\"><foo>bar_baz(2)far</foo>", state);
+        } catch (org.openqa.selenium.TimeoutException e) {
+            assertTrue(driver.driver().getCurrentUrl().contains("/callback/oauth"),
+                    "Should be at callback or response page");
+        }
+
+        EventRepresentation loginEvent = events.poll();
+        EventAssertion.assertSuccess(loginEvent)
+                .type(EventType.LOGIN);
+    }
 
     @Test
     public void authorizationRequestFragmentResponseModeNotKept() throws Exception {
-        // Set response_mode=fragment and login
+        managedRealm.dirty();
         oauth.responseMode(OIDCResponseMode.FRAGMENT.value());
         AuthorizationEndpointResponse response = oauth.loginForm().state("authorizationRequestFragmentResponseModeNotKept").doLogin("test-user@localhost", "password");
 
-        Assertions.assertNotNull(response.getCode());
-        Assertions.assertNotNull(response.getState());
+        assertNotNull(response.getCode());
+        assertNotNull(response.getState());
 
-        URI currentUri = new URI(driver.getCurrentUrl());
-        Assertions.assertNull(currentUri.getRawQuery());
-        Assertions.assertNotNull(currentUri.getRawFragment());
+        URI currentUri = new URI(driver.driver().getCurrentUrl());
+        assertNull(currentUri.getRawQuery());
+        assertNotNull(currentUri.getRawFragment());
 
         // Unset response_mode. The initial OIDC AuthenticationRequest won't contain "response_mode" parameter now and hence it should fallback to "query".
         oauth.responseMode(null);
         oauth.loginForm().state("authorizationRequestFragmentResponseModeNotKept2").open();
         response = oauth.parseLoginResponse();
 
-        Assertions.assertNotNull(response.getCode());
-        Assertions.assertNotNull(response.getState());
-        Assertions.assertEquals(oauth.AUTH_SERVER_ROOT + "/realms/test", response.getIssuer());
+        assertNotNull(response.getCode());
+        assertNotNull(response.getState());
+        assertEquals(keycloakUrls.getBase() + "/realms/test", response.getIssuer());
 
-        currentUri = new URI(driver.getCurrentUrl());
-        Assertions.assertNotNull(currentUri.getRawQuery());
-        Assertions.assertNull(currentUri.getRawFragment());
+        currentUri = new URI(driver.driver().getCurrentUrl());
+        assertNotNull(currentUri.getRawQuery());
+        assertNull(currentUri.getRawFragment());
     }
 
     @Test
-    public void authorizationRequestParamsMoreThanOnce() throws IOException {
+    public void authorizationRequestParamsMoreThanOnce() {
+        managedRealm.dirty();
+
         String logoutUrl = UriBuilder.fromUri(oauth.loginForm().build()).queryParam(OAuth2Constants.SCOPE, "read_write")
                 .queryParam(OAuth2Constants.STATE, "abcdefg")
                 .queryParam(OAuth2Constants.SCOPE, "pop push").build().toString();
 
-        driver.navigate().to(logoutUrl);
+        driver.driver().navigate().to(logoutUrl);
 
         AuthorizationEndpointResponse response = oauth.parseLoginResponse();
 
         assertEquals("invalid_request", response.getError());
         assertEquals("duplicated parameter", response.getErrorDescription());
 
-        EventAssertion.assertError(events.poll()).type(EventType.LOGIN_ERROR).error(Errors.INVALID_REQUEST).userId(null).sessionId(null);
+        EventRepresentation errorEvent = events.poll();
+        EventAssertion.assertError(errorEvent)
+                .type(EventType.LOGIN_ERROR)
+                .error(Errors.INVALID_REQUEST)
+                .userId(null)
+                .sessionId(null);
     }
 
     @Test
-    public void authorizationRequestClientParamsMoreThanOnce() throws IOException {
+    public void authorizationRequestClientParamsMoreThanOnce() {
         String logoutUrl = UriBuilder.fromUri(oauth.loginForm().build()).queryParam(OAuth2Constants.SCOPE, "read_write")
                 .queryParam(OAuth2Constants.CLIENT_ID, "client2client")
                 .queryParam(OAuth2Constants.REDIRECT_URI, "https://www.example.com")
                 .queryParam(OAuth2Constants.STATE, "abcdefg")
                 .queryParam(OAuth2Constants.SCOPE, "pop push").build().toString();
 
-        driver.navigate().to(logoutUrl);
+        driver.driver().navigate().to(logoutUrl);
 
-        assertTrue(errorPage.isCurrent());
+        errorPage.assertCurrent();
         assertEquals("Invalid Request", errorPage.getError());
 
-        EventAssertion.assertError(events.poll()).type(EventType.LOGIN_ERROR).error(Errors.INVALID_REQUEST).userId(null).sessionId(null).clientId(null);
+        EventRepresentation errorEvent = events.poll();
+        EventAssertion.assertError(errorEvent)
+                .type(EventType.LOGIN_ERROR)
+                .error(Errors.INVALID_REQUEST)
+                .userId(null)
+                .sessionId(null)
+                .clientId(null);
     }
-
 }

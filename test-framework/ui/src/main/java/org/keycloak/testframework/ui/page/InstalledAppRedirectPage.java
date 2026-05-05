@@ -17,7 +17,7 @@
  *
  */
 
-package org.keycloak.testsuite.pages;
+package org.keycloak.testframework.ui.page;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -25,6 +25,7 @@ import java.net.URISyntaxException;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.services.Urls;
+import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 
 import org.junit.jupiter.api.Assertions;
 import org.openqa.selenium.By;
@@ -37,7 +38,7 @@ import org.openqa.selenium.support.FindBy;
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class InstalledAppRedirectPage extends AbstractPage {
+public class InstalledAppRedirectPage extends AbstractPage{
 
     @FindBy(id = "code")
     private WebElement code;
@@ -48,9 +49,9 @@ public class InstalledAppRedirectPage extends AbstractPage {
     @FindBy(css = "div[class^='pf-v5-c-alert'], div[class^='alert-error']")
     private WebElement errorBox;
 
-    public void open(String realmName, String code, String error, String errorDescription) {
+    public void open(String realmName, String code, String error, String errorDescription, String authServerRoot) {
         try {
-            KeycloakUriBuilder kcUriBuilder = KeycloakUriBuilder.fromUri(Urls.realmInstalledAppUrnCallback(new URI(oauth.AUTH_SERVER_ROOT), realmName));
+            KeycloakUriBuilder kcUriBuilder = KeycloakUriBuilder.fromUri(Urls.realmInstalledAppUrnCallback(new URI(authServerRoot), realmName));
             if (code != null) {
                 kcUriBuilder.queryParam(OAuth2Constants.CODE, code);
             }
@@ -61,13 +62,12 @@ public class InstalledAppRedirectPage extends AbstractPage {
                 kcUriBuilder.queryParam(OAuth2Constants.ERROR_DESCRIPTION, errorDescription);
             }
             String oobEndpointUri = kcUriBuilder.build().toString();
-            driver.navigate().to(oobEndpointUri);
+            driver.driver().navigate().to(oobEndpointUri);
         } catch (URISyntaxException use) {
             throw new IllegalArgumentException(use);
         }
     }
 
-    @Override
     public boolean isCurrent() {
         throw new UnsupportedOperationException("Use method 'isCurrentExpectSuccess' or 'isCurrentExpectError'");
     }
@@ -98,5 +98,14 @@ public class InstalledAppRedirectPage extends AbstractPage {
             // Ignore
         }
 
+    }
+
+    public InstalledAppRedirectPage(ManagedWebDriver driver) {
+        super(driver);
+    }
+
+    @Override
+    public String getExpectedPageId() {
+        return "";
     }
 }
