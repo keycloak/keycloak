@@ -19,6 +19,9 @@ public class UserSessionLimitsAuthenticatorFactory implements AuthenticatorFacto
     public static final String TERMINATE_OLDEST_SESSION = "Terminate oldest session";
     public static final String USER_SESSION_LIMITS = "user-session-limits";
     public static final String ERROR_MESSAGE = "errorMessage";
+    public static final String SESSION_COUNTING_SCOPE = "sessionCountingScope";
+    public static final String SCOPE_THIS_FLOW = "This Authentication Flow";
+    public static final String SCOPE_ALL_FLOWS = "All Authentication Flows";
 
     private static AuthenticationExecutionModel.Requirement[] REQUIREMENT_CHOICES = {
             AuthenticationExecutionModel.Requirement.REQUIRED,
@@ -84,7 +87,15 @@ public class UserSessionLimitsAuthenticatorFactory implements AuthenticatorFacto
         customErrorMessage.setHelpText("If left empty a default error message is shown");
         customErrorMessage.setType(ProviderConfigProperty.STRING_TYPE);
 
-        return Arrays.asList(userRealmLimit, userClientLimit, behaviourProperty, customErrorMessage);
+        ProviderConfigProperty sessionCountingScope = new ProviderConfigProperty();
+        sessionCountingScope.setName(SESSION_COUNTING_SCOPE);
+        sessionCountingScope.setLabel("Session Counting Scope");
+        sessionCountingScope.setHelpText("Determines how sessions are counted. 'This Authentication Flow' counts only sessions created through this specific flow. 'All Authentication Flows' counts all user sessions across all flows..");
+        sessionCountingScope.setType(ProviderConfigProperty.LIST_TYPE);
+        sessionCountingScope.setDefaultValue(SCOPE_ALL_FLOWS);
+        sessionCountingScope.setOptions(Arrays.asList(SCOPE_THIS_FLOW, SCOPE_ALL_FLOWS));
+
+        return Arrays.asList(userRealmLimit, userClientLimit, behaviourProperty, customErrorMessage, sessionCountingScope);
     }
 
     @Override
