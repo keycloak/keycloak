@@ -13,11 +13,16 @@ import org.keycloak.common.Profile;
 import org.keycloak.events.outbox.OutboxStore;
 import org.keycloak.http.simple.SimpleHttp;
 import org.keycloak.http.simple.SimpleHttpResponse;
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.models.jpa.entities.OutboxEntryEntity;
 import org.keycloak.models.jpa.entities.OutboxEntryStatus;
+import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
+import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.ssf.Ssf;
+import org.keycloak.ssf.transmitter.support.SsfAuthUtil;
 import org.keycloak.ssf.event.caep.CaepCredentialChange;
 import org.keycloak.ssf.event.caep.CaepSessionRevoked;
 import org.keycloak.ssf.transmitter.SsfScopes;
@@ -34,10 +39,13 @@ import org.keycloak.testframework.annotations.InjectKeycloakUrls;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.InjectSimpleHttp;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.oauth.OAuthClient;
+import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
 import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testframework.server.DefaultKeycloakServerConfig;
@@ -84,6 +92,17 @@ public class SsfTransmitterStreamManagementTests {
     static final String RECEIVER_SCOPED = "ssf-receiver-scoped";
     static final String RECEIVER_SCOPED_SECRET = "receiver-scoped-secret";
 
+    // Receiver used to exercise the service-account gate explicitly: it
+    // enables both the client-credentials flow (the receiver's own SA)
+    // and direct access grants (so a regular user can mint a token with
+    // the ssf.manage scope). Tests then assert that the gate accepts the
+    // SA bearer and rejects the user bearer when SA is required, and
+    // accepts the user bearer when the SA requirement is opted out.
+    static final String RECEIVER_USER_AUTH = "ssf-receiver-user-auth";
+    static final String RECEIVER_USER_AUTH_SECRET = "receiver-user-auth-secret";
+    static final String SSF_USER = "ssf-user";
+    static final String SSF_USER_PASSWORD = "ssf-user-password";
+
     static final String DUMMY_PUSH_ENDPOINT = "http://127.0.0.1:65535/ssf/push";
     static final String DUMMY_PUSH_AUTH_HEADER = "Bearer dummy-receiver-token";
 
@@ -102,6 +121,14 @@ public class SsfTransmitterStreamManagementTests {
     @InjectRunOnServer
     RunOnServerClient runOnServer;
 
+    // The OAuthClient is provisioned by the test framework with its own
+    // default test-app client; we don't use that default — we drive the
+    // password-grant request against our own RECEIVER_USER_AUTH client by
+    // overriding realm/client/scope on each call. The injection only
+    // exists to give us access to the framework's HTTP machinery.
+    @InjectOAuthClient
+    OAuthClient oauth;
+
     @BeforeEach
     public void assignSsfScopesToReceiverClients() {
         // The SSF client scopes (ssf.read / ssf.manage) are created on the
@@ -114,12 +141,17 @@ public class SsfTransmitterStreamManagementTests {
         assignOptionalClientScopes(RECEIVER_RW, SsfScopes.SCOPE_SSF_READ, SsfScopes.SCOPE_SSF_MANAGE);
         assignOptionalClientScopes(RECEIVER_RO, SsfScopes.SCOPE_SSF_READ);
         assignOptionalClientScopes(RECEIVER_SCOPED, SsfScopes.SCOPE_SSF_READ, SsfScopes.SCOPE_SSF_MANAGE);
+        assignOptionalClientScopes(RECEIVER_USER_AUTH, SsfScopes.SCOPE_SSF_READ, SsfScopes.SCOPE_SSF_MANAGE);
     }
 
     @AfterEach
     public void cleanupStreams() {
-        List.of(RECEIVER_RW, RECEIVER_RO, RECEIVER_SCOPED)
+        List.of(RECEIVER_RW, RECEIVER_RO, RECEIVER_SCOPED, RECEIVER_USER_AUTH)
                 .forEach(this::bestEffortDeleteStream);
+        // The opt-out test flips ssf.requireServiceAccount on RECEIVER_USER_AUTH;
+        // reset to the default (attribute absent → SA required) so subsequent
+        // tests start from the documented default policy.
+        clearClientAttribute(RECEIVER_USER_AUTH, ClientStreamStore.SSF_REQUIRE_SERVICE_ACCOUNT_KEY);
     }
 
     @Test
@@ -992,6 +1024,122 @@ public class SsfTransmitterStreamManagementTests {
         }
     }
 
+    @Test
+    public void testCreateStreamAcceptsServiceAccountBearer() throws IOException {
+
+        // Explicit regression for the service-account gate in
+        // SsfAuthUtil.checkScopePermission: with the default policy
+        // (ssf.requireServiceAccount attribute absent → required) the
+        // receiver's own service-account bearer must be accepted.
+        // UserModel.getServiceAccountClientLink() returns the receiver
+        // client's clientId for service-account users, so the gate must
+        // deny iff that link does NOT match — a missing negation here
+        // had the inverse effect (denied SA bearers, accepted user
+        // bearers). Many other tests in this class hit this path
+        // implicitly through obtainManageToken(); naming it here makes
+        // the regression intent explicit.
+        String saToken = obtainManageToken(RECEIVER_USER_AUTH, RECEIVER_USER_AUTH_SECRET);
+
+        StreamConfigUpdateRepresentation request = buildPushStreamRequest(Set.of(CaepCredentialChange.TYPE));
+        try (SimpleHttpResponse response = postStream(saToken, request)) {
+            Assertions.assertEquals(201, response.getStatus(),
+                    "service-account bearer must be accepted under the default SA-required policy");
+        }
+    }
+
+    @Test
+    public void testCreateStreamRejectsUserBearerWhenServiceAccountRequired() throws IOException {
+
+        // Negative side of the SA gate: with the default policy a
+        // password-grant token (regular user, not the receiver's SA)
+        // must be rejected even when it carries the ssf.manage scope.
+        // The token is mintable here because RECEIVER_USER_AUTH has
+        // direct access grants enabled and ssf.manage is in the
+        // user's optional scopes — so the gate is the only thing
+        // standing between a regular user and stream management.
+        String userToken = obtainPasswordGrantToken(
+                RECEIVER_USER_AUTH, RECEIVER_USER_AUTH_SECRET,
+                SSF_USER, SSF_USER_PASSWORD,
+                SsfScopes.SCOPE_SSF_MANAGE + " " + SsfScopes.SCOPE_SSF_READ);
+        Assertions.assertNotNull(userToken,
+                "test setup must allow the user to mint an ssf.manage token; the gate, not OAuth, is what must reject it");
+
+        StreamConfigUpdateRepresentation request = buildPushStreamRequest(Set.of(CaepCredentialChange.TYPE));
+        try (SimpleHttpResponse response = postStream(userToken, request)) {
+            Assertions.assertEquals(401, response.getStatus(),
+                    "regular-user bearer must be rejected when ssf.requireServiceAccount=true");
+        }
+    }
+
+    @Test
+    public void testCreateStreamAcceptsUserBearerWhenServiceAccountOptedOut() throws IOException {
+
+        // Opt-out path: when ssf.requireServiceAccount is explicitly
+        // "false", the SA gate is skipped entirely and a regular-user
+        // bearer with ssf.manage is allowed. The opt-out is reset by
+        // the @AfterEach hook so subsequent tests run under the
+        // default SA-required policy.
+        setClientAttribute(RECEIVER_USER_AUTH, ClientStreamStore.SSF_REQUIRE_SERVICE_ACCOUNT_KEY, "false");
+
+        String userToken = obtainPasswordGrantToken(
+                RECEIVER_USER_AUTH, RECEIVER_USER_AUTH_SECRET,
+                SSF_USER, SSF_USER_PASSWORD,
+                SsfScopes.SCOPE_SSF_MANAGE + " " + SsfScopes.SCOPE_SSF_READ);
+        Assertions.assertNotNull(userToken);
+
+        StreamConfigUpdateRepresentation request = buildPushStreamRequest(Set.of(CaepCredentialChange.TYPE));
+        try (SimpleHttpResponse response = postStream(userToken, request)) {
+            Assertions.assertEquals(201, response.getStatus(),
+                    "with ssf.requireServiceAccount=false, a regular-user bearer must pass the gate");
+        }
+    }
+
+    @Test
+    public void testServiceAccountGateRejectsAnotherClientsServiceAccount() {
+
+        // White-box coverage for the SA-gate's mismatch branch. The
+        // receiver-side SSF endpoints only ever observe a bearer's bound
+        // client (authResult.client()) and resource owner
+        // (authResult.user()). For a client_credentials token Keycloak's
+        // auth pipeline guarantees user.getServiceAccountClientLink() ==
+        // authResult.client().getId() by construction — so a token whose
+        // user is the SA of a *different* client cannot arise from the
+        // public token endpoint, and there is no realistic HTTP path that
+        // exercises this branch.
+        //
+        // To cover it anyway we fabricate the mismatched pairing on the
+        // server side: authResult.client() = RECEIVER_USER_AUTH (the
+        // bearer's bound receiver) but authResult.user() = RECEIVER_RW's
+        // service-account user (whose link points to RECEIVER_RW's UUID).
+        // The gate must reject because the link belongs to RECEIVER_RW,
+        // not RECEIVER_USER_AUTH.
+        runOnServer.run(session -> {
+            var serverRealm = session.getContext().getRealm();
+            ClientModel target = serverRealm.getClientByClientId(RECEIVER_USER_AUTH);
+            ClientModel other = serverRealm.getClientByClientId(RECEIVER_RW);
+            Assertions.assertNotNull(target, "RECEIVER_USER_AUTH must exist");
+            Assertions.assertNotNull(other, "RECEIVER_RW must exist");
+
+            UserModel otherSa = session.users().getServiceAccount(other);
+            Assertions.assertNotNull(otherSa, "RECEIVER_RW must have a service-account user");
+            Assertions.assertEquals(other.getId(), otherSa.getServiceAccountClientLink(),
+                    "sanity: SA link points to RECEIVER_RW's UUID, not RECEIVER_USER_AUTH's");
+
+            AccessToken token = new AccessToken();
+            token.setScope(Ssf.SCOPE_SSF_MANAGE);
+            AuthenticationManager.AuthResult auth =
+                    new AuthenticationManager.AuthResult(otherSa, null, token, target);
+
+            session.setAttribute(SsfAuthUtil.AUTH_KEY, auth);
+            try {
+                Assertions.assertFalse(SsfAuthUtil.canManage(),
+                        "SA gate must reject a bearer whose user is the SA of a different client");
+            } finally {
+                session.removeAttribute(SsfAuthUtil.AUTH_KEY);
+            }
+        });
+    }
+
     // --- helpers ---------------------------------------------------------
 
     protected String streamsEndpoint() {
@@ -1065,6 +1213,45 @@ public class SsfTransmitterStreamManagementTests {
             }
             return response.asJson().get("access_token").asText();
         }
+    }
+
+    protected String obtainPasswordGrantToken(String clientId, String secret,
+                                              String username, String password,
+                                              String scope) {
+        return oauth.realm(realm.getName())
+                .client(clientId, secret)
+                .scope(scope)
+                .doPasswordGrantRequest(username, password)
+                .getAccessToken();
+    }
+
+    /**
+     * Writes the given attribute on the receiver client through the admin
+     * REST API. Used to flip {@code ssf.requireServiceAccount} at test time.
+     */
+    protected void setClientAttribute(String clientId, String key, String value) {
+        ClientRepresentation client = findClientByClientId(clientId);
+        Assertions.assertNotNull(client, () -> "expected client '" + clientId + "' to be present in realm");
+        if (client.getAttributes() == null) {
+            client.setAttributes(new java.util.HashMap<>());
+        }
+        client.getAttributes().put(key, value);
+        realm.admin().clients().get(client.getId()).update(client);
+    }
+
+    /**
+     * Removes the given attribute from the receiver client. Used to reset
+     * test-mutated attributes back to the documented "absent" default in
+     * the {@code @AfterEach} hook.
+     */
+    protected void clearClientAttribute(String clientId, String key) {
+        ClientRepresentation client = findClientByClientId(clientId);
+        if (client == null || client.getAttributes() == null
+                || !client.getAttributes().containsKey(key)) {
+            return;
+        }
+        client.getAttributes().remove(key);
+        realm.admin().clients().get(client.getId()).update(client);
     }
 
     protected ClientRepresentation findClientByClientId(String clientId) {
@@ -1193,6 +1380,31 @@ public class SsfTransmitterStreamManagementTests {
                             .attribute(ClientStreamStore.SSF_ENABLED_KEY, "true")
                             .attribute(ClientStreamStore.SSF_STREAM_SUPPORTED_EVENTS_KEY,
                                     CaepSessionRevoked.class.getSimpleName())
+                            .build()
+            );
+
+            // SA-gate fixture: both client_credentials (the receiver's own SA)
+            // and direct access grants (a regular user obtaining an
+            // ssf.manage token for the same client) are valid token paths
+            // here, so the only thing that distinguishes the two bearers
+            // at the SSF layer is the SA gate itself.
+            realm.clients(
+                    ClientBuilder.create(RECEIVER_USER_AUTH)
+                            .secret(RECEIVER_USER_AUTH_SECRET)
+                            .serviceAccountsEnabled(true)
+                            .directAccessGrantsEnabled(true)
+                            .publicClient(false)
+                            .attribute(ClientStreamStore.SSF_ENABLED_KEY, "true")
+                            .build()
+            );
+
+            realm.users(
+                    UserBuilder.create(SSF_USER)
+                            .email(SSF_USER + "@example.org")
+                            .firstName("SSF")
+                            .lastName("User")
+                            .enabled(true)
+                            .password(SSF_USER_PASSWORD)
                             .build()
             );
 

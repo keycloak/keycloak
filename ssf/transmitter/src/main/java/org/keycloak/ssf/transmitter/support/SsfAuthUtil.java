@@ -78,7 +78,16 @@ public class SsfAuthUtil {
                 log.tracef("SSF auth denied: service account required but not enabled for client %s", client.getClientId());
                 return false;
             }
-            if (client.getClientId().equals(authResult.user().getServiceAccountClientLink())) {
+            // getServiceAccountClientLink() returns the internal client UUID
+            // (see UserModel.setServiceAccountClientLink(String clientInternalId)
+            // and ClientManager.enableServiceAccount which calls
+            // user.setServiceAccountClientLink(client.getId())) — NOT the
+            // public clientId. Compare against client.getId() so the gate
+            // correctly accepts the receiver's own service-account bearer
+            // (link == client.getId()) and rejects anything else: regular
+            // users (link == null) and SAs of other clients (link == some
+            // other UUID).
+            if (!client.getId().equals(authResult.user().getServiceAccountClientLink())) {
                 log.tracef("SSF auth denied: token user is not the service account for client %s", client.getClientId());
                 return false;
             }
