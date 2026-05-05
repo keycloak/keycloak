@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.testsuite.oauth;
+package org.keycloak.tests.oauth;
 
 import java.io.IOException;
 import java.net.URI;
@@ -36,22 +36,28 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.utils.OIDCResponseMode;
 import org.keycloak.representations.AuthorizationResponseToken;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.events.EventAssertion;
-import org.keycloak.testsuite.AbstractKeycloakTest;
+import org.keycloak.testframework.oauth.OAuthClient;
+import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
+import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.ui.annotations.InjectWebDriver;
+import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.pages.ErrorPage;
-import org.keycloak.testsuite.pages.InstalledAppRedirectPage;
+import org.keycloak.testframework.ui.page.ErrorPage;
+import org.keycloak.testframework.ui.page.InstalledAppRedirectPage;
 import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.testsuite.util.ClientManager;
 import org.keycloak.testsuite.util.WaitUtils;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 
-import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Assert;
-import org.junit.Before;
+import org.keycloak.testframework.ui.annotations.InjectPage;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Assertions;
 import org.openqa.selenium.By;
 
@@ -67,15 +73,25 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class AuthorizationCodeTest extends AbstractKeycloakTest {
+@KeycloakIntegrationTest
+public class AuthorizationCodeTest {
+
+    @InjectRealm
+    ManagedRealm managedRealm;
+
+    @InjectWebDriver
+    ManagedWebDriver driver;
+
+    @InjectOAuthClient
+    OAuthClient oauth;
 
     @Rule
     public AssertEvents events = new AssertEvents(this);
 
-    @Page
+    @InjectPage
     private ErrorPage errorPage;
 
-    @Page
+    @InjectPage
     private InstalledAppRedirectPage installedAppPage;
 
     @Override
@@ -84,7 +100,7 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
         testRealms.add(realmRepresentation);
     }
 
-    @Before
+    @BeforeEach
     public void clientConfiguration() {
         oauth.responseType(OAuth2Constants.CODE);
         oauth.responseMode(null);
