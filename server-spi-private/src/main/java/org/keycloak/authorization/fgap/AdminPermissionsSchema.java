@@ -65,6 +65,7 @@ import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.provider.ProviderEvent;
 import org.keycloak.representations.idm.authorization.AbstractPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.AuthorizationSchema;
+import org.keycloak.representations.idm.authorization.DecisionStrategy;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceType;
@@ -285,6 +286,10 @@ public class AdminPermissionsSchema extends AuthorizationSchema {
             }
             if (rep.getScopes() == null || rep.getScopes().isEmpty()) {
                 throw new ModelValidationException("Scopes not provided.");
+            }
+            DecisionStrategy decisionStrategy = rep.getDecisionStrategy();
+            if (decisionStrategy != null && !DecisionStrategy.UNANIMOUS.equals(decisionStrategy)) {
+                throw new ModelValidationException("Only UNANIMOUS decision strategy is supported for admin permissions.");
             }
         }
     }

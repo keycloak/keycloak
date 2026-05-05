@@ -200,7 +200,7 @@ public class UserResourceTypeEvaluationTest extends AbstractPermissionTest {
         List<UserRepresentation> search = realmAdminClient.realm(realm.getName()).users().search(null, -1, -1);
         assertFalse(search.isEmpty());
 
-        permission = client.admin().authorization().permissions().scope().findByName(permission.getName());
+        permission = client.admin().authorization().permissions().scope().findByName(permission.getName(), "*");
         permission.setPolicies(Set.of());
         client.admin().authorization().permissions().scope().findById(permission.getId()).update(permission);
         search = realmAdminClient.realm(realm.getName()).users().search(null, -1, -1);

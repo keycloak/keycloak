@@ -262,6 +262,58 @@ public class PermissionRESTTest extends AbstractPermissionTest {
     }
 
     @Test
+    public void testNonUnanimousDecisionStrategyRejected() {
+        // AFFIRMATIVE should be rejected
+        createPermission(client, PermissionBuilder.create()
+                .resourceType(AdminPermissionsSchema.USERS.getType())
+                .scopes(Set.of(AdminPermissionsSchema.VIEW))
+                .decisionStrategy(DecisionStrategy.AFFIRMATIVE)
+                .build(), Response.Status.BAD_REQUEST);
+
+        // CONSENSUS should be rejected
+        createPermission(client, PermissionBuilder.create()
+                .resourceType(AdminPermissionsSchema.GROUPS.getType())
+                .scopes(Set.of(AdminPermissionsSchema.MANAGE))
+                .decisionStrategy(DecisionStrategy.CONSENSUS)
+                .build(), Response.Status.BAD_REQUEST);
+
+        // UNANIMOUS should be accepted (explicit)
+        createPermission(client, PermissionBuilder.create()
+                .resourceType(AdminPermissionsSchema.USERS.getType())
+                .scopes(Set.of(AdminPermissionsSchema.VIEW))
+                .decisionStrategy(DecisionStrategy.UNANIMOUS)
+                .build());
+
+        // default (null) should be accepted
+        createPermission(client, PermissionBuilder.create()
+                .resourceType(AdminPermissionsSchema.USERS.getType())
+                .scopes(Set.of(AdminPermissionsSchema.MANAGE))
+                .build());
+    }
+
+    @Test
+    public void testNonUnanimousDecisionStrategyRejectedOnUpdate() {
+        ScopePermissionRepresentation permission = PermissionBuilder.create()
+                .resourceType(AdminPermissionsSchema.USERS.getType())
+                .scopes(Set.of(AdminPermissionsSchema.VIEW))
+                .build();
+        createPermission(client, permission);
+
+        // attempt to update with AFFIRMATIVE should fail
+        permission.setDecisionStrategy(DecisionStrategy.AFFIRMATIVE);
+        try {
+            client.admin().authorization().permissions().scope().findById(permission.getId()).update(permission);
+            fail("Expected Exception wasn't thrown.");
+        } catch (Exception ex) {
+            assertThat(ex, instanceOf(BadRequestException.class));
+        }
+
+        // verify permission is unchanged
+        ScopePermissionRepresentation fetched = client.admin().authorization().permissions().scope().findById(permission.getId()).toRepresentation();
+        assertThat(fetched.getDecisionStrategy(), equalTo(DecisionStrategy.UNANIMOUS));
+    }
+
+    @Test
     public void testResourceTypeMixingNotAllowed() {
         // Create a Users permission for alice — this creates an authz resource with alice's UUID as its name
         createPermission(client, PermissionBuilder.create()
