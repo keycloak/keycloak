@@ -148,7 +148,7 @@ public class LDAPEmbeddedServer {
                 try {
                     ldapEmbeddedServer.stop();
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    log.error("Failed to stop LDAP embedded server", e);
                 }
             }
 
