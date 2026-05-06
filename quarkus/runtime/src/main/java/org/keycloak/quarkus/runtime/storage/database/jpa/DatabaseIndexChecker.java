@@ -21,6 +21,7 @@ import java.lang.invoke.MethodHandles;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
@@ -38,19 +39,24 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 
 import liquibase.change.core.CreateIndexChange;
+import liquibase.change.core.CreateTableChange;
 import liquibase.change.core.DropIndexChange;
 import liquibase.change.core.DropTableChange;
 import liquibase.changelog.ChangeSet;
 import liquibase.database.Database;
 import liquibase.database.DatabaseList;
-import liquibase.database.core.H2Database;
-import liquibase.database.core.MSSQLDatabase;
 import liquibase.exception.LiquibaseException;
 import liquibase.exception.PreconditionErrorException;
 import liquibase.exception.PreconditionFailedException;
+import liquibase.precondition.FailedPrecondition;
 import liquibase.precondition.Precondition;
-import liquibase.precondition.PreconditionLogic;
+import liquibase.precondition.core.AndPrecondition;
+import liquibase.precondition.core.ChangeSetExecutedPrecondition;
 import liquibase.precondition.core.DBMSPrecondition;
+import liquibase.precondition.core.IndexExistsPrecondition;
+import liquibase.precondition.core.NotPrecondition;
+import liquibase.precondition.core.OrPrecondition;
+import liquibase.precondition.core.TableExistsPrecondition;
 import org.jboss.logging.Logger;
 
 /**
@@ -121,8 +127,16 @@ public class DatabaseIndexChecker implements Runnable {
 
         var expectedIndexes = new HashMap<String, IndexInfo>();
         var database = liquibase.getDatabase();
+        var runChangesets = new HashSet<ChangesetInfo>();
+        var tables = new HashSet<TableInfo>();
         liquibase.getDatabaseChangeLog().getChangeSets().stream()
-                .filter(cs -> isChangeSetForCurrentDatabase(cs, database))
+                .filter(cs -> {
+                    boolean changeSetForCurrentDatabase = isChangeSetForCurrentDatabase(cs, database, expectedIndexes, runChangesets, tables);
+                    if (changeSetForCurrentDatabase) {
+                        runChangesets.add(new ChangesetInfo(cs.getId(), cs.getAuthor(), cs.getFilePath()));
+                    }
+                    return changeSetForCurrentDatabase;
+                })
                 .map(ChangeSet::getChanges)
                 .flatMap(Collection::stream)
                 .forEach(change -> {
@@ -139,13 +153,18 @@ public class DatabaseIndexChecker implements Runnable {
                     } else if (change instanceof DropIndexChange dic && dic.getIndexName() != null) {
                         var info = expectedIndexes.remove(dic.getIndexName().toUpperCase());
                         logger.debugf("Drop index (%s), %s", change.getChangeSet(), info);
+                    } else if (change instanceof CreateTableChange dic) {
+                        TableInfo info = new TableInfo(dic.getTableName());
+                        logger.debugf("Create table (%s), %s", change.getChangeSet(), info);
+                        tables.add(info);
                     } else if (change instanceof DropTableChange dtc && dtc.getTableName() != null) {
                         var droppedTable = dtc.getTableName();
                         expectedIndexes.values().removeIf(info -> info.tableName.equalsIgnoreCase(droppedTable));
+                        TableInfo info = new TableInfo(droppedTable);
+                        tables.remove(info);
                         logger.debugf("Drop table (%s), %s", change.getChangeSet(), droppedTable);
                     }
                 });
-        excludeIndexes(database, expectedIndexes);
         return expectedIndexes;
     }
 
@@ -165,7 +184,7 @@ public class DatabaseIndexChecker implements Runnable {
         return existingIndexes;
     }
 
-    private static boolean isChangeSetForCurrentDatabase(ChangeSet changeSet, Database database) {
+    private static boolean isChangeSetForCurrentDatabase(ChangeSet changeSet, Database database, HashMap<String, IndexInfo> expectedIndexes, HashSet<ChangesetInfo> changes, HashSet<TableInfo> tables) {
         if (!DatabaseList.definitionMatches(changeSet.getDbmsSet(), database, true)) {
             // returns true if `getDbmsSet()` returns empty or null - i.e. for all databases
             logger.debugf("ChangeSet not valid for current database '%s'. %s", database.getShortName(), changeSet);
@@ -177,26 +196,82 @@ public class DatabaseIndexChecker implements Runnable {
             return true;
         }
         for (var precondition : preconditions.getNestedPreconditions()) {
-            if (containsDbmsPrecondition(precondition)) {
-                try {
-                    precondition.check(database, null, changeSet, null);
-                } catch (PreconditionFailedException | PreconditionErrorException e) {
-                    logger.debugf(e, "ChangeSet not valid for current database '%s'. %s", database.getShortName(), changeSet);
-                    return false;
-                }
+            try {
+                evaluate(precondition, database, expectedIndexes, changes, tables);
+            } catch (PreconditionFailedException | PreconditionErrorException e) {
+                logger.debugf(e, "ChangeSet not valid for current database '%s'. %s", database.getShortName(), changeSet);
+                return false;
             }
         }
         return true;
     }
 
-    private static boolean containsDbmsPrecondition(Precondition precondition) {
-        if (precondition instanceof DBMSPrecondition) {
-            return true;
+    /**
+     * Evaluate the precondition based on the transient state for indexes, tables and changesets and the database.
+     * It will not use any changelog or database information directly, as that has already been fully migrated.
+     * All conditions that are not implemented here will default to "true".
+     */
+    private static void evaluate(Precondition p, Database database, HashMap<String, IndexInfo> expectedIndexes, HashSet<ChangesetInfo> changes, HashSet<TableInfo> tables)
+            throws PreconditionFailedException, PreconditionErrorException {
+        if (p instanceof DBMSPrecondition dbmsPrecondition) {
+            dbmsPrecondition.check(database, null, null, null);
+        } else if (p instanceof AndPrecondition andCondition) {
+            boolean allPassed = true;
+            List<FailedPrecondition> failures = new ArrayList<>();
+            for (Precondition precondition : andCondition.getNestedPreconditions()) {
+                try {
+                    evaluate(precondition, database, expectedIndexes, changes, tables);
+                } catch (PreconditionFailedException e) {
+                    failures.addAll(e.getFailedPreconditions());
+                    allPassed = false;
+                    break;
+                }
+            }
+            if (!allPassed) {
+                throw new PreconditionFailedException(failures);
+            }
+        } else if (p instanceof NotPrecondition notPrecondition) {
+            for (Precondition precondition : notPrecondition.getNestedPreconditions()) {
+                boolean threwException = false;
+                try {
+                    evaluate(precondition, database, expectedIndexes, changes, tables);
+                } catch (PreconditionFailedException e) {
+                    //that's what we want with a Not precondition
+                    threwException = true;
+                }
+                if (!threwException) {
+                    throw new PreconditionFailedException("Not precondition failed", null, notPrecondition);
+                }
+            }
+        } else if (p instanceof OrPrecondition orPrecondition) {
+            boolean onePassed = false;
+            List<FailedPrecondition> failures = new ArrayList<>();
+            for (Precondition precondition : orPrecondition.getNestedPreconditions()) {
+                try {
+                    evaluate(precondition, database, expectedIndexes, changes, tables);
+                    onePassed = true;
+                    break;
+                } catch (PreconditionFailedException e) {
+                    failures.addAll(e.getFailedPreconditions());
+                }
+            }
+            if (!onePassed) {
+                throw new PreconditionFailedException(failures);
+            }
+        } else if (p instanceof ChangeSetExecutedPrecondition changeSetExecutedPrecondition) {
+            if (!changes.contains(new ChangesetInfo(changeSetExecutedPrecondition.getId(), changeSetExecutedPrecondition.getAuthor(), changeSetExecutedPrecondition.getChangeLogFile()))) {
+                throw new PreconditionFailedException("Precondition failed", null, changeSetExecutedPrecondition);
+            }
+        } else if (p instanceof IndexExistsPrecondition indexExistsPrecondition) {
+            if (expectedIndexes.get(indexExistsPrecondition.getIndexName()) == null) {
+                throw new PreconditionFailedException("Precondition failed", null, indexExistsPrecondition);
+            }
+        } else if (p instanceof TableExistsPrecondition tableExistsPrecondition) {
+            if (!tables.contains(new TableInfo(tableExistsPrecondition.getTableName()))) {
+                throw new PreconditionFailedException("Precondition failed", null, tableExistsPrecondition);
+            }
         }
-        if (precondition instanceof PreconditionLogic logic) {
-            return logic.getNestedPreconditions().stream().anyMatch(DatabaseIndexChecker::containsDbmsPrecondition);
-        }
-        return false;
+        // All other conditions default to true
     }
 
     private static String normalizeIdentifier(String name, boolean storesLower, boolean storesUpper) {
@@ -205,20 +280,11 @@ public class DatabaseIndexChecker implements Runnable {
         return name;
     }
 
-    private static void excludeIndexes(Database database, HashMap<String, IndexInfo> expectedIndexes) {
-        if (database instanceof MSSQLDatabase) {
-            // This is a bug. Remove this line after https://github.com/keycloak/keycloak/issues/48716 is fixed
-            expectedIndexes.values().removeIf(indexInfo -> "IDX_IDP_FOR_LOGIN".equalsIgnoreCase(indexInfo.indexName));
-            // This index was dropped and re-added to another databases, but not MSSQL.
-            // See https://github.com/keycloak/keycloak/issues/26618#issuecomment-1964096990
-            expectedIndexes.values().removeIf(indexInfo -> "IDX_CLIENT_ATT_BY_NAME_VALUE".equalsIgnoreCase(indexInfo.indexName));
-        } else if (database instanceof H2Database) {
-            // This index was dropped and re-added to another databases, but not H2.
-            // See https://github.com/keycloak/keycloak/issues/26618#issuecomment-1964096990
-            expectedIndexes.values().removeIf(indexInfo -> "IDX_CLIENT_ATT_BY_NAME_VALUE".equalsIgnoreCase(indexInfo.indexName));
-        }
-    }
-
     private record IndexInfo(String tableName, String indexName, String sql) {
     }
+    private record ChangesetInfo(String id, String author, String filePath) {
+    }
+    private record TableInfo(String tableName) {
+    }
+
 }
