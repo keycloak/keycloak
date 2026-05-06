@@ -6,14 +6,14 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.ssf.SsfException;
-import org.keycloak.ssf.transmitter.resources.AddSubjectRequest;
 import org.keycloak.ssf.subject.ComplexSubjectId;
 import org.keycloak.ssf.subject.OpaqueSubjectId;
-import org.keycloak.ssf.transmitter.resources.RemoveSubjectRequest;
 import org.keycloak.ssf.subject.SubjectId;
 import org.keycloak.ssf.subject.SubjectResolution;
 import org.keycloak.ssf.subject.SubjectResolver;
 import org.keycloak.ssf.transmitter.SsfTransmitterProvider;
+import org.keycloak.ssf.transmitter.resources.AddSubjectRequest;
+import org.keycloak.ssf.transmitter.resources.RemoveSubjectRequest;
 import org.keycloak.ssf.transmitter.stream.StreamConfig;
 import org.keycloak.ssf.transmitter.stream.storage.client.ClientStreamStore;
 
