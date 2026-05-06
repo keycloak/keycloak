@@ -653,7 +653,7 @@ public class LightWeightAccessTokenTest extends AbstractClientPoliciesTest {
     }
 
     private void removeSession(final String sessionId) {
-        testingClient.testing().removeExpired(REALM_NAME);
+        runOnServer.run(RunHelpers.removeExpired(REALM_NAME));
         try {
             runOnServer.run(RunHelpers.removeUserSession(REALM_NAME, sessionId));
         } catch (RunOnServerException nfe) {

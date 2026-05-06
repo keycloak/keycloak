@@ -54,6 +54,7 @@ import org.keycloak.testsuite.util.KeycloakModelUtils;
 import org.keycloak.testsuite.util.TokenSignatureUtil;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.IntrospectionResponse;
+import org.keycloak.testsuite.util.runonserver.RunHelpers;
 import org.keycloak.util.BasicAuthHelper;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.util.TokenUtil;
@@ -453,7 +454,7 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
         assertEquals("test-app", rep.getClientId());
 
         // "Online" session doesn't even exists
-        testingClient.testing().removeExpired("test");
+        runOnServer.run(RunHelpers.removeExpired("test"));
 
         oauth.client("test-app", "password");
         accessTokenResponse = oauth.doRefreshTokenRequest(accessTokenResponse.getRefreshToken());

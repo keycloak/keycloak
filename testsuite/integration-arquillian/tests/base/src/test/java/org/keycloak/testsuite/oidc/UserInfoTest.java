@@ -748,7 +748,7 @@ public class UserInfoTest extends AbstractKeycloakTest {
         try {
             AccessTokenResponse accessTokenResponse = executeGrantAccessTokenRequest(client, true, true);
 
-            testingClient.testing().removeExpired("test");
+            runOnServer.run(RunHelpers.removeExpired("test"));
 
             Response response = UserInfoClientUtil.executeUserInfoRequest_getMethod(client, accessTokenResponse.getToken());
 

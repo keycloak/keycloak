@@ -74,11 +74,6 @@ public interface TestingResource {
     @Produces(MediaType.APPLICATION_JSON)
     void clearAdminEventQueue();
 
-    @POST
-    @Path("/remove-expired")
-    @Produces(MediaType.APPLICATION_JSON)
-    void removeExpired(@QueryParam("realm") final String realm);
-
     /**
      * Will set Inifispan's {@link TimeService} that is aware of Keycloak time shifts to the infinispan {@code CacheManager} before the test.
      * This will allow infinispan expiration to be aware of Keycloak {@link org.keycloak.common.util.Time#setOffset}

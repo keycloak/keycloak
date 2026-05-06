@@ -69,7 +69,6 @@ import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
 import org.keycloak.models.UserSessionModel;
-import org.keycloak.models.session.UserSessionPersisterProvider;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider;
 import org.keycloak.protocol.oid4vc.issuance.credentialoffer.CredentialOfferState;
@@ -139,18 +138,6 @@ public class TestingResourceProvider implements RealmResourceProvider {
         this.factory = factory;
         this.suspendedTimerTasks = suspendedTimerTasks;
         this.request = session.getContext().getHttpRequest();
-    }
-
-    @POST
-    @Path("/remove-expired")
-    @Produces(MediaType.APPLICATION_JSON)
-    public Response removeExpired(@QueryParam("realm") final String name) {
-        RealmModel realm = getRealmByName(name);
-
-        session.getProvider(UserSessionPersisterProvider.class).removeExpired(realm);
-        session.realms().removeExpiredClientInitialAccess();
-
-        return Response.noContent().build();
     }
 
     @POST

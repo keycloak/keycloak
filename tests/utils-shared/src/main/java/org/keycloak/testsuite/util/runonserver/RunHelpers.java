@@ -11,6 +11,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmProvider;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.session.UserSessionPersisterProvider;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
@@ -119,6 +120,15 @@ public class RunHelpers {
             public Class<Integer> getResultClass() {
                 return Integer.class;
             }
+        };
+    }
+
+    public static RunOnServer removeExpired(String realmName) {
+        return session -> {
+            RealmModel realm = getRealmByName(session, realmName);
+
+            session.getProvider(UserSessionPersisterProvider.class).removeExpired(realm);
+            session.realms().removeExpiredClientInitialAccess();
         };
     }
 
