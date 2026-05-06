@@ -400,6 +400,55 @@ public class SecureRedirectUrisEnforcerExecutorTest extends AbstractClientPolici
     }
 
     @Test
+    public void testSecureRedirectUrisEnforcerExecutor_AllowWildcardSubdomain() throws Exception {
+        // register profiles
+        String json = (new ClientPoliciesUtil.ClientProfilesBuilder()).addProfile(
+                (new ClientPoliciesUtil.ClientProfileBuilder()).createProfile(PROFILE_NAME, "Le Premier Profil")
+                        .addExecutor(SecureRedirectUrisEnforcerExecutorFactory.PROVIDER_ID,
+                                createSecureRedirectUrisEnforcerExecutorConfig(it -> it.setAllowWildcardSubdomain(true)))
+                        .toRepresentation()
+        ).toString();
+        updateProfiles(json);
+
+        // register policies
+        json = (new ClientPoliciesUtil.ClientPoliciesBuilder()).addPolicy(
+                (new ClientPoliciesUtil.ClientPolicyBuilder()).createPolicy(POLICY_NAME, "La Premiere Politique", Boolean.TRUE)
+                        .addCondition(AnyClientConditionFactory.PROVIDER_ID,
+                                createAnyClientConditionConfig())
+                        .addProfile(PROFILE_NAME)
+                        .toRepresentation()
+        ).toString();
+        updatePolicies(json);
+
+        // register dynamically - success
+        String dynamicClientId = testSecureRedirectUrisEnforcerExecutor_successRegisterDynamically(List.of("https://*.example.org/callback"));
+
+        // update dynamically - fail
+        // wildcard can be used only once and only in the first host label
+        testSecureRedirectUrisEnforcerExecutor_failUpdateDynamically(dynamicClientId, List.of("https://*.*.example.org/callback"));
+
+        String actualRedirectUri = "http://preview.localtest.me:8180/auth/realms/master/app/auth";
+        String wildcardActualRedirectUri = "http://*.localtest.me:8180/auth/realms/master/app/auth";
+
+        // register by admin - success
+        List<String> registerResultList = testSecureRedirectUrisEnforcerExecutor_successRegisterByAdmin(
+                Arrays.asList(wildcardActualRedirectUri, "https://*.example.org/callback"));
+        String alphaClientId = registerResultList.get(0);
+        String alphaCid = registerResultList.get(1);
+
+        // update by admin - success
+        testSecureRedirectUrisEnforcerExecutor_successUpdateByAdmin(alphaCid,
+                Arrays.asList(wildcardActualRedirectUri, "https://*-preview.example.org/callback"));
+
+        // authorization request - fail
+        // wildcard must not cross labels
+        testSecureRedirectUrisEnforcerExecutor_failAuthorizationRequest(alphaClientId, "https://foo.bar.example.org/callback");
+
+        // authorization request - success
+        testSecureRedirectUrisEnforcerExecutor_successAuthorizationRequest(alphaClientId, actualRedirectUri);
+    }
+
+    @Test
     public void testSecureRedirectUrisEnforcerExecutor_AllowPermittedDomains() throws Exception {
         // register profiles
         String json = (new ClientPoliciesUtil.ClientProfilesBuilder()).addProfile(
@@ -428,6 +477,10 @@ public class SecureRedirectUrisEnforcerExecutorTest extends AbstractClientPolici
         // register - fail
         // not match permitted domains
         testSecureRedirectUrisEnforcerExecutor_failRegisterByAdmin(Arrays.asList("http://oauth.redirect/*", "http://dev.example.org/redirect"));
+
+        // register - fail
+        // wildcard subdomains cannot be combined with permitted domains
+        testSecureRedirectUrisEnforcerExecutor_failRegisterByAdmin(List.of("https://*.example.org/redirect"));
 
         // register - success
         List<String> registerResultList = testSecureRedirectUrisEnforcerExecutor_successRegisterByAdmin(
@@ -709,4 +762,5 @@ public class SecureRedirectUrisEnforcerExecutorTest extends AbstractClientPolici
         assertEquals(200, res.getStatusCode());
         oauth.doLogout(res.getRefreshToken());
     }
+
 }

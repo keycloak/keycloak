@@ -22,6 +22,8 @@ import java.util.List;
 
 import jakarta.ws.rs.core.Response;
 
+import org.keycloak.admin.client.resource.ClientResource;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testsuite.AbstractKeycloakTest;
@@ -46,6 +48,9 @@ public class LogoutCorsTest extends AbstractKeycloakTest {
 
     private static final String VALID_CORS_URL = "http://localtest.me:8180";
     private static final String INVALID_CORS_URL = "http://invalid.localtest.me:8180";
+    private static final String MATCHING_WILDCARD_CORS_URL = "http://preview.localtest.me:8180";
+    private static final String INVALID_WILDCARD_CORS_URL = "http://foo.bar.localtest.me:8180";
+    private static final String WILDCARD_REDIRECT_URI = "http://*.localtest.me:8180/auth/realms/test/app/auth";
 
     @Override
     public void beforeAbstractKeycloakTest() throws Exception {
@@ -104,6 +109,52 @@ public class LogoutCorsTest extends AbstractKeycloakTest {
         assertCors(response);
     }
 
+    @Test
+    public void postLogout_validRequestWithWildcardOriginDerivedFromRedirectUris() throws Exception {
+        AccessTokenResponse tokenResponse = loginUser();
+        String refreshTokenString = tokenResponse.getRefreshToken();
+
+        ClientResource client = getTestAppClient();
+        ClientRepresentation original = client.toRepresentation();
+        ClientRepresentation rep = client.toRepresentation();
+        try {
+            rep.setRedirectUris(List.of(WILDCARD_REDIRECT_URI));
+            rep.setWebOrigins(List.of("+"));
+            client.update(rep);
+
+            oauth.origin(MATCHING_WILDCARD_CORS_URL);
+
+            LogoutResponse response = oauth.doLogout(refreshTokenString);
+            assertTrue(response.isSuccess());
+            assertCors(response, MATCHING_WILDCARD_CORS_URL);
+        } finally {
+            client.update(original);
+        }
+    }
+
+    @Test
+    public void postLogout_validRequestWithCrossLabelWildcardOriginShouldFailCors() throws Exception {
+        AccessTokenResponse tokenResponse = loginUser();
+        String refreshTokenString = tokenResponse.getRefreshToken();
+
+        ClientResource client = getTestAppClient();
+        ClientRepresentation original = client.toRepresentation();
+        ClientRepresentation rep = client.toRepresentation();
+        try {
+            rep.setRedirectUris(List.of(WILDCARD_REDIRECT_URI));
+            rep.setWebOrigins(List.of("+"));
+            client.update(rep);
+
+            oauth.origin(INVALID_WILDCARD_CORS_URL);
+
+            LogoutResponse response = oauth.doLogout(refreshTokenString);
+            assertTrue(response.isSuccess());
+            assertNotCors(response);
+        } finally {
+            client.update(original);
+        }
+    }
+
     private AccessTokenResponse loginUser() {
         oauth.doLogin("test-user@localhost", "password");
 
@@ -114,8 +165,12 @@ public class LogoutCorsTest extends AbstractKeycloakTest {
 
 
     private static void assertCors(LogoutResponse response) {
+        assertCors(response, VALID_CORS_URL);
+    }
+
+    private static void assertCors(LogoutResponse response, String expectedOrigin) {
         assertEquals("true", response.getHeader("Access-Control-Allow-Credentials"));
-        assertEquals(VALID_CORS_URL, response.getHeader("Access-Control-Allow-Origin"));
+        assertEquals(expectedOrigin, response.getHeader("Access-Control-Allow-Origin"));
         assertEquals("Access-Control-Allow-Methods", response.getHeader("Access-Control-Expose-Headers"));
     }
 
@@ -123,6 +178,11 @@ public class LogoutCorsTest extends AbstractKeycloakTest {
         assertNull(response.getHeader("Access-Control-Allow-Credentials"));
         assertNull(response.getHeader("Access-Control-Allow-Origin"));
         assertNull(response.getHeader("Access-Control-Expose-Headers"));
+    }
+
+    private ClientResource getTestAppClient() {
+        String clientId = adminClient.realm("test").clients().findByClientId("test-app").get(0).getId();
+        return adminClient.realm("test").clients().get(clientId);
     }
 
 
