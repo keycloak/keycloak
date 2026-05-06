@@ -8,7 +8,7 @@ type HelpItemProps = {
   fieldLabelId: string;
   noVerticalAlign?: boolean;
   unWrap?: boolean;
-  isRecommendation?: boolean;
+  isHelpIconWarning?: boolean;
 };
 
 export const HelpItem = ({
@@ -16,10 +16,10 @@ export const HelpItem = ({
   fieldLabelId,
   noVerticalAlign = true,
   unWrap = false,
-  isRecommendation = false,
+  isHelpIconWarning = false,
 }: HelpItemProps) => {
   const { enabled } = useHelp();
-  const IconComponent = isRecommendation ? ExclamationTriangleIcon : HelpIcon;
+  const IconComponent = isHelpIconWarning ? ExclamationTriangleIcon : HelpIcon;
 
   return enabled ? (
     <Popover bodyContent={helpText}>
@@ -33,7 +33,7 @@ export const HelpItem = ({
           >
             <Icon
               isInline={noVerticalAlign}
-              status={isRecommendation ? "warning" : undefined}
+              status={isHelpIconWarning ? "warning" : undefined}
             >
               <IconComponent />
             </Icon>
@@ -42,7 +42,7 @@ export const HelpItem = ({
         {unWrap && (
           <Icon
             isInline={noVerticalAlign}
-            status={isRecommendation ? "warning" : undefined}
+            status={isHelpIconWarning ? "warning" : undefined}
           >
             <IconComponent />
           </Icon>

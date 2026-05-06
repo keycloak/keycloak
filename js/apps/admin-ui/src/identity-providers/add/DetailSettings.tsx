@@ -73,6 +73,7 @@ import { SpiffeSettings } from "./SpiffeSettings";
 import { AdminEvents } from "../../events/AdminEvents";
 import { UserProfileClaimsSettings } from "./OAuth2UserProfileClaimsSettings";
 import { KubernetesSettings } from "./KubernetesSettings";
+import "./identity-providers-settings.css";
 import { JWTAuthorizationGrantAssertionSettings } from "./JWTAuthorizationGrantAssertionSettings";
 import JWTAuthorizationGrantSettings from "./JWTAuthorizationGrantSettings";
 import { DefaultSwitchControl } from "../../components/SwitchControl";

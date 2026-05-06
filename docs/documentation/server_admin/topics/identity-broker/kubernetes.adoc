@@ -4,7 +4,7 @@
 
 A Kubernetes identity provider supports authenticating clients with Kubernetes service account tokens.
 
-This feature can be enabled and disabled with the feature `kubernetes-service-accounts` which is enabled by default. It depends on the feature `client-auth-federated` which is enabled by default as well.
+NOTE: This feature can be enabled and disabled with the feature `kubernetes-service-accounts` which is enabled by default. It depends on the feature `client-auth-federated` which is enabled by default as well.
 
 The default issuer URL for a Kubernetes cluster is `\https://kubernetes.default.svc.cluster.local`. You can discover
 this value by decoding a service account token to retrieve the value of the `iss` claim.
@@ -18,10 +18,10 @@ Each identity provider must have a unique issuer. Each client must also have a u
 issuer. As the subject identifier is built from the namespace and service account name, each client must have its own
 service account if multiple clients share a namespace.
 
-As a security best practice, do not use the `default` service account in a namespace, as it is shared with all Pods in a namespace.
+WARNING: As a security best practice, do not use the `default` service account in a namespace, as it is shared with all Pods in a namespace.
 Instead, create an individual service account for each client.
 
-Kubernetes service account tokens can be reused multiple times. As a security best practice, reduce the expiration time
+WARNING: Kubernetes service account tokens can be reused multiple times. As a security best practice, reduce the expiration time
 and make sure tokens can not be intercepted in communication between the client and {project_name}.
 
 
@@ -39,11 +39,11 @@ and make sure tokens can not be intercepted in communication between the client 
 |The alias for the identity provider is used to link a client to the provider
 
 |Kubernetes Issuer URL
-|The issuer URL of service account tokens. The URL `<ISSUER>.well-known/openid-configuration` must be available to {project_name})
+|The issuer URL of service account tokens. The URL `<ISSUER>.well-known/openid-configuration` must be available to {project_name}
 
 |===
 +
-. When you create a new realm with the preview feature `client-auth-federated` enabled, the client authentication flow is already configured correctly. For existing realms, add to the client authentication flow the execution of *Signed JWT - Federated* as an alternative step. As built-in flows can not be updated, and if the default flow is your default, you will first need to duplicate the existing clients
+. When you create a new realm with the feature `client-auth-federated` enabled, the client authentication flow is already configured correctly. For existing realms, add to the client authentication flow the execution of *Signed JWT - Federated* as an alternative step. As built-in flows can not be updated, and if the default flow is your default, you will first need to duplicate the existing flow
 . For each confidential OpenID Connect client that should authenticate via this provider:
 .. Change in the *Credentials* tab the *Client Authenticator* to *Signed JWT - Federated*.
 .. As *Identity provider*, enter the alias of the Kubernetes identity provider added in step 3.
@@ -108,4 +108,4 @@ curl -k https://example.com:8443/realms/<realm>/protocol/openid-connect/token \
 }
 ----
 
-NOTE: While the service account functionality is helpful to test that the setup is working, disabled this feature after the test if it is not needed for the client to follow the least-privileges security best practice.
+NOTE: While the service account functionality is helpful to test that the setup is working, disable this feature after the test if it is not needed for the client to follow the least-privileges security best practice.
