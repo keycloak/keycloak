@@ -623,11 +623,11 @@ public class OAuth2DeviceAuthorizationGrantTest extends AbstractKeycloakTest {
         Assertions.assertEquals(5, response.getInterval());
 
         try {
-            setTimeOffset(610);
+            timeOffSet.set(610);
             openVerificationPage(response.getVerificationUriComplete());
         } finally {
             getTestingClient().testing().revertTestingInfinispanTimeService();
-            resetTimeOffset();
+            timeOffSet.set(0);
         }
 
         // device code not found in the cache because of expiration => invalid_grant error and redirection to the login page
@@ -718,7 +718,7 @@ public class OAuth2DeviceAuthorizationGrantTest extends AbstractKeycloakTest {
         Assertions.assertEquals(5, response.getInterval());
 
         try {
-            setTimeOffset(610);
+            timeOffSet.set(610);
             // Token request from device
             AccessTokenResponse tokenResponse = oauth.device().doDeviceTokenRequest(response.getDeviceCode());
 
@@ -726,7 +726,7 @@ public class OAuth2DeviceAuthorizationGrantTest extends AbstractKeycloakTest {
             Assertions.assertEquals("invalid_grant", tokenResponse.getError());
         } finally {
             getTestingClient().testing().revertTestingInfinispanTimeService();
-            resetTimeOffset();
+            timeOffSet.set(0);
         }
     }
 
@@ -768,14 +768,14 @@ public class OAuth2DeviceAuthorizationGrantTest extends AbstractKeycloakTest {
         AccessTokenResponse tokenResponse;
 
         try {
-            setTimeOffset(100);
+            timeOffSet.set(100);
             // Token request from device
             tokenResponse = oauth.device().doDeviceTokenRequest(response.getDeviceCode());
 
             Assertions.assertEquals(400, tokenResponse.getStatusCode());
             Assertions.assertEquals("authorization_pending", tokenResponse.getError());
 
-            setTimeOffset(125);
+            timeOffSet.set(125);
             // Token request from device
             tokenResponse = oauth.device().doDeviceTokenRequest(response.getDeviceCode());
 
@@ -783,7 +783,7 @@ public class OAuth2DeviceAuthorizationGrantTest extends AbstractKeycloakTest {
             Assertions.assertEquals("expired_token", tokenResponse.getError());
         } finally {
             getTestingClient().testing().revertTestingInfinispanTimeService();
-            resetTimeOffset();
+            timeOffSet.set(0);
         }
 
         clientRepresentation.getAttributes().put(OAuth2DeviceConfig.OAUTH2_DEVICE_CODE_LIFESPAN_PER_CLIENT, "");
@@ -828,7 +828,7 @@ public class OAuth2DeviceAuthorizationGrantTest extends AbstractKeycloakTest {
             Assertions.assertEquals(400, tokenResponse.getStatusCode());
             Assertions.assertEquals("slow_down", tokenResponse.getError());
 
-            setTimeOffset(7);
+            timeOffSet.set(7);
 
             // Token request from device
             tokenResponse = oauth.device().doDeviceTokenRequest(response.getDeviceCode());
@@ -836,7 +836,7 @@ public class OAuth2DeviceAuthorizationGrantTest extends AbstractKeycloakTest {
             Assertions.assertEquals(400, tokenResponse.getStatusCode());
             Assertions.assertEquals("slow_down", tokenResponse.getError());
 
-            setTimeOffset(10);
+            timeOffSet.set(10);
 
             // Token request from device
             tokenResponse = oauth.device().doDeviceTokenRequest(response.getDeviceCode());
@@ -881,7 +881,7 @@ public class OAuth2DeviceAuthorizationGrantTest extends AbstractKeycloakTest {
             Assertions.assertEquals("slow_down", tokenResponse.getError());
 
             // Wait the interval
-            setTimeOffset(5);
+            timeOffSet.set(5);
 
             // Polling again
             tokenResponse = oauth.device().doDeviceTokenRequest(response.getDeviceCode());
@@ -908,7 +908,7 @@ public class OAuth2DeviceAuthorizationGrantTest extends AbstractKeycloakTest {
             Assertions.assertEquals("authorization_pending", tokenResponse.getError());
 
             // Wait
-            setTimeOffset(10);
+            timeOffSet.set(10);
 
             // Polling again without waiting
             tokenResponse = oauth.device().doDeviceTokenRequest(response.getDeviceCode());
@@ -918,7 +918,7 @@ public class OAuth2DeviceAuthorizationGrantTest extends AbstractKeycloakTest {
             Assertions.assertEquals("slow_down", tokenResponse.getError());
 
             // Wait
-            setTimeOffset(15);
+            timeOffSet.set(15);
 
             // Polling again
             tokenResponse = oauth.device().doDeviceTokenRequest(response.getDeviceCode());

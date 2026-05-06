@@ -628,7 +628,7 @@ public final class KcOidcBrokerTransientSessionsTest extends AbstractAdvancedBro
             String newRefreshTokenString = testRefreshWithOfflineToken(token, offlineToken, offlineTokenString, sessionId, consumerRealmRep, lwUserId);
 
             // Change offset to very big value to ensure offline session expires
-            setTimeOffset(3000000);
+            timeOffSet.set(3000000);
 
             AccessTokenResponse response = oauth.doRefreshTokenRequest(newRefreshTokenString);
             RefreshToken newRefreshToken = oauth.parseRefreshToken(newRefreshTokenString);
@@ -643,14 +643,14 @@ public final class KcOidcBrokerTransientSessionsTest extends AbstractAdvancedBro
                     .clearDetails()
                     .assertEvent();
         } finally {
-            setTimeOffset(0);
+            timeOffSet.set(0);
         }
     }
 
     private String testRefreshWithOfflineToken(AccessToken oldToken, RefreshToken offlineToken, String offlineTokenString,
                                                final String sessionId, RealmRepresentation consumerRealmRep, String userId) {
         // Change offset to big value to ensure userSession expired
-        setTimeOffset(99999);
+        timeOffSet.set(99999);
         assertFalse(oldToken.isActive());
         assertTrue(offlineToken.isActive());
 
@@ -690,7 +690,7 @@ public final class KcOidcBrokerTransientSessionsTest extends AbstractAdvancedBro
                 .assertEvent();
         Assertions.assertNotEquals(oldToken.getId(), refreshEvent.getDetails().get(Details.TOKEN_ID));
 
-        setTimeOffset(0);
+        timeOffSet.set(0);
         return newRefreshToken;
     }
 

@@ -273,7 +273,7 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
             String idTokenString = tokenResponse.getIdToken();
 
             // expire online user session
-            setTimeOffset(9999);
+            timeOffSet.set(9999);
 
             oauth.logoutForm().postLogoutRedirectUri(APP_REDIRECT_URI).idTokenHint(idTokenString).open();
 
@@ -386,7 +386,7 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
         String idTokenString = tokenResponse.getIdToken();
 
         // Logout should succeed with expired ID token, see KEYCLOAK-3399
-        setTimeOffset(60 * 60 * 24);
+        timeOffSet.set(60 * 60 * 24);
 
         String logoutUrl = oauth.logoutForm()
                 .idTokenHint(idTokenString)
@@ -554,7 +554,7 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
         events.assertEmpty();
 
         // Set time offset to expire "action" inside logoutSession
-        setTimeOffset(310);
+        timeOffSet.set(310);
         logoutConfirmPage.confirmLogout();
 
         errorPage.assertCurrent();
@@ -585,7 +585,7 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
         events.assertEmpty();
 
         // Set time offset to expire "action" inside logoutSession
-        setTimeOffset(1810);
+        timeOffSet.set(1810);
         logoutConfirmPage.confirmLogout();
 
         errorPage.assertCurrent();
@@ -615,7 +615,7 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
         events.assertEmpty();
 
         // Set time offset to expire "action" inside logoutSession
-        setTimeOffset(1810);
+        timeOffSet.set(1810);
         logoutConfirmPage.confirmLogout();
 
         errorPage.assertCurrent();
@@ -688,7 +688,7 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
         events.assertEmpty();
 
         // Set time offset to expire "action" inside logoutSession
-        setTimeOffset(310);
+        timeOffSet.set(310);
         logoutConfirmPage.confirmLogout();
 
         errorPage.assertCurrent();

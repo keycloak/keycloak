@@ -126,7 +126,7 @@ public class KcOIDCBrokerWithSignatureTest extends AbstractBaseBrokerTest {
         AccountHelper.logout(adminClient.realm(bc.consumerRealmName()), bc.getUserLogin());
 
         // Set time offset. New keys can be downloaded. Check that user is able to login.
-        setTimeOffset(20);
+        timeOffSet.set(20);
 
         logInAsUserInIDPWithReAuthenticate();
         appPage.assertCurrent();
@@ -187,7 +187,7 @@ public class KcOIDCBrokerWithSignatureTest extends AbstractBaseBrokerTest {
         AccountHelper.logout(adminClient.realm(bc.consumerRealmName()), bc.getUserLogin());
 
         // Even after time offset is user not able to login, because it uses old key hardcoded in identityProvider config
-        setTimeOffset(20);
+        timeOffSet.set(20);
 
         logInAsUserInIDPWithReAuthenticate();
         assertErrorPage("Unexpected error when authenticating with identity provider");
@@ -466,7 +466,7 @@ public class KcOIDCBrokerWithSignatureTest extends AbstractBaseBrokerTest {
         Assertions.assertFalse(cache.contains(expectedCacheKey));
 
         // Check that user is not able to login with IDP
-        setTimeOffset(20);
+        timeOffSet.set(20);
         logInAsUserInIDP();
         assertErrorPage("Unexpected error when authenticating with identity provider");
     }

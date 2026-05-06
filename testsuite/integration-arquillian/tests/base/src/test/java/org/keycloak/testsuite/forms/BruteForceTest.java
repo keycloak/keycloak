@@ -543,7 +543,7 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
 
             //Wait for brute force executor to process the login and then wait for delta time
             WaitUtils.waitForBruteForceExecutors(testingClient);
-            setTimeOffset(5);
+            timeOffSet.set(5);
 
             loginInvalidPassword();
             loginSuccess();
@@ -560,7 +560,7 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
 
         //Wait for brute force executor to process the login and then wait for delta time
         WaitUtils.waitForBruteForceExecutors(testingClient);
-        setTimeOffset(realm.getMaxDeltaTimeSeconds());
+        timeOffSet.set(realm.getMaxDeltaTimeSeconds());
 
         String realmId = realm.getId();
         testingClient.server().run(session -> {
@@ -582,7 +582,7 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
 
             //Wait for brute force executor to process the login and then wait for delta time
             WaitUtils.waitForBruteForceExecutors(testingClient);
-            setTimeOffset(5);
+            timeOffSet.set(5);
 
             loginInvalidPassword();
             expectPermanentlyDisabled();
@@ -606,7 +606,7 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
 
         // KEYCLOAK-5420
         // Test to make sure that temporarily disabled doesn't increment failure count
-        setTimeOffset(21);
+        timeOffSet.set(21);
         // should be unlocked now
         loginSuccess();
         clearUserFailures();
@@ -640,14 +640,14 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
             loginInvalidPassword();
             expectTemporarilyDisabled();
             assertUserNumberOfFailures(user.getId(), 2);
-            this.setTimeOffset(30);
+            timeOffSet.set(30);
 
             loginInvalidPassword();
             assertUserNumberOfFailures(user.getId(), 3);
-            this.setTimeOffset(60);
+            timeOffSet.set(60);
             loginSuccess();
         } finally {
-            this.resetTimeOffset();
+            timeOffSet.set(0);
         }
     }
 
@@ -665,18 +665,18 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
             loginInvalidPassword();
             expectTemporarilyDisabled();
             assertUserNumberOfFailures(user.getId(), 2);
-            this.setTimeOffset(30);
+            timeOffSet.set(30);
 
             loginInvalidPassword();
             assertUserNumberOfFailures(user.getId(), 3);
-            this.setTimeOffset(60);
+            timeOffSet.set(60);
             expectTemporarilyDisabled();
 
         } finally {
             realm.setPermanentLockout(false);
             realm.setBruteForceStrategy(RealmRepresentation.BruteForceStrategy.MULTIPLE);
             managedRealm.admin().update(realm);
-            this.resetTimeOffset();
+            timeOffSet.set(0);
         }
     }
 
@@ -736,7 +736,7 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
             managedRealm.admin().update(realm);
 
             // expires the temporary lockout
-            this.setTimeOffset(60);
+            timeOffSet.set(60);
 
             // after switching to permanent lockout the user status is disabled because there are login failures
             // the user did not try to successfully authenticate yet to clear the login failures
@@ -758,7 +758,7 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
             // login failures should be removed after re-enabling the user and the user able to authenticate
             loginSuccess();
         } finally {
-            resetTimeOffset();
+            timeOffSet.set(0);
             realm.setPermanentLockout(false);
             managedRealm.admin().update(realm);
         }
@@ -929,11 +929,11 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
             loginInvalidPassword();
             loginInvalidPassword();
             expectTemporarilyDisabled();
-            setTimeOffset(21);
+            timeOffSet.set(21);
 
             loginInvalidPassword();
             expectTemporarilyDisabled();
-            setTimeOffset(42);
+            timeOffSet.set(42);
 
             loginInvalidPassword();
             expectPermanentlyDisabled();
@@ -958,7 +958,7 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
             loginInvalidPassword();
             loginInvalidPassword();
             expectTemporarilyDisabled();
-            setTimeOffset(21);
+            timeOffSet.set(21);
             UserRepresentation user = adminClient.realm("test").users().search("test-user@localhost", 0, 1).get(0);
             Map<String, Object> status = adminClient.realm("test").attackDetection().bruteForceUserStatus(user.getId());
             assertEquals(1, status.get("numTemporaryLockouts"));

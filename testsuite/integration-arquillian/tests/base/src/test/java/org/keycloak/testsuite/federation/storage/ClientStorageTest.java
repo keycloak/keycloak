@@ -335,7 +335,7 @@ public class ClientStorageTest extends AbstractTestRealmKeycloakTest {
             realm.updateComponent(model);
         });
         testIsCached();
-        setTimeOffset(2 * 60 * 60); // 2 hours in future
+        timeOffSet.set(2 * 60 * 60); // 2 hours in future
         testNotCached();
         testIsCached();
 
@@ -360,9 +360,9 @@ public class ClientStorageTest extends AbstractTestRealmKeycloakTest {
             realm.updateComponent(model);
         });
         testIsCached();
-        setTimeOffset(2 * 24 * 60 * 60); // 2 days in future
+        timeOffSet.set(2 * 24 * 60 * 60); // 2 days in future
         testIsCached();
-        setTimeOffset(5 * 24 * 60 * 60); // 5 days in future
+        timeOffSet.set(5 * 24 * 60 * 60); // 5 days in future
         testNotCached();
         testIsCached();
 
@@ -384,11 +384,11 @@ public class ClientStorageTest extends AbstractTestRealmKeycloakTest {
         });
         testIsCached();
 
-        setTimeOffset(1/2 * 60 * 60); // 1/2 hour in future
+        timeOffSet.set(1/2 * 60 * 60); // 1/2 hour in future
 
         testIsCached();
 
-        setTimeOffset(2 * 60 * 60); // 2 hours in future
+        timeOffSet.set(2 * 60 * 60); // 2 hours in future
 
         testNotCached();
         testIsCached();
@@ -496,7 +496,7 @@ public class ClientStorageTest extends AbstractTestRealmKeycloakTest {
     private String testRefreshWithOfflineToken(AccessToken oldToken, RefreshToken offlineToken, String offlineTokenString,
                                                final String sessionId, String userId) {
         // Change offset to big value to ensure userSession expired
-        setTimeOffset(99999);
+        timeOffSet.set(99999);
         Assertions.assertFalse(oldToken.isActive());
         Assertions.assertTrue(offlineToken.isActive());
 
@@ -537,7 +537,7 @@ public class ClientStorageTest extends AbstractTestRealmKeycloakTest {
                 .assertEvent();
         Assertions.assertNotEquals(oldToken.getId(), refreshEvent.getDetails().get(Details.TOKEN_ID));
 
-        setTimeOffset(0);
+        timeOffSet.set(0);
         return newRefreshToken;
     }
 

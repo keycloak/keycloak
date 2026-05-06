@@ -212,7 +212,7 @@ public class RequiredActionResetPasswordTest extends AbstractTestRealmKeycloakTe
 
         try {
             RealmManager.realm(managedRealm.admin()).passwordPolicy("forceExpiredPasswordChange(1)");
-            setTimeOffset(60 * 60 * 48);
+            timeOffSet.set(60 * 60 * 48);
 
             //create username only flow
             testingClient.server("test").run(session -> FlowUtil.inCurrentRealm(session).copyBrowserFlow(newFlowAlias));
@@ -239,7 +239,7 @@ public class RequiredActionResetPasswordTest extends AbstractTestRealmKeycloakTe
                     .ifPresent(authenticationFlowRepresentation ->
                             managedRealm.admin().flows().deleteFlow(authenticationFlowRepresentation.getId()));
 
-            setTimeOffset(0);
+            timeOffSet.set(0);
             RealmManager.realm(managedRealm.admin()).passwordPolicy(null);
         }
     }

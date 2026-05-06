@@ -405,7 +405,7 @@ public class ClientAuthSecretSignedJWTTest extends AbstractKeycloakTest {
         assertThat(firstSecret, not(equalTo(newSecret)));
 
         //force rotated secret expiration
-        setTimeOffset(31);
+        timeOffSet.set(31);
 
         oauth.client("jwt-client");
         oauth.doLogin("test-user@localhost", "password");

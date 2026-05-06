@@ -185,11 +185,11 @@ public class TokenRevocationTest extends AbstractKeycloakTest {
 
         assertTrue(oauth.tokenRevocationRequest(tokenResponse.getAccessToken()).accessToken().send().isSuccess());
 
-        setTimeOffset(adminClient.realm(oauth.getRealm()).toRepresentation().getAccessTokenLifespan());
+        timeOffSet.set(adminClient.realm(oauth.getRealm()).toRepresentation().getAccessTokenLifespan());
 
         isAccessTokenDisabled(tokenResponse.getAccessToken(), "test-app");
 
-        setTimeOffset(0);
+        timeOffSet.set(0);
     }
 
     @Test

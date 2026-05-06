@@ -585,7 +585,7 @@ public class UserInfoTest extends AbstractKeycloakTest {
         try {
             AccessTokenResponse accessTokenResponse = executeGrantAccessTokenRequest(client);
 
-            setTimeOffset(600);
+            timeOffSet.set(600);
 
             Response response = UserInfoClientUtil.executeUserInfoRequest_getMethod(client, accessTokenResponse.getToken());
 
@@ -618,7 +618,7 @@ public class UserInfoTest extends AbstractKeycloakTest {
         oauth.doLogout(refreshToken1);
         events.clear();
 
-        setTimeOffset(2);
+        timeOffSet.set(2);
 
         driver.navigate().refresh();
         oauth.fillLoginForm("test-user@localhost", "password");
@@ -1081,7 +1081,7 @@ public class UserInfoTest extends AbstractKeycloakTest {
 
         org.keycloak.testsuite.util.oauth.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
 
-        setTimeOffset(1);
+        timeOffSet.set(1);
 
         oauth.loginForm().prompt(OIDCLoginProtocol.PROMPT_VALUE_LOGIN).open();
 

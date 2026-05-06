@@ -133,7 +133,7 @@ public class ReAuthenticationTest extends AbstractChangeImportedUserPasswordsTes
         Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
         // Set time offset
-        setTimeOffset(10);
+        timeOffSet.set(10);
 
         // Request re-authentication
         oauth.loginForm().maxAge(1).open();
@@ -172,7 +172,7 @@ public class ReAuthenticationTest extends AbstractChangeImportedUserPasswordsTes
         Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
         // Set time offset
-        setTimeOffset(10);
+        timeOffSet.set(10);
 
         // Request re-authentication
         oauth.loginForm().maxAge(1).open();
@@ -219,7 +219,7 @@ public class ReAuthenticationTest extends AbstractChangeImportedUserPasswordsTes
         Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
         // Set time offset
-        setTimeOffset(10);
+        timeOffSet.set(10);
 
         // Request re-authentication
         oauth.loginForm().maxAge(1).open();
@@ -262,7 +262,7 @@ public class ReAuthenticationTest extends AbstractChangeImportedUserPasswordsTes
         Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
         // See that user can re-authenticate with the github link present on the page as user has link to github social provider
-        setTimeOffset(10);
+        timeOffSet.set(10);
         oauth.loginForm().maxAge(1).open();
 
         // Username input hidden as well as register and rememberMe. Info message should be present
@@ -330,7 +330,7 @@ public class ReAuthenticationTest extends AbstractChangeImportedUserPasswordsTes
         AccessTokenResponse response1 = oauth.doAccessTokenRequest(code);
 
         //set time offset after user session expiration (10s) but before accessCodeLifespanLogin (1800s) and accessCodeLifespan (60s)
-        setTimeOffset(20);
+        timeOffSet.set(20);
 
         oauth.openLoginForm();
         loginPage.login("john-doh@localhost", getPassword("john-doh@localhost"));
@@ -344,7 +344,7 @@ public class ReAuthenticationTest extends AbstractChangeImportedUserPasswordsTes
         Assertions.assertNotEquals(accessToken1.getSubject(), accessToken2.getSubject());
         Assertions.assertNotEquals(accessToken1.getSessionId(), accessToken2.getSessionId());
 
-        setTimeOffset(0);
+        timeOffSet.set(0);
         rep.setSsoSessionIdleTimeout(originalSsoSessionIdleTimeout);
         rep.setSsoSessionMaxLifespan(originalSsoSessionMaxLifespan);
         realmsResouce().realm(rep.getRealm()).update(rep);

@@ -240,7 +240,7 @@ public abstract class AbstractKeycloakTest {
     @After
     public void afterAbstractKeycloakTest() throws Exception {
         if (resetTimeOffset) {
-            resetTimeOffset();
+            timeOffSet.set(0);
         }
 
         if (isImportAfterEachMethod()) {
@@ -677,27 +677,15 @@ public abstract class AbstractKeycloakTest {
         now.set(Calendar.SECOND, second);
         int offset = (int) ((now.getTime().getTime() - System.currentTimeMillis()) / 1000);
 
-        setTimeOffset(offset + addSeconds);
+        timeOffSet.set(offset + addSeconds);
     }
 
-    /**
-     * Sets time offset in seconds that will be added to Time.currentTime() and Time.currentTimeMillis() both for client and server.
-     * Moves time on the remote Infinispan server as well if the HotRod storage is used.
-     *
-     * @param offset
-     */
-    public void setTimeOffset(int offset) {
-        timeOffSet.set(offset);
-        resetTimeOffset = offset != 0;
-    }
-
-    public void resetTimeOffset() {
-        timeOffSet.set(0);
-        resetTimeOffset = false;
+    public void shouldResetTimeOffset(boolean resetTimeOffset) {
+        this.resetTimeOffset = resetTimeOffset;
     }
 
     public void setOtpTimeOffset(int offsetSeconds, TimeBasedOTP otp) {
-        setTimeOffset(offsetSeconds);
+        timeOffSet.set(offsetSeconds);
         final Calendar calendar = Calendar.getInstance();
         calendar.add(Calendar.SECOND, offsetSeconds);
         otp.setCalendar(calendar);

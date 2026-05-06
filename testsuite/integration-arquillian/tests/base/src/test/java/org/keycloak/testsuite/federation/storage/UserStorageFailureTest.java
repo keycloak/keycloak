@@ -394,7 +394,7 @@ public class UserStorageFailureTest extends AbstractTestRealmKeycloakTest {
 
         try {
             // force cache to expire
-            setTimeOffset(Math.toIntExact(Duration.ofMinutes(10).toSeconds()));
+            timeOffSet.set(Math.toIntExact(Duration.ofMinutes(10).toSeconds()));
             user = managedRealm.admin().users().search(FailableHardcodedStorageProvider.username).get(0);
             assertFalse(user.isEnabled());
             toggleForceFailOnValidation(false);
@@ -402,7 +402,7 @@ public class UserStorageFailureTest extends AbstractTestRealmKeycloakTest {
             assertTrue(user.isEnabled());
 
             // force cache to expire again and make sure user is disabled
-            setTimeOffset(Math.toIntExact(Duration.ofMinutes(20).toSeconds()));
+            timeOffSet.set(Math.toIntExact(Duration.ofMinutes(20).toSeconds()));
             toggleForceFailOnValidation(true);
             user = managedRealm.admin().users().search(FailableHardcodedStorageProvider.username).get(0);
             assertFalse(user.isEnabled());
@@ -417,7 +417,7 @@ public class UserStorageFailureTest extends AbstractTestRealmKeycloakTest {
             user = managedRealm.admin().users().search(FailableHardcodedStorageProvider.username).get(0);
             assertTrue(user.isEnabled());
         } finally {
-            resetTimeOffset();
+            timeOffSet.set(0);
             toggleForceFailOnValidation(false);
         }
     }

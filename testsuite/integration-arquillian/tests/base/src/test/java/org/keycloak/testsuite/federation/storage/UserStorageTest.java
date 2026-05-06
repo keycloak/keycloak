@@ -198,7 +198,7 @@ public class UserStorageTest extends AbstractAuthTest {
             Assertions.assertNotNull(userMapStorageFactory);
             userMapStorageFactory.clear();
         });
-        resetTimeOffset();
+        timeOffSet.set(0);
         testingClient.testing().revertTestingInfinispanTimeService();
     }
 
@@ -689,11 +689,11 @@ public class UserStorageTest extends AbstractAuthTest {
 
         setFirstname("thor", "Thor1");
 
-        setTimeOffset(2 * 24 * 60 * 60); // 2 days in future
+        timeOffSet.set(2 * 24 * 60 * 60); // 2 days in future
 
         validateFirstname("thor", "Thor0"); // should still be cached
 
-        setTimeOffset(5 * 24 * 60 * 60); // 5 days in future
+        timeOffSet.set(5 * 24 * 60 * 60); // 5 days in future
 
         validateFirstname("thor", "Thor1"); // should be evicted
 
@@ -719,11 +719,11 @@ public class UserStorageTest extends AbstractAuthTest {
 
         validateFirstname("thor", "Thor0"); // should still be cached
 
-        setTimeOffset(30 * 60); // 1/2 hour in future
+        timeOffSet.set(30 * 60); // 1/2 hour in future
 
         validateFirstname("thor", "Thor0"); // should still be cached
 
-        setTimeOffset(2 * 60 * 60); // 2 hours in future
+        timeOffSet.set(2 * 60 * 60); // 2 hours in future
 
         validateFirstname("thor", "Thor1"); // should be evicted
 
