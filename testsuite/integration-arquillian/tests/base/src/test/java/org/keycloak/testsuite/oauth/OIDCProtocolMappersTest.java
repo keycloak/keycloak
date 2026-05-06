@@ -494,7 +494,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
             assertTrue(accessToken.getResourceAccess("app").getRoles().contains("hardcoded"));
 
             // Assert audiences added through AudienceResolve mapper
-            assertThat(accessToken.getAudience(), arrayContainingInAnyOrder( "app", "account"));
+            assertThat(accessToken.getAudience(), arrayContainingInAnyOrder( "test-app", "app", "account", "confidential-cli"));
 
             // Assert allowed origins
             Assert.assertNames(accessToken.getAllowedOrigins(), "http://localhost:8180", "https://localhost:8543");
@@ -789,7 +789,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
 
         // Verify attribute is filled
         Map<String, Object> roleMappings = (Map<String, Object>)idToken.getOtherClaims().get("roles-custom");
-        assertThat(roleMappings.keySet(), containsInAnyOrder("realm", "test-app"));
+        assertThat(roleMappings.keySet(),  containsInAnyOrder("realm", "test-app"));
         List<String> realmRoleMappings = (List<String>) roleMappings.get("realm");
         List<String> testAppMappings = (List<String>) roleMappings.get("test-app");
         assertRolesString(realmRoleMappings,
@@ -855,7 +855,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
             Assert.assertNames(roles, "offline_access", "user", "customer-user", "hardcoded", AccountRoles.VIEW_PROFILE, AccountRoles.MANAGE_ACCOUNT, AccountRoles.MANAGE_ACCOUNT_LINKS);
 
             // Assert audience
-            Assert.assertNames(Arrays.asList(accessToken.getAudience()), "account");
+            Assert.assertNames(Arrays.asList(accessToken.getAudience()), "account", "confidential-cli", "test-app");
         } finally {
             // Revert
             rolesScope.getProtocolMappers().delete(hardcodedMapperId);
@@ -892,7 +892,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
 
             // Assert client not in the token audience. Just in "issuedFor"
             Assert.assertEquals("test-app", accessToken.getIssuedFor());
-            Assert.assertFalse(accessToken.hasAudience("test-app"));
+            Assert.assertTrue(accessToken.hasAudience("test-app"));
 
             // Assert IDToken still has "test-app" as an audience
             IDToken idToken = oauth.verifyIDToken(response.getIdToken());

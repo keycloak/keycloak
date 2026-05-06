@@ -1260,6 +1260,7 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
         ClientRepresentation client = testRealm().clients().findByClientId("broker-app").get(0);
         client.setId(null);
         client.setClientId("broker-app2");
+        client.setProtocolMappers(null);
         testRealm().clients().create(client).close();
         // identity-first login will respect the organization provided in the scope even though the user email maps to a different organization
         oauth.client("broker-app", "broker-app-secret");

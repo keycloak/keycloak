@@ -102,21 +102,41 @@ public class ServiceAccountTest extends AbstractKeycloakTest {
         RealmBuilder realm = RealmBuilder.create().name("test")
                 .testEventListener();
 
+        ProtocolMapperRepresentation audienceMapperRefreshOn = new ProtocolMapperRepresentation();
+        audienceMapperRefreshOn.setName("audience-service-account-cl-refresh-on");
+        audienceMapperRefreshOn.setProtocol("openid-connect");
+        audienceMapperRefreshOn.setProtocolMapper("oidc-audience-mapper");
+        audienceMapperRefreshOn.setConfig(Map.of(
+            "included.client.audience", "service-account-cl-refresh-on",
+            "access.token.claim", "true"
+        ));
+
         ClientRepresentation enabledApp = ClientBuilder.create()
                 .id(KeycloakModelUtils.generateId())
                 .clientId("service-account-cl-refresh-on")
                 .secret("secret1")
                 .serviceAccountsEnabled(true)
                 .attribute(OIDCConfigAttributes.USE_REFRESH_TOKEN_FOR_CLIENT_CREDENTIALS_GRANT, "true")
+                .protocolMapper(audienceMapperRefreshOn)
                 .build();
 
         realm.client(enabledApp);
+
+        ProtocolMapperRepresentation audienceMapper = new ProtocolMapperRepresentation();
+        audienceMapper.setName("audience-service-account-cl");
+        audienceMapper.setProtocol("openid-connect");
+        audienceMapper.setProtocolMapper("oidc-audience-mapper");
+        audienceMapper.setConfig(Map.of(
+            "included.client.audience", "service-account-cl",
+            "access.token.claim", "true"
+        ));
 
         ClientRepresentation enabledAppWithSkipRefreshToken = ClientBuilder.create()
                 .id(KeycloakModelUtils.generateId())
                 .clientId("service-account-cl")
                 .secret("secret1")
                 .serviceAccountsEnabled(true)
+                .protocolMapper(audienceMapper)
                 .build();
 
         realm.client(enabledAppWithSkipRefreshToken);
@@ -129,11 +149,21 @@ public class ServiceAccountTest extends AbstractKeycloakTest {
 
         realm.client(disabledApp);
 
+        ProtocolMapperRepresentation audienceMapperSpecialSecrets = new ProtocolMapperRepresentation();
+        audienceMapperSpecialSecrets.setName("audience-service-account-cl-special-secrets");
+        audienceMapperSpecialSecrets.setProtocol("openid-connect");
+        audienceMapperSpecialSecrets.setProtocolMapper("oidc-audience-mapper");
+        audienceMapperSpecialSecrets.setConfig(Map.of(
+            "included.client.audience", "service-account-cl-special-secrets",
+            "access.token.claim", "true"
+        ));
+
         ClientRepresentation secretsWithSpecialCharacterClient = ClientBuilder.create()
             .id(KeycloakModelUtils.generateId())
             .clientId("service-account-cl-special-secrets")
             .secret("secret/with=special?character")
             .serviceAccountsEnabled(true)
+            .protocolMapper(audienceMapperSpecialSecrets)
             .build();
 
         realm.client(secretsWithSpecialCharacterClient);

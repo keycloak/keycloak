@@ -32,7 +32,11 @@ import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.models.Constants;
+import org.keycloak.models.utils.ModelToRepresentation;
+import org.keycloak.protocol.LoginProtocol;
+import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.mappers.AudienceProtocolMapper;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
@@ -58,7 +62,7 @@ import org.keycloak.util.JsonSerialization;
 import org.keycloak.util.TokenUtil;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.TextNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import org.apache.commons.io.output.ByteArrayOutputStream;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
@@ -96,6 +100,18 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
         confApp.setServiceAccountsEnabled(Boolean.TRUE);
         confApp.setAttributes(Map.of(Constants.SUPPORT_JWT_CLAIM_IN_INTROSPECTION_RESPONSE_ENABLED,"true"));
 
+        ProtocolMapperRepresentation audienceMapper = ModelToRepresentation.toRepresentation(
+            AudienceProtocolMapper.createClaimMapper(
+                "audience-mapper-confidential",
+                "test-app",
+                null,
+                true,
+                false,
+                false
+            )
+        );
+
+        confApp.setProtocolMappers(List.of(audienceMapper));
         ClientRepresentation pubApp = KeycloakModelUtils.createClient(testRealm, "public-cli");
         pubApp.setPublicClient(Boolean.TRUE);
 
@@ -188,9 +204,10 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
 
         List<String> audiences = new ArrayList<>();
 
-        // We have single audience in the token - hence it is simple string
-        assertTrue(jsonNode.get("aud") instanceof TextNode);
-        audiences.add(jsonNode.get("aud").asText());
+        // We have multiple audiences in the token
+        assertTrue(jsonNode.get("aud") instanceof ArrayNode);
+        ArrayNode audArray = (ArrayNode) jsonNode.get("aud");
+        audArray.forEach(node -> audiences.add(node.asText()));
         Assert.assertNames(audiences, rep.getAudience());
 
         assertEquals(jsonNode.get("iss").asText(), rep.getIssuer());
@@ -216,12 +233,12 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
         EventRepresentation loginEvent = events.expectLogin().assertEvent();
         String sessionId = loginEvent.getSessionId();
         AccessTokenResponse accessTokenResponse = oauth.doAccessTokenRequest(code);
-        oauth.client("confidential-cli", "secret1");
+        oauth.client("test-app", "password");
         events.clear();
 
         JsonNode jsonNode = oauth.doIntrospectionRefreshTokenRequest(accessTokenResponse.getRefreshToken()).asJsonNode();
         events.expect(EventType.INTROSPECT_TOKEN)
-                .client("confidential-cli")
+                .client("test-app")
                 .session(sessionId)
                 .assertEvent();
         events.assertEmpty();
@@ -236,6 +253,23 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
         assertTrue(jsonNode.has("iss"));
         assertTrue(jsonNode.has("jti"));
         assertTrue(jsonNode.has("typ"));
+    }
+
+    @Test
+    public void testIntrospectRefreshTokenDeniedForNotIssuedFor() throws Exception {
+        oauth.doLogin("test-user@localhost", "password");
+        String code = oauth.parseLoginResponse().getCode();
+        EventRepresentation loginEvent = events.expectLogin().assertEvent();
+        String sessionId = loginEvent.getSessionId();
+        AccessTokenResponse accessTokenResponse = oauth.doAccessTokenRequest(code);
+        events.clear();
+
+        // Refresh token issued to test-app, try to introspect with confidential-cli
+        oauth.client("confidential-cli", "secret1");
+        JsonNode jsonNode = oauth.doIntrospectionRefreshTokenRequest(accessTokenResponse.getRefreshToken()).asJsonNode();
+
+        // Should fail - confidential-cli is not the azp
+        assertFalse(jsonNode.get("active").asBoolean());
     }
 
     @Test
@@ -257,7 +291,7 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
         String code = oauth.parseLoginResponse().getCode();
         AccessTokenResponse tokenResponse2 = oauth.doAccessTokenRequest(code);
 
-        oauth.client("confidential-cli", "secret1");
+        oauth.client("test-app", "password");
 
         JsonNode jsonNode = oauth.doIntrospectionRefreshTokenRequest(tokenResponse2.getRefreshToken()).asJsonNode();
         assertTrue(jsonNode.get("active").asBoolean());
@@ -472,7 +506,7 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
 
         setTimeOffset(1200);
 
-        oauth.client("confidential-cli", "secret1");
+        oauth.client("test-app", "password");
         TokenMetadataRepresentation rep = oauth.doIntrospectionRefreshTokenRequest(accessTokenResponse.getRefreshToken()).asTokenMetadata();
 
         assertTrue(rep.isActive());
@@ -643,14 +677,14 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
 
             accessTokenResponse = oauth.doRefreshTokenRequest(oldRefreshToken);
             String newRefreshToken = accessTokenResponse.getRefreshToken();
-            oauth.client("confidential-cli", "secret1");
+            oauth.client("test-app", "password");
             JsonNode jsonNode = oauth.doIntrospectionRefreshTokenRequest(newRefreshToken).asJsonNode();
             assertTrue(jsonNode.get("active").asBoolean());
 
             oauth.client("test-app", "password");
             accessTokenResponse = oauth.doRefreshTokenRequest(newRefreshToken);
 
-            oauth.client("confidential-cli", "secret1");
+            oauth.client("test-app", "password");
             jsonNode = oauth.doIntrospectionRefreshTokenRequest(oldRefreshToken).asJsonNode();
             assertFalse(jsonNode.get("active").asBoolean());
         } finally {
@@ -715,7 +749,87 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
 
         accessTokenResponse = oauth.doRefreshTokenRequest(stringRefreshToken);
 
-        oauth.client("confidential-cli", "secret1");
+        oauth.client("test-app", "password");
         return oauth.doIntrospectionRefreshTokenRequest(stringRefreshToken).asJsonNode();
+    }
+
+    private void allowTokenIntrospectionWithoutAudienceCheck(boolean allow) {
+        getTestingClient().testing().setSystemPropertyOnServer("oidc.allow-token-introspection-without-audience-check", String.valueOf(allow));
+        getTestingClient().testing().reinitializeProviderFactoryWithSystemPropertiesScope(LoginProtocol.class.getName(), OIDCLoginProtocol.LOGIN_PROTOCOL, "oidc.");
+    }
+
+    @Test
+    public void testIntrospectionAudienceCheckDefault() throws Exception {
+        // Default behavior: introspection should fail when client not in audience
+        oauth.doLogin("test-user@localhost", "password");
+        String code = oauth.parseLoginResponse().getCode();
+        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
+        events.clear();
+
+        oauth.client("no-scope", "password");
+        IntrospectionResponse introspectionResponse = oauth.doIntrospectionAccessTokenRequest(tokenResponse.getAccessToken());
+        assertFalse(introspectionResponse.asJsonNode().get("active").asBoolean());
+    }
+
+    @Test
+    public void testIntrospectionPerClientOption() throws Exception {
+        ClientRepresentation noScopeRep = ApiUtil.findClientByClientId(testRealm(), "no-scope").toRepresentation();
+
+        try {
+            // Enable per-client option
+            noScopeRep.getAttributes().put(OIDCConfigAttributes.ALLOW_TOKEN_INTROSPECTION_WITHOUT_AUDIENCE_CHECK, "true");
+            ApiUtil.findClientByClientId(testRealm(), "no-scope").update(noScopeRep);
+
+            oauth.doLogin("test-user@localhost", "password");
+            String code = oauth.parseLoginResponse().getCode();
+            AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
+            events.clear();
+
+            //succeed
+            oauth.client("no-scope", "password");
+            IntrospectionResponse introspectionResponse = oauth.doIntrospectionAccessTokenRequest(tokenResponse.getAccessToken());
+            assertTrue(introspectionResponse.asJsonNode().get("active").asBoolean());
+            assertEquals("test-app", introspectionResponse.asJsonNode().get("client_id").asText());
+
+        } finally {
+            noScopeRep.getAttributes().remove(OIDCConfigAttributes.ALLOW_TOKEN_INTROSPECTION_WITHOUT_AUDIENCE_CHECK);
+            ApiUtil.findClientByClientId(testRealm(), "no-scope").update(noScopeRep);
+        }
+    }
+
+    @Test
+    public void testIntrospectionServerWideOptionOverridesClient() throws Exception {
+        ClientRepresentation noScopeRep = ApiUtil.findClientByClientId(testRealm(), "no-scope").toRepresentation();
+
+        try {
+            allowTokenIntrospectionWithoutAudienceCheck(true);
+
+            // Explicitly disable per-client option
+            noScopeRep.getAttributes().put(OIDCConfigAttributes.ALLOW_TOKEN_INTROSPECTION_WITHOUT_AUDIENCE_CHECK, "false");
+            ApiUtil.findClientByClientId(testRealm(), "no-scope").update(noScopeRep);
+
+            oauth.doLogin("test-user@localhost", "password");
+            String code = oauth.parseLoginResponse().getCode();
+            AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
+            events.clear();
+
+            // Should succeed - server-wide overrides per-client, even for no-scope (not in audience)
+            oauth.client("no-scope", "password");
+            IntrospectionResponse introspectionResponse = oauth.doIntrospectionAccessTokenRequest(tokenResponse.getAccessToken());
+            assertTrue(introspectionResponse.asJsonNode().get("active").asBoolean());
+
+            //test with no per-client option set
+            noScopeRep.getAttributes().remove(OIDCConfigAttributes.ALLOW_TOKEN_INTROSPECTION_WITHOUT_AUDIENCE_CHECK);
+            ApiUtil.findClientByClientId(testRealm(), "no-scope").update(noScopeRep);
+
+            // Reuse the same token - server-wide should still allow
+            introspectionResponse = oauth.doIntrospectionAccessTokenRequest(tokenResponse.getAccessToken());
+            assertTrue(introspectionResponse.asJsonNode().get("active").asBoolean());
+
+        } finally {
+            allowTokenIntrospectionWithoutAudienceCheck(false);
+            noScopeRep.getAttributes().remove(OIDCConfigAttributes.ALLOW_TOKEN_INTROSPECTION_WITHOUT_AUDIENCE_CHECK);
+            ApiUtil.findClientByClientId(testRealm(), "no-scope").update(noScopeRep);
+        }
     }
 }

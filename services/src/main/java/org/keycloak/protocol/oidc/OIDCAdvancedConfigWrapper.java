@@ -520,4 +520,22 @@ public class OIDCAdvancedConfigWrapper extends AbstractClientConfigWrapper {
     public void setMinimumAcrValue(String minimumAcrValue) {
         setAttribute(Constants.MINIMUM_ACR_VALUE, minimumAcrValue);
     }
+
+    public boolean isAllowTokenIntrospectionWithoutAudienceCheck() {
+        String val = getAttribute(OIDCConfigAttributes.ALLOW_TOKEN_INTROSPECTION_WITHOUT_AUDIENCE_CHECK, "false");
+        return Boolean.parseBoolean(val);
+    }
+
+    public void setAllowTokenIntrospectionWithoutAudienceCheck(boolean allow) {
+        setAttribute(OIDCConfigAttributes.ALLOW_TOKEN_INTROSPECTION_WITHOUT_AUDIENCE_CHECK, String.valueOf(allow));
+    }
+
+    public boolean isAllowUserinfoWithLightweightAccessToken() {
+        String val = getAttribute(OIDCConfigAttributes.ALLOW_USERINFO_WITH_LIGHTWEIGHT_ACCESS_TOKEN, "false");
+        return Boolean.parseBoolean(val);
+    }
+
+    public void setAllowUserinfoWithLightweightAccessToken(boolean allow) {
+        setAttribute(OIDCConfigAttributes.ALLOW_USERINFO_WITH_LIGHTWEIGHT_ACCESS_TOKEN, String.valueOf(allow));
+    }
 }

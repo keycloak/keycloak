@@ -96,6 +96,8 @@ public class TokenExchangeTestUtils {
         clientExchanger.addProtocolMapper(AudienceProtocolMapper.createClaimMapper("allowed-exchanger1", null, "legal", true, false, true));
         clientExchanger.addProtocolMapper(AudienceProtocolMapper.createClaimMapper("allowed-exchanger2", null, "no-refresh-token", true, false, true));
         clientExchanger.addProtocolMapper(AudienceProtocolMapper.createClaimMapper("audience-to-itself", "client-exchanger", null, true, false, true));
+       //adding the exception, as te v1 will be removed
+        clientExchanger.setAttribute(OIDCConfigAttributes.ALLOW_TOKEN_INTROSPECTION_WITHOUT_AUDIENCE_CHECK, "true");
 
         ClientModel illegal = realm.addClient("illegal");
         illegal.setClientId("illegal");

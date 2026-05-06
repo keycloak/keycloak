@@ -891,7 +891,16 @@
     "fullScopeAllowed" : false,
     "nodeReRegistrationTimeout" : -1,
     "defaultClientScopes" : [ "service_account", "acr", "default-scope1", "roles", "basic" ],
-    "optionalClientScopes" : [ "optional-scope2", "optional-requester-scope", "offline_access", "profile", "email" ]
+    "optionalClientScopes" : [ "optional-scope2", "optional-requester-scope", "offline_access", "profile", "email" ],
+    "protocolMappers" : [ {
+      "name" : "audience-requester-client",
+      "protocol" : "openid-connect",
+      "protocolMapper" : "oidc-audience-mapper",
+      "config" : {
+        "included.client.audience" : "requester-client",
+        "access.token.claim" : "true"
+      }
+    } ]
   }, {
       "id" : "952643a3-2943-4734-9b51-8fa5956ebf55",
       "clientId" : "requester-client-2",
@@ -934,7 +943,16 @@
       "fullScopeAllowed" : false,
       "nodeReRegistrationTimeout" : -1,
       "defaultClientScopes" : [ "service_account", "acr", "default-scope1", "roles", "basic" ],
-      "optionalClientScopes" : [ "optional-scope2", "optional-requester-scope", "offline_access" ]
+      "optionalClientScopes" : [ "optional-scope2", "optional-requester-scope", "offline_access" ],
+      "protocolMappers" : [ {
+        "name" : "audience-requester-client-2",
+        "protocol" : "openid-connect",
+        "protocolMapper" : "oidc-audience-mapper",
+        "config" : {
+          "included.client.audience" : "requester-client-2",
+          "access.token.claim" : "true"
+        }
+      } ]
     }, {
     "id" : "2daeae03-ff78-4f79-8e72-1c4d443e1655",
     "clientId" : "requester-client-public",

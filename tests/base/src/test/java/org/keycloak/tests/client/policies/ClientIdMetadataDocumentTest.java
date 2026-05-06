@@ -9,6 +9,7 @@ import jakarta.ws.rs.core.Response;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.protocol.oauth2.cimd.clientpolicy.condition.ClientIdUriSchemeCondition;
 import org.keycloak.protocol.oauth2.cimd.clientpolicy.condition.ClientIdUriSchemeConditionFactory;
 import org.keycloak.protocol.oauth2.cimd.clientpolicy.executor.AbstractClientIdMetadataDocumentExecutor;
@@ -16,10 +17,12 @@ import org.keycloak.protocol.oauth2.cimd.clientpolicy.executor.ClientIdMetadataD
 import org.keycloak.protocol.oauth2.cimd.clientpolicy.executor.ClientIdMetadataDocumentExecutorFactory;
 import org.keycloak.protocol.oauth2.cimd.clientpolicy.executor.ClientIdMetadataDocumentExecutorFactoryProviderConfig;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.mappers.AudienceProtocolMapper;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.idm.ClientPolicyConditionConfigurationRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.oidc.OIDCClientRepresentation;
 import org.keycloak.services.clientpolicy.condition.AnyClientConditionFactory;
 import org.keycloak.testframework.annotations.InjectRealm;
@@ -237,6 +240,20 @@ public class ClientIdMetadataDocumentTest {
 
         // send an authorization request
         String code = loginUserAndGetCode(true);
+
+        // Add audience mapper to allow test-app to introspect tokens
+        ClientRepresentation client = findByClientIdByAdmin();
+        ProtocolMapperRepresentation audienceMapper = ModelToRepresentation.toRepresentation(
+            AudienceProtocolMapper.createClaimMapper(
+                "test-app-audience",
+                "test-app",
+                null,
+                true,
+                false,
+                false
+            )
+        );
+        realm.admin().clients().get(client.getId()).getProtocolMappers().createMapper(audienceMapper);
 
         // get an access token
         AccessTokenResponse tokenResponse = oauth.client(CLIENT_ID).accessTokenRequest(code).send();
