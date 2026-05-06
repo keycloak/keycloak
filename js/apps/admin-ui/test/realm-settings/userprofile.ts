@@ -42,6 +42,14 @@ export async function clickSaveValidator(page: Page) {
   await page.getByTestId("save-validator-role-button").click();
 }
 
+export async function clickAddConverter(page: Page) {
+  await page.getByTestId("addConverter").click();
+}
+
+export async function clickSaveConverter(page: Page) {
+  await page.getByTestId("save-converter-role-button").click();
+}
+
 export async function goToAttributeGroupsTab(page: Page) {
   await page.getByTestId("attributesGroupTab").click();
 }

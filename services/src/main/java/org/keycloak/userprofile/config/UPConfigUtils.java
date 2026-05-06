@@ -35,6 +35,8 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.keycloak.common.util.StreamUtil;
+import org.keycloak.convert.ConverterConfig;
+import org.keycloak.convert.Converters;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -188,6 +190,9 @@ public class UPConfigUtils {
             attributeConfig.getValidations().forEach((validator, validatorConfig) -> validateValidationConfig(session, validator, validatorConfig, attributeName, errors));
             validateDefaultValue(session, attributeConfig, errors);
         }
+        if (attributeConfig.getConverters() != null) {
+            attributeConfig.getConverters().forEach((converter, converterConfig) -> validateConverterConfig(session, converter, converterConfig, attributeName, errors));
+        }
         if (attributeConfig.getPermissions() != null) {
             if (attributeConfig.getPermissions().getView() != null) {
                 validateRoles(attributeConfig.getPermissions().getView(), "permissions.view", errors, attributeName);
@@ -308,6 +313,33 @@ public class UPConfigUtils {
                         result.forEachError(err -> sb.append(err.toString()+", "));
                         errors.add("Validator '" + validator + "' defined for attribute '" + attributeName + "' has incorrect configuration: " + sb.toString());
                     }
+                }
+            }
+        }
+    }
+
+    /**
+     * Validate that converter configuration is correct.
+     *
+     * @param session to be used for Converter SPI integration
+     * @param converter id of the converter
+     * @param converterConfig config to be checked
+     * @param attributeName for error messages
+     * @param errors to add error message in if something is invalid
+     */
+    private static void validateConverterConfig(KeycloakSession session, String converter, Map<String, Object> converterConfig, String attributeName, List<String> errors) {
+
+        if (isBlank(converter)) {
+            errors.add("Converter without converter id is defined for attribute '" + attributeName + "'");
+        } else if (session != null) {
+            if (Converters.converter(session, converter) == null) {
+                errors.add("Converter '" + converter + "' defined for attribute '" + attributeName + "' doesn't exist");
+            } else {
+                ValidationResult result = Converters.validateConfig(session, converter, ConverterConfig.configFromMap(converterConfig));
+                if (!result.isValid()) {
+                    final StringBuilder sb = new StringBuilder();
+                    result.forEachError(err -> sb.append(err.toString()).append(", "));
+                    errors.add("Converter '" + converter + "' defined for attribute '" + attributeName + "' has incorrect configuration: " + sb.toString());
                 }
             }
         }

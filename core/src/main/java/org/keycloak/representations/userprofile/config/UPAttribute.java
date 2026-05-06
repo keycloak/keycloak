@@ -35,6 +35,8 @@ public class UPAttribute implements Cloneable {
     private String displayName;
     /** key in the Map is name of the validator, value is its configuration */
     private Map<String, Map<String, Object>> validations;
+    /** key in the Map is name of the converter, value is its configuration. Converters run before validators. */
+    private Map<String, Map<String, Object>> converters;
     private Map<String, Object> annotations;
     /** null means it is not required */
     private UPAttributeRequired required;
@@ -130,6 +132,21 @@ public class UPAttribute implements Cloneable {
         validations.put(validator, config);
     }
 
+    public Map<String, Map<String, Object>> getConverters() {
+        return converters;
+    }
+
+    public void setConverters(Map<String, Map<String, Object>> converters) {
+        this.converters = converters;
+    }
+
+    public void addConverter(String converter, Map<String, Object> config) {
+        if (converters == null) {
+            converters = new HashMap<>();
+        }
+        converters.put(converter, config);
+    }
+
     public UPAttributeSelector getSelector() {
         return selector;
     }
@@ -172,7 +189,7 @@ public class UPAttribute implements Cloneable {
 
     @Override
     public String toString() {
-        return "UPAttribute [name=" + name + ", displayName=" + displayName + ", permissions=" + permissions + ", selector=" + selector + ", required=" + required + ", validations=" + validations + ", annotations=" + annotations + ", group=" + group + ", multivalued=" + multivalued + ", defaultValue=" + defaultValue + "]";
+        return "UPAttribute [name=" + name + ", displayName=" + displayName + ", permissions=" + permissions + ", selector=" + selector + ", required=" + required + ", validations=" + validations + ", converters=" + converters + ", annotations=" + annotations + ", group=" + group + ", multivalued=" + multivalued + ", defaultValue=" + defaultValue + "]";
     }
 
     @Override
@@ -191,6 +208,18 @@ public class UPAttribute implements Cloneable {
             }
         }
         attr.setValidations(validations);
+
+        Map<String, Map<String, Object>> converters;
+        if (this.converters == null) {
+            converters = null;
+        } else {
+            converters = new LinkedHashMap<>();
+            for (Map.Entry<String, Map<String, Object>> entry : this.converters.entrySet()) {
+                Map<String, Object> newVal = entry.getValue() == null ? null : new LinkedHashMap<>(entry.getValue());
+                converters.put(entry.getKey(), newVal);
+            }
+        }
+        attr.setConverters(converters);
 
         attr.setAnnotations(this.annotations == null ? null : new HashMap<>(this.annotations));
         attr.setRequired(this.required == null ? null : this.required.clone());
@@ -220,6 +249,7 @@ public class UPAttribute implements Cloneable {
                 && Objects.equals(this.displayName, other.displayName)
                 && Objects.equals(this.group, other.group)
                 && Objects.equals(this.validations, other.validations)
+                && Objects.equals(this.converters, other.converters)
                 && Objects.equals(this.annotations, other.annotations)
                 && Objects.equals(this.required, other.required)
                 && Objects.equals(this.permissions, other.permissions)
