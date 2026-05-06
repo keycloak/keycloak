@@ -230,7 +230,7 @@
         <webauthn4j.version>0.30.3.RELEASE</webauthn4j.version>
 
         <!-- Used to test SAML Galleon feature-pack layers discovery -->
-        <version.org.wildfly.glow>1.0.0.Alpha8</version.org.wildfly.glow>
+        <version.org.wildfly.glow>1.5.2.Final</version.org.wildfly.glow>
 
         <!-- Galleon -->
         <galleon.fork.embedded>true</galleon.fork.embedded>
@@ -1624,8 +1624,8 @@
                 <!-- relative directory for galleon pack with layer spec files -->
                 <saml.adapter.galleon.pack.metadata.dir>metadata</saml.adapter.galleon.pack.metadata.dir>
                 <!-- WildFly Galleon Build related properties -->
-                <org.wildfly.galleon-plugins.version>7.3.1.Final</org.wildfly.galleon-plugins.version>
-                <org.jboss.galleon.version>6.0.4.Final</org.jboss.galleon.version>
+                <org.wildfly.galleon-plugins.version>8.1.2.Final</org.wildfly.galleon-plugins.version>
+                <org.jboss.galleon.version>7.0.5.Final</org.jboss.galleon.version>
                 <org.wildfly.maven.plugins.licenses-plugin.version>2.3.1.Final</org.wildfly.maven.plugins.licenses-plugin.version>
             </properties>
 
