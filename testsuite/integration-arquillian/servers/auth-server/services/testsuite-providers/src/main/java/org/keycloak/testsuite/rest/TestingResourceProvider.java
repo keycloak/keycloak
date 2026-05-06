@@ -54,10 +54,7 @@ import org.keycloak.common.profile.PropertiesProfileConfigResolver;
 import org.keycloak.common.util.HtmlUtils;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.events.Event;
-import org.keycloak.events.EventListenerProvider;
-import org.keycloak.events.EventType;
 import org.keycloak.events.admin.AdminEvent;
-import org.keycloak.events.email.EmailEventListenerProviderFactory;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.ClientModel;
@@ -695,28 +692,6 @@ public class TestingResourceProvider implements RealmResourceProvider {
 
         PreAuthCodeCtx preAuthCodeCtx = new PreAuthCodeCtx(offerState);
         return new JwtPreAuthCodeHandler(session).createPreAuthCode(preAuthCodeCtx);
-    }
-
-    @POST
-    @Path("/email-event-listener-provide/add-events")
-    @Consumes(MediaType.APPLICATION_JSON)
-    public void addEventsToEmailEventListenerProvider(List<EventType> events) {
-        if (events != null && !events.isEmpty()) {
-            EmailEventListenerProviderFactory prov = (EmailEventListenerProviderFactory) session.getKeycloakSessionFactory()
-                    .getProviderFactory(EventListenerProvider.class, EmailEventListenerProviderFactory.ID);
-            prov.addIncludedEvents(events.toArray(EventType[]::new));
-        }
-    }
-
-    @POST
-    @Path("/email-event-listener-provide/remove-events")
-    @Consumes(MediaType.APPLICATION_JSON)
-    public void removeEventsToEmailEventListenerProvider(List<EventType> events) {
-        if (events != null && !events.isEmpty()) {
-            EmailEventListenerProviderFactory prov = (EmailEventListenerProviderFactory) session.getKeycloakSessionFactory()
-                    .getProviderFactory(EventListenerProvider.class, EmailEventListenerProviderFactory.ID);
-            prov.removeIncludedEvents(events.toArray(EventType[]::new));
-        }
     }
 
     @GET

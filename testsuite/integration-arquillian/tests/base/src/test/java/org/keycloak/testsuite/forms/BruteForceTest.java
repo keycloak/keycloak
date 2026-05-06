@@ -62,6 +62,7 @@ import org.keycloak.testsuite.util.MailUtils;
 import org.keycloak.testsuite.util.RealmRepUtil;
 import org.keycloak.testsuite.util.WaitUtils;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.runonserver.RunHelpers;
 
 import org.hamcrest.MatcherAssert;
 import org.jboss.arquillian.graphene.page.Page;
@@ -822,7 +823,7 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
 
     @Test
     public void testPermanentLockout() throws Exception {
-        testingClient.testing().addEventsToEmailEventListenerProvider(Collections.singletonList(EventType.USER_DISABLED_BY_PERMANENT_LOCKOUT));
+        runOnServer.run(RunHelpers.addEventsToEmailEventListenerProvider(Collections.singletonList(EventType.USER_DISABLED_BY_PERMANENT_LOCKOUT)));
         try (RealmAttributeUpdater updater = new RealmAttributeUpdater(managedRealm.admin()).setPermanentLockout(true)
                 .setQuickLoginCheckMilliSeconds(0L)
                 .addEventsListener(EmailEventListenerProviderFactory.ID).update()) {
@@ -850,7 +851,7 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
             updateUser(user);
             assertUserDisabledReason(null);
         } finally {
-            testingClient.testing().removeEventsToEmailEventListenerProvider(Collections.singletonList(EventType.USER_DISABLED_BY_PERMANENT_LOCKOUT));
+            runOnServer.run(RunHelpers.removeEventsToEmailEventListenerProvider(Collections.singletonList(EventType.USER_DISABLED_BY_PERMANENT_LOCKOUT)));
             UserRepresentation user = managedRealm.admin().users().search("test-user@localhost", 0, 1).get(0);
             user.setEnabled(true);
             updateUser(user);
@@ -902,7 +903,7 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
 
     @Test
     public void testTemporaryLockout() throws Exception {
-        testingClient.testing().addEventsToEmailEventListenerProvider(Collections.singletonList(EventType.USER_DISABLED_BY_TEMPORARY_LOCKOUT));
+        runOnServer.run(RunHelpers.addEventsToEmailEventListenerProvider(Collections.singletonList(EventType.USER_DISABLED_BY_TEMPORARY_LOCKOUT)));
         try (RealmAttributeUpdater updater = new RealmAttributeUpdater(managedRealm.admin())
                 .addEventsListener(EmailEventListenerProviderFactory.ID).update()) {
             loginInvalidPassword("test-user@localhost");
@@ -914,7 +915,7 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
 
             checkEmailPresent("User disabled by temporary lockout");
         } finally {
-            testingClient.testing().removeEventsToEmailEventListenerProvider(Collections.singletonList(EventType.USER_DISABLED_BY_TEMPORARY_LOCKOUT));
+            runOnServer.run(RunHelpers.removeEventsToEmailEventListenerProvider(Collections.singletonList(EventType.USER_DISABLED_BY_TEMPORARY_LOCKOUT)));
         }
     }
 

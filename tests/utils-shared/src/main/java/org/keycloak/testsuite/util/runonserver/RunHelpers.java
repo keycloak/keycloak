@@ -6,6 +6,9 @@ import java.util.stream.Collectors;
 import jakarta.ws.rs.NotFoundException;
 
 import org.keycloak.credential.CredentialModel;
+import org.keycloak.events.EventListenerProvider;
+import org.keycloak.events.EventType;
+import org.keycloak.events.email.EmailEventListenerProviderFactory;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmProvider;
@@ -129,6 +132,26 @@ public class RunHelpers {
 
             session.getProvider(UserSessionPersisterProvider.class).removeExpired(realm);
             session.realms().removeExpiredClientInitialAccess();
+        };
+    }
+
+    public static RunOnServer addEventsToEmailEventListenerProvider(List<EventType> events) {
+        return session -> {
+            if (events != null && !events.isEmpty()) {
+                EmailEventListenerProviderFactory prov = (EmailEventListenerProviderFactory) session.getKeycloakSessionFactory()
+                        .getProviderFactory(EventListenerProvider.class, EmailEventListenerProviderFactory.ID);
+                prov.addIncludedEvents(events.toArray(EventType[]::new));
+            }
+        };
+    }
+
+    public static RunOnServer removeEventsToEmailEventListenerProvider(List<EventType> events) {
+        return session -> {
+            if (events != null && !events.isEmpty()) {
+                EmailEventListenerProviderFactory prov = (EmailEventListenerProviderFactory) session.getKeycloakSessionFactory()
+                        .getProviderFactory(EventListenerProvider.class, EmailEventListenerProviderFactory.ID);
+                prov.removeIncludedEvents(events.toArray(EventType[]::new));
+            }
         };
     }
 
