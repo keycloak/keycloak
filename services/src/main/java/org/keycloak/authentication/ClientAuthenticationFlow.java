@@ -103,17 +103,7 @@ public class ClientAuthenticationFlow implements AuthenticationFlow {
             throw new AuthenticationFlowException("Client is disabled", AuthenticationFlowError.CLIENT_DISABLED);
         }
 
-        String expectedClientAuthType = client.getClientAuthenticatorType();
-
-        // Fallback to secret just in case (for backwards compatibility). Also for public clients, ignore the
-        // "clientAuthenticatorType", which is set to them and stick to the default, which set the client
-        // just based on "client_id" parameter
-        if (expectedClientAuthType == null || client.isPublicClient()) {
-            if (expectedClientAuthType == null) {
-                ServicesLogger.LOGGER.authMethodFallback(client.getClientId(), expectedClientAuthType);
-            }
-            expectedClientAuthType = KeycloakModelUtils.getDefaultClientAuthenticatorType();
-        }
+        String expectedClientAuthType = resolveExpectedClientAuthType(client, executions);
 
         // Find the matching authenticator and run credential validation
         for (AuthenticationExecutionModel model : executions) {
@@ -141,6 +131,46 @@ public class ClientAuthenticationFlow implements AuthenticationFlow {
 
         // Client's configured authenticator type is not present in the flow
         throw new AuthenticationFlowException("Client authenticator not configured in the authentication flow", AuthenticationFlowError.CLIENT_NOT_FOUND);
+    }
+
+    /**
+     * Resolves which authenticator should validate credentials for the given client.
+     *
+     * <p>Mirrors the legacy resolution rules so that switching to the two-phase flow does not change
+     * authenticator selection semantics:
+     * <ul>
+     *   <li>If the client has no configured authenticator type, fall back to the default and log it.</li>
+     *   <li>For public clients, the configured type is ignored and the default is used. This preserves
+     *       backwards-compatible behavior where public clients are matched purely on {@code client_id}.</li>
+     *   <li>For public clients with the {@code attestation-based} authenticator present in the flow and
+     *       the ABCA feature enabled, prefer ABCA over the default. Without this override, ABCA would
+     *       never run for a public client because {@link KeycloakModelUtils#getDefaultClientAuthenticatorType()}
+     *       resolves to {@code client-secret}, which short-circuits to success for public clients.</li>
+     * </ul>
+     */
+    private String resolveExpectedClientAuthType(ClientModel client, List<AuthenticationExecutionModel> executions) {
+        String expectedClientAuthType = client.getClientAuthenticatorType();
+
+        if (expectedClientAuthType == null) {
+            ServicesLogger.LOGGER.authMethodFallback(client.getClientId(), expectedClientAuthType);
+            expectedClientAuthType = KeycloakModelUtils.getDefaultClientAuthenticatorType();
+        } else if (client.isPublicClient()) {
+            expectedClientAuthType = KeycloakModelUtils.getDefaultClientAuthenticatorType();
+        }
+
+        // For public clients, prefer ABCA when it is configured in the flow and enabled by feature flag.
+        // This preserves the legacy behavior where the per-execution loop activated ABCA for public clients.
+        String abcaAuthType = AttestationBasedClientAuthenticator.PROVIDER_ID;
+        if (client.isPublicClient() && Profile.isFeatureEnabled(Profile.Feature.CLIENT_AUTH_ABCA)) {
+            for (AuthenticationExecutionModel model : executions) {
+                if (abcaAuthType.equals(model.getAuthenticator())) {
+                    expectedClientAuthType = abcaAuthType;
+                    break;
+                }
+            }
+        }
+
+        return expectedClientAuthType;
     }
 
     /**

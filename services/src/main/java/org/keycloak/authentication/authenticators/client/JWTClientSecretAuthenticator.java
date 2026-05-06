@@ -100,7 +100,18 @@ public class JWTClientSecretAuthenticator extends AbstractClientAuthenticator {
                     clientAssertionState.setClient(context.getRealm().getClientByClientId(jwt.getSubject()));
                 }
             } else {
-                // Two-phase path: ensure ClientAssertionState has the client
+                // Two-phase path: client already identified. Re-check the self-signed constraint
+                // (iss == sub) and the presence of a parsed assertion before proceeding, since the
+                // client may have been identified by a different authenticator and we cannot rely on
+                // lookupClient() of this provider having been the one that set it.
+                JsonWebToken jwt = clientAssertionState.getToken();
+                if (jwt == null) {
+                    return;
+                }
+                if (!Objects.equals(jwt.getIssuer(), jwt.getSubject())) {
+                    return;
+                }
+
                 if (clientAssertionState.getClient() == null) {
                     clientAssertionState.setClient(context.getClient());
                 }

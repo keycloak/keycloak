@@ -99,7 +99,7 @@ public class FederatedJWTClientAuthenticator extends AbstractClientAuthenticator
             clientAssertionState.setClient(client);
             return client;
         } catch (Exception e) {
-            LOGGER.warn("Client lookup failed", e);
+            logger.warn("Client lookup failed", e);
             return null;
         }
     }
@@ -161,6 +161,17 @@ public class FederatedJWTClientAuthenticator extends AbstractClientAuthenticator
 
                 ClientAssertionIdentityProviderFactory.LookupResult lookup = strategy.lookup(context);
                 if (lookup == null || lookup.identityProviderModel() == null || !lookup.identityProviderModel().isEnabled()) {
+                    context.failure(AuthenticationFlowError.INVALID_CLIENT_CREDENTIALS);
+                    return;
+                }
+
+                // Bind the assertion to the pre-identified client. If the strategy resolves a client
+                // and it does not match the one set on the context, the assertion is for a different
+                // client than the one being authenticated and must be rejected.
+                ClientModel resolvedClient = lookup.clientModel();
+                if (resolvedClient != null && !Objects.equals(resolvedClient.getClientId(), client.getClientId())) {
+                    logger.debugf("Federated assertion subject does not match the client identified earlier in the flow (expected=%s, found=%s)",
+                            client.getClientId(), resolvedClient.getClientId());
                     context.failure(AuthenticationFlowError.INVALID_CLIENT_CREDENTIALS);
                     return;
                 }

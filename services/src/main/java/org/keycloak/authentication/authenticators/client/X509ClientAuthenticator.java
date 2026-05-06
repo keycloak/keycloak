@@ -74,6 +74,7 @@ public class X509ClientAuthenticator extends AbstractClientAuthenticator {
             return;
         }
 
+        final boolean preIdentified = context.getClient() != null;
         ClientModel client = context.getClient();
         X509Certificate[] certs = null;
 
@@ -118,9 +119,16 @@ public class X509ClientAuthenticator extends AbstractClientAuthenticator {
         }
 
         if (certs == null || certs.length == 0) {
-            // No x509 client cert, fall through and
-            // continue processing the rest of the authentication flow
             logger.debug("[X509ClientCertificateAuthenticator:authenticate] x509 client certificate is not available for mutual SSL.");
+            if (preIdentified) {
+                // The client was already identified by a prior phase, and its configured authenticator
+                // is x509. Missing the certificate is therefore an explicit credential failure rather
+                // than a fall-through to other authenticators in the flow.
+                Response challengeResponse = ClientAuthUtil.errorResponse(Response.Status.UNAUTHORIZED.getStatusCode(), "invalid_client", "Client certificate is required for mutual TLS authentication");
+                context.failure(AuthenticationFlowError.INVALID_CLIENT_CREDENTIALS, challengeResponse);
+                return;
+            }
+            // Legacy path: no client identified yet, fall through so other authenticators may match.
             context.attempted();
             return;
         }
