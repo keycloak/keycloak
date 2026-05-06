@@ -34,6 +34,7 @@ import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -77,6 +78,8 @@ import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
+import org.keycloak.protocol.oidc.mappers.AudienceProtocolMapper;
+import org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.RefreshToken;
@@ -91,6 +94,7 @@ import org.keycloak.representations.idm.ClientProfileRepresentation;
 import org.keycloak.representations.idm.ClientProfilesRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
+import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.oidc.OIDCClientRepresentation;
 import org.keycloak.representations.oidc.TokenMetadataRepresentation;
 import org.keycloak.services.Urls;
@@ -723,6 +727,22 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
         // registered components will be removed automatically when a test method finishes regardless of its success or failure.
         String cId = ApiUtil.getCreatedId(resp);
         testContext.getOrCreateCleanup(REALM_NAME).addClientUuid(cId);
+
+        // Add audience mapper so the client can introspect its own tokens
+        if (protocol.equals(OIDCLoginProtocol.LOGIN_PROTOCOL)) {
+            ProtocolMapperRepresentation audienceMapper = new ProtocolMapperRepresentation();
+            audienceMapper.setName("audience-mapper");
+            audienceMapper.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+            audienceMapper.setProtocolMapper(AudienceProtocolMapper.PROVIDER_ID);
+
+            Map<String, String> audienceConfig = new HashMap<>();
+            audienceConfig.put(AudienceProtocolMapper.INCLUDED_CUSTOM_AUDIENCE, clientName);
+            audienceConfig.put(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN, "true");
+            audienceMapper.setConfig(audienceConfig);
+
+            adminClient.realm(REALM_NAME).clients().get(cId).getProtocolMappers().createMapper(audienceMapper);
+        }
+
         return cId;
     }
 
@@ -815,6 +835,22 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
         // registered components will be removed automatically when a test method finishes regardless of its success or failure.
         String clientId = response.getClientId();
         testContext.getOrCreateCleanup(REALM_NAME).addClientUuid(clientId);
+
+        // Add audience mapper so the client can introspect its own tokens
+        ProtocolMapperRepresentation audienceMapper = new ProtocolMapperRepresentation();
+        audienceMapper.setName("audience-mapper");
+        audienceMapper.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+        audienceMapper.setProtocolMapper(AudienceProtocolMapper.PROVIDER_ID);
+
+        java.util.Map<String, String> audienceConfig = new java.util.HashMap<>();
+        audienceConfig.put(AudienceProtocolMapper.INCLUDED_CUSTOM_AUDIENCE, clientId);
+        audienceConfig.put(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN, "true");
+        audienceMapper.setConfig(audienceConfig);
+
+        // Find client UUID from clientId
+        String cId = adminClient.realm(REALM_NAME).clients().findByClientId(clientId).get(0).getId();
+        adminClient.realm(REALM_NAME).clients().get(cId).getProtocolMappers().createMapper(audienceMapper);
+
         return clientId;
     }
 

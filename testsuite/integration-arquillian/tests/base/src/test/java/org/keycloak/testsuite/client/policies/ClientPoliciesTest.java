@@ -55,7 +55,9 @@ import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.mappers.AudienceProtocolMapper;
 import org.keycloak.protocol.oidc.mappers.ClaimsParameterWithValueIdTokenMapper;
+import org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
 import org.keycloak.representations.ClaimsRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -405,6 +407,19 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         EventAssertion.assertSuccess(events.poll()).type(EventType.CLIENT_INFO).clientId(clientId).userId(null);
 
         adminClient.realm(REALM_NAME).clients().get(clientId).roles().create(RoleBuilder.create().name(SAMPLE_CLIENT_ROLE).build());
+
+        // Add audience mapper so the client can introspect its own tokens
+        org.keycloak.representations.idm.ProtocolMapperRepresentation audienceMapper = new org.keycloak.representations.idm.ProtocolMapperRepresentation();
+        audienceMapper.setName("audience-mapper");
+        audienceMapper.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+        audienceMapper.setProtocolMapper(AudienceProtocolMapper.PROVIDER_ID);
+
+        Map<String, String> audienceConfig = new HashMap<>();
+        audienceConfig.put(AudienceProtocolMapper.INCLUDED_CUSTOM_AUDIENCE, response.getClientId());
+        audienceConfig.put(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN, "true");
+        audienceMapper.setConfig(audienceConfig);
+
+        adminClient.realm(REALM_NAME).clients().get(clientId).getProtocolMappers().createMapper(audienceMapper);
 
         successfulLoginAndLogoutWithPKCE(response.getClientId(), clientSecret, TEST_USER_NAME, TEST_USER_PASSWORD);
     }
