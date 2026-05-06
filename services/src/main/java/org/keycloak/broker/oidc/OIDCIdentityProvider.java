@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
@@ -51,6 +52,7 @@ import org.keycloak.common.Profile;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.common.util.Time;
+import org.keycloak.connections.httpclient.HttpClientProvider;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.crypto.SignatureProvider;
@@ -71,6 +73,7 @@ import org.keycloak.keys.PublicKeyStorageUtils;
 import org.keycloak.keys.loader.OIDCIdentityProviderPublicKeyLoader;
 import org.keycloak.keys.loader.PublicKeyStorageManager;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.Constants;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.IdentityProviderType;
 import org.keycloak.models.KeycloakSession;
@@ -93,6 +96,7 @@ import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.util.Booleans;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.util.TokenUtil;
+import org.keycloak.utils.StringUtil;
 import org.keycloak.vault.VaultStringSecret;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -113,6 +117,15 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
     public static final String VALIDATED_ACCESS_TOKEN = "VALIDATED_ACCESS_TOKEN";
     private static final String BROKER_NONCE_PARAM = "BROKER_NONCE";
     private static final List<String> SUPPORTED_TOKEN_TYPES = Arrays.asList(TokenUtil.TOKEN_TYPE_ID, TokenUtil.TOKEN_TYPE_BEARER, TokenUtil.TOKEN_TYPE_JWT_ACCESS_TOKEN, TokenUtil.TOKEN_TYPE_JWT_ACCESS_TOKEN_PREFIXED);
+    private static final List<String> SYNCABLE_FIELDS = List.of(
+        OIDCIdentityProviderConfig.AUTHORIZATION_URL,
+        OIDCIdentityProviderConfig.TOKEN_URL,
+        OIDCIdentityProviderConfig.LOGOUT_URL,
+        OIDCIdentityProviderConfig.USER_INFO_URL,
+        OIDCIdentityProviderConfig.TOKEN_INTROSPECTION_URL,
+        OIDCIdentityProviderConfig.ISSUER,
+        OIDCIdentityProviderConfig.JWKS_URL
+    );
 
     public OIDCIdentityProvider(KeycloakSession session, OIDCIdentityProviderConfig config) {
         super(session, config);
@@ -1072,6 +1085,83 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
             return keyStorage.reloadKeys(modelKey, new OIDCIdentityProviderPublicKeyLoader(session, getConfig()));
         }
         return false;
+    }
+
+    @Override
+    public boolean reloadConfig() {
+        OIDCIdentityProviderConfig cfg = getConfig();
+        if (!cfg.isEnabled() || !cfg.isReloadEnabled()) {
+            return false;
+        }
+
+        long start = Time.currentTimeMillis();
+        long end = start;
+        try {
+            String json = session.getProvider(HttpClientProvider.class).getString(cfg.getMetadataDescriptorUrl());
+            Map<String, String> parsed = OIDCIdentityProviderFactory.parseOIDCConfig(session, json);
+
+            String rawIncluded = cfg.getConfig().get(OIDCIdentityProviderConfig.INCLUDED_WELL_KNOWN_FIELDS);
+            Set<String> included = StringUtil.isBlank(rawIncluded)
+                    ? Set.of()
+                    : Set.of(Constants.CFG_DELIMITER_PATTERN.split(rawIncluded));
+
+            boolean changed = false;
+            boolean jwksChanged = false;
+            for (String field : SYNCABLE_FIELDS) {
+                if (!included.contains(field)) {
+                    continue;
+                }
+                String newVal = parsed.get(field);
+                String oldVal = cfg.getConfig().get(field);
+                if (newVal == null) {
+                    if (oldVal != null) {
+                        cfg.getConfig().remove(field);
+                        changed = true;
+                    }
+                } else if (!newVal.equals(oldVal)) {
+                    cfg.getConfig().put(field, newVal);
+                    changed = true;
+                    if (field.equals(OIDCIdentityProviderConfig.JWKS_URL)) {
+                        // Do not reload keys here, do it after potentially setting USE_JWKS_URL to true, otherwise reloadKeys() will not reload
+                        jwksChanged = true;
+                    }
+                }
+            }
+
+            String effectiveJwksUrl = cfg.getConfig().get(OIDCIdentityProviderConfig.JWKS_URL);
+            if (StringUtil.isNotBlank(effectiveJwksUrl)) {
+                if (!"true".equals(cfg.getConfig().get(OIDCIdentityProviderConfig.VALIDATE_SIGNATURE))) {
+                    cfg.getConfig().put(OIDCIdentityProviderConfig.VALIDATE_SIGNATURE, "true");
+                    changed = true;
+                }
+                if (!"true".equals(cfg.getConfig().get(OIDCIdentityProviderConfig.USE_JWKS_URL))) {
+                    cfg.getConfig().put(OIDCIdentityProviderConfig.USE_JWKS_URL, "true");
+                    changed = true;
+                }
+            }
+
+            if (jwksChanged) {
+                reloadKeys();
+            }
+
+            if (changed) {
+                logger.infof("Updated config for IDP %s in realm %s", cfg.getAlias(), session.getContext().getRealm().getName());
+            } else {
+                logger.infof("No config changes for IDP %s in realm %s", cfg.getAlias(), session.getContext().getRealm().getName());
+            }
+            end = Time.currentTimeMillis();
+            cfg.getConfig().remove(OIDCIdentityProviderConfig.WELL_KNOWN_LAST_SYNC_ERROR);
+            return true;
+        } catch (IOException | RuntimeException e) {
+            logger.warnf(e, "Failed to sync well-known for IDP %s in realm %s", cfg.getAlias(), session.getContext().getRealm().getName());
+            end = Time.currentTimeMillis();
+            cfg.getConfig().put(OIDCIdentityProviderConfig.WELL_KNOWN_LAST_SYNC_ERROR, e.getMessage());
+            return true;
+        } finally {
+            cfg.getConfig().put(OIDCIdentityProviderConfig.WELL_KNOWN_LAST_SYNC_ATTEMPT, String.valueOf(end));
+            cfg.getConfig().put(OIDCIdentityProviderConfig.WELL_KNOWN_LAST_SYNC_ATTEMPT_DURATION, String.valueOf(end - start));
+            session.identityProviders().update(cfg);
+        }
     }
 
     @Override

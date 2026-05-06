@@ -34,6 +34,7 @@ import jakarta.ws.rs.core.Response;
 
 import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
 import org.keycloak.representations.idm.IdentityProviderMapperTypeRepresentation;
+import org.keycloak.representations.idm.IdentityProviderReloadWellKnownRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 
 /**
@@ -88,4 +89,10 @@ public interface IdentityProviderResource {
     @GET
     @Path("reload-keys")
     boolean reloadKeys();
+
+    @POST
+    @Path("reload-well-known")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    IdentityProviderRepresentation reloadWellKnown(IdentityProviderReloadWellKnownRepresentation body);
 }

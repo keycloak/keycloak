@@ -175,4 +175,9 @@ public class GoogleIdentityProvider extends OIDCIdentityProvider implements Soci
     public boolean isAssertionReuseAllowed() {
         return true;
     }
+
+    @Override
+    public boolean reloadConfig() {
+        return false;
+    }
 }

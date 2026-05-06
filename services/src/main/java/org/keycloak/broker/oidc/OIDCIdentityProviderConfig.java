@@ -21,6 +21,7 @@ import org.keycloak.common.enums.SslRequired;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.IdentityProviderType;
 import org.keycloak.models.RealmModel;
+import org.keycloak.utils.StringUtil;
 
 import static org.keycloak.common.util.UriUtils.checkUrl;
 
@@ -37,6 +38,19 @@ public class OIDCIdentityProviderConfig extends OAuth2IdentityProviderConfig imp
     public static final String SUPPORTS_CLIENT_ASSERTIONS = "supportsClientAssertions";
     public static final String SUPPORTS_CLIENT_ASSERTION_REUSE = "supportsClientAssertionReuse";
     public static final String ALLOW_CLIENT_ID_AS_AUDIENCE = "allowClientIdAsAudience";
+
+    public static final String AUTHORIZATION_URL = "authorizationUrl";
+    public static final String TOKEN_URL = "tokenUrl";
+    public static final String LOGOUT_URL = "logoutUrl";
+    public static final String USER_INFO_URL = "userInfoUrl";
+    public static final String TOKEN_INTROSPECTION_URL = "tokenIntrospectionUrl";
+    public static final String ISSUER = "issuer";
+
+    public static final String RELOAD_ENABLED = "reloadEnabled";
+    public static final String INCLUDED_WELL_KNOWN_FIELDS = "includedWellKnownFields";
+    public static final String WELL_KNOWN_LAST_SYNC_ATTEMPT = "wellKnownLastSyncAttempt";
+    public static final String WELL_KNOWN_LAST_SYNC_ATTEMPT_DURATION = "wellKnownLastSyncAttemptDuration";
+    public static final String WELL_KNOWN_LAST_SYNC_ERROR = "wellKnownLastSyncError";
 
     public OIDCIdentityProviderConfig(IdentityProviderModel identityProviderModel) {
         super(identityProviderModel);
@@ -188,5 +202,12 @@ public class OIDCIdentityProviderConfig extends OAuth2IdentityProviderConfig imp
         if (isSupportsClientAssertions()) {
             validateIssuer(realm, IdentityProviderType.CLIENT_ASSERTION);
         }
+        if (isReloadEnabled() && StringUtil.isBlank(getMetadataDescriptorUrl())) {
+            throw new IllegalArgumentException("metadataDescriptorUrl is required when reloadEnabled is true");
+        }
+    }
+
+    public boolean isReloadEnabled() {
+        return Boolean.parseBoolean(getConfig().get(RELOAD_ENABLED));
     }
 }

@@ -340,6 +340,18 @@ class AdminClient {
     });
   }
 
+  async updateIdentityProviderConfig(
+    alias: string,
+    config: Record<string, string>,
+  ) {
+    await this.#login();
+    const idp = await this.#client.identityProviders.findOne({ alias });
+    await this.#client.identityProviders.update(
+      { alias },
+      { ...idp!, config: { ...idp!.config, ...config } },
+    );
+  }
+
   async addLocalizationText(
     locale: string,
     key: string,
