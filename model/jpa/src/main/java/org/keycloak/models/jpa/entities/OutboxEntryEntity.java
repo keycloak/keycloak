@@ -24,10 +24,11 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
-import jakarta.persistence.Lob;
 import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
 import jakarta.persistence.Table;
+
+import org.hibernate.annotations.Nationalized;
 
 /**
  * Generic durable outbox row: a single message persisted for asynchronous,
@@ -298,11 +299,11 @@ public class OutboxEntryEntity {
     @Column(name = "ENTRY_TYPE", nullable = false, length = 256)
     protected String entryType;
 
-    @Lob
+    @Nationalized
     @Column(name = "PAYLOAD", nullable = false)
     protected String payload;
 
-    @Lob
+    @Nationalized
     @Column(name = "METADATA")
     protected String metadata;
 

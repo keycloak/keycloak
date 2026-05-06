@@ -131,13 +131,13 @@
                 <constraints nullable="false"/>
             </column>
             <!--
-                CLOB rather than VARCHAR: payloads can be arbitrarily
-                large (signed JWS, JSON envelopes with embedded data).
+               NCLOB rather than VARCHAR: payloads can be arbitrarily
+               large (signed JWS, JSON envelopes with embedded data).
             -->
-            <column name="PAYLOAD" type="CLOB">
+            <column name="PAYLOAD" type="NCLOB">
                 <constraints nullable="false"/>
             </column>
-            <column name="METADATA" type="CLOB"/>
+            <column name="METADATA" type="NCLOB"/>
             <column name="STATUS" type="VARCHAR(16)">
                 <constraints nullable="false"/>
             </column>
