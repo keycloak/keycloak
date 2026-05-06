@@ -49,6 +49,14 @@ import jakarta.inject.Singleton;
 import jakarta.persistence.Entity;
 import jakarta.persistence.PersistenceUnitTransactionType;
 
+import io.quarkus.arc.deployment.AdditionalBeanBuildItem;
+
+import io.quarkus.arc.processor.BuiltinScope;
+import io.quarkus.deployment.Capabilities;
+
+import io.quarkus.deployment.Capability;
+
+
 import org.keycloak.Config;
 import org.keycloak.authentication.AuthenticatorSpi;
 import org.keycloak.authentication.authenticators.browser.DeployedScriptAuthenticatorFactory;
@@ -85,6 +93,7 @@ import org.keycloak.provider.ProviderManager;
 import org.keycloak.provider.Spi;
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.KeycloakRecorder;
+import org.keycloak.quarkus.runtime.configuration.UpdateSocketTimeoutOnConnectionAcquireInterceptor;
 import org.keycloak.quarkus.runtime.cli.Picocli;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.quarkus.runtime.configuration.KeycloakConfigSourceProvider;
@@ -420,6 +429,21 @@ class KeycloakProcessor {
 
         if (!notSetPersistenceUnitsDBKinds.isEmpty()) {
             throwConfigError("Detected additional named datasources without a DB kind set, please specify: %s".formatted(String.join(",", notSetPersistenceUnitsDBKinds)));
+        }
+    }
+
+    @BuildStep
+    void configureAgroalConnection(BuildProducer<AdditionalBeanBuildItem> additionalBeans,
+                                   Capabilities capabilities) {
+        String db = Configuration.getConfigValue(DatabaseOptions.DB).getValue();
+        Database.Vendor vendor = Database.getVendor(db).orElseThrow();
+        if (Database.Vendor.MYSQL == vendor || Database.Vendor.MARIADB == vendor || Database.Vendor.TIDB == vendor) {
+            if (capabilities.isPresent(Capability.AGROAL)) {
+                additionalBeans.produce(new AdditionalBeanBuildItem.Builder().addBeanClass(UpdateSocketTimeoutOnConnectionAcquireInterceptor.class)
+                        .setDefaultScope(BuiltinScope.APPLICATION.getName())
+                        .setUnremovable()
+                        .build());
+            }
         }
     }
 
