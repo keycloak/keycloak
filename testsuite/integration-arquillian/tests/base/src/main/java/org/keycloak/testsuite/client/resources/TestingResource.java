@@ -278,17 +278,4 @@ public interface TestingResource {
     @GET
     @Path("/no-cache-annotated-endpoint")
     Response getNoCacheAnnotatedEndpointResponse(@QueryParam("programmatic_max_age_value") Long programmaticMaxAgeValue);
-
-    /**
-     * Return a pre-authorized code for the current session.
-     *
-     * @param realmName     name of the realm to be used
-     * @param userSessionId id of the user session to get a code for
-     * @param clientId      id of the client to be used
-     * @param expiration    expiration time of the code
-     * @return the code
-     */
-    @GET
-    @Path("/pre-authorized-code")
-    String getPreAuthorizedCode(@QueryParam("realm") final String realmName, @QueryParam("userSessionId") final String userSessionId, @QueryParam("clientId") final String clientId, @QueryParam("expiration") final int expiration);
 }

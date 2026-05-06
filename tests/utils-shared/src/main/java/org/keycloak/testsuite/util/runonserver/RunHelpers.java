@@ -171,7 +171,7 @@ public class RunHelpers {
         };
     }
 
-    private static RealmModel getRealmByName(KeycloakSession session, String realmName) {
+    public static RealmModel getRealmByName(KeycloakSession session, String realmName) {
         RealmProvider realmProvider = session.getProvider(RealmProvider.class);
         RealmModel realm = realmProvider.getRealmByName(realmName);
         if (realm == null) {

@@ -26,7 +26,6 @@ import java.lang.reflect.Method;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
@@ -65,15 +64,7 @@ import org.keycloak.models.RealmProvider;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
-import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.ModelToRepresentation;
-import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider;
-import org.keycloak.protocol.oid4vc.issuance.credentialoffer.CredentialOfferState;
-import org.keycloak.protocol.oid4vc.issuance.credentialoffer.CredentialOfferStorage;
-import org.keycloak.protocol.oid4vc.issuance.credentialoffer.preauth.JwtPreAuthCodeHandler;
-import org.keycloak.protocol.oid4vc.model.CredentialsOffer;
-import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
-import org.keycloak.protocol.oid4vc.model.PreAuthCodeCtx;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.representations.idm.AdminEventRepresentation;
@@ -109,7 +100,6 @@ import org.jboss.resteasy.reactive.NoCache;
 
 import static java.util.Objects.requireNonNull;
 
-import static org.keycloak.OID4VCConstants.OPENID_CREDENTIAL;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -662,34 +652,4 @@ public class TestingResourceProvider implements RealmResourceProvider {
     public Response getBlankPage() {
         return Response.ok("<html><body></body></html>").build();
     }
-
-    @GET
-    @Path("/pre-authorized-code")
-    @NoCache
-    public String getPreAuthorizedCode(@QueryParam("realm") final String realmName, @QueryParam("userSessionId") final String userSessionId, @QueryParam("clientId") final String clientId, @QueryParam("expiration") final int expireAt) {
-        RealmModel realm = getRealmByName(realmName);
-        UserSessionModel userSession = session.sessions().getUserSession(realm, userSessionId);
-
-        String credConfigId = "oid4vc_natural_person_sd";
-
-        CredentialsOffer credOffer = new CredentialsOffer()
-                .setCredentialIssuer(OID4VCIssuerWellKnownProvider.getIssuer(session.getContext()))
-                .setCredentialConfigurationIds(List.of(credConfigId));
-
-        String targetUserId = userSession.getUser().getId();
-        CredentialOfferState offerState = new CredentialOfferState(credOffer, clientId, targetUserId, expireAt, credOfferId -> {
-            OID4VCAuthorizationDetail authDetail = new OID4VCAuthorizationDetail();
-            authDetail.setType(OPENID_CREDENTIAL);
-            authDetail.setCredentialConfigurationId(credConfigId);
-            authDetail.setCredentialsOfferId(credOfferId);
-            return List.of(authDetail);
-        });
-
-        var offerStorage = session.getProvider(CredentialOfferStorage.class);
-        offerStorage.putOfferState( offerState);
-
-        PreAuthCodeCtx preAuthCodeCtx = new PreAuthCodeCtx(offerState);
-        return new JwtPreAuthCodeHandler(session).createPreAuthCode(preAuthCodeCtx);
-    }
-
 }
