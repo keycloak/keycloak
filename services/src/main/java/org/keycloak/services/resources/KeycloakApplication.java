@@ -69,16 +69,17 @@ public abstract class KeycloakApplication extends Application {
 
     protected abstract String getDataDir();
 
-    protected Runnable startup() {
+    // synchronized to prevent shutdown while running bootstrapping
+    protected synchronized void startup() {
         logger.debugv("Application: {0}", this.getClass().getName());
         initTmpDirectory();
         Profile.getInstance().logUnsupportedFeatures();
         CryptoIntegration.init(KeycloakApplication.class.getClassLoader());
         KeycloakApplication.sessionFactory = createSessionFactory();
-        return () -> runBootstrap(KeycloakApplication.sessionFactory);
+        runBootstrap(KeycloakApplication.sessionFactory);
     }
 
-    private synchronized void runBootstrap(DefaultKeycloakSessionFactory keycloakSessionFactory) {
+    private void runBootstrap(DefaultKeycloakSessionFactory keycloakSessionFactory) {
         var startTime = System.nanoTime();
 
         keycloakSessionFactory.init();
@@ -154,10 +155,12 @@ public abstract class KeycloakApplication extends Application {
 
     protected abstract void createTemporaryAdmin(KeycloakSession session);
 
-    protected abstract void initAndStart();
-
     protected abstract DefaultKeycloakSessionFactory createSessionFactory();
 
+    /**
+     * WARNING: This method is for use by test logic. Will return null if there is no current KeycloakApplication, or if the
+     * startup has not yet reached the point of setting this value.
+     */
     public static DefaultKeycloakSessionFactory getSessionFactory() {
         return sessionFactory;
     }

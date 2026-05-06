@@ -74,10 +74,10 @@ public class QuarkusKeycloakApplication extends KeycloakApplication {
                 .orElse(Boolean.TRUE);
         // skip async bootstrap in dev and non-server mode
         if (isDevMode() || isNonServerMode() || isTestLaunchMode() || !asyncBootstrap) {
-            startup().run();      
+            startup();      
         } else {
             ManagedExecutor executor = Arc.container().instance(ManagedExecutor.class).get();
-            CompletableFuture.runAsync(startup(), executor).exceptionally(cause -> {
+            CompletableFuture.runAsync(this::startup, executor).exceptionally(cause -> {
                 logger.fatal("Failed to bootstrap the server", cause);
                 Quarkus.asyncExit(1);
                 return null;
@@ -96,11 +96,6 @@ public class QuarkusKeycloakApplication extends KeycloakApplication {
     @Override
     public DefaultKeycloakSessionFactory createSessionFactory() {
         return Arc.container().instance(QuarkusKeycloakSessionFactory.class).get();
-    }
-
-    @Override
-    protected void initAndStart() {
-        // no need - is handled by Quarkus logic and onStartupEvent
     }
 
     @Override
