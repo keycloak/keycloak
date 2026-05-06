@@ -27,7 +27,9 @@ export const OpenIdConnectSettings = ({
   } = useFormContext();
 
   const setupForm = (result: any) => {
-    Object.keys(result).map((k) => setValue(`config.${k}`, result[k]));
+    Object.keys(result).map((k) =>
+      setValue(`config.${k}`, result[k], { shouldDirty: true }),
+    );
   };
 
   const fileUpload = async (obj?: object) => {
