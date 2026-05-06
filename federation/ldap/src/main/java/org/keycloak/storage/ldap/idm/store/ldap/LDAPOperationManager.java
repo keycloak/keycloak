@@ -378,6 +378,10 @@ public class LDAPOperationManager {
     }
 
     public Condition getFilterById(String id) {
+        return getFilterById(id, true);
+    }
+
+    public Condition getFilterById(String id, boolean applyCustomUserFilter) {
         LDAPQueryConditionsBuilder builder = new LDAPQueryConditionsBuilder();
         Condition conditionId;
 
@@ -391,7 +395,7 @@ public class LDAPOperationManager {
             conditionId = builder.equal(getUuidAttributeName(), id);
         }
 
-        if (config.getCustomUserSearchFilter() != null) {
+        if (applyCustomUserFilter && config.getCustomUserSearchFilter() != null) {
             return builder.andCondition(new Condition[]{conditionId, builder.addCustomLDAPFilter(config.getCustomUserSearchFilter())});
         } else {
             return conditionId;
@@ -399,7 +403,11 @@ public class LDAPOperationManager {
     }
 
     public SearchResult lookupById(final LdapName baseDN, final String id, final Collection<String> returningAttributes) {
-        final String filter = getFilterById(id).toFilter();
+        return lookupById(baseDN, id, returningAttributes, true);
+    }
+
+    public SearchResult lookupById(final LdapName baseDN, final String id, final Collection<String> returningAttributes, final boolean applyCustomUserFilter) {
+        final String filter = getFilterById(id, applyCustomUserFilter).toFilter();
 
         try {
             final SearchControls cons = getSearchControls(returningAttributes, this.config.getSearchScope());

@@ -255,7 +255,7 @@ public class LDAPIdentityStore implements IdentityStore {
                     EqualCondition equalCondition = (EqualCondition) condition;
                     if (equalCondition.getParameterName().equalsIgnoreCase(uuidAttrName)) {
                         SearchResult search = this.operationManager
-                                .lookupById(baseDN, equalCondition.getValue().toString(), identityQuery.getReturningLdapAttributes());
+                                .lookupById(baseDN, equalCondition.getValue().toString(), identityQuery.getReturningLdapAttributes(), identityQuery.isUserQuery());
 
                         if (search != null) {
                             results.add(populateAttributedType(search, identityQuery));
