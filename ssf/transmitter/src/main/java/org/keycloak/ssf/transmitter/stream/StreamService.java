@@ -140,8 +140,6 @@ public class StreamService {
 
     protected StreamConfig createStream(ClientModel receiverClient, StreamConfigInputRepresentation input, boolean adminInitiated) {
 
-        checkClient(receiverClient);
-
         SsfProfile profile = resolveReceiverProfile(receiverClient);
 
         // iss / aud / format are transmitter-supplied under SSF 1.0 §8.1.1 and
@@ -159,9 +157,20 @@ public class StreamService {
         // Receiver-writable fields first so validate() sees the delivery
         // configuration the receiver actually supplied.
         replaceReceiverFields(input, streamConfig);
-        applyLegacyFields(input, streamConfig, receiverClient, profile);
 
+        // Cheap, side-effect-free input/URL validation up front so a receiver
+        // with a misconfigured push URL gets the actionable 400 even if it
+        // also has an existing stream that would fail the duplicate guard
+        // below — the receiver fixes the URL before fighting the duplicate.
+        // Also keeps "rejection means no client-state mutation" a guarantee:
+        // applyLegacyFields below (SSE_CAEP profile only) writes a client
+        // attribute, and we don't want a rejected request to leave that
+        // attribute behind.
         validate(streamConfig, receiverClient);
+
+        // Stateful checks AFTER input is known good.
+        checkClient(receiverClient);
+        applyLegacyFields(input, streamConfig, receiverClient, profile);
 
         // Transmitter-supplied identity fields.
         streamConfig.setStreamId(createStreamId(session, streamConfig));
