@@ -469,9 +469,9 @@ public class ClientStreamStore implements SsfStreamStore {
         streamConfig.setStreamId(streamId);
         streamConfig.setIssuer(client.getAttribute(SSF_STREAM_ISSUER_KEY));
         streamConfig.setAudience(splitSet(client.getAttribute(SSF_STREAM_AUDIENCE_STORED_KEY)));
-        streamConfig.setEventsSupported(splitSet(client.getAttribute(SSF_STREAM_EVENTS_SUPPORTED_KEY)));
-        streamConfig.setEventsRequested(splitSet(client.getAttribute(SSF_STREAM_EVENTS_REQUESTED_KEY)));
-        streamConfig.setEventsDelivered(splitSet(client.getAttribute(SSF_STREAM_EVENTS_DELIVERED_KEY)));
+        streamConfig.setEventsSupported(splitAsEventTypeUris(client.getAttribute(SSF_STREAM_EVENTS_SUPPORTED_KEY)));
+        streamConfig.setEventsRequested(splitAsEventTypeUris(client.getAttribute(SSF_STREAM_EVENTS_REQUESTED_KEY)));
+        streamConfig.setEventsDelivered(splitAsEventTypeUris(client.getAttribute(SSF_STREAM_EVENTS_DELIVERED_KEY)));
         streamConfig.setDescription(client.getAttribute(SSF_STREAM_DESCRIPTION_KEY));
         streamConfig.setMinVerificationInterval(parseIntAttribute(client, SSF_STREAM_MIN_VERIFICATION_INTERVAL_KEY));
         streamConfig.setInactivityTimeout(parseIntAttribute(client, SSF_STREAM_INACTIVITY_TIMEOUT_KEY));
@@ -615,9 +615,9 @@ public class ClientStreamStore implements SsfStreamStore {
 
         setOrRemove(client, SSF_STREAM_ISSUER_KEY, streamConfig.getIssuer());
         setOrRemove(client, SSF_STREAM_AUDIENCE_STORED_KEY, joinSet(streamConfig.getAudience()));
-        setOrRemove(client, SSF_STREAM_EVENTS_SUPPORTED_KEY, joinSet(streamConfig.getEventsSupported()));
-        setOrRemove(client, SSF_STREAM_EVENTS_REQUESTED_KEY, joinSet(streamConfig.getEventsRequested()));
-        setOrRemove(client, SSF_STREAM_EVENTS_DELIVERED_KEY, joinSet(streamConfig.getEventsDelivered()));
+        setOrRemove(client, SSF_STREAM_EVENTS_SUPPORTED_KEY, joinAsAliases(streamConfig.getEventsSupported()));
+        setOrRemove(client, SSF_STREAM_EVENTS_REQUESTED_KEY, joinAsAliases(streamConfig.getEventsRequested()));
+        setOrRemove(client, SSF_STREAM_EVENTS_DELIVERED_KEY, joinAsAliases(streamConfig.getEventsDelivered()));
         setOrRemove(client, SSF_STREAM_DESCRIPTION_KEY, streamConfig.getDescription());
         setIntOrRemove(client, SSF_STREAM_MIN_VERIFICATION_INTERVAL_KEY, streamConfig.getMinVerificationInterval());
         setIntOrRemove(client, SSF_STREAM_INACTIVITY_TIMEOUT_KEY, streamConfig.getInactivityTimeout());
@@ -698,6 +698,73 @@ public class ClientStreamStore implements SsfStreamStore {
             }
         }
         return result.isEmpty() ? null : result;
+    }
+
+    /**
+     * Storage-side compaction for the three per-stream event sets
+     * ({@code ssf.stream.eventsSupported}, {@code ssf.stream.eventsRequested},
+     * {@code ssf.stream.eventsDelivered}). The in-memory and wire shapes hold
+     * canonical event-type URIs (e.g.
+     * {@code https://schemas.openid.net/secevent/caep/event-type/credential-change}),
+     * but those URIs are ~80 chars each and a stream may carry up to
+     * {@code MAX_EVENTS_REQUESTED_COUNT}=32 of them across the three sets.
+     * Storing them verbatim in client-attribute columns burns space the
+     * total-blob cap ({@link #MAX_STREAM_CONFIG_JSON_BYTES}) would otherwise
+     * spend on something useful.
+     *
+     * <p>This helper converts each URI to its short alias (e.g.
+     * {@code CaepCredentialChange}, ~30 chars) when the event registry knows
+     * one. Custom event types not registered by any
+     * {@link org.keycloak.ssf.event.SsfEventProviderFactory} fall through
+     * unchanged. {@code joinAsAliases} on save and {@link #splitAsEventTypeUris}
+     * on load are inverse — read-side tolerates both forms so receiver
+     * attributes that pre-date this change continue to load correctly,
+     * and the next save migrates them to the alias form.
+     */
+    protected String joinAsAliases(Set<String> eventTypeUris) {
+        if (eventTypeUris == null || eventTypeUris.isEmpty()) {
+            return null;
+        }
+        SsfEventRegistry registry = Ssf.events().getRegistry();
+        Set<String> compact = new LinkedHashSet<>(eventTypeUris.size());
+        for (String entry : eventTypeUris) {
+            if (entry == null) {
+                continue;
+            }
+            String alias = registry != null ? registry.resolveAliasForEventType(entry) : null;
+            compact.add(alias != null ? alias : entry);
+        }
+        return joinSet(compact);
+    }
+
+    /**
+     * Inverse of {@link #joinAsAliases}: splits the stored string and
+     * resolves each entry back to its canonical event-type URI when it
+     * matches a known alias. Entries that don't match a known alias pass
+     * through unchanged — covers two cases at once:
+     * <ol>
+     *     <li>Legacy URI-form entries written before the alias compaction
+     *         landed; they're already in canonical form, no resolution
+     *         needed.</li>
+     *     <li>Custom event types whose provider factory did not register
+     *         an alias; the URI is the canonical name.</li>
+     * </ol>
+     */
+    protected Set<String> splitAsEventTypeUris(String stored) {
+        Set<String> entries = splitSet(stored);
+        if (entries == null) {
+            return null;
+        }
+        SsfEventRegistry registry = Ssf.events().getRegistry();
+        if (registry == null) {
+            return entries;
+        }
+        Set<String> resolved = new LinkedHashSet<>(entries.size());
+        for (String entry : entries) {
+            String canonical = registry.resolveEventTypeForAlias(entry);
+            resolved.add(canonical != null ? canonical : entry);
+        }
+        return resolved;
     }
 
     protected void deleteStreamConfig(ClientModel client, String streamId) {
