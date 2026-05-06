@@ -54,17 +54,6 @@ import org.jboss.resteasy.reactive.NoCache;
 @Consumes(MediaType.APPLICATION_JSON)
 public interface TestingResource {
 
-    @GET
-    @Path("/time-offset")
-    @Produces(MediaType.APPLICATION_JSON)
-    Map<String, String> getTimeOffset();
-
-    @PUT
-    @Path("/time-offset")
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Produces(MediaType.APPLICATION_JSON)
-    Map<String, String> setTimeOffset(Map<String, String> time);
-
     @POST
     @Path("/poll-event-queue")
     @Produces(MediaType.APPLICATION_JSON)

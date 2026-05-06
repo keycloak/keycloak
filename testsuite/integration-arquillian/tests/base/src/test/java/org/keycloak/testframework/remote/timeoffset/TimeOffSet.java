@@ -3,6 +3,7 @@ package org.keycloak.testframework.remote.timeoffset;
 import java.util.Collections;
 
 import org.keycloak.common.util.Time;
+import org.keycloak.models.utils.ResetTimeOffsetEvent;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 
 public class TimeOffSet {
@@ -16,7 +17,16 @@ public class TimeOffSet {
     public void set(int offset) {
         // adminClient depends on Time.offset for auto-refreshing tokens
         Time.setOffset(offset);
-        test.getTestingClient().testing().setTimeOffset(Collections.singletonMap("offset", String.valueOf(offset)));
+        test.getTestingClient().server().run(
+                session -> {
+                    Time.setOffset(offset);
+
+                    // Time offset was restarted
+                    if (offset == 0) {
+                        session.getKeycloakSessionFactory().publish(new ResetTimeOffsetEvent());
+                    }
+                }
+        );
 
         // force getting new token after time offset has changed
         test.getAdminClient().tokenManager().grantToken();
