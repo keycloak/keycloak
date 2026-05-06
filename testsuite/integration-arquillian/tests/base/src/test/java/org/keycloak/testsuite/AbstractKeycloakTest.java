@@ -58,6 +58,7 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.remote.timeoffset.TimeOffSet;
 import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.arquillian.KcArquillian;
 import org.keycloak.testsuite.arquillian.SuiteContext;
@@ -138,6 +139,8 @@ public abstract class AbstractKeycloakTest {
     protected KeycloakTestingClient testingClient;
 
     protected KeycloakTestingClient.Server runOnServer;
+
+    protected TimeOffSet timeOffSet = new TimeOffSet(this);
 
     @ArquillianResource
     protected OAuthClient oauth;
@@ -707,15 +710,8 @@ public abstract class AbstractKeycloakTest {
     }
 
     protected String invokeTimeOffset(int offset) {
-        // adminClient depends on Time.offset for auto-refreshing tokens
-        Time.setOffset(offset);
-        Map result = testingClient.testing().setTimeOffset(Collections.singletonMap("offset", String.valueOf(offset)));
-
-        // force getting new token after time offset has changed
-        adminClient.tokenManager().grantToken();
-
-
-        return String.valueOf(result);
+        timeOffSet.set(offset);
+        return null;
     }
 
     private void loadConstantsProperties() throws ConfigurationException {
