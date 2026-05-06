@@ -35,6 +35,7 @@ import org.keycloak.admin.client.resource.BearerAuthFilter;
 import org.keycloak.admin.client.token.TokenManager;
 import org.keycloak.admin.ui.rest.model.UIRealmInfo;
 import org.keycloak.admin.ui.rest.model.UIRealmRepresentation;
+import org.keycloak.events.Details;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.AccountRoles;
@@ -48,6 +49,7 @@ import org.keycloak.representations.userprofile.config.UPAttributePermissions;
 import org.keycloak.representations.userprofile.config.UPAttributeRequired;
 import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.representations.userprofile.config.UPConfig.UnmanagedAttributePolicy;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
@@ -237,7 +239,7 @@ public class UIRealmResourceTest extends AbstractTestRealmKeycloakTest {
         Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
         Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
 
-        String userId = events.expectRegister("tbrady@email.com", "tbrady@email.com").assertEvent().getUserId();
+        String userId = EventAssertion.expectRegisterSuccess(events.poll()).clientId(oauth.getClientId()).details(Details.USERNAME, "tbrady@email.com").details(Details.EMAIL, "tbrady@email.com").getEvent().getUserId();
         UserRepresentation user = managedRealm.admin().users().get(userId).toRepresentation();
         assertEquals("Tom", user.getFirstName());
         assertEquals("Brady", user.getLastName());
@@ -268,7 +270,7 @@ public class UIRealmResourceTest extends AbstractTestRealmKeycloakTest {
         Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
         Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
 
-        String userId = events.expectRegister("awood", null).removeDetail("email").assertEvent().getUserId();
+        String userId = EventAssertion.expectRegisterSuccess(events.poll()).clientId(oauth.getClientId()).details(Details.USERNAME, "awood").details(Details.EMAIL, null).getEvent().getUserId();
         UserRepresentation user = managedRealm.admin().users().get(userId).toRepresentation();
         assertEquals("awood", user.getUsername());
         assertEquals("Alice", user.getFirstName());

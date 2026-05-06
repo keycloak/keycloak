@@ -571,7 +571,7 @@ public class UserInfoTest extends AbstractKeycloakTest {
                     .session(accessTokenResponse.getSessionState())
                     .detail(Details.AUTH_METHOD, Details.VALIDATE_ACCESS_TOKEN)
                     .assertEvent();
-            events.assertEmpty();
+            Assertions.assertNull(events.poll());
 
         } finally {
             client.close();

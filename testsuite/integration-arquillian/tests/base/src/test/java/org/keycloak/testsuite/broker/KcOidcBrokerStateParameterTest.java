@@ -18,6 +18,8 @@
 
 package org.keycloak.testsuite.broker;
 
+import org.junit.jupiter.api.Assertions;
+
 import org.keycloak.OAuth2Constants;
 import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.common.util.UriUtils;
@@ -80,7 +82,7 @@ public class KcOidcBrokerStateParameterTest extends AbstractInitializedBaseBroke
                 .error("identity_provider_login_failure")
                 .assertEvent();
 
-        events.assertEmpty();
+        Assertions.assertNull(events.poll());
     }
 
 
@@ -107,7 +109,7 @@ public class KcOidcBrokerStateParameterTest extends AbstractInitializedBaseBroke
                 .error("invalidRequestMessage")
                 .assertEvent();
 
-        events.assertEmpty();
+        Assertions.assertNull(events.poll());
     }
 
 
@@ -161,7 +163,7 @@ public class KcOidcBrokerStateParameterTest extends AbstractInitializedBaseBroke
         driver.navigate().to(consumerEndpointUrl);
         loginExpiredPage.assertCurrent();
 
-        events.assertEmpty();
+        Assertions.assertNull(events.poll());
 
     }
 

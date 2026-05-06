@@ -58,6 +58,7 @@ import org.keycloak.testsuite.rest.representation.AuthenticatorState;
 import org.keycloak.testsuite.updaters.Creator;
 import org.keycloak.testsuite.util.RealmRepUtil;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.util.TokenUtil;
 
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
@@ -398,11 +399,13 @@ public class CustomFlowTest extends AbstractFlowTest {
         assertEquals(accessToken.getSessionState(), refreshedAccessToken.getSessionState());
         assertEquals(accessToken.getSessionState(), refreshedRefreshToken.getSessionState());
 
-        events.expectRefresh(refreshToken.getId(), refreshToken.getSessionState())
-                .user(userId)
-                .client(clientId)
-                .detail(Details.CLIENT_AUTH_METHOD, PassThroughClientAuthenticator.PROVIDER_ID)
-                .assertEvent();
+        EventAssertion.expectRefreshTokenSuccess(events.poll())
+                .sessionId(refreshToken.getSessionState())
+                .userId(userId)
+                .clientId(clientId)
+                .details(Details.REFRESH_TOKEN_ID, refreshToken.getId())
+                .details(Details.REFRESH_TOKEN_TYPE, TokenUtil.TOKEN_TYPE_REFRESH)
+                .details(Details.CLIENT_AUTH_METHOD, PassThroughClientAuthenticator.PROVIDER_ID);
     }
 
 

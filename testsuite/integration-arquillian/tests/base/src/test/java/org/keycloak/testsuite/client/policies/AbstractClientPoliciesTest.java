@@ -149,6 +149,7 @@ import org.keycloak.testsuite.util.oauth.IntrospectionResponse;
 import org.keycloak.testsuite.util.oauth.LogoutResponse;
 import org.keycloak.testsuite.util.oauth.PkceGenerator;
 import org.keycloak.util.JsonSerialization;
+import org.keycloak.util.TokenUtil;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -1393,7 +1394,12 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
         String code = oauth.parseLoginResponse().getCode();
         AccessTokenResponse res = oauth.doAccessTokenRequest(code);
         assertEquals(200, res.getStatusCode());
-        events.expectCodeToToken(codeId, sessionId).client(clientId).assertEvent();
+        EventAssertion.expectCodeToTokenSuccess(events.poll())
+                .sessionId(sessionId)
+                .clientId(clientId)
+                .details(Details.CODE_ID, codeId)
+                .details(Details.REFRESH_TOKEN_TYPE, TokenUtil.TOKEN_TYPE_REFRESH)
+                .details(Details.CLIENT_AUTH_METHOD, ClientIdAndSecretAuthenticator.PROVIDER_ID);
 
         return res;
     }
@@ -1413,7 +1419,12 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
 
         AccessTokenResponse res = oauth.accessTokenRequest(code).codeVerifier(pkceGenerator).send();
         assertEquals(200, res.getStatusCode());
-        events.expectCodeToToken(codeId, sessionId).client(clientId).assertEvent();
+        EventAssertion.expectCodeToTokenSuccess(events.poll())
+                .sessionId(sessionId)
+                .clientId(clientId)
+                .details(Details.CODE_ID, codeId)
+                .details(Details.REFRESH_TOKEN_TYPE, TokenUtil.TOKEN_TYPE_REFRESH)
+                .details(Details.CLIENT_AUTH_METHOD, ClientIdAndSecretAuthenticator.PROVIDER_ID);
 
         AccessToken token = oauth.verifyToken(res.getAccessToken());
         String userId = findUserByUsername(adminClient.realm(REALM_NAME), userName).getId();
@@ -1430,7 +1441,12 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
 
         AccessTokenResponse refreshResponse = oauth.doRefreshTokenRequest(refreshTokenString);
         assertEquals(200, refreshResponse.getStatusCode());
-        events.expectRefresh(refreshToken.getId(), sessionId).client(clientId).assertEvent();
+        EventAssertion.expectRefreshTokenSuccess(events.poll())
+                .sessionId(sessionId)
+                .clientId(clientId)
+                .details(Details.REFRESH_TOKEN_ID, refreshToken.getId())
+                .details(Details.REFRESH_TOKEN_TYPE, TokenUtil.TOKEN_TYPE_REFRESH)
+                .details(Details.CLIENT_AUTH_METHOD, ClientIdAndSecretAuthenticator.PROVIDER_ID);
 
         AccessToken refreshedToken = oauth.verifyToken(refreshResponse.getAccessToken());
         RefreshToken refreshedRefreshToken = oauth.parseRefreshToken(refreshResponse.getRefreshToken());
@@ -1449,10 +1465,11 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
         AuthorizationEndpointResponse response = oauth.parseLoginResponse();
         assertEquals(OAuthErrorException.INVALID_REQUEST, response.getError());
         assertEquals("Missing parameter: code_challenge_method", response.getErrorDescription());
-        events.expectClientPolicyError(EventType.LOGIN_ERROR, OAuthErrorException.INVALID_REQUEST,
-                Details.CLIENT_POLICY_ERROR, OAuthErrorException.INVALID_REQUEST,
-                "Missing parameter: code_challenge_method").client(clientId).user((String) null)
-                .assertEvent();
+        EventAssertion.assertError(events.poll()).type(EventType.LOGIN_ERROR).error(OAuthErrorException.INVALID_REQUEST)
+                .details(Details.REASON, Details.CLIENT_POLICY_ERROR)
+                .details(Details.CLIENT_POLICY_ERROR, OAuthErrorException.INVALID_REQUEST)
+                .details(Details.CLIENT_POLICY_ERROR_DETAIL, "Missing parameter: code_challenge_method")
+                .clientId(clientId).userId(null);
     }
 
     protected void failLoginByNotFollowingPKCEWithoutClientPolicyValidation(String clientId) {
@@ -1472,9 +1489,14 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
         AuthorizationEndpointResponse response = oauth.parseLoginResponse();
         assertEquals(OAuthErrorException.INVALID_REQUEST, response.getError());
         assertEquals(errorDescription, response.getErrorDescription());
-        events.expectClientPolicyError(EventType.LOGIN_ERROR, OAuthErrorException.INVALID_REQUEST,
-                Details.CLIENT_POLICY_ERROR, OAuthErrorException.INVALID_REQUEST, errorDescription).client(clientId)
-                .user((String) null).assertEvent();
+        EventAssertion.assertError(events.poll())
+                .type(EventType.LOGIN_ERROR)
+                .error(OAuthErrorException.INVALID_REQUEST)
+                .details(Details.REASON, Details.CLIENT_POLICY_ERROR)
+                .details(Details.CLIENT_POLICY_ERROR, OAuthErrorException.INVALID_REQUEST)
+                .details(Details.CLIENT_POLICY_ERROR_DETAIL, errorDescription)
+                .clientId(clientId)
+                .userId(null);
     }
 
     protected void failLoginWithoutNonce(String clientId) {

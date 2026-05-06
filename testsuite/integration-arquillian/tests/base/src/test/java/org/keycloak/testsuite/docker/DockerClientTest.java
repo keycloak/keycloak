@@ -211,7 +211,7 @@ public class DockerClientTest extends AbstractKeycloakTest {
     private void assertLogin(UserRepresentation dockerUser) {
         EventAssertion.assertSuccess(events.poll())
                 .type(EventType.LOGIN)
-                .isCodeId()
+                .hasCodeId()
                 .clientId(CLIENT_ID)
                 .userId(dockerUser.getId())
                 .details(Details.AUTH_METHOD, DockerAuthV2Protocol.LOGIN_PROTOCOL)

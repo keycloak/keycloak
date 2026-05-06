@@ -111,13 +111,13 @@ public class TrustStoreEmailTest extends AbstractTestRealmKeycloakTest {
         oauth.openLoginForm();
         testRealmLoginPage.form().login(user.getUsername(), "password");
 
-        EventRepresentation sendEvent = events.expectRequiredAction(EventType.SEND_VERIFY_EMAIL)
-                .user(user.getId())
-                .client("test-app")
-                .detail(Details.USERNAME, "test-user@localhost")
-                .detail(Details.EMAIL, "test-user@localhost")
-                .removeDetail(Details.REDIRECT_URI)
-                .assertEvent();
+        EventRepresentation sendEvent = EventAssertion.expectRequiredAction(events.poll()).type(EventType.SEND_VERIFY_EMAIL)
+                .userId(user.getId())
+                .clientId("test-app")
+                .details(Details.USERNAME, "test-user@localhost")
+                .details(Details.EMAIL, "test-user@localhost")
+                .withoutDetails(Details.REDIRECT_URI)
+                .getEvent();
         String mailCodeId = sendEvent.getDetails().get(Details.CODE_ID);
 
         assertEquals("You need to verify your email address to activate your account.",
@@ -130,14 +130,13 @@ public class TrustStoreEmailTest extends AbstractTestRealmKeycloakTest {
 
         driver.navigate().to(verifyEmailUrl);
 
-        events.expectRequiredAction(EventType.VERIFY_EMAIL)
-                .user(user.getId())
-                .client("test-app")
-                .detail(Details.USERNAME, "test-user@localhost")
-                .detail(Details.EMAIL, "test-user@localhost")
-                .detail(Details.CODE_ID, mailCodeId)
-                .removeDetail(Details.REDIRECT_URI)
-                .assertEvent();
+        EventAssertion.expectRequiredAction(events.poll()).type(EventType.VERIFY_EMAIL)
+                .userId(user.getId())
+                .clientId("test-app")
+                .details(Details.USERNAME, "test-user@localhost")
+                .details(Details.EMAIL, "test-user@localhost")
+                .details(Details.CODE_ID, mailCodeId)
+                .withoutDetails(Details.REDIRECT_URI);
 
         EventAssertion.expectLoginSuccess(events.poll())
                 .clientId("test-app")
@@ -160,14 +159,13 @@ public class TrustStoreEmailTest extends AbstractTestRealmKeycloakTest {
         oauth.openLoginForm();
         loginPage.form().login(user.getUsername(), "password");
 
-        events.expectRequiredAction(EventType.SEND_VERIFY_EMAIL_ERROR)
+        EventAssertion.expectRequiredAction(events.poll()).type(EventType.SEND_VERIFY_EMAIL_ERROR)
                 .error(Errors.EMAIL_SEND_FAILED)
-                .user(user.getId())
-                .client("test-app")
-                .detail(Details.USERNAME, "test-user@localhost")
-                .detail(Details.EMAIL, "test-user@localhost")
-                .removeDetail(Details.REDIRECT_URI)
-                .assertEvent();
+                .userId(user.getId())
+                .clientId("test-app")
+                .details(Details.USERNAME, "test-user@localhost")
+                .details(Details.EMAIL, "test-user@localhost")
+                .withoutDetails(Details.REDIRECT_URI);
 
         // Email wasn't send
         Assertions.assertNull(SslMailServer.getLastReceivedMessage());
@@ -198,14 +196,13 @@ public class TrustStoreEmailTest extends AbstractTestRealmKeycloakTest {
             oauth.openLoginForm();
             loginPage.form().login(user.getUsername(), "password");
 
-            events.expectRequiredAction(EventType.SEND_VERIFY_EMAIL_ERROR)
+            EventAssertion.expectRequiredAction(events.poll()).type(EventType.SEND_VERIFY_EMAIL_ERROR)
                     .error(Errors.EMAIL_SEND_FAILED)
-                    .user(user.getId())
-                    .client("test-app")
-                    .detail(Details.USERNAME, "test-user@localhost")
-                    .detail(Details.EMAIL, "test-user@localhost")
-                    .removeDetail(Details.REDIRECT_URI)
-                    .assertEvent();
+                    .userId(user.getId())
+                    .clientId("test-app")
+                    .details(Details.USERNAME, "test-user@localhost")
+                    .details(Details.EMAIL, "test-user@localhost")
+                    .withoutDetails(Details.REDIRECT_URI);
 
             // Email wasn't send
             Assertions.assertNull(SslMailServer.getLastReceivedMessage());

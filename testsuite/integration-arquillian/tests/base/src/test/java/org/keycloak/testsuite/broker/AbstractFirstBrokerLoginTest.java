@@ -26,6 +26,7 @@ import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.storage.UserStorageProvider;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testframework.realm.FederatedIdentityBuilder;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.AdminApiUtil;
@@ -1353,28 +1354,26 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
 
         RealmRepresentation consumerRealmRep = adminClient.realm(bc.consumerRealmName()).toRepresentation();
 
-        events.expectAccount(EventType.IDENTITY_PROVIDER_FIRST_LOGIN).client("broker-app")
-                .realm(consumerRealmRep).user((String)null)
-                .detail(Details.IDENTITY_PROVIDER, bc.getIDPAlias())
-                .detail(Details.IDENTITY_PROVIDER_USERNAME, "no-first-name")
-                .assertEvent(getFirstConsumerEvent());
+        EventAssertion.assertSuccess(getFirstConsumerEvent()).type(EventType.IDENTITY_PROVIDER_FIRST_LOGIN).clientId("broker-app")
+                .userId(null)
+                .details(Details.IDENTITY_PROVIDER, bc.getIDPAlias())
+                .details(Details.IDENTITY_PROVIDER_USERNAME, "no-first-name");
 
-        events.expectAccount(EventType.UPDATE_PROFILE).client("broker-app")
-                .realm(consumerRealmRep).user((String)null)
-                .detail(Details.CONTEXT, UserProfileContext.IDP_REVIEW.name())
-                .assertEvent(getFirstConsumerEvent());
+        EventAssertion.assertSuccess(getFirstConsumerEvent()).type(EventType.UPDATE_PROFILE).clientId("broker-app")
+                .userId(null)
+                .details(Details.CONTEXT, UserProfileContext.IDP_REVIEW.name());
 
-        events.expectAccount(EventType.REGISTER).client("broker-app")
-                .realm(consumerRealmRep).user(Matchers.any(String.class)).session((String) null)
-                .detail(Details.IDENTITY_PROVIDER_USERNAME, "no-first-name")
-                .detail(Details.REGISTER_METHOD, "broker")
-                .assertEvent(getFirstConsumerEvent());
+        EventAssertion.assertSuccess(getFirstConsumerEvent()).type(EventType.REGISTER).clientId("broker-app")
+                .hasUserId()
+                .sessionId(null)
+                .details(Details.IDENTITY_PROVIDER_USERNAME, "no-first-name")
+                .details(Details.REGISTER_METHOD, "broker");
 
-        events.expectAccount(EventType.LOGIN).client("broker-app")
-                .realm(consumerRealmRep).user(Matchers.any(String.class)).session(Matchers.any(String.class))
-                .detail(Details.IDENTITY_PROVIDER_USERNAME, "no-first-name")
-                .detail(Details.IDENTITY_PROVIDER, bc.getIDPAlias())
-                .assertEvent(getFirstConsumerEvent());
+        EventAssertion.assertSuccess(getFirstConsumerEvent()).type(EventType.LOGIN).clientId("broker-app")
+                .hasUserId()
+                .hasSessionId()
+                .details(Details.IDENTITY_PROVIDER_USERNAME, "no-first-name")
+                .details(Details.IDENTITY_PROVIDER, bc.getIDPAlias());
     }
 
     @Test
@@ -1408,36 +1407,36 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
 
         RealmRepresentation consumerRealmRep = adminClient.realm(bc.consumerRealmName()).toRepresentation();
 
-        events.expectAccount(EventType.IDENTITY_PROVIDER_FIRST_LOGIN).client("broker-app")
-                .realm(consumerRealmRep).user((String)null)
-                .detail(Details.IDENTITY_PROVIDER, bc.getIDPAlias())
-                .detail(Details.IDENTITY_PROVIDER_USERNAME, "no-first-name")
-                .assertEvent(getFirstConsumerEvent());
+        EventAssertion.assertSuccess(getFirstConsumerEvent()).type(EventType.IDENTITY_PROVIDER_FIRST_LOGIN)
+                .clientId("broker-app")
+                .userId(null)
+                .details(Details.IDENTITY_PROVIDER, bc.getIDPAlias())
+                .details(Details.IDENTITY_PROVIDER_USERNAME, "no-first-name");
 
-        events.expectAccount(EventType.UPDATE_EMAIL).client("broker-app")
-                .realm(consumerRealmRep).user((String)null).session((String) null)
-            .detail(Details.CONTEXT, UserProfileContext.IDP_REVIEW.name())
-            .detail(Details.IDENTITY_PROVIDER_USERNAME, "no-first-name")
-            .detail(Details.PREVIOUS_EMAIL, "no-first-name@localhost.com")
-            .detail(Details.UPDATED_EMAIL, "new-email@localhost.com")
-            .assertEvent(getFirstConsumerEvent());
+        EventAssertion.assertSuccess(getFirstConsumerEvent()).type(EventType.UPDATE_EMAIL)
+            .clientId("broker-app")
+            .userId(null)
+            .sessionId(null)
+            .details(Details.CONTEXT, UserProfileContext.IDP_REVIEW.name())
+            .details(Details.IDENTITY_PROVIDER_USERNAME, "no-first-name")
+            .details(Details.PREVIOUS_EMAIL, "no-first-name@localhost.com")
+            .details(Details.UPDATED_EMAIL, "new-email@localhost.com");
 
-        events.expectAccount(EventType.UPDATE_PROFILE).client("broker-app")
-                .realm(consumerRealmRep).user((String)null)
-                .detail(Details.CONTEXT, UserProfileContext.IDP_REVIEW.name())
-                .assertEvent(getFirstConsumerEvent());
+        EventAssertion.assertSuccess(getFirstConsumerEvent()).type(EventType.UPDATE_PROFILE).clientId("broker-app")
+                .userId(null)
+                .details(Details.CONTEXT, UserProfileContext.IDP_REVIEW.name());
 
-        events.expectAccount(EventType.REGISTER).client("broker-app")
-                .realm(consumerRealmRep).user(Matchers.any(String.class)).session((String) null)
-            .detail(Details.IDENTITY_PROVIDER_USERNAME, "no-first-name")
-            .detail(Details.REGISTER_METHOD, "broker")
-            .assertEvent(events.poll());
+        EventAssertion.assertSuccess(events.poll()).type(EventType.REGISTER).clientId("broker-app")
+            .hasUserId()
+            .sessionId(null)
+            .details(Details.IDENTITY_PROVIDER_USERNAME, "no-first-name")
+            .details(Details.REGISTER_METHOD, "broker");
 
-        events.expectAccount(EventType.LOGIN).client("broker-app")
-                .realm(consumerRealmRep).user(Matchers.any(String.class)).session(Matchers.any(String.class))
-            .detail(Details.IDENTITY_PROVIDER_USERNAME, "no-first-name")
-            .detail(Details.IDENTITY_PROVIDER, bc.getIDPAlias())
-            .assertEvent(events.poll());
+        EventAssertion.assertSuccess(events.poll()).type(EventType.LOGIN).clientId("broker-app")
+            .hasUserId()
+            .hasSessionId()
+            .details(Details.IDENTITY_PROVIDER_USERNAME, "no-first-name")
+            .details(Details.IDENTITY_PROVIDER, bc.getIDPAlias());
     }
 
     protected EventRepresentation getFirstConsumerEvent() {
@@ -1684,20 +1683,30 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         RealmRepresentation consumerRealmRep = consumerRealm.toRepresentation();
 
         // one for showing the confirm page
-        events.expectIdentityProviderFirstLogin(consumerRealmRep, bc.getIDPAlias(), bc.getUserLogin())
-                .assertEvent(getFirstConsumerEvent());
+        EventAssertion.assertSuccess(getFirstConsumerEvent())
+                .type(EventType.IDENTITY_PROVIDER_FIRST_LOGIN)
+                .hasCodeId()
+                .userId(null)
+                .clientId("broker-app")
+                .details(Details.IDENTITY_PROVIDER, bc.getIDPAlias())
+                .details(Details.IDENTITY_PROVIDER_USERNAME, bc.getUserLogin());
         // one for submitting the confirmAction
-        events.expectIdentityProviderFirstLogin(consumerRealmRep, bc.getIDPAlias(), bc.getUserLogin())
-                .assertEvent(getFirstConsumerEvent());
+        EventAssertion.assertSuccess(getFirstConsumerEvent())
+                .type(EventType.IDENTITY_PROVIDER_FIRST_LOGIN)
+                .hasCodeId()
+                .userId(null)
+                .clientId("broker-app")
+                .details(Details.IDENTITY_PROVIDER, bc.getIDPAlias())
+                .details(Details.IDENTITY_PROVIDER_USERNAME, bc.getUserLogin());
 
-        events.expect(EventType.FEDERATED_IDENTITY_OVERRIDE_LINK)
-                .client("broker-app")
-                .realm(consumerRealmRep)
-                .user(createdUser)
-                .detail(Details.IDENTITY_PROVIDER, bc.getIDPAlias())
-                .detail(Details.IDENTITY_PROVIDER_USERNAME, bc.getUserLogin())
-                .detail(Details.PREF_PREVIOUS + Details.IDENTITY_PROVIDER_USERNAME, "username")
-                .assertEvent(getFirstConsumerEvent());
+        EventAssertion.assertSuccess(getFirstConsumerEvent())
+                .type(EventType.FEDERATED_IDENTITY_OVERRIDE_LINK)
+                .hasCodeId()
+                .clientId("broker-app")
+                .userId(createdUser)
+                .details(Details.IDENTITY_PROVIDER, bc.getIDPAlias())
+                .details(Details.IDENTITY_PROVIDER_USERNAME, bc.getUserLogin())
+                .details(Details.PREF_PREVIOUS + Details.IDENTITY_PROVIDER_USERNAME, "username");
     }
 
     private Runnable toggleRegistrationAllowed(String realmName, boolean registrationAllowed) {

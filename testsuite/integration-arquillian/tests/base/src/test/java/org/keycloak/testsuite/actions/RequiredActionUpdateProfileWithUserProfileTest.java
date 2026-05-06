@@ -278,10 +278,9 @@ public class RequiredActionUpdateProfileWithUserProfileTest extends AbstractTest
 
         updateProfilePage.prepareUpdate().username(USERNAME1).firstName("New first").lastName("").email("new@email.com").submit();
 
-        events.expectRequiredAction(EventType.UPDATE_PROFILE).detail(Details.PREVIOUS_FIRST_NAME, "Tom").detail(Details.UPDATED_FIRST_NAME, "New first")
-                .detail(Details.PREVIOUS_LAST_NAME, "Brady")
-                .detail(Details.PREVIOUS_EMAIL, USERNAME1).detail(Details.UPDATED_EMAIL, "new@email.com")
-                .assertEvent();
+        EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_PROFILE).details(Details.PREVIOUS_FIRST_NAME, "Tom").details(Details.UPDATED_FIRST_NAME, "New first")
+                .details(Details.PREVIOUS_LAST_NAME, "Brady")
+                .details(Details.PREVIOUS_EMAIL, USERNAME1).details(Details.UPDATED_EMAIL, "new@email.com");
         Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
         EventAssertion.expectLoginSuccess(events.poll());
@@ -433,11 +432,10 @@ public class RequiredActionUpdateProfileWithUserProfileTest extends AbstractTest
                 .department("DepartmentCC").submit();
 
         // we also test additional attribute configured to be audited in the event
-        events.expectRequiredAction(EventType.UPDATE_PROFILE)
-                .detail(Details.PREVIOUS_FIRST_NAME, "Tom").detail(Details.UPDATED_FIRST_NAME, "FirstCC")
-                .detail(Details.PREVIOUS_LAST_NAME, "Brady").detail(Details.UPDATED_LAST_NAME, "LastCC")
-                .detail(Details.PREF_UPDATED + "department", "DepartmentCC")
-                .assertEvent();
+        EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_PROFILE)
+                .details(Details.PREVIOUS_FIRST_NAME, "Tom").details(Details.UPDATED_FIRST_NAME, "FirstCC")
+                .details(Details.PREVIOUS_LAST_NAME, "Brady").details(Details.UPDATED_LAST_NAME, "LastCC")
+                .details(Details.PREF_UPDATED + "department", "DepartmentCC");
 
         Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
         Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
@@ -473,10 +471,10 @@ public class RequiredActionUpdateProfileWithUserProfileTest extends AbstractTest
         updateProfilePage.prepareUpdate().username(USERNAME1).firstName("FirstCC").lastName("LastCC").email(USERNAME1)
                 .department("DepartmentCC").submit();
 
-        events.expectRequiredAction(EventType.UPDATE_PROFILE).client(client_scope_optional.getClientId())
-                .detail(Details.PREVIOUS_FIRST_NAME, "Tom").detail(Details.UPDATED_FIRST_NAME, "FirstCC")
-                .detail(Details.PREVIOUS_LAST_NAME, "Brady").detail(Details.UPDATED_LAST_NAME, "LastCC")
-                .assertEvent();
+        EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_PROFILE).clientId(client_scope_optional.getClientId())
+                .details(Details.PREVIOUS_FIRST_NAME, "Tom").details(Details.UPDATED_FIRST_NAME, "FirstCC")
+                .details(Details.PREVIOUS_LAST_NAME, "Brady").details(Details.UPDATED_LAST_NAME, "LastCC")
+                ;
 
 
         Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());

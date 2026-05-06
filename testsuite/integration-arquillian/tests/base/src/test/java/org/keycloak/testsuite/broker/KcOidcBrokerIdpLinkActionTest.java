@@ -215,7 +215,7 @@ public class KcOidcBrokerIdpLinkActionTest extends AbstractInitializedBaseBroker
                     .detail(Details.USERNAME, consumerUsername)
                     .assertEvent();
 
-            events.assertEmpty();
+            Assertions.assertNull(events.poll());
         });
     }
 
@@ -254,7 +254,7 @@ public class KcOidcBrokerIdpLinkActionTest extends AbstractInitializedBaseBroker
             // Consumer - rejected provider consent screen event propagated
             assertConsumerFailedLinkEvents(consumerRealmId, consumerUserId, consumerUsername, Errors.REJECTED_BY_USER, true);
 
-            events.assertEmpty();
+            Assertions.assertNull(events.poll());
         });
     }
 
@@ -289,7 +289,7 @@ public class KcOidcBrokerIdpLinkActionTest extends AbstractInitializedBaseBroker
             assertProviderEventsSuccess(providerRealmId, providerUserId);
             assertConsumerFailedLinkEvents(consumerRealmId, consumerUserId, consumerUsername, Messages.IDENTITY_PROVIDER_ALREADY_LINKED, false);
 
-            events.assertEmpty();
+            Assertions.assertNull(events.poll());
         });
     }
 
@@ -320,7 +320,7 @@ public class KcOidcBrokerIdpLinkActionTest extends AbstractInitializedBaseBroker
         assertEvents((providerRealmId, providerUserId, consumerRealmId, consumerUserId, consumerUsername) -> {
             assertConsumerFailedLinkEvents(consumerRealmId, consumerUserId, consumerUsername, Errors.NOT_ALLOWED, true);
 
-            events.assertEmpty();
+            Assertions.assertNull(events.poll());
         });
 
     }
@@ -438,7 +438,7 @@ public class KcOidcBrokerIdpLinkActionTest extends AbstractInitializedBaseBroker
                     .error(Errors.REJECTED_BY_USER)
                     .assertEvent();
 
-            events.assertEmpty();
+            Assertions.assertNull(events.poll());
         });
     }
 
@@ -539,7 +539,7 @@ public class KcOidcBrokerIdpLinkActionTest extends AbstractInitializedBaseBroker
                 .detail(Details.USERNAME, username)
                 .assertEvent();
 
-        events.assertEmpty();
+        Assertions.assertNull(events.poll());
     }
 
     private void assertConsumerFailedLinkEvents(String consumerRealmId, String consumerUserId, String consumerUsername, String expectedError, boolean expectLoginEvent) {
@@ -562,7 +562,7 @@ public class KcOidcBrokerIdpLinkActionTest extends AbstractInitializedBaseBroker
                     .assertEvent();
         }
 
-        events.assertEmpty();
+        Assertions.assertNull(events.poll());
     }
 
 

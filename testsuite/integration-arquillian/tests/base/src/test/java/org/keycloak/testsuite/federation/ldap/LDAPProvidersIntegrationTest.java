@@ -626,7 +626,7 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
         UserResource user = AdminApiUtil.findUserByUsernameId(managedRealm.admin(), username);
         String userId = user.toRepresentation().getId();
 
-        events.expectRegister(username, email).assertEvent();
+        EventAssertion.assertSuccess(events.poll()).type(EventType.REGISTER).userId(userId).clientId(oauth.getClientId()).details(Details.USERNAME, username).details(Details.EMAIL, email);
         EventRepresentation loginEvent = EventAssertion.expectLoginSuccess(events.poll()).userId(userId).getEvent();
         AccessTokenResponse tokenResponse = sendTokenRequestAndGetResponse(loginEvent);
         appPage.logout(tokenResponse.getIdToken());

@@ -129,10 +129,9 @@ public class RequiredActionUpdateProfileTest extends AbstractChangeImportedUserP
 
         updateProfilePage.prepareUpdate().username("test-user@localhost").firstName("New first").lastName("New last").email("new@email.com").submit();
 
-        events.expectRequiredAction(EventType.UPDATE_PROFILE).detail(Details.PREVIOUS_FIRST_NAME, "Tom").detail(Details.UPDATED_FIRST_NAME, "New first")
-                .detail(Details.PREVIOUS_LAST_NAME, "Brady").detail(Details.UPDATED_LAST_NAME, "New last")
-                .detail(Details.PREVIOUS_EMAIL, "test-user@localhost").detail(Details.UPDATED_EMAIL, "new@email.com")
-                .assertEvent();
+        EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_PROFILE).details(Details.PREVIOUS_FIRST_NAME, "Tom").details(Details.UPDATED_FIRST_NAME, "New first")
+                .details(Details.PREVIOUS_LAST_NAME, "Brady").details(Details.UPDATED_LAST_NAME, "New last")
+                .details(Details.PREVIOUS_EMAIL, "test-user@localhost").details(Details.UPDATED_EMAIL, "new@email.com");
         Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
         EventAssertion.expectLoginSuccess(events.poll());
@@ -161,7 +160,7 @@ public class RequiredActionUpdateProfileTest extends AbstractChangeImportedUserP
 
         EventAssertion.assertSuccess(events.poll())
                 .type(EventType.UPDATE_PROFILE)
-                .isCodeId()
+                .hasCodeId()
                 .sessionId(null)
                 .userId(userId)
                 .details(Details.USERNAME, "john-doh@localhost")
@@ -202,7 +201,7 @@ public class RequiredActionUpdateProfileTest extends AbstractChangeImportedUserP
         Assertions.assertEquals("new@email.com", updateProfilePage.getEmail());
         Assertions.assertEquals("Please specify this field.", updateProfilePage.getInputErrors().getFirstNameError());
 
-        events.assertEmpty();
+        Assertions.assertNull(events.poll());
     }
 
     @Test
@@ -224,7 +223,7 @@ public class RequiredActionUpdateProfileTest extends AbstractChangeImportedUserP
 
         Assertions.assertEquals("Please specify this field.", updateProfilePage.getInputErrors().getLastNameError());
 
-        events.assertEmpty();
+        Assertions.assertNull(events.poll());
     }
 
     @Test
@@ -250,7 +249,7 @@ public class RequiredActionUpdateProfileTest extends AbstractChangeImportedUserP
                 containsString("Please specify this field")
         ));
 
-        events.assertEmpty();
+        Assertions.assertNull(events.poll());
     }
 
     @Test
@@ -273,7 +272,7 @@ public class RequiredActionUpdateProfileTest extends AbstractChangeImportedUserP
 
         Assertions.assertEquals("Invalid email address.", updateProfilePage.getInputErrors().getEmailError());
 
-        events.assertEmpty();
+        Assertions.assertNull(events.poll());
     }
 
     @Test
@@ -296,7 +295,7 @@ public class RequiredActionUpdateProfileTest extends AbstractChangeImportedUserP
 
         Assertions.assertEquals("Please specify username.", updateProfilePage.getInputErrors().getUsernameError());
 
-        events.assertEmpty();
+        Assertions.assertNull(events.poll());
     }
 
     @Test
@@ -319,7 +318,7 @@ public class RequiredActionUpdateProfileTest extends AbstractChangeImportedUserP
 
         Assertions.assertEquals("Username already exists.", updateProfilePage.getInputErrors().getUsernameError());
 
-        events.assertEmpty();
+        Assertions.assertNull(events.poll());
     }
 
     @Test
@@ -342,7 +341,7 @@ public class RequiredActionUpdateProfileTest extends AbstractChangeImportedUserP
 
         Assertions.assertEquals("Email already exists.", updateProfilePage.getInputErrors().getEmailError());
 
-        events.assertEmpty();
+        Assertions.assertNull(events.poll());
     }
 
     @Test
@@ -367,7 +366,7 @@ public class RequiredActionUpdateProfileTest extends AbstractChangeImportedUserP
 
         Assertions.assertEquals("Username already exists.", updateProfilePage.getInputErrors().getUsernameError());
 
-        events.assertEmpty();
+        Assertions.assertNull(events.poll());
     }
 
     @Test
@@ -392,7 +391,7 @@ public class RequiredActionUpdateProfileTest extends AbstractChangeImportedUserP
 
         Assertions.assertEquals("Email already exists.", updateProfilePage.getInputErrors().getEmailError());
 
-        events.assertEmpty();
+        Assertions.assertNull(events.poll());
     }
 
     @Test
@@ -439,7 +438,7 @@ public class RequiredActionUpdateProfileTest extends AbstractChangeImportedUserP
 
             updateProfilePage.prepareUpdate().username("test-user@localhost").firstName("New first").lastName("New last").email("new@email.com").submit();
 
-            events.expectRequiredAction(EventType.UPDATE_PROFILE).detail(Details.CONTEXT, UserProfileContext.UPDATE_PROFILE.name()).detail(Details.PREVIOUS_EMAIL, "test-user@localhost").detail(Details.UPDATED_EMAIL, "new@email.com").assertEvent();
+            EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_PROFILE).details(Details.CONTEXT, UserProfileContext.UPDATE_PROFILE.name()).details(Details.PREVIOUS_EMAIL, "test-user@localhost").details(Details.UPDATED_EMAIL, "new@email.com");
 
             Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 

@@ -24,6 +24,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
+import org.junit.jupiter.api.Assertions;
+
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
@@ -38,6 +40,7 @@ import org.keycloak.representations.idm.UserProfileMetadata;
 import org.keycloak.representations.userprofile.config.UPAttribute;
 import org.keycloak.representations.userprofile.config.UPAttributePermissions;
 import org.keycloak.representations.userprofile.config.UPConfig;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.broker.util.SimpleHttpDefault;
 import org.keycloak.testsuite.util.userprofile.UserProfileUtil;
@@ -347,17 +350,18 @@ public class AccountRestServiceWithUserProfileTest extends AbstractRestServiceTe
             user = updateAndGet(user);
 
             //skip login to the REST API event
-            events.expectAccount(EventType.UPDATE_PROFILE).user(user.getId())
-                .detail(Details.CONTEXT, UserProfileContext.ACCOUNT.name())
-                .detail(Details.PREVIOUS_EMAIL, originalEmail)
-                .detail(Details.UPDATED_EMAIL, "bobby@localhost")
-                .detail(Details.PREVIOUS_FIRST_NAME, originalFirstName)
-                .detail(Details.PREVIOUS_LAST_NAME, originalLastName)
-                .detail(Details.UPDATED_FIRST_NAME, "Homer")
-                .detail(Details.UPDATED_LAST_NAME, "Simpsons")
-                .detail(Details.PREF_UPDATED+"attr2", "val22")
-                .assertEvent();
-            events.assertEmpty();
+            EventAssertion.assertSuccess(events.poll()).type(EventType.UPDATE_PROFILE)
+                .userId(user.getId())
+                .clientId("account")
+                .details(Details.CONTEXT, UserProfileContext.ACCOUNT.name())
+                .details(Details.PREVIOUS_EMAIL, originalEmail)
+                .details(Details.UPDATED_EMAIL, "bobby@localhost")
+                .details(Details.PREVIOUS_FIRST_NAME, originalFirstName)
+                .details(Details.PREVIOUS_LAST_NAME, originalLastName)
+                .details(Details.UPDATED_FIRST_NAME, "Homer")
+                .details(Details.UPDATED_LAST_NAME, "Simpsons")
+                .details(Details.PREF_UPDATED+"attr2", "val22");
+            Assertions.assertNull(events.poll());
             
         } finally {
             RealmRepresentation realmRep = adminClient.realm("test").toRepresentation();

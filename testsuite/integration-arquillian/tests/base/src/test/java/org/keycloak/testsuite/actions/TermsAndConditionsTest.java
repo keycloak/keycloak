@@ -99,7 +99,7 @@ public class TermsAndConditionsTest extends AbstractChangeImportedUserPasswordsT
 
         termsPage.acceptTerms();
 
-        events.expectRequiredAction(EventType.CUSTOM_REQUIRED_ACTION).removeDetail(Details.REDIRECT_URI).detail(Details.CUSTOM_REQUIRED_ACTION, TermsAndConditions.PROVIDER_ID).assertEvent();
+        EventAssertion.expectRequiredAction(events.poll()).type(EventType.CUSTOM_REQUIRED_ACTION).withoutDetails(Details.REDIRECT_URI).details(Details.CUSTOM_REQUIRED_ACTION, TermsAndConditions.PROVIDER_ID);
 
         Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
         AuthorizationEndpointResponse response = oauth.parseLoginResponse();

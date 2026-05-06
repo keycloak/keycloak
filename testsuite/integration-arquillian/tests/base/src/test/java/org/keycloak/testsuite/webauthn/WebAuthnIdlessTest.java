@@ -226,18 +226,16 @@ public class WebAuthnIdlessTest extends AbstractWebAuthnVirtualTest {
 
         appPage.assertCurrent();
         assertThat(appPage.getRequestType(), is(RequestType.AUTH_RESPONSE));
-        EventRepresentation eventRep1 = events.expectRequiredAction(EventType.CUSTOM_REQUIRED_ACTION)
-                .user(userId)
-                .detail(Details.CUSTOM_REQUIRED_ACTION, raProviderID)
-                .detail(WebAuthnConstants.PUBKEY_CRED_LABEL_ATTR, authenticatorLabel)
-                .detail(WebAuthnConstants.PUBKEY_CRED_AAGUID_ATTR, ALL_ZERO_AAGUID)
-                .assertEvent();
-        EventRepresentation eventRep2 = events.expectRequiredAction(EventType.UPDATE_CREDENTIAL)
-                .user(userId)
-                .detail(Details.CUSTOM_REQUIRED_ACTION, raProviderID)
-                .detail(WebAuthnConstants.PUBKEY_CRED_LABEL_ATTR, authenticatorLabel)
-                .detail(WebAuthnConstants.PUBKEY_CRED_AAGUID_ATTR, ALL_ZERO_AAGUID)
-                .assertEvent();
+        EventRepresentation eventRep1 = EventAssertion.expectRequiredAction(events.poll()).type(EventType.CUSTOM_REQUIRED_ACTION)
+                .userId(userId)
+                .details(Details.CUSTOM_REQUIRED_ACTION, raProviderID)
+                .details(WebAuthnConstants.PUBKEY_CRED_LABEL_ATTR, authenticatorLabel)
+                .details(WebAuthnConstants.PUBKEY_CRED_AAGUID_ATTR, ALL_ZERO_AAGUID).getEvent();
+        EventRepresentation eventRep2 = EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_CREDENTIAL)
+                .userId(userId)
+                .details(Details.CUSTOM_REQUIRED_ACTION, raProviderID)
+                .details(WebAuthnConstants.PUBKEY_CRED_LABEL_ATTR, authenticatorLabel)
+                .details(WebAuthnConstants.PUBKEY_CRED_AAGUID_ATTR, ALL_ZERO_AAGUID).getEvent();
         String credentialId1 = eventRep1.getDetails().get(WebAuthnConstants.PUBKEY_CRED_ID_ATTR);
         String credentialId2 = eventRep2.getDetails().get(WebAuthnConstants.PUBKEY_CRED_ID_ATTR);
 

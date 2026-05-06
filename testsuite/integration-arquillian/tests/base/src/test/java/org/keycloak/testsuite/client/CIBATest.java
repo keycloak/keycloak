@@ -33,6 +33,7 @@ import jakarta.ws.rs.core.Response.Status;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.admin.client.resource.ClientResource;
+import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthenticator;
 import org.keycloak.client.registration.ClientRegistrationException;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.Time;
@@ -43,6 +44,7 @@ import org.keycloak.events.EventType;
 import org.keycloak.models.CibaConfig;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.grants.ciba.CibaGrantType;
+import org.keycloak.protocol.oidc.grants.ciba.CibaGrantTypeFactory;
 import org.keycloak.protocol.oidc.grants.ciba.channel.AuthenticationChannelRequest;
 import org.keycloak.protocol.oidc.grants.ciba.channel.AuthenticationChannelResponse;
 import org.keycloak.protocol.oidc.grants.ciba.clientpolicy.executor.SecureCibaAuthenticationRequestSigningAlgorithmExecutorFactory;
@@ -1613,10 +1615,11 @@ public class CIBATest extends AbstractClientPoliciesTest {
             assertThat(response.getStatusCode(), is(equalTo(400)));
             assertThat(response.getError(), is(OAuthErrorException.INVALID_REQUEST));
             assertThat(response.getErrorDescription(), is("Missing parameter in the signed authentication request: exp"));
-            events.expectClientPolicyError(EventType.LOGIN_ERROR, OAuthErrorException.INVALID_REQUEST,
-                    Details.CLIENT_POLICY_ERROR, OAuthErrorException.INVALID_REQUEST,
-                    "Missing parameter in the signed authentication request: exp").user((String) null)
-                    .assertEvent();
+            EventAssertion.assertError(events.poll()).type(EventType.LOGIN_ERROR).error(OAuthErrorException.INVALID_REQUEST)
+                    .details(Details.REASON, Details.CLIENT_POLICY_ERROR)
+                    .details(Details.CLIENT_POLICY_ERROR, OAuthErrorException.INVALID_REQUEST)
+                    .details(Details.CLIENT_POLICY_ERROR_DETAIL, "Missing parameter in the signed authentication request: exp")
+                    .userId(null);
 
             useRequestUri = true;
             bindingMessage = "Flughafen-Wien-Schwechat";
@@ -1630,10 +1633,10 @@ public class CIBATest extends AbstractClientPoliciesTest {
             assertThat(response.getStatusCode(), is(equalTo(400)));
             assertThat(response.getError(), is(OAuthErrorException.INVALID_REQUEST));
             assertThat(response.getErrorDescription(), is("Missing parameter in the signed authentication request: nbf"));
-            events.expectClientPolicyError(EventType.LOGIN_ERROR, OAuthErrorException.INVALID_REQUEST,
-                    Details.CLIENT_POLICY_ERROR, OAuthErrorException.INVALID_REQUEST,
-                    "Missing parameter in the signed authentication request: nbf").user((String) null)
-                    .assertEvent();
+            EventAssertion.assertError(events.poll()).type(EventType.LOGIN_ERROR).error(OAuthErrorException.INVALID_REQUEST).details(Details.REASON, Details.CLIENT_POLICY_ERROR)
+                    .details(Details.CLIENT_POLICY_ERROR, OAuthErrorException.INVALID_REQUEST)
+                    .details(Details.CLIENT_POLICY_ERROR_DETAIL, "Missing parameter in the signed authentication request: nbf")
+                    .userId(null);
 
             useRequestUri = false;
             bindingMessage = "Stuttgart-Hauptbahnhof";
@@ -1648,10 +1651,11 @@ public class CIBATest extends AbstractClientPoliciesTest {
             assertThat(response.getStatusCode(), is(equalTo(400)));
             assertThat(response.getError(), is(OAuthErrorException.INVALID_REQUEST));
             assertThat(response.getErrorDescription(), is("signed authentication request's available period is long"));
-            events.expectClientPolicyError(EventType.LOGIN_ERROR, OAuthErrorException.INVALID_REQUEST,
-                    Details.CLIENT_POLICY_ERROR, OAuthErrorException.INVALID_REQUEST,
-                    "signed authentication request's available period is long").user((String) null)
-                    .assertEvent();
+            EventAssertion.assertError(events.poll()).type(EventType.LOGIN_ERROR).error(OAuthErrorException.INVALID_REQUEST)
+                    .details(Details.REASON, Details.CLIENT_POLICY_ERROR)
+                    .details(Details.CLIENT_POLICY_ERROR, OAuthErrorException.INVALID_REQUEST)
+                    .details(Details.CLIENT_POLICY_ERROR_DETAIL, "signed authentication request's available period is long")
+                    .userId(null);
 
             useRequestUri = true;
             bindingMessage = "Flughafen-Wien-Schwechat";
@@ -1667,10 +1671,11 @@ public class CIBATest extends AbstractClientPoliciesTest {
             assertThat(response.getStatusCode(), is(equalTo(400)));
             assertThat(response.getError(), is(OAuthErrorException.INVALID_REQUEST));
             assertThat(response.getErrorDescription(), is("Missing parameter in the 'request' object: aud"));
-            events.expectClientPolicyError(EventType.LOGIN_ERROR, OAuthErrorException.INVALID_REQUEST,
-                    Details.CLIENT_POLICY_ERROR, OAuthErrorException.INVALID_REQUEST,
-                    "Missing parameter in the 'request' object: aud").user((String) null)
-                    .assertEvent();
+            EventAssertion.assertError(events.poll()).type(EventType.LOGIN_ERROR).error(OAuthErrorException.INVALID_REQUEST)
+                    .details(Details.REASON, Details.CLIENT_POLICY_ERROR)
+                    .details(Details.CLIENT_POLICY_ERROR, OAuthErrorException.INVALID_REQUEST)
+                    .details(Details.CLIENT_POLICY_ERROR_DETAIL, "Missing parameter in the 'request' object: aud")
+                    .userId(null);
 
             useRequestUri = false;
             bindingMessage = "Stuttgart-Hauptbahnhof";
@@ -1686,10 +1691,11 @@ public class CIBATest extends AbstractClientPoliciesTest {
             assertThat(response.getStatusCode(), is(equalTo(400)));
             assertThat(response.getError(), is(OAuthErrorException.INVALID_REQUEST));
             assertThat(response.getErrorDescription(), is("Invalid parameter in the 'request' object: aud"));
-            events.expectClientPolicyError(EventType.LOGIN_ERROR, OAuthErrorException.INVALID_REQUEST,
-                    Details.CLIENT_POLICY_ERROR, OAuthErrorException.INVALID_REQUEST,
-                    "Invalid parameter in the 'request' object: aud").user((String) null)
-                    .assertEvent();
+            EventAssertion.assertError(events.poll()).type(EventType.LOGIN_ERROR).error(OAuthErrorException.INVALID_REQUEST)
+                    .details(Details.REASON, Details.CLIENT_POLICY_ERROR)
+                    .details(Details.CLIENT_POLICY_ERROR, OAuthErrorException.INVALID_REQUEST)
+                    .details(Details.CLIENT_POLICY_ERROR_DETAIL, "Invalid parameter in the 'request' object: aud")
+                    .userId(null);
 
             useRequestUri = true;
             bindingMessage = "Flughafen-Wien-Schwechat";
@@ -1705,10 +1711,11 @@ public class CIBATest extends AbstractClientPoliciesTest {
             assertThat(response.getStatusCode(), is(equalTo(400)));
             assertThat(response.getError(), is(OAuthErrorException.INVALID_REQUEST));
             assertThat(response.getErrorDescription(), is("Missing parameter in the 'request' object: iss"));
-            events.expectClientPolicyError(EventType.LOGIN_ERROR, OAuthErrorException.INVALID_REQUEST,
-                    Details.CLIENT_POLICY_ERROR, OAuthErrorException.INVALID_REQUEST,
-                    "Missing parameter in the 'request' object: iss").user((String) null)
-                    .assertEvent();
+            EventAssertion.assertError(events.poll()).type(EventType.LOGIN_ERROR).error(OAuthErrorException.INVALID_REQUEST)
+                    .details(Details.REASON, Details.CLIENT_POLICY_ERROR)
+                    .details(Details.CLIENT_POLICY_ERROR, OAuthErrorException.INVALID_REQUEST)
+                    .details(Details.CLIENT_POLICY_ERROR_DETAIL, "Missing parameter in the 'request' object: iss")
+                    .userId(null);
 
             useRequestUri = false;
             bindingMessage = "Stuttgart-Hauptbahnhof";
@@ -1725,10 +1732,11 @@ public class CIBATest extends AbstractClientPoliciesTest {
             assertThat(response.getStatusCode(), is(equalTo(400)));
             assertThat(response.getError(), is(OAuthErrorException.INVALID_REQUEST));
             assertThat(response.getErrorDescription(), is("Invalid parameter in the 'request' object: iss"));
-            events.expectClientPolicyError(EventType.LOGIN_ERROR, OAuthErrorException.INVALID_REQUEST,
-                    Details.CLIENT_POLICY_ERROR, OAuthErrorException.INVALID_REQUEST,
-                    "Invalid parameter in the 'request' object: iss").user((String) null)
-                    .assertEvent();
+            EventAssertion.assertError(events.poll()).type(EventType.LOGIN_ERROR).error(OAuthErrorException.INVALID_REQUEST)
+                    .details(Details.REASON, Details.CLIENT_POLICY_ERROR)
+                    .details(Details.CLIENT_POLICY_ERROR, OAuthErrorException.INVALID_REQUEST)
+                    .details(Details.CLIENT_POLICY_ERROR_DETAIL, "Invalid parameter in the 'request' object: iss")
+                    .userId(null);
 
             useRequestUri = true;
             bindingMessage = "Flughafen-Wien-Schwechat";
@@ -1747,10 +1755,11 @@ public class CIBATest extends AbstractClientPoliciesTest {
             assertThat(response.getStatusCode(), is(equalTo(400)));
             assertThat(response.getError(), is(OAuthErrorException.INVALID_REQUEST));
             assertThat(response.getErrorDescription(), is("Missing parameter in the signed authentication request: iat"));
-            events.expectClientPolicyError(EventType.LOGIN_ERROR, OAuthErrorException.INVALID_REQUEST,
-                    Details.CLIENT_POLICY_ERROR, OAuthErrorException.INVALID_REQUEST,
-                    "Missing parameter in the signed authentication request: iat").user((String) null)
-                    .assertEvent();
+            EventAssertion.assertError(events.poll()).type(EventType.LOGIN_ERROR).error(OAuthErrorException.INVALID_REQUEST)
+                    .details(Details.REASON, Details.CLIENT_POLICY_ERROR)
+                    .details(Details.CLIENT_POLICY_ERROR, OAuthErrorException.INVALID_REQUEST)
+                    .details(Details.CLIENT_POLICY_ERROR_DETAIL, "Missing parameter in the signed authentication request: iat")
+                    .userId(null);
 
             useRequestUri = false;
             bindingMessage = "Stuttgart-Hauptbahnhof";
@@ -1769,10 +1778,10 @@ public class CIBATest extends AbstractClientPoliciesTest {
             assertThat(response.getStatusCode(), is(equalTo(400)));
             assertThat(response.getError(), is(OAuthErrorException.INVALID_REQUEST));
             assertThat(response.getErrorDescription(), is("Missing parameter in the signed authentication request: jti"));
-            events.expectClientPolicyError(EventType.LOGIN_ERROR, OAuthErrorException.INVALID_REQUEST,
-                    Details.CLIENT_POLICY_ERROR, OAuthErrorException.INVALID_REQUEST,
-                    "Missing parameter in the signed authentication request: jti").user((String) null)
-                    .assertEvent();
+            EventAssertion.assertError(events.poll()).type(EventType.LOGIN_ERROR).error(OAuthErrorException.INVALID_REQUEST).details(Details.REASON, Details.CLIENT_POLICY_ERROR)
+                    .details(Details.CLIENT_POLICY_ERROR, OAuthErrorException.INVALID_REQUEST)
+                    .details(Details.CLIENT_POLICY_ERROR_DETAIL, "Missing parameter in the signed authentication request: jti")
+                    .userId(null);
 
             useRequestUri = true;
             bindingMessage = "Brno-hlavni-nadrazif";
@@ -2847,7 +2856,15 @@ public class CIBATest extends AbstractClientPoliciesTest {
         AccessToken accessToken = oauth.verifyToken(tokenRes.getAccessToken());
         assertThat(accessToken.getIssuedFor(), is(equalTo(clientId)));
 
-        EventRepresentation event = events.expectAuthReqIdToToken(null, null).clearDetails().user(accessToken.getSubject()).client(clientId).assertEvent();
+        EventAssertion.assertSuccess(events.poll())
+                .type(EventType.AUTHREQID_TO_TOKEN)
+                .hasSessionId()
+                .hasIpAddress()
+                .hasCodeId()
+                .userId(accessToken.getSubject()).clientId(clientId)
+                .hasTokenId(Details.REFRESH_TOKEN_ID)
+                .hasAccessTokenId(CibaGrantTypeFactory.GRANT_SHORTCUT)
+                .details(Details.CLIENT_AUTH_METHOD, ClientIdAndSecretAuthenticator.PROVIDER_ID);
 
         RefreshToken refreshToken = oauth.parseRefreshToken(tokenRes.getRefreshToken());
         assertThat(refreshToken.getIssuedFor(), is(equalTo(clientId)));
@@ -2903,7 +2920,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
         assertThat(idToken.getAudience()[0], is(equalTo(idToken.getIssuedFor())));
         checkTokenExpiration(idToken, tokenRes.getExpiresIn());
 
-        events.expectRefresh(tokenRes.getRefreshToken(), sessionId).session(CoreMatchers.notNullValue(String.class)).user(accessToken.getSubject()).clearDetails().assertEvent();
+        EventAssertion.assertSuccess(events.poll()).type(EventType.REFRESH_TOKEN).hasSessionId().userId(accessToken.getSubject());
 
         return tokenRes;
     }

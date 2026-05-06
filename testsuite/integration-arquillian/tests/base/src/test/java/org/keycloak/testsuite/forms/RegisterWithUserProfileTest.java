@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import org.keycloak.events.Details;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -135,7 +136,8 @@ public class RegisterWithUserProfileTest extends AbstractTestRealmKeycloakTest {
         appPage.assertCurrent();
         assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-        String userId = events.expectRegister("registerUserSuccessLastNameOptional", "registerUserSuccessLastNameOptional@email").assertEvent().getUserId();
+        String userId = EventAssertion.expectRegisterSuccess(events.poll()).clientId(oauth.getClientId())
+                .details(Details.USERNAME, "registerUserSuccessLastNameOptional").details(Details.EMAIL, "registerUserSuccessLastNameOptional@email").getEvent().getUserId();
         assertUserRegistered(userId, "registerUserSuccessLastNameOptional", "registerusersuccesslastnameoptional@email", "firstName", "");
     }
 
@@ -156,7 +158,8 @@ public class RegisterWithUserProfileTest extends AbstractTestRealmKeycloakTest {
         appPage.assertCurrent();
         assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-        String userId = events.expectRegister("registerUserSuccessLastNameRequiredForScope_notRequested", "registerUserSuccessLastNameRequiredForScope_notRequested@email").assertEvent().getUserId();
+        String userId = EventAssertion.expectRegisterSuccess(events.poll()).clientId(oauth.getClientId())
+                .details(Details.USERNAME, "registerUserSuccessLastNameRequiredForScope_notRequested").details(Details.EMAIL, "registerUserSuccessLastNameRequiredForScope_notRequested@email").getEvent().getUserId();
         assertUserRegistered(userId, "registerUserSuccessLastNameRequiredForScope_notRequested", "registerusersuccesslastnamerequiredforscope_notrequested@email", "firstName", "");
     }
 
@@ -229,7 +232,8 @@ public class RegisterWithUserProfileTest extends AbstractTestRealmKeycloakTest {
         appPage.assertCurrent();
         assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-        String userId = events.expectRegister("registerUserSuccessLastNameLengthValidation", "registerUserSuccessLastNameLengthValidation@email").assertEvent().getUserId();
+        String userId = EventAssertion.expectRegisterSuccess(events.poll()).clientId(oauth.getClientId())
+                .details(Details.USERNAME, "registerUserSuccessLastNameLengthValidation").details(Details.EMAIL, "registerUserSuccessLastNameLengthValidation@email").getEvent().getUserId();
         assertUserRegistered(userId, "registerUserSuccessLastNameLengthValidation", "registerusersuccesslastnamelengthvalidation@email", "firstName", "last");
     }
 
@@ -250,8 +254,10 @@ public class RegisterWithUserProfileTest extends AbstractTestRealmKeycloakTest {
         registerPage.assertCurrent();
         assertEquals("Length must be between 3 and 255.", registerPage.getInputAccountErrors().getLastNameError());
 
-        events.expectRegister("registeruserinvalidlastnamelength", "registeruserinvalidlastnamelength@email")
-                .error("invalid_registration").assertEvent();
+        EventAssertion.expectRegisterError(events.poll())
+                .error("invalid_registration")
+                .clientId(oauth.getClientId())
+                .details(Details.USERNAME, "registeruserinvalidlastnamelength").details(Details.EMAIL, "registeruserinvalidlastnamelength@email");
     }
 
     @Test
@@ -508,7 +514,11 @@ public class RegisterWithUserProfileTest extends AbstractTestRealmKeycloakTest {
         Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
         Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
 
-        String userId = events.expectRegister("attributeNotRequiredAndSelectedByScopeCanBeIgnored", "attributeNotRequiredAndSelectedByScopeCanBeIgnored@email",client_scope_optional.getClientId()).assertEvent().getUserId();
+        String userId = EventAssertion.expectRegisterSuccess(events.poll())
+                .details(Details.USERNAME, "attributeNotRequiredAndSelectedByScopeCanBeIgnored")
+                .details(Details.EMAIL, "attributeNotRequiredAndSelectedByScopeCanBeIgnored@email")
+                .hasUserId()
+                .clientId(client_scope_optional.getClientId()).getEvent().getUserId();
         UserRepresentation user = getUser(userId);
         assertEquals("FirstAA", user.getFirstName());
         assertEquals("LastAA", user.getLastName());
@@ -535,7 +545,11 @@ public class RegisterWithUserProfileTest extends AbstractTestRealmKeycloakTest {
         Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
         Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
 
-        String userId = events.expectRegister("attributeNotRequiredAndSelectedByScopeCanBeSet", "attributeNotRequiredAndSelectedByScopeCanBeSet@email",client_scope_default.getClientId()).assertEvent().getUserId();
+        String userId = EventAssertion.expectRegisterSuccess(events.poll())
+                .details(Details.USERNAME, "attributeNotRequiredAndSelectedByScopeCanBeSet")
+                .details(Details.EMAIL, "attributeNotRequiredAndSelectedByScopeCanBeSet@email")
+                .hasUserId()
+                .clientId(client_scope_default.getClientId()).getEvent().getUserId();
         UserRepresentation user = getUser(userId);
         assertEquals("FirstAA", user.getFirstName());
         assertEquals("LastAA", user.getLastName());
@@ -561,7 +575,11 @@ public class RegisterWithUserProfileTest extends AbstractTestRealmKeycloakTest {
         Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
         Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
 
-        String userId = events.expectRegister("attributeRequiredButNotSelectedByScopeIsNotRendered", "attributeRequiredButNotSelectedByScopeIsNotRendered@email",client_scope_optional.getClientId()).assertEvent().getUserId();
+        String userId = EventAssertion.expectRegisterSuccess(events.poll())
+                .details(Details.USERNAME, "attributeRequiredButNotSelectedByScopeIsNotRendered")
+                .details(Details.EMAIL, "attributeRequiredButNotSelectedByScopeIsNotRendered@email")
+                .hasUserId()
+                .clientId(client_scope_optional.getClientId()).getEvent().getUserId();
         UserRepresentation user = getUser(userId);
         assertEquals("FirstAA", user.getFirstName());
         assertEquals("LastAA", user.getLastName());

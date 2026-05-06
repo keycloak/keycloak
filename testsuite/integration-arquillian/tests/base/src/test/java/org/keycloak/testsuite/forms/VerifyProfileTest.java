@@ -34,6 +34,7 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.userprofile.config.UPConfig;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testframework.realm.ClientScopeBuilder;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.UserBuilder;
@@ -293,19 +294,18 @@ public class VerifyProfileTest extends AbstractChangeImportedUserPasswordsTest {
 
         verifyProfilePage.assertCurrent();
         //event when form is shown
-        events.expectRequiredAction(EventType.VERIFY_PROFILE).user(user5Id)
-                .detail(Details.FIELDS_TO_UPDATE, "department")
-                .assertEvent();
+        EventAssertion.expectRequiredAction(events.poll()).type(EventType.VERIFY_PROFILE).userId(user5Id)
+                .details(Details.FIELDS_TO_UPDATE, "department")
+                ;
 
         verifyProfilePage.update("First", "Last", "Department");
         //event after profile is updated
         // we also test additional attribute configured to be audited in the event
-        events.expectRequiredAction(EventType.UPDATE_PROFILE).user(user5Id)
-                .detail(Details.CONTEXT, UserProfileContext.UPDATE_PROFILE.name())
-                .detail(Details.PREVIOUS_FIRST_NAME, "ExistingFirst").detail(Details.UPDATED_FIRST_NAME, "First")
-                .detail(Details.PREVIOUS_LAST_NAME, "ExistingLast").detail(Details.UPDATED_LAST_NAME, "Last")
-                .detail(Details.PREF_UPDATED+"department", "Department")
-                .assertEvent();
+        EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_PROFILE).userId(user5Id)
+                .details(Details.CONTEXT, UserProfileContext.UPDATE_PROFILE.name())
+                .details(Details.PREVIOUS_FIRST_NAME, "ExistingFirst").details(Details.UPDATED_FIRST_NAME, "First")
+                .details(Details.PREVIOUS_LAST_NAME, "ExistingLast").details(Details.UPDATED_LAST_NAME, "Last")
+                .details(Details.PREF_UPDATED+"department", "Department");
     }
 
     @Test

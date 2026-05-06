@@ -279,7 +279,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         assertFalse(loginPage.isCurrent());
         assertTrue(appPage.isCurrent());
 
-        events.assertEmpty();
+        Assertions.assertNull(events.poll());
 
         // Assert error response was sent because not logged in
         AuthorizationEndpointResponse resp = oauth.parseLoginResponse();

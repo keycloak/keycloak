@@ -51,6 +51,7 @@ import org.keycloak.representations.idm.MembershipType;
 import org.keycloak.representations.idm.OrganizationInvitationRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AbstractAuthenticationTest;
 import org.keycloak.testsuite.AssertEvents;
@@ -279,13 +280,9 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
                 .assertEvent();
 
         // Assert LOGIN event fires after registration completes
-        events.expectLogin()
-                .client("account")
-                .user(inviteEvent.getUserId())
-                .removeDetail(Details.REDIRECT_URI)
-                .removeDetail(Details.CONSENT)
-                .session(AssertEvents.isSessionId())
-                .assertEvent();
+        EventAssertion.expectLoginSuccess(events.poll())
+                .clientId("account")
+                .userId(inviteEvent.getUserId());
 
         List<UserRepresentation> users = managedRealm.admin().users().searchByEmail(email, true);
         assertThat(users, not(empty()));

@@ -163,7 +163,7 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
                 .client("confidential-cli")
                 .session(accessTokenResponse.getSessionState())
                 .assertEvent();
-        events.assertEmpty();
+        Assertions.assertNull(events.poll());
 
         JsonNode jsonNode = introspectionResponse.asJsonNode();
 
@@ -226,7 +226,7 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
                 .client("confidential-cli")
                 .session(sessionId)
                 .assertEvent();
-        events.assertEmpty();
+        Assertions.assertNull(events.poll());
 
         assertEquals(sessionId, jsonNode.get("sid").asText());
         assertEquals("test-app", jsonNode.get("client_id").asText());
@@ -425,7 +425,7 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
                 .session(accessTokenResponse.getSessionState())
                 .error(Errors.USER_SESSION_NOT_FOUND)
                 .assertEvent();
-        events.assertEmpty();
+        Assertions.assertNull(events.poll());
 
         assertFalse(rep.isActive());
         assertNull(rep.getUserName());

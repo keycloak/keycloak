@@ -82,6 +82,7 @@ import org.keycloak.services.cors.Cors;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.account.AccountCredentialResource;
 import org.keycloak.services.util.ResolveRelative;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AbstractAuthenticationTest;
 import org.keycloak.testsuite.AssertEvents;
@@ -403,16 +404,17 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
 
             //skip login to the REST API event
             events.poll();
-            events.expectAccount(EventType.UPDATE_PROFILE).user(user.getId())
-                .detail(Details.CONTEXT, UserProfileContext.ACCOUNT.name())
-                .detail(Details.PREVIOUS_EMAIL, originalEmail)
-                .detail(Details.UPDATED_EMAIL, "bobby@localhost")
-                .detail(Details.PREVIOUS_FIRST_NAME, originalFirstName)
-                .detail(Details.PREVIOUS_LAST_NAME, originalLastName)
-                .detail(Details.UPDATED_FIRST_NAME, "Homer")
-                .detail(Details.UPDATED_LAST_NAME, "Simpsons")
-                .assertEvent();
-            events.assertEmpty();
+            EventAssertion.assertSuccess(events.poll()).type(EventType.UPDATE_PROFILE)
+                .userId(user.getId())
+                .clientId("account")
+                .details(Details.CONTEXT, UserProfileContext.ACCOUNT.name())
+                .details(Details.PREVIOUS_EMAIL, originalEmail)
+                .details(Details.UPDATED_EMAIL, "bobby@localhost")
+                .details(Details.PREVIOUS_FIRST_NAME, originalFirstName)
+                .details(Details.PREVIOUS_LAST_NAME, originalLastName)
+                .details(Details.UPDATED_FIRST_NAME, "Homer")
+                .details(Details.UPDATED_LAST_NAME, "Simpsons");
+            Assertions.assertNull(events.poll());
 
         } finally {
             RealmRepresentation realmRep = adminClient.realm("test").toRepresentation();
@@ -859,7 +861,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         user.removeCredential(credential.getId());
 
         events.poll();
-        events.assertEmpty();
+        Assertions.assertNull(events.poll());
     }
 
     @Test
@@ -909,7 +911,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
                 .detail(Details.CREDENTIAL_USER_LABEL, "totpCredentialUserLabel")
                 .detail(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE)
                 .assertEvent();
-        events.assertEmpty();
+        Assertions.assertNull(events.poll());
     }
 
     // Send REST request to get all credential containers and credentials of current user
@@ -1170,13 +1172,13 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         assertEquals(0, user.getUserSessions().size());
 
         userSessions.forEach(session -> {
-            events.expectAccount(EventType.LOGOUT)
-                .user(user.toRepresentation().getId())
-                .session(session.getId())
-                .assertEvent();
+            EventAssertion.assertSuccess(events.poll()).type(EventType.LOGOUT)
+                .userId(user.toRepresentation().getId())
+                .clientId("account")
+                .sessionId(session.getId());
         });
 
-        events.assertEmpty();
+        Assertions.assertNull(events.poll());
     }
 
     @Test
@@ -1205,13 +1207,13 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         userSessions = userSessions.stream().filter(session -> !session.getId().equals(token.getSessionId())).toList();
 
         userSessions.forEach(session -> {
-            events.expectAccount(EventType.LOGOUT)
-                .user(user.toRepresentation().getId())
-                .session(session.getId())
-                .assertEvent();
+            EventAssertion.assertSuccess(events.poll()).type(EventType.LOGOUT)
+                .userId(user.toRepresentation().getId())
+                .clientId("account")
+                .sessionId(session.getId());
         });
 
-        events.assertEmpty();
+        Assertions.assertNull(events.poll());
     }
 
 
@@ -1237,12 +1239,12 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         assertEquals(204, status);
         assertEquals(1, user.getUserSessions().size());
 
-        events.expectAccount(EventType.LOGOUT)
-            .user(user.toRepresentation().getId())
-            .session(token.getSessionId())
-            .assertEvent();
+        EventAssertion.assertSuccess(events.poll()).type(EventType.LOGOUT)
+            .userId(user.toRepresentation().getId())
+            .clientId("account")
+            .sessionId(token.getSessionId());
 
-        events.assertEmpty();
+        Assertions.assertNull(events.poll());
     }
 
     @Test
@@ -1297,10 +1299,10 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         assertEquals(204, status);
 
         allSessions.forEach(session -> {
-            events.expectAccount(EventType.LOGOUT)
-                .user(user.toRepresentation().getId())
-                .session(session.getId())
-                .assertEvent();
+            EventAssertion.assertSuccess(events.poll()).type(EventType.LOGOUT)
+                .userId(user.toRepresentation().getId())
+                .clientId("account")
+                .sessionId(session.getId());
         });
     }
 
@@ -1332,12 +1334,12 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
             .acceptJson().auth(firstToken).asStatus();
         assertEquals(204, status);
 
-        events.expectAccount(EventType.LOGOUT)
-            .user(user.toRepresentation().getId())
-            .session(offlineTokenResponse.getSessionState())
-            .assertEvent();
+        EventAssertion.assertSuccess(events.poll()).type(EventType.LOGOUT)
+            .userId(user.toRepresentation().getId())
+            .clientId("account")
+            .sessionId(offlineTokenResponse.getSessionState());
 
-        events.assertEmpty();
+        Assertions.assertNull(events.poll());
     }
 
 
@@ -1561,12 +1563,12 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
 
         events.poll();
         String expectedScopeDetails = requestedScopes.stream().map(cs->cs.getName()).collect(Collectors.joining(" "));
-        events.expectAccount(EventType.GRANT_CONSENT)
-                .user(getUser().getId())
-                .detail(Details.GRANTED_CLIENT,appId)
-                .detail(Details.SCOPE,expectedScopeDetails)
-                .assertEvent();
-        events.assertEmpty();
+        EventAssertion.assertSuccess(events.poll()).type(EventType.GRANT_CONSENT)
+                .userId(getUser().getId())
+                .clientId("account")
+                .details(Details.GRANTED_CLIENT,appId)
+                .details(Details.SCOPE,expectedScopeDetails);
+        Assertions.assertNull(events.poll());
 
         //cleanup
         SimpleHttpDefault.doDelete(getAccountUrl("applications/" + appId + "/consent"), httpClient)
@@ -1611,12 +1613,12 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
 
         events.poll();
         events.poll();
-        events.expectAccount(EventType.UPDATE_CONSENT)
-                .user(getUser().getId())
-                .detail(Details.GRANTED_CLIENT,appId)
-                .detail(Details.SCOPE,requestedScopes.get(0).getName())
-                .assertEvent();
-        events.assertEmpty();
+        EventAssertion.assertSuccess(events.poll()).type(EventType.UPDATE_CONSENT)
+                .userId(getUser().getId())
+                .clientId("account")
+                .details(Details.GRANTED_CLIENT,appId)
+                .details(Details.SCOPE,requestedScopes.get(0).getName());
+        Assertions.assertNull(events.poll());
 
         //Cleanup
         SimpleHttpDefault.doDelete(getAccountUrl("applications/" + appId + "/consent"), httpClient)
@@ -1681,12 +1683,12 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         assertEquals(requestedScopes.get(0).getId(), consentRepresentation.getGrantedScopes().get(0).getId());
 
         events.poll();
-        events.expectAccount(EventType.GRANT_CONSENT)
-                .user(getUser().getId())
-                .detail(Details.GRANTED_CLIENT,appId)
-                .detail(Details.SCOPE,requestedScopes.get(0).getName())
-                .assertEvent();
-        events.assertEmpty();
+        EventAssertion.assertSuccess(events.poll()).type(EventType.GRANT_CONSENT)
+                .userId(getUser().getId())
+                .clientId("account")
+                .details(Details.GRANTED_CLIENT,appId)
+                .details(Details.SCOPE,requestedScopes.get(0).getName());
+        Assertions.assertNull(events.poll());
 
         //Cleanup
         SimpleHttpDefault.doDelete(getAccountUrl("applications/" + appId + "/consent"), httpClient)
@@ -1732,12 +1734,12 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
 
         events.poll();
         events.poll();
-        events.expectAccount(EventType.UPDATE_CONSENT)
-                .user(getUser().getId())
-                .detail(Details.GRANTED_CLIENT,appId)
-                .detail(Details.SCOPE,requestedScopes.get(0).getName())
-                .assertEvent();
-        events.assertEmpty();
+        EventAssertion.assertSuccess(events.poll()).type(EventType.UPDATE_CONSENT)
+                .userId(getUser().getId())
+                .clientId("account")
+                .details(Details.GRANTED_CLIENT,appId)
+                .details(Details.SCOPE,requestedScopes.get(0).getName());
+        Assertions.assertNull(events.poll());
 
         //Cleanup
         SimpleHttpDefault.doDelete(getAccountUrl("applications/" + appId + "/consent"), httpClient)
@@ -1879,11 +1881,11 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
 
         events.poll();
         events.poll();
-        events.expectAccount(EventType.REVOKE_GRANT)
-                .user(getUser().getId())
-                .detail(Details.REVOKED_CLIENT,appId)
-                .assertEvent();
-        events.assertEmpty();
+        EventAssertion.assertSuccess(events.poll()).type(EventType.REVOKE_GRANT)
+                .userId(getUser().getId())
+                .clientId("account")
+                .details(Details.REVOKED_CLIENT,appId);
+        Assertions.assertNull(events.poll());
 
         try (SimpleHttpResponse response = SimpleHttpDefault
                 .doDelete(getAccountUrl("applications/" + appId + "/consent"), httpClient)

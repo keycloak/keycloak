@@ -112,6 +112,7 @@ import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.keycloak.testsuite.util.oauth.ParResponse;
 import org.keycloak.testsuite.util.oauth.PkceGenerator;
 import org.keycloak.util.JsonSerialization;
+import org.keycloak.util.TokenUtil;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import org.apache.http.HttpResponse;
@@ -314,9 +315,14 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
         AuthorizationEndpointResponse authorizationEndpointResponse = oauth.parseLoginResponse();
         assertEquals(OAuthErrorException.INVALID_REQUEST, authorizationEndpointResponse.getError());
         assertEquals("invalid response_type", authorizationEndpointResponse.getErrorDescription());
-        events.expectClientPolicyError(EventType.LOGIN_ERROR, OAuthErrorException.INVALID_REQUEST,
-                        Details.CLIENT_POLICY_ERROR, OAuthErrorException.INVALID_REQUEST,
-                        "invalid response_type").client(clientId).user((String) null).assertEvent();
+        EventAssertion.assertError(events.poll())
+                .type(EventType.LOGIN_ERROR)
+                .error(OAuthErrorException.INVALID_REQUEST)
+                .details(Details.REASON, Details.CLIENT_POLICY_ERROR)
+                .details(Details.CLIENT_POLICY_ERROR, OAuthErrorException.INVALID_REQUEST)
+                .details(Details.CLIENT_POLICY_ERROR_DETAIL, "invalid response_type")
+                .clientId(clientId)
+                .userId(null);
 
         oauth.responseType(OIDCResponseType.CODE + " " + OIDCResponseType.ID_TOKEN);
         oauth.loginForm().nonce("vbwe566fsfffds").doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
@@ -327,7 +333,12 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
         String code = oauth.parseLoginResponse().getCode();
         AccessTokenResponse res = oauth.doAccessTokenRequest(code);
         assertEquals(200, res.getStatusCode());
-        events.expectCodeToToken(codeId, sessionId).client(clientId).assertEvent();
+        EventAssertion.expectCodeToTokenSuccess(events.poll())
+                .sessionId(sessionId)
+                .clientId(clientId)
+                .details(Details.CODE_ID, codeId)
+                .details(Details.REFRESH_TOKEN_TYPE, TokenUtil.TOKEN_TYPE_REFRESH)
+                .details(Details.CLIENT_AUTH_METHOD, ClientIdAndSecretAuthenticator.PROVIDER_ID);
 
         oauth.doLogout(res.getRefreshToken());
         EventAssertion.assertSuccess(events.poll()).type(EventType.LOGOUT)
@@ -350,7 +361,12 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
         code = oauth.parseLoginResponse().getCode();
         res = oauth.doAccessTokenRequest(code);
         assertEquals(200, res.getStatusCode());
-        events.expectCodeToToken(codeId, sessionId).client(clientId).assertEvent();
+        EventAssertion.expectCodeToTokenSuccess(events.poll())
+                .sessionId(sessionId)
+                .clientId(clientId)
+                .details(Details.CODE_ID, codeId)
+                .details(Details.REFRESH_TOKEN_TYPE, TokenUtil.TOKEN_TYPE_REFRESH)
+                .details(Details.CLIENT_AUTH_METHOD, ClientIdAndSecretAuthenticator.PROVIDER_ID);
 
         oauth.doLogout(res.getRefreshToken());
         EventAssertion.assertSuccess(events.poll()).type(EventType.LOGOUT)
@@ -447,9 +463,14 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
         AuthorizationEndpointResponse authorizationEndpointResponse = oauth.parseLoginResponse();
         assertEquals(OAuthErrorException.INVALID_REQUEST, authorizationEndpointResponse.getError());
         assertEquals("invalid response_type", authorizationEndpointResponse.getErrorDescription());
-        events.expectClientPolicyError(EventType.LOGIN_ERROR, OAuthErrorException.INVALID_REQUEST,
-                Details.CLIENT_POLICY_ERROR, OAuthErrorException.INVALID_REQUEST,
-                "invalid response_type").client(clientId).user((String) null).assertEvent();
+        EventAssertion.assertError(events.poll())
+                .type(EventType.LOGIN_ERROR)
+                .error(OAuthErrorException.INVALID_REQUEST)
+                .details(Details.REASON, Details.CLIENT_POLICY_ERROR)
+                .details(Details.CLIENT_POLICY_ERROR, OAuthErrorException.INVALID_REQUEST)
+                .details(Details.CLIENT_POLICY_ERROR_DETAIL, "invalid response_type")
+                .clientId(clientId)
+                .userId(null);
 
         oauth.responseType(OIDCResponseType.CODE + " " + OIDCResponseType.ID_TOKEN);
         oauth.loginForm().nonce("LIVieviDie028f").doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
@@ -474,7 +495,12 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
 
         AccessTokenResponse res = oauth.doAccessTokenRequest(code);
         assertEquals(200, res.getStatusCode());
-        events.expectCodeToToken(codeId, sessionId).client(clientId).assertEvent();
+        EventAssertion.expectCodeToTokenSuccess(events.poll())
+                .sessionId(sessionId)
+                .clientId(clientId)
+                .details(Details.CODE_ID, codeId)
+                .details(Details.REFRESH_TOKEN_TYPE, TokenUtil.TOKEN_TYPE_REFRESH)
+                .details(Details.CLIENT_AUTH_METHOD, ClientIdAndSecretAuthenticator.PROVIDER_ID);
 
         oauth.doLogout(res.getRefreshToken());
         EventAssertion.assertSuccess(events.poll()).type(EventType.LOGOUT)
@@ -521,10 +547,14 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
         AuthorizationEndpointResponse authorizationEndpointResponse = oauth.parseLoginResponse();
         assertEquals(OAuthErrorException.INVALID_REQUEST, authorizationEndpointResponse.getError());
         assertEquals("Missing parameter: 'request' or 'request_uri'", authorizationEndpointResponse.getErrorDescription());
-        events.expectClientPolicyError(EventType.LOGIN_ERROR, OAuthErrorException.INVALID_REQUEST,
-                Details.CLIENT_POLICY_ERROR, OAuthErrorException.INVALID_REQUEST,
-                "Missing parameter: 'request' or 'request_uri'").client(clientId).user((String) null)
-                .assertEvent();
+        EventAssertion.assertError(events.poll())
+                .type(EventType.LOGIN_ERROR)
+                .error(OAuthErrorException.INVALID_REQUEST)
+                .details(Details.REASON, Details.CLIENT_POLICY_ERROR)
+                .details(Details.CLIENT_POLICY_ERROR, OAuthErrorException.INVALID_REQUEST)
+                .details(Details.CLIENT_POLICY_ERROR_DETAIL, "Missing parameter: 'request' or 'request_uri'")
+                .clientId(clientId)
+                .userId(null);
 
         // check whether request_uri is https scheme
         // cannot test because existing AuthorizationEndpoint check and return error before executing client policy
@@ -543,10 +573,14 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
         authorizationEndpointResponse = oauth.parseLoginResponse();
         assertEquals(OAuthErrorException.INVALID_REQUEST, authorizationEndpointResponse.getError());
         assertEquals("Invalid parameter. Parameters in 'request' object not matching with request parameters", authorizationEndpointResponse.getErrorDescription());
-        events.expectClientPolicyError(EventType.LOGIN_ERROR, OAuthErrorException.INVALID_REQUEST,
-                Details.CLIENT_POLICY_ERROR, OAuthErrorException.INVALID_REQUEST,
-                "Invalid parameter. Parameters in 'request' object not matching with request parameters")
-                .client(clientId).user((String) null).assertEvent();
+        EventAssertion.assertError(events.poll())
+                .type(EventType.LOGIN_ERROR)
+                .error(OAuthErrorException.INVALID_REQUEST)
+                .details(Details.REASON, Details.CLIENT_POLICY_ERROR)
+                .details(Details.CLIENT_POLICY_ERROR, OAuthErrorException.INVALID_REQUEST)
+                .details(Details.CLIENT_POLICY_ERROR_DETAIL, "Invalid parameter. Parameters in 'request' object not matching with request parameters")
+                .clientId(clientId)
+                .userId(null);
 
         // check whether client_id exists in both query parameter and request object
         requestObject = createValidRequestObjectForSecureRequestObjectExecutor(clientId);
@@ -556,10 +590,14 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
         authorizationEndpointResponse = oauth.parseLoginResponse();
         assertEquals(OAuthErrorException.INVALID_REQUEST, authorizationEndpointResponse.getError());
         assertEquals("Invalid parameter. Parameters in 'request' object not matching with request parameters", authorizationEndpointResponse.getErrorDescription());
-        events.expectClientPolicyError(EventType.LOGIN_ERROR, OAuthErrorException.INVALID_REQUEST,
-                Details.CLIENT_POLICY_ERROR, OAuthErrorException.INVALID_REQUEST,
-                "Invalid parameter. Parameters in 'request' object not matching with request parameters")
-                .client(clientId).user((String) null).assertEvent();
+        EventAssertion.assertError(events.poll())
+                .type(EventType.LOGIN_ERROR)
+                .error(OAuthErrorException.INVALID_REQUEST)
+                .details(Details.REASON, Details.CLIENT_POLICY_ERROR)
+                .details(Details.CLIENT_POLICY_ERROR, OAuthErrorException.INVALID_REQUEST)
+                .details(Details.CLIENT_POLICY_ERROR_DETAIL, "Invalid parameter. Parameters in 'request' object not matching with request parameters")
+                .clientId(clientId)
+                .userId(null);
 
         // check whether response_type exists in both query parameter and request object
         requestObject = createValidRequestObjectForSecureRequestObjectExecutor(clientId);
@@ -569,10 +607,13 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
         authorizationEndpointResponse = oauth.parseLoginResponse();
         assertEquals(OAuthErrorException.INVALID_REQUEST, authorizationEndpointResponse.getError());
         assertEquals("Invalid parameter. Parameters in 'request' object not matching with request parameters", authorizationEndpointResponse.getErrorDescription());
-        events.expectClientPolicyError(EventType.LOGIN_ERROR, OAuthErrorException.INVALID_REQUEST,
-                Details.CLIENT_POLICY_ERROR, OAuthErrorException.INVALID_REQUEST,
-                "Invalid parameter. Parameters in 'request' object not matching with request parameters")
-                .client(clientId).user((String) null).assertEvent();
+        EventAssertion.assertError(events.poll())
+                .type(EventType.LOGIN_ERROR)
+                .error(OAuthErrorException.INVALID_REQUEST).details(Details.REASON, Details.CLIENT_POLICY_ERROR)
+                .details(Details.CLIENT_POLICY_ERROR, OAuthErrorException.INVALID_REQUEST)
+                .details(Details.CLIENT_POLICY_ERROR_DETAIL, "Invalid parameter. Parameters in 'request' object not matching with request parameters")
+                .clientId(clientId)
+                .userId(null);
 
         // Check scope required
         requestObject = createValidRequestObjectForSecureRequestObjectExecutor(clientId);
@@ -584,10 +625,12 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
         authorizationEndpointResponse = oauth.parseLoginResponse();
         assertEquals(OAuthErrorException.INVALID_REQUEST, authorizationEndpointResponse.getError());
         assertEquals("Parameter 'scope' missing in the request parameters or in 'request' object", authorizationEndpointResponse.getErrorDescription());
-        events.expectClientPolicyError(EventType.LOGIN_ERROR, OAuthErrorException.INVALID_REQUEST,
-                Details.CLIENT_POLICY_ERROR, OAuthErrorException.INVALID_REQUEST,
-                "Parameter 'scope' missing in the request parameters or in 'request' object")
-                .client(clientId).user((String) null).assertEvent();
+        EventAssertion.assertError(events.poll())
+                .type(EventType.LOGIN_ERROR).error(OAuthErrorException.INVALID_REQUEST)
+                .details(Details.REASON, Details.CLIENT_POLICY_ERROR)
+                .details(Details.CLIENT_POLICY_ERROR, OAuthErrorException.INVALID_REQUEST)
+                .details(Details.CLIENT_POLICY_ERROR_DETAIL, "Parameter 'scope' missing in the request parameters or in 'request' object")
+                .clientId(clientId).userId(null);
         oauth.openid(true);
 
         // check whether "exp" claim exists
@@ -598,10 +641,9 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
         authorizationEndpointResponse = oauth.parseLoginResponse();
         assertEquals(OAuthErrorException.INVALID_REQUEST_OBJECT, authorizationEndpointResponse.getError());
         assertEquals("Missing parameter in the 'request' object: exp", authorizationEndpointResponse.getErrorDescription());
-        events.expectClientPolicyError(EventType.LOGIN_ERROR, OAuthErrorException.INVALID_REQUEST_OBJECT,
-                Details.CLIENT_POLICY_ERROR, OAuthErrorException.INVALID_REQUEST_OBJECT,
-                "Missing parameter in the 'request' object: exp").client(clientId).user((String) null)
-                .assertEvent();
+        EventAssertion.assertError(events.poll()).type(EventType.LOGIN_ERROR).error(OAuthErrorException.INVALID_REQUEST_OBJECT).details(Details.REASON, Details.CLIENT_POLICY_ERROR)
+                .details(Details.CLIENT_POLICY_ERROR, OAuthErrorException.INVALID_REQUEST_OBJECT)
+                .details(Details.CLIENT_POLICY_ERROR_DETAIL, "Missing parameter in the 'request' object: exp").clientId(clientId).userId(null);
 
         // check whether request object not expired
         requestObject = createValidRequestObjectForSecureRequestObjectExecutor(clientId);
@@ -611,9 +653,10 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
         authorizationEndpointResponse = oauth.parseLoginResponse();
         assertEquals(OAuthErrorException.INVALID_REQUEST_OBJECT, authorizationEndpointResponse.getError());
         assertEquals("Request Expired", authorizationEndpointResponse.getErrorDescription());
-        events.expectClientPolicyError(EventType.LOGIN_ERROR, OAuthErrorException.INVALID_REQUEST_OBJECT,
-                Details.CLIENT_POLICY_ERROR, OAuthErrorException.INVALID_REQUEST_OBJECT,
-                "Request Expired").client(clientId).user((String) null).assertEvent();
+        EventAssertion.assertError(events.poll()).type(EventType.LOGIN_ERROR).error(OAuthErrorException.INVALID_REQUEST_OBJECT)
+                .details(Details.REASON, Details.CLIENT_POLICY_ERROR)
+                .details(Details.CLIENT_POLICY_ERROR, OAuthErrorException.INVALID_REQUEST_OBJECT)
+                .details(Details.CLIENT_POLICY_ERROR_DETAIL, "Request Expired").clientId(clientId).userId(null);
 
         // check whether "nbf" claim exists
         requestObject = createValidRequestObjectForSecureRequestObjectExecutor(clientId);
@@ -623,10 +666,10 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
         authorizationEndpointResponse = oauth.parseLoginResponse();
         assertEquals(OAuthErrorException.INVALID_REQUEST_OBJECT, authorizationEndpointResponse.getError());
         assertEquals("Missing parameter in the 'request' object: nbf", authorizationEndpointResponse.getErrorDescription());
-        events.expectClientPolicyError(EventType.LOGIN_ERROR, OAuthErrorException.INVALID_REQUEST_OBJECT,
-                Details.CLIENT_POLICY_ERROR, OAuthErrorException.INVALID_REQUEST_OBJECT,
-                "Missing parameter in the 'request' object: nbf").client(clientId).user((String) null)
-                .assertEvent();
+        EventAssertion.assertError(events.poll()).type(EventType.LOGIN_ERROR).error(OAuthErrorException.INVALID_REQUEST_OBJECT)
+                .details(Details.REASON, Details.CLIENT_POLICY_ERROR)
+                .details(Details.CLIENT_POLICY_ERROR, OAuthErrorException.INVALID_REQUEST_OBJECT)
+                .details(Details.CLIENT_POLICY_ERROR_DETAIL, "Missing parameter in the 'request' object: nbf").clientId(clientId).userId(null);
 
         // check whether request object not yet being processed
         requestObject = createValidRequestObjectForSecureRequestObjectExecutor(clientId);
@@ -636,9 +679,10 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
         authorizationEndpointResponse = oauth.parseLoginResponse();
         assertEquals(OAuthErrorException.INVALID_REQUEST_OBJECT, authorizationEndpointResponse.getError());
         assertEquals("Request not yet being processed", authorizationEndpointResponse.getErrorDescription());
-        events.expectClientPolicyError(EventType.LOGIN_ERROR, OAuthErrorException.INVALID_REQUEST_OBJECT,
-                Details.CLIENT_POLICY_ERROR, OAuthErrorException.INVALID_REQUEST_OBJECT,
-                "Request not yet being processed").client(clientId).user((String) null).assertEvent();
+        EventAssertion.assertError(events.poll()).type(EventType.LOGIN_ERROR).error(OAuthErrorException.INVALID_REQUEST_OBJECT)
+                .details(Details.REASON, Details.CLIENT_POLICY_ERROR)
+                .details(Details.CLIENT_POLICY_ERROR, OAuthErrorException.INVALID_REQUEST_OBJECT)
+                .details(Details.CLIENT_POLICY_ERROR_DETAIL, "Request not yet being processed").clientId(clientId).userId(null);
 
         // nbf ahead within allowed clock skew
         requestObject = createValidRequestObjectForSecureRequestObjectExecutor(clientId);
@@ -654,9 +698,10 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
         authorizationEndpointResponse = oauth.parseLoginResponse();
         assertEquals(OAuthErrorException.INVALID_REQUEST_OBJECT, authorizationEndpointResponse.getError());
         assertEquals("Request issued in the future", authorizationEndpointResponse.getErrorDescription());
-        events.expectClientPolicyError(EventType.LOGIN_ERROR, OAuthErrorException.INVALID_REQUEST_OBJECT,
-                Details.CLIENT_POLICY_ERROR, OAuthErrorException.INVALID_REQUEST_OBJECT,
-                "Request issued in the future").client(clientId).user((String) null).assertEvent();
+        EventAssertion.assertError(events.poll()).type(EventType.LOGIN_ERROR).error(OAuthErrorException.INVALID_REQUEST_OBJECT)
+                .details(Details.REASON, Details.CLIENT_POLICY_ERROR)
+                .details(Details.CLIENT_POLICY_ERROR, OAuthErrorException.INVALID_REQUEST_OBJECT)
+                .details(Details.CLIENT_POLICY_ERROR_DETAIL, "Request issued in the future").clientId(clientId).userId(null);
 
         // iat ahead within allowed clock skew
         requestObject = createValidRequestObjectForSecureRequestObjectExecutor(clientId);
@@ -672,10 +717,10 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
         authorizationEndpointResponse = oauth.parseLoginResponse();
         assertEquals(OAuthErrorException.INVALID_REQUEST_OBJECT, authorizationEndpointResponse.getError());
         assertEquals("Request's available period is long", authorizationEndpointResponse.getErrorDescription());
-        events.expectClientPolicyError(EventType.LOGIN_ERROR, OAuthErrorException.INVALID_REQUEST_OBJECT,
-                Details.CLIENT_POLICY_ERROR, OAuthErrorException.INVALID_REQUEST_OBJECT,
-                "Request's available period is long").client(clientId).user((String) null)
-                .assertEvent();
+        EventAssertion.assertError(events.poll()).type(EventType.LOGIN_ERROR).error(OAuthErrorException.INVALID_REQUEST_OBJECT)
+                .details(Details.REASON, Details.CLIENT_POLICY_ERROR)
+                .details(Details.CLIENT_POLICY_ERROR, OAuthErrorException.INVALID_REQUEST_OBJECT)
+                .details(Details.CLIENT_POLICY_ERROR_DETAIL, "Request's available period is long").clientId(clientId).userId(null);
 
         // check whether "aud" claim exists
         requestObject = createValidRequestObjectForSecureRequestObjectExecutor(clientId);
@@ -685,10 +730,11 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
         authorizationEndpointResponse = oauth.parseLoginResponse();
         assertEquals(OAuthErrorException.INVALID_REQUEST_OBJECT, authorizationEndpointResponse.getError());
         assertEquals("Missing parameter in the 'request' object: aud", authorizationEndpointResponse.getErrorDescription());
-        events.expectClientPolicyError(EventType.LOGIN_ERROR, OAuthErrorException.INVALID_REQUEST_OBJECT,
-                        Details.CLIENT_POLICY_ERROR, OAuthErrorException.INVALID_REQUEST_OBJECT,
-                        "Missing parameter in the 'request' object: aud").client(clientId)
-                .user((String) null).assertEvent();
+        EventAssertion.assertError(events.poll()).type(EventType.LOGIN_ERROR).error(OAuthErrorException.INVALID_REQUEST_OBJECT)
+                .details(Details.REASON, Details.CLIENT_POLICY_ERROR)
+                .details(Details.CLIENT_POLICY_ERROR, OAuthErrorException.INVALID_REQUEST_OBJECT)
+                .details(Details.CLIENT_POLICY_ERROR_DETAIL, "Missing parameter in the 'request' object: aud").clientId(clientId)
+                .userId(null);
 
         // check whether "aud" claim points to this keycloak as authz server
         requestObject = createValidRequestObjectForSecureRequestObjectExecutor(clientId);
@@ -698,10 +744,12 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
         authorizationEndpointResponse = oauth.parseLoginResponse();
         assertEquals(OAuthErrorException.INVALID_REQUEST_URI, authorizationEndpointResponse.getError());
         assertEquals("Invalid parameter in the 'request' object: aud", authorizationEndpointResponse.getErrorDescription());
-        events.expectClientPolicyError(EventType.LOGIN_ERROR, OAuthErrorException.INVALID_REQUEST_URI,
-                        Details.CLIENT_POLICY_ERROR, OAuthErrorException.INVALID_REQUEST_URI,
-                        "Invalid parameter in the 'request' object: aud").client(clientId)
-                .user((String) null).assertEvent();
+        EventAssertion.assertError(events.poll()).type(EventType.LOGIN_ERROR).error(OAuthErrorException.INVALID_REQUEST_URI)
+                .details(Details.REASON, Details.CLIENT_POLICY_ERROR)
+                .details(Details.CLIENT_POLICY_ERROR, OAuthErrorException.INVALID_REQUEST_URI)
+                .details(Details.CLIENT_POLICY_ERROR_DETAIL, "Invalid parameter in the 'request' object: aud")
+                .clientId(clientId)
+                .userId(null);
 
         // confirm whether all parameters in query string are included in the request object, and have the same values
         // argument "request" are parameters overridden by parameters in request object
@@ -712,10 +760,11 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
         authorizationEndpointResponse = oauth.parseLoginResponse();
         assertEquals(OAuthErrorException.INVALID_REQUEST, authorizationEndpointResponse.getError());
         assertEquals("Invalid parameter. Parameters in 'request' object not matching with request parameters", authorizationEndpointResponse.getErrorDescription());
-        events.expectClientPolicyError(EventType.LOGIN_ERROR, OAuthErrorException.INVALID_REQUEST,
-                        Details.CLIENT_POLICY_ERROR, OAuthErrorException.INVALID_REQUEST,
-                        "Invalid parameter. Parameters in 'request' object not matching with request parameters")
-                .client(clientId).user((String) null).assertEvent();
+        EventAssertion.assertError(events.poll()).type(EventType.LOGIN_ERROR).error(OAuthErrorException.INVALID_REQUEST)
+                .details(Details.REASON, Details.CLIENT_POLICY_ERROR)
+                .details(Details.CLIENT_POLICY_ERROR, OAuthErrorException.INVALID_REQUEST)
+                .details(Details.CLIENT_POLICY_ERROR_DETAIL, "Invalid parameter. Parameters in 'request' object not matching with request parameters")
+                .clientId(clientId).userId(null);
 
         // valid request object
         requestObject = createValidRequestObjectForSecureRequestObjectExecutor(clientId);
@@ -739,10 +788,12 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
         authorizationEndpointResponse = oauth.parseLoginResponse();
         assertEquals(OAuthErrorException.INVALID_REQUEST_OBJECT, authorizationEndpointResponse.getError());
         assertEquals("Missing parameter in the 'request' object: nbf", authorizationEndpointResponse.getErrorDescription());
-        events.expectClientPolicyError(EventType.LOGIN_ERROR, OAuthErrorException.INVALID_REQUEST_OBJECT,
-                        Details.CLIENT_POLICY_ERROR, OAuthErrorException.INVALID_REQUEST_OBJECT,
-                        "Missing parameter in the 'request' object: nbf").client(clientId)
-                .user((String) null).assertEvent();
+        EventAssertion.assertError(events.poll()).type(EventType.LOGIN_ERROR).error(OAuthErrorException.INVALID_REQUEST_OBJECT)
+                .details(Details.REASON, Details.CLIENT_POLICY_ERROR)
+                .details(Details.CLIENT_POLICY_ERROR, OAuthErrorException.INVALID_REQUEST_OBJECT)
+                .details(Details.CLIENT_POLICY_ERROR_DETAIL, "Missing parameter in the 'request' object: nbf")
+                .clientId(clientId)
+                .userId(null);
 
         // check whether request object not yet being processed
         requestObject = createValidRequestObjectForSecureRequestObjectExecutor(clientId);
@@ -752,10 +803,10 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
         authorizationEndpointResponse = oauth.parseLoginResponse();
         assertEquals(OAuthErrorException.INVALID_REQUEST_OBJECT, authorizationEndpointResponse.getError());
         assertEquals("Request not yet being processed", authorizationEndpointResponse.getErrorDescription());
-        events.expectClientPolicyError(EventType.LOGIN_ERROR, OAuthErrorException.INVALID_REQUEST_OBJECT,
-                        Details.CLIENT_POLICY_ERROR, OAuthErrorException.INVALID_REQUEST_OBJECT,
-                        "Request not yet being processed").client(clientId).user((String) null)
-                .assertEvent();
+        EventAssertion.assertError(events.poll()).type(EventType.LOGIN_ERROR).error(OAuthErrorException.INVALID_REQUEST_OBJECT)
+                .details(Details.REASON, Details.CLIENT_POLICY_ERROR)
+                .details(Details.CLIENT_POLICY_ERROR, OAuthErrorException.INVALID_REQUEST_OBJECT)
+                .details(Details.CLIENT_POLICY_ERROR_DETAIL, "Request not yet being processed").clientId(clientId).userId(null);
 
         // check whether request object's available period is short
         requestObject = createValidRequestObjectForSecureRequestObjectExecutor(clientId);
@@ -765,10 +816,10 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
         authorizationEndpointResponse = oauth.parseLoginResponse();
         assertEquals(OAuthErrorException.INVALID_REQUEST_OBJECT, authorizationEndpointResponse.getError());
         assertEquals("Request's available period is long", authorizationEndpointResponse.getErrorDescription());
-        events.expectClientPolicyError(EventType.LOGIN_ERROR, OAuthErrorException.INVALID_REQUEST_OBJECT,
-                        Details.CLIENT_POLICY_ERROR, OAuthErrorException.INVALID_REQUEST_OBJECT,
-                        "Request's available period is long").client(clientId).user((String) null)
-                .assertEvent();
+        EventAssertion.assertError(events.poll()).type(EventType.LOGIN_ERROR).error(OAuthErrorException.INVALID_REQUEST_OBJECT)
+                .details(Details.REASON, Details.CLIENT_POLICY_ERROR)
+                .details(Details.CLIENT_POLICY_ERROR, OAuthErrorException.INVALID_REQUEST_OBJECT)
+                .details(Details.CLIENT_POLICY_ERROR_DETAIL, "Request's available period is long").clientId(clientId).userId(null);
 
         // update profile : not check "nbf"
         json = (new ClientProfilesBuilder()).addProfile(
@@ -811,10 +862,10 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
         authorizationEndpointResponse = oauth.parseLoginResponse();
         assertEquals(OAuthErrorException.INVALID_REQUEST_OBJECT, authorizationEndpointResponse.getError());
         assertEquals("Request object not encrypted", authorizationEndpointResponse.getErrorDescription());
-        events.expectClientPolicyError(EventType.LOGIN_ERROR, OAuthErrorException.INVALID_REQUEST_OBJECT,
-                        Details.CLIENT_POLICY_ERROR, OAuthErrorException.INVALID_REQUEST_OBJECT,
-                        "Request object not encrypted").client(clientId).user((String) null)
-                .assertEvent();
+        EventAssertion.assertError(events.poll()).type(EventType.LOGIN_ERROR).error(OAuthErrorException.INVALID_REQUEST_OBJECT)
+                .details(Details.REASON, Details.CLIENT_POLICY_ERROR)
+                .details(Details.CLIENT_POLICY_ERROR, OAuthErrorException.INVALID_REQUEST_OBJECT)
+                .details(Details.CLIENT_POLICY_ERROR_DETAIL, "Request object not encrypted").clientId(clientId).userId(null);
     }
 
     @Test
@@ -1447,10 +1498,12 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
         RefreshToken refreshToken = oauth.parseRefreshToken(response.getRefreshToken());
         assertEquals(sessionId, refreshToken.getSessionId());
         assertEquals(sessionId, refreshToken.getSessionId());
-        events.expectCodeToToken(loginEvent.getDetails().get(Details.CODE_ID), loginEvent.getSessionId())
-                .client(clientId)
-                .detail(Details.CLIENT_AUTH_METHOD, JWTClientAuthenticator.PROVIDER_ID)
-                .assertEvent();
+        EventAssertion.expectCodeToTokenSuccess(events.poll())
+                .sessionId(loginEvent.getSessionId())
+                .clientId(clientId)
+                .details(Details.CODE_ID, loginEvent.getDetails().get(Details.CODE_ID))
+                .details(Details.REFRESH_TOKEN_TYPE, TokenUtil.TOKEN_TYPE_REFRESH)
+                .details(Details.CLIENT_AUTH_METHOD, JWTClientAuthenticator.PROVIDER_ID);
 
         // refresh token
         signedJwt = createSignedRequestToken(clientId, privateKey, publicKey, Algorithm.ES256);
@@ -1651,10 +1704,12 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
         oauth.loginForm().state("randomstatesomething").requestUri(requestUri).open();
         assertTrue(errorPage.isCurrent());
         assertEquals("PAR request did not include necessary parameters", errorPage.getError());
-        events.expectClientPolicyError(EventType.LOGIN_ERROR, OAuthErrorException.INVALID_REQUEST,
-                        Details.CLIENT_POLICY_ERROR, OAuthErrorException.INVALID_REQUEST,
-                        "PAR request did not include necessary parameters").client((String) null)
-                .user((String) null).assertEvent();
+        EventAssertion.assertError(events.poll())
+                .type(EventType.LOGIN_ERROR).error(OAuthErrorException.INVALID_REQUEST)
+                .details(Details.REASON, Details.CLIENT_POLICY_ERROR)
+                .details(Details.CLIENT_POLICY_ERROR, OAuthErrorException.INVALID_REQUEST)
+                .details(Details.CLIENT_POLICY_ERROR_DETAIL, "PAR request did not include necessary parameters").clientId(null)
+                .userId(null);
 
         oauth.client(clientBetaId, "secretBeta");
         pResp = oauth.doPushedAuthorizationRequest();
@@ -1700,10 +1755,12 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
         oauth.loginForm().requestUri(requestUri).state("mystate2").open();
         assertTrue(errorPage.isCurrent());
         assertEquals("PAR request did not include necessary parameters", errorPage.getError());
-        events.expectClientPolicyError(EventType.LOGIN_ERROR, OAuthErrorException.INVALID_REQUEST,
-                        Details.CLIENT_POLICY_ERROR, OAuthErrorException.INVALID_REQUEST,
-                        "PAR request did not include necessary parameters").client((String) null)
-                .user((String) null).assertEvent();
+        EventAssertion.assertError(events.poll())
+                .type(EventType.LOGIN_ERROR).error(OAuthErrorException.INVALID_REQUEST)
+                .details(Details.REASON, Details.CLIENT_POLICY_ERROR)
+                .details(Details.CLIENT_POLICY_ERROR, OAuthErrorException.INVALID_REQUEST)
+                .details(Details.CLIENT_POLICY_ERROR_DETAIL, "PAR request did not include necessary parameters").clientId(null)
+                .userId(null);
 
         // Pushed Authorization Request with state parameter
         oidcClientEndpointsResource.setOIDCRequest(REALM_NAME, TEST_CLIENT, oauth.getRedirectUri(), "10", "mystate2", "none");
