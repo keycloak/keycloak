@@ -112,6 +112,20 @@ public abstract class AbstractJWTClientValidator extends AbstractBaseJWTValidato
             return false;
         }
 
+        // In the two-phase flow, the client is already identified and set on the context.
+        // The client may have been identified by a different authenticator (e.g. HTTP Basic) than the
+        // one validating this assertion, so we still need to bind the assertion to that client by
+        // verifying the JWT subject. Without this, an attacker who can authenticate as client A could
+        // present an assertion for client B and have it accepted.
+        if (context.getClient() != null) {
+            if (!clientId.equals(context.getClient().getClientId())) {
+                logger.debug("JWT subject does not match the client identified earlier in the flow");
+                return failure("Token sub claim does not match the authenticated client");
+            }
+            return true;
+        }
+
+        // Legacy path: client not yet set on context, look up and validate
         ClientModel client = clientAssertionState.getClient();
 
         if (client == null) {

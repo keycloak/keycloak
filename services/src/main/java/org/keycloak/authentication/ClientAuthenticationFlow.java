@@ -64,13 +64,125 @@ public class ClientAuthenticationFlow implements AuthenticationFlow {
     public Response processFlow() {
         List<AuthenticationExecutionModel> executions = findExecutionsToRun();
 
+        // Phase 1: Attempt to look up the client using the new two-phase approach.
+        // Each authenticator's lookupClient() extracts client identity from the request
+        // and returns the ClientModel without validating credentials.
+        ClientModel client = null;
         for (AuthenticationExecutionModel model : executions) {
-            ClientAuthenticatorFactory factory = (ClientAuthenticatorFactory) processor.getSession().getKeycloakSessionFactory().getProviderFactory(ClientAuthenticator.class, model.getAuthenticator());
-            if (factory == null) {
-                throw new AuthenticationFlowException("Could not find ClientAuthenticatorFactory for: " + model.getAuthenticator(), AuthenticationFlowError.INTERNAL_ERROR);
-            }
+            ClientAuthenticatorFactory factory = getClientAuthenticatorFactory(model);
             ClientAuthenticator authenticator = factory.create();
-            logger.debugv("client authenticator: {0}", factory.getId());
+            logger.debugv("client authenticator lookup: {0}", factory.getId());
+
+            AuthenticationProcessor.Result context = processor.createClientAuthenticatorContext(model, authenticator, executions);
+            client = authenticator.lookupClient(context);
+            if (client != null) {
+                logger.debugv("Client {0} identified by {1}", client.getClientId(), factory.getId());
+                break;
+            }
+        }
+
+        if (client != null) {
+            // Phase 2: Client identified - authenticate using the client's configured authenticator.
+            return authenticateIdentifiedClient(client, executions);
+        }
+
+        // Legacy fallback: lookupClient() returned null for all authenticators.
+        // This handles custom authenticators that have not yet implemented lookupClient().
+        return processFlowLegacy(executions);
+    }
+
+    /**
+     * Phase 2 of the two-phase client authentication flow.
+     * The client has been identified; now validate credentials using the client's configured authenticator.
+     */
+    private Response authenticateIdentifiedClient(ClientModel client, List<AuthenticationExecutionModel> executions) {
+        processor.setClient(client);
+        processor.getEvent().client(client.getClientId());
+
+        if (!client.isEnabled()) {
+            throw new AuthenticationFlowException("Client is disabled", AuthenticationFlowError.CLIENT_DISABLED);
+        }
+
+        String expectedClientAuthType = resolveExpectedClientAuthType(client, executions);
+
+        // Find the matching authenticator and run credential validation
+        for (AuthenticationExecutionModel model : executions) {
+            ClientAuthenticatorFactory factory = getClientAuthenticatorFactory(model);
+            if (factory.getId().equals(expectedClientAuthType)) {
+                ClientAuthenticator authenticator = factory.create();
+                logger.debugv("client authenticator auth: {0}", factory.getId());
+
+                AuthenticationProcessor.Result context = processor.createClientAuthenticatorContext(model, authenticator, executions);
+                authenticator.authenticateClient(context);
+
+                Response response = processResult(context);
+                if (response != null) return response;
+
+                if (!context.getStatus().equals(FlowStatus.SUCCESS)) {
+                    throw new AuthenticationFlowException("Expected success, but for an unknown reason the status was " + context.getStatus(), AuthenticationFlowError.INTERNAL_ERROR);
+                }
+
+                success = true;
+                logger.debugv("Client {0} authenticated by {1}", client.getClientId(), factory.getId());
+                processor.getEvent().detail(Details.CLIENT_AUTH_METHOD, factory.getId());
+                return null;
+            }
+        }
+
+        // Client's configured authenticator type is not present in the flow
+        throw new AuthenticationFlowException("Client authenticator not configured in the authentication flow", AuthenticationFlowError.CLIENT_NOT_FOUND);
+    }
+
+    /**
+     * Resolves which authenticator should validate credentials for the given client.
+     *
+     * <p>Mirrors the legacy resolution rules so that switching to the two-phase flow does not change
+     * authenticator selection semantics:
+     * <ul>
+     *   <li>If the client has no configured authenticator type, fall back to the default and log it.</li>
+     *   <li>For public clients, the configured type is ignored and the default is used. This preserves
+     *       backwards-compatible behavior where public clients are matched purely on {@code client_id}.</li>
+     *   <li>For public clients with the {@code attestation-based} authenticator present in the flow and
+     *       the ABCA feature enabled, prefer ABCA over the default. Without this override, ABCA would
+     *       never run for a public client because {@link KeycloakModelUtils#getDefaultClientAuthenticatorType()}
+     *       resolves to {@code client-secret}, which short-circuits to success for public clients.</li>
+     * </ul>
+     */
+    private String resolveExpectedClientAuthType(ClientModel client, List<AuthenticationExecutionModel> executions) {
+        String expectedClientAuthType = client.getClientAuthenticatorType();
+
+        if (expectedClientAuthType == null) {
+            ServicesLogger.LOGGER.authMethodFallback(client.getClientId(), expectedClientAuthType);
+            expectedClientAuthType = KeycloakModelUtils.getDefaultClientAuthenticatorType();
+        } else if (client.isPublicClient()) {
+            expectedClientAuthType = KeycloakModelUtils.getDefaultClientAuthenticatorType();
+        }
+
+        // For public clients, prefer ABCA when it is configured in the flow and enabled by feature flag.
+        // This preserves the legacy behavior where the per-execution loop activated ABCA for public clients.
+        String abcaAuthType = AttestationBasedClientAuthenticator.PROVIDER_ID;
+        if (client.isPublicClient() && Profile.isFeatureEnabled(Profile.Feature.CLIENT_AUTH_ABCA)) {
+            for (AuthenticationExecutionModel model : executions) {
+                if (abcaAuthType.equals(model.getAuthenticator())) {
+                    expectedClientAuthType = abcaAuthType;
+                    break;
+                }
+            }
+        }
+
+        return expectedClientAuthType;
+    }
+
+    /**
+     * Legacy single-pass flow for backward compatibility with custom authenticators that have not
+     * implemented {@link ClientAuthenticator#lookupClient}. This preserves the original behavior
+     * where each authenticator handles both client lookup and credential validation.
+     */
+    private Response processFlowLegacy(List<AuthenticationExecutionModel> executions) {
+        for (AuthenticationExecutionModel model : executions) {
+            ClientAuthenticatorFactory factory = getClientAuthenticatorFactory(model);
+            ClientAuthenticator authenticator = factory.create();
+            logger.debugv("client authenticator (legacy): {0}", factory.getId());
 
             AuthenticationProcessor.Result context = processor.createClientAuthenticatorContext(model, authenticator, executions);
             authenticator.authenticateClient(context);
@@ -120,8 +232,16 @@ public class ClientAuthenticationFlow implements AuthenticationFlow {
             processor.getEvent().error(Errors.INVALID_CLIENT);
             return alternativeChallenge;
         }
-        
+
         throw new AuthenticationFlowException("Invalid client or Invalid client credentials", AuthenticationFlowError.CLIENT_NOT_FOUND);
+    }
+
+    private ClientAuthenticatorFactory getClientAuthenticatorFactory(AuthenticationExecutionModel model) {
+        ClientAuthenticatorFactory factory = (ClientAuthenticatorFactory) processor.getSession().getKeycloakSessionFactory().getProviderFactory(ClientAuthenticator.class, model.getAuthenticator());
+        if (factory == null) {
+            throw new AuthenticationFlowException("Could not find ClientAuthenticatorFactory for: " + model.getAuthenticator(), AuthenticationFlowError.INTERNAL_ERROR);
+        }
+        return factory;
     }
 
     protected List<AuthenticationExecutionModel> findExecutionsToRun() {
