@@ -286,7 +286,7 @@ public class RefreshTokenTest {
         EventAssertion.assertSuccess(tokenEvent)
                 .userId(user.getId())
                 .sessionId(sessionId)
-                .isCodeId()
+                .hasCodeId()
                 .clientId("test-app")
                 .type(EventType.CODE_TO_TOKEN);
 
@@ -1109,7 +1109,7 @@ public class RefreshTokenTest {
         EventAssertion.assertSuccess(tokenEvent)
                 .userId(user.getId())
                 .sessionId(sessionId)
-                .isCodeId()
+                .hasCodeId()
                 .clientId("test-app")
                 .type(EventType.CODE_TO_TOKEN);
 

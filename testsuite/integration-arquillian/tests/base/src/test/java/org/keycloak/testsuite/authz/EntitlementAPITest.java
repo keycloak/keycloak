@@ -74,6 +74,7 @@ import org.keycloak.representations.idm.authorization.ResourceServerRepresentati
 import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.UserBuilder;
@@ -686,12 +687,11 @@ public class EntitlementAPITest extends AbstractAuthzTest {
         }
 
 
-        events.expect(EventType.PERMISSION_TOKEN_ERROR).realm(getRealm().toRepresentation().getId()).client(RESOURCE_SERVER_TEST)
-                .session((String) null)
+        EventAssertion.assertError(events.poll()).type(EventType.PERMISSION_TOKEN_ERROR).clientId(RESOURCE_SERVER_TEST)
+                .sessionId(null)
                 .error("invalid_request")
-                .detail("reason", "Resource with id [Sensortest] does not exist.")
-                .user(at.getSubject())
-                .assertEvent();
+                .details("reason", "Resource with id [Sensortest] does not exist.")
+                .userId(at.getSubject());
     }
 
     @Test

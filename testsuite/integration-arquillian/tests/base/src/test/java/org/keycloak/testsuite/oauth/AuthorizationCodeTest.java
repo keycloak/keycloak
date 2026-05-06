@@ -310,13 +310,12 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
             Assertions.assertEquals(requestState, state);
             Assertions.assertNotNull(driver.findElement(By.id("code")).getText());
 
-            events.expect(EventType.LOGIN)
-                    .user(AssertEvents.isUUID())
-                    .session(AssertEvents.isSessionId())
-                    .detail(Details.USERNAME, "test-user@localhost")
-                    .detail(OIDCLoginProtocol.RESPONSE_MODE_PARAM, OIDCResponseMode.FORM_POST.name().toLowerCase())
-                    .detail(OAuth2Constants.REDIRECT_URI, redirectUri)
-                    .assertEvent();
+            EventAssertion.assertSuccess(events.poll()).type(EventType.LOGIN)
+                    .hasUserId()
+                    .hasSessionId()
+                    .details(Details.USERNAME, "test-user@localhost")
+                    .details(OIDCLoginProtocol.RESPONSE_MODE_PARAM, OIDCResponseMode.FORM_POST.name().toLowerCase())
+                    .details(OAuth2Constants.REDIRECT_URI, redirectUri);
         }
     }
 
@@ -344,13 +343,12 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
             Assertions.assertEquals(requestState, responseToken.getOtherClaims().get("state"));
             Assertions.assertNotNull(responseToken.getOtherClaims().get("code"));
 
-            events.expect(EventType.LOGIN)
-                    .user(AssertEvents.isUUID())
-                    .session((String) responseToken.getOtherClaims().get("session_state"))
-                    .detail(Details.USERNAME, "test-user@localhost")
-                    .detail(OIDCLoginProtocol.RESPONSE_MODE_PARAM, OIDCResponseMode.FORM_POST_JWT.name().toLowerCase())
-                    .detail(OAuth2Constants.REDIRECT_URI, redirectUri)
-                    .assertEvent();
+            EventAssertion.assertSuccess(events.poll()).type(EventType.LOGIN)
+                    .hasUserId()
+                    .sessionId((String) responseToken.getOtherClaims().get("session_state"))
+                    .details(Details.USERNAME, "test-user@localhost")
+                    .details(OIDCLoginProtocol.RESPONSE_MODE_PARAM, OIDCResponseMode.FORM_POST_JWT.name().toLowerCase())
+                    .details(OAuth2Constants.REDIRECT_URI, redirectUri);
         }
     }
 

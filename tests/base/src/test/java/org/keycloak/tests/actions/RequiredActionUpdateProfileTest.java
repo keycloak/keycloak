@@ -30,7 +30,6 @@ import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
 import org.keycloak.models.UserModel;
-import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.userprofile.config.UPAttribute;
 import org.keycloak.representations.userprofile.config.UPAttributePermissions;
@@ -57,9 +56,9 @@ import org.keycloak.testframework.ui.page.LoginPage;
 import org.keycloak.testframework.ui.page.LoginUpdateProfilePage;
 import org.keycloak.testframework.ui.webdriver.BrowserType;
 import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
+import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.tests.suites.DatabaseTest;
 import org.keycloak.tests.utils.PasswordGenerateUtil;
-import org.keycloak.tests.utils.admin.AdminApiUtil;
 import org.keycloak.userprofile.UserProfileContext;
 import org.keycloak.utils.StringUtil;
 
@@ -72,12 +71,10 @@ import org.openqa.selenium.ElementClickInterceptedException;
 import static org.keycloak.userprofile.config.UPConfigUtils.ROLE_ADMIN;
 import static org.keycloak.userprofile.config.UPConfigUtils.ROLE_USER;
 
-import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.anyOf;
 import static org.hamcrest.Matchers.containsString;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNull;
 
 @KeycloakIntegrationTest
 @DatabaseTest
@@ -124,17 +121,13 @@ public class RequiredActionUpdateProfileTest {
 
         updateProfilePage.prepareUpdate().username("test-user@localhost").firstName("New first").lastName("New last").email("new@email.com").submit();
 
-        EventAssertion.assertSuccess(pollEvent())
-                .type(EventType.UPDATE_PROFILE)
-                .details(Details.PREVIOUS_FIRST_NAME, "Tom")
-                .details(Details.UPDATED_FIRST_NAME, "New first")
-                .details(Details.PREVIOUS_LAST_NAME, "Brady")
-                .details(Details.UPDATED_LAST_NAME, "New last")
-                .details(Details.PREVIOUS_EMAIL, "test-user@localhost")
-                .details(Details.UPDATED_EMAIL, "new@email.com");
-        assertThat(oauth.parseLoginResponse().getCode(), notNullValue());
+        Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
 
-        EventAssertion.expectLoginSuccess(pollEvent());
+        EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_PROFILE).details(Details.PREVIOUS_FIRST_NAME, "Tom").details(Details.UPDATED_FIRST_NAME, "New first")
+                .details(Details.PREVIOUS_LAST_NAME, "Brady").details(Details.UPDATED_LAST_NAME, "New last")
+                .details(Details.PREVIOUS_EMAIL, "test-user@localhost").details(Details.UPDATED_EMAIL, "new@email.com");
+
+        EventAssertion.expectLoginSuccess(events.poll());
 
         // assert user is really updated in persistent store
         UserRepresentation user = testUser.admin().toRepresentation();
@@ -159,9 +152,11 @@ public class RequiredActionUpdateProfileTest {
 
         updateProfilePage.prepareUpdate().username("new").firstName("New first").lastName("New last").email("john-doh@localhost").submit();
 
-        EventAssertion.assertSuccess(pollEvent())
+        Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
+
+        EventAssertion.assertSuccess(events.poll())
                 .type(EventType.UPDATE_PROFILE)
-                .isCodeId()
+                .hasCodeId()
                 .sessionId(null)
                 .userId(userId)
                 .details(Details.USERNAME, "john-doh@localhost")
@@ -169,9 +164,7 @@ public class RequiredActionUpdateProfileTest {
                 .details(Details.UPDATED_LAST_NAME, "New last")
                 .withoutDetails(Details.CONSENT);
 
-        assertThat(oauth.parseLoginResponse().getCode(), notNullValue());
-
-        EventAssertion.expectLoginSuccess(pollEvent()).details(Details.USERNAME, "john-doh@localhost").userId(userId);
+        EventAssertion.expectLoginSuccess(events.poll()).details(Details.USERNAME, "john-doh@localhost").userId(userId);
 
         // assert user is really updated in persistent store
         UserRepresentation user = johnDohUser.admin().toRepresentation();
@@ -202,7 +195,7 @@ public class RequiredActionUpdateProfileTest {
         Assertions.assertEquals("new@email.com", updateProfilePage.getEmail());
         Assertions.assertEquals("Please specify this field.", updateProfilePage.getInputErrors().getFirstNameError());
 
-        assertNoMoreEvents();
+        Assertions.assertNull(events.poll());
     }
 
     @Test
@@ -225,7 +218,7 @@ public class RequiredActionUpdateProfileTest {
 
         Assertions.assertEquals("Please specify this field.", updateProfilePage.getInputErrors().getLastNameError());
 
-        assertNoMoreEvents();
+        Assertions.assertNull(events.poll());
     }
 
     @Test
@@ -252,7 +245,7 @@ public class RequiredActionUpdateProfileTest {
                 containsString("Please specify this field")
         ));
 
-        assertNoMoreEvents();
+        Assertions.assertNull(events.poll());
     }
 
     @Test
@@ -276,7 +269,7 @@ public class RequiredActionUpdateProfileTest {
 
         Assertions.assertEquals("Invalid email address.", updateProfilePage.getInputErrors().getEmailError());
 
-        assertNoMoreEvents();
+        Assertions.assertNull(events.poll());
     }
 
     @Test
@@ -300,7 +293,7 @@ public class RequiredActionUpdateProfileTest {
 
         Assertions.assertEquals("Please specify username.", updateProfilePage.getInputErrors().getUsernameError());
 
-        assertNoMoreEvents();
+        Assertions.assertNull(events.poll());
     }
 
     @Test
@@ -324,7 +317,7 @@ public class RequiredActionUpdateProfileTest {
 
         Assertions.assertEquals("Username already exists.", updateProfilePage.getInputErrors().getUsernameError());
 
-        assertNoMoreEvents();
+        Assertions.assertNull(events.poll());
     }
 
     @Test
@@ -348,12 +341,15 @@ public class RequiredActionUpdateProfileTest {
 
         Assertions.assertEquals("Email already exists.", updateProfilePage.getInputErrors().getEmailError());
 
-        assertNoMoreEvents();
+        Assertions.assertNull(events.poll());
     }
 
     @Test
     public void updateProfileDuplicateUsernameWithEmail() {
-        String userId = createUser("user1@local.com", "user1", "user1", "user1@local.org");
+        UserRepresentation user = UserBuilder.create("user1@local.com")
+                .name("user1", "user1").email("user1@local.org").emailVerified(true).password("password").build();
+
+        String userId = ApiUtil.getCreatedId(realm.admin().users().create(user));
         realm.cleanup().add(r -> r.users().get(userId).remove());
 
         oauth.openLoginForm();
@@ -375,12 +371,15 @@ public class RequiredActionUpdateProfileTest {
 
         Assertions.assertEquals("Username already exists.", updateProfilePage.getInputErrors().getUsernameError());
 
-        assertNoMoreEvents();
+        Assertions.assertNull(events.poll());
     }
 
     @Test
     public void updateProfileDuplicatedEmailWithUsername() {
-        String userId = createUser("user1@local.com", "user1", "user1", "user1@local.org");
+        UserRepresentation user = UserBuilder.create("user1@local.com")
+                .name("user1", "user1").email("user1@local.org").emailVerified(true).password("password").build();
+
+        String userId = ApiUtil.getCreatedId(realm.admin().users().create(user));
         realm.cleanup().add(r -> r.users().get(userId).remove());
 
         oauth.openLoginForm();
@@ -402,7 +401,7 @@ public class RequiredActionUpdateProfileTest {
 
         Assertions.assertEquals("Email already exists.", updateProfilePage.getInputErrors().getEmailError());
 
-        assertNoMoreEvents();
+        Assertions.assertNull(events.poll());
     }
 
     @Test
@@ -446,15 +445,11 @@ public class RequiredActionUpdateProfileTest {
 
             updateProfilePage.prepareUpdate().username("test-user@localhost").firstName("New first").lastName("New last").email("new@email.com").submit();
 
-            EventAssertion.assertSuccess(pollEvent())
-                    .type(EventType.UPDATE_PROFILE)
-                    .details(Details.CONTEXT, UserProfileContext.UPDATE_PROFILE.name())
-                    .details(Details.PREVIOUS_EMAIL, "test-user@localhost")
-                    .details(Details.UPDATED_EMAIL, "new@email.com");
+            Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
 
-            assertThat(oauth.parseLoginResponse().getCode(), notNullValue());
+            EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_PROFILE).details(Details.CONTEXT, UserProfileContext.UPDATE_PROFILE.name()).details(Details.PREVIOUS_EMAIL, "test-user@localhost").details(Details.UPDATED_EMAIL, "new@email.com");
 
-            EventAssertion.expectLoginSuccess(pollEvent());
+            EventAssertion.expectLoginSuccess(events.poll());
 
             // assert user is really updated in persistent store
             userRep = testUser.admin().toRepresentation();
@@ -593,26 +588,6 @@ public class RequiredActionUpdateProfileTest {
         } finally {
             userProfile.update(configuration);
         }
-    }
-
-    private String createUser(String username, String firstName, String lastName, String email) {
-        UserRepresentation user = UserBuilder.create().enabled(true)
-                .username(username)
-                .email(email)
-                .firstName(firstName)
-                .lastName(lastName)
-                .emailVerified(true)
-                .build();
-        return AdminApiUtil.createUserAndResetPasswordWithAdminClient(realm.admin(), user, PASSWORD);
-    }
-
-    private void assertNoMoreEvents() {
-        EventRepresentation event = events.poll();
-        assertNull(event, "Expected no more events but got: " + (event != null ? event.getType() : null));
-    }
-
-    private EventRepresentation pollEvent() {
-        return driver.waiting().until(d -> events.poll());
     }
 
     public static class RequiredActionUpdateProfileRealmConfig implements RealmConfig {

@@ -114,7 +114,7 @@ public class WebAuthnRegisterAndLoginTest extends AbstractWebAuthnVirtualTest {
 
         EventRepresentation event = events.poll();
 
-        EventAssertion.assertSuccess(event).type(EventType.CUSTOM_REQUIRED_ACTION).sessionId(null).userId(userId).isCodeId()
+        EventAssertion.assertSuccess(event).type(EventType.CUSTOM_REQUIRED_ACTION).sessionId(null).userId(userId).hasCodeId()
                 .details(Details.REDIRECT_URI, testApp.getRedirectionUri())
                 .details(Details.CUSTOM_REQUIRED_ACTION, WebAuthnRegisterFactory.PROVIDER_ID)
                 .details(WebAuthnConstants.PUBKEY_CRED_LABEL_ATTR, authenticatorLabel)
@@ -124,7 +124,7 @@ public class WebAuthnRegisterAndLoginTest extends AbstractWebAuthnVirtualTest {
 
         EventRepresentation event2 = events.poll();
 
-        EventAssertion.assertSuccess(event2).type(EventType.UPDATE_CREDENTIAL).sessionId(null).userId(userId).isCodeId()
+        EventAssertion.assertSuccess(event2).type(EventType.UPDATE_CREDENTIAL).sessionId(null).userId(userId).hasCodeId()
                 .details(Details.REDIRECT_URI, testApp.getRedirectionUri())
                 .details(Details.CUSTOM_REQUIRED_ACTION, WebAuthnRegisterFactory.PROVIDER_ID)
                 .details(WebAuthnConstants.PUBKEY_CRED_LABEL_ATTR, authenticatorLabel)
@@ -135,7 +135,7 @@ public class WebAuthnRegisterAndLoginTest extends AbstractWebAuthnVirtualTest {
         assertThat(regPubKeyCredentialId1, equalTo(regPubKeyCredentialId2));
 
         // confirm login event
-        EventAssertion.assertSuccess(events.poll()).type(EventType.LOGIN).hasSessionId().userId(userId).isCodeId()
+        EventAssertion.assertSuccess(events.poll()).type(EventType.LOGIN).hasSessionId().userId(userId).hasCodeId()
                 .details(Details.REDIRECT_URI, testApp.getRedirectionUri())
                 .details(Details.CUSTOM_REQUIRED_ACTION, WebAuthnRegisterFactory.PROVIDER_ID)
                 .details(WebAuthnConstants.PUBKEY_CRED_LABEL_ATTR, authenticatorLabel);
@@ -166,7 +166,7 @@ public class WebAuthnRegisterAndLoginTest extends AbstractWebAuthnVirtualTest {
         Assertions.assertNotNull(oAuthClient.parseLoginResponse().getCode());
 
         // confirm login event
-        EventAssertion.assertSuccess(events.poll()).type(EventType.LOGIN).hasSessionId().userId(userId).isCodeId()
+        EventAssertion.assertSuccess(events.poll()).type(EventType.LOGIN).hasSessionId().userId(userId).hasCodeId()
                 .details(Details.REDIRECT_URI, testApp.getRedirectionUri())
                 .details(WebAuthnConstants.PUBKEY_CRED_ID_ATTR, regPubKeyCredentialId2)
                 .details(WebAuthnConstants.USER_VERIFICATION_CHECKED, Boolean.FALSE.toString());
@@ -223,12 +223,12 @@ public class WebAuthnRegisterAndLoginTest extends AbstractWebAuthnVirtualTest {
 
         webAuthnRegisterPage.assertCurrent();
 
-        EventAssertion.assertSuccess(events.poll()).type(EventType.CUSTOM_REQUIRED_ACTION).sessionId(null).userId(userId).isCodeId()
+        EventAssertion.assertSuccess(events.poll()).type(EventType.CUSTOM_REQUIRED_ACTION).sessionId(null).userId(userId).hasCodeId()
                 .details(Details.REDIRECT_URI, testApp.getRedirectionUri())
                 .details(Details.CUSTOM_REQUIRED_ACTION, WebAuthnRegisterFactory.PROVIDER_ID)
                 .details(WebAuthnConstants.PUBKEY_CRED_LABEL_ATTR, WEBAUTHN_LABEL);
 
-        EventAssertion.assertSuccess(events.poll()).type(EventType.UPDATE_CREDENTIAL).sessionId(null).userId(userId).isCodeId()
+        EventAssertion.assertSuccess(events.poll()).type(EventType.UPDATE_CREDENTIAL).sessionId(null).userId(userId).hasCodeId()
                 .details(Details.REDIRECT_URI, testApp.getRedirectionUri())
                 .details(Details.CUSTOM_REQUIRED_ACTION, WebAuthnRegisterFactory.PROVIDER_ID)
                 .details(WebAuthnConstants.PUBKEY_CRED_LABEL_ATTR, WEBAUTHN_LABEL);
@@ -238,17 +238,17 @@ public class WebAuthnRegisterAndLoginTest extends AbstractWebAuthnVirtualTest {
 
         Assertions.assertNotNull(oAuthClient.parseLoginResponse().getCode());
 
-        EventAssertion.assertSuccess(events.poll()).type(EventType.CUSTOM_REQUIRED_ACTION).sessionId(null).userId(userId).isCodeId()
+        EventAssertion.assertSuccess(events.poll()).type(EventType.CUSTOM_REQUIRED_ACTION).sessionId(null).userId(userId).hasCodeId()
                 .details(Details.REDIRECT_URI, testApp.getRedirectionUri())
                 .details(Details.CUSTOM_REQUIRED_ACTION, WebAuthnPasswordlessRegisterFactory.PROVIDER_ID)
                 .details(WebAuthnConstants.PUBKEY_CRED_LABEL_ATTR, PASSWORDLESS_LABEL);
 
-        EventAssertion.assertSuccess(events.poll()).type(EventType.UPDATE_CREDENTIAL).sessionId(null).userId(userId).isCodeId()
+        EventAssertion.assertSuccess(events.poll()).type(EventType.UPDATE_CREDENTIAL).sessionId(null).userId(userId).hasCodeId()
                 .details(Details.REDIRECT_URI, testApp.getRedirectionUri())
                 .details(Details.CUSTOM_REQUIRED_ACTION, WebAuthnPasswordlessRegisterFactory.PROVIDER_ID)
                 .details(WebAuthnConstants.PUBKEY_CRED_LABEL_ATTR, PASSWORDLESS_LABEL);
 
-        EventAssertion.assertSuccess(events.poll()).type(EventType.LOGIN).hasSessionId().userId(userId).isCodeId()
+        EventAssertion.assertSuccess(events.poll()).type(EventType.LOGIN).hasSessionId().userId(userId).hasCodeId()
                 .details(Details.REDIRECT_URI, testApp.getRedirectionUri())
                 .details(Details.CUSTOM_REQUIRED_ACTION, WebAuthnPasswordlessRegisterFactory.PROVIDER_ID);
 
@@ -350,12 +350,12 @@ public class WebAuthnRegisterAndLoginTest extends AbstractWebAuthnVirtualTest {
 
         webAuthnRegisterPage.assertCurrent();
 
-        EventAssertion.assertSuccess(events.poll()).type(EventType.CUSTOM_REQUIRED_ACTION).sessionId(null).userId(userId).isCodeId()
+        EventAssertion.assertSuccess(events.poll()).type(EventType.CUSTOM_REQUIRED_ACTION).sessionId(null).userId(userId).hasCodeId()
                 .details(Details.REDIRECT_URI, testApp.getRedirectionUri())
                 .details(Details.CUSTOM_REQUIRED_ACTION, WebAuthnRegisterFactory.PROVIDER_ID)
                 .details(WebAuthnConstants.PUBKEY_CRED_LABEL_ATTR, WEBAUTHN_LABEL);
 
-        EventAssertion.assertSuccess(events.poll()).type(EventType.UPDATE_CREDENTIAL).sessionId(null).userId(userId).isCodeId()
+        EventAssertion.assertSuccess(events.poll()).type(EventType.UPDATE_CREDENTIAL).sessionId(null).userId(userId).hasCodeId()
                 .details(Details.REDIRECT_URI, testApp.getRedirectionUri())
                 .details(Details.CUSTOM_REQUIRED_ACTION, WebAuthnRegisterFactory.PROVIDER_ID)
                 .details(WebAuthnConstants.PUBKEY_CRED_LABEL_ATTR, WEBAUTHN_LABEL);

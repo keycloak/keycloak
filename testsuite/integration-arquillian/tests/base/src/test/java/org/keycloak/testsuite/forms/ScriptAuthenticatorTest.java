@@ -178,7 +178,7 @@ public class ScriptAuthenticatorTest extends AbstractFlowTest {
 
         loginPage.login("fail", getPassword("fail"));
 
-        events.expect(EventType.LOGIN_ERROR).user((String) null).error(Errors.USER_NOT_FOUND).assertEvent();
+        EventAssertion.assertError(events.poll()).type(EventType.LOGIN_ERROR).userId(null).error(Errors.USER_NOT_FOUND);
     }
 
     /**

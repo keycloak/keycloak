@@ -84,18 +84,19 @@ public class ClientAuthSignedJWTTest extends AbstractClientAuthSignedJWTTest {
         AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
         RefreshToken refreshToken = oauth.parseRefreshToken(response.getRefreshToken());
 
-        events.expectClientLogin()
-                .client("client1")
-                .user(client1SAUserId)
-                .session(accessToken.getSessionState())
-                .detail(Details.TOKEN_ID, accessToken.getId())
-                .detail(Details.REFRESH_TOKEN_ID, refreshToken.getId())
-                .detail(Details.USERNAME, ServiceAccountConstants.SERVICE_ACCOUNT_USER_PREFIX + "client1")
-                .detail(Details.CLIENT_AUTH_METHOD, JWTClientAuthenticator.PROVIDER_ID)
-                .detail(Details.CLIENT_ASSERTION_ID, client1JsonWebToken.getId())
-                .detail(Details.CLIENT_ASSERTION_ISSUER, "client1")
-                .detail(Details.CLIENT_ASSERTION_SUB, "client1")
-                .assertEvent();
+        EventAssertion.assertSuccess(events.poll())
+                .type(EventType.CLIENT_LOGIN)
+                .clientId("client1")
+                .userId(client1SAUserId)
+                .hasSessionId()
+                .sessionId(accessToken.getSessionState())
+                .details(Details.TOKEN_ID, accessToken.getId())
+                .details(Details.REFRESH_TOKEN_ID, refreshToken.getId())
+                .details(Details.USERNAME, ServiceAccountConstants.SERVICE_ACCOUNT_USER_PREFIX + "client1")
+                .details(Details.CLIENT_AUTH_METHOD, JWTClientAuthenticator.PROVIDER_ID)
+                .details(Details.CLIENT_ASSERTION_ID, client1JsonWebToken.getId())
+                .details(Details.CLIENT_ASSERTION_ISSUER, "client1")
+                .details(Details.CLIENT_ASSERTION_SUB, "client1");
 
         assertEquals(accessToken.getSessionState(), refreshToken.getSessionState());
 
@@ -107,11 +108,10 @@ public class ClientAuthSignedJWTTest extends AbstractClientAuthSignedJWTTest {
         assertEquals(accessToken.getSessionState(), refreshedAccessToken.getSessionState());
         assertEquals(accessToken.getSessionState(), refreshedRefreshToken.getSessionState());
 
-        events.expectRefresh(refreshToken.getId(), refreshToken.getSessionState())
-                .user(client1SAUserId)
-                .client("client1")
-                .detail(Details.CLIENT_AUTH_METHOD, JWTClientAuthenticator.PROVIDER_ID)
-                .assertEvent();
+        EventAssertion.expectRefreshTokenSuccess(events.poll()).details(Details.REFRESH_TOKEN_ID, refreshToken.getId()).sessionId(refreshToken.getSessionState())
+                .userId(client1SAUserId)
+                .clientId("client1")
+                .details(Details.CLIENT_AUTH_METHOD, JWTClientAuthenticator.PROVIDER_ID);
 
         // Logout and assert refresh will fail
         HttpResponse logoutResponse = doLogout(response.getRefreshToken(), getClient1SignedJWT());
@@ -128,13 +128,13 @@ public class ClientAuthSignedJWTTest extends AbstractClientAuthSignedJWTTest {
         assertEquals(400, response.getStatusCode());
         assertEquals("invalid_grant", response.getError());
 
-        events.expectRefresh(refreshToken.getId(), refreshToken.getSessionState())
-                .client("client1")
-                .user((String) null)
-                .removeDetail(Details.TOKEN_ID)
-                .removeDetail(Details.UPDATED_REFRESH_TOKEN_ID)
-                .detail(Details.CLIENT_AUTH_METHOD, JWTClientAuthenticator.PROVIDER_ID)
-                .error(Errors.INVALID_TOKEN).assertEvent();
+        EventAssertion.assertError(events.poll()).type(EventType.REFRESH_TOKEN_ERROR).details(Details.REFRESH_TOKEN_ID, refreshToken.getId()).sessionId(refreshToken.getSessionState())
+                .clientId("client1")
+                .userId(null)
+                .withoutDetails(Details.TOKEN_ID)
+                .withoutDetails(Details.UPDATED_REFRESH_TOKEN_ID)
+                .details(Details.CLIENT_AUTH_METHOD, JWTClientAuthenticator.PROVIDER_ID)
+                .error(Errors.INVALID_TOKEN);
 
     }
 

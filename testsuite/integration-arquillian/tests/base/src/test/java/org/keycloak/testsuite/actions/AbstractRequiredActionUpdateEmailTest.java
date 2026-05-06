@@ -146,7 +146,7 @@ public abstract class AbstractRequiredActionUpdateEmailTest extends AbstractTest
 
 		Assertions.assertTrue(updateEmailPage.getEmailInputError().contains("Please specify email."));
 
-		events.assertEmpty();
+		Assertions.assertNull(events.poll());
 	}
 
 	@Test
@@ -166,7 +166,7 @@ public abstract class AbstractRequiredActionUpdateEmailTest extends AbstractTest
 
 		Assertions.assertEquals("Email already exists.", updateEmailPage.getEmailInputError());
 
-		events.assertEmpty();
+		Assertions.assertNull(events.poll());
 	}
 
 	@Test
@@ -186,7 +186,7 @@ public abstract class AbstractRequiredActionUpdateEmailTest extends AbstractTest
 
 		Assertions.assertEquals("Invalid email address.", updateEmailPage.getEmailInputError());
 
-		events.assertEmpty();
+		Assertions.assertNull(events.poll());
 	}
 
 	@Test

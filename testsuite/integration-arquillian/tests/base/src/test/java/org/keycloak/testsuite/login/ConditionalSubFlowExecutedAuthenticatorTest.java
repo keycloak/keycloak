@@ -145,7 +145,7 @@ public class ConditionalSubFlowExecutedAuthenticatorTest extends AbstractTestRea
         errorPage.assertCurrent();
         Assertions.assertEquals("Access denied", errorPage.getError());
 
-        events.expect(EventType.LOGIN_ERROR).user((String) null).error(Errors.ACCESS_DENIED).assertEvent();
+        EventAssertion.assertError(events.poll()).type(EventType.LOGIN_ERROR).userId(null).error(Errors.ACCESS_DENIED);
     }
 
     private void checkAllowed(String username) {

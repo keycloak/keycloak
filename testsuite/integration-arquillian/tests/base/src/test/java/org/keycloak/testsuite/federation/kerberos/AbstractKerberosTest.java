@@ -288,7 +288,7 @@ public abstract class AbstractKerberosTest extends AbstractAuthTest {
         RealmResource realm = testRealmResource();
         List<UserRepresentation> users = realm.users().search("", 0, -1);
         for (UserRepresentation user : users) {
-            if (!user.getUsername().equals(AssertEvents.DEFAULT_USERNAME)) {
+            if (!user.getUsername().equals("test-user@localhost")) {
                 realm.users().get(user.getId()).remove();
             }
         }

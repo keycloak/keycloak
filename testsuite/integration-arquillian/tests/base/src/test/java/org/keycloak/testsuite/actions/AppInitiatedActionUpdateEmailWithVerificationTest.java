@@ -33,6 +33,7 @@ import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.IgnoreBrowserDriver;
 import org.keycloak.testsuite.pages.ErrorPage;
@@ -87,7 +88,7 @@ public class AppInitiatedActionUpdateEmailWithVerificationTest extends AbstractA
 		assertTrue(emailUpdatePage.isCancelDisplayed());
 		emailUpdatePage.changeEmail(newEmail);
 
-		events.expect(EventType.SEND_VERIFY_EMAIL).detail(Details.EMAIL, newEmail).assertEvent();
+		EventAssertion.assertSuccess(events.poll()).type(EventType.SEND_VERIFY_EMAIL).details(Details.EMAIL, newEmail);
 		Assertions.assertEquals("test-user@localhost", ActionUtil.findUserWithAdminClient(adminClient, "test-user@localhost").getEmail());
 
 		driver.navigate().to(fetchEmailConfirmationLink(newEmail));
@@ -100,9 +101,9 @@ public class AppInitiatedActionUpdateEmailWithVerificationTest extends AbstractA
 	public void updateEmail() throws Exception {
 		changeEmailUsingAIA("new@localhost");
 
-		events.expect(EventType.UPDATE_EMAIL)
-				.detail(Details.PREVIOUS_EMAIL, "test-user@localhost")
-				.detail(Details.UPDATED_EMAIL, "new@localhost");
+		EventAssertion.assertSuccess(events.poll()).type(EventType.UPDATE_EMAIL)
+				.details(Details.PREVIOUS_EMAIL, "test-user@localhost")
+				.details(Details.UPDATED_EMAIL, "new@localhost");
 
 		Assertions.assertEquals("new@localhost", ActionUtil.findUserWithAdminClient(adminClient, "test-user@localhost").getEmail());
 	}
@@ -169,7 +170,7 @@ public class AppInitiatedActionUpdateEmailWithVerificationTest extends AbstractA
 		assertTrue(emailUpdatePage.isCancelDisplayed());
 		emailUpdatePage.changeEmail("new@localhost");
 
-		events.expect(EventType.SEND_VERIFY_EMAIL).detail(Details.EMAIL, "new@localhost").assertEvent();
+		EventAssertion.assertSuccess(events.poll()).type(EventType.SEND_VERIFY_EMAIL).details(Details.EMAIL, "new@localhost");
 		Assertions.assertEquals("test-user@localhost", ActionUtil.findUserWithAdminClient(adminClient, "test-user@localhost").getEmail());
 		String link = fetchEmailConfirmationLink("new@localhost");
 		String token = link.substring(link.indexOf("key=") + "key=".length()).split("&")[0];
@@ -188,9 +189,9 @@ public class AppInitiatedActionUpdateEmailWithVerificationTest extends AbstractA
 		final WebElement backToApplicationLink = driver.findElement(By.linkText("« Back to Application"));
 		assertThat(backToApplicationLink.getDomAttribute("href"), Matchers.containsString("/auth/realms/master/app/auth"));
 
-		events.expect(EventType.UPDATE_EMAIL)
-				.detail(Details.PREVIOUS_EMAIL, "test-user@localhost")
-				.detail(Details.UPDATED_EMAIL, "new@localhost");
+		EventAssertion.assertSuccess(events.poll()).type(EventType.UPDATE_EMAIL)
+				.details(Details.PREVIOUS_EMAIL, "test-user@localhost")
+				.details(Details.UPDATED_EMAIL, "new@localhost");
 		Assertions.assertEquals("new@localhost", ActionUtil.findUserWithAdminClient(adminClient, "test-user@localhost").getEmail());
 	}
 
@@ -214,7 +215,7 @@ public class AppInitiatedActionUpdateEmailWithVerificationTest extends AbstractA
             emailUpdatePage.assertCurrent();
             emailUpdatePage.changeEmail("new@localhost");
 
-            events.expect(EventType.SEND_VERIFY_EMAIL).detail(Details.EMAIL, "new@localhost").assertEvent();
+            EventAssertion.assertSuccess(events.poll()).type(EventType.SEND_VERIFY_EMAIL).details(Details.EMAIL, "new@localhost");
             String link = fetchEmailConfirmationLink("new@localhost");
 
             // Simulate opening the verification link in a clean browser (no session cookies)
@@ -235,9 +236,9 @@ public class AppInitiatedActionUpdateEmailWithVerificationTest extends AbstractA
             assertThat("Expected OIDC authentication URL", finalUrl, Matchers.containsString("/protocol/openid-connect/auth"));
             assertThat("Expected response_type=code for OIDC authorization code flow", finalUrl, Matchers.containsString("response_type=code"));
 
-            events.expect(EventType.UPDATE_EMAIL)
-                    .detail(Details.PREVIOUS_EMAIL, "test-user@localhost")
-                    .detail(Details.UPDATED_EMAIL, "new@localhost");
+            EventAssertion.assertSuccess(events.poll()).type(EventType.UPDATE_EMAIL)
+                    .details(Details.PREVIOUS_EMAIL, "test-user@localhost")
+                    .details(Details.UPDATED_EMAIL, "new@localhost");
             Assertions.assertEquals("new@localhost", ActionUtil.findUserWithAdminClient(adminClient, "test-user@localhost").getEmail());
 		
 		} finally {

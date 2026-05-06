@@ -88,7 +88,6 @@ import org.junit.jupiter.api.Assertions;
 import org.openqa.selenium.htmlunit.HtmlUnitDriver;
 
 import static org.keycloak.models.Constants.CLIENT_DATA;
-import static org.keycloak.testsuite.AssertEvents.DEFAULT_REDIRECT_URI;
 import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
 
@@ -204,7 +203,8 @@ public class MultipleTabsLoginTest extends AbstractChangeImportedUserPasswordsTe
             multipleTabsParallelLogin(tabUtil);
 
             waitForAppPage(() -> loginPage.login("login-test", getPassword("login-test")));
-            assertOnAppPageWithAlreadyLoggedInError(EventType.LOGIN);
+            events.skip(4);
+            assertOnAppPageWithAlreadyLoggedInError(EventType.LOGIN_ERROR);
         }
     }
 
@@ -306,16 +306,17 @@ public class MultipleTabsLoginTest extends AbstractChangeImportedUserPasswordsTe
         if (!(driver instanceof HtmlUnitDriver)) {
             // In case of real browsers, the "tab2" is automatically refreshed when tab1 finish authentication. This is done by invoking LoginActionsService.restartSession endpoint by JS.
             // Hence event type is always RESTART_AUTHENTICATION
-            expectedEventType = EventType.RESTART_AUTHENTICATION;
+            expectedEventType = EventType.RESTART_AUTHENTICATION_ERROR;
         }
 
-        events.expect(expectedEventType)
-                .user((String) null).error(Errors.ALREADY_LOGGED_IN)
-                .detail(Details.REDIRECT_URI, Matchers.equalTo(DEFAULT_REDIRECT_URI))
-                .detail(Details.REDIRECTED_TO_CLIENT, "true")
-                .detail(Details.RESPONSE_TYPE, OIDCResponseType.CODE)
-                .detail(Details.RESPONSE_MODE, OIDCResponseMode.QUERY.value())
-                .assertEvent(true);
+        EventAssertion.assertError(events.poll())
+                .type(expectedEventType)
+                .userId(null)
+                .error(Errors.ALREADY_LOGGED_IN)
+                .details(Details.REDIRECT_URI, oauth.getRedirectUri())
+                .details(Details.REDIRECTED_TO_CLIENT, "true")
+                .details(Details.RESPONSE_TYPE, OIDCResponseType.CODE)
+                .details(Details.RESPONSE_MODE, OIDCResponseMode.QUERY.value());
         appPage.assertCurrent(); // Page "You are already logged in." should not be here
         AuthorizationEndpointResponse authzResponse = oauth.parseLoginResponse();
         Assertions.assertEquals(OAuthErrorException.TEMPORARILY_UNAVAILABLE, authzResponse.getError());
@@ -328,7 +329,8 @@ public class MultipleTabsLoginTest extends AbstractChangeImportedUserPasswordsTe
             multipleTabsParallelLogin(tabUtil);
 
             waitForAppPage(() -> loginPage.clickRegister());
-            assertOnAppPageWithAlreadyLoggedInError(EventType.REGISTER);
+            events.skip(4);
+            assertOnAppPageWithAlreadyLoggedInError(EventType.REGISTER_ERROR);
         }
     }
 
@@ -338,7 +340,8 @@ public class MultipleTabsLoginTest extends AbstractChangeImportedUserPasswordsTe
             multipleTabsParallelLogin(tabUtil);
 
             waitForAppPage(() -> loginPage.resetPassword());
-            assertOnAppPageWithAlreadyLoggedInError(EventType.RESET_PASSWORD);
+            events.skip(4);
+            assertOnAppPageWithAlreadyLoggedInError(EventType.RESET_PASSWORD_ERROR);
         }
     }
 
@@ -377,7 +380,9 @@ public class MultipleTabsLoginTest extends AbstractChangeImportedUserPasswordsTe
             assertThat(tabUtil.getCountOfTabs(), Matchers.equalTo(1));
 
             waitForAppPage(() -> updateProfile());
-            assertOnAppPageWithAlreadyLoggedInError(EventType.CUSTOM_REQUIRED_ACTION);
+
+            events.skip(5);
+            assertOnAppPageWithAlreadyLoggedInError(EventType.CUSTOM_REQUIRED_ACTION_ERROR);
         }
     }
 
@@ -416,10 +421,10 @@ public class MultipleTabsLoginTest extends AbstractChangeImportedUserPasswordsTe
             assertThat(tabUtil.getCountOfTabs(), Matchers.equalTo(1));
 
             waitForAppPage(() -> {
-                events.clear();
                 driver.navigate().refresh();
             });
-            assertOnAppPageWithAlreadyLoggedInError(EventType.LOGIN);
+            events.skip(6);
+            assertOnAppPageWithAlreadyLoggedInError(EventType.LOGIN_ERROR);
         }
     }
 
@@ -836,15 +841,13 @@ public class MultipleTabsLoginTest extends AbstractChangeImportedUserPasswordsTe
             loginPage.login("login-test", getPassword("login-test"));
 
             //assert cookie not found
-            events.expect(EventType.LOGIN_ERROR)
-                    .user(new UserRepresentation())
-                    .error(Errors.INVALID_CODE)
-                    .assertEvent();
+            EventAssertion.assertError(events.poll()).type(EventType.LOGIN_ERROR)
+                    .userId(null)
+                    .error(Errors.INVALID_CODE);
 
-            events.expect(EventType.LOGIN_ERROR)
-                    .user(new UserRepresentation())
-                    .error(Errors.COOKIE_NOT_FOUND)
-                    .assertEvent();
+            EventAssertion.assertError(events.poll()).type(EventType.LOGIN_ERROR)
+                    .userId(null)
+                    .error(Errors.COOKIE_NOT_FOUND);
         }
     }
 

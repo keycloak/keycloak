@@ -279,7 +279,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         assertFalse(loginPage.isCurrent());
         assertTrue(appPage.isCurrent());
 
-        events.assertEmpty();
+        Assertions.assertNull(events.poll());
 
         // Assert error response was sent because not logged in
         AuthorizationEndpointResponse resp = oauth.parseLoginResponse();
@@ -1298,7 +1298,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
                 assertEquals("Tom", userInfo.getGivenName());
                 assertNull(userInfo.getName());
             } finally {
-                events.expect(EventType.USER_INFO_REQUEST).session(accessTokenResponse.getSessionState()).client("test-app").assertEvent();
+                EventAssertion.assertSuccess(events.poll()).type(EventType.USER_INFO_REQUEST).sessionId(accessTokenResponse.getSessionState()).clientId("test-app");
                 client.close();
             }
 

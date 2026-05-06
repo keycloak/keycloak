@@ -638,7 +638,7 @@ public class BackchannelLogoutTest extends AbstractNestedBrokerTest {
             EventRepresentation loginEvent = loginEventOptional.get();
             EventAssertion.assertSuccess(loginEvent)
                     .type(EventType.LOGIN)
-                    .isCodeId()
+                    .hasCodeId()
                     .hasSessionId()
                     .hasIpAddress()
                     .clientId(clientId)
