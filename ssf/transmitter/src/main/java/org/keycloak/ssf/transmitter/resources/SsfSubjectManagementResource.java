@@ -10,8 +10,6 @@ import jakarta.ws.rs.core.Response;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.services.resources.KeycloakOpenAPI;
-import org.keycloak.ssf.subject.AddSubjectRequest;
-import org.keycloak.ssf.subject.RemoveSubjectRequest;
 import org.keycloak.ssf.transmitter.subject.SubjectManagementResult;
 import org.keycloak.ssf.transmitter.subject.SubjectManagementService;
 import org.keycloak.ssf.transmitter.support.SsfAuthUtil;

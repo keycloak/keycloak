@@ -1,8 +1,10 @@
-package org.keycloak.ssf.subject;
+package org.keycloak.ssf.transmitter.resources;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import org.keycloak.ssf.subject.SubjectId;
+import org.keycloak.ssf.subject.SubjectIdJsonDeserializer;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class AddSubjectRequest {
