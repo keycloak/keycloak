@@ -227,9 +227,10 @@ public class RedirectUtilsTest {
         ).collect(Collectors.toSet());
 
         Assert.assertEquals("https://keycloak.org/index.html", RedirectUtils.verifyRedirectUri(session, null, "https://keycloak.org/index.html", set, false));
-        Assert.assertEquals("https://test.com/index.html", RedirectUtils.verifyRedirectUri(session, null, "https://test.com/index.html", set, false));
+        Assert.assertEquals("https://test/index.html", RedirectUtils.verifyRedirectUri(session, null, "https://test/index.html", set, false));
         Assert.assertEquals("https://something@keycloak.com/exact", RedirectUtils.verifyRedirectUri(session, null, "https://something@keycloak.com/exact", set, false));
 
+        Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, "https://test.com/index.html", set, false));
         Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, "https://something@other.com/", set, false));
         Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, "https://keycloak.org@other.com", set, false));
         Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, "https://keycloak.org%2F@other.com", set, false));
@@ -281,5 +282,27 @@ public class RedirectUtilsTest {
 
         Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, "https://keycloak.org/test%2Fanother/../any/path/", set, false));
         Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, "https://keycloak.org/test%2Fanother/%2E%2E/any/path/", set, false));
+    }
+
+    @Test
+    public void testWildcards() {
+        Set<String> set = Stream.of(
+                "https://test*",
+                "https://test.com:*",
+                "https://test.com/*",
+                "custom2:*",
+                "custom3://*"
+        ).collect(Collectors.toSet());
+
+        Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, "https://test.evil.com", set, false));
+        Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, "https://testa.com", set, false));
+        Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, "custom3:/test", set, false));
+        Assert.assertEquals("https://test", RedirectUtils.verifyRedirectUri(session, null, "https://test", set, false));
+        Assert.assertEquals("https://test/something", RedirectUtils.verifyRedirectUri(session, null, "https://test/something", set, false));
+        Assert.assertEquals("https://test.com", RedirectUtils.verifyRedirectUri(session, null, "https://test.com", set, false));
+        Assert.assertEquals("https://test.com:4443/", RedirectUtils.verifyRedirectUri(session, null, "https://test.com:4443/", set, false));
+        Assert.assertEquals("custom2:custom", RedirectUtils.verifyRedirectUri(session, null, "custom2:custom", set, false));
+        Assert.assertEquals("custom3://custom", RedirectUtils.verifyRedirectUri(session, null, "custom3://custom", set, false));
+        Assert.assertEquals("https://test.com/lala", RedirectUtils.verifyRedirectUri(session, null, "https://test.com/lala", set, false));
     }
 }
