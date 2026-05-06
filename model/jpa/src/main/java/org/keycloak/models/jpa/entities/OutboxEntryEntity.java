@@ -83,6 +83,24 @@ import jakarta.persistence.Table;
                         + " WHERE e.entryKind = :entryKind"
                         + "   AND e.ownerId = :ownerId"
                         + "   AND e.correlationId = :correlationId"),
+        // Race-safe enqueue. The ON CONFLICT DO NOTHING clause (HQL,
+        // available since Hibernate 6.5) makes the unique-constraint
+        // dedup happen at the storage engine — concurrent inserts of
+        // the same (entryKind, ownerId, correlationId) triple from
+        // sibling nodes silently no-op instead of throwing
+        // ConstraintViolationException and marking the JTA transaction
+        // rollback-only. executeUpdate() returns 0 on conflict, 1 on
+        // successful insert; the caller distinguishes via that count
+        // and re-fetches via findByOwnerAndCorrelationId on conflict
+        // to return the racing row's id. See OutboxStore#enqueueInStatus.
+        @NamedQuery(
+                name = "OutboxEntryEntity.insertIfAbsent",
+                query = "INSERT INTO OutboxEntryEntity"
+                        + " (id, entryKind, realmId, ownerId, containerId, correlationId,"
+                        + "  entryType, payload, metadata, status, attempts, nextAttemptAt, createdAt)"
+                        + " VALUES (:id, :entryKind, :realmId, :ownerId, :containerId, :correlationId,"
+                        + "         :entryType, :payload, :metadata, :status, :attempts, :nextAttemptAt, :createdAt)"
+                        + " ON CONFLICT DO NOTHING"),
         @NamedQuery(
                 name = "OutboxEntryEntity.countByEntryKindRealmAndStatus",
                 query = "SELECT e.status, COUNT(e) FROM OutboxEntryEntity e"

@@ -128,6 +128,11 @@ public class OutboxStore {
         Objects.requireNonNull(entryType, "entryType");
         Objects.requireNonNull(payload, "payload");
 
+        // Optimistic local fast-path: if we already wrote the row in this
+        // transaction (or it's recent enough to be in the row cache),
+        // skip the INSERT and return the existing id. Correctness does
+        // not depend on this — the storage-engine ON CONFLICT DO NOTHING
+        // below dedups regardless. Cheap savings for retry-style callers.
         OutboxEntryEntity existing = findByOwnerAndCorrelationId(entryKind, ownerId, correlationId);
         if (existing != null) {
             log.debugf("Outbox enqueue deduplicated. entryKind=%s ownerId=%s correlationId=%s existingId=%s status=%s",
@@ -136,28 +141,55 @@ public class OutboxStore {
         }
 
         Instant now = Instant.now();
-        OutboxEntryEntity entity = new OutboxEntryEntity();
-        entity.setId(UUID.randomUUID().toString());
-        entity.setEntryKind(entryKind);
-        entity.setRealmId(realmId);
-        entity.setOwnerId(ownerId);
-        entity.setContainerId(containerId);
-        entity.setCorrelationId(correlationId);
-        entity.setEntryType(entryType);
-        entity.setPayload(payload);
-        entity.setMetadata(metadata);
-        entity.setStatus(status);
-        entity.setAttempts(0);
-        // next_attempt_at is meaningful only for PENDING rows the
-        // drainer locks; HELD rows ignore it but the column is NOT
-        // NULL, so set it to "now" as a harmless seed.
-        entity.setNextAttemptAt(now);
-        entity.setCreatedAt(now);
+        String id = generateEntryId();
+        // Race-safe insert. ON CONFLICT DO NOTHING (HQL, Hibernate 6.5+)
+        // resolves the dedup race at the storage engine: a concurrent
+        // sibling insert of the same (entryKind, ownerId, correlationId)
+        // triple causes our INSERT to no-op (executeUpdate returns 0)
+        // instead of throwing ConstraintViolationException and marking
+        // the JTA transaction rollback-only. The caller's surrounding
+        // transaction therefore survives the race cleanly.
+        //
+        // next_attempt_at is meaningful only for PENDING rows the drainer
+        // locks; HELD rows ignore it but the column is NOT NULL, so we
+        // set it to "now" as a harmless seed.
+        int inserted = getEntityManager()
+                .createNamedQuery("OutboxEntryEntity.insertIfAbsent")
+                .setParameter("id", id)
+                .setParameter("entryKind", entryKind)
+                .setParameter("realmId", realmId)
+                .setParameter("ownerId", ownerId)
+                .setParameter("containerId", containerId)
+                .setParameter("correlationId", correlationId)
+                .setParameter("entryType", entryType)
+                .setParameter("payload", payload)
+                .setParameter("metadata", metadata)
+                .setParameter("status", status)
+                .setParameter("attempts", 0)
+                .setParameter("nextAttemptAt", now)
+                .setParameter("createdAt", now)
+                .executeUpdate();
 
-        getEntityManager().persist(entity);
+        if (inserted == 0) {
+            // Lost the dedup race against a sibling. Their row is in
+            // storage and will be drained, so the event is captured
+            // at-most-once as intended. Re-fetch and return their id
+            // so the caller can correlate.
+            OutboxEntryEntity racingRow = findByOwnerAndCorrelationId(entryKind, ownerId, correlationId);
+            log.debugf("Outbox enqueue lost dedup race; sibling already inserted. "
+                    + "entryKind=%s realmId=%s ownerId=%s correlationId=%s racingId=%s",
+                    entryKind, realmId, ownerId, correlationId,
+                    racingRow != null ? racingRow.getId() : "(unresolved)");
+            return racingRow != null ? racingRow.getId() : id;
+        }
+
         log.debugf("Outbox enqueued. id=%s status=%s entryKind=%s realmId=%s ownerId=%s containerId=%s correlationId=%s entryType=%s",
-                entity.getId(), status, entryKind, realmId, ownerId, containerId, correlationId, entryType);
-        return entity.getId();
+                id, status, entryKind, realmId, ownerId, containerId, correlationId, entryType);
+        return id;
+    }
+
+    protected String generateEntryId() {
+        return UUID.randomUUID().toString();
     }
 
     public OutboxEntryEntity findById(String id) {
