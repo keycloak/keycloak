@@ -99,6 +99,7 @@ export const SigningIn = () => {
 
   const credentialRowCells = (
     credMetadata: CredentialMetadataRepresentation,
+    showIcon: boolean,
   ) => {
     const credential = credMetadata.credential;
     const maxWidth = {
@@ -108,37 +109,42 @@ export const SigningIn = () => {
     const authenticatorProvider = credMetadata.infoProperties?.find(
       (p) => p.key === "webauthn-authenticator-provider",
     )?.parameters?.[0];
+    const iconSrc = icon
+      ? joinPath(context.environment.resourceUrl, "passkeys", icon)
+      : joinPath(context.environment.resourceUrl, "favicon.svg");
+    const iconDarkSrc = credMetadata.iconDark
+      ? joinPath(
+          context.environment.resourceUrl,
+          "passkeys",
+          credMetadata.iconDark,
+        )
+      : undefined;
+
     const items = [
-      ...(icon
+      ...(showIcon
         ? [
             <DataListCell
               key="icon"
               data-testrole="icon"
               className="pf-v5-c-data-list__cell pf-m-icon pf-v5-u-display-flex pf-v5-u-align-items-center pf-v5-u-pt-0"
             >
-              <picture>
-                {credMetadata.iconDark && (
-                  <source
-                    srcSet={joinPath(
-                      context.environment.resourceUrl,
-                      "passkeys",
-                      credMetadata.iconDark,
-                    )}
-                    media="(prefers-color-scheme: dark)"
-                  />
-                )}
-                <img
-                  src={joinPath(
-                    context.environment.resourceUrl,
-                    "passkeys",
-                    icon,
+              <div className="pf-v5-c-icon pf-m-xl">
+                <picture>
+                  {iconDarkSrc && (
+                    <source
+                      srcSet={iconDarkSrc}
+                      media="(prefers-color-scheme: dark)"
+                    />
                   )}
-                  alt=""
-                  width="40"
-                  height="40"
-                  style={{ maxWidth: "none" }}
-                />
-              </picture>
+                  <img
+                    src={iconSrc}
+                    alt=""
+                    width="40"
+                    height="40"
+                    style={{ maxWidth: "none" }}
+                  />
+                </picture>
+              </div>
             </DataListCell>,
           ]
         : []),
@@ -343,7 +349,10 @@ export const SigningIn = () => {
                         <DataListItemCells
                           className="pf-v5-u-py-0 pf-v5-u-align-items-center"
                           dataListCells={[
-                            ...credentialRowCells(meta),
+                            ...credentialRowCells(
+                              meta,
+                              container.type.startsWith("webauthn"),
+                            ),
                             <DataListAction
                               key="action"
                               id={`action-${meta.credential.id}`}
