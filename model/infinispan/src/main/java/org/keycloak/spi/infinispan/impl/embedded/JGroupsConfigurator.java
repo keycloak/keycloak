@@ -308,7 +308,7 @@ public final class JGroupsConfigurator {
     private static Address insertSequenceInTable(JpaConnectionProvider cp, String clusterName, String tableName, long mySequence) {
         ExtendedUUID address = new ExtendedUUID(0, mySequence);
         cp.getEntityManager().<Connection>runWithConnection(con -> {
-            try (PreparedStatement s = con.prepareStatement("INSERT INTO %s (address, name, cluster_name, ip, coord, LAST_UPDATE) values (?, ?, ?, ?, ?, ?)".formatted(tableName))) {
+            try (PreparedStatement s = con.prepareStatement("INSERT INTO %s (address, name, cluster_name, ip, coord, last_update) values (?, ?, ?, ?, ?, ?)".formatted(tableName))) {
                 s.setString(1, org.jgroups.util.Util.addressToString(new UUID(address.getMostSignificantBits(), address.getLeastSignificantBits()))); // address
                 s.setString(2, "(starting)"); // name
                 s.setString(3, clusterName); // cluster name
@@ -331,8 +331,8 @@ public final class JGroupsConfigurator {
                     // "cluster" cannot be used with Oracle DB as it's a reserved word.
                     "clear_sql", String.format("DELETE from %s WHERE cluster_name=?", tableName),
                     "delete_single_sql", String.format("DELETE from %s WHERE address=?", tableName),
-                    "insert_single_sql", String.format("INSERT INTO %s (address, name, cluster_name, ip, coord, LAST_UPDATE, COORDINATED_BY) values (?, ?, ?, ?, ?, ?, ?)", tableName),
-                    "select_all_pingdata_sql", String.format("SELECT address, name, ip, coord, COORDINATED_BY, LAST_UPDATE FROM %s WHERE cluster_name=?", tableName),
+                    "insert_single_sql", String.format("INSERT INTO %s (address, name, cluster_name, ip, coord, last_update, coordinated_by) values (?, ?, ?, ?, ?, ?, ?)", tableName),
+                    "select_all_pingdata_sql", String.format("SELECT address, name, ip, coord, coordinated_by, last_update FROM %s WHERE cluster_name=?", tableName),
                     // This guarantees cleanup of stale data
                     "remove_all_data_on_view_change", "true",
                     // This guarantees that merging happens even after the info writer completed
