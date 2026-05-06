@@ -19,6 +19,12 @@ The `manage-realm` role continues to implicitly grant full organization manageme
 
 For per-organization granularity, organizations are now a first-class resource type in Fine-Grained Admin Permissions. Administrators can create permissions to control which specific organizations a delegated administrator can view or manage — for example, granting access to manage one organization without giving access to all organizations in the realm. When Fine-Grained Admin Permissions is enabled, organization member queries also respect user-level permissions, returning only members the administrator is permitted to view.
 
+== Dedicated admin role for realm exports
+
+{project_name} now provides a dedicated realm admin role for exporting realms: `export-realm`.
+
+Previously, exporting a realm via the Admin API's partial export endpoint required the `manage-realm` role, which grants broad administrative access. The new `export-realm` role allows administrators to perform realm exports without requiring full realm management privileges. It allows exporting group and client information as well, without requiring the `query-groups` or `view-clients` role.
+
 == Realm search now matches by display name
 
 When searching for realms in the admin console, the search now also matches against the realm's display name in addition to the realm name.
