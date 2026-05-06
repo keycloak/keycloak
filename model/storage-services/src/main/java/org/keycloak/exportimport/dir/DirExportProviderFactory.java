@@ -18,6 +18,8 @@
 package org.keycloak.exportimport.dir;
 
 import java.util.List;
+import java.util.Optional;
+import java.util.function.BiFunction;
 
 import org.keycloak.Config;
 import org.keycloak.exportimport.ExportImportConfig;
@@ -41,18 +43,21 @@ import static org.keycloak.exportimport.ExportImportConfig.DEFAULT_USERS_PER_FIL
 public class DirExportProviderFactory implements ExportProviderFactory {
 
     public static final String PROVIDER_ID = "dir";
-    public static final String DIR = "dir";
-    public static final String REALM_NAME = "realmName";
+    public static final String DIR = ExportImportConfig.DIR_OPTION;
+    public static final String REALM_NAME = ExportImportConfig.REALM_NAME_OPTION;
     public static final String USERS_EXPORT_STRATEGY = "usersExportStrategy";
     public static final String USERS_PER_FILE = "usersPerFile";
     private Config.Scope config;
 
     @Override
     public ExportProvider create(KeycloakSession session) {
-        String dir = System.getProperty(ExportImportConfig.DIR, config.get(DIR));
-        String realmName = System.getProperty(ExportImportConfig.REALM_NAME, config.get(REALM_NAME));
-        String usersExportStrategy = System.getProperty(ExportImportConfig.USERS_EXPORT_STRATEGY, config.get(USERS_EXPORT_STRATEGY, DEFAULT_USERS_EXPORT_STRATEGY.toString()));
-        String usersPerFile = System.getProperty(ExportImportConfig.USERS_PER_FILE, config.get(USERS_PER_FILE, String.valueOf(DEFAULT_USERS_PER_FILE)));
+        BiFunction<String, String, String> configFunct = Optional
+                .ofNullable((BiFunction<String, String, String>) session.getAttribute(ExportImportConfig.CONFIG_OVERRIDE_ATTRIBUTE, BiFunction.class))
+                .orElse(this.config::get);
+        String dir = System.getProperty(ExportImportConfig.DIR, configFunct.apply(DIR, null));
+        String realmName = System.getProperty(ExportImportConfig.REALM_NAME, configFunct.apply(REALM_NAME, null));
+        String usersExportStrategy = System.getProperty(ExportImportConfig.USERS_EXPORT_STRATEGY, configFunct.apply(USERS_EXPORT_STRATEGY, DEFAULT_USERS_EXPORT_STRATEGY.toString()));
+        String usersPerFile = System.getProperty(ExportImportConfig.USERS_PER_FILE, configFunct.apply(USERS_PER_FILE, String.valueOf(DEFAULT_USERS_PER_FILE)));
         return new DirExportProvider(session.getKeycloakSessionFactory())
                 .withDir(dir)
                 .withRealmName(realmName)
