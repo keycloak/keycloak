@@ -326,6 +326,13 @@ public interface UserResource {
     @Path("consents/{client}")
     void revokeConsent(@PathParam("client") String clientId);
 
+    /**
+     * @since Keycloak server 26.7.0
+     * @return {@link UserVerifiableCredentialResource} with further methods to deal with credentials and issued credentials of the user
+     */
+    @Path("vc")
+    UserVerifiableCredentialResource verifiableCredentials();
+
     @POST
     @Path("impersonation")
     @Produces(MediaType.APPLICATION_JSON)
