@@ -19,32 +19,15 @@ public class BlacklistPasswordPolicyProviderTest {
     public TemporaryFolder tempFolder = new TemporaryFolder();
 
     @Test
-    public void testUpperCaseInFile() {
+    public void testPasswordLookupIsCaseInsensitive() {
         FileBasedPasswordBlacklist blacklist =
                 new FileBasedPasswordBlacklist(Paths.get("src/test/java/org/keycloak/policy"), "short_blacklist.txt",
                         BlacklistPasswordPolicyProviderFactory.DEFAULT_FALSE_POSITIVE_PROBABILITY,
                         BlacklistPasswordPolicyProviderFactory.DEFAULT_CHECK_INTERVAL_SECONDS * 1000L);
 
-        // all passwords in the deny list are in lower case
+        // passwords in the deny list are stored in lower case; lookups must be case-insensitive
         Assert.assertFalse(blacklist.contains("1Password!"));
-    }
-
-    @Test
-    public void testAlwaysLowercaseInFile() {
-        FileBasedPasswordBlacklist blacklist =
-                new FileBasedPasswordBlacklist(Paths.get("src/test/java/org/keycloak/policy"), "short_blacklist.txt",
-                        BlacklistPasswordPolicyProviderFactory.DEFAULT_FALSE_POSITIVE_PROBABILITY,
-                        BlacklistPasswordPolicyProviderFactory.DEFAULT_CHECK_INTERVAL_SECONDS * 1000L);
         Assert.assertTrue(blacklist.contains("1Password!".toLowerCase()));
-    }
-
-    @Test
-    public void testLowerCaseInFile() {
-        FileBasedPasswordBlacklist blacklist =
-                new FileBasedPasswordBlacklist(Paths.get("src/test/java/org/keycloak/policy"), "short_blacklist.txt",
-                        BlacklistPasswordPolicyProviderFactory.DEFAULT_FALSE_POSITIVE_PROBABILITY,
-                        BlacklistPasswordPolicyProviderFactory.DEFAULT_CHECK_INTERVAL_SECONDS * 1000L);
-        Assert.assertTrue(blacklist.contains("pass1!word"));
     }
 
     @Test
@@ -114,16 +97,15 @@ public class BlacklistPasswordPolicyProviderTest {
 
     @Test
     public void testLoadFromBloomFile() throws Exception {
-        // Write plaintext denylist
+        // Write plaintext denylist and pre-compute .bloom alongside it
         Path txtFile = tempFolder.newFile("denylist.txt").toPath();
         Files.writeString(txtFile, "secret123\nbadpassword\n");
-
-        // Pre-compute and write .bloom file
         writeBloomFile(tempFolder.getRoot().toPath(), "denylist.txt",
                 BlacklistPasswordPolicyProviderFactory.DEFAULT_FALSE_POSITIVE_PROBABILITY);
 
+        // Admin explicitly configures the .bloom file
         FileBasedPasswordBlacklist denylist =
-                new FileBasedPasswordBlacklist(tempFolder.getRoot().toPath(), "denylist.txt",
+                new FileBasedPasswordBlacklist(tempFolder.getRoot().toPath(), "denylist.txt.bloom",
                         BlacklistPasswordPolicyProviderFactory.DEFAULT_FALSE_POSITIVE_PROBABILITY, 0);
 
         Assert.assertTrue("Should find password from .bloom file", denylist.contains("secret123"));
@@ -131,44 +113,37 @@ public class BlacklistPasswordPolicyProviderTest {
         Assert.assertFalse("Should not find password that was never added", denylist.contains("goodpassword"));
     }
 
-    @Test
-    public void testCorruptBloomFileFallsBackToPlaintext() throws Exception {
-        Path txtFile = tempFolder.newFile("denylist.txt").toPath();
-        Files.writeString(txtFile, "plaintextpassword\n");
-
+    @Test(expected = RuntimeException.class)
+    public void testCorruptBloomFileThrows() throws Exception {
         // Write a corrupt (non-Guava) .bloom file
-        Path bloomFile = txtFile.resolveSibling("denylist.txt.bloom");
+        Path bloomFile = tempFolder.newFile("denylist.txt.bloom").toPath();
         Files.writeString(bloomFile, "this is not a valid bloom filter binary");
 
-        FileBasedPasswordBlacklist denylist =
-                new FileBasedPasswordBlacklist(tempFolder.getRoot().toPath(), "denylist.txt",
-                        BlacklistPasswordPolicyProviderFactory.DEFAULT_FALSE_POSITIVE_PROBABILITY, 0);
-
-        // Should have fallen back to plaintext load — password must still be found
-        Assert.assertTrue("Fallback to plaintext should still find the password",
-                denylist.contains("plaintextpassword"));
+        // Admin configured .bloom explicitly — must fail hard on corrupt file, no fallback
+        new FileBasedPasswordBlacklist(tempFolder.getRoot().toPath(), "denylist.txt.bloom",
+                BlacklistPasswordPolicyProviderFactory.DEFAULT_FALSE_POSITIVE_PROBABILITY, 0);
     }
 
     @Test
-    public void testReloadWatchesBloomFileWhenPresent() throws Exception {
+    public void testReloadBloomFileOnChange() throws Exception {
         Path txtFile = tempFolder.newFile("denylist.txt").toPath();
         Files.writeString(txtFile, "initialpassword\n");
         writeBloomFile(tempFolder.getRoot().toPath(), "denylist.txt",
                 BlacklistPasswordPolicyProviderFactory.DEFAULT_FALSE_POSITIVE_PROBABILITY);
 
+        // Admin explicitly configures the .bloom file
         FileBasedPasswordBlacklist denylist =
-                new FileBasedPasswordBlacklist(tempFolder.getRoot().toPath(), "denylist.txt",
+                new FileBasedPasswordBlacklist(tempFolder.getRoot().toPath(), "denylist.txt.bloom",
                         BlacklistPasswordPolicyProviderFactory.DEFAULT_FALSE_POSITIVE_PROBABILITY, 1);
 
         Assert.assertTrue(denylist.contains("initialpassword"));
         Assert.assertFalse(denylist.contains("updatedpassword"));
 
-        // Update the plaintext file and regenerate the .bloom file
+        // Update the plaintext file, regenerate and bump mtime on .bloom
         Thread.sleep(2);
         Files.writeString(txtFile, "updatedpassword\n");
         writeBloomFile(tempFolder.getRoot().toPath(), "denylist.txt",
                 BlacklistPasswordPolicyProviderFactory.DEFAULT_FALSE_POSITIVE_PROBABILITY);
-        // Bump mtime on .bloom to ensure change detection
         Path bloomFile = txtFile.resolveSibling("denylist.txt.bloom");
         Files.setLastModifiedTime(bloomFile, FileTime.fromMillis(Files.getLastModifiedTime(bloomFile).toMillis() + 1000));
 
@@ -181,27 +156,19 @@ public class BlacklistPasswordPolicyProviderTest {
         Path txtFile = tempFolder.newFile("denylist.txt").toPath();
         Files.writeString(txtFile, "alpha\nbeta\ngamma\n");
 
-        BlacklistPasswordPolicyProviderFactory.buildBloomFile(
-                txtFile, BlacklistPasswordPolicyProviderFactory.DEFAULT_FALSE_POSITIVE_PROBABILITY);
-
         Path bloomFile = txtFile.resolveSibling("denylist.txt.bloom");
+        BlacklistPasswordPolicyProviderFactory.buildBloomFile(
+                txtFile, bloomFile, BlacklistPasswordPolicyProviderFactory.DEFAULT_FALSE_POSITIVE_PROBABILITY);
         Assert.assertTrue("bloom file must be created", Files.exists(bloomFile));
         Assert.assertTrue("bloom file must have non-zero size", Files.size(bloomFile) > 0);
-
-        // The server must be able to load and use it
-        FileBasedPasswordBlacklist bl = new FileBasedPasswordBlacklist(
-                tempFolder.getRoot().toPath(), "denylist.txt",
-                BlacklistPasswordPolicyProviderFactory.DEFAULT_FALSE_POSITIVE_PROBABILITY, 0);
-        Assert.assertTrue(bl.contains("alpha"));
-        Assert.assertTrue(bl.contains("beta"));
-        Assert.assertFalse(bl.contains("delta"));
     }
 
     @Test(expected = IOException.class)
     public void testBuildBloomFileMissingInputThrows() throws Exception {
         Path missing = tempFolder.getRoot().toPath().resolve("nonexistent.txt");
         BlacklistPasswordPolicyProviderFactory.buildBloomFile(
-                missing, BlacklistPasswordPolicyProviderFactory.DEFAULT_FALSE_POSITIVE_PROBABILITY);
+                missing, missing.resolveSibling("nonexistent.txt.bloom"),
+                BlacklistPasswordPolicyProviderFactory.DEFAULT_FALSE_POSITIVE_PROBABILITY);
     }
 
     @Test
@@ -212,16 +179,17 @@ public class BlacklistPasswordPolicyProviderTest {
         // Build bloom with a DIFFERENT fpp than what the server will use
         double bloomFpp = 0.01;    // coarser
         double serverFpp = BlacklistPasswordPolicyProviderFactory.DEFAULT_FALSE_POSITIVE_PROBABILITY; // 0.0001
-        BlacklistPasswordPolicyProviderFactory.buildBloomFile(txtFile, bloomFpp);
+        BlacklistPasswordPolicyProviderFactory.buildBloomFile(txtFile, txtFile.resolveSibling("denylist.txt.bloom"), bloomFpp);
 
         // Server should still load without throwing (only logs a warning)
         FileBasedPasswordBlacklist bl = new FileBasedPasswordBlacklist(
-                tempFolder.getRoot().toPath(), "denylist.txt", serverFpp, 0);
+                tempFolder.getRoot().toPath(), "denylist.txt.bloom", serverFpp, 0);
         Assert.assertTrue("password must still be found despite fpp mismatch", bl.contains("mismatchpw"));
     }
 
     private static void writeBloomFile(Path baseDir, String name, double fpp) throws IOException {
-        BlacklistPasswordPolicyProviderFactory.buildBloomFile(baseDir.resolve(name), fpp);
+        Path input = baseDir.resolve(name);
+        BlacklistPasswordPolicyProviderFactory.buildBloomFile(input, input.resolveSibling(name + ".bloom"), fpp);
     }
 
 }

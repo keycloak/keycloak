@@ -31,16 +31,18 @@ import picocli.CommandLine.Parameters;
 // The server loads the .bloom file instead of rebuilding from plaintext, reducing reload latency.
 @Command(name = BuildPasswordDenylist.NAME,
         header = BuildPasswordDenylist.HEADER,
+        sortOptions = false,
         description = "%n" + BuildPasswordDenylist.HEADER
                 + "%n%nKeycloak's password-blacklist policy rejects passwords found in a plaintext denylist file."
                 + " For large lists, loading from plaintext on every startup or reload can take seconds."
                 + " Run this command once after creating or updating DENYLIST_FILE to generate a pre-computed"
-                + " .bloom file alongside it. The server will pick it up automatically, reducing load time"
-                + " to milliseconds. The plaintext file must remain present; the .bloom file is supplementary only.",
+                + " .bloom file. To use it, configure the password policy with the .bloom filename instead of"
+                + " the plaintext file. The server detects the file type by extension and loads it accordingly,"
+                + " reducing load time to milliseconds.",
         footerHeading = "%nExamples:%n",
         footer = {
                 "  ${PARENT-COMMAND-FULL-NAME:-$PARENTCOMMAND} ${COMMAND-NAME} /path/to/denylist.txt%n",
-                "  ${PARENT-COMMAND-FULL-NAME:-$PARENTCOMMAND} ${COMMAND-NAME} /path/to/denylist.txt --fpp 0.00001%n"
+                "  ${PARENT-COMMAND-FULL-NAME:-$PARENTCOMMAND} ${COMMAND-NAME} /path/to/denylist.txt --fpp 0.00001 -o /path/to/out.bloom%n"
         })
 public class BuildPasswordDenylist extends AbstractCommand {
 
@@ -57,6 +59,11 @@ public class BuildPasswordDenylist extends AbstractCommand {
             description = "Desired false-positive probability for the Bloom filter, defaults to 0.0001.",
             defaultValue = "0.0001")
     private double fpp;
+
+    @Option(names = {"-o", "--output"},
+            paramLabel = "OUTPUT_FILE",
+            description = "Path for the generated .bloom file. Must end with '.bloom'. Defaults to <DENYLIST_FILE>.bloom in the same directory.")
+    private Path outputFile;
 
     @Override
     public String getName() {
@@ -77,16 +84,35 @@ public class BuildPasswordDenylist extends AbstractCommand {
             executionError(spec.commandLine(), "--fpp must be between 0 and 1 (exclusive), got: " + fpp);
         }
 
-        Path outputFile = inputFile.resolveSibling(inputFile.getFileName() + ".bloom");
+        if (outputFile == null) {
+            outputFile = inputFile.resolveSibling(inputFile.getFileName() + ".bloom");
+        } else if (!outputFile.getFileName().toString().endsWith(".bloom")) {
+            executionError(spec.commandLine(), "--output must end with '.bloom', got: " + outputFile);
+        } else {
+            Path outputParent = outputFile.toAbsolutePath().getParent();
+            if (outputParent != null && !Files.isDirectory(outputParent)) {
+                executionError(spec.commandLine(), "Output directory does not exist: " + outputParent);
+            }
+        }
         picocli.println("Building Bloom filter from: " + inputFile);
         picocli.println("  False-positive probability: " + fpp);
 
         try {
             long startMs = System.currentTimeMillis();
-            BlacklistPasswordPolicyProviderFactory.buildBloomFile(inputFile, fpp);
+            BlacklistPasswordPolicyProviderFactory.buildBloomFile(inputFile, outputFile, fpp);
             long elapsedMs = System.currentTimeMillis() - startMs;
-            long outputSizeKb = Files.size(outputFile) / 1024;
-            picocli.println("Done in " + elapsedMs + " ms. Output: " + outputFile + " (" + outputSizeKb + " KB)");
+            long outputSizeBytes = Files.size(outputFile);
+            String sizeStr;
+            if (outputSizeBytes < 1024) {
+                sizeStr = outputSizeBytes + " B";
+            } else if (outputSizeBytes < 1024 * 1024) {
+                sizeStr = (outputSizeBytes / 1024) + " KB";
+            } else {
+                sizeStr = (outputSizeBytes / (1024 * 1024)) + " MB";
+            }
+            picocli.println("Done in " + elapsedMs + " ms. Output: " + outputFile + " (" + sizeStr + ")");
+            picocli.println("Next step: place " + outputFile.getFileName() + " in your password-blacklists folder and"
+                    + " configure the password blacklist policy value to '" + outputFile.getFileName() + "'.");
         } catch (IOException e) {
             executionError(spec.commandLine(), "Failed to build Bloom filter: " + e.getMessage(), e);
         }
