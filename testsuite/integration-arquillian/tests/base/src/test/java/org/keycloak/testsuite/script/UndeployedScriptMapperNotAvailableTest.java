@@ -23,6 +23,7 @@ import static org.keycloak.testsuite.arquillian.DeploymentTargetModifier.AUTH_SE
 import static org.keycloak.testsuite.util.ProtocolMapperUtil.createScriptMapper;
 
 import java.io.IOException;
+import java.util.stream.Collectors;
 
 import org.jboss.arquillian.container.test.api.Deployer;
 import org.jboss.arquillian.container.test.api.Deployment;
@@ -104,7 +105,7 @@ public class UndeployedScriptMapperNotAvailableTest extends AbstractTestRealmKey
         deployer.undeploy(SCRIPT_DEPLOYMENT_NAME);
         reconnectAdminClient();
         ClientResource cl = findClientResourceByClientId(adminClient.realm("test"), "test-app");
-        assertTrue(cl.getProtocolMappers().getMappers().isEmpty());
-        assertTrue(cl.getProtocolMappers().getMappersPerProtocol(cl.toRepresentation().getProtocol()).isEmpty());
+        assertTrue(cl.getProtocolMappers().getMappers().stream().filter(m->m.getName().equals("test-script-mapper1")).collect(Collectors.toSet()).isEmpty());
+        assertTrue(cl.getProtocolMappers().getMappersPerProtocol(cl.toRepresentation().getProtocol()).stream().filter(m->m.getName().equals("test-script-mapper1")).collect(Collectors.toSet()).isEmpty());
     }
 }

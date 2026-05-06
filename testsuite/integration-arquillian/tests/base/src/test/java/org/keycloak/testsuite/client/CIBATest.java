@@ -2868,7 +2868,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
         assertThat(rep.getIssuedFor(), is(equalTo(TEST_CLIENT_NAME)));
         events.expect(EventType.INTROSPECT_TOKEN).user(AssertEvents.isUUID()).session(accessToken.getSessionId()).clearDetails().assertEvent();
 
-        rep = oauth.doIntrospectionAccessTokenRequest(tokenRes.getRefreshToken()).asTokenMetadata();
+        rep = oauth.doIntrospectionRefreshTokenRequest(tokenRes.getRefreshToken()).asTokenMetadata();
         assertThat(rep.isActive(), is(equalTo(true)));
         assertThat(rep.getClientId(), is(equalTo(TEST_CLIENT_NAME)));
         assertThat(rep.getIssuedFor(), is(equalTo(TEST_CLIENT_NAME)));

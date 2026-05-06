@@ -79,7 +79,13 @@ public class OIDCProviderConfig {
      */
     private final boolean allowMultipleAudiencesForJwtClientAuthentication;
 
+    public static final boolean DEFAULT_ALLOW_TOKEN_INTROSPECTION_WITHOUT_AUDIENCE_CHECK = false;
 
+    private final boolean allowTokenIntrospectionWithoutAudienceCheck;
+
+    public static final boolean DEFAULT_ALLOW_USERINFO_WITH_LIGHTWEIGHT_ACCESS_TOKEN = false;
+
+    private final boolean allowUserinfoWithLightweightAccessToken;
 
     public OIDCProviderConfig(Config.Scope config) {
         this.config = config;
@@ -91,6 +97,8 @@ public class OIDCProviderConfig {
         this.additionalReqParamsFailFast = config.getBoolean(OIDCLoginProtocolFactory.CONFIG_OIDC_ADD_REQ_PARAMS_FAIL_FAST, DEFAULT_ADDITIONAL_REQ_PARAMS_FAIL_FAST);
 
         this.allowMultipleAudiencesForJwtClientAuthentication = config.getBoolean(OIDCLoginProtocolFactory.CONFIG_OIDC_ALLOW_MULTIPLE_AUDIENCES_FOR_JWT_CLIENT_AUTHENTICATION, DEFAULT_ALLOW_MULTIPLE_AUDIENCES_FOR_JWT_CLIENT_AUTHENTICATION);
+        this.allowTokenIntrospectionWithoutAudienceCheck = config.getBoolean(OIDCLoginProtocolFactory.CONFIG_ALLOW_TOKEN_INTROSPECTION_WITHOUT_AUDIENCE_CHECK, DEFAULT_ALLOW_TOKEN_INTROSPECTION_WITHOUT_AUDIENCE_CHECK);
+        this.allowUserinfoWithLightweightAccessToken = config.getBoolean(OIDCLoginProtocolFactory.CONFIG_ALLOW_USERINFO_WITH_LIGHTWEIGHT_ACCESS_TOKEN, DEFAULT_ALLOW_USERINFO_WITH_LIGHTWEIGHT_ACCESS_TOKEN);
     }
 
     public int getAdditionalReqParamsMaxNumber() {
@@ -111,6 +119,14 @@ public class OIDCProviderConfig {
 
     public boolean isAllowMultipleAudiencesForJwtClientAuthentication() {
         return allowMultipleAudiencesForJwtClientAuthentication;
+    }
+
+    public boolean isAllowTokenIntrospectionWithoutAudienceCheck() {
+        return allowTokenIntrospectionWithoutAudienceCheck;
+    }
+
+    public boolean isAllowUserinfoWithLightweightAccessToken() {
+        return allowUserinfoWithLightweightAccessToken;
     }
 
     /**

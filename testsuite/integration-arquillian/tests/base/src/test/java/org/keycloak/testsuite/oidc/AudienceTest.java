@@ -133,7 +133,7 @@ public class AudienceTest extends AbstractOIDCScopeTest {
                 .assertEvent();
         Tokens tokens = sendTokenRequest(loginEvent, userId, "openid profile email audience-scope", "test-app");
 
-        assertAudiences(tokens.accessToken, "service-client");
+        assertAudiences(tokens.accessToken, "test-app", "service-client", "confidential-cli");
         assertAudiences(tokens.idToken, "test-app");
 
         // Revert
@@ -165,7 +165,7 @@ public class AudienceTest extends AbstractOIDCScopeTest {
                 .assertEvent();
         Tokens tokens = sendTokenRequest(loginEvent, userId, "openid profile email audience-scope", "test-app");
 
-        assertAudiences(tokens.accessToken, "http://host/service/ctx1", "http://host/service/ctx2");
+        assertAudiences(tokens.accessToken, "test-app", "http://host/service/ctx1", "http://host/service/ctx2", "confidential-cli");
         assertAudiences(tokens.idToken, "test-app", "http://host/service/ctx2");
 
         // Revert

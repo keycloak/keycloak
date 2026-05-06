@@ -22,6 +22,7 @@ import org.keycloak.OAuthErrorException;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.models.AuthenticatedClientSessionModel;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.representations.RefreshToken;
 import org.keycloak.services.util.UserSessionUtil;
@@ -76,4 +77,12 @@ public class RefreshTokenIntrospectionProvider extends AccessTokenIntrospectionP
             return false;
         }
     }
+
+    @Override
+    protected boolean verifyAudience() {
+        ClientModel authenticatedClient = session.getContext().getClient();
+
+        return authenticatedClient.getClientId().equals(token.getIssuedFor());
+    }
+
 }

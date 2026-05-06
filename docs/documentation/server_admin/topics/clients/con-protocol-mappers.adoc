@@ -92,3 +92,11 @@ Using a lightweight access token in {project_name}::
 
 Introspection endpoint::
   In some cases, it might be useful to trigger the token introspection endpoint with the HTTP header `Accept: application/jwt` instead of `Accept: application/json`, which can be useful especially for lightweight access tokens. See the details of *Token Introspection endpoint* in the link:{securing_apps_link}[securing apps] section.
+
+UserInfo endpoint restriction::
+  The UserInfo endpoint rejects lightweight access tokens by default, not for direct use with UserInfo. If you need user information from a lightweight access token, use one of these alternatives:
++
+* Call the token introspection endpoint instead of UserInfo - the introspection endpoint is designed for lightweight tokens and returns the full claims
+* Exchange the lightweight access token for a full access token using link:{securing_apps_token_exchange_link}[Token Exchange], then call UserInfo with the full token
++
+If you must use lightweight tokens with the UserInfo endpoint during migration, you can enable a backwards compatibility option in *OpenID Connect Compatibility Modes* by enabling *Allow UserInfo with lightweight access token* on the client that issues the lightweight tokens.

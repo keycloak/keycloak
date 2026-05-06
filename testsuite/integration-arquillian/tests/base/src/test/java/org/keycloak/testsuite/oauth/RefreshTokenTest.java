@@ -1886,6 +1886,7 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
         clientRepresentation2.setClientId("test-app2");
         clientRepresentation2.getAttributes().put(CLIENT_SESSION_IDLE_TIMEOUT, "500");
         clientRepresentation2.setId(null);
+        clientRepresentation2.setProtocolMappers(null);
         try (Response resp = realm.clients().create(clientRepresentation2)) {
             String clientUUID = ApiUtil.getCreatedId(resp);
             getCleanup().addClientUuid(clientUUID);

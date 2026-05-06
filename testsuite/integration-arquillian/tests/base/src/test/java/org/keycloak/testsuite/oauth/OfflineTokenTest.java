@@ -45,10 +45,11 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.SessionTimeoutHelper;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.encode.AccessTokenContext;
-import org.keycloak.protocol.oidc.encode.TokenContextEncoderProvider;
+import org.keycloak.protocol.oidc.mappers.AudienceProtocolMapper;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.RefreshToken;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -152,7 +153,9 @@ public class OfflineTokenTest extends AbstractKeycloakTest {
                 .directAccessGrants()
                 .serviceAccountsEnabled(true)
                 .attribute(OIDCConfigAttributes.USE_REFRESH_TOKEN_FOR_CLIENT_CREDENTIALS_GRANT, "true")
-                .secret("secret1").build();
+                .secret("secret1")
+                .protocolMapper(ModelToRepresentation.toRepresentation(AudienceProtocolMapper.createClaimMapper("offline-client-audience", null, "offline-client", true, false, false)))
+                .build();
 
         realm.client(app);
 
@@ -1608,7 +1611,7 @@ public class OfflineTokenTest extends AbstractKeycloakTest {
                 .session(loginEvent.getSessionId())
                 .assertEvent();
 
-        introspectionResponse = oauth.doIntrospectionAccessTokenRequest(response.getRefreshToken());
+        introspectionResponse = oauth.doIntrospectionRefreshTokenRequest(response.getRefreshToken());
         assertTrue(introspectionResponse.asJsonNode().get("active").asBoolean());
         events.expect(EventType.INTROSPECT_TOKEN)
                 .client("offline-client")

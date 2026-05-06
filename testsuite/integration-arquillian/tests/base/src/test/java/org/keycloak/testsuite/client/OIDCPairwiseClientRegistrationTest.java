@@ -19,7 +19,6 @@ package org.keycloak.testsuite.client;
 
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang.StringUtils;
 import org.junit.Before;
 import org.junit.Test;
@@ -29,6 +28,8 @@ import org.keycloak.client.registration.Auth;
 import org.keycloak.client.registration.ClientRegistrationException;
 import org.keycloak.client.registration.HttpErrorException;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
+import org.keycloak.protocol.oidc.mappers.AudienceProtocolMapper;
+import org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper;
 import org.keycloak.protocol.oidc.mappers.SHA256PairwiseSubMapper;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.IDToken;
@@ -56,7 +57,9 @@ import jakarta.ws.rs.core.Response;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
@@ -85,6 +88,21 @@ public class OIDCPairwiseClientRegistrationTest extends AbstractClientRegistrati
 
         OIDCClientRepresentation response = reg.oidc().create(client);
 
+        // Add audience mapper so the client can introspect its own tokens
+        String clientId = response.getClientId();
+        ProtocolMapperRepresentation audienceMapper = new ProtocolMapperRepresentation();
+        audienceMapper.setName("audience-mapper");
+        audienceMapper.setProtocol("openid-connect");
+        audienceMapper.setProtocolMapper(AudienceProtocolMapper.PROVIDER_ID);
+
+        Map<String, String> config = new HashMap<>();
+        config.put(AudienceProtocolMapper.INCLUDED_CUSTOM_AUDIENCE, clientId);
+        config.put(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN, "true");
+        audienceMapper.setConfig(config);
+
+        RealmResource realmResource = realmsResouce().realm(REALM_NAME);
+        ClientManager.realm(realmResource).clientId(clientId).addProtocolMapper(audienceMapper);
+
         return response;
     }
 
@@ -96,6 +114,21 @@ public class OIDCPairwiseClientRegistrationTest extends AbstractClientRegistrati
 
         // No need to remove default sub mapper. As the pairwise sub mapper should be executed after the default one.
         //removeDefaultBasicClientScope(pairwiseClient.getClientId());
+
+        // Add audience mapper so the client can introspect its own tokens
+        String clientId = pairwiseClient.getClientId();
+        ProtocolMapperRepresentation audienceMapper = new ProtocolMapperRepresentation();
+        audienceMapper.setName("audience-mapper");
+        audienceMapper.setProtocol("openid-connect");
+        audienceMapper.setProtocolMapper(AudienceProtocolMapper.PROVIDER_ID);
+
+        java.util.Map<String, String> config = new java.util.HashMap<>();
+        config.put(AudienceProtocolMapper.INCLUDED_CUSTOM_AUDIENCE, clientId);
+        config.put(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN, "true");
+        audienceMapper.setConfig(config);
+
+        RealmResource realmResource = realmsResouce().realm(REALM_NAME);
+        ClientManager.realm(realmResource).clientId(clientId).addProtocolMapper(audienceMapper);
 
         return pairwiseClient;
     }

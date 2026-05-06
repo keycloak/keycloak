@@ -6,6 +6,7 @@ import org.keycloak.models.IdentityProviderSyncMode;
 import org.keycloak.protocol.ProtocolMapperUtils;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.mappers.AudienceProtocolMapper;
 import org.keycloak.protocol.oidc.mappers.HardcodedClaim;
 import org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper;
 import org.keycloak.protocol.oidc.mappers.UserAttributeMapper;
@@ -23,8 +24,18 @@ import java.util.Map;
 import java.util.Set;
 
 import static org.keycloak.broker.oidc.OAuth2IdentityProviderConfig.TOKEN_ENDPOINT_URL;
-import static org.keycloak.testsuite.broker.BrokerTestConstants.*;
-import static org.keycloak.testsuite.broker.BrokerTestTools.*;
+import static org.keycloak.testsuite.broker.BrokerTestConstants.CLIENT_ID;
+import static org.keycloak.testsuite.broker.BrokerTestConstants.CLIENT_SECRET;
+import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_OIDC_ALIAS;
+import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_OIDC_PROVIDER_ID;
+import static org.keycloak.testsuite.broker.BrokerTestConstants.REALM_CONS_NAME;
+import static org.keycloak.testsuite.broker.BrokerTestConstants.REALM_PROV_NAME;
+import static org.keycloak.testsuite.broker.BrokerTestConstants.USER_EMAIL;
+import static org.keycloak.testsuite.broker.BrokerTestConstants.USER_LOGIN;
+import static org.keycloak.testsuite.broker.BrokerTestConstants.USER_PASSWORD;
+import static org.keycloak.testsuite.broker.BrokerTestTools.createIdentityProvider;
+import static org.keycloak.testsuite.broker.BrokerTestTools.getConsumerRoot;
+import static org.keycloak.testsuite.broker.BrokerTestTools.getProviderRoot;
 
 /**
  * @author hmlnarik
@@ -161,7 +172,16 @@ public class KcOidcBrokerConfiguration implements BrokerConfiguration {
         hardcodedJsonClaimMapperConfig.put(OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN, "true");
         hardcodedJsonClaimMapperConfig.put(HardcodedClaim.CLAIM_VALUE, "{\"" + HARDOCDED_CLAIM + "\": \"" + HARDOCDED_VALUE + "\"}");
 
-        client.setProtocolMappers(Arrays.asList(emailMapper, userAttrMapper, userAttrMapper2, nestedAttrMapper, dottedAttrMapper, hardcodedJsonClaim));
+        ProtocolMapperRepresentation audienceMapper = new ProtocolMapperRepresentation();
+        audienceMapper.setName("audience-brokerapp");
+        audienceMapper.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+        audienceMapper.setProtocolMapper(AudienceProtocolMapper.PROVIDER_ID);
+
+        Map<String, String> audienceMapperConfig = audienceMapper.getConfig();
+        audienceMapperConfig.put(AudienceProtocolMapper.INCLUDED_CUSTOM_AUDIENCE, CLIENT_ID);
+        audienceMapperConfig.put(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN, "true");
+
+        client.setProtocolMappers(Arrays.asList(emailMapper, userAttrMapper, userAttrMapper2, nestedAttrMapper, dottedAttrMapper, hardcodedJsonClaim, audienceMapper));
 
         return Collections.singletonList(client);
     }
@@ -183,6 +203,17 @@ public class KcOidcBrokerConfiguration implements BrokerConfiguration {
 
         OIDCAdvancedConfigWrapper.fromClientRepresentation(client).setPostLogoutRedirectUris(Collections.singletonList("+"));
         OIDCAdvancedConfigWrapper.fromClientRepresentation(client).setUseRefreshTokenForClientCredentialsGrant(true);
+
+        ProtocolMapperRepresentation audienceMapper = new ProtocolMapperRepresentation();
+        audienceMapper.setName("audience-broker-app");
+        audienceMapper.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+        audienceMapper.setProtocolMapper(AudienceProtocolMapper.PROVIDER_ID);
+
+        Map<String, String> audienceMapperConfig = audienceMapper.getConfig();
+        audienceMapperConfig.put(AudienceProtocolMapper.INCLUDED_CUSTOM_AUDIENCE, CONSUMER_BROKER_APP_CLIENT_ID);
+        audienceMapperConfig.put(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN, "true");
+
+        client.setProtocolMappers(Collections.singletonList(audienceMapper));
 
         return Collections.singletonList(client);
     }
