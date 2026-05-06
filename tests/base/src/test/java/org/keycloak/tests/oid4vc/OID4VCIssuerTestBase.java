@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Stream;
 
 import org.keycloak.OID4VCConstants;
 import org.keycloak.VCFormat;
@@ -36,10 +37,13 @@ import org.keycloak.common.util.PemUtils;
 import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.common.util.Time;
 import org.keycloak.constants.OID4VCIConstants;
+import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.events.EventType;
 import org.keycloak.keys.KeyProvider;
+import org.keycloak.models.KeyManager;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCAuthorizationDetailsParser;
@@ -47,8 +51,10 @@ import org.keycloak.protocol.oid4vc.issuance.TimeProvider;
 import org.keycloak.protocol.oid4vc.issuance.mappers.OID4VCGeneratedIdMapper;
 import org.keycloak.protocol.oid4vc.issuance.mappers.OID4VCIssuedAtTimeClaimMapper;
 import org.keycloak.protocol.oid4vc.model.CredentialScopeRepresentation;
+import org.keycloak.protocol.oid4vc.model.CredentialSubject;
 import org.keycloak.protocol.oid4vc.model.DisplayObject;
 import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
+import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.ComponentRepresentation;
@@ -138,6 +144,7 @@ public abstract class OID4VCIssuerTestBase {
     protected static final Instant TEST_EXPIRATION_DATE = Instant.ofEpochMilli(Time.currentTimeMillis())
             .plus(365, ChronoUnit.DAYS)
             .truncatedTo(ChronoUnit.SECONDS);
+    protected static final Instant TEST_ISSUANCE_DATE = Instant.ofEpochSecond(1000);
 
     @InjectRealm(config = VCTestRealmConfig.class)
     protected ManagedRealm testRealm;
@@ -222,6 +229,46 @@ public abstract class OID4VCIssuerTestBase {
         wallet.logout();
         driver.cookies().deleteAll();
         driver.open("about:blank");
+    }
+
+    public static KeyWrapper getKeyFromSession(KeycloakSession keycloakSession) {
+        String realmName = keycloakSession.getContext().getRealm().getName();
+        Logger logger = Logger.getLogger(OID4VCIssuerTestBase.class);
+        KeyManager keyManager = keycloakSession.keys();
+        Stream<KeyWrapper> keyWrapperStream = keyManager
+                .getKeysStream(keycloakSession.getContext().getRealm(), KeyUse.SIG, Algorithm.RS256);
+        KeyWrapper kw = keyWrapperStream
+                .peek(k -> logger.warnf("THE KEY: %s - %s in realm %s", k.getKid(), k.getAlgorithm(), realmName))
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("No key was configured"));
+        logger.warnf("Kid is %s", kw.getKid());
+        return kw;
+    }
+
+    public static String getKeyIdFromSession(KeycloakSession keycloakSession) {
+        return getKeyFromSession(keycloakSession).getKid();
+    }
+
+    protected static CredentialSubject getCredentialSubject(Map<String, Object> claims) {
+        CredentialSubject credentialSubject = new CredentialSubject();
+        claims.forEach(credentialSubject::setClaims);
+        return credentialSubject;
+    }
+
+    protected static VerifiableCredential getTestCredential(Map<String, Object> claims) {
+
+        VerifiableCredential testCredential = new VerifiableCredential();
+        testCredential.setId(URI.create(String.format("uri:uuid:%s", UUID.randomUUID())));
+        testCredential.setContext(List.of(CONTEXT_URL));
+        testCredential.setType(TEST_TYPES);
+        testCredential.setIssuer(TEST_DID);
+        testCredential.setExpirationDate(TEST_EXPIRATION_DATE);
+        if (claims.containsKey("issuanceDate")) {
+            testCredential.setIssuanceDate((Instant) claims.get("issuanceDate"));
+        }
+
+        testCredential.setCredentialSubject(getCredentialSubject(claims));
+        return testCredential;
     }
 
     protected CredentialScopeRepresentation getCredentialScope(String scopeName) {

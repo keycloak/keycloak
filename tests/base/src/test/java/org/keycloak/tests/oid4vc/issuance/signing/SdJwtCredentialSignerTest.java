@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.oid4vc.issuance.signing;
+package org.keycloak.tests.oid4vc.issuance.signing;
 
 import java.security.PublicKey;
 import java.security.cert.CertificateEncodingException;
@@ -29,7 +29,6 @@ import java.util.UUID;
 import org.keycloak.OID4VCConstants;
 import org.keycloak.TokenVerifier;
 import org.keycloak.common.VerificationException;
-import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.AsymmetricSignatureVerifierContext;
 import org.keycloak.crypto.KeyWrapper;
@@ -46,14 +45,16 @@ import org.keycloak.protocol.oid4vc.issuance.signing.SdJwtCredentialSigner;
 import org.keycloak.protocol.oid4vc.model.CredentialBuildConfig;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.representations.JsonWebToken;
-import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.sdjwt.SdJwt;
 import org.keycloak.sdjwt.SdJwtUtils;
-import org.keycloak.testframework.remote.providers.runonserver.RunOnServerException;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
+import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
+import org.keycloak.tests.oid4vc.OID4VCIssuerTestBase;
 import org.keycloak.util.JsonSerialization;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import static org.keycloak.OID4VCConstants.CLAIM_NAME_SD;
 import static org.keycloak.OID4VCConstants.CLAIM_NAME_SD_HASH_ALGORITHM;
@@ -62,211 +63,216 @@ import static org.keycloak.OID4VCConstants.SDJWT_DELIMITER;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
-public class SdJwtCredentialSignerTest extends OID4VCTest {
+@KeycloakIntegrationTest(config = OID4VCIssuerTestBase.VCTestServerConfig.class)
+public class SdJwtCredentialSignerTest extends OID4VCIssuerTestBase {
 
-    private static final KeyWrapper rsaKey = getRsaKey();
+    @InjectRunOnServer
+    RunOnServerClient runOnServer;
 
-    @Test(expected = CredentialSignerException.class)
+    @Test
     public void testUnsupportedCredentialBody() throws Throwable {
-        try {
-            getTestingClient()
-                    .server(TEST_REALM_NAME)
-                    .run(session -> new SdJwtCredentialSigner(session).signCredential(
-                            new LDCredentialBody(getTestCredential(Map.of())),
-                            new CredentialBuildConfig()
-                    ));
-        } catch (RunOnServerException ros) {
-            throw ros.getCause();
-        }
+        runOnServer.run(session -> {
+                    assertThrows(
+                            CredentialSignerException.class,
+                            () -> {
+                                new SdJwtCredentialSigner(session).signCredential(
+                                        new LDCredentialBody(getTestCredential(Map.of())),
+                                        new CredentialBuildConfig()
+                                );
+                            }
+                    );
+                }
+        );
     }
 
     // If an unsupported algorithm is provided, signing should reliably fail.
-    @Test(expected = CredentialSignerException.class)
+    @Test
     public void testUnsupportedAlgorithm() throws Throwable {
-        try {
-            getTestingClient()
-                    .server(TEST_REALM_NAME)
-                    .run(session ->
-                            testSignSDJwtCredential(
-                                    session,
-                                    getKeyIdFromSession(session),
-                                    null,
-                                    "unsupported-algorithm",
-                                    Map.of(),
-                                    0,
-                                    List.of()));
-        } catch (RunOnServerException ros) {
-            throw ros.getCause();
-        }
+        runOnServer.run(session -> {
+                    assertThrows(
+                            CredentialSignerException.class,
+                            () -> {
+                                testSignSDJwtCredential(
+                                        session,
+                                        getKeyIdFromSession(session),
+                                        null,
+                                        "unsupported-algorithm",
+                                        Map.of(),
+                                        0,
+                                        List.of());
+                            }
+                    );
+                }
+        );
     }
 
     // If an unknown key is provided, signing should reliably fail.
-    @Test(expected = CredentialSignerException.class)
+    @Test
     public void testFailIfNoKey() throws Throwable {
-        try {
-            getTestingClient()
-                    .server(TEST_REALM_NAME)
-                    .run(session ->
-                            testSignSDJwtCredential(
-                                    session,
-                                    "no-such-key",
-                                    null,
-                                    Algorithm.RS256,
-                                    Map.of(),
-                                    0,
-                                    List.of()));
-        } catch (RunOnServerException ros) {
-            throw ros.getCause();
-        }
+        runOnServer.run(session -> {
+                    assertThrows(
+                            CredentialSignerException.class,
+                            () -> {
+                                testSignSDJwtCredential(
+                                        session,
+                                        "no-such-key",
+                                        null,
+                                        Algorithm.RS256,
+                                        Map.of(),
+                                        0,
+                                        List.of());
+                            }
+                    );
+                }
+        );
     }
 
     @Test
     public void testRsaSignedCredentialWithClaims() {
-        getTestingClient()
-                .server(TEST_REALM_NAME)
-                .run(session ->
-                        testSignSDJwtCredential(
-                                session,
-                                getKeyIdFromSession(session),
-                                null,
-                                Algorithm.RS256,
-                                Map.of("id", String.format("uri:uuid:%s", UUID.randomUUID()),
-                                        "test", "test",
-                                        "arrayClaim", List.of("a", "b", "c")),
-                                0,
-                                List.of()));
+        runOnServer.run(session -> {
+                    testSignSDJwtCredential(
+                            session,
+                            getKeyIdFromSession(session),
+                            null,
+                            Algorithm.RS256,
+                            Map.of("id", String.format("uri:uuid:%s", UUID.randomUUID()),
+                                    "test", "test",
+                                    "arrayClaim", List.of("a", "b", "c")),
+                            0,
+                            List.of());
+                }
+        );
     }
 
     @Test
     public void testRsaSignedCredentialWithVisibleClaims() {
-        getTestingClient()
-                .server(TEST_REALM_NAME)
-                .run(session ->
-                        testSignSDJwtCredential(
-                                session,
-                                getKeyIdFromSession(session),
-                                null,
-                                Algorithm.RS256,
-                                Map.of("id", String.format("uri:uuid:%s", UUID.randomUUID()),
-                                        "test", "test",
-                                        "arrayClaim", List.of("a", "b", "c")),
-                                0,
-                                List.of("test")));
+        runOnServer.run(session -> {
+                    testSignSDJwtCredential(
+                            session,
+                            getKeyIdFromSession(session),
+                            null,
+                            Algorithm.RS256,
+                            Map.of("id", String.format("uri:uuid:%s", UUID.randomUUID()),
+                                    "test", "test",
+                                    "arrayClaim", List.of("a", "b", "c")),
+                            0,
+                            List.of("test"));
+                }
+        );
     }
 
 
     @Test
     public void testRsaSignedCredentialWithClaimsAndDecoys() {
-        getTestingClient()
-                .server(TEST_REALM_NAME)
-                .run(session ->
-                        testSignSDJwtCredential(
-                                session,
-                                getKeyIdFromSession(session),
-                                null,
-                                Algorithm.RS256,
-                                Map.of("id", String.format("uri:uuid:%s", UUID.randomUUID()),
-                                        "test", "test",
-                                        "arrayClaim", List.of("a", "b", "c")),
-                                6,
-                                List.of()));
+        runOnServer.run(session -> {
+                    testSignSDJwtCredential(
+                            session,
+                            getKeyIdFromSession(session),
+                            null,
+                            Algorithm.RS256,
+                            Map.of("id", String.format("uri:uuid:%s", UUID.randomUUID()),
+                                    "test", "test",
+                                    "arrayClaim", List.of("a", "b", "c")),
+                            6,
+                            List.of());
+                }
+        );
     }
 
     @Test
     public void testRsaSignedCredentialWithKeyId() {
-        getTestingClient()
-                .server(TEST_REALM_NAME)
-                .run(session ->
-                        testSignSDJwtCredential(
-                                session,
-                                getKeyIdFromSession(session),
-                                "did:web:test.org#key-id",
-                                Algorithm.RS256,
-                                Map.of("id", String.format("uri:uuid:%s", UUID.randomUUID()),
-                                        "test", "test",
-                                        "arrayClaim", List.of("a", "b", "c")),
-                                0,
-                                List.of()));
+        runOnServer.run(session -> {
+                    testSignSDJwtCredential(
+                            session,
+                            getKeyIdFromSession(session),
+                            "did:web:test.org#key-id",
+                            Algorithm.RS256,
+                            Map.of("id", String.format("uri:uuid:%s", UUID.randomUUID()),
+                                    "test", "test",
+                                    "arrayClaim", List.of("a", "b", "c")),
+                            0,
+                            List.of());
+                }
+        );
     }
 
     @Test
     public void testRsaSignedCredentialWithoutAdditionalClaims() {
-        getTestingClient()
-                .server(TEST_REALM_NAME)
-                .run(session ->
-                        testSignSDJwtCredential(
-                                session,
-                                getKeyIdFromSession(session),
-                                null,
-                                Algorithm.RS256,
-                                Map.of(),
-                                0,
-                                List.of()));
+        runOnServer.run(session -> {
+                    testSignSDJwtCredential(
+                            session,
+                            getKeyIdFromSession(session),
+                            null,
+                            Algorithm.RS256,
+                            Map.of(),
+                            0,
+                            List.of());
+                }
+        );
     }
 
     @Test
     public void testSdJwtCredentialContainsX5cHeader() {
-        getTestingClient()
-                .server(TEST_REALM_NAME)
-                .run(session -> {
-                    String signingKeyId = getKeyIdFromSession(session);
-                    CredentialBuildConfig credentialBuildConfig = new CredentialBuildConfig()
-                            .setCredentialIssuer(TEST_DID.toString())
-                            .setCredentialType("https://credentials.example.com/test-credential")
-                            .setTokenJwsType("example+sd-jwt")
-                            .setHashAlgorithm(OID4VCConstants.SD_HASH_DEFAULT_ALGORITHM)
-                            .setNumberOfDecoys(0)
-                            .setSdJwtVisibleClaims(List.of())
-                            .setSigningKeyId(signingKeyId)
-                            .setSigningAlgorithm(Algorithm.RS256);
+        runOnServer.run(session -> {
+            String signingKeyId = getKeyIdFromSession(session);
+            CredentialBuildConfig credentialBuildConfig = new CredentialBuildConfig()
+                    .setCredentialIssuer(TEST_DID.toString())
+                    .setCredentialType("https://credentials.example.com/test-credential")
+                    .setTokenJwsType("example+sd-jwt")
+                    .setHashAlgorithm(OID4VCConstants.SD_HASH_DEFAULT_ALGORITHM)
+                    .setNumberOfDecoys(0)
+                    .setSdJwtVisibleClaims(List.of())
+                    .setSigningKeyId(signingKeyId)
+                    .setSigningAlgorithm(Algorithm.RS256);
 
-                    SdJwtCredentialSigner sdJwtCredentialSigner = new SdJwtCredentialSigner(session);
+            SdJwtCredentialSigner sdJwtCredentialSigner = new SdJwtCredentialSigner(session);
 
-                    VerifiableCredential testCredential = getTestCredential(Map.of());
-                    SdJwtCredentialBody sdJwtCredentialBody = new SdJwtCredentialBuilder()
-                            .buildCredentialBody(testCredential, credentialBuildConfig);
+            VerifiableCredential testCredential = getTestCredential(Map.of());
+            SdJwtCredentialBody sdJwtCredentialBody = new SdJwtCredentialBuilder()
+                    .buildCredentialBody(testCredential, credentialBuildConfig);
 
-                    String sdJwt = sdJwtCredentialSigner.signCredential(sdJwtCredentialBody, credentialBuildConfig);
+            String sdJwt = sdJwtCredentialSigner.signCredential(sdJwtCredentialBody, credentialBuildConfig);
 
-                    String[] splittedSdToken = sdJwt.split(SDJWT_DELIMITER);
-                    String[] splittedToken = splittedSdToken[0].split("\\.");
+            String[] splittedSdToken = sdJwt.split(SDJWT_DELIMITER);
+            String[] splittedToken = splittedSdToken[0].split("\\.");
 
-                    String jwt = new StringJoiner(".")
-                            .add(splittedToken[0])
-                            .add(splittedToken[1])
-                            .add(splittedToken[2])
-                            .toString();
+            String jwt = new StringJoiner(".")
+                    .add(splittedToken[0])
+                    .add(splittedToken[1])
+                    .add(splittedToken[2])
+                    .toString();
 
-                    KeyWrapper keyWrapper = getKeyFromSession(session);
-                    SignatureVerifierContext verifierContext = new AsymmetricSignatureVerifierContext(keyWrapper);
+            KeyWrapper keyWrapper = getKeyFromSession(session);
+            SignatureVerifierContext verifierContext = new AsymmetricSignatureVerifierContext(keyWrapper);
 
-                    TokenVerifier<JsonWebToken> verifier = TokenVerifier
-                            .create(jwt, JsonWebToken.class)
-                            .verifierContext(verifierContext);
-                    verifier.publicKey((PublicKey) keyWrapper.getPublicKey());
+            TokenVerifier<JsonWebToken> verifier = TokenVerifier
+                    .create(jwt, JsonWebToken.class)
+                    .verifierContext(verifierContext);
+            verifier.publicKey((PublicKey) keyWrapper.getPublicKey());
 
+            try {
+                verifier.verify();
+
+                JWSHeader header = verifier.getHeader();
+                assertNotNull(header.getX5c(), "x5c header should be present in SD-JWT credential");
+                assertFalse(header.getX5c().isEmpty(), "x5c header should contain at least one certificate");
+
+                if (keyWrapper.getCertificate() != null) {
                     try {
-                        verifier.verify();
-
-                        JWSHeader header = verifier.getHeader();
-                        assertNotNull(header.getX5c(), "x5c header should be present in SD-JWT credential");
-                        assertFalse(header.getX5c().isEmpty(), "x5c header should contain at least one certificate");
-
-                        if (keyWrapper.getCertificate() != null) {
-                            try {
-                                String expectedCert = Base64.getEncoder().encodeToString(keyWrapper.getCertificate().getEncoded());
-                                assertEquals(expectedCert, header.getX5c().get(0), "First certificate in x5c should match the signing key certificate");
-                            } catch (CertificateEncodingException e) {
-                                fail("Failed to encode certificate for comparison: " + e.getMessage());
-                            }
-                        }
-                    } catch (VerificationException e) {
-                        fail("The credential should successfully be verified: " + e.getMessage());
+                        String expectedCert = Base64.getEncoder().encodeToString(keyWrapper.getCertificate().getEncoded());
+                        assertEquals(expectedCert, header.getX5c().get(0), "First certificate in x5c should match the signing key certificate");
+                    } catch (CertificateEncodingException e) {
+                        fail("Failed to encode certificate for comparison: " + e.getMessage());
                     }
-                });
+                }
+            } catch (VerificationException e) {
+                fail("The credential should successfully be verified: " + e.getMessage());
+            }
+        });
     }
 
     public static void testSignSDJwtCredential(KeycloakSession session, String signingKeyId, String overrideKeyId, String
@@ -366,17 +372,6 @@ public class SdJwtCredentialSignerTest extends OID4VCTest {
 
     }
 
-    @Override
-    public void configureTestRealm(RealmRepresentation testRealm) {
-        testRealm.setVerifiableCredentialsEnabled(true);
-        
-        if (testRealm.getComponents() != null) {
-            testRealm.getComponents().add("org.keycloak.keys.KeyProvider", getRsaKeyProvider(rsaKey));
-        } else {
-            testRealm.setComponents(new MultivaluedHashMap<>(
-                    Map.of("org.keycloak.keys.KeyProvider", List.of(getRsaKeyProvider(rsaKey)))));
-        }
-    }
 
     static class DisclosedClaim {
         private final String salt;
@@ -420,4 +415,20 @@ public class SdJwtCredentialSignerTest extends OID4VCTest {
         }
     }
 
+
+    /*
+    private static class SdJwtCredentialSignerRealmConfig extends LegacyRealmConfig {
+
+        @Override
+        public void configureTestRealm(RealmRepresentation testRealm) {
+            testRealm.setVerifiableCredentialsEnabled(true);
+
+            if (testRealm.getComponents() != null) {
+                testRealm.getComponents().add("org.keycloak.keys.KeyProvider", getRsaKeyProvider(rsaKey));
+            } else {
+                testRealm.setComponents(new MultivaluedHashMap<>(
+                        Map.of("org.keycloak.keys.KeyProvider", List.of(getRsaKeyProvider(rsaKey)))));
+            }
+    }
+     */
 }

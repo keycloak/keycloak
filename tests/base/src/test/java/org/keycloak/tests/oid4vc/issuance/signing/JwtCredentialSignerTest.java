@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.oid4vc.issuance.signing;
+package org.keycloak.tests.oid4vc.issuance.signing;
 
 import java.security.PublicKey;
 import java.time.Instant;
@@ -25,9 +25,9 @@ import java.util.Optional;
 import java.util.UUID;
 
 import org.keycloak.TokenVerifier;
+import org.keycloak.admin.client.resource.ComponentsResource;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.crypto.CryptoIntegration;
-import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.AsymmetricSignatureVerifierContext;
 import org.keycloak.crypto.KeyWrapper;
@@ -43,121 +43,140 @@ import org.keycloak.protocol.oid4vc.model.CredentialBuildConfig;
 import org.keycloak.protocol.oid4vc.model.CredentialSubject;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.representations.JsonWebToken;
-import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.testframework.remote.providers.runonserver.RunOnServerException;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.annotations.TestSetup;
+import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
+import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
+import org.keycloak.tests.oid4vc.OID4VCIssuerTestBase;
 import org.keycloak.util.JsonSerialization;
 
-import org.jboss.logging.Logger;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 
 
-public class JwtCredentialSignerTest extends OID4VCTest {
+@KeycloakIntegrationTest(config = OID4VCIssuerTestBase.VCTestServerConfig.class)
+public class JwtCredentialSignerTest extends OID4VCIssuerTestBase {
 
-    private static final Logger LOGGER = Logger.getLogger(JwtCredentialSignerTest.class);
+    @InjectRunOnServer
+    RunOnServerClient runOnServer;
 
-    private static final KeyWrapper rsaKey = getRsaKey();
-
-    @Before
+    @BeforeEach
     public void setup() {
         CryptoIntegration.init(this.getClass().getClassLoader());
     }
 
-    @Test(expected = CredentialSignerException.class)
+    @TestSetup
+    public void configureTestRealm() {
+        super.configureTestRealm();
+        ComponentsResource components = testRealm.admin().components();
+        components.add(getRsaKeyProvider(getRsaKey_Default())).close();
+    }
+
+
+    @Test
     public void testUnsupportedCredentialBody() throws Throwable {
-        try {
-            getTestingClient()
-                    .server(TEST_REALM_NAME)
-                    .run(session -> new JwtCredentialSigner(session).signCredential(
-                            new LDCredentialBody(getTestCredential(Map.of())),
-                            new CredentialBuildConfig()
-                    ));
-        } catch (RunOnServerException ros) {
-            throw ros.getCause();
-        }
+        runOnServer.run(session -> {
+                    assertThrows(
+                            CredentialSignerException.class,
+                            () -> {
+                                new JwtCredentialSigner(session).signCredential(
+                                        new LDCredentialBody(getTestCredential(Map.of())),
+                                        new CredentialBuildConfig()
+                                );
+                            }
+                    );
+                }
+        );
     }
 
     // If an unsupported algorithm is provided, signing should reliably fail.
-    @Test(expected = CredentialSignerException.class)
+    @Test
     public void testUnsupportedAlgorithm() throws Throwable {
-        try {
-            getTestingClient()
-                    .server(TEST_REALM_NAME)
-                    .run(session ->
-                            testSignJwtCredential(
-                                    session,
-                                    getKeyIdFromSession(session),
-                                    "unsupported-algorithm",
-                                    Map.of())
+        runOnServer.run(session -> {
+                    assertThrows(
+                            CredentialSignerException.class,
+                            () -> {
+                                testSignJwtCredential(
+                                        session,
+                                        getKeyIdFromSession(session),
+                                        "unsupported-algorithm",
+                                        Map.of()
+                                );
+                            }
                     );
-        } catch (RunOnServerException ros) {
-            throw ros.getCause();
-        }
+                }
+        );
     }
 
     // If an unknown key is provided, signing should reliably fail.
-    @Test(expected = CredentialSignerException.class)
+    @Test
     public void testFailIfNoKey() throws Throwable {
-        try {
-            getTestingClient()
-                    .server(TEST_REALM_NAME)
-                    .run(session ->
-                            testSignJwtCredential(
-                                    session,
-                                    "no-such-key",
-                                    Algorithm.RS256,
-                                    Map.of()));
-        } catch (RunOnServerException ros) {
-            throw ros.getCause();
-        }
+        runOnServer.run(session -> {
+                    assertThrows(
+                            CredentialSignerException.class,
+                            () -> {
+                                testSignJwtCredential(
+                                        session,
+                                        "no-such-key",
+                                        Algorithm.RS256,
+                                        Map.of()
+                                );
+                            }
+                    );
+                }
+        );
     }
 
     // The provided credentials should be successfully signed as a JWT-VC.
     @Test
-    public void testRsaSignedCredentialWithOutIssuanceDate() {
-        getTestingClient()
-                .server(TEST_REALM_NAME)
-                .run(session ->
-                        testSignJwtCredential(
-                                session,
-                                getKeyIdFromSession(session),
-                                Algorithm.RS256,
-                                Map.of("id", String.format("uri:uuid:%s", UUID.randomUUID()),
-                                        "test", "test",
-                                        "arrayClaim", List.of("a", "b", "c"))));
+    public void testRsaSignedCredentialWithOutIssuanceDate() throws Exception {
+        runOnServer.run(session -> {
+                    testSignJwtCredential(
+                            session,
+                            getKeyIdFromSession(session),
+                            Algorithm.RS256,
+                            Map.of("id", String.format("uri:uuid:%s", UUID.randomUUID()),
+                                    "test", "test",
+                                    "arrayClaim", List.of("a", "b", "c"))
+                    );
+
+                }
+        );
     }
 
     @Test
     public void testRsaSignedCredentialWithIssuanceDate() {
-        getTestingClient()
-                .server(TEST_REALM_NAME)
-                .run(session ->
-                        testSignJwtCredential(
-                                session,
-                                getKeyIdFromSession(session),
-                                Algorithm.RS256,
-                                Map.of("id", String.format("uri:uuid:%s", UUID.randomUUID()),
-                                        "test", "test",
-                                        "arrayClaim", List.of("a", "b", "c"),
-                                        "issuanceDate", Instant.ofEpochSecond(10))));
+        runOnServer.run(session -> {
+                    testSignJwtCredential(
+                            session,
+                            getKeyIdFromSession(session),
+                            Algorithm.RS256,
+                            Map.of("id", String.format("uri:uuid:%s", UUID.randomUUID()),
+                                    "test", "test",
+                                    "arrayClaim", List.of("a", "b", "c"),
+                                    "issuanceDate", Instant.ofEpochSecond(10))
+                    );
+                }
+        );
     }
 
     @Test
     public void testRsaSignedCredentialWithoutAdditionalClaims() {
-        getTestingClient()
-                .server(TEST_REALM_NAME)
-                .run(session ->
-                        testSignJwtCredential(
-                                session,
-                                getKeyIdFromSession(session),
-                                Algorithm.RS256,
-                                Map.of()));
+        runOnServer.run(session -> {
+                    testSignJwtCredential(
+                            session,
+                            getKeyIdFromSession(session),
+                            Algorithm.RS256,
+                            Map.of()
+                    );
+                }
+        );
     }
-
 
     public static void testSignJwtCredential(
             KeycloakSession session, String signingKeyId, String algorithm, Map<String, Object> claims) {
@@ -240,16 +259,4 @@ public class JwtCredentialSignerTest extends OID4VCTest {
         }
     }
 
-
-    @Override
-    public void configureTestRealm(RealmRepresentation testRealm) {
-        testRealm.setVerifiableCredentialsEnabled(true);
-        
-        if (testRealm.getComponents() != null) {
-            testRealm.getComponents().add("org.keycloak.keys.KeyProvider", getRsaKeyProvider(rsaKey));
-        } else {
-            testRealm.setComponents(new MultivaluedHashMap<>(
-                    Map.of("org.keycloak.keys.KeyProvider", List.of(getRsaKeyProvider(rsaKey)))));
-        }
-    }
 }
