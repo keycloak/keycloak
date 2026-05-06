@@ -587,7 +587,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
             AccessTokenResponse tokenResponse = sendTokenRequestAndGetResponse(loginEvent);
             oauth.logoutForm().idTokenHint(tokenResponse.getIdToken()).withRedirect().open();
 
-            events.expectLogout(sessionId).user(userId).session(sessionId).assertEvent();
+            EventAssertion.expectLogoutSuccess(events.poll()).sessionId(sessionId).userId(userId);
 
             oauth.openLoginForm();
 
@@ -601,7 +601,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
             tokenResponse = sendTokenRequestAndGetResponse(loginEvent);
             oauth.logoutForm().idTokenHint(tokenResponse.getIdToken()).withRedirect().open();
 
-            events.expectLogout(sessionId).user(userId).session(sessionId).assertEvent();
+            EventAssertion.expectLogoutSuccess(events.poll()).sessionId(sessionId).userId(userId);
         }
 
         return changePasswordUrl;
@@ -1222,7 +1222,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
         AccessTokenResponse tokenResponse = sendTokenRequestAndGetResponse(loginEvent);
         oauth.logoutForm().idTokenHint(tokenResponse.getIdToken()).withRedirect().open();
 
-        events.expectLogout(sessionId).user(userId).session(sessionId).assertEvent();
+        EventAssertion.expectLogoutSuccess(events.poll()).sessionId(sessionId).userId(userId);
 
         oauth.openLoginForm();
 

@@ -30,6 +30,7 @@ import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ClientScopeResource;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.events.Details;
+import org.keycloak.events.EventType;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
@@ -199,10 +200,12 @@ public class OIDCScopeTest extends AbstractOIDCScopeTest {
 
         // Logout
         oauth.doLogout(tokens.refreshToken);
-        events.expectLogout(idToken.getSessionState())
-                .client("test-app")
-                .user(userId)
-                .removeDetail(Details.REDIRECT_URI).assertEvent();
+        EventAssertion.assertSuccess(events.poll())
+                .type(EventType.LOGOUT)
+                .sessionId(idToken.getSessionState())
+                .clientId(oauth.getClientId())
+                .userId(userId)
+                .withoutDetails(Details.REDIRECT_URI);
 
         // Login with optional scopes. Assert that everything is there
         oauth.scope("openid address phone microprofile-jwt");
@@ -311,10 +314,12 @@ public class OIDCScopeTest extends AbstractOIDCScopeTest {
 
         // Logout
         oauth.doLogout(tokens.refreshToken);
-        events.expectLogout(idToken.getSessionState())
-                .client("test-app")
-                .user(userId)
-                .removeDetail(Details.REDIRECT_URI).assertEvent();
+        EventAssertion.assertSuccess(events.poll())
+                .type(EventType.LOGOUT)
+                .sessionId(idToken.getSessionState())
+                .clientId(oauth.getClientId())
+                .userId(userId)
+                .withoutDetails(Details.REDIRECT_URI);
 
         // Login with scope parameter. Just 'profile' is there
         oauth.scope("openid profile");
@@ -368,10 +373,12 @@ public class OIDCScopeTest extends AbstractOIDCScopeTest {
 
         // Logout
         oauth.doLogout(tokens.refreshToken);
-        events.expectLogout(idToken.getSessionState())
-                .client("third-party")
-                .user(userId)
-                .removeDetail(Details.REDIRECT_URI).assertEvent();
+        EventAssertion.assertSuccess(events.poll())
+                .type(EventType.LOGOUT)
+                .sessionId(idToken.getSessionState())
+                .clientId("third-party")
+                .userId(userId)
+                .withoutDetails(Details.REDIRECT_URI);
 
         // Login with optional scopes. Grant screen should have just "phone"
         oauth.scope("openid address phone");
@@ -701,10 +708,12 @@ public class OIDCScopeTest extends AbstractOIDCScopeTest {
         Assert.assertNames(tokens.accessToken.getRealmAccess().getRoles(), expectedRoles);
 
         oauth.doLogout(tokens.refreshToken);
-        events.expectLogout(tokens.idToken.getSessionState())
-                .client("test-app")
-                .user(userId)
-                .removeDetail(Details.REDIRECT_URI).assertEvent();
+        EventAssertion.assertSuccess(events.poll())
+                .type(EventType.LOGOUT)
+                .sessionId(tokens.idToken.getSessionState())
+                .clientId(oauth.getClientId())
+                .userId(userId)
+                .withoutDetails(Details.REDIRECT_URI);
     }
 
 

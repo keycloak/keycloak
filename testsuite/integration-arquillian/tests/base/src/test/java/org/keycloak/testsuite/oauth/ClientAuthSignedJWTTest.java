@@ -116,12 +116,13 @@ public class ClientAuthSignedJWTTest extends AbstractClientAuthSignedJWTTest {
         // Logout and assert refresh will fail
         HttpResponse logoutResponse = doLogout(response.getRefreshToken(), getClient1SignedJWT());
         assertEquals(204, logoutResponse.getStatusLine().getStatusCode());
-        events.expectLogout(accessToken.getSessionState())
-                .client("client1")
-                .user(client1SAUserId)
-                .removeDetail(Details.REDIRECT_URI)
-                .detail(Details.CLIENT_AUTH_METHOD, JWTClientAuthenticator.PROVIDER_ID)
-                .assertEvent();
+        EventAssertion.assertSuccess(events.poll())
+                .type(EventType.LOGOUT)
+                .sessionId(accessToken.getSessionState())
+                .clientId("client1")
+                .userId(client1SAUserId)
+                .details(Details.CLIENT_AUTH_METHOD, JWTClientAuthenticator.PROVIDER_ID)
+                .withoutDetails(Details.REDIRECT_URI);
 
         response = doRefreshTokenRequest(response.getRefreshToken(), getClient1SignedJWT());
         assertEquals(400, response.getStatusCode());

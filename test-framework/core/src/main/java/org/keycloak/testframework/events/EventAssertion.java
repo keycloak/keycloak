@@ -80,6 +80,36 @@ public class EventAssertion {
     }
 
     /**
+     * Assert an expected LOGOUT event
+     *
+     * @param event the event to assert
+     * @return
+     */
+    public static EventAssertion expectLogoutSuccess(EventRepresentation event) {
+        return assertSuccess(event)
+                .type(EventType.LOGOUT)
+                .hasIpAddress()
+                .hasSessionId()
+                .hasRedirectUri();
+    }
+
+    /**
+     * Assert an expected LOGOUT_ERROR event
+     *
+     * @param event the event to assert
+     * @return
+     */
+    public static EventAssertion expectLogoutError(EventRepresentation event) {
+        return assertError(event)
+                .type(EventType.LOGOUT_ERROR)
+                .hasIpAddress()
+                .sessionId(null)
+                .clientId(null)
+                .userId(null)
+                .withoutDetails(Details.CODE_ID);
+    }
+
+    /**
      * Assert the error message
      *
      * @param error the expected error message
@@ -213,6 +243,16 @@ public class EventAssertion {
         for (String key : keyDetails) {
             MatcherAssert.assertThat(event.getDetails(), Matchers.hasKey(key));
         }
+        return this;
+    }
+
+    /**
+     * Assert the event details has redirect_uri
+     *
+     * @return
+     */
+    private EventAssertion hasRedirectUri() {
+        MatcherAssert.assertThat(event.getDetails(), Matchers.hasKey("redirect_uri"));
         return this;
     }
 
