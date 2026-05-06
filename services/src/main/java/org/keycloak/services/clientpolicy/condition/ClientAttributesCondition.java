@@ -95,7 +95,6 @@ public class ClientAttributesCondition extends AbstractClientPolicyConditionProv
             case JWT_AUTHORIZATION_GRANT:
             case SAML_AUTHN_REQUEST:
             case SAML_LOGOUT_REQUEST:
-            case CREDENTIAL_OFFER_CREATE:
                 boolean attributesMatched = isAttributesMatched(session.getContext().getClient());
                 return attributesMatched ? ClientPolicyVote.YES : ClientPolicyVote.NO;
             default:

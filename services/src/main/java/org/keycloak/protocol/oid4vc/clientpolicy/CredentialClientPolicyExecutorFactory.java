@@ -4,6 +4,7 @@ import java.util.Collections;
 import java.util.List;
 
 import org.keycloak.Config;
+import org.keycloak.common.Profile;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.ProviderConfigProperty;
@@ -45,4 +46,10 @@ public class CredentialClientPolicyExecutorFactory implements ClientPolicyExecut
         return Collections.emptyList();
     }
 
+    @Override
+    public boolean isSupported(Config.Scope config) {
+        // [TODO >>>] Adding this fails in GitHub CD/CI
+        // Profile.isFeatureEnabled(Profile.Feature.OID4VC_VCI)
+        return Profile.isFeatureEnabled(Profile.Feature.CLIENT_POLICIES);
+    }
 }
