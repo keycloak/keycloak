@@ -11,12 +11,14 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.Executors;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
 import org.keycloak.common.util.Time;
 import org.keycloak.events.outbox.OutboxStore;
+import org.keycloak.executors.ExecutorsProvider;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
@@ -396,9 +398,16 @@ public class StreamService {
         HttpRequest httpRequest = session.getContext().getHttpRequest();
         KeycloakSessionFactory keycloakSessionFactory = session.getKeycloakSessionFactory();
 
-        var executor = Executors.newSingleThreadScheduledExecutor();
+        // Hand the verification dispatch to Keycloak's managed executor pool (ExecutorsProvider)
+        // The delay exists so the receiver's POST /streams response is delivered
+        // before the verification SET arrives on its push endpoint.
+        // CompletableFuture.delayedExecutor handles the wait via the JDK's
+        // shared timer without holding a worker thread, then forwards the
+        // task to the managed pool when it's due.
+        ExecutorService verificationPool = session.getProvider(ExecutorsProvider.class)
+                .getExecutor("ssf-stream-verification");
         int delay = streamVerificationConfig.verificationDelayMillis();
-        executor.schedule(() -> {
+        CompletableFuture.runAsync(() -> {
             try (KeycloakSession subSession = keycloakSessionFactory.create()) {
                 subSession.getTransactionManager().begin();
                 subSession.setAttribute("ssfTransmitterMetadata", transmitterMetadata);
@@ -426,10 +435,8 @@ public class StreamService {
             } catch (Exception e) {
                 log.errorf(e, "Failed to send transmitter initiated verification request after stream creation. realm=%s client=%s streamId=%s",
                         realmName, clientId, streamConfig.getStreamId());
-            } finally {
-                executor.shutdown();
             }
-        }, delay, TimeUnit.MILLISECONDS);
+        }, CompletableFuture.delayedExecutor(delay, TimeUnit.MILLISECONDS, verificationPool));
     }
 
     protected boolean triggerTransmitterInitiatedStreamVerification(StreamConfig streamConfig, KeycloakSession subSession, StreamVerificationRequest verificationRequest) {
