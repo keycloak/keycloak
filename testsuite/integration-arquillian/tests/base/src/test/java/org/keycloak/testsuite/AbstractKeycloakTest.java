@@ -77,6 +77,7 @@ import org.keycloak.testsuite.util.TestCleanup;
 import org.keycloak.testsuite.util.TestEventsLogger;
 import org.keycloak.testsuite.util.WaitUtils;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
+import org.keycloak.testsuite.util.runonserver.RunHelpers;
 
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.PropertiesConfiguration;
@@ -136,6 +137,8 @@ public abstract class AbstractKeycloakTest {
 
     protected KeycloakTestingClient testingClient;
 
+    protected KeycloakTestingClient.Server runOnServer;
+
     @ArquillianResource
     protected OAuthClient oauth;
 
@@ -181,6 +184,7 @@ public abstract class AbstractKeycloakTest {
         }
 
         getTestingClient();
+        runOnServer = testingClient.server();
 
         setDefaultPageUriParameters();
 
@@ -244,7 +248,7 @@ public abstract class AbstractKeycloakTest {
         } else {
             log.info("calling all TestCleanup");
             // Remove all sessions
-            testContext.getTestRealmReps().stream().forEach((r)->testingClient.testing().removeUserSessions(r.getRealm()));
+            testContext.getTestRealmReps().stream().forEach((r)->runOnServer.run(RunHelpers.removeUserSessions(r.getRealm())));
 
             // Cleanup objects
             for (TestCleanup cleanup : testContext.getCleanups().values()) {

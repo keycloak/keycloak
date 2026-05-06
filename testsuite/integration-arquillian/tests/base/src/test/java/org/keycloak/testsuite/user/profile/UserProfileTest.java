@@ -59,10 +59,10 @@ import org.keycloak.representations.userprofile.config.UPConfig.UnmanagedAttribu
 import org.keycloak.representations.userprofile.config.UPGroup;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.testframework.realm.ClientScopeBuilder;
+import org.keycloak.testframework.remote.providers.runonserver.RunOnServer;
 import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.ModelTest;
-import org.keycloak.testsuite.runonserver.RunOnServer;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.KeycloakModelUtils;
 import org.keycloak.userprofile.AttributeGroupMetadata;

@@ -25,7 +25,7 @@ import org.keycloak.storage.ldap.LDAPStorageProvider;
 import org.keycloak.storage.ldap.mappers.HardcodedAttributeMapper;
 import org.keycloak.storage.ldap.mappers.HardcodedAttributeMapperFactory;
 import org.keycloak.storage.ldap.mappers.LDAPStorageMapper;
-import org.keycloak.testsuite.runonserver.RunOnServerException;
+import org.keycloak.testframework.remote.providers.runonserver.RunOnServerException;
 import org.keycloak.testsuite.util.LDAPRule;
 import org.keycloak.testsuite.util.LDAPTestUtils;
 

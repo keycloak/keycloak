@@ -44,7 +44,7 @@ import org.keycloak.protocol.oid4vc.model.CredentialSubject;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.testsuite.runonserver.RunOnServerException;
+import org.keycloak.testframework.remote.providers.runonserver.RunOnServerException;
 import org.keycloak.util.JsonSerialization;
 
 import org.jboss.logging.Logger;
