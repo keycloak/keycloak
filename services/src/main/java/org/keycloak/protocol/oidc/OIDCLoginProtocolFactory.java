@@ -136,6 +136,10 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
      */
     public static final String CONFIG_OIDC_ALLOW_MULTIPLE_AUDIENCES_FOR_JWT_CLIENT_AUTHENTICATION = "allow-multiple-audiences-for-jwt-client-authentication";
 
+    public static final String CONFIG_ALLOW_TOKEN_INTROSPECTION_WITHOUT_AUDIENCE_CHECK = "allow-token-introspection-without-audience-check";
+
+    public static final String CONFIG_ALLOW_USERINFO_WITH_LIGHTWEIGHT_ACCESS_TOKEN = "allow-userinfo-with-lightweight-access-token";
+
     private OIDCProviderConfig providerConfig;
 
     @Override
@@ -144,6 +148,20 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
         if (this.providerConfig.isAllowMultipleAudiencesForJwtClientAuthentication()) {
             logger.warnf("It is allowed to have multiple audiences for the JWT client authentication. This option is not recommended and will be removed in one of the future releases."
                     + " It is recommended to update your OAuth/OIDC clients to rather use single audience in the JWT token used for the client authentication.");
+        }
+
+        if (this.providerConfig.isAllowTokenIntrospectionWithoutAudienceCheck()) {
+            logger.warnf("Token introspection audience check is disabled globally. " +
+                    "Any authenticated client can introspect any token. " +
+                    "Enable per-client settings and disable this option: %s=false",
+                    CONFIG_ALLOW_TOKEN_INTROSPECTION_WITHOUT_AUDIENCE_CHECK);
+        }
+
+        if (this.providerConfig.isAllowUserinfoWithLightweightAccessToken()) {
+            logger.warnf("UserInfo endpoint accepts lightweight access tokens globally. " +
+                    "Lightweight tokens should use token introspection instead. " +
+                    "Enable per-client settings and disable this option: %s=false",
+                    CONFIG_ALLOW_USERINFO_WITH_LIGHTWEIGHT_ACCESS_TOKEN);
         }
 
         initBuiltIns();
@@ -606,6 +624,18 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
                     .helpText("Whether the fail-fast strategy should be enforced in case if the limit for some standard OIDC parameter or additional OIDC parameter is not met for the parameters sent to the OIDC authentication or token endpoints." +
                             " If false, then all additional request parameters to not meet the configuration are silently ignored. If true, an exception will be raised and request to the OIDC authentication or token endpoints will not be allowed.")
                     .defaultValue(DEFAULT_ADDITIONAL_REQ_PARAMS_FAIL_FAST)
+                    .add()
+                .property()
+                    .name(CONFIG_ALLOW_TOKEN_INTROSPECTION_WITHOUT_AUDIENCE_CHECK)
+                    .type("boolean")
+                    .helpText("Allows token introspection without audience validation for any client. This option is deprecated and will be removed in some future release.")
+                    .defaultValue(OIDCProviderConfig.DEFAULT_ALLOW_TOKEN_INTROSPECTION_WITHOUT_AUDIENCE_CHECK)
+                    .add()
+                .property()
+                    .name(CONFIG_ALLOW_USERINFO_WITH_LIGHTWEIGHT_ACCESS_TOKEN)
+                    .type("boolean")
+                    .helpText("Allows lightweight access tokens to be used with the UserInfo endpoint. This option is deprecated and will be removed in some future release.")
+                    .defaultValue(OIDCProviderConfig.DEFAULT_ALLOW_USERINFO_WITH_LIGHTWEIGHT_ACCESS_TOKEN)
                     .add()
                 .build();
     }

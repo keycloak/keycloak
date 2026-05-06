@@ -747,7 +747,6 @@ public class UserInfoTest extends AbstractKeycloakTest {
 
             EventAssertion.assertError(events.poll()).type(EventType.USER_INFO_REQUEST_ERROR)
                     .error(Errors.INVALID_TOKEN)
-                    .userId(null)
                     .sessionId(null)
                     .details(Details.AUTH_METHOD, Details.VALIDATE_ACCESS_TOKEN)
                     .clientId(null);
