@@ -56,4 +56,7 @@ public interface OrganizationResource {
 
     @Path("groups")
     OrganizationGroupsResource groups();
+
+    @Path("roles")
+    OrganizationRolesResource roles();
 }

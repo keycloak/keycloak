@@ -68,6 +68,7 @@ import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleContainerModel.RoleRemovedEvent;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.RoleProvider;
+import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.delegate.ClientModelLazyDelegate;
 import org.keycloak.models.jpa.entities.ClientAttributeEntity;
 import org.keycloak.models.jpa.entities.ClientEntity;
@@ -312,6 +313,49 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
         List<String> roles = query.getResultList();
         if (roles.isEmpty()) return null;
         return session.roles().getRoleById(client.getRealm(), roles.get(0));
+    }
+
+    @Override
+    public RoleModel addOrganizationRole(OrganizationModel organization, String id, String name) {
+        if (getOrganizationRole(organization, name) != null) {
+            throw new ModelDuplicateException();
+        }
+        RoleEntity entity = new RoleEntity();
+        entity.setId(id == null ? KeycloakModelUtils.generateId() : id);
+        entity.setName(name);
+        entity.setOrganizationId(organization.getId());
+        entity.setRealmId(organization.getRealm().getId());
+
+        em.persist(entity);
+        em.flush();
+
+        return new RoleAdapter(session, organization.getRealm(), em, entity);
+    }
+
+    @Override
+    public RoleModel getOrganizationRole(OrganizationModel organization, String name) {
+        TypedQuery<String> query = em.createNamedQuery("getOrganizationRoleIdByName", String.class);
+        query.setParameter("name", name);
+        query.setParameter("organization", organization.getId());
+        List<String> roles = query.getResultList();
+        if (roles.isEmpty()) return null;
+        return session.roles().getRoleById(organization.getRealm(), roles.get(0));
+    }
+
+    @Override
+    public Stream<RoleModel> getOrganizationRolesStream(OrganizationModel organization, Integer first, Integer max) {
+        TypedQuery<RoleEntity> query = em.createNamedQuery("getOrganizationRoles", RoleEntity.class);
+        query.setParameter("organization", organization.getId());
+
+        return getRolesStream(query, organization.getRealm(), first, max);
+    }
+
+    @Override
+    public Stream<RoleModel> searchForOrganizationRolesStream(OrganizationModel organization, String search, Integer first, Integer max) {
+        TypedQuery<RoleEntity> query = em.createNamedQuery("searchForOrganizationRoles", RoleEntity.class);
+        query.setParameter("organization", organization.getId());
+
+        return searchForRoles(query, organization.getRealm(), search, first, max);
     }
 
     @Override

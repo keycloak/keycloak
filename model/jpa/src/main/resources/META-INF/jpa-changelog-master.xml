@@ -92,5 +92,6 @@
     <include file="META-INF/jpa-changelog-26.5.0.xml"/>
     <include file="META-INF/jpa-changelog-26.6.0.xml"/>
     <include file="META-INF/jpa-changelog-26.7.0.xml"/>
+    <include file="META-INF/jpa-changelog-authz-org-roles.xml"/>
 
 </databaseChangeLog>

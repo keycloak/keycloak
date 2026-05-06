@@ -43,6 +43,7 @@ import org.keycloak.models.KeycloakTransaction;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmProvider;
 import org.keycloak.models.RoleModel;
+import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RoleProvider;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.cache.CacheRealmProvider;
@@ -901,6 +902,57 @@ public class RealmCacheSession implements CacheRealmProvider {
             return getRoleDelegate().getClientRole(client, name);
         }
         return role;
+    }
+
+    @Override
+    public RoleModel addOrganizationRole(OrganizationModel organization, String id, String name) {
+        RoleModel role = getRoleDelegate().addOrganizationRole(organization, id, name);
+        addedRole(role.getId(), organization.getId(), name);
+        return role;
+    }
+
+    @Override
+    public RoleModel getOrganizationRole(OrganizationModel organization, String name) {
+        String cacheKey = getRoleByNameCacheKey(organization.getId(), name);
+        boolean queryDB = invalidations.contains(cacheKey) || listInvalidations.contains(organization.getId());
+        if (queryDB) {
+            return getRoleDelegate().getOrganizationRole(organization, name);
+        }
+        RoleByNameQuery query = cache.get(cacheKey, RoleByNameQuery.class);
+        if (query != null) {
+            logger.tracev("getOrganizationRole cache hit: {0}.{1}", organization.getName(), name);
+        }
+        if (query == null) {
+            long loaded = cache.getCurrentRevision(cacheKey);
+            RoleModel model = getRoleDelegate().getOrganizationRole(organization, name);
+            if (model == null) {
+                query = new RoleByNameQuery(loaded, cacheKey, organization.getRealm(), null, organization.getId());
+            } else {
+                query = new RoleByNameQuery(loaded, cacheKey, organization.getRealm(), model.getId(), organization.getId());
+            }
+            logger.tracev("adding organization role cache miss: org {0} key {1}", organization.getName(), cacheKey);
+            cache.addRevisioned(query, startupRevision);
+        }
+        String roleId = query.getRole();
+        if (roleId == null) {
+            return null;
+        }
+        RoleModel role = getRoleById(organization.getRealm(), roleId);
+        if (role == null) {
+            invalidations.add(cacheKey);
+            return getRoleDelegate().getOrganizationRole(organization, name);
+        }
+        return role;
+    }
+
+    @Override
+    public Stream<RoleModel> getOrganizationRolesStream(OrganizationModel organization, Integer first, Integer max) {
+        return getRoleDelegate().getOrganizationRolesStream(organization, first, max);
+    }
+
+    @Override
+    public Stream<RoleModel> searchForOrganizationRolesStream(OrganizationModel organization, String search, Integer first, Integer max) {
+        return getRoleDelegate().searchForOrganizationRolesStream(organization, search, first, max);
     }
 
     @Override

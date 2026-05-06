@@ -20,6 +20,7 @@ import java.util.stream.Stream;
 
 import org.keycloak.provider.Provider;
 import org.keycloak.storage.role.RoleLookupProvider;
+import org.keycloak.models.OrganizationModel;
 
 /**
  * Provider of the role records.
@@ -137,4 +138,61 @@ public interface RoleProvider extends Provider, RoleLookupProvider {
      * @param client Client.
      */
     void removeRoles(ClientModel client);
+
+    /**
+     * Adds an organization role with given {@code name} to the given organization.
+     * The internal ID of the role will be created automatically.
+     * @param organization Organization owning this role.
+     * @param name String name of the role.
+     * @return Model of the created role.
+     */
+    default RoleModel addOrganizationRole(OrganizationModel organization, String name) {
+        return addOrganizationRole(organization, null, name);
+    }
+
+    /**
+     * Adds an organization role with given internal ID and {@code name} to the given organization.
+     * @param organization Organization owning this role.
+     * @param id Internal ID of the role or {@code null} if one is to be created by the underlying store.
+     * @param name String name of the role.
+     * @return Model of the created role.
+     */
+    RoleModel addOrganizationRole(OrganizationModel organization, String id, String name);
+
+    /**
+     * Returns the organization role of the given organization by name.
+     * @param organization Organization.
+     * @param name String name of the role.
+     * @return Model of the role or {@code null} if no such role exists.
+     */
+    RoleModel getOrganizationRole(OrganizationModel organization, String name);
+
+    /**
+     * Returns all the organization roles of the given organization as a stream.
+     * Effectively the same as the call {@code getOrganizationRolesStream(organization, null, null)}.
+     * @param organization Organization.
+     * @return Stream of the roles. Never returns {@code null}.
+     */
+    default Stream<RoleModel> getOrganizationRolesStream(OrganizationModel organization) {
+        return getOrganizationRolesStream(organization, null, null);
+    }
+
+    /**
+     * Returns the organization roles of the given organization as a stream.
+     * @param organization Organization.
+     * @param first First result to return. Ignored if negative or {@code null}.
+     * @param max Maximum number of results to return. Ignored if negative or {@code null}.
+     * @return Stream of the roles. Never returns {@code null}.
+     */
+    Stream<RoleModel> getOrganizationRolesStream(OrganizationModel organization, Integer first, Integer max);
+
+    /**
+     * Returns a stream of organization roles matching the given search string.
+     * @param organization Organization.
+     * @param search Case-insensitive string to search by role's name or description. Ignored if {@code null}.
+     * @param first First result to return. Ignored if negative or {@code null}.
+     * @param max Maximum number of results to return. Ignored if negative or {@code null}.
+     * @return Stream of the roles. Never returns {@code null}.
+     */
+    Stream<RoleModel> searchForOrganizationRolesStream(OrganizationModel organization, String search, Integer first, Integer max);
 }

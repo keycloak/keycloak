@@ -323,8 +323,48 @@ public class KeycloakModelUtilsTest {
         }
 
         @Override
+        public RealmModel getRealm() {
+            return null;
+        }
+
+        @Override
         public String getId() {
             return id;
+        }
+
+        @Override
+        public RoleModel getRole(String name) {
+            return null;
+        }
+
+        @Override
+        public RoleModel addRole(String name) {
+            return null;
+        }
+
+        @Override
+        public RoleModel addRole(String id, String name) {
+            return null;
+        }
+
+        @Override
+        public boolean removeRole(RoleModel role) {
+            return false;
+        }
+
+        @Override
+        public Stream<RoleModel> getRolesStream() {
+            return Stream.empty();
+        }
+
+        @Override
+        public Stream<RoleModel> getRolesStream(Integer firstResult, Integer maxResults) {
+            return Stream.empty();
+        }
+
+        @Override
+        public Stream<RoleModel> searchForRolesStream(String search, Integer first, Integer max) {
+            return Stream.empty();
         }
 
         @Override

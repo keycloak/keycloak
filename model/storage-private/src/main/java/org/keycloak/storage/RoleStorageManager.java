@@ -27,6 +27,7 @@ import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.RoleProvider;
+import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.StorageProviderRealmModel;
 import org.keycloak.storage.role.RoleLookupProvider;
 import org.keycloak.storage.role.RoleStorageProvider;
@@ -270,5 +271,35 @@ public class RoleStorageManager implements RoleProvider {
 
     @Override
     public void close() {
+    }
+
+    @Override
+    public RoleModel addOrganizationRole(OrganizationModel organization, String name) {
+        return localStorage().addOrganizationRole(organization, name);
+    }
+
+    @Override
+    public RoleModel addOrganizationRole(OrganizationModel organization, String id, String name) {
+        return localStorage().addOrganizationRole(organization, id, name);
+    }
+
+    @Override
+    public RoleModel getOrganizationRole(OrganizationModel organization, String name) {
+        return localStorage().getOrganizationRole(organization, name);
+    }
+
+    @Override
+    public Stream<RoleModel> getOrganizationRolesStream(OrganizationModel organization) {
+        return localStorage().getOrganizationRolesStream(organization);
+    }
+
+    @Override
+    public Stream<RoleModel> getOrganizationRolesStream(OrganizationModel organization, Integer first, Integer max) {
+        return localStorage().getOrganizationRolesStream(organization, first, max);
+    }
+
+    @Override
+    public Stream<RoleModel> searchForOrganizationRolesStream(OrganizationModel organization, String search, Integer first, Integer max) {
+        return localStorage().searchForOrganizationRolesStream(organization, search, first, max);
     }
 }
