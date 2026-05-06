@@ -2,6 +2,7 @@ package org.keycloak.testsuite.broker;
 
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.keycloak.admin.client.CreatedResponseUtil;
@@ -37,6 +38,8 @@ public class OidcClaimToUserSessionNoteMapperTest extends AbstractIdentityProvid
 
     private static final String CLAIM_NAME = "sessionNoteTest";
     private static final String CLAIM_VALUE = "foo";
+
+    private static final String ARRAY_CLAIM_JSON_TYPE = "Array";
     private static final String CONFIG_PROPERTY_CLAIMS = "claims";
 
     private static final String HARD_CODED_CLAIM_CONFIG_PROPERTY_CLAIM_VALUE = "claim.value";
@@ -44,6 +47,7 @@ public class OidcClaimToUserSessionNoteMapperTest extends AbstractIdentityProvid
     private ClientRepresentation consumerClientRep;
     private String providerClientUuid;
     private String providerHardcodedClaimMapperId;
+    private String consumerSessionNoteToClaimMapperId;
 
     @Override
     protected BrokerConfiguration getBrokerConfiguration() {
@@ -68,8 +72,9 @@ public class OidcClaimToUserSessionNoteMapperTest extends AbstractIdentityProvid
         consumerSessionNoteToClaimMapper.setProtocolMapper(UserSessionNoteMapper.PROVIDER_ID);
         consumerSessionNoteToClaimMapper.setConfig(Map.of("user.session.note", CLAIM_NAME, "claim.name", CLAIM_NAME,
                 "access.token.claim", "true"));
-        CreatedResponseUtil.getCreatedId(consumerRealm.clients().get(consumerClientRep.getId()).getProtocolMappers()
-                .createMapper(consumerSessionNoteToClaimMapper));
+        consumerSessionNoteToClaimMapperId = CreatedResponseUtil
+                .getCreatedId(consumerRealm.clients().get(consumerClientRep.getId()).getProtocolMappers()
+                        .createMapper(consumerSessionNoteToClaimMapper));
 
         RealmResource providerRealm = adminClient.realm(bc.providerRealmName());
         ClientRepresentation providerClientRep = providerRealm.clients().findByClientId("brokerapp").get(0);
@@ -120,6 +125,19 @@ public class OidcClaimToUserSessionNoteMapperTest extends AbstractIdentityProvid
         AccessToken accessTokenSecondLogin = login();
 
         assertThat(accessTokenSecondLogin.getOtherClaims().get(CLAIM_NAME), equalTo(updatedClaimValue));
+    }
+
+    @Test
+    public void claimWithArrayValueIsMappedAsExpected() {
+        updateSessionNoteToClaimMapper(ARRAY_CLAIM_JSON_TYPE);
+        createUserSessionNoteIdpMapper(IdentityProviderMapperSyncMode.FORCE, "foo-1,foo-2");
+
+        final var updatedClaimValue = "foo-1,foo-2";
+        updateProviderHardcodedClaimMapper(updatedClaimValue);
+
+        final var accessTokenFirstLogin = login();
+        final var expectedClaimValue = List.of("foo-1", "foo-2");
+        assertThat(accessTokenFirstLogin.getOtherClaims().get(CLAIM_NAME), equalTo(expectedClaimValue));
     }
 
     @Test
@@ -198,7 +216,6 @@ public class OidcClaimToUserSessionNoteMapperTest extends AbstractIdentityProvid
         clientProtocolMappersResource.update(mapper.getId(), mapper);
     }
 
-
     private void updateUserSessionNoteIdpMapper(IdentityProviderMapperRepresentation mapper, String matchingValue) {
         Map<String, String> existingConfig = mapper.getConfig();
         Map<String, String> newConfig = existingConfig == null ? new HashMap<>() : existingConfig;
@@ -207,6 +224,18 @@ public class OidcClaimToUserSessionNoteMapperTest extends AbstractIdentityProvid
 
         IdentityProviderResource idpResource = realm.identityProviders().get(bc.getIDPAlias());
         idpResource.update(mapper.getId(), mapper);
+    }
+
+    private void updateSessionNoteToClaimMapper(String claimJsonType) {
+        final var consumerRealm = adminClient.realm(bc.consumerRealmName());
+        final var clientProtocolMappersResource = consumerRealm.clients().get(consumerClientRep.getId()).getProtocolMappers();
+        final var mapper = clientProtocolMappersResource.getMapperById(consumerSessionNoteToClaimMapperId);
+
+        final var existingConfig = mapper.getConfig();
+        Map<String, String> newConfig = existingConfig == null ? new HashMap<>() : existingConfig;
+        newConfig.put("jsonType.label", claimJsonType);
+
+        clientProtocolMappersResource.update(mapper.getId(), mapper);
     }
 
     private IdentityProviderMapperRepresentation persistMapper(IdentityProviderMapperRepresentation idpMapper) {
