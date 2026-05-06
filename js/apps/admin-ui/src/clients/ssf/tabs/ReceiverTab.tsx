@@ -16,12 +16,15 @@ import {
   CardBody,
   CardHeader,
   CardTitle,
+  Checkbox,
   Chip,
   FormGroup,
   Label,
   SelectOption,
   Split,
   SplitItem,
+  Stack,
+  StackItem,
   Text,
   TextContent,
 } from "@patternfly/react-core";
@@ -37,6 +40,7 @@ import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
 import { FormAccess } from "../../../components/form/FormAccess";
+import { MultiLineInput } from "../../../components/multi-line-input/MultiLineInput";
 import {
   AddRoleButton,
   AddRoleMappingModal,
@@ -56,6 +60,23 @@ const splitSupportedEvents = (value: unknown): string[] => {
   return value
     .split(",")
     .map((s) => s.trim())
+    .filter((s) => s.length > 0);
+};
+
+/**
+ * Splits a {@code ssf.allowedDeliveryMethods} client attribute value
+ * into its canonical lowercase tokens. The server uses
+ * {@code ##}-separated storage (see {@code Constants.CFG_DELIMITER});
+ * empty / unset attribute returns an empty array which the UI treats
+ * as "both push and poll allowed".
+ */
+const splitDeliveryMethods = (value: unknown): string[] => {
+  if (!value || typeof value !== "string") {
+    return [];
+  }
+  return value
+    .split("##")
+    .map((s) => s.trim().toLowerCase())
     .filter((s) => s.length > 0);
 };
 
@@ -142,6 +163,56 @@ export const ReceiverTab = ({
   const emitOnlyEventsSelected = splitSupportedEvents(ssfEmitOnlyEvents).filter(
     (e) => supportedEventsSelected.includes(e),
   );
+
+  // Allowed delivery methods is stored as a ##-separated client attribute
+  // matching ssf.allowedDeliveryMethods on the server. Empty / unset means
+  // "both push and poll allowed" (transmitter default), which is also what
+  // the checkboxes render as the initial state on a freshly registered
+  // receiver. The two checkboxes drive the same form field via setValue —
+  // the conditional reveal of "Valid push URLs" below keys off whether
+  // "push" is selected here.
+  const allowedDeliveryMethodsField = convertAttributeNameToForm<FormFields>(
+    "attributes.ssf.allowedDeliveryMethods",
+  );
+  const ssfAllowedDeliveryMethodsRaw = watch(allowedDeliveryMethodsField);
+  const allowedDeliveryMethodTokens = splitDeliveryMethods(
+    ssfAllowedDeliveryMethodsRaw,
+  );
+  const pushDeliveryAllowed =
+    allowedDeliveryMethodTokens.length === 0 ||
+    allowedDeliveryMethodTokens.includes("push");
+  const pollDeliveryAllowed =
+    allowedDeliveryMethodTokens.length === 0 ||
+    allowedDeliveryMethodTokens.includes("poll");
+
+  const updateAllowedDeliveryMethod = (
+    method: "push" | "poll",
+    checked: boolean,
+  ) => {
+    const current =
+      allowedDeliveryMethodTokens.length === 0
+        ? new Set<string>(["push", "poll"])
+        : new Set<string>(allowedDeliveryMethodTokens);
+    if (checked) {
+      current.add(method);
+    } else {
+      current.delete(method);
+    }
+    // At least one method must remain selected — silently re-enable the
+    // toggled-off method if the user attempted to uncheck both. The
+    // server treats blank as "both allowed" too, but driving the user
+    // through that path makes the UI ambiguous (cleared → defaults).
+    if (current.size === 0) {
+      current.add(method);
+    }
+    setValue(
+      allowedDeliveryMethodsField,
+      // Canonical wire order push,poll → join in the same order so a
+      // round-trip through storage doesn't churn the value.
+      ["push", "poll"].filter((m) => current.has(m)).join("##"),
+      { shouldDirty: true },
+    );
+  };
 
   return (
     <Card isFlat className="pf-v5-u-mt-md">
@@ -525,6 +596,85 @@ export const ReceiverTab = ({
                         )}
                       />
                     </FormGroup>
+                  </div>
+                ),
+              },
+              {
+                title: t("ssfSectionDelivery"),
+                panel: (
+                  <div
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      rowGap: "1.5rem",
+                    }}
+                  >
+                    <Text className="pf-v5-u-pb-lg">
+                      {t("ssfSectionDeliveryHelp")}
+                    </Text>
+                    <FormGroup
+                      label={t("ssfAllowedDeliveryMethods")}
+                      fieldId="ssfAllowedDeliveryMethods"
+                      labelIcon={
+                        <HelpItem
+                          helpText={t("ssfAllowedDeliveryMethodsHelp")}
+                          fieldLabelId="ssfAllowedDeliveryMethods"
+                        />
+                      }
+                    >
+                      <Stack hasGutter>
+                        <StackItem>
+                          <Checkbox
+                            id="ssfAllowedDeliveryMethodsPush"
+                            data-testid="ssfAllowedDeliveryMethods.push"
+                            label={t("ssfAllowedDeliveryMethods.push")}
+                            description={t(
+                              "ssfAllowedDeliveryMethods.pushHelp",
+                            )}
+                            isChecked={pushDeliveryAllowed}
+                            onChange={(_event, checked) =>
+                              updateAllowedDeliveryMethod("push", checked)
+                            }
+                          />
+                        </StackItem>
+                        <StackItem>
+                          <Checkbox
+                            id="ssfAllowedDeliveryMethodsPoll"
+                            data-testid="ssfAllowedDeliveryMethods.poll"
+                            label={t("ssfAllowedDeliveryMethods.poll")}
+                            description={t(
+                              "ssfAllowedDeliveryMethods.pollHelp",
+                            )}
+                            isChecked={pollDeliveryAllowed}
+                            onChange={(_event, checked) =>
+                              updateAllowedDeliveryMethod("poll", checked)
+                            }
+                          />
+                        </StackItem>
+                      </Stack>
+                    </FormGroup>
+                    {pushDeliveryAllowed && (
+                      <FormGroup
+                        label={t("ssfValidPushUrls")}
+                        fieldId="ssfValidPushUrls"
+                        labelIcon={
+                          <HelpItem
+                            helpText={t("ssfValidPushUrlsHelp")}
+                            fieldLabelId="ssfValidPushUrls"
+                          />
+                        }
+                      >
+                        <MultiLineInput
+                          id="ssfValidPushUrls"
+                          name={convertAttributeNameToForm<FormFields>(
+                            "attributes.ssf.validPushUrls",
+                          )}
+                          aria-label={t("ssfValidPushUrls")}
+                          addButtonLabel="ssfValidPushUrls.add"
+                          stringify
+                        />
+                      </FormGroup>
+                    )}
                   </div>
                 ),
               },
