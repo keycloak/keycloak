@@ -102,7 +102,7 @@ public class KcAdmV2ClientCLITest extends AbstractKcAdmV2CLITest {
         CommandResult result = kcAdmV2Cmd("client", "get", "non-existent-id");
 
         assertThat("get non-existent client should fail", result.exitCode(), is(not(0)));
-        assertThat(result.err(), containsString("Could not find client"));
+        assertThat(result.err(), containsString("Cannot find the specified client"));
     }
 
     @Test
@@ -470,7 +470,7 @@ public class KcAdmV2ClientCLITest extends AbstractKcAdmV2CLITest {
 
         assertThat("should fail for non-existent client", result.exitCode(), is(not(0)));
         assertThat("URL-encoded ID should reach the server and get a proper 404, not a malformed URL error",
-                result.err(), containsString("Could not find client"));
+                result.err(), containsString("Cannot find the specified client"));
     }
 
     @Test
@@ -572,7 +572,7 @@ public class KcAdmV2ClientCLITest extends AbstractKcAdmV2CLITest {
 
         getResult = kcAdmV2Cmd("client", "get", id);
         assertThat("get after delete should fail", getResult.exitCode(), is(not(0)));
-        assertThat(getResult.err(), containsString("Could not find client"));
+        assertThat(getResult.err(), containsString("Cannot find the specified client"));
     }
 
     @Test

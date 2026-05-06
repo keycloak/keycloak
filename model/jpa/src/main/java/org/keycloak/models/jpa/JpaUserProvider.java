@@ -39,8 +39,10 @@ import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Path;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
+import jakarta.ws.rs.BadRequestException;
 
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
+import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.common.util.Time;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.connections.jpa.support.EntityManagers;
@@ -62,6 +64,7 @@ import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.UserCredentialManager;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
+import org.keycloak.models.UserVerifiableCredentialModel;
 import org.keycloak.models.jpa.entities.CredentialEntity;
 import org.keycloak.models.jpa.entities.FederatedIdentityEntity;
 import org.keycloak.models.jpa.entities.UserAttributeEntity;
@@ -70,6 +73,7 @@ import org.keycloak.models.jpa.entities.UserConsentEntity;
 import org.keycloak.models.jpa.entities.UserEntity;
 import org.keycloak.models.jpa.entities.UserGroupMembershipEntity;
 import org.keycloak.models.jpa.entities.UserRoleMappingEntity;
+import org.keycloak.models.jpa.entities.UserVerifiableCredentialEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.storage.StorageId;
 import org.keycloak.storage.UserStorageProvider;
@@ -161,6 +165,7 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
         em.createNamedQuery("deleteUserGroupMembershipsByUser").setParameter("user", user).executeUpdate();
         em.createNamedQuery("deleteUserConsentClientScopesByUser").setParameter("user", user).executeUpdate();
         em.createNamedQuery("deleteUserConsentsByUser").setParameter("user", user).executeUpdate();
+        em.createNamedQuery("deleteVerifiableCredentialsByUser").setParameter("user", user).executeUpdate();
 
         em.remove(user);
         em.flush();
@@ -360,6 +365,60 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
         em.flush();
     }
 
+    @Override
+    public UserVerifiableCredentialModel addVerifiableCredential(String userId, UserVerifiableCredentialModel verifCredentialModel) {
+        if (verifCredentialModel.getCredentialScopeName() == null) {
+            throw new BadRequestException("Credential scope not specified");
+        }
+
+        UserVerifiableCredentialEntity vcEntity = new UserVerifiableCredentialEntity();
+        vcEntity.setId(KeycloakModelUtils.generateId());
+        vcEntity.setUser(em.getReference(UserEntity.class, userId));
+
+        String revision = verifCredentialModel.getRevision() == null ? SecretGenerator.getInstance().generateSecureID() : verifCredentialModel.getRevision();
+        vcEntity.setRevision(revision);
+
+        long createdDate = verifCredentialModel.getCreatedDate() == null ? Time.currentTimeMillis() : verifCredentialModel.getCreatedDate();
+        vcEntity.setCreatedDate(createdDate);
+
+        vcEntity.setCredentialScopeName(verifCredentialModel.getCredentialScopeName());
+        em.persist(vcEntity);
+        em.flush();
+
+        return toVerifiableCredentialModel(vcEntity);
+    }
+
+    @Override
+    public boolean removeVerifiableCredential(String userId, String credentialScopeName) {
+        UserVerifiableCredentialEntity found = getVerifiableCredentialsEntitiesByUser(userId)
+                .filter(vcEnt -> vcEnt.getCredentialScopeName().equals(credentialScopeName))
+                .findFirst()
+                .orElse(null);
+
+        if (found == null) return false;
+
+        em.remove(found);
+        em.flush();
+        return true;
+    }
+
+    @Override
+    public Stream<UserVerifiableCredentialModel> getVerifiableCredentialsByUser(String userId) {
+        return getVerifiableCredentialsEntitiesByUser(userId).map(this::toVerifiableCredentialModel);
+    }
+
+    private Stream<UserVerifiableCredentialEntity> getVerifiableCredentialsEntitiesByUser(String userId) {
+        TypedQuery<UserVerifiableCredentialEntity> query = em.createNamedQuery("verifiableCredentialsByUser", UserVerifiableCredentialEntity.class);
+        query.setParameter("userId", userId);
+        return closing(query.getResultStream());
+    }
+
+    private UserVerifiableCredentialModel toVerifiableCredentialModel(UserVerifiableCredentialEntity entity) {
+        UserVerifiableCredentialModel model = new UserVerifiableCredentialModel(entity.getCredentialScopeName());
+        model.setRevision(entity.getRevision());
+        model.setCreatedDate(entity.getCreatedDate());
+        return model;
+    }
 
     @Override
     public void setNotBeforeForUser(RealmModel realm, UserModel user, int notBefore) {
@@ -394,6 +453,8 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
         em.createNamedQuery("deleteUserConsentClientScopesByRealm")
                 .setParameter("realmId", realm.getId()).executeUpdate();
         em.createNamedQuery("deleteUserConsentsByRealm")
+                .setParameter("realmId", realm.getId()).executeUpdate();
+        em.createNamedQuery("deleteVerifiableCredentialsByRealm")
                 .setParameter("realmId", realm.getId()).executeUpdate();
         em.createNamedQuery("deleteUserRoleMappingsByRealm")
                 .setParameter("realmId", realm.getId()).executeUpdate();
@@ -496,6 +557,9 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
     public void preRemove(ClientScopeModel clientScope) {
         em.createNamedQuery("deleteUserConsentClientScopesByClientScope")
                 .setParameter("scopeId", clientScope.getId())
+                .executeUpdate();
+        em.createNamedQuery("deleteVerifiableCredentialsByClientScope")
+                .setParameter("scopeName", clientScope.getName())
                 .executeUpdate();
     }
 

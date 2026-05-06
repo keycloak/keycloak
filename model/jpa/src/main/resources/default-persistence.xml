@@ -45,6 +45,7 @@
         <class>org.keycloak.models.jpa.entities.ProtocolMapperEntity</class>
         <class>org.keycloak.models.jpa.entities.UserConsentEntity</class>
         <class>org.keycloak.models.jpa.entities.UserConsentClientScopeEntity</class>
+        <class>org.keycloak.models.jpa.entities.UserVerifiableCredentialEntity</class>
         <class>org.keycloak.models.jpa.entities.AuthenticationFlowEntity</class>
         <class>org.keycloak.models.jpa.entities.AuthenticationExecutionEntity</class>
         <class>org.keycloak.models.jpa.entities.AuthenticatorConfigEntity</class>
