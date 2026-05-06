@@ -68,6 +68,30 @@ To enable the log filter capability set `KC_TEST_LOG_FILTER` / `kc.test.log.filt
 To enable colors to log output set `KC_TEST_CONSOLE_COLOR` / `kc.test.console.color` to `true`. For CI or anywhere log 
 files are being parsed this is usually not a good idea.
 
+## Asserting server logs
+
+Inject `Logs` to assert on server log output. Capture is only active when `@InjectLogs` is present.
+
+```java
+@InjectLogs
+Logs logs;
+```
+
+Assertion methods search the log message content:
+
+```java
+logs.assertContains("Listening on");
+logs.assertContains(Logger.Level.INFO, "Keycloak");
+logs.assertContains(Logger.Level.DEBUG, "org.keycloak", "some message");
+```
+
+For clustered servers, use `node` to select which cluster member's logs to capture:
+
+```java
+@InjectLogs(node = 1)
+Logs node1Logs;
+```
+
 ## Examples
 
 ### Example default log configuration

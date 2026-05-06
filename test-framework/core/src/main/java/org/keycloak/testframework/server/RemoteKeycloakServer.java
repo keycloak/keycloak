@@ -19,6 +19,11 @@ public class RemoteKeycloakServer implements KeycloakServer {
     private String kcwCommand;
 
     @Override
+    public Logs getLogs(int node) {
+        throw new UnsupportedOperationException("@InjectLogs is not supported with remote Keycloak server");
+    }
+
+    @Override
     public void start(KeycloakServerConfigBuilder keycloakServerConfigBuilder, boolean tlsEnabled) {
         this.tlsEnabled = tlsEnabled;
         kcwCommand = Config.getValueTypeConfig(KeycloakServer.class, "kcw", null, String.class);

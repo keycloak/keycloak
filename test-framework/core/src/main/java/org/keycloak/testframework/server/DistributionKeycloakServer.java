@@ -51,11 +51,17 @@ public class DistributionKeycloakServer implements KeycloakServer {
     private final boolean reuse;
     private final long startTimeout;
     private boolean tlsEnabled = false;
+    private final Logs logs = new Logs();
 
     public DistributionKeycloakServer(boolean debug, boolean reuse, long startTimeout) {
         this.debug = debug;
         this.reuse = reuse;
         this.startTimeout = startTimeout;
+    }
+
+    @Override
+    public Logs getLogs(int node) {
+        return logs;
     }
 
     @Override
@@ -98,6 +104,7 @@ public class DistributionKeycloakServer implements KeycloakServer {
 
             waitForStart(outputHandler);
             ReadinessProbe.waitUntilReady(this);
+            logs.markStartupComplete();
 
             if (!Environment.isWindows()) {
                 FileUtils.writeToFile(getPidFile(), ProcessUtils.getKeycloakPid(keycloakProcess));
@@ -158,6 +165,7 @@ public class DistributionKeycloakServer implements KeycloakServer {
             keycloakProcess = pb.start();
             outputHandler = new OutputHandler(keycloakProcess);
             new Thread(outputHandler).start();
+            new Thread(new ErrorStreamReader(keycloakProcess)).start();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -350,6 +358,8 @@ public class DistributionKeycloakServer implements KeycloakServer {
             BufferedReader br = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8));
             try {
                 for (String line = br.readLine(); process.isAlive() && line != null; line = br.readLine()) {
+                    logs.add(LogEntry.parse(line, false));
+
                     if (!startedInPrinted && line.matches(".*Keycloak.* started in.*")) {
                         startupLatch.countDown();
                     }
@@ -387,6 +397,27 @@ public class DistributionKeycloakServer implements KeycloakServer {
             }
         }
 
+    }
+
+    private class ErrorStreamReader implements Runnable {
+
+        private final Process process;
+
+        private ErrorStreamReader(Process process) {
+            this.process = process;
+        }
+
+        @Override
+        public void run() {
+            BufferedReader br = new BufferedReader(new InputStreamReader(process.getErrorStream(), StandardCharsets.UTF_8));
+            try {
+                for (String line = br.readLine(); process.isAlive() && line != null; line = br.readLine()) {
+                    logs.add(LogEntry.parse(line, true));
+                }
+            } catch (IOException e) {
+                // Ignored
+            }
+        }
     }
 
     private static class NullTrustManager implements X509TrustManager {
