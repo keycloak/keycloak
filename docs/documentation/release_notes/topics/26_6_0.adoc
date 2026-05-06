@@ -240,6 +240,15 @@ Follow the translation progress on the https://www.keycloak.org/translations[tra
 
 Support for right-to-left (RTL) languages was added to the Login UI, Admin UI, and email templates several releases ago. This release adds initial RTL support to the Account UI, which completes this effort.
 
+== Deprecation of SHA1 hashing functions in {project_name} 27
+
+NIST is going to fully https://www.nist.gov/news-events/news/2022/12/nist-retires-sha-1-cryptographic-algorithm[retire] SHA1 hashing function in 2030. {project_name} will remove all uses of SHA1 in version 27.
+
+[NOTE]
+====
+Consider SHA1 hashing retired in all uses within {project_name}. Users should configure other secure hashing functions as soon as possible (for example SHA2, SHA3).
+====
+
 = Observability
 
 == Telemetry configuration via the Keycloak CR
