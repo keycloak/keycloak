@@ -151,7 +151,7 @@ public class UserResourceTypePermissionTest extends AbstractPermissionTest {
     public void testUpdate() {
         createUserPermission(userAlice, userBob);
 
-        List<ScopePermissionRepresentation> searchByResourceAlice = getScopePermissionsResource(client).findAll(null, null, userAlice.getId(), -1, -1);
+        List<ScopePermissionRepresentation> searchByResourceAlice = getScopePermissionsResource(client).findAll(null, null, userAlice.getId(), "*", -1, -1);
         assertThat(searchByResourceAlice, hasSize(1));
         List<ScopePermissionRepresentation> searchByResourceBob = getScopePermissionsResource(client).findAll(null, null, userBob.getId(), -1, -1);
         assertThat(searchByResourceBob, hasSize(1));
@@ -186,7 +186,7 @@ public class UserResourceTypePermissionTest extends AbstractPermissionTest {
     public void testUpdatePermissionResources() {
         AuthorizationResource authorization = client.admin().authorization();
         ScopePermissionRepresentation representation = createAllUserPermission();
-        representation = getScopePermissionsResource(client).findByName(representation.getName());
+        representation = getScopePermissionsResource(client).findByName(representation.getName(), "*");
         assertThat(representation, notNullValue());
         List<ResourceRepresentation> resources = authorization.resources().resources();
         assertThat(resources.size(), is(AdminPermissionsSchema.SCHEMA.getResourceTypes().size()));
