@@ -687,15 +687,13 @@ public abstract class AbstractKeycloakTest {
      * @param offset
      */
     public void setTimeOffset(int offset) {
-        String response = invokeTimeOffset(offset);
+        timeOffSet.set(offset);
         resetTimeOffset = offset != 0;
-        log.debugv("Set time offset, response {0}", response);
     }
 
     public void resetTimeOffset() {
-        String response = invokeTimeOffset(0);
+        timeOffSet.set(0);
         resetTimeOffset = false;
-        log.debugv("Reset time offset, response {0}", response);
     }
 
     public void setOtpTimeOffset(int offsetSeconds, TimeBasedOTP otp) {
@@ -707,11 +705,6 @@ public abstract class AbstractKeycloakTest {
 
     public int getCurrentTime() {
         return Time.currentTime();
-    }
-
-    protected String invokeTimeOffset(int offset) {
-        timeOffSet.set(offset);
-        return null;
     }
 
     private void loadConstantsProperties() throws ConfigurationException {
