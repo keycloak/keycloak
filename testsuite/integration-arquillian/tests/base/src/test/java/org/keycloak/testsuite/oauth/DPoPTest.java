@@ -291,13 +291,13 @@ public class DPoPTest extends AbstractTestRealmKeycloakTest {
 
             AccessTokenResponse response = successTokenProceduresWithDPoP(dpopProofEcEncoded, jktEc, true, true, false);
 
-            setTimeOffset(25); // 25 <= 10+10+15, proof not expired because clockSkew, detected by replay check
+            timeOffSet.set(25); // 25 <= 10+10+15, proof not expired because clockSkew, detected by replay check
             response = oauth.refreshRequest(response.getRefreshToken()).dpopProof(dpopProofEcEncoded).send();
             assertEquals(400, response.getStatusCode());
             assertEquals(OAuthErrorException.INVALID_REQUEST, response.getError());
             assertEquals("DPoP proof has already been used", response.getErrorDescription());
 
-            setTimeOffset(36); // 36 > 10+10+15, proof expired definitely
+            timeOffSet.set(36); // 36 > 10+10+15, proof expired definitely
             response = oauth.refreshRequest(response.getRefreshToken()).dpopProof(dpopProofEcEncoded).send();
             assertEquals(400, response.getStatusCode());
             assertEquals(response.getError(), OAuthErrorException.INVALID_REQUEST);
@@ -1041,7 +1041,7 @@ public class DPoPTest extends AbstractTestRealmKeycloakTest {
             Assertions.assertEquals(REALM_NAME, realm.getRealm());
 
             // To enforce token refresh by admin client in the next request
-            setTimeOffset(700);
+            timeOffSet.set(700);
 
             realm = adminClientDPoP.realm(REALM_NAME).toRepresentation();
             Assertions.assertEquals(REALM_NAME, realm.getRealm());

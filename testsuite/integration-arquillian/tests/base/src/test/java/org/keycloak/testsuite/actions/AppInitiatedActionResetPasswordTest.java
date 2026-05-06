@@ -199,7 +199,7 @@ public class AppInitiatedActionResetPasswordTest extends AbstractAppInitiatedAct
 
         EventAssertion.expectLoginSuccess(events.poll());
 
-        setTimeOffset(350);
+        timeOffSet.set(350);
 
         // Should prompt for re-authentication
         doAIA();
@@ -236,7 +236,7 @@ public class AppInitiatedActionResetPasswordTest extends AbstractAppInitiatedAct
 
         EventAssertion.expectLoginSuccess(events.poll());
 
-        setTimeOffset(550);
+        timeOffSet.set(550);
 
         // Should prompt for re-authentication
         doAIA();
@@ -275,7 +275,7 @@ public class AppInitiatedActionResetPasswordTest extends AbstractAppInitiatedAct
 
         EventAssertion.expectLoginSuccess(events.poll());
 
-        setTimeOffset(350);
+        timeOffSet.set(350);
 
         // Should not prompt for re-authentication
         doAIA();
@@ -313,7 +313,7 @@ public class AppInitiatedActionResetPasswordTest extends AbstractAppInitiatedAct
             EventAssertion.expectLoginSuccess(events.poll());
 
             // we need to add some slack to avoid timing issues
-            setTimeOffset(1);
+            timeOffSet.set(1);
 
             // Should prompt for re-authentication due to maxAuthAge password policy
             doAIA();

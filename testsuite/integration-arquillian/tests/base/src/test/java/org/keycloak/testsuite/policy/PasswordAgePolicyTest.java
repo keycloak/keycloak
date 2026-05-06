@@ -163,10 +163,10 @@ public class PasswordAgePolicyTest extends AbstractAuthTest {
     public void testPasswordHistoryRetrySamePassword() {
         setPasswordAgePolicyValue(1);
         //set offset to 12h ago
-        setTimeOffset(-12 * 60 * 60);
+        timeOffSet.set(-12 * 60 * 60);
         resetUserPassword(user, "secret");
         //try to set again same password
-        setTimeOffset(0);
+        timeOffSet.set(0);
         expectBadRequestException(f -> resetUserPassword(user, "secret"));
     }
 
@@ -174,13 +174,13 @@ public class PasswordAgePolicyTest extends AbstractAuthTest {
     public void testPasswordHistoryWithTwoPasswordsErrorThrown() {
         setPasswordAgePolicyValue(1);
         //set offset to 12h ago
-        setTimeOffset(-12 * 60 * 60);
+        timeOffSet.set(-12 * 60 * 60);
         resetUserPassword(user, "secret");
-        setTimeOffset(-10 * 60 * 60);
+        timeOffSet.set(-10 * 60 * 60);
         resetUserPassword(user, "secret1");
 
         //try to set again same password after 12h
-        setTimeOffset(0);
+        timeOffSet.set(0);
         expectBadRequestException(f -> resetUserPassword(user, "secret"));
     }
 
@@ -188,13 +188,13 @@ public class PasswordAgePolicyTest extends AbstractAuthTest {
     public void testPasswordHistoryWithTwoPasswords() {
         setPasswordAgePolicyValue(1);
         //set offset to more than a day ago
-        setTimeOffset(-24 * 60 * 60 * 2);
+        timeOffSet.set(-24 * 60 * 60 * 2);
         resetUserPassword(user, "secret");
-        setTimeOffset(-10 * 60 * 60);
+        timeOffSet.set(-10 * 60 * 60);
         resetUserPassword(user, "secret1");
 
         //try to set again same password after 48h
-        setTimeOffset(0);
+        timeOffSet.set(0);
         resetUserPassword(user, "secret");
     }
 
@@ -202,17 +202,17 @@ public class PasswordAgePolicyTest extends AbstractAuthTest {
     public void testPasswordHistoryWithMultiplePasswordsErrorThrown() {
         setPasswordAgePolicyValue(30);
         //set offset to 29 days, 23:45:00
-        setTimeOffset(-30 * 24 * 60 * 60 + 15 * 60);
+        timeOffSet.set(-30 * 24 * 60 * 60 + 15 * 60);
         resetUserPassword(user, "secret");
-        setTimeOffset(-25 * 24 * 60 * 60);
+        timeOffSet.set(-25 * 24 * 60 * 60);
         resetUserPassword(user, "secret1");
-        setTimeOffset(-20 * 24 * 60 * 60);
+        timeOffSet.set(-20 * 24 * 60 * 60);
         resetUserPassword(user, "secret2");
-        setTimeOffset(-10 * 24 * 60 * 60);
+        timeOffSet.set(-10 * 24 * 60 * 60);
         resetUserPassword(user, "secret3");
 
         //try to set again same password after 30 days, should throw error, 15 minutes too early
-        setTimeOffset(0);
+        timeOffSet.set(0);
         expectBadRequestException(f -> resetUserPassword(user, "secret"));
     }
 
@@ -220,17 +220,17 @@ public class PasswordAgePolicyTest extends AbstractAuthTest {
     public void testPasswordHistoryWithMultiplePasswords() {
         setPasswordAgePolicyValue(30);
         //set offset to 30 days and 15 minutes
-        setTimeOffset(-30 * 24 * 60 * 60 - 5 * 60);
+        timeOffSet.set(-30 * 24 * 60 * 60 - 5 * 60);
         resetUserPassword(user, "secret");
-        setTimeOffset(-25 * 24 * 60 * 60);
+        timeOffSet.set(-25 * 24 * 60 * 60);
         resetUserPassword(user, "secret1");
-        setTimeOffset(-20 * 24 * 60 * 60);
+        timeOffSet.set(-20 * 24 * 60 * 60);
         resetUserPassword(user, "secret2");
-        setTimeOffset(-10 * 24 * 60 * 60);
+        timeOffSet.set(-10 * 24 * 60 * 60);
         resetUserPassword(user, "secret3");
         //try to set again same password after 30 days and 15 minutes
 
-        setTimeOffset(0);
+        timeOffSet.set(0);
         resetUserPassword(user, "secret");
     }
 
@@ -277,12 +277,12 @@ public class PasswordAgePolicyTest extends AbstractAuthTest {
         setPasswordAgePolicyValue(1);
         //last 3 passwords
         setPasswordHistoryValue(3);
-        setTimeOffset(daysToSeconds(-2));
+        timeOffSet.set(daysToSeconds(-2));
         resetUserPassword(user, "secret");
         resetUserPassword(user, "secret1");
         resetUserPassword(user, "secret2");
 
-        setTimeOffset(daysToSeconds(0));
+        timeOffSet.set(daysToSeconds(0));
         //password history takes precedence
         expectBadRequestException(f -> setPasswordAgePolicyValue("secret"));
     }
@@ -293,12 +293,12 @@ public class PasswordAgePolicyTest extends AbstractAuthTest {
         setPasswordAgePolicyValue(2);
         //last 10 passwords
         setPasswordHistoryValue(10);
-        setTimeOffset(daysToSeconds(-1));
+        timeOffSet.set(daysToSeconds(-1));
         resetUserPassword(user, "secret");
         resetUserPassword(user, "secret1");
         resetUserPassword(user, "secret2");
 
-        setTimeOffset(daysToSeconds(0));
+        timeOffSet.set(daysToSeconds(0));
         //password age takes precedence
         expectBadRequestException(f -> setPasswordAgePolicyValue("secret"));
     }

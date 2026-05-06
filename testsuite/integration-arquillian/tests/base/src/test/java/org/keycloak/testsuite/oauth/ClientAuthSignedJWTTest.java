@@ -623,7 +623,7 @@ public class ClientAuthSignedJWTTest extends AbstractClientAuthSignedJWTTest {
     public void testAssertionExpired() throws Exception {
         String invalidJwt = getClient1SignedJWT();
 
-        setTimeOffset(1000);
+        timeOffSet.set(1000);
 
         List<NameValuePair> parameters = new LinkedList<NameValuePair>();
         parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.CLIENT_CREDENTIALS));
@@ -633,7 +633,7 @@ public class ClientAuthSignedJWTTest extends AbstractClientAuthSignedJWTTest {
         CloseableHttpResponse resp = sendRequest(oauth.getEndpoints().getToken(), parameters);
         AccessTokenResponse response = new AccessTokenResponse(resp);
 
-        setTimeOffset(0);
+        timeOffSet.set(0);
 
         assertError(response, "client1", OAuthErrorException.INVALID_CLIENT, Errors.INVALID_CLIENT_CREDENTIALS);
     }
@@ -748,7 +748,7 @@ public class ClientAuthSignedJWTTest extends AbstractClientAuthSignedJWTTest {
     public void testAssertionInvalidNotBefore() throws Exception {
         String invalidJwt = getClient1SignedJWT();
 
-        setTimeOffset(-1000);
+        timeOffSet.set(-1000);
 
         List<NameValuePair> parameters = new LinkedList<NameValuePair>();
         parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.CLIENT_CREDENTIALS));
@@ -758,7 +758,7 @@ public class ClientAuthSignedJWTTest extends AbstractClientAuthSignedJWTTest {
         CloseableHttpResponse resp = sendRequest(oauth.getEndpoints().getToken(), parameters);
         AccessTokenResponse response = new AccessTokenResponse(resp);
 
-        setTimeOffset(0);
+        timeOffSet.set(0);
 
         assertError(response, "client1", OAuthErrorException.INVALID_CLIENT, Errors.INVALID_CLIENT_CREDENTIALS);
 
@@ -906,13 +906,13 @@ public class ClientAuthSignedJWTTest extends AbstractClientAuthSignedJWTTest {
         assertSuccess(response, app1.getClientId(), serviceAccountUser.getId(), serviceAccountUser.getUsername());
 
         // in the max-exp window the token should be detected as already used
-        setTimeOffset(30);
+        timeOffSet.set(30);
         response = doClientCredentialsGrantRequest(jwt);
         assertError(response, app1.getClientId(), OAuthErrorException.INVALID_CLIENT, Errors.INVALID_CLIENT_CREDENTIALS);
         assertThat(response.getErrorDescription(), containsString("Token reuse detected"));
 
         // after the max-exp window the token cannot be used because iat is too far in the past
-        setTimeOffset(65);
+        timeOffSet.set(65);
         response = doClientCredentialsGrantRequest(jwt);
         assertError(response, app1.getClientId(), OAuthErrorException.INVALID_CLIENT, Errors.INVALID_CLIENT_CREDENTIALS);
         assertThat(response.getErrorDescription(), containsString("Token was issued too far in the past to be used now"));

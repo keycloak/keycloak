@@ -83,7 +83,7 @@ public class RegistrationAccessTokenTest extends AbstractClientRegistrationTest 
 
     @Test
     public void getClientWithRegistrationToken() throws ClientRegistrationException {
-        setTimeOffset(10);
+        timeOffSet.set(10);
 
         ClientRepresentation rep = reg.get(client.getClientId());
         assertNotNull(rep);
