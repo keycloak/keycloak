@@ -1191,7 +1191,15 @@ public class ModelToRepresentation {
             representation = (R) new PolicyRepresentation();
             PolicyRepresentation.class.cast(representation).setConfig(policy.getConfig());
             if (export) {
-                providerFactory.onExport(policy, PolicyRepresentation.class.cast(representation), authorization);
+                if (providerFactory != null) {
+                    providerFactory.onExport(policy, PolicyRepresentation.class.cast(representation), authorization);
+                } else {
+                    // Provider is unavailable at runtime (e.g. its feature is disabled or the provider was removed).
+                    // The policy is still exported with its stored config so it round-trips once the provider is registered again.
+                    LOG.warnf(
+                            "No policy provider registered for type '%s'; policy '%s' will be exported with its stored configuration only.",
+                            policy.getType(), policy.getName());
+                }
             }
         } else {
             try {
