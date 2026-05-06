@@ -59,7 +59,4 @@ public enum ClientPolicyEvent {
 
     SAML_AUTHN_REQUEST,
     SAML_LOGOUT_REQUEST,
-
-    // OID4VCI
-    CREDENTIAL_OFFER_CREATE
 }
