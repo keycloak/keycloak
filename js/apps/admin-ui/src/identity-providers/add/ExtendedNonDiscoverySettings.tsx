@@ -94,10 +94,6 @@ export const ExtendedNonDiscoverySettings = () => {
           />
         </FormGroupField>
         <SwitchField
-          field="config.acceptsPromptNoneForwardFromClient"
-          label="acceptsPromptNone"
-        />
-        <SwitchField
           field="config.requiresShortStateParameter"
           label="requiresShortStateParameter"
         />
