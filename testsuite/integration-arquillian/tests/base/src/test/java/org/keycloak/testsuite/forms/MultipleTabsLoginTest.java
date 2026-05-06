@@ -43,6 +43,7 @@ import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.RefreshToken;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AbstractChangeImportedUserPasswordsTest;
@@ -245,13 +246,14 @@ public class MultipleTabsLoginTest extends AbstractChangeImportedUserPasswordsTe
             errorPage.assertCurrent();
             Assertions.assertEquals("Invalid parameter: redirect_uri", errorPage.getError());
 
-            events.expectLogin().user((String) null).session((String) null)
+            EventAssertion.assertError(events.poll()).userId(null).sessionId(null)
+                    .type(EventType.LOGIN_ERROR)
                     .error(Errors.INVALID_REDIRECT_URI)
-                    .detail(Details.RESPONSE_TYPE, OIDCResponseType.CODE)
-                    .detail(Details.RESPONSE_MODE, OIDCResponseMode.QUERY.value())
-                    .removeDetail(Details.CONSENT)
-                    .removeDetail(Details.CODE_ID)
-                    .assertEvent(true);
+                    .details(Details.RESPONSE_TYPE, OIDCResponseType.CODE)
+                    .details(Details.RESPONSE_MODE, OIDCResponseMode.QUERY.value())
+                    .details(Details.REDIRECT_URI, oauth.getRedirectUri())
+                    .withoutDetails(Details.CONSENT)
+                    .withoutDetails(Details.CODE_ID);
         }
     }
 

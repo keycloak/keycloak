@@ -35,6 +35,7 @@ import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.ProfileAssume;
@@ -233,9 +234,9 @@ public class OIDCDynamicScopeTest extends OIDCScopeTest {
 
         oauth.openLoginForm();
         oauth.doLogin(username, "password");
-        EventRepresentation loginEvent = events.expectLogin()
-                .user(userId)
-                .assertEvent();
+        EventRepresentation loginEvent = events.poll();
+        EventAssertion.expectLoginSuccess(loginEvent)
+                .userId(userId);
 
         Tokens tokens = sendTokenRequest(loginEvent, userId, "openid email profile " + expectedRoleScopes, "test-app");
         Assert.assertNames(tokens.accessToken.getRealmAccess().getRoles(), expectedRoles);

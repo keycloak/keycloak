@@ -117,7 +117,9 @@ public class InviteOrgActionTokenHandler extends AbstractActionTokenHandler<Invi
         AuthenticationSessionModel authSession = tokenContext.getAuthenticationSession();
         EventBuilder event = tokenContext.getEvent();
 
-        event.event(EventType.INVITE_ORG).detail(Details.USERNAME, user.getUsername());
+        event.event(EventType.INVITE_ORG)
+                .detail(Details.USERNAME, user.getUsername())
+                .detail(Details.ORG_ID, token.getOrgId());
 
         OrganizationModel organization = orgProvider.getById(token.getOrgId());
 

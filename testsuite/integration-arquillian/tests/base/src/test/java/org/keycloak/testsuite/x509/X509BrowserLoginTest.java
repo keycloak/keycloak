@@ -23,12 +23,15 @@ import jakarta.ws.rs.core.Response;
 import org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel;
 import org.keycloak.events.Details;
 import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
+import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.testsuite.AssertEvents;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.util.DroneUtils;
 import org.keycloak.testsuite.util.HtmlUnitBrowser;
 
+import org.hamcrest.MatcherAssert;
+import org.hamcrest.Matchers;
 import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.junit.Before;
 import org.junit.Test;
@@ -45,6 +48,7 @@ import static org.keycloak.authentication.authenticators.x509.X509AuthenticatorC
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.emptyOrNullString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.startsWith;
@@ -84,13 +88,11 @@ public class X509BrowserLoginTest extends AbstractX509AuthenticationTest {
 
         oauth.openLoginForm();
 
-        events.expectLogin()
-                .user((String) null)
-                .session((String) null)
+        EventAssertion.expectLoginError(events.poll())
+                .userId(null)
+                .sessionId(null)
                 .error("invalid_user_credentials")
-                .removeDetail(Details.CONSENT)
-                .removeDetail(Details.REDIRECT_URI)
-                .assertEvent();
+                .withoutDetails(Details.CONSENT);
     }
 
     @Test
@@ -157,11 +159,9 @@ public class X509BrowserLoginTest extends AbstractX509AuthenticationTest {
         Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
         Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
 
-         events.expectLogin()
-                 .user(userId)
-                 .detail(Details.USERNAME, "test-user@localhost")
-                 .removeDetail(Details.REDIRECT_URI)
-                 .assertEvent();
+         EventAssertion.expectLoginSuccess(events.poll())
+                 .userId(userId)
+                 .details(Details.USERNAME, "test-user@localhost");
     }
 
     @Test
@@ -297,11 +297,9 @@ public class X509BrowserLoginTest extends AbstractX509AuthenticationTest {
         Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
         Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
 
-        events.expectLogin()
-                .user(userId)
-                .detail(Details.USERNAME, "test-user@localhost")
-                .removeDetail(Details.REDIRECT_URI)
-                .assertEvent();
+        EventAssertion.expectLoginSuccess(events.poll())
+                .userId(userId)
+                .details(Details.USERNAME, "test-user@localhost");
     }
 
     @Test
@@ -316,11 +314,9 @@ public class X509BrowserLoginTest extends AbstractX509AuthenticationTest {
 
         Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
         Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
-        events.expectLogin()
-                .user(userId)
-                .detail(Details.USERNAME, "test-user@localhost")
-                .removeDetail(Details.REDIRECT_URI)
-                .assertEvent();
+        EventAssertion.expectLoginSuccess(events.poll())
+                .userId(userId)
+                .details(Details.USERNAME, "test-user@localhost");
     }
 
     @Test
@@ -343,25 +339,21 @@ public class X509BrowserLoginTest extends AbstractX509AuthenticationTest {
         Assertions.assertNotNull(loginPage.getError());
 
         assertThat(loginPage.getError(), containsString("X509 certificate authentication's failed."));
-        events.expectLogin()
-                .user((String) null)
-                .session((String) null)
+        EventAssertion.expectLoginError(events.poll())
+                .userId(null)
+                .sessionId(null)
                 .error("user_not_found")
-                .detail(Details.USERNAME, "Red Hat")
-                .removeDetail(Details.CONSENT)
-                .removeDetail(Details.REDIRECT_URI)
-                .assertEvent();
+                .details(Details.USERNAME, "Red Hat")
+                .withoutDetails(Details.CONSENT);
 
         // Continue with form based login
         loginPage.login("test-user@localhost", "password");
 
         Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
         Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
-        events.expectLogin()
-                .user(userId)
-                .detail(Details.USERNAME, "test-user@localhost")
-                .removeDetail(Details.REDIRECT_URI)
-                .assertEvent();
+        EventAssertion.expectLoginSuccess(events.poll())
+                .userId(userId)
+                .details(Details.USERNAME, "test-user@localhost");
     }
 
     @Test
@@ -421,16 +413,16 @@ public class X509BrowserLoginTest extends AbstractX509AuthenticationTest {
 
         assertThat(loginPage.getError(), containsString("X509 certificate authentication's failed."));
 
-        AssertEvents.ExpectedEvent expectedEvent = events.expectLogin()
-                .user((String) null)
-                .session((String) null)
+        EventRepresentation eventRep = EventAssertion.expectLoginError(events.poll())
+                .userId(null)
+                .sessionId(null)
                 .error("user_not_found")
-                .detail(Details.USERNAME, "test-user@localhost")
-                .removeDetail(Details.CONSENT)
-                .removeDetail(Details.REDIRECT_URI);
+                .details(Details.USERNAME, "test-user@localhost")
+                .withoutDetails(Details.CONSENT).getEvent();
 
-        addX509CertificateDetails(expectedEvent)
-                .assertEvent();
+        MatcherAssert.assertThat(eventRep.getDetails().get(Details.X509_CERTIFICATE_SERIAL_NUMBER), Matchers.not(is(emptyOrNullString())));
+        MatcherAssert.assertThat(eventRep.getDetails().get(Details.X509_CERTIFICATE_SUBJECT_DISTINGUISHED_NAME), Matchers.startsWith("EMAILADDRESS=test-user@localhost"));
+        MatcherAssert.assertThat(eventRep.getDetails().get(Details.X509_CERTIFICATE_ISSUER_DISTINGUISHED_NAME), Matchers.startsWith("EMAILADDRESS=contact@keycloak.org"));
 
         // Continue with form based login
         loginPage.login("test-user@localhost", "password");
@@ -458,14 +450,12 @@ public class X509BrowserLoginTest extends AbstractX509AuthenticationTest {
 
             assertThat(loginPage.getError(), containsString("X509 certificate authentication's failed. User is disabled"));
 
-            events.expectLogin()
-                    .user(userId)
-                    .session((String) null)
+            EventAssertion.expectLoginError(events.poll())
+                    .userId(userId)
+                    .sessionId(null)
                     .error("user_disabled")
-                    .detail(Details.USERNAME, "test-user@localhost")
-                    .removeDetail(Details.CONSENT)
-                    .removeDetail(Details.REDIRECT_URI)
-                    .assertEvent();
+                    .details(Details.USERNAME, "test-user@localhost")
+                    .withoutDetails(Details.CONSENT);
 
             loginPage.login("test-user@localhost", "password");
             loginPage.assertCurrent();
@@ -477,14 +467,12 @@ public class X509BrowserLoginTest extends AbstractX509AuthenticationTest {
             // KEYCLOAK-2024
             Assertions.assertEquals("Account is disabled, contact your administrator.", loginPage.getError());
 
-            events.expectLogin()
-                    .user(userId)
-                    .session((String) null)
+            EventAssertion.expectLoginError(events.poll())
+                    .userId(userId)
+                    .sessionId(null)
                     .error("user_disabled")
-                    .detail(Details.USERNAME, "test-user@localhost")
-                    .removeDetail(Details.CONSENT)
-                    .removeDetail(Details.REDIRECT_URI)
-                    .assertEvent();
+                    .details(Details.USERNAME, "test-user@localhost")
+                    .withoutDetails(Details.CONSENT);
         } finally {
             setUserEnabled("test-user@localhost", true);
         }
@@ -509,13 +497,13 @@ public class X509BrowserLoginTest extends AbstractX509AuthenticationTest {
         Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
         Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
 
-        AssertEvents.ExpectedEvent expectedEvent = events.expectLogin()
-                .user(userId)
-                .detail(Details.USERNAME, "test-user@localhost")
-                .removeDetail(Details.REDIRECT_URI);
+        EventRepresentation eventRep = EventAssertion.expectLoginSuccess(events.poll())
+                .userId(userId)
+                .details(Details.USERNAME, "test-user@localhost").getEvent();
 
-        addX509CertificateDetails(expectedEvent)
-                .assertEvent();
+        MatcherAssert.assertThat(eventRep.getDetails().get(Details.X509_CERTIFICATE_SERIAL_NUMBER), Matchers.not(is(emptyOrNullString())));
+        MatcherAssert.assertThat(eventRep.getDetails().get(Details.X509_CERTIFICATE_SUBJECT_DISTINGUISHED_NAME), Matchers.startsWith("EMAILADDRESS=test-user@localhost"));
+        MatcherAssert.assertThat(eventRep.getDetails().get(Details.X509_CERTIFICATE_ISSUER_DISTINGUISHED_NAME), Matchers.startsWith("EMAILADDRESS=contact@keycloak.org"));
     }
 
 

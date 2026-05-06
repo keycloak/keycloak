@@ -1,27 +1,26 @@
 package org.keycloak.tests.admin.client.v2;
 
-import org.keycloak.testframework.annotations.InjectHttpClient;
+import jakarta.ws.rs.NotFoundException;
+
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.CloseableHttpClient;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
  */
 @KeycloakIntegrationTest
 public class ClientApiV2DisabledTest extends AbstractClientApiV2Test {
-    @InjectHttpClient
-    CloseableHttpClient client;
-
     @Test
-    public void getClient() throws Exception {
-        HttpGet request = new HttpGet(getClientsApiUrl() + "/realms/master/clients/account");
-        try (var response = client.execute(request)) {
-            assertEquals(404, response.getStatusLine().getStatusCode());
-        }
+    public void getClient() {
+        NotFoundException ex = assertThrows(
+            NotFoundException.class,
+            () -> getClientApi("account").getClient()
+        );
+
+        assertTrue(ex.getMessage().contains("HTTP 404 Not Found"));
     }
 }

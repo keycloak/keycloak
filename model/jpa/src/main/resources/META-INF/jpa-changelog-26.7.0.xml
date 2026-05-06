@@ -45,4 +45,25 @@
         </delete>
     </changeSet>
 
+    <changeSet author="keycloak" id="26.7.0-verifiable-credential">
+        <createTable tableName="USER_VER_CREDENTIAL">
+            <column name="ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="CREDENTIAL_SCOPE_NAME" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="USER_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="REVISION" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="CREATED_DATE" type="BIGINT"/>
+        </createTable>
+        <addPrimaryKey columnNames="ID" constraintName="CONSTRAINT_VCRED_PM" tableName="USER_VER_CREDENTIAL"/>
+        <addForeignKeyConstraint baseColumnNames="USER_ID" baseTableName="USER_VER_CREDENTIAL" constraintName="FK_VCRED_USER" referencedColumnNames="ID" referencedTableName="USER_ENTITY"/>
+        <addUniqueConstraint columnNames="CREDENTIAL_SCOPE_NAME, USER_ID" constraintName="UK_KKUWUVD67ONTGSUGOGM8UEWRE" tableName="USER_VER_CREDENTIAL"/>
+    </changeSet>
+
 </databaseChangeLog>

@@ -24,6 +24,7 @@ import org.keycloak.models.credential.OTPCredentialModel;
 import org.keycloak.models.utils.HmacOTP;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AbstractChangeImportedUserPasswordsTest;
 import org.keycloak.testsuite.AssertEvents;
@@ -110,9 +111,9 @@ public class LoginHotpTest extends AbstractChangeImportedUserPasswordsTest {
         //loginPage.assertCurrent();  // Invalid authenticator code.
         //Assert.assertEquals("Invalid username or password.", loginPage.getError());
 
-        events.expectLogin().error("invalid_user_credentials").session((String) null)
-                .removeDetail(Details.CONSENT)
-                .assertEvent();
+        EventAssertion.expectLoginError(events.poll()).error("invalid_user_credentials").sessionId(null)
+                .details(Details.REDIRECT_URI, oauth.getRedirectUri())
+                .withoutDetails(Details.CONSENT);
     }
 
     @Test
@@ -129,9 +130,9 @@ public class LoginHotpTest extends AbstractChangeImportedUserPasswordsTest {
         //loginPage.assertCurrent();  // Invalid authenticator code.
         //Assert.assertEquals("Invalid username or password.", loginPage.getError());
 
-        events.expectLogin().error("invalid_user_credentials").session((String) null)
-                .removeDetail(Details.CONSENT)
-                .assertEvent();
+        EventAssertion.expectLoginError(events.poll()).error("invalid_user_credentials").sessionId(null)
+                .details(Details.REDIRECT_URI, oauth.getRedirectUri())
+                .withoutDetails(Details.CONSENT);
     }
 
     @Test
@@ -147,7 +148,7 @@ public class LoginHotpTest extends AbstractChangeImportedUserPasswordsTest {
 
         Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-        events.expectLogin().assertEvent();
+        EventAssertion.expectLoginSuccess(events.poll());
     }
 
     @Test
@@ -159,8 +160,8 @@ public class LoginHotpTest extends AbstractChangeImportedUserPasswordsTest {
 
         Assertions.assertEquals("Invalid username or password.", loginPage.getInputError());
 
-        events.expectLogin().error("invalid_user_credentials").session((String) null)
-                .removeDetail(Details.CONSENT)
-                .assertEvent();
+        EventAssertion.expectLoginError(events.poll()).error("invalid_user_credentials").sessionId(null)
+                .details(Details.REDIRECT_URI, oauth.getRedirectUri())
+                .withoutDetails(Details.CONSENT);
     }
 }

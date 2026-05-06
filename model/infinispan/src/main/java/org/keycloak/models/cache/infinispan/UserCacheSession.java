@@ -48,6 +48,7 @@ import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.UserCredentialManager;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
+import org.keycloak.models.UserVerifiableCredentialModel;
 import org.keycloak.models.cache.CachedUserModel;
 import org.keycloak.models.cache.OnUserCache;
 import org.keycloak.models.cache.UserCache;
@@ -851,6 +852,22 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
         }
 
         return consentModel;
+    }
+
+
+    @Override
+    public UserVerifiableCredentialModel addVerifiableCredential(String userId, UserVerifiableCredentialModel credentialModel) {
+        return getDelegate().addVerifiableCredential(userId, credentialModel);
+    }
+
+    @Override
+    public boolean removeVerifiableCredential(String userId, String credentialScopeName) {
+        return getDelegate().removeVerifiableCredential(userId, credentialScopeName);
+    }
+
+    @Override
+    public Stream<UserVerifiableCredentialModel> getVerifiableCredentialsByUser(String userId) {
+        return getDelegate().getVerifiableCredentialsByUser(userId);
     }
 
     @Override
