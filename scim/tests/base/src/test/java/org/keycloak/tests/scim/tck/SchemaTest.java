@@ -1,19 +1,27 @@
 package org.keycloak.tests.scim.tck;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.keycloak.representations.userprofile.config.UPAttribute;
+import org.keycloak.representations.userprofile.config.UPAttributePermissions;
+import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.scim.protocol.response.ListResponse;
 import org.keycloak.scim.resource.Scim;
 import org.keycloak.scim.resource.schema.Schema;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.userprofile.config.UPConfigUtils;
 
 import org.junit.jupiter.api.Test;
+
+import static org.keycloak.scim.model.user.AbstractUserModelSchema.ANNOTATION_SCIM_SCHEMA_ATTRIBUTE;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @KeycloakIntegrationTest(config = ScimServerConfig.class)
@@ -21,12 +29,15 @@ public class SchemaTest extends AbstractScimTest {
 
     @Test
     public void testGetAllSchemas() {
+        String customSchema = "urn:my:params:scim:schemas:extension:custom:1.0:User";
+        addOrReplaceUPAttribute(customSchema, "myattribute");
+
         ListResponse<Schema> response = client.schemas().getAll();
 
         assertNotNull(response);
         assertNotNull(response.getResources());
-        assertEquals(3, response.getTotalResults());
-        assertEquals(3, response.getResources().size());
+        assertEquals(4, response.getTotalResults());
+        assertEquals(4, response.getResources().size());
 
         // Verify all expected schemas are present
         List<String> schemaIds = response.getResources().stream()
@@ -36,6 +47,7 @@ public class SchemaTest extends AbstractScimTest {
         assertTrue(schemaIds.contains(Scim.USER_CORE_SCHEMA));
         assertTrue(schemaIds.contains(Scim.GROUP_CORE_SCHEMA));
         assertTrue(schemaIds.contains(Scim.ENTERPRISE_USER_SCHEMA));
+        assertTrue(schemaIds.contains(customSchema));
     }
 
     @Test
@@ -111,6 +123,7 @@ public class SchemaTest extends AbstractScimTest {
 
     @Test
     public void testGetEnterpriseUserSchema() {
+        addEnterpriseUserUserProfileAttributes();
         Schema schema = client.schemas().get(Scim.ENTERPRISE_USER_SCHEMA);
 
         assertNotNull(schema);
@@ -144,6 +157,37 @@ public class SchemaTest extends AbstractScimTest {
         for (Schema.Attribute subAttr : manager.getSubAttributes()) {
             assertSubAttribute(subAttr, "string", false, "readWrite");
         }
+    }
+
+    @Test
+    public void testGetCustomSchema() {
+        String fooSchema = "urn:my:params:scim:schemas:extension:custom:1.0:User";
+        addOrReplaceUPAttribute(fooSchema, "myattribute");
+        addOrReplaceUPAttribute(fooSchema, "team");
+
+        String barSchema = "urn:my:params:scim:schemas:extension:other:1.0:User";
+        addOrReplaceUPAttribute(barSchema, "other");
+
+        Schema schema = client.schemas().get(fooSchema);
+        assertNotNull(schema);
+        assertEquals(fooSchema, schema.getId());
+        assertEquals(fooSchema, schema.getName());
+        assertNull(schema.getDescription());
+        assertNotNull(schema.getAttributes());
+        Set<String> attributeNames = schema.getAttributes().stream()
+                .map(Schema.Attribute::getName)
+                .collect(Collectors.toSet());
+        assertEquals(2, attributeNames.size());
+        assertAttribute(findAttribute(schema, "myattribute"), "string", false, false, true, "readWrite", "none");
+        assertAttribute(findAttribute(schema, "team"), "string", false, false, true, "readWrite", "none");
+
+        schema = client.schemas().get(barSchema);
+        attributeNames = schema.getAttributes().stream()
+                .map(Schema.Attribute::getName)
+                .collect(Collectors.toSet());
+        assertEquals(1, attributeNames.size());
+        // Simple string attributes
+        assertAttribute(findAttribute(schema, "other"), "string", false, false, true, "readWrite", "none");
     }
 
     @Test
@@ -202,5 +246,13 @@ public class SchemaTest extends AbstractScimTest {
         assertEquals(type, subAttribute.getType(), subAttribute.getName() + " sub-attribute type");
         assertEquals(multiValued, subAttribute.getMultiValued(), subAttribute.getName() + " sub-attribute multiValued");
         assertEquals(mutability, subAttribute.getMutability(), subAttribute.getName() + " sub-attribute mutability");
+    }
+
+    private void addOrReplaceUPAttribute(String customSchema, String name) {
+        UPConfig upConfig = realm.admin().users().userProfile().getConfiguration();
+        UPAttribute upAttribute = new UPAttribute("scim" + name, Map.of(ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, customSchema + "." + name));
+        upAttribute.setPermissions(new UPAttributePermissions(Set.of(UPConfigUtils.ROLE_ADMIN), Set.of(UPConfigUtils.ROLE_ADMIN)));
+        upConfig.addOrReplaceAttribute(upAttribute);
+        realm.admin().users().userProfile().update(upConfig);
     }
 }

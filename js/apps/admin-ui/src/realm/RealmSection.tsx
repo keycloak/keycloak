@@ -24,7 +24,7 @@ import { fetchAdminUI } from "../context/auth/admin-ui-endpoint";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { useRecentRealms } from "../context/RecentRealms";
 import { useWhoAmI } from "../context/whoami/WhoAmI";
-import { translationFormatter } from "../utils/translationFormatter";
+import { resolveDisplayName } from "../util";
 import NewRealmForm from "./add/NewRealmForm";
 import { toRealm } from "./RealmRoutes";
 import { toDashboard } from "../dashboard/routes/Dashboard";
@@ -250,7 +250,8 @@ export default function RealmSection() {
             {
               name: "displayName",
               transforms: [cellWidth(80)],
-              cellFormatters: [translationFormatter(t)],
+              cellRenderer: ({ displayName }) =>
+                resolveDisplayName(t, displayName, "—"),
             },
           ]}
         />

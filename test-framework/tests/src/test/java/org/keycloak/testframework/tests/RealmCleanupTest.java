@@ -89,7 +89,7 @@ public class RealmCleanupTest {
 
         @Override
         public RealmBuilder configure(RealmBuilder realm) {
-            realm.addUser("someuser").firstName("Sarah");
+            realm.users(UserBuilder.create("someuser").firstName("Sarah"));
             return realm;
         }
     }

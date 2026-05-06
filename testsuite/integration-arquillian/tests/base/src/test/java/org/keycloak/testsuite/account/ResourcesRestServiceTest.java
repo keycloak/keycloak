@@ -96,11 +96,11 @@ public class ResourcesRestServiceTest extends AbstractRestServiceTest {
 
         testRealm.setUserManagedAccessAllowed(true);
 
-        testRealm.getUsers().add(createUser("alice", "password"));
-        testRealm.getUsers().add(createUser("jdoe", "password"));
-        testRealm.getUsers().add(createUser("bob", "password"));
+        testRealm.getUsers().add(createUser("alice", "password", "Alice", "A", "alice@localhost"));
+        testRealm.getUsers().add(createUser("jdoe", "password", "John", "Doe", "jdoe@localhost"));
+        testRealm.getUsers().add(createUser("bob", "password", "Bob", "B", "bob@localhost"));
         testRealm.getUsers().add(UserBuilder.create().username("test-authz-user@localhost").password("password")
-                .roles("uma_authorization", "uma_protection")
+                .realmRoles("uma_authorization", "uma_protection")
                 .clientRoles("my-resource-server", "uma_protection")
                 .clientRoles("account", AccountRoles.MANAGE_ACCOUNT)
                 .build());
@@ -335,6 +335,30 @@ public class ResourcesRestServiceTest extends AbstractRestServiceTest {
 
         response = doGet("/" + encodePathAsIs(getMyResources().get(0).getId()), authzClient.obtainAccessToken("jdoe", "password").getToken(), OAuth2ErrorRepresentation.class);
         assertEquals("invalid_resource", response.getError());
+    }
+
+    @Test
+    public void testUserLookupReturnsMinimalData() {
+        Resource resource = getMyResources().get(0);
+
+        UserRepresentation user = doGet("/" + encodePathAsIs(resource.getId()) + "/user?value=alice", UserRepresentation.class);
+
+        assertNotNull(user);
+        assertNotNull(user.getId());
+        assertEquals("alice", user.getUsername());
+        assertEquals("Alice", user.getFirstName());
+        assertEquals("A", user.getLastName());
+        assertEquals("alice@localhost", user.getEmail());
+
+        assertNull(user.getAttributes(), "User attributes should not be exposed");
+        assertNull(user.isTotp(), "TOTP status should not be exposed");
+        assertNull(user.getRequiredActions(), "Required actions should not be exposed");
+        assertNull(user.getDisableableCredentialTypes(), "Disableable credential types should not be exposed");
+        assertNull(user.getCreatedTimestamp(), "Created timestamp should not be exposed");
+        assertNull(user.isEnabled(), "Enabled status should not be exposed");
+        assertNull(user.isEmailVerified(), "Email verified should not be exposed");
+        assertNull(user.getFederationLink(), "Federation link should not be exposed");
+        assertNull(user.getNotBefore(), "NotBefore should not be exposed");
     }
 
     @Test
@@ -737,11 +761,15 @@ public class ResourcesRestServiceTest extends AbstractRestServiceTest {
                         credentials, httpClient));
     }
 
-    private UserRepresentation createUser(String userName, String password) {
+    private UserRepresentation createUser(String userName, String password, String firstName, String lastName, String email) {
         return UserBuilder.create()
                 .username(userName)
                 .enabled(true)
                 .password(password)
+                .firstName(firstName)
+                .lastName(lastName)
+                .email(email)
+                .attribute("secret-attr", "secret-value")
                 .clientRoles("account", AccountRoles.MANAGE_ACCOUNT)
                 .build();
     }

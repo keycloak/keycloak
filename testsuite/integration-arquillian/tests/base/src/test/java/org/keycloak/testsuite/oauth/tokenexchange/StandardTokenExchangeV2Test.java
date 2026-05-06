@@ -63,6 +63,7 @@ import org.keycloak.services.clientpolicy.condition.GrantTypeConditionFactory;
 import org.keycloak.services.clientpolicy.executor.DownscopeAssertionGrantEnforcerExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.JWTClaimEnforcerExecutor;
 import org.keycloak.services.clientpolicy.executor.JWTClaimEnforcerExecutorFactory;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.admin.ApiUtil;
@@ -157,13 +158,15 @@ public class StandardTokenExchangeV2Test extends AbstractClientPoliciesTest {
         assertEquals(Response.Status.OK.getStatusCode(), response.getStatusCode());
         TokenVerifier<AccessToken> accessTokenVerifier = TokenVerifier.create(response.getAccessToken(), AccessToken.class);
         AccessToken token = accessTokenVerifier.parse().getToken();
-        final EventRepresentation loginEvent = events.expectLogin()
-                .client(clientId)
-                .user(user.getId())
-                .session(token.getSessionId())
-                .detail(Details.USERNAME, user.getUsername())
-                .detail(Details.CONSENT, Details.CONSENT_VALUE_CONSENT_GRANTED)
-                .assertEvent();
+        final EventRepresentation loginEvent = events.poll();
+        EventAssertion.expectLoginSuccess(loginEvent)
+                .clientId(clientId)
+                .userId(user.getId())
+                .sessionId(token.getSessionId())
+                .details(Details.USERNAME, user.getUsername())
+                .details(Details.CONSENT, Details.CONSENT_VALUE_CONSENT_GRANTED)
+                .details(Details.REDIRECT_URI, oauth.getRedirectUri());
+
         final String codeId = loginEvent.getDetails().get(Details.CODE_ID);
         events.expectCodeToToken(codeId, token.getSessionId())
                 .client(clientId)

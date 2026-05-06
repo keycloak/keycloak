@@ -410,6 +410,7 @@ public class AuthenticationManagementResource {
         auth.realm().requireManageRealm();
 
         String newName = data.get("newName");
+        ReservedCharValidator.validate(newName);
         if (realm.getFlowByAlias(newName) != null) {
             throw ErrorResponse.exists("New flow alias name already exists");
         }

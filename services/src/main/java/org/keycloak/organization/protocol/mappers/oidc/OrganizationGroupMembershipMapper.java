@@ -25,7 +25,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.keycloak.Config;
-import org.keycloak.OAuth2Constants;
 import org.keycloak.common.Profile;
 import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.KeycloakSession;
@@ -45,6 +44,8 @@ import org.keycloak.protocol.oidc.mappers.UserInfoTokenMapper;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.IDToken;
+
+import static org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME;
 
 public class OrganizationGroupMembershipMapper extends AbstractOIDCProtocolMapper implements OIDCAccessTokenMapper, OIDCIDTokenMapper, UserInfoTokenMapper, TokenIntrospectionTokenMapper, EnvironmentDependentProviderFactory {
 
@@ -93,9 +94,19 @@ public class OrganizationGroupMembershipMapper extends AbstractOIDCProtocolMappe
 
         UserModel user = userSession.getUser();
         OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
+        ProtocolMapperModel organizationMapperModel = getOrganizationMapperModel(clientSessionCtx);
 
-        // Get or create organization claims map for composition
-        final Map<String, Object> orgClaims = OIDCAttributeMapperHelper.getOrInitializeOrganizationClaimAsMap(token, OAuth2Constants.ORGANIZATION);
+        if (organizationMapperModel == null) {
+            // this mapper requires the organization scope and its mapper set to the request
+            return;
+        }
+
+        String orgClaimName = organizationMapperModel.getConfig().get(TOKEN_CLAIM_NAME);
+
+        model = getEffectiveModel(session, userSession.getRealm(), model);
+        model.getConfig().put(TOKEN_CLAIM_NAME, orgClaimName);
+
+        Map<String, Object> orgClaims = OIDCAttributeMapperHelper.getOrInitializeOrganizationClaimAsMap(token, model);
 
         // Add groups to each organization
         organizations.forEach(org -> {
@@ -152,5 +163,12 @@ public class OrganizationGroupMembershipMapper extends AbstractOIDCProtocolMappe
     public int getPriority() {
         // Run after OrganizationMembershipMapper (higher number = later execution)
         return 10;
+    }
+
+    private ProtocolMapperModel getOrganizationMapperModel(ClientSessionContext clientSessionContext) {
+        return clientSessionContext.getProtocolMappersStream()
+                .filter(m -> OrganizationMembershipMapper.PROVIDER_ID.equals(m.getProtocolMapper()))
+                .findAny()
+                .orElse(null);
     }
 }

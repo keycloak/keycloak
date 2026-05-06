@@ -58,7 +58,8 @@
     </script>
     <#if darkMode>
       <script type="module" async blocking="render">
-          const DARK_MODE_CLASS = "${properties.kcDarkModeClass}";
+          <#outputformat "JavaScript">
+          const DARK_MODE_CLASS = ${properties.kcDarkModeClass?c};
           const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
 
           updateDarkMode(mediaQuery.matches);
@@ -73,6 +74,7 @@
               classList.remove(DARK_MODE_CLASS);
             }
           }
+          </#outputformat>
       </script>
     </#if>
     <#if properties.scripts?has_content>
@@ -88,7 +90,7 @@
     <script type="module" src="${url.resourcesPath}/js/passwordVisibility.js"></script>
     <script type="module">
         <#outputformat "JavaScript">
-        import { startSessionPolling } from "${url.resourcesPath}/js/authChecker.js";
+        import { startSessionPolling } from ${(url.resourcesPath + "/js/authChecker.js")?c};
 
         startSessionPolling(
             ${url.ssoLoginInOtherTabsUrl?c}
@@ -121,7 +123,7 @@
     <#if authenticationSession??>
         <script type="module">
              <#outputformat "JavaScript">
-            import { checkAuthSession } from "${url.resourcesPath}/js/authChecker.js";
+            import { checkAuthSession } from ${(url.resourcesPath + "/js/authChecker.js")?c};
 
             checkAuthSession(
                 ${authenticationSession.authSessionIdHash?c}

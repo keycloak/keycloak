@@ -36,6 +36,7 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.events.Details;
+import org.keycloak.events.EventType;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
@@ -50,6 +51,8 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.storage.CacheableStorageProviderModel;
 import org.keycloak.storage.client.ClientStorageProvider;
 import org.keycloak.storage.client.ClientStorageProviderModel;
+import org.keycloak.testframework.events.EventAssertion;
+import org.keycloak.testframework.remote.providers.runonserver.RunOnServerException;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
@@ -61,6 +64,7 @@ import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
+import org.keycloak.testsuite.util.runonserver.RunHelpers;
 import org.keycloak.util.BasicAuthHelper;
 import org.keycloak.util.TokenUtil;
 
@@ -254,7 +258,7 @@ public class ClientStorageTest extends AbstractTestRealmKeycloakTest {
         AuthorizationEndpointResponse response = oauth.doLogin("test-user@localhost", "password");
         appPage.assertCurrent();
 
-        events.expectLogin().client(clientId).detail(Details.USERNAME, "test-user@localhost").assertEvent();
+        EventAssertion.expectLoginSuccess(events.poll()).clientId(clientId).details(Details.USERNAME, "test-user@localhost");
 
         AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(response.getCode());
         Assertions.assertNotNull(tokenResponse.getAccessToken());
@@ -457,19 +461,19 @@ public class ClientStorageTest extends AbstractTestRealmKeycloakTest {
         String offlineTokenString = tokenResponse.getRefreshToken();
         RefreshToken offlineToken = oauth.parseRefreshToken(offlineTokenString);
 
-        events.expectLogin()
-                .client("hardcoded-client")
-                .user(userId)
-                .session(token.getSessionState())
-                .detail(Details.GRANT_TYPE, OAuth2Constants.PASSWORD)
-                .detail(Details.TOKEN_ID, token.getId())
-                .detail(Details.REFRESH_TOKEN_ID, offlineToken.getId())
-                .detail(Details.REFRESH_TOKEN_TYPE, TokenUtil.TOKEN_TYPE_OFFLINE)
-                .detail(Details.USERNAME, "test-user@localhost")
-                .removeDetail(Details.CODE_ID)
-                .removeDetail(Details.REDIRECT_URI)
-                .removeDetail(Details.CONSENT)
-                .assertEvent();
+        EventAssertion.assertSuccess(events.poll())
+                .type(EventType.LOGIN)
+                .clientId("hardcoded-client")
+                .userId(userId)
+                .sessionId(token.getSessionState())
+                .details(Details.GRANT_TYPE, OAuth2Constants.PASSWORD)
+                .details(Details.TOKEN_ID, token.getId())
+                .details(Details.REFRESH_TOKEN_ID, offlineToken.getId())
+                .details(Details.REFRESH_TOKEN_TYPE, TokenUtil.TOKEN_TYPE_OFFLINE)
+                .details(Details.USERNAME, "test-user@localhost")
+                .withoutDetails(Details.CODE_ID)
+                .withoutDetails(Details.REDIRECT_URI)
+                .withoutDetails(Details.CONSENT);
 
         Assertions.assertEquals(TokenUtil.TOKEN_TYPE_OFFLINE, offlineToken.getType());
         Assertions.assertNull(offlineToken.getExp());
@@ -499,8 +503,11 @@ public class ClientStorageTest extends AbstractTestRealmKeycloakTest {
         // Assert userSession expired
         testingClient.testing().removeExpired("test");
         try {
-            testingClient.testing().removeUserSession("test", sessionId);
-        } catch (NotFoundException nfe) {
+            runOnServer.run(RunHelpers.removeUserSession("test", sessionId));
+        } catch (RunOnServerException nfe) {
+            if (!(nfe.getCause() instanceof NotFoundException)) {
+                throw nfe;
+            }
             // Ignore
         }
 

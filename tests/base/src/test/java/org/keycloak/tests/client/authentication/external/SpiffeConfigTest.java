@@ -16,6 +16,7 @@ import org.keycloak.testframework.annotations.InjectUser;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
+import org.keycloak.testframework.realm.IdentityProviderBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.ManagedUser;
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
@@ -23,7 +24,6 @@ import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testframework.ui.annotations.InjectPage;
 import org.keycloak.testframework.ui.page.LoginPage;
 import org.keycloak.tests.common.BasicUserConfig;
-import org.keycloak.testsuite.util.IdentityProviderBuilder;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import org.hamcrest.MatcherAssert;
@@ -111,8 +111,8 @@ public class SpiffeConfigTest {
     private IdentityProviderRepresentation createConfig(String alias, String trustDomain, String bundleEndpoint) {
         return IdentityProviderBuilder.create().providerId(SpiffeIdentityProviderFactory.PROVIDER_ID)
                 .alias(alias)
-                .setAttribute(SpiffeIdentityProviderConfig.TRUST_DOMAIN_KEY, trustDomain)
-                .setAttribute(SpiffeIdentityProviderConfig.BUNDLE_ENDPOINT_KEY, bundleEndpoint).build();
+                .attribute(SpiffeIdentityProviderConfig.TRUST_DOMAIN_KEY, trustDomain)
+                .attribute(SpiffeIdentityProviderConfig.BUNDLE_ENDPOINT_KEY, bundleEndpoint).build();
     }
 
 }

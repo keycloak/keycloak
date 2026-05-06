@@ -47,13 +47,15 @@ import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testframework.realm.ClientBuilder;
+import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.AdminApiUtil;
+import org.keycloak.testsuite.events.TestEventsListenerProviderFactory;
 import org.keycloak.testsuite.util.ClientManager;
-import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.TokenSignatureUtil;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.LogoutResponse;
@@ -100,7 +102,7 @@ public class ServiceAccountTest extends AbstractKeycloakTest {
     public void addTestRealms(List<RealmRepresentation> testRealms) {
 
         RealmBuilder realm = RealmBuilder.create().name("test")
-                .testEventListener();
+                .eventsListeners(TestEventsListenerProviderFactory.PROVIDER_ID);
 
         ClientRepresentation enabledApp = ClientBuilder.create()
                 .id(KeycloakModelUtils.generateId())
@@ -110,7 +112,7 @@ public class ServiceAccountTest extends AbstractKeycloakTest {
                 .attribute(OIDCConfigAttributes.USE_REFRESH_TOKEN_FOR_CLIENT_CREDENTIALS_GRANT, "true")
                 .build();
 
-        realm.client(enabledApp);
+        realm.clients(enabledApp);
 
         ClientRepresentation enabledAppWithSkipRefreshToken = ClientBuilder.create()
                 .id(KeycloakModelUtils.generateId())
@@ -119,7 +121,7 @@ public class ServiceAccountTest extends AbstractKeycloakTest {
                 .serviceAccountsEnabled(true)
                 .build();
 
-        realm.client(enabledAppWithSkipRefreshToken);
+        realm.clients(enabledAppWithSkipRefreshToken);
 
         ClientRepresentation disabledApp = ClientBuilder.create()
                 .id(KeycloakModelUtils.generateId())
@@ -127,7 +129,7 @@ public class ServiceAccountTest extends AbstractKeycloakTest {
                 .secret("secret1")
                 .build();
 
-        realm.client(disabledApp);
+        realm.clients(disabledApp);
 
         ClientRepresentation secretsWithSpecialCharacterClient = ClientBuilder.create()
             .id(KeycloakModelUtils.generateId())
@@ -136,12 +138,12 @@ public class ServiceAccountTest extends AbstractKeycloakTest {
             .serviceAccountsEnabled(true)
             .build();
 
-        realm.client(secretsWithSpecialCharacterClient);
+        realm.clients(secretsWithSpecialCharacterClient);
 
         UserBuilder defaultUser = UserBuilder.create()
                 .id(KeycloakModelUtils.generateId())
                 .username("test-user@localhost");
-        realm.user(defaultUser);
+        realm.users(defaultUser);
 
         userName = ServiceAccountConstants.SERVICE_ACCOUNT_USER_PREFIX + enabledApp.getClientId();
 
@@ -149,7 +151,7 @@ public class ServiceAccountTest extends AbstractKeycloakTest {
                 .id(KeycloakModelUtils.generateId())
                 .username(userName)
                 .serviceAccountId(enabledApp.getClientId());
-        realm.user(serviceAccountUser);
+        realm.users(serviceAccountUser);
 
         testRealms.add(realm.build());
     }
@@ -230,11 +232,12 @@ public class ServiceAccountTest extends AbstractKeycloakTest {
 
         LogoutResponse logoutResponse = oauth.doLogout(response.getRefreshToken());
         assertTrue(logoutResponse.isSuccess());
-        events.expectLogout(accessToken.getSessionState())
-                .client("service-account-cl-refresh-on")
-                .user(userIdClRefreshOn)
-                .removeDetail(Details.REDIRECT_URI)
-                .assertEvent();
+        EventAssertion.assertSuccess(events.poll())
+                .type(EventType.LOGOUT)
+                .sessionId(accessToken.getSessionState())
+                .clientId("service-account-cl-refresh-on")
+                .userId(userIdClRefreshOn)
+                .withoutDetails(Details.REDIRECT_URI);
 
         response = oauth.doRefreshTokenRequest(response.getRefreshToken());
         assertEquals(400, response.getStatusCode());

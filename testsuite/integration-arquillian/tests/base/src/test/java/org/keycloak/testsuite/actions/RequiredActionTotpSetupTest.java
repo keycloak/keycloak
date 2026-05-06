@@ -43,6 +43,8 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.UserSessionRepresentation;
+import org.keycloak.testframework.events.EventAssertion;
+import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
@@ -57,7 +59,6 @@ import org.keycloak.testsuite.pages.RegisterPage;
 import org.keycloak.testsuite.pages.SetupRecoveryAuthnCodesPage;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.AccountHelper;
-import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.SecondBrowser;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
@@ -211,7 +212,7 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
 
         assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-        events.expectLogin().user(userId).session(authSessionId1).detail(Details.USERNAME, "setuptotp").assertEvent();
+        EventAssertion.expectLoginSuccess(events.poll()).sessionId(authSessionId1).userId(userId).details(Details.USERNAME, "setuptotp");
     }
 
     @Test
@@ -425,12 +426,12 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
         assertEquals(authSessionId1, authSessionId2);
         assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-        EventRepresentation loginEvent = events.expectLogin().session(authSessionId1).assertEvent();
+        EventRepresentation loginEvent = EventAssertion.expectLoginSuccess(events.poll()).sessionId(authSessionId1).getEvent();
 
         AccessTokenResponse tokenResponse = sendTokenRequestAndGetResponse(loginEvent);
         oauth.logoutForm().idTokenHint(tokenResponse.getIdToken()).withRedirect().open();
 
-        events.expectLogout(authSessionId1).assertEvent();
+        EventAssertion.expectLogoutSuccess(events.poll()).sessionId(authSessionId1);
 
         oauth.openLoginForm();
         loginPage.login("test-user@localhost", "password");
@@ -442,7 +443,7 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
             assertEquals("Invalid authenticator code.", loginTotpPage.getInputError());
         } else {
             assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
-            events.expectLogin().assertEvent();
+            EventAssertion.expectLoginSuccess(events.poll());
         }
     }
 
@@ -504,12 +505,12 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
                     .detail(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE)
                     .detail(Details.USERNAME, "setuptotp2").assertEvent();
 
-            EventRepresentation loginEvent = events.expectLogin().user(userId).detail(Details.USERNAME, "setuptotp2").assertEvent();
+            EventRepresentation loginEvent = EventAssertion.expectLoginSuccess(events.poll()).userId(userId).details(Details.USERNAME, "setuptotp2").getEvent();
 
             // Logout
             AccessTokenResponse tokenResponse = sendTokenRequestAndGetResponse(loginEvent);
             oauth.logoutForm().idTokenHint(tokenResponse.getIdToken()).withRedirect().open();
-            events.expectLogout(loginEvent.getSessionId()).user(userId).assertEvent();
+            EventAssertion.expectLogoutSuccess(events.poll()).sessionId(loginEvent.getSessionId()).userId(userId);
 
             setOtpTimeOffset(TimeBasedOTP.DEFAULT_INTERVAL_SECONDS, totp);
 
@@ -526,7 +527,7 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
             // Login with one-time password
             loginTotpPage.login(totp.generateTOTP(totpCode));
 
-            loginEvent = events.expectLogin().user(userId).detail(Details.USERNAME, "setupTotp2").assertEvent();
+            loginEvent = EventAssertion.expectLoginSuccess(events.poll()).userId(userId).details(Details.USERNAME, "setupTotp2").getEvent();
 
             // Remove google authenticator
             Assertions.assertTrue(AccountHelper.deleteTotpAuthentication(managedRealm.admin(), "setupTotp2"));
@@ -556,7 +557,7 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
             assertEquals(sessionId1, sessionId2);
             assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-            events.expectLogin().user(userId).session(sessionId1).detail(Details.USERNAME, "setupTotp2").assertEvent();
+            EventAssertion.expectLoginSuccess(events.poll()).sessionId(sessionId1).userId(userId).details(Details.USERNAME, "setupTotp2");
         } finally {
             setOTPAuthRequirement(AuthenticationExecutionModel.Requirement.CONDITIONAL, AuthenticationExecutionModel.Requirement.ALTERNATIVE);
         }
@@ -566,7 +567,7 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
     public void setupOtpPolicyChangedTotp8Digits() {
         // set policy to 8 digits
         RealmRepresentation realmRep = adminClient.realm("test").toRepresentation();
-        RealmBuilder.edit(realmRep)
+        RealmBuilder.update(realmRep)
                     .otpLookAheadWindow(1)
                     .otpDigits(8)
                     .otpPeriod(30)
@@ -596,12 +597,12 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
         assertEquals(sessionId1, sessionId2);
         assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-        EventRepresentation loginEvent = events.expectLogin().session(sessionId1).assertEvent();
+        EventRepresentation loginEvent = EventAssertion.expectLoginSuccess(events.poll()).sessionId(sessionId1).getEvent();
 
         AccessTokenResponse tokenResponse = sendTokenRequestAndGetResponse(loginEvent);
         oauth.logoutForm().idTokenHint(tokenResponse.getIdToken()).withRedirect().open();
 
-        events.expectLogout(loginEvent.getSessionId()).assertEvent();
+        EventAssertion.expectLogoutSuccess(events.poll()).sessionId(loginEvent.getSessionId());
 
         setOtpTimeOffset(TimeBasedOTP.DEFAULT_INTERVAL_SECONDS, timeBased);
 
@@ -614,11 +615,11 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
 
         assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-        events.expectLogin().assertEvent();
+        EventAssertion.expectLoginSuccess(events.poll());
 
         // Revert
         realmRep = adminClient.realm("test").toRepresentation();
-        RealmBuilder.edit(realmRep)
+        RealmBuilder.update(realmRep)
                 .otpDigits(6);
         adminClient.realm("test").update(realmRep);
     }
@@ -626,7 +627,7 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
     @Test
     public void setupOtpPolicyChangedHotp() {
         RealmRepresentation realmRep = adminClient.realm("test").toRepresentation();
-        RealmBuilder.edit(realmRep)
+        RealmBuilder.update(realmRep)
                     .otpLookAheadWindow(0)
                     .otpDigits(6)
                     .otpPeriod(30)
@@ -656,12 +657,12 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
         assertEquals(sessionId1, sessionId2);
         assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-        EventRepresentation loginEvent = events.expectLogin().session(sessionId1).assertEvent();
+        EventRepresentation loginEvent = EventAssertion.expectLoginSuccess(events.poll()).sessionId(sessionId1).getEvent();
 
         AccessTokenResponse tokenResponse = sendTokenRequestAndGetResponse(loginEvent);
         oauth.logoutForm().idTokenHint(tokenResponse.getIdToken()).withRedirect().open();
 
-        events.expectLogout(loginEvent.getSessionId()).assertEvent();
+        EventAssertion.expectLogoutSuccess(events.poll()).sessionId(loginEvent.getSessionId());
 
         oauth.openLoginForm();
         loginPage.login("test-user@localhost", "password");
@@ -671,15 +672,15 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
 
         assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-        loginEvent = events.expectLogin().assertEvent();
+        loginEvent = EventAssertion.expectLoginSuccess(events.poll()).getEvent();
 
         tokenResponse = sendTokenRequestAndGetResponse(loginEvent);
         oauth.logoutForm().idTokenHint(tokenResponse.getIdToken()).withRedirect().open();
-        events.expectLogout(null).session(AssertEvents.isSessionId()).assertEvent();
+        EventAssertion.expectLogoutSuccess(events.poll()).sessionId(tokenResponse.getSessionState());
 
         // test lookAheadWindow
         realmRep = adminClient.realm("test").toRepresentation();
-        RealmBuilder.edit(realmRep)
+        RealmBuilder.update(realmRep)
                     .otpLookAheadWindow(5)
                     .otpDigits(6)
                     .otpPeriod(30)
@@ -696,11 +697,11 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
 
         assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-        events.expectLogin().assertEvent();
+        EventAssertion.expectLoginSuccess(events.poll());
 
         // Revert
         realmRep = adminClient.realm("test").toRepresentation();
-        RealmBuilder.edit(realmRep)
+        RealmBuilder.update(realmRep)
                 .otpLookAheadWindow(1)
                 .otpDigits(6)
                 .otpPeriod(30)
@@ -728,7 +729,7 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
         UserResource testUser = managedRealm.admin().users().get(findUser("test-user@localhost").getId());
         OAuthClient oauth2 = oauth.newConfig().driver(driver2);
         oauth2.doLogin("test-user@localhost", "password");
-        EventRepresentation event1 = events.expectLogin().assertEvent();
+        EventRepresentation event1 = EventAssertion.expectLoginSuccess(events.poll()).getEvent();
         assertEquals(1, testUser.getUserSessions().size());
 
         // add action to configure totp
@@ -746,9 +747,9 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
         assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
         if (logoutOtherSessions) {
-            events.expectLogout(event1.getSessionId())
-                    .detail(Details.LOGOUT_TRIGGERED_BY_REQUIRED_ACTION, UserModel.RequiredAction.CONFIGURE_TOTP.name())
-                    .assertEvent();
+            EventAssertion.expectLogoutSuccess(events.poll())
+                    .sessionId(event1.getSessionId())
+                    .details(Details.LOGOUT_TRIGGERED_BY_REQUIRED_ACTION, UserModel.RequiredAction.CONFIGURE_TOTP.name());
         }
 
         events.expectRequiredAction(EventType.UPDATE_TOTP)
@@ -759,7 +760,7 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
                 .user(event1.getUserId())
                 .detail(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE)
                 .detail(Details.USERNAME, "test-user@localhost").assertEvent();
-        event2 = events.expectLogin().user(event2.getUserId()).session(event2.getDetails().get(Details.CODE_ID)).detail(Details.USERNAME, "test-user@localhost").assertEvent();
+        event2 = EventAssertion.expectLoginSuccess(events.poll()).sessionId(event2.getDetails().get(Details.CODE_ID)).userId(event2.getUserId()).details(Details.USERNAME, "test-user@localhost").getEvent();
 
         // assert old session is gone or is maintained
         List<UserSessionRepresentation> sessions = testUser.getUserSessions();

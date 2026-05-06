@@ -12,12 +12,12 @@ import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
 import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginPasswordResetPage;
 import org.keycloak.testsuite.pages.ResetOtpPage;
-import org.keycloak.testsuite.util.RealmBuilder;
 
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.After;
@@ -105,7 +105,7 @@ public class ResetOtpTest extends AbstractTestRealmKeycloakTest {
         userRemoveAll.credential(removeAllCredential1);
         userRemoveAll.credential(removeAllCredential2);
 
-        RealmBuilder.edit(testRealm).user(userRemoveNone.build()).user(userRemoveOne.build()).user(userRemoveAll.build());
+        RealmBuilder.update(testRealm).users(userRemoveNone.build()).users(userRemoveOne.build()).users(userRemoveAll.build());
 
         realmResource = adminClient.realm(testRealm.getRealm());
     }

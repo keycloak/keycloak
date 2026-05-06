@@ -71,11 +71,9 @@ import org.keycloak.representations.idm.authorization.TimePolicyRepresentation;
 import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
 import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.GroupBuilder;
-import org.keycloak.testframework.realm.RoleBuilder;
+import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
-import org.keycloak.testsuite.util.RealmBuilder;
-import org.keycloak.testsuite.util.RolesBuilder;
 
 import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
@@ -105,29 +103,24 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
         groupProtocolMapper.setConfig(config);
 
         testRealms.add(RealmBuilder.create().name("authz-test")
-                .roles(RolesBuilder.create()
-                        .realmRole(RoleBuilder.create().name("uma_authorization").build())
-                        .realmRole(RoleBuilder.create().name("role-a").build())
-                        .realmRole(RoleBuilder.create().name("role-b").build())
-                )
-                .group(GroupBuilder.create().name("Group A")
+                .realmRoles("uma_authorization", "role-a", "role-b")
+                .groups(GroupBuilder.create().name("Group A")
                         .subGroups(GroupBuilder.create("Group B").subGroups("Group C", "Group E"))
-                        .subGroups(GroupBuilder.create("Group D"))
-                        .build())
-                .group(GroupBuilder.create().name("Group E").build())
-                .user(UserBuilder.create().username("marta").password("password").roles("uma_authorization", "role-a").groups("Group A"))
-                .user(UserBuilder.create().username("alice").password("password").roles("uma_authorization").groups("/Group A/Group B/Group E"))
-                .user(UserBuilder.create().username("kolo").password("password").roles("uma_authorization").groups("/Group A/Group D"))
-                .user(UserBuilder.create().username("trinity").password("password").roles("uma_authorization").clientRoles("role-mapping-client", "client-role-a"))
-                .user(UserBuilder.create().username("jdoe").password("password").groups("/Group A/Group B", "/Group A/Group D"))
-                .client(ClientBuilder.create().clientId("resource-server-test")
+                        .subGroups(GroupBuilder.create("Group D").realmRoles("role-a")))
+                .groups(GroupBuilder.create().name("Group E"))
+                .users(UserBuilder.create().username("marta").password("password").realmRoles("uma_authorization", "role-a").groups("Group A"))
+                .users(UserBuilder.create().username("alice").password("password").realmRoles("uma_authorization").groups("/Group A/Group B/Group E"))
+                .users(UserBuilder.create().username("kolo").password("password").realmRoles("uma_authorization").groups("/Group A/Group D"))
+                .users(UserBuilder.create().username("trinity").password("password").realmRoles("uma_authorization").clientRoles("role-mapping-client", "client-role-a"))
+                .users(UserBuilder.create().username("jdoe").password("password").groups("/Group A/Group B", "/Group A/Group D"))
+                .clients(ClientBuilder.create().clientId("resource-server-test")
                         .secret("secret")
                         .authorizationServicesEnabled(true)
                         .redirectUris("http://localhost/resource-server-test")
                         .defaultRoles("uma_protection")
                         .directAccessGrantsEnabled()
                         .protocolMappers(groupProtocolMapper))
-                .client(ClientBuilder.create().clientId("role-mapping-client")
+                .clients(ClientBuilder.create().clientId("role-mapping-client")
                         .defaultRoles("client-role-a", "client-role-b"))
                 .build());
     }

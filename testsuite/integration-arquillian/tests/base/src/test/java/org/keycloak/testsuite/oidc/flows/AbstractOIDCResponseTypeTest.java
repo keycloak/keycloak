@@ -24,12 +24,14 @@ import org.keycloak.OAuthErrorException;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
+import org.keycloak.events.EventType;
 import org.keycloak.jose.jws.JWSHeader;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.crypto.HashUtils;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testsuite.AbstractAdminTest;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
@@ -120,7 +122,7 @@ public abstract class AbstractOIDCResponseTypeTest extends AbstractTestRealmKeyc
         Assertions.assertTrue(errorResponse.isRedirected());
         Assertions.assertEquals(errorResponse.getError(), OAuthErrorException.INVALID_REQUEST);
 
-        events.expectLogin().error(Errors.INVALID_REQUEST).user((String) null).session((String) null).clearDetails().assertEvent();
+        EventAssertion.assertError(events.poll()).type(EventType.LOGIN_ERROR).error(Errors.INVALID_REQUEST).userId(null).sessionId(null);
     }
 
     protected void validateNonceNotUsedSuccessExpected() {
@@ -153,7 +155,7 @@ public abstract class AbstractOIDCResponseTypeTest extends AbstractTestRealmKeyc
         Assertions.assertEquals(errorResponse.getError(), OAuthErrorException.UNAUTHORIZED_CLIENT);
         Assertions.assertEquals(errorResponse.getErrorDescription(), "Client is not allowed to initiate browser login with given response_type. Implicit flow is disabled for the client.");
 
-        events.expectLogin().error(Errors.NOT_ALLOWED).user((String) null).session((String) null).clearDetails().assertEvent();
+        EventAssertion.assertError(events.poll()).type(EventType.LOGIN_ERROR).error(Errors.NOT_ALLOWED).userId(null).sessionId(null);
 
         // Revert
         clientManagerBuilder().implicitFlow(true);
@@ -171,7 +173,7 @@ public abstract class AbstractOIDCResponseTypeTest extends AbstractTestRealmKeyc
         Assertions.assertEquals(errorResponse.getError(), OAuthErrorException.UNAUTHORIZED_CLIENT);
         Assertions.assertEquals(errorResponse.getErrorDescription(), "Client is not allowed to initiate browser login with given response_type. Standard flow is disabled for the client.");
 
-        events.expectLogin().error(Errors.NOT_ALLOWED).user((String) null).session((String) null).clearDetails().assertEvent();
+        EventAssertion.assertError(events.poll()).type(EventType.LOGIN_ERROR).error(Errors.NOT_ALLOWED).userId(null).sessionId(null);
 
         // Revert
         clientManagerBuilder().standardFlow(true);
@@ -186,7 +188,9 @@ public abstract class AbstractOIDCResponseTypeTest extends AbstractTestRealmKeyc
         loginPage.login("test-user@localhost", "password");
         Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-        return events.expectLogin().detail(Details.USERNAME, "test-user@localhost").assertEvent();
+        EventRepresentation eventRep = events.poll();
+        EventAssertion.expectLoginSuccess(eventRep).details(Details.USERNAME, "test-user@localhost");
+        return eventRep;
     }
 
     protected EventRepresentation loginUserWithRedirect(String nonce, String redirectUri) {
@@ -200,7 +204,11 @@ public abstract class AbstractOIDCResponseTypeTest extends AbstractTestRealmKeyc
         loginPage.login("test-user@localhost", "password");
         Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-        return events.expectLogin().detail(Details.REDIRECT_URI, redirectUri).detail(Details.USERNAME, "test-user@localhost").assertEvent();
+        EventRepresentation eventRep = events.poll();
+        EventAssertion.expectLoginSuccess(eventRep)
+                .details(Details.REDIRECT_URI, redirectUri)
+                .details(Details.USERNAME, "test-user@localhost");
+        return eventRep;
     }
 
     protected abstract boolean isFragment();

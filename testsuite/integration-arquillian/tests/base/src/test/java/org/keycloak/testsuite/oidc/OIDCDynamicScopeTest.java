@@ -26,6 +26,7 @@ import jakarta.ws.rs.core.Response;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.common.Profile;
 import org.keycloak.events.Details;
+import org.keycloak.events.EventType;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
@@ -35,6 +36,7 @@ import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.ProfileAssume;
@@ -70,7 +72,7 @@ public class OIDCDynamicScopeTest extends OIDCScopeTest {
                 .firstName("John")
                 .lastName("Dynamic")
                 .password("password")
-                .roles("dynamic-scope-role")
+                .realmRoles("dynamic-scope-role")
                 .build();
         testRealm.getUsers().add(user);
 
@@ -78,7 +80,7 @@ public class OIDCDynamicScopeTest extends OIDCScopeTest {
                 .username("JohnNormal")
                 .enabled(true)
                 .password("password")
-                .roles("role-1")
+                .realmRoles("role-1")
                 .build();
         testRealm.getUsers().add(user);
 
@@ -233,18 +235,20 @@ public class OIDCDynamicScopeTest extends OIDCScopeTest {
 
         oauth.openLoginForm();
         oauth.doLogin(username, "password");
-        EventRepresentation loginEvent = events.expectLogin()
-                .user(userId)
-                .assertEvent();
+        EventRepresentation loginEvent = events.poll();
+        EventAssertion.expectLoginSuccess(loginEvent)
+                .userId(userId);
 
         Tokens tokens = sendTokenRequest(loginEvent, userId, "openid email profile " + expectedRoleScopes, "test-app");
         Assert.assertNames(tokens.accessToken.getRealmAccess().getRoles(), expectedRoles);
 
         oauth.doLogout(tokens.refreshToken);
-        events.expectLogout(tokens.idToken.getSessionState())
-                .client("test-app")
-                .user(userId)
-                .removeDetail(Details.REDIRECT_URI).assertEvent();
+        EventAssertion.assertSuccess(events.poll())
+                .type(EventType.LOGOUT)
+                .sessionId(tokens.idToken.getSessionState())
+                .clientId(oauth.getClientId())
+                .userId(userId)
+                .withoutDetails(Details.REDIRECT_URI);
     }
 
 

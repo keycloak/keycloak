@@ -2,6 +2,7 @@ package org.keycloak.tests.common;
 
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
+import org.keycloak.testframework.realm.UserBuilder;
 
 public class BasicRealmWithUserConfig implements RealmConfig {
 
@@ -10,8 +11,7 @@ public class BasicRealmWithUserConfig implements RealmConfig {
 
     @Override
     public RealmBuilder configure(RealmBuilder realm) {
-        realm.addUser("basic-user").password("password").email("basic@localhost").name("First", "Last");
-        return realm;
+        return realm.users(UserBuilder.create("basic-user").password("password").email("basic@localhost").name("First", "Last"));
     }
 
 }

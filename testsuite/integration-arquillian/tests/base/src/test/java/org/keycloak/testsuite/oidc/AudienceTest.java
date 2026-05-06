@@ -35,6 +35,7 @@ import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.admin.ApiUtil;
@@ -131,9 +132,8 @@ public class AudienceTest extends AbstractOIDCScopeTest {
         // Login and check audiences in the token (just accessToken contains it)
         oauth.scope("openid audience-scope");
         oauth.doLogin("john", "password");
-        EventRepresentation loginEvent = events.expectLogin()
-                .user(userId)
-                .assertEvent();
+        EventRepresentation loginEvent = EventAssertion.expectLoginSuccess(events.poll())
+                .userId(userId).getEvent();
         Tokens tokens = sendTokenRequest(loginEvent, userId, "openid profile email audience-scope", "test-app");
 
         assertAudiences(tokens.accessToken, "service-client");
@@ -163,9 +163,8 @@ public class AudienceTest extends AbstractOIDCScopeTest {
         // Login and check audiences in the token
         oauth.scope("openid audience-scope");
         oauth.doLogin("john", "password");
-        EventRepresentation loginEvent = events.expectLogin()
-                .user(userId)
-                .assertEvent();
+        EventRepresentation loginEvent = EventAssertion.expectLoginSuccess(events.poll())
+                .userId(userId).getEvent();
         Tokens tokens = sendTokenRequest(loginEvent, userId, "openid profile email audience-scope", "test-app");
 
         assertAudiences(tokens.accessToken, "http://host/service/ctx1", "http://host/service/ctx2");

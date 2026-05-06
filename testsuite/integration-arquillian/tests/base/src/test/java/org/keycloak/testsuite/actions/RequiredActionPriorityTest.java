@@ -27,6 +27,7 @@ import org.keycloak.models.credential.OTPCredentialModel;
 import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.AdminApiUtil;
@@ -158,7 +159,7 @@ public class RequiredActionPriorityTest extends AbstractTestRealmKeycloakTest {
         // Logged in
         appPage.assertCurrent();
         assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        events.expectLogin().assertEvent();
+        EventAssertion.expectLoginSuccess(events.poll());
     }
 
     @Test
@@ -208,7 +209,7 @@ public class RequiredActionPriorityTest extends AbstractTestRealmKeycloakTest {
         // Logged in
         appPage.assertCurrent();
         assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        events.expectLogin().assertEvent();
+        EventAssertion.expectLoginSuccess(events.poll());
     }
 
     @Test
@@ -259,7 +260,7 @@ public class RequiredActionPriorityTest extends AbstractTestRealmKeycloakTest {
         // Logged in
         appPage.assertCurrent();
         assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        events.expectLogin().assertEvent();
+        EventAssertion.expectLoginSuccess(events.poll());
     }
 
 
@@ -324,7 +325,7 @@ public class RequiredActionPriorityTest extends AbstractTestRealmKeycloakTest {
         // Logged in
         appPage.assertCurrent();
         assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        events.expectLogin().assertEvent();
+        EventAssertion.expectLoginSuccess(events.poll());
     }
 
     @Test
@@ -377,7 +378,7 @@ public class RequiredActionPriorityTest extends AbstractTestRealmKeycloakTest {
         // Logged in
         appPage.assertCurrent();
         assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        events.expectLogin().assertEvent();
+        EventAssertion.expectLoginSuccess(events.poll());
     }
 
     @Test
@@ -418,7 +419,7 @@ public class RequiredActionPriorityTest extends AbstractTestRealmKeycloakTest {
         // Logged in
         appPage.assertCurrent();
         assertThat(appPage.getRequestType(), is(RequestType.AUTH_RESPONSE));
-        events.expectLogin().assertEvent();
+        EventAssertion.expectLoginSuccess(events.poll());
 
     }
 

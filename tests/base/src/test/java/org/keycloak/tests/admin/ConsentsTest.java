@@ -304,7 +304,7 @@ public class ConsentsTest {
                 .isCodeId()
                 .details(Details.USERNAME, userFromUserRealm.getUsername())
                 .details(Details.CONSENT, Details.CONSENT_VALUE_NO_CONSENT_REQUIRED)
-                .details(Details.REDIRECT_URI, "http://127.0.0.1:8500/callback/oauth");
+                .details(Details.REDIRECT_URI, userRealmOAuth.getRedirectUri());
 
         userRealm.updateWithCleanup(r -> r.enabledEventTypes("REFRESH_TOKEN_ERROR"));
         String sessionId = loginEvent.getSessionId();
@@ -451,7 +451,7 @@ public class ConsentsTest {
 
         @Override
         public RealmBuilder configure(RealmBuilder builder) {
-            builder.identityProvider(setUpIdentityProvider());
+            builder.identityProviders(setUpIdentityProvider());
 
             return builder;
         }

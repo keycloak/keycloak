@@ -20,7 +20,9 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 
+import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.NotAuthorizedException;
 import jakarta.ws.rs.POST;
@@ -47,13 +49,19 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.UserProvider;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.authorization.Permission;
 import org.keycloak.util.JsonSerialization;
 
 public class AuthZenResource {
 
-    private static final Response DECISION_FALSE = jakarta.ws.rs.core.Response.ok(new AuthZen.EvaluationResponse(false)).build();
+    private static final Response DECISION_FALSE = Response.ok(new AuthZen.EvaluationResponse(false)).build();
+    private static final Pattern UUID_PATTERN = Pattern.compile("^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$");
+
+    private static final String NAMESPACE_ID = "id:";
+    private static final String NAMESPACE_USERNAME = "username:";
+    private static final String NAMESPACE_EMAIL = "email:";
 
     private final KeycloakSession session;
 
@@ -143,7 +151,7 @@ public class AuthZenResource {
         AuthZen.Subject subject = request.subject();
         Identity identity = switch (subject.type()) {
             case USER -> {
-                UserModel user = session.users().getUserById(realm, subject.id());
+                UserModel user = resolveUserId(realm, subject.id());
                 yield user != null ? new UserModelIdentity(realm, user) : null;
             }
             case CLIENT -> {
@@ -155,6 +163,35 @@ public class AuthZenResource {
             identity = withSubjectProperties(identity, request.subject().properties());
         }
         return identity;
+    }
+
+    private UserModel resolveUserId(RealmModel realm, String subjectId) {
+        UserProvider users = session.users();
+        if (subjectId.startsWith(NAMESPACE_ID)) {
+            String id = extractNamespaceValue(subjectId, NAMESPACE_ID);
+            return users.getUserById(realm, id);
+        } else if (subjectId.startsWith(NAMESPACE_USERNAME)) {
+            String username = extractNamespaceValue(subjectId, NAMESPACE_USERNAME);
+            return users.getUserByUsername(realm, username);
+        } else if (subjectId.startsWith(NAMESPACE_EMAIL)) {
+            if (realm.isDuplicateEmailsAllowed()) {
+                throw new BadRequestException("email namespace cannot be used when duplicate emails are allowed");
+            }
+            String email = extractNamespaceValue(subjectId, NAMESPACE_EMAIL);
+            return users.getUserByEmail(realm, email);
+        } else if (UUID_PATTERN.matcher(subjectId).matches()) {
+            return users.getUserById(realm, subjectId);
+        } else {
+            return users.getUserByUsername(realm, subjectId);
+        }
+    }
+
+    private static String extractNamespaceValue(String subjectId, String namespace) {
+        String value = subjectId.substring(namespace.length());
+        if (value.isEmpty()) {
+            throw new BadRequestException("subject id namespace '" + namespace + "' requires a non-empty value");
+        }
+        return value;
     }
 
     private static Identity withSubjectProperties(Identity delegate, Map<String, Object> properties) {

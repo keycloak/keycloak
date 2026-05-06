@@ -27,4 +27,5 @@ public @interface ClientSecretNotBlank {
 
     Class<? extends Payload>[] payload() default {};
 
+     String[] affectedFieldNames();
 }

@@ -21,9 +21,8 @@ import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
-import org.keycloak.authorization.authzen.AuthZen;
-import org.keycloak.testframework.annotations.InjectClient;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.authzen.client.AuthZenClient;
@@ -31,11 +30,11 @@ import org.keycloak.testframework.authzen.client.AuthZenClient.EvaluationResult;
 import org.keycloak.testframework.authzen.client.annotations.InjectAuthZenClient;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
-import org.keycloak.testframework.realm.ManagedClient;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.util.JsonSerialization;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.TestFactory;
 
@@ -51,35 +50,13 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 @KeycloakIntegrationTest(config = AuthZenServerConfig.class)
 public class AuthZenEvaluationInteropTest {
 
-    // Interop project subject IDs (base64-encoded, too long for Keycloak's VARCHAR(36) ID column)
-    private static final String INTEROP_RICK_ID = "CiRmZDA2MTRkMy1jMzlhLTQ3ODEtYjdiZC04Yjk2ZjVhNTEwMGQSBWxvY2Fs";
-    private static final String INTEROP_MORTY_ID = "CiRmZDE2MTRkMy1jMzlhLTQ3ODEtYjdiZC04Yjk2ZjVhNTEwMGQSBWxvY2Fs";
-    private static final String INTEROP_SUMMER_ID = "CiRmZDI2MTRkMy1jMzlhLTQ3ODEtYjdiZC04Yjk2ZjVhNTEwMGQSBWxvY2Fs";
-    private static final String INTEROP_BETH_ID = "CiRmZDM2MTRkMy1jMzlhLTQ3ODEtYjdiZC04Yjk2ZjVhNTEwMGQSBWxvY2Fs";
-    private static final String INTEROP_JERRY_ID = "CiRmZDQ2MTRkMy1jMzlhLTQ3ODEtYjdiZC04Yjk2ZjVhNTEwMGQSBWxvY2Fs";
-
-    // Keycloak-compatible UUIDs for each user
-    private static final String RICK_ID = "fd0614d3-c39a-4781-b7bd-8b96f5a5100d";
-    private static final String MORTY_ID = "fd1614d3-c39a-4781-b7bd-8b96f5a5100d";
-    private static final String SUMMER_ID = "fd2614d3-c39a-4781-b7bd-8b96f5a5100d";
-    private static final String BETH_ID = "fd3614d3-c39a-4781-b7bd-8b96f5a5100d";
-    private static final String JERRY_ID = "fd4614d3-c39a-4781-b7bd-8b96f5a5100d";
-
-    // Maps interop subject IDs to Keycloak UUIDs
-    private static final Map<String, String> INTEROP_TO_KC_ID = Map.of(
-          INTEROP_RICK_ID, RICK_ID,
-          INTEROP_MORTY_ID, MORTY_ID,
-          INTEROP_SUMMER_ID, SUMMER_ID,
-          INTEROP_BETH_ID, BETH_ID,
-          INTEROP_JERRY_ID, JERRY_ID
-    );
-
+    // Maps interop subject IDs (base64-encoded, used as usernames) to display names for test output
     private static final Map<String, String> USER_NAMES = Map.of(
-          RICK_ID, "rick",
-          MORTY_ID, "morty",
-          SUMMER_ID, "summer",
-          BETH_ID, "beth",
-          JERRY_ID, "jerry"
+          "CiRmZDA2MTRkMy1jMzlhLTQ3ODEtYjdiZC04Yjk2ZjVhNTEwMGQSBWxvY2Fs", "rick",
+          "CiRmZDE2MTRkMy1jMzlhLTQ3ODEtYjdiZC04Yjk2ZjVhNTEwMGQSBWxvY2Fs", "morty",
+          "CiRmZDI2MTRkMy1jMzlhLTQ3ODEtYjdiZC04Yjk2ZjVhNTEwMGQSBWxvY2Fs", "summer",
+          "CiRmZDM2MTRkMy1jMzlhLTQ3ODEtYjdiZC04Yjk2ZjVhNTEwMGQSBWxvY2Fs", "beth",
+          "CiRmZDQ2MTRkMy1jMzlhLTQ3ODEtYjdiZC04Yjk2ZjVhNTEwMGQSBWxvY2Fs", "jerry"
     );
 
     private static final String PDP_CLIENT_ID = "authzen-pdp";
@@ -87,9 +64,6 @@ public class AuthZenEvaluationInteropTest {
 
     @InjectRealm(fromJson = "authzen-interop-realm.json")
     ManagedRealm realm;
-
-    @InjectClient(attachTo = PDP_CLIENT_ID)
-    ManagedClient pdpClient;
 
     @InjectOAuthClient
     OAuthClient oauth;
@@ -117,11 +91,12 @@ public class AuthZenEvaluationInteropTest {
     }
 
     private static String buildTestName(InteropDecision decision) {
-        AuthZen.EvaluationRequest req = decision.request();
-        String userName = USER_NAMES.getOrDefault(req.subject().id(), req.subject().id());
-        String action = req.action().name();
-        String resourceType = req.resource().type();
-        String resourceId = req.resource().id();
+        JsonNode req = decision.request();
+        String subjectId = req.path("subject").path("id").asText();
+        String userName = USER_NAMES.getOrDefault(subjectId, subjectId);
+        String action = req.path("action").path("name").asText();
+        String resourceType = req.path("resource").path("type").asText();
+        String resourceId = req.path("resource").path("id").asText();
         String expected = decision.expected() ? "ALLOW" : "DENY";
         return String.format("%s | %s %s:%s => %s", userName, action, resourceType, resourceId, expected);
     }
@@ -129,29 +104,13 @@ public class AuthZenEvaluationInteropTest {
     private static List<InteropDecision> loadDecisions() throws IOException {
         try (InputStream is = AuthZenEvaluationInteropTest.class.getResourceAsStream(
               "decisions-authorization-api-1_0-01.json")) {
-            com.fasterxml.jackson.databind.ObjectMapper mapper = JsonSerialization.mapper;
-            mapper = mapper.copy().configure(
-                  com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-            InteropDecisions decisions = mapper.readValue(is, InteropDecisions.class);
-            return decisions.evaluation().stream()
-                  .map(AuthZenEvaluationInteropTest::remapSubjectId)
+            JsonNode root = JsonSerialization.mapper.readTree(is);
+            return StreamSupport.stream(root.path("evaluation").spliterator(), false)
+                  .map(node -> new InteropDecision(node.get("request"), node.get("expected").asBoolean()))
                   .toList();
         }
     }
 
-    private static InteropDecision remapSubjectId(InteropDecision decision) {
-        AuthZen.EvaluationRequest req = decision.request();
-        String kcId = INTEROP_TO_KC_ID.get(req.subject().id());
-        if (kcId == null) {
-            return decision;
-        }
-        AuthZen.Subject remapped = new AuthZen.Subject(req.subject().type(), kcId, req.subject().properties());
-        return new InteropDecision(new AuthZen.EvaluationRequest(remapped, req.resource(), req.action(), req.context()), decision.expected());
-    }
-
-    public record InteropDecisions(List<InteropDecision> evaluation) {
-    }
-
-    public record InteropDecision(AuthZen.EvaluationRequest request, boolean expected) {
+    public record InteropDecision(JsonNode request, boolean expected) {
     }
 }

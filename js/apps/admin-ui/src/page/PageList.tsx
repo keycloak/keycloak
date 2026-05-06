@@ -58,13 +58,16 @@ export default function PageList() {
 
   const page = pages?.find((p) => p.id === providerId)!;
 
-  const loader = async () => {
-    const params: ComponentQuery = {
-      parent: realm?.id,
-      type: PAGE_PROVIDER,
-      providerId,
-    };
-    return await adminClient.components.find({ ...params });
+  const loader = {
+    signal: { providerId },
+    loader: async () => {
+      const params: ComponentQuery = {
+        parent: realm?.id,
+        type: PAGE_PROVIDER,
+        providerId,
+      };
+      return await adminClient.components.find({ ...params });
+    },
   };
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({

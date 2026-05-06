@@ -22,7 +22,7 @@ import java.util.stream.Collectors;
 import org.keycloak.VCFormat;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider;
 import org.keycloak.protocol.oid4vc.model.Claim;
-import org.keycloak.representations.idm.ClientScopeRepresentation;
+import org.keycloak.protocol.oid4vc.model.CredentialScopeRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
@@ -54,7 +54,7 @@ public class OID4VCSdJwtPreInstalledNaturalPersonTest extends OID4VCIssuerEndpoi
     @Test
     public void testGetSdJwtConfigFromMetadata() {
         String scopeName = sdJwtTypeNaturalPersonScopeName;
-        ClientScopeRepresentation clientScope = requireExistingClientScope(scopeName);
+        CredentialScopeRepresentation clientScope = requireExistingCredentialScope(scopeName);
         String credentialConfigurationId = clientScope.getAttributes().get(VC_CONFIGURATION_ID);
         String expectedIssuer = testRealm.getBaseUrl();
         runOnServer

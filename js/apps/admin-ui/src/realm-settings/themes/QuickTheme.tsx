@@ -35,21 +35,37 @@ export const QuickTheme = ({ realm, theme }: QuickThemeProps) => {
     const bgimageName =
       "img/bgimage" + bgimage?.name?.substring(bgimage?.name?.lastIndexOf("."));
 
+    const themeNameClean =
+      (realm.themeName ?? "quick-theme")
+        .trim()
+        .toLowerCase()
+        .normalize("NFKD") // decompose accents
+        .replace(/[\u0300-\u036f]/g, "") // remove accents
+        .replace(/[^a-z0-9._-]+/g, "-") // swap unsupported chars with '-'
+        .replace(/-+/g, "-") // swap multiple '-' with single '-'
+        .replace(/^[-._]+|[-._]+$/g, "") || "quick-theme"; // remove any '-' at string[0] or string[len-1]
+
     if (favicon) {
-      zip.file(`theme/quick-theme/common/resources/img/favicon.ico`, favicon);
+      zip.file(
+        `theme/${themeNameClean}/common/resources/img/favicon.ico`,
+        favicon,
+      );
     }
     if (logo) {
-      zip.file(`theme/quick-theme/common/resources/${logoName}`, logo);
+      zip.file(`theme/${themeNameClean}/common/resources/${logoName}`, logo);
     }
     if (bgimage) {
-      zip.file(`theme/quick-theme/common/resources/${bgimageName}`, bgimage);
+      zip.file(
+        `theme/${themeNameClean}/common/resources/${bgimageName}`,
+        bgimage,
+      );
     }
 
     zip.file(
-      "theme/quick-theme/admin/theme.properties",
+      `theme/${themeNameClean}/admin/theme.properties`,
       `
 parent=keycloak.v2
-import=common/quick-theme
+import=common/${themeNameClean}
 
 ${logo ? "logo=" + logoName : ""}
 ${favicon ? "favIcon=/img/favicon.ico" : ""}
@@ -58,10 +74,15 @@ styles=css/theme-styles.css
     );
 
     zip.file(
-      "theme/quick-theme/account/theme.properties",
+      `theme/${themeNameClean}/admin/messages/messages_en.properties`,
+      `theme.${themeNameClean}.admin.description=${realm.themeDescription ?? ""}`,
+    );
+
+    zip.file(
+      `theme/${themeNameClean}/account/theme.properties`,
       `
 parent=keycloak.v3
-import=common/quick-theme
+import=common/${themeNameClean}
 
 ${logo ? "logo=" + logoName : ""}
 ${favicon ? "favIcon=/img/favicon.ico" : ""}
@@ -70,20 +91,30 @@ styles=css/theme-styles.css
     );
 
     zip.file(
-      "theme/quick-theme/login/theme.properties",
+      `theme/${themeNameClean}/account/messages/messages_en.properties`,
+      `theme.${themeNameClean}.account.description=${realm.themeDescription ?? ""}`,
+    );
+
+    zip.file(
+      `theme/${themeNameClean}/login/theme.properties`,
       `
 parent=keycloak.v2
-import=common/quick-theme
+import=common/${themeNameClean}
 
 styles=css/login.css css/theme-styles.css
 `,
     );
 
     zip.file(
+      `theme/${themeNameClean}/login/messages/messages_en.properties`,
+      `theme.${themeNameClean}.login.description=${realm.themeDescription ?? ""}`,
+    );
+
+    zip.file(
       "META-INF/keycloak-themes.json",
       `{
   "themes": [{
-      "name" : "quick-theme",
+      "name" : "${themeNameClean}",
       "types": [ "login", "account", "admin", "common" ]
   }]
 }`,
@@ -93,12 +124,14 @@ styles=css/login.css css/theme-styles.css
       "theme-settings.json",
       JSON.stringify({
         ...styles,
-        logo: logo ? `theme/quick-theme/common/resources/${logoName}` : "",
+        logo: logo
+          ? `theme/${themeNameClean}/common/resources/${logoName}`
+          : "",
         bgimage: bgimage
-          ? `theme/quick-theme/common/resources/${bgimageName}`
+          ? `theme/${themeNameClean}/common/resources/${bgimageName}`
           : "",
         favicon: favicon
-          ? "theme/quick-theme/common/resources/img/favicon.ico"
+          ? `theme/${themeNameClean}/common/resources/img/favicon.ico`
           : "",
       }),
     );
@@ -111,10 +144,13 @@ styles=css/login.css css/theme-styles.css
     const loginCss = (
       await fetch(joinPath(environment.resourceUrl, "/theme/login.css"))
     ).text();
-    zip.file("theme/quick-theme/common/resources/css/styles.css", loginCss);
+    zip.file(
+      `theme/${themeNameClean}/common/resources/css/styles.css`,
+      loginCss,
+    );
 
     zip.file(
-      "theme/quick-theme/common/resources/css/theme-styles.css",
+      `theme/${themeNameClean}/common/resources/css/theme-styles.css`,
       `:root {
         ${bgimage ? `--keycloak-bg-logo-url: url('../${bgimageName}');` : ""}
         ${logo ? `--keycloak-logo-url: url('../${logoName}');` : ""}
@@ -131,7 +167,7 @@ styles=css/login.css css/theme-styles.css
       const url = URL.createObjectURL(content);
       const a = document.createElement("a");
       a.href = url;
-      a.download = fileName || "quick-theme.jar";
+      a.download = fileName || `${themeNameClean}.jar`;
       a.click();
       URL.revokeObjectURL(url);
     });

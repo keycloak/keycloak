@@ -24,6 +24,7 @@ import java.util.stream.Stream;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.DefaultValue;
+import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.FormParam;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.NotFoundException;
@@ -102,15 +103,10 @@ public class OrganizationMemberResource {
         @APIResponse(responseCode = "409", description = "Conflict")
     })
     public Response addMember(String id) {
-        auth.orgs().requireManage();
+        auth.orgs().requireManage(organization);
         id = id.trim().replaceAll("^\"|\"$", ""); // fixes https://github.com/keycloak/keycloak/issues/34401
 
-        UserModel user = session.users().getUserById(realm, id);
-
-        if (user == null) {
-            throw ErrorResponse.error("User does not exist", Status.BAD_REQUEST);
-        }
-
+        UserModel user = getUser(id);
         auth.users().requireManage(user);
 
         try {
@@ -182,6 +178,7 @@ public class OrganizationMemberResource {
     ) {
         auth.users().requireQuery();
 
+        // if a dedicated admin can query, but cannot view (and FGAP is not enabled) - we can return empty list right away to save a roundtrip to the DB
         if (!AdminPermissionsSchema.SCHEMA.isAdminPermissionsEnabled(realm) && !auth.users().canView()) {
             return Stream.empty();
         }
@@ -234,7 +231,7 @@ public class OrganizationMemberResource {
         @APIResponse(responseCode = "403", description = "Forbidden")
     })
     public Response delete(@PathParam("member-id") String memberId) {
-        auth.orgs().requireManage();
+        auth.orgs().requireManage(organization);
         if (StringUtil.isBlank(memberId)) {
             throw ErrorResponse.error("id cannot be null", Status.BAD_REQUEST);
         }
@@ -276,6 +273,11 @@ public class OrganizationMemberResource {
 
         UserModel member = organization == null ? getUser(memberId) : getMember(memberId);
         auth.users().requireView(member);
+
+        // if a dedicated admin can query, but cannot view (and FGAP is not enabled) - we can return empty list right away to save a roundtrip to the DB
+        if (!AdminPermissionsSchema.SCHEMA.isAdminPermissionsEnabled(realm) && !auth.orgs().canView()) {
+            return Stream.empty();
+        }
 
         return provider.getByMember(member)
                 .map(model -> ModelToRepresentation.toRepresentation(model, briefRepresentation));
@@ -323,6 +325,7 @@ public class OrganizationMemberResource {
     public Long count() {
         auth.users().requireQuery();
 
+        // if a dedicated admin can query, but cannot view (and FGAP is not enabled) - we can return 0L right away to save a roundtrip to the DB
         if (!AdminPermissionsSchema.SCHEMA.isAdminPermissionsEnabled(realm) && !auth.users().canView()) {
             return 0L;
         }
@@ -334,7 +337,7 @@ public class OrganizationMemberResource {
         UserModel member = provider.getMemberById(organization, id);
 
         if (member == null) {
-            throw new NotFoundException();
+            throw (auth.users().canQuery()) ? new NotFoundException() : new ForbiddenException();
         }
 
         return member;
@@ -344,7 +347,7 @@ public class OrganizationMemberResource {
         UserModel user = session.users().getUserById(realm, id);
 
         if (user == null) {
-            throw new NotFoundException();
+            throw (auth.users().canQuery()) ? new NotFoundException() : new ForbiddenException();
         }
 
         return user;

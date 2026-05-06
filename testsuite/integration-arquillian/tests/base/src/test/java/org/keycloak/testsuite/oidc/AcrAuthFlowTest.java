@@ -29,6 +29,7 @@ import org.keycloak.admin.client.Keycloak;
 import org.keycloak.authentication.authenticators.browser.OTPFormAuthenticatorFactory;
 import org.keycloak.authentication.authenticators.browser.UsernamePasswordFormFactory;
 import org.keycloak.events.Details;
+import org.keycloak.events.EventType;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.Constants;
@@ -47,6 +48,7 @@ import org.keycloak.services.clientpolicy.condition.AcrCondition;
 import org.keycloak.services.clientpolicy.condition.AcrConditionFactory;
 import org.keycloak.services.clientpolicy.executor.AuthenticationFlowSelectorExecutor;
 import org.keycloak.services.clientpolicy.executor.AuthenticationFlowSelectorExecutorFactory;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginTotpPage;
@@ -445,10 +447,12 @@ public class AcrAuthFlowTest extends AbstractOIDCScopeTest{
     private void logout(String userId, Tokens tokens){
         // Logout
         oauth.doLogout(tokens.refreshToken);
-        events.expectLogout(tokens.idToken.getSessionState())
-                .client(CLIENT_ID)
-                .user(userId)
-                .removeDetail(Details.REDIRECT_URI).assertEvent();
+        EventAssertion.assertSuccess(events.poll())
+                .type(EventType.LOGOUT)
+                .sessionId(tokens.idToken.getSessionState())
+                .clientId(CLIENT_ID)
+                .userId(userId)
+                .withoutDetails(Details.REDIRECT_URI);
     }
 
     /**
@@ -479,9 +483,8 @@ public class AcrAuthFlowTest extends AbstractOIDCScopeTest{
      * @return The tokens from a successful login
      */
     private Tokens assertLoginWithAcr(String userId, String expectedAcr){
-        EventRepresentation loginEvent = events.expectLogin()
-                .user(userId)
-                .assertEvent();
+        EventRepresentation loginEvent = EventAssertion.expectLoginSuccess(events.poll())
+                .userId(userId).getEvent();
 
         Tokens tokens = sendTokenRequest(loginEvent, userId, "openid", CLIENT_ID);
         assertAcr(tokens.idToken, expectedAcr);

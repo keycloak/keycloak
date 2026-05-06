@@ -37,6 +37,7 @@ import org.keycloak.common.util.UriUtils;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.organization.protocol.mappers.oidc.OrganizationMembershipMapper;
+import org.keycloak.organization.utils.Organizations;
 import org.keycloak.protocol.ProtocolMapperUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
@@ -50,6 +51,7 @@ import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.FederatedIdentityRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.MemberRepresentation;
+import org.keycloak.representations.idm.OrganizationDomainRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -72,6 +74,7 @@ import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
@@ -88,6 +91,7 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
     public void onBefore() {
         setMapperConfig(ProtocolMapperUtils.MULTIVALUED, null);
         setMapperConfig(OIDCAttributeMapperHelper.JSON_TYPE, null);
+        setMapperConfig(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME, null);
     }
 
     @Test
@@ -1643,6 +1647,85 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
         assertThat(orgClaims.get("id"), not(equalTo("custom-id-value")));
     }
 
+    @Test
+    public void testDomainClaim() {
+        OrganizationRepresentation orgA = createOrganization("orga", true);
+        OrganizationResource organization = managedRealm.admin().organizations().get(orgA.getId());
+        OrganizationDomainRepresentation domain = orgA.getDomains().iterator().next();
+        MemberRepresentation member = addMember(organization, "member@" + domain.getName());
+
+        domain.setName("*." + domain.getName());
+        organization.update(orgA).close();
+
+        setMapperConfig(OrganizationMembershipMapper.ADD_ORGANIZATION_DOMAIN, Boolean.TRUE.toString());
+        setMapperConfig(OIDCAttributeMapperHelper.JSON_TYPE, "JSON");
+        getCleanup().addCleanup(() -> {
+            setMapperConfig(OrganizationMembershipMapper.ADD_ORGANIZATION_DOMAIN, Boolean.FALSE.toString());
+            setMapperConfig(OIDCAttributeMapperHelper.JSON_TYPE, "String");
+        });
+        oauth.client("broker-app", KcOidcBrokerConfiguration.CONSUMER_BROKER_APP_SECRET);
+        String orgScope = "organization";
+        oauth.scope(orgScope);
+        loginPage.open(bc.consumerRealmName());
+        loginPage.loginUsername(member.getEmail());
+        loginPage.login(memberPassword);
+        String code = oauth.parseLoginResponse().getCode();
+        AccessTokenResponse response = oauth.doAccessTokenRequest(code);
+        AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
+        assertThat(accessToken.getOtherClaims().keySet(), hasItem(OAuth2Constants.ORGANIZATION));
+        Map<String, Map<String, String>> organizations = (Map<String, Map<String, String>>) accessToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION);
+        assertThat(organizations.keySet(), hasItem(orgA.getAlias()));
+        Map<String, String> orgClaims = organizations.get(orgA.getAlias());
+        assertThat(orgClaims.get("domain"), is(domain.getName()));
+
+        String memberEmailDomain = Organizations.getEmailDomain(this.memberEmail);
+        memberEmailDomain = "sub." + memberEmailDomain;
+        member.setEmail("test@" + memberEmailDomain);
+        managedRealm.admin().users().get(member.getId()).update(new UserRepresentation(member));
+        orgA.addDomain(new OrganizationDomainRepresentation(memberEmailDomain));
+        organization.update(orgA).close();
+
+        managedRealm.admin().users().get(member.getId()).logout();
+        loginPage.open(bc.consumerRealmName());
+        loginPage.loginUsername(member.getEmail());
+        loginPage.login(memberPassword);
+        code = oauth.parseLoginResponse().getCode();
+        response = oauth.doAccessTokenRequest(code);
+        accessToken = oauth.verifyToken(response.getAccessToken());
+        assertThat(accessToken.getOtherClaims().keySet(), hasItem(OAuth2Constants.ORGANIZATION));
+        organizations = (Map<String, Map<String, String>>) accessToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION);
+        assertThat(organizations.keySet(), hasItem(orgA.getAlias()));
+        orgClaims = organizations.get(orgA.getAlias());
+        assertThat(orgClaims.get("domain"), is(memberEmailDomain));
+
+        memberEmailDomain = Organizations.getEmailDomain(member.getEmail());
+        member.setEmail("test@deep." + memberEmailDomain);
+        managedRealm.admin().users().get(member.getId()).update(new UserRepresentation(member));
+        orgA.addDomain(new OrganizationDomainRepresentation("*." + memberEmailDomain));
+        organization.update(orgA).close();
+
+        managedRealm.admin().users().get(member.getId()).logout();
+        loginPage.open(bc.consumerRealmName());
+        loginPage.loginUsername(member.getEmail());
+        loginPage.login(memberPassword);
+        code = oauth.parseLoginResponse().getCode();
+        response = oauth.doAccessTokenRequest(code);
+        accessToken = oauth.verifyToken(response.getAccessToken());
+        assertThat(accessToken.getOtherClaims().keySet(), hasItem(OAuth2Constants.ORGANIZATION));
+        organizations = (Map<String, Map<String, String>>) accessToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION);
+        assertThat(organizations.keySet(), hasItem(orgA.getAlias()));
+        orgClaims = organizations.get(orgA.getAlias());
+        assertThat(orgClaims.get("domain"), is("*." + memberEmailDomain));
+
+        response = oauth.doRefreshTokenRequest(response.getRefreshToken());
+        accessToken = oauth.verifyToken(response.getAccessToken());
+        assertThat(accessToken.getOtherClaims().keySet(), hasItem(OAuth2Constants.ORGANIZATION));
+        organizations = (Map<String, Map<String, String>>) accessToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION);
+        assertThat(organizations.keySet(), hasItem(orgA.getAlias()));
+        orgClaims = organizations.get(orgA.getAlias());
+        assertThat(orgClaims.get("domain"), is("*." + memberEmailDomain));
+    }
+
     private AccessTokenResponse assertSuccessfulCodeGrant() {
        return assertSuccessfulCodeGrant(oauth);
     }
@@ -1689,6 +1772,25 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
         assertThat(organizations.contains(org.getAlias()), is(true));
         refreshToken = oauth.parseRefreshToken(response.getRefreshToken());
         assertThat(refreshToken.getScope(), containsString(orgScope));
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void testCustomClaimName() throws Exception {
+        OrganizationResource org = managedRealm.admin().organizations().get(createOrganization("acme").getId());
+        addMember(org);
+
+        setMapperConfig(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME, "my_orgs");
+
+        oauth.client("direct-grant", "password");
+        oauth.scope("openid organization");
+        AccessTokenResponse response = oauth.doPasswordGrantRequest(memberEmail, memberPassword);
+
+        AccessToken token = TokenVerifier.create(response.getAccessToken(), AccessToken.class).getToken();
+
+        assertThat(token.getOtherClaims(), not(hasKey(OAuth2Constants.ORGANIZATION)));
+        assertThat(token.getOtherClaims(), hasKey("my_orgs"));
+        assertThat(token.getOtherClaims().get("my_orgs"), notNullValue());
     }
 
     private void assertResponseMissingOrganizationScopeAndClaims(AccessTokenResponse response) {

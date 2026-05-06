@@ -51,6 +51,9 @@ import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.events.EventAssertion;
+import org.keycloak.testframework.events.EventMatchers;
+import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AbstractChangeImportedUserPasswordsTest;
 import org.keycloak.testsuite.AssertEvents;
@@ -70,10 +73,10 @@ import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.testsuite.util.ContainerAssume;
 import org.keycloak.testsuite.util.InfinispanTestTimeServiceRule;
 import org.keycloak.testsuite.util.Matchers;
-import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.TokenSignatureUtil;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
+import org.keycloak.testsuite.util.runonserver.RunHelpers;
 
 import org.apache.commons.lang3.RandomStringUtils;
 import org.hamcrest.MatcherAssert;
@@ -131,10 +134,10 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
         clientRoles.put("realm-management", Arrays.asList("realm-admin"));
         admin.setClientRoles(clientRoles);
 
-        RealmBuilder.edit(testRealm)
-                    .user(user)
-                    .user(user2)
-                    .user(admin);
+        RealmBuilder.update(testRealm)
+                    .users(user)
+                    .users(user2)
+                    .users(admin);
     }
 
     @Rule
@@ -245,7 +248,7 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
             loginPage.assertCurrent();
             loginPage.login("login-test", getPassword("login-test"));
 
-            events.expectLogin().user(userId).detail(OAuth2Constants.REDIRECT_URI, longRedirectUri).assertEvent();
+            EventAssertion.expectLoginSuccess(events.poll()).userId(userId).details(Details.REDIRECT_URI, longRedirectUri);
         }
     }
 
@@ -262,17 +265,17 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
         Assertions.assertEquals("Invalid username or password.", loginPage.getUsernameInputError());
         assertNull(loginPage.getPasswordInputError());
 
-        events.expectLogin().user(user2Id).session((String) null).error("invalid_user_credentials")
-                .detail(Details.USERNAME, "login-test2")
-                .removeDetail(Details.CONSENT)
-                .assertEvent();
+        EventAssertion.expectLoginError(events.poll()).userId(user2Id).sessionId(null).error("invalid_user_credentials")
+                .details(Details.USERNAME, "login-test2")
+                .details(Details.REDIRECT_URI, oauth.getRedirectUri())
+                .withoutDetails(Details.CONSENT);
 
         loginPage.login("login-test", getPassword("login-test"));
 
         Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
         Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
 
-        events.expectLogin().user(userId).detail(Details.USERNAME, "login-test").assertEvent();
+        EventAssertion.expectLoginSuccess(events.poll()).userId(userId).details(Details.USERNAME, "login-test");
     }
 
     @Test
@@ -289,10 +292,10 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
         Assertions.assertEquals("Invalid username or password.", loginPage.getUsernameInputError());
         assertNull(loginPage.getPasswordInputError());
 
-        events.expectLogin().user(userId).session((String) null).error("invalid_user_credentials")
-                .detail(Details.USERNAME, "login-test")
-                .removeDetail(Details.CONSENT)
-                .assertEvent();
+        EventAssertion.expectLoginError(events.poll()).userId(userId).sessionId(null).error("invalid_user_credentials")
+                .details(Details.USERNAME, "login-test")
+                .details(Details.REDIRECT_URI, oauth.getRedirectUri())
+                .withoutDetails(Details.CONSENT);
     }
 
     @Test
@@ -309,10 +312,10 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
         Assertions.assertEquals("Invalid username or password.", loginPage.getUsernameInputError());
         assertNull(loginPage.getPasswordInputError());
 
-        events.expectLogin().user(userId).session((String) null).error("invalid_user_credentials")
-                .detail(Details.USERNAME, "login-test")
-                .removeDetail(Details.CONSENT)
-                .assertEvent();
+        EventAssertion.expectLoginError(events.poll()).userId(userId).sessionId(null).error("invalid_user_credentials")
+                .details(Details.USERNAME, "login-test")
+                .details(Details.REDIRECT_URI, oauth.getRedirectUri())
+                .withoutDetails(Details.CONSENT);
     }
 
     private void setUserEnabled(String id, boolean enabled) {
@@ -338,10 +341,10 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
             // KEYCLOAK-2024
             Assertions.assertEquals("Invalid username or password.", loginPage.getInputError());
 
-            events.expectLogin().user(userId).session((String) null).error("invalid_user_credentials")
-                    .detail(Details.USERNAME, "login-test")
-                    .removeDetail(Details.CONSENT)
-                    .assertEvent();
+            EventAssertion.expectLoginError(events.poll()).userId(userId).sessionId(null).error("invalid_user_credentials")
+                    .details(Details.USERNAME, "login-test")
+                    .details(Details.REDIRECT_URI, oauth.getRedirectUri())
+                    .withoutDetails(Details.CONSENT);
         } finally {
             setUserEnabled(userId, true);
         }
@@ -364,10 +367,10 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
             // KEYCLOAK-2024
             Assertions.assertEquals("Account is disabled, contact your administrator.", loginPage.getError());
 
-            events.expectLogin().user(userId).session((String) null).error("user_disabled")
-                    .detail(Details.USERNAME, "login-test")
-                    .removeDetail(Details.CONSENT)
-                    .assertEvent();
+            EventAssertion.expectLoginError(events.poll()).userId(userId).sessionId(null).error("user_disabled")
+                    .details(Details.USERNAME, "login-test")
+                    .details(Details.REDIRECT_URI, oauth.getRedirectUri())
+                    .withoutDetails(Details.CONSENT);
         } finally {
             setUserEnabled(userId, true);
         }
@@ -411,17 +414,17 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
 
         Assertions.assertEquals("Invalid username or password.", loginPage.getInputError());
 
-        events.expectLogin().user((String) null).session((String) null).error("user_not_found")
-                .detail(Details.USERNAME, "invalid")
-                .removeDetail(Details.CONSENT)
-                .assertEvent();
+        EventAssertion.expectLoginError(events.poll()).userId(null).sessionId(null).error("user_not_found")
+                .details(Details.USERNAME, "invalid")
+                .details(Details.REDIRECT_URI, oauth.getRedirectUri())
+                .withoutDetails(Details.CONSENT);
 
         loginPage.login("login-test", getPassword("login-test"));
 
         Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
         Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
 
-        events.expectLogin().user(userId).detail(Details.USERNAME, "login-test").assertEvent();
+        EventAssertion.expectLoginSuccess(events.poll()).userId(userId).details(Details.USERNAME, "login-test");
     }
 
     @Test
@@ -433,9 +436,9 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
 
         Assertions.assertEquals("Invalid username or password.", loginPage.getInputError());
 
-        events.expectLogin().user((String) null).session((String) null).error("user_not_found")
-                .removeDetail(Details.CONSENT)
-                .assertEvent();
+        EventAssertion.expectLoginError(events.poll()).userId(null).sessionId(null).error("user_not_found")
+                .details(Details.REDIRECT_URI, oauth.getRedirectUri())
+                .withoutDetails(Details.CONSENT);
     }
 
     @Test
@@ -447,7 +450,7 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
         Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
         Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
 
-        events.expectLogin().user(userId).detail(Details.USERNAME, "login@test.com").assertEvent();
+        EventAssertion.expectLoginSuccess(events.poll()).userId(userId).details(Details.USERNAME, "login@test.com");
     }
 
     @Test
@@ -458,7 +461,7 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
         Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
         Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
 
-        events.expectLogin().user(userId).detail(Details.USERNAME, "login-test").assertEvent();
+        EventAssertion.expectLoginSuccess(events.poll()).userId(userId).details(Details.USERNAME, "login-test");
     }
 
     @Test
@@ -471,7 +474,7 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
         Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
         Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
 
-        events.expectLogin().user(userId).detail(Details.USERNAME, "login-test").assertEvent();
+        EventAssertion.expectLoginSuccess(events.poll()).userId(userId).details(Details.USERNAME, "login-test");
 
         driver.navigate().to(getAuthServerContextRoot() + "/auth/realms/test/");
         String keycloakIdentity = driver.manage().getCookieNamed("KEYCLOAK_IDENTITY").getValue();
@@ -509,7 +512,7 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
         Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
         Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
 
-        events.expectLogin().user(userId).detail(Details.USERNAME, "login-test").assertEvent();
+        EventAssertion.expectLoginSuccess(events.poll()).userId(userId).details(Details.USERNAME, "login-test");
     }
 
     @Test
@@ -520,7 +523,7 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
         Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
         Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
 
-        events.expectLogin().user(userId).assertEvent();
+        EventAssertion.expectLoginSuccess(events.poll()).userId(userId);
     }
 
     private void setPasswordPolicy(String policy) {
@@ -556,7 +559,7 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
             String pageSource = driver.getPageSource();
             assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType(), "bad expectation, on page: " + currentUrl);
 
-            events.expectLogin().user(userId).detail(Details.USERNAME, "login-test").assertEvent();
+            EventAssertion.expectLoginSuccess(events.poll()).userId(userId).details(Details.USERNAME, "login-test");
 
         } finally {
             setPasswordPolicy(null);
@@ -581,7 +584,7 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
 
             setTimeOffset(0);
 
-            events.expectLogin().user(userId).detail(Details.USERNAME, "login-test").assertEvent();
+            EventAssertion.expectLoginSuccess(events.poll()).userId(userId).details(Details.USERNAME, "login-test");
         } finally {
             setPasswordPolicy(null);
         }
@@ -597,7 +600,7 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
 
         setTimeOffset(0);
 
-        events.expectLogin().user(userId).detail(Details.USERNAME, "login-test").assertEvent().getSessionId();
+        EventAssertion.expectLoginSuccess(events.poll()).userId(userId).details(Details.USERNAME, "login-test");
     }
 
     @Test
@@ -610,7 +613,7 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
         Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
         Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
 
-        events.expectLogin().user(userId).detail(Details.USERNAME, "login-test").assertEvent();
+        EventAssertion.expectLoginSuccess(events.poll()).userId(userId).details(Details.USERNAME, "login-test");
     }
 
     @Test
@@ -621,7 +624,7 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
         Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
         Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
 
-        events.expectLogin().user(userId).assertEvent();
+        EventAssertion.expectLoginSuccess(events.poll()).userId(userId);
     }
 
     private void setRememberMe(boolean enabled) {
@@ -649,14 +652,13 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
 
             Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
             Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
-            EventRepresentation loginEvent = events.expectLogin().user(userId)
-                                                   .detail(Details.USERNAME, "login-test")
-                                                   .detail(Details.REMEMBER_ME, "true")
-                                                   .assertEvent();
+            EventRepresentation loginEvent = EventAssertion.expectLoginSuccess(events.poll()).userId(userId)
+                                                   .details(Details.USERNAME, "login-test")
+                                                   .details(Details.REMEMBER_ME, "true").getEvent();
             String sessionId = loginEvent.getSessionId();
 
             // Expire session
-            testingClient.testing().removeUserSession("test", sessionId);
+            runOnServer.run(RunHelpers.removeUserSession("test", sessionId));
 
             // Assert rememberMe checked and username/email prefilled
             oauth.openLoginForm();
@@ -687,9 +689,8 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
 
         Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
         Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
-        EventRepresentation loginEvent = events.expectLogin().user(userId)
-                .detail(Details.USERNAME, "login-test")
-                .assertEvent();
+        EventRepresentation loginEvent = EventAssertion.expectLoginSuccess(events.poll()).userId(userId)
+                .details(Details.USERNAME, "login-test").getEvent();
         // check remember me is not set although it was sent in the form data
         assertNull(loginEvent.getDetails().get(Details.REMEMBER_ME));
     }
@@ -709,14 +710,13 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
 
             Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
             Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
-            EventRepresentation loginEvent = events.expectLogin().user(userId)
-                                                   .detail(Details.USERNAME, "login-test")
-                                                   .detail(Details.REMEMBER_ME, "true")
-                                                   .assertEvent();
+            EventRepresentation loginEvent = EventAssertion.expectLoginSuccess(events.poll()).userId(userId)
+                                                   .details(Details.USERNAME, "login-test")
+                                                   .details(Details.REMEMBER_ME, "true").getEvent();
             String sessionId = loginEvent.getSessionId();
 
             // Expire session
-            testingClient.testing().removeUserSession("test", sessionId);
+            runOnServer.run(RunHelpers.removeUserSession("test", sessionId));
 
             // Assert rememberMe checked and username/email prefilled
             oauth.openLoginForm();
@@ -728,11 +728,10 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
             loginPage.login("login-test", getPassword("login-test"));
 
             // Expire session
-            loginEvent = events.expectLogin().user(userId)
-                                                   .detail(Details.USERNAME, "login-test")
-                                                   .assertEvent();
+            loginEvent = EventAssertion.expectLoginSuccess(events.poll()).userId(userId)
+                                                   .details(Details.USERNAME, "login-test").getEvent();
             sessionId = loginEvent.getSessionId();
-            testingClient.testing().removeUserSession("test", sessionId);
+            runOnServer.run(RunHelpers.removeUserSession("test", sessionId));
 
             // Assert rememberMe not checked nor username/email prefilled
             oauth.openLoginForm();
@@ -756,14 +755,13 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
 
             Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
             Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
-            EventRepresentation loginEvent = events.expectLogin().user(userId)
-                                                   .detail(Details.USERNAME, "login@test.com")
-                                                   .detail(Details.REMEMBER_ME, "true")
-                                                   .assertEvent();
+            EventRepresentation loginEvent = EventAssertion.expectLoginSuccess(events.poll()).userId(userId)
+                                                   .details(Details.USERNAME, "login@test.com")
+                                                   .details(Details.REMEMBER_ME, "true").getEvent();
             String sessionId = loginEvent.getSessionId();
 
             // Expire session
-            testingClient.testing().removeUserSession("test", sessionId);
+            runOnServer.run(RunHelpers.removeUserSession("test", sessionId));
 
             // Assert rememberMe checked and username/email prefilled
             oauth.openLoginForm();
@@ -790,10 +788,9 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
 
             Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
             Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
-            events.expectLogin().user(userId)
-                    .detail(Details.USERNAME, "login@test.com")
-                    .detail(Details.REMEMBER_ME, "true")
-                    .assertEvent();
+            EventAssertion.expectLoginSuccess(events.poll()).userId(userId)
+                    .details(Details.USERNAME, "login@test.com")
+                    .details(Details.REMEMBER_ME, "true");
 
             AccessTokenResponse response = oauth.accessTokenRequest(oauth.parseLoginResponse().getCode()).send();
 
@@ -828,8 +825,7 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
         Assertions.assertEquals("Your login attempt timed out. Login will start from the beginning.", loginPage.getError());
         setTimeOffset(0);
 
-        events.expectLogin().user((String) null).session((String) null).error(Errors.EXPIRED_CODE).clearDetails()
-                .assertEvent();
+        EventAssertion.assertError(events.poll()).type(EventType.LOGIN_ERROR).userId(null).sessionId(null).error(Errors.EXPIRED_CODE);
     }
 
     // KEYCLOAK-1037
@@ -846,9 +842,8 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
 
         setTimeOffset(0);
 
-        events.expectLogin().user((String) null).session((String) null).error(Errors.EXPIRED_CODE).clearDetails()
-                .detail(Details.RESTART_AFTER_TIMEOUT, "true")
-                .assertEvent();
+        EventAssertion.assertError(events.poll()).type(EventType.LOGIN_ERROR).userId(null).sessionId(null).error(Errors.EXPIRED_CODE)
+                .details(Details.RESTART_AFTER_TIMEOUT, "true");
     }
 
     @Test
@@ -862,7 +857,7 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
             oauth.openLoginForm();
             loginPage.login("login@test.com", getPassword("login-test"));
 
-            events.expectLogin().user(userId).assertEvent();
+            EventAssertion.expectLoginSuccess(events.poll()).userId(userId);
 
             // wait for a timeout
             setTimeOffset(6);
@@ -870,7 +865,7 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
             oauth.openLoginForm();
             loginPage.login("login@test.com", getPassword("login-test"));
 
-            events.expectLogin().user(userId).assertEvent();
+            EventAssertion.expectLoginSuccess(events.poll()).userId(userId);
         }
     }
 
@@ -955,7 +950,7 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
         loginPage.login("test-user@localhost", getPassword("test-user@localhost"));
         appPage.assertCurrent();
 
-        events.expectLogin().detail(Details.USERNAME, "test-user@localhost").assertEvent();
+        EventAssertion.expectLoginSuccess(events.poll()).details(Details.USERNAME, "test-user@localhost");
     }
 
     @Test
@@ -972,7 +967,7 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
         loginPage.login("test-user@localhost", getPassword("test-user@localhost"));
         appPage.assertCurrent();
 
-        events.expectLogin().detail(Details.USERNAME, "test-user@localhost").assertEvent();
+        EventAssertion.expectLoginSuccess(events.poll()).details(Details.USERNAME, "test-user@localhost");
     }
 
     @Test
@@ -1014,7 +1009,7 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
             loginPage.login("test-user@localhost", getPassword("test-user@localhost"));
 
             // sucessful login - app page should be on display.
-            events.expectLogin().detail(Details.USERNAME, "test-user@localhost").assertEvent();
+            EventAssertion.expectLoginSuccess(events.poll()).details(Details.USERNAME, "test-user@localhost");
             appPage.assertCurrent();
 
             // expire idle timeout using the timeout window.
@@ -1042,7 +1037,7 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
             loginPage.login("test-user@localhost", getPassword("test-user@localhost"));
 
             // sucessful login - app page should be on display.
-            events.expectLogin().detail(Details.USERNAME, "test-user@localhost").assertEvent();
+            EventAssertion.expectLoginSuccess(events.poll()).details(Details.USERNAME, "test-user@localhost");
             appPage.assertCurrent();
 
             // expire the max lifespan.
@@ -1077,7 +1072,7 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
 
         oauth.scope("dynamic:scope");
         oauth.doLogin("login@test.com", getPassword("login-test"));
-        events.expectLogin().user(userId).assertEvent();
+        EventAssertion.expectLoginSuccess(events.poll()).userId(userId);
     }
 
     @Test
@@ -1087,7 +1082,7 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
             oauth.openLoginForm();
             loginPage.login("test-user@localhost", getPassword("test-user@localhost"));
             Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
-            events.expectLogin().assertEvent();
+            EventAssertion.expectLoginSuccess(events.poll());
         } finally {
             testingClient.enableFeature(Profile.Feature.WEB_AUTHN);
         }
@@ -1098,7 +1093,7 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
         oauth.openLoginForm();
         loginPage.login("test-user@localhost", getPassword("test-user@localhost"));
         Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        events.expectLogin().assertEvent();
+        EventAssertion.expectLoginSuccess(events.poll());
 
         UsersResource users = adminClient.realm("test").users();
         UserRepresentation user = users.search("test-user@localhost").get(0);
@@ -1135,7 +1130,7 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
         String authSessionId = decodedAuthSessionId.substring(0, decodedAuthSessionId.indexOf("."));
         String signature = decodedAuthSessionId.substring(decodedAuthSessionId.indexOf(".") + 1);
         Assertions.assertNotNull(authSessionId);
-        MatcherAssert.assertThat(authSessionId, AssertEvents.isSessionId());
+        MatcherAssert.assertThat(authSessionId, EventMatchers.isSessionId());
         Assertions.assertNotNull(signature);
 
         testingClient.server().run(session-> {

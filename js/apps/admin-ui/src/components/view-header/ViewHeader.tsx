@@ -45,6 +45,7 @@ export type ViewHeaderProps = {
   helpTextKey?: string;
   isReadOnly?: boolean;
   actionDropdownTitle?: string;
+  noTranslate?: boolean;
 };
 
 export type ViewHeaderBadge = {
@@ -71,6 +72,7 @@ export const ViewHeader = ({
   helpTextKey,
   isReadOnly = false,
   actionDropdownTitle = "action",
+  noTranslate = false,
 }: ViewHeaderProps) => {
   const { t, i18n } = useTranslation();
   const { enabled } = useHelp();
@@ -100,7 +102,9 @@ export const ViewHeader = ({
                     component="h1"
                     data-testid="view-header"
                   >
-                    {i18n.exists(titleKey) ? t(titleKey) : titleKey}
+                    {noTranslate || !i18n.exists(titleKey)
+                      ? titleKey
+                      : t(titleKey)}
                   </Text>
                 </TextContent>
               </LevelItem>

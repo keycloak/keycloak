@@ -23,6 +23,7 @@ import java.util.stream.Stream;
 
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
@@ -97,7 +98,7 @@ public class OrganizationInvitationResource {
     }
 
     public Response inviteUser(String email, String firstName, String lastName) {
-        auth.orgs().requireManage();
+        auth.orgs().requireManage(organization);
 
         if (!organization.isEnabled()) {
             throw ErrorResponse.error("Organization is disabled", Status.BAD_REQUEST);
@@ -147,7 +148,7 @@ public class OrganizationInvitationResource {
     }
 
     public Response inviteExistingUser(String id) {
-        auth.orgs().requireManage();
+        auth.orgs().requireManage(organization);
 
         if (!organization.isEnabled()) {
             throw ErrorResponse.error("Organization is disabled", Status.BAD_REQUEST);
@@ -160,7 +161,9 @@ public class OrganizationInvitationResource {
         UserModel user = session.users().getUserById(realm, id);
 
         if (user == null) {
-            throw ErrorResponse.error("User does not exist", Status.BAD_REQUEST);
+            throw auth.users().canQuery() ?
+                    ErrorResponse.error("User does not exist", Status.BAD_REQUEST) :
+                    new ForbiddenException();
         }
 
         if (StringUtil.isBlank(user.getEmail())) {

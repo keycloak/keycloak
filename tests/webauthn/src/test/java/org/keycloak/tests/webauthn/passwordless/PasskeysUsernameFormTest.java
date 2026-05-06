@@ -40,6 +40,8 @@ import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.openqa.selenium.By;
 import org.openqa.selenium.NoSuchElementException;
 
@@ -69,8 +71,9 @@ public class PasskeysUsernameFormTest extends AbstractWebAuthnVirtualTest {
         return true;
     }
 
-    @Test
-    public void webauthnLoginWithDiscoverableKey() {
+    @ParameterizedTest
+    @ValueSource(strings = {"conditional", "optional"})
+    public void webauthnLoginWithDiscoverableKey(String mediation) {
         getVirtualAuthManager().useAuthenticator(DefaultVirtualAuthOptions.PASSKEYS.getOptions());
 
         // set passwordless policy for discoverable keys
@@ -78,7 +81,8 @@ public class PasskeysUsernameFormTest extends AbstractWebAuthnVirtualTest {
             managedRealm.updateWithCleanup(r -> r.webAuthnPolicyPasswordlessRpEntityName("localhost")
                     .webAuthnPolicyPasswordlessRequireResidentKey(Constants.WEBAUTHN_POLICY_OPTION_YES)
                     .webAuthnPolicyPasswordlessUserVerificationRequirement(Constants.WEBAUTHN_POLICY_OPTION_REQUIRED)
-                    .webAuthnPolicyPasswordlessPasskeysEnabled(Boolean.TRUE));
+                    .webAuthnPolicyPasswordlessPasskeysEnabled(Boolean.TRUE)
+                    .webAuthnPolicyPasswordlessMediation(mediation));
             checkWebAuthnConfiguration(Constants.WEBAUTHN_POLICY_OPTION_YES, Constants.WEBAUTHN_POLICY_OPTION_REQUIRED);
 
             registerDefaultUser();
@@ -206,6 +210,33 @@ public class PasskeysUsernameFormTest extends AbstractWebAuthnVirtualTest {
             MatcherAssert.assertThat(driver.findElement(By.xpath("//form[@id='webauth']")), Matchers.notNullValue());
 
             // force login using webauthn link
+            webAuthnLoginPage.clickAuthenticate();
+            Assertions.assertNotNull(oAuthClient.parseLoginResponse().getCode());
+
+            EventAssertion.assertSuccess(events.poll())
+                    .type(EventType.LOGIN)
+                    .hasSessionId()
+                    .userId(user.getId())
+                    .isCodeId()
+                    .details(Details.USERNAME, user.getUsername())
+                    .details(Details.CREDENTIAL_TYPE, WebAuthnCredentialModel.TYPE_PASSWORDLESS)
+                    .details(WebAuthnConstants.USER_VERIFICATION_CHECKED, "true");
+
+            logout();
+            events.clear();
+
+            // set authenticatorAttachment to platform with modal mediation;
+            // no platform authenticator is available so the modal must not be shown
+            managedRealm.updateWithCleanup(r -> r.webAuthnPolicyPasswordlessAuthenticatorAttachment("platform")
+                    .webAuthnPolicyPasswordlessMediation("optional"));
+
+            oAuthClient.openLoginForm();
+
+            loginPage.assertCurrent();
+            MatcherAssert.assertThat(loginPage.getUsernameAutocomplete(), Matchers.is("username webauthn"));
+            MatcherAssert.assertThat(driver.findElement(By.xpath("//form[@id='webauth']")), Matchers.notNullValue());
+
+            // no modal was shown, force login using webauthn link
             webAuthnLoginPage.clickAuthenticate();
             Assertions.assertNotNull(oAuthClient.parseLoginResponse().getCode());
 

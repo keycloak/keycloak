@@ -3,6 +3,8 @@ package org.keycloak.models.workflow;
 
 import java.util.concurrent.TimeoutException;
 
+import org.keycloak.cluster.ClusterProvider;
+import org.keycloak.cluster.ExecutionResult;
 import org.keycloak.common.util.DurationConverter;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -22,27 +24,50 @@ class RunWorkflowTask extends WorkflowTransactionalTask {
         this.context = context;
     }
 
+    private static final int EXECUTION_LOCK_TIMEOUT_SECS = 300;
+
     @Override
     public void run(KeycloakSession session) {
 
         DefaultWorkflowExecutionContext context = new DefaultWorkflowExecutionContext(session, this.context);
-        WorkflowStep nextStep = runCurrentStep(context);
+        String executionId = context.getExecutionId();
 
-        while (nextStep != null) {
-            WorkflowStateProvider.ScheduleResult result = scheduleStep(session, context, nextStep);
-            if (result == WorkflowStateProvider.ScheduleResult.CREATED && context.getEvent() != null) {
-                fireWorkflowActivated(session, context);
+        ClusterProvider clusterProvider = session.getProvider(ClusterProvider.class);
+        ExecutionResult<Void> result = clusterProvider.executeIfNotExecuted("wf-exec::" + executionId, EXECUTION_LOCK_TIMEOUT_SECS, () -> {
+            if (context.getStep() != null) {
+                WorkflowStateProvider stateProvider = session.getProvider(WorkflowStateProvider.class);
+                WorkflowStateProvider.ScheduledStep scheduledStep = stateProvider.getScheduledStep(
+                        context.getWorkflow().getId(), context.getResourceId());
+                if (scheduledStep == null || !scheduledStep.stepId().equals(context.getStep().getId())) {
+                    log.debugf("Execution %s for resource %s: DB state has changed (expected step %s), skipping",
+                            executionId, context.getResourceId(), context.getStep().getProviderId());
+                    return null;
+                }
             }
-            boolean isNextStepScheduled = DurationConverter.isPositiveDuration(nextStep.getAfter());
-            if (isNextStepScheduled) {
-                fireWorkflowStepScheduled(session, context, nextStep);
-                return;
+
+            WorkflowStep nextStep = runCurrentStep(context);
+
+            while (nextStep != null) {
+                WorkflowStateProvider.ScheduleResult scheduleResult = scheduleStep(session, context, nextStep);
+                if (scheduleResult == WorkflowStateProvider.ScheduleResult.CREATED && context.getEvent() != null) {
+                    fireWorkflowActivated(session, context);
+                }
+                boolean isNextStepScheduled = DurationConverter.isPositiveDuration(nextStep.getAfter());
+                if (isNextStepScheduled) {
+                    fireWorkflowStepScheduled(session, context, nextStep);
+                    return null;
+                }
+                nextStep = runWorkflowStep(context, nextStep);
             }
-            nextStep = runWorkflowStep(context, nextStep);
+
+            completeWorkflowExecution(session, context);
+            return null;
+        });
+
+        if (!result.isExecuted()) {
+            log.debugf("Execution %s for resource %s already in progress on another node, skipping",
+                    executionId, context.getResourceId());
         }
-
-        // no more steps to run, complete the workflow execution
-        completeWorkflowExecution(session, context);
     }
 
     protected WorkflowStep runCurrentStep(DefaultWorkflowExecutionContext context) {
@@ -99,22 +124,10 @@ class RunWorkflowTask extends WorkflowTransactionalTask {
         Workflow workflow = context.getWorkflow();
         String resourceId = context.getResourceId();
         String executionId = context.getExecutionId();
-        boolean isImmediateStep = !DurationConverter.isPositiveDuration(nextStep.getAfter());
 
-        // we always persist the step state in the database, even if the step doesn't have a time defined, to make sure that the workflow execution
-        // can be resumed from this step in case of server failure
         return KeycloakModelUtils.runJobInTransactionWithResult(session.getKeycloakSessionFactory(), session.getContext(), s -> {
             WorkflowStateProvider stateProvider = s.getProvider(WorkflowStateProvider.class);
-            // if the step is an immediate step, we set after to a short period to prevent it from being picked up by the workflow execution task
-            // while we run it
-            try {
-                if (isImmediateStep)
-                    nextStep.setAfter("1m");
-                return stateProvider.scheduleStep(workflow, nextStep, resourceId, executionId);
-            } finally {
-                if (isImmediateStep)
-                    nextStep.setAfter(null);
-            }
+            return stateProvider.scheduleStep(workflow, nextStep, resourceId, executionId);
         }, "Workflow step scheduling task");
     }
 

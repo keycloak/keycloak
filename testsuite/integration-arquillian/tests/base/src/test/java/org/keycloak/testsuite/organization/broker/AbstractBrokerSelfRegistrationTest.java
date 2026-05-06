@@ -866,6 +866,166 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
     }
 
     @Test
+    public void testRedirectToIdentityProviderWithWildcardSubdomainMatching() {
+        OrganizationRepresentation orgRep = createOrganization();
+        OrganizationResource organization = managedRealm.admin().organizations().get(orgRep.getId());
+        
+        // Update the organization domain to enable wildcard subdomain matching
+        OrganizationDomainRepresentation domain = orgRep.getDomains().iterator().next();
+        domain.setName("*." + domain.getName());
+        try (Response response = organization.update(orgRep)) {
+            assertEquals(Status.NO_CONTENT.getStatusCode(), response.getStatus());
+        }
+        
+        // Configure IdP with ANY_DOMAIN to match any org domain
+        IdentityProviderRepresentation idp = organization.identityProviders().get(bc.getIDPAlias()).toRepresentation();
+        idp.getConfig().put(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE, ANY_DOMAIN);
+        idp.getConfig().put(IdentityProviderRedirectMode.EMAIL_MATCH.getKey(), Boolean.TRUE.toString());
+        managedRealm.admin().identityProviders().get(bc.getIDPAlias()).update(idp);
+        
+        // Test with subdomain - should automatically redirect
+        String subdomainEmail = "user@sub.neworg.org";
+        openIdentityFirstLoginPage(subdomainEmail, true, idp.getAlias(), false, false);
+        MatcherAssert.assertThat("Driver should be on the provider realm page right now",
+                driver.getCurrentUrl(), Matchers.containsString("/auth/realms/" + bc.providerRealmName() + "/"));
+    }
+
+    @Test
+    public void testRedirectToIdentityProviderWithDeepSubdomain() {
+        OrganizationRepresentation orgRep = createOrganization();
+        OrganizationResource organization = managedRealm.admin().organizations().get(orgRep.getId());
+        String deepSubdomainEmail = "user@deep.sub.neworg.org";
+        IdentityProviderRepresentation idp = organization.identityProviders().get(bc.getIDPAlias()).toRepresentation();
+
+        openIdentityFirstLoginPage(deepSubdomainEmail, false, idp.getAlias(), false, false);
+        MatcherAssert.assertThat("Driver should be on the consumer realm page right now",
+                driver.getCurrentUrl(), Matchers.containsString("/auth/realms/" + bc.consumerRealmName() + "/"));
+
+        // Enable wildcard subdomain matching
+        OrganizationDomainRepresentation domain = orgRep.getDomains().iterator().next();
+        String baseDomain = domain.getName();
+
+        domain.setName("*." + baseDomain);
+
+        try (Response response = organization.update(orgRep)) {
+            assertEquals(Status.NO_CONTENT.getStatusCode(), response.getStatus());
+        }
+        
+        idp.getConfig().put(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE, ANY_DOMAIN);
+        idp.getConfig().put(IdentityProviderRedirectMode.EMAIL_MATCH.getKey(), Boolean.TRUE.toString());
+        managedRealm.admin().identityProviders().get(bc.getIDPAlias()).update(idp);
+        
+        // Test with deep subdomain (multiple levels)
+        openIdentityFirstLoginPage(deepSubdomainEmail, true, idp.getAlias(), false, false);
+        // user should be automatically redirected to the org IdP login page
+        MatcherAssert.assertThat("Driver should be on the provider realm page right now",
+                driver.getCurrentUrl(), Matchers.containsString("/auth/realms/" + bc.providerRealmName() + "/"));
+
+        orgRep.addDomain(new OrganizationDomainRepresentation("deep.sub." + baseDomain));
+
+        try (Response response = organization.update(orgRep)) {
+            assertEquals(Status.NO_CONTENT.getStatusCode(), response.getStatus());
+        }
+
+        // Test with deep subdomain (multiple levels)
+        openIdentityFirstLoginPage(deepSubdomainEmail, true, idp.getAlias(), false, false);
+        // user should be automatically redirected to the org IdP login page
+        MatcherAssert.assertThat("Driver should be on the provider realm page right now",
+                driver.getCurrentUrl(), Matchers.containsString("/auth/realms/" + bc.providerRealmName() + "/"));
+    }
+
+    @Test
+    public void testNoRedirectWithoutWildcardSubdomainMatching() {
+        OrganizationRepresentation orgRep = createOrganization();
+        OrganizationResource organization = managedRealm.admin().organizations().get(orgRep.getId());
+        
+        // Ensure domain doesn't have wildcard prefix (exact match only)
+        OrganizationDomainRepresentation domain = orgRep.getDomains().iterator().next();
+        if (domain.getName().startsWith("*.")) {
+            domain.setName(domain.getName().substring(2));
+        }
+        try (Response response = organization.update(orgRep)) {
+            assertEquals(Status.NO_CONTENT.getStatusCode(), response.getStatus());
+        }
+        
+        IdentityProviderRepresentation idp = organization.identityProviders().get(bc.getIDPAlias()).toRepresentation();
+        idp.getConfig().put(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE, ANY_DOMAIN);
+        idp.getConfig().put(IdentityProviderRedirectMode.EMAIL_MATCH.getKey(), Boolean.TRUE.toString());
+        managedRealm.admin().identityProviders().get(bc.getIDPAlias()).update(idp);
+        
+        // Test with subdomain - should NOT automatically redirect since wildcard is disabled
+        // The subdomain email doesn't match the exact domain, so no redirect should occur
+        String subdomainEmail = "user@sub.neworg.org";
+        
+        // With exact match only, subdomain won't match, so user sees standard login
+        openIdentityFirstLoginPage(subdomainEmail, false, null, false, false);
+        
+        // Verify we're on the login page (no automatic redirect happened)
+        assertTrue(driver.getCurrentUrl().contains("/realms/" + bc.consumerRealmName()));
+    }
+
+    @Test
+    public void testExactDomainStillWorksWithWildcardEnabled() {
+        OrganizationRepresentation orgRep = createOrganization();
+        OrganizationResource organization = managedRealm.admin().organizations().get(orgRep.getId());
+        
+        // Enable wildcard subdomain matching
+        OrganizationDomainRepresentation domain = orgRep.getDomains().iterator().next();
+        domain.setName("*." + domain.getName());
+        try (Response response = organization.update(orgRep)) {
+            assertEquals(Status.NO_CONTENT.getStatusCode(), response.getStatus());
+        }
+        
+        IdentityProviderRepresentation idp = organization.identityProviders().get(bc.getIDPAlias()).toRepresentation();
+        idp.getConfig().put(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE, domain.getName());
+        idp.getConfig().put(IdentityProviderRedirectMode.EMAIL_MATCH.getKey(), Boolean.TRUE.toString());
+        managedRealm.admin().identityProviders().get(bc.getIDPAlias()).update(idp);
+        
+        // Test with exact domain match - should still work
+        openIdentityFirstLoginPage(bc.getUserEmail(), true, idp.getAlias(), false, false);
+        
+        loginOrgIdp(bc.getUserEmail(), bc.getUserEmail(), true, true);
+        
+        assertIsMember(bc.getUserEmail(), organization);
+    }
+
+    @Test
+    public void testDoNotRedirectIfExclusionDomain() {
+        OrganizationRepresentation orgRep = createOrganization();
+        OrganizationResource organization = managedRealm.admin().organizations().get(orgRep.getId());
+
+        // Update the organization domain to enable wildcard subdomain matching
+        OrganizationDomainRepresentation domain = orgRep.getDomains().iterator().next();
+        String domainName = domain.getName();
+        domain.setName("*." + domainName);
+        try (Response response = organization.update(orgRep)) {
+            assertEquals(Status.NO_CONTENT.getStatusCode(), response.getStatus());
+        }
+
+        organization.update(orgRep).close();
+
+        // Configure IdP with ANY_DOMAIN to match any org domain
+        IdentityProviderRepresentation idp = organization.identityProviders().get(bc.getIDPAlias()).toRepresentation();
+        idp.getConfig().put(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE, ANY_DOMAIN);
+        idp.getConfig().put(OrganizationModel.ORGANIZATION_EXCLUDED_DOMAIN_ATTRIBUTE, "*.sub." + domainName);
+        idp.getConfig().put(IdentityProviderRedirectMode.EMAIL_MATCH.getKey(), Boolean.TRUE.toString());
+        managedRealm.admin().identityProviders().get(bc.getIDPAlias()).update(idp);
+
+        // Test with subdomain - should not automatically redirect
+        String subdomainEmail = "user@sub.neworg.org";
+        openIdentityFirstLoginPage(subdomainEmail, false, idp.getAlias(), false, false);
+        MatcherAssert.assertThat("Driver should be on the consumer realm page right now",
+                driver.getCurrentUrl(), Matchers.containsString("/auth/realms/" + bc.consumerRealmName() + "/"));
+
+        openIdentityFirstLoginPage("user@valid.neworg.org", true, idp.getAlias(), false, false);
+        MatcherAssert.assertThat("Driver should be on the provider realm page right now",
+                driver.getCurrentUrl(), Matchers.containsString("/auth/realms/" + bc.providerRealmName() + "/"));
+        openIdentityFirstLoginPage("user@neworg.org", true, idp.getAlias(), false, false);
+        MatcherAssert.assertThat("Driver should be on the provider realm page right now",
+                driver.getCurrentUrl(), Matchers.containsString("/auth/realms/" + bc.providerRealmName() + "/"));
+    }
+
+    @Test
     public void testOnlyShowBrokersAssociatedWithResolvedOrganization() {
         String org0Name = "org-0";
         OrganizationResource org0 = managedRealm.admin().organizations().get(createOrganization(org0Name).getId());
@@ -1003,6 +1163,7 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
         appPage.assertCurrent();
         assertIsMember("external@other.org", organization);
     }
+
 
     @Test
     public void testAnyEmailFromBrokerWithoutDomainSet() {
@@ -1194,6 +1355,145 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
         assertFalse(loginPage.isSocialButtonPresent(orgIdp.getAlias()));
         assertFalse(loginPage.isSocialButtonPresent(realmIdp.getAlias()));
         assertTrue(loginPage.isSocialButtonPresent(org2Idp.getAlias()));
+    }
+
+    @Test
+    public void testExactDomainPrecedenceWhenResolvingOrganizationByDomain() {
+        OrganizationRepresentation orgA = createOrganization("org-a", "sub.example.com");
+        OrganizationResource organization = managedRealm.admin().organizations().get(orgA.getId());
+        OrganizationIdentityProviderResource broker = organization.identityProviders().get(brokerConfigFunction.apply(orgA.getAlias()).getIDPAlias());
+        IdentityProviderRepresentation brokerRepOrgA = broker.toRepresentation();
+        brokerRepOrgA.setHideOnLogin(false);
+        brokerRepOrgA.getConfig().remove(IdentityProviderRedirectMode.EMAIL_MATCH.getKey());
+        managedRealm.admin().identityProviders().get(brokerRepOrgA.getAlias()).update(brokerRepOrgA);
+
+        OrganizationRepresentation orgB = createOrganization("org-b");
+        organization = managedRealm.admin().organizations().get(orgB.getId());
+        broker = organization.identityProviders().get(brokerConfigFunction.apply(orgB.getAlias()).getIDPAlias());
+        IdentityProviderRepresentation brokerRepOrgB = broker.toRepresentation();
+        brokerRepOrgB.setHideOnLogin(false);
+        brokerRepOrgB.getConfig().remove(IdentityProviderRedirectMode.EMAIL_MATCH.getKey());
+        managedRealm.admin().identityProviders().get(brokerRepOrgB.getAlias()).update(brokerRepOrgB);
+        OrganizationDomainRepresentation wildcardDomain = new OrganizationDomainRepresentation();
+        wildcardDomain.setName("*.example.com");
+        orgB.addDomain(wildcardDomain);
+
+        try (Response response = managedRealm.admin().organizations().get(orgB.getId()).update(orgB)) {
+            assertEquals(Status.NO_CONTENT.getStatusCode(), response.getStatus());
+        }
+
+        loginPage.open(TEST_REALM_NAME);
+        log.debug("Logging in");
+        loginPage.loginUsername("user@sub.example.com");
+        assertTrue(loginPage.isSocialButtonPresent(brokerRepOrgA.getAlias()));
+        assertFalse(loginPage.isSocialButtonPresent(brokerRepOrgB.getAlias()));
+
+        loginPage.open(TEST_REALM_NAME);
+        log.debug("Logging in");
+        loginPage.loginUsername("user@deep.sub.example.com");
+        assertTrue(loginPage.isSocialButtonPresent(brokerRepOrgB.getAlias()));
+        assertFalse(loginPage.isSocialButtonPresent(brokerRepOrgA.getAlias()));
+
+        loginPage.open(TEST_REALM_NAME);
+        log.debug("Logging in");
+        loginPage.loginUsername("user@some.deep.sub.example.com");
+        assertTrue(loginPage.isSocialButtonPresent(brokerRepOrgB.getAlias()));
+        assertFalse(loginPage.isSocialButtonPresent(brokerRepOrgA.getAlias()));
+
+        OrganizationRepresentation orgC = createOrganization("org-c");
+        organization = managedRealm.admin().organizations().get(orgC.getId());
+        broker = organization.identityProviders().get(brokerConfigFunction.apply(orgC.getAlias()).getIDPAlias());
+        IdentityProviderRepresentation brokerRepOrgC = broker.toRepresentation();
+        brokerRepOrgC.setHideOnLogin(false);
+        brokerRepOrgC.getConfig().remove(IdentityProviderRedirectMode.EMAIL_MATCH.getKey());
+        managedRealm.admin().identityProviders().get(brokerRepOrgC.getAlias()).update(brokerRepOrgC);
+        wildcardDomain = new OrganizationDomainRepresentation();
+        wildcardDomain.setName("*.deep.sub.example.com");
+        orgC.addDomain(wildcardDomain);
+
+        try (Response response = managedRealm.admin().organizations().get(orgC.getId()).update(orgC)) {
+            assertEquals(Status.NO_CONTENT.getStatusCode(), response.getStatus());
+        }
+
+        loginPage.open(TEST_REALM_NAME);
+        log.debug("Logging in");
+        loginPage.loginUsername("user@deep.sub.example.com");
+        assertTrue(loginPage.isSocialButtonPresent(brokerRepOrgC.getAlias()));
+        assertFalse(loginPage.isSocialButtonPresent(brokerRepOrgA.getAlias()));
+        assertFalse(loginPage.isSocialButtonPresent(brokerRepOrgB.getAlias()));
+
+        loginPage.open(TEST_REALM_NAME);
+        log.debug("Logging in");
+        loginPage.loginUsername("user@some.deep.sub.example.com");
+        assertTrue(loginPage.isSocialButtonPresent(brokerRepOrgC.getAlias()));
+        assertFalse(loginPage.isSocialButtonPresent(brokerRepOrgA.getAlias()));
+        assertFalse(loginPage.isSocialButtonPresent(brokerRepOrgB.getAlias()));
+
+        // Scenario: adding an exact-match domain to a new org must invalidate a previously-cached wildcard
+        // resolution. The lookup for "some.deep.sub.example.com" was cached above as resolving to orgC (via
+        // the "*.deep.sub.example.com" wildcard). Creating orgD with the exact domain
+        // "some.deep.sub.example.com" must take precedence on the next resolution.
+        OrganizationRepresentation orgD = createOrganization("org-d");
+        organization = managedRealm.admin().organizations().get(orgD.getId());
+        broker = organization.identityProviders().get(brokerConfigFunction.apply(orgD.getAlias()).getIDPAlias());
+        IdentityProviderRepresentation brokerRepOrgD = broker.toRepresentation();
+        brokerRepOrgD.setHideOnLogin(false);
+        brokerRepOrgD.getConfig().remove(IdentityProviderRedirectMode.EMAIL_MATCH.getKey());
+        managedRealm.admin().identityProviders().get(brokerRepOrgD.getAlias()).update(brokerRepOrgD);
+        OrganizationDomainRepresentation exactDomain = new OrganizationDomainRepresentation();
+        exactDomain.setName("some.deep.sub.example.com");
+        orgD.addDomain(exactDomain);
+
+        try (Response response = managedRealm.admin().organizations().get(orgD.getId()).update(orgD)) {
+            assertEquals(Status.NO_CONTENT.getStatusCode(), response.getStatus());
+        }
+
+        loginPage.open(TEST_REALM_NAME);
+        log.debug("Logging in");
+        loginPage.loginUsername("user@some.deep.sub.example.com");
+        assertTrue(loginPage.isSocialButtonPresent(brokerRepOrgD.getAlias()));
+        assertFalse(loginPage.isSocialButtonPresent(brokerRepOrgA.getAlias()));
+        assertFalse(loginPage.isSocialButtonPresent(brokerRepOrgB.getAlias()));
+        assertFalse(loginPage.isSocialButtonPresent(brokerRepOrgC.getAlias()));
+
+        // siblings of the exact-match domain must still resolve to the more-specific wildcard (orgC) and
+        // not be impacted by the new exact-match org
+        loginPage.open(TEST_REALM_NAME);
+        log.debug("Logging in");
+        loginPage.loginUsername("user@another.deep.sub.example.com");
+        assertTrue(loginPage.isSocialButtonPresent(brokerRepOrgC.getAlias()));
+        assertFalse(loginPage.isSocialButtonPresent(brokerRepOrgD.getAlias()));
+
+        // Scenario: removing the more-specific wildcard org (orgC) must invalidate cached lookups that
+        // resolved to it, so that subsequent resolution falls back to the broader wildcard (orgB).
+        managedRealm.admin().organizations().get(orgC.getId()).delete().close();
+
+        loginPage.open(TEST_REALM_NAME);
+        log.debug("Logging in");
+        loginPage.loginUsername("user@deep.sub.example.com");
+        assertTrue(loginPage.isSocialButtonPresent(brokerRepOrgB.getAlias()));
+        assertFalse(loginPage.isSocialButtonPresent(brokerRepOrgA.getAlias()));
+
+        loginPage.open(TEST_REALM_NAME);
+        log.debug("Logging in");
+        loginPage.loginUsername("user@another.deep.sub.example.com");
+        assertTrue(loginPage.isSocialButtonPresent(brokerRepOrgB.getAlias()));
+
+        // exact-match org for "some.deep.sub.example.com" still wins over the broader wildcard
+        loginPage.open(TEST_REALM_NAME);
+        log.debug("Logging in");
+        loginPage.loginUsername("user@some.deep.sub.example.com");
+        assertTrue(loginPage.isSocialButtonPresent(brokerRepOrgD.getAlias()));
+        assertFalse(loginPage.isSocialButtonPresent(brokerRepOrgB.getAlias()));
+
+        // Scenario: removing the exact-match org (orgA) must invalidate the cached
+        // "sub.example.com" -> orgA entry so the lookup falls back to the wildcard (orgB).
+        managedRealm.admin().organizations().get(orgA.getId()).delete().close();
+
+        loginPage.open(TEST_REALM_NAME);
+        log.debug("Logging in");
+        loginPage.loginUsername("user@sub.example.com");
+        assertTrue(loginPage.isSocialButtonPresent(brokerRepOrgB.getAlias()));
     }
 
     private void assertIsNotMember(String userEmail, OrganizationResource organization) {

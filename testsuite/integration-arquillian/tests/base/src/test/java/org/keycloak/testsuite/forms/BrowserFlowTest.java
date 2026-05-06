@@ -30,6 +30,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderSimpleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testframework.realm.RoleBuilder;
 import org.keycloak.testsuite.AbstractAuthenticationTest;
 import org.keycloak.testsuite.AbstractChangeImportedUserPasswordsTest;
@@ -716,8 +717,8 @@ public class BrowserFlowTest extends AbstractChangeImportedUserPasswordsTest {
 
             loginTotpPage.login(getOtpCode(USER_WITH_ONE_OTP_OTP_SECRET));
             Assertions.assertFalse(loginTotpPage.isCurrent());
-            events.expectLogin().user(managedRealm.admin().users().search("user-with-one-configured-otp").get(0).getId())
-                    .detail(Details.USERNAME, "user-with-one-configured-otp").assertEvent();
+            EventAssertion.expectLoginSuccess(events.poll()).userId(managedRealm.admin().users().search("user-with-one-configured-otp").get(0).getId())
+                    .details(Details.USERNAME, "user-with-one-configured-otp");
 
         } finally {
             revertFlows("browser - copy 1");
@@ -769,11 +770,12 @@ public class BrowserFlowTest extends AbstractChangeImportedUserPasswordsTest {
         try {
             String userId = managedRealm.admin().users().search("user-with-two-configured-otp").get(0).getId();
             provideUsernamePassword("user-with-two-configured-otp");
-            events.expectLogin().user(userId).session((String) null)
+            EventAssertion.expectLoginError(events.poll()).userId(userId)
+                    .sessionId(null)
                     .error("invalid_user_credentials")
-                    .detail(Details.USERNAME, "user-with-two-configured-otp")
-                    .removeDetail(Details.CONSENT)
-                    .assertEvent();
+                    .details(Details.USERNAME, "user-with-two-configured-otp")
+                    .details(Details.REDIRECT_URI, oauth.getRedirectUri())
+                    .withoutDetails(Details.CONSENT);
 
             // Assert on otp page now
             Assertions.assertTrue(oneTimeCodePage.isOtpLabelPresent());
@@ -782,7 +784,7 @@ public class BrowserFlowTest extends AbstractChangeImportedUserPasswordsTest {
 
             loginTotpPage.login(getOtpCode(USER_WITH_TWO_OTPS_OTP1_SECRET));
             Assertions.assertFalse(loginTotpPage.isCurrent());
-            events.expectLogin().user(userId).detail(Details.USERNAME, "user-with-two-configured-otp").assertEvent();
+            EventAssertion.expectLoginSuccess(events.poll()).userId(userId).details(Details.USERNAME, "user-with-two-configured-otp");
         } finally {
             revertFlows("browser - copy 1");
         }
@@ -800,15 +802,14 @@ public class BrowserFlowTest extends AbstractChangeImportedUserPasswordsTest {
         try {
             String userId = managedRealm.admin().users().search("user-with-one-configured-otp").get(0).getId();
             provideUsernamePassword("user-with-one-configured-otp");
-            events.expectLogin().user(userId).session((String) null)
+            EventAssertion.expectLoginError(events.poll()).userId(userId).sessionId(null)
                     .error("invalid_user_credentials")
-                    .detail(Details.USERNAME, "user-with-one-configured-otp")
-                    .removeDetail(Details.CONSENT)
-                    .assertEvent();
+                    .details(Details.USERNAME, "user-with-one-configured-otp")
+                    .withoutDetails(Details.CONSENT);
             // Assert not on otp page now
             Assertions.assertFalse(oneTimeCodePage.isOtpLabelPresent());
             Assertions.assertFalse(loginTotpPage.isCurrent());
-            events.expectLogin().user(userId).detail(Details.USERNAME, "user-with-one-configured-otp").assertEvent();
+            EventAssertion.expectLoginSuccess(events.poll()).userId(userId).details(Details.USERNAME, "user-with-one-configured-otp");
 
         } finally {
             revertFlows("browser - copy 1");
@@ -1055,10 +1056,9 @@ public class BrowserFlowTest extends AbstractChangeImportedUserPasswordsTest {
         loginPage.login(user.getUsername(), getPassword("test-user@localhost"));
 
         Assertions.assertFalse(loginPage.isCurrent());
-        events.expectLogin()
-                .user(user)
-                .detail(Details.USERNAME, "test-user@localhost")
-                .assertEvent();
+        EventAssertion.expectLoginSuccess(events.poll())
+                .userId(user.getId())
+                .details(Details.USERNAME, "test-user@localhost");
     }
 
     /**
@@ -1102,10 +1102,9 @@ public class BrowserFlowTest extends AbstractChangeImportedUserPasswordsTest {
             Assertions.assertFalse(loginUsernameOnlyPage.isCurrent());
             Assertions.assertFalse(passwordPage.isCurrent());
 
-            events.expectLogin()
-                    .user(user)
-                    .detail(Details.USERNAME, "test-user@localhost")
-                    .assertEvent();
+            EventAssertion.expectLoginSuccess(events.poll())
+                    .userId(user.getId())
+                    .details(Details.USERNAME, "test-user@localhost");
         } finally {
             revertFlows("browser - alternative");
         }
@@ -1191,8 +1190,8 @@ public class BrowserFlowTest extends AbstractChangeImportedUserPasswordsTest {
 
             Assertions.assertFalse(loginPage.isCurrent());
             Assertions.assertFalse(oneTimeCodePage.isOtpLabelPresent());
-            events.expectLogin().user(managedRealm.admin().users().search("user-with-one-configured-otp").get(0).getId())
-                    .detail(Details.USERNAME, "user-with-one-configured-otp").assertEvent();
+            EventAssertion.expectLoginSuccess(events.poll()).userId(managedRealm.admin().users().search("user-with-one-configured-otp").get(0).getId())
+                    .details(Details.USERNAME, "user-with-one-configured-otp");
         } finally {
             revertFlows(newFlowAlias);
         }

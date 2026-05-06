@@ -21,6 +21,8 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
@@ -50,16 +52,20 @@ public class HttpDistTest {
     public void maxQueuedRequestsTest(KeycloakDistribution dist) {
         dist.run("start-dev", "--http-max-queued-requests=1", "--http-pool-max-threads=1");
 
-        // run requests async
-        List<CompletableFuture<Integer>> statusCodesFuture = new ArrayList<>();
-        for (int i = 0; i < 5; i++) {
-            statusCodesFuture.add(CompletableFuture.supplyAsync(() ->
-                    when().get("/realms/master/test-resources/slow").getStatusCode()));
-        }
-        List<Integer> statusCodes = statusCodesFuture.stream().map(CompletableFuture::join).toList();
+        ExecutorService executor = Executors.newFixedThreadPool(5);
+        try {
+            List<CompletableFuture<Integer>> statusCodesFuture = new ArrayList<>();
+            for (int i = 0; i < 5; i++) {
+                statusCodesFuture.add(CompletableFuture.supplyAsync(() ->
+                        when().get("/realms/master/test-resources/slow").getStatusCode(), executor));
+            }
+            List<Integer> statusCodes = statusCodesFuture.stream().map(CompletableFuture::join).toList();
 
-        assertThat("Some of the requests should be properly rejected", statusCodes, hasItem(503));
-        assertThat("None of the requests should throw an unhandled exception", statusCodes, not(hasItem(500)));
+            assertThat("Some of the requests should be properly rejected", statusCodes, hasItem(503));
+            assertThat("None of the requests should throw an unhandled exception", statusCodes, not(hasItem(500)));
+        } finally {
+            executor.shutdown();
+        }
     }
 
     @Test

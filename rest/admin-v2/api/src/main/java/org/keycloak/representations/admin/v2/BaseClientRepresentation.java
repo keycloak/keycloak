@@ -29,7 +29,7 @@ import org.hibernate.validator.constraints.URL;
     @JsonSubTypes.Type(value = OIDCClientRepresentation.class, name = OIDCClientRepresentation.PROTOCOL),
     @JsonSubTypes.Type(value = SAMLClientRepresentation.class, name = SAMLClientRepresentation.PROTOCOL)
 })
-@UuidUnmodified(groups = {PutClient.class, PatchClient.class})
+@UuidUnmodified(groups = {PutClient.class, PatchClient.class}, affectedFieldNames = {"uuid"})
 @ProtocolUnmodified(groups = {PutClient.class, PatchClient.class})
 @ValidRedirectUris
 public abstract class BaseClientRepresentation extends BaseRepresentation implements RepresentationWithUuid {
@@ -140,9 +140,10 @@ public abstract class BaseClientRepresentation extends BaseRepresentation implem
 
     @Override
     public boolean equals(Object o) {
-        if (!(o instanceof BaseClientRepresentation that)) {
+        if (!(o instanceof BaseClientRepresentation)) {
             return false;
         }
+        BaseClientRepresentation that = (BaseClientRepresentation)o;
         return Objects.equals(uuid, that.uuid) && Objects.equals(clientId, that.clientId) && Objects.equals(displayName, that.displayName) && Objects.equals(description, that.description) && Objects.equals(enabled, that.enabled) && Objects.equals(appUrl, that.appUrl) && Objects.equals(redirectUris, that.redirectUris) && Objects.equals(roles, that.roles);
     }
 

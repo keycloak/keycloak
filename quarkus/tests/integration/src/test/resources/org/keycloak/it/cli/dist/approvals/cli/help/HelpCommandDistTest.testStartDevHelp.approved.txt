@@ -357,9 +357,10 @@ HTTP(S):
                        loadbalancer reconfiguration and draining of TLS/HTTP keepalive connections.
                        Default: 1s.
 --shutdown-timeout <timeout>
-                     The shutdown period waiting for currently running HTTP requests to finish. May
-                       be an ISO 8601 duration value, an integer number of seconds, or an integer
-                       followed by one of [ms, h, m, s, d]. Default: 1s.
+                     The shutdown period waiting for currently running HTTP requests to finish and
+                       distributed caches to settle. May be an ISO 8601 duration value, an integer
+                       number of seconds, or an integer followed by one of [ms, h, m, s, d].
+                       Default: 10s.
 
 HTTP Access log:
 

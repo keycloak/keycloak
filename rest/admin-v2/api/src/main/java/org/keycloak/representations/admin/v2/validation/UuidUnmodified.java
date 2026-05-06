@@ -22,4 +22,5 @@ public @interface UuidUnmodified {
     String message() default "UUID is server-managed and must not be user-specified";
     Class<?>[] groups() default {};
     Class<? extends Payload>[] payload() default {};
+    String[] affectedFieldNames();
 }

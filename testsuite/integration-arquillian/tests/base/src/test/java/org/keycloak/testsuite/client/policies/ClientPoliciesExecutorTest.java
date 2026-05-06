@@ -88,6 +88,7 @@ import org.keycloak.services.clientpolicy.executor.SecureResponseTypeExecutorFac
 import org.keycloak.services.clientpolicy.executor.SecureSessionEnforceExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.SecureSigningAlgorithmExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.SecureSigningAlgorithmForSignedJwtExecutorFactory;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.RoleBuilder;
 import org.keycloak.testframework.realm.UserBuilder;
@@ -320,7 +321,7 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
         oauth.responseType(OIDCResponseType.CODE + " " + OIDCResponseType.ID_TOKEN);
         oauth.loginForm().nonce("vbwe566fsfffds").doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
 
-        EventRepresentation loginEvent = events.expectLogin().client(clientId).assertEvent();
+        EventRepresentation loginEvent = EventAssertion.expectLoginSuccess(events.poll()).clientId(clientId).getEvent();
         String sessionId = loginEvent.getSessionId();
         String codeId = loginEvent.getDetails().get(Details.CODE_ID);
         String code = oauth.parseLoginResponse().getCode();
@@ -329,7 +330,8 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
         events.expectCodeToToken(codeId, sessionId).client(clientId).assertEvent();
 
         oauth.doLogout(res.getRefreshToken());
-        events.expectLogout(sessionId).client(clientId).clearDetails().assertEvent();
+        EventAssertion.assertSuccess(events.poll()).type(EventType.LOGOUT)
+                .sessionId(sessionId).clientId(clientId).withoutDetails(Details.REDIRECT_URI);
 
         // update profiles
         json = (new ClientProfilesBuilder()).addProfile(
@@ -342,7 +344,7 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
         oauth.responseType(OIDCResponseType.CODE + " " + OIDCResponseType.ID_TOKEN + " " + OIDCResponseType.TOKEN); // token response type allowed
         oauth.loginForm().nonce("cie8cjcwiw").doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
 
-        loginEvent = events.expectLogin().client(clientId).assertEvent();
+        loginEvent = EventAssertion.expectLoginSuccess(events.poll()).clientId(clientId).getEvent();
         sessionId = loginEvent.getSessionId();
         codeId = loginEvent.getDetails().get(Details.CODE_ID);
         code = oauth.parseLoginResponse().getCode();
@@ -351,7 +353,8 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
         events.expectCodeToToken(codeId, sessionId).client(clientId).assertEvent();
 
         oauth.doLogout(res.getRefreshToken());
-        events.expectLogout(sessionId).client(clientId).clearDetails().assertEvent();
+        EventAssertion.assertSuccess(events.poll()).type(EventType.LOGOUT)
+                .sessionId(sessionId).clientId(clientId).withoutDetails(Details.REDIRECT_URI);
 
         // shall allow code using response_mode jwt
         oauth.responseType(OIDCResponseType.CODE);
@@ -451,7 +454,7 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
         oauth.responseType(OIDCResponseType.CODE + " " + OIDCResponseType.ID_TOKEN);
         oauth.loginForm().nonce("LIVieviDie028f").doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
 
-        EventRepresentation loginEvent = events.expectLogin().client(clientId).assertEvent();
+        EventRepresentation loginEvent = EventAssertion.expectLoginSuccess(events.poll()).clientId(clientId).getEvent();
         String sessionId = loginEvent.getSessionId();
         String codeId = loginEvent.getDetails().get(Details.CODE_ID);
         authorizationEndpointResponse = oauth.parseLoginResponse();
@@ -474,7 +477,8 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
         events.expectCodeToToken(codeId, sessionId).client(clientId).assertEvent();
 
         oauth.doLogout(res.getRefreshToken());
-        events.expectLogout(sessionId).client(clientId).clearDetails().assertEvent();
+        EventAssertion.assertSuccess(events.poll()).type(EventType.LOGOUT)
+                .sessionId(sessionId).clientId(clientId).withoutDetails(Details.REDIRECT_URI);
     }
 
     @Test
@@ -1430,9 +1434,8 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
 
         oauth.client(clientId);
         oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
-        EventRepresentation loginEvent = events.expectLogin()
-                .client(clientId)
-                .assertEvent();
+        EventRepresentation loginEvent = EventAssertion.expectLoginSuccess(events.poll())
+                .clientId(clientId).getEvent();
         String sessionId = loginEvent.getSessionId();
         String code = oauth.parseLoginResponse().getCode();
 
@@ -1521,7 +1524,7 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
 
         oauth.client(clientId);
         oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
-        events.expectLogin().client(clientId).assertEvent();
+        EventAssertion.expectLoginSuccess(events.poll()).clientId(clientId);
         String code = oauth.parseLoginResponse().getCode();
 
         // obtain access token

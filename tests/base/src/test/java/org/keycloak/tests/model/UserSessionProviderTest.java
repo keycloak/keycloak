@@ -43,6 +43,7 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.provider.ProviderEventListener;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
@@ -1001,8 +1002,8 @@ public class UserSessionProviderTest {
         @Override
         public RealmBuilder configure(RealmBuilder realm) {
             realm.name("test");
-            realm.addClient("test-app");
-            realm.addClient("third-party");
+            realm.clients(ClientBuilder.create("test-app"));
+            realm.clients(ClientBuilder.create("third-party"));
             return realm;
         }
     }

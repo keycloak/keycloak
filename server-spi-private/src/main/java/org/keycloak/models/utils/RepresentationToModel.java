@@ -93,6 +93,7 @@ import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
+import org.keycloak.models.UserVerifiableCredentialModel;
 import org.keycloak.models.credential.OTPCredentialModel;
 import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.models.credential.dto.OTPCredentialData;
@@ -129,6 +130,7 @@ import org.keycloak.representations.idm.authorization.ResourceOwnerRepresentatio
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
+import org.keycloak.representations.idm.oid4vc.UserVerifiableCredentialRepresentation;
 import org.keycloak.storage.DatastoreProvider;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.utils.StringUtil;
@@ -984,6 +986,13 @@ public class RepresentationToModel {
         return consentModel;
     }
 
+    public static UserVerifiableCredentialModel toModel(UserVerifiableCredentialRepresentation rep) {
+        UserVerifiableCredentialModel verifCredentialModel = new UserVerifiableCredentialModel(rep.getCredentialScopeName());
+        verifCredentialModel.setRevision(rep.getRevision());
+        verifCredentialModel.setCreatedDate(rep.getCreatedDate());
+        return verifCredentialModel;
+    }
+
     public static AuthenticationFlowModel toModel(AuthenticationFlowRepresentation rep) {
         AuthenticationFlowModel model = new AuthenticationFlowModel();
         model.setId(rep.getId());
@@ -1745,7 +1754,6 @@ public class RepresentationToModel {
         model.setAttributes(rep.getAttributes());
         model.setDomains(ofNullable(rep.getDomains()).orElse(Set.of()).stream()
                 .filter(Objects::nonNull)
-                .filter(domain -> StringUtil.isNotBlank(domain.getName()))
                 .map(RepresentationToModel::toModel)
                 .collect(Collectors.toSet()));
 

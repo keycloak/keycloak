@@ -189,6 +189,9 @@ public final class Marshalling {
     public static final int VALUE_IDENTITY_BI_FUNCTION = 65619;
     public static final int LOGIN_FAILURES_LIFESPAN_UPDATE = 65620;
 
+    /** see {@link org.keycloak.models.workflow.WorkflowScheduleClusterEvent} */
+    public static final int WORKFLOW_SCHEDULE_CLUSTER_EVENT = 65621;
+
     public static void configure(GlobalConfigurationBuilder builder) {
         getSchemas().forEach(builder.serialization()::addContextInitializer);
     }

@@ -70,6 +70,7 @@ import org.keycloak.services.clientpolicy.condition.ClientUpdaterContextConditio
 import org.keycloak.services.clientpolicy.executor.ConfidentialClientAcceptExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.HolderOfKeyEnforcerExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.SecureSigningAlgorithmForSignedJwtExecutorFactory;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RoleBuilder;
 import org.keycloak.testframework.realm.UserBuilder;
@@ -156,7 +157,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
                 .email("schwarz@test.example.com")
                 .enabled(true)
                 .password("passwort-schwarz")
-                .roles("user", "offline_access")
+                .realmRoles("user", "offline_access")
                 .build();
         realm.getUsers().add(user);
 
@@ -165,7 +166,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
                 .email("rot@test.example.com")
                 .enabled(true)
                 .password("passwort-rot")
-                .roles("user", "offline_access")
+                .realmRoles("user", "offline_access")
                 .build();
         realm.getUsers().add(user);
 
@@ -174,7 +175,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
                 .email("gelb@test.example.com")
                 .enabled(true)
                 .password("passwort-gelb")
-                .roles("user", "offline_access")
+                .realmRoles("user", "offline_access")
                 .build();
         realm.getUsers().add(user);
 
@@ -183,7 +184,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
                 .email("deaktiviert@test.example.com")
                 .enabled(false)
                 .password("passwort-deaktiviert")
-                .roles("user", "offline_access")
+                .realmRoles("user", "offline_access")
                 .build();
         realm.getUsers().add(user);
 
@@ -2348,7 +2349,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
         AuthenticationRequestAcknowledgement response = oauth.ciba().backchannelAuthenticationRequest(username).bindingMessage(bindingMessage).additionalParams(additionalParameters).send();
         assertThat(response.getStatusCode(), is(equalTo(400)));
         assertThat(response.getError(), is(OAuthErrorException.INVALID_CLIENT));
-        assertThat(response.getErrorDescription(), is("invalid client access type"));
+        assertThat(response.getErrorDescription(), is("invalid client access type: public"));
 
         String clientConfidentialId = generateSuffixedName("confidential-app");
         String clientConfidentialSecret = "app-secret";
@@ -2376,7 +2377,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
         AccessTokenResponse tokenRes = oauth.ciba().doBackchannelAuthenticationTokenRequest(response.getAuthReqId());
         assertThat(tokenRes.getStatusCode(), is(equalTo(400)));
         assertThat(tokenRes.getError(), is(OAuthErrorException.INVALID_GRANT));
-        assertThat(tokenRes.getErrorDescription(), is("invalid client access type"));
+        assertThat(tokenRes.getErrorDescription(), is("invalid client access type: public"));
     }
 
     @Test
@@ -2931,7 +2932,8 @@ public class CIBATest extends AbstractClientPoliciesTest {
         else assertThat(tokenRes.getErrorDescription(), is(equalTo("Session not active")));
 
         RefreshToken rt = oauth.parseRefreshToken(refreshToken);
-        return events.expectLogout(sessionId).client(TEST_CLIENT_NAME).user(rt.getSubject()).session(AssertEvents.isSessionId()).clearDetails().assertEvent();
+        return EventAssertion.assertSuccess(events.poll()).type(EventType.LOGOUT)
+                .sessionId(rt.getSessionId()).clientId(TEST_CLIENT_NAME).userId(rt.getSubject()).withoutDetails(Details.REDIRECT_URI).getEvent();
     }
 
     private EventRepresentation doTokenRevokeByRefreshToken(String refreshToken, String sessionId, String userId, boolean isOfflineAccess) throws IOException {

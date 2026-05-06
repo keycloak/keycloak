@@ -17,6 +17,7 @@
 
 package org.keycloak.tests.admin.event;
 
+import java.util.Collections;
 import java.util.List;
 
 import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
@@ -70,13 +71,13 @@ public class EventConfigTest {
 
     @Test
     public void addRemoveListenerTest() {
-        configRealm.updateWithCleanup(r -> r.eventsEnabled(false).adminEventsEnabled(false).overwriteEventsListeners());
+        configRealm.updateWithCleanup(r -> r.eventsEnabled(false).adminEventsEnabled(false).setEventsListeners(Collections.emptyList()));
 
         configRep = configRealm.admin().getRealmEventsConfig();
 
         Assertions.assertEquals(0, configRep.getEventsListeners().size());
 
-        configRealm.updateWithCleanup(r -> r.overwriteEventsListeners("email"));
+        configRealm.updateWithCleanup(r -> r.setEventsListeners(List.of("email")));
         configRep = configRealm.admin().getRealmEventsConfig();
         List<String> eventListeners = configRep.getEventsListeners();
         Assertions.assertEquals(1, eventListeners.size());
@@ -97,7 +98,7 @@ public class EventConfigTest {
         Assertions.assertEquals(2, enabledEventTypes.size());
 
         // remove all event types
-        configRealm.updateWithCleanup(RealmBuilder::setEnabledEventTypes);
+        configRealm.updateWithCleanup(realm -> realm.setEnabledEventTypes(Collections.emptyList()));
 
         // removing all event types restores default events
         Assertions.assertEquals(defaultEventCount, configRealm.admin().getRealmEventsConfig().getEnabledEventTypes().size());
