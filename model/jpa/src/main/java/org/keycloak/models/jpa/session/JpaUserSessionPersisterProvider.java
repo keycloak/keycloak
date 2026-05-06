@@ -367,7 +367,7 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
         String offlineStr = offlineToString(offline);
 
         TypedQuery<PersistentUserSessionEntity> query = paginateQuery(
-                em.createNamedQuery("findUserSessionsByUserId", PersistentUserSessionEntity.class),
+                em.createNamedQuery("findUserSessionsByUserIdLastSessionRefresh", PersistentUserSessionEntity.class),
                 firstResult, maxResults);
 
         query.setParameter("offline", offlineStr);
@@ -376,6 +376,20 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
         query.setParameter("lastSessionRefresh", calculateOldestSessionTime(realm, offline));
 
         return loadExactUserSessionsWithClientSessions(query, offlineStr);
+    }
+
+    @Override
+    public Map<String, Set<String>> findUserSessionsByUserId(RealmModel realm, UserModel user, boolean offline) {
+        final TypedQuery<Object[]> query = em.createNamedQuery("findUserSessionsByUserId", Object[].class)
+                .setParameter("offline", offlineToString(offline))
+                .setParameter("realmId", realm.getId())
+                .setParameter("userId", user.getId());
+        return closing(query.getResultStream())
+                .collect(Collectors.groupingBy(
+                        row -> (String) row[0],
+                        Collectors.mapping(
+                                row -> (String) row[1],
+                                Collectors.filtering(Objects::nonNull, Collectors.toSet()))));
     }
 
     public Stream<UserSessionModel> loadUserSessionsStream(Integer firstResult, Integer maxResults, boolean offline,

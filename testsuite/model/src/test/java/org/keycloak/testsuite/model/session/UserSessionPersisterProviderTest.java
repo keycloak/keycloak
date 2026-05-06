@@ -556,6 +556,85 @@ public class UserSessionPersisterProviderTest extends KeycloakModelTest {
         });
     }
 
+    @Test
+    public void testFindUserSessionsByUserId() {
+        // Verifies that findUserSessionsByUserId returns sessions for cache cleanup even when their
+        // lastSessionRefresh would exclude them from loadUserSessionsStream (which filters by idle timeout).
+        // Without this guarantee, a user delete could leave orphaned cache entries for a user whose
+        // sessions have been idle longer than the offline-session idle timeout.
+        AtomicReference<UserSessionModel[]> origSessionsAt = new AtomicReference<>();
+
+        inComittedTransaction(session -> {
+            origSessionsAt.set(createSessions(session, realmId));
+        });
+
+        inComittedTransaction(session -> {
+            RealmModel realm = session.realms().getRealm(realmId);
+            session.getContext().setRealm(realm);
+            UserSessionModel us1 = session.sessions().getUserSession(realm, origSessionsAt.get()[1].getId());
+            persistUserSession(session, us1, true);
+        });
+
+        withRealmConsumer(realmId, (session, realm) -> {
+            // Advance clock past the offline session idle timeout. The persisted session's lastSessionRefresh
+            // is now older than the idle threshold, so loadUserSessionsStream filters it out.
+            setTimeOffset(realm.getOfflineSessionIdleTimeout() + 86400);
+            try {
+                UserSessionPersisterProvider persister = session.getProvider(UserSessionPersisterProvider.class);
+                UserModel user1 = session.users().getUserByUsername(realm, "user1");
+
+                long activeStreamCount = persister.loadUserSessionsStream(realm, user1, true, null, null).count();
+                Assert.assertEquals("loadUserSessionsStream is expected to filter out idle-expired sessions",
+                        0L, activeStreamCount);
+
+                Map<String, Set<String>> forRemoval = persister.findUserSessionsByUserId(realm, user1, true);
+                Assert.assertEquals("findUserSessionsByUserId must return idle-expired sessions for cache cleanup",
+                        1, forRemoval.size());
+                Assert.assertTrue("returned map must include the persisted user session id",
+                        forRemoval.containsKey(origSessionsAt.get()[1].getId()));
+            } finally {
+                setTimeOffset(0);
+                session.getKeycloakSessionFactory().publish(new ResetTimeOffsetEvent());
+            }
+        });
+    }
+
+    @Test
+    public void testFindUserSessionsByUserIdWithoutClientSessions() {
+        // Regression guard for the LEFT JOIN in findUserSessionsByUserId: a user session can exist in the
+        // persister without any associated client session (e.g. when the last client session was removed,
+        // or during the brief race window between createUserSession and createClientSession). The query
+        // must still return the user-session id so cache eviction can clear orphaned user-session entries.
+        AtomicReference<UserSessionModel[]> origSessionsAt = new AtomicReference<>();
+
+        inComittedTransaction(session -> {
+            origSessionsAt.set(createSessions(session, realmId));
+        });
+
+        inComittedTransaction(session -> {
+            RealmModel realm = session.realms().getRealm(realmId);
+            session.getContext().setRealm(realm);
+            // Persist only the user session row, NOT its client sessions — this is what the LEFT JOIN
+            // in findUserSessionsByUserId must cope with.
+            UserSessionModel us = session.sessions().getUserSession(realm, origSessionsAt.get()[2].getId());
+            session.getProvider(UserSessionPersisterProvider.class).createUserSession(us, true);
+        });
+
+        withRealmConsumer(realmId, (session, realm) -> {
+            UserSessionPersisterProvider persister = session.getProvider(UserSessionPersisterProvider.class);
+            UserModel user2 = session.users().getUserByUsername(realm, "user2");
+
+            Map<String, Set<String>> result = persister.findUserSessionsByUserId(realm, user2, true);
+            Assert.assertEquals("user session without client sessions must still appear in result",
+                    1, result.size());
+            String userSessionId = origSessionsAt.get()[2].getId();
+            Assert.assertTrue("returned map must contain the persisted user-session id",
+                    result.containsKey(userSessionId));
+            Assert.assertEquals("client-id set must be empty when no client session exists",
+                    Collections.emptySet(), result.get(userSessionId));
+        });
+    }
+
     // KEYCLOAK-1999
     @Test
     public void testNoSessions() {

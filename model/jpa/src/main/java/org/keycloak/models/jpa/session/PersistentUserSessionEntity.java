@@ -53,8 +53,11 @@ import org.hibernate.annotations.DynamicUpdate;
                 " order by sess.userSessionId"),
         @NamedQuery(name="findUserSession", query="select sess from PersistentUserSessionEntity sess where sess.offline = :offline" +
                 " AND sess.userSessionId = :userSessionId AND sess.realmId = :realmId AND sess.lastSessionRefresh >= :lastSessionRefresh"),
-        @NamedQuery(name="findUserSessionsByUserId", query="select sess from PersistentUserSessionEntity sess where sess.offline = :offline" +
+        @NamedQuery(name="findUserSessionsByUserIdLastSessionRefresh", query="select sess from PersistentUserSessionEntity sess where sess.offline = :offline" +
                 " AND sess.realmId = :realmId AND sess.userId = :userId AND sess.lastSessionRefresh >= :lastSessionRefresh ORDER BY sess.userSessionId"),
+        @NamedQuery(name="findUserSessionsByUserId", query="SELECT sess.userSessionId, cs.clientId FROM PersistentUserSessionEntity sess" +
+                " LEFT JOIN PersistentClientSessionEntity cs ON cs.userSessionId = sess.userSessionId AND cs.offline = sess.offline" +
+                " WHERE sess.offline = :offline AND sess.realmId = :realmId AND sess.userId = :userId"),
         @NamedQuery(name="findUserSessionsByBrokerSessionId", query="select sess from PersistentUserSessionEntity sess where sess.brokerSessionId = :brokerSessionId" +
                 " AND sess.realmId = :realmId AND sess.offline = :offline AND lastSessionRefresh >= :lastSessionRefresh ORDER BY sess.userSessionId"),
         @NamedQuery(name="findUserSessionsByClientId", query="SELECT sess FROM PersistentUserSessionEntity sess INNER JOIN PersistentClientSessionEntity clientSess " +
