@@ -74,8 +74,6 @@ import org.keycloak.protocol.oid4vc.issuance.credentialoffer.preauth.JwtPreAuthC
 import org.keycloak.protocol.oid4vc.model.CredentialsOffer;
 import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
 import org.keycloak.protocol.oid4vc.model.PreAuthCodeCtx;
-import org.keycloak.protocol.oidc.encode.AccessTokenContext;
-import org.keycloak.protocol.oidc.encode.TokenContextEncoderProvider;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.representations.idm.AdminEventRepresentation;
@@ -692,13 +690,6 @@ public class TestingResourceProvider implements RealmResourceProvider {
 
         PreAuthCodeCtx preAuthCodeCtx = new PreAuthCodeCtx(offerState);
         return new JwtPreAuthCodeHandler(session).createPreAuthCode(preAuthCodeCtx);
-    }
-
-    @GET
-    @Path("/token-context")
-    @Produces(MediaType.APPLICATION_JSON)
-    public AccessTokenContext getTokenContext(@QueryParam("tokenId") String tokenId) {
-        return session.getProvider(TokenContextEncoderProvider.class).getTokenContextFromTokenId(tokenId);
     }
 
 }

@@ -930,7 +930,7 @@ public class StandardTokenExchangeV2Test extends AbstractClientPoliciesTest {
             TokenVerifier<AccessToken> verifier = TokenVerifier.create(accessToken, AccessToken.class);
             AccessToken originalToken = verifier.parse().getToken();
 
-            AccessTokenContext ctx = getTestingClient().testing().getTokenContext(originalToken.getId());
+            AccessTokenContext ctx = runOnServer.fetch(RunHelpers.getTokenContext(originalToken.getId()));
             assertEquals(ctx.getSessionType(), AccessTokenContext.SessionType.OFFLINE);
 
             // normal access token exchange is allowed for the offline session
@@ -1456,7 +1456,7 @@ public class StandardTokenExchangeV2Test extends AbstractClientPoliciesTest {
 
     private void assertAccessTokenContext(String jti, AccessTokenContext.SessionType sessionType,
                                           AccessTokenContext.TokenType tokenType, String grantType) {
-        AccessTokenContext ctx = testingClient.testing(TEST).getTokenContext(jti);
+        AccessTokenContext ctx = runOnServer.fetch(RunHelpers.getTokenContext(jti));
         assertEquals(sessionType, ctx.getSessionType());
         assertEquals(tokenType, ctx.getTokenType());
         assertEquals(grantType, ctx.getGrantType());

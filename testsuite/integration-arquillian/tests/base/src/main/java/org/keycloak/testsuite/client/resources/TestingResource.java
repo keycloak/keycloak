@@ -32,7 +32,6 @@ import jakarta.ws.rs.core.Response;
 
 import org.keycloak.common.Profile;
 import org.keycloak.common.enums.HostnameVerificationPolicy;
-import org.keycloak.protocol.oidc.encode.AccessTokenContext;
 import org.keycloak.representations.idm.AdminEventRepresentation;
 import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
@@ -292,9 +291,4 @@ public interface TestingResource {
     @GET
     @Path("/pre-authorized-code")
     String getPreAuthorizedCode(@QueryParam("realm") final String realmName, @QueryParam("userSessionId") final String userSessionId, @QueryParam("clientId") final String clientId, @QueryParam("expiration") final int expiration);
-
-    @GET
-    @Path("/token-context")
-    @Produces(MediaType.APPLICATION_JSON)
-    AccessTokenContext getTokenContext(@QueryParam("tokenId") String tokenId);
 }

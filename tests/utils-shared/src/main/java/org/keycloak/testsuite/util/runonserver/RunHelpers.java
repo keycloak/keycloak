@@ -16,6 +16,8 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.session.UserSessionPersisterProvider;
 import org.keycloak.models.utils.ModelToRepresentation;
+import org.keycloak.protocol.oidc.encode.AccessTokenContext;
+import org.keycloak.protocol.oidc.encode.TokenContextEncoderProvider;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -151,6 +153,20 @@ public class RunHelpers {
                 EmailEventListenerProviderFactory prov = (EmailEventListenerProviderFactory) session.getKeycloakSessionFactory()
                         .getProviderFactory(EventListenerProvider.class, EmailEventListenerProviderFactory.ID);
                 prov.removeIncludedEvents(events.toArray(EventType[]::new));
+            }
+        };
+    }
+
+    public static FetchOnServerWrapper<AccessTokenContext> getTokenContext(String tokenId) {
+        return new FetchOnServerWrapper<>() {
+            @Override
+            public FetchOnServer getRunOnServer() {
+                return session -> session.getProvider(TokenContextEncoderProvider.class).getTokenContextFromTokenId(tokenId);
+            }
+
+            @Override
+            public Class<AccessTokenContext> getResultClass() {
+                return AccessTokenContext.class;
             }
         };
     }
