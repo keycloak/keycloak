@@ -137,24 +137,24 @@ public class RequiredActionPriorityTest extends AbstractTestRealmKeycloakTest {
         // First, accept terms
         termsPage.assertCurrent();
         termsPage.acceptTerms();
-        events.expectRequiredAction(EventType.CUSTOM_REQUIRED_ACTION).removeDetail(Details.REDIRECT_URI)
-                .detail(Details.CUSTOM_REQUIRED_ACTION, TermsAndConditions.PROVIDER_ID).assertEvent();
+        EventAssertion.expectRequiredAction(events.poll()).type(EventType.CUSTOM_REQUIRED_ACTION).withoutDetails(Details.REDIRECT_URI)
+                .details(Details.CUSTOM_REQUIRED_ACTION, TermsAndConditions.PROVIDER_ID);
 
         // Second, update profile
         updateProfilePage.assertCurrent();
         updateProfilePage.prepareUpdate().firstName(NEW_FIRST_NAME).lastName(NEW_LAST_NAME)
                 .email(NEW_EMAIL).submit();
-        events.expectRequiredAction(EventType.UPDATE_PROFILE).detail(Details.UPDATED_FIRST_NAME, NEW_FIRST_NAME)
-                .detail(Details.UPDATED_LAST_NAME, NEW_LAST_NAME)
-                .detail(Details.PREVIOUS_EMAIL, EMAIL)
-                .detail(Details.UPDATED_EMAIL, NEW_EMAIL)
-                .assertEvent();
+        EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_PROFILE).details(Details.UPDATED_FIRST_NAME, NEW_FIRST_NAME)
+                .details(Details.UPDATED_LAST_NAME, NEW_LAST_NAME)
+                .details(Details.PREVIOUS_EMAIL, EMAIL)
+                .details(Details.UPDATED_EMAIL, NEW_EMAIL)
+                ;
 
         // Finally, change password
         changePasswordPage.assertCurrent();
         changePasswordPage.changePassword(NEW_PASSWORD, NEW_PASSWORD);
-        events.expectRequiredAction(EventType.UPDATE_PASSWORD).detail(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE).assertEvent();
-        events.expectRequiredAction(EventType.UPDATE_CREDENTIAL).detail(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE).assertEvent();
+        EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_PASSWORD).details(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE);
+        EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_CREDENTIAL).details(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE);
 
         // Logged in
         appPage.assertCurrent();
@@ -187,24 +187,24 @@ public class RequiredActionPriorityTest extends AbstractTestRealmKeycloakTest {
         // First, change password
         changePasswordPage.assertCurrent();
         changePasswordPage.changePassword(NEW_PASSWORD, NEW_PASSWORD);
-        events.expectRequiredAction(EventType.UPDATE_PASSWORD).detail(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE).assertEvent();
-        events.expectRequiredAction(EventType.UPDATE_CREDENTIAL).detail(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE).assertEvent();
+        EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_PASSWORD).details(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE);
+        EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_CREDENTIAL).details(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE);
 
         // Second, update profile
         updateProfilePage.assertCurrent();
         updateProfilePage.prepareUpdate().firstName(NEW_FIRST_NAME).lastName(NEW_LAST_NAME)
                 .email(NEW_EMAIL).submit();
-        events.expectRequiredAction(EventType.UPDATE_PROFILE).detail(Details.UPDATED_FIRST_NAME, NEW_FIRST_NAME)
-                .detail(Details.UPDATED_LAST_NAME, NEW_LAST_NAME)
-                .detail(Details.PREVIOUS_EMAIL, EMAIL)
-                .detail(Details.UPDATED_EMAIL, NEW_EMAIL)
-                .assertEvent();
+        EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_PROFILE).details(Details.UPDATED_FIRST_NAME, NEW_FIRST_NAME)
+                .details(Details.UPDATED_LAST_NAME, NEW_LAST_NAME)
+                .details(Details.PREVIOUS_EMAIL, EMAIL)
+                .details(Details.UPDATED_EMAIL, NEW_EMAIL)
+                ;
 
         // Finally, accept terms
         termsPage.assertCurrent();
         termsPage.acceptTerms();
-        events.expectRequiredAction(EventType.CUSTOM_REQUIRED_ACTION).removeDetail(Details.REDIRECT_URI)
-                .detail(Details.CUSTOM_REQUIRED_ACTION, TermsAndConditions.PROVIDER_ID).assertEvent();
+        EventAssertion.expectRequiredAction(events.poll()).type(EventType.CUSTOM_REQUIRED_ACTION).withoutDetails(Details.REDIRECT_URI)
+                .details(Details.CUSTOM_REQUIRED_ACTION, TermsAndConditions.PROVIDER_ID);
 
         // Logged in
         appPage.assertCurrent();
@@ -238,24 +238,24 @@ public class RequiredActionPriorityTest extends AbstractTestRealmKeycloakTest {
         // First, change password
         changePasswordPage.assertCurrent();
         changePasswordPage.changePassword(NEW_PASSWORD, NEW_PASSWORD);
-        events.expectRequiredAction(EventType.UPDATE_PASSWORD).assertEvent();
-        events.expectRequiredAction(EventType.UPDATE_CREDENTIAL).assertEvent();
+        EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_PASSWORD);
+        EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_CREDENTIAL);
 
         // Second, accept terms
         termsPage.assertCurrent();
         termsPage.acceptTerms();
-        events.expectRequiredAction(EventType.CUSTOM_REQUIRED_ACTION).removeDetail(Details.REDIRECT_URI)
-                .detail(Details.CUSTOM_REQUIRED_ACTION, TermsAndConditions.PROVIDER_ID).assertEvent();
+        EventAssertion.expectRequiredAction(events.poll()).type(EventType.CUSTOM_REQUIRED_ACTION).withoutDetails(Details.REDIRECT_URI)
+                .details(Details.CUSTOM_REQUIRED_ACTION, TermsAndConditions.PROVIDER_ID);
 
         // Finally, update profile. Action specified by "kc_action" should be always triggered last
         updateProfilePage.assertCurrent();
         updateProfilePage.prepareUpdate().firstName(NEW_FIRST_NAME).lastName(NEW_LAST_NAME)
                 .email(NEW_EMAIL).submit();
-        events.expectRequiredAction(EventType.UPDATE_PROFILE).detail(Details.UPDATED_FIRST_NAME, NEW_FIRST_NAME)
-                .detail(Details.UPDATED_LAST_NAME, NEW_LAST_NAME)
-                .detail(Details.PREVIOUS_EMAIL, EMAIL)
-                .detail(Details.UPDATED_EMAIL, NEW_EMAIL)
-                .assertEvent();
+        EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_PROFILE).details(Details.UPDATED_FIRST_NAME, NEW_FIRST_NAME)
+                .details(Details.UPDATED_LAST_NAME, NEW_LAST_NAME)
+                .details(Details.PREVIOUS_EMAIL, EMAIL)
+                .details(Details.UPDATED_EMAIL, NEW_EMAIL)
+                ;
 
         // Logged in
         appPage.assertCurrent();
@@ -290,7 +290,7 @@ public class RequiredActionPriorityTest extends AbstractTestRealmKeycloakTest {
 
         resetPasswordPage.assertCurrent();
         resetPasswordPage.changePassword(USERNAME);
-        events.expectRequiredAction(EventType.SEND_RESET_PASSWORD).assertEvent();
+        EventAssertion.expectRequiredAction(events.poll()).type(EventType.SEND_RESET_PASSWORD);
         loginPage.assertCurrent();
         assertEquals("You should receive an email shortly with further instructions.", loginPage.getSuccessMessage());
 
@@ -303,24 +303,24 @@ public class RequiredActionPriorityTest extends AbstractTestRealmKeycloakTest {
         // First, change password
         changePasswordPage.assertCurrent();
         changePasswordPage.changePassword(NEW_PASSWORD, NEW_PASSWORD);
-        events.expectRequiredAction(EventType.UPDATE_PASSWORD).detail(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE).assertEvent();
-        events.expectRequiredAction(EventType.UPDATE_CREDENTIAL).detail(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE).assertEvent();
+        EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_PASSWORD).details(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE);
+        EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_CREDENTIAL).details(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE);
 
         // Second, update profile
         updateProfilePage.assertCurrent();
         updateProfilePage.prepareUpdate().firstName(NEW_FIRST_NAME).lastName(NEW_LAST_NAME)
                 .email(NEW_EMAIL).submit();
-        events.expectRequiredAction(EventType.UPDATE_PROFILE).detail(Details.UPDATED_FIRST_NAME, NEW_FIRST_NAME)
-                .detail(Details.UPDATED_LAST_NAME, NEW_LAST_NAME)
-                .detail(Details.PREVIOUS_EMAIL, EMAIL)
-                .detail(Details.UPDATED_EMAIL, NEW_EMAIL)
-                .assertEvent();
+        EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_PROFILE).details(Details.UPDATED_FIRST_NAME, NEW_FIRST_NAME)
+                .details(Details.UPDATED_LAST_NAME, NEW_LAST_NAME)
+                .details(Details.PREVIOUS_EMAIL, EMAIL)
+                .details(Details.UPDATED_EMAIL, NEW_EMAIL)
+                ;
 
         // Finally, accept terms
         termsPage.assertCurrent();
         termsPage.acceptTerms();
-        events.expectRequiredAction(EventType.CUSTOM_REQUIRED_ACTION).removeDetail(Details.REDIRECT_URI)
-                .detail(Details.CUSTOM_REQUIRED_ACTION, TermsAndConditions.PROVIDER_ID).assertEvent();
+        EventAssertion.expectRequiredAction(events.poll()).type(EventType.CUSTOM_REQUIRED_ACTION).withoutDetails(Details.REDIRECT_URI)
+                .details(Details.CUSTOM_REQUIRED_ACTION, TermsAndConditions.PROVIDER_ID);
 
         // Logged in
         appPage.assertCurrent();
@@ -357,23 +357,23 @@ public class RequiredActionPriorityTest extends AbstractTestRealmKeycloakTest {
 
         // Second, complete the profile
         verifyProfilePage.assertCurrent();
-        events.expectRequiredAction(EventType.VERIFY_PROFILE)
-                .user(testUserId)
-                .detail(Details.FIELDS_TO_UPDATE, UserModel.LAST_NAME)
-                .assertEvent();
+        EventAssertion.expectRequiredAction(events.poll()).type(EventType.VERIFY_PROFILE)
+                .userId(testUserId)
+                .details(Details.FIELDS_TO_UPDATE, UserModel.LAST_NAME)
+                ;
 
         verifyProfilePage.update(NEW_FIRST_NAME, NEW_LAST_NAME);
-        events.expectRequiredAction(EventType.UPDATE_PROFILE)
-                .user(testUserId)
-                .detail(Details.UPDATED_FIRST_NAME, NEW_FIRST_NAME)
-                .detail(Details.UPDATED_LAST_NAME, NEW_LAST_NAME)
-                .assertEvent();
+        EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_PROFILE)
+                .userId(testUserId)
+                .details(Details.UPDATED_FIRST_NAME, NEW_FIRST_NAME)
+                .details(Details.UPDATED_LAST_NAME, NEW_LAST_NAME)
+                ;
 
         // Finally, accept terms
         termsPage.assertCurrent();
         termsPage.acceptTerms();
-        events.expectRequiredAction(EventType.CUSTOM_REQUIRED_ACTION).removeDetail(Details.REDIRECT_URI)
-                .detail(Details.CUSTOM_REQUIRED_ACTION, TermsAndConditions.PROVIDER_ID).assertEvent();
+        EventAssertion.expectRequiredAction(events.poll()).type(EventType.CUSTOM_REQUIRED_ACTION).withoutDetails(Details.REDIRECT_URI)
+                .details(Details.CUSTOM_REQUIRED_ACTION, TermsAndConditions.PROVIDER_ID);
 
         // Logged in
         appPage.assertCurrent();
@@ -400,8 +400,8 @@ public class RequiredActionPriorityTest extends AbstractTestRealmKeycloakTest {
         // change password
         changePasswordPage.assertCurrent();
         changePasswordPage.changePassword(NEW_PASSWORD, NEW_PASSWORD);
-        events.expectRequiredAction(EventType.UPDATE_PASSWORD).detail(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE).assertEvent();
-        events.expectRequiredAction(EventType.UPDATE_CREDENTIAL).detail(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE).assertEvent();
+        EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_PASSWORD).details(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE);
+        EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_CREDENTIAL).details(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE);
 
         // CONFIGURE_TOTP
         totpPage.assertCurrent();
@@ -413,8 +413,8 @@ public class RequiredActionPriorityTest extends AbstractTestRealmKeycloakTest {
 
         TimeBasedOTP totp = new TimeBasedOTP();
         totpPage.configure(totp.generateTOTP(totpPage.getTotpSecret()), "userLabel");
-        events.expectRequiredAction(EventType.UPDATE_TOTP).detail(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE).assertEvent();
-        events.expectRequiredAction(EventType.UPDATE_CREDENTIAL).detail(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE).assertEvent();
+        EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_TOTP).details(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE);
+        EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_CREDENTIAL).details(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE);
 
         // Logged in
         appPage.assertCurrent();
@@ -446,12 +446,12 @@ public class RequiredActionPriorityTest extends AbstractTestRealmKeycloakTest {
         // Login
         oauth.openLoginForm();
         loginPage.login(USERNAME, PASSWORD);
-        events.expectRequiredAction(EventType.CUSTOM_REQUIRED_ACTION).assertEvent();
+        EventAssertion.expectRequiredAction(events.poll()).type(EventType.CUSTOM_REQUIRED_ACTION);
 
         // change password
         changePasswordPage.assertCurrent();
         changePasswordPage.changePassword(NEW_PASSWORD, NEW_PASSWORD);
-        events.expectRequiredAction(EventType.UPDATE_PASSWORD).assertEvent();
+        EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_PASSWORD);
 
         appPage.assertCurrent();
         assertThat(appPage.getRequestType(), is(RequestType.AUTH_RESPONSE));

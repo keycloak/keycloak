@@ -78,6 +78,7 @@ import org.keycloak.services.clientpolicy.condition.AnyClientConditionFactory;
 import org.keycloak.services.clientpolicy.condition.ClientAccessTypeConditionFactory;
 import org.keycloak.services.clientpolicy.executor.DPoPBindEnforcerExecutorFactory;
 import org.keycloak.services.cors.Cors;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
@@ -860,10 +861,12 @@ public class DPoPTest extends AbstractTestRealmKeycloakTest {
         AuthorizationEndpointResponse response = oauth.parseLoginResponse();
         assertEquals(OAuthErrorException.INVALID_REQUEST, response.getError());
         assertEquals("Missing parameter: dpop_jkt", response.getErrorDescription());
-        events.expectClientPolicyError(EventType.LOGIN_ERROR, OAuthErrorException.INVALID_REQUEST,
-                        Details.CLIENT_POLICY_ERROR, OAuthErrorException.INVALID_REQUEST,
-                        "Missing parameter: dpop_jkt").client(oauth.getClientId()).user((String) null)
-                .assertEvent();
+        EventAssertion.assertError(events.poll()).type(EventType.LOGIN_ERROR).error(OAuthErrorException.INVALID_REQUEST)
+                .details(Details.REASON, Details.CLIENT_POLICY_ERROR)
+                .details(Details.CLIENT_POLICY_ERROR, OAuthErrorException.INVALID_REQUEST)
+                .details(Details.CLIENT_POLICY_ERROR_DETAIL, "Missing parameter: dpop_jkt")
+                .clientId(oauth.getClientId())
+                .userId(null);
 
         // Login with dpop_jkt -- should be OK
         long clockSkew = 10;

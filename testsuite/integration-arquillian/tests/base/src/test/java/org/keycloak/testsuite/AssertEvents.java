@@ -25,20 +25,14 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
-import org.keycloak.OAuth2Constants;
-import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthenticator;
 import org.keycloak.common.util.Time;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
-import org.keycloak.protocol.oidc.grants.AuthorizationCodeGrantTypeFactory;
-import org.keycloak.protocol.oidc.grants.RefreshTokenGrantTypeFactory;
-import org.keycloak.protocol.oidc.grants.ciba.CibaGrantTypeFactory;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.UserSessionRepresentation;
-import org.keycloak.util.TokenUtil;
 
 import org.hamcrest.CoreMatchers;
 import org.hamcrest.Description;
@@ -99,131 +93,8 @@ public class AssertEvents implements TestRule {
         return event;
     }
 
-    public void assertEmpty() {
-        EventRepresentation event = fetchNextEvent();
-        Assertions.assertNull(event, "Empty event queue expected, but there is " + event);
-    }
-
     public void clear() {
         context.getTestingClient().testing().clearEventQueue();
-    }
-
-    public ExpectedEvent expectRequiredAction(EventType event) {
-        return expectLogin().event(event).removeDetail(Details.CONSENT).session(is(emptyOrNullString()));
-    }
-
-    public ExpectedEvent expectLogin() {
-        return expect(EventType.LOGIN)
-                .detail(Details.CODE_ID, isCodeId())
-                //.detail(Details.USERNAME, DEFAULT_USERNAME)
-                //.detail(Details.AUTH_METHOD, OIDCLoginProtocol.LOGIN_PROTOCOL)
-                //.detail(Details.AUTH_TYPE, AuthorizationEndpoint.CODE_AUTH_TYPE)
-                .detail(Details.REDIRECT_URI, Matchers.equalTo(DEFAULT_REDIRECT_URI))
-                .detail(Details.CONSENT, Details.CONSENT_VALUE_NO_CONSENT_REQUIRED)
-                .session(isSessionId());
-    }
-
-    public ExpectedEvent expectClientLogin() {
-        return expect(EventType.CLIENT_LOGIN)
-                .detail(Details.CODE_ID, isCodeId())
-                .detail(Details.CLIENT_AUTH_METHOD, ClientIdAndSecretAuthenticator.PROVIDER_ID)
-                .detail(Details.GRANT_TYPE, OAuth2Constants.CLIENT_CREDENTIALS)
-                .removeDetail(Details.CODE_ID)
-                .session(isSessionId());
-    }
-
-    public ExpectedEvent expectSocialLogin() {
-        return expect(EventType.LOGIN)
-                .detail(Details.CODE_ID, isCodeId())
-                .detail(Details.USERNAME, DEFAULT_USERNAME)
-                .detail(Details.AUTH_METHOD, "form")
-                .detail(Details.REDIRECT_URI, Matchers.equalTo(DEFAULT_REDIRECT_URI))
-                .session(isSessionId());
-    }
-
-    public ExpectedEvent expectCodeToToken(String codeId, String sessionId) {
-        return expect(EventType.CODE_TO_TOKEN)
-                .detail(Details.CODE_ID, codeId)
-                .detail(Details.TOKEN_ID, isAccessTokenId(AuthorizationCodeGrantTypeFactory.GRANT_SHORTCUT))
-                .detail(Details.REFRESH_TOKEN_ID, isTokenId())
-                .detail(Details.REFRESH_TOKEN_TYPE, TokenUtil.TOKEN_TYPE_REFRESH)
-                .detail(Details.CLIENT_AUTH_METHOD, ClientIdAndSecretAuthenticator.PROVIDER_ID)
-                .session(sessionId);
-    }
-
-    public ExpectedEvent expectRefresh(String refreshTokenId, String sessionId) {
-        return expect(EventType.REFRESH_TOKEN)
-                .detail(Details.TOKEN_ID, isAccessTokenId(RefreshTokenGrantTypeFactory.GRANT_SHORTCUT))
-                .detail(Details.REFRESH_TOKEN_ID, refreshTokenId)
-                .detail(Details.REFRESH_TOKEN_TYPE, TokenUtil.TOKEN_TYPE_REFRESH)
-                .detail(Details.UPDATED_REFRESH_TOKEN_ID, isTokenId())
-                .detail(Details.CLIENT_AUTH_METHOD, ClientIdAndSecretAuthenticator.PROVIDER_ID)
-                .session(sessionId);
-    }
-
-    public ExpectedEvent expectSessionExpired(String sessionId, String userId) {
-        return expect(EventType.USER_SESSION_DELETED)
-                .session(sessionId)
-                .user(userId)
-                .detail(Details.REASON, Details.USER_SESSION_EXPIRED_REASON)
-                .client((String) null)
-                .ipAddress((String) null);
-    }
-
-    public ExpectedEvent expectRegister(String username, String email) {
-        return expectRegister(username, email, DEFAULT_CLIENT_ID);
-    }
-
-    public ExpectedEvent expectRegister(String username, String email, String clientId) {
-        UserRepresentation user = username != null ? getUser(username) : null;
-        return expect(EventType.REGISTER)
-                .user(user != null ? user.getId() : null)
-                .client(clientId)
-                .detail(Details.USERNAME, username)
-                .detail(Details.EMAIL, email)
-                .detail(Details.REGISTER_METHOD, "form")
-                .detail(Details.REDIRECT_URI, Matchers.equalTo(DEFAULT_REDIRECT_URI));
-    }
-
-    public ExpectedEvent expectIdentityProviderFirstLogin(RealmRepresentation realm, String identityProvider, String idpUsername) {
-        return expect(EventType.IDENTITY_PROVIDER_FIRST_LOGIN)
-                .client("broker-app")
-                .realm(realm)
-                .user((String)null)
-                .detail(Details.IDENTITY_PROVIDER, identityProvider)
-                .detail(Details.IDENTITY_PROVIDER_USERNAME, idpUsername);
-    }
-
-    public ExpectedEvent expectRegisterError(String username, String email) {
-        UserRepresentation user = username != null ? getUser(username) : null;
-        return expect(EventType.REGISTER_ERROR)
-                .user(user != null ? user.getId() : null)
-                .detail(Details.USERNAME, username)
-                .detail(Details.EMAIL, email)
-                .detail(Details.REGISTER_METHOD, "form")
-                .detail(Details.REDIRECT_URI, Matchers.equalTo(DEFAULT_REDIRECT_URI));
-    }
-
-    public ExpectedEvent expectAccount(EventType event) {
-        return expect(event).client("account");
-    }
-
-    public ExpectedEvent expectAuthReqIdToToken(String codeId, String sessionId) {
-        return expect(EventType.AUTHREQID_TO_TOKEN)
-                .detail(Details.CODE_ID, codeId)
-                .detail(Details.TOKEN_ID, isAccessTokenId(CibaGrantTypeFactory.GRANT_SHORTCUT))
-                .detail(Details.REFRESH_TOKEN_ID, isTokenId())
-                .detail(Details.REFRESH_TOKEN_TYPE, TokenUtil.TOKEN_TYPE_REFRESH)
-                .detail(Details.CLIENT_AUTH_METHOD, ClientIdAndSecretAuthenticator.PROVIDER_ID)
-                .session(isSessionId());
-    }
-
-    public ExpectedEvent expectClientPolicyError(EventType eventType, String error, String reason, String clientPolicyError, String clientPolicyErrorDetail) {
-        return expect(eventType)
-                .error(error)
-                .detail(Details.REASON, reason)
-                .detail(Details.CLIENT_POLICY_ERROR, clientPolicyError)
-                .detail(Details.CLIENT_POLICY_ERROR_DETAIL, clientPolicyErrorDetail);
     }
 
     public ExpectedEvent expect(EventType event) {

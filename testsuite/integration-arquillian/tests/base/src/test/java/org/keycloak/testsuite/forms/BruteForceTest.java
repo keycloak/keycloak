@@ -1044,7 +1044,7 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
 
         assertEquals("You should receive an email shortly with further instructions.", loginPage.getSuccessMessage());
 
-        events.expectRequiredAction(EventType.SEND_RESET_PASSWORD).user(userId).assertEvent();
+        EventAssertion.expectRequiredAction(events.poll()).type(EventType.SEND_RESET_PASSWORD).userId(userId);
 
         MimeMessage message = greenMail.getReceivedMessages()[0];
         String passwordResetEmailLink = MailUtils.getPasswordResetEmailLink(message);
@@ -1060,8 +1060,8 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
 
         updatePasswordPage.updatePasswords(getPassword("user2"), getPassword("user2"));
 
-        events.expectRequiredAction(EventType.UPDATE_PASSWORD).detail(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE).user(userId).assertEvent();
-        events.expectRequiredAction(EventType.UPDATE_CREDENTIAL).detail(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE).user(userId).assertEvent();
+        EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_PASSWORD).details(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE).userId(userId);
+        EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_CREDENTIAL).details(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE).userId(userId);
 
         userRepresentation = managedRealm.admin().users().get(userId).toRepresentation();
         assertTrue(userRepresentation.isEnabled());

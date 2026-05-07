@@ -328,7 +328,7 @@ public class KcOidcMultipleTabsBrokerTest  extends AbstractInitializedBaseBroker
             // Login finished on IDP (provider) as well as on "consumer" realm after being redirected there from "provider"
             EventRepresentation eventRep1 = EventAssertion.assertSuccess(events.poll())
                     .type(EventType.LOGIN)
-                    .isCodeId()
+                    .hasCodeId()
                     .hasSessionId()
                     .clientId("brokerapp")
                     .details(Details.REDIRECT_URI, OAuthClient.AUTH_SERVER_ROOT + "/realms/" + bc.consumerRealmName() + "/broker/" + bc.getIDPAlias() + "/endpoint").getEvent();
@@ -339,7 +339,7 @@ public class KcOidcMultipleTabsBrokerTest  extends AbstractInitializedBaseBroker
 
             EventRepresentation eventRep2 = EventAssertion.assertSuccess(events.poll())
                     .type(EventType.LOGIN)
-                    .isCodeId()
+                    .hasCodeId()
                     .hasSessionId()
                     .clientId("broker-app")
                     .details(Details.IDENTITY_PROVIDER, bc.getIDPAlias()).getEvent();

@@ -44,6 +44,29 @@ public class EventMatchers {
         return Matchers.anyOf(isBase64WithAtLeast128Bits(), isUUID());
     }
 
+    public static Matcher<String> isTokenId() {
+        // Make the tests pass with the old and the new encoding of token IDs
+        return Matchers.anyOf(isBase64WithAtLeast128Bits(), isUUID());
+    }
+
+    public static Matcher<String> isAccessTokenId(String expectedGrantShortcut) {
+        return new TypeSafeMatcher<>() {
+            @Override
+            protected boolean matchesSafely(String item) {
+                String[] items = item.split(":");
+                if (items.length != 2) return false;
+                // Grant type shortcut starts at character 4th char and is 2-chars long
+                if (items[0].substring(3, 5).equals(expectedGrantShortcut)) return false;
+                return isTokenId().matches(items[1]);
+            }
+
+            @Override
+            public void describeTo(Description description) {
+                description.appendText("Not a Token ID with expected grant: " + expectedGrantShortcut);
+            }
+        };
+    }
+
     private static Matcher<String> isBase64WithAtLeast128Bits() {
         return new TypeSafeMatcher<>() {
             private static final Pattern BASE64 = Pattern.compile("[-A-Za-z0-9+/_]*");

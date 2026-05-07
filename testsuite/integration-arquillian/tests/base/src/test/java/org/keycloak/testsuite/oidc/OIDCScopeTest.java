@@ -515,10 +515,9 @@ public class OIDCScopeTest extends AbstractOIDCScopeTest {
         assertAddress(idToken, false);
         assertPhone(idToken, false);
 
-        events.expectRefresh(refreshToken1.getId(), idToken.getSessionState())
-                .user(userId)
-                .client("third-party")
-                .assertEvent();
+        EventAssertion.expectRefreshTokenSuccess(events.poll()).details(Details.REFRESH_TOKEN_ID, refreshToken1.getId()).sessionId(idToken.getSessionState())
+                .userId(userId)
+                .clientId("third-party");
 
         // Go to applications in account mgmt and revoke consent
         events.clear();
@@ -529,13 +528,14 @@ public class OIDCScopeTest extends AbstractOIDCScopeTest {
         // Ensure I can't refresh anymore
         refreshResponse = oauth.doRefreshTokenRequest(refreshResponse.getRefreshToken());
         assertEquals(400, refreshResponse.getStatusCode());
-        events.expectRefresh(refreshToken1.getId(), idToken.getSessionState())
-                .client("third-party")
-                .user((String) null)
-                .removeDetail(Details.TOKEN_ID)
-                .removeDetail(Details.REFRESH_TOKEN_ID)
-                .removeDetail(Details.UPDATED_REFRESH_TOKEN_ID)
-                .error("invalid_token").assertEvent();
+        EventRepresentation eventRep = EventAssertion.expectRefreshTokenError(events.poll())
+                .sessionId(idToken.getSessionState())
+                .clientId("third-party")
+                .userId(null)
+                .withoutDetails(Details.TOKEN_ID)
+                .withoutDetails(Details.UPDATED_REFRESH_TOKEN_ID)
+                .error("invalid_token").getEvent();
+        Assertions.assertNotEquals(refreshToken1.getId(), eventRep.getDetails().get(Details.REFRESH_TOKEN_ID));
     }
 
 

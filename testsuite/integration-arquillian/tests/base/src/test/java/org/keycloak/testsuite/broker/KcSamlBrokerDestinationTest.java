@@ -4,6 +4,8 @@ import java.util.Collections;
 
 import jakarta.ws.rs.core.Response;
 
+import org.junit.jupiter.api.Assertions;
+
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
 import org.keycloak.protocol.saml.SamlConfigAttributes;
@@ -88,7 +90,7 @@ public class KcSamlBrokerDestinationTest extends AbstractBrokerTest {
                             .error(expectedError)
                             .detail("reason", Errors.MISSING_REQUIRED_DESTINATION)
                             .assertEvent();
-                    events.assertEmpty();
+                    Assertions.assertNull(events.poll());
                 });
     }
 }

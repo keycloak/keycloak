@@ -15,6 +15,8 @@ import java.util.Map;
 
 import jakarta.ws.rs.core.Response;
 
+import org.junit.jupiter.api.Assertions;
+
 import org.keycloak.dom.saml.v2.protocol.ResponseType;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
@@ -219,7 +221,7 @@ public final class KcSamlBrokerFrontendUrlTest extends AbstractBrokerTest {
                             .error(Errors.INVALID_SAML_RESPONSE)
                             .detail("reason", Errors.INVALID_DESTINATION)
                             .assertEvent();
-                    events.assertEmpty();
+                    Assertions.assertNull(events.poll());
                 });
     }
 

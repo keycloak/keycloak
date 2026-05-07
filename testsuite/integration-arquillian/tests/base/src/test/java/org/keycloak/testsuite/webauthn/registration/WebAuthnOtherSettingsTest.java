@@ -30,6 +30,7 @@ import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
 import org.keycloak.models.credential.dto.WebAuthnCredentialData;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testsuite.arquillian.annotation.IgnoreBrowserDriver;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.util.WaitUtils;
@@ -80,22 +81,20 @@ public class WebAuthnOtherSettingsTest extends AbstractWebAuthnVirtualTest {
 
         assertThat(userId, notNullValue());
 
-        events.expectRequiredAction(EventType.CUSTOM_REQUIRED_ACTION)
-                .user(userId)
-                .detail(Details.CUSTOM_REQUIRED_ACTION, isPasswordless()
+        EventAssertion.expectRequiredAction(events.poll()).type(EventType.CUSTOM_REQUIRED_ACTION)
+                .userId(userId)
+                .details(Details.CUSTOM_REQUIRED_ACTION, isPasswordless()
                         ? WebAuthnPasswordlessRegisterFactory.PROVIDER_ID
                         : WebAuthnRegisterFactory.PROVIDER_ID)
-                .detail(WebAuthnConstants.PUBKEY_CRED_LABEL_ATTR, "webauthn")
-                .detail(WebAuthnConstants.PUBKEY_CRED_AAGUID_ATTR, ALL_ZERO_AAGUID)
-                .assertEvent();
-        events.expectRequiredAction(EventType.UPDATE_CREDENTIAL)
-                .user(userId)
-                .detail(Details.CUSTOM_REQUIRED_ACTION, isPasswordless()
+                .details(WebAuthnConstants.PUBKEY_CRED_LABEL_ATTR, "webauthn")
+                .details(WebAuthnConstants.PUBKEY_CRED_AAGUID_ATTR, ALL_ZERO_AAGUID);
+        EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_CREDENTIAL)
+                .userId(userId)
+                .details(Details.CUSTOM_REQUIRED_ACTION, isPasswordless()
                         ? WebAuthnPasswordlessRegisterFactory.PROVIDER_ID
                         : WebAuthnRegisterFactory.PROVIDER_ID)
-                .detail(WebAuthnConstants.PUBKEY_CRED_LABEL_ATTR, "webauthn")
-                .detail(WebAuthnConstants.PUBKEY_CRED_AAGUID_ATTR, ALL_ZERO_AAGUID)
-                .assertEvent();
+                .details(WebAuthnConstants.PUBKEY_CRED_LABEL_ATTR, "webauthn")
+                .details(WebAuthnConstants.PUBKEY_CRED_AAGUID_ATTR, ALL_ZERO_AAGUID);
 
         final String credentialType = getCredentialType();
         // Soft token in Firefox does not increment counter

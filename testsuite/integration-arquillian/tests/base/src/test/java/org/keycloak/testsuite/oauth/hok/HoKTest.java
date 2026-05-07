@@ -17,6 +17,7 @@ import jakarta.ws.rs.core.Response;
 
 import org.keycloak.OAuthErrorException;
 import org.keycloak.admin.client.resource.ClientResource;
+import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthenticator;
 import org.keycloak.common.util.KeystoreUtil;
 import org.keycloak.constants.AdapterConstants;
 import org.keycloak.crypto.Algorithm;
@@ -55,6 +56,7 @@ import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.keycloak.testsuite.util.oauth.LogoutResponse;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
+import org.keycloak.util.TokenUtil;
 
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.hamcrest.Matchers;
@@ -253,7 +255,11 @@ public class HoKTest extends AbstractTestRealmKeycloakTest {
         assertEquals(1, token.getResourceAccess(oauth.getClientId()).getRoles().size());
         assertTrue(token.getResourceAccess(oauth.getClientId()).isUserInRole("customer-user"));
 
-        EventRepresentation event = events.expectCodeToToken(codeId, sessionId).assertEvent();
+        EventRepresentation event = EventAssertion.expectCodeToTokenSuccess(events.poll())
+                .sessionId(sessionId)
+                .details(Details.CODE_ID, codeId)
+                .details(Details.REFRESH_TOKEN_TYPE, TokenUtil.TOKEN_TYPE_REFRESH)
+                .details(Details.CLIENT_AUTH_METHOD, ClientIdAndSecretAuthenticator.PROVIDER_ID).getEvent();
         assertEquals(token.getId(), event.getDetails().get(Details.TOKEN_ID));
         assertEquals(oauth.parseRefreshToken(response.getRefreshToken()).getId(), event.getDetails().get(Details.REFRESH_TOKEN_ID));
         assertEquals(sessionId, token.getSessionState());
@@ -334,7 +340,11 @@ public class HoKTest extends AbstractTestRealmKeycloakTest {
         AccessToken token = oauth.verifyToken(tokenResponse.getAccessToken());
         String refreshTokenString = tokenResponse.getRefreshToken();
         RefreshToken refreshToken = oauth.parseRefreshToken(refreshTokenString);
-        EventRepresentation tokenEvent = events.expectCodeToToken(codeId, sessionId).assertEvent();
+        EventRepresentation tokenEvent = EventAssertion.expectCodeToTokenSuccess(events.poll())
+                .sessionId(sessionId)
+                .details(Details.CODE_ID, codeId)
+                .details(Details.REFRESH_TOKEN_TYPE, TokenUtil.TOKEN_TYPE_REFRESH)
+                .details(Details.CLIENT_AUTH_METHOD, ClientIdAndSecretAuthenticator.PROVIDER_ID).getEvent();
 
         Assertions.assertNotNull(refreshTokenString);
         assertEquals("Bearer", tokenResponse.getTokenType());
@@ -440,7 +450,12 @@ public class HoKTest extends AbstractTestRealmKeycloakTest {
         assertEquals(1, refreshedToken.getResourceAccess(oauth.getClientId()).getRoles().size());
         Assertions.assertTrue(refreshedToken.getResourceAccess(oauth.getClientId()).isUserInRole("customer-user"));
 
-        EventRepresentation refreshEvent = events.expectRefresh(tokenEvent.getDetails().get(Details.REFRESH_TOKEN_ID), sessionId).user(refreshToken.getSubject()).assertEvent();
+        EventRepresentation refreshEvent = EventAssertion.expectRefreshTokenSuccess(events.poll())
+                .sessionId(sessionId)
+                .userId(refreshToken.getSubject())
+                .details(Details.REFRESH_TOKEN_ID, tokenEvent.getDetails().get(Details.REFRESH_TOKEN_ID))
+                .details(Details.REFRESH_TOKEN_TYPE, TokenUtil.TOKEN_TYPE_REFRESH)
+                .details(Details.CLIENT_AUTH_METHOD, ClientIdAndSecretAuthenticator.PROVIDER_ID).getEvent();
         Assertions.assertNotEquals(tokenEvent.getDetails().get(Details.TOKEN_ID), refreshEvent.getDetails().get(Details.TOKEN_ID));
         Assertions.assertNotEquals(tokenEvent.getDetails().get(Details.REFRESH_TOKEN_ID), refreshEvent.getDetails().get(Details.UPDATED_REFRESH_TOKEN_ID));
 
@@ -470,7 +485,11 @@ public class HoKTest extends AbstractTestRealmKeycloakTest {
             oauth.httpClient().reset();
         }
         verifyHoKTokenDefaultCertThumbPrint(tokenResponse);
-        events.expectCodeToToken(codeId, sessionId).assertEvent();
+        EventAssertion.expectCodeToTokenSuccess(events.poll())
+                .sessionId(sessionId)
+                .details(Details.CODE_ID, codeId)
+                .details(Details.REFRESH_TOKEN_TYPE, TokenUtil.TOKEN_TYPE_REFRESH)
+                .details(Details.CLIENT_AUTH_METHOD, ClientIdAndSecretAuthenticator.PROVIDER_ID);
 
         // execute the access token to get UserInfo with token binded client certificate in mutual authentication TLS
         ClientBuilder clientBuilder = ClientBuilder.newBuilder();
@@ -512,7 +531,11 @@ public class HoKTest extends AbstractTestRealmKeycloakTest {
             oauth.httpClient().reset();
         }
         verifyHoKTokenDefaultCertThumbPrint(tokenResponse);
-        events.expectCodeToToken(codeId, sessionId).assertEvent();
+        EventAssertion.expectCodeToTokenSuccess(events.poll())
+                .sessionId(sessionId)
+                .details(Details.CODE_ID, codeId)
+                .details(Details.REFRESH_TOKEN_TYPE, TokenUtil.TOKEN_TYPE_REFRESH)
+                .details(Details.CLIENT_AUTH_METHOD, ClientIdAndSecretAuthenticator.PROVIDER_ID);
 
         // execute the access token to get UserInfo without token binded client certificate in mutual authentication TLS
         Client client = KeycloakTestingClient.getRestEasyClientBuilder().build();

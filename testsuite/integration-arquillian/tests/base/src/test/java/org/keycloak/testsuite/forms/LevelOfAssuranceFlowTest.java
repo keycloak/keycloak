@@ -816,8 +816,8 @@ public class LevelOfAssuranceFlowTest extends AbstractChangeImportedUserPassword
         authenticateWithTotp();
         totpSetupPage.assertCurrent();
         totpSetupPage.configure(totp.generateTOTP(totpSetupPage.getTotpSecret()), "totp2-label");
-        events.expectRequiredAction(EventType.UPDATE_TOTP).detail(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE).assertEvent();
-        events.expectRequiredAction(EventType.UPDATE_CREDENTIAL).detail(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE).assertEvent();
+        EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_TOTP).details(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE);
+        EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_CREDENTIAL).details(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE);
         TokenCtx token2 = assertLoggedInWithAcr("gold");
 
         // Trying to add another OTP by "kc_action". Level 2 should be required and user can choose between 2 OTP codes
@@ -896,8 +896,8 @@ public class LevelOfAssuranceFlowTest extends AbstractChangeImportedUserPassword
         authenticateWithTotp();
         totpSetupPage.assertCurrent();
         totpSetupPage.configure(totp.generateTOTP(totpSetupPage.getTotpSecret()), "totp2-label");
-        events.expectRequiredAction(EventType.UPDATE_TOTP).detail(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE).assertEvent();
-        events.expectRequiredAction(EventType.UPDATE_CREDENTIAL).detail(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE).assertEvent();
+        EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_TOTP).details(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE);
+        EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_CREDENTIAL).details(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE);
         TokenCtx token2 = assertLoggedInWithAcr("gold");
 
         String otp2CredentialId = getCredentialIdByLabel("totp2-label");
@@ -911,8 +911,8 @@ public class LevelOfAssuranceFlowTest extends AbstractChangeImportedUserPassword
         deleteCredentialPage.assertCredentialInMessage("totp2-label");
         deleteCredentialPage.confirm();
 
-        events.expectRequiredAction(EventType.REMOVE_TOTP).detail(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE).assertEvent();
-        events.expectRequiredAction(EventType.REMOVE_CREDENTIAL).detail(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE).assertEvent();
+        EventAssertion.expectRequiredAction(events.poll()).type(EventType.REMOVE_TOTP).details(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE);
+        EventAssertion.expectRequiredAction(events.poll()).type(EventType.REMOVE_CREDENTIAL).details(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE);
         assertLoggedInWithAcr("gold");
     }
 
@@ -934,8 +934,8 @@ public class LevelOfAssuranceFlowTest extends AbstractChangeImportedUserPassword
             deleteCredentialPage.assertCurrent();
             deleteCredentialPage.assertCredentialInMessage("otp");
             deleteCredentialPage.confirm();
-            events.expectRequiredAction(EventType.REMOVE_TOTP).detail(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE).assertEvent();
-            events.expectRequiredAction(EventType.REMOVE_CREDENTIAL).detail(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE).assertEvent();
+            EventAssertion.expectRequiredAction(events.poll()).type(EventType.REMOVE_TOTP).details(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE);
+            EventAssertion.expectRequiredAction(events.poll()).type(EventType.REMOVE_CREDENTIAL).details(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE);
             assertLoggedInWithAcr("gold");
 
             // Trying to add OTP. No 2nd factor should be required as user doesn't have any
@@ -943,8 +943,8 @@ public class LevelOfAssuranceFlowTest extends AbstractChangeImportedUserPassword
             totpSetupPage.assertCurrent();
             String totp2Secret = totpSetupPage.getTotpSecret();
             totpSetupPage.configure(totp.generateTOTP(totp2Secret), "totp2-label");
-            events.expectRequiredAction(EventType.UPDATE_TOTP).detail(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE).assertEvent();
-            events.expectRequiredAction(EventType.UPDATE_CREDENTIAL).detail(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE).assertEvent();
+            EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_TOTP).details(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE);
+            EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_CREDENTIAL).details(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE);
             assertLoggedInWithAcr("silver");
 
             // set time offset for OTP as it is not permitted to authenticate with same OTP code multiple times
@@ -956,7 +956,7 @@ public class LevelOfAssuranceFlowTest extends AbstractChangeImportedUserPassword
             loginTotpPage.login(totp.generateTOTP(totp2Secret));
             setupRecoveryAuthnCodesPage.assertCurrent();
             setupRecoveryAuthnCodesPage.clickSaveRecoveryAuthnCodesButton();
-            events.expectRequiredAction(EventType.UPDATE_CREDENTIAL).assertEvent();
+            EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_CREDENTIAL);
             assertLoggedInWithAcr("gold");
 
             // Removing recovery-code credential. User required to authenticate with 2nd-factor. He can choose between OTP or recovery-codes
@@ -973,7 +973,7 @@ public class LevelOfAssuranceFlowTest extends AbstractChangeImportedUserPassword
             deleteCredentialPage.assertCurrent();
             deleteCredentialPage.assertCredentialInMessage("Recovery codes");
             deleteCredentialPage.confirm();
-            events.expectRequiredAction(EventType.REMOVE_CREDENTIAL).detail(Details.CREDENTIAL_TYPE, RecoveryAuthnCodesCredentialModel.TYPE).assertEvent();
+            EventAssertion.expectRequiredAction(events.poll()).type(EventType.REMOVE_CREDENTIAL).details(Details.CREDENTIAL_TYPE, RecoveryAuthnCodesCredentialModel.TYPE);
             assertLoggedInWithAcr("gold");
         } finally {
             setOtpTimeOffset(0, totp);

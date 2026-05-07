@@ -33,6 +33,7 @@ import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.OAuth2Constants;
+import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthenticator;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.events.Details;
@@ -529,12 +530,12 @@ public class ClientStorageTest extends AbstractTestRealmKeycloakTest {
         Assertions.assertTrue(refreshedToken.getRealmAccess().isUserInRole(Constants.OFFLINE_ACCESS_ROLE));
 
 
-        EventRepresentation refreshEvent = events.expectRefresh(offlineToken.getId(), sessionId)
-                .client("hardcoded-client")
-                .user(userId)
-                .removeDetail(Details.UPDATED_REFRESH_TOKEN_ID)
-                .detail(Details.REFRESH_TOKEN_TYPE, TokenUtil.TOKEN_TYPE_OFFLINE)
-                .assertEvent();
+        EventRepresentation refreshEvent = EventAssertion.expectRefreshTokenSuccess(events.poll())
+                .clientId("hardcoded-client")
+                .userId(userId)
+                .details(Details.REFRESH_TOKEN_ID, offlineToken.getId()).sessionId(sessionId)
+                .details(Details.CLIENT_AUTH_METHOD, ClientIdAndSecretAuthenticator.PROVIDER_ID)
+                .details(Details.REFRESH_TOKEN_TYPE, TokenUtil.TOKEN_TYPE_OFFLINE).getEvent();
         Assertions.assertNotEquals(oldToken.getId(), refreshEvent.getDetails().get(Details.TOKEN_ID));
 
         setTimeOffset(0);

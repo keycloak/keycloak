@@ -188,7 +188,7 @@ public class KcSamlMultipleTabsBrokerTest extends AbstractInitializedBaseBrokerT
             // Event 3: Successful SSO login on "provider", which then redirects back to "consumer"
             EventRepresentation eventRep1 = EventAssertion.assertSuccess(events.poll())
                     .type(EventType.LOGIN)
-                    .isCodeId()
+                    .hasCodeId()
                     .hasSessionId()
                     .clientId(OAuthClient.AUTH_SERVER_ROOT + "/realms/" + bc.consumerRealmName())
                     .details(Details.REDIRECT_URI, OAuthClient.AUTH_SERVER_ROOT + "/realms/" + bc.consumerRealmName() + "/broker/" + bc.getIDPAlias() + "/endpoint").getEvent();
@@ -197,7 +197,7 @@ public class KcSamlMultipleTabsBrokerTest extends AbstractInitializedBaseBrokerT
             // Event 4: Successful login on "consumer"
             EventRepresentation eventRep2 = EventAssertion.assertSuccess(events.poll())
                     .type(EventType.LOGIN)
-                    .isCodeId()
+                    .hasCodeId()
                     .hasSessionId()
                     .clientId("broker-app")
                     .details(Details.IDENTITY_PROVIDER, bc.getIDPAlias()).getEvent();

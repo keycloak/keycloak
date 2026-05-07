@@ -41,6 +41,7 @@ import org.keycloak.common.util.UriUtils;
 import org.keycloak.constants.ServiceUrlConstants;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.events.Details;
+import org.keycloak.events.EventType;
 import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.models.ClientSecretConstants;
@@ -69,6 +70,7 @@ import org.keycloak.testsuite.util.ClientPoliciesUtil;
 import org.keycloak.testsuite.util.ServerURLs;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.util.JsonSerialization;
+import org.keycloak.util.TokenUtil;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -263,10 +265,12 @@ public class ClientAuthSecretSignedJWTTest extends AbstractKeycloakTest {
         assertEquals(200, response.getStatusCode());
         oauth.verifyToken(response.getAccessToken());
         oauth.parseRefreshToken(response.getRefreshToken());
-        events.expectCodeToToken(loginEvent.getDetails().get(Details.CODE_ID), loginEvent.getSessionId())
-                .client(oauth.getClientId())
-                .detail(Details.CLIENT_AUTH_METHOD, JWTClientSecretAuthenticator.PROVIDER_ID)
-                .assertEvent();
+        EventAssertion.expectCodeToTokenSuccess(events.poll())
+                .sessionId(loginEvent.getSessionId())
+                .clientId(oauth.getClientId())
+                .details(Details.CODE_ID, loginEvent.getDetails().get(Details.CODE_ID))
+                .details(Details.REFRESH_TOKEN_TYPE, TokenUtil.TOKEN_TYPE_REFRESH)
+                .details(Details.CLIENT_AUTH_METHOD, JWTClientSecretAuthenticator.PROVIDER_ID);
     }
 
     /**
@@ -362,10 +366,12 @@ public class ClientAuthSecretSignedJWTTest extends AbstractKeycloakTest {
 
         AccessTokenResponse response = doAccessTokenRequest(code, clientSignedJWT);
         assertEquals(200, response.getStatusCode());
-        events.expectCodeToToken(loginEvent.getDetails().get(Details.CODE_ID), loginEvent.getSessionId())
-                .client(oauth.getClientId())
-                .detail(Details.CLIENT_AUTH_METHOD, JWTClientSecretAuthenticator.PROVIDER_ID)
-                .assertEvent();
+        EventAssertion.expectCodeToTokenSuccess(events.poll())
+                .sessionId(loginEvent.getSessionId())
+                .clientId(oauth.getClientId())
+                .details(Details.CODE_ID, loginEvent.getDetails().get(Details.CODE_ID))
+                .details(Details.REFRESH_TOKEN_TYPE, TokenUtil.TOKEN_TYPE_REFRESH)
+                .details(Details.CLIENT_AUTH_METHOD, JWTClientSecretAuthenticator.PROVIDER_ID);
 
 
         // 2nd attempt to use same clientSignedJWT should fail
@@ -376,12 +382,11 @@ public class ClientAuthSecretSignedJWTTest extends AbstractKeycloakTest {
 
         String code2 = oauth.parseLoginResponse().getCode();
         response = doAccessTokenRequest(code2, clientSignedJWT);
-        events.expectCodeToToken(loginEvent.getDetails().get(Details.CODE_ID), loginEvent.getSessionId())
+        EventAssertion.assertError(events.poll())
+                .type(EventType.CODE_TO_TOKEN_ERROR)
                 .error("invalid_client_credentials")
-                .clearDetails()
-                .user((String) null)
-                .session((String) null)
-                .assertEvent();
+                .userId(null)
+                .sessionId(null);
 
 
         assertEquals(OAuthErrorException.INVALID_CLIENT, response.getError());

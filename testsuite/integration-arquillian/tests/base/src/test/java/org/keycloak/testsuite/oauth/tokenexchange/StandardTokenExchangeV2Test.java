@@ -33,6 +33,7 @@ import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
+import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthenticator;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.CollectionUtil;
 import org.keycloak.events.Details;
@@ -168,10 +169,13 @@ public class StandardTokenExchangeV2Test extends AbstractClientPoliciesTest {
                 .details(Details.REDIRECT_URI, oauth.getRedirectUri());
 
         final String codeId = loginEvent.getDetails().get(Details.CODE_ID);
-        events.expectCodeToToken(codeId, token.getSessionId())
-                .client(clientId)
-                .user(user.getId())
-                .assertEvent();
+        EventAssertion.expectCodeToTokenSuccess(events.poll())
+                .sessionId(token.getSessionId())
+                .clientId(clientId)
+                .userId(user.getId())
+                .details(Details.CODE_ID, codeId)
+                .details(Details.REFRESH_TOKEN_TYPE, TokenUtil.TOKEN_TYPE_REFRESH)
+                .details(Details.CLIENT_AUTH_METHOD, ClientIdAndSecretAuthenticator.PROVIDER_ID);
         return response.getAccessToken();
     }
 
