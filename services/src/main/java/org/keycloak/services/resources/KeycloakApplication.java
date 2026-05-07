@@ -110,6 +110,11 @@ public abstract class KeycloakApplication extends Application {
         var startTime = System.nanoTime();
 
         keycloakSessionFactory.init();
+
+        if ("test".equals(System.getProperty("kc.launch.mode")) && "true".equals(System.getenv("SKIP_DB_BOOTSTRAP"))) {
+            return;
+        }
+
         setTransactionTimeout(keycloakSessionFactory);
         var exportImportManager = KeycloakModelUtils.runJobInTransactionWithResult(keycloakSessionFactory, session -> {
             DBLockManager dbLockManager = new DBLockManager(session);

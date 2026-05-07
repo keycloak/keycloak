@@ -98,6 +98,10 @@ public class CLITestExtension extends QuarkusMainTestExtension {
                 dist.setEnvVar(DryRunMixin.KC_DRY_RUN_ENV, "true");
                 dist.setEnvVar(DryRunMixin.KC_DRY_RUN_BUILD_ENV, "true");
             }
+            if (isRaw() && (context.getRequiredTestClass().getAnnotation(SkipRealmBootstrap.class) != null
+                    || context.getRequiredTestMethod().getAnnotation(SkipRealmBootstrap.class) != null)) {
+                dist.setEnvVar("SKIP_DB_BOOTSTRAP", "true");
+            }
 
             if (launch != null) {
                 result = dist.run(List.of(launch.value()));
