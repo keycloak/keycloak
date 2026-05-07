@@ -36,7 +36,10 @@ import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
 import org.keycloak.models.AccountRoles;
 import org.keycloak.models.Constants;
+import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.FederatedIdentityRepresentation;
+import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.messages.Messages;
@@ -44,6 +47,7 @@ import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.pages.IdpLinkActionPage;
 import org.keycloak.testsuite.util.AccountHelper;
+import org.keycloak.testsuite.util.FederatedIdentityBuilder;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.keycloak.utils.BrokerUtil;
 
@@ -65,7 +69,6 @@ import static org.hamcrest.Matchers.is;
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public class KcOidcBrokerIdpLinkActionTest extends AbstractInitializedBaseBrokerTest {
-
     private static final BrokerConfiguration BROKER_CONFIG_INSTANCE = new KcOidcBrokerConfiguration() {
 
         @Override
@@ -89,8 +92,6 @@ public class KcOidcBrokerIdpLinkActionTest extends AbstractInitializedBaseBroker
 
     @Before
     public void recreateConsumerUser() {
-        RealmResource providerRealmResource = realmsResouce().realm(bc.providerRealmName());
-
         String consumerUserID1 = createUser(bc.consumerRealmName(), "user1", "password", "User1", "Last", "user1@keycloak.org",
                 user -> user.setEmailVerified(true));
         String consumerUserID2 = createUser(bc.consumerRealmName(), "user2", "password", "User2", "Last", "user2@keycloak.org",
@@ -116,6 +117,58 @@ public class KcOidcBrokerIdpLinkActionTest extends AbstractInitializedBaseBroker
 
         // Check that user is linked to the IDP
         assertUserLinkedToIDP(true);
+    }
+
+    @Test
+    public void testAccountLinkingWithExistingLinkFailsWhenReplacementDisabled() throws Exception {
+        loginToConsumer();
+        addFederatedIdentity("user1", "previous-provider-user-id", "previous-provider-username");
+
+        String kcAction = getKcActionParamForLinkIdp(bc.getIDPAlias());
+        oauth.loginForm().kcAction(kcAction).open();
+        confirmIdpLinking();
+        loginPage.login(bc.getUserLogin(), bc.getUserPassword());
+
+        events.clear();
+        grantPage.assertCurrent();
+        grantPage.accept();
+
+        errorPage.assertCurrent();
+        Assert.assertEquals("Your account is already linked to the identity provider " + bc.getIDPAlias() + ".", errorPage.getError());
+        assertUserLinkedToIDP(true);
+
+        assertEvents((providerRealmId, providerUserId, consumerRealmId, consumerUserId, consumerUsername) -> {
+            assertProviderEventsSuccess(providerRealmId, providerUserId);
+            assertConsumerFailedLinkEvents(consumerRealmId, consumerUserId, consumerUsername, Messages.IDENTITY_PROVIDER_ALREADY_LINKED_TO_CURRENT_USER, false);
+        });
+    }
+
+    @Test
+    public void testAccountLinkingWithExistingLinkReplacedWhenEnabled() throws Exception {
+        setAllowLinkingWithExistingFederatedIdentity(true);
+        loginToConsumer();
+        addFederatedIdentity("user1", "previous-provider-user-id", "previous-provider-username");
+
+        String kcAction = getKcActionParamForLinkIdp(bc.getIDPAlias());
+        oauth.loginForm().kcAction(kcAction).open();
+        confirmIdpLinking();
+        loginPage.login(bc.getUserLogin(), bc.getUserPassword());
+
+        events.clear();
+        grantPage.assertCurrent();
+        grantPage.accept();
+
+        appPage.assertCurrent();
+        assertKcActionParams(IdpLinkAction.PROVIDER_ID, RequiredActionContext.KcActionStatus.SUCCESS.name().toLowerCase());
+
+        String providerUserId = adminClient.realm(bc.providerRealmName()).users().search(bc.getUserLogin()).iterator().next().getId();
+        assertUserLinkedToIDP(true);
+
+        assertEvents((providerRealmId, providerUserIdFromEvent, consumerRealmId, consumerUserId, consumerUsername) -> {
+            assertProviderEventsSuccess(providerRealmId, providerUserIdFromEvent);
+            assertConsumerOverrideLinkEvent(consumerRealmId, consumerUserId, consumerUsername, "previous-provider-user-id", "previous-provider-username", providerUserIdFromEvent);
+            assertConsumerSuccessLinkEvents(consumerRealmId, consumerUserId, consumerUsername);
+        });
     }
 
     @Test
@@ -466,6 +519,26 @@ public class KcOidcBrokerIdpLinkActionTest extends AbstractInitializedBaseBroker
         return IdpLinkAction.PROVIDER_ID + ":" + providerAlias;
     }
 
+    private void setAllowLinkingWithExistingFederatedIdentity(boolean enabled) {
+        IdentityProviderRepresentation idpRep = identityProviderResource.toRepresentation();
+        idpRep.getConfig().put(IdentityProviderModel.ALLOW_LINKING_WITH_EXISTING_FEDERATED_IDENTITY, Boolean.toString(enabled));
+        identityProviderResource.update(idpRep);
+    }
+
+    private void addFederatedIdentity(String username, String federatedUserId, String federatedUsername) {
+        RealmResource consumerRealm = adminClient.realm(bc.consumerRealmName());
+        String userId = consumerRealm.users().search(username).iterator().next().getId();
+
+        FederatedIdentityRepresentation identity = FederatedIdentityBuilder.create()
+                .identityProvider(bc.getIDPAlias())
+                .userId(federatedUserId)
+                .userName(federatedUsername)
+                .build();
+        try (Response response = consumerRealm.users().get(userId).addFederatedIdentity(bc.getIDPAlias(), identity)) {
+            Assert.assertEquals(204, response.getStatus());
+        }
+    }
+
     private void assertKcActionParams(String expectedKcAction, String expectedKcActionStatus) throws Exception {
         MultivaluedHashMap<String, String> params = UriUtils.decodeQueryString(new URL(driver.getCurrentUrl()).getQuery());
         Assertions.assertEquals(expectedKcAction, params.getFirst(Constants.KC_ACTION));
@@ -540,6 +613,20 @@ public class KcOidcBrokerIdpLinkActionTest extends AbstractInitializedBaseBroker
                 .assertEvent();
 
         events.assertEmpty();
+    }
+
+    private void assertConsumerOverrideLinkEvent(String consumerRealmId, String consumerUserId, String username, String previousFederatedUserId, String previousFederatedUsername, String providerUserIdFromEvent) {
+        events.expect(EventType.FEDERATED_IDENTITY_OVERRIDE_LINK)
+                .realm(consumerRealmId)
+                .client("broker-app")
+                .user(consumerUserId)
+                .detail(Details.USERNAME, username)
+                .detail(Details.IDENTITY_PROVIDER, IDP_OIDC_ALIAS)
+                .detail(Details.IDENTITY_PROVIDER_USERNAME, bc.getUserLogin())
+                .detail(Details.IDENTITY_PROVIDER_USER_ID, providerUserIdFromEvent)
+                .detail(Details.PREF_PREVIOUS + Details.IDENTITY_PROVIDER_USER_ID, previousFederatedUserId)
+                .detail(Details.PREF_PREVIOUS + Details.IDENTITY_PROVIDER_USERNAME, previousFederatedUsername)
+                .assertEvent();
     }
 
     private void assertConsumerFailedLinkEvents(String consumerRealmId, String consumerUserId, String consumerUsername, String expectedError, boolean expectLoginEvent) {
