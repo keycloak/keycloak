@@ -75,7 +75,7 @@ export const OrganizationForm = ({
           aria-label={t("domain")}
           addButtonLabel="addDomain"
         />
-        {errors?.["domains"]?.message && (
+        {errors["domains"]?.message && (
           <FormErrorText message={errors["domains"].message.toString()} />
         )}
       </FormGroup>

@@ -110,9 +110,7 @@ export const MultiValuedListComponent = ({
                     newValue = values;
                   }
                   field.onChange(
-                    stringify && variant === SelectVariant.typeaheadMulti
-                      ? toStringValue(newValue)
-                      : newValue,
+                    stringify ? toStringValue(newValue) : newValue,
                   );
                 } else {
                   field.onChange(option);

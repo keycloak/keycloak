@@ -201,10 +201,7 @@ const flattenVariables = (theme: ThemeType): FlattenedVariable[] => {
   return result;
 };
 
-export const lightTheme = (): FlattenedVariable[] =>
-  flattenVariables("light").filter(
-    (v) => v.defaultValue !== undefined || v.parentName !== undefined,
-  );
+export const lightTheme = (): FlattenedVariable[] => flattenVariables("light");
 
 export const darkTheme = (): FlattenedVariable[] => flattenVariables("dark");
 

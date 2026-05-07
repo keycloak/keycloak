@@ -152,8 +152,8 @@ export const UserForm = ({
 
   const allFieldsReadOnly = () =>
     user?.userProfileMetadata?.attributes &&
-    !user?.userProfileMetadata?.attributes
-      ?.map((a) => a.readOnly)
+    !user.userProfileMetadata.attributes
+      .map((a) => a.readOnly)
       .reduce((p, c) => p && c, true);
 
   const handleEmailVerificationReset = async () => {

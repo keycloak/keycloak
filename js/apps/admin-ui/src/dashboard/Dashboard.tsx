@@ -54,7 +54,7 @@ const EmptyDashboard = () => {
   const { t } = useTranslation();
   const { realm, realmRepresentation: realmInfo } = useRealm();
   const brandImage = environment.logo ? environment.logo : "/icon.svg";
-  const realmDisplayInfo = resolveDisplayName(t, realmInfo?.displayName, realm);
+  const realmDisplayInfo = resolveDisplayName(t, realmInfo.displayName, realm);
 
   return (
     <PageSection variant="light">
@@ -87,9 +87,7 @@ const FeatureItem = ({ feature }: FeatureItemProps) => {
         ? "blue"
         : feature.type === FeatureType.Experimental
           ? "orange"
-          : feature.type === FeatureType.Deprecated
-            ? "grey"
-            : "red";
+          : "grey";
   return (
     <ListItem className="pf-v5-u-mb-sm">
       {feature.name}&nbsp;
@@ -116,12 +114,12 @@ const Dashboard = () => {
   );
 
   const disabledFeatures = useMemo(
-    () => sortedFeatures.filter((f) => !f.enabled) || [],
+    () => sortedFeatures.filter((f) => !f.enabled),
     [serverInfo.features],
   );
 
   const enabledFeatures = useMemo(
-    () => sortedFeatures.filter((f) => f.enabled) || [],
+    () => sortedFeatures.filter((f) => f.enabled),
     [serverInfo.features],
   );
 
@@ -133,7 +131,7 @@ const Dashboard = () => {
       }),
     );
 
-  const realmDisplayInfo = resolveDisplayName(t, realmInfo?.displayName, realm);
+  const realmDisplayInfo = resolveDisplayName(t, realmInfo.displayName, realm);
 
   const welcomeTab = useTab("welcome");
   const infoTab = useTab("info");

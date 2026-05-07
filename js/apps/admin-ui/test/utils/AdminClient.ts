@@ -69,6 +69,7 @@ class AdminClient {
       await this.#client.clients.find({ clientId: clientName })
     )[0];
 
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- find()[0] is undefined when client does not exist
     if (client) {
       await this.#client.clients.del({ id: client.id! });
     }
@@ -604,6 +605,7 @@ class AdminClient {
 
     const client = (await this.#client.clients.find({ clientId, realm }))[0];
 
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- find()[0] is undefined when client does not exist
     if (!client?.id) {
       throw new Error(`Client ${clientId} not found in realm ${realm}`);
     }
@@ -623,6 +625,7 @@ class AdminClient {
 
     const client = (await this.#client.clients.find({ clientId, realm }))[0];
 
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- find()[0] is undefined when client does not exist
     if (!client?.id) {
       throw new Error(`Client ${clientId} not found in realm ${realm}`);
     }

@@ -106,7 +106,7 @@ export default function AttributesGroupForm() {
     const success = await save({ ...config, groups });
 
     if (success) {
-      if (realm?.internationalizationEnabled) {
+      if (realm.internationalizationEnabled) {
         try {
           await saveTranslations({
             adminClient,

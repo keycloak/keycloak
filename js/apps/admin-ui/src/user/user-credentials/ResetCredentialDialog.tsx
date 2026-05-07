@@ -30,7 +30,7 @@ export const ResetCredentialDialog = ({
   const form = useForm<CredentialResetForm>({
     defaultValues: {
       actions: [],
-      lifespan: realm?.actionTokenGeneratedByAdminLifespan,
+      lifespan: realm.actionTokenGeneratedByAdminLifespan,
     },
   });
   const { handleSubmit, control } = form;

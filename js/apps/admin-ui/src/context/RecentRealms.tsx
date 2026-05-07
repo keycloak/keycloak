@@ -59,14 +59,11 @@ export const RecentRealmsProvider = ({ children }: PropsWithChildren) => {
         }),
       ),
     (realms) => setStoredRealms(realms.filter((r) => !!r)),
-    [realm?.realm === "master"],
+    [realm.realm === "master"],
   );
 
   useEffect(() => {
-    if (
-      storedRealms.map((r) => r.name).includes(realm?.realm || "") ||
-      !realm
-    ) {
+    if (storedRealms.map((r) => r.name).includes(realm.realm || "")) {
       return;
     }
     setStoredRealms(

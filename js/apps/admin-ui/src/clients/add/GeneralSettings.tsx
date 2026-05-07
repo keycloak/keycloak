@@ -12,7 +12,7 @@ export const GeneralSettings = () => {
   const { realmRepresentation } = useRealm();
   const providers = useLoginProviders();
 
-  const filteredProviders = realmRepresentation?.verifiableCredentialsEnabled
+  const filteredProviders = realmRepresentation.verifiableCredentialsEnabled
     ? providers
     : providers.filter((provider) => provider !== PROTOCOL_OID4VC);
 
