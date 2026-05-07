@@ -1,3 +1,14 @@
+== Breaking changes
+
+Breaking changes are identified as those that might require changes for existing users to their configurations or applications.
+In minor or patch releases, {project_name} will only introduce breaking changes to fix bugs.
+
+=== Valid redirect URIs for clients do not accept wildcards for hostname anymore
+
+The wildcard comparison for valid redirect URIs does not affect the hostname anymore. Previously patterns like `$$https://example.com*$$` were accepted and lead to allow unintended domains like `$$https://example.com.other.domain.com$$`. Since this release, the hostname does not accept such type of wildcard and those patterns will be managed as if the wildcard is after the hostname `$$https://example.com/*$$`. The full wildcard for the hostname `$$https://*$$` is still accepted because its interpretation cannot be misunderstood.
+
+Note that OAuth 2.0 recommends exact string matching in the link:https://datatracker.ietf.org/doc/html/draft-ietf-oauth-security-topics#name-protecting-redirect-based-f[Security Best Current Practice] and draft for OAuth 2.1 enforces it. {project_name} recommends to not use any wildcard valid redirect URI for clients. See link:{adminguide_link}#unspecific-redirect-uris_server_administration_guide[Unspecific redirect URIs] in the {adminguide_name} for more information.
+
 == Notable changes
 
 Notable changes may include internal behavior changes that prevent common misconfigurations, bugs that are fixed, or changes to simplify running {project_name}.

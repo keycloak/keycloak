@@ -180,22 +180,57 @@ public class RedirectUtils {
             if ("*".equals(validRedirect)) {
                 // the valid redirect * is a full wildcard for http(s) even if the redirect URI does not allow wildcards
                 return validRedirect;
-            } else if (validRedirect.endsWith("*") && !validRedirect.contains("?") && allowWildcards) {
-                // strip off the query or fragment components - we don't check them when wildcards are effective
-                int idx = redirect.indexOf('?');
-                if (idx == -1) {
-                    idx = redirect.indexOf('#');
+            } else {
+                String validRedirectWildcard = allowWildcards ? checkValidRedirectWildcard(validRedirect) : null;
+                if (validRedirectWildcard != null) {
+                    // strip off the query or fragment components - we don't check them when wildcards are effective
+                    int idx = redirect.indexOf('?');
+                    if (idx == -1) {
+                        idx = redirect.indexOf('#');
+                    }
+                    String r = idx == -1 ? redirect : redirect.substring(0, idx);
+                    // strip off *
+                    int length = validRedirectWildcard.length() - 1;
+                    validRedirectWildcard = validRedirectWildcard.substring(0, length);
+                    if (r.startsWith(validRedirectWildcard)) {
+                        return validRedirectWildcard;
+                    }
+                    // strip off trailing '/'
+                    if (length - 1 > 0 && validRedirectWildcard.charAt(length - 1) == '/') {
+                        length--;
+                    }
+                    validRedirectWildcard = validRedirectWildcard.substring(0, length);
+                    if (validRedirectWildcard.equals(r)) {
+                        return validRedirectWildcard;
+                    }
+                } else if (validRedirect.equals(redirect)) {
+                    return validRedirect;
                 }
-                String r = idx == -1 ? redirect : redirect.substring(0, idx);
-                // strip off *
-                int length = validRedirect.length() - 1;
-                validRedirect = validRedirect.substring(0, length);
-                if (r.startsWith(validRedirect)) return validRedirect;
-                // strip off trailing '/'
-                if (length - 1 > 0 && validRedirect.charAt(length - 1) == '/') length--;
-                validRedirect = validRedirect.substring(0, length);
-                if (validRedirect.equals(r)) return validRedirect;
-            } else if (validRedirect.equals(redirect)) return validRedirect;
+            }
+        }
+        return null;
+    }
+
+    private static String checkValidRedirectWildcard(String validRedirect) {
+        if (!validRedirect.endsWith("*") || validRedirect.contains("?") || validRedirect.contains("#")) {
+            return null; // no wildcard as before
+        }
+        KeycloakUriBuilder uriBuilder = KeycloakUriBuilder.fromUri(validRedirect, false);
+        if (uriBuilder.getPath() != null) {
+            return validRedirect; // wildcard valid on path
+        }
+        if (uriBuilder.getAuthority() != null) {
+            if (uriBuilder.getAuthority().equals("*") || uriBuilder.getAuthority().endsWith(":*")) {
+                return validRedirect; // on authority just full wildcard or on port
+            } else {
+                // treat the wildcard after the authority
+                validRedirect = validRedirect.substring(0, validRedirect.length() - 1);
+                validRedirect = validRedirect + "/*";
+                return validRedirect;
+            }
+        }
+        if (uriBuilder.getSsp() != null) {
+            return validRedirect; // wildcard valid on SSP
         }
         return null;
     }
