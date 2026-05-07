@@ -37,13 +37,13 @@ import org.keycloak.representations.userprofile.config.UPAttributePermissions;
 import org.keycloak.representations.userprofile.config.UPAttributeRequired;
 import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.storage.UserStorageProvider;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.util.WaitUtils;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.userprofile.config.UPConfigUtils;
 
-import org.hamcrest.Matchers;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
@@ -118,15 +118,14 @@ public class SSSDUserProfileTest extends AbstractBaseSSSDTest {
                 .user(user.getId())
                 .assertEvent();
         Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        EventRepresentation loginEvent = events.expectLogin()
-                .user(Matchers.any(String.class))
-                .detail(Details.USERNAME, username)
-                .assertEvent();
+        EventRepresentation loginEvent = EventAssertion.expectLoginSuccess(events.poll())
+                .hasUserId()
+                .details(Details.USERNAME, username).getEvent();
 
         // logout
         AccessTokenResponse tokenResponse = sendTokenRequestAndGetResponse(loginEvent);
         appPage.logout(tokenResponse.getIdToken());
-        events.expectLogout(loginEvent.getSessionId()).user(loginEvent.getUserId()).assertEvent();
+        EventAssertion.expectLogoutSuccess(events.poll()).sessionId(loginEvent.getSessionId()).userId(loginEvent.getUserId());
     }
 
     @Test
@@ -161,15 +160,14 @@ public class SSSDUserProfileTest extends AbstractBaseSSSDTest {
                 .user(test.getId())
                 .assertEvent();
         Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        EventRepresentation loginEvent = events.expectLogin()
-                .user(Matchers.any(String.class))
-                .detail(Details.USERNAME, "test-user@localhost")
-                .assertEvent();
+        EventRepresentation loginEvent = EventAssertion.expectLoginSuccess(events.poll())
+                .hasUserId()
+                .details(Details.USERNAME, "test-user@localhost").getEvent();
 
         // logout
         AccessTokenResponse tokenResponse = sendTokenRequestAndGetResponse(loginEvent);
         appPage.logout(tokenResponse.getIdToken());
-        events.expectLogout(loginEvent.getSessionId()).user(loginEvent.getUserId()).assertEvent();
+        EventAssertion.expectLogoutSuccess(events.poll()).sessionId(loginEvent.getSessionId()).userId(loginEvent.getUserId());
     }
 
     @Test
@@ -211,15 +209,14 @@ public class SSSDUserProfileTest extends AbstractBaseSSSDTest {
                     .detail("updated_postal_code", "123456")
                     .assertEvent();
             Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
-            EventRepresentation loginEvent = events.expectLogin()
-                    .user(Matchers.any(String.class))
-                    .detail(Details.USERNAME, username)
-                    .assertEvent();
+            EventRepresentation loginEvent = EventAssertion.expectLoginSuccess(events.poll())
+                    .hasUserId()
+                    .details(Details.USERNAME, username).getEvent();
 
             // logout
             AccessTokenResponse tokenResponse = sendTokenRequestAndGetResponse(loginEvent);
             appPage.logout(tokenResponse.getIdToken());
-            events.expectLogout(loginEvent.getSessionId()).user(loginEvent.getUserId()).assertEvent();
+            EventAssertion.expectLogoutSuccess(events.poll()).sessionId(loginEvent.getSessionId()).userId(loginEvent.getUserId());
         } finally {
             realm.users().userProfile().update(origConfig);
         }
@@ -262,15 +259,14 @@ public class SSSDUserProfileTest extends AbstractBaseSSSDTest {
                     .detail("updated_postal_code", "123456")
                     .assertEvent();
             Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
-            EventRepresentation loginEvent = events.expectLogin()
-                    .user(Matchers.any(String.class))
-                    .detail(Details.USERNAME, "test-user@localhost")
-                    .assertEvent();
+            EventRepresentation loginEvent = EventAssertion.expectLoginSuccess(events.poll())
+                    .hasUserId()
+                    .details(Details.USERNAME, "test-user@localhost").getEvent();
 
             // logout
             AccessTokenResponse tokenResponse = sendTokenRequestAndGetResponse(loginEvent);
             appPage.logout(tokenResponse.getIdToken());
-            events.expectLogout(loginEvent.getSessionId()).user(loginEvent.getUserId()).assertEvent();
+            EventAssertion.expectLogoutSuccess(events.poll()).sessionId(loginEvent.getSessionId()).userId(loginEvent.getUserId());
         } finally {
             realm.users().userProfile().update(origConfig);
         }

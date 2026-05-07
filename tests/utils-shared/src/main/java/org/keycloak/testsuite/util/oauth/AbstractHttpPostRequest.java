@@ -61,7 +61,10 @@ public abstract class AbstractHttpPostRequest<T, R> {
     public R send() {
         post = new HttpPost(endpoint != null ? endpoint : getEndpoint());
         post.addHeader("Accept", getAccept());
-        post.addHeader("Origin", client.config().getOrigin());
+        String origin = client.config().getOrigin();
+        if (origin != null) {
+            post.addHeader("Origin", origin);
+        }
 
         authorization();
 
