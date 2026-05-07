@@ -38,6 +38,7 @@ import org.keycloak.http.simple.SimpleHttpResponse;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oidc.TokenExchangeContext;
 import org.keycloak.services.ErrorResponseException;
+import org.keycloak.services.messages.Messages;
 import org.keycloak.util.BasicAuthHelper;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -83,11 +84,14 @@ public class GitHubIdentityProvider extends AbstractOAuth2IdentityProvider imple
     protected static final String GITHUB_JSON_FORMAT_KEY = "githubJsonFormat";
     /** Email URL key in config map. */
     protected static final String EMAIL_URL_KEY = "emailUrl";
+    /** Organizations key in config map. Comma-separated list of GitHub organizations allowed to log in. */
+    protected static final String ORGANIZATIONS_KEY = "organizations";
 
     private final String authUrl;
     private final String tokenUrl;
     private final String profileUrl;
     private final String emailUrl;
+    private final String apiUrl;
     private final boolean githubJsonFormat;
 
     public GitHubIdentityProvider(KeycloakSession session, OAuth2IdentityProviderConfig config) {
@@ -98,6 +102,7 @@ public class GitHubIdentityProvider extends AbstractOAuth2IdentityProvider imple
 
         authUrl = baseUrl + AUTH_FRAGMENT;
         tokenUrl = baseUrl + TOKEN_FRAGMENT;
+        this.apiUrl = apiUrl;
         profileUrl = apiUrl + PROFILE_FRAGMENT;
         emailUrl = apiUrl + EMAIL_FRAGMENT;
 
@@ -180,9 +185,48 @@ public class GitHubIdentityProvider extends AbstractOAuth2IdentityProvider imple
                     if (user.getEmail() == null) {
                         user.setEmail(searchEmail(accessToken));
                     }
+
+                    checkOrganizationMembership(accessToken, user.getUsername());
+
                     return user;
+		} catch (IdentityBrokerException e) {
+			throw e;
 		} catch (Exception e) {
 			throw new IdentityBrokerException("Profile could not be retrieved from the github endpoint", e);
+		}
+	}
+
+	private void checkOrganizationMembership(String accessToken, String username) {
+		String orgsConfig = getConfig().getConfig().get(ORGANIZATIONS_KEY);
+		if (orgsConfig == null || orgsConfig.trim().isEmpty()) {
+			return;
+		}
+
+		String[] allowedOrgs = orgsConfig.split(",");
+		for (String org : allowedOrgs) {
+			String trimmedOrg = org.trim();
+			if (trimmedOrg.isEmpty()) continue;
+			if (isUserInOrganization(accessToken, username, trimmedOrg)) {
+				return;
+			}
+		}
+
+		logger.warnf("GitHub user '%s' is not a member of any required organization: %s", username, orgsConfig);
+		throw new IdentityBrokerException("User is not a member of any required GitHub organization")
+				.withMessageCode(Messages.ACCESS_DENIED);
+	}
+
+	private boolean isUserInOrganization(String accessToken, String username, String org) {
+		String orgMemberUrl = apiUrl + "/orgs/" + org + "/members/" + username;
+		try (SimpleHttpResponse response = SimpleHttp.create(session).doGet(orgMemberUrl)
+				.header("Authorization", "Bearer " + accessToken)
+				.header("Accept", "application/json")
+				.asResponse()) {
+			// GitHub returns 204 if the user is a member, 404 if not a member, 302 if the requester is not a member
+			return response.getStatus() == 204;
+		} catch (Exception e) {
+			logger.warnf(e, "Could not check organization membership for user %s in organization %s", username, org);
+			return false;
 		}
 	}
 
@@ -256,6 +300,10 @@ public class GitHubIdentityProvider extends AbstractOAuth2IdentityProvider imple
 
     @Override
 	protected String getDefaultScopes() {
+		String orgs = getConfig().getConfig().get(ORGANIZATIONS_KEY);
+		if (orgs != null && !orgs.trim().isEmpty()) {
+			return DEFAULT_SCOPE + " read:org";
+		}
 		return DEFAULT_SCOPE;
 	}
 }

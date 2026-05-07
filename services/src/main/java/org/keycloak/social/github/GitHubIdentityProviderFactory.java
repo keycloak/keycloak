@@ -61,6 +61,8 @@ public class GitHubIdentityProviderFactory extends AbstractIdentityProviderFacto
                 .name(GitHubIdentityProvider.API_URL_KEY).label("API URL").helpText("Override the default API URL for this identity provider.")
                 .type(ProviderConfigProperty.STRING_TYPE).add().property()
                 .name(GitHubIdentityProvider.GITHUB_JSON_FORMAT_KEY).label("JSON Format").helpText("Enable to receive JSON format responses from GitHub. This is also required to automatically refresh access tokens retrieved from GitHub.")
-                .defaultValue(false).type(ProviderConfigProperty.BOOLEAN_TYPE).add().build();
+                .defaultValue(false).type(ProviderConfigProperty.BOOLEAN_TYPE).add().property()
+                .name(GitHubIdentityProvider.ORGANIZATIONS_KEY).label("Organizations").helpText("Comma-separated list of GitHub organization names. If specified, only members of at least one of these organizations will be allowed to log in. Requires the 'read:org' scope, which is automatically added when this field is set.")
+                .type(ProviderConfigProperty.STRING_TYPE).add().build();
     }
 }
