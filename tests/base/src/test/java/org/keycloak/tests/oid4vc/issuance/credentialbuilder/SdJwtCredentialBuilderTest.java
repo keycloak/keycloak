@@ -134,22 +134,21 @@ public class SdJwtCredentialBuilderTest extends CredentialBuilderTest {
 
         List<String> disclosed = sdJwt.getDisclosures().values().stream().toList();
         assertEquals(disclosed.size() + (decoys == 0 ? SdJwt.DEFAULT_NUMBER_OF_DECOYS : decoys),
-                     sdArrayNode == null ? 0 : sdArrayNode.size(),
-                     "All undisclosed claims and decoys should be provided.");
+                sdArrayNode == null ? 0 : sdArrayNode.size(),
+                "All undisclosed claims and decoys should be provided.");
 
         visibleClaims.forEach(vc ->
                 assertTrue(jwt.getPayload().has(vc),
                         "The visible claims should be present within the token.")
         );
 
-        // Will check disclosure conformity
         sdJwt.getSdJwtVerificationContext()
-             .verifyIssuance(List.of(exampleVerifier()),
-                             IssuerSignedJwtVerificationOpts.builder()
-                                                            .withIatCheck(true)
-                                                            .withNbfCheck(true)
-                                                            .withExpCheck(true)
-                                                            .build(),
-                             null);
+                .verifyIssuance(List.of(exampleVerifier()),
+                        IssuerSignedJwtVerificationOpts.builder()
+                                .withIatCheck(true)
+                                .withNbfCheck(true)
+                                .withExpCheck(true)
+                                .build(),
+                        null);
     }
 }

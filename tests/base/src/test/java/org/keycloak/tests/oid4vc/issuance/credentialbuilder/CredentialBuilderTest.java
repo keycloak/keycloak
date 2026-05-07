@@ -17,60 +17,39 @@
 
 package org.keycloak.tests.oid4vc.issuance.credentialbuilder;
 
-import java.net.URI;
-import java.time.Instant;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-
 import org.keycloak.crypto.AsymmetricSignatureSignerContext;
 import org.keycloak.crypto.AsymmetricSignatureVerifierContext;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.crypto.SignatureSignerContext;
 import org.keycloak.crypto.SignatureVerifierContext;
-import org.keycloak.protocol.oid4vc.model.CredentialSubject;
-import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
-import org.keycloak.tests.oid4vc.OID4VCIssuerTestBase;
+import org.keycloak.tests.oid4vc.issuance.signing.OID4VCTest;
 
-/**
- * @author <a href="mailto:Ingrid.Kamga@adorsys.com">Ingrid Kamga</a>
- */
-public abstract class CredentialBuilderTest extends OID4VCIssuerTestBase {
+public abstract class CredentialBuilderTest extends OID4VCTest {
 
-    private final KeyWrapper keyWrapper;
+    private static final KeyWrapper KEY_WRAPPER = createRsaKey();
 
-    CredentialBuilderTest() {
-        keyWrapper = getRsaKey_Default();
+    protected static SignatureSignerContext exampleSigner() {
+        return new AsymmetricSignatureSignerContext(KEY_WRAPPER);
     }
 
-    protected SignatureSignerContext exampleSigner() {
-        return new AsymmetricSignatureSignerContext(keyWrapper);
+    protected static SignatureVerifierContext exampleVerifier() {
+        return new AsymmetricSignatureVerifierContext(KEY_WRAPPER);
     }
 
-    protected SignatureVerifierContext exampleVerifier() {
-        return new AsymmetricSignatureVerifierContext(keyWrapper);
-    }
-
-    protected static CredentialSubject getCredentialSubject(Map<String, Object> claims) {
-        CredentialSubject credentialSubject = new CredentialSubject();
-        claims.forEach(credentialSubject::setClaims);
-        return credentialSubject;
-    }
-
-    protected static VerifiableCredential getTestCredential(Map<String, Object> claims) {
-
-        VerifiableCredential testCredential = new VerifiableCredential();
-        testCredential.setId(URI.create(String.format("uri:uuid:%s", UUID.randomUUID())));
-        testCredential.setContext(List.of(CONTEXT_URL));
-        testCredential.setType(TEST_TYPES);
-        testCredential.setIssuer(TEST_DID);
-        testCredential.setExpirationDate(TEST_EXPIRATION_DATE);
-        if (claims.containsKey("issuanceDate")) {
-            testCredential.setIssuanceDate((Instant) claims.get("issuanceDate"));
+    private static KeyWrapper createRsaKey() {
+        try {
+            var kpg = java.security.KeyPairGenerator.getInstance("RSA");
+            kpg.initialize(2048);
+            var kp = kpg.generateKeyPair();
+            KeyWrapper kw = new KeyWrapper();
+            kw.setPrivateKey(kp.getPrivate());
+            kw.setPublicKey(kp.getPublic());
+            kw.setKid(java.util.UUID.randomUUID().toString());
+            kw.setType("RSA");
+            kw.setAlgorithm("RS256");
+            return kw;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
-
-        testCredential.setCredentialSubject(getCredentialSubject(claims));
-        return testCredential;
     }
-
 }
