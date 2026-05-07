@@ -17,19 +17,33 @@
 
 package org.keycloak.tests.admin;
 
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URL;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response;
-import org.hamcrest.MatcherAssert;
-import org.hamcrest.Matchers;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
+
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ProtocolMappersResource;
 import org.keycloak.admin.client.resource.RoleMappingResource;
 import org.keycloak.admin.client.resource.RolesResource;
+import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthenticator;
+import org.keycloak.authentication.authenticators.client.JWTClientSecretAuthenticator;
 import org.keycloak.common.util.Time;
+import org.keycloak.crypto.Algorithm;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.AccountRoles;
@@ -37,6 +51,7 @@ import org.keycloak.models.Constants;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
+import org.keycloak.protocol.oidc.client.authentication.JWTClientSecretCredentialsProvider;
 import org.keycloak.protocol.saml.SamlProtocol;
 import org.keycloak.representations.adapters.action.GlobalRequestResult;
 import org.keycloak.representations.adapters.action.PushNotBeforeAction;
@@ -60,28 +75,25 @@ import org.keycloak.testframework.realm.ClientConfigBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmConfig;
 import org.keycloak.testframework.realm.RealmConfigBuilder;
+import org.keycloak.testframework.realm.RoleConfigBuilder;
 import org.keycloak.testframework.realm.UserConfigBuilder;
 import org.keycloak.tests.utils.Assert;
 import org.keycloak.tests.utils.admin.AdminEventPaths;
 import org.keycloak.tests.utils.admin.ApiUtil;
-import org.keycloak.testframework.realm.RoleConfigBuilder;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
+import org.keycloak.testsuite.util.oauth.RegisterNodeResponse;
+import org.keycloak.testsuite.util.oauth.UnregisterNodeResponse;
 
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.stream.Collectors;
+import org.hamcrest.MatcherAssert;
+import org.hamcrest.Matchers;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import static java.util.Arrays.asList;
+
+import static org.keycloak.models.Constants.defaultClients;
+
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
@@ -97,7 +109,6 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
-import static org.keycloak.models.Constants.defaultClients;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -657,6 +668,52 @@ public class ClientTest {
 
         assertEquals(1, managedRealm.admin().clients().get(id).toRepresentation().getRegisteredNodes().size());
         managedRealm.admin().clients().get(id).unregisterNode(myhost);
+    }
+
+    @Test
+    public void nodesUsingClientEndpointAndJwt() throws MalformedURLException, InterruptedException {
+        testApp.kcAdmin().clear();
+
+        ClientResource clientResource = ApiUtil.findClientByClientId(managedRealm.admin(), "test-app");
+        ClientRepresentation clientRep = clientResource.toRepresentation();
+        clientRep.setClientAuthenticatorType(JWTClientSecretAuthenticator.PROVIDER_ID);
+        clientResource.update(clientRep);
+        managedRealm.cleanup().add(r -> {
+            clientRep.setClientAuthenticatorType(ClientIdAndSecretAuthenticator.PROVIDER_ID);
+            r.clients().get(clientRep.getId()).update(clientRep);
+        });
+
+        JWTClientSecretCredentialsProvider jwtProvider = new JWTClientSecretCredentialsProvider();
+        jwtProvider.setClientSecret(clientRep.getSecret(), Algorithm.HS256);
+        String jwt = jwtProvider.createSignedRequestToken("test-app", oauth.getEndpoints().getIssuer(), Algorithm.HS256);
+
+        // register the node
+        String myhost = URI.create(managedRealm.getBaseUrl()).getHost();
+        RegisterNodeResponse resgiterResponse = oauth.registerNodeRequest().clientClusterHost(myhost).clientJwt(jwt).send();
+        Assertions.assertTrue(resgiterResponse.isSuccess());
+        jwt = jwtProvider.createSignedRequestToken("test-app", oauth.getEndpoints().getIssuer(), Algorithm.HS256);
+        resgiterResponse = oauth.registerNodeRequest().clientClusterHost("invalid").clientJwt(jwt).send();
+        Assertions.assertTrue(resgiterResponse.isSuccess());
+        GlobalRequestResult result = managedRealm.admin().clients().get(clientRep.getId()).testNodesAvailable();
+        assertEquals(1, result.getSuccessRequests().size());
+        assertEquals(1, result.getFailedRequests().size());
+
+        // test availability and nodes are registered
+        TestAvailabilityAction testAvailable = testApp.kcAdmin().getTestAvailable();
+        assertEquals("test-app", testAvailable.getResource());
+        assertEquals(2, managedRealm.admin().clients().get(clientRep.getId()).toRepresentation().getRegisteredNodes().size());
+
+        // unregister the invalid node
+        jwt = jwtProvider.createSignedRequestToken("test-app", oauth.getEndpoints().getIssuer(), Algorithm.HS256);
+        UnregisterNodeResponse unregisterResponse = oauth.unregisterNodeRequest().clientClusterHost("invalid").clientJwt(jwt).send();
+        Assertions.assertTrue(unregisterResponse.isSuccess());
+        assertEquals(1, managedRealm.admin().clients().get(clientRep.getId()).toRepresentation().getRegisteredNodes().size());
+
+        // unregister the valid node
+        jwt = jwtProvider.createSignedRequestToken("test-app", oauth.getEndpoints().getIssuer(), Algorithm.HS256);
+        unregisterResponse = oauth.unregisterNodeRequest().clientClusterHost(myhost).clientJwt(jwt).send();
+        Assertions.assertTrue(unregisterResponse.isSuccess());
+        assertNull(managedRealm.admin().clients().get(clientRep.getId()).toRepresentation().getRegisteredNodes());
     }
 
     @Test
