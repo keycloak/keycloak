@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.testsuite.client;
+package org.keycloak.tests.client;
 
 import java.util.Collections;
 import java.util.LinkedList;
@@ -31,44 +31,35 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.testsuite.AbstractKeycloakTest;
-
-import org.junit.After;
-import org.junit.Before;
+import org.keycloak.testframework.annotations.InjectKeycloakUrls;
+import org.keycloak.testframework.injection.LifeCycle;
+import org.keycloak.testframework.oauth.OAuthClient;
+import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
+import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.server.KeycloakUrls;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-
-/**
- * @deprecated
- * <p> Use {@link org.keycloak.testsuite.AbstractClientTest} instead </p>
- *
- */
-@Deprecated(forRemoval = true)
-public abstract class AbstractClientRegistrationTest extends AbstractKeycloakTest {
+public abstract class AbstractClientRegistrationTest {
 
     static final String REALM_NAME = "test";
+    static final String CLIENT_ID = "test-client";
+    static final String CLIENT_SECRET = "test-client-secret";
 
-    ClientRegistration reg;
+    @InjectKeycloakUrls
+    KeycloakUrls keycloakUrls;
 
-    @Before
-    public void before() throws Exception {
-        reg = ClientRegistration.create().url(suiteContext.getAuthServerInfo().getContextRoot() + "/auth", "test").build();
-    }
+    @InjectOAuthClient(lifecycle = LifeCycle.METHOD)
+    OAuthClient oauth;
 
-    @After
-    public void after() throws Exception {
-        reg.close();
-    }
 
-    @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
         RealmRepresentation rep = new RealmRepresentation();
         rep.setEnabled(true);
         rep.setId(REALM_NAME);
         rep.setRealm(REALM_NAME);
-        rep.setUsers(new LinkedList<UserRepresentation>());
+        rep.setUsers(new LinkedList<>());
 
         LinkedList<CredentialRepresentation> credentials = new LinkedList<>();
         CredentialRepresentation password = new CredentialRepresentation();
@@ -111,30 +102,27 @@ public abstract class AbstractClientRegistrationTest extends AbstractKeycloakTes
     }
 
     public ClientRepresentation createClient(ClientRepresentation client) throws ClientRegistrationException {
-        authManageClients();
+        ClientRegistration reg =  oauth.clientRegistration();
+        authManageClients(reg);
         ClientRepresentation response = reg.create(client);
         reg.auth(null);
         return response;
     }
 
-    public ClientRepresentation getClient(String clientUuid) {
-        try {
-            return adminClient.realm(REALM_NAME).clients().get(clientUuid).toRepresentation();
-        } catch (NotFoundException e) {
-            return null;
-        }
+    public ClientRepresentation getClient(String clientUuid, ManagedRealm realm) throws NotFoundException{
+        return realm.admin().clients().get(clientUuid).toRepresentation();
     }
 
-    void authCreateClients() {
-        reg.auth(Auth.token(getToken("create-clients", "password")));
+    ClientRegistration authCreateClients(ClientRegistration reg) {
+        return reg.auth(Auth.token(getToken("create-clients", "password")));
     }
 
-    void authManageClients() {
-        reg.auth(Auth.token(getToken("manage-clients", "password")));
+    ClientRegistration authManageClients(ClientRegistration reg) {
+        return reg.auth(Auth.token(getToken("manage-clients", "password")));
     }
 
-    void authNoAccess() {
-        reg.auth(Auth.token(getToken("no-access", "password")));
+    ClientRegistration authNoAccess(ClientRegistration reg) {
+        return reg.auth(Auth.token(getToken("no-access", "password")));
     }
 
     protected String getToken(String username, String password) {
@@ -148,5 +136,4 @@ public abstract class AbstractClientRegistrationTest extends AbstractKeycloakTes
             throw new RuntimeException(e);
         }
     }
-
 }
