@@ -2268,7 +2268,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
             AccessTokenResponse tokenRes = oauth.ciba().doBackchannelAuthenticationTokenRequest(response.getAuthReqId());
             assertThat(tokenRes.getStatusCode(), is(equalTo(400)));
             assertThat(tokenRes.getError(), is(equalTo(OAuthErrorException.INVALID_GRANT)));
-            assertThat(tokenRes.getErrorDescription(), is(equalTo("Client Certification missing for MTLS HoK Token Binding")));
+            assertThat(tokenRes.getErrorDescription(), is(equalTo("Holder of Key Proof required (e.g. mTLS, DPoP)")));
             events.expect(EventType.AUTHREQID_TO_TOKEN_ERROR).clearDetails().user((String)null).client(TEST_CLIENT_NAME).error(OAuthErrorException.INVALID_REQUEST).assertEvent();
             oauth.httpClient().reset();
 
