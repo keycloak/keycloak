@@ -27,6 +27,7 @@ import org.keycloak.ssf.transmitter.stream.StreamDeliveryConfig;
 import org.keycloak.ssf.transmitter.stream.StreamVerificationConfig;
 import org.keycloak.ssf.transmitter.stream.storage.SsfStreamStore;
 import org.keycloak.util.JsonSerialization;
+import org.keycloak.vault.VaultStringSecret;
 
 import org.jboss.logging.Logger;
 
@@ -486,7 +487,16 @@ public class ClientStreamStore implements SsfStreamStore {
             StreamDeliveryConfig delivery = new StreamDeliveryConfig();
             delivery.setMethod(deliveryMethod);
             delivery.setEndpointUrl(client.getAttribute(SSF_STREAM_DELIVERY_ENDPOINT_URL_KEY));
-            delivery.setAuthorizationHeader(client.getAttribute(SSF_STREAM_DELIVERY_AUTHORIZATION_HEADER_KEY));
+            // Mirror the IdP clientSecret pattern: the attribute is stored as
+            // entered (literal token or ${vault.x} expression) and resolved
+            // through VaultTranscriber at read time so operators can keep the
+            // raw secret out of the DB.
+            String rawAuthorizationHeader = client.getAttribute(SSF_STREAM_DELIVERY_AUTHORIZATION_HEADER_KEY);
+            if (rawAuthorizationHeader != null) {
+                try (VaultStringSecret vaulted = session.vault().getStringSecret(rawAuthorizationHeader)) {
+                    delivery.setAuthorizationHeader(vaulted.get().orElse(rawAuthorizationHeader));
+                }
+            }
             String additionalRaw = client.getAttribute(SSF_STREAM_DELIVERY_ADDITIONAL_PARAMETERS_KEY);
             if (additionalRaw != null) {
                 try {
@@ -631,7 +641,24 @@ public class ClientStreamStore implements SsfStreamStore {
         if (delivery != null) {
             setOrRemove(client, SSF_STREAM_DELIVERY_METHOD_KEY, delivery.getMethod());
             setOrRemove(client, SSF_STREAM_DELIVERY_ENDPOINT_URL_KEY, delivery.getEndpointUrl());
-            setOrRemove(client, SSF_STREAM_DELIVERY_AUTHORIZATION_HEADER_KEY, delivery.getAuthorizationHeader());
+            // Preserve an admin's vault externalization across a no-op
+            // round-trip from the receiver. The receiver sees the resolved
+            // value on read (see applyDeliveryConfig); if it echoes that
+            // value back unchanged, keep the existing ${vault.x} attribute
+            // rather than overwriting it with the resolved plaintext. Only
+            // an actual change to the secret rewrites the attribute.
+            String incomingAuthorizationHeader = delivery.getAuthorizationHeader();
+            String existingRawAuthorizationHeader = client.getAttribute(SSF_STREAM_DELIVERY_AUTHORIZATION_HEADER_KEY);
+            if (incomingAuthorizationHeader != null
+                    && existingRawAuthorizationHeader != null
+                    && !existingRawAuthorizationHeader.equals(incomingAuthorizationHeader)) {
+                try (VaultStringSecret vaulted = session.vault().getStringSecret(existingRawAuthorizationHeader)) {
+                    if (vaulted.get().filter(incomingAuthorizationHeader::equals).isPresent()) {
+                        incomingAuthorizationHeader = existingRawAuthorizationHeader;
+                    }
+                }
+            }
+            setOrRemove(client, SSF_STREAM_DELIVERY_AUTHORIZATION_HEADER_KEY, incomingAuthorizationHeader);
             Map<String, Object> additionalParameters = delivery.getAdditionalParameters();
             if (additionalParameters != null && !additionalParameters.isEmpty()) {
                 client.setAttribute(SSF_STREAM_DELIVERY_ADDITIONAL_PARAMETERS_KEY,

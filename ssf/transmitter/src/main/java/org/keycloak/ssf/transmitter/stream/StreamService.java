@@ -511,7 +511,7 @@ public class StreamService {
         validateAllowedDeliveryMethod(delivery, receiverClient);
         validateDeliveryMethod(streamConfig, delivery, receiverClient);
 
-        validateFieldLengths(streamConfig);
+        validateFieldConstraints(streamConfig);
     }
 
     /**
@@ -719,13 +719,17 @@ public class StreamService {
     }
 
     /**
-     * Enforces per-field length caps on receiver-supplied fields so oversized
+     * Enforces structural constraints on receiver-supplied fields so invalid
      * inputs are rejected with a clean {@link SsfException} → HTTP 400 rather
-     * than leaking through to a DB column overflow when the stream is
-     * persisted. The overall persisted-blob size is additionally capped in
+     * than leaking through. Covers per-field length caps (so oversized values
+     * don't reach DB column overflow) and content rules (e.g. rejecting
+     * vault expressions in {@code authorization_header}, which would otherwise
+     * grant a rogue receiver indirect read of arbitrary vault entries via
+     * the resolved-on-read path in {@link ClientStreamStore}). The overall
+     * persisted-blob size is additionally capped in
      * {@link ClientStreamStore#storeStreamConfig}.
      */
-    protected void validateFieldLengths(StreamConfig streamConfig) {
+    protected void validateFieldConstraints(StreamConfig streamConfig) {
 
         String description = streamConfig.getDescription();
         if (description != null && description.length() > MAX_DESCRIPTION_LENGTH) {
@@ -759,6 +763,21 @@ public class StreamService {
             if (authorizationHeader != null && authorizationHeader.length() > MAX_DELIVERY_AUTHORIZATION_HEADER_LENGTH) {
                 throw new SsfException("Invalid stream configuration: delivery.authorization_header exceeds "
                         + MAX_DELIVERY_AUTHORIZATION_HEADER_LENGTH + " characters");
+            }
+            // Vault expressions (${vault.x}) are an admin-only ceremony.
+            // Accepting them via the receiver-facing API would let a rogue
+            // receiver point its own authorization_header at any vault key
+            // the operator has registered; the next GET would then resolve
+            // and hand back the vault contents (see ClientStreamStore
+            // applyDeliveryConfig). Reject the syntax outright — admins
+            // configure vault placeholders directly on the client attribute.
+            //
+            // Use contains rather than startsWith: the default transcriber
+            // only resolves anchored ^${vault.x}$ today, but a custom vault
+            // provider or a future pattern loosening would re-open the
+            // door if we accepted embedded forms like "Bearer ${vault.x}".
+            if (authorizationHeader != null && authorizationHeader.contains("${vault.")) {
+                throw new SsfException("Invalid stream configuration: delivery.authorization_header must not contain a vault expression");
             }
 
             Map<String, Object> additionalParameters = delivery.getAdditionalParameters();
