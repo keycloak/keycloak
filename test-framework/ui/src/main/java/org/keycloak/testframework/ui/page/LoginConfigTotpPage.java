@@ -14,12 +14,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.tests.forms.page;
 
-import org.keycloak.testframework.ui.page.AbstractPage;
+package org.keycloak.testframework.ui.page;
+
 import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 
-import org.openqa.selenium.By;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
@@ -27,7 +26,7 @@ import org.openqa.selenium.support.FindBy;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class LoginConfigTotpPage extends AbstractPage {
+public class LoginConfigTotpPage extends AbstractLoginPage{
 
     @FindBy(id = "totpSecret")
     private WebElement totpSecret;
@@ -59,22 +58,9 @@ public class LoginConfigTotpPage extends AbstractPage {
     @FindBy(id = "input-error-otp-label")
     private WebElement totpInputLabelError;
 
-    public LoginConfigTotpPage(ManagedWebDriver driver) {
-        super(driver);
-    }
-
 
     public String getTotpSecret() {
         return totpSecret.getAttribute("value");
-    }
-
-    public boolean isCurrent() {
-        try {
-            driver.findElement(By.id("totp"));
-            return true;
-        } catch (Throwable t) {
-            return false;
-        }
     }
 
     public boolean isCancelDisplayed() {
@@ -83,6 +69,10 @@ public class LoginConfigTotpPage extends AbstractPage {
         } catch (NoSuchElementException e) {
             return false;
         }
+    }
+
+    public LoginConfigTotpPage(ManagedWebDriver driver) {
+        super(driver);
     }
 
     @Override

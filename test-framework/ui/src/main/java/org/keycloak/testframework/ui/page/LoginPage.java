@@ -123,4 +123,12 @@ public class LoginPage extends AbstractLoginPage {
             return Optional.empty();
         }
     }
+
+    public boolean isRememberMePresent() {
+        try {
+            return rememberMe.isDisplayed();
+        } catch (NoSuchElementException e) {
+            return false;
+        }
+    }
 }
