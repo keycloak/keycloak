@@ -54,6 +54,7 @@ public class TokenRevocationCorsTest extends AbstractKeycloakTest {
         testRealms.add(realm);
     }
 
+
     @Test
     public void testTokenRevocationCorsRequestWithValidUrl() throws Exception {
         oauth.realm("test");
@@ -80,10 +81,8 @@ public class TokenRevocationCorsTest extends AbstractKeycloakTest {
 
         oauth.origin(INVALID_CORS_URL);
         TokenRevocationResponse response = oauth.tokenRevocationRequest(tokenResponse.getRefreshToken()).refreshToken().send();
-        assertTrue(response.isSuccess());
+        assertEquals(Status.FORBIDDEN.getStatusCode(), response.getStatusCode());
         assertNotCors(response);
-
-        isTokenDisabled(tokenResponse);
     }
 
     private static void assertCors(TokenRevocationResponse response) {

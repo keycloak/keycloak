@@ -509,7 +509,7 @@ public class IdentityBrokerService implements UserAuthenticationIdentityProvider
         // authenticate client
         AuthorizeClientUtil.ClientAuthResult clientAuth = AuthorizeClientUtil.authorizeClient(session, event, cors);
         ClientModel client = clientAuth.getClient();
-        cors.allowedOrigins(session, client);
+        cors.checkAllowedOrigins(session, client);
         event.client(client);
         session.getContext().setClient(client);
         if (client.isPublicClient()) {
@@ -1546,7 +1546,7 @@ public class IdentityBrokerService implements UserAuthenticationIdentityProvider
     }
 
     private Response corsResponse(Response response, ClientModel clientModel) {
-        return Cors.builder().auth().allowedOrigins(session, clientModel).add(Response.fromResponse(response));
+        return Cors.builder().auth().checkAllowedOrigins(session, clientModel).add(Response.fromResponse(response));
     }
 
     private void fireErrorEvent(String message, Throwable throwable) {
