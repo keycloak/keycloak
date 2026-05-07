@@ -21,18 +21,24 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.keycloak.Config;
 import org.keycloak.common.Profile;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionContext;
+import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.ProtocolMapperModel;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.ModelToRepresentation;
+import org.keycloak.models.utils.RoleUtils;
 import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.mappers.AbstractOIDCProtocolMapper;
@@ -50,11 +56,19 @@ import static org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper.TOKEN
 public class OrganizationGroupMembershipMapper extends AbstractOIDCProtocolMapper implements OIDCAccessTokenMapper, OIDCIDTokenMapper, UserInfoTokenMapper, TokenIntrospectionTokenMapper, EnvironmentDependentProviderFactory {
 
     public static final String PROVIDER_ID = "oidc-organization-group-membership-mapper";
+    public static final String ADD_GROUP_ROLE_MAPPINGS = "addGroupRoleMappings";
 
     @Override
     public List<ProviderConfigProperty> getConfigProperties() {
         List<ProviderConfigProperty> properties = new ArrayList<>();
         OIDCAttributeMapperHelper.addIncludeInTokensConfig(properties, OrganizationGroupMembershipMapper.class);
+        ProviderConfigProperty property = new ProviderConfigProperty();
+        property.setName(ADD_GROUP_ROLE_MAPPINGS);
+        property.setLabel(ADD_GROUP_ROLE_MAPPINGS + ".label");
+        property.setType(ProviderConfigProperty.BOOLEAN_TYPE);
+        property.setDefaultValue(Boolean.FALSE.toString());
+        property.setHelpText(ADD_GROUP_ROLE_MAPPINGS + ".help");
+        properties.add(property);
         return properties;
     }
 
@@ -108,14 +122,18 @@ public class OrganizationGroupMembershipMapper extends AbstractOIDCProtocolMappe
 
         Map<String, Object> orgClaims = OIDCAttributeMapperHelper.getOrInitializeOrganizationClaimAsMap(token, model);
 
+        boolean includeRoles = isAddGroupRoleMappings(model);
+
         // Add groups to each organization
         organizations.forEach(org -> {
             if (org == null || !org.isEnabled() || !org.isMember(user)) {
                 return;
             }
 
-            // Get user's groups in this organization
-            List<String> groupPaths = orgProvider.getOrganizationGroupsByMember(org, user)
+            List<GroupModel> userOrgGroups = orgProvider.getOrganizationGroupsByMember(org, user)
+                .collect(Collectors.toList());
+
+            List<String> groupPaths = userOrgGroups.stream()
                 .map(ModelToRepresentation::buildGroupPath)
                 .collect(Collectors.toList());
 
@@ -130,6 +148,35 @@ public class OrganizationGroupMembershipMapper extends AbstractOIDCProtocolMappe
 
             // Add groups
             orgData.put("groups", groupPaths);
+
+            // Add roles from org groups if configured
+            if (includeRoles) {
+                Set<RoleModel> roleMappings = userOrgGroups.stream()
+                    .flatMap(GroupModel::getRoleMappingsStream)
+                    .collect(Collectors.toSet());
+                roleMappings = RoleUtils.expandCompositeRoles(roleMappings);
+
+                List<String> realmRoles = new ArrayList<>();
+                Map<String, List<String>> clientRoles = new HashMap<>();
+
+                for (RoleModel role : roleMappings) {
+                    if (role.getContainer() instanceof RealmModel) {
+                        realmRoles.add(role.getName());
+                    } else if (role.getContainer() instanceof ClientModel clientModel) {
+                        clientRoles.computeIfAbsent(clientModel.getClientId(), k -> new ArrayList<>())
+                            .add(role.getName());
+                    }
+                }
+
+                if (!realmRoles.isEmpty()) {
+                    orgData.put("realm_access", Map.of("roles", realmRoles));
+                }
+                if (!clientRoles.isEmpty()) {
+                    Map<String, Object> resourceAccess = new HashMap<>();
+                    clientRoles.forEach((clientId, roles) -> resourceAccess.put(clientId, Map.of("roles", roles)));
+                    orgData.put("resource_access", resourceAccess);
+                }
+            }
         });
     }
 
@@ -138,6 +185,10 @@ public class OrganizationGroupMembershipMapper extends AbstractOIDCProtocolMappe
         OrganizationScope scope = OrganizationScope.valueOfScope(session, rawScopes);
 
         return scope.resolveOrganizations(userSession.getUser(), rawScopes, session);
+    }
+
+    private boolean isAddGroupRoleMappings(ProtocolMapperModel model) {
+        return Boolean.parseBoolean(model.getConfig().getOrDefault(ADD_GROUP_ROLE_MAPPINGS, Boolean.FALSE.toString()));
     }
 
     public static ProtocolMapperModel create(String name, boolean accessToken, boolean idToken, boolean introspectionEndpoint) {

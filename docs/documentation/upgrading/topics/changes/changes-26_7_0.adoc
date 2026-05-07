@@ -63,6 +63,10 @@ As before, for any rolling update or scaling up or down, we require to do this o
 
 Use the `shutdown-timeout` option to adjust the timeout to your environment. Restore the original behavior by setting it to `1s`.
 
+=== Organization group representations now include role mappings
+
+Organization group representations returned by the Admin REST API now include `realmRoles` and `clientRoles` fields. Previously, these fields were `null` for organization groups. They are now empty lists/maps by default, and populated when roles are assigned to the group. If your code checks for `null` to detect organization groups or conditionally processes role mappings, update it to handle the new behavior.
+
 === Realm search now matches by display name
 
 When searching for realms in the admin console, the search now also matches against the realm's display name in addition to the realm name.

@@ -20,6 +20,7 @@ keycloak.access_token['/preferred_username']
 keycloak.access_token['/custom_claim']
 resource_id
 alias
+clientId
 user_id
 ticket_id
 $evaluation.grant()
