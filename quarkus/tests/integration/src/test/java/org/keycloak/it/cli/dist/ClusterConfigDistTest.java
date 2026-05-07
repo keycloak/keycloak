@@ -26,6 +26,7 @@ import org.keycloak.it.junit5.extension.BeforeStartDistribution;
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
 import org.keycloak.it.junit5.extension.RawDistOnly;
+import org.keycloak.it.junit5.extension.SkipRealmBootstrap;
 import org.keycloak.it.junit5.extension.Storage;
 import org.keycloak.it.utils.KeycloakDistribution;
 
@@ -47,6 +48,7 @@ import org.testcontainers.shaded.com.google.common.io.Files;
 @DistributionTest(defaultOptions = {"--db=dev-file", "--http-enabled=true", "--hostname-strict=false"})
 @RawDistOnly(reason = "Not possible to mount files using docker.")
 @Storage(defaultLocalCache = false)
+@SkipRealmBootstrap
 @Tag(DistributionTest.SMOKE)
 @Tag(DistributionTest.SLOW)
 @TestMethodOrder(OrderAnnotation.class)

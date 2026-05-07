@@ -46,7 +46,7 @@ import org.junit.jupiter.api.extension.ReflectiveInvocationContext;
 import static java.lang.System.setProperty;
 
 import static org.keycloak.it.junit5.extension.DistributionType.RAW;
-import static org.keycloak.quarkus.runtime.Environment.forceTestLaunchMode;
+import static org.keycloak.quarkus.runtime.Environment.forceExitAfterStartLaunchMode;
 
 public class CLITestExtension extends QuarkusMainTestExtension {
 
@@ -105,6 +105,10 @@ public class CLITestExtension extends QuarkusMainTestExtension {
             if (dryRun && isRaw()) {
                 dist.setEnvVar(DryRunMixin.KC_DRY_RUN_ENV, "true");
                 dist.setEnvVar(DryRunMixin.KC_DRY_RUN_BUILD_ENV, "true");
+            }
+            if (isRaw() && (context.getRequiredTestClass().getAnnotation(SkipRealmBootstrap.class) != null
+                    || context.getRequiredTestMethod().getAnnotation(SkipRealmBootstrap.class) != null)) {
+                dist.unwrap(RawKeycloakDistribution.class).setLaunchMode(Environment.LAUNCH_MODE_EXIT_BEFORE_BOOTSTRAP);
             }
 
             if (launch != null) {
@@ -179,6 +183,9 @@ public class CLITestExtension extends QuarkusMainTestExtension {
             onKeepServerAlive(context.getRequiredTestMethod().getAnnotation(KeepServerAlive.class), false);
             dist.stop();
             dist.clearEnv();
+            if (isRaw()) {
+                dist.unwrap(RawKeycloakDistribution.class).setLaunchMode(Environment.LAUNCH_MODE_EXIT_AFTER_START);
+            }
         }
 
         super.afterEach(context);
@@ -224,7 +231,7 @@ public class CLITestExtension extends QuarkusMainTestExtension {
         if (distConfig != null) {
             dist = createDistribution(distConfig, getStoreConfig(context), getDatabaseConfig(context));
         } else {
-            forceTestLaunchMode();
+            forceExitAfterStartLaunchMode();
         }
 
         super.beforeAll(context);

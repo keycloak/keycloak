@@ -112,8 +112,7 @@ public abstract class KeycloakApplication extends Application {
 
         keycloakSessionFactory.init();
 
-        // for testing, allow the quarkus application to exit early
-        if (io.quarkus.runtime.Application.currentApplication() != null && Boolean.getBoolean("init_db_only")) {
+        if ("exit_before_bootstrap".equals(System.getProperty("kc.launch.mode"))) {
             Quarkus.asyncExit(0);
             return;
         }

@@ -104,6 +104,7 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
     private long startTimeout = TimeUnit.SECONDS.toMillis(Long.getLong("keycloak.distribution.start.timeout", 120L));
     private boolean throwErrorIfFailedToStart = false;
     private boolean threadDump = true;
+    private String launchMode = Environment.LAUNCH_MODE_EXIT_AFTER_START;
 
     public RawKeycloakDistribution(boolean debug, boolean manualStop, boolean enableTls, boolean reCreate, boolean removeBuildOptionsAfterBuild, int requestPort) {
         this.debug = debug;
@@ -330,7 +331,7 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
         }
 
         if (!this.isManualStop()) {
-            allArgs.add("-D" + LAUNCH_MODE + "=test");
+            allArgs.add("-D" + LAUNCH_MODE + "=" + launchMode);
         }
 
         allArgs.add("-Djgroups.join_timeout=50");
@@ -565,7 +566,7 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
     private void preInitH2(Path dPath) throws IOException {
         LOG.info("Creating pre-initialized database for reuse");
         ProcessHandle.current().info().command().ifPresent(command -> {
-            ProcessBuilder pb = new ProcessBuilder(List.of(command, "-Dinit_db_only=true",
+            ProcessBuilder pb = new ProcessBuilder(List.of(command, "-D" + LAUNCH_MODE + "=" + Environment.LAUNCH_MODE_EXIT_BEFORE_BOOTSTRAP,
                     "-Dkc.home.dir=" + dPath.toFile().getAbsolutePath(), "-Dkc.config.built=true",
                     "-Dkc.db=dev-file", "-jar", dPath.resolve("lib").resolve("quarkus-run.jar").toFile().getAbsolutePath(), "start-dev"));
             try {
@@ -659,6 +660,10 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
     @Override
     public void setEnvVar(String name, String value) {
         this.envVars.put(name, value);
+    }
+
+    public void setLaunchMode(String launchMode) {
+        this.launchMode = launchMode;
     }
 
     @Override

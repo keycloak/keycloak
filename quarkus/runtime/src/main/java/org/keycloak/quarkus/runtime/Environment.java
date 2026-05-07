@@ -47,6 +47,8 @@ public final class Environment {
     public static final String DEFAULT_THEMES_PATH = File.separator +  "themes";
     public static final String PROD_PROFILE_VALUE = "prod";
     public static final String LAUNCH_MODE = "kc.launch.mode";
+    public static final String LAUNCH_MODE_EXIT_AFTER_START = "exit_after_start";
+    public static final String LAUNCH_MODE_EXIT_BEFORE_BOOTSTRAP = "exit_before_bootstrap";
 
     private Environment() {}
 
@@ -86,9 +88,6 @@ public final class Environment {
         System.setProperty(org.keycloak.common.util.Environment.PROFILE, profile);
         System.setProperty(LaunchMode.current().getProfileKey(), profile);
         System.setProperty(SmallRyeConfig.SMALLRYE_CONFIG_PROFILE, profile);
-        if (isTestLaunchMode()) {
-            System.setProperty("mp.config.profile", profile);
-        }
     }
 
     /**
@@ -135,12 +134,13 @@ public final class Environment {
         })).collect(Collectors.toMap(File::getName, Function.identity()));
     }
 
-    public static boolean isTestLaunchMode() {
-        return "test".equals(System.getProperty(LAUNCH_MODE));
+    public static boolean hasEarlyExitLaunchMode() {
+        String mode = System.getProperty(LAUNCH_MODE);
+        return LAUNCH_MODE_EXIT_AFTER_START.equals(mode) || LAUNCH_MODE_EXIT_BEFORE_BOOTSTRAP.equals(mode);
     }
 
-    public static void forceTestLaunchMode() {
-        System.setProperty(LAUNCH_MODE, "test");
+    public static void forceExitAfterStartLaunchMode() {
+        System.setProperty(LAUNCH_MODE, LAUNCH_MODE_EXIT_AFTER_START);
     }
 
     /**

@@ -46,7 +46,7 @@ import org.jboss.logging.Logger;
 
 import static org.keycloak.common.util.Environment.isDevMode;
 import static org.keycloak.common.util.Environment.isNonServerMode;
-import static org.keycloak.quarkus.runtime.Environment.isTestLaunchMode;
+import static org.keycloak.quarkus.runtime.Environment.hasEarlyExitLaunchMode;
 
 @ApplicationPath("/")
 @Blocking
@@ -119,7 +119,7 @@ public class QuarkusKeycloakApplication extends KeycloakApplication {
                 .map(Boolean::parseBoolean)
                 .orElse(Boolean.TRUE);
         // skip async bootstrap in dev and non-server mode
-        return !isDevMode() && !isNonServerMode() && !isTestLaunchMode() && asyncBootstrap;
+        return !isDevMode() && !isNonServerMode() && !hasEarlyExitLaunchMode() && asyncBootstrap;
     }
 
     @Override
