@@ -1,5 +1,7 @@
 package org.keycloak.services.clientregistration.policy.impl;
 
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 import org.keycloak.component.ComponentModel;
@@ -9,21 +11,17 @@ import org.keycloak.services.clientregistration.ClientRegistrationContext;
 import org.keycloak.services.clientregistration.ClientRegistrationProvider;
 import org.keycloak.services.clientregistration.policy.ClientRegistrationPolicy;
 import org.keycloak.services.clientregistration.policy.ClientRegistrationPolicyException;
-import org.keycloak.services.cors.Cors;
 
 public class RegistrationWebOriginsPolicy implements ClientRegistrationPolicy {
 
-    private final KeycloakSession session;
     private final List<String> allowedWebOrigins;
 
     public RegistrationWebOriginsPolicy(KeycloakSession session, ComponentModel model) {
-        this.session = session;
         allowedWebOrigins = model.getConfig().getList(RegistrationWebOriginsPolicyFactory.WEB_ORIGINS);
     }
 
     @Override
     public void beforeRegister(ClientRegistrationContext context) throws ClientRegistrationPolicyException {
-        addOrigins();
     }
 
     @Override
@@ -32,7 +30,6 @@ public class RegistrationWebOriginsPolicy implements ClientRegistrationPolicy {
 
     @Override
     public void beforeUpdate(ClientRegistrationContext context, ClientModel clientModel) throws ClientRegistrationPolicyException {
-        addOrigins();
     }
 
     @Override
@@ -41,18 +38,15 @@ public class RegistrationWebOriginsPolicy implements ClientRegistrationPolicy {
 
     @Override
     public void beforeView(ClientRegistrationProvider provider, ClientModel clientModel) throws ClientRegistrationPolicyException {
-        addOrigins();
     }
 
     @Override
     public void beforeDelete(ClientRegistrationProvider provider, ClientModel clientModel) throws ClientRegistrationPolicyException {
-        addOrigins();
     }
 
-    private void addOrigins() {
-        if (allowedWebOrigins != null && !allowedWebOrigins.isEmpty()) {
-            session.getProvider(Cors.class).addAllowedOrigins(allowedWebOrigins);
-        }
+    @Override
+    public Collection<String> getAllowedOrigins() {
+        return allowedWebOrigins != null ? allowedWebOrigins : Collections.emptyList();
     }
 
 }

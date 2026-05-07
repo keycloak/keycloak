@@ -1,0 +1,10 @@
+== Notable changes
+
+Notable changes may include internal behavior changes that prevent common misconfigurations, bugs that are fixed, or changes to simplify running {project_name}.
+It also lists significant changes to internal APIs.
+
+=== CORS requests with an invalid Origin are now rejected before endpoint logic runs
+
+Cross-origin requests sent to OIDC endpoints (such as the token, userinfo, token revocation, logout, and PAR endpoints) are now validated against the client's configured Web Origins before the endpoint reaches its authentication and request-processing logic. Previously, requests carrying an `Origin` header that did not match any of the client's allowed Web Origins could be processed up to the point where the response was about to be returned, which could result in inconsistent error responses depending on how far the request progressed.
+
+After this change, such requests are rejected immediately with a CORS failure returning Forbidden (403) HTTP error status. There is no behavior change for same-origin requests (no `Origin` header) or for cross-origin requests whose `Origin` is already permitted by the client's Web Origins configuration.
