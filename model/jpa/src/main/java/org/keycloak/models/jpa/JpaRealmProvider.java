@@ -1052,6 +1052,10 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
                         builder.function("substr", Integer.class, builder.literal(value), builder.literal(1), builder.literal(255)));
                 Predicate attrValuePredicate2 =  builder.equal(attributeJoin.get("value"), value);
                 predicates.add(builder.and(attrNamePredicate, attrValuePredicate1, attrValuePredicate2));
+            } else if (dbProductName.equals("Microsoft SQL Server")) {
+                Predicate prefixPredicate = builder.equal(attributeJoin.get("valuePrefix"), value.length() > 255 ? value.substring(0, 255) : value);
+                Predicate fullPredicate = builder.equal(attributeJoin.get("value"), value);
+                predicates.add(builder.and(attrNamePredicate, prefixPredicate, fullPredicate));
             } else {
                 Predicate attrValuePredicate = builder.equal(attributeJoin.get("value"), value);
                 predicates.add(builder.and(attrNamePredicate, attrValuePredicate));

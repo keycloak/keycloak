@@ -52,6 +52,9 @@ public class ClientAttributeEntity {
     @Column(name = "VALUE")
     protected String value;
 
+    @Column(name = "VALUE_PREFIX", insertable = false, updatable = false)
+    protected String valuePrefix;
+
     public ClientEntity getClient() {
         return client;
     }
