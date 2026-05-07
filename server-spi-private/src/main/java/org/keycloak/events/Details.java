@@ -33,6 +33,7 @@ public interface Details {
     String ACTION = "action";
     String CODE_ID = "code_id";
     String REDIRECT_URI = "redirect_uri";
+    String REQUEST_URI = "request_uri";
     String RESPONSE_TYPE = "response_type";
     String RESPONSE_MODE = "response_mode";
     String GRANT_TYPE = "grant_type";

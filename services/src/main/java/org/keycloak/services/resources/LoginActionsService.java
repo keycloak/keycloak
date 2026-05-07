@@ -475,22 +475,22 @@ public class LoginActionsService {
         if (clientID == null) {
             if (redirectUriParam != null) {
                 logger.warn("Unsupported to send 'redirect_uri' parameter without providing 'client_id' parameter.");
-                throw new ErrorPageException(session, null, Response.Status.BAD_REQUEST, Messages.MISSING_PARAMETER, OIDCLoginProtocol.CLIENT_ID_PARAM);
+                throw new ErrorPageException(session, Response.Status.BAD_REQUEST, Messages.MISSING_PARAMETER, OIDCLoginProtocol.CLIENT_ID_PARAM);
             }
             client = SystemClientUtil.getSystemClient(realm);
             redirectUri = Urls.accountBase(session.getContext().getUri().getBaseUri()).path("/").build(realm.getName()).toString();
         } else {
             client = session.clients().getClientByClientId(realm, clientID);
             if (client == null) {
-                throw new ErrorPageException(session, null, Response.Status.BAD_REQUEST, Messages.CLIENT_NOT_FOUND);
+                throw new ErrorPageException(session, Response.Status.BAD_REQUEST, Messages.CLIENT_NOT_FOUND);
             }
             if (!client.isEnabled()) {
-                throw new ErrorPageException(session, null, Response.Status.BAD_REQUEST, Messages.CLIENT_DISABLED);
+                throw new ErrorPageException(session, Response.Status.BAD_REQUEST, Messages.CLIENT_DISABLED);
             }
             if (redirectUriParam != null) {
                 redirectUri = RedirectUtils.verifyRedirectUri(session, redirectUriParam, client);
                 if (redirectUri == null) {
-                    throw new ErrorPageException(session, null, Response.Status.BAD_REQUEST, Messages.INVALID_PARAMETER, OIDCLoginProtocol.REDIRECT_URI_PARAM);
+                    throw new ErrorPageException(session, Response.Status.BAD_REQUEST, Messages.INVALID_PARAMETER, OIDCLoginProtocol.REDIRECT_URI_PARAM);
                 }
             }
         }

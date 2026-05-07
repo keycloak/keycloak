@@ -135,7 +135,6 @@ public class AuthorizationEndpointRequestParserProcessor {
         if (requestUri == null) {
             throw new RuntimeException("'request_uri' parameter is null");
         }
-
         return requestUri.toLowerCase().startsWith("urn:ietf:params:oauth:request_uri:")
                        ? RequestUriType.PAR
                        : RequestUriType.REQUEST_OBJECT;
