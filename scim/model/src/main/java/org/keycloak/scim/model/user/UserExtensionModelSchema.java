@@ -22,20 +22,12 @@ public class UserExtensionModelSchema extends AbstractUserModelSchema {
 
     public static final String KEYCLOAK_USER_SCHEMA = "urn:keycloak:params:scim:schemas:extension:realm:1.0:User";
 
-    private final KeycloakSession session;
-
     public UserExtensionModelSchema(KeycloakSession session) {
         this(session, KEYCLOAK_USER_SCHEMA);
     }
 
     public UserExtensionModelSchema(KeycloakSession session, String schema) {
         super(session, schema);
-        this.session = session;
-    }
-
-    @Override
-    public String getId() {
-        return KEYCLOAK_USER_SCHEMA;
     }
 
     @Override
@@ -202,20 +194,15 @@ public class UserExtensionModelSchema extends AbstractUserModelSchema {
                         user.setExtensions(extensions);
                     }
 
-                    Map<String, Object> subAttributes = (Map<String, Object>) extensions.get(schema);
+                    Map<String, Object> subAttributes = (Map<String, Object>) extensions.computeIfAbsent(schema, k -> new HashMap<>());
 
-                    if (subAttributes == null) {
-                        subAttributes = new HashMap<>();
-                        extensions.put(schema, subAttributes);
-                        user.addSchema(schema);
-                    }
+                    user.addSchema(schema);
 
                     int subSubAttribute = attributeName.indexOf('.');
 
                     if (subSubAttribute != -1) {
                         String parentAttributeName = attributeName.substring(0, subSubAttribute);
-                        subAttributes.put(parentAttributeName, new HashMap<>());
-                        subAttributes = (Map<String, Object>) subAttributes.get(parentAttributeName);
+                        subAttributes = (Map<String, Object>) subAttributes.computeIfAbsent(parentAttributeName, k -> new HashMap<>());
                         attributeName = attributeName.substring(parentAttributeName.length() + 1);
                     }
 

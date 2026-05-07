@@ -138,8 +138,7 @@ public class OID4VCCredentialOfferCorsTest extends OID4VCIssuerEndpointTest {
                 .preAuthorized(false)
                 .send();
 
-        // Should still return 200 OK but without CORS headers
-        assertEquals(HttpStatus.SC_OK, response.getStatusCode());
+        assertEquals(HttpStatus.SC_FORBIDDEN, response.getStatusCode());
         assertNoCorsHeaders(response);
     }
 

@@ -23,21 +23,15 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
-import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.Consumes;
@@ -55,23 +49,15 @@ import jakarta.ws.rs.core.Response;
 import org.keycloak.Config;
 import org.keycloak.common.Profile;
 import org.keycloak.common.Profile.Feature;
-import org.keycloak.common.VerificationException;
 import org.keycloak.common.enums.HostnameVerificationPolicy;
 import org.keycloak.common.profile.PropertiesProfileConfigResolver;
 import org.keycloak.common.util.HtmlUtils;
 import org.keycloak.common.util.Time;
 import org.keycloak.component.ComponentModel;
-import org.keycloak.cookie.CookieProvider;
-import org.keycloak.cookie.CookieType;
 import org.keycloak.events.Event;
 import org.keycloak.events.EventListenerProvider;
-import org.keycloak.events.EventQuery;
-import org.keycloak.events.EventStoreProvider;
 import org.keycloak.events.EventType;
 import org.keycloak.events.admin.AdminEvent;
-import org.keycloak.events.admin.AdminEventQuery;
-import org.keycloak.events.admin.AuthDetails;
-import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.email.EmailEventListenerProviderFactory;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.models.AuthenticationFlowModel;
@@ -91,7 +77,6 @@ import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider;
 import org.keycloak.protocol.oid4vc.issuance.credentialoffer.CredentialOfferState;
 import org.keycloak.protocol.oid4vc.issuance.credentialoffer.CredentialOfferStorage;
 import org.keycloak.protocol.oid4vc.issuance.credentialoffer.preauth.JwtPreAuthCodeHandler;
-import org.keycloak.protocol.oid4vc.issuance.credentialoffer.preauth.PreAuthCodeHandler;
 import org.keycloak.protocol.oid4vc.model.CredentialsOffer;
 import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
 import org.keycloak.protocol.oid4vc.model.PreAuthCodeCtx;
@@ -100,17 +85,16 @@ import org.keycloak.protocol.oidc.encode.TokenContextEncoderProvider;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.representations.idm.AdminEventRepresentation;
-import org.keycloak.representations.idm.AuthDetailsRepresentation;
 import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.services.resource.RealmResourceProvider;
-import org.keycloak.services.scheduled.ClearExpiredUserSessions;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
 import org.keycloak.storage.UserStorageProvider;
-import org.keycloak.storage.datastore.PeriodicEventInvalidation;
+import org.keycloak.testframework.remote.providers.runonserver.FetchOnServer;
+import org.keycloak.testframework.remote.providers.runonserver.RunOnServer;
+import org.keycloak.testframework.remote.providers.runonserver.SerializationUtil;
 import org.keycloak.testsuite.components.amphibian.TestAmphibianProvider;
 import org.keycloak.testsuite.events.TestEventsListenerProvider;
 import org.keycloak.testsuite.federation.DummyUserFederationProviderFactory;
@@ -121,9 +105,6 @@ import org.keycloak.testsuite.rest.representation.AuthenticatorState;
 import org.keycloak.testsuite.rest.resource.TestCacheResource;
 import org.keycloak.testsuite.rest.resource.TestLDAPResource;
 import org.keycloak.testsuite.rest.resource.TestingExportImportResource;
-import org.keycloak.testsuite.runonserver.FetchOnServer;
-import org.keycloak.testsuite.runonserver.RunOnServer;
-import org.keycloak.testsuite.runonserver.SerializationUtil;
 import org.keycloak.testsuite.util.FeatureDeployerUtil;
 import org.keycloak.timer.TimerProvider;
 import org.keycloak.truststore.FileTruststoreProvider;
@@ -160,45 +141,6 @@ public class TestingResourceProvider implements RealmResourceProvider {
         this.factory = factory;
         this.suspendedTimerTasks = suspendedTimerTasks;
         this.request = session.getContext().getHttpRequest();
-    }
-
-    @POST
-    @Path("/remove-user-session")
-    @Produces(MediaType.APPLICATION_JSON)
-    public Response removeUserSession(@QueryParam("realm") final String name, @QueryParam("session") final String sessionId) {
-        RealmModel realm = getRealmByName(name);
-
-        UserSessionModel sessionModel = session.sessions().getUserSession(realm, sessionId);
-        if (sessionModel == null) {
-            throw new NotFoundException("Session not found");
-        }
-
-        session.sessions().removeUserSession(realm, sessionModel);
-        return Response.noContent().build();
-    }
-
-    @POST
-    @Path("/remove-user-sessions")
-    @Produces(MediaType.APPLICATION_JSON)
-    public Response removeUserSessions(@QueryParam("realm") final String realmName) {
-        RealmModel realm = getRealmByName(realmName);
-
-        session.sessions().removeUserSessions(realm);
-        return Response.noContent().build();
-    }
-
-    @GET
-    @Path("/get-last-session-refresh")
-    @Produces(MediaType.APPLICATION_JSON)
-    public Integer getLastSessionRefresh(@QueryParam("realm") final String name, @QueryParam("session") final String sessionId, @QueryParam("offline") boolean offline) {
-        RealmModel realm = getRealmByName(name);
-
-        UserSessionModel sessionModel = offline ? session.sessions().getOfflineUserSession(realm, sessionId) : session.sessions().getUserSession(realm, sessionId);
-        if (sessionModel == null) {
-            throw new NotFoundException("Session not found");
-        }
-
-        return sessionModel.getLastSessionRefresh();
     }
 
     @POST
@@ -311,289 +253,6 @@ public class TestingResourceProvider implements RealmResourceProvider {
         TestEventsListenerProvider.clearAdminEvents();
         return Response.noContent().build();
     }
-
-    @GET
-    @Path("/clear-event-store-for-realm")
-    @Produces(MediaType.APPLICATION_JSON)
-    public Response clearEventStore(@QueryParam("realmId") String realmId) {
-        EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);
-        RealmModel realm = session.realms().getRealm(realmId);
-
-        if (realm == null) throw ErrorResponse.error("Realm not found", Response.Status.NOT_FOUND);
-
-        eventStore.clear(realm);
-        return Response.noContent().build();
-    }
-
-    @GET
-    @Path("/clear-expired-events")
-    @Produces(MediaType.APPLICATION_JSON)
-    public Response clearExpiredEvents() {
-        EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);
-        eventStore.clearExpiredEvents();
-        session.invalidate(PeriodicEventInvalidation.JPA_EVENT_STORE);
-        return Response.noContent().build();
-    }
-
-
-    /**
-     * Query events
-     * <p>
-     * Returns all events, or filters them based on URL query parameters listed here
-     *
-     * @param realmId     The realm
-     * @param types       The types of events to return
-     * @param client      App or oauth client name
-     * @param user        User id
-     * @param dateFrom    From date
-     * @param dateTo      To date
-     * @param ipAddress   IP address
-     * @param firstResult Paging offset
-     * @param maxResults  Paging size
-     * @return
-     */
-    @Path("query-events")
-    @GET
-    @NoCache
-    @Produces(MediaType.APPLICATION_JSON)
-    public Stream<EventRepresentation> queryEvents(@QueryParam("realmId") String realmId, @QueryParam("type") List<String> types, @QueryParam("client") String client,
-                                                   @QueryParam("user") String user, @QueryParam("dateFrom") String dateFrom, @QueryParam("dateTo") String dateTo,
-                                                   @QueryParam("ipAddress") String ipAddress, @QueryParam("first") Integer firstResult,
-                                                   @QueryParam("max") Integer maxResults) {
-
-        EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);
-
-        EventQuery query = eventStore.createQuery();
-
-        if (realmId != null) {
-            query.realm(realmId);
-        }
-
-        if (client != null) {
-            query.client(client);
-        }
-
-        if (types != null && !types.isEmpty()) {
-            EventType[] t = new EventType[types.size()];
-            for (int i = 0; i < t.length; i++) {
-                t[i] = EventType.valueOf(types.get(i));
-            }
-            query.type(t);
-        }
-
-        if (user != null) {
-            query.user(user);
-        }
-
-        if (dateFrom != null) {
-            Date from = formatDate(dateFrom, "Date(From)");
-            query.fromDate(from);
-        }
-
-        if (dateTo != null) {
-            Date to = formatDate(dateTo, "Date(To)");
-            query.toDate(to);
-        }
-
-        if (ipAddress != null) {
-            query.ipAddress(ipAddress);
-        }
-        if (firstResult != null) {
-            query.firstResult(firstResult);
-        }
-        if (maxResults != null) {
-            query.maxResults(maxResults);
-        }
-
-        return query.getResultStream().map(ModelToRepresentation::toRepresentation);
-    }
-
-    @PUT
-    @Path("/on-event")
-    @Consumes(MediaType.APPLICATION_JSON)
-    public void onEvent(final EventRepresentation rep) {
-        EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);
-
-        eventStore.onEvent(repToModel(rep));
-    }
-
-    private Event repToModel(EventRepresentation rep) {
-        Event event = new Event();
-        event.setId(UUID.randomUUID().toString());
-        event.setClientId(rep.getClientId());
-        event.setDetails(rep.getDetails());
-        event.setError(rep.getError());
-        event.setIpAddress(rep.getIpAddress());
-        event.setRealmId(rep.getRealmId());
-        event.setSessionId(rep.getSessionId());
-        event.setTime(rep.getTime());
-        event.setType(EventType.valueOf(rep.getType()));
-        event.setUserId(rep.getUserId());
-        return event;
-    }
-
-    @GET
-    @Path("/clear-admin-event-store-for-realm")
-    @Produces(MediaType.APPLICATION_JSON)
-    public Response clearAdminEventStore(@QueryParam("realmId") String realmId) {
-        EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);
-        RealmModel realm = session.realms().getRealm(realmId);
-
-        if (realm == null) throw ErrorResponse.error("Realm not found", Response.Status.NOT_FOUND);
-
-        eventStore.clearAdmin(realm);
-        return Response.noContent().build();
-    }
-
-    @GET
-    @Path("/clear-admin-event-store-older-than")
-    @Produces(MediaType.APPLICATION_JSON)
-    public Response clearAdminEventStore(@QueryParam("realmId") String realmId, @QueryParam("olderThan") long olderThan) {
-        EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);
-        RealmModel realm = session.realms().getRealm(realmId);
-
-        if (realm == null) throw ErrorResponse.error("Realm not found", Response.Status.NOT_FOUND);
-
-        eventStore.clearAdmin(realm, olderThan);
-        return Response.noContent().build();
-    }
-
-    /**
-     * Get admin events
-     * <p>
-     * Returns all admin events, or filters events based on URL query parameters listed here
-     *
-     * @param realmId
-     * @param operationTypes
-     * @param authRealm
-     * @param authClient
-     * @param authUser       user id
-     * @param authIpAddress
-     * @param resourcePath
-     * @param dateFrom
-     * @param dateTo
-     * @param firstResult
-     * @param maxResults
-     * @return
-     */
-    @Path("query-admin-events")
-    @GET
-    @NoCache
-    @Produces(MediaType.APPLICATION_JSON)
-    public Stream<AdminEventRepresentation> getAdminEvents(@QueryParam("realmId") String realmId, @QueryParam("operationTypes") List<String> operationTypes, @QueryParam("authRealm") String authRealm, @QueryParam("authClient") String authClient,
-                                                           @QueryParam("authUser") String authUser, @QueryParam("authIpAddress") String authIpAddress,
-                                                           @QueryParam("resourcePath") String resourcePath, @QueryParam("dateFrom") String dateFrom,
-                                                           @QueryParam("dateTo") String dateTo, @QueryParam("first") Integer firstResult,
-                                                           @QueryParam("max") Integer maxResults) {
-
-        EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);
-        AdminEventQuery query = eventStore.createAdminQuery();
-
-        if (realmId != null) {
-            query.realm(realmId);
-        }
-
-        if (authRealm != null) {
-            query.authRealm(authRealm);
-        }
-
-        if (authClient != null) {
-            query.authClient(authClient);
-        }
-
-        if (authUser != null) {
-            query.authUser(authUser);
-        }
-
-        if (authIpAddress != null) {
-            query.authIpAddress(authIpAddress);
-        }
-
-        if (resourcePath != null) {
-            query.resourcePath(resourcePath);
-        }
-
-        if (operationTypes != null && !operationTypes.isEmpty()) {
-            OperationType[] t = new OperationType[operationTypes.size()];
-            for (int i = 0; i < t.length; i++) {
-                t[i] = OperationType.valueOf(operationTypes.get(i));
-            }
-            query.operation(t);
-        }
-
-        if (dateFrom != null) {
-            Date from = formatDate(dateFrom, "Date(From)");
-            query.fromTime(from);
-        }
-
-        if (dateTo != null) {
-            Date to = formatDate(dateTo, "Date(To)");
-            query.toTime(to);
-        }
-
-        if (firstResult != null || maxResults != null) {
-            if (firstResult == null) {
-                firstResult = 0;
-            }
-            if (maxResults == null) {
-                maxResults = 100;
-            }
-            query.firstResult(firstResult);
-            query.maxResults(maxResults);
-        }
-
-        return query.getResultStream().map(ModelToRepresentation::toRepresentation);
-    }
-
-    private Date formatDate(String date, String paramName) {
-        SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
-        try {
-            return df.parse(date);
-        } catch (ParseException e) {
-            throw new BadRequestException("Invalid value for '" + paramName + "', expected format is yyyy-MM-dd");
-        }
-    }
-
-    @POST
-    @Path("/on-admin-event")
-    @Consumes(MediaType.APPLICATION_JSON)
-    public void onAdminEvent(final AdminEventRepresentation rep, @QueryParam("includeRepresentation") boolean includeRepresentation) {
-        EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);
-        eventStore.onEvent(repToModel(rep), includeRepresentation);
-    }
-
-    private AdminEvent repToModel(AdminEventRepresentation rep) {
-        AdminEvent event = new AdminEvent();
-        event.setId(UUID.randomUUID().toString());
-        event.setAuthDetails(repToModel(rep.getAuthDetails()));
-        event.setError(rep.getError());
-        event.setOperationType(OperationType.valueOf(rep.getOperationType()));
-        if (rep.getResourceType() != null) {
-            event.setResourceTypeAsString(rep.getResourceType());
-        }
-        event.setRealmId(rep.getRealmId());
-        event.setRepresentation(rep.getRepresentation());
-        event.setResourcePath(rep.getResourcePath());
-        event.setTime(rep.getTime());
-        return event;
-    }
-
-    private AuthDetails repToModel(AuthDetailsRepresentation rep) {
-        AuthDetails details = new AuthDetails();
-        details.setClientId(rep.getClientId());
-        details.setIpAddress(rep.getIpAddress());
-        details.setRealmId(rep.getRealmId());
-        details.setUserId(rep.getUserId());
-        return details;
-    }
-
-    @GET
-    @Path("/get-sso-cookie")
-    @Produces(MediaType.APPLICATION_JSON)
-    public String getSSOCookieValue() {
-        return session.getProvider(CookieProvider.class).get(CookieType.IDENTITY);
-    }
-
 
     @Path("/cache/{cache}")
     public TestCacheResource getCacheResource(@PathParam("cache") String cacheName) {
@@ -715,51 +374,11 @@ public class TestingResourceProvider implements RealmResourceProvider {
                         }));
     }
 
-
-    @GET
-    @Path("/identity-config")
-    @Produces(MediaType.APPLICATION_JSON)
-    public Map<String, String> getIdentityProviderConfig(@QueryParam("alias") String alias) {
-        return session.identityProviders().getByAlias(alias).getConfig();
-    }
-
     @PUT
     @Path("/set-krb5-conf-file")
     @Consumes(MediaType.APPLICATION_JSON)
     public void setKrb5ConfFile(@QueryParam("krb5-conf-file") String krb5ConfFile) {
         System.setProperty("java.security.krb5.conf", krb5ConfFile);
-    }
-
-    @POST
-    @Path("/suspend-periodic-tasks")
-    @Produces(MediaType.APPLICATION_JSON)
-    public Response suspendPeriodicTasks() {
-        suspendTask(ClearExpiredUserSessions.TASK_NAME);
-
-        return Response.noContent().build();
-    }
-
-    private void suspendTask(String taskName) {
-        TimerProvider.TimerTaskContext taskContext = session.getProvider(TimerProvider.class).cancelTask(taskName);
-
-        if (taskContext != null) {
-            suspendedTimerTasks.put(taskName, taskContext);
-        }
-    }
-
-    @POST
-    @Path("/restore-periodic-tasks")
-    @Produces(MediaType.APPLICATION_JSON)
-    public Response restorePeriodicTasks() {
-        TimerProvider timer = session.getProvider(TimerProvider.class);
-
-        for (Map.Entry<String, TimerProvider.TimerTaskContext> task : suspendedTimerTasks.entrySet()) {
-            timer.schedule(task.getValue().getRunnable(), task.getValue().getIntervalMillis(), task.getKey());
-        }
-
-        suspendedTimerTasks.clear();
-
-        return Response.noContent().build();
     }
 
     @POST
@@ -1134,19 +753,6 @@ public class TestingResourceProvider implements RealmResourceProvider {
 
         PreAuthCodeCtx preAuthCodeCtx = new PreAuthCodeCtx(offerState);
         return new JwtPreAuthCodeHandler(session).createPreAuthCode(preAuthCodeCtx);
-    }
-
-    @GET
-    @Path("/tx-code")
-    @NoCache
-    public String getTxCode(@QueryParam("pre-auth-code") final String preAuthCode) throws VerificationException {
-        var preAuthCodeHandler = session.getProvider(PreAuthCodeHandler.class);
-        PreAuthCodeCtx ctx = preAuthCodeHandler.verifyPreAuthCode(preAuthCode);
-
-        var offerStorage = session.getProvider(CredentialOfferStorage.class);
-        var offerState = offerStorage.getOfferStateById(ctx.getCredentialsOfferId());
-
-        return Optional.ofNullable(offerState).map(CredentialOfferState::getTxCode).orElse(null);
     }
 
     @POST
