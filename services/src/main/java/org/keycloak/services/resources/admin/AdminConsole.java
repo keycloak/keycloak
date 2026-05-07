@@ -262,7 +262,7 @@ public class AdminConsole {
         Locale locale = session.getContext().resolveLocale(user);
 
         return Cors.builder()
-                .allowedOrigins(authResult.token())
+                .checkAllowedOrigins(authResult.token())
                 .allowedMethods("GET")
                 .auth()
                 .add(Response.ok(new WhoAmI(user.getId(), realm.getName(), displayName, createRealm, realmAccess, locale, Boolean.parseBoolean(user.getFirstAttribute(IS_TEMP_ADMIN_ATTR_NAME)))));
