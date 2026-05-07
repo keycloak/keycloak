@@ -78,10 +78,7 @@ public class SecureParContentsExecutor implements ClientPolicyExecutorProvider<C
     private void checkValidParContents(PreAuthorizationRequestContext preAuthorizationRequestContext) throws ClientPolicyException {
         MultivaluedMap<String, String> requestParametersFromQuery = preAuthorizationRequestContext.getRequestParameters();
         String requestUri = requestParametersFromQuery.getFirst(OIDCLoginProtocol.REQUEST_URI_PARAM);
-        if (requestUri == null) {
-            throw new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, "request_uri not included.");
-        }
-        if (requestUri != null && AuthorizationEndpointRequestParserProcessor.getRequestUriType(requestUri) != RequestUriType.PAR) {
+        if (requestUri == null || AuthorizationEndpointRequestParserProcessor.getRequestUriType(requestUri) != RequestUriType.PAR) {
             throw new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, "PAR request_uri not included.");
         }
 
@@ -89,7 +86,7 @@ public class SecureParContentsExecutor implements ClientPolicyExecutorProvider<C
         SingleUseObjectProvider singleUseStore = session.singleUseObjects();
         Map<String, String> requestParametersFromPAR = singleUseStore.get(ParEndpoint.CACHE_KEY_PREFIX + key);
         if (requestParametersFromPAR == null) {
-            throw new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, "PAR not found, not issued or used multiple times.");
+            throw new ClientPolicyException(OAuthErrorException.INVALID_REQUEST_URI, "PAR not found, not issued or used multiple times.");
         }
 
         Set<String> requestParametersNameFromPAR = new HashSet<>();
