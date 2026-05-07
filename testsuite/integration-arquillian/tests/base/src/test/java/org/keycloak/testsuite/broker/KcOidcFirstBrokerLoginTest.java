@@ -466,10 +466,7 @@ public class KcOidcFirstBrokerLoginTest extends AbstractFirstBrokerLoginTest {
         loginPage.open(bc.consumerRealmName());
         loginPage.assertCurrent(bc.consumerRealmName());
 
-        System.out.println(driver.getCurrentUrl());
-
-        // loginPage.clickResetLogin(); does not work somehow?
-        driver.findElement(By.linkText("Forgot Password?")).click();
+        loginPage.resetPassword();
         loginPasswordResetPage.assertCurrent();
 
         loginPasswordResetPage.backToLogin();
@@ -478,8 +475,7 @@ public class KcOidcFirstBrokerLoginTest extends AbstractFirstBrokerLoginTest {
         log.debug("Social button should be visible");
         final var socialButton = this.loginPage.findSocialButton(bc.getIDPAlias());
 
-        // loginPage.clickResetLogin(); does not work somehow?
-        driver.findElement(By.linkText("Forgot Password?")).click();
+        loginPage.resetPassword();
         loginPasswordResetPage.assertCurrent();
 
         loginPasswordResetPage.changePassword("user-without-idp");

@@ -125,6 +125,7 @@ public class UsernamePasswordForm extends AbstractUsernameFormAuthenticator impl
     private void clearUserIfComingFromResetPassword(AuthenticationFlowContext context) {
         if ("true".equals(context.getAuthenticationSession().getAuthNote(RESET_CREDENTIAL_USER_CHOSEN))) {
             context.clearUser();
+            context.getAuthenticationSession().removeAuthNote(RESET_CREDENTIAL_USER_CHOSEN);
         }
     }
 
