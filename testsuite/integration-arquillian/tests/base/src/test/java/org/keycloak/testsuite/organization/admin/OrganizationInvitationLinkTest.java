@@ -61,6 +61,7 @@ import org.keycloak.testsuite.util.GreenMailRule;
 import org.keycloak.testsuite.util.MailUtils;
 import org.keycloak.testsuite.util.MailUtils.EmailBody;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
+import org.keycloak.testsuite.util.userprofile.UserProfileUtil;
 import org.keycloak.util.JsonSerialization;
 
 import org.apache.http.NameValuePair;
@@ -433,6 +434,63 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
             assertThat(memberByEmail, Matchers.hasSize(1));
             assertThat(memberByEmail.get(0).getMembershipType(), equalTo(MembershipType.MANAGED));
         }
+    }
+
+    @Test
+    public void testEmailReadOnlyDuringInvitationWithEmailAsUsername() throws IOException, MessagingException {
+        String email = "inviteduser@email";
+
+        // Enable "Email as Username"
+        RealmRepresentation realm = managedRealm.admin().toRepresentation();
+        realm.setRegistrationEmailAsUsername(true);
+        managedRealm.admin().update(realm);
+        getCleanup().addCleanup(() -> {
+            realm.setRegistrationEmailAsUsername(false);
+            managedRealm.admin().update(realm);
+        });
+
+        // Set email to admin-editable only (read-only for users)
+        UserProfileUtil.setUserProfileConfiguration(managedRealm.admin(),
+                "{\"attributes\": ["
+                + "{\"name\": \"firstName\"," + UserProfileUtil.PERMISSIONS_ALL + ", \"required\": {}},"
+                + "{\"name\": \"lastName\"," + UserProfileUtil.PERMISSIONS_ALL + ", \"required\": {}},"
+                + "{\"name\": \"email\"," + UserProfileUtil.PERMISSIONS_ADMIN_EDITABLE + ", \"required\": {\"roles\" : [\"user\"]}}"
+                + "]}");
+        getCleanup().addCleanup(() -> UserProfileUtil.setUserProfileConfiguration(managedRealm.admin(), null));
+
+        OrganizationResource organization = managedRealm.admin().organizations().get(createOrganization().getId());
+        organization.members().inviteUser(email, null, null).close();
+
+        String link = getInvitationLinkFromEmail();
+        driver.navigate().to(link);
+
+        registerPage.assertCurrent(organizationName);
+
+        // Email field should be visible but disabled (read-only)
+        Assertions.assertTrue(registerPage.isEmailReadOnly());
+        assertThat(registerPage.getEmailValue(), equalTo(email));
+
+        // Fill in only the editable fields and submit
+        driver.findElement(By.id("firstName")).clear();
+        driver.findElement(By.id("firstName")).sendKeys("Homer");
+        driver.findElement(By.id("lastName")).clear();
+        driver.findElement(By.id("lastName")).sendKeys("Simpson");
+        driver.findElement(By.id("password")).clear();
+        driver.findElement(By.id("password")).sendKeys("password");
+        driver.findElement(By.id("password-confirm")).clear();
+        driver.findElement(By.id("password-confirm")).sendKeys("password");
+        driver.findElement(By.cssSelector("input[type=\"submit\"]")).click();
+
+        // Verify user was created with the invited email
+        List<UserRepresentation> users = managedRealm.admin().users().searchByEmail(email, true);
+        assertThat(users, not(empty()));
+        assertThat(users.get(0).getEmail(), equalTo(email));
+
+        // Verify user is a managed member of the organization
+        MemberRepresentation member = organization.members().member(users.get(0).getId()).toRepresentation();
+        Assertions.assertNotNull(member);
+        assertThat(member.getMembershipType(), equalTo(MembershipType.MANAGED));
+        getCleanup().addCleanup(() -> managedRealm.admin().users().get(users.get(0).getId()).remove());
     }
 
     @Test

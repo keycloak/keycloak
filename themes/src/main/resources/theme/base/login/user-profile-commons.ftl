@@ -94,7 +94,10 @@
 </#macro>
 
 <#macro inputTag attribute value>
-	<input type="<@inputTagType attribute=attribute/>" id="${attribute.name}" name="${attribute.name}" value="${(value!'')}" class="${properties.kcInputClass!}"
+	<#if attribute.readOnly>
+		<input type="hidden" name="${attribute.name}" value="${(value!'')}"/>
+	</#if>
+	<input type="<@inputTagType attribute=attribute/>" id="${attribute.name}" <#if !attribute.readOnly>name="${attribute.name}"</#if> value="${(value!'')}" class="${properties.kcInputClass!}"
 		aria-invalid="<#if messagesPerField.existsError('${attribute.name}')>true</#if>"
 		<#if attribute.readOnly>disabled</#if>
 		<#if attribute.autocomplete??>autocomplete="${attribute.autocomplete}"</#if>

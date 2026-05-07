@@ -37,10 +37,13 @@ public class RegisterBean extends AbstractUserProfileBean {
     private Map<String, String> formDataLegacy = new HashMap<>();
 
     public RegisterBean(MultivaluedMap<String, String> formData, KeycloakSession session) {
-        
+
         super(formData);
-        init(session, true);
-        
+        // During organization invitation registration, include read-only attributes (e.g., email
+        // with edit: ["admin"]) so they are shown as disabled fields in the form.
+        boolean writeableOnly = session.getContext().getOrganization() == null;
+        init(session, writeableOnly);
+
         if (formData != null) {
             for (String k : formData.keySet()) {
                 this.formDataLegacy.put(k, formData.getFirst(k));

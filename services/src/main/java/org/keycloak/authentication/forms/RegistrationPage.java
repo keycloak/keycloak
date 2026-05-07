@@ -70,6 +70,10 @@ public class RegistrationPage implements FormAuthenticator, FormAuthenticatorFac
                         return form.setError(Messages.EXPIRED_ACTION).createErrorPage(Status.BAD_REQUEST);
                     }
 
+                    // Set organization context so that User Profile permissions are respected
+                    // (e.g., email edit: ["admin"] makes email read-only during invitation registration)
+                    session.getContext().setOrganization(organization);
+
                     form.setAttribute("messageHeader", Messages.REGISTER_ORGANIZATION_MEMBER);
                     form.setAttribute(OrganizationModel.ORGANIZATION_NAME_ATTRIBUTE, organization.getName());
                     form.setAttribute(FIELD_EMAIL, token.getEmail());

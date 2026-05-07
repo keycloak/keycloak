@@ -274,6 +274,19 @@ public class RegisterPage extends LanguageComboboxAwarePage
         }
     }
 
+    public boolean isEmailReadOnly() {
+        try {
+            WebElement el = driver.findElement(By.id("email"));
+            return el.isDisplayed() && !el.isEnabled();
+        } catch (NoSuchElementException nse) {
+            return false;
+        }
+    }
+
+    public String getEmailValue() {
+        return driver.findElement(By.id("email")).getAttribute("value");
+    }
+
     public boolean isUsernamePresent() {
         try {
             return driver.findElement(By.name("username")).isDisplayed();

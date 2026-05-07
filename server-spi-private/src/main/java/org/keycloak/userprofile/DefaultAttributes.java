@@ -114,7 +114,15 @@ public class DefaultAttributes extends HashMap<String, List<String>> implements 
             // in context of registration, username or email (email as username) cannot be readonly otherwise registration is not possible
             if (UserModel.EMAIL.equals(name)) {
                 RealmModel realm = session.getContext().getRealm();
-                return realm.isRegistrationEmailAsUsername();
+                if (realm.isRegistrationEmailAsUsername()) {
+                    // During organization invitation registration, the email is pre-filled from the
+                    // invitation token and should respect User Profile permissions (e.g., edit: ["admin"]
+                    // makes email read-only). For normal self-registration, email must remain writable.
+                    if (session.getContext().getOrganization() != null && isReadOnlyFromMetadata(name)) {
+                        return false;
+                    }
+                    return true;
+                }
             }
             return UserModel.USERNAME.equals(name);
         }
