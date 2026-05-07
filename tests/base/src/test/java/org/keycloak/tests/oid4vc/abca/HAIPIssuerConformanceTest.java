@@ -29,9 +29,11 @@ import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.annotations.TestSetup;
 import org.keycloak.testframework.ui.annotations.InjectPage;
 import org.keycloak.testframework.ui.page.ErrorPage;
+import org.keycloak.tests.oid4vc.OID4VCBasicWallet.AuthorizationEndpointRequest;
 import org.keycloak.tests.oid4vc.OID4VCIssuerTestBase;
 import org.keycloak.tests.oid4vc.OID4VCTestContext;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.keycloak.testsuite.util.oauth.ParResponse;
 import org.keycloak.testsuite.util.oauth.PkceGenerator;
 import org.keycloak.util.JWKSUtils;
@@ -54,6 +56,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Replicates various tests in oid4vci-1_0-issuer-haip-test-plan
@@ -468,6 +471,56 @@ public class HAIPIssuerConformanceTest extends OID4VCIssuerTestBase {
         } finally {
             oauth.config().client(clientId);
         }
+    }
+
+    /**
+     * fapi2-security-profile-final-par-ensure-reused-request-uri-prior-to-auth-completion-succeeds
+     *
+     * This test checks that authorization servers that enforce one-time use of request_uri values do so at the point of authorization,
+     * not at the point of visiting the authorization endpoint.
+     */
+    @Test
+    public void testEnsureReusedRequestUriPriorToAuthCompletionSucceeds() throws Exception {
+
+        var ctx = new OID4VCTestContext(abcaClient, sdJwtTypeCredentialScope);
+        ctx.putAttachment(CLIENT_ATTESTER_ATTACHMENT_KEY, attester);
+
+        var pkce = PkceGenerator.s256();
+
+        // Generate ABCA Headers
+        //
+        KeyWrapper rsaKey = wallet.getRSAKeyPair(ctx);
+        String attestationJwt = wallet.buildClientAttestationJWT(ctx, rsaKey);
+        String attestationPoPJwt = wallet.buildClientAttestationPoPJWT(ctx, rsaKey);
+
+        // Send PAR Request
+        //
+        String requestUri = oauth.pushedAuthorizationRequest()
+                .header(OAUTH_CLIENT_ATTESTATION_HEADER, attestationJwt)
+                .header(OAUTH_CLIENT_ATTESTATION_POP_HEADER, attestationPoPJwt)
+                .scopeParam(ctx.getScope())
+                .codeChallenge(pkce)
+                .send().getRequestUri();
+        assertNotNull(requestUri, "No requestUri");
+
+        // Open LoginForm and Cancel
+        // This should access the request_uri for the first time
+        //
+        AuthorizationEndpointRequest authRequest = wallet.authorizationRequest()
+                .requestUri(requestUri)
+                .codeChallenge(pkce);
+        assertTrue(authRequest.openLoginForm());
+
+        // Send Authorization Request
+        // This should access the request_uri for the second time
+        //
+        AuthorizationEndpointResponse authResponse = wallet.authorizationRequest()
+                .requestUri(requestUri)
+                .codeChallenge(pkce)
+                .send(ctx.getHolder(), TEST_PASSWORD);
+        assertTrue(authResponse.isSuccess());
+        String authCode = authResponse.getCode();
+        assertNotNull(authCode, "No auth code");
     }
 
     // Private ---------------------------------------------------------------------------------------------------------
