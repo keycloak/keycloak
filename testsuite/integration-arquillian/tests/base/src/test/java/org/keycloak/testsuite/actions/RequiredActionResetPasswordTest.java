@@ -123,7 +123,7 @@ public class RequiredActionResetPasswordTest extends AbstractTestRealmKeycloakTe
         AccessTokenResponse tokenResponse = sendTokenRequestAndGetResponse(loginEvent);
         oauth.logoutForm().idTokenHint(tokenResponse.getIdToken()).withRedirect().open();
 
-        events.expectLogout(loginEvent.getSessionId()).assertEvent();
+        EventAssertion.assertSuccess(events.poll()).type(EventType.LOGOUT).sessionId(loginEvent.getSessionId()).withoutDetails(Details.CODE_ID);
 
         oauth.openLoginForm();
         loginPage.login("test-user@localhost", "new-password");
@@ -160,6 +160,8 @@ public class RequiredActionResetPasswordTest extends AbstractTestRealmKeycloakTe
         EventRepresentation offlineSession = events.poll();
         EventAssertion.expectLoginSuccess(offlineSession);
         AccessTokenResponse at = oauth2.doAccessTokenRequest(os.getCode());
+        EventAssertion.assertSuccess(events.poll()).type(EventType.CODE_TO_TOKEN)
+                .sessionId(offlineSession.getSessionId()).clientId(oauth2.getClientId());
         String clientUuid = managedRealm.admin().clients().findByClientId(oauth2.getClientId()).get(0).getId();
         assertEquals(1, testUser.getOfflineSessions(clientUuid).size());
 
@@ -176,12 +178,12 @@ public class RequiredActionResetPasswordTest extends AbstractTestRealmKeycloakTe
         changePasswordPage.changePassword("All Right Then, Keep Your Secrets", "All Right Then, Keep Your Secrets");
 
         if (logoutOtherSessions) {
-            events.expectLogout(regularSession.getSessionId())
-                    .detail(Details.LOGOUT_TRIGGERED_BY_REQUIRED_ACTION, RequiredAction.UPDATE_PASSWORD.name())
-                    .assertEvent(true);
-            events.expectLogout(offlineSession.getSessionId())
-                    .detail(Details.LOGOUT_TRIGGERED_BY_REQUIRED_ACTION, RequiredAction.UPDATE_PASSWORD.name())
-                    .assertEvent();
+            EventAssertion.expectLogoutSuccess(events.poll())
+                    .sessionId(regularSession.getSessionId())
+                    .details(Details.LOGOUT_TRIGGERED_BY_REQUIRED_ACTION, RequiredAction.UPDATE_PASSWORD.name());
+            EventAssertion.expectLogoutSuccess(events.poll())
+                    .sessionId(offlineSession.getSessionId())
+                    .details(Details.LOGOUT_TRIGGERED_BY_REQUIRED_ACTION, RequiredAction.UPDATE_PASSWORD.name());
         }
 
         events.expectRequiredAction(EventType.UPDATE_PASSWORD).detail(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE).assertEvent(true);

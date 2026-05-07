@@ -441,7 +441,7 @@ public class MultipleTabsLoginTest extends AbstractChangeImportedUserPasswordsTe
             events.clear();
             // logout in the second tab
             oauth.logoutForm().idTokenHint(tokenResponse.getIdToken()).withRedirect().open();
-            events.expectLogout(accessToken.getSessionState()).user(userId).session(accessToken.getSessionState()).assertEvent();
+            EventAssertion.expectLogoutSuccess(events.poll()).sessionId(accessToken.getSessionState()).userId(userId);
             // re-login in the second tab
             oauth.openLoginForm();
             loginPage.login("login-test", getPassword("login-test"));

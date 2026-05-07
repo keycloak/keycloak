@@ -630,7 +630,7 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
         EventRepresentation loginEvent = EventAssertion.expectLoginSuccess(events.poll()).userId(userId).getEvent();
         AccessTokenResponse tokenResponse = sendTokenRequestAndGetResponse(loginEvent);
         appPage.logout(tokenResponse.getIdToken());
-        events.expectLogout(loginEvent.getSessionId()).user(userId).assertEvent();
+        EventAssertion.expectLogoutSuccess(events.poll()).sessionId(loginEvent.getSessionId()).userId(userId);
 
         // Test admin endpoint. Assert federated endpoint returns password in LDAP "supportedCredentials", but there is no stored password
         assertPasswordConfiguredThroughLDAPOnly(user);
@@ -664,7 +664,7 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
             loginEvent = EventAssertion.expectLoginSuccess(events.poll()).userId(userId).getEvent();
             tokenResponse = sendTokenRequestAndGetResponse(loginEvent);
             appPage.logout(tokenResponse.getIdToken());
-            events.expectLogout(loginEvent.getSessionId()).user(userId);
+            EventAssertion.expectLogoutSuccess(events.poll()).sessionId(loginEvent.getSessionId()).userId(userId);
 
             // Assert user can authenticate with the new password
             loginSuccessAndLogout(username, "Password1-updated2");

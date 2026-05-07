@@ -189,14 +189,21 @@ public class DefaultEvaluation implements Evaluation {
                     }
                     RealmModel realm = session.getContext().getRealm();
                     user = session.users().getUserById(realm, id);
+
+                    if (Objects.isNull(user)) {
+                        // in case the id references a service account
+                        ClientModel client = realm.getClientById(id);
+
+                        if (client != null) {
+                            user = session.users().getServiceAccount(client);
+                        }
+                    }
+
                     if (Objects.isNull(user)) {
                         user = session.users().getUserByUsername(realm, id);
                     }
                     if (Objects.isNull(user)) {
                         user = session.users().getUserByEmail(realm, id);
-                    }
-                    if (Objects.isNull(user)) {
-                        user = session.users().getServiceAccount(realm.getClientById(id));
                     }
                 }
 
