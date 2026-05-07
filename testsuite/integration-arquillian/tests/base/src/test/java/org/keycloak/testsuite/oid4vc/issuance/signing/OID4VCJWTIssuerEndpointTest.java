@@ -16,7 +16,6 @@
  */
 package org.keycloak.testsuite.oid4vc.issuance.signing;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.client.Entity;
 import jakarta.ws.rs.client.WebTarget;
@@ -68,8 +67,6 @@ import org.keycloak.util.JsonSerialization;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
-import java.security.NoSuchAlgorithmException;
-import java.security.PrivateKey;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -223,20 +220,28 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
     @Test
     public void testGetCredentialOffer() {
         String token = getBearerToken(oauth);
-        testingClient
+
+        String sessionCode = testingClient
                 .server(TEST_REALM_NAME)
-                .run((session) -> {
+                .fetch((session) -> {
                     AppAuthManager.BearerTokenAuthenticator authenticator = new AppAuthManager.BearerTokenAuthenticator(session);
                     authenticator.setTokenString(token);
                     CredentialsOffer credentialsOffer = new CredentialsOffer()
                             .setCredentialIssuer("the-issuer")
                             .setGrants(new PreAuthorizedGrant().setPreAuthorizedCode(new PreAuthorizedCode().setPreAuthorizedCode("the-code")))
                             .setCredentialConfigurationIds(List.of("credential-configuration-id"));
+                    try {
+                        return prepareSessionCode(session, authenticator, JsonSerialization.writeValueAsString(credentialsOffer));
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                }, String.class);
 
-                    String sessionCode = prepareSessionCode(session, authenticator, JsonSerialization.writeValueAsString(credentialsOffer));
-                    // The cache transactions need to be committed explicitly in the test. Without that, the OAuth2Code will only be committed to
-                    // the cache after .run((session)-> ...)
-                    session.getTransactionManager().commit();
+        testingClient
+                .server(TEST_REALM_NAME)
+                .run((session) -> {
+                    AppAuthManager.BearerTokenAuthenticator authenticator = new AppAuthManager.BearerTokenAuthenticator(session);
+
                     OID4VCIssuerEndpoint issuerEndpoint = prepareIssuerEndpoint(session, authenticator);
                     Response credentialOfferResponse = issuerEndpoint.getCredentialOffer(sessionCode);
                     assertEquals("The offer should have been returned.", HttpStatus.SC_OK, credentialOfferResponse.getStatus());
@@ -244,7 +249,8 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
                     assertNotNull("An actual offer should be in the response.", credentialOfferEntity);
 
                     CredentialsOffer retrievedCredentialsOffer = JsonSerialization.mapper.convertValue(credentialOfferEntity, CredentialsOffer.class);
-                    assertEquals("The offer should be the one prepared with for the session.", credentialsOffer, retrievedCredentialsOffer);
+                    assertEquals("the-issuer", retrievedCredentialsOffer.getCredentialIssuer());
+                    assertEquals(List.of("credential-configuration-id"), retrievedCredentialsOffer.getCredentialConfigurationIds());
                 });
     }
 

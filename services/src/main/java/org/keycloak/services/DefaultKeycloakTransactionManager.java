@@ -48,6 +48,9 @@ public class DefaultKeycloakTransactionManager implements KeycloakTransactionMan
 
     @Override
     public void enlist(KeycloakTransaction transaction) {
+        if (completed) {
+            throw new IllegalStateException("Transaction already completed");
+        }
         if (active && !transaction.isActive()) {
             transaction.begin();
         }
@@ -57,6 +60,9 @@ public class DefaultKeycloakTransactionManager implements KeycloakTransactionMan
 
     @Override
     public void enlistAfterCompletion(KeycloakTransaction transaction) {
+        if (completed) {
+            throw new IllegalStateException("Transaction already completed");
+        }
         if (active && !transaction.isActive()) {
             transaction.begin();
         }
@@ -66,6 +72,9 @@ public class DefaultKeycloakTransactionManager implements KeycloakTransactionMan
 
     @Override
     public void enlistPrepare(KeycloakTransaction transaction) {
+        if (completed) {
+            throw new IllegalStateException("Transaction already completed");
+        }
         if (active && !transaction.isActive()) {
             transaction.begin();
         }
@@ -86,11 +95,12 @@ public class DefaultKeycloakTransactionManager implements KeycloakTransactionMan
 
     @Override
     public void begin() {
+        if (completed) {
+            throw new IllegalStateException("Transaction already completed");
+        }
         if (active) {
              throw new IllegalStateException("Transaction already active");
         }
-
-        completed = false;
 
         if (jtaPolicy == JTAPolicy.REQUIRES_NEW) {
             JtaTransactionManagerLookup jtaLookup = session.getProvider(JtaTransactionManagerLookup.class);
@@ -103,7 +113,21 @@ public class DefaultKeycloakTransactionManager implements KeycloakTransactionMan
         }
 
         for (KeycloakTransaction tx : transactions) {
-            tx.begin();
+            if (!tx.isActive()) {
+                tx.begin();
+            }
+        }
+
+        for (KeycloakTransaction tx : prepare) {
+            if (!tx.isActive()) {
+                tx.begin();
+            }
+        }
+
+        for (KeycloakTransaction tx : afterCompletion) {
+            if (!tx.isActive()) {
+                tx.begin();
+            }
         }
 
         active = true;
