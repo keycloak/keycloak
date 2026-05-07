@@ -161,7 +161,7 @@ public class FAPI2Test extends AbstractFAPI2Test {
 
         // without PAR request - should fail
         oauth.openLoginForm();
-        assertBrowserWithError("request_uri not included.");
+        assertBrowserWithError("PAR request_uri not included.");
 
         pkceGenerator = PkceGenerator.s256();
 

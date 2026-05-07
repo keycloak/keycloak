@@ -110,6 +110,7 @@ public class AttestationBasedClientAuthenticator extends AbstractClientAuthentic
     @Override
     public void authenticateClient(ClientAuthenticationFlowContext context) {
 
+        KeycloakSession session = context.getSession();
         HttpHeaders headers = context.getHttpRequest().getHttpHeaders();
         String attestationValue = headers.getHeaderString(OAUTH_CLIENT_ATTESTATION_HEADER);
         String attestationPoPValue = headers.getHeaderString(OAUTH_CLIENT_ATTESTATION_POP_HEADER);
@@ -126,16 +127,27 @@ public class AttestationBasedClientAuthenticator extends AbstractClientAuthentic
         context.attempted();
 
         try {
-            ClientAttestationJwt attesterJwt = validateClientAttestationJwt(context);
-            validateClientAttestationPoPJwt(context, attesterJwt);
+            ABCAResult abcaResult = new ABCAResult();
+            session.setAttribute(ABCAResult.ABCA_RESULT, abcaResult);
+
+            validateClientAttestationJwt(context, abcaResult);
+            validateClientAttestationPoPJwt(context, abcaResult);
 
             context.success();
+
+            ClientModel clientModel = context.getClient();
+            abcaResult.setAttestedClient(clientModel);
 
         } catch (Exception ex) {
             ServicesLogger.LOGGER.errorValidatingAssertion(ex);
             Response response = ClientAuthUtil.errorResponse(BAD_REQUEST.getStatusCode(), INVALID_CLIENT_ATTESTATION, ex.getMessage());
             context.failure(AuthenticationFlowError.INVALID_CLIENT_ATTESTATION, response);
         }
+
+        // Error Message specifically related to the use of client attestations
+        // [TODO] use_attestation_challenge MUST be used when the Client Attestation PoP JWT is not using an expected server-provided challenge.
+        // [TODO] use_fresh_attestation MUST be used when the Client Attestation JWT is deemed to be not fresh enough to be acceptable by the server.
+        // [TODO] invalid_client_attestation MAY be used in addition to the more general invalid_client error code as defined in [RFC6749] if the attestation or its proof of possession could not be successfully verified
     }
 
     @Override
@@ -331,7 +343,7 @@ public class AttestationBasedClientAuthenticator extends AbstractClientAuthentic
 
     // Validate the Client Attestation JWT
     // https://www.ietf.org/archive/id/draft-ietf-oauth-attestation-based-client-auth-07.html#section-5.1
-    private ClientAttestationJwt validateClientAttestationJwt(ClientAuthenticationFlowContext context) throws Exception {
+    private void validateClientAttestationJwt(ClientAuthenticationFlowContext context, ABCAResult abcaResult) throws Exception {
 
         KeycloakSession session = context.getSession();
         RealmModel realmModel = session.getContext().getRealm();
@@ -401,17 +413,18 @@ public class AttestationBasedClientAuthenticator extends AbstractClientAuthentic
             throw new TokenSignatureInvalidException(attestationJwt, "Invalid token signature");
         }
 
+        abcaResult.setAttestationJwt(attestationJwt);
+
         // [TODO] The alg JOSE Header Parameter for both JWTs indicates a registered asymmetric digital signature algorithm
         // [TODO] The key contained in the cnf claim of the Client Attestation JWT is not a private key
-
-        return attestationJwt;
     }
 
     // Validate the Client Attestation PoP JWT
     // https://www.ietf.org/archive/id/draft-ietf-oauth-attestation-based-client-auth-07.html#section-5.2
-    private ClientAttestationPoPJwt validateClientAttestationPoPJwt(ClientAuthenticationFlowContext context, ClientAttestationJwt attesterJwt) throws Exception {
+    private void validateClientAttestationPoPJwt(ClientAuthenticationFlowContext context, ABCAResult abcaResult) throws Exception {
 
         KeycloakSession session = context.getSession();
+        ClientAttestationJwt attestationJwt = abcaResult.getAttestationJwt();
 
         HttpHeaders headers = context.getHttpRequest().getHttpHeaders();
         String headerValue = Optional.ofNullable(headers.getHeaderString(OAUTH_CLIENT_ATTESTATION_POP_HEADER))
@@ -440,7 +453,7 @@ public class AttestationBasedClientAuthenticator extends AbstractClientAuthentic
         };
 
         TokenVerifier.Predicate<JsonWebToken> issCheck = (t) -> {
-            if (Strings.isEmpty(t.getIssuer()) || !t.getIssuer().equals(attesterJwt.getSubject()))
+            if (Strings.isEmpty(t.getIssuer()) || !t.getIssuer().equals(attestationJwt.getSubject()))
                 throw new TokenVerificationException(t, "The value of the iss (issuer) claim, representing the client_id MUST match the value of the sub (subject) claim in the Client Attestation");
             return true;
         };
@@ -453,7 +466,7 @@ public class AttestationBasedClientAuthenticator extends AbstractClientAuthentic
 
         // The public key used to verify the ClientAttestationPoP JWT MUST be the key located in the "cnf" claim of the corresponding ClientAttestation JWT
         //
-        JWK jwk = attesterJwt.getConfirmation().getJwk();
+        JWK jwk = attestationJwt.getConfirmation().getJwk();
         KeyWrapper clientKey = toPublicKeyWrapper(jwk);
 
         // Client Attestation PoP JWT verification without signature check
@@ -474,20 +487,15 @@ public class AttestationBasedClientAuthenticator extends AbstractClientAuthentic
             throw new TokenSignatureInvalidException(attestationPoPJwt, "Invalid token signature");
         }
 
+        abcaResult.setAttestationPoPJwt(attestationPoPJwt);
+
         // [TODO] The aud (audience) claim MUST specify a value that identifies the authorization server as an intended audience
         // [TODO] The authorization server can utilize the jti value for replay attack detection
         // [TODO] The authorization server may reject JWTs with an "iat" claim value that is unreasonably far in the past
 
         // [TODO] If the server provided a challenge value to the client, the challenge claim is present in the Client Attestation PoP JWT and matches the server-provided challenge value.
         // [TODO] Additional checks to guarantee replay protection for the Client Attestation PoP JWT might need to be applied
-
-        return attestationPoPJwt;
     }
-
-    // Error Message specifically related to the use of client attestations
-    // [TODO] use_attestation_challenge MUST be used when the Client Attestation PoP JWT is not using an expected server-provided challenge.
-    // [TODO] use_fresh_attestation MUST be used when the Client Attestation JWT is deemed to be not fresh enough to be acceptable by the server.
-    // [TODO] invalid_client_attestation MAY be used in addition to the more general invalid_client error code as defined in [RFC6749] if the attestation or its proof of possession could not be successfully verified
 
     /**
      * The AttestationBasedClientAuthenticator config
@@ -504,6 +512,46 @@ public class AttestationBasedClientAuthenticator extends AbstractClientAuthentic
         public ABCAConfig setKeys(List<JWK> keys) {
             this.keys = keys;
             return this;
+        }
+    }
+
+    public static class ABCAResult {
+
+        /**
+         *  A key to a KeycloakSession attribute that contains the ABCA validation result
+         */
+        public static final String ABCA_RESULT = "ABCAResult";
+
+        private ClientAttestationJwt attestationJwt;
+        private ClientAttestationPoPJwt attestationPoPJwt;
+        private ClientModel attestedClient;
+
+        public ClientAttestationJwt getAttestationJwt() {
+            return attestationJwt;
+        }
+
+        public void setAttestationJwt(ClientAttestationJwt attestationJwt) {
+            this.attestationJwt = attestationJwt;
+        }
+
+        public ClientAttestationPoPJwt getAttestationPoPJwt() {
+            return attestationPoPJwt;
+        }
+
+        public void setAttestationPoPJwt(ClientAttestationPoPJwt attestationPoPJwt) {
+            this.attestationPoPJwt = attestationPoPJwt;
+        }
+
+        public ClientModel getAttestedClient() {
+            return attestedClient;
+        }
+
+        public void setAttestedClient(ClientModel client) {
+            this.attestedClient = client;
+        }
+
+        public boolean hasAttestedClient() {
+            return attestedClient != null;
         }
     }
 }
