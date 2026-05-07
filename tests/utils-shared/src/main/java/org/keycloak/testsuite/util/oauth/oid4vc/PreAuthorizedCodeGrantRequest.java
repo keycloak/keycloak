@@ -16,6 +16,7 @@ import org.apache.http.client.methods.CloseableHttpResponse;
 public class PreAuthorizedCodeGrantRequest extends AbstractHttpPostRequest<PreAuthorizedCodeGrantRequest, AccessTokenResponse> {
 
     private final String preAuthCode;
+    private String txCode;
 
     public PreAuthorizedCodeGrantRequest(AbstractOAuthClient<?> client, String preAuthorizedCode) {
         super(client);
@@ -24,6 +25,11 @@ public class PreAuthorizedCodeGrantRequest extends AbstractHttpPostRequest<PreAu
 
     public PreAuthorizedCodeGrantRequest authorizationDetails(List<OID4VCAuthorizationDetail> authDetails) {
         parameter(OAuth2Constants.AUTHORIZATION_DETAILS, JsonSerialization.valueAsString(authDetails));
+        return this;
+    }
+
+    public PreAuthorizedCodeGrantRequest txCode(String txCode) {
+        this.txCode = txCode;
         return this;
     }
 
@@ -36,6 +42,7 @@ public class PreAuthorizedCodeGrantRequest extends AbstractHttpPostRequest<PreAu
     protected void initRequest() {
         parameter(OAuth2Constants.GRANT_TYPE, PreAuthorizedCodeGrant.PRE_AUTH_GRANT_TYPE);
         parameter(PreAuthorizedCodeGrant.CODE_REQUEST_PARAM, preAuthCode);
+        parameter(PreAuthorizedCodeGrant.TX_CODE_PARAM, txCode);
     }
 
     @Override

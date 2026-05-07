@@ -91,8 +91,8 @@ public class CredentialsOffer {
         return this;
     }
 
-    public CredentialOfferGrant getGrant(String grantType) {
-        return grants.get(grantType);
+    public Map<String, CredentialOfferGrant> getGrants() {
+        return Collections.unmodifiableMap(grants);
     }
 
     public CredentialsOffer addGrant(CredentialOfferGrant grant) {

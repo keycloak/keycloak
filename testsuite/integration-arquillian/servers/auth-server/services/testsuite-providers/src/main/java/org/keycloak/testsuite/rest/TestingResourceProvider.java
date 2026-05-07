@@ -740,7 +740,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
                 .setCredentialConfigurationIds(List.of(credConfigId));
 
         String targetUserId = userSession.getUser().getId();
-        CredentialOfferState offerState = new CredentialOfferState(credOffer, clientId, targetUserId, expireAt, credOfferId -> {
+        CredentialOfferState offerState = new CredentialOfferState(credOffer, clientId, targetUserId, false, expireAt, credOfferId -> {
             OID4VCAuthorizationDetail authDetail = new OID4VCAuthorizationDetail();
             authDetail.setType(OPENID_CREDENTIAL);
             authDetail.setCredentialConfigurationId(credConfigId);

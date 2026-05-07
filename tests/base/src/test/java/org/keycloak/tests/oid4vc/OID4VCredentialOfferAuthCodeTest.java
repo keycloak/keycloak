@@ -10,6 +10,8 @@ import org.keycloak.protocol.oid4vc.model.CredentialsOffer;
 import org.keycloak.protocol.oid4vc.model.OfferResponseType;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.representations.JsonWebToken;
+import org.keycloak.representations.idm.ClientPoliciesRepresentation;
+import org.keycloak.representations.idm.ClientProfilesRepresentation;
 import org.keycloak.sdjwt.IssuerSignedJWT;
 import org.keycloak.sdjwt.vp.SdJwtVP;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
@@ -48,6 +50,18 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 @KeycloakIntegrationTest(config = VCTestServerConfig.class)
 public class OID4VCredentialOfferAuthCodeTest extends OID4VCIssuerTestBase {
+
+    @Test
+    public void testRealmSetup() {
+        ClientProfilesRepresentation clientProfiles = testRealm.admin().clientPoliciesProfilesResource().getProfiles(true);
+        assertEquals(1, clientProfiles.getProfiles().size());
+        assertEquals("oid4vci-client-profile", clientProfiles.getProfiles().get(0).getName());
+
+        ClientPoliciesRepresentation clientPolicies = testRealm.admin().clientPoliciesPoliciesResource().getPolicies();
+        assertEquals(2, clientPolicies.getPolicies().size());
+        assertEquals("oid4vci-offer-required", clientPolicies.getPolicies().get(0).getName());
+        assertEquals("oid4vci-offer-preauth-allowed", clientPolicies.getPolicies().get(1).getName());
+    }
 
     @Test
     public void testAuthCodeOffer_Anonymous() throws Exception {

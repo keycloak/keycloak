@@ -30,6 +30,7 @@ import org.keycloak.protocol.oid4vc.issuance.credentialoffer.CredentialOfferProv
 import org.keycloak.protocol.oid4vc.issuance.credentialoffer.CredentialOfferState;
 import org.keycloak.protocol.oid4vc.issuance.credentialoffer.CredentialOfferStorage;
 import org.keycloak.protocol.oid4vc.utils.CredentialScopeModelUtils;
+import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.util.JsonSerialization;
 
@@ -177,8 +178,13 @@ public class VerifiableCredentialOfferAction implements RequiredActionProvider, 
 
         String clientId = actionConfig.getClientId();
         CredentialOfferProvider offerProvider = session.getProvider(CredentialOfferProvider.class);
-        CredentialOfferState offerState = offerProvider.createCredentialOffer(user, grantType,
-                List.of(credentialConfigurationId), clientId, user.getUsername(), expiresAt);
+        CredentialOfferState offerState;
+        try {
+            offerState = offerProvider.createCredentialOffer(user, grantType,
+                    List.of(credentialConfigurationId), clientId, user.getUsername(), false, expiresAt);
+        } catch (ClientPolicyException ex) {
+            throw new CredentialOfferException(ex.getError(), ex.getErrorDetail());
+        }
 
         CredentialOfferStorage offerStorage = session.getProvider(CredentialOfferStorage.class);
         offerStorage.putOfferState(offerState);

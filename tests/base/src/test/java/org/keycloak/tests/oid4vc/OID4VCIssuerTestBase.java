@@ -42,6 +42,7 @@ import org.keycloak.events.EventType;
 import org.keycloak.keys.KeyProvider;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.protocol.oid4vc.clientpolicy.CredentialClientPolicyExecutorFactory;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCAuthorizationDetailsParser;
 import org.keycloak.protocol.oid4vc.issuance.TimeProvider;
 import org.keycloak.protocol.oid4vc.issuance.mappers.OID4VCGeneratedIdMapper;
@@ -49,6 +50,10 @@ import org.keycloak.protocol.oid4vc.issuance.mappers.OID4VCIssuedAtTimeClaimMapp
 import org.keycloak.protocol.oid4vc.model.CredentialScopeRepresentation;
 import org.keycloak.protocol.oid4vc.model.DisplayObject;
 import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
+import org.keycloak.representations.idm.ClientPolicyConditionRepresentation;
+import org.keycloak.representations.idm.ClientPolicyExecutorRepresentation;
+import org.keycloak.representations.idm.ClientPolicyRepresentation;
+import org.keycloak.representations.idm.ClientProfileRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.ComponentRepresentation;
@@ -86,6 +91,8 @@ import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.keycloak.util.AuthorizationDetailsParser;
 import org.keycloak.util.JsonSerialization;
 
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.jboss.logging.Logger;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -100,6 +107,8 @@ import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_BINDING_REQUIR
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_BINDING_REQUIRED_PROOF_TYPES;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_CRYPTOGRAPHIC_BINDING_METHODS;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_FORMAT_DEFAULT;
+import static org.keycloak.protocol.oid4vc.clientpolicy.CredentialClientPolicies.VC_POLICY_CREDENTIAL_OFFER_PREAUTH_ALLOWED;
+import static org.keycloak.protocol.oid4vc.clientpolicy.CredentialClientPolicies.VC_POLICY_CREDENTIAL_OFFER_REQUIRED;
 
 /**
  * Abstract base class for OID4VCI Testing
@@ -430,6 +439,8 @@ public abstract class OID4VCIssuerTestBase {
 
     public static class VCTestRealmConfig implements RealmConfig {
 
+        private static final Logger LOGGER = Logger.getLogger(VCTestRealmConfig.class);
+
         public static final String TEST_REALM_NAME = "test";
 
         @Override
@@ -496,7 +507,74 @@ public abstract class OID4VCIssuerTestBase {
             realm.users(getUserRepresentation("John Doe", Map.of("did", "did:key:1234"), List.of(CREDENTIAL_OFFER_CREATE.getName()), Collections.emptyMap()));
             realm.users(getUserRepresentation("Alice Wonderland", Map.of("did", "did:key:5678"), List.of(), Map.of()));
 
+            // Add ClientPolicyRepresentations
+            //
+            ClientProfileRepresentation profile = createClientPolicyProfile();
+            realm.clientPolicy(createClientPolicyOfferRequired(profile));
+            realm.clientPolicy(createClientPolicyOfferPreAuthAllowed(profile));
+            realm.clientProfile(profile);
+
             return realm;
+        }
+
+        private ClientProfileRepresentation createClientPolicyProfile() {
+
+            ClientProfileRepresentation profile = new ClientProfileRepresentation();
+            profile.setName("oid4vci-client-profile");
+
+            ClientPolicyExecutorRepresentation executor = new ClientPolicyExecutorRepresentation();
+            executor.setExecutorProviderId(CredentialClientPolicyExecutorFactory.PROVIDER_ID);
+            executor.setConfiguration(JsonNodeFactory.instance.objectNode());
+            profile.setExecutors(List.of(executor));
+
+            LOGGER.infof(JsonSerialization.valueAsString(profile));
+            return profile;
+        }
+
+        private ClientPolicyRepresentation createClientPolicyOfferRequired(ClientProfileRepresentation profile) {
+
+            ClientPolicyRepresentation policy = new ClientPolicyRepresentation();
+            policy.setName(VC_POLICY_CREDENTIAL_OFFER_REQUIRED.getName());
+            policy.setDescription("Client policy to determine whether a credential offers is required");
+            policy.setEnabled(false);
+
+            ClientPolicyConditionRepresentation condition = new ClientPolicyConditionRepresentation();
+            condition.setConditionProviderId("client-attributes");
+            ObjectNode config = JsonNodeFactory.instance.objectNode();
+            config.put("attributes", JsonSerialization.valueAsString(List.of(Map.of(
+                    "key", OID4VCI_ENABLED_ATTRIBUTE_KEY,
+                    "value", String.valueOf(true)
+            ))));
+            condition.setConfiguration(config);
+
+            policy.setConditions(List.of(condition));
+            policy.setProfiles(List.of(profile.getName()));
+
+            LOGGER.infof(JsonSerialization.valueAsString(policy));
+            return policy;
+        }
+
+        private ClientPolicyRepresentation createClientPolicyOfferPreAuthAllowed(ClientProfileRepresentation profile) {
+
+            ClientPolicyRepresentation policy = new ClientPolicyRepresentation();
+            policy.setName(VC_POLICY_CREDENTIAL_OFFER_PREAUTH_ALLOWED.getName());
+            policy.setDescription("Client policy to determine whether 'pre-authorized_code' grant credential offers can be issued");
+            policy.setEnabled(true);
+
+            ClientPolicyConditionRepresentation condition = new ClientPolicyConditionRepresentation();
+            condition.setConditionProviderId("client-attributes");
+            ObjectNode config = JsonNodeFactory.instance.objectNode();
+            config.put("attributes", JsonSerialization.valueAsString(List.of(Map.of(
+                    "key", OID4VCI_ENABLED_ATTRIBUTE_KEY,
+                    "value", String.valueOf(true)
+            ))));
+            condition.setConfiguration(config);
+
+            policy.setConditions(List.of(condition));
+            policy.setProfiles(List.of(profile.getName()));
+
+            LOGGER.infof(JsonSerialization.valueAsString(policy));
+            return policy;
         }
 
         private CredentialScopeRepresentation createCredentialScope(

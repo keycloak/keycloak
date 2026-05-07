@@ -667,6 +667,56 @@
     }
   ],
 
+  "clientProfiles": {
+    "profiles": [
+      {
+        "name": "oid4vci-client-profile",
+        "executors": [
+          {
+            "executor": "oid4vci-policy-executor",
+            "configuration": {}
+          }
+        ]
+      }
+    ]
+  },
+
+  "clientPolicies": {
+    "policies": [
+      {
+        "name": "oid4vci-offer-required",
+        "description": "Client policy to determine whether a credential offers is required",
+        "enabled": false,
+        "conditions": [
+          {
+            "condition": "client-attributes",
+            "configuration": {
+              "attributes": "[{\"key\":\"oid4vci.enabled\", \"value\":\"true\"}]"
+            }
+          }
+        ],
+        "profiles": [
+          "oid4vci-client-profile"
+        ]
+      },
+      {
+        "name": "oid4vci-offer-preauth-allowed",
+        "description": "Client policy to determine whether 'pre-authorized_code' grant credential offers can be issued",
+        "enabled": true,
+        "conditions": [
+          {
+            "condition": "client-attributes",
+            "configuration": {
+              "attributes": "[{\"key\":\"oid4vci.enabled\", \"value\":\"true\"}]"
+            }
+          }
+        ],
+        "profiles": [
+          "oid4vci-client-profile"
+        ]
+      }
+    ]
+  },
 
   "clientScopeMappings": {
     "test-app": [
