@@ -22,6 +22,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -88,6 +89,7 @@ import org.infinispan.commons.api.AsyncCache;
 import org.infinispan.commons.api.BasicCache;
 import org.infinispan.commons.util.ByRef;
 import org.infinispan.commons.util.concurrent.CompletionStages;
+import org.infinispan.context.Flag;
 import org.infinispan.factories.ComponentRegistry;
 import org.infinispan.persistence.manager.PersistenceManager;
 import org.jboss.logging.Logger;
@@ -114,10 +116,24 @@ public class PersistentUserSessionProvider implements UserSessionProvider, Sessi
 
     protected final SessionEventsSenderTransaction clusterEventsSenderTx;
     protected final UserSessionPersisterProvider userSessionPersister;
+    /**
+     * When {@code true}, persistent session writes are batched asynchronously, meaning the cache may
+     * legitimately contain entries whose corresponding DB row has not yet been written. In that case
+     * cache eviction during user removal cannot rely solely on the persister to know which keys exist
+     * and must fall back to a full cache scan.
+     */
+    protected final boolean useBatches;
 
     public PersistentUserSessionProvider(KeycloakSession session,
                                          UserSessionPersistentChangelogBasedTransaction sessionTx,
                                          ClientSessionPersistentChangelogBasedTransaction clientSessionTx) {
+        this(session, sessionTx, clientSessionTx, false);
+    }
+
+    public PersistentUserSessionProvider(KeycloakSession session,
+                                         UserSessionPersistentChangelogBasedTransaction sessionTx,
+                                         ClientSessionPersistentChangelogBasedTransaction clientSessionTx,
+                                         boolean useBatches) {
         if (!MultiSiteUtils.isPersistentSessionsEnabled()) {
             throw new IllegalStateException("Persistent user sessions are not enabled");
         }
@@ -125,6 +141,7 @@ public class PersistentUserSessionProvider implements UserSessionProvider, Sessi
         this.session = session;
         this.sessionTx = sessionTx;
         this.clientSessionTx = clientSessionTx;
+        this.useBatches = useBatches;
         this.clusterEventsSenderTx = new SessionEventsSenderTransaction(session);
 
         session.getTransactionManager().enlistAfterCompletion(clusterEventsSenderTx);
@@ -512,9 +529,24 @@ public class PersistentUserSessionProvider implements UserSessionProvider, Sessi
     }
 
     protected void onUserRemoved(RealmModel realm, UserModel user) {
-        userSessionPersister.onUserRemoved(realm, user);
-        removeCachedUserAndClientSessionForUser(realm.getId(), user.getId(), true);
-        removeCachedUserAndClientSessionForUser(realm.getId(), user.getId(), false);
+        if (useBatches) {
+            // When async-batch persistence is enabled, the cache may hold entries whose INSERT is still in
+            // the writer queue and not yet visible to the persister. In that case we fall back to the
+            // full-cache-scan to remain correct at the cost of being slower.
+            userSessionPersister.onUserRemoved(realm, user);
+            removeCachedUserAndClientSessionForUser(realm.getId(), user.getId(), true);
+            removeCachedUserAndClientSessionForUser(realm.getId(), user.getId(), false);
+        } else {
+            // Replaces a previous full-cache-scan that scaled with total cached sessions and made deletes
+            // progressively slower as the offline-session cache filled up over time. We collect cache keys
+            // from the persister BEFORE the DB delete (otherwise the rows are gone), then run the DB delete,
+            // then evict only the known keys from the cache.
+            Map<String, Set<String>> offlineForRemoval = userSessionPersister.findUserSessionsByUserId(realm, user, true);
+            Map<String, Set<String>> onlineForRemoval = userSessionPersister.findUserSessionsByUserId(realm, user, false);
+            userSessionPersister.onUserRemoved(realm, user);
+            removeCachedUserAndClientSessions(offlineForRemoval, true);
+            removeCachedUserAndClientSessions(onlineForRemoval, false);
+        }
     }
 
     @Override
@@ -700,7 +732,7 @@ public class PersistentUserSessionProvider implements UserSessionProvider, Sessi
             userSessionEntityToImport.getClientSessions().add(clientUUID);
         }
 
-        SessionEntityWrapper<UserSessionEntity>  wrappedUserSessionEntity = new SessionEntityWrapper<>(userSessionEntityToImport);
+        SessionEntityWrapper<UserSessionEntity> wrappedUserSessionEntity = new SessionEntityWrapper<>(userSessionEntityToImport);
 
         SessionEntityWrapper<UserSessionEntity> existingSession = sessionTx.importSession(realm, sessionId, wrappedUserSessionEntity, offline, lifespan, maxIdle);
         if (existingSession != null) {
@@ -960,7 +992,7 @@ public class PersistentUserSessionProvider implements UserSessionProvider, Sessi
             return;
         }
         var clientSessionCache = clientSessionTx.getCache(false);
-        sessionEntityWrapper.getEntity().getClientSessions().forEach(clientId-> {
+        sessionEntityWrapper.getEntity().getClientSessions().forEach(clientId -> {
             var key = new EmbeddedClientSessionKey(sessionEntityWrapper.getEntity().getId(), clientId);
             SessionEntityWrapper<AuthenticatedClientSessionEntity> clientSession = clientSessionCache.get(key);
             if (clientSession != null) {
@@ -1010,6 +1042,36 @@ public class PersistentUserSessionProvider implements UserSessionProvider, Sessi
         sessionTx.registerClientSession(cacheKey.userSessionId(), cacheKey.clientId(), offline);
     }
 
+
+    /**
+     * Removes the listed user-session and client-session entries directly from the Infinispan cache,
+     * bypassing {@link JpaChangesPerformer} so no per-key DB delete is issued.
+     * Cost is O(K) over the user's own sessions, independent of total cache size.
+     */
+    private void removeCachedUserAndClientSessions(Map<String, Set<String>> sessionsToRemove, boolean offline) {
+        if (getCache(offline) == null) {
+            // caching disabled
+            return;
+        }
+        var userSessionCache = getCache(offline).getAdvancedCache()
+                .withFlags(Flag.ZERO_LOCK_ACQUISITION_TIMEOUT, Flag.FAIL_SILENTLY, Flag.IGNORE_RETURN_VALUES);
+        var clientSessionCache = getClientSessionCache(offline).getAdvancedCache()
+                .withFlags(Flag.ZERO_LOCK_ACQUISITION_TIMEOUT, Flag.FAIL_SILENTLY, Flag.IGNORE_RETURN_VALUES);
+        sessionsToRemove.forEach((userSessionId, clientUUIDs) -> {
+            for (String clientUUID : clientUUIDs) {
+                clientSessionCache.remove(new EmbeddedClientSessionKey(userSessionId, clientUUID));
+            }
+            userSessionCache.remove(userSessionId);
+        });
+    }
+
+    /**
+     * Removes user-session and client-session entries from the Infinispan cache via full cache-scan.
+     * Cache-scan fallback used when async-batch persistence ({@code useBatches=true}) is active. In that
+     * mode the cache may hold entries whose INSERT is still in the writer queue and not yet visible to
+     * the persister, so we cannot rely on the persister to enumerate keys for eviction and must scan the
+     * cache directly. Cost is O(N) over all cached sessions.
+     */
     private void removeCachedUserAndClientSessionForUser(String realmId, String userId, boolean offline) {
         if (getCache(offline) == null) {
             // caching disabled
@@ -1022,7 +1084,7 @@ public class PersistentUserSessionProvider implements UserSessionProvider, Sessi
                 .map(MapEntryToKeyMapper.getInstance())) {
             stream.forEach(RemoveKeyConsumer.getInstance());
         }
-        try (var stream = getClientSessionCache(offline) .getAdvancedCache()
+        try (var stream = getClientSessionCache(offline).getAdvancedCache()
                 .entrySet()
                 .stream()
                 .filter(new ClientSessionFilterByUser(realmId, userId))

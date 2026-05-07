@@ -119,7 +119,8 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
             return new PersistentUserSessionProvider(
                     session,
                     tx.userTx,
-                    tx.clientTx
+                    tx.clientTx,
+                    useBatches
             );
         }
         var tx = createVolatileTransaction(session);
