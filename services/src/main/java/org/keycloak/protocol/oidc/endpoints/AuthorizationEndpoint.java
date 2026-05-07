@@ -482,16 +482,22 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
         }
     }
 
-    private Response buildAuthorizationCodeAuthorizationResponse(String requestUriParam) {
+    private Response buildAuthorizationCodeAuthorizationResponse(String requestUri) {
         this.event.event(EventType.LOGIN);
         authenticationSession.setAuthNote(Details.AUTH_TYPE, CODE_AUTH_TYPE);
+        authenticationSession.setAuthNote(Details.REQUEST_URI, requestUri);
 
-        // redirect if it is a PAR request because authentication can need a refresh (kerberos) and the single object is consumed now
-        final boolean redirectToAuthenticationIfParRequest = requestUriParam != null
-                && RequestUriType.PAR == AuthorizationEndpointRequestParserProcessor.getRequestUriType(requestUriParam);
+        RequestUriType requestUriType = Optional.ofNullable(requestUri)
+                .map(AuthorizationEndpointRequestParserProcessor::getRequestUriType)
+                .orElse(null);
 
-        return handleBrowserAuthenticationRequest(authenticationSession, new OIDCLoginProtocol(session, realm, session.getContext().getUri(), headers, event),
-                TokenUtil.hasPrompt(request.getPrompt(), OIDCLoginProtocol.PROMPT_VALUE_NONE), redirectToAuthenticationIfParRequest);
+        // Redirect if it is a PAR request because authentication may need a refresh (kerberos) and the single object is consumed now
+        boolean redirectToAuthFlow = requestUriType == RequestUriType.PAR;
+
+        OIDCLoginProtocol loginProtocol = new OIDCLoginProtocol(session, realm, session.getContext().getUri(), headers, event);
+        boolean isPassive = TokenUtil.hasPrompt(request.getPrompt(), OIDCLoginProtocol.PROMPT_VALUE_NONE);
+        Response response = handleBrowserAuthenticationRequest(authenticationSession, loginProtocol, isPassive, redirectToAuthFlow);
+        return response;
     }
 
     private Response buildRegister() {

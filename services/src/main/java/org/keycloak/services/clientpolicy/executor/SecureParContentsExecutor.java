@@ -30,7 +30,6 @@ import org.keycloak.common.Profile;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.SingleUseObjectProvider;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.endpoints.AuthorizationEndpoint;
 import org.keycloak.protocol.oidc.endpoints.request.AuthorizationEndpointRequest;
@@ -38,7 +37,7 @@ import org.keycloak.protocol.oidc.endpoints.request.AuthorizationEndpointRequest
 import org.keycloak.protocol.oidc.endpoints.request.AuthzEndpointRequestObjectParser;
 import org.keycloak.protocol.oidc.endpoints.request.AuthzEndpointRequestParser;
 import org.keycloak.protocol.oidc.endpoints.request.RequestUriType;
-import org.keycloak.protocol.oidc.par.endpoints.ParEndpoint;
+import org.keycloak.protocol.oidc.par.endpoints.request.AuthzEndpointParParser;
 import org.keycloak.representations.idm.ClientPolicyExecutorConfigurationRepresentation;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
@@ -85,9 +84,7 @@ public class SecureParContentsExecutor implements ClientPolicyExecutorProvider<C
             throw new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, "PAR request_uri not included.");
         }
 
-        String key = requestUri.substring(ParEndpoint.REQUEST_URI_PREFIX_LENGTH);
-        SingleUseObjectProvider singleUseStore = session.singleUseObjects();
-        Map<String, String> requestParametersFromPAR = singleUseStore.get(ParEndpoint.CACHE_KEY_PREFIX + key);
+        Map<String, String> requestParametersFromPAR = AuthzEndpointParParser.getRequestObject(session, requestUri);
         if (requestParametersFromPAR == null) {
             throw new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, "PAR not found, not issued or used multiple times.");
         }
@@ -109,7 +106,7 @@ public class SecureParContentsExecutor implements ClientPolicyExecutorProvider<C
         if (!Profile.isFeatureEnabled(Profile.Feature.OID4VC_HAIP)) {
             for (String queryParam : queryKeys) {
                 if (!requestParametersNameFromPAR.contains(queryParam)) {
-                    singleUseStore.remove(ParEndpoint.CACHE_KEY_PREFIX + key);
+                    AuthzEndpointParParser.removeRequestObject(session, requestUri);
                     throw new ClientPolicyException(OAuthErrorException.INVALID_REQUEST_OBJECT, "PAR request did not include query parameter: " + queryParam);
                 }
             }

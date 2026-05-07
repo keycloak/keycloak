@@ -19,6 +19,7 @@
 package org.keycloak.protocol.oidc.par.endpoints.request;
 
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import org.keycloak.common.Profile;
@@ -54,29 +55,18 @@ public class AuthzEndpointParParser extends AuthzEndpointRequestParser {
         super(session);
         this.session = session;
         this.client = client;
-        SingleUseObjectProvider singleUseStore = session.singleUseObjects();
-        String key;
-        try {
-            key = requestUri.substring(ParEndpoint.REQUEST_URI_PREFIX_LENGTH);
-        } catch (RuntimeException re) {
-            logger.warnf(re,"Unable to parse request_uri: %s", requestUri);
-            throw new RuntimeException("Unable to parse request_uri");
-        }
-        Map<String, String> retrievedRequest = singleUseStore.remove(CACHE_KEY_PREFIX + key);
-        if (retrievedRequest == null) {
-            throw new RuntimeException("PAR not found. not issued or used multiple times.");
-        }
-
         RealmModel realm = session.getContext().getRealm();
+        Map<String, String> parRequestParams = Optional.ofNullable(getRequestObject(session, requestUri))
+                .orElseThrow(() -> new RuntimeException("PAR not found, not issued or used multiple times."));
+        long created = Long.parseLong(parRequestParams.get(PAR_CREATED_TIME));
         int expiresIn = realm.getParPolicy().getRequestUriLifespan();
-        long created = Long.parseLong(retrievedRequest.get(PAR_CREATED_TIME));
-        if (System.currentTimeMillis() - created < (expiresIn * 1000)) {
-            requestParams = retrievedRequest;
+        if (System.currentTimeMillis() - created < expiresIn * 1000L) {
+            requestParams = parRequestParams;
         } else {
             throw new RuntimeException("PAR expired.");
         }
         // If DPoP Proof existed with PAR request, its public key needs to be matched with the one with Token Request afterward
-        String dpopJkt = retrievedRequest.get(PAR_DPOP_PROOF_JKT);
+        String dpopJkt = parRequestParams.get(PAR_DPOP_PROOF_JKT);
         if (dpopJkt != null) {
             session.setAttribute(PAR_DPOP_PROOF_JKT, dpopJkt);
         }
@@ -88,7 +78,7 @@ public class AuthzEndpointParParser extends AuthzEndpointRequestParser {
 
         if (requestParam != null) {
             // parses the request object if PAR was registered using JAR
-            // parameters from requets object have precedence over those sent directly in the request
+            // parameters from the request object have precedence over those sent directly in the request
             new ParEndpointRequestObjectParser(session, requestParam, client).parseRequest(request);
         } else {
             super.parseRequest(request);
@@ -122,6 +112,32 @@ public class AuthzEndpointParParser extends AuthzEndpointRequestParser {
             return newVal;
         } else {
             return super.replaceIfNotNull(previousVal, newVal);
+        }
+    }
+
+    public static Map<String, String> getRequestObject(KeycloakSession session, String requestUri) {
+        String key = getRequestObjectKey(requestUri);
+        SingleUseObjectProvider singleUseStore = session.singleUseObjects();
+        Map<String, String> retrievedRequest = singleUseStore.get(CACHE_KEY_PREFIX + key);
+        return retrievedRequest;
+    }
+
+    /**
+     * Authorization servers that enforce one-time use of request_uri values do so at the point of authorization,
+     * not at the point of visiting the authorization endpoint
+     * OpenID CT: fapi2-security-profile-final-par-ensure-reused-request-uri-prior-to-auth-completion-succeeds
+     */
+    public static void removeRequestObject(KeycloakSession session, String requestUri) {
+        String key = getRequestObjectKey(requestUri);
+        session.singleUseObjects().remove(CACHE_KEY_PREFIX + key);
+    }
+
+    private static String getRequestObjectKey(String requestUri) {
+        try {
+            return requestUri.substring(ParEndpoint.REQUEST_URI_PREFIX_LENGTH);
+        } catch (RuntimeException re) {
+            logger.warnf(re,"Unable to parse request_uri: %s", requestUri);
+            throw new RuntimeException("Unable to parse request_uri");
         }
     }
 }
