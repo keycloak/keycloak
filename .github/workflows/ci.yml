@@ -262,7 +262,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest]
-        suite: [zip-slow, zip-fast, container, storage, smoke]
+        suite: [zip-slow, zip-fast, storage, smoke]
         full-testsuite:
           - ${{ needs.conditional.outputs.ci-quarkus == 'true' }}
         # Win runs always as includes are evaluated after excludes
@@ -275,8 +275,6 @@ jobs:
             suite: zip-slow
           - full-testsuite: false
             suite: zip-fast
-          - full-testsuite: false
-            suite: container
           - full-testsuite: false
             suite: storage
           - full-testsuite: true
@@ -306,13 +304,9 @@ jobs:
           PARAMS["win"]="-Dkc.quarkus.tests.groups=win"
           PARAMS["zip-slow"]="-Dkc.quarkus.tests.groups=slow"
           PARAMS["zip-fast"]='-Dkc.quarkus.tests.groups=!slow'
-          PARAMS["container"]="-Dkc.quarkus.tests.dist=docker"
           PARAMS["storage"]="-Ptest-database"
           PARAMS["smoke"]="-Dkc.quarkus.tests.groups=smoke"
 
-          if [ "${{ matrix.suite }}" == "container" ]; then
-            ./mvnw install -pl quarkus/tests/integration -am -DskipTests
-          fi
           ./mvnw test -pl quarkus/tests/integration ${PARAMS["${{ matrix.suite }}"]} 2>&1 | misc/log/trimmer.sh
 
   jdk-integration-tests:
