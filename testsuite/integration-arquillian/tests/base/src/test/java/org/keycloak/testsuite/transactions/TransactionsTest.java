@@ -35,8 +35,8 @@ public class TransactionsTest extends AbstractKeycloakTest {
                     Assert.assertTrue(session.getTransactionManager().isActive());
                     session.getTransactionManager().commit();
                     Assert.assertFalse(session.getTransactionManager().isActive());
-
-                    session.getTransactionManager().begin();
+                });
+        testingClient.server().run(session -> {
                     Assert.assertTrue(session.getTransactionManager().isActive());
                     session.getTransactionManager().rollback();
                     Assert.assertFalse(session.getTransactionManager().isActive());
