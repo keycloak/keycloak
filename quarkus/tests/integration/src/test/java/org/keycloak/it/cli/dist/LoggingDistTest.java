@@ -38,7 +38,6 @@ import org.keycloak.it.utils.KeycloakDistribution;
 import org.keycloak.it.utils.RawDistRootPath;
 import org.keycloak.it.utils.RawKeycloakDistribution;
 
-import io.quarkus.deployment.util.FileUtil;
 import io.quarkus.test.junit.main.Launch;
 import org.apache.commons.io.FileUtils;
 import org.apache.http.HttpHeaders;
@@ -109,23 +108,21 @@ public class LoggingDistTest {
 
     @Test
     void testJsonFormatApplied(KeycloakDistribution dist) throws IOException {
-        RawKeycloakDistribution rawDist = dist.unwrap(RawKeycloakDistribution.class);
-        FileUtil.deleteDirectory(rawDist.getDistPath().resolve("data").resolve("h2").toAbsolutePath());
+        dist.unwrap(RawKeycloakDistribution.class).resetH2Dir();
         CLIResult cliResult = dist.run("start-dev", "--log-console-output=json");
         cliResult.assertJsonLogDefaultsApplied();
         cliResult.assertStartedDevMode();
-        assertFalse(cliResult.getOutput().contains("UPDATE SUMMARY"));
+        assertFalse(cliResult.getOutput().contains("\"loggerName\":\"liquibase.servicelocator\",\"level\":\"FINE\""));
     }
 
     @Test
     void testLogLevelSettingsAppliedWhenJsonEnabled(KeycloakDistribution dist) throws IOException {
-        RawKeycloakDistribution rawDist = dist.unwrap(RawKeycloakDistribution.class);
-        FileUtil.deleteDirectory(rawDist.getDistPath().resolve("data").resolve("h2").toAbsolutePath());
+        dist.unwrap(RawKeycloakDistribution.class).resetH2Dir();
         CLIResult cliResult = dist.run("start-dev", "--log-level=off,org.keycloak:debug,liquibase:debug", "--log-console-output=json");
         assertFalse(cliResult.getOutput().contains("\"loggerName\":\"io.quarkus\",\"level\":\"INFO\")"));
         assertTrue(cliResult.getOutput().contains("\"loggerName\":\"org.keycloak.services.resources.KeycloakApplication\",\"level\":\"DEBUG\""));
         assertTrue(cliResult.getOutput().contains("\"loggerName\":\"liquibase.servicelocator\",\"level\":\"FINE\""));
-        assertTrue(cliResult.getOutput().contains("UPDATE SUMMARY"));
+        cliResult.assertStartedDevMode();
     }
 
     @Test

@@ -43,7 +43,7 @@ public enum DistributionType {
                 config.debug(),
                 config.keepAlive(),
                 config.enableTls(),
-                !DistributionTest.ReInstall.NEVER.equals(config.reInstall()),
+                false,
                 config.removeBuildOptionsAfterBuild(),
                 config.requestPort());
     }

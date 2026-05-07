@@ -84,8 +84,7 @@ public class ImportAtStartupDistTest {
         dist.run("start-dev", "--import-realm");
         dist.run("--profile=dev", "export", "--file=../data/import/realm.json", "--verbose");
 
-        RawKeycloakDistribution rawDist = dist.unwrap(RawKeycloakDistribution.class);
-        FileUtil.deleteDirectory(rawDist.getDistPath().resolve("data").resolve("h2").toAbsolutePath());
+        dist.unwrap(RawKeycloakDistribution.class).resetH2Dir();
 
         CLIResult result = dist.run("start-dev", "--import-realm");
         result.assertMessage("Realm 'quickstart-realm' imported");
@@ -99,8 +98,7 @@ public class ImportAtStartupDistTest {
         dist.run("start-dev", "--import-realm");
         dist.run("--profile=dev", "export", "--realm=quickstart-realm", "--file=../data/import/realm.json");
 
-        RawKeycloakDistribution rawDist = dist.unwrap(RawKeycloakDistribution.class);
-        FileUtil.deleteDirectory(rawDist.getDistPath().resolve("data").resolve("h2").toAbsolutePath());
+        dist.unwrap(RawKeycloakDistribution.class).resetH2Dir();
 
         CLIResult result = dist.run("start-dev", "--import-realm");
         result.assertMessage("Realm 'quickstart-realm' imported");
@@ -115,7 +113,7 @@ public class ImportAtStartupDistTest {
         FileUtil.deleteDirectory(rawDist.getDistPath().resolve("data").resolve("import").toAbsolutePath());
         dist.run("--profile=dev", "export", "--dir=../data/import");
 
-        FileUtil.deleteDirectory(rawDist.getDistPath().resolve("data").resolve("h2").toAbsolutePath());
+        dist.unwrap(RawKeycloakDistribution.class).resetH2Dir();
 
         CLIResult result = dist.run("start-dev", "--import-realm");
         result.assertMessage("Realm 'quickstart-realm' imported");
