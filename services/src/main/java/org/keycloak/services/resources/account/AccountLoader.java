@@ -169,7 +169,7 @@ public class AccountLoader {
 
     private AccountResourceProvider getAccountResourceProvider(Theme theme) {
       try {
-        if (theme.getProperties().containsKey(Theme.ACCOUNT_RESOURCE_PROVIDER_KEY)) {
+        if (theme != null && theme.getProperties().containsKey(Theme.ACCOUNT_RESOURCE_PROVIDER_KEY)) {
           return session.getProvider(AccountResourceProvider.class, theme.getProperties().getProperty(Theme.ACCOUNT_RESOURCE_PROVIDER_KEY));
         }
       } catch (IOException ignore) {}
