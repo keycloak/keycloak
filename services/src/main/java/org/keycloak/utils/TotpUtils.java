@@ -49,26 +49,28 @@ public class TotpUtils {
         return sb.toString();
     }
 
+    /**
+     * Generates a QR code using the realm name as issuer. Use when no session is available.
+     *
+     * @deprecated Use {@link #qrCode(KeycloakSession, String, RealmModel, UserModel)} instead to get locale-aware issuer names.
+     */
+    @Deprecated(since = "26.7.0")
     public static String qrCode(String totpSecret, RealmModel realm, UserModel user) {
-        try {
-            String keyUri = realm.getOTPPolicy().getKeyURI(realm, user, totpSecret);
-
-            int width = 246;
-            int height = 246;
-
-            return QRCodeUtils.encodeAsQRString(keyUri, width, height);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        return qrCode(null, totpSecret, realm, user);
     }
 
+    /**
+     * Generates a QR code using a locale-aware realm display name as issuer. Preferred when a session is available.
+     */
     public static String qrCode(KeycloakSession session, String totpSecret, RealmModel realm, UserModel user) {
-        if (session == null) {
-            return qrCode(totpSecret, realm, user);
-        }
         try {
-            String issuerName = getIssuerName(session, realm, user);
-            String keyUri = realm.getOTPPolicy().getKeyURI(issuerName, user.getUsername(), totpSecret);
+            String keyUri;
+            if (session != null) {
+                String issuerName = getIssuerName(session, realm, user);
+                keyUri = realm.getOTPPolicy().getKeyURI(issuerName, user.getUsername(), totpSecret);
+            } else {
+                keyUri = realm.getOTPPolicy().getKeyURI(realm, user, totpSecret);
+            }
 
             int width = 246;
             int height = 246;
@@ -79,7 +81,7 @@ public class TotpUtils {
         }
     }
 
-    public static String getIssuerName(KeycloakSession session, RealmModel realm, UserModel user) {
+    private static String getIssuerName(KeycloakSession session, RealmModel realm, UserModel user) {
         String displayName = realm.getDisplayName();
         if (StringUtil.isNullOrEmpty(displayName)) {
             return realm.getName();
