@@ -95,19 +95,14 @@ public class DefaultClientService implements ClientService {
         this.rolesService = new RolesService(session, realm, permissions, adminEventBuilder);
     }
 
-    protected Optional<ClientModel> avoidClientIdPhishing(ClientModel client) throws ServiceException {
-        if (client == null && !permissions.clients().canList()) {
-            // we do this to make sure somebody can't phish client IDs
-            throw new ServiceException(Response.Status.FORBIDDEN);
-        }
-        return Optional.ofNullable(client);
-    }
-
     @Override
     public Optional<BaseClientRepresentation> getClient(@Nonnull RealmModel realm,
                                                         @Nonnull String clientId,
                                                         ClientProjectionOptions projectionOptions) throws ServiceException {
-        ClientModel client = avoidClientIdPhishing(realm.getClientByClientId(clientId)).orElseThrow(() -> new ServiceException("Could not find client", Response.Status.NOT_FOUND));
+        ClientModel client = realm.getClientByClientId(clientId);
+        if (client == null) {
+            return Optional.empty();
+        }
         permissions.clients().requireView(client);
         
         try {
@@ -151,8 +146,10 @@ public class DefaultClientService implements ClientService {
 
     @Override
     public void deleteClient(RealmModel realm, String clientId) throws ServiceException {
-        ClientModel client = avoidClientIdPhishing(realm.getClientByClientId(clientId))
-                .orElseThrow(() -> new ServiceException("Could not find client", Response.Status.NOT_FOUND));
+        ClientModel client = realm.getClientByClientId(clientId);
+        if (client == null) {
+            throw new ServiceException("Could not find client", Response.Status.NOT_FOUND);
+        }
 
         permissions.clients().requireManage(client);
         try {
@@ -234,7 +231,7 @@ public class DefaultClientService implements ClientService {
         ClientModel model = null;
         if (!strategy.equals(CreateOrUpdateStrategy.ONLY_CREATE)) {
             assertSameClientIds(clientId, client.getClientId());
-            model = avoidClientIdPhishing(realm.getClientByClientId(clientId)).orElse(null);
+            model = realm.getClientByClientId(clientId);
         }
         boolean alreadyExists = model != null;
         ClientModelMapper mapper = getMapper(client.getProtocol());

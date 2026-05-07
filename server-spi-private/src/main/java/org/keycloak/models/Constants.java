@@ -130,6 +130,10 @@ public final class Constants {
     public static final String GENERATE = "GENERATE";
 
     public static final int DEFAULT_MAX_RESULTS = 100;
+    /**
+    * Used by {@code DefaultValue} annotation for when a REST endpoints max size default is set by {@link #DEFAULT_MAX_RESULTS}.
+    */
+    public static final String DEFAULT_MAX_RESULTS_STR = "" + DEFAULT_MAX_RESULTS;
 
     // Delimiter to be used in the configuration of authenticators (and some other components) in case that we need to save
     // multiple values into single string

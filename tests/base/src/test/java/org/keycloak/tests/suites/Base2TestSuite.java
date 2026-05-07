@@ -23,6 +23,7 @@ import org.junit.platform.suite.api.Suite;
         "org.keycloak.tests.oauth",
         "org.keycloak.tests.organization",
         "org.keycloak.tests.oid4vc",
+        "org.keycloak.tests.policy",
         "org.keycloak.tests.securityprofile",
         "org.keycloak.tests.session",
         "org.keycloak.tests.sessionlimits",

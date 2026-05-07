@@ -41,6 +41,7 @@ import org.keycloak.representations.idm.RequiredActionConfigRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.UserSessionRepresentation;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.broker.util.SimpleHttpDefault;
@@ -160,7 +161,10 @@ public class RequiredActionUpdateEmailTestWithVerificationTest extends AbstractR
 		UserResource testUser = managedRealm.admin().users().get(findUser("test-user@localhost").getId());
 		OAuthClient oauth2 = oauth.newConfig().driver(driver2);
 		oauth2.doLogin("test-user@localhost", "password");
-		EventRepresentation event1 = events.expectLogin().detail(Details.REDIRECT_URI, getAuthServerContextRoot() + "/auth/realms/test/app/auth").assertEvent();
+		EventRepresentation event1 = events.poll();
+        EventAssertion.expectLoginSuccess(event1)
+                .details(Details.CONSENT, Details.CONSENT_VALUE_NO_CONSENT_REQUIRED)
+                .details(Details.REDIRECT_URI, getAuthServerContextRoot() + "/auth/realms/test/app/auth");
 		assertEquals(1, testUser.getUserSessions().size());
 
 		// add action and change email

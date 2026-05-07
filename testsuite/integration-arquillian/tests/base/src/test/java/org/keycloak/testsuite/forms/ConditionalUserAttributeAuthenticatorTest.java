@@ -16,6 +16,7 @@ import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testframework.realm.GroupBuilder;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
@@ -118,11 +119,9 @@ public class ConditionalUserAttributeAuthenticatorTest extends AbstractTestRealm
             passwordPage.assertCurrent();
             passwordPage.login(PASSWORD);
 
-            events.expectLogin()
-                    .user(testUserId)
-                    .detail(Details.USERNAME, user)
-                    .removeDetail(Details.CONSENT)
-                    .assertEvent();
+            EventAssertion.expectLoginSuccess(events.poll())
+                    .userId(testUserId)
+                    .details(Details.USERNAME, user);
 
             AccountHelper.logout(managedRealm.admin(), user);
         }
@@ -147,13 +146,13 @@ public class ConditionalUserAttributeAuthenticatorTest extends AbstractTestRealm
             errorPage.assertCurrent();
             assertThat(errorPage.getError(), is(errorMessage));
 
-            events.expectLogin()
-                    .user((String) null)
-                    .session((String) null)
+            EventAssertion.expectLoginError(events.poll())
+                    .userId(null)
+                    .sessionId(null)
                     .error(Errors.ACCESS_DENIED)
-                    .detail(Details.USERNAME, user)
-                    .removeDetail(Details.CONSENT)
-                    .assertEvent();
+                    .details(Details.USERNAME, user)
+                    .details(Details.REDIRECT_URI, oauth.getRedirectUri())
+                    .withoutDetails(Details.CONSENT);
         } finally {
             revertFlows(managedRealm.admin(), flowAlias);
         }

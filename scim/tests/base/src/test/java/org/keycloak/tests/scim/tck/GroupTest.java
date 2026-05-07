@@ -389,7 +389,7 @@ public class GroupTest extends AbstractScimTest {
         } catch (ScimClientException e) {
             ErrorResponse error = e.getError();
             assertNotNull(error);
-            assertEquals("Managing members on updates are not supported", error.getDetail());
+            assertEquals("Managing members on updates is not supported", error.getDetail());
         }
     }
 

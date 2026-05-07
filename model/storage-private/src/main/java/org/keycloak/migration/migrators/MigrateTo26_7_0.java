@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.keycloak.Config;
+import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.migration.ModelVersion;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.ClientModel;
@@ -46,6 +47,7 @@ public class MigrateTo26_7_0 extends RealmMigration {
     @Override
     public void migrateRealm(KeycloakSession session, RealmModel realm) {
         updatePasswordAfterEmailVerificationDuringRegistrationOfUsers(realm);
+        updateAdminPermissionsSchema(session, realm);
     }
 
     private void updatePasswordAfterEmailVerificationDuringRegistrationOfUsers(RealmModel realm) {
@@ -114,6 +116,12 @@ public class MigrateTo26_7_0 extends RealmMigration {
         RoleModel queryOrganizations = client.getRole(AdminRoles.QUERY_ORGANIZATIONS);
         if (viewOrganizations != null && queryOrganizations != null && !viewOrganizations.hasRole(queryOrganizations)) {
             viewOrganizations.addCompositeRole(queryOrganizations);
+        }
+    }
+
+    private void updateAdminPermissionsSchema(KeycloakSession session, RealmModel realm) {
+        if (realm.getAdminPermissionsClient() != null) {
+            AdminPermissionsSchema.SCHEMA.init(session, realm);
         }
     }
 }

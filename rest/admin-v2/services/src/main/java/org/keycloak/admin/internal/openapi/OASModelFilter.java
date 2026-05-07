@@ -3,6 +3,7 @@ package org.keycloak.admin.internal.openapi;
 
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -10,8 +11,6 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-
-import org.keycloak.OAuth2Constants;
 
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
@@ -37,12 +36,14 @@ public class OASModelFilter implements OASFilter {
 
     private final Logger log = Logger.getLogger(OASModelFilter.class);
     private final Map<String, ClassInfo> simpleNameToClassInfoMap = new HashMap<>();
+    private final ValidationAnnotationScanner validationScanner;
 
     public static final String REF_PREFIX = "#/components/schemas/";
 
     public OASModelFilter(IndexView indexView) {
         log.debug("Index size: " + indexView.getKnownClasses().size());
 
+        this.validationScanner = new ValidationAnnotationScanner(indexView);
         indexView.getKnownClasses().forEach(classInfo -> {
             simpleNameToClassInfoMap.put(classInfo.simpleName(), classInfo);
         });
@@ -226,7 +227,7 @@ public class OASModelFilter implements OASFilter {
         SecurityScheme bearerScheme = OASFactory.createSecurityScheme()
                 .type(SecurityScheme.Type.HTTP)
                 .scheme("bearer")
-                .bearerFormat(OAuth2Constants.JWT)
+                .bearerFormat("JWT")
                 .description("Bearer token authentication using a Keycloak access token");
 
         if (openAPI.getComponents() == null) {
@@ -285,16 +286,104 @@ public class OASModelFilter implements OASFilter {
             if (schema.getProperties() != null) {
                 ClassInfo classInfo = simpleNameToClassInfoMap.get(schemaName);
                 if (classInfo == null) {
-                    log.debugf("No Java class found for schema '%s' — property descriptions from  the '%s' annotation will not be added", schemaName, JsonPropertyDescription.class.getName());
+                    log.debugf("No Java class found for schema '%s' — property descriptions from the '%s' annotation will not be added", schemaName, JsonPropertyDescription.class.getName());
                 } else {
+                    // Get class-level validation descriptions (e.g., @UuidUnmodified, @ClientSecretNotBlank)
+                    Map<String, String> classLevelValidations = validationScanner.buildClassLevelDescriptions(classInfo);
+
                     schema.getProperties().forEach((propertyName, propertySchema) -> {
+                        // First, ensure we have the base description from @JsonPropertyDescription
                         if (isNullOrEmpty(propertySchema.getDescription())) {
                             propertySchema.setDescription(findJsonPropertyDescription(classInfo, propertyName));
+                        }
+
+                        // Add machine-readable validation schema properties
+                        validationScanner.applySchemaProperties(classInfo, propertyName, propertySchema);
+
+                        // Build validation description from field-level annotations
+                        String fieldValidation = validationScanner.buildDescription(classInfo, propertyName);
+
+                        // Include class-level validation if this field is affected
+                        String classLevelValidation = classLevelValidations.get(propertyName);
+                        if (classLevelValidation != null) {
+                            fieldValidation = fieldValidation != null
+                                    ? fieldValidation + "; " + classLevelValidation
+                                    : classLevelValidation;
+                        }
+
+                        // Append validation description if any (strip prior suffix: SmallRye may invoke the filter repeatedly)
+                        if (fieldValidation != null) {
+                            fieldValidation = dedupeConstraintPhrases(fieldValidation);
+                            String existingDesc = propertySchema.getDescription();
+                            String base = stripValidationSuffix(existingDesc);
+                            String newDesc = isNullOrEmpty(base)
+                                    ? "Validation: " + fieldValidation
+                                    : base + ". Validation: " + fieldValidation;
+                            propertySchema.setDescription(collapseMirroredValidationClause(newDesc));
+                            log.debugf("Added validation description to '%s.%s': %s", schemaName, propertyName, fieldValidation);
                         }
                     });
                 }
             }
         });
+    }
+
+    /**
+     * Removes validation clauses previously appended by this filter so repeated OpenAPI filter passes
+     * do not stack duplicate {@code Validation:} text.
+     */
+    private static String stripValidationSuffix(String description) {
+        if (isNullOrEmpty(description)) {
+            return description;
+        }
+        int idx = description.indexOf(". Validation: ");
+        if (idx >= 0) {
+            return description.substring(0, idx);
+        }
+        if (description.startsWith("Validation: ")) {
+            return "";
+        }
+        return description;
+    }
+
+    private static String dedupeConstraintPhrases(String joined) {
+        if (joined == null) {
+            return null;
+        }
+        String[] parts = joined.split("; ");
+        Set<String> seen = new LinkedHashSet<>();
+        for (String part : parts) {
+            String trimmed = part.trim();
+            if (!trimmed.isEmpty()) {
+                seen.add(trimmed);
+            }
+        }
+        return String.join("; ", seen);
+    }
+
+    /**
+     * Collapses {@code X. Validation: X} when {@code X} is repeated verbatim (duplicate filter passes).
+     */
+    private static String collapseMirroredValidationClause(String description) {
+        if (isNullOrEmpty(description)) {
+            return description;
+        }
+        String marker = ". Validation: ";
+        String current = description;
+        while (true) {
+            int i = current.indexOf(marker);
+            if (i <= 0) {
+                break;
+            }
+            String first = current.substring(0, i);
+            String second = current.substring(i + marker.length());
+            if (first.equals(second)) {
+                current = first;
+            } else {
+                break;
+            }
+        }
+        return current;
     }
 
     private String findJsonPropertyDescription(ClassInfo classInfo, String fieldName) {

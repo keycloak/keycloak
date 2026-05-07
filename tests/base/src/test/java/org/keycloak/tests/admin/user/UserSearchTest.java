@@ -522,6 +522,92 @@ public class UserSearchTest extends AbstractUserTest {
 
     @Test
     @DatabaseTest
+    public void searchByUsernameSearch() {
+        List<String> userIds = createUsers();
+        String expectedUserId = userIds.get(0);
+        UserRepresentation expectedUserRep = managedRealm.admin().users().get(expectedUserId).toRepresentation();
+        String expectedUsername = expectedUserRep.getUsername();
+
+        List<UserRepresentation> users = managedRealm.admin().users().search("username:" + expectedUsername, null, null);
+
+        assertEquals(1, users.size());
+        assertEquals(expectedUserId, users.get(0).getId());
+        assertEquals(expectedUsername, users.get(0).getUsername());
+        assertThat(managedRealm.admin().users().count("username:" + expectedUsername), is(1));
+
+        // ensure spaces are ignored
+        users = managedRealm.admin().users().search("username:   " + expectedUsername + "     ", null, null);
+
+        assertEquals(1, users.size());
+        assertEquals(expectedUserId, users.get(0).getId());
+        assertEquals(expectedUsername, users.get(0).getUsername());
+        assertThat(managedRealm.admin().users().count("username:   " + expectedUsername + "     "), is(1));
+
+        // Should allow searching for multiple users
+        String expectedUserId2 = userIds.get(1);
+        String expectedUsername2 = managedRealm.admin().users().get(expectedUserId2).toRepresentation().getUsername();
+        List<UserRepresentation> multipleUsers = managedRealm.admin().users().search(String.format("username:%s %s", expectedUsername, expectedUsername2), 0, 10);
+        assertThat(multipleUsers, hasSize(2));
+        assertThat(multipleUsers.get(0).getId(), is(expectedUserId));
+        assertThat(multipleUsers.get(1).getId(), is(expectedUserId2));
+        assertThat(managedRealm.admin().users().count(String.format("username:%s %s", expectedUsername, expectedUsername2)), is(2));
+
+        // Should take arbitrary amount of spaces in between usernames
+        List<UserRepresentation> multipleUsers2 = managedRealm.admin().users().search(String.format("username:  %s   %s  ", expectedUsername, expectedUsername2), 0, 10);
+        assertThat(multipleUsers2, hasSize(2));
+        assertThat(multipleUsers2.get(0).getId(), is(expectedUserId));
+        assertThat(multipleUsers2.get(1).getId(), is(expectedUserId2));
+        assertThat(managedRealm.admin().users().count(String.format("username:  %s   %s  ", expectedUsername, expectedUsername2)), is(2));
+
+        // Unknown username yields a count of zero
+        assertThat(managedRealm.admin().users().count("username:does-not-exist"), is(0));
+    }
+
+    @Test
+    @DatabaseTest
+    public void searchByEmailSearch() {
+        List<String> userIds = createUsers();
+        String expectedUserId = userIds.get(0);
+        UserRepresentation expectedUserRep = managedRealm.admin().users().get(expectedUserId).toRepresentation();
+        String expectedEmail = expectedUserRep.getEmail();
+
+        List<UserRepresentation> users = managedRealm.admin().users().search("email:" + expectedEmail, null, null);
+
+        assertEquals(1, users.size());
+        assertEquals(expectedUserId, users.get(0).getId());
+        assertEquals(expectedEmail, users.get(0).getEmail());
+        assertThat(managedRealm.admin().users().count("email:" + expectedEmail), is(1));
+
+        // ensure spaces are ignored
+        users = managedRealm.admin().users().search("email:   " + expectedEmail + "     ", null, null);
+
+        assertEquals(1, users.size());
+        assertEquals(expectedUserId, users.get(0).getId());
+        assertEquals(expectedEmail, users.get(0).getEmail());
+        assertThat(managedRealm.admin().users().count("email:   " + expectedEmail + "     "), is(1));
+
+        // Should allow searching for multiple users
+        String expectedUserId2 = userIds.get(1);
+        String expectedEmail2 = managedRealm.admin().users().get(expectedUserId2).toRepresentation().getEmail();
+        List<UserRepresentation> multipleUsers = managedRealm.admin().users().search(String.format("email:%s %s", expectedEmail, expectedEmail2), 0, 10);
+        assertThat(multipleUsers, hasSize(2));
+        assertThat(multipleUsers.get(0).getId(), is(expectedUserId));
+        assertThat(multipleUsers.get(1).getId(), is(expectedUserId2));
+        assertThat(managedRealm.admin().users().count(String.format("email:%s %s", expectedEmail, expectedEmail2)), is(2));
+
+        // Should take arbitrary amount of spaces in between emails
+        List<UserRepresentation> multipleUsers2 = managedRealm.admin().users().search(String.format("email:  %s   %s  ", expectedEmail, expectedEmail2), 0, 10);
+        assertThat(multipleUsers2, hasSize(2));
+        assertThat(multipleUsers2.get(0).getId(), is(expectedUserId));
+        assertThat(multipleUsers2.get(1).getId(), is(expectedUserId2));
+        assertThat(managedRealm.admin().users().count(String.format("email:  %s   %s  ", expectedEmail, expectedEmail2)), is(2));
+
+        // Unknown email yields a count of zero
+        assertThat(managedRealm.admin().users().count("email:does-not-exist@nowhere.test"), is(0));
+    }
+
+    @Test
+    @DatabaseTest
     public void infixSearch() {
         List<String> userIds = createUsers();
 

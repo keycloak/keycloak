@@ -87,6 +87,7 @@ import org.keycloak.services.clientpolicy.executor.SecureClientAuthenticatorExec
 import org.keycloak.services.clientpolicy.executor.SecureSessionEnforceExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.SecureSigningAlgorithmForSignedJwtExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.SuppressRefreshTokenRotationExecutorFactory;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.RoleBuilder;
 import org.keycloak.testframework.realm.UserBuilder;
@@ -752,7 +753,7 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         oauth.client(clientPublicId);
         oauth.openLoginForm();
         assertEquals(OAuthErrorException.INVALID_CLIENT, oauth.parseLoginResponse().getError());
-        assertEquals("invalid client access type", oauth.parseLoginResponse().getErrorDescription());
+        assertEquals("invalid client access type: public", oauth.parseLoginResponse().getErrorDescription());
     }
 
     @Test
@@ -1249,7 +1250,7 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         oauth.loginForm().request(request).doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
 
         // check an authorization response
-        EventRepresentation loginEvent = events.expectLogin().client(clientId).assertEvent();
+        EventRepresentation loginEvent = EventAssertion.expectLoginSuccess(events.poll()).clientId(clientId).getEvent();
         String sessionId = loginEvent.getSessionId();
         String codeId = loginEvent.getDetails().get(Details.CODE_ID);
         String code = oauth.parseLoginResponse().getCode();

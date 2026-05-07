@@ -44,9 +44,9 @@ import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.userprofile.config.UPConfigUtils;
 
 import org.hamcrest.Matchers;
-import org.junit.Assert;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 import org.junit.runners.MethodSorters;
 
 /**
@@ -102,13 +102,13 @@ public class SSSDUserProfileTest extends AbstractBaseSSSDTest {
         oauth.doLogin(username, getPassword(username));
         WaitUtils.waitForPageToLoad();
         updateProfilePage.assertCurrent();
-        Assert.assertEquals(getFirstName(username), updateProfilePage.getFirstName());
-        Assert.assertEquals(getLastName(username), updateProfilePage.getLastName());
-        Assert.assertEquals(getEmail(username), updateProfilePage.getEmail());
-        Assert.assertFalse(updateProfilePage.getElementById(UserModel.FIRST_NAME).isEnabled());
-        Assert.assertFalse(updateProfilePage.getElementById(UserModel.LAST_NAME).isEnabled());
-        Assert.assertFalse(updateProfilePage.getElementById(UserModel.EMAIL).isEnabled());
-        Assert.assertFalse(updateProfilePage.getElementById(UserModel.USERNAME).isEnabled());
+        Assertions.assertEquals(getFirstName(username), updateProfilePage.getFirstName());
+        Assertions.assertEquals(getLastName(username), updateProfilePage.getLastName());
+        Assertions.assertEquals(getEmail(username), updateProfilePage.getEmail());
+        Assertions.assertFalse(updateProfilePage.getElementById(UserModel.FIRST_NAME).isEnabled());
+        Assertions.assertFalse(updateProfilePage.getElementById(UserModel.LAST_NAME).isEnabled());
+        Assertions.assertFalse(updateProfilePage.getElementById(UserModel.EMAIL).isEnabled());
+        Assertions.assertFalse(updateProfilePage.getElementById(UserModel.USERNAME).isEnabled());
         updateProfilePage.prepareUpdate().submit();
 
         // check events
@@ -117,7 +117,7 @@ public class SSSDUserProfileTest extends AbstractBaseSSSDTest {
         events.expectRequiredAction(EventType.UPDATE_PROFILE)
                 .user(user.getId())
                 .assertEvent();
-        Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
         EventRepresentation loginEvent = events.expectLogin()
                 .user(Matchers.any(String.class))
                 .detail(Details.USERNAME, username)
@@ -145,13 +145,13 @@ public class SSSDUserProfileTest extends AbstractBaseSSSDTest {
         oauth.doLogin("test-user@localhost", "password");
         WaitUtils.waitForPageToLoad();
         updateProfilePage.assertCurrent();
-        Assert.assertEquals("Tom", updateProfilePage.getFirstName());
-        Assert.assertEquals("Brady", updateProfilePage.getLastName());
-        Assert.assertEquals("test-user@localhost", updateProfilePage.getEmail());
-        Assert.assertTrue(updateProfilePage.getElementById(UserModel.FIRST_NAME).isEnabled());
-        Assert.assertTrue(updateProfilePage.getElementById(UserModel.LAST_NAME).isEnabled());
-        Assert.assertTrue(updateProfilePage.getElementById(UserModel.EMAIL).isEnabled());
-        Assert.assertTrue(updateProfilePage.getElementById(UserModel.USERNAME).isEnabled());
+        Assertions.assertEquals("Tom", updateProfilePage.getFirstName());
+        Assertions.assertEquals("Brady", updateProfilePage.getLastName());
+        Assertions.assertEquals("test-user@localhost", updateProfilePage.getEmail());
+        Assertions.assertTrue(updateProfilePage.getElementById(UserModel.FIRST_NAME).isEnabled());
+        Assertions.assertTrue(updateProfilePage.getElementById(UserModel.LAST_NAME).isEnabled());
+        Assertions.assertTrue(updateProfilePage.getElementById(UserModel.EMAIL).isEnabled());
+        Assertions.assertTrue(updateProfilePage.getElementById(UserModel.USERNAME).isEnabled());
         updateProfilePage.prepareUpdate().submit();
 
         // check events
@@ -160,7 +160,7 @@ public class SSSDUserProfileTest extends AbstractBaseSSSDTest {
         events.expectRequiredAction(EventType.UPDATE_PROFILE)
                 .user(test.getId())
                 .assertEvent();
-        Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
         EventRepresentation loginEvent = events.expectLogin()
                 .user(Matchers.any(String.class))
                 .detail(Details.USERNAME, "test-user@localhost")
@@ -195,12 +195,12 @@ public class SSSDUserProfileTest extends AbstractBaseSSSDTest {
             oauth.doLogin(username, getPassword(username));
             WaitUtils.waitForPageToLoad();
             updateProfilePage.assertCurrent();
-            Assert.assertEquals(getEmail(username), updateProfilePage.getEmail());
-            Assert.assertNull(updateProfilePage.getElementById(UserModel.FIRST_NAME));
-            Assert.assertNull(updateProfilePage.getElementById(UserModel.LAST_NAME));
-            Assert.assertFalse(updateProfilePage.getElementById(UserModel.EMAIL).isEnabled());
-            Assert.assertFalse(updateProfilePage.getElementById(UserModel.USERNAME).isEnabled());
-            Assert.assertTrue(updateProfilePage.getElementById("postal_code").isEnabled());
+            Assertions.assertEquals(getEmail(username), updateProfilePage.getEmail());
+            Assertions.assertNull(updateProfilePage.getElementById(UserModel.FIRST_NAME));
+            Assertions.assertNull(updateProfilePage.getElementById(UserModel.LAST_NAME));
+            Assertions.assertFalse(updateProfilePage.getElementById(UserModel.EMAIL).isEnabled());
+            Assertions.assertFalse(updateProfilePage.getElementById(UserModel.USERNAME).isEnabled());
+            Assertions.assertTrue(updateProfilePage.getElementById("postal_code").isEnabled());
             updateProfilePage.prepareUpdate().otherProfileAttribute(Map.of("postal_code", "123456")).submit();
             WaitUtils.waitForPageToLoad();
             appPage.assertCurrent();
@@ -210,7 +210,7 @@ public class SSSDUserProfileTest extends AbstractBaseSSSDTest {
                     .user(user.getId())
                     .detail("updated_postal_code", "123456")
                     .assertEvent();
-            Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+            Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
             EventRepresentation loginEvent = events.expectLogin()
                     .user(Matchers.any(String.class))
                     .detail(Details.USERNAME, username)
@@ -237,8 +237,8 @@ public class SSSDUserProfileTest extends AbstractBaseSSSDTest {
             UserRepresentation test = testResource.toRepresentation(true);
             assertUser(test, "test-user@localhost", "test-user@localhost", null, null, null);
             assertProfileAttributes(test, null, false, "username", "email", "postal_code");
-            Assert.assertNull(test.getUserProfileMetadata().getAttributeMetadata(UserModel.FIRST_NAME));
-            Assert.assertNull(test.getUserProfileMetadata().getAttributeMetadata(UserModel.LAST_NAME));
+            Assertions.assertNull(test.getUserProfileMetadata().getAttributeMetadata(UserModel.FIRST_NAME));
+            Assertions.assertNull(test.getUserProfileMetadata().getAttributeMetadata(UserModel.LAST_NAME));
 
             // for user, firstName and lastName are not visible, username, email read-only and postal_code editable
             test.getRequiredActions().add(UserModel.RequiredAction.UPDATE_PROFILE.toString());
@@ -246,12 +246,12 @@ public class SSSDUserProfileTest extends AbstractBaseSSSDTest {
             oauth.doLogin("test-user@localhost", "password");
             WaitUtils.waitForPageToLoad();
             updateProfilePage.assertCurrent();
-            Assert.assertEquals("test-user@localhost", updateProfilePage.getEmail());
-            Assert.assertNull(updateProfilePage.getElementById(UserModel.FIRST_NAME));
-            Assert.assertNull(updateProfilePage.getElementById(UserModel.LAST_NAME));
-            Assert.assertTrue(updateProfilePage.getElementById(UserModel.EMAIL).isEnabled());
-            Assert.assertTrue(updateProfilePage.getElementById(UserModel.USERNAME).isEnabled());
-            Assert.assertTrue(updateProfilePage.getElementById("postal_code").isEnabled());
+            Assertions.assertEquals("test-user@localhost", updateProfilePage.getEmail());
+            Assertions.assertNull(updateProfilePage.getElementById(UserModel.FIRST_NAME));
+            Assertions.assertNull(updateProfilePage.getElementById(UserModel.LAST_NAME));
+            Assertions.assertTrue(updateProfilePage.getElementById(UserModel.EMAIL).isEnabled());
+            Assertions.assertTrue(updateProfilePage.getElementById(UserModel.USERNAME).isEnabled());
+            Assertions.assertTrue(updateProfilePage.getElementById("postal_code").isEnabled());
             updateProfilePage.prepareUpdate().otherProfileAttribute(Map.of("postal_code", "123456")).submit();
             WaitUtils.waitForPageToLoad();
             appPage.assertCurrent();
@@ -261,7 +261,7 @@ public class SSSDUserProfileTest extends AbstractBaseSSSDTest {
                     .user(test.getId())
                     .detail("updated_postal_code", "123456")
                     .assertEvent();
-            Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+            Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
             EventRepresentation loginEvent = events.expectLogin()
                     .user(Matchers.any(String.class))
                     .detail(Details.USERNAME, "test-user@localhost")
@@ -278,27 +278,27 @@ public class SSSDUserProfileTest extends AbstractBaseSSSDTest {
 
     private void assertUser(UserRepresentation user, String expectedUsername, String expectedEmail,
             String expectedFirstName, String expectedLastname, String sssdId) {
-        Assert.assertNotNull(user);
-        Assert.assertEquals(expectedUsername, user.getUsername());
-        Assert.assertEquals(expectedFirstName, user.getFirstName());
-        Assert.assertEquals(expectedLastname, user.getLastName());
-        Assert.assertEquals(expectedEmail, user.getEmail());
-        Assert.assertEquals(sssdId, user.getFederationLink());
+        Assertions.assertNotNull(user);
+        Assertions.assertEquals(expectedUsername, user.getUsername());
+        Assertions.assertEquals(expectedFirstName, user.getFirstName());
+        Assertions.assertEquals(expectedLastname, user.getLastName());
+        Assertions.assertEquals(expectedEmail, user.getEmail());
+        Assertions.assertEquals(sssdId, user.getFederationLink());
     }
 
     private void assertProfileAttributes(UserRepresentation user, String expectedGroup, boolean expectReadOnly, String... attributes) {
         for (String attrName : attributes) {
             UserProfileAttributeMetadata attrMetadata = user.getUserProfileMetadata().getAttributeMetadata(attrName);
-            Assert.assertNotNull("Attribute " + attrName + " was not present for user " + user.getUsername(), attrMetadata);
-            Assert.assertEquals("Attribute " + attrName + " for user " + user.getUsername() + ". Expected read-only: " + expectReadOnly + " but was not", expectReadOnly, attrMetadata.isReadOnly());
-            Assert.assertEquals("Attribute " + attrName + " for user " + user.getUsername() + ". Expected group: " + expectedGroup + " but was " + attrMetadata.getGroup(), expectedGroup, attrMetadata.getGroup());
+            Assertions.assertNotNull(attrMetadata, "Attribute " + attrName + " was not present for user " + user.getUsername());
+            Assertions.assertEquals(expectReadOnly, attrMetadata.isReadOnly(), "Attribute " + attrName + " for user " + user.getUsername() + ". Expected read-only: " + expectReadOnly + " but was not");
+            Assertions.assertEquals(expectedGroup, attrMetadata.getGroup(), "Attribute " + attrName + " for user " + user.getUsername() + ". Expected group: " + expectedGroup + " but was " + attrMetadata.getGroup());
         }
     }
 
     private String getSssdProviderId() {
         List<ComponentRepresentation> comps = managedRealm.admin().components()
                 .query(TEST_REALM_NAME, UserStorageProvider.class.getName(), PROVIDER_NAME);
-        Assert.assertEquals(1, comps.size());
+        Assertions.assertEquals(1, comps.size());
         return comps.iterator().next().getId();
     }
 

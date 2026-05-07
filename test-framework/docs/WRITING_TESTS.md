@@ -68,7 +68,7 @@ ManagedRealm realm;
 static class MyRealmConfig implements RealmConfig {
 
     @Override
-    public RealmConfigBuilder configure(RealmConfigBuilder builder) {
+    public RealmBuilder configure(RealmBuilder builder) {
         return builder
                 .name("myrealm")
                 .groups("group-a", "group-b");

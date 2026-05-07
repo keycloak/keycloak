@@ -115,7 +115,7 @@ public class OrganizationGroupResource {
         @APIResponse(responseCode = "404", description = "Not Found")
     })
     public void deleteGroup() {
-        auth.orgs().requireManage();
+        auth.orgs().requireManage(organization);
         session.groups().removeGroup(session.getContext().getRealm(), group);
         adminEvent.operation(OperationType.DELETE).resourcePath(session.getContext().getUri()).success();
     }
@@ -132,7 +132,7 @@ public class OrganizationGroupResource {
             @APIResponse(responseCode = "409", description = "Conflict")
     })
     public Response updateGroup(GroupRepresentation rep) {
-        auth.orgs().requireManage();
+        auth.orgs().requireManage(organization);
         try {
             String groupName = rep.getName();
 
@@ -223,7 +223,7 @@ public class OrganizationGroupResource {
             @APIResponse(responseCode = "409", description = "Conflict")
     })
     public Response addSubGroup(GroupRepresentation rep) {
-        auth.orgs().requireManage();
+        auth.orgs().requireManage(organization);
         String groupName = rep.getName();
         if (ObjectUtil.isBlank(groupName)) {
             throw ErrorResponse.error("Group name is missing", Response.Status.BAD_REQUEST);
@@ -328,12 +328,14 @@ public class OrganizationGroupResource {
         @APIResponse(responseCode = "409", description = "Conflict - User is already a member of the group")
     })
     public void joinGroup(@PathParam("userId") String userId) {
-        auth.orgs().requireManage();
+        auth.orgs().requireManage(organization);
         UserModel user = session.users().getUserById(session.getContext().getRealm(), userId);
 
         if (user == null) {
             throw ErrorResponse.error("User does not exist", Response.Status.NOT_FOUND);
         }
+
+        auth.users().requireManageGroupMembership(user);
 
         if (!organizationProvider.isMember(organization, user)) {
             throw ErrorResponse.error("User is not member of the organization", Response.Status.BAD_REQUEST);
@@ -370,12 +372,14 @@ public class OrganizationGroupResource {
         @APIResponse(responseCode = "404", description = "Not Found - User does not exist")
     })
     public void leaveGroup(@PathParam("userId") String userId) {
-        auth.orgs().requireManage();
+        auth.orgs().requireManage(organization);
         UserModel user = session.users().getUserById(session.getContext().getRealm(), userId);
 
         if (user == null) {
             throw ErrorResponse.error("User does not exist", Response.Status.NOT_FOUND);
         }
+
+        auth.users().requireManageGroupMembership(user);
 
         if (user.isMemberOf(group)) {
             try {

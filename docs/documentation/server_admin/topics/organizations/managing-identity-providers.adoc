@@ -39,6 +39,9 @@ The identity provider you want to link to the organization. An identity provider
 Domain::
 The domain from the organization that you want to link with the identity provider.
 
+Excluded domains::
+A comma-separated list of domains to skip automatic redirection. You can use wildcard domains like `*.example.com` to exclude all subdomains of `example.com`.
+
 Hide on login page::
 If this identity provider should be hidden in login pages when the user is authenticating in the scope of the organization.
 

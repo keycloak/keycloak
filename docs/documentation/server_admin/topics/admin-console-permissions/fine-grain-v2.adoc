@@ -1,5 +1,5 @@
-[[_fine_grained_permissions]]
 
+[[_fine_grained_permissions]]
 === Delegating realm administration using permissions
 
 You can delegate realm management to other administrators, the realm administrators, using the fine-grained admin permissions
@@ -52,6 +52,7 @@ This feature provides the necessary mechanisms to enforce access controls when m
 * Groups
 * Clients
 * Roles
+* Organizations
 
 You can manage permissions for all resources of a given resource type, such as all users in a realm, or
 for a specific realm resource, such as a specific user or set of users in the realm.
@@ -172,6 +173,22 @@ have user role mapping permissions on the user.
 
 If there is a client resource type permission for the *map-roles*, *map-roles-composite*, or *map-roles-client-scope* scopes,
 it will take precedence over any role resource type permission if the role is a client role.
+
+===== Organizations Resource Type
+
+The *Organizations* realm resource type represents the organizations in a realm. You can manage permissions for organizations based on the following
+set of management operations:
+
+[cols="30%,70%"]
+|===
+| *Operation*               | *Description*
+
+| *view*                    | Defines if a realm administrator can view organizations. This scope should be set whenever you want
+                              to make organizations available from queries.
+| *manage*                  | Defines if a realm administrator can manage organizations, including updating and deleting them.
+|===
+
+Creating new organizations requires `manage` permission on all organizations (the resource type level), not just on a specific organization.
 
 ==== Enabling admin permissions to a realm
 
@@ -387,6 +404,8 @@ if a respective admin role is assigned to a realm administrator, permission eval
 | *impersonation*          | A realm administrator can *impersonate* all users in the realm.
 | *view-clients*           | A realm administrator can *view* all clients in the realm.
 | *manage-clients*         | A realm administrator can *view* and *manage* all clients and client scopes in the realm.
+| *view-organizations*     | A realm administrator can *view* all organizations in the realm.
+| *manage-organizations*   | A realm administrator can *view* and *manage* all organizations in the realm.
 |===
 
 When this feature is enabled in a realm, only server and realm administrators with the corresponding admin roles can grant these roles

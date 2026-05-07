@@ -254,6 +254,8 @@ public final class PartialEvaluator {
             return user.hasRole(client.getRole(AdminRoles.VIEW_USERS)) || user.hasRole(client.getRole(AdminRoles.MANAGE_USERS)) || !hasAnyQueryAdminRole(client, user);
         } else if (resourceType.equals(AdminPermissionsSchema.CLIENTS)) {
             return user.hasRole(client.getRole(AdminRoles.VIEW_CLIENTS)) || user.hasRole(client.getRole(AdminRoles.MANAGE_CLIENTS)) || !hasAnyQueryAdminRole(client, user);
+        } else if (resourceType.equals(AdminPermissionsSchema.ORGANIZATIONS)) {
+            return user.hasRole(client.getRole(AdminRoles.VIEW_ORGANIZATIONS)) || user.hasRole(client.getRole(AdminRoles.MANAGE_ORGANIZATIONS)) || !hasAnyQueryAdminRole(client, user);
         }
 
         return false;
@@ -275,7 +277,7 @@ public final class PartialEvaluator {
 
     private boolean hasAnyQueryAdminRole(ClientModel client, UserModel user) {
         boolean result = false;
-        for (String adminRole : List.of(AdminRoles.QUERY_CLIENTS, AdminRoles.QUERY_GROUPS, AdminRoles.QUERY_USERS)) {
+        for (String adminRole : List.of(AdminRoles.QUERY_CLIENTS, AdminRoles.QUERY_GROUPS, AdminRoles.QUERY_USERS, AdminRoles.QUERY_ORGANIZATIONS)) {
             RoleModel role = client.getRole(adminRole);
 
             if (role == null) {

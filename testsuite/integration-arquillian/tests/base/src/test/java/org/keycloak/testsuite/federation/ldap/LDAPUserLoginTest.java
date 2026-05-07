@@ -31,6 +31,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.storage.ldap.idm.model.LDAPObject;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.arquillian.annotation.EnableVault;
 import org.keycloak.testsuite.pages.AppPage;
@@ -154,7 +155,7 @@ public class LDAPUserLoginTest extends AbstractLDAPTest {
         appPage.assertCurrent();
         Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
         Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
-        EventRepresentation loginEvent = events.expectLogin().user(userId).assertEvent();
+        EventRepresentation loginEvent = EventAssertion.expectLoginSuccess(events.poll()).userId(userId).getEvent();
         AccessTokenResponse tokenResponse = sendTokenRequestAndGetResponse(loginEvent);
         appPage.logout(tokenResponse.getIdToken());
         events.expectLogout(loginEvent.getSessionId()).user(userId).assertEvent();

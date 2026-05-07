@@ -24,6 +24,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Stream;
 
+import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.UriInfo;
 
@@ -62,6 +63,9 @@ public abstract class RoleResource {
     protected void updateRole(RoleRepresentation rep, RoleModel role, RealmModel realm,
             KeycloakSession session) {
         String newName = rep.getName();
+        if (newName == null) {
+            throw new BadRequestException("role has no name");
+        }
         String previousName = role.getName();
         if (!Objects.equals(previousName, newName)) {
             role.setName(newName);

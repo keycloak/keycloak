@@ -29,7 +29,7 @@ import org.hibernate.validator.constraints.URL;
     @JsonSubTypes.Type(value = OIDCClientRepresentation.class, name = OIDCClientRepresentation.PROTOCOL),
     @JsonSubTypes.Type(value = SAMLClientRepresentation.class, name = SAMLClientRepresentation.PROTOCOL)
 })
-@UuidUnmodified(groups = {PutClient.class, PatchClient.class})
+@UuidUnmodified(groups = {PutClient.class, PatchClient.class}, affectedFieldNames = {"uuid"})
 @ProtocolUnmodified(groups = {PutClient.class, PatchClient.class})
 @ValidRedirectUris
 public abstract class BaseClientRepresentation extends BaseRepresentation implements RepresentationWithUuid {

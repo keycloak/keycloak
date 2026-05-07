@@ -93,8 +93,9 @@ public class OrganizationIdentityProvidersResource {
         @APIResponse(responseCode = "409", description = "Conflict")
     })
     public Response addIdentityProvider(String id) {
-        auth.orgs().requireManage();
-        auth.realm().requireManageIdentityProviders();
+        auth.orgs().requireManage(organization);
+        // todo: do we want to enforce that admins has to have manage-identity-providers admin role to be able to assign IDP to the org?
+//        auth.realm().requireManageIdentityProviders();
         id = id.trim().replaceAll("^\"|\"$", ""); // fixes https://github.com/keycloak/keycloak/issues/34401
 
         try {
@@ -124,6 +125,9 @@ public class OrganizationIdentityProvidersResource {
         @APIResponse(responseCode = "403", description = "Forbidden")
     })
     public Stream<IdentityProviderRepresentation> getIdentityProviders() {
+        auth.orgs().requireView(organization);
+        // todo: do we want to enforce that admins has to have view-identity-providers admin role to be able to get the IDPs linked to the org?
+//        auth.realm().requireViewIdentityProviders();
         return organization.getIdentityProviders().map(this::toRepresentation);
     }
 
@@ -141,6 +145,9 @@ public class OrganizationIdentityProvidersResource {
         @APIResponse(responseCode = "404", description = "Not Found")
     })
     public IdentityProviderRepresentation getIdentityProvider(@PathParam("alias") String alias) {
+        auth.orgs().requireView(organization);
+        // todo: do we want to enforce that admins has to have view-identity-providers admin role to be able to get the IDP linked to the org?
+//        auth.realm().requireViewIdentityProviders();
         IdentityProviderModel broker = session.identityProviders().getByAlias(alias);
 
         if (!isOrganizationBroker(broker)) {
@@ -189,7 +196,7 @@ public class OrganizationIdentityProvidersResource {
             @Parameter(description = "If true, return brief representation; otherwise return full representation") @QueryParam("briefRepresentation") @DefaultValue("true") boolean briefRepresentation,
             @Parameter(description = "If true, include subgroups count in the response") @QueryParam("subGroupsCount") @DefaultValue("false") boolean subGroupsCount) {
 
-        // Validate that the identity provider is associated with the organization
+        // Validate that the identity provider is associated with the organization and the caller can view the org
         getIdentityProvider(alias);
 
         OrganizationGroupsResource groupsResource = new OrganizationGroupsResource(session, organization, adminEvent, auth);
@@ -210,7 +217,9 @@ public class OrganizationIdentityProvidersResource {
         @APIResponse(responseCode = "404", description = "Not Found")
     })
     public Response delete(@PathParam("alias") String alias) {
-        auth.orgs().requireManage();
+        auth.orgs().requireManage(organization);
+        // todo: do we want to enforce that admins has to have manage-identity-providers admin role to be able to unassign IDP to the org?
+//        auth.realm().requireManageIdentityProviders();
         IdentityProviderModel broker = session.identityProviders().getByAlias(alias);
 
         if (!isOrganizationBroker(broker)) {

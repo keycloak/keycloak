@@ -41,6 +41,7 @@ import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
@@ -247,7 +248,7 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
         loginPage.login("test-user@localhost", "password");
         assertTrue(appPage.isCurrent());
 
-        String sessionId2 = events.expectLogin().assertEvent().getSessionId();
+        String sessionId2 = EventAssertion.expectLoginSuccess(events.poll()).getEvent().getSessionId();
         assertNotEquals(sessionId, sessionId2);
 
         // Using idTokenHint of the 1st session. Logout confirmation is needed in such case. Test also "state" parameter is included in the URL after logout
@@ -299,7 +300,7 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
             assertTrue(loginPage.isRememberMeChecked());
             loginPage.login(testUsername, testUserPassword);
 
-            String sessionId = events.expectLogin().assertEvent().getSessionId();
+            String sessionId = EventAssertion.expectLoginSuccess(events.poll()).getEvent().getSessionId();
 
             // Expire session
             testingClient.testing().removeUserSession("test", sessionId);

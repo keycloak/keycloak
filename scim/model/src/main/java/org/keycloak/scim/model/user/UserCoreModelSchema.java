@@ -45,7 +45,14 @@ public final class UserCoreModelSchema extends AbstractUserModelSchema {
     }
 
     @Override
-    protected Map<String, Attribute<UserModel, User>> doGetAttributes() {
+    protected boolean hasSchema(String attributeName) {
+        String schema = Attribute.getSchema(attributeName);
+
+        return schema == null || getId().equals(schema);
+    }
+
+    @Override
+    protected Map<String, Attribute<UserModel, User>> getAttributeMappers() {
         List<Attribute<UserModel, User>> attributes = new ArrayList<>();
 
         attributes.addAll(Attribute.<UserModel, User>simple("userName")
@@ -131,7 +138,12 @@ public final class UserCoreModelSchema extends AbstractUserModelSchema {
                 .bool()
                 .withModelSetter(
                         (model, name, value) -> model.setEnabled(Boolean.parseBoolean(Optional.ofNullable(value).orElse("").toString()))
-                        , (user, value) -> user.setActive(Boolean.parseBoolean(value.toString()))
+                        , (user, value) -> {
+                            if (value == null) {
+                                return;
+                            }
+                            user.setActive(Boolean.parseBoolean(value.toString()));
+                        }
                 )
                 .build());
         attributes.addAll(Attribute.<UserModel, User>simple("meta.created")

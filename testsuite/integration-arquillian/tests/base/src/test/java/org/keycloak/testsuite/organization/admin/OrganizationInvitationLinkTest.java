@@ -37,12 +37,15 @@ import jakarta.ws.rs.core.UriBuilder;
 import org.keycloak.admin.client.resource.OrganizationResource;
 import org.keycloak.common.util.UriUtils;
 import org.keycloak.cookie.CookieType;
+import org.keycloak.events.Details;
+import org.keycloak.events.EventType;
 import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.representations.idm.AuthenticationExecutionRepresentation;
+import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.MemberRepresentation;
 import org.keycloak.representations.idm.MembershipType;
 import org.keycloak.representations.idm.OrganizationInvitationRepresentation;
@@ -50,6 +53,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AbstractAuthenticationTest;
+import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.authentication.PushButtonAuthenticatorFactory;
 import org.keycloak.testsuite.pages.InfoPage;
@@ -85,6 +89,9 @@ import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 
 public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
+
+    @Rule
+    public AssertEvents events = new AssertEvents(this);
 
     @Rule
     public GreenMailRule greenMail = new GreenMailRule();
@@ -250,10 +257,35 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
         String firstName = "Homer";
         String lastName = "Simpson";
 
-        OrganizationResource organization = managedRealm.admin().organizations().get(createOrganization().getId());
+        String orgId = createOrganization().getId();
+        OrganizationResource organization = managedRealm.admin().organizations().get(orgId);
         organization.members().inviteUser(email, firstName, lastName).close();
 
         registerUser(organization, email);
+
+        // Assert INVITE_ORG event fires when user is added to the organization
+        EventRepresentation inviteEvent = events.expect(EventType.INVITE_ORG)
+                .client("account")
+                .user(Matchers.notNullValue(String.class))
+                .detail(Details.ORG_ID, orgId)
+                .assertEvent();
+
+        // Assert REGISTER event fires during new user registration via organization invite
+        events.expect(EventType.REGISTER)
+                .client("account")
+                .user(inviteEvent.getUserId())
+                .detail(Details.EMAIL, email)
+                .detail(Details.REGISTER_METHOD, "form")
+                .assertEvent();
+
+        // Assert LOGIN event fires after registration completes
+        events.expectLogin()
+                .client("account")
+                .user(inviteEvent.getUserId())
+                .removeDetail(Details.REDIRECT_URI)
+                .removeDetail(Details.CONSENT)
+                .session(AssertEvents.isSessionId())
+                .assertEvent();
 
         List<UserRepresentation> users = managedRealm.admin().users().searchByEmail(email, true);
         assertThat(users, not(empty()));
