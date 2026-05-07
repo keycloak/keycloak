@@ -71,7 +71,7 @@ public class PermissionGrantType extends OAuth2GrantTypeBase {
                     // from the access token anyway in order to set correct CORS headers.
                     AccessToken invalidToken = new JWSInput(accessTokenString).readJsonContent(AccessToken.class);
                     ClientModel client = realm.getClientByClientId(invalidToken.getIssuedFor());
-                    cors.allowedOrigins(session, client);
+                    cors.checkAllowedOrigins(session, client);
                     event.client(client);
                 } catch (JWSInputException ignore) {
                 }
@@ -83,7 +83,7 @@ public class PermissionGrantType extends OAuth2GrantTypeBase {
 
             session.getContext().setClient(client);
 
-            cors.allowedOrigins(session, client);
+            cors.checkAllowedOrigins(session, client);
             event.client(client);
         }
 
