@@ -26,11 +26,13 @@ import org.keycloak.config.Option;
 import org.keycloak.it.junit5.extension.DistributionTest;
 import org.keycloak.it.junit5.extension.DryRun;
 import org.keycloak.it.junit5.extension.RawDistOnly;
+import org.keycloak.it.junit5.extension.SkipRealmBootstrap;
 import org.keycloak.it.utils.KeycloakDistribution;
 
 import org.junit.jupiter.api.Test;
 
 @DistributionTest
+@SkipRealmBootstrap
 public class CacheEmbeddedMtlsDistTest {
 
     @DryRun

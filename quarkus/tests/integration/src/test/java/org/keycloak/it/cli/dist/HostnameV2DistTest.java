@@ -20,6 +20,7 @@ package org.keycloak.it.cli.dist;
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
 import org.keycloak.it.junit5.extension.RawDistOnly;
+import org.keycloak.it.junit5.extension.SkipRealmBootstrap;
 
 import io.quarkus.test.junit.main.Launch;
 import io.quarkus.test.junit.main.LaunchResult;
@@ -30,6 +31,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 @DistributionTest
 @RawDistOnly(reason = "Containers are immutable")
+@SkipRealmBootstrap
 public class HostnameV2DistTest {
     @Test
     @Launch({"start", "--db=dev-file", "--http-enabled=true"})

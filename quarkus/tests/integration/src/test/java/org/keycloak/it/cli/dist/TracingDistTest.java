@@ -20,6 +20,7 @@ package org.keycloak.it.cli.dist;
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
 import org.keycloak.it.junit5.extension.RawDistOnly;
+import org.keycloak.it.junit5.extension.SkipRealmBootstrap;
 
 import io.quarkus.test.junit.main.Launch;
 import io.quarkus.test.junit.main.LaunchResult;
@@ -31,6 +32,7 @@ import org.junit.jupiter.api.TestMethodOrder;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DistributionTest
 @RawDistOnly(reason = "Containers are immutable")
+@SkipRealmBootstrap
 public class TracingDistTest {
 
     static void assertTracingEnabled(CLIResult result) {
