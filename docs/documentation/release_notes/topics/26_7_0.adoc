@@ -27,3 +27,7 @@ As part of this change, the `displayName` attribute has been promoted from a rea
 
 Before migrating, check the current value of the `displayName` attribute for your realms. If the current value of `displayName` attribute
 exceeds 255 characters, it will be truncated during migration.
+
+== SAML `login_hint` query parameter support
+
+{project_name} can now forward the `login_hint` query parameter to SAML identity providers, allowing destination providers to pre-fill their login form. This behavior is controlled by a new *Use login_hint* option in the SAML identity provider configuration.

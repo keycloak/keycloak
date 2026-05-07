@@ -50,7 +50,7 @@ public class KcSamlLogoutTest extends AbstractInitializedBaseBrokerTest {
     
     @Override
     protected BrokerConfiguration getBrokerConfiguration() {
-        return new KcSamlBrokerConfiguration(false) {
+        return new KcSamlBrokerConfiguration(false, false) {
             @Override
             public List<ClientRepresentation> createProviderClients() {
                 List<ClientRepresentation> superClients = super.createProviderClients();
