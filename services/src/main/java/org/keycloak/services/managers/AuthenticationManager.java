@@ -66,6 +66,7 @@ import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.common.util.Time;
 import org.keycloak.cookie.CookieProvider;
 import org.keycloak.cookie.CookieType;
+import org.keycloak.crypto.CryptoUtils;
 import org.keycloak.crypto.SignatureProvider;
 import org.keycloak.crypto.SignatureVerifierContext;
 import org.keycloak.events.Details;
@@ -262,7 +263,7 @@ public class AuthenticationManager {
             String kid = verifier.getHeader().getKeyId();
             String algorithm = verifier.getHeader().getAlgorithm().name();
 
-            SignatureVerifierContext signatureVerifier = session.getProvider(SignatureProvider.class, algorithm).verifier(kid);
+            SignatureVerifierContext signatureVerifier = CryptoUtils.getSignatureProvider(session, algorithm).verifier(kid);
             verifier.verifierContext(signatureVerifier);
 
             AccessToken token = verifier.verify().getToken();
