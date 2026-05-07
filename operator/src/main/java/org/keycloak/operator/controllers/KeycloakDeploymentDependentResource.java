@@ -60,6 +60,7 @@ import io.fabric8.kubernetes.api.model.PodSpecFluent;
 import io.fabric8.kubernetes.api.model.PodTemplateSpec;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretKeySelector;
+import io.fabric8.kubernetes.api.model.ServiceAccount;
 import io.fabric8.kubernetes.api.model.VolumeBuilder;
 import io.fabric8.kubernetes.api.model.VolumeMountBuilder;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
@@ -327,6 +328,14 @@ public class KeycloakDeploymentDependentResource extends VersionTolerantCRUDKube
         }
         boolean automount = !Boolean.FALSE.equals(keycloakCR.getSpec().getAutomountServiceAccountToken());
         specBuilder.withAutomountServiceAccountToken(automount);
+        if (keycloakCR.getSpec().getServiceAccountSpec() != null) {
+            String saName = context.getSecondaryResource(ServiceAccount.class)
+                    .map(sa -> sa.getMetadata().getName())
+                    .orElse("default");
+            specBuilder.withServiceAccountName(saName);
+        } else {
+            specBuilder.withServiceAccountName("default");
+        }
         handleScheduling(keycloakCR, schedulingLabels, specBuilder);
 
         // there isn't currently an editOrNewFirstContainer, so we need to do this manually

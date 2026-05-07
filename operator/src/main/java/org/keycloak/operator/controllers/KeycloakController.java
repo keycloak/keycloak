@@ -69,6 +69,7 @@ import io.quarkus.logging.Log;
         @Dependent(type = KeycloakServiceDependentResource.class),
         @Dependent(type = KeycloakDiscoveryServiceDependentResource.class),
         @Dependent(type = KeycloakNetworkPolicyDependentResource.class, reconcilePrecondition = KeycloakNetworkPolicyDependentResource.EnabledCondition.class),
+        @Dependent(type = KeycloakServiceAccountDependentResource.class, reconcilePrecondition = KeycloakServiceAccountDependentResource.EnabledCondition.class),
         @Dependent(
               type = KeycloakServiceMonitorDependentResource.class,
               activationCondition = KeycloakServiceMonitorDependentResource.ActivationCondition.class

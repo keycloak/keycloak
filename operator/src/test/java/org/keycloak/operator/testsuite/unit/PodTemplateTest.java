@@ -60,6 +60,8 @@ import io.fabric8.kubernetes.api.model.PodTemplateSpecBuilder;
 import io.fabric8.kubernetes.api.model.ProbeBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretKeySelector;
+import io.fabric8.kubernetes.api.model.ServiceAccount;
+import io.fabric8.kubernetes.api.model.ServiceAccountBuilder;
 import io.fabric8.kubernetes.api.model.Toleration;
 import io.fabric8.kubernetes.api.model.TopologySpreadConstraint;
 import io.fabric8.kubernetes.api.model.TopologySpreadConstraintBuilder;
@@ -777,6 +779,33 @@ public class PodTemplateTest {
                         .endStartupProbeSpec()).getSpec().getTemplate();
         assertThat(startupPodTemplate.getSpec().getContainers().get(0).getStartupProbe().getPeriodSeconds()).isEqualTo(startupProbe.getPeriodSeconds());
         assertThat(startupPodTemplate.getSpec().getContainers().get(0).getStartupProbe().getFailureThreshold()).isEqualTo(startupProbe.getFailureThreshold());
+    }
+
+    @Test
+    public void testServiceAccountNameSetWhenSpecPresentAndSAInCache() {
+        var kc = createKeycloak(null,
+                spec -> spec.withServiceAccountSpec(new org.keycloak.operator.crds.v2beta1.deployment.spec.ServiceAccountSpec()));
+        var existingDeployment = new StatefulSetBuilder().editOrNewMetadata().endMetadata()
+                .editOrNewSpec().editOrNewSelector().withMatchLabels(Utils.allInstanceLabels(kc)).endSelector().endSpec().build();
+        Context<Keycloak> context = mockContext(existingDeployment);
+        ServiceAccount sa = new ServiceAccountBuilder().withNewMetadata().withName("instance").endMetadata().build();
+        Mockito.when(context.getSecondaryResource(ServiceAccount.class)).thenReturn(Optional.of(sa));
+        var ss = deployment.initialDesired(kc, context);
+        assertEquals("instance", ss.getSpec().getTemplate().getSpec().getServiceAccountName());
+    }
+
+    @Test
+    public void testServiceAccountNameDefaultWhenSpecPresentButSANotInCache() {
+        // SA spec present but SA not yet in informer cache (first reconcile): fall back to default
+        var ss = getDeployment(null, new StatefulSet(),
+                spec -> spec.withServiceAccountSpec(new org.keycloak.operator.crds.v2beta1.deployment.spec.ServiceAccountSpec()));
+        assertEquals("default", ss.getSpec().getTemplate().getSpec().getServiceAccountName());
+    }
+
+    @Test
+    public void testServiceAccountNameDefaultWhenSpecNotPresent() {
+        var ss = getDeployment(null);
+        assertEquals("default", ss.getSpec().getTemplate().getSpec().getServiceAccountName());
     }
 
     private Job getUpdateJob(Consumer<KeycloakSpecBuilder> newSpec, Consumer<KeycloakSpecBuilder> oldSpec, Consumer<StatefulSetBuilder> existingModifier) {
