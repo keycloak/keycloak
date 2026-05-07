@@ -17,8 +17,13 @@
 
 package org.keycloak.protocol.oidc.endpoints;
 
+import java.io.IOException;
+import java.text.MessageFormat;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
+import java.util.Properties;
 import java.util.function.BiConsumer;
 
 import jakarta.ws.rs.Consumes;
@@ -48,12 +53,14 @@ import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.endpoints.request.AuthorizationEndpointRequest;
 import org.keycloak.protocol.oidc.endpoints.request.AuthorizationEndpointRequestParserProcessor;
+import org.keycloak.protocol.oidc.endpoints.request.AuthorizationEndpointRequestParserProcessor.EndpointType;
 import org.keycloak.protocol.oidc.endpoints.request.RequestUriType;
 import org.keycloak.protocol.oidc.grants.device.endpoints.DeviceEndpoint;
 import org.keycloak.protocol.oidc.utils.AcrUtils;
 import org.keycloak.protocol.oidc.utils.OIDCRedirectUriBuilder;
 import org.keycloak.protocol.oidc.utils.OIDCResponseMode;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
+import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
 import org.keycloak.services.ErrorPageException;
 import org.keycloak.services.Urls;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
@@ -65,6 +72,7 @@ import org.keycloak.services.resources.LoginActionsService;
 import org.keycloak.services.util.CacheControlUtil;
 import org.keycloak.services.util.LocaleUtil;
 import org.keycloak.sessions.AuthenticationSessionModel;
+import org.keycloak.theme.Theme;
 import org.keycloak.util.TokenUtil;
 
 import org.jboss.logging.Logger;
@@ -80,6 +88,9 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
 
     public static final String CODE_AUTH_TYPE = "code";
 
+    // Prefer error delivery on `redirect_uri` - rather than as HTML error page
+    public static final String AUTHORIZATION_PREFER_ERROR_ON_REDIRECT = "authorization.preferErrorOnRedirect";
+
     /**
      * Prefix used to store additional HTTP GET params from original client request into {@link AuthenticationSessionModel} note to be available later in Authenticators, RequiredActions etc. Prefix is used to
      * prevent collisions with internally used notes.
@@ -93,6 +104,7 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
     }
 
     private ClientModel client;
+    private AuthorizationEndpointChecker checker;
     private AuthenticationSessionModel authenticationSession;
 
     private Action action;
@@ -100,7 +112,7 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
     private OIDCResponseMode parsedResponseMode;
 
     private AuthorizationEndpointRequest request;
-    private String redirectUri;
+    private String parsedRedirectUri;
 
     public AuthorizationEndpoint(KeycloakSession session, EventBuilder event) {
         super(session, event);
@@ -132,52 +144,58 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
     }
 
     private Response process(final MultivaluedMap<String, String> params) {
-        String clientId = AuthorizationEndpointRequestParserProcessor.getClientId(event, session, params);
-
-        checkSsl();
-        checkRealm();
 
         try {
-            session.clientPolicy().triggerOnEvent(new PreAuthorizationRequestContext(clientId, params));
-        } catch (ClientPolicyException cpe) {
-            event.detail(Details.REASON, Details.CLIENT_POLICY_ERROR);
-            event.detail(Details.CLIENT_POLICY_ERROR, cpe.getError());
-            event.detail(Details.CLIENT_POLICY_ERROR_DETAIL, cpe.getErrorDetail());
-            event.error(cpe.getError());
-            throw new ErrorPageException(session, authenticationSession, cpe.getErrorStatus(), cpe.getErrorDetail());
+            String clientId = AuthorizationEndpointRequestParserProcessor.getClientId(event, session, params);
+
+            checkSsl();
+            checkRealm();
+
+            try {
+                session.clientPolicy().triggerOnEvent(new PreAuthorizationRequestContext(clientId, params));
+            } catch (ClientPolicyException cpe) {
+                event.detail(Details.REASON, Details.CLIENT_POLICY_ERROR);
+                event.detail(Details.CLIENT_POLICY_ERROR, cpe.getError());
+                event.detail(Details.CLIENT_POLICY_ERROR_DETAIL, cpe.getErrorDetail());
+                event.error(cpe.getError());
+                throw new ErrorPageException(session, cpe.getError(), cpe.getErrorStatus(), cpe.getErrorDetail());
+            }
+            checkClient(clientId);
+
+            request = AuthorizationEndpointRequestParserProcessor.parseRequest(event, session, client, params, EndpointType.OIDC_AUTH_ENDPOINT);
+
+        } catch (ErrorPageException ex) {
+            buildAuthorizationEndpointChecker(params);
+            return handleErrorPageException(ex);
         }
-        checkClient(clientId);
 
-        request = AuthorizationEndpointRequestParserProcessor.parseRequest(event, session, client, params, AuthorizationEndpointRequestParserProcessor.EndpointType.OIDC_AUTH_ENDPOINT);
-
-        AuthorizationEndpointChecker checker = new AuthorizationEndpointChecker()
-                .event(event)
-                .client(client)
-                .realm(realm)
-                .request(request)
-                .session(session)
-                .params(params);
+        buildAuthorizationEndpointChecker(params);
 
         try {
             checker.checkRedirectUri();
-            this.redirectUri = checker.getRedirectUri();
-        } catch (AuthorizationEndpointChecker.AuthorizationCheckException ex) {
-            ex.throwAsErrorPageException(authenticationSession);
+            parsedRedirectUri = checker.getRedirectUri();
+        } catch (AuthorizationCheckException ex) {
+            ErrorPageException epex = new ErrorPageException(session, ex.getError(), ex.getStatus(), ex.getErrorMessage(), ex.getParameters());
+            return handleErrorPageException(epex);
         }
 
         try {
             checker.checkResponseType();
-            this.parsedResponseType = checker.getParsedResponseType();
-            this.parsedResponseMode = checker.getParsedResponseMode();
-        } catch (AuthorizationEndpointChecker.AuthorizationCheckException ex) {
-            OIDCResponseMode responseMode;
+            parsedResponseType = checker.getParsedResponseType();
+            parsedResponseMode = checker.getParsedResponseMode();
+        } catch (AuthorizationCheckException ex) {
             if (checker.isInvalidResponseType(ex)) {
-                responseMode = OIDCResponseMode.parseWhenInvalidResponseType(request.getResponseMode());
-            } else {
-                responseMode = checker.getParsedResponseMode() != null ? checker.getParsedResponseMode() : OIDCResponseMode.QUERY;
+                parsedResponseMode = OIDCResponseMode.parseWhenInvalidResponseType(request.getResponseMode());
             }
-            return redirectErrorToClient(responseMode, ex.getError(), ex.getErrorDescription());
+            if (parsedResponseMode == null) {
+                parsedResponseMode = checker.getParsedResponseMode();
+            }
+            if (parsedResponseMode == null) {
+                parsedResponseMode = OIDCResponseMode.QUERY;
+            }
+            return handleRedirectErrorToClient(ex.getError(), ex.getErrorDescription());
         }
+
         if (action == null) {
             action = AuthorizationEndpoint.Action.CODE;
         }
@@ -191,8 +209,8 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
             checker.checkValidResource();
             checker.checkOIDCParams();
             checker.checkPKCEParams();
-        } catch (AuthorizationEndpointChecker.AuthorizationCheckException ex) {
-            return redirectErrorToClient(parsedResponseMode, ex.getError(), ex.getErrorDescription());
+        } catch (AuthorizationCheckException ex) {
+            return handleRedirectErrorToClient(ex.getError(), ex.getErrorDescription());
         }
 
         // If DPoP Proof existed with PAR request, its public key needs to be matched with the one with Token Request afterward
@@ -205,14 +223,14 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
         authenticationSession = createAuthenticationSession(client, request.getState());
 
         try {
-            session.clientPolicy().triggerOnEvent(new AuthorizationRequestContext(parsedResponseType, request, redirectUri, params, authenticationSession));
+            session.clientPolicy().triggerOnEvent(new AuthorizationRequestContext(parsedResponseType, request, parsedRedirectUri, params, authenticationSession));
         } catch (ClientPolicyException cpe) {
             event.detail(Details.REASON, Details.CLIENT_POLICY_ERROR);
             event.detail(Details.CLIENT_POLICY_ERROR, cpe.getError());
             event.detail(Details.CLIENT_POLICY_ERROR_DETAIL, cpe.getErrorDetail());
             event.error(cpe.getError());
             new AuthenticationSessionManager(session).removeAuthenticationSession(realm, authenticationSession, false);
-            return redirectErrorToClient(parsedResponseMode, cpe.getError(), cpe.getErrorDetail());
+            return handleRedirectErrorToClient(cpe.getError(), cpe.getErrorDetail());
         }
 
         updateAuthenticationSession();
@@ -239,6 +257,19 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
         }
 
         throw new RuntimeException("Unknown action " + action);
+    }
+
+    private AuthorizationEndpointChecker buildAuthorizationEndpointChecker(MultivaluedMap<String, String> params) {
+        if (checker == null) {
+            checker = new AuthorizationEndpointChecker()
+                    .event(event)
+                    .client(client)
+                    .realm(realm)
+                    .request(request)
+                    .session(session)
+                    .params(params);
+        }
+        return checker;
     }
 
     public AuthorizationEndpoint register(String tokenString) {
@@ -271,7 +302,7 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
         return this;
     }
 
-    private void checkClient(String clientId) {
+    private ClientModel checkClient(String clientId) {
         if (clientId == null) {
             event.detail(Details.REASON, "Missing parameter: " + OIDCLoginProtocol.CLIENT_ID_PARAM);
             event.error(Errors.INVALID_REQUEST);
@@ -309,24 +340,80 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
         }
 
         session.getContext().setClient(client);
+        return client;
     }
 
-    private Response redirectErrorToClient(OIDCResponseMode responseMode, String error, String errorDescription) {
+    private Response handleErrorPageException(ErrorPageException epex) {
+
+        // Prefer authorization error on redirect_uri
+        // https://github.com/keycloak/keycloak/issues/48542
+        boolean preferErrorOnRedirect = realm.getAttribute(AUTHORIZATION_PREFER_ERROR_ON_REDIRECT, false);
+        if (!preferErrorOnRedirect)
+            throw epex;
+
+        // Get the localized error message (english)
+        //
+        Properties localizedMessages = null;
+        try {
+            Theme theme = session.theme().getTheme(Theme.Type.LOGIN);
+            localizedMessages = theme.getEnhancedMessages(realm, Locale.ENGLISH);
+        } catch (IOException ioe) {
+            // ignore
+        }
+
+        Response.Status status = epex.getStatus();
+        String errorMessage = Optional.ofNullable(localizedMessages)
+                .map(it -> it.getProperty(epex.getErrorMessage()))
+                .map(it -> MessageFormat.format(it, epex.getParameters()))
+                .orElse(epex.getErrorMessage());
+
+        // Do a second pass trying to obtain the required parameters for a valid redirect
+        //
+        try {
+            MultivaluedMap<String, String> params = checker.getRequestParams();
+            AuthorizationEndpointRequest request = checker.getAuthorizationEndpointRequest();
+            if (client == null) {
+                String clientId = request != null ? request.getClientId() : params.getFirst(OIDCLoginProtocol.CLIENT_ID_PARAM);
+                client = checkClient(clientId);
+                checker.client(client);
+            }
+            if (parsedRedirectUri == null) {
+                checker.checkRedirectUri();
+                parsedRedirectUri = checker.getRedirectUri();
+            }
+            if (parsedResponseType == null || parsedResponseMode == null) {
+                checker.checkResponseType();
+                parsedResponseType = checker.getParsedResponseType();
+                parsedResponseMode = checker.getParsedResponseMode();
+            }
+        } catch (Exception aux) {
+            // ignore
+        }
+
+        if (client != null && parsedRedirectUri != null && parsedResponseType != null && parsedResponseMode != null) {
+            return handleRedirectErrorToClient(epex.getError(), errorMessage);
+        }
+
+        // [TODO >>>] Should we throw an ErrorResponseException instead?
+        var errRep = new OAuth2ErrorRepresentation(epex.getError(), errorMessage);
+        return Response.status(status).entity(errRep).type(MediaType.APPLICATION_JSON_TYPE).build();
+    }
+
+    private Response handleRedirectErrorToClient(String error, String errorDescription) {
         CacheControlUtil.noBackButtonCacheControlHeader(session);
 
-        OIDCRedirectUriBuilder errorResponseBuilder = OIDCRedirectUriBuilder.fromUri(redirectUri, responseMode, session, null)
+        OIDCRedirectUriBuilder errorResponseBuilder = OIDCRedirectUriBuilder.fromUri(parsedRedirectUri, parsedResponseMode, session, null)
                 .addParam(OAuth2Constants.ERROR, error);
 
         if (errorDescription != null) {
             errorResponseBuilder.addParam(OAuth2Constants.ERROR_DESCRIPTION, errorDescription);
         }
 
-        if (request.getState() != null) {
+        if (request != null && request.getState() != null) {
             errorResponseBuilder.addParam(OAuth2Constants.STATE, request.getState());
         }
 
-        OIDCAdvancedConfigWrapper clientConfig = OIDCAdvancedConfigWrapper.fromClientModel(client);
-        if (!clientConfig.isExcludeIssuerFromAuthResponse()) {
+        if (client != null && !OIDCAdvancedConfigWrapper.fromClientModel(client).isExcludeIssuerFromAuthResponse()) {
             errorResponseBuilder.addParam(OAuth2Constants.ISSUER, Urls.realmIssuer(session.getContext().getUri().getBaseUri(), realm.getName()));
         }
 
@@ -335,7 +422,7 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
 
     private void updateAuthenticationSession() {
         authenticationSession.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
-        authenticationSession.setRedirectUri(redirectUri);
+        authenticationSession.setRedirectUri(parsedRedirectUri);
         authenticationSession.setAction(AuthenticationSessionModel.Action.AUTHENTICATE.name());
         authenticationSession.setClientNote(OIDCLoginProtocol.RESPONSE_TYPE_PARAM, request.getResponseType());
         authenticationSession.setClientNote(OIDCLoginProtocol.REDIRECT_URI_PARAM, request.getRedirectUriParam());
