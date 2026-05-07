@@ -57,7 +57,7 @@ import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
 import org.keycloak.testsuite.pages.LoginTotpPage;
 import org.keycloak.testsuite.pages.RegisterPage;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
-import org.keycloak.testsuite.util.GreenMailRule;
+import org.keycloak.testsuite.util.MailServer;
 import org.keycloak.testsuite.util.MailUtils;
 import org.keycloak.testsuite.util.RealmRepUtil;
 import org.keycloak.testsuite.util.WaitUtils;
@@ -88,7 +88,7 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
     public AssertEvents events = new AssertEvents(this);
 
     @Rule
-    public GreenMailRule greenMail = new GreenMailRule();
+    public MailServer mail = new MailServer();
 
     @Page
     protected AppPage appPage;
@@ -811,7 +811,7 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
     }
 
     private void checkEmailPresent(String subject) {
-        Assertions.assertFalse(Arrays.stream(greenMail.getReceivedMessages()).filter(m -> {
+        Assertions.assertFalse(Arrays.stream(mail.getReceivedMessages()).filter(m -> {
             try {
                 return subject.equals(m.getSubject());
             } catch (MessagingException ex) {
@@ -1046,7 +1046,7 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
 
         events.expectRequiredAction(EventType.SEND_RESET_PASSWORD).user(userId).assertEvent();
 
-        MimeMessage message = greenMail.getReceivedMessages()[0];
+        MimeMessage message = mail.getReceivedMessages()[0];
         String passwordResetEmailLink = MailUtils.getPasswordResetEmailLink(message);
 
         driver.navigate().to(passwordResetEmailLink.trim());

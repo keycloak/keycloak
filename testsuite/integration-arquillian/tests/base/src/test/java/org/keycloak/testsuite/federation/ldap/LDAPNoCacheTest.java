@@ -42,9 +42,9 @@ import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginPasswordResetPage;
 import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
-import org.keycloak.testsuite.util.GreenMailRule;
 import org.keycloak.testsuite.util.LDAPRule;
 import org.keycloak.testsuite.util.LDAPTestUtils;
+import org.keycloak.testsuite.util.MailServer;
 import org.keycloak.testsuite.util.MailUtils;
 
 import org.jboss.arquillian.graphene.page.Page;
@@ -109,7 +109,7 @@ public class LDAPNoCacheTest extends AbstractLDAPTest {
     }
 
     @Rule
-    public GreenMailRule greenMail = new GreenMailRule();
+    public MailServer mail = new MailServer();
 
     @Page
     protected AppPage appPage;
@@ -209,9 +209,9 @@ public class LDAPNoCacheTest extends AbstractLDAPTest {
         loginPage.assertCurrent();
         assertEquals("You should receive an email shortly with further instructions.", loginPage.getSuccessMessage());
 
-        MimeMessage[] messages = greenMail.getReceivedMessages();
+        MimeMessage[] messages = mail.getReceivedMessages();
         Assertions.assertEquals(expectedCountOfMessages, messages.length);
-        MimeMessage message = greenMail.getReceivedMessages()[expectedCountOfMessages - 1];
+        MimeMessage message = mail.getReceivedMessages()[expectedCountOfMessages - 1];
 
         String emailAddress = MailUtils.getRecipient(message);
         Assertions.assertEquals(expectedEmail, emailAddress);

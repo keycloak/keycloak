@@ -32,7 +32,8 @@ public class MigrateTest {
             PageObjectRewrite.class,
             RunOnServerRewrite.class,
             CommonStatementsRewrite.class,
-            TestRealmRewrite.class
+            TestRealmRewrite.class,
+            MailServerRewrite.class
     );
 
     Path rootPath = getRootPath();

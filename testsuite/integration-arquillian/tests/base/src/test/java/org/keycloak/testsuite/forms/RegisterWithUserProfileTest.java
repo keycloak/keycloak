@@ -32,8 +32,8 @@ import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.RegisterPage;
-import org.keycloak.testsuite.util.GreenMailRule;
 import org.keycloak.testsuite.util.KeycloakModelUtils;
+import org.keycloak.testsuite.util.MailServer;
 import org.keycloak.testsuite.util.userprofile.UserProfileUtil;
 
 import org.apache.commons.lang3.StringUtils;
@@ -93,7 +93,7 @@ public class RegisterWithUserProfileTest extends AbstractTestRealmKeycloakTest {
     protected RegisterPage registerPage;
 
     @Rule
-    public GreenMailRule greenMail = new GreenMailRule();
+    public MailServer mail = new MailServer();
 
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {

@@ -49,8 +49,8 @@ import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
 import org.keycloak.testsuite.pages.InfoPage;
 import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
-import org.keycloak.testsuite.util.GreenMailRule;
 import org.keycloak.testsuite.util.KerberosRule;
+import org.keycloak.testsuite.util.MailServer;
 import org.keycloak.testsuite.util.MailUtils;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
 
@@ -80,7 +80,7 @@ public class KerberosStandaloneTest extends AbstractKerberosSingleRealmTest {
     public static KerberosRule kerberosRule = new KerberosRule(PROVIDER_CONFIG_LOCATION, KerberosEmbeddedServer.DEFAULT_KERBEROS_REALM);
 
     @Rule
-    public GreenMailRule greenMail = new GreenMailRule();
+    public MailServer mail = new MailServer();
 
     @Page
     protected LoginPasswordUpdatePage loginPasswordUpdatePage;
@@ -268,7 +268,7 @@ public class KerberosStandaloneTest extends AbstractKerberosSingleRealmTest {
         }
 
         // get the email from green mail
-        MimeMessage message = greenMail.getLastReceivedMessage();
+        MimeMessage message = mail.getLastReceivedMessage();
         Assertions.assertNotNull(message);
         String changePasswordUrl = MailUtils.getPasswordResetEmailLink(message);
 

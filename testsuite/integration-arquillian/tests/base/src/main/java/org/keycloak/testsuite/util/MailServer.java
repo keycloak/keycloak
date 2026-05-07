@@ -33,17 +33,17 @@ import org.junit.rules.ExternalResource;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class GreenMailRule extends ExternalResource {
+public class MailServer extends ExternalResource {
 
     private GreenMail greenMail;
 
     private int port = 3025;
     private String host = "localhost";
 
-    public GreenMailRule() {
+    public MailServer() {
     }
 
-    public GreenMailRule(int port, String host) {
+    public MailServer(int port, String host) {
         this.port = port;
         this.host = host;
     }
