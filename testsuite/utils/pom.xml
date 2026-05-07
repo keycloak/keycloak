@@ -296,21 +296,6 @@
             </build>
         </profile>
         <profile>
-            <id>mail-server</id>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.codehaus.mojo</groupId>
-                        <artifactId>exec-maven-plugin</artifactId>
-                        <configuration>
-                            <mainClass>org.keycloak.testsuite.MailServer</mainClass>
-                            <classpathScope>test</classpathScope>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-        <profile>
             <id>totp</id>
             <build>
                 <plugins>

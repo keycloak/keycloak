@@ -65,7 +65,7 @@ import org.keycloak.testsuite.pages.RegisterPage;
 import org.keycloak.testsuite.pages.VerifyEmailPage;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.AccountHelper;
-import org.keycloak.testsuite.util.GreenMailRule;
+import org.keycloak.testsuite.util.MailServer;
 import org.keycloak.testsuite.util.TestCleanup;
 import org.keycloak.testsuite.util.userprofile.UserProfileUtil;
 import org.keycloak.userprofile.DefaultAttributes;
@@ -120,7 +120,7 @@ public class UserStorageTest extends AbstractAuthTest {
     private String propProviderRWId;
 
     @Rule
-    public GreenMailRule greenMail = new GreenMailRule();
+    public MailServer mail = new MailServer();
 
     @Page
     protected LoginPage loginPage;
@@ -405,9 +405,9 @@ public class UserStorageTest extends AbstractAuthTest {
 
             verifyEmailPage.assertCurrent();
 
-            Assertions.assertEquals(1, greenMail.getReceivedMessages().length);
+            Assertions.assertEquals(1, mail.getReceivedMessages().length);
 
-            MimeMessage message = greenMail.getReceivedMessages()[0];
+            MimeMessage message = mail.getReceivedMessages()[0];
 
             String verificationUrl = getEmailLink(message);
 

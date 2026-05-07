@@ -47,7 +47,7 @@ import org.keycloak.testsuite.pages.LoginConfigTotpPage;
 import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.updaters.UserAttributeUpdater;
-import org.keycloak.testsuite.util.GreenMailRule;
+import org.keycloak.testsuite.util.MailServer;
 import org.keycloak.testsuite.util.MailUtils;
 import org.keycloak.testsuite.util.SecondBrowser;
 import org.keycloak.testsuite.util.URLUtils;
@@ -89,7 +89,7 @@ public class AppInitiatedActionResetPasswordTest extends AbstractAppInitiatedAct
     }
 
     @Rule
-    public GreenMailRule greenMail = new GreenMailRule();
+    public MailServer mail = new MailServer();
 
     @Page
     protected LoginPasswordUpdatePage changePasswordPage;
@@ -165,7 +165,7 @@ public class AppInitiatedActionResetPasswordTest extends AbstractAppInitiatedAct
             events.expectRequiredAction(EventType.UPDATE_PASSWORD).assertEvent();
             events.expectRequiredAction(EventType.UPDATE_CREDENTIAL).detail(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE).assertEvent();
 
-            MimeMessage[] receivedMessages = greenMail.getReceivedMessages();
+            MimeMessage[] receivedMessages = mail.getReceivedMessages();
             Assertions.assertEquals(2, receivedMessages.length);
 
             Assertions.assertEquals("Update password", receivedMessages[0].getSubject());

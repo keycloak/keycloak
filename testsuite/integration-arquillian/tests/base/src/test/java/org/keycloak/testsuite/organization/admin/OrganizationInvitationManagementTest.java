@@ -29,9 +29,7 @@ import org.keycloak.representations.idm.OrganizationInvitationRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.updaters.OrganizationAttributeUpdater;
-import org.keycloak.testsuite.util.MailServer;
 
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -59,15 +57,9 @@ public class OrganizationInvitationManagementTest extends AbstractOrganizationTe
 
     @Before
     public void setUp() {
-        MailServer.start();
         OrganizationRepresentation orgRep = createOrganization("test-org", "test-org.com");
         organizationId = orgRep.getId();
         organization = managedRealm.admin().organizations().get(organizationId);
-    }
-
-    @After
-    public void tearDown() {
-        MailServer.stop();
     }
 
     @Override

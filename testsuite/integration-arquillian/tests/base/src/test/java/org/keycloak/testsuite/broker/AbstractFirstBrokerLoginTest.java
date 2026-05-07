@@ -81,6 +81,8 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
     @Rule
     public AssertEvents events = new AssertEvents(this);
 
+    @Rule
+    public MailServer mail = new MailServer();
 
     /**
      * Refers to in old test suite: org.keycloak.testsuite.broker.AbstractFirstBrokerLoginTest#testErrorPageWhenDuplicationNotAllowed_updateProfileOn
@@ -493,10 +495,10 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         this.loginPasswordResetPage.assertCurrent();
         this.loginPasswordResetPage.changePassword();
         assertEquals("You should receive an email shortly with further instructions.", this.loginPage.getSuccessMessage());
-        assertEquals(1, MailServer.getReceivedMessages().length);
-        MimeMessage message = MailServer.getLastReceivedMessage();
-        String linkFromMail = assertEmailAndGetUrl(MailServerConfiguration.FROM, USER_EMAIL,
-                "credentials", false);
+        assertEquals(1, mail.getReceivedMessages().length);
+        MimeMessage message = mail.getLastReceivedMessage();
+        String linkFromMail = assertEmailAndGetUrl(mail.getLastReceivedMessage(), MailServerConfiguration.FROM, USER_EMAIL,
+                "credentials");
 
         driver.navigate().to(linkFromMail.trim());
 
@@ -555,10 +557,10 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         this.loginPasswordResetPage.assertCurrent();
         this.loginPasswordResetPage.changePassword("consumer");
         assertEquals("You should receive an email shortly with further instructions.", this.loginPage.getSuccessMessage());
-        assertEquals(1, MailServer.getReceivedMessages().length);
-        MimeMessage message = MailServer.getLastReceivedMessage();
-        String linkFromMail = assertEmailAndGetUrl(MailServerConfiguration.FROM, USER_EMAIL,
-                "credentials", false);
+        assertEquals(1, mail.getReceivedMessages().length);
+        MimeMessage message = mail.getLastReceivedMessage();
+        String linkFromMail = assertEmailAndGetUrl(message, MailServerConfiguration.FROM, USER_EMAIL,
+                "credentials");
 
         driver.navigate().to(linkFromMail.trim());
 
@@ -609,10 +611,10 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         this.loginPasswordResetPage.assertCurrent();
         this.loginPasswordResetPage.changePassword();
         assertEquals("You should receive an email shortly with further instructions.", this.loginPage.getSuccessMessage());
-        assertEquals(1, MailServer.getReceivedMessages().length);
-        MimeMessage message = MailServer.getLastReceivedMessage();
-        String linkFromMail = assertEmailAndGetUrl(MailServerConfiguration.FROM, USER_EMAIL,
-                "credentials", false);
+        assertEquals(1, mail.getReceivedMessages().length);
+        MimeMessage message = mail.getLastReceivedMessage();
+        String linkFromMail = assertEmailAndGetUrl(message, MailServerConfiguration.FROM, USER_EMAIL,
+                "credentials");
 
         driver2.navigate().to(linkFromMail.trim());
         removeSMTPConfiguration(realm);
@@ -865,8 +867,8 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         waitForPage(driver, "account already exists", false);
         idpConfirmLinkPage.clickLinkAccount();
 
-        String url = assertEmailAndGetUrl(MailServerConfiguration.FROM, USER_EMAIL,
-                "Someone wants to link your ", false);
+        String url = assertEmailAndGetUrl(mail.getLastReceivedMessage(), MailServerConfiguration.FROM, USER_EMAIL,
+                "Someone wants to link your ");
 
         log.info("navigating to url from email: " + url);
         driver.navigate().to(url);
@@ -989,8 +991,8 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
 
         verifyEmailPage.assertCurrent();
 
-        String verificationUrl = assertEmailAndGetUrl(MailServerConfiguration.FROM, USER_EMAIL,
-                "verify your email address", false);
+        String verificationUrl = assertEmailAndGetUrl(mail.getLastReceivedMessage(), MailServerConfiguration.FROM, USER_EMAIL,
+                "verify your email address");
 
         driver.navigate().to(verificationUrl.trim());
     }
@@ -1093,8 +1095,8 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
 
         verifyEmailPage.assertCurrent();
 
-        String verificationUrl = assertEmailAndGetUrl(MailServerConfiguration.FROM, "changed@localhost.com",
-                "verify your email address", false);
+        String verificationUrl = assertEmailAndGetUrl(mail.getLastReceivedMessage(), MailServerConfiguration.FROM, "changed@localhost.com",
+                "verify your email address");
 
         driver.navigate().to(verificationUrl.trim());
 
@@ -1133,8 +1135,8 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         assertEquals("User with email user@localhost.com already exists. How do you want to continue?", idpConfirmLinkPage.getMessage());
         idpConfirmLinkPage.clickLinkAccount();
 
-        String url = assertEmailAndGetUrl(MailServerConfiguration.FROM, USER_EMAIL,
-                "Someone wants to link your ", false);
+        String url = assertEmailAndGetUrl(mail.getLastReceivedMessage(), MailServerConfiguration.FROM, USER_EMAIL,
+                "Someone wants to link your ");
         driver.navigate().to(url);
         //test if user is logged in
         assertTrue(driver.getCurrentUrl().startsWith(getConsumerRoot() + "/auth/realms/master/app/"));
@@ -1179,8 +1181,8 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         idpConfirmLinkPage.clickLinkAccount();
         idpLinkEmailPage.assertCurrent();
 
-        String url = assertEmailAndGetUrl(MailServerConfiguration.FROM, USER_EMAIL,
-                "Someone wants to link your ", false);
+        String url = assertEmailAndGetUrl(mail.getLastReceivedMessage(), MailServerConfiguration.FROM, USER_EMAIL,
+                "Someone wants to link your ");
 
         // in the second browser confirm the mail
         driver2.navigate().to(url);
@@ -1229,8 +1231,8 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         assertEquals("User with email user@localhost.com already exists. How do you want to continue?", idpConfirmLinkPage.getMessage());
         idpConfirmLinkPage.clickLinkAccount();
 
-        String url = assertEmailAndGetUrl(MailServerConfiguration.FROM, USER_EMAIL,
-                "Someone wants to link your ", false);
+        String url = assertEmailAndGetUrl(mail.getLastReceivedMessage(), MailServerConfiguration.FROM, USER_EMAIL,
+                "Someone wants to link your ");
         driver.navigate().to(url);
 
         assertTrue(driver.getCurrentUrl().startsWith(getConsumerRoot() + "/auth/realms/master/app/"));
@@ -1272,7 +1274,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         assertEquals("an email with instructions to link " + bc.getIDPAlias() + " account testuser with your consumer account has been sent to you.", idpLinkEmailPage.getMessage().toLowerCase());
         idpLinkEmailPage.resendEmail();
 
-        assertEquals(2, MailServer.getReceivedMessages().length);
+        assertEquals(2, mail.getReceivedMessages().length);
     }
 
 
@@ -1301,8 +1303,8 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         waitForPage(driver, "account already exists", false);
         idpConfirmLinkPage.clickLinkAccount();
 
-        String url = assertEmailAndGetUrl(MailServerConfiguration.FROM, USER_EMAIL,
-                "Someone wants to link your ", false);
+        String url = assertEmailAndGetUrl(mail.getLastReceivedMessage(), MailServerConfiguration.FROM, USER_EMAIL,
+                "Someone wants to link your ");
 
         log.info("navigating to url from email in second browser: " + url);
 

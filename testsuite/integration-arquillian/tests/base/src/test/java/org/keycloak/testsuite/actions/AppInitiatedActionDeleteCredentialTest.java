@@ -43,7 +43,7 @@ import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginConfigTotpPage;
 import org.keycloak.testsuite.pages.LoginTotpPage;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
-import org.keycloak.testsuite.util.GreenMailRule;
+import org.keycloak.testsuite.util.MailServer;
 import org.keycloak.testsuite.util.MailUtils;
 
 import org.hamcrest.MatcherAssert;
@@ -60,7 +60,7 @@ import org.junit.jupiter.api.Assertions;
 public class AppInitiatedActionDeleteCredentialTest extends AbstractAppInitiatedActionTest {
 
     @Rule
-    public GreenMailRule greenMail = new GreenMailRule();
+    public MailServer mail = new MailServer();
 
     @Override
     protected String getAiaAction() {
@@ -138,7 +138,7 @@ public class AppInitiatedActionDeleteCredentialTest extends AbstractAppInitiated
                     .detail(Details.CUSTOM_REQUIRED_ACTION, DeleteCredentialAction.PROVIDER_ID)
                     .assertEvent();
 
-            MimeMessage[] receivedMessages = greenMail.getReceivedMessages();
+            MimeMessage[] receivedMessages = mail.getReceivedMessages();
             Assertions.assertEquals(2, receivedMessages.length);
 
             Assertions.assertEquals("Remove OTP", receivedMessages[0].getSubject());
