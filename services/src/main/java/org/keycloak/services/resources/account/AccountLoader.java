@@ -166,11 +166,12 @@ public class AccountLoader {
     }
 
     private AccountResourceProvider getAccountResourceProvider(Theme theme) {
-      try {
-        if (theme.getProperties().containsKey(Theme.ACCOUNT_RESOURCE_PROVIDER_KEY)) {
-          return session.getProvider(AccountResourceProvider.class, theme.getProperties().getProperty(Theme.ACCOUNT_RESOURCE_PROVIDER_KEY));
+        try {
+            if (theme != null && theme.getProperties().containsKey(Theme.ACCOUNT_RESOURCE_PROVIDER_KEY)) {
+                return session.getProvider(AccountResourceProvider.class, theme.getProperties().getProperty(Theme.ACCOUNT_RESOURCE_PROVIDER_KEY));
+            }
+        } catch (IOException ignore) {
         }
-      } catch (IOException ignore) {}
-      return session.getProvider(AccountResourceProvider.class);
+        return session.getProvider(AccountResourceProvider.class);
     }
 }

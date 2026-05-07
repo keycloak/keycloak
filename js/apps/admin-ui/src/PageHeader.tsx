@@ -14,12 +14,18 @@ import { useRealm } from "./context/realm-context/RealmContext";
 import { toDashboard } from "./dashboard/routes/Dashboard";
 import { usePreviewLogo } from "./realm-settings/themes/LogoContext";
 import { joinPath } from "./utils/joinPath";
+import useIsFeatureEnabled, { Feature } from "./utils/useIsFeatureEnabled";
 import useToggle from "./utils/useToggle";
 
 const ManageAccountDropdownItem = () => {
   const { keycloak } = useEnvironment();
-
   const { t } = useTranslation();
+  const isFeatureEnabled = useIsFeatureEnabled();
+
+  if (!isFeatureEnabled(Feature.AccountV3)) {
+    return null;
+  }
+
   return (
     <DropdownItem
       key="manage account"

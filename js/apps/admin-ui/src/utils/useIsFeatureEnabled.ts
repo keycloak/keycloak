@@ -2,6 +2,7 @@ import { useServerInfo } from "../context/server-info/ServerInfoProvider";
 import { useAccess } from "../context/access/Access";
 
 export enum Feature {
+  AccountV3 = "ACCOUNT_V3",
   AdminFineGrainedAuthz = "ADMIN_FINE_GRAINED_AUTHZ",
   AdminFineGrainedAuthzV2 = "ADMIN_FINE_GRAINED_AUTHZ_V2",
   ClientPolicies = "CLIENT_POLICIES",
