@@ -24,6 +24,7 @@ export type TextControlProps<
   Omit<TextInputProps, "name" | "isRequired" | "required"> & {
     label: string;
     labelIcon?: string | ReactNode;
+    isHelpIconWarning?: boolean;
     isDisabled?: boolean;
     helperText?: string;
     "data-testid"?: string;
@@ -36,7 +37,7 @@ export const TextControl = <
 >(
   props: TextControlProps<T, P>,
 ) => {
-  const { labelIcon, helperText, ...rest } = props;
+  const { labelIcon, isHelpIconWarning, helperText, ...rest } = props;
   const required = !!getRuleValue(props.rules?.required);
   const defaultValue = props.defaultValue ?? ("" as PathValue<T, P>);
 
@@ -50,6 +51,7 @@ export const TextControl = <
       name={props.name}
       label={props.label}
       labelIcon={labelIcon}
+      isHelpIconWarning={isHelpIconWarning}
       isRequired={required}
       error={fieldState.error}
     >
