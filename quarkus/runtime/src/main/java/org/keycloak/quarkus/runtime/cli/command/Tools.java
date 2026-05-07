@@ -21,7 +21,7 @@ import picocli.CommandLine.Command;
 
 @Command(name = Tools.NAME,
         description = "Utilities for use and interaction with the server.",
-        subcommands = {Completion.class, WindowsService.class})
+        subcommands = {Completion.class, WindowsService.class, BuildPasswordDenylist.class})
 public class Tools {
 
     public static final String NAME = "tools";
