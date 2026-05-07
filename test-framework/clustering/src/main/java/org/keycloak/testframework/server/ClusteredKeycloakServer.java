@@ -21,6 +21,7 @@ import java.util.Arrays;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.stream.Stream;
 
 import org.keycloak.it.utils.DockerKeycloakDistribution;
 import org.keycloak.testframework.clustering.LoadBalancer;
@@ -28,6 +29,7 @@ import org.keycloak.testframework.infinispan.CacheType;
 import org.keycloak.testframework.logging.JBossContainerLogConsumer;
 
 import org.jboss.logging.Logger;
+import org.testcontainers.containers.output.OutputFrame;
 import org.testcontainers.images.RemoteDockerImage;
 import org.testcontainers.utility.DockerImageName;
 import org.testcontainers.utility.LazyFuture;
@@ -42,6 +44,7 @@ public class ClusteredKeycloakServer implements KeycloakServer {
 
     private final DockerKeycloakDistribution[] containers;
     private final String images;
+    private final Logs[] nodeLogs;
 
     private static LazyFuture<String> defaultImage() {
         return DockerKeycloakDistribution.createImage(true);
@@ -50,6 +53,12 @@ public class ClusteredKeycloakServer implements KeycloakServer {
     public ClusteredKeycloakServer(int mumServers, String images) {
         containers = new DockerKeycloakDistribution[mumServers];
         this.images = images;
+        nodeLogs = Stream.generate(Logs::new).limit(mumServers).toArray(Logs[]::new);
+    }
+
+    @Override
+    public Logs getLogs(int node) {
+        return nodeLogs[node];
     }
 
     @Override
@@ -76,6 +85,9 @@ public class ClusteredKeycloakServer implements KeycloakServer {
             throw new RuntimeException("Expected %d cluster members".formatted(numServers), e);
         }
         ReadinessProbe.waitUntilReady(this::getBaseUrl, numServers);
+        for (Logs l : nodeLogs) {
+            l.markStartupComplete();
+        }
     }
 
     private void startContainersWithMixedImage(KeycloakServerConfigBuilder configBuilder, String[] imagePeServer, CountdownLatchLoggingConsumer clusterLatch) {
@@ -123,9 +135,14 @@ public class ClusteredKeycloakServer implements KeycloakServer {
         }
     }
 
-    private static void configureLogConsumers(DockerKeycloakDistribution container, int index, CountdownLatchLoggingConsumer clusterLatch) {
+    private void configureLogConsumers(DockerKeycloakDistribution container, int index, CountdownLatchLoggingConsumer clusterLatch) {
         var logger = new JBossContainerLogConsumer(Logger.getLogger("managed.keycloak." + index));
-        container.setCustomLogConsumer(logger.andThen(clusterLatch));
+        Logs logs = nodeLogs[index];
+        container.setCustomLogConsumer(logger.andThen(clusterLatch).andThen(frame -> {
+            String line = frame.getUtf8StringWithoutLineEnding();
+            boolean stderr = frame.getType() == OutputFrame.OutputType.STDERR;
+            logs.add(LogEntry.parse(line, stderr));
+        }));
     }
 
     private void copyProvidersAndConfigs(DockerKeycloakDistribution container, KeycloakServerConfigBuilder configBuilder) {

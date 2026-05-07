@@ -12,6 +12,8 @@ public interface KeycloakServer {
 
     String getManagementBaseUrl();
 
+    Logs getLogs(int node);
+
     static boolean getDependencyHotDeployEnabled() {
         return Boolean.parseBoolean(Config.getValueTypeConfig(KeycloakServer.class, "hot.deploy", "false", String.class));
     }

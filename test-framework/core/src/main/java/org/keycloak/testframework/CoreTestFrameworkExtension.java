@@ -27,6 +27,7 @@ import org.keycloak.testframework.server.DistributionKeycloakServerSupplier;
 import org.keycloak.testframework.server.EmbeddedKeycloakServerSupplier;
 import org.keycloak.testframework.server.KeycloakServer;
 import org.keycloak.testframework.server.KeycloakUrlsSupplier;
+import org.keycloak.testframework.server.LogsSupplier;
 import org.keycloak.testframework.server.RemoteKeycloakServerSupplier;
 
 public class CoreTestFrameworkExtension implements TestFrameworkExtension {
@@ -53,7 +54,8 @@ public class CoreTestFrameworkExtension implements TestFrameworkExtension {
                 new HttpServerSupplier(),
                 new SimpleHttpSupplier(),
                 new CertificatesSupplier(),
-                new CryptoHelperSupplier()
+                new CryptoHelperSupplier(),
+                new LogsSupplier()
         );
     }
 
