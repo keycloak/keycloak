@@ -172,6 +172,7 @@ public abstract class OID4VCIssuerTestBase {
     protected ClientRepresentation client;
     protected ClientRepresentation pubClient;
     protected OID4VCBasicWallet wallet;
+    protected OID4VCBasicVerifier verifier;
 
     @TestSetup
     public void configureTestRealm() {
@@ -198,7 +199,8 @@ public abstract class OID4VCIssuerTestBase {
         oauth.client(client.getClientId(), client.getSecret());
         enableVerifiableCredentialEvents(testRealm);
 
-        wallet = new OID4VCBasicWallet(keycloak, oauth);
+        wallet = new OID4VCBasicWallet(testRealm, oauth);
+        verifier = new OID4VCBasicVerifier(testRealm, oauth);
     }
 
     @AfterEach
@@ -221,7 +223,7 @@ public abstract class OID4VCIssuerTestBase {
                 .orElseThrow(() -> new IllegalStateException("No such credential scope: " + scopeName));
     }
 
-    protected UserRepresentation getExistingUser(String username) {
+    protected UserRepresentation getUserRepresentation(String username) {
         return testRealm.admin().users().search(username).stream()
                 .findFirst()
                 .orElseThrow(() -> new IllegalStateException("No such user: " + username));

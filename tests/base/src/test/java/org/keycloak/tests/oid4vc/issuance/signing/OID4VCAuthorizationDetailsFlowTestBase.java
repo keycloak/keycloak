@@ -9,7 +9,7 @@ import org.keycloak.protocol.oid4vc.model.CredentialRequest;
 import org.keycloak.protocol.oid4vc.model.CredentialResponse;
 import org.keycloak.protocol.oid4vc.model.CredentialScopeRepresentation;
 import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
-import org.keycloak.tests.oid4vc.OID4VCBasicWallet.AuthorizationEndpointRequest;
+import org.keycloak.tests.oid4vc.OID4VCAuthorizationRequest;
 import org.keycloak.tests.oid4vc.OID4VCIssuerTestBase;
 import org.keycloak.tests.oid4vc.OID4VCTestContext;
 import org.keycloak.tests.oid4vc.OID4VCTestContext.AttachmentKey;
@@ -138,7 +138,7 @@ public abstract class OID4VCAuthorizationDetailsFlowTestBase extends OID4VCIssue
             OID4VCTestContext ctx,
             String credIdentifier,
             Supplier<OID4VCAuthorizationDetail> authDetailSupplier,
-            Supplier<AuthorizationEndpointRequest> authRequestSupplier,
+            Supplier<OID4VCAuthorizationRequest> authRequestSupplier,
             Function<String, AccessTokenRequest> tokenRequestSupplier,
             Supplier<CredentialRequest> credentialRequestSupplier) {
 
@@ -160,7 +160,7 @@ public abstract class OID4VCAuthorizationDetailsFlowTestBase extends OID4VCIssue
         if (authRequestSupplier == null) {
             authRequestSupplier = () -> {
                 boolean onAuthRequest = ctx.getAttachment(ON_AUTH_REQUEST_ATTACHMENT_KEY, false);
-                AuthorizationEndpointRequest authRequest = wallet.authorizationRequest().scope(ctx.getScope());
+                OID4VCAuthorizationRequest authRequest = wallet.authorizationRequest().scope(ctx.getScope());
                 if (onAuthRequest)
                     authRequest.authorizationDetails(authDetail);
                 return authRequest;
@@ -191,7 +191,7 @@ public abstract class OID4VCAuthorizationDetailsFlowTestBase extends OID4VCIssue
         }
 
         try {
-            AuthorizationEndpointRequest authRequest = authRequestSupplier.get();
+            OID4VCAuthorizationRequest authRequest = authRequestSupplier.get();
             if (authRequest.openLoginForm()) {
                 authRequest.fillLoginForm(ctx.getHolder(), TEST_PASSWORD);
             }

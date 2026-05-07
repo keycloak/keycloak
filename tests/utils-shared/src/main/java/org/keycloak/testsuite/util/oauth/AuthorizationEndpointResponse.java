@@ -1,7 +1,8 @@
 package org.keycloak.testsuite.util.oauth;
 
 import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 import org.keycloak.OAuth2Constants;
@@ -9,43 +10,56 @@ import org.keycloak.protocol.oidc.utils.OIDCResponseMode;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
 
 import org.apache.http.client.utils.URLEncodedUtils;
-import org.openqa.selenium.WebDriver;
+
+import static org.keycloak.protocol.oidc.utils.OIDCResponseMode.FRAGMENT;
+import static org.keycloak.protocol.oidc.utils.OIDCResponseMode.FRAGMENT_JWT;
 
 public class AuthorizationEndpointResponse {
 
-    private boolean isRedirected;
-    private Map<String, String> params;
+    protected boolean isRedirected;
+    protected Map<String, String> params;
 
     public AuthorizationEndpointResponse(AbstractOAuthClient<?> client) {
-        WebDriver driver = client.driver;
-        String currentUrl = driver.getCurrentUrl();
+        this(client.driver.getCurrentUrl(), client.config().getResponseType(),
+                client.config().getResponseMode(), client.getRedirectUri());
+    }
 
-        boolean fragment = isFragment(client);
-        int parametersIndex = fragment ? currentUrl.indexOf('#') : currentUrl.indexOf('?');
+    protected AuthorizationEndpointResponse(String responseUrl, String responseType, String responseMode, String redirectUri) {
+
+        boolean fragment = isFragment(responseType, responseMode);
+        int parametersIndex = fragment ? responseUrl.indexOf('#') : responseUrl.indexOf('?');
         if (parametersIndex != -1) {
-            String urlWithoutParameters = currentUrl.substring(0, parametersIndex);
-            String parameters = currentUrl.substring(parametersIndex + 1);
+            String parameters = responseUrl.substring(parametersIndex + 1);
 
-            isRedirected = urlWithoutParameters.equals(client.getRedirectUri());
+            String urlWithoutParameters = responseUrl.substring(0, parametersIndex);
+            isRedirected = urlWithoutParameters.equals(redirectUri);
 
-            params = new HashMap<>();
+            params = new LinkedHashMap<>();
             URLEncodedUtils.parse(parameters, StandardCharsets.UTF_8)
                     .stream().filter(p -> p.getValue() != null)
                     .forEach(p -> params.put(p.getName(), p.getValue()));
         }
     }
 
-    private boolean isFragment(AbstractOAuthClient<?> client) {
+    protected AuthorizationEndpointResponse(Map<String, String> params) {
+        this.params = new LinkedHashMap<>(params);
+    }
+
+    private boolean isFragment(String responseType, String responseMode) {
         try {
-            OIDCResponseType responseType = OIDCResponseType.parse(client.config().getResponseType());
-            OIDCResponseMode responseMode = OIDCResponseMode.parse(client.config().getResponseMode(), responseType);
-            return switch (responseMode) {
+            OIDCResponseType resType = OIDCResponseType.parse(responseType);
+            OIDCResponseMode resMode = OIDCResponseMode.parse(responseMode, resType);
+            return switch (resMode) {
                 case FRAGMENT, FRAGMENT_JWT -> true;
                 default -> false;
             };
         } catch (IllegalArgumentException e) {
             return false;
         }
+    }
+
+    public Map<String, String> getParams() {
+        return Collections.unmodifiableMap(params);
     }
 
     public boolean isRedirected() {

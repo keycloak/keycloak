@@ -110,7 +110,7 @@ public class SdJwtVerificationContext {
      *                                        disclosing the Issuer-signed JWT during the verification.
      * @throws VerificationException if verification failed
      */
-    public void verifyIssuance(List<SignatureVerifierContext> issuerVerifyingKeys,
+    public VerifiedSdJwt verifyIssuance(List<SignatureVerifierContext> issuerVerifyingKeys,
                                IssuerSignedJwtVerificationOpts issuerSignedJwtVerificationOpts,
                                PresentationRequirements presentationRequirements)
             throws VerificationException
@@ -119,7 +119,7 @@ public class SdJwtVerificationContext {
         validateIssuerSignedJwt(issuerVerifyingKeys);
 
         // Validate disclosures.
-        JsonNode disclosedPayload = validateDisclosuresDigests();
+        ObjectNode disclosedPayload = validateDisclosuresDigests();
 
         // Validate time claims and algorithm header claim.
         // Issuers will typically include claims controlling the validity of the SD-JWT in plaintext in the
@@ -131,6 +131,8 @@ public class SdJwtVerificationContext {
         if (presentationRequirements != null) {
             presentationRequirements.checkIfSatisfiedBy(disclosedPayload);
         }
+
+        return new VerifiedSdJwt(disclosedPayload);
     }
 
     /**
@@ -152,7 +154,7 @@ public class SdJwtVerificationContext {
      *                                        disclosing the Issuer-signed JWT during the verification.
      * @throws VerificationException if verification failed
      */
-    public void verifyPresentation(List<SignatureVerifierContext> issuerVerifyingKeys,
+    public VerifiedSdJwt verifyPresentation(List<SignatureVerifierContext> issuerVerifyingKeys,
                                    IssuerSignedJwtVerificationOpts issuerSignedJwtVerificationOpts,
                                    KeyBindingJwtVerificationOpts keyBindingJwtVerificationOpts,
                                    PresentationRequirements presentationRequirements)
@@ -165,12 +167,14 @@ public class SdJwtVerificationContext {
         }
 
         // Upon receiving a Presentation, in addition to the checks in {@link #verifyIssuance}...
-        verifyIssuance(issuerVerifyingKeys, issuerSignedJwtVerificationOpts, presentationRequirements);
+        VerifiedSdJwt verifiedSdJwt = verifyIssuance(issuerVerifyingKeys, issuerSignedJwtVerificationOpts, presentationRequirements);
 
         // Validate Key Binding JWT if required
         if (keyBindingJwtVerificationOpts.isKeyBindingRequired()) {
             validateKeyBindingJwt(keyBindingJwtVerificationOpts);
         }
+
+        return verifiedSdJwt;
     }
 
     /**
@@ -299,7 +303,7 @@ public class SdJwtVerificationContext {
      * @return the fully disclosed SdJwt payload
      * @throws VerificationException if verification failed
      */
-    private JsonNode validateDisclosuresDigests() throws VerificationException {
+    private ObjectNode validateDisclosuresDigests() throws VerificationException {
         // Validate SdJwt digests by attempting full recursive disclosing.
         Set<String> visitedSalts = new HashSet<>();
         Set<String> visitedDigests = new HashSet<>();
@@ -307,11 +311,14 @@ public class SdJwtVerificationContext {
         JsonNode disclosedPayload = validateViaRecursiveDisclosing(
                 SdJwtUtils.deepClone(issuerSignedJwt.getPayload()),
                 visitedSalts, visitedDigests, visitedDisclosureStrings);
+        if (!disclosedPayload.isObject()) {
+            throw new VerificationException("Fully disclosed SD-JWT payload must be a JSON object");
+        }
 
         // Validate all disclosures where visited
         validateDisclosuresVisits(visitedDisclosureStrings);
 
-        return disclosedPayload;
+        return (ObjectNode) disclosedPayload;
     }
 
     /**
