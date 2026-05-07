@@ -520,6 +520,58 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
         loginPage.assertCurrent();
     }
 
+    @Test
+    public void resetPasswordEmailLinkWorksAfterNavigatingBackToLoginPage() throws IOException {
+        oauth.openLoginForm();
+        loginPage.resetPassword();
+        resetPasswordPage.assertCurrent();
+        resetPasswordPage.backToLogin();
+
+        String urlWhenBackFromRegistrationPage = driver.getCurrentUrl();
+
+        loginPage.assertCurrent();
+        loginPage.resetPassword();
+        resetPasswordPage.assertCurrent();
+
+        resetPasswordPage.changePassword("login-test");
+        expectedMessagesCount++;
+
+        events.expectRequiredAction(EventType.SEND_RESET_PASSWORD)
+                .user(userId)
+                .detail(Details.USERNAME, "login-test")
+                .detail(Details.EMAIL, "login@test.com")
+                .session((String) null)
+                .assertEvent();
+
+        assertEquals(expectedMessagesCount, greenMail.getReceivedMessages().length);
+        MimeMessage message = greenMail.getReceivedMessages()[greenMail.getReceivedMessages().length - 1];
+        String changePasswordUrl = MailUtils.getPasswordResetEmailLink(message);
+
+        // Navigate back to the login page, which triggers UsernamePasswordForm to clear the user from the auth session
+        driver.navigate().back();
+        driver.navigate().back();
+        String urlWhenWentBackFromResetPassword = driver.getCurrentUrl();
+        assertEquals(urlWhenBackFromRegistrationPage, urlWhenWentBackFromResetPassword);
+        loginPage.assertCurrent();
+
+        events.clear();
+        driver.navigate().to(changePasswordUrl.trim());
+
+        updatePasswordPage.assertCurrent();
+        assertEquals("You need to change your password.", updatePasswordPage.getFeedbackMessage());
+        updatePasswordPage.changePassword("resetPassword", "resetPassword");
+
+        events.expectRequiredAction(EventType.UPDATE_PASSWORD)
+                .detail(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE)
+                .user(userId).detail(Details.USERNAME, "login-test").assertEvent();
+        events.expectRequiredAction(EventType.UPDATE_CREDENTIAL)
+                .detail(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE)
+                .user(userId).detail(Details.USERNAME, "login-test").assertEvent();
+
+        assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        driver.getCurrentUrl();
+    }
+
     private void configureForceLogin(String value) {
         AuthenticationExecutionInfoRepresentation sendEmailExec = managedRealm.admin()
                 .flows()
