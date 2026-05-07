@@ -748,6 +748,12 @@
             <groupId>org.twitter4j</groupId>
             <artifactId>twitter4j-core</artifactId>
         </dependency>
+
+        <!-- dbus-java for SSSD -->
+        <dependency>
+            <groupId>com.github.hypfvieh</groupId>
+            <artifactId>dbus-java-transport-native-unixsocket</artifactId>
+        </dependency>
     </dependencies>
 
     <build>
