@@ -34,6 +34,8 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.sessions.AuthenticationSessionModel;
 
+import static org.keycloak.authentication.authenticators.resetcred.ResetCredentialChooseUser.RESET_CREDENTIAL_USER_CHOSEN;
+
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
@@ -87,6 +89,7 @@ public class UsernamePasswordForm extends AbstractUsernameFormAuthenticator impl
         MultivaluedMap<String, String> formData = new MultivaluedHashMap<>();
         String loginHint = context.getAuthenticationSession().getClientNote(OIDCLoginProtocol.LOGIN_HINT_PARAM);
 
+        clearUserIfComingFromResetPassword(context);
         String rememberMeUsername = AuthenticationManager.getRememberMeUsername(context.getSession());
 
         if (context.getUser() != null) {
@@ -117,6 +120,12 @@ public class UsernamePasswordForm extends AbstractUsernameFormAuthenticator impl
         }
         Response challengeResponse = challenge(context, formData);
         context.challenge(challengeResponse);
+    }
+
+    private void clearUserIfComingFromResetPassword(AuthenticationFlowContext context) {
+        if ("true".equals(context.getAuthenticationSession().getAuthNote(RESET_CREDENTIAL_USER_CHOSEN))) {
+            context.clearUser();
+        }
     }
 
     @Override
