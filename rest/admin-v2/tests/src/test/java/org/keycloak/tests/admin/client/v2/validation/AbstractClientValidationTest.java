@@ -216,10 +216,10 @@ public abstract class AbstractClientValidationTest extends AbstractClientApiV2Te
 
         try (var response = client.execute(request)) {
             switch (getHttpMethod()) {
-                case HttpPatch.METHOD_NAME -> assertThat(response.getStatusLine().getStatusCode(), is(200));
-                case HttpPost.METHOD_NAME, HttpPut.METHOD_NAME -> {
+                case HttpPatch.METHOD_NAME, HttpPut.METHOD_NAME -> assertThat(response.getStatusLine().getStatusCode(), is(200));
+                case HttpPost.METHOD_NAME -> {
                     assertThat(response.getStatusLine().getStatusCode(), is(400));
-                    assertThat(EntityUtils.toString(response.getEntity()), containsString("Cannot parse the JSON"));
+                    assertThat(EntityUtils.toString(response.getEntity()), containsString("unsupported client protocol: null"));
                 }
             }
         }
@@ -247,8 +247,7 @@ public abstract class AbstractClientValidationTest extends AbstractClientApiV2Te
                 case HttpPatch.METHOD_NAME ->
                         assertThat(responseBody, containsString("Invalid values for these fields: protocol"));
                 case HttpPost.METHOD_NAME, HttpPut.METHOD_NAME ->
-                        // happening on the JAX-RS level implicitly
-                        assertThat(responseBody, containsString("Cannot parse the JSON"));
+                        assertThat(responseBody, containsString("unsupported client protocol: " + protocol));
             }
         }
     }

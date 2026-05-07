@@ -63,12 +63,10 @@ components:
             \ must not be blank"
         protocol:
           type: string
-          pattern: \S
-          description: "Validation: on update/on patch: protocol cannot be changed\
-            \ for an existing client"
+          description: "Client protocol. Validation: on update/on patch: protocol\
+            \ cannot be changed for an existing client"
       required:
       - clientId
-      - protocol
       discriminator:
         propertyName: protocol
         mapping:

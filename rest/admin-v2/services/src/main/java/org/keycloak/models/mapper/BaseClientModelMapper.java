@@ -31,6 +31,7 @@ public abstract class BaseClientModelMapper<T extends BaseClientRepresentation> 
         rep.setDescription(model.getDescription());
         rep.setDisplayName(model.getName());
         rep.setAppUrl(model.getBaseUrl());
+        rep.setProtocol(model.getProtocol());
         rep.setRedirectUris(new HashSet<>(model.getRedirectUris()));
         rep.setRoles(model.getRolesStream().map(RoleModel::getName).collect(Collectors.toSet()));
 

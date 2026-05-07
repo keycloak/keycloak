@@ -54,6 +54,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpOptions;
 import org.apache.http.client.methods.HttpPatch;
+import org.apache.http.client.methods.HttpPut;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.util.EntityUtils;
@@ -208,6 +209,37 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
             OIDCClientRepresentation client = response.readEntity(OIDCClientRepresentation.class);
             assertEquals("I'm updated", client.getDescription());
             assertClientUuid(client);
+        }
+    }
+
+    @Test
+    public void putUpdateWithoutProtocolUsesExistingClientProtocol() throws Exception {
+        var clientId = "without-protocol-update";
+        OIDCClientRepresentation createRep = new OIDCClientRepresentation();
+        createRep.setEnabled(true);
+        createRep.setClientId(clientId);
+        createRep.setDescription("Initial description");
+
+        try (var response = getClientsApi().createClient(createRep)) {
+            assertEquals(201, response.getStatus());
+        }
+
+        HttpPut request = new HttpPut(getClientApiUrl(clientId));
+        setAuthHeader(request);
+        request.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
+        request.setEntity(new StringEntity("""
+                {
+                    "clientId": "%s",
+                    "description": "Updated without protocol"
+                }
+                """.formatted(clientId)));
+
+        try (var response = client.execute(request)) {
+            assertEquals(200, response.getStatusLine().getStatusCode());
+            BaseClientRepresentation updated = mapper.readValue(response.getEntity().getContent(), BaseClientRepresentation.class);
+            assertEquals("Updated without protocol", updated.getDescription());
+            assertEquals(OIDCClientRepresentation.PROTOCOL, updated.getProtocol());
+            assertClientUuid(updated);
         }
     }
 

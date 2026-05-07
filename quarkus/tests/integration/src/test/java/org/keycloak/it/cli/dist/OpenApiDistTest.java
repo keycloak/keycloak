@@ -33,6 +33,7 @@ import static io.restassured.RestAssured.given;
 import static io.restassured.RestAssured.when;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.not;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -108,7 +109,9 @@ public class OpenApiDistTest {
       response
           .body("components.schemas.BaseClientRepresentation.discriminator.propertyName", equalTo("protocol"))
           .body("components.schemas.BaseClientRepresentation.discriminator.mapping.openid-connect", equalTo("#/components/schemas/OIDCClientRepresentation"))
-          .body("components.schemas.BaseClientRepresentation.discriminator.mapping.saml", equalTo("#/components/schemas/SAMLClientRepresentation"));
+          .body("components.schemas.BaseClientRepresentation.discriminator.mapping.saml", equalTo("#/components/schemas/SAMLClientRepresentation"))
+          .body("components.schemas.BaseClientRepresentation.required", hasItem("clientId"))
+          .body("components.schemas.BaseClientRepresentation.required", not(hasItem("protocol")));
 
       // Verify subtypes have the discriminator property and allOf reference to parent
       response

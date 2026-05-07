@@ -234,6 +234,9 @@ public class DefaultClientService implements ClientService {
             model = realm.getClientByClientId(clientId);
         }
         boolean alreadyExists = model != null;
+        if (alreadyExists && client.getProtocol() == null) {
+            client.setProtocol(model.getProtocol());
+        }
         ClientModelMapper mapper = getMapper(client.getProtocol());
 
         try {
@@ -338,7 +341,7 @@ public class DefaultClientService implements ClientService {
 
     // TODO we should find a way on how to evoke it on the mapper level?
     private void generateClientSecretIfNeeded(BaseClientRepresentation client, ClientModel model) {
-        if (client.getProtocol().equals(OIDCClientRepresentation.PROTOCOL)) {
+        if (OIDCClientRepresentation.PROTOCOL.equals(client.getProtocol())) {
             var auth = ((OIDCClientRepresentation) client).getAuth();
             if (auth != null && isClientSecret(auth.getMethod()) && isBlank(auth.getSecret())) {
                 auth.setSecret(KeycloakModelUtils.generateSecret(model));
