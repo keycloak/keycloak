@@ -125,6 +125,12 @@ public class ClientScopeResource {
     })
     public Response update(final ClientScopeRepresentation rep) {
         auth.clients().requireManageClientScopes();
+
+        if (!Profile.isFeatureEnabled(Profile.Feature.DYNAMIC_SCOPES) && rep.getAttributes() != null) {
+            rep.getAttributes().remove(ClientScopeModel.IS_DYNAMIC_SCOPE);
+            rep.getAttributes().remove(ClientScopeModel.DYNAMIC_SCOPE_REGEXP);
+        }
+
         ClientScopeResource.validateClientScope(session, rep);
         validateDynamicScopeUpdate(rep);
         try {

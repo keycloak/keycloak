@@ -758,6 +758,30 @@ public class ClientScopeTest extends AbstractClientScopeTest {
         createClientScope(protocol);
     }
 
+    @Test
+    public void updatePastDynamicClientScope() {
+        ClientScopeRepresentation scopeRep = new ClientScopeRepresentation();
+        scopeRep.setName("dynamic-scope-disabled");
+        scopeRep.setProtocol("openid-connect");
+        String scopeId = createClientScopeWithCleanup(scopeRep);
+
+        scopeRep = clientScopes().get(scopeId).toRepresentation();
+        scopeRep.getAttributes().put(ClientScopeModel.IS_DYNAMIC_SCOPE, "true");
+        scopeRep.getAttributes().put(ClientScopeModel.DYNAMIC_SCOPE_REGEXP, "dynamic-scope-disabled:*");
+        scopeRep.setDescription("updated description");
+
+        clientScopes().get(scopeId).update(scopeRep);
+
+        ClientScopeRepresentation updatedScopeRep = clientScopes().get(scopeId).toRepresentation();
+
+        String isDynamic = updatedScopeRep.getAttributes().get(ClientScopeModel.IS_DYNAMIC_SCOPE);
+        String regexp = updatedScopeRep.getAttributes().get(ClientScopeModel.DYNAMIC_SCOPE_REGEXP);
+
+        Assertions.assertEquals("updated description", updatedScopeRep.getDescription());
+        Assertions.assertTrue(isDynamic == null || isDynamic.isEmpty() || isDynamic.equals("false"));
+        Assertions.assertTrue(regexp == null || regexp.isEmpty());
+    }
+
     private void createClientScope(String protocol) {
         ClientScopeRepresentation clientScope = new ClientScopeRepresentation();
         clientScope.setName("test-client-scope");
