@@ -90,11 +90,7 @@ public class SdJwtCredentialBuilder implements CredentialBuilder {
                 .stream()
                 .filter(entry -> !credentialBuildConfig.getSdJwtVisibleClaims().contains(entry.getKey()))
                 .forEach(entry -> {
-                    if (entry instanceof List<?> listValue) {
-                        // FIXME: Unreachable branch. The intent was probably to check `entry.getValue()`,
-                        //  but changing just that will expose the array field name and break many tests.
-                        //  Needs further discussion on the wanted behavior.
-
+                    if (entry.getValue() instanceof List<?> listValue) {
                         IntStream.range(0, listValue.size())
                                 .forEach(i -> disclosureSpecBuilder
                                         .withUndisclosedArrayElt(entry.getKey(), i, SdJwtUtils.randomSalt())

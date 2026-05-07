@@ -116,7 +116,7 @@ public class KerberosEmbeddedServer extends LDAPEmbeddedServer {
                 try {
                     kerberosEmbeddedServer.stop();
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    log.error("Failed to stop Kerberos embedded server", e);
                 }
             }
 

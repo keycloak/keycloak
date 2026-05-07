@@ -276,7 +276,7 @@ public class LinkedAccountsResource {
 
             return Cors.builder().auth().checkAllowedOrigins(auth.getToken()).add(Response.ok(rep));
         } catch (Exception spe) {
-            spe.printStackTrace();
+            logger.error("Failed to create linked account URI", spe);
             throw ErrorResponse.error(Messages.FAILED_TO_PROCESS_RESPONSE, Response.Status.INTERNAL_SERVER_ERROR);
         }
     }

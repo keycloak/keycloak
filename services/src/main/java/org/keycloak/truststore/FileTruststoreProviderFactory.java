@@ -108,6 +108,7 @@ public class FileTruststoreProviderFactory implements TruststoreProviderFactory 
                 try {
                     truststore = KeystoreUtil.loadKeyStore(storepath, pass, "jks");
                 } catch (Exception e1) {
+                    log.debugf("Failed to load truststore as JKS type: %s", e1.getMessage());
                 }
             }
             if (truststore == null) {

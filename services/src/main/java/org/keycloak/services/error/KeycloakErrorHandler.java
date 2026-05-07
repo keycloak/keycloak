@@ -205,7 +205,7 @@ public class KeycloakErrorHandler implements ExceptionMapper<Throwable> {
             attributes.put("darkMode", "true".equals(properties.getProperty("darkMode"))
                     && realm.getAttribute("darkMode", true));
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.warn("Failed to load theme properties for dark mode", e);
         }
 
         return attributes;

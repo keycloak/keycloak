@@ -116,8 +116,8 @@ public class OIDCAttributeMapperHelper {
         tmpToken.put(IDToken.AUTH_TIME, (claim, mapperName, token, value) -> {
             try {
                 token.setAuth_time(Long.parseLong(value.toString()));
-            } catch (NumberFormatException ignored){
-
+            } catch (NumberFormatException e){
+                logger.tracef("Failed to parse auth_time value: %s", value);
             }
         });
         tmpToken.put("aud", (claim, mapperName, token, value) -> {
@@ -276,13 +276,15 @@ public class OIDCAttributeMapperHelper {
         if (attributeValue instanceof Map) {
             try {
                 return JsonSerialization.createObjectNode(attributeValue);
-            } catch (Exception ignore) {
+            } catch (Exception e) {
+                logger.tracef("Failed to create JsonNode from Map: %s", e.getMessage());
             }
         }
         if (attributeValue instanceof String) {
             try {
                 return JsonSerialization.readValue(attributeValue.toString(), JsonNode.class);
-            } catch (Exception ignore) {
+            } catch (Exception e) {
+                logger.tracef("Failed to parse String as JsonNode: %s", e.getMessage());
             }
         }
         return null;

@@ -191,7 +191,7 @@ public class SecureRequestObjectExecutor implements ClientPolicyExecutorProvider
 
         // check whether request object not expired
         long exp = requestObject.get("exp").asLong();
-        if (Time.currentTime() > exp) { // TODO: Time.currentTime() is int while exp is long...
+        if (Time.currentTimeMillis() / 1000 > exp) {
             logger.trace("request object expired.");
             throw new ClientPolicyException(INVALID_REQUEST_OBJECT, "Request Expired");
         }
@@ -208,7 +208,7 @@ public class SecureRequestObjectExecutor implements ClientPolicyExecutorProvider
 
             // check whether request object not yet being processed
             long nbf = requestObject.get("nbf").asLong();
-            if (Time.currentTime() < nbf - configuration.getAllowedClockSkew().intValue()) { // TODO: Time.currentTime() is int while nbf is long...
+            if (Time.currentTimeMillis() / 1000 < nbf - configuration.getAllowedClockSkew().intValue()) {
                 logger.trace("request object not yet being processed.");
                 throwClientPolicyException(INVALID_REQUEST_OBJECT, "Request not yet being processed", context);
             }
@@ -224,7 +224,7 @@ public class SecureRequestObjectExecutor implements ClientPolicyExecutorProvider
         // check "iat" with clock skew
         if (requestObject.get("iat") != null) {
             long iat = requestObject.get("iat").asLong();
-            if (Time.currentTime() < iat - configuration.getAllowedClockSkew().intValue()) { // TODO: Time.currentTime() is int while nbf is long...
+            if (Time.currentTimeMillis() / 1000 < iat - configuration.getAllowedClockSkew().intValue()) {
                 logger.trace("request object issed in the future.");
                 throwClientPolicyException(INVALID_REQUEST_OBJECT, "Request issued in the future", context);
             }

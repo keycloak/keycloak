@@ -135,7 +135,9 @@ public class UserConsentManager {
      * @param clientInternalId id of the client
      * @return {@code true} if the consent was removed, {@code false} otherwise
      *
-     * TODO: Make this method return Boolean so that store can return "I don't know" answer, this can be used for example in async stores
+     * Note: This method returns boolean instead of Boolean to maintain API compatibility.
+     * For async stores that need to return "I don't know" (null), a future enhancement
+     * could change the return type to Boolean, but that would be a breaking API change.
      */
     public static boolean revokeConsentForClient(KeycloakSession session, RealmModel realm, UserModel user, String clientInternalId) {
         if (isLightweightUser(user)) {

@@ -142,7 +142,7 @@ public class SecureCibaSignedAuthenticationRequestExecutor implements ClientPoli
 
         // check whether signed authentication request not expired
         long exp = signedAuthReq.get("exp").asLong();
-        if (Time.currentTime() > exp) { // TODO: Time.currentTime() is int while exp is long...
+        if (Time.currentTimeMillis() / 1000 > exp) {
             logger.trace("request object expired.");
             throw new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, "Request Expired");
         }
@@ -155,7 +155,7 @@ public class SecureCibaSignedAuthenticationRequestExecutor implements ClientPoli
 
         // check whether signed authentication request not yet being processed
         long nbf = signedAuthReq.get("nbf").asLong();
-        if (Time.currentTime() < nbf) { // TODO: Time.currentTime() is int while nbf is long...
+        if (Time.currentTimeMillis() / 1000 < nbf) {
             logger.trace("request object not yet being processed.");
             throw new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, "Request not yet being processed");
         }
