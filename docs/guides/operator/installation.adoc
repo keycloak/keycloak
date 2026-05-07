@@ -128,6 +128,19 @@ kubectl patch clusterrolebinding keycloak-operator-clusterrole-binding --type='j
 # if you have existing keycloaks, restart the operator after patching the clusterrolebinding
 kubectl rollout restart -n custom-namespace Deployment/keycloak-operator
 ----
+
+Experimental support is available for installing the Operator cluster-wide when using `kubectl`.
+
+To install the Operator cluster-wide, use the `cluster-wide` overlay:
+
+[source,bash]
+----
+kubectl create namespace keycloak
+kubectl apply -k https://github.com/keycloak/keycloak/tree/main/operator/overlays/cluster-wide
+----
+
+This installs the Operator into the `keycloak` namespace and configures it to watch resources in all namespaces.
+To use a different installation namespace, adjust the overlay namespace and the ServiceAccount namespace in the rendered RBAC bindings accordingly.
 </@profile.ifCommunity>
 
 === Installing Multiple Operators
