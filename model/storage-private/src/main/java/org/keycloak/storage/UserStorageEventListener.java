@@ -5,6 +5,7 @@ import java.util.stream.Stream;
 import org.keycloak.cluster.ClusterEvent;
 import org.keycloak.cluster.ClusterListener;
 import org.keycloak.cluster.ClusterProvider;
+import org.keycloak.models.AbstractKeycloakTransaction;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
@@ -128,10 +129,13 @@ public final class UserStorageEventListener implements ClusterListener, Provider
 
         ClusterProvider cp = session.getProvider(ClusterProvider.class);
 
-        if (cp != null) {
-            UserStorageProviderClusterEvent event = UserStorageProviderClusterEvent.createEvent(removed, realm.getId(), provider);
-            cp.notify(USER_STORAGE_TASK_KEY, event, true);
+        if (cp == null) {
+            return;
         }
+
+        UserStorageProviderClusterEvent event = UserStorageProviderClusterEvent.createEvent(removed, realm.getId(), provider);
+
+        session.getTransactionManager().enlistAfterCompletion(createClusterSyncEventTransaction(cp, event));
     }
 
     private void refreshScheduledTasks(KeycloakSession session, UserStorageProviderModel model, boolean removed) {
@@ -149,5 +153,19 @@ public final class UserStorageEventListener implements ClusterListener, Provider
         }
 
         return Stream.empty();
+    }
+
+    private AbstractKeycloakTransaction createClusterSyncEventTransaction(ClusterProvider cp, UserStorageProviderClusterEvent event) {
+        return new AbstractKeycloakTransaction() {
+            @Override
+            protected void commitImpl() {
+                cp.notify(USER_STORAGE_TASK_KEY, event, true);
+            }
+
+            @Override
+            protected void rollbackImpl() {
+
+            }
+        };
     }
 }
