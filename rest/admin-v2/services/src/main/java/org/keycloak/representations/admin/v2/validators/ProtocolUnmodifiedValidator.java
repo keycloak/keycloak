@@ -20,7 +20,7 @@ public class ProtocolUnmodifiedValidator implements ConstraintValidator<Protocol
                 .map(ClientModel::getProtocol)
                 .orElse(null);
 
-        if (persistedProtocol == null || persistedProtocol.equals(representation.getProtocol())) {
+        if (persistedProtocol == null || representation.getProtocol() == null || persistedProtocol.equals(representation.getProtocol())) {
             return true;
         }
 

@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -33,6 +35,7 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.admin.v2.BaseClientRepresentation;
 import org.keycloak.representations.admin.v2.OIDCClientRepresentation;
+import org.keycloak.representations.admin.v2.SAMLClientRepresentation;
 import org.keycloak.representations.admin.v2.validation.CreateClient;
 import org.keycloak.representations.admin.v2.validation.PatchClient;
 import org.keycloak.representations.admin.v2.validation.PutClient;
@@ -282,6 +285,10 @@ public class DefaultClientService implements ClientService {
             model = realm.getClientByClientId(clientId);
         }
         boolean alreadyExists = model != null;
+        if (alreadyExists && client.getProtocol() == null) {
+            client.setProtocol(model.getProtocol());
+        }
+        client = materializeProtocolSubtypeIfNeeded(client);
         ClientModelMapper mapper = getMapper(client.getProtocol());
 
         try {
@@ -386,9 +393,54 @@ public class DefaultClientService implements ClientService {
     }
 
     // TODO we should find a way on how to evoke it on the mapper level?
+    /**
+     * JSON without a {@code protocol} property deserializes to {@link BaseClientRepresentation}. Once protocol is
+     * known (from the payload or the existing client), map to the concrete subtype so protocol-specific mappers run.
+     */
+    private BaseClientRepresentation materializeProtocolSubtypeIfNeeded(BaseClientRepresentation client) {
+        String protocol = client.getProtocol();
+        if (protocol == null) {
+            return client;
+        }
+        if (client instanceof OIDCClientRepresentation || client instanceof SAMLClientRepresentation) {
+            return client;
+        }
+        if (OIDCClientRepresentation.PROTOCOL.equals(protocol)) {
+            OIDCClientRepresentation target = new OIDCClientRepresentation();
+            shallowCopyCommonClientFields(client, target);
+            return target;
+        }
+        if (SAMLClientRepresentation.PROTOCOL.equals(protocol)) {
+            SAMLClientRepresentation target = new SAMLClientRepresentation();
+            shallowCopyCommonClientFields(client, target);
+            return target;
+        }
+        return client;
+    }
+
+    private void shallowCopyCommonClientFields(BaseClientRepresentation from, BaseClientRepresentation to) {
+        to.setUuid(from.getUuid());
+        to.setClientId(from.getClientId());
+        to.setDisplayName(from.getDisplayName());
+        to.setDescription(from.getDescription());
+        to.setEnabled(from.getEnabled());
+        to.setAppUrl(from.getAppUrl());
+        if (from.getRedirectUris() != null) {
+            to.setRedirectUris(new LinkedHashSet<>(from.getRedirectUris()));
+        }
+        if (from.getRoles() != null) {
+            to.setRoles(new LinkedHashSet<>(from.getRoles()));
+        }
+        to.setProtocol(from.getProtocol());
+        to.setAdditionalFields(from.getAdditionalFields().isEmpty()
+                ? new LinkedHashMap<>()
+                : new LinkedHashMap<>(from.getAdditionalFields()));
+    }
+
     private void generateClientSecretIfNeeded(BaseClientRepresentation client, ClientModel model, CreateOrUpdateStrategy strategy, boolean patchExplicitNullSecret) {
-        if (client.getProtocol().equals(OIDCClientRepresentation.PROTOCOL)) {
-            var auth = ((OIDCClientRepresentation) client).getAuth();
+        if (client instanceof OIDCClientRepresentation oidcClient
+                && OIDCClientRepresentation.PROTOCOL.equals(client.getProtocol())) {
+            var auth = oidcClient.getAuth();
             if (auth != null && isClientSecret(auth.getMethod()) && isBlank(auth.getSecret())) {
                 if (strategy == CreateOrUpdateStrategy.PATCH && patchExplicitNullSecret) {
                     auth.setSecret(KeycloakModelUtils.generateSecret(model));

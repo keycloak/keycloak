@@ -71,6 +71,23 @@ describe("Clients V2 API", () => {
     );
   });
 
+  it("should update a client with PUT when protocol is omitted", async () => {
+    const updatedDescription = "Updated without protocol";
+
+    await kcAdminClient.clients.v2().byId(currentClientId).put({
+      clientId: currentClientId,
+      description: updatedDescription,
+    });
+
+    const client = await kcAdminClient.clients.v2().byId(currentClientId).get();
+    expect((client as OIDCClientRepresentation).description).to.equal(
+      updatedDescription,
+    );
+    expect((client as OIDCClientRepresentation).protocol).to.equal(
+      "openid-connect",
+    );
+  });
+
   it("should patch a client", async () => {
     const patchedDisplayName = "Patched Display Name";
 

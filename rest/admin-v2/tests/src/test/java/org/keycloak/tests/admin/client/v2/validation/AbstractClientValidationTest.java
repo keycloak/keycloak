@@ -218,11 +218,13 @@ public abstract class AbstractClientValidationTest extends AbstractClientApiV2Te
                 """.formatted(getPayloadClientId(isOidc))));
 
         try (var response = client.execute(request)) {
+            var responseBody = EntityUtils.toString(response.getEntity());
             switch (getHttpMethod()) {
+                // Merge patch can omit protocol; full PUT/POST bodies are polymorphic JSON and require it.
                 case HttpPatch.METHOD_NAME -> assertThat(response.getStatusLine().getStatusCode(), is(200));
-                case HttpPost.METHOD_NAME, HttpPut.METHOD_NAME -> {
+                case HttpPut.METHOD_NAME, HttpPost.METHOD_NAME -> {
                     assertThat(response.getStatusLine().getStatusCode(), is(400));
-                    assertThat(EntityUtils.toString(response.getEntity()), containsString("Cannot parse the JSON"));
+                    assertThat(responseBody, containsString("Cannot parse the JSON"));
                 }
             }
         }
@@ -250,7 +252,6 @@ public abstract class AbstractClientValidationTest extends AbstractClientApiV2Te
                 case HttpPatch.METHOD_NAME ->
                         assertThat(responseBody, containsString("Invalid values for these fields: protocol"));
                 case HttpPost.METHOD_NAME, HttpPut.METHOD_NAME ->
-                        // happening on the JAX-RS level implicitly
                         assertThat(responseBody, containsString("Cannot parse the JSON"));
             }
         }
