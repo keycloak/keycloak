@@ -21,6 +21,7 @@ import org.keycloak.broker.oidc.OAuth2IdentityProviderConfig;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Unit test for {@link org.keycloak.social.github.GitHubIdentityProvider}.
@@ -54,6 +55,43 @@ public class GitHubIdentityProviderTest {
         GitHubIdentityProvider idp = new GitHubIdentityProvider(null, config);
 
         validateUrls(idp, baseUrl, apiUrl);
+    }
+
+    /**
+     * Test that default scope does not include read:org when no organizations are configured.
+     */
+    @Test
+    public void testDefaultScopeWithoutOrganizations() {
+        OAuth2IdentityProviderConfig config = new OAuth2IdentityProviderConfig();
+        GitHubIdentityProvider idp = new GitHubIdentityProvider(null, config);
+
+        assertEquals(GitHubIdentityProvider.DEFAULT_SCOPE, idp.getDefaultScopes());
+    }
+
+    /**
+     * Test that read:org scope is added when organizations are configured.
+     */
+    @Test
+    public void testDefaultScopeWithOrganizations() {
+        OAuth2IdentityProviderConfig config = new OAuth2IdentityProviderConfig();
+        config.getConfig().put(GitHubIdentityProvider.ORGANIZATIONS_KEY, "my-org,another-org");
+        GitHubIdentityProvider idp = new GitHubIdentityProvider(null, config);
+
+        String scopes = idp.getDefaultScopes();
+        assertTrue("Scope should contain user:email", scopes.contains("user:email"));
+        assertTrue("Scope should contain read:org when organizations are configured", scopes.contains("read:org"));
+    }
+
+    /**
+     * Test that read:org scope is not added when organizations value is blank.
+     */
+    @Test
+    public void testDefaultScopeWithBlankOrganizations() {
+        OAuth2IdentityProviderConfig config = new OAuth2IdentityProviderConfig();
+        config.getConfig().put(GitHubIdentityProvider.ORGANIZATIONS_KEY, "   ");
+        GitHubIdentityProvider idp = new GitHubIdentityProvider(null, config);
+
+        assertEquals(GitHubIdentityProvider.DEFAULT_SCOPE, idp.getDefaultScopes());
     }
 
     protected void validateUrls(GitHubIdentityProvider idp, String baseUrl, String apiUrl) {
