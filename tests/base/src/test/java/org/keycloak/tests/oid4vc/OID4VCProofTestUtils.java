@@ -74,6 +74,7 @@ public final class OID4VCProofTestUtils {
     ) {
         keyWrapper.setKid(null);
         JWK jwk = JWKBuilder.create().ec(keyWrapper.getPublicKey());
+        jwk.setAlgorithm(keyWrapper.getAlgorithm());
 
         AccessToken token = new AccessToken();
         List<String> resolvedAudiences = audiences != null ? audiences : List.of();

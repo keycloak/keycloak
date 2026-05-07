@@ -1,5 +1,7 @@
 package org.keycloak.tests.oid4vc.issuance;
 
+import java.util.List;
+
 import org.keycloak.protocol.oid4vc.model.CredentialScopeRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.tests.oid4vc.OID4VCIssuerTestBase;
@@ -28,9 +30,8 @@ public class OID4VCSdJwtAuthorizationCodeFlowTest extends OID4VCAuthorizationCod
     }
 
     @Override
-    protected String getExpectedClaimPath() {
-        // In sd_jwt_vc the last-name claim sits at the top level as lastName
-        return "lastName";
+    protected List<Object> getExpectedClaimPath() {
+        return List.of("lastName");
     }
 
     @Override
