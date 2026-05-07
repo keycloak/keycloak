@@ -635,7 +635,7 @@ public class PicocliTest extends AbstractConfigurationTest {
     public void warnProviderChanged() {
         build("build", "--db=dev-file");
 
-        putEnvVar("KC_RUN_IN_CONTAINER", "true");
+        putEnvVar(Environment.KC_RUN_IN_CONTAINER, "true");
         String key = PersistedConfigSource.getInstance().getConfigValueProperties().keySet().stream().filter(k -> k.startsWith(Picocli.KC_PROVIDER_FILE_PREFIX)).findAny().orElseThrow();
         addPersistedConfigValues(Map.of(key, "1")); // change to a fake timestamp
 

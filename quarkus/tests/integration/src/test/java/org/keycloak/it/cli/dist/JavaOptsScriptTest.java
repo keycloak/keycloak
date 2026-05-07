@@ -21,6 +21,7 @@ import org.keycloak.it.junit5.extension.DistributionTest;
 import org.keycloak.it.junit5.extension.DryRun;
 import org.keycloak.it.junit5.extension.RawDistOnly;
 import org.keycloak.it.junit5.extension.WithEnvVars;
+import org.keycloak.quarkus.runtime.Environment;
 
 import io.quarkus.test.junit.main.Launch;
 import io.quarkus.test.junit.main.LaunchResult;
@@ -121,6 +122,30 @@ public class JavaOptsScriptTest {
     void testPicocliClosuresDisabled(LaunchResult result) {
         String output = result.getErrorOutput(); // not sure why picocli logs are printed to err
         assertThat(output, containsString("DefaultFactory: groovy Closures in annotations are disabled and will not be loaded"));
+    }
+
+    @Test
+    @Launch({"start", "--optimized"})
+    @WithEnvVars({"KC_RUN_IN_CONTAINER", "true"})
+    @EnabledOnOs(value = { OS.LINUX, OS.MAC }, disabledReason = "kc.sh is not used on Windows")
+    void testContainerNonPid1Warning(LaunchResult result) {
+        assertThat(result.getOutput(), containsString("-D" + Environment.KC_SCRIPT_PID));
+        assertThat(result.getOutput(), containsString("WARNING: Keycloak is running inside a container, but is not PID 1."));
+    }
+
+    @Test
+    @Launch({"start", "--optimized"})
+    @EnabledOnOs(value = { OS.LINUX, OS.MAC }, disabledReason = "kc.sh is not used on Windows")
+    void testNoContainerNonPid1Warning(LaunchResult result) {
+        assertThat(result.getOutput(), not(containsString("WARNING: Keycloak is running inside a container")));
+    }
+
+    @Test
+    @Launch({"export", "--dir", "/tmp"})
+    @WithEnvVars({"KC_RUN_IN_CONTAINER", "true"})
+    @EnabledOnOs(value = { OS.LINUX, OS.MAC }, disabledReason = "kc.sh is not used on Windows")
+    void testContainerNonPid1WarningAbsentForNonServerCommands(LaunchResult result) {
+        assertThat(result.getOutput(), not(containsString("WARNING: Keycloak is running inside a container")));
     }
 
     @EnabledOnOs(value = { OS.WINDOWS }, disabledReason = "different path behaviour on Windows.")
