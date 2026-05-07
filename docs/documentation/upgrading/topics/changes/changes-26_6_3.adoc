@@ -19,3 +19,15 @@ It also lists significant changes to internal APIs.
 Cross-origin requests sent to OIDC endpoints (such as the token, userinfo, token revocation, logout, and PAR endpoints) are now validated against the client's configured Web Origins before the endpoint reaches its authentication and request-processing logic. Previously, requests carrying an `Origin` header that did not match any of the client's allowed Web Origins could be processed up to the point where the response was about to be returned, which could result in inconsistent error responses depending on how far the request progressed.
 
 After this change, such requests are rejected immediately with a CORS failure returning Forbidden (403) HTTP error status. There is no behavior change for same-origin requests (no `Origin` header) or for cross-origin requests whose `Origin` is already permitted by the client's Web Origins configuration.
+
+=== Extensions must not restart a Keycloak transaction
+
+This change might affect custom {project_name} extensions.
+
+The implicit transaction handling in {project_name} previously assumed that a transaction is started once per session, which is usually request-scoped. If it was started a second time, this might have led to an inconsistent state.
+
+Starting with this version, this is now enforced and a session's transaction can only be started once. This prevents difficult-to-track errors and lost commits. It also ensures that at the start of the transaction, all nested transactions are started if they have not been started earlier.
+
+A transaction is started automatically before the REST endpoint code is invoked, even if the session was created earlier in a filter.
+
+As before, transactions can be nested, which will pause the outer transaction once the nested transaction starts, and will resume the outer transaction once the nested transaction ends.
