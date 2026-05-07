@@ -61,6 +61,9 @@ import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.LoginProtocol.Error;
 import org.keycloak.protocol.RestartLoginCookie;
 import org.keycloak.protocol.oidc.TokenManager;
+import org.keycloak.protocol.oidc.endpoints.request.AuthorizationEndpointRequestParserProcessor;
+import org.keycloak.protocol.oidc.endpoints.request.RequestUriType;
+import org.keycloak.protocol.oidc.par.endpoints.request.AuthzEndpointParParser;
 import org.keycloak.services.ErrorPage;
 import org.keycloak.services.ErrorPageException;
 import org.keycloak.services.ServicesLogger;
@@ -1243,10 +1246,21 @@ public class AuthenticationProcessor {
 
         String nextRequiredAction = nextRequiredAction();
         if (nextRequiredAction != null) {
-            return AuthenticationManager.redirectToRequiredActions(session, realm, authenticationSession, uriInfo, nextRequiredAction);
+            Response response = AuthenticationManager.redirectToRequiredActions(session, realm, authenticationSession, uriInfo, nextRequiredAction);
+            return response;
         } else {
+            // Authorization servers that enforce one-time use of request_uri values do so at the point of authorization,
+            // not at the point of visiting the authorization endpoint
+            String requestUri = authenticationSession.getAuthNote(Details.REQUEST_URI);
+            RequestUriType requestUriType = Optional.ofNullable(requestUri)
+                    .map(AuthorizationEndpointRequestParserProcessor::getRequestUriType)
+                    .orElse(null);
+            if (requestUriType == RequestUriType.PAR && AuthzEndpointParParser.removeRequestObject(session, requestUri) == null) {
+                throw new AuthenticationFlowException("PAR not found, not issued or used multiple times.", AuthenticationFlowError.INTERNAL_ERROR);
+            }
             event.detail(Details.CODE_ID, authenticationSession.getParentSession().getId());  // todo This should be set elsewhere.  find out why tests fail.  Don't know where this is supposed to be set
-            return AuthenticationManager.finishedRequiredActions(session, authenticationSession, userSession, connection, request, uriInfo, event);
+            Response response = AuthenticationManager.finishedRequiredActions(session, authenticationSession, userSession, connection, request, uriInfo, event);
+            return response;
         }
     }
 
