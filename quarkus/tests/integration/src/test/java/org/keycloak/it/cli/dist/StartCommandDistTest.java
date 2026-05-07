@@ -17,14 +17,20 @@
 
 package org.keycloak.it.cli.dist;
 
+import java.util.concurrent.TimeUnit;
+
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
 import org.keycloak.it.junit5.extension.DryRun;
 import org.keycloak.it.junit5.extension.RawDistOnly;
+import org.keycloak.it.junit5.extension.TestProvider;
 import org.keycloak.it.junit5.extension.WithEnvVars;
+import org.keycloak.it.resource.realm.TestRealmResourceTestProvider;
 import org.keycloak.it.utils.KeycloakDistribution;
+import org.keycloak.it.utils.RawKeycloakDistribution;
 
 import io.quarkus.test.junit.main.Launch;
+import org.awaitility.Awaitility;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Tag;
@@ -276,4 +282,20 @@ public class StartCommandDistTest {
         cliResult.assertNoBuild();
         cliResult.assertStarted();
     }
+    
+    @RawDistOnly(reason = "Containers are immutable")
+    @Test
+    @TestProvider(TestRealmResourceTestProvider.class)
+    void testAsyncBootstrapFails(KeycloakDistribution dist) {
+        RawKeycloakDistribution rawDist = dist.unwrap(RawKeycloakDistribution.class);
+        dist.setManualStop(true);
+        CLIResult result = dist.run("start", "--server-async-bootstrap=true", "--hostname-strict=false", "--db=dev-file", "--http-enabled=true", "--spi-realm-restapi-extension--test-resources--fail=true");
+        Awaitility.await().atMost(2, TimeUnit.MINUTES).until(() -> !rawDist.isRunning());
+        dist.stop();
+        result.assertMessage("Failed to bootstrap the server");
+        result.assertMessage("I've failed");
+        assertEquals(1, dist.getExitCode());
+    }
+
+    
 }
