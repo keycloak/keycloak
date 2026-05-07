@@ -19,7 +19,7 @@ public class LeaveGroupStepProvider extends GroupBasedStepProvider {
 
     @Override
     protected void run(UserModel user, GroupModel group) {
-        log.debugv("Removing user %s from group %s)", user.getId(), buildGroupPath(group));
+        log.debugv("Removing user {0} from group {1}", user.getId(), buildGroupPath(group));
         user.leaveGroup(group);
     }
 }

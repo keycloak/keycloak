@@ -22,7 +22,6 @@ import java.util.UUID;
 
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
-import org.keycloak.common.Profile;
 import org.keycloak.common.util.Time;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
@@ -41,23 +40,20 @@ import org.keycloak.testframework.oauth.OAuthIdentityProviderConfig;
 import org.keycloak.testframework.oauth.OAuthIdentityProviderConfigBuilder;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthIdentityProvider;
+import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.ManagedUser;
+import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
-import org.keycloak.testframework.realm.RealmConfigBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.realm.UserConfig;
-import org.keycloak.testframework.realm.UserConfigBuilder;
 import org.keycloak.testframework.remote.timeoffset.InjectTimeOffSet;
 import org.keycloak.testframework.remote.timeoffset.TimeOffSet;
-import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
-import org.keycloak.tests.client.authentication.external.ClientAuthIdpServerConfig;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Assertions;
-
-import static org.keycloak.tests.oauth.AbstractJWTAuthorizationGrantTest.IDP_ISSUER;
 
 /**
  *
@@ -134,21 +130,13 @@ public class BaseAbstractJWTAuthorizationGrantTest {
         }
     }
 
-    public static class JWTAuthorizationGrantServerConfig extends ClientAuthIdpServerConfig {
-
-        @Override
-        public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
-            return super.configure(config).features(Profile.Feature.JWT_AUTHORIZATION_GRANT);
-        }
-    }
-
     public static class JWTAuthorizationGrantRealmConfig implements RealmConfig {
 
         @Override
-        public RealmConfigBuilder configure(RealmConfigBuilder realm) {
-            realm.addClient("test-public").publicClient(true);
-            realm.addClient("authorization-grant-disabled-client").publicClient(false).secret("test-secret");
-            realm.addClient("authorization-grant-not-allowed-idp-client").publicClient(false).attribute(OIDCConfigAttributes.JWT_AUTHORIZATION_GRANT_ENABLED, "true").secret("test-secret");
+        public RealmBuilder configure(RealmBuilder realm) {
+            realm.clients(ClientBuilder.create("test-public").publicClient(true));
+            realm.clients(ClientBuilder.create("authorization-grant-disabled-client").publicClient(false).secret("test-secret"));
+            realm.clients(ClientBuilder.create("authorization-grant-not-allowed-idp-client").publicClient(false).attribute(OIDCConfigAttributes.JWT_AUTHORIZATION_GRANT_ENABLED, "true").secret("test-secret"));
             return realm;
         }
     }
@@ -156,7 +144,7 @@ public class BaseAbstractJWTAuthorizationGrantTest {
     public static class FederatedUserConfiguration implements UserConfig {
 
         @Override
-        public UserConfigBuilder configure(UserConfigBuilder user) {
+        public UserBuilder configure(UserBuilder user) {
             return user
                     .username("basic-user")
                     .password("password")
@@ -175,7 +163,7 @@ public class BaseAbstractJWTAuthorizationGrantTest {
         Assertions.assertEquals(expectedClientId, accessToken.getIssuedFor());
         Assertions.assertEquals(user.getUsername(), accessToken.getPreferredUsername());
         EventAssertion.assertSuccess(events.poll())
-                .type(EventType.LOGIN)
+                .type(EventType.JWT_AUTHORIZATION_GRANT)
                 .clientId(expectedClientId)
                 .sessionId(null)
                 .userId(user.getId())
@@ -196,7 +184,7 @@ public class BaseAbstractJWTAuthorizationGrantTest {
         Assertions.assertEquals(expectedError, response.getError());
         Assertions.assertEquals(expectedErrorDescription, response.getErrorDescription());
         return EventAssertion.assertError(event)
-                .type(EventType.LOGIN_ERROR)
+                .type(EventType.JWT_AUTHORIZATION_GRANT_ERROR)
                 .sessionId(null)
                 .error(OAuthErrorException.INVALID_REQUEST)
                 .details(Details.GRANT_TYPE, OAuth2Constants.JWT_AUTHORIZATION_GRANT)
@@ -208,7 +196,7 @@ public class BaseAbstractJWTAuthorizationGrantTest {
         Assertions.assertEquals(expectedError, response.getError());
         Assertions.assertEquals(expectedErrorDescription, response.getErrorDescription());
         return EventAssertion.assertError(event)
-                .type(EventType.LOGIN_ERROR)
+                .type(EventType.JWT_AUTHORIZATION_GRANT_ERROR)
                 .sessionId(null)
                 .userId(user.getId())
                 .error(expectedError)

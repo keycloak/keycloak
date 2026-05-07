@@ -15,4 +15,4 @@
 # limitations under the License.
 #
 
-org.keycloak.testsuite.broker.oidc.OverwrittenMappersTestIdentityProviderFactory
+org.keycloak.tests.providers.broker.oidc.OverwrittenMappersTestIdentityProviderFactory

@@ -209,7 +209,7 @@ export const GroupTable = ({ refresh: viewRefresh }: GroupTableProps) => {
             name: "name",
             displayKey: "groupName",
             cellRenderer: (group) =>
-              group.access?.view ? (
+              groups.isOrgGroups() || group.access?.view ? ( // The org UI does not use access
                 <Link key={group.id} to={`${location.pathname}/${group.id}`}>
                   {group.name}
                 </Link>
@@ -221,9 +221,11 @@ export const GroupTable = ({ refresh: viewRefresh }: GroupTableProps) => {
         emptyState={
           <ListEmptyState
             hasIcon={true}
-            message={t(`noGroupsInThis${id ? "SubGroup" : "Realm"}`)}
+            message={t(
+              `noGroupsInThis${id ? "SubGroup" : groups.isOrgGroups() ? "Organization" : "Realm"}`,
+            )}
             instructions={t(
-              `noGroupsInThis${id ? "SubGroup" : "Realm"}Instructions`,
+              `noGroupsInThis${id ? "SubGroup" : groups.isOrgGroups() ? "Organization" : "Realm"}Instructions`,
             )}
             primaryActionText={t("createGroup")}
             onPrimaryAction={toggleCreateOpen}

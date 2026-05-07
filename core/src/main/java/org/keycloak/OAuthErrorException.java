@@ -59,8 +59,12 @@ public class OAuthErrorException extends Exception {
     // DPoP
     public static final String INVALID_DPOP_PROOF = "invalid_dpop_proof";
 
+    // Resource Indicators
+    public static final String INVALID_TARGET =  "invalid_target";
+
     // Others
     public static final String INVALID_CLIENT = "invalid_client";
+    public static final String INVALID_CLIENT_ATTESTATION = "invalid_client_attestation";
     public static final String INVALID_GRANT = "invalid_grant";
     public static final String UNSUPPORTED_GRANT_TYPE = "unsupported_grant_type";
     public static final String UNSUPPORTED_TOKEN_TYPE = "unsupported_token_type";

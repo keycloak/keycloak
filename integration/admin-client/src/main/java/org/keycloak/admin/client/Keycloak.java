@@ -216,6 +216,13 @@ public class Keycloak implements AutoCloseable {
         WebTarget register = client.target(absoluteURI).register(newAuthFilter());
         return CLIENT_PROVIDER.targetProxy(register, proxyClass);
     }
+    
+    /**
+     * Create a secure proxy with endpoints targetting the server
+     */
+    public <T> T proxy(Class<T> proxyClass) {
+        return CLIENT_PROVIDER.targetProxy(target, proxyClass);
+    }
 
     /**
      * Closes the underlying client. After calling this method, this <code>Keycloak</code> instance cannot be reused.
@@ -240,4 +247,5 @@ public class Keycloak implements AutoCloseable {
     public boolean isClosed() {
         return closed;
     }
+
 }

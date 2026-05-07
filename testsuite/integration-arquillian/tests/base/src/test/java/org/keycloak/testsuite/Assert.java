@@ -38,6 +38,7 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.info.ThemeInfoRepresentation;
 
 import org.hamcrest.MatcherAssert;
+import org.junit.jupiter.api.Assertions;
 
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.containsInAnyOrder;
@@ -49,20 +50,20 @@ import static org.hamcrest.Matchers.lessThanOrEqualTo;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class Assert extends org.junit.Assert {
+public class Assert extends Assertions {
 
     public static final Long DEFAULT_NUMBER_DEVIATION = 20L;
 
     public static <T> void assertNames(Set<T> actual, String... expected) {
         Arrays.sort(expected);
         String[] actualNames = names(new LinkedList<Object>(actual));
-        assertArrayEquals("Expected: " + Arrays.toString(expected) + ", was: " + Arrays.toString(actualNames), expected, actualNames);
+        assertArrayEquals(expected, actualNames, "Expected: " + Arrays.toString(expected) + ", was: " + Arrays.toString(actualNames));
     }
 
     public static <T> void assertNames(List<T> actual, String... expected) {
         Arrays.sort(expected);
         String[] actualNames = names(actual);
-        assertArrayEquals("Expected: " + Arrays.toString(expected) + ", was: " + Arrays.toString(actualNames), expected, actualNames);
+        assertArrayEquals(expected, actualNames, "Expected: " + Arrays.toString(expected) + ", was: " + Arrays.toString(actualNames));
     }
 
     private static <T> String[] names(List<T> list) {
@@ -118,11 +119,11 @@ public class Assert extends org.junit.Assert {
             expected = new String[] {};
         }
 
-        Assert.assertEquals(config.size() * 2, expected.length);
+        Assertions.assertEquals(config.size() * 2, expected.length);
         for (int i=0 ; i<expected.length ; i+=2) {
             String key = expected[i];
             String value = expected[i+1];
-            Assert.assertEquals(value, config.get(key));
+            Assertions.assertEquals(value, config.get(key));
         }
     }
 
@@ -142,16 +143,16 @@ public class Assert extends org.junit.Assert {
         for (int i=0 ; i<expected.length ; i+=2) {
             String key = expected[i];
             String value = expected[i+1];
-            Assert.assertEquals(value, config.getFirst(key));
+            Assertions.assertEquals(value, config.getFirst(key));
         }
     }
 
     public static void assertProviderConfigProperty(ConfigPropertyRepresentation property, String name, String label, String defaultValue, String helpText, String type) {
-        Assert.assertEquals(name, property.getName());
-        Assert.assertEquals(label, property.getLabel());
-        Assert.assertEquals(defaultValue, property.getDefaultValue());
-        Assert.assertEquals(helpText, property.getHelpText());
-        Assert.assertEquals(type, property.getType());
+        Assertions.assertEquals(name, property.getName());
+        Assertions.assertEquals(label, property.getLabel());
+        Assertions.assertEquals(defaultValue, property.getDefaultValue());
+        Assertions.assertEquals(helpText, property.getHelpText());
+        Assertions.assertEquals(type, property.getType());
     }
 
     public static void assertExpiration(int actual, int expected) {

@@ -18,7 +18,7 @@ import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { useAdminClient } from "../admin-client";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
-import type { KeyValueType } from "../components/key-value-form/key-value-convert";
+import type { RealmLoAMappingType } from "../components/realm-loa-mapping/RealmLoAMapping";
 import {
   RoutableTabs,
   useRoutableTab,
@@ -29,7 +29,11 @@ import { useRealm } from "../context/realm-context/RealmContext";
 import { toDashboard } from "../dashboard/routes/Dashboard";
 import type { Environment } from "../environment";
 import helpUrls from "../help-urls";
-import { convertFormValuesToObject, convertToFormValues } from "../util";
+import {
+  convertFormValuesToObject,
+  convertToFormValues,
+  resolveDisplayName,
+} from "../util";
 import { getAuthorizationHeaders } from "../utils/getAuthorizationHeaders";
 import { joinPath } from "../utils/joinPath";
 import useIsFeatureEnabled, { Feature } from "../utils/useIsFeatureEnabled";
@@ -123,6 +127,7 @@ const RealmSettingsHeader = ({
       />
       <ViewHeader
         titleKey={realmName}
+        noTranslate
         subKey="realmSettingsExplain"
         helpUrl={helpUrls.realmSettingsUrl}
         divider={false}
@@ -227,11 +232,20 @@ export const RealmSettingsTabs = () => {
       r.attributes?.["acr.loa.map"] &&
       typeof r.attributes["acr.loa.map"] !== "string"
     ) {
+      if (isFeatureEnabled(Feature.StepUpAuthenticationSaml)) {
+        r.attributes["acr.uri.map"] = JSON.stringify(
+          Object.fromEntries(
+            (r.attributes["acr.loa.map"] as RealmLoAMappingType[])
+              .filter(({ acr, uri }) => acr !== "" && uri && uri !== "")
+              .map(({ acr, uri }) => [acr, uri]),
+          ),
+        );
+      }
       r.attributes["acr.loa.map"] = JSON.stringify(
         Object.fromEntries(
-          (r.attributes["acr.loa.map"] as KeyValueType[])
-            .filter(({ key }) => key !== "")
-            .map(({ key, value }) => [key, value]),
+          (r.attributes["acr.loa.map"] as RealmLoAMappingType[])
+            .filter(({ acr }) => acr !== "")
+            .map(({ acr, loa }) => [acr, loa]),
         ),
       );
     }
@@ -314,7 +328,7 @@ export const RealmSettingsTabs = () => {
           <RealmSettingsHeader
             value={field.value}
             onChange={field.onChange}
-            realmName={realmName}
+            realmName={resolveDisplayName(t, realm?.displayName, realmName)}
             refresh={refreshHeader}
             save={() => save(getValues())}
           />

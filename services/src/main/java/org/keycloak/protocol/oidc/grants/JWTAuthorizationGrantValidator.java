@@ -43,7 +43,6 @@ public class JWTAuthorizationGrantValidator extends AbstractBaseJWTValidator imp
 
     private final String scope;
     private Set<String> restrictedScopes;
-    private boolean audienceAlreadyValidated;
 
     public static JWTAuthorizationGrantValidator createValidator(KeycloakSession session, ClientModel client, String assertion, String scope) {
         if (assertion == null) {
@@ -63,7 +62,6 @@ public class JWTAuthorizationGrantValidator extends AbstractBaseJWTValidator imp
     private JWTAuthorizationGrantValidator(KeycloakSession session, String scope, ClientAssertionState clientAssertionState) {
         super(session, clientAssertionState);
         this.scope = scope;
-        this.audienceAlreadyValidated = false;
     }
 
     public void validateClient() {
@@ -112,16 +110,6 @@ public class JWTAuthorizationGrantValidator extends AbstractBaseJWTValidator imp
     @Override
     public void setRestrictedScopes(Set<String> restrictedScopes) {
         this.restrictedScopes = restrictedScopes;
-    }
-
-    @Override
-    public void setAudienceAlreadyValidated() {
-        this.audienceAlreadyValidated = true;
-    }
-
-    @Override
-    public boolean isAudienceAlreadyValidated() {
-        return audienceAlreadyValidated;
     }
 
     @Override

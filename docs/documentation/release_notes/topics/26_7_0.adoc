@@ -1,0 +1,29 @@
+// Release notes should contain only headline-worthy new features,
+// assuming that people who migrate will read the upgrading guide anyway.
+
+This release features new capabilities for users and administrators of {project_name}. The highlights of this release are:
+
+= Administration
+
+== Delegated administration for organizations
+
+{project_name} now supports delegated organization administration without requiring the broad `manage-realm` role. This is achieved through new dedicated admin roles and Fine-Grained Admin Permissions support for organizations.
+
+New realm admin roles provide coarse-grained delegation:
+
+* `manage-organizations` — grants full read and write access to organizations, including creating, updating, and deleting organizations and their members.
+* `view-organizations` — grants read-only access to organizations and their members (also requires `view-users` or Fine-Grained Admin Permissions for user visibility).
+* `query-organizations` — grants the ability to search and list organizations without full view access, consistent with the `query-users` / `query-clients` / `query-groups` pattern.
+
+The `manage-realm` role continues to implicitly grant full organization management access for backward compatibility.
+
+For per-organization granularity, organizations are now a first-class resource type in Fine-Grained Admin Permissions. Administrators can create permissions to control which specific organizations a delegated administrator can view or manage — for example, granting access to manage one organization without giving access to all organizations in the realm. When Fine-Grained Admin Permissions is enabled, organization member queries also respect user-level permissions, returning only members the administrator is permitted to view.
+
+== Realm search now matches by display name
+
+When searching for realms in the admin console, the search now also matches against the realm's display name in addition to the realm name.
+
+As part of this change, the `displayName` attribute has been promoted from a realm attribute to a dedicated column on the realm entity.
+
+Before migrating, check the current value of the `displayName` attribute for your realms. If the current value of `displayName` attribute
+exceeds 255 characters, it will be truncated during migration.

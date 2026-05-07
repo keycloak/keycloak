@@ -64,13 +64,15 @@ import org.keycloak.operator.crds.v2alpha1.client.KeycloakClientSpec;
 import org.keycloak.operator.crds.v2alpha1.client.KeycloakClientStatus;
 import org.keycloak.operator.crds.v2alpha1.client.KeycloakClientStatusBuilder;
 import org.keycloak.operator.crds.v2alpha1.client.KeycloakClientStatusCondition;
-import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
-import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusAggregator;
-import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusCondition;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.HttpSpec;
+import org.keycloak.operator.crds.v2beta1.deployment.Keycloak;
+import org.keycloak.operator.crds.v2beta1.deployment.KeycloakStatusAggregator;
+import org.keycloak.operator.crds.v2beta1.deployment.KeycloakStatusCondition;
+import org.keycloak.operator.crds.v2beta1.deployment.spec.FeatureSpec;
+import org.keycloak.operator.crds.v2beta1.deployment.spec.HttpSpec;
 import org.keycloak.representations.admin.v2.BaseClientRepresentation;
 
 import io.fabric8.kubernetes.api.model.Secret;
+import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.internal.CertUtils;
@@ -83,7 +85,7 @@ import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.quarkus.logging.Log;
 import org.apache.http.conn.ssl.NoopHostnameVerifier;
 
-import static org.keycloak.operator.crds.v2alpha1.CRDUtils.isTlsConfigured;
+import static org.keycloak.operator.crds.v2beta1.CRDUtils.isTlsConfigured;
 
 /**
  * Base class for Client controllers.
@@ -95,7 +97,7 @@ import static org.keycloak.operator.crds.v2alpha1.CRDUtils.isTlsConfigured;
 public abstract class KeycloakClientBaseController<R extends CustomResource<? extends KeycloakClientSpec<S>, KeycloakClientStatus>, T extends BaseClientRepresentation, S extends BaseClientRepresentation>
         implements Reconciler<R>, Cleaner<R> {
 
-    private static final String CLIENT_API_VERSION = "v2";
+    public static final String CLIENT_ADMIN_API_V2 = "client-admin-api:v2";
     private static final String HTTPS = "https";
 
     static class KeycloakClientStatusAggregator {
@@ -103,6 +105,7 @@ public abstract class KeycloakClientBaseController<R extends CustomResource<? ex
         KeycloakClientStatus existingStatus;
         Map<String, KeycloakClientStatusCondition> existingConditions;
         Map<String, KeycloakClientStatusCondition> newConditions = new LinkedHashMap<String, KeycloakClientStatusCondition>();
+        String uuid;
 
         KeycloakClientStatusAggregator(CustomResource<?, KeycloakClientStatus> resource) {
             this.generation = resource.getMetadata().getGeneration();
@@ -119,6 +122,10 @@ public abstract class KeycloakClientBaseController<R extends CustomResource<? ex
             newConditions.put(type, condition); // No aggregation yet
         }
 
+        void setUuid(String uuid) {
+            this.uuid = uuid;
+        }
+
         KeycloakClientStatus build() {
             KeycloakClientStatusBuilder statusBuilder = new KeycloakClientStatusBuilder();
             String now = Utils.iso8601Now();
@@ -129,6 +136,7 @@ public abstract class KeycloakClientBaseController<R extends CustomResource<? ex
                     k -> new KeycloakClientStatusCondition(KeycloakStatusCondition.HAS_ERRORS, false, null, now,
                             generation));
             statusBuilder.withConditions(new ArrayList<>(existingConditions.values().stream().sorted(Comparator.comparing(KeycloakClientStatusCondition::getType)).toList()));
+            statusBuilder.withUuid(uuid);
             return statusBuilder.build();
         }
 
@@ -153,6 +161,12 @@ public abstract class KeycloakClientBaseController<R extends CustomResource<? ex
 
         KeycloakClientStatusAggregator statusAggregator = new KeycloakClientStatusAggregator(resource);
 
+        if (!hasFeatureEnabled(keycloak)) {
+            statusAggregator.setCondition(KeycloakClientStatusCondition.HAS_ERRORS, Boolean.TRUE, "Cannot create/update because the server does not have %s enabled".formatted(CLIENT_ADMIN_API_V2));
+            resource.setStatus(statusAggregator.build());
+            return UpdateControl.patchStatus(resource);
+        }
+
         S client = resource.getSpec().getClient();
         // first convert to the target representation - the spec representation is specialized
         var map = context.getClient().getKubernetesSerialization().convertValue(client, Map.class);
@@ -169,10 +183,13 @@ public abstract class KeycloakClientBaseController<R extends CustomResource<? ex
                 return clientApi.createOrUpdateClient(rep);
             });
 
-            // if not ok response, throw exception to allow the retry loop
-            // TODO however not all errors (something not validating) should get retried every 10 seconds
-            // that should instead get captured in the status
-            if (response.getStatus() != HttpURLConnection.HTTP_OK && response.getStatus() != HttpURLConnection.HTTP_CREATED) {
+            if (response.getStatus() == HttpURLConnection.HTTP_OK || response.getStatus() == HttpURLConnection.HTTP_CREATED) {
+                BaseClientRepresentation resultingRep = response.readEntity(BaseClientRepresentation.class);
+                statusAggregator.setUuid(resultingRep.getUuid());
+            } else {
+                // if not ok response, throw exception to allow the retry loop
+                // TODO however not all errors (something not validating) should get retried every 10 seconds
+                // that should instead get captured in the status
                 String message = response.hasEntity() ? response.readEntity(String.class) : "";
                 throw new RuntimeException("Client update operation not sucessful with status code " + response.getStatus() + " : " + message);
             }
@@ -197,6 +214,23 @@ public abstract class KeycloakClientBaseController<R extends CustomResource<? ex
         return updateControl;
     }
 
+    private boolean isServerReady(Context<R> context, R resource) {
+        StatefulSet existingDeployment = context.getClient().resources(StatefulSet.class)
+                .inNamespace(resource.getMetadata().getNamespace()).withName(resource.getSpec().getKeycloakCRName())
+                .get();
+
+        return existingDeployment != null && KeycloakRealmImportController.getReadyReplicas(existingDeployment) > 0;
+    }
+
+    // TODO: this doesn't mesh well with the current feature concept
+    // we specifically need v2 enabled, so we can't simply check for client-admin-api
+    // - the behavior is also version dependent later verions of keycloak presumably will have client-admin-api:v2
+    //   enabled by default, so we'd need to check specifically for that feature being disabled, or remove this check altogether
+    private boolean hasFeatureEnabled(Keycloak keycloak) {
+        return Optional.ofNullable(keycloak.getSpec().getFeatureSpec()).map(FeatureSpec::getEnabledFeatures)
+                .filter(ef -> ef.contains(CLIENT_ADMIN_API_V2)).isPresent();
+    }
+
     abstract boolean prepareRepresentation(S crRepresentation, T targetRepresentation, Context<?> context);
 
     abstract Class<T> getTargetRepresentation();
@@ -213,6 +247,14 @@ public abstract class KeycloakClientBaseController<R extends CustomResource<? ex
                 .inNamespace(resource.getMetadata().getNamespace()).withName(kcName).get();
 
         if (keycloak == null) {
+            return DeleteControl.defaultDelete();
+        }
+
+        if (!hasFeatureEnabled(keycloak)) {
+            // TODO: this behavior is not very straight-forward. For now just log an error
+            // in the server and move on
+            Log.error("Cannot delete Client $s/%s because the server does not have %s enabled.".formatted(
+                    resource.getMetadata().getNamespace(), resource.getMetadata().getName(), CLIENT_ADMIN_API_V2));
             return DeleteControl.defaultDelete();
         }
 
@@ -256,13 +298,16 @@ public abstract class KeycloakClientBaseController<R extends CustomResource<? ex
         this.addressOverride = addressOverride;
     }
 
-    private <V> V invoke(R resource, Context<?> context, Keycloak keycloak,
+    private <V> V invoke(R resource, Context<R> context, Keycloak keycloak,
             Function<ClientApi, V> action) {
+        if (!isServerReady(context, resource)) {
+            throw new RuntimeException("A replica of the server is not yet ready. The operatiorn will be retried");
+        }
         try (var kcAdmin = getAdminClient(context.getClient(), keycloak, addressOverride)) {
             var target = getWebTarget(kcAdmin);
             AdminRootV2 root = org.keycloak.admin.client.Keycloak.getClientProvider().targetProxy(target,
                     AdminRootV2.class);
-            return action.apply(root.adminApi(resource.getSpec().getRealm()).clients(CLIENT_API_VERSION)
+            return action.apply(root.adminApi(resource.getSpec().getRealm()).clientsV2()
                     .client(resource.getMetadata().getName()));
         }
     }
@@ -379,7 +424,7 @@ public abstract class KeycloakClientBaseController<R extends CustomResource<? ex
         String protocol = https?HTTPS:"http";
         String address = addressOverride;
 
-        int port = https?HttpSpec.httpsPort(keycloak):HttpSpec.httpPort(keycloak);
+        int port = https?HttpSpec.serviceHttpsPort(keycloak):HttpSpec.serviceHttpPort(keycloak);
 
         if (address == null) {
             // uses the service host - TODO: assumes the operator and the keycloak instance are in the same cluster

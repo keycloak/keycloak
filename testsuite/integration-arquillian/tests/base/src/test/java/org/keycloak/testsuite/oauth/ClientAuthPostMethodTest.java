@@ -31,10 +31,11 @@ import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testsuite.AbstractAdminTest;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
 import org.apache.http.NameValuePair;
@@ -50,8 +51,8 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.lessThanOrEqualTo;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 /**
  * Test for "client_secret_post" client authentication (clientID + clientSecret sent in the POST body instead of in "Authorization: Basic" header)
@@ -75,7 +76,7 @@ public class ClientAuthPostMethodTest extends AbstractKeycloakTest {
     public void testPostAuthentication() {
         oauth.doLogin("test-user@localhost", "password");
 
-        EventRepresentation loginEvent = events.expectLogin().assertEvent();
+        EventRepresentation loginEvent = EventAssertion.expectLoginSuccess(events.poll()).getEvent();
 
         String sessionId = loginEvent.getSessionId();
         String codeId = loginEvent.getDetails().get(Details.CODE_ID);
@@ -99,7 +100,7 @@ public class ClientAuthPostMethodTest extends AbstractKeycloakTest {
     @Test
     public void testBasicAuthenticationNotAllowedWhenPostRequested() {
         // Update client to request client_secret_post client authentication method
-        ClientResource client = ApiUtil.findClientByClientId(adminClient.realm("test"), oauth.getClientId());
+        ClientResource client = AdminApiUtil.findClientByClientId(adminClient.realm("test"), oauth.getClientId());
         ClientRepresentation clientRep = client.toRepresentation();
         OIDCClientSecretConfigWrapper.fromClientRepresentation(clientRep).setClientSecretAuthenticationAllowedMethod(OIDCLoginProtocol.CLIENT_SECRET_POST);
         client.update(clientRep);
@@ -128,7 +129,7 @@ public class ClientAuthPostMethodTest extends AbstractKeycloakTest {
     @Test
     public void testPostAuthenticationNotAllowedWhenBasicRequested() {
         // Update client to request client_secret_basic client authentication method
-        ClientResource client = ApiUtil.findClientByClientId(adminClient.realm("test"), oauth.getClientId());
+        ClientResource client = AdminApiUtil.findClientByClientId(adminClient.realm("test"), oauth.getClientId());
         ClientRepresentation clientRep = client.toRepresentation();
         OIDCClientSecretConfigWrapper.fromClientRepresentation(clientRep).setClientSecretAuthenticationAllowedMethod(OIDCLoginProtocol.CLIENT_SECRET_BASIC);
         client.update(clientRep);

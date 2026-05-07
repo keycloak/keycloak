@@ -34,7 +34,7 @@ We regularly test {project_name} with the following configuration:
 using ROSA HCP.
 
 ** At least one worker node for each availability-zone
-** OpenShift version 4.18.
+** OpenShift version 4.21.
 
 * Amazon Aurora PostgreSQL database
 ** High availability with a primary DB instance in one availability zone, and synchronously replicated readers in the other availability zones
@@ -140,7 +140,13 @@ Additional performance tuning and security hardening are still recommended when 
 
 == Blueprints for building blocks
 * <@links.ha id="single-cluster-deploy-aurora" />
+* <@links.ha id="single-cluster-deploy-cnpg" />
+* <@links.ha id="single-cluster-deploy-cnpg-with-backup" />
+* <@links.ha id="single-cluster-monitoring-cnpg" />
+* <@links.ha id="single-cluster-deploy-cnpg-recovery" />
 * <@links.ha id="single-cluster-deploy-keycloak" />
+* <@links.ha id="single-cluster-operate-cnpg-switchover" />
+
 </@profile.ifCommunity>
 
 </@tmpl.guide>

@@ -32,7 +32,7 @@ public class RFC8414CompliantOAuth2WellKnownProviderTest extends AbstractWellKno
     }
 
     protected URI getOIDCDiscoveryUri(UriBuilder builder) {
-        return ServerMetadataResource.wellKnownOAuthProviderUrl(builder).build(this.getWellKnownProviderId(), "test");
+        return ServerMetadataResource.wellKnownProviderUrl(builder).build(this.getWellKnownProviderId(), "test");
     }
 
 }

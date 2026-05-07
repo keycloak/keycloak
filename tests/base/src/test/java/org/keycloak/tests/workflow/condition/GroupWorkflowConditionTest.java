@@ -22,8 +22,8 @@ import org.keycloak.representations.workflows.WorkflowRepresentation;
 import org.keycloak.representations.workflows.WorkflowScheduleRepresentation;
 import org.keycloak.representations.workflows.WorkflowStepRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
-import org.keycloak.testframework.realm.GroupConfigBuilder;
-import org.keycloak.testframework.realm.UserConfigBuilder;
+import org.keycloak.testframework.realm.GroupBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.remote.providers.runonserver.RunOnServer;
 import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.tests.workflow.AbstractWorkflowTest;
@@ -52,7 +52,7 @@ public class GroupWorkflowConditionTest extends AbstractWorkflowTest {
         managedRealm.admin().users().userProfile().update(upConfig);
 
         // create test group and associate a few test users with it
-        managedRealm.admin().groups().add(GroupConfigBuilder.create().name(GROUP_NAME).build()).close();
+        managedRealm.admin().groups().add(GroupBuilder.create().name(GROUP_NAME).build()).close();
 
         // create workflow that activates on user creation with a group membership condition
         managedRealm.admin().workflows().create(WorkflowRepresentation.withName("group-membership-workflow")
@@ -67,7 +67,7 @@ public class GroupWorkflowConditionTest extends AbstractWorkflowTest {
 
         // create test user not associated with the target group - workflow should not trigger
         String userId;
-        try (Response response = managedRealm.admin().users().create(UserConfigBuilder.create()
+        try (Response response = managedRealm.admin().users().create(UserBuilder.create()
                 .username("no-group-user").email("generic-user@example.com").build())) {
             userId = ApiUtil.getCreatedId(response);
         }
@@ -77,7 +77,7 @@ public class GroupWorkflowConditionTest extends AbstractWorkflowTest {
         assertThat(userRepresentation.getAttributes(), nullValue());
 
         // create another user associated with the target group - this time the workflow should trigger
-        try (Response response = managedRealm.admin().users().create(UserConfigBuilder.create()
+        try (Response response = managedRealm.admin().users().create(UserBuilder.create()
                 .username("group-user").groups(GROUP_NAME).build())) {
             userId = ApiUtil.getCreatedId(response);
         }
@@ -90,11 +90,11 @@ public class GroupWorkflowConditionTest extends AbstractWorkflowTest {
 
     @Test
     public void testActivateWorkflowForEligibleResources() {
-        managedRealm.admin().groups().add(GroupConfigBuilder.create().name(GROUP_NAME).build()).close();
+        managedRealm.admin().groups().add(GroupBuilder.create().name(GROUP_NAME).build()).close();
 
         // create test users - some associated with the target group, some not
         for (int i = 0; i < 20; i++) {
-            UserConfigBuilder builder = UserConfigBuilder.create().username("group-member-" + i);
+            UserBuilder builder = UserBuilder.create().username("group-member-" + i);
             if (i % 2 == 0) {
                 builder.groups(GROUP_NAME);
             }

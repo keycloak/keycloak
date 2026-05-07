@@ -147,7 +147,8 @@ public class DPoPUtil {
 
         HttpRequest request = keycloakSession.getContext().getHttpRequest();
         final boolean isClientRequiresDpop = clientConfig != null && clientConfig.isUseDPoP();
-        final boolean isDpopHeaderPresent = request.getHttpHeaders().getHeaderString(DPOP_HTTP_HEADER) != null;
+        final String dpopHeaderValue = request.getHttpHeaders().getHeaderString(DPOP_HTTP_HEADER);
+        final boolean isDpopHeaderPresent = dpopHeaderValue != null;
 
         if (!isClientRequiresDpop && !isDpopHeaderPresent) {
             return;
@@ -195,6 +196,9 @@ public class DPoPUtil {
             throw new VerificationException("No JWK in DPoP header");
         } else {
             key = JWKSUtils.getKeyWrapper(jwk);
+            if (key == null) {
+                throw new VerificationException("Unsupported key type in DPoP header");
+            }
             if (key.getPublicKey() == null) {
                 throw new VerificationException("No public key in DPoP header");
             }
@@ -238,13 +242,13 @@ public class DPoPUtil {
                         boolean isSchemeDPoP = false;
                         if (StringUtil.isNotBlank(validator.authHeader)) {
                             String[] split = WHITESPACES.split(validator.authHeader);
-                            isSchemeDPoP = TokenUtil.TOKEN_TYPE_DPOP.equals(split[0]);
+                            isSchemeDPoP = TokenUtil.TOKEN_TYPE_DPOP.equalsIgnoreCase(split[0]);
                         }
 
-                        if (!isSchemeDPoP && DPoPUtil.DPOP_TOKEN_TYPE.equals(token.getType())) {
+                        if (!isSchemeDPoP && DPoPUtil.DPOP_TOKEN_TYPE.equalsIgnoreCase(token.getType())) {
                             throw new VerificationException("The access token type is DPoP but Authorization Header is not DPoP");
                         }
-                        if (isSchemeDPoP && !DPoPUtil.DPOP_TOKEN_TYPE.equals(token.getType())) {
+                        if (isSchemeDPoP && !DPoPUtil.DPOP_TOKEN_TYPE.equalsIgnoreCase(token.getType())) {
                             throw new VerificationException("The access token type is not DPoP but Authorization Header is DPoP");
                         }
                         ClientModel clientModel = realm.getClientByClientId(token.getIssuedFor());
@@ -388,8 +392,8 @@ public class DPoPUtil {
         @Override
         public boolean test(DPoP t) throws DPoPVerificationException {
             SingleUseObjectProvider singleUseCache = session.singleUseObjects();
-            byte[] hash = HashUtils.hash("SHA1", (t.getId() + "\n" + t.getHttpUri()).getBytes());
-            String hashString = Hex.encodeHexString(hash);
+            String hashKey = t.getId() + "\n" + t.getHttpUri();
+            String hashString = Hex.encodeHexString(HashUtils.hash("SHA1", hashKey.getBytes()));
             if (!singleUseCache.putIfAbsent(hashString, (int)(t.getIat() + lifetime - Time.currentTime()))) {
                 throw new DPoPVerificationException(t, "DPoP proof has already been used");
             }

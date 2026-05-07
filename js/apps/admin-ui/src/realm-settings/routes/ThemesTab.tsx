@@ -15,9 +15,9 @@ const RealmSettingsSection = lazy(() => import("../RealmSettingsSection"));
 export const ThemeTabRoute: AppRouteObject = {
   path: "/:realm/realm-settings/themes/:tab",
   element: <RealmSettingsSection />,
-  breadcrumb: (t) => t("themes"),
   handle: {
     access: "view-realm",
+    breadcrumb: (t) => t("themes"),
   },
 };
 

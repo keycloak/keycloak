@@ -24,7 +24,7 @@ steps:
            Best regards,<br/>
            ${realm.displayName} Team
         </p>
-  - uses: set-user-required-action
+  - uses: add-required-action
     after: 30d
     with:
       action: UPDATE_PASSWORD
@@ -40,7 +40,7 @@ It is composed of three main sections:
 *   `on`: The event that will trigger the workflow. In this case, the workflow is triggered when a new user is added to the realm.
 *   `steps`: A set of one or more steps to be executed when executing a workflow execution. In this example, three steps are defined:
     1. The first step uses the built-in `notify-user` action to send a welcome message to the new user.
-    2. The second step uses the built-in `set-user-required-action` action to require the user to update their password after 30 days.
+    2. The second step uses the built-in `add-required-action` action to require the user to update their password after 30 days.
     3. The third step uses the built-in `restart` action to restart the workflow from the second step so that the user is forced to update their password every 30 days.
 
 Here is a more detailed look at all settings available from the workflow definition:

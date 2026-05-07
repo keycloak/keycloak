@@ -92,6 +92,7 @@ import org.keycloak.models.utils.RoleUtils;
 import org.keycloak.models.utils.SystemClientUtil;
 import org.keycloak.organization.utils.Organizations;
 import org.keycloak.policy.PasswordPolicyNotMetException;
+import org.keycloak.protocol.oid4vc.resources.admin.UserVerifiableCredentialResource;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.utils.RedirectUtils;
 import org.keycloak.provider.ProviderFactory;
@@ -663,6 +664,11 @@ public class UserResource {
         adminEvent.operation(OperationType.ACTION).resourcePath(session.getContext().getUri()).success();
     }
 
+    @Path("vc")
+    public UserVerifiableCredentialResource verifiableCredentials() {
+        return new UserVerifiableCredentialResource(session, realm, user, auth, adminEvent);
+    }
+
     /**
      * Remove all user sessions associated with the user
      *
@@ -789,7 +795,11 @@ public class UserResource {
             logger.error(e.getMessage(), e);
             throw ErrorResponse.error(e.getMessage(), Response.Status.INTERNAL_SERVER_ERROR);
         } catch (ModelException e) {
-            logger.warn("Could not update user password.", e);
+            String exceptionMessage = e.getCause() != null ? e.getCause().getMessage() : e.getMessage();
+            logger.warnf("Could not update password for user %s. Reason: %s", user.getUsername(), exceptionMessage);
+            if (logger.isTraceEnabled()) {
+                logger.trace("Could not update user password.", e);
+            }
             Properties messages = AdminRoot.getMessages(session, realm, auth.adminAuth().getToken().getLocale());
             throw new ErrorResponseException(e.getMessage(), MessageFormat.format(messages.getProperty(e.getMessage(), e.getMessage()), e.getParameters()),
                     Status.BAD_REQUEST);
@@ -877,7 +887,11 @@ public class UserResource {
             else throw new ForbiddenException();
         }
         user.credentialManager().removeStoredCredentialById(credentialId);
-        adminEvent.operation(OperationType.ACTION).resourcePath(session.getContext().getUri()).success();
+        adminEvent.operation(OperationType.ACTION).resourcePath(session.getContext().getUri())
+                .detail(Details.CREDENTIAL_ID, credentialId)
+                .detail(Details.CREDENTIAL_TYPE, credential.getType())
+                .detail(Details.CREDENTIAL_USER_LABEL, credential.getUserLabel())
+                .success();
     }
 
     /**
@@ -1248,18 +1262,9 @@ public class UserResource {
     public Map<String, List<String>> getUnmanagedAttributes() {
         auth.users().requireView(user);
         UserProfileProvider provider = session.getProvider(UserProfileProvider.class);
-
         UserProfile profile = provider.create(USER_API, user);
-        Map<String, List<String>> managedAttributes = profile.getAttributes().getReadable();
-        Map<String, List<String>> unmanagedAttributes = profile.getAttributes().getUnmanagedAttributes();
-        managedAttributes.entrySet().removeAll(unmanagedAttributes.entrySet());
-        Map<String, List<String>> attributes = new HashMap<>(user.getAttributes());
-        attributes.entrySet().removeAll(managedAttributes.entrySet());
 
-        attributes.remove(UserModel.USERNAME);
-        attributes.remove(UserModel.EMAIL);
-
-        return attributes.entrySet().stream()
+        return profile.getAttributes().getUnmanagedAttributes().entrySet().stream()
                 .filter(entry -> ofNullable(entry.getValue()).orElse(emptyList()).stream().anyMatch(StringUtil::isNotBlank))
                 .collect(Collectors.toMap(Entry::getKey, Entry::getValue));
     }

@@ -111,6 +111,9 @@ public class JwtCredentialBuilder implements CredentialBuilder {
     @Override
     public void contributeToMetadata(SupportedCredentialConfiguration credentialConfig, CredentialScopeModel credentialScope) {
         CredentialDefinition credentialDefinition = CredentialDefinition.parse(credentialScope);
+        // @context must not be included for jwt_vc_json format per OID4VCI spec;
+        // it is only valid for ldp_vc format.
+        credentialDefinition.setContext(null);
         credentialConfig.setCredentialDefinition(credentialDefinition);
     }
 }

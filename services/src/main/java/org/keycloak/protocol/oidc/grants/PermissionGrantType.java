@@ -71,19 +71,19 @@ public class PermissionGrantType extends OAuth2GrantTypeBase {
                     // from the access token anyway in order to set correct CORS headers.
                     AccessToken invalidToken = new JWSInput(accessTokenString).readJsonContent(AccessToken.class);
                     ClientModel client = realm.getClientByClientId(invalidToken.getIssuedFor());
-                    cors.allowedOrigins(session, client);
+                    cors.checkAllowedOrigins(session, client);
                     event.client(client);
                 } catch (JWSInputException ignore) {
                 }
                 event.error(Errors.INVALID_TOKEN);
-                throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, "Invalid bearer token", Response.Status.UNAUTHORIZED);
+                throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, "Invalid bearer token", Response.Status.BAD_REQUEST);
             }
 
             ClientModel client = realm.getClientByClientId(accessToken.getIssuedFor());
 
             session.getContext().setClient(client);
 
-            cors.allowedOrigins(session, client);
+            cors.checkAllowedOrigins(session, client);
             event.client(client);
         }
 

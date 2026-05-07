@@ -10,6 +10,10 @@ import com.icegreen.greenmail.user.TokenValidator;
 import com.icegreen.greenmail.util.GreenMail;
 import com.icegreen.greenmail.util.ServerSetup;
 
+/**
+ * Retrieve emails sent by the Keycloak server. Received emails are reset when a test is executed, which means
+ * only emails sent during a test was executed are returned.
+ */
 public class MailServer extends ManagedTestResource {
 
     private final GreenMail greenMail;
@@ -36,19 +40,41 @@ public class MailServer extends ManagedTestResource {
         ((com.icegreen.greenmail.user.UserImpl)user).setTokenValidator(validator);
     }
 
+    /**
+     * Retrieve all received emails
+     *
+     * @return list of received emails
+     */
     public MimeMessage[] getReceivedMessages() {
         return greenMail.getReceivedMessages();
     }
 
+    /**
+     * Retrieve the last received email
+     *
+     * @return the last received email
+     */
     public MimeMessage getLastReceivedMessage() {
         MimeMessage[] receivedMessages = greenMail.getReceivedMessages();
         return receivedMessages != null && receivedMessages.length > 0 ? receivedMessages[receivedMessages.length - 1] : null;
     }
 
+    /**
+     * Wait for the specified time to receive the specified number of emails
+     *
+     * @param timeout the time to wait for emails to be received
+     * @param emailCount the number of emails to wait for
+     * @return
+     */
     public boolean waitForIncomingEmail(long timeout, int emailCount) {
         return greenMail.waitForIncomingEmail(timeout, emailCount);
     }
 
+    /**
+     *
+     * @param emailCount
+     * @return
+     */
     public boolean waitForIncomingEmail(int emailCount) {
         return greenMail.waitForIncomingEmail(emailCount);
     }

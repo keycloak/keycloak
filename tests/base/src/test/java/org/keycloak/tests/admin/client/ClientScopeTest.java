@@ -51,8 +51,10 @@ import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.events.AdminEventAssertion;
-import org.keycloak.testframework.realm.RoleConfigBuilder;
+import org.keycloak.testframework.realm.ClientBuilder;
+import org.keycloak.testframework.realm.RoleBuilder;
 import org.keycloak.testframework.util.ApiUtil;
+import org.keycloak.tests.suites.DatabaseTest;
 import org.keycloak.tests.utils.admin.AdminEventPaths;
 import org.keycloak.tests.utils.matchers.Matchers;
 
@@ -112,6 +114,7 @@ public class ClientScopeTest extends AbstractClientScopeTest {
     }
 
     @Test
+    @DatabaseTest
     public void testAddDuplicatedClientScope() {
         ClientScopeRepresentation scopeRep = new ClientScopeRepresentation();
         scopeRep.setName("scope1");
@@ -142,6 +145,7 @@ public class ClientScopeTest extends AbstractClientScopeTest {
     }
 
     @Test
+    @DatabaseTest
     public void testRemoveClientScope() {
         // Create scope1
         ClientScopeRepresentation scopeRep = new ClientScopeRepresentation();
@@ -181,6 +185,7 @@ public class ClientScopeTest extends AbstractClientScopeTest {
 
 
     @Test
+    @DatabaseTest
     public void testUpdateScopeScope() {
         // Test creating
         ClientScopeRepresentation scopeRep = new ClientScopeRepresentation();
@@ -225,6 +230,7 @@ public class ClientScopeTest extends AbstractClientScopeTest {
     }
 
     @Test
+    @DatabaseTest
     public void testRenameScope() {
         // Create two scopes
         ClientScopeRepresentation scope1Rep = new ClientScopeRepresentation();
@@ -251,6 +257,7 @@ public class ClientScopeTest extends AbstractClientScopeTest {
 
 
     @Test
+    @DatabaseTest
     public void testScopes() {
         RoleRepresentation realmCompositeRole = createRealmRoleWithCleanup("realm-composite");
         RoleRepresentation realmChildRole = createRealmRoleWithCleanup("realm-child");
@@ -349,9 +356,9 @@ public class ClientScopeTest extends AbstractClientScopeTest {
         String roleContainerClientUuid = realm.clients().findByClientId("role-container-client").stream().findFirst().orElseThrow().getId();
         ClientResource roleContainerClient = realm.clients().get(roleContainerClientUuid);
 
-        RoleRepresentation clientCompositeRole = RoleConfigBuilder.create().name("client-composite").build();
+        RoleRepresentation clientCompositeRole = RoleBuilder.create().name("client-composite").build();
         roleContainerClient.roles().create(clientCompositeRole);
-        roleContainerClient.roles().create(RoleConfigBuilder.create().name("client-child").build());
+        roleContainerClient.roles().create(RoleBuilder.create().name("client-child").build());
         roleContainerClient.roles().get("client-composite").addComposites(Collections
                 .singletonList(
                         roleContainerClient.roles().get("client-child").toRepresentation()));
@@ -442,6 +449,7 @@ public class ClientScopeTest extends AbstractClientScopeTest {
     }
 
     @Test
+    @DatabaseTest
     public void testRemoveClientScopeInUse() {
         // Add client scope
         ClientScopeRepresentation scopeRep = new ClientScopeRepresentation();
@@ -451,10 +459,10 @@ public class ClientScopeTest extends AbstractClientScopeTest {
 
         // Add client with the clientScope
         managedRealm.updateWithCleanup(r -> {
-            r.addClient("bar-client")
+            r.clients(ClientBuilder.create("bar-client")
                     .name("bar-client")
                     .protocol("openid-connect")
-                    .defaultClientScopes("foo-scope");
+                    .defaultClientScopes("foo-scope"));
             return r;
         });
         adminEvents.skip();
@@ -619,6 +627,7 @@ public class ClientScopeTest extends AbstractClientScopeTest {
 
     // KEYCLOAK-5863
     @Test
+    @DatabaseTest
     public void testUpdateProtocolMappers() {
         ClientScopeRepresentation scopeRep = new ClientScopeRepresentation();
         scopeRep.setName("testUpdateProtocolMappers");

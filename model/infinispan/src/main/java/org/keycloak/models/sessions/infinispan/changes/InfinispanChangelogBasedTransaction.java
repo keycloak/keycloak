@@ -167,7 +167,7 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> imp
             long lifespanMs = cacheHolder.lifespanFunction().apply(realm, sessionUpdates.getClient(), sessionWrapper.getEntity());
             long maxIdleTimeMs = cacheHolder.maxIdleFunction().apply(realm, sessionUpdates.getClient(), sessionWrapper.getEntity());
 
-            MergedUpdate<V> merged = MergedUpdate.computeUpdate(updateTasks, sessionWrapper, lifespanMs, maxIdleTimeMs);
+            MergedUpdate<V> merged = MergedUpdate.computeUpdate(updateTasks, sessionWrapper, computeLifespan(maxIdleTimeMs, lifespanMs), computeMaxIdle(maxIdleTimeMs, lifespanMs));
 
             if (merged != null) {
                 // Now run the operation in our cluster
@@ -216,7 +216,7 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> imp
             // exists in transaction, avoid cache operation
             return updatesList.getEntityWrapper().getEntity();
         }
-        SessionEntityWrapper<V> existing = cacheHolder.cache().putIfAbsent(key, session, lifespan, TimeUnit.MILLISECONDS, maxIdle, TimeUnit.MILLISECONDS);
+        SessionEntityWrapper<V> existing = cacheHolder.cache().putIfAbsent(key, session, computeLifespan(maxIdle, lifespan), TimeUnit.MILLISECONDS, computeMaxIdle(maxIdle, lifespan), TimeUnit.MILLISECONDS);
         if (existing == null) {
             // keep track of the imported session for updates
             updates.put(key, new SessionUpdatesList<>(realmModel, session));
@@ -263,7 +263,7 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> imp
                 //nothing to import, already expired
                 return;
             }
-            var future = cacheHolder.cache().putIfAbsentAsync(key, session, lifespan, TimeUnit.MILLISECONDS, maxIdle, TimeUnit.MILLISECONDS);
+            var future = cacheHolder.cache().putIfAbsentAsync(key, session, computeLifespan(maxIdle, lifespan), TimeUnit.MILLISECONDS, computeMaxIdle(maxIdle, lifespan), TimeUnit.MILLISECONDS);
             // write result into concurrent hash map because the consumer is invoked in a different thread each time.
             stage.dependsOn(future.thenAccept(existing -> allSessions.put(key, existing == null ? session : existing)));
         });
@@ -287,5 +287,13 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> imp
 
         // Run the update now, so reader in same transaction can see it (TODO: Rollback may not work correctly. See if it's an issue..)
         myUpdates.addAndExecute(task);
+    }
+
+    protected long computeLifespan(long maxIdle, long lifespan) {
+        return lifespan;
+    }
+
+    protected long computeMaxIdle(long maxIdle, long lifespan) {
+        return maxIdle;
     }
 }

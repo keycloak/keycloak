@@ -19,6 +19,11 @@ user profile configuration where too much information was returned in the past.
 
 Notable changes where an internal behavior changed to prevent common misconfigurations, fix bugs or simplify running {project_name}.
 
+=== OpenTelemetry span attributes location changed
+
+In previous releases, certain OpenTelemetry span attributes such as `kc.realmName` and `kc.clientId` appeared on parent HTTP request spans.
+Span attributes are now set only on child spans where the information is actually known. Monitoring tools that relied on filtering parent HTTP spans by these attributes will need to query the appropriate child spans instead.
+
 === Different credentials of a user need to have different names
 
 When adding an OTP, WebAuthn or any other 2FA credentials, the name the user assigns to this credential needs to be unique for the given user.

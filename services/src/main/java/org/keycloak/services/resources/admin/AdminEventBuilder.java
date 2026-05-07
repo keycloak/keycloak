@@ -48,20 +48,20 @@ import static org.keycloak.models.utils.StripSecretsUtils.stripSecrets;
 public class AdminEventBuilder {
 
     protected static final Logger logger = Logger.getLogger(AdminEventBuilder.class);
-    private final AdminAuth auth;
-    private final String ipAddress;
-    private final RealmModel realm;
-    private final AdminEvent adminEvent;
-    private final Map<String, EventListenerProvider> listeners;
-    private final KeycloakSession session;
+    protected final AdminAuth auth;
+    protected final String ipAddress;
+    protected final RealmModel realm;
+    protected final AdminEvent adminEvent;
+    protected final Map<String, EventListenerProvider> listeners;
+    protected final KeycloakSession session;
 
-    private EventStoreProvider store;
+    protected EventStoreProvider store;
 
     public AdminEventBuilder(RealmModel realm, AdminAuth auth, KeycloakSession session, ClientConnection clientConnection) {
         this(realm, auth, session, clientConnection.getRemoteHost(), null);
     }
 
-    private AdminEventBuilder(RealmModel realm, AdminAuth auth, KeycloakSession session, String ipAddress, AdminEvent adminEvent) {
+    protected AdminEventBuilder(RealmModel realm, AdminAuth auth, KeycloakSession session, String ipAddress, AdminEvent adminEvent) {
         this.realm = realm;
         this.listeners = new HashMap<>();
         updateStore(session);
@@ -121,7 +121,7 @@ public class AdminEventBuilder {
         return this.updateStore(session).addListeners(session);
     }
 
-    private AdminEventBuilder updateStore(KeycloakSession session) {
+    protected AdminEventBuilder updateStore(KeycloakSession session) {
         if (realm.isAdminEventsEnabled() && store == null) {
             this.store = session.getProvider(EventStoreProvider.class);
             if (store == null) {
@@ -131,7 +131,7 @@ public class AdminEventBuilder {
         return this;
     }
 
-    private AdminEventBuilder addListeners(KeycloakSession session) {
+    protected AdminEventBuilder addListeners(KeycloakSession session) {
         HashSet<String> realmListeners = new HashSet<>(realm.getEventsListenersStream().toList());
         session.getKeycloakSessionFactory().getProviderFactoriesStream(EventListenerProvider.class)
                 .filter(providerFactory -> realmListeners.contains(providerFactory.getId()) || ((EventListenerProviderFactory) providerFactory).isGlobal())
@@ -241,7 +241,7 @@ public class AdminEventBuilder {
         return this;
     }
 
-    private String getResourcePath(UriInfo uriInfo) {
+    protected String getResourcePath(UriInfo uriInfo) {
         String path = uriInfo.getPath();
 
         StringBuilder sb = new StringBuilder();
@@ -258,7 +258,7 @@ public class AdminEventBuilder {
             return this;
         }
 
-        stripSecrets(session, value);
+        stripSecretsFromRepresentation(value);
 
         try {
             adminEvent.setRepresentation(JsonSerialization.writeValueAsString(value));
@@ -266,6 +266,10 @@ public class AdminEventBuilder {
             throw new RuntimeException(e);
         }
         return this;
+    }
+
+    protected void stripSecretsFromRepresentation(Object value){
+        stripSecrets(session, value);
     }
 
     public AdminEventBuilder detail(String key, String value) {
@@ -290,7 +294,7 @@ public class AdminEventBuilder {
         send();
     }
 
-    private void send() {
+    protected void send() {
         boolean includeRepresentation = realm.isAdminEventsDetailsEnabled();
 
         // Event needs to be copied because the same builder can be used with another event

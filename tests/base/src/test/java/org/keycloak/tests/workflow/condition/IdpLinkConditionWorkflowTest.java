@@ -44,12 +44,12 @@ import org.keycloak.representations.workflows.WorkflowRepresentation;
 import org.keycloak.representations.workflows.WorkflowScheduleRepresentation;
 import org.keycloak.representations.workflows.WorkflowStepRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
-import org.keycloak.testframework.realm.UserConfigBuilder;
+import org.keycloak.testframework.realm.IdentityProviderBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.remote.providers.runonserver.RunOnServer;
 import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.tests.workflow.AbstractWorkflowTest;
 import org.keycloak.tests.workflow.config.WorkflowsBlockingServerConfig;
-import org.keycloak.testsuite.util.IdentityProviderBuilder;
 
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
@@ -95,7 +95,7 @@ public class IdpLinkConditionWorkflowTest extends AbstractWorkflowTest {
 
         // create a test user not linked to the identity provider
         String userId;
-        try (Response response = managedRealm.admin().users().create(UserConfigBuilder.create()
+        try (Response response = managedRealm.admin().users().create(UserBuilder.create()
                 .username("no-idp-user").email("generic-user@example.com").build())) {
             userId = ApiUtil.getCreatedId(response);
         }
@@ -105,7 +105,7 @@ public class IdpLinkConditionWorkflowTest extends AbstractWorkflowTest {
         assertThat(userRepresentation.getAttributes(), nullValue());
 
         // create another user linked to the identity provider - this time the workflow should trigger
-        try (Response response = managedRealm.admin().users().create(UserConfigBuilder.create()
+        try (Response response = managedRealm.admin().users().create(UserBuilder.create()
                 .username("idp-user").federatedLink(IDP_OIDC_ALIAS, UUID.randomUUID().toString(), "fed-user-123").build())) {
             userId = ApiUtil.getCreatedId(response);
         }
@@ -120,12 +120,12 @@ public class IdpLinkConditionWorkflowTest extends AbstractWorkflowTest {
     public void testAssignWorkflowToExistingResources() {
         // create some realm users
         for (int i = 0; i < 10; i++) {
-            managedRealm.admin().users().create(UserConfigBuilder.create().username("user-" + i).build()).close();
+            managedRealm.admin().users().create(UserBuilder.create().username("user-" + i).build()).close();
         }
 
         // create some users associated with a federated identity
         for (int i = 0; i < 10; i++) {
-            managedRealm.admin().users().create(UserConfigBuilder.create().username("idp-user-" + i)
+            managedRealm.admin().users().create(UserBuilder.create().username("idp-user-" + i)
                     .federatedLink(IDP_OIDC_ALIAS, UUID.randomUUID().toString(), "idp-user-" + i).build()).close();
         }
 
@@ -146,13 +146,13 @@ public class IdpLinkConditionWorkflowTest extends AbstractWorkflowTest {
 
         // now with the workflow in place, let's create a couple more idp users - these will be attached to the workflow on creation.
         for (int i = 0; i < 3; i++) {
-            managedRealm.admin().users().create(UserConfigBuilder.create().username("new-idp-user-" + i)
+            managedRealm.admin().users().create(UserBuilder.create().username("new-idp-user-" + i)
                     .federatedLink(IDP_OIDC_ALIAS, UUID.randomUUID().toString(), "new-idp-user-" + i).build()).close();
         }
 
         // new realm users created after the workflow - these should not be attached to the workflow because they are not idp users.
         for (int i = 0; i < 3; i++) {
-            managedRealm.admin().users().create(UserConfigBuilder.create().username("new-user-" + i).build()).close();
+            managedRealm.admin().users().create(UserBuilder.create().username("new-user-" + i).build()).close();
         }
 
         runOnServer.run((RunOnServer) session -> {
@@ -247,14 +247,14 @@ public class IdpLinkConditionWorkflowTest extends AbstractWorkflowTest {
     private void setupIdentityProvider() {
         IdentityProviderRepresentation rep = IdentityProviderBuilder.create().alias(IDP_OIDC_ALIAS).providerId(IDP_OIDC_PROVIDER_ID)
                 .displayName(IDP_OIDC_PROVIDER_ID)
-                .setAttribute("clientId", "test-client")
-                .setAttribute("clientSecret", "secret")
-                .setAttribute("authorizationUrl", "http://localhost:8080/realms/" + DEFAULT_REALM_NAME + "/protocol/openid-connect/auth")
-                .setAttribute("tokenUrl", "http://localhost:8080/realms/" + DEFAULT_REALM_NAME + "/protocol/openid-connect/token")
-                .setAttribute("logoutUrl", "http://localhost:8080/realms/" + DEFAULT_REALM_NAME + "/protocol/openid-connect/logout")
-                .setAttribute("userInfoUrl", "http://localhost:8080/realms/" + DEFAULT_REALM_NAME + "/protocol/openid-connect/userinfo")
-                .setAttribute("defaultScope", "email profile")
-                .setAttribute("backchannelSupported", "true")
+                .attribute("clientId", "test-client")
+                .attribute("clientSecret", "secret")
+                .attribute("authorizationUrl", "http://localhost:8080/realms/" + DEFAULT_REALM_NAME + "/protocol/openid-connect/auth")
+                .attribute("tokenUrl", "http://localhost:8080/realms/" + DEFAULT_REALM_NAME + "/protocol/openid-connect/token")
+                .attribute("logoutUrl", "http://localhost:8080/realms/" + DEFAULT_REALM_NAME + "/protocol/openid-connect/logout")
+                .attribute("userInfoUrl", "http://localhost:8080/realms/" + DEFAULT_REALM_NAME + "/protocol/openid-connect/userinfo")
+                .attribute("defaultScope", "email profile")
+                .attribute("backchannelSupported", "true")
                 .build();
 
         managedRealm.admin().identityProviders().create(rep).close();

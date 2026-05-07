@@ -269,8 +269,9 @@ public class SdJwt {
             Optional.ofNullable(keyBindingJWT).ifPresent(keyBindJwt -> {
                 // get the hash-algorithm to use for keyBinding and set it if not present
                 String hashAlgorithm = getEffectiveHashAlgorithm(sdHashAlgorithm);
+                // Normalize to lowercase to comply with IANA registered hash algorithm names
                 issuerSignedJwt.getPayload().put(OID4VCConstants.CLAIM_NAME_SD_HASH_ALGORITHM,
-                                                 hashAlgorithm);
+                                                 hashAlgorithm.toLowerCase());
                 if (issuerSigningContext != null) {
                     issuerSignedJwt.sign(issuerSigningContext);
                 }

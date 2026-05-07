@@ -35,12 +35,12 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
-import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.util.KeycloakModelUtils;
 
 import org.apache.commons.io.IOUtils;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
 
@@ -113,13 +113,13 @@ public class SAMLClientRegistrationTest extends AbstractClientRegistrationTest {
         assertThat(response.getAttributes().get(SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_SOAP_ATTRIBUTE), is("https://LoadBalancer-9.siroe.com:3443/federation/SPSloSoap/metaAlias/sp"));
         assertThat(response.getAttributes().get(SamlConfigAttributes.SAML_ARTIFACT_BINDING_IDENTIFIER), is(ArtifactBindingUtils.computeArtifactBindingIdentifierString("loadbalancer-9.siroe.com")));
 
-        Assert.assertNotNull(response.getProtocolMappers());
-        Assert.assertEquals(1,response.getProtocolMappers().size());
+        Assertions.assertNotNull(response.getProtocolMappers());
+        Assertions.assertEquals(1,response.getProtocolMappers().size());
         ProtocolMapperRepresentation mapper = response.getProtocolMappers().get(0);
-        Assert.assertEquals("saml-user-attribute-mapper",mapper.getProtocolMapper());
-        Assert.assertEquals("urn:oid:2.5.4.42",mapper.getConfig().get(AttributeStatementHelper.SAML_ATTRIBUTE_NAME));
-        Assert.assertEquals("givenName",mapper.getConfig().get(AttributeStatementHelper.FRIENDLY_NAME));
-        Assert.assertEquals(AttributeStatementHelper.URI_REFERENCE,mapper.getConfig().get(AttributeStatementHelper.SAML_ATTRIBUTE_NAMEFORMAT));
+        Assertions.assertEquals("saml-user-attribute-mapper",mapper.getProtocolMapper());
+        Assertions.assertEquals("urn:oid:2.5.4.42",mapper.getConfig().get(AttributeStatementHelper.SAML_ATTRIBUTE_NAME));
+        Assertions.assertEquals("givenName",mapper.getConfig().get(AttributeStatementHelper.FRIENDLY_NAME));
+        Assertions.assertEquals(AttributeStatementHelper.URI_REFERENCE,mapper.getConfig().get(AttributeStatementHelper.SAML_ATTRIBUTE_NAMEFORMAT));
 
         adminClient.realm(REALM_NAME).clients().get(response.getId()).remove();
     }

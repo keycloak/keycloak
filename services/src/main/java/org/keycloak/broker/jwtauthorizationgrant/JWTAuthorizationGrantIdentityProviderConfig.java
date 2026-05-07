@@ -2,6 +2,7 @@ package org.keycloak.broker.jwtauthorizationgrant;
 
 import org.keycloak.broker.oidc.IssuerValidation;
 import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.IdentityProviderType;
 import org.keycloak.models.RealmModel;
 
 import static org.keycloak.broker.oidc.OIDCIdentityProviderConfig.JWKS_URL;
@@ -19,6 +20,6 @@ public class JWTAuthorizationGrantIdentityProviderConfig extends IdentityProvide
     @Override
     public void validate(RealmModel realm) {
         checkUrl(realm.getSslRequired(), getJwksUrl(), JWKS_URL);
-        validateIssuer(realm);
+        validateIssuer(realm, IdentityProviderType.JWT_AUTHORIZATION_GRANT);
     }
 }

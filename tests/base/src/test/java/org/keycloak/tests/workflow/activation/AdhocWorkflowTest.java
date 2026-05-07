@@ -5,18 +5,22 @@ import java.util.List;
 
 import jakarta.ws.rs.core.Response;
 
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.workflow.NotifyUserStepProviderFactory;
 import org.keycloak.models.workflow.ResourceType;
 import org.keycloak.models.workflow.SetUserAttributeStepProviderFactory;
 import org.keycloak.models.workflow.WorkflowProvider;
+import org.keycloak.models.workflow.client.DisableClientStepProviderFactory;
+import org.keycloak.models.workflow.events.ClientCreatedWorkflowEventFactory;
 import org.keycloak.models.workflow.events.UserCreatedWorkflowEventFactory;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.workflows.WorkflowRepresentation;
 import org.keycloak.representations.workflows.WorkflowStepRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
-import org.keycloak.testframework.realm.UserConfigBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.tests.workflow.AbstractWorkflowTest;
 import org.keycloak.tests.workflow.config.WorkflowsBlockingServerConfig;
@@ -26,6 +30,7 @@ import org.junit.jupiter.api.Test;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.hasSize;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
@@ -220,8 +225,96 @@ public class AdhocWorkflowTest extends AbstractWorkflowTest {
         });
     }
 
+    @Test
+    public void testRunAdHocClientWorkflow() {
+        String workflowId;
+        try (Response response = managedRealm.admin().workflows().create(WorkflowRepresentation.withName("clientworkflow")
+                .withSteps(WorkflowStepRepresentation.create()
+                        .of(DisableClientStepProviderFactory.ID)
+                        .build())
+                .build())) {
+            workflowId = ApiUtil.getCreatedId(response);
+        }
+
+        String clientId = createClient();
+
+        managedRealm.admin().workflows().workflow(workflowId).activate(ResourceType.CLIENTS.name(), clientId);
+
+        runScheduledSteps(Duration.ZERO);
+
+        runOnServer.run((session -> {
+            RealmModel realm = session.getContext().getRealm();
+            ClientModel client = session.clients().getClientById(realm, clientId);
+            assertNotNull(client);
+            assertFalse(client.isEnabled());
+        }));
+
+        // clean
+        managedRealm.admin().clients().delete(clientId).close();
+    }
+
+    @Test
+    public void testDeactivateClientWorkflow() {
+        String workflowOneId;
+        String workflowTwoId;
+        try (Response response = managedRealm.admin().workflows().create(WorkflowRepresentation.withName("ClientOne")
+                .onEvent(ClientCreatedWorkflowEventFactory.ID)
+                .withSteps(
+                        WorkflowStepRepresentation.create()
+                                .of(DisableClientStepProviderFactory.ID)
+                                .after(Duration.ofDays(5))
+                                .build()
+                ).build())) {
+            workflowOneId = ApiUtil.getCreatedId(response);
+        }
+        try (Response response = managedRealm.admin().workflows().create(WorkflowRepresentation.withName("ClientTwo")
+                .onEvent(ClientCreatedWorkflowEventFactory.ID)
+                .withSteps(
+                        WorkflowStepRepresentation.create()
+                                .of(DisableClientStepProviderFactory.ID)
+                                .after(Duration.ofDays(5))
+                                .build()
+                ).build())) {
+            workflowTwoId = ApiUtil.getCreatedId(response);
+        }
+
+        // create a client - both workflows should be activated via the event
+        String clientId = createClient();
+
+        runOnServer.run(session -> {
+            WorkflowProvider provider = session.getProvider(WorkflowProvider.class);
+            List<WorkflowRepresentation> scheduledWorkflows = provider.getScheduledWorkflowsByResource(clientId).toList();
+            assertThat(scheduledWorkflows, hasSize(2));
+        });
+
+        // deactivate the first workflow for this client
+        managedRealm.admin().workflows().workflow(workflowOneId).deactivate(ResourceType.CLIENTS.name(), clientId);
+
+        runOnServer.run(session -> {
+            WorkflowProvider provider = session.getProvider(WorkflowProvider.class);
+            List<WorkflowRepresentation> scheduledWorkflows = provider.getScheduledWorkflowsByResource(clientId).toList();
+            assertThat(scheduledWorkflows, hasSize(1));
+        });
+
+        // clean
+        managedRealm.admin().clients().delete(clientId).close();
+    }
+
+    private String createClient() {
+        ClientRepresentation rep = new ClientRepresentation();
+        rep.setName("test-workflow-client");
+        rep.setClientId("test-workflow-client");
+        rep.setProtocol("openid-connect");
+        rep.setPublicClient(false);
+        rep.setSecret("618268aa-51e6-4e64-93c4-3c0bc65b8171");
+        rep.setEnabled(true);
+        try (Response response = managedRealm.admin().clients().create(rep)) {
+            return ApiUtil.getCreatedId(response);
+        }
+    }
+
     private UserRepresentation getUserRepresentation() {
-        return UserConfigBuilder.create().username("alice")
+        return UserBuilder.create().username("alice")
                 .email("alice@wonderland.org")
                 .firstName("Alice")
                 .lastName("Wonderland")

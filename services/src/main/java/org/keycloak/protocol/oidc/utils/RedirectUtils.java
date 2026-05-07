@@ -151,7 +151,7 @@ public class RedirectUtils {
 
     // any access to parent folder /../ is unsafe with or without encoding
     private final static Pattern UNSAFE_PATH_PATTERN = Pattern.compile(
-            "(/|%2[fF]|%5[cC]|\\\\)(%2[eE]|\\.){2}(/|%2[fF]|%5[cC]|\\\\)|(/|%2[fF]|%5[cC]|\\\\)(%2[eE]|\\.){2}$");
+            "(/|%2[fF]|%5[cC]|\\\\)(%2[eE]|\\.){2}(/|%2[fF]|%5[cC]|\\\\|;)|(/|%2[fF]|%5[cC]|\\\\)(%2[eE]|\\.){2}$");
 
     private static boolean areWildcardsAllowed(URI redirectUri) {
         // wildcars are only allowed if no user-info and no unsafe pattern in path

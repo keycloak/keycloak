@@ -28,7 +28,7 @@ import org.keycloak.representations.idm.authorization.ResourceServerRepresentati
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
-import org.keycloak.testframework.realm.ClientConfigBuilder;
+import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.tests.admin.authz.fgap.KeycloakAdminPermissionsV1ServerConfig;
@@ -52,7 +52,7 @@ public class PermissionsTestV1 extends AbstractPermissionsTest {
 
     @Test
     public void clientAuthorization() {
-        String fooAuthzClientUuid = ApiUtil.getCreatedId(managedRealm1.admin().clients().create(ClientConfigBuilder.create().clientId("foo-authz").build()));
+        String fooAuthzClientUuid = ApiUtil.getCreatedId(managedRealm1.admin().clients().create(ClientBuilder.create().clientId("foo-authz").build()));
         ClientRepresentation foo = managedRealm1.admin().clients().get(fooAuthzClientUuid).toRepresentation();
 
         invoke((realm, response) -> {

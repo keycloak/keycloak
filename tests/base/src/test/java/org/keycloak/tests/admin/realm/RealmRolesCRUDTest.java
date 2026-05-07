@@ -22,7 +22,8 @@ import org.keycloak.testframework.annotations.InjectClient;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.events.AdminEventAssertion;
 import org.keycloak.testframework.realm.ManagedClient;
-import org.keycloak.testframework.realm.RoleConfigBuilder;
+import org.keycloak.testframework.realm.RoleBuilder;
+import org.keycloak.tests.suites.DatabaseTest;
 import org.keycloak.tests.utils.Assert;
 import org.keycloak.tests.utils.admin.AdminEventPaths;
 
@@ -41,6 +42,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 @KeycloakIntegrationTest
+@DatabaseTest
 public class RealmRolesCRUDTest extends AbstractRealmRolesTest {
 
     @InjectClient(ref = "client-a", attachTo = "client-a")
@@ -59,7 +61,7 @@ public class RealmRolesCRUDTest extends AbstractRealmRolesTest {
     @Test
     public void createRoleWithSameName() {
         Assertions.assertThrows(ClientErrorException.class, () -> {
-            managedRealm.admin().roles().create(RoleConfigBuilder.create().name("role-a").build());
+            managedRealm.admin().roles().create(RoleBuilder.create().name("role-a").build());
         });
     }
 
@@ -83,9 +85,22 @@ public class RealmRolesCRUDTest extends AbstractRealmRolesTest {
         assertEquals(newAttributes, role.getAttributes());
         assertFalse(role.isComposite());
 
-        managedRealm.cleanup().add(r -> r.roles().create(RoleConfigBuilder.create().name("role-a")
+        managedRealm.cleanup().add(r -> r.roles().create(RoleBuilder.create().name("role-a")
                 .description("Role A").attributes(Map.of("role-a-attr-key1", List.of("role-a-attr-val1"))).build()));
         managedRealm.cleanup().add(r -> r.roles().get("role-a-new").remove());
+    }
+
+    @Test
+    public void updateRoleWithoutNameReturnsBadRequest() {
+        RoleResource roleResource = managedRealm.admin().roles().get("role-a");
+
+        RoleRepresentation update = new RoleRepresentation();
+        update.setDescription("Role A updated description");
+        update.setAttributes(Collections.singletonMap("attrKey", Collections.singletonList("attrValue")));
+        Assertions.assertThrows(BadRequestException.class, () -> roleResource.update(update));
+
+        update.setName(" ");
+        Assertions.assertThrows(BadRequestException.class, () -> roleResource.update(update));
     }
 
     @Test
@@ -108,8 +123,8 @@ public class RealmRolesCRUDTest extends AbstractRealmRolesTest {
         assertEquals(0, managedRealm.admin().roles().get("role-a").getRoleComposites().size());
 
         List<RoleRepresentation> l = new LinkedList<>();
-        l.add(RoleConfigBuilder.create().id(managedRealm.admin().roles().get("role-b").toRepresentation().getId()).build());
-        l.add(RoleConfigBuilder.create().id(managedRealm.admin().clients().get(clientA.getId()).roles().get("role-c").toRepresentation().getId()).build());
+        l.add(RoleBuilder.create().id(managedRealm.admin().roles().get("role-b").toRepresentation().getId()).build());
+        l.add(RoleBuilder.create().id(managedRealm.admin().clients().get(clientA.getId()).roles().get("role-c").toRepresentation().getId()).build());
         managedRealm.admin().roles().get("role-a").addComposites(l);
 
         AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.CREATE, AdminEventPaths.roleResourceCompositesPath("role-a"), l, ResourceType.REALM_ROLE);
@@ -131,7 +146,7 @@ public class RealmRolesCRUDTest extends AbstractRealmRolesTest {
         assertFalse(managedRealm.admin().roles().get("role-a").toRepresentation().isComposite());
         assertEquals(0, managedRealm.admin().roles().get("role-a").getRoleComposites().size());
 
-        managedRealm.admin().roles().create(RoleConfigBuilder.create().name("role-z").build());
+        managedRealm.admin().roles().create(RoleBuilder.create().name("role-z").build());
         managedRealm.admin().roles().get("role-z").addComposites(l);
         // show that I can delete a role that has composite roles
         managedRealm.admin().roles().deleteRole("role-z");

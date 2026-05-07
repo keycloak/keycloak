@@ -1,6 +1,5 @@
 package org.keycloak.testsuite.saml;
 
-import java.io.ByteArrayInputStream;
 import java.util.Base64;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -51,12 +50,13 @@ public class ArtifactBindingCustomResolverTest extends ArtifactBindingTest {
 
         String artifact = artifactReference.get();
         byte[] byteArray = Base64.getDecoder().decode(artifact);
-        ByteArrayInputStream bis = new ByteArrayInputStream(byteArray);
-        bis.skip(2);
-        int index = bis.read();
-        
+
         assertThat(byteArray[0], is((byte)0));
         assertThat(byteArray[1], is((byte)5));
+        assertThat(byteArray[2], is((byte)0));
+        assertThat(byteArray[3], is((byte)0));
+
+        int index = byteArray[4];
 
         if (!suiteContext.getAuthServerInfo().isUndertow()) return;
 
@@ -86,12 +86,13 @@ public class ArtifactBindingCustomResolverTest extends ArtifactBindingTest {
 
         String artifact = artifactReference.get();
         byte[] byteArray = Base64.getDecoder().decode(artifact);
-        ByteArrayInputStream bis = new ByteArrayInputStream(byteArray);
-        bis.skip(2);
-        int index = bis.read();
 
         assertThat(byteArray[0], is((byte)0));
         assertThat(byteArray[1], is((byte)5));
+        assertThat(byteArray[2], is((byte)0));
+        assertThat(byteArray[3], is((byte)0));
+
+        int index = byteArray[4];
 
         String storedResponse = CustomTestingSamlArtifactResolver.list.get(index);
 

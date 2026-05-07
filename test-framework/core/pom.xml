@@ -29,12 +29,17 @@
     <artifactId>keycloak-test-framework-core</artifactId>
     <name>Keycloak Test Framework</name>
     <packaging>jar</packaging>
-    <description>Preview Keycloak testing framework based on JUnit 5</description>
+    <description>Keycloak testing framework based on JUnit 6</description>
 
     <dependencies>
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-admin-client-tests</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak.testframework</groupId>
+            <artifactId>keycloak-test-framework-builders</artifactId>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
@@ -80,6 +85,14 @@
         <dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-bootstrap-maven-resolver</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.shrinkwrap</groupId>
+            <artifactId>shrinkwrap-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.shrinkwrap</groupId>
+            <artifactId>shrinkwrap-impl-base</artifactId>
         </dependency>
     </dependencies>
 

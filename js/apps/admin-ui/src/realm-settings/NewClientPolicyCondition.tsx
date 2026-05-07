@@ -228,6 +228,7 @@ export default function NewClientPolicyCondition() {
                   variant={SelectVariant.single}
                   aria-label={t("conditionType")}
                   isOpen={openConditionType}
+                  width="trigger"
                 >
                   {conditionTypes?.map((condition) => (
                     <SelectOption

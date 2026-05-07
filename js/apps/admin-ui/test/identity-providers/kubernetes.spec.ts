@@ -1,4 +1,4 @@
-import { test } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 import adminClient from "../utils/AdminClient.ts";
 import { login } from "../utils/login.ts";
 import { assertNotificationMessage } from "../utils/masthead.ts";
@@ -36,5 +36,26 @@ test.describe.serial("Kubernetes identity provider test", () => {
     await clickSaveButton(page);
 
     await assertNotificationMessage(page, "Provider successfully updated");
+  });
+
+  test("should set and persist federated client assertion max expiration", async ({
+    page,
+  }) => {
+    await clickTableRowItem(page, "kubernetes");
+
+    const maxExpInput = page.getByTestId(
+      "fed-client-assertion-max-expiration-time-input",
+    );
+    await maxExpInput.fill("5");
+
+    await clickSaveButton(page);
+    await assertNotificationMessage(page, "Provider successfully updated");
+
+    await goToIdentityProviders(page);
+    await clickTableRowItem(page, "kubernetes");
+
+    await expect(
+      page.getByTestId("fed-client-assertion-max-expiration-time-input"),
+    ).toHaveValue("5");
   });
 });

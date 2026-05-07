@@ -19,23 +19,26 @@ package org.keycloak.testsuite.sssd;
 import java.io.InputStream;
 import java.util.Arrays;
 import java.util.List;
-import org.apache.commons.configuration.ConfigurationException;
-import org.apache.commons.configuration.PropertiesConfiguration;
-import org.hamcrest.Matchers;
-import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Rule;
+
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
 import org.keycloak.representations.idm.EventRepresentation;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginUpdateProfilePage;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+
+import org.apache.commons.configuration.ConfigurationException;
+import org.apache.commons.configuration.PropertiesConfiguration;
+import org.hamcrest.Matchers;
+import org.jboss.arquillian.graphene.page.Page;
+import org.junit.BeforeClass;
+import org.junit.Rule;
+import org.junit.jupiter.api.Assertions;
 
 /**
  * <p>Abstract base class for SSSD tests.</p>
@@ -73,21 +76,21 @@ public abstract class AbstractBaseSSSDTest extends AbstractTestRealmKeycloakTest
     }
 
     protected void testLoginFailure(String username, String password) {
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login(username, password);
         loginPage.assertCurrent();
-        Assert.assertEquals("Invalid username or password.", loginPage.getInputError());
+        Assertions.assertEquals(loginPage.getInputError(), "Invalid username or password.");
         events.expect(EventType.LOGIN_ERROR).user(Matchers.any(String.class)).error(Errors.INVALID_USER_CREDENTIALS).assertEvent();
     }
 
     protected void testLoginSuccess(String username) {
         oauth.doLogin(username, getPassword(username));
-        Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        EventRepresentation loginEvent = events.expectLogin().user(Matchers.any(String.class))
-                .detail(Details.USERNAME, username).assertEvent();
+        Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        EventRepresentation loginEvent = EventAssertion.expectLoginSuccess(events.poll()).hasUserId()
+                .details(Details.USERNAME, username).getEvent();
         AccessTokenResponse tokenResponse = sendTokenRequestAndGetResponse(loginEvent);
         appPage.logout(tokenResponse.getIdToken());
-        events.expectLogout(loginEvent.getSessionId()).user(loginEvent.getUserId()).assertEvent();
+        EventAssertion.expectLogoutSuccess(events.poll()).sessionId(loginEvent.getSessionId()).userId(loginEvent.getUserId());
     }
 
     protected String getUsername() {

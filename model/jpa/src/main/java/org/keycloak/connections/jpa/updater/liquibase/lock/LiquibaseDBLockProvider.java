@@ -98,7 +98,7 @@ public class LiquibaseDBLockProvider implements DBLockProvider {
                     logger.warnf("Locking namespace %s which was already locked in this provider", lock);
                     return;
                 } else {
-                    throw new RuntimeException(String.format("Trying to get a lock when one was already taken by the provider"));
+                    throw new RuntimeException("Trying to get a lock when one was already taken by the provider");
                 }
             }
 
@@ -165,9 +165,7 @@ public class LiquibaseDBLockProvider implements DBLockProvider {
 
     @Override
     public void close() {
-        KeycloakModelUtils.suspendJtaTransaction(session.getKeycloakSessionFactory(), () -> {
-            safeCloseConnection();
-        });
+        KeycloakModelUtils.suspendJtaTransaction(session.getKeycloakSessionFactory(), this::safeCloseConnection);
     }
 
     private void safeRollbackConnection() {

@@ -458,6 +458,7 @@ public class LoginActionsService {
 
             }
             authSession = createAuthenticationSessionForClient(clientId, redirectUri);
+            processLocaleParam(authSession);
             return processResetCredentials(false, null, authSession, null);
         }
 
@@ -625,7 +626,11 @@ public class LoginActionsService {
             String kid = verifier.getHeader().getKeyId();
             String algorithm = verifier.getHeader().getAlgorithm().name();
 
-            SignatureVerifierContext signatureVerifier = session.getProvider(SignatureProvider.class, algorithm).verifier(kid);
+            SignatureProvider signatureProvider = session.getProvider(SignatureProvider.class, algorithm);
+            if (signatureProvider == null) {
+                throw new ExplainedTokenVerificationException(aToken, Errors.INVALID_SIGNATURE, Messages.INVALID_REQUEST);
+            }
+            SignatureVerifierContext signatureVerifier = signatureProvider.verifier(kid);
             verifier.verifierContext(signatureVerifier);
 
             verifier.verify();
@@ -823,8 +828,11 @@ public class LoginActionsService {
         AuthenticationManager.expireIdentityCookie(session);
 
         if (Profile.isFeatureEnabled(Profile.Feature.ORGANIZATION) && tokenString != null) {
-            //this call should extract orgId from token and set the organization to the session context
+            // this call should extract orgId from token and set the organization to the session context
             Response response = preHandleActionToken(tokenString);
+            // restore event type because handleActionToken() overwrites it to EXECUTE_ACTION_TOKEN
+            event.event(EventType.REGISTER);
+
             if (response != null) {
                 return response;
             }

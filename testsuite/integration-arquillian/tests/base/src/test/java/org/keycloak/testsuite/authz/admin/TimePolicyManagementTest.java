@@ -31,12 +31,12 @@ import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
 import org.keycloak.representations.idm.authorization.DecisionStrategy;
 import org.keycloak.representations.idm.authorization.Logic;
 import org.keycloak.representations.idm.authorization.TimePolicyRepresentation;
-import org.keycloak.testsuite.Assert;
 
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -154,7 +154,7 @@ public class TimePolicyManagementTest extends AbstractPolicyManagementTest {
         try {
             representation.setNotOnOrAfter("2016-02-01 00:00:00");
             authorization.policies().time().findById(representation.getId()).update(representation);
-            Assert.fail("should fail due to invalid dates");
+            Assertions.fail("should fail due to invalid dates");
         } catch (BadRequestException bre) {
             Response response = bre.getResponse();
             assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());

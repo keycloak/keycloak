@@ -40,19 +40,20 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.messages.Messages;
-import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.pages.IdpLinkActionPage;
 import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.keycloak.utils.BrokerUtil;
 
+import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_OIDC_ALIAS;
 
@@ -262,7 +263,7 @@ public class KcOidcBrokerIdpLinkActionTest extends AbstractInitializedBaseBroker
     public void testAccountLinkingDifferentUserLinked() throws Exception {
         // Link IDP to user "user2"
         Response response = AccountHelper.addIdentityProvider(adminClient.realm(bc.consumerRealmName()), "user2", adminClient.realm(bc.providerRealmName()), bc.getUserLogin(), bc.getIDPAlias());
-        Assert.assertEquals(204, response.getStatus());
+        Assertions.assertEquals(204, response.getStatus());
 
         // Linking the user "user1" to same IDP should fail
         loginToConsumer();
@@ -278,8 +279,8 @@ public class KcOidcBrokerIdpLinkActionTest extends AbstractInitializedBaseBroker
         grantPage.accept();
 
         errorPage.assertCurrent();
-        Assert.assertEquals("Federated identity returned by " + bc.getIDPAlias() + " is already linked to another user.", errorPage.getError());
-        Assert.assertEquals(bc.createConsumerClients().get(0).getBaseUrl(), errorPage.getBackToApplicationLink());
+        Assertions.assertEquals("Federated identity returned by " + bc.getIDPAlias() + " is already linked to another user.", errorPage.getError());
+        Assertions.assertEquals(bc.createConsumerClients().get(0).getBaseUrl(), errorPage.getBackToApplicationLink());
 
         // Check that user is not linked to the IDP
         assertUserLinkedToIDP(false);
@@ -333,7 +334,7 @@ public class KcOidcBrokerIdpLinkActionTest extends AbstractInitializedBaseBroker
         RoleRepresentation defaultRoles = consumerRealm.roles().get(Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + bc.consumerRealmName()).toRepresentation();
         consumerRealm.users().get(user1Id).roles().realmLevel().remove(Collections.singletonList(defaultRoles));
 
-        ClientRepresentation accountClient = ApiUtil.findClientResourceByClientId(consumerRealm, Constants.ACCOUNT_MANAGEMENT_CLIENT_ID).toRepresentation();
+        ClientRepresentation accountClient = AdminApiUtil.findClientResourceByClientId(consumerRealm, Constants.ACCOUNT_MANAGEMENT_CLIENT_ID).toRepresentation();
         RoleRepresentation manageAccount = consumerRealm.clients().get(accountClient.getId()).roles().get(AccountRoles.MANAGE_ACCOUNT).toRepresentation();
         consumerRealm.users().get(user1Id).roles().clientLevel(accountClient.getId()).add(Collections.singletonList(manageAccount));
 
@@ -372,7 +373,7 @@ public class KcOidcBrokerIdpLinkActionTest extends AbstractInitializedBaseBroker
         RoleRepresentation defaultRoles = consumerRealm.roles().get(Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + bc.consumerRealmName()).toRepresentation();
         consumerRealm.users().get(user1Id).roles().realmLevel().remove(Collections.singletonList(defaultRoles));
 
-        ClientRepresentation accountClient = ApiUtil.findClientResourceByClientId(consumerRealm, Constants.ACCOUNT_MANAGEMENT_CLIENT_ID).toRepresentation();
+        ClientRepresentation accountClient = AdminApiUtil.findClientResourceByClientId(consumerRealm, Constants.ACCOUNT_MANAGEMENT_CLIENT_ID).toRepresentation();
         RoleRepresentation manageAccountLinks = consumerRealm.clients().get(accountClient.getId()).roles().get(AccountRoles.MANAGE_ACCOUNT_LINKS).toRepresentation();
         consumerRealm.users().get(user1Id).roles().clientLevel(accountClient.getId()).add(Collections.singletonList(manageAccountLinks));
 
@@ -408,7 +409,7 @@ public class KcOidcBrokerIdpLinkActionTest extends AbstractInitializedBaseBroker
 
         // Link IDP to user "user1"
         Response response = AccountHelper.addIdentityProvider(adminClient.realm(bc.consumerRealmName()), "user1", adminClient.realm(bc.providerRealmName()), bc.getUserLogin(), bc.getIDPAlias());
-        Assert.assertEquals(204, response.getStatus());
+        Assertions.assertEquals(204, response.getStatus());
 
         setTimeOffset(2);
 
@@ -424,7 +425,7 @@ public class KcOidcBrokerIdpLinkActionTest extends AbstractInitializedBaseBroker
 
         // Should be redirected back to "consumer" login
         loginPage.assertCurrent(bc.consumerRealmName());
-        Assert.assertEquals("Access denied when authenticating with kc-oidc-idp", loginPage.getError());
+        Assertions.assertEquals("Access denied when authenticating with kc-oidc-idp", loginPage.getError());
 
         assertEvents((providerRealmId, providerUserId, consumerRealmId, consumerUserId, consumerUsername) -> {
             // Provider login - rejected consent screen
@@ -443,7 +444,7 @@ public class KcOidcBrokerIdpLinkActionTest extends AbstractInitializedBaseBroker
 
     private String loginToConsumer() {
         // Login to "consumer" realm with password
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
         loginPage.login("user1", "password");
         appPage.assertCurrent();
@@ -467,12 +468,12 @@ public class KcOidcBrokerIdpLinkActionTest extends AbstractInitializedBaseBroker
 
     private void assertKcActionParams(String expectedKcAction, String expectedKcActionStatus) throws Exception {
         MultivaluedHashMap<String, String> params = UriUtils.decodeQueryString(new URL(driver.getCurrentUrl()).getQuery());
-        Assert.assertEquals(expectedKcAction, params.getFirst(Constants.KC_ACTION));
-        Assert.assertEquals(expectedKcActionStatus, params.getFirst(Constants.KC_ACTION_STATUS));
+        Assertions.assertEquals(expectedKcAction, params.getFirst(Constants.KC_ACTION));
+        Assertions.assertEquals(expectedKcActionStatus, params.getFirst(Constants.KC_ACTION_STATUS));
     }
 
     private void assertUserLinkedToIDP(boolean expectedLinked) {
-        Assert.assertThat(expectedLinked, is(AccountHelper.isIdentityProviderLinked(adminClient.realm(bc.consumerRealmName()), "user1", bc.getIDPAlias())));
+        MatcherAssert.assertThat(expectedLinked, is(AccountHelper.isIdentityProviderLinked(adminClient.realm(bc.consumerRealmName()), "user1", bc.getIDPAlias())));
     }
 
     @FunctionalInterface

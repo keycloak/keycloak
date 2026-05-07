@@ -1,0 +1,28 @@
+== Manual migration if you migrated to 26.6.0
+
+The migration to 26.6.0 might have introduced the `Organization` sub-flow to your custom browser flow in case they were bound to the `browser flow` binding type.
+
+If you upgrade from 26.5.x or earlier directly to 26.6.1, this does not apply to you.
+
+If you have migrated to 26.6.0, review your custom browser flow in each realm and remove the `Organization` sub-flow if this is not desired.
+
+Once you upgraded to 26.6.1, you should see in the built-in browser flow the `Organization` sub-flow.
+
+// ------------------------ Breaking changes ------------------------  //
+== Breaking changes
+
+Breaking changes are identified as those that might require changes for existing users to their configurations or applications.
+In minor or patch releases, {project_name} will only introduce breaking changes to fix bugs.
+
+=== Outgoing HTTP connections do not follow redirects
+
+Since this release, the HTTP connections originated from the {project_name} server do not follow redirects by default. The HTTP result will be the redirect status (`3xx`) code, and the `Location` header will not be automatically fetched. With this change, the server avoids retrieving unwanted redirects that can bypass allowed URLs defined by client policies or other future configurations.
+
+The new option `allow-redirects` (SPI `connections-http-client`, provider `default`) is available to revert to the previous behavior. This option is deprecated and will be removed in a future version.
+
+[source,bash]
+----
+bin/kc.[sh|bat] start --spi-connections-http-client--default--allow-redirects true
+----
+
+See link:{server_guide_base_link}/outgoinghttp[Outgoing HTTP requests documentation] for more information.

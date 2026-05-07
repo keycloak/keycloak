@@ -59,8 +59,8 @@ public class SamlEcpProfileService extends SamlService {
     private static final String NS_PREFIX_SAML_PROTOCOL = "samlp";
     private static final String NS_PREFIX_SAML_ASSERTION = "saml";
 
-    public SamlEcpProfileService(KeycloakSession session, EventBuilder event, DestinationValidator destinationValidator) {
-        super(session, event, destinationValidator);
+    public SamlEcpProfileService(KeycloakSession session, EventBuilder event, long maxInflatingSize, DestinationValidator destinationValidator) {
+        super(session, event, maxInflatingSize, destinationValidator);
     }
 
     public Response authenticate(InputStream inputStream) {

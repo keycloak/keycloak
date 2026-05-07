@@ -31,12 +31,12 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.storage.ldap.idm.model.LDAPObject;
-import org.keycloak.testsuite.Assert;
+import org.keycloak.testframework.events.EventAssertion;
+import org.keycloak.testframework.remote.providers.runonserver.RunOnServerException;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.arquillian.annotation.EnableVault;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginPage;
-import org.keycloak.testsuite.runonserver.RunOnServerException;
 import org.keycloak.testsuite.util.LDAPRule;
 import org.keycloak.testsuite.util.LDAPRule.LDAPConnectionParameters;
 import org.keycloak.testsuite.util.LDAPTestConfiguration;
@@ -48,6 +48,7 @@ import org.junit.Assume;
 import org.junit.FixMethodOrder;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 import org.junit.rules.ExternalResource;
 import org.junit.runners.MethodSorters;
 
@@ -149,24 +150,24 @@ public class LDAPUserLoginTest extends AbstractLDAPTest {
     // Helper methods
     private void verifyLoginSucceededAndLogout(String username, String password) {
         String userId = findUser(username).getId();
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login(username, password);
         appPage.assertCurrent();
-        Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assert.assertNotNull(oauth.parseLoginResponse().getCode());
-        EventRepresentation loginEvent = events.expectLogin().user(userId).assertEvent();
+        Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
+        EventRepresentation loginEvent = EventAssertion.expectLoginSuccess(events.poll()).userId(userId).getEvent();
         AccessTokenResponse tokenResponse = sendTokenRequestAndGetResponse(loginEvent);
         appPage.logout(tokenResponse.getIdToken());
-        events.expectLogout(loginEvent.getSessionId()).user(userId).assertEvent();
+        EventAssertion.expectLogoutSuccess(events.poll()).sessionId(loginEvent.getSessionId()).userId(userId);
     }
 
     private void verifyLoginFailed(String username, String password) {
         // Clear the events queue before the actual test to catch all errors properly
         events.clear();
         // Run the test actions
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login(username, password);
-        Assert.assertEquals("Invalid username or password.", loginPage.getInputError());
+        Assertions.assertEquals("Invalid username or password.", loginPage.getInputError());
 
         if (username.equals(DEFAULT_TEST_USERS.get("INVALID_USER_EMAIL")) || username.equals(DEFAULT_TEST_USERS.get("INVALID_USER_NAME"))) {
 
@@ -175,7 +176,7 @@ public class LDAPUserLoginTest extends AbstractLDAPTest {
         } else if (username.equals(DEFAULT_TEST_USERS.get("VALID_USER_EMAIL")) || username.equals(DEFAULT_TEST_USERS.get("VALID_USER_NAME"))) {
 
             List<UserRepresentation> knownUsers = getAdminClient().realm(TEST_REALM_NAME).users().search(DEFAULT_TEST_USERS.get("VALID_USER_NAME"));
-            Assert.assertTrue(!knownUsers.isEmpty());
+            Assertions.assertTrue(!knownUsers.isEmpty());
             final String userId = knownUsers.get(0).getId();
             events.expect(EventType.LOGIN_ERROR).user(userId).error(Errors.INVALID_USER_CREDENTIALS).assertEvent();
 
@@ -211,7 +212,7 @@ public class LDAPUserLoginTest extends AbstractLDAPTest {
 
     private void verifyConnectionUrlProtocolPrefix(String ldapProtocolPrefix) {
         final String ldapConnectionUrl = ldapRule.getConfig().get(LDAPConstants.CONNECTION_URL);
-        Assert.assertTrue(!ldapConnectionUrl.isEmpty() && ldapConnectionUrl.startsWith(ldapProtocolPrefix));
+        Assertions.assertTrue(!ldapConnectionUrl.isEmpty() && ldapConnectionUrl.startsWith(ldapProtocolPrefix));
     }
 
     // Tests themselves

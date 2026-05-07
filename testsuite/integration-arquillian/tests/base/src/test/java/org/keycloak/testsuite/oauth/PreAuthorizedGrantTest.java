@@ -26,13 +26,13 @@ import jakarta.ws.rs.core.UriBuilder;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.Time;
+import org.keycloak.protocol.oid4vc.model.PreAuthorizedCodeGrant;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
-import org.keycloak.protocol.oidc.grants.PreAuthorizedCodeGrantTypeFactory;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
-import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 
@@ -46,9 +46,10 @@ import org.apache.http.message.BasicNameValuePair;
 import org.junit.Before;
 import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @EnableFeature(value = Profile.Feature.OID4VC_VCI, skipRestart = true)
+@EnableFeature(value = Profile.Feature.OID4VC_VCI_PREAUTH_CODE, skipRestart = true)
 public class PreAuthorizedGrantTest extends AbstractTestRealmKeycloakTest {
 
     private CloseableHttpClient httpClient;
@@ -61,18 +62,18 @@ public class PreAuthorizedGrantTest extends AbstractTestRealmKeycloakTest {
     @Test
     public void testPreAuthorizedGrant() throws Exception {
         String userSessionId = getUserSession();
-        String preAuthorizedCode = getTestingClient().testing().getPreAuthorizedCode(TEST_REALM_NAME, userSessionId, "test-app", Time.currentTime() + 30);
+        String preAuthorizedCode = getTestingClient().testing(TEST_REALM_NAME).getPreAuthorizedCode(TEST_REALM_NAME, userSessionId, "test-app", Time.currentTime() + 30);
         AccessTokenResponse accessTokenResponse = postCode(preAuthorizedCode);
 
-        assertEquals("An access token should have successfully been returned.", HttpStatus.SC_OK, accessTokenResponse.getStatusCode());
+        assertEquals(HttpStatus.SC_OK, accessTokenResponse.getStatusCode(), "An access token should have successfully been returned.");
     }
 
     @Test
     public void testPreAuthorizedGrantExpired() throws Exception {
         String userSessionId = getUserSession();
-        String preAuthorizedCode = getTestingClient().testing().getPreAuthorizedCode(TEST_REALM_NAME, userSessionId, "test-app", Time.currentTime() - 30);
+        String preAuthorizedCode = getTestingClient().testing(TEST_REALM_NAME).getPreAuthorizedCode(TEST_REALM_NAME, userSessionId, "test-app", Time.currentTime() - 30);
         AccessTokenResponse accessTokenResponse = postCode(preAuthorizedCode);
-        assertEquals("An expired code should not get an access token.", HttpStatus.SC_BAD_REQUEST, accessTokenResponse.getStatusCode());
+        assertEquals(HttpStatus.SC_BAD_REQUEST, accessTokenResponse.getStatusCode(), "An expired code should not get an access token.");
     }
 
     @Test
@@ -80,7 +81,7 @@ public class PreAuthorizedGrantTest extends AbstractTestRealmKeycloakTest {
         // assure that a session exists.
         getUserSession();
         AccessTokenResponse accessTokenResponse = postCode("invalid-code");
-        assertEquals("An invalid code should not get an access token.", HttpStatus.SC_BAD_REQUEST, accessTokenResponse.getStatusCode());
+        assertEquals(HttpStatus.SC_BAD_REQUEST, accessTokenResponse.getStatusCode(), "An invalid code should not get an access token.");
     }
 
     @Test
@@ -89,12 +90,12 @@ public class PreAuthorizedGrantTest extends AbstractTestRealmKeycloakTest {
         getUserSession();
         HttpPost post = new HttpPost(getTokenEndpoint());
         List<NameValuePair> parameters = new LinkedList<>();
-        parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, PreAuthorizedCodeGrantTypeFactory.GRANT_TYPE));
+        parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, PreAuthorizedCodeGrant.PRE_AUTH_GRANT_TYPE));
         UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, StandardCharsets.UTF_8);
         post.setEntity(formEntity);
 
         AccessTokenResponse accessTokenResponse = new AccessTokenResponse(httpClient.execute(post));
-        assertEquals("If no code is provided, no access token should be returned.", HttpStatus.SC_BAD_REQUEST, accessTokenResponse.getStatusCode());
+        assertEquals(HttpStatus.SC_BAD_REQUEST, accessTokenResponse.getStatusCode(), "If no code is provided, no access token should be returned.");
     }
 
     /**
@@ -104,9 +105,9 @@ public class PreAuthorizedGrantTest extends AbstractTestRealmKeycloakTest {
     @Test
     public void testPreAuthorizedGrantRealmDisabled() throws Exception {
         // Disable verifiable credentials for the test realm
-        RealmRepresentation realmRep = adminClient.realm(TEST_REALM_NAME).toRepresentation();
+        RealmRepresentation realmRep = managedRealm.admin().toRepresentation();
         realmRep.setVerifiableCredentialsEnabled(false);
-        adminClient.realm(TEST_REALM_NAME).update(realmRep);
+        managedRealm.admin().update(realmRep);
 
         try {
             String userSessionId = getUserSession();
@@ -114,20 +115,19 @@ public class PreAuthorizedGrantTest extends AbstractTestRealmKeycloakTest {
                     .getPreAuthorizedCode(TEST_REALM_NAME, userSessionId, "test-app", Time.currentTime() + 30);
 
             AccessTokenResponse accessTokenResponse = postCode(preAuthorizedCode);
-            assertEquals("Pre-authorized grant should be forbidden when verifiable credentials are disabled.",
-                    HttpStatus.SC_FORBIDDEN, accessTokenResponse.getStatusCode());
+            assertEquals(HttpStatus.SC_FORBIDDEN, accessTokenResponse.getStatusCode(), "Pre-authorized grant should be forbidden when verifiable credentials are disabled.");
         } finally {
             // Re-enable verifiable credentials so other tests see the default behavior
-            RealmRepresentation realmRepReset = adminClient.realm(TEST_REALM_NAME).toRepresentation();
+            RealmRepresentation realmRepReset = managedRealm.admin().toRepresentation();
             realmRepReset.setVerifiableCredentialsEnabled(true);
-            adminClient.realm(TEST_REALM_NAME).update(realmRepReset);
+            managedRealm.admin().update(realmRepReset);
         }
     }
 
     private AccessTokenResponse postCode(String preAuthorizedCode) throws Exception {
         HttpPost post = new HttpPost(getTokenEndpoint());
         List<NameValuePair> parameters = new LinkedList<>();
-        parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, PreAuthorizedCodeGrantTypeFactory.GRANT_TYPE));
+        parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, PreAuthorizedCodeGrant.PRE_AUTH_GRANT_TYPE));
         parameters.add(new BasicNameValuePair("pre-authorized_code", preAuthorizedCode));
         UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, StandardCharsets.UTF_8);
         post.setEntity(formEntity);

@@ -5,7 +5,7 @@
 <#import "/templates/profile.adoc" as profile>
 
 <@tmpl.guide title="Root cause analysis with tracing"
-summary="Record information during the request lifecycle with OpenTelementry tracing to identify root cases for latencies and errors in {project_name} and connected systems."
+summary="Record information during the request lifecycle with OpenTelemetry tracing to identify root cases for latencies and errors in {project_name} and connected systems."
 includedOptions="tracing-* log-*-include-trace">
 
 This {section} explains how you can enable and configure distributed tracing in {project_name} by utilizing https://opentelemetry.io/[OpenTelemetry] (OTel).
@@ -182,5 +182,14 @@ You can filter out the required traces in your tracing backend based on their ta
 {project_name} Operator automatically sets the `KC_TRACING_SERVICE_NAME` and `KC_TRACING_RESOURCE_ATTRIBUTES` environment variables for each {project_name} container included in pods it manages.
 
 NOTE: The `KC_TRACING_RESOURCE_ATTRIBUTES` variable always contains (if not overridden) the `k8s.namespace.name` attribute representing the current namespace.
+
+== Including trace information in Freemarker templates
+
+When tracing is enabled, you can include the trace ID in the Freemarker templates of the login theme by using the `traceId` variable.
+
+By default, the base login theme includes the trace ID in the `error.ftl` template.
+With the trace ID included in the error page, users can report it when they encounter an error, which can help you quickly identify and investigate additional recorded information for that operation.
+
+You will then find the trace ID in all logged messages for this request, and in your tracing system if this trace was sampled.
 
 </@tmpl.guide>

@@ -102,6 +102,15 @@ public class RoleContainerResource extends RoleResource {
         this.session = session;
     }
 
+    public RoleContainerResource(KeycloakSession session, UriInfo uriInfo, RealmModel realm,
+                                 AdminPermissionEvaluator auth, AdminEventBuilder adminEvent) {
+        this(session, uriInfo, realm, auth, null, adminEvent);
+    }
+
+    public void setRoleContainer(RoleContainerModel roleContainer) {
+        this.roleContainer = roleContainer;
+    }
+
     /**
      * Get all roles for the realm or client
      *
@@ -313,6 +322,7 @@ public class RoleContainerResource extends RoleResource {
     @Operation(summary = "Update a role by name")
     @APIResponses(value = {
         @APIResponse(responseCode = "204", description = "No Content"),
+        @APIResponse(responseCode = "400", description = "Bad Request"),
         @APIResponse(responseCode = "403", description = "Forbidden"),
         @APIResponse(responseCode = "404", description = "Not Found"),
         @APIResponse(responseCode = "409", description = "Conflict")
@@ -554,7 +564,7 @@ public class RoleContainerResource extends RoleResource {
      *
      * @param roleName the role name.
      * @param firstResult first result to return. Ignored if negative or {@code null}.
-     * @param maxResults maximum number of results to return. Ignored if negative or {@code null}.
+     * @param maxResults maximum number of results to return. Unbounded if negative.
      * @param briefRepresentation Boolean which defines whether brief representations are returned (default: false)
      * @return a non-empty {@code Stream} of users.
      */
@@ -572,7 +582,7 @@ public class RoleContainerResource extends RoleResource {
     public Stream<UserRepresentation> getUsersInRole(final @Parameter(description = "the role name.") @PathParam("role-name") String roleName,
                                                     @Parameter(description = "Boolean which defines whether brief representations are returned (default: false)") @QueryParam("briefRepresentation") Boolean briefRepresentation,
                                                     @Parameter(description = "first result to return. Ignored if negative or {@code null}.") @QueryParam("first") Integer firstResult,
-                                                    @Parameter(description = "maximum number of results to return. Ignored if negative or {@code null}.") @QueryParam("max") Integer maxResults) {
+                                                    @Parameter(description = "Maximum number of results to return. Unbounded if negative.") @QueryParam("max") @DefaultValue(Constants.DEFAULT_MAX_RESULTS_STR) Integer maxResults) {
 
         auth.roles().requireView(roleContainer);
         auth.users().requireQuery();
@@ -598,7 +608,7 @@ public class RoleContainerResource extends RoleResource {
      *
      * @param roleName the role name.
      * @param firstResult first result to return. Ignored if negative or {@code null}.
-     * @param maxResults maximum number of results to return. Ignored if negative or {@code null}.
+     * @param maxResults maximum number of results to return. Unbounded if negative.
      * @param briefRepresentation if false, return a full representation of the {@code GroupRepresentation} objects.
      * @return a non-empty {@code Stream} of groups.
      */
@@ -614,9 +624,9 @@ public class RoleContainerResource extends RoleResource {
         @APIResponse(responseCode = "404", description = "Not Found")
     })
     public Stream<GroupRepresentation> getGroupsInRole(final @Parameter(description = "the role name.") @PathParam("role-name") String roleName,
-                                                    @Parameter(description = "first result to return. Ignored if negative or {@code null}.") @QueryParam("first") Integer firstResult,
-                                                    @Parameter(description = "maximum number of results to return. Ignored if negative or {@code null}.") @QueryParam("max") Integer maxResults,
-                                                    @Parameter(description = "if false, return a full representation of the {@code GroupRepresentation} objects.") @QueryParam("briefRepresentation") @DefaultValue("true") boolean briefRepresentation) {
+                                                    @Parameter(description = "First result to return. Ignored if negative or {@code null}.") @QueryParam("first") Integer firstResult,
+                                                    @Parameter(description = "Maximum number of results to return. Unbounded if negative.") @QueryParam(Constants.DEFAULT_MAX_RESULTS_STR) Integer maxResults,
+                                                    @Parameter(description = "If false, return a full representation of the {@code GroupRepresentation} objects.") @QueryParam("briefRepresentation") @DefaultValue("true") boolean briefRepresentation) {
 
         auth.roles().requireView(roleContainer);
         firstResult = firstResult != null ? firstResult : 0;

@@ -23,7 +23,7 @@ import static org.keycloak.testsuite.util.UIUtils.click;
 import static org.keycloak.testsuite.util.UIUtils.getTextFromElement;
 import static org.keycloak.testsuite.util.UIUtils.isElementVisible;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
@@ -63,7 +63,7 @@ public abstract class AbstractHeader extends AbstractFragmentWithMobileLayout {
     protected void assertToolsBtnVisible(boolean expected, WebElement btn) {
         boolean actual = isToolsBtnVisible(btn);
         String msg = "Header button should" + (!expected ? " not" : "") + " be visible";
-        assertEquals(msg, expected, actual);
+        assertEquals(expected, actual, msg);
     }
 
     protected String getToolsBtnText(WebElement btn) {

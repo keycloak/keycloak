@@ -17,7 +17,7 @@ public class GrantRoleStepProvider extends RoleBasedStepProvider {
 
     @Override
     protected void run(UserModel user, RoleModel role) {
-        log.debugv("Granting role %s to user %s)", role.getName(), user.getId());
+        log.debugv("Granting role {0} to user {1}", role.getName(), user.getId());
         user.grantRole(role);
     }
 }

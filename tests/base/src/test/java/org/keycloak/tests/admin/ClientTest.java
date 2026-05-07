@@ -18,6 +18,7 @@
 package org.keycloak.tests.admin;
 
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URL;
 import java.util.Arrays;
 import java.util.Collections;
@@ -39,7 +40,10 @@ import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ProtocolMappersResource;
 import org.keycloak.admin.client.resource.RoleMappingResource;
 import org.keycloak.admin.client.resource.RolesResource;
+import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthenticator;
+import org.keycloak.authentication.authenticators.client.JWTClientSecretAuthenticator;
 import org.keycloak.common.util.Time;
+import org.keycloak.crypto.Algorithm;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.AccountRoles;
@@ -47,6 +51,7 @@ import org.keycloak.models.Constants;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
+import org.keycloak.protocol.oidc.client.authentication.JWTClientSecretCredentialsProvider;
 import org.keycloak.protocol.saml.SamlProtocol;
 import org.keycloak.representations.adapters.action.GlobalRequestResult;
 import org.keycloak.representations.adapters.action.PushNotBeforeAction;
@@ -67,18 +72,20 @@ import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.TestApp;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectTestApp;
-import org.keycloak.testframework.realm.ClientConfigBuilder;
+import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
-import org.keycloak.testframework.realm.RealmConfigBuilder;
-import org.keycloak.testframework.realm.RoleConfigBuilder;
-import org.keycloak.testframework.realm.UserConfigBuilder;
+import org.keycloak.testframework.realm.RoleBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.tests.utils.Assert;
 import org.keycloak.tests.utils.admin.AdminApiUtil;
 import org.keycloak.tests.utils.admin.AdminEventPaths;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
+import org.keycloak.testsuite.util.oauth.RegisterNodeResponse;
+import org.keycloak.testsuite.util.oauth.UnregisterNodeResponse;
 
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
@@ -204,7 +211,7 @@ public class ClientTest {
 
     @Test
     public void testCreateClientWithBlankClientId() {
-        ClientRepresentation rep = ClientConfigBuilder.create()
+        ClientRepresentation rep = ClientBuilder.create()
                 .clientId("")
                 .description("blank")
                 .enabled(true)
@@ -222,7 +229,7 @@ public class ClientTest {
 
     @Test
     public void testInvalidLengthClientIdValidation() {
-        ClientRepresentation rep = ClientConfigBuilder.create()
+        ClientRepresentation rep = ClientBuilder.create()
                 .id("test-long-invalid-client-id-validation-400-bad-request")
                 .clientId("test-long-invalid-client-id-validation-400-bad-request")
                 .description("invalid-client-id-app description")
@@ -392,7 +399,7 @@ public class ClientTest {
 
     @Test
     public void removeClient() {
-        Response response = managedRealm.admin().clients().create(ClientConfigBuilder.create().clientId("my-app").build());
+        Response response = managedRealm.admin().clients().create(ClientBuilder.create().clientId("my-app").build());
         String id = ApiUtil.getCreatedId(response);
         adminEvents.skip();
 
@@ -404,16 +411,16 @@ public class ClientTest {
 
     @Test
     public void removeClientWithDependentCompositeRoles() {
-        ClientRepresentation clientRep = ClientConfigBuilder.create().clientId("my-app").build();
+        ClientRepresentation clientRep = ClientBuilder.create().clientId("my-app").build();
         String id = ApiUtil.getCreatedId(managedRealm.admin().clients().create(clientRep));
         AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.CREATE, AdminEventPaths.clientResourcePath(id), clientRep, ResourceType.CLIENT);
         ClientResource clientRsc = managedRealm.admin().clients().get(id);
 
-        RoleRepresentation roleB = RoleConfigBuilder.create().name("role-b").build();
+        RoleRepresentation roleB = RoleBuilder.create().name("role-b").build();
         clientRsc.roles().create(roleB);
         AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.CREATE, AdminEventPaths.clientRoleResourcePath(id, "role-b"), roleB, ResourceType.CLIENT_ROLE);
 
-        RoleRepresentation roleA = RoleConfigBuilder.create().name("role-a").build();
+        RoleRepresentation roleA = RoleBuilder.create().name("role-a").build();
          clientRsc.roles().create(roleA);
         AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.CREATE, AdminEventPaths.clientRoleResourcePath(id, "role-a"), roleA, ResourceType.CLIENT_ROLE);
 
@@ -493,7 +500,7 @@ public class ClientTest {
     @Test
     public void getAllClientsSearchAndPagination() {
         for (int i = 1; i <= 10; i++) {
-            ClientRepresentation c = ClientConfigBuilder.create().clientId("ccx-" + (i < 10 ? "0" + i : i)).build();
+            ClientRepresentation c = ClientBuilder.create().clientId("ccx-" + (i < 10 ? "0" + i : i)).build();
             Response response = managedRealm.admin().clients().create(c);
             String id = ApiUtil.getCreatedId(response);
             managedRealm.cleanup().add(r -> r.clients().get(id).remove());
@@ -563,7 +570,7 @@ public class ClientTest {
     public void updateClient() {
         ClientRepresentation client = createClient();
 
-        ClientRepresentation newClient = ClientConfigBuilder.create()
+        ClientRepresentation newClient = ClientBuilder.create()
                 .id(client.getId())
                 .clientId(client.getClientId())
                 .baseUrl("http://baseurl")
@@ -606,7 +613,7 @@ public class ClientTest {
 
     @Test
     public void serviceAccount() {
-        Response response = managedRealm.admin().clients().create(ClientConfigBuilder.create().clientId("serviceClient").serviceAccountsEnabled(true).build());
+        Response response = managedRealm.admin().clients().create(ClientBuilder.create().clientId("serviceClient").serviceAccountsEnabled(true).build());
         String id = ApiUtil.getCreatedId(response);
         managedRealm.cleanup().add(r -> r.clients().get(id).remove());
         UserRepresentation userRep = managedRealm.admin().clients().get(id).getServiceAccountUser();
@@ -672,11 +679,57 @@ public class ClientTest {
     }
 
     @Test
+    public void nodesUsingClientEndpointAndJwt() throws MalformedURLException, InterruptedException {
+        testApp.kcAdmin().clear();
+
+        ClientResource clientResource = AdminApiUtil.findClientByClientId(managedRealm.admin(), "test-app");
+        ClientRepresentation clientRep = clientResource.toRepresentation();
+        clientRep.setClientAuthenticatorType(JWTClientSecretAuthenticator.PROVIDER_ID);
+        clientResource.update(clientRep);
+        managedRealm.cleanup().add(r -> {
+            clientRep.setClientAuthenticatorType(ClientIdAndSecretAuthenticator.PROVIDER_ID);
+            r.clients().get(clientRep.getId()).update(clientRep);
+        });
+
+        JWTClientSecretCredentialsProvider jwtProvider = new JWTClientSecretCredentialsProvider();
+        jwtProvider.setClientSecret(clientRep.getSecret(), Algorithm.HS256);
+        String jwt = jwtProvider.createSignedRequestToken("test-app", oauth.getEndpoints().getIssuer(), Algorithm.HS256);
+
+        // register the node
+        String myhost = URI.create(managedRealm.getBaseUrl()).getHost();
+        RegisterNodeResponse resgiterResponse = oauth.registerNodeRequest().clientClusterHost(myhost).clientJwt(jwt).send();
+        Assertions.assertTrue(resgiterResponse.isSuccess());
+        jwt = jwtProvider.createSignedRequestToken("test-app", oauth.getEndpoints().getIssuer(), Algorithm.HS256);
+        resgiterResponse = oauth.registerNodeRequest().clientClusterHost("invalid").clientJwt(jwt).send();
+        Assertions.assertTrue(resgiterResponse.isSuccess());
+        GlobalRequestResult result = managedRealm.admin().clients().get(clientRep.getId()).testNodesAvailable();
+        assertEquals(1, result.getSuccessRequests().size());
+        assertEquals(1, result.getFailedRequests().size());
+
+        // test availability and nodes are registered
+        TestAvailabilityAction testAvailable = testApp.kcAdmin().getTestAvailable();
+        assertEquals("test-app", testAvailable.getResource());
+        assertEquals(2, managedRealm.admin().clients().get(clientRep.getId()).toRepresentation().getRegisteredNodes().size());
+
+        // unregister the invalid node
+        jwt = jwtProvider.createSignedRequestToken("test-app", oauth.getEndpoints().getIssuer(), Algorithm.HS256);
+        UnregisterNodeResponse unregisterResponse = oauth.unregisterNodeRequest().clientClusterHost("invalid").clientJwt(jwt).send();
+        Assertions.assertTrue(unregisterResponse.isSuccess());
+        assertEquals(1, managedRealm.admin().clients().get(clientRep.getId()).toRepresentation().getRegisteredNodes().size());
+
+        // unregister the valid node
+        jwt = jwtProvider.createSignedRequestToken("test-app", oauth.getEndpoints().getIssuer(), Algorithm.HS256);
+        unregisterResponse = oauth.unregisterNodeRequest().clientClusterHost(myhost).clientJwt(jwt).send();
+        Assertions.assertTrue(unregisterResponse.isSuccess());
+        assertNull(managedRealm.admin().clients().get(clientRep.getId()).toRepresentation().getRegisteredNodes());
+    }
+
+    @Test
     public void offlineUserSessions() {
         ClientRepresentation client = AdminApiUtil.findClientByClientId(managedRealm.admin(), "test-app").toRepresentation();
         String id = client.getId();
 
-        Response response = managedRealm.admin().users().create(UserConfigBuilder.create().username("testuser").password("password").email("testuser@localhost").name("test", "user").build());
+        Response response = managedRealm.admin().users().create(UserBuilder.create().username("testuser").password("password").email("testuser@localhost").name("test", "user").build());
         String userId = ApiUtil.getCreatedId(response);
         managedRealm.cleanup().add(r -> r.users().delete(userId).close());
 
@@ -716,7 +769,7 @@ public class ClientTest {
 
     @Test
     public void scopes() {
-        Response response = managedRealm.admin().clients().create(ClientConfigBuilder.create().clientId("client").fullScopeEnabled(false).build());
+        Response response = managedRealm.admin().clients().create(ClientBuilder.create().clientId("client").fullScopeEnabled(false).build());
         String id = ApiUtil.getCreatedId(response);
         managedRealm.cleanup().add(r -> r.clients().get(id).remove());
         adminEvents.skip();
@@ -780,7 +833,7 @@ public class ClientTest {
     @Test
     public void rolesCanBeAddedToScopeEvenWhenTheyAreAlreadyIndirectlyAssigned() {
         Response response =
-                managedRealm.admin().clients().create(ClientConfigBuilder.create().clientId("test-client").fullScopeEnabled(false).build());
+                managedRealm.admin().clients().create(ClientBuilder.create().clientId("test-client").fullScopeEnabled(false).build());
         String testedClientUuid = ApiUtil.getCreatedId(response);
         managedRealm.cleanup().add(r -> r.clients().get(testedClientUuid).remove());
 
@@ -789,13 +842,13 @@ public class ClientTest {
         managedRealm.admin().roles().get("realm-composite")
                 .addComposites(List.of(managedRealm.admin().roles().get("realm-child").toRepresentation()));
 
-        response = managedRealm.admin().clients().create(ClientConfigBuilder.create().clientId("role-container-client").build());
+        response = managedRealm.admin().clients().create(ClientBuilder.create().clientId("role-container-client").build());
         String roleContainerClientUuid = ApiUtil.getCreatedId(response);
         RolesResource roleContainerClientRolesRsc = managedRealm.admin().clients().get(roleContainerClientUuid).roles();
         managedRealm.cleanup().add(r -> r.clients().get(roleContainerClientUuid).remove());
 
-        roleContainerClientRolesRsc.create(RoleConfigBuilder.create().name("client-composite").build());
-        roleContainerClientRolesRsc.create(RoleConfigBuilder.create().name("client-child").build());
+        roleContainerClientRolesRsc.create(RoleBuilder.create().name("client-composite").build());
+        roleContainerClientRolesRsc.create(RoleBuilder.create().name("client-child").build());
         roleContainerClientRolesRsc.get("client-composite").addComposites(List.of(
                 roleContainerClientRolesRsc.get("client-child").toRepresentation()));
 
@@ -839,12 +892,12 @@ public class ClientTest {
     @Test
     public void scopesRoleRemoval() {
         // clientA to test scope mappings
-        Response response = managedRealm.admin().clients().create(ClientConfigBuilder.create().clientId("clientA").fullScopeEnabled(false).build());
+        Response response = managedRealm.admin().clients().create(ClientBuilder.create().clientId("clientA").fullScopeEnabled(false).build());
         String idA = ApiUtil.getCreatedId(response);
         managedRealm.cleanup().add(r -> r.clients().get(idA).remove());
 
         // clientB to create a client role for clientA
-        response = managedRealm.admin().clients().create(ClientConfigBuilder.create().clientId("clientB").fullScopeEnabled(false).build());
+        response = managedRealm.admin().clients().create(ClientBuilder.create().clientId("clientB").fullScopeEnabled(false).build());
         String idB = ApiUtil.getCreatedId(response);
         managedRealm.cleanup().add(r -> r.clients().get(idB).remove());
 
@@ -853,10 +906,10 @@ public class ClientTest {
         RoleMappingResource scopesResource = managedRealm.admin().clients().get(idA).getScopeMappings();
 
         // create a realm role and a role in clientB
-        RoleRepresentation realmRoleRep = RoleConfigBuilder.create().name("realm-role").build();
+        RoleRepresentation realmRoleRep = RoleBuilder.create().name("realm-role").build();
         managedRealm.admin().roles().create(realmRoleRep);
         AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.CREATE, AdminEventPaths.roleResourcePath(realmRoleRep.getName()), realmRoleRep, ResourceType.REALM_ROLE);
-        RoleRepresentation clientBRoleRep = RoleConfigBuilder.create().name("clientB-role").build();
+        RoleRepresentation clientBRoleRep = RoleBuilder.create().name("clientB-role").build();
         managedRealm.admin().clients().get(idB).roles().create(clientBRoleRep);
         AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.CREATE, AdminEventPaths.clientRoleResourcePath(idB, clientBRoleRep.getName()), clientBRoleRep, ResourceType.CLIENT_ROLE);
 
@@ -1064,7 +1117,7 @@ public class ClientTest {
     }
 
     private RoleRepresentation createRealmRole(String roleName) {
-        RoleRepresentation role = RoleConfigBuilder.create().name(roleName).build();
+        RoleRepresentation role = RoleBuilder.create().name(roleName).build();
         managedRealm.admin().roles().create(role);
 
         String createdId = managedRealm.admin().roles().get(role.getName()).toRepresentation().getId();
@@ -1075,13 +1128,13 @@ public class ClientTest {
 
     private static class ClientTestRealmConfig implements RealmConfig {
         @Override
-        public RealmConfigBuilder configure(RealmConfigBuilder realm) {
+        public RealmBuilder configure(RealmBuilder realm) {
 
-            realm.addUser("test-user@localhost")
+            realm.users(UserBuilder.create("test-user@localhost")
                     .enabled(true)
                     .email("test-user@localhost")
                     .name("Tom", "Brady")
-                    .password("password");
+                    .password("password"));
             return realm;
         }
     }

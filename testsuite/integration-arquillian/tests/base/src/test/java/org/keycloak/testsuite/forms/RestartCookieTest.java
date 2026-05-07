@@ -20,6 +20,8 @@ package org.keycloak.testsuite.forms;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import javax.crypto.SecretKey;
 
@@ -27,11 +29,13 @@ import jakarta.ws.rs.core.Response;
 
 import org.keycloak.OAuth2Constants;
 import org.keycloak.TokenCategory;
+import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
+import org.keycloak.events.EventType;
 import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.keys.Attributes;
 import org.keycloak.keys.GeneratedHmacKeyProviderFactory;
@@ -45,20 +49,21 @@ import org.keycloak.protocol.RestartLoginCookie;
 import org.keycloak.protocol.oidc.endpoints.AuthorizationEndpoint;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testframework.events.EventAssertion;
+import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
-import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.pages.LoginPage;
-import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.oauth.ParResponse;
 import org.keycloak.util.TokenUtil;
 
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 import org.openqa.selenium.Cookie;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -112,7 +117,7 @@ public class RestartCookieTest extends AbstractTestRealmKeycloakTest {
         // create a HS256 for the compatibility tests for previous RESTART cookie formats
         ComponentRepresentation rep = new ComponentRepresentation();
         rep.setName(GeneratedHmacKeyProviderFactory.ID + "-256");
-        rep.setParentId(testRealm().toRepresentation().getId());
+        rep.setParentId(managedRealm.admin().toRepresentation().getId());
         rep.setProviderId(GeneratedHmacKeyProviderFactory.ID);
         rep.setProviderType(KeyProvider.class.getName());
 
@@ -121,16 +126,44 @@ public class RestartCookieTest extends AbstractTestRealmKeycloakTest {
         config.addFirst(Attributes.ALGORITHM_KEY, Algorithm.HS256);
         rep.setConfig(config);
 
-        try (Response res = testRealm().components().add(rep)) {
-            Assert.assertEquals(Response.Status.CREATED.getStatusCode(), res.getStatus());
+        try (Response res = managedRealm.admin().components().add(rep)) {
+            Assertions.assertEquals(Response.Status.CREATED.getStatusCode(), res.getStatus());
         }
     }
 
     @Test
     public void testRestartCookie() {
-        loginPage.open();
+        oauth.openLoginForm();
         String restartCookie = driver.manage().getCookieNamed(RestartLoginCookie.KC_RESTART).getValue();
         assertRestartCookie(restartCookie);
+    }
+
+    @Test
+    public void testRestartCookieRotateAes() {
+        oauth.openLoginForm();
+        String restartCookie = driver.manage().getCookieNamed(RestartLoginCookie.KC_RESTART).getValue();
+        rotateAesKeys();
+        assertRestartCookie(restartCookie);
+    }
+
+    @Test
+    public void testRestartCookieParsedOldA128CBCHS256() throws IOException {
+        oauth.openLoginForm();
+        String restartCookie = driver.manage().getCookieNamed(RestartLoginCookie.KC_RESTART).getValue();
+        getTestingClient().server(TEST_REALM_NAME).run(session -> {
+            try {
+                RestartLoginCookie restartLoginCookie = RestartLoginCookie.decryptAndDecode(session, restartCookie);
+                String sigAlgorithm = session.tokens().signatureAlgorithm(TokenCategory.INTERNAL);
+                String algAlgorithm = session.tokens().cekManagementAlgorithm(TokenCategory.INTERNAL);
+                SecretKey encKey = session.keys().getActiveKey(session.getContext().getRealm(), KeyUse.ENC, algAlgorithm).getSecretKey();
+                SecretKey signKey = session.keys().getActiveKey(session.getContext().getRealm(), KeyUse.SIG, sigAlgorithm).getSecretKey();
+                String encodedJwt = session.tokens().encode(restartLoginCookie);
+                String oldRestartCookie = TokenUtil.jweDirectEncode(encKey, signKey, encodedJwt.getBytes(StandardCharsets.UTF_8));
+                Assertions.assertNotNull(RestartLoginCookie.decryptAndDecode(session, oldRestartCookie));
+            } catch (Exception e) {
+                Assertions.fail();
+            }
+        });
     }
 
     @Test
@@ -151,7 +184,7 @@ public class RestartCookieTest extends AbstractTestRealmKeycloakTest {
             requestUri = pResp.getRequestUri();
         }
         catch (Exception e) {
-            Assert.fail();
+            Assertions.fail();
         }
 
         oauth.redirectUri(null);
@@ -163,23 +196,45 @@ public class RestartCookieTest extends AbstractTestRealmKeycloakTest {
         assertRestartCookie(restartCookie);
     }
 
+    private void rotateAesKeys() {
+        RealmResource realm = managedRealm.admin();
+        String activeKid = realm.keys().getKeyMetadata().getActive().get(Algorithm.AES);
+
+        // Rotate public keys on the parent broker
+        String realmId = realm.toRepresentation().getId();
+        ComponentRepresentation keys = createComponentRep(Algorithm.AES, "aes-generated", realmId,
+                new MultivaluedHashMap<>(Map.of("secretSize", List.of("16"))));
+        try (Response response = realm.components().add(keys)) {
+            assertEquals(201, response.getStatus());
+        }
+
+        String updatedActiveKid = realm.keys().getKeyMetadata().getActive().get(Algorithm.AES);
+        Assertions.assertNotEquals(activeKid, updatedActiveKid);
+    }
+
+    private ComponentRepresentation createComponentRep(String algorithm, String providerId, String realmId, MultivaluedHashMap<String,String> extra) {
+        ComponentRepresentation keys = new ComponentRepresentation();
+        keys.setName("generated");
+        keys.setProviderType(KeyProvider.class.getName());
+        keys.setProviderId(providerId);
+        keys.setParentId(realmId);
+        MultivaluedHashMap<String, String> config = new MultivaluedHashMap<>(extra);
+        keys.setConfig(config);
+        config.putSingle("priority", Long.toString(System.currentTimeMillis()));
+        config.putSingle("algorithm", algorithm);
+        return keys;
+    }
+
     private void assertRestartCookie(String restartCookie) {
         getTestingClient()
                 .server(TEST_REALM_NAME)
                 .run(session ->
                 {
                     try {
-                        String sigAlgorithm = session.tokens().signatureAlgorithm(TokenCategory.INTERNAL);
-                        String encAlgorithm = session.tokens().cekManagementAlgorithm(TokenCategory.INTERNAL);
-                        SecretKey encKey = session.keys().getActiveKey(session.getContext().getRealm(), KeyUse.ENC, encAlgorithm).getSecretKey();
-                        SecretKey signKey = session.keys().getActiveKey(session.getContext().getRealm(), KeyUse.SIG, sigAlgorithm).getSecretKey();
-
-                        byte[] contentBytes = TokenUtil.jweDirectVerifyAndDecode(encKey, signKey, restartCookie);
-                        String jwt = new String(contentBytes, StandardCharsets.UTF_8);
-                        RestartLoginCookie restartLoginCookie = session.tokens().decode(jwt, RestartLoginCookie.class);
-                        Assert.assertFalse(restartLoginCookie.getNotes().keySet().stream().anyMatch(sensitiveNotes::contains));
+                        RestartLoginCookie restartLoginCookie = RestartLoginCookie.decryptAndDecode(session, restartCookie);
+                        Assertions.assertFalse(restartLoginCookie.getNotes().keySet().stream().anyMatch(sensitiveNotes::contains));
                     } catch (Exception e) {
-                        Assert.fail();
+                        Assertions.fail();
                     }
                 });
     }
@@ -208,11 +263,10 @@ public class RestartCookieTest extends AbstractTestRealmKeycloakTest {
 
         loginPage.login("foo", "bar");
         loginPage.assertCurrent();
-        Assert.assertEquals("Your login attempt timed out. Login will start from the beginning.", loginPage.getError());
+        Assertions.assertEquals("Your login attempt timed out. Login will start from the beginning.", loginPage.getError());
 
-        events.expectLogin().user((String) null).session((String) null).error(Errors.EXPIRED_CODE).clearDetails()
-                .detail(Details.RESTART_AFTER_TIMEOUT, "true")
-                .assertEvent();
+        EventAssertion.assertError(events.poll()).type(EventType.LOGIN_ERROR).userId(null).sessionId(null).error(Errors.EXPIRED_CODE)
+                .details(Details.RESTART_AFTER_TIMEOUT, "true");
     }
 
 
@@ -241,10 +295,9 @@ public class RestartCookieTest extends AbstractTestRealmKeycloakTest {
 
         loginPage.login("foo", "bar");
         loginPage.assertCurrent();
-        Assert.assertEquals("Your login attempt timed out. Login will start from the beginning.", loginPage.getError());
+        Assertions.assertEquals("Your login attempt timed out. Login will start from the beginning.", loginPage.getError());
 
-        events.expectLogin().user((String) null).session((String) null).error(Errors.EXPIRED_CODE).clearDetails()
-                .detail(Details.RESTART_AFTER_TIMEOUT, "true")
-                .assertEvent();
+        EventAssertion.assertError(events.poll()).type(EventType.LOGIN_ERROR).userId(null).sessionId(null).error(Errors.EXPIRED_CODE)
+                .details(Details.RESTART_AFTER_TIMEOUT, "true");
     }
 }

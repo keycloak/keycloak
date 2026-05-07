@@ -22,10 +22,10 @@ import org.keycloak.testframework.annotations.InjectUser;
 import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.ManagedUser;
-import org.keycloak.testframework.realm.RealmConfigBuilder;
-import org.keycloak.testframework.realm.RoleConfigBuilder;
+import org.keycloak.testframework.realm.RealmBuilder;
+import org.keycloak.testframework.realm.RoleBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.realm.UserConfig;
-import org.keycloak.testframework.realm.UserConfigBuilder;
 import org.keycloak.testframework.util.ApiUtil;
 
 import org.junit.jupiter.api.AfterEach;
@@ -85,12 +85,12 @@ abstract class AbstractAdminRBACTest {
     }
 
     protected RealmResource createRealm(Keycloak adminClient, String name) {
-        adminClient.realms().create(RealmConfigBuilder.create().name(name).build());
+        adminClient.realms().create(RealmBuilder.create().name(name).build());
         return adminClient.realm(name);
     }
 
     protected UserRepresentation createUser(RealmResource realm, String username) {
-        UserRepresentation user = UserConfigBuilder.create()
+        UserRepresentation user = UserBuilder.create()
                 .username(username)
                 .email(username.concat("@keycloak.org"))
                 .firstName("First")
@@ -116,7 +116,7 @@ abstract class AbstractAdminRBACTest {
         try {
             role = realm.roles().get(roleName).toRepresentation();
         } catch (NotFoundException nfe) {
-            realm.roles().create(RoleConfigBuilder.create().name(roleName).build());
+            realm.roles().create(RoleBuilder.create().name(roleName).build());
             role = realm.roles().get(roleName).toRepresentation();
         }
 
@@ -151,7 +151,7 @@ abstract class AbstractAdminRBACTest {
     private static class MasterUserConfig implements UserConfig {
 
         @Override
-        public UserConfigBuilder configure(UserConfigBuilder user) {
+        public UserBuilder configure(UserBuilder user) {
             return user.username("mymasteradmin")
                     .password("password")
                     .email("mymasteradmin@keycloak.org")

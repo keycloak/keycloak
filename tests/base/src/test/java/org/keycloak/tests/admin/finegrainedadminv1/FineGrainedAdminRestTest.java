@@ -30,8 +30,8 @@ import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
-import org.keycloak.testframework.realm.GroupConfigBuilder;
-import org.keycloak.testframework.realm.UserConfigBuilder;
+import org.keycloak.testframework.realm.GroupBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.tests.utils.admin.AdminApiUtil;
 
@@ -49,7 +49,7 @@ public class FineGrainedAdminRestTest extends AbstractFineGrainedAdminTest {
 
     @Test
     public void testRestEvaluation() throws Exception {
-        String groupId = ApiUtil.getCreatedId(managedRealm.admin().groups().add(GroupConfigBuilder.create().name("restricted-group").build()));
+        String groupId = ApiUtil.getCreatedId(managedRealm.admin().groups().add(GroupBuilder.create().name("restricted-group").build()));
 
         runOnServer.run(FineGrainedAdminRestTest::setupPolices);
         runOnServer.run(FineGrainedAdminRestTest::setupUsers);
@@ -273,33 +273,33 @@ public class FineGrainedAdminRestTest extends AbstractFineGrainedAdminTest {
                 List<UserRepresentation> queryUsers = realmClient.realm(REALM_NAME).users().list();
                 Assertions.assertEquals(1, queryUsers.size());
 
-                UserRepresentation newGroupMemberWithoutGroup = UserConfigBuilder.create()
+                UserRepresentation newGroupMemberWithoutGroup = UserBuilder.create()
                         .username("new-group-member").email("new-group-member@keycloak.org").name("New", "Member").build();
 
                 Response response1 = realmClient.realm(REALM_NAME).users().create(newGroupMemberWithoutGroup);
 
                 Assertions.assertEquals(403, response1.getStatus());
 
-                UserRepresentation newEmptyGroupList = UserConfigBuilder.create()
+                UserRepresentation newEmptyGroupList = UserBuilder.create()
                         .username("new-group-member").email("new-group-member@keycloak.org").name("New", "Member").build();
                 newEmptyGroupList.setGroups(Collections.emptyList());
 
                 Response response2 = realmClient.realm(REALM_NAME).users().create(newEmptyGroupList);
                 Assertions.assertEquals(403, response2.getStatus());
 
-                UserRepresentation newGroupMemberWithNonExistentGroup = UserConfigBuilder.create()
+                UserRepresentation newGroupMemberWithNonExistentGroup = UserBuilder.create()
                         .username("new-group-member").email("new-group-member@keycloak.org").name("New", "Member").groups("wrong-group").build();
 
                 Response response3 = realmClient.realm(REALM_NAME).users().create(newGroupMemberWithNonExistentGroup);
                 Assertions.assertEquals(403, response3.getStatus());
 
-                UserRepresentation newGroupMemberOfNotManagedGroup = UserConfigBuilder.create()
+                UserRepresentation newGroupMemberOfNotManagedGroup = UserBuilder.create()
                         .username("new-group-member").email("new-group-member@keycloak.org").name("New", "Member").groups("restricted-group").build();
 
                 Response response4 = realmClient.realm(REALM_NAME).users().create(newGroupMemberOfNotManagedGroup);
                 Assertions.assertEquals(403, response4.getStatus());
 
-                UserRepresentation newGroupMember = UserConfigBuilder.create()
+                UserRepresentation newGroupMember = UserBuilder.create()
                         .username("new-group-member").email("new-group-member@keycloak.org").name("New", "Member").groups("top").build();
                 AdminApiUtil.createUserWithAdminClient(realmClient.realm(REALM_NAME), newGroupMember);
 

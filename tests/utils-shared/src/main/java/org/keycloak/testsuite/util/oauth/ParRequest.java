@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.List;
 
 import org.keycloak.OAuth2Constants;
+import org.keycloak.constants.AdapterConstants;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.util.TokenUtil;
@@ -80,6 +81,11 @@ public class ParRequest extends AbstractHttpPostRequest<ParRequest, ParResponse>
     public ParRequest scopeParam(String scope) {
         scopeExplicitlySet = true;
         parameter(OAuth2Constants.SCOPE, scope);
+        return this;
+    }
+
+    public ParRequest idpHint(String idpHint) {
+        parameter(AdapterConstants.KC_IDP_HINT, idpHint);
         return this;
     }
 

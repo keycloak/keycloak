@@ -13,6 +13,9 @@ import org.keycloak.testframework.injection.LifeCycle;
 @Target(ElementType.FIELD)
 public @interface InjectTestDatabase {
 
+    /**
+     * Controls the lifecycle of the resource
+     */
     LifeCycle lifecycle() default LifeCycle.GLOBAL;
 
     Class<? extends DatabaseConfig> config() default DefaultDatabaseConfig.class;

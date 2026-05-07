@@ -6,6 +6,7 @@ import org.keycloak.authentication.authenticators.client.FederatedJWTClientAuthe
 import org.keycloak.broker.oidc.OIDCIdentityProviderConfig;
 import org.keycloak.broker.oidc.OIDCIdentityProviderFactory;
 import org.keycloak.common.util.Time;
+import org.keycloak.events.EventType;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -13,22 +14,23 @@ import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.testframework.annotations.InjectEvents;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testframework.events.Events;
 import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.OAuthIdentityProvider;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthIdentityProvider;
-import org.keycloak.testframework.realm.ClientConfigBuilder;
+import org.keycloak.testframework.realm.ClientBuilder;
+import org.keycloak.testframework.realm.IdentityProviderBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.util.ApiUtil;
-import org.keycloak.testsuite.util.IdentityProviderBuilder;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-@KeycloakIntegrationTest(config = ClientAuthIdpServerConfig.class)
+@KeycloakIntegrationTest
 public class FederatedClientAuthConflictsTest {
 
     @InjectOAuthIdentityProvider
@@ -65,7 +67,8 @@ public class FederatedClientAuthConflictsTest {
         // Should fail as there are two IdPs with the same issuer URL
         AccessTokenResponse response = oAuthClient.clientCredentialsGrantRequest().clientJwt(createDefaultToken("external1", "http://127.0.0.1:8500")).send();
         Assertions.assertTrue(response.isSuccess());
-        Assertions.assertEquals("myclient", events.poll().getClientId());
+
+        EventAssertion.assertSuccess(events.poll()).type(EventType.CLIENT_LOGIN).clientId("myclient");
 
         IdentityProviderRepresentation idp2 = createIdp("idp2", "http://127.0.0.1:8500", false);
 
@@ -89,7 +92,8 @@ public class FederatedClientAuthConflictsTest {
         events.clear();
         response = oAuthClient.clientCredentialsGrantRequest().clientJwt(createDefaultToken("external1", "http://127.0.0.1:8500")).send();
         Assertions.assertTrue(response.isSuccess());
-        Assertions.assertEquals("myclient", events.poll().getClientId());
+
+        EventAssertion.assertSuccess(events.poll()).type(EventType.CLIENT_LOGIN).clientId("myclient");
     }
 
     @Test
@@ -102,11 +106,13 @@ public class FederatedClientAuthConflictsTest {
 
         AccessTokenResponse response = oAuthClient.clientCredentialsGrantRequest().clientJwt(createDefaultToken("external1", "http://127.0.0.1:8500/one")).send();
         Assertions.assertTrue(response.isSuccess());
-        Assertions.assertEquals("myclient1", events.poll().getClientId());
+
+        EventAssertion.assertSuccess(events.poll()).type(EventType.CLIENT_LOGIN).clientId("myclient1");
 
         response = oAuthClient.clientCredentialsGrantRequest().clientJwt(createDefaultToken("external1", "http://127.0.0.1:8500/two")).send();
         Assertions.assertTrue(response.isSuccess());
-        Assertions.assertEquals("myclient2", events.poll().getClientId());
+
+        EventAssertion.assertSuccess(events.poll()).type(EventType.CLIENT_LOGIN).clientId("myclient2");
     }
 
     private String createDefaultToken(String externalClientId, String issuer) {
@@ -127,18 +133,18 @@ public class FederatedClientAuthConflictsTest {
         IdentityProviderRepresentation rep = IdentityProviderBuilder.create()
                 .providerId(OIDCIdentityProviderFactory.PROVIDER_ID)
                 .alias(alias)
-                .setAttribute(IdentityProviderModel.ISSUER, issuer)
-                .setAttribute(OIDCIdentityProviderConfig.SUPPORTS_CLIENT_ASSERTIONS, String.valueOf(supportsClientAssertions))
-                .setAttribute(OIDCIdentityProviderConfig.USE_JWKS_URL, "true")
-                .setAttribute(OIDCIdentityProviderConfig.VALIDATE_SIGNATURE, "true")
-                .setAttribute(OIDCIdentityProviderConfig.JWKS_URL, "http://127.0.0.1:8500/idp/jwks")
+                .attribute(IdentityProviderModel.ISSUER, issuer)
+                .attribute(OIDCIdentityProviderConfig.SUPPORTS_CLIENT_ASSERTIONS, String.valueOf(supportsClientAssertions))
+                .attribute(OIDCIdentityProviderConfig.USE_JWKS_URL, "true")
+                .attribute(OIDCIdentityProviderConfig.VALIDATE_SIGNATURE, "true")
+                .attribute(OIDCIdentityProviderConfig.JWKS_URL, "http://127.0.0.1:8500/idp/jwks")
                 .build();
         rep.setInternalId(ApiUtil.getCreatedId(realm.admin().identityProviders().create(rep)));
         return rep;
     }
 
     private ClientRepresentation createClient(String clientId, String externalClientId, String idpAlias) {
-        ClientRepresentation rep = ClientConfigBuilder.create().clientId(clientId)
+        ClientRepresentation rep = ClientBuilder.create().clientId(clientId)
                 .serviceAccountsEnabled(true)
                 .authenticatorType(FederatedJWTClientAuthenticator.PROVIDER_ID)
                 .attribute(FederatedJWTClientAuthenticator.JWT_CREDENTIAL_ISSUER_KEY, idpAlias)

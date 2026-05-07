@@ -16,6 +16,14 @@
   ansible.builtin.shell: |
     set -o pipefail
     cd {{ kc_home }}
+    {% if lookup('env', 'JAVA_VERSION') != "" %}
+    {% if ansible_os_family == 'Debian' %}
+    export JAVA_HOME=/usr/lib/jvm/java-{{ lookup('env', 'JAVA_VERSION') }}-openjdk-amd64
+    {% else %}
+    export JAVA_HOME=/usr/lib/jvm/java-{{ lookup('env', 'JAVA_VERSION') }}-openjdk
+    {% endif %}
+    echo "Using JAVA_HOME: ${JAVA_HOME}"
+    {% endif %}
     echo "{{ mvn_params }}"
     ./mvnw {{ mvn_params }}
   args:

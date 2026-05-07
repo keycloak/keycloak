@@ -1,5 +1,7 @@
 package org.keycloak.tests.admin.user;
 
+import java.time.LocalDate;
+import java.time.ZoneOffset;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -18,8 +20,9 @@ import org.keycloak.representations.idm.FederatedIdentityRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
-import org.keycloak.testframework.realm.UserConfigBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.util.ApiUtil;
+import org.keycloak.tests.suites.DatabaseTest;
 import org.keycloak.userprofile.DefaultAttributes;
 import org.keycloak.userprofile.validator.UsernameProhibitedCharactersValidator;
 
@@ -78,6 +81,7 @@ public class UserSearchTest extends AbstractUserTest {
     }
 
     @Test
+    @DatabaseTest
     public void searchByEmail() {
         createUsers();
 
@@ -99,6 +103,7 @@ public class UserSearchTest extends AbstractUserTest {
     }
 
     @Test
+    @DatabaseTest
     public void searchByUsername() {
         createUsers();
 
@@ -110,6 +115,7 @@ public class UserSearchTest extends AbstractUserTest {
     }
 
     @Test
+    @DatabaseTest
     public void searchByAttribute() {
         createUsers();
 
@@ -131,6 +137,7 @@ public class UserSearchTest extends AbstractUserTest {
     }
 
     @Test
+    @DatabaseTest
     public void searchByMultipleAttributes() {
         createUsers();
 
@@ -151,6 +158,7 @@ public class UserSearchTest extends AbstractUserTest {
     }
 
     @Test
+    @DatabaseTest
     public void searchByAttributesWithPagination() {
         createUsers();
 
@@ -164,10 +172,11 @@ public class UserSearchTest extends AbstractUserTest {
     }
 
     @Test
+    @DatabaseTest
     public void storeAndReadUserWithLongAttributeValue() {
         String longValue = RandomStringUtils.random(Integer.parseInt(DefaultAttributes.DEFAULT_MAX_LENGTH_ATTRIBUTES), true, true);
 
-        UserRepresentation userRep = UserConfigBuilder.create()
+        UserRepresentation userRep = UserBuilder.create()
                 .username("user1").password("password").name("user1FirstName", "user1LastName")
                 .email("user1@example.com").emailVerified(true).attribute("attr", longValue).build();
         String userId = createUser(userRep);
@@ -177,7 +186,7 @@ public class UserSearchTest extends AbstractUserTest {
         Assertions.assertNotNull(user1);
         assertThat(user1.getAttributes().get("attr").get(0), equalTo(longValue));
 
-        UserRepresentation userRep2 = UserConfigBuilder.create()
+        UserRepresentation userRep2 = UserBuilder.create()
                 .username("user2").password("password").name("user2FirstName", "user2LastName")
                 .email("user2@example.com").emailVerified(true).attribute("attr", longValue + "a").build();
 
@@ -187,20 +196,21 @@ public class UserSearchTest extends AbstractUserTest {
     }
 
     @Test
+    @DatabaseTest
     public void searchByLongAttributes() {
         // random string with suffix that makes it case-sensitive and distinct
         String longValue = RandomStringUtils.random(Integer.parseInt(DefaultAttributes.DEFAULT_MAX_LENGTH_ATTRIBUTES) - 1, true, true) + "u";
         String longValue2 = RandomStringUtils.random(Integer.parseInt(DefaultAttributes.DEFAULT_MAX_LENGTH_ATTRIBUTES) - 1, true, true) + "v";
 
-        UserRepresentation userRep = UserConfigBuilder.create()
+        UserRepresentation userRep = UserBuilder.create()
                 .username("user1").password("password").name("user1FirstName", "user1LastName")
                 .email("user1@example.com").emailVerified(true)
                 .attribute("test1", longValue, "v2").attribute("test2", "v2").build();
-        UserRepresentation userRep2 = UserConfigBuilder.create()
+        UserRepresentation userRep2 = UserBuilder.create()
                 .username("user2").password("password").name("user2FirstName", "user2LastName")
                 .email("user2@example.com").emailVerified(true)
                 .attribute("test1", longValue, "v2").attribute("test2", longValue2).build();
-        UserRepresentation userRep3 = UserConfigBuilder.create()
+        UserRepresentation userRep3 = UserBuilder.create()
                 .username("user3").password("password").name("user3FirstName", "user3LastName")
                 .email("user3@example.com").emailVerified(true)
                 .attribute("test2", longValue, "v3").attribute("test4", "v4").build();
@@ -312,6 +322,7 @@ public class UserSearchTest extends AbstractUserTest {
     }
 
     @Test
+    @DatabaseTest
     public void searchWithFilters() {
         createUser();
 
@@ -365,6 +376,7 @@ public class UserSearchTest extends AbstractUserTest {
     }
 
     @Test
+    @DatabaseTest
     public void searchByIdp() {
         // Add user without IDP
         createUser();
@@ -480,6 +492,7 @@ public class UserSearchTest extends AbstractUserTest {
     }
 
     @Test
+    @DatabaseTest
     public void searchById() {
         List<String> userIds = createUsers();
         String expectedUserId = userIds.get(0);
@@ -508,6 +521,93 @@ public class UserSearchTest extends AbstractUserTest {
     }
 
     @Test
+    @DatabaseTest
+    public void searchByUsernameSearch() {
+        List<String> userIds = createUsers();
+        String expectedUserId = userIds.get(0);
+        UserRepresentation expectedUserRep = managedRealm.admin().users().get(expectedUserId).toRepresentation();
+        String expectedUsername = expectedUserRep.getUsername();
+
+        List<UserRepresentation> users = managedRealm.admin().users().search("username:" + expectedUsername, null, null);
+
+        assertEquals(1, users.size());
+        assertEquals(expectedUserId, users.get(0).getId());
+        assertEquals(expectedUsername, users.get(0).getUsername());
+        assertThat(managedRealm.admin().users().count("username:" + expectedUsername), is(1));
+
+        // ensure spaces are ignored
+        users = managedRealm.admin().users().search("username:   " + expectedUsername + "     ", null, null);
+
+        assertEquals(1, users.size());
+        assertEquals(expectedUserId, users.get(0).getId());
+        assertEquals(expectedUsername, users.get(0).getUsername());
+        assertThat(managedRealm.admin().users().count("username:   " + expectedUsername + "     "), is(1));
+
+        // Should allow searching for multiple users
+        String expectedUserId2 = userIds.get(1);
+        String expectedUsername2 = managedRealm.admin().users().get(expectedUserId2).toRepresentation().getUsername();
+        List<UserRepresentation> multipleUsers = managedRealm.admin().users().search(String.format("username:%s %s", expectedUsername, expectedUsername2), 0, 10);
+        assertThat(multipleUsers, hasSize(2));
+        assertThat(multipleUsers.get(0).getId(), is(expectedUserId));
+        assertThat(multipleUsers.get(1).getId(), is(expectedUserId2));
+        assertThat(managedRealm.admin().users().count(String.format("username:%s %s", expectedUsername, expectedUsername2)), is(2));
+
+        // Should take arbitrary amount of spaces in between usernames
+        List<UserRepresentation> multipleUsers2 = managedRealm.admin().users().search(String.format("username:  %s   %s  ", expectedUsername, expectedUsername2), 0, 10);
+        assertThat(multipleUsers2, hasSize(2));
+        assertThat(multipleUsers2.get(0).getId(), is(expectedUserId));
+        assertThat(multipleUsers2.get(1).getId(), is(expectedUserId2));
+        assertThat(managedRealm.admin().users().count(String.format("username:  %s   %s  ", expectedUsername, expectedUsername2)), is(2));
+
+        // Unknown username yields a count of zero
+        assertThat(managedRealm.admin().users().count("username:does-not-exist"), is(0));
+    }
+
+    @Test
+    @DatabaseTest
+    public void searchByEmailSearch() {
+        List<String> userIds = createUsers();
+        String expectedUserId = userIds.get(0);
+        UserRepresentation expectedUserRep = managedRealm.admin().users().get(expectedUserId).toRepresentation();
+        String expectedEmail = expectedUserRep.getEmail();
+
+        List<UserRepresentation> users = managedRealm.admin().users().search("email:" + expectedEmail, null, null);
+
+        assertEquals(1, users.size());
+        assertEquals(expectedUserId, users.get(0).getId());
+        assertEquals(expectedEmail, users.get(0).getEmail());
+        assertThat(managedRealm.admin().users().count("email:" + expectedEmail), is(1));
+
+        // ensure spaces are ignored
+        users = managedRealm.admin().users().search("email:   " + expectedEmail + "     ", null, null);
+
+        assertEquals(1, users.size());
+        assertEquals(expectedUserId, users.get(0).getId());
+        assertEquals(expectedEmail, users.get(0).getEmail());
+        assertThat(managedRealm.admin().users().count("email:   " + expectedEmail + "     "), is(1));
+
+        // Should allow searching for multiple users
+        String expectedUserId2 = userIds.get(1);
+        String expectedEmail2 = managedRealm.admin().users().get(expectedUserId2).toRepresentation().getEmail();
+        List<UserRepresentation> multipleUsers = managedRealm.admin().users().search(String.format("email:%s %s", expectedEmail, expectedEmail2), 0, 10);
+        assertThat(multipleUsers, hasSize(2));
+        assertThat(multipleUsers.get(0).getId(), is(expectedUserId));
+        assertThat(multipleUsers.get(1).getId(), is(expectedUserId2));
+        assertThat(managedRealm.admin().users().count(String.format("email:%s %s", expectedEmail, expectedEmail2)), is(2));
+
+        // Should take arbitrary amount of spaces in between emails
+        List<UserRepresentation> multipleUsers2 = managedRealm.admin().users().search(String.format("email:  %s   %s  ", expectedEmail, expectedEmail2), 0, 10);
+        assertThat(multipleUsers2, hasSize(2));
+        assertThat(multipleUsers2.get(0).getId(), is(expectedUserId));
+        assertThat(multipleUsers2.get(1).getId(), is(expectedUserId2));
+        assertThat(managedRealm.admin().users().count(String.format("email:  %s   %s  ", expectedEmail, expectedEmail2)), is(2));
+
+        // Unknown email yields a count of zero
+        assertThat(managedRealm.admin().users().count("email:does-not-exist@nowhere.test"), is(0));
+    }
+
+    @Test
+    @DatabaseTest
     public void infixSearch() {
         List<String> userIds = createUsers();
 
@@ -543,6 +643,7 @@ public class UserSearchTest extends AbstractUserTest {
     }
 
     @Test
+    @DatabaseTest
     public void prefixSearch() {
         List<String> userIds = createUsers();
 
@@ -610,6 +711,7 @@ public class UserSearchTest extends AbstractUserTest {
     }
 
     @Test
+    @DatabaseTest
     public void wildcardSearch() {
         UserProfileResource upResource = managedRealm.admin().users().userProfile();
         UPConfig upConfig = upResource.getConfiguration();
@@ -635,6 +737,45 @@ public class UserSearchTest extends AbstractUserTest {
     }
 
     @Test
+    @DatabaseTest
+    public void sqlWildcardEscaping() {
+        // Test underscore character doesn't act as SQL wildcard
+        createUser("john_doe", "john_doe@test.com");
+        createUser("johnadoe", "johnadoe@test.com");
+        createUser("johnbdoe", "johnbdoe@test.com");
+
+        List<UserRepresentation> users = managedRealm.admin().users().search("john_", null, null);
+        assertThat(users, hasSize(1));
+        assertThat(users.get(0).getUsername(), is("john_doe"));
+
+        // Test percent character doesn't act as SQL wildcard - use email since username doesn't allow %
+        createUser("fifty", "50%@test.com");
+        createUser("fivehundred", "500@test.com");
+        createUser("fiftyabc", "50abc@test.com");
+
+        users = managedRealm.admin().users().search("50%", null, null);
+        assertThat(users, hasSize(1));
+        assertThat(users.get(0).getEmail(), is("50%@test.com"));
+
+        // Test combination of wildcards - underscore in email
+        createUser("testuser", "test_email@example.com");
+        createUser("testauser", "testaemail@example.com");
+
+        users = managedRealm.admin().users().search("test_email", null, null);
+        assertThat(users, hasSize(1));
+        assertThat(users.get(0).getEmail(), is("test_email@example.com"));
+
+        // Test both percent and underscore in email
+        createUser("testpercent", "50%_test@test.com");
+        createUser("testatest", "50atest@test.com");
+
+        users = managedRealm.admin().users().search("50%_", null, null);
+        assertThat(users, hasSize(1));
+        assertThat(users.get(0).getEmail(), is("50%_test@test.com"));
+    }
+
+    @Test
+    @DatabaseTest
     public void exactSearch() {
         List<String> userIds = createUsers();
 
@@ -827,6 +968,149 @@ public class UserSearchTest extends AbstractUserTest {
         assertEquals(countWithIdpUserId.intValue(), usersWithIdpUserId.size(), "Count and search should return same number with idpUserId parameter");
         
         managedRealm.admin().clients().get(clientId).remove();
+    }
+
+    @Test
+    public void searchByCreatedAfter() {
+        long beforeCreation = System.currentTimeMillis();
+        createUser("timestampuser1", "timestampuser1@localhost");
+        createUser("timestampuser2", "timestampuser2@localhost");
+
+        // All users created at or after beforeCreation should be returned
+        List<UserRepresentation> users = managedRealm.admin().users().search(
+                null, null, null, null, null, null, null, 0, 100, null, null,
+                String.valueOf(beforeCreation), null);
+        List<String> usernames = users.stream().map(UserRepresentation::getUsername).collect(Collectors.toList());
+        assertTrue(usernames.contains("timestampuser1"), "Should contain timestampuser1");
+        assertTrue(usernames.contains("timestampuser2"), "Should contain timestampuser2");
+
+        // Using a future timestamp should return no users
+        long futureTimestamp = System.currentTimeMillis() + 100_000;
+        users = managedRealm.admin().users().search(
+                null, null, null, null, null, null, null, 0, 100, null, null,
+                String.valueOf(futureTimestamp), null);
+        assertTrue(users.isEmpty(), "No users should be created after a future timestamp");
+    }
+
+    @Test
+    public void searchByCreatedBefore() {
+        createUser("beforeuser1", "beforeuser1@localhost");
+        long afterCreation = System.currentTimeMillis();
+
+        // All users created at or before afterCreation should include beforeuser1
+        List<UserRepresentation> users = managedRealm.admin().users().search(
+                null, null, null, null, null, null, null, 0, 100, null, null,
+                null, String.valueOf(afterCreation));
+        List<String> usernames = users.stream().map(UserRepresentation::getUsername).collect(Collectors.toList());
+        assertTrue(usernames.contains("beforeuser1"), "Should contain beforeuser1");
+
+        // Using a very old timestamp should return no users
+        List<UserRepresentation> noUsers = managedRealm.admin().users().search(
+                null, null, null, null, null, null, null, 0, 100, null, null,
+                null, "1");
+        assertTrue(noUsers.isEmpty(), "No users should be created before epoch 1ms");
+    }
+
+    @Test
+    public void searchByCreatedBeforeAndAfter() {
+        long beforeFirst = System.currentTimeMillis();
+        createUser("rangeuser1", "rangeuser1@localhost");
+        long afterFirst = System.currentTimeMillis();
+
+        // Range query: both inclusive bounds
+        List<UserRepresentation> users = managedRealm.admin().users().search(
+                null, null, null, null, null, null, null, 0, 100, null, null,
+                String.valueOf(beforeFirst), String.valueOf(afterFirst));
+        List<String> usernames = users.stream().map(UserRepresentation::getUsername).collect(Collectors.toList());
+        assertTrue(usernames.contains("rangeuser1"), "Should contain rangeuser1 in range");
+
+        // Empty range: after > before should return no users
+        users = managedRealm.admin().users().search(
+                null, null, null, null, null, null, null, 0, 100, null, null,
+                String.valueOf(afterFirst + 100_000), String.valueOf(beforeFirst));
+        assertTrue(users.isEmpty(), "Inverted range should return no users");
+    }
+
+    @Test
+    public void searchByCreatedTimestampWithIsoDate() {
+        createUser("isodateuser1", "isodateuser1@localhost");
+
+        // Today's date in ISO-8601 format should include the user we just created
+        String today = LocalDate.now(ZoneOffset.UTC).toString();
+        List<UserRepresentation> users = managedRealm.admin().users().search(
+                null, null, null, null, null, null, null, 0, 100, null, null,
+                today, today);
+        List<String> usernames = users.stream().map(UserRepresentation::getUsername).collect(Collectors.toList());
+        assertTrue(usernames.contains("isodateuser1"), "Should contain user created today using ISO date filter");
+
+        // Yesterday should work as createdBefore (end-of-day) — but user was created today, so createdAfter=tomorrow should exclude
+        String tomorrow = LocalDate.now(ZoneOffset.UTC).plusDays(1).toString();
+        users = managedRealm.admin().users().search(
+                null, null, null, null, null, null, null, 0, 100, null, null,
+                tomorrow, null);
+        usernames = users.stream().map(UserRepresentation::getUsername).collect(Collectors.toList());
+        Assertions.assertFalse(usernames.contains("isodateuser1"), "Should not contain user when createdAfter is tomorrow");
+    }
+
+    @Test
+    public void countByCreatedTimestamp() {
+        long beforeCreation = System.currentTimeMillis();
+        createUser("countuser1", "countuser1@localhost");
+        createUser("countuser2", "countuser2@localhost");
+        long afterCreation = System.currentTimeMillis();
+
+        Integer count = managedRealm.admin().users().count(
+                null, null, null, null, null, null, null, null, null, null, null,
+                String.valueOf(beforeCreation), String.valueOf(afterCreation));
+        assertEquals(2, count.intValue(), "Should count 2 users created in the time range");
+
+        // Future range should count 0
+        Integer zeroCount = managedRealm.admin().users().count(
+                null, null, null, null, null, null, null, null, null, null, null,
+                String.valueOf(afterCreation + 100_000), null);
+        assertEquals(0, zeroCount.intValue(), "Should count 0 users for future timestamp");
+
+        // Count using ISO date (today) should include the users
+        String today = LocalDate.now(ZoneOffset.UTC).toString();
+        Integer isoCount = managedRealm.admin().users().count(
+                null, null, null, null, null, null, null, null, null, null, null,
+                today, today);
+        assertTrue(isoCount >= 2, "Should count at least 2 users created today using ISO date");
+    }
+
+    @Test
+    public void searchByCreatedTimestampWithOtherFilters() {
+        long beforeCreation = System.currentTimeMillis();
+
+        UserRepresentation enabledUser = new UserRepresentation();
+        enabledUser.setUsername("tsenableduser");
+        enabledUser.setEmail("tsenableduser@localhost");
+        enabledUser.setEnabled(true);
+        createUser(enabledUser);
+
+        UserRepresentation disabledUser = new UserRepresentation();
+        disabledUser.setUsername("tsdisableduser");
+        disabledUser.setEmail("tsdisableduser@localhost");
+        disabledUser.setEnabled(false);
+        createUser(disabledUser);
+
+        long afterCreation = System.currentTimeMillis();
+
+        // Search with createdAfter + enabled=true
+        List<UserRepresentation> enabledUsers = managedRealm.admin().users().search(
+                null, null, null, null, null, null, null, 0, 100, true, null,
+                String.valueOf(beforeCreation), String.valueOf(afterCreation));
+        List<String> usernames = enabledUsers.stream().map(UserRepresentation::getUsername).collect(Collectors.toList());
+        assertTrue(usernames.contains("tsenableduser"), "Should contain enabled user");
+        Assertions.assertFalse(usernames.contains("tsdisableduser"), "Should not contain disabled user");
+
+        // Search with createdAfter + enabled=false
+        List<UserRepresentation> disabledUsers = managedRealm.admin().users().search(
+                null, null, null, null, null, null, null, 0, 100, false, null,
+                String.valueOf(beforeCreation), String.valueOf(afterCreation));
+        usernames = disabledUsers.stream().map(UserRepresentation::getUsername).collect(Collectors.toList());
+        assertTrue(usernames.contains("tsdisableduser"), "Should contain disabled user");
+        Assertions.assertFalse(usernames.contains("tsenableduser"), "Should not contain enabled user");
     }
 
     @Test

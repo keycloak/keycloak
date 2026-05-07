@@ -24,11 +24,10 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 
-import org.keycloak.platform.Platform;
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.Messages;
-import org.keycloak.quarkus.runtime.integration.QuarkusPlatform;
 
+import io.quarkus.bootstrap.logging.InitialConfigurator;
 import io.smallrye.config.ConfigValue;
 import org.jboss.logging.Logger;
 import picocli.CommandLine;
@@ -110,9 +109,8 @@ public final class ExecutionExceptionHandler implements CommandLine.IExecutionEx
 
     // The "cause" can be null
     private void logError(PrintWriter errorWriter, String errorMessage, Throwable cause) {
-        QuarkusPlatform platform = (QuarkusPlatform) Platform.getPlatform();
-        if (platform.isStarted()) {
-            // Can delegate to proper logger once the platform is started
+        if (InitialConfigurator.DELAYED_HANDLER.isActivated()) {
+            // Can delegate to proper logger once delayed handler is activated
             if (cause == null) {
                 getLogger().error(errorMessage);
             } else {

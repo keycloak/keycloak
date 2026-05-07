@@ -30,21 +30,22 @@ import org.keycloak.representations.idm.AuthenticationExecutionRepresentation;
 import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.events.EventAssertion;
+import org.keycloak.testframework.realm.AuthenticationExecutionBuilder;
+import org.keycloak.testframework.realm.AuthenticationFlowBuilder;
+import org.keycloak.testframework.realm.RealmBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.pages.LoginPage;
-import org.keycloak.testsuite.util.ExecutionBuilder;
-import org.keycloak.testsuite.util.FlowBuilder;
-import org.keycloak.testsuite.util.RealmBuilder;
-import org.keycloak.testsuite.util.UserBuilder;
 
 import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 import static org.keycloak.common.Profile.Feature.AUTHORIZATION;
 
@@ -92,9 +93,9 @@ public class ScriptAuthenticatorTest extends AbstractFlowTest {
                 .password(generatePassword("user"))
                 .build();
 
-        RealmBuilder.edit(testRealm)
-                .user(failUser)
-                .user(okayUser);
+        RealmBuilder.update(testRealm)
+                .users(failUser)
+                .users(okayUser);
     }
 
     @Override
@@ -113,7 +114,7 @@ public class ScriptAuthenticatorTest extends AbstractFlowTest {
             return;
         }
 
-        AuthenticationFlowRepresentation scriptBrowserFlow = FlowBuilder.create()
+        AuthenticationFlowRepresentation scriptBrowserFlow = AuthenticationFlowBuilder.create()
                 .alias(scriptFlow)
                 .description("dummy pass through registration")
                 .providerId("basic-flow")
@@ -121,36 +122,36 @@ public class ScriptAuthenticatorTest extends AbstractFlowTest {
                 .builtIn(false)
                 .build();
 
-        Response createFlowResponse = testRealm().flows().createFlow(scriptBrowserFlow);
-        Assert.assertEquals(201, createFlowResponse.getStatus());
+        Response createFlowResponse = managedRealm.admin().flows().createFlow(scriptBrowserFlow);
+        Assertions.assertEquals(201, createFlowResponse.getStatus());
 
-        RealmRepresentation realm = testRealm().toRepresentation();
+        RealmRepresentation realm = managedRealm.admin().toRepresentation();
         realm.setBrowserFlow(scriptFlow);
         realm.setDirectGrantFlow(scriptFlow);
-        testRealm().update(realm);
+        managedRealm.admin().update(realm);
 
         this.flow = findFlowByAlias(scriptFlow);
 
-        AuthenticationExecutionRepresentation usernamePasswordFormExecution = ExecutionBuilder.create()
+        AuthenticationExecutionRepresentation usernamePasswordFormExecution = AuthenticationExecutionBuilder.create()
                 .id("username password form")
                 .parentFlow(this.flow.getId())
                 .requirement(AuthenticationExecutionModel.Requirement.REQUIRED.name())
                 .authenticator(UsernamePasswordFormFactory.PROVIDER_ID)
                 .build();
 
-        AuthenticationExecutionRepresentation authScriptExecution = ExecutionBuilder.create()
+        AuthenticationExecutionRepresentation authScriptExecution = AuthenticationExecutionBuilder.create()
                 .id(EXECUTION_ID)
                 .parentFlow(this.flow.getId())
                 .requirement(AuthenticationExecutionModel.Requirement.REQUIRED.name())
                 .authenticator("script-scripts/auth-example.js")
                 .build();
 
-        Response addExecutionResponse = testRealm().flows().addExecution(usernamePasswordFormExecution);
-        Assert.assertEquals(201, addExecutionResponse.getStatus());
+        Response addExecutionResponse = managedRealm.admin().flows().addExecution(usernamePasswordFormExecution);
+        Assertions.assertEquals(201, addExecutionResponse.getStatus());
         addExecutionResponse.close();
 
-        addExecutionResponse = testRealm().flows().addExecution(authScriptExecution);
-        Assert.assertEquals(201, addExecutionResponse.getStatus());
+        addExecutionResponse = managedRealm.admin().flows().addExecution(authScriptExecution);
+        Assertions.assertEquals(201, addExecutionResponse.getStatus());
         addExecutionResponse.close();
 
         testContext.setInitialized(true);
@@ -161,11 +162,11 @@ public class ScriptAuthenticatorTest extends AbstractFlowTest {
      */
     @Test
     public void loginShouldWorkWithScriptAuthenticator() {
-        loginPage.open();
+        oauth.openLoginForm();
 
         loginPage.login("user", getPassword("user"));
 
-        events.expectLogin().user(userId).detail(Details.USERNAME, "user").assertEvent();
+        EventAssertion.expectLoginSuccess(events.poll()).userId(userId).details(Details.USERNAME, "user");
     }
 
     /**
@@ -173,7 +174,7 @@ public class ScriptAuthenticatorTest extends AbstractFlowTest {
      */
     @Test
     public void loginShouldFailWithScriptAuthenticator() {
-        loginPage.open();
+        oauth.openLoginForm();
 
         loginPage.login("fail", getPassword("fail"));
 
@@ -185,21 +186,21 @@ public class ScriptAuthenticatorTest extends AbstractFlowTest {
      */
     @Test
     public void scriptWithClientSession()  {
-        AuthenticationExecutionRepresentation authScriptExecution = ExecutionBuilder.create()
+        AuthenticationExecutionRepresentation authScriptExecution = AuthenticationExecutionBuilder.create()
                 .id(EXECUTION_ID + "client-session")
                 .parentFlow(this.flow.getId())
                 .requirement(AuthenticationExecutionModel.Requirement.REQUIRED.name())
                 .authenticator("script-scripts/auth-session.js")
                 .build();
 
-        Response addExecutionResponse = testRealm().flows().addExecution(authScriptExecution);
-        Assert.assertEquals(201, addExecutionResponse.getStatus());
+        Response addExecutionResponse = managedRealm.admin().flows().addExecution(authScriptExecution);
+        Assertions.assertEquals(201, addExecutionResponse.getStatus());
         addExecutionResponse.close();
 
-        loginPage.open();
+        oauth.openLoginForm();
 
         loginPage.login("user", getPassword("user"));
 
-        events.expectLogin().user(userId).detail(Details.USERNAME, "user").assertEvent();
+        EventAssertion.expectLoginSuccess(events.poll()).userId(userId).details(Details.USERNAME, "user");
     }
 }

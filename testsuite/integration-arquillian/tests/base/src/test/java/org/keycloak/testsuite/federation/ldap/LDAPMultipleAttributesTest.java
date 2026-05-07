@@ -40,10 +40,10 @@ import org.keycloak.testsuite.util.LDAPTestConfiguration;
 import org.keycloak.testsuite.util.LDAPTestUtils;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
-import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 import org.junit.runners.MethodSorters;
 
 /**
@@ -113,7 +113,7 @@ public class LDAPMultipleAttributesTest extends AbstractLDAPTest {
 
             // Test user imported in local storage now
             UserModel user = session.users().getUserByUsername(appRealm, "jbrown");
-            Assert.assertNotNull(UserStoragePrivateUtil.userLocalStorage(session).getUserById(appRealm, user.getId()));
+            Assertions.assertNotNull(UserStoragePrivateUtil.userLocalStorage(session).getUserById(appRealm, user.getId()));
             LDAPTestAsserts.assertUserImported(UserStoragePrivateUtil.userLocalStorage(session), appRealm, "jbrown", "James", "Brown", "jbrown@keycloak.org", "88441");
         });
     }
@@ -127,11 +127,11 @@ public class LDAPMultipleAttributesTest extends AbstractLDAPTest {
             RealmModel appRealm = ctx.getRealm();
 
             UserModel user = session.users().getUserByUsername(appRealm, "bwilson");
-            Assert.assertEquals("bwilson@keycloak.org", user.getEmail());
-            Assert.assertEquals("Bruce", user.getFirstName());
+            Assertions.assertEquals("bwilson@keycloak.org", user.getEmail());
+            Assertions.assertEquals("Bruce", user.getFirstName());
 
             // There are 2 lastnames in ldif
-            Assert.assertTrue("Wilson".equals(user.getLastName()) || "Schneider".equals(user.getLastName()));
+            Assertions.assertTrue("Wilson".equals(user.getLastName()) || "Schneider".equals(user.getLastName()));
 
             // Actually there are 2 postalCodes
             List<String> postalCodes = user.getAttributeStream("postal_code").collect(Collectors.toList());
@@ -173,10 +173,10 @@ public class LDAPMultipleAttributesTest extends AbstractLDAPTest {
         }
 
 
-        Assert.assertEquals(expectedPostalCodes.length, postalCodes.size());
+        Assertions.assertEquals(expectedPostalCodes.length, postalCodes.size());
         for (String expected : expectedPostalCodes) {
             if (!postalCodes.contains(expected)) {
-                Assert.fail("postalCode '" + expected + "' not in postalCodes: " + postalCodes);
+                Assertions.fail("postalCode '" + expected + "' not in postalCodes: " + postalCodes);
             }
         }
     }
@@ -187,40 +187,40 @@ public class LDAPMultipleAttributesTest extends AbstractLDAPTest {
         oauth.client("ldap-portal", "password");
         oauth.redirectUri(suiteContext.getAuthServerInfo().getContextRoot().toString() + "/ldap-portal");
 
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("bwilson", "Password1");
 
         String code = oauth.parseLoginResponse().getCode();
         AccessTokenResponse response = oauth.doAccessTokenRequest(code);
 
-        Assert.assertEquals(200, response.getStatusCode());
+        Assertions.assertEquals(200, response.getStatusCode());
         IDToken idToken = oauth.verifyIDToken(response.getIdToken());
 
-        Assert.assertEquals("Bruce Wilson", idToken.getName());
-        Assert.assertEquals("Elm 5", idToken.getOtherClaims().get("street"));
+        Assertions.assertEquals("Bruce Wilson", idToken.getName());
+        Assertions.assertEquals("Elm 5", idToken.getOtherClaims().get("street"));
         Collection postalCodes = (Collection) idToken.getOtherClaims().get("postal_code");
-        Assert.assertEquals(2, postalCodes.size());
-        Assert.assertTrue(postalCodes.contains("88441"));
-        Assert.assertTrue(postalCodes.contains("77332"));
+        Assertions.assertEquals(2, postalCodes.size());
+        Assertions.assertTrue(postalCodes.contains("88441"));
+        Assertions.assertTrue(postalCodes.contains("77332"));
 
         oauth.doLogout(response.getRefreshToken());
 
         // Login as jbrown
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("jbrown", "Password1");
 
         code = oauth.parseLoginResponse().getCode();
         response = oauth.doAccessTokenRequest(code);
 
-        org.keycloak.testsuite.Assert.assertEquals(200, response.getStatusCode());
+        Assertions.assertEquals(200, response.getStatusCode());
         idToken = oauth.verifyIDToken(response.getIdToken());
 
-        Assert.assertEquals("James Brown", idToken.getName());
-        Assert.assertNull(idToken.getOtherClaims().get("street"));
+        Assertions.assertEquals("James Brown", idToken.getName());
+        Assertions.assertNull(idToken.getOtherClaims().get("street"));
         postalCodes = (Collection) idToken.getOtherClaims().get("postal_code");
-        Assert.assertEquals(1, postalCodes.size());
-        Assert.assertTrue(postalCodes.contains("88441"));
-        Assert.assertFalse(postalCodes.contains("77332"));
+        Assertions.assertEquals(1, postalCodes.size());
+        Assertions.assertTrue(postalCodes.contains("88441"));
+        Assertions.assertFalse(postalCodes.contains("77332"));
 
         oauth.doLogout(response.getRefreshToken());
     }

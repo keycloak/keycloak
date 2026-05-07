@@ -6,7 +6,6 @@ export function decodeToken(token: string): DecodedToken {
   const [, payload] = token?.split(".") || [];
 
   if (typeof payload !== "string") {
-    console.info("Unable to decode token, payload not found.");
     return {};
   }
 

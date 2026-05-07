@@ -104,7 +104,7 @@ public class AuthenticatedClientSessionUpdater extends BaseUpdater<ClientSession
     public Expiration computeExpiration() {
         long maxIdle = SessionTimeouts.getClientSessionMaxIdleMs(userSession.getRealm(), client, offline, isUserSessionRememberMe(), getTimestamp());
         long lifespan = SessionTimeouts.getClientSessionLifespanMs(userSession.getRealm(), client, offline, isUserSessionRememberMe(), getStarted(), getUserSessionStarted());
-        return new Expiration(maxIdle, lifespan);
+        return new Expiration(SessionTimeouts.IMMORTAL_FLAG, SessionTimeouts.calculateEffectiveSessionLifespan(maxIdle, lifespan));
     }
 
     @Override

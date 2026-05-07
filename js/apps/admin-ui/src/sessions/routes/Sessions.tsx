@@ -10,9 +10,9 @@ const SessionsSection = lazy(() => import("../SessionsSection"));
 export const SessionsRoute: AppRouteObject = {
   path: "/:realm/sessions",
   element: <SessionsSection />,
-  breadcrumb: (t) => t("titleSessions"),
   handle: {
     access: ["view-realm", "view-clients", "view-users"],
+    breadcrumb: (t) => t("titleSessions"),
   },
 };
 

@@ -34,9 +34,9 @@ import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
 import org.keycloak.testframework.annotations.InjectAdminClient;
 import org.keycloak.testframework.annotations.InjectUser;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
-import org.keycloak.testframework.realm.GroupConfigBuilder;
+import org.keycloak.testframework.realm.GroupBuilder;
 import org.keycloak.testframework.realm.ManagedUser;
-import org.keycloak.testframework.realm.UserConfigBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.util.ApiUtil;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -186,13 +186,13 @@ public class GroupResourceTypeFilteringTest extends AbstractPermissionTest {
     @Test
     public void testViewGroupNotAffectQueryUsers() {
         // create groups
-        String companyId = ApiUtil.getCreatedId(realm.admin().groups().add(GroupConfigBuilder.create().name("Company").build()));
-        String sub1Id = ApiUtil.getCreatedId(realm.admin().groups().group(companyId).subGroup(GroupConfigBuilder.create().name("Sub1").build()));
-        String sub2Id = ApiUtil.getCreatedId(realm.admin().groups().group(companyId).subGroup(GroupConfigBuilder.create().name("Sub2").build()));
-        String depAId = ApiUtil.getCreatedId(realm.admin().groups().group(sub1Id).subGroup(GroupConfigBuilder.create().name("DepartmentA").build()));
-        String depBId = ApiUtil.getCreatedId(realm.admin().groups().group(sub1Id).subGroup(GroupConfigBuilder.create().name("DepartmentB").build()));
-        String depCId = ApiUtil.getCreatedId(realm.admin().groups().group(sub2Id).subGroup(GroupConfigBuilder.create().name("DepartmentC").build()));
-        String depDId = ApiUtil.getCreatedId(realm.admin().groups().group(sub2Id).subGroup(GroupConfigBuilder.create().name("DepartmentD").build()));
+        String companyId = ApiUtil.getCreatedId(realm.admin().groups().add(GroupBuilder.create().name("Company").build()));
+        String sub1Id = ApiUtil.getCreatedId(realm.admin().groups().group(companyId).subGroup(GroupBuilder.create().name("Sub1").build()));
+        String sub2Id = ApiUtil.getCreatedId(realm.admin().groups().group(companyId).subGroup(GroupBuilder.create().name("Sub2").build()));
+        String depAId = ApiUtil.getCreatedId(realm.admin().groups().group(sub1Id).subGroup(GroupBuilder.create().name("DepartmentA").build()));
+        String depBId = ApiUtil.getCreatedId(realm.admin().groups().group(sub1Id).subGroup(GroupBuilder.create().name("DepartmentB").build()));
+        String depCId = ApiUtil.getCreatedId(realm.admin().groups().group(sub2Id).subGroup(GroupBuilder.create().name("DepartmentC").build()));
+        String depDId = ApiUtil.getCreatedId(realm.admin().groups().group(sub2Id).subGroup(GroupBuilder.create().name("DepartmentD").build()));
         realm.cleanup().add(r -> r.groups().group(companyId).remove());
 
         GroupRepresentation company = realm.admin().groups().group(companyId).toRepresentation();
@@ -205,13 +205,13 @@ public class GroupResourceTypeFilteringTest extends AbstractPermissionTest {
 
         // create members
         List<String> userIds = List.of(
-                ApiUtil.getCreatedId(realm.admin().users().create(UserConfigBuilder.create().username("company-admin").groups("/Company").build())),
-                ApiUtil.getCreatedId(realm.admin().users().create(UserConfigBuilder.create().username("sub1-admin").groups("/Company/Sub1").build())),
-                ApiUtil.getCreatedId(realm.admin().users().create(UserConfigBuilder.create().username("sub2-admin").groups("/Company/Sub2").build())),
-                ApiUtil.getCreatedId(realm.admin().users().create(UserConfigBuilder.create().username("department-a-member").groups("/Company/Sub1/DepartmentA").build())),
-                ApiUtil.getCreatedId(realm.admin().users().create(UserConfigBuilder.create().username("department-b-member").groups("/Company/Sub1/DepartmentB").build())),
-                ApiUtil.getCreatedId(realm.admin().users().create(UserConfigBuilder.create().username("department-c-member").groups("/Company/Sub2/DepartmentC").build())),
-                ApiUtil.getCreatedId(realm.admin().users().create(UserConfigBuilder.create().username("department-d-member").groups("/Company/Sub2/DepartmentD").build()))
+                ApiUtil.getCreatedId(realm.admin().users().create(UserBuilder.create().username("company-admin").groups("/Company").build())),
+                ApiUtil.getCreatedId(realm.admin().users().create(UserBuilder.create().username("sub1-admin").groups("/Company/Sub1").build())),
+                ApiUtil.getCreatedId(realm.admin().users().create(UserBuilder.create().username("sub2-admin").groups("/Company/Sub2").build())),
+                ApiUtil.getCreatedId(realm.admin().users().create(UserBuilder.create().username("department-a-member").groups("/Company/Sub1/DepartmentA").build())),
+                ApiUtil.getCreatedId(realm.admin().users().create(UserBuilder.create().username("department-b-member").groups("/Company/Sub1/DepartmentB").build())),
+                ApiUtil.getCreatedId(realm.admin().users().create(UserBuilder.create().username("department-c-member").groups("/Company/Sub2/DepartmentC").build())),
+                ApiUtil.getCreatedId(realm.admin().users().create(UserBuilder.create().username("department-d-member").groups("/Company/Sub2/DepartmentD").build()))
         );
         realm.cleanup().add(r -> userIds.forEach(userId -> r.users().delete(userId).close()));
 

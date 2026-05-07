@@ -188,7 +188,7 @@ public class AuthorizationCodeGrantType extends OAuth2GrantTypeBase {
         DPoPUtil.validateDPoPJkt(codeData.getDpopJkt(), session, event, cors);
 
         try {
-            session.clientPolicy().triggerOnEvent(new TokenRequestContext(formParams, parseResult, client));
+            session.clientPolicy().triggerOnEvent(new TokenRequestContext(formParams, parseResult));
         } catch (ClientPolicyException cpe) {
             event.detail(Details.REASON, Details.CLIENT_POLICY_ERROR);
             event.detail(Details.CLIENT_POLICY_ERROR, cpe.getError());
@@ -256,7 +256,7 @@ public class AuthorizationCodeGrantType extends OAuth2GrantTypeBase {
         }
 
         // Case when authorization_details response not generated
-        if ((authorizationDetailsResponse == null || authorizationDetailsResponse.isEmpty())) {
+        if (authorizationDetailsResponse == null || authorizationDetailsResponse.isEmpty()) {
             authorizationDetailsResponse = handleMissingAuthorizationDetails(clientSession.getUserSession(), clientSessionCtx);
             if (authorizationDetailsResponse != null && !authorizationDetailsResponse.isEmpty()) {
                 clientSessionCtx.setAttribute(AUTHORIZATION_DETAILS_RESPONSE, authorizationDetailsResponse);
@@ -276,6 +276,7 @@ public class AuthorizationCodeGrantType extends OAuth2GrantTypeBase {
                     s.getRefreshToken().setAuthorizationDetails(authDetailsResponse);
                 }
             }
+            s.code(codeData);
             return new TokenResponseContext(formParams, parseResult, clientSessionCtx, s);
         });
     }

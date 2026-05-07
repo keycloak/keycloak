@@ -86,6 +86,7 @@ import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.UserVerifiableCredentialModel;
 import org.keycloak.models.WebAuthnPolicy;
 import org.keycloak.models.credential.OTPCredentialModel;
 import org.keycloak.models.light.LightweightUserAdapter;
@@ -126,6 +127,7 @@ import org.keycloak.representations.idm.authorization.ResourceOwnerRepresentatio
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
+import org.keycloak.representations.idm.oid4vc.UserVerifiableCredentialRepresentation;
 import org.keycloak.storage.StorageId;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.utils.StringUtil;
@@ -159,6 +161,7 @@ public class ModelToRepresentation {
         REALM_EXCLUDED_ATTRIBUTES.add("minimumQuickLoginWaitSeconds");
         REALM_EXCLUDED_ATTRIBUTES.add("maxDeltaTimeSeconds");
         REALM_EXCLUDED_ATTRIBUTES.add("failureFactor");
+        REALM_EXCLUDED_ATTRIBUTES.add("maxSecondaryAuthFailures");
         REALM_EXCLUDED_ATTRIBUTES.add("actionTokenGeneratedByAdminLifespan");
         REALM_EXCLUDED_ATTRIBUTES.add("actionTokenGeneratedByUserLifespan");
         REALM_EXCLUDED_ATTRIBUTES.add("offlineSessionMaxLifespanEnabled");
@@ -186,6 +189,7 @@ public class ModelToRepresentation {
         REALM_EXCLUDED_ATTRIBUTES.add("webAuthnPolicyAvoidSameAuthenticatorRegisterPasswordless");
         REALM_EXCLUDED_ATTRIBUTES.add("webAuthnPolicyAcceptableAaguidsPasswordless");
         REALM_EXCLUDED_ATTRIBUTES.add("webAuthnPolicyPasskeysEnabledPasswordless");
+        REALM_EXCLUDED_ATTRIBUTES.add("webAuthnPolicyMediationPasswordless");
 
         REALM_EXCLUDED_ATTRIBUTES.add(Constants.CLIENT_POLICIES);
         REALM_EXCLUDED_ATTRIBUTES.add(Constants.CLIENT_PROFILES);
@@ -196,6 +200,7 @@ public class ModelToRepresentation {
         REALM_EXCLUDED_ATTRIBUTES.add("verifiableCredentialsEnabled");
         REALM_EXCLUDED_ATTRIBUTES.add("adminPermissionsEnabled");
         REALM_EXCLUDED_ATTRIBUTES.add("adminPermissionsClientId");
+        REALM_EXCLUDED_ATTRIBUTES.add("scimEnabled");
     }
 
     public static Set<String> CLIENT_EXCLUDED_ATTRIBUTES = new HashSet<>();
@@ -483,6 +488,7 @@ public class ModelToRepresentation {
         rep.setQuickLoginCheckMilliSeconds(realm.getQuickLoginCheckMilliSeconds());
         rep.setMaxDeltaTimeSeconds(realm.getMaxDeltaTimeSeconds());
         rep.setFailureFactor(realm.getFailureFactor());
+        rep.setMaxSecondaryAuthFailures(realm.getMaxSecondaryAuthFailures());
         if (Profile.isFeatureEnabled(Profile.Feature.AUTHORIZATION)) {
             rep.setUserManagedAccessAllowed(realm.isUserManagedAccessAllowed());
         } else {
@@ -509,6 +515,7 @@ public class ModelToRepresentation {
         rep.setOrganizationsEnabled(realm.isOrganizationsEnabled());
         rep.setAdminPermissionsEnabled(realm.isAdminPermissionsEnabled());
         rep.setVerifiableCredentialsEnabled(realm.isVerifiableCredentialsEnabled());
+        rep.setScimApiEnabled(realm.isScimApiEnabled());
         rep.setDefaultSignatureAlgorithm(realm.getDefaultSignatureAlgorithm());
         rep.setRevokeRefreshToken(realm.isRevokeRefreshToken());
         rep.setRefreshTokenMaxReuse(realm.getRefreshTokenMaxReuse());
@@ -585,6 +592,7 @@ public class ModelToRepresentation {
         rep.setWebAuthnPolicyPasswordlessAcceptableAaguids(webAuthnPolicy.getAcceptableAaguids());
         rep.setWebAuthnPolicyPasswordlessExtraOrigins(webAuthnPolicy.getExtraOrigins());
         rep.setWebAuthnPolicyPasswordlessPasskeysEnabled(webAuthnPolicy.isPasskeysEnabled());
+        rep.setWebAuthnPolicyPasswordlessMediation(webAuthnPolicy.getMediation());
 
         CibaConfig cibaPolicy = realm.getCibaPolicy();
         Map<String, String> attrMap = ofNullable(rep.getAttributes()).orElse(new HashMap<>());
@@ -1025,6 +1033,14 @@ public class ModelToRepresentation {
         consentRep.setCreatedDate(model.getCreatedDate());
         consentRep.setLastUpdatedDate(model.getLastUpdatedDate());
         return consentRep;
+    }
+
+    public static UserVerifiableCredentialRepresentation toRepresentation(UserVerifiableCredentialModel model) {
+        UserVerifiableCredentialRepresentation rep = new UserVerifiableCredentialRepresentation();
+        rep.setCredentialScopeName(model.getCredentialScopeName());
+        rep.setRevision(model.getRevision());
+        rep.setCreatedDate(model.getCreatedDate());
+        return rep;
     }
 
     public static AuthenticationFlowRepresentation toRepresentation(KeycloakSession session, RealmModel realm, AuthenticationFlowModel model) {

@@ -24,11 +24,11 @@ import workflowRoutes from "./workflows/routes";
 
 export type AppRouteObjectHandle = {
   access: AccessType | AccessType[];
+  breadcrumb?: (t: TFunction) => string | ComponentType<any>;
 };
 
 export interface AppRouteObject extends NonIndexRouteObject {
   path: string;
-  breadcrumb?: (t: TFunction) => string | ComponentType<any>;
   handle: AppRouteObjectHandle;
 }
 

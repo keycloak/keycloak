@@ -39,6 +39,11 @@ import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.provider.ScriptProviderDescriptor;
+import org.keycloak.testframework.events.EventAssertion;
+import org.keycloak.testframework.realm.AuthenticationExecutionBuilder;
+import org.keycloak.testframework.realm.AuthenticationFlowBuilder;
+import org.keycloak.testframework.realm.RealmBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AbstractAuthenticationTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
@@ -46,10 +51,6 @@ import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.forms.AbstractFlowTest;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.util.ContainerAssume;
-import org.keycloak.testsuite.util.ExecutionBuilder;
-import org.keycloak.testsuite.util.FlowBuilder;
-import org.keycloak.testsuite.util.RealmBuilder;
-import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.util.JsonSerialization;
 
 import org.jboss.arquillian.container.test.api.Deployment;
@@ -58,15 +59,15 @@ import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
-import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 import static org.keycloak.common.Profile.Feature.SCRIPTS;
 import static org.keycloak.testsuite.arquillian.DeploymentTargetModifier.AUTH_SERVER_CURRENT;
 
-import static org.junit.Assert.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -122,9 +123,9 @@ public class DeployedScriptAuthenticatorTest extends AbstractFlowTest {
                 .password("password")
                 .build();
 
-        RealmBuilder.edit(testRealm)
-                .user(failUser)
-                .user(okayUser);
+        RealmBuilder.update(testRealm)
+                .users(failUser)
+                .users(okayUser);
     }
 
     public void configureFlows() throws Exception {
@@ -134,7 +135,7 @@ public class DeployedScriptAuthenticatorTest extends AbstractFlowTest {
 
         String scriptFlow = "scriptBrowser";
 
-        AuthenticationFlowRepresentation scriptBrowserFlow = FlowBuilder.create()
+        AuthenticationFlowRepresentation scriptBrowserFlow = AuthenticationFlowBuilder.create()
                 .alias(scriptFlow)
                 .description("dummy pass through registration")
                 .providerId("basic-flow")
@@ -142,36 +143,36 @@ public class DeployedScriptAuthenticatorTest extends AbstractFlowTest {
                 .builtIn(false)
                 .build();
 
-        Response createFlowResponse = adminClient.realm(TEST_REALM_NAME).flows().createFlow(scriptBrowserFlow);
-        Assert.assertEquals(201, createFlowResponse.getStatus());
+        Response createFlowResponse = managedRealm.admin().flows().createFlow(scriptBrowserFlow);
+        Assertions.assertEquals(201, createFlowResponse.getStatus());
 
-        RealmRepresentation realm = adminClient.realm(TEST_REALM_NAME).toRepresentation();
+        RealmRepresentation realm = managedRealm.admin().toRepresentation();
         realm.setBrowserFlow(scriptFlow);
         realm.setDirectGrantFlow(scriptFlow);
-        testRealm().update(realm);
+        managedRealm.admin().update(realm);
 
         this.flow = findFlowByAlias(scriptFlow);
 
-        AuthenticationExecutionRepresentation usernamePasswordFormExecution = ExecutionBuilder.create()
+        AuthenticationExecutionRepresentation usernamePasswordFormExecution = AuthenticationExecutionBuilder.create()
                 .id("username password form")
                 .parentFlow(this.flow.getId())
                 .requirement(AuthenticationExecutionModel.Requirement.REQUIRED.name())
                 .authenticator(UsernamePasswordFormFactory.PROVIDER_ID)
                 .build();
 
-        AuthenticationExecutionRepresentation authScriptExecution = ExecutionBuilder.create()
+        AuthenticationExecutionRepresentation authScriptExecution = AuthenticationExecutionBuilder.create()
                 .id(EXECUTION_ID)
                 .parentFlow(this.flow.getId())
                 .requirement(AuthenticationExecutionModel.Requirement.REQUIRED.name())
                 .authenticator("script-authenticator-a.js")
                 .build();
 
-        Response addExecutionResponse = testRealm().flows().addExecution(usernamePasswordFormExecution);
-        Assert.assertEquals(201, addExecutionResponse.getStatus());
+        Response addExecutionResponse = managedRealm.admin().flows().addExecution(usernamePasswordFormExecution);
+        Assertions.assertEquals(201, addExecutionResponse.getStatus());
         addExecutionResponse.close();
 
-        addExecutionResponse = testRealm().flows().addExecution(authScriptExecution);
-        Assert.assertEquals(201, addExecutionResponse.getStatus());
+        addExecutionResponse = managedRealm.admin().flows().addExecution(authScriptExecution);
+        Assertions.assertEquals(201, addExecutionResponse.getStatus());
         addExecutionResponse.close();
 
         testContext.setInitialized(true);
@@ -184,18 +185,18 @@ public class DeployedScriptAuthenticatorTest extends AbstractFlowTest {
     public void loginShouldWorkWithScriptAuthenticator() throws Exception {
         configureFlows();
 
-        loginPage.open();
+        oauth.openLoginForm();
 
         loginPage.login("user", "password");
 
-        events.expectLogin().user(okayUser()).detail(Details.USERNAME, "user").assertEvent();
+        EventAssertion.expectLoginSuccess(events.poll()).userId(okayUser().getId()).details(Details.USERNAME, "user");
     }
 
     // Issue 20005
     @Test
     public void testManyScriptAuthenticatorInstances() throws Exception {
         configureFlows();
-        AuthenticationManagementResource authMgmtResource = adminClient.realm(TEST_REALM_NAME).flows();
+        AuthenticationManagementResource authMgmtResource = managedRealm.admin().flows();
 
         // Endpoint used by admin console
         Map<String, Object> scriptExecution = new HashMap<>();
@@ -210,9 +211,9 @@ public class DeployedScriptAuthenticatorTest extends AbstractFlowTest {
                 .collect(Collectors.toList());
 
         // Both executions refers to same config of deployed script provider
-        Assert.assertEquals(2, scriptExecutions.size());
+        Assertions.assertEquals(2, scriptExecutions.size());
         for (AuthenticationExecutionInfoRepresentation execution : scriptExecutions) {
-            Assert.assertEquals(execution.getAuthenticationConfig(), "script-authenticator-a.js");
+            Assertions.assertEquals(execution.getAuthenticationConfig(), "script-authenticator-a.js");
         }
 
         // Assert updating config should fail due it's read-only
@@ -220,7 +221,7 @@ public class DeployedScriptAuthenticatorTest extends AbstractFlowTest {
         configRep.getConfig().put("scriptCode", "Something");
         try {
             authMgmtResource.updateAuthenticatorConfig("script-authenticator-a.js", configRep);
-            Assert.fail("Update of configuration should have failed");
+            Assertions.fail("Update of configuration should have failed");
         } catch (BadRequestException bre) {
             // Expected
         }
@@ -229,7 +230,7 @@ public class DeployedScriptAuthenticatorTest extends AbstractFlowTest {
         Map<String, Object> newFlow = new HashMap<>();
         newFlow.put("newName", "Copy of script flow");
         Response resp = authMgmtResource.copy("scriptBrowser", newFlow);
-        Assert.assertEquals(201, resp.getStatus());
+        Assertions.assertEquals(201, resp.getStatus());
         resp.close();
         AuthenticationFlowRepresentation copiedFlow = AbstractAuthenticationTest.findFlowByAlias("Copy of script flow", authMgmtResource.getFlows());
 
@@ -239,7 +240,7 @@ public class DeployedScriptAuthenticatorTest extends AbstractFlowTest {
     }
 
     private UserRepresentation okayUser() {
-        return adminClient.realm(TEST_REALM_NAME).users().search("user", true).get(0);
+        return managedRealm.admin().users().search("user", true).get(0);
     }
 
     /**
@@ -249,7 +250,7 @@ public class DeployedScriptAuthenticatorTest extends AbstractFlowTest {
     public void loginShouldFailWithScriptAuthenticator() throws Exception {
         configureFlows();
 
-        loginPage.open();
+        oauth.openLoginForm();
 
         loginPage.login("fail", "password");
 
@@ -259,7 +260,7 @@ public class DeployedScriptAuthenticatorTest extends AbstractFlowTest {
     @Test
     @DisableFeature(value = SCRIPTS, executeAsLast = false, skipRestart = true)
     public void testScriptAuthenticatorNotAvailable() {
-        assertFalse(testRealm().flows().getAuthenticatorProviders().stream().anyMatch(
+        assertFalse(managedRealm.admin().flows().getAuthenticatorProviders().stream().anyMatch(
                 provider -> ScriptBasedAuthenticatorFactory.PROVIDER_ID.equals(provider.get("id"))));
     }
 }

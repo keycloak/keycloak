@@ -66,7 +66,12 @@ class BuildCommandDistTest {
     @Test
     @Launch({ "build", "--db=postgres", "--db-username=myuser", "--db-password=mypassword", "--http-enabled=true" })
     void testIgnoreRuntimeOptions(CLIResult cliResult) {
-        cliResult.assertMessage("The following run time options were found, but will be ignored during build time: kc.db-username, kc.http-enabled, kc.db-password");
+        String output = cliResult.getOutput();
+        assertTrue(output.contains("The following run time options were found, but will be ignored during build time:"));
+        assertTrue(output.contains("kc.db-username"));
+        assertTrue(output.contains("kc.http-enabled"));
+        assertTrue(output.contains("kc.db-password"));
+        assertTrue(output.contains("kc.shutdown-delay"));
         cliResult.assertBuild();
     }
 
@@ -87,12 +92,13 @@ class BuildCommandDistTest {
     @Test
     @RawDistOnly(reason = "Containers are immutable")
     void testDoNotRecordRuntimeOptionsDuringBuild(KeycloakDistribution distribution) {
-        distribution.setProperty("proxy", "edge");
-        distribution.run("build");
-        distribution.removeProperty("proxy");
+        distribution.setProperty("db-url", "invalid");
+        CLIResult cliResult = distribution.run("build");
+        cliResult.assertBuild();
+        distribution.removeProperty("db-url");
 
-        CLIResult result = distribution.run("start", "--hostname=mykeycloak", "--cache=local", OPTIMIZED_BUILD_OPTION_LONG);
-        result.assertError("Key material not provided to setup HTTPS");
+        CLIResult result = distribution.run("start", "--hostname=mykeycloak", "--cache=local", "--http-enabled=true", OPTIMIZED_BUILD_OPTION_LONG);
+        result.assertStarted();
     }
 
     @Test

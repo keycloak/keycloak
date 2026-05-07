@@ -27,11 +27,12 @@ import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.UserSessionRepresentation;
+import org.keycloak.testframework.events.EventAssertion;
+import org.keycloak.testframework.realm.CredentialBuilder;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.broker.AbstractNestedBrokerTest;
 import org.keycloak.testsuite.broker.NestedBrokerConfiguration;
 import org.keycloak.testsuite.broker.OidcBackchannelLogoutBrokerConfiguration;
-import org.keycloak.testsuite.util.CredentialBuilder;
 import org.keycloak.testsuite.util.LogoutTokenUtil;
 import org.keycloak.testsuite.util.RealmManager;
 import org.keycloak.testsuite.util.SecondBrowser;
@@ -48,16 +49,16 @@ import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 
-import static org.keycloak.testsuite.admin.ApiUtil.createUserWithAdminClient;
-import static org.keycloak.testsuite.admin.ApiUtil.resetUserPassword;
+import static org.keycloak.testsuite.admin.AdminApiUtil.createUserWithAdminClient;
+import static org.keycloak.testsuite.admin.AdminApiUtil.resetUserPassword;
 import static org.keycloak.testsuite.broker.BrokerTestTools.getConsumerRoot;
 import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class BackchannelLogoutTest extends AbstractNestedBrokerTest {
 
@@ -191,9 +192,7 @@ public class BackchannelLogoutTest extends AbstractNestedBrokerTest {
         BackchannelLogoutResponse response = oauth.doBackchannelLogout(null);
         assertEquals(400, response.getStatusCode());
         assertEquals("No logout token", response.getErrorDescription());
-        events.expectLogoutError(Errors.INVALID_TOKEN)
-                .realm(realmIdConsumerRealm)
-                .assertEvent();
+        EventAssertion.expectLogoutError(events.poll()).error(Errors.INVALID_TOKEN);
     }
 
     @Test
@@ -205,9 +204,7 @@ public class BackchannelLogoutTest extends AbstractNestedBrokerTest {
         BackchannelLogoutResponse response = oauth.doBackchannelLogout(logoutTokenMissingContent);
         assertEquals(400, response.getStatusCode());
         assertEquals(LogoutTokenValidationCode.DECODE_TOKEN_FAILED.getErrorMessage(), response.getErrorDescription());
-        events.expectLogoutError(Errors.INVALID_TOKEN)
-                .realm(realmIdConsumerRealm)
-                .assertEvent();
+        EventAssertion.expectLogoutError(events.poll()).error(Errors.INVALID_TOKEN);
     }
 
     @Test
@@ -247,7 +244,7 @@ public class BackchannelLogoutTest extends AbstractNestedBrokerTest {
 
         OAuthClient oauth2 = oauth.newConfig().driver(driver2);
         oauth2.realm(nbc.consumerRealmName())
-                .clientId(OidcBackchannelLogoutBrokerConfiguration.CONSUMER_CLIENT_ID)
+                .client(OidcBackchannelLogoutBrokerConfiguration.CONSUMER_CLIENT_ID)
                 .redirectUri(getAuthServerRoot() + "realms/" + nbc.consumerRealmName() + "/app");
 
         doLoginSocial(oauth2, nbc.getIDPAlias(), nbc.getUserLogin(), nbc.getUserPassword());
@@ -317,7 +314,7 @@ public class BackchannelLogoutTest extends AbstractNestedBrokerTest {
         logInAsUserInIDP(OidcBackchannelLogoutBrokerConfiguration.CONSUMER_CLIENT_ID);
         String userIdConsumerRealm = getUserIdConsumerRealm();
         adminClient.realm(nbc.consumerRealmName()).users().get(userIdConsumerRealm)
-                .resetPassword(CredentialBuilder.create().password(USER_PASSWORD_CONSUMER_REALM).build());
+                .resetPassword(CredentialBuilder.password(USER_PASSWORD_CONSUMER_REALM).build());
 
         String sessionId1ProviderRealm = assertProviderLoginEventIdpClient(userIdProviderRealm);
         String sessionId1ConsumerRealm = assertConsumerLoginEventAccountManagement(userIdConsumerRealm);
@@ -356,7 +353,7 @@ public class BackchannelLogoutTest extends AbstractNestedBrokerTest {
         logInAsUserInIDP(OidcBackchannelLogoutBrokerConfiguration.CONSUMER_CLIENT_ID);
         String userIdConsumerRealm = getUserIdConsumerRealm();
         adminClient.realm(nbc.consumerRealmName()).users().get(userIdConsumerRealm)
-                .resetPassword(CredentialBuilder.create().password(USER_PASSWORD_CONSUMER_REALM).build());
+                .resetPassword(CredentialBuilder.password(USER_PASSWORD_CONSUMER_REALM).build());
 
         String sessionId1ProviderRealm = assertProviderLoginEventIdpClient(userIdProviderRealm);
         String sessionId1ConsumerRealm = assertConsumerLoginEventAccountManagement(userIdConsumerRealm);
@@ -639,14 +636,14 @@ public class BackchannelLogoutTest extends AbstractNestedBrokerTest {
 
         if (loginEventOptional.isPresent()) {
             EventRepresentation loginEvent = loginEventOptional.get();
-            this.events.expectLogin()
-                    .realm(realmId)
-                    .client(clientId)
-                    .user(userId)
-                    .removeDetail(Details.CODE_ID)
-                    .removeDetail(Details.REDIRECT_URI)
-                    .removeDetail(Details.CONSENT)
-                    .assertEvent(loginEvent);
+            EventAssertion.assertSuccess(loginEvent)
+                    .type(EventType.LOGIN)
+                    .isCodeId()
+                    .hasSessionId()
+                    .hasIpAddress()
+                    .clientId(clientId)
+                    .userId(userId);
+
             sessionId = loginEvent.getSessionId();
         } else {
             fail("No Login event found for user " + userId);
@@ -675,12 +672,12 @@ public class BackchannelLogoutTest extends AbstractNestedBrokerTest {
 
         if (logoutEventOptional.isPresent()) {
             EventRepresentation logoutEvent = logoutEventOptional.get();
-            this.events.expectLogout(sessionId)
-                    .realm(realmId)
-                    .user(userId)
-                    .client((String) null)
-                    .removeDetail(Details.REDIRECT_URI)
-                    .assertEvent(logoutEvent);
+            EventAssertion.assertSuccess(logoutEvent)
+                    .type(EventType.LOGOUT)
+                    .sessionId(sessionId)
+                    .userId(userId)
+                    .clientId(null)
+                    .withoutDetails(Details.REDIRECT_URI);
         } else {
             fail("No Logout event found for session " + sessionId);
         }
@@ -698,9 +695,7 @@ public class BackchannelLogoutTest extends AbstractNestedBrokerTest {
 
         if (logoutErrorEventOptional.isPresent()) {
             EventRepresentation logoutEvent = logoutErrorEventOptional.get();
-            this.events.expectLogoutError(Errors.LOGOUT_FAILED)
-                    .realm(realmId)
-                    .assertEvent(logoutEvent);
+            EventAssertion.expectLogoutError(logoutEvent).error(Errors.LOGOUT_FAILED);
         } else {
             fail("No Logout error event found in realm " + realmName);
         }
@@ -717,12 +712,12 @@ public class BackchannelLogoutTest extends AbstractNestedBrokerTest {
 
             if (logoutEventOptional.isPresent()) {
                 EventRepresentation logoutEvent = logoutEventOptional.get();
-                this.events.expectLogout(sessionId)
-                        .realm(realmIdConsumerRealm)
-                        .user(userIdConsumerRealm)
-                        .client((String) null)
-                        .removeDetail(Details.REDIRECT_URI)
-                        .assertEvent(logoutEvent);
+                EventAssertion.assertSuccess(logoutEvent)
+                        .type(EventType.LOGOUT)
+                        .sessionId(sessionId)
+                        .userId(userIdConsumerRealm)
+                        .clientId(null)
+                        .withoutDetails(Details.REDIRECT_URI);
             } else {
                 fail("No Logout event found for session " + sessionId);
             }
@@ -824,7 +819,7 @@ public class BackchannelLogoutTest extends AbstractNestedBrokerTest {
     private OAuthClient loginWithSecondBrowser(String identityProviderDisplayName) {
         OAuthClient oauth2 = oauth.newConfig().driver(driver2);
         oauth2.realm(nbc.consumerRealmName())
-                .clientId(OidcBackchannelLogoutBrokerConfiguration.CONSUMER_CLIENT_ID)
+                .client(OidcBackchannelLogoutBrokerConfiguration.CONSUMER_CLIENT_ID)
                 .redirectUri(getAuthServerRoot() + "realms/" + nbc.consumerRealmName() + "/app");
         doLoginSocial(oauth2, identityProviderDisplayName, nbc.getUserLogin(), nbc.getUserPassword());
         return oauth2;

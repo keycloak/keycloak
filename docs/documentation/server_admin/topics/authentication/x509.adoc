@@ -111,7 +111,15 @@ image:images/x509-configuration.png[X509 Configuration]
 Defines the method for extracting the user identity from a client certificate.
 
 *Canonical DN representation enabled*::
-Defines whether to use canonical format to determine a distinguished name. The official link:https://docs.oracle.com/javase/8/docs/api/javax/security/auth/x500/X500Principal.html#getName-java.lang.String-[Java API documentation] describes the format. This option affects the two User Identity Sources _Match SubjectDN using regular expression_ and _Match IssuerDN using regular expression_ only. Enable this option when you set up a new {project_name} instance. Disable this option to retain backward compatibility with existing {project_name} instances.
+Defines whether to use the canonical format to determine a distinguished name. The format adds additional normalization rules to the RFC 2253 conformant string representation. The official link:https://docs.oracle.com/en/java/javase/25/docs/api/java.base/javax/security/auth/x500/X500Principal.html#getName(java.lang.String)[Java API documentation] describes the additions in detail. This option affects the following User Identity Sources only:
+
+* _Match SubjectDN using regular expression_
+* _Match IssuerDN using regular expression_
+* _Certificate Serial Number and IssuerDN_ (the IssuerDN portion)
+
+WARNING: Do not enable this option to retain backward compatibility with existing {project_name} instances.
+
+WARNING: The `canonical` format performs modifications over the presented DN in the certificate (e.g., leading and trailing spaces are removed or the entire name is converted to uppercase and lowercase using the English locale). This behavior can lead to collisions in user matching if the Certificate Authorities (CA) that issue the certificates do not validate the assigned DN (e.g., if DNs are issued using any locale and present problems when performing the upper and lower case in English). Do not enable this option if you cannot guarantee that the canonical representation avoids duplications for later matching.
 
 *Enable Serial Number hexadecimal representation*::
 Represent the link:https://datatracker.ietf.org/doc/html/rfc5280#section-4.1.2.2[serial number] as hexadecimal. The serial number with the sign bit set to 1 must be left padded with 00 octet. For example, a serial number with decimal value _161_, or _a1_ in hexadecimal representation is encoded as _00a1_, according to RFC 5280. See link:https://datatracker.ietf.org/doc/html/rfc5280#appendix-B[RFC 5280, appendix-B] for more details.

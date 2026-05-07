@@ -38,17 +38,24 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
  * @version $Revision: 1 $
  */
 public class JsonSerialization {
-    public static final ObjectMapper mapper = new ObjectMapper();
-    public static final ObjectMapper prettyMapper = new ObjectMapper();
+    public static final ObjectMapper mapper = createObjectMapperWithDefaults();
+    public static final ObjectMapper prettyMapper = createPrettyObjectMapperWithDefaults();
 
-    static {
+    public static ObjectMapper createObjectMapperWithDefaults() {
+        ObjectMapper mapper = new ObjectMapper();
         mapper.registerModule(new Jdk8Module());
         mapper.registerModule(new JavaTimeModule());
         mapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
-        mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+        mapper.setDefaultPropertyInclusion(JsonInclude.Include.NON_NULL);
+        return mapper;
+    }
+
+    public static ObjectMapper createPrettyObjectMapperWithDefaults() {
+        ObjectMapper prettyMapper = new ObjectMapper();
         prettyMapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
         prettyMapper.enable(SerializationFeature.INDENT_OUTPUT);
-        prettyMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+        prettyMapper.setDefaultPropertyInclusion(JsonInclude.Include.NON_NULL);
+        return prettyMapper;
     }
 
     public static String valueAsString(Object obj) {
@@ -135,8 +142,10 @@ public class JsonSerialization {
         }
 
         ObjectNode objectNode = createObjectNode();
-        JsonParser jsonParser = mapper.getFactory().createParser(writeValueAsBytes(pojo));
-        JsonNode jsonNode = jsonParser.readValueAsTree();
+        JsonNode jsonNode;
+        try (JsonParser jsonParser = mapper.getFactory().createParser(writeValueAsBytes(pojo))) {
+            jsonNode = jsonParser.readValueAsTree();
+        }
 
         if (!jsonNode.isObject()) {
             throw new RuntimeException("JsonNode [" + jsonNode + "] is not a object.");

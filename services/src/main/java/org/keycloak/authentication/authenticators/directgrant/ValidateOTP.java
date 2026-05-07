@@ -52,7 +52,7 @@ public class ValidateOTP extends AbstractDirectGrantAuthenticator implements Cre
                 context.attempted();
             } else if (context.getExecution().isRequired()) {
                 context.getEvent().error(Errors.INVALID_USER_CREDENTIALS);
-                Response challengeResponse = errorResponse(Response.Status.UNAUTHORIZED.getStatusCode(), "invalid_grant", "Invalid user credentials");
+                Response challengeResponse = errorResponse(Response.Status.BAD_REQUEST.getStatusCode(), "invalid_grant", "Invalid user credentials");
                 context.failure(AuthenticationFlowError.INVALID_USER, challengeResponse);
             }
             return;
@@ -73,7 +73,7 @@ public class ValidateOTP extends AbstractDirectGrantAuthenticator implements Cre
                 context.getEvent().user(context.getUser());
             }
             context.getEvent().error(Errors.INVALID_USER_CREDENTIALS);
-            Response challengeResponse = errorResponse(Response.Status.UNAUTHORIZED.getStatusCode(), "invalid_grant", "Invalid user credentials");
+            Response challengeResponse = errorResponse(Response.Status.BAD_REQUEST.getStatusCode(), "invalid_grant", "Invalid user credentials");
             context.failure(AuthenticationFlowError.INVALID_USER, challengeResponse);
             return;
         }
@@ -81,12 +81,12 @@ public class ValidateOTP extends AbstractDirectGrantAuthenticator implements Cre
         if (!valid) {
             context.getEvent().user(context.getUser());
             context.getEvent().error(Errors.INVALID_USER_CREDENTIALS);
-            Response challengeResponse = errorResponse(Response.Status.UNAUTHORIZED.getStatusCode(), "invalid_grant", "Invalid user credentials");
+            Response challengeResponse = errorResponse(Response.Status.BAD_REQUEST.getStatusCode(), "invalid_grant", "Invalid user credentials");
             context.failure(AuthenticationFlowError.INVALID_USER, challengeResponse);
             return;
         }
 
-        context.success();
+        context.success(OTPCredentialModel.TYPE);
     }
 
     @Override
@@ -117,7 +117,7 @@ public class ValidateOTP extends AbstractDirectGrantAuthenticator implements Cre
 
     @Override
     public String getReferenceCategory() {
-        return null;
+        return OTPCredentialModel.TYPE;
     }
 
     @Override

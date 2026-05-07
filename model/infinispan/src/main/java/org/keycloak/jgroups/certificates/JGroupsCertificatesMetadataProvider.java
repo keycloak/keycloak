@@ -20,6 +20,14 @@ public class JGroupsCertificatesMetadataProvider extends AbstractCompatibilityMe
 
     @Override
     public Stream<String> configKeys() {
-        return Stream.of(DefaultJGroupsCertificateProviderFactory.ENABLED);
+        return Stream.of(DefaultJGroupsCertificateProviderFactory.ACTIVATED);
+    }
+
+    @Override
+    protected String remapConfigKey(String key) {
+        if (DefaultJGroupsCertificateProviderFactory.ACTIVATED.equals(key)) {
+            return DefaultJGroupsCertificateProviderFactory.ENABLED;
+        }
+        return key;
     }
 }

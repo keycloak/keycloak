@@ -45,11 +45,11 @@ import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.PartialImportRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.client.resources.TestingExportImportResource;
 import org.keycloak.testsuite.organization.admin.AbstractOrganizationTest;
 import org.keycloak.testsuite.pages.AppPage;
-import org.keycloak.testsuite.util.UserBuilder;
 
 import org.hamcrest.Matchers;
 import org.junit.Test;
@@ -61,8 +61,8 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class OrganizationExportTest extends AbstractOrganizationTest {
 
@@ -79,8 +79,8 @@ public class OrganizationExportTest extends AbstractOrganizationTest {
             broker.setAlias("broker-org-" + i);
             broker.setInternalId(null);
             String domain = "org-" + i + ".org";
-            OrganizationRepresentation orgRep = createOrganization(testRealm(), getCleanup(), "org-" + i, broker, domain);
-            OrganizationResource organization = testRealm().organizations().get(orgRep.getId());
+            OrganizationRepresentation orgRep = createOrganization(managedRealm.admin(), getCleanup(), "org-" + i, broker, domain);
+            OrganizationResource organization = managedRealm.admin().organizations().get(orgRep.getId());
 
             orgRep.setRedirectUrl("https://0.0.0.0:8080");
             try (Response response = organization.update(orgRep)) {
@@ -126,7 +126,7 @@ public class OrganizationExportTest extends AbstractOrganizationTest {
                 // login to the organization identity provider and run the configured first broker login flow
                 loginPage.login(email, bc.getUserPassword());
                 assertIsMember(email, organization);
-                testRealm().logoutAll();
+                managedRealm.admin().logoutAll();
                 providerRealm.logoutAll();
             }
 
@@ -141,7 +141,7 @@ public class OrganizationExportTest extends AbstractOrganizationTest {
 
         validateImported(expectedOrganizations, expectedManagedMembers, expectedUnmanagedMembers, expectedGroupIds, importedSingleFileRealm);
 
-        testRealm().logoutAll();
+        managedRealm.admin().logoutAll();
         providerRealm.logoutAll();
 
         RealmRepresentation importedDirRealm = exportRemoveImportRealm(false);
@@ -155,7 +155,7 @@ public class OrganizationExportTest extends AbstractOrganizationTest {
             RealmRepresentation importedRealm) {
         assertTrue(importedRealm.isOrganizationsEnabled());
 
-        List<OrganizationRepresentation> organizations = testRealm().organizations().list(-1, -1);
+        List<OrganizationRepresentation> organizations = managedRealm.admin().organizations().list(-1, -1);
         assertEquals(expectedOrganizations.size(), organizations.size());
         // id, name, alias, description and redirectUrl should have all been preserved.
         assertThat(organizations.stream().map(OrganizationRepresentation::getId).toList(),
@@ -171,7 +171,7 @@ public class OrganizationExportTest extends AbstractOrganizationTest {
 
         // the endpoint search method returns brief representations of orgs - to get full rep we need to fetch by id.
         for (OrganizationRepresentation organization : organizations) {
-            OrganizationRepresentation fullRep = testRealm().organizations().get(organization.getId()).toRepresentation();
+            OrganizationRepresentation fullRep = managedRealm.admin().organizations().get(organization.getId()).toRepresentation();
             // attributes should have been imported.
             assertThat(fullRep.getAttributes(), notNullValue());
             assertThat(fullRep.getAttributes().keySet(), hasSize(1));
@@ -182,7 +182,7 @@ public class OrganizationExportTest extends AbstractOrganizationTest {
         }
 
         for (OrganizationRepresentation orgRep : organizations) {
-            OrganizationResource organization = testRealm().organizations().get(orgRep.getId());
+            OrganizationResource organization = managedRealm.admin().organizations().get(orgRep.getId());
             
             // Validate members
             List<String> members = organization.members().list(-1, -1).stream().map(UserRepresentation::getEmail).toList();
@@ -201,7 +201,7 @@ public class OrganizationExportTest extends AbstractOrganizationTest {
         loginPage.login(email, bc.getUserPassword());
         assertThat(appPage.getRequestType(),is(AppPage.RequestType.AUTH_RESPONSE));
 
-        AuthenticationManagementResource flows = testRealm().flows();
+        AuthenticationManagementResource flows = managedRealm.admin().flows();
         List<AuthenticationExecutionInfoRepresentation> executions = flows.getExecutions(DefaultAuthenticationFlows.BROWSER_FLOW);
         assertThat(executions.stream().filter(e -> "Organization".equals(e.getDisplayName())).count(), is(1L));
         executions = flows.getExecutions(DefaultAuthenticationFlows.FIRST_BROKER_LOGIN_FLOW);
@@ -209,7 +209,7 @@ public class OrganizationExportTest extends AbstractOrganizationTest {
     }
 
     private void validateOrganizationGroups(OrganizationResource organization, Map<String, String> expectedGroupIds) {
-        List<GroupRepresentation> topLevelGroups = organization.groups().getAll(null, null, null, null, true);
+        List<GroupRepresentation> topLevelGroups = organization.groups().getAll(null, null, null, null, null, true, false);
         assertThat(topLevelGroups, hasSize(2));
 
         // Validate top-level group names
@@ -266,7 +266,7 @@ public class OrganizationExportTest extends AbstractOrganizationTest {
         for (GroupRepresentation group : groups) {
             String expectedId = expectedGroupIds.get(group.getName());
             if (expectedId != null) {
-                assertEquals("Group ID mismatch for group: " + group.getName(), expectedId, group.getId());
+                assertEquals(expectedId, group.getId(), "Group ID mismatch for group: " + group.getName());
             }
         }
     }
@@ -275,17 +275,17 @@ public class OrganizationExportTest extends AbstractOrganizationTest {
     public void testExportImportEmptyOrg() {
         OrganizationRepresentation orgRep = createRepresentation("acme", "acme.com");
 
-        try (Response response = testRealm().organizations().create(orgRep)) {
+        try (Response response = managedRealm.admin().organizations().create(orgRep)) {
             assertEquals(Response.Status.CREATED.getStatusCode(), response.getStatus());
         }
-        List<OrganizationRepresentation> orgs = testRealm().organizations().list(-1, -1);
+        List<OrganizationRepresentation> orgs = managedRealm.admin().organizations().list(-1, -1);
         assertEquals(1, orgs.size());
 
         RealmRepresentation importedSingleFileRealm = exportRemoveImportRealm(true);
 
         assertTrue(importedSingleFileRealm.isOrganizationsEnabled());
 
-        orgs = testRealm().organizations().list(-1, -1);
+        orgs = managedRealm.admin().organizations().list(-1, -1);
         assertEquals(1, orgs.size());
         assertEquals("acme", orgs.get(0).getName());
     }
@@ -305,11 +305,11 @@ public class OrganizationExportTest extends AbstractOrganizationTest {
             exportImport.setDir(fileOrDir);
         }
         exportImport.setAction(ExportImportConfig.ACTION_EXPORT);
-        exportImport.setRealmName(testRealm().toRepresentation().getRealm());
+        exportImport.setRealmName(managedRealm.admin().toRepresentation().getRealm());
         exportImport.runExport();
 
         // remove the realm and import it back
-        testRealm().remove();
+        managedRealm.admin().remove();
         exportImport = testingClient.testing().exportImport();
         if (file) {
             exportImport.setProvider(SingleFileImportProviderFactory.PROVIDER_ID);
@@ -321,11 +321,11 @@ public class OrganizationExportTest extends AbstractOrganizationTest {
         exportImport.setAction(ExportImportConfig.ACTION_IMPORT);
         exportImport.runImport();
         getCleanup().addCleanup(() -> {
-            testRealm().remove();
+            managedRealm.admin().remove();
             getTestContext().getTestRealmReps().clear();
         });
 
-        return testRealm().toRepresentation();
+        return managedRealm.admin().toRepresentation();
     }
 
     @Test
@@ -338,7 +338,7 @@ public class OrganizationExportTest extends AbstractOrganizationTest {
     }
 
     private void assertPartialExportImport(boolean exportGroupsAndRoles, boolean exportClients) {
-        RealmRepresentation export = testRealm().partialExport(exportGroupsAndRoles, exportClients);
+        RealmRepresentation export = managedRealm.admin().partialExport(exportGroupsAndRoles, exportClients);
         assertTrue(Optional.ofNullable(export.getOrganizations()).orElse(List.of()).isEmpty());
         assertTrue(Optional.ofNullable(export.getIdentityProviders()).orElse(List.of()).stream().noneMatch(idp -> Objects.nonNull(idp.getOrganizationId())));
         PartialImportRepresentation rep = new PartialImportRepresentation();
@@ -347,7 +347,7 @@ public class OrganizationExportTest extends AbstractOrganizationTest {
         rep.setRoles(export.getRoles());
         rep.setIdentityProviders(export.getIdentityProviders());
         rep.setGroups(export.getGroups());
-        testRealm().partialImport(rep).close();
+        managedRealm.admin().partialImport(rep).close();
     }
 
     private String createTopLevelGroup(OrganizationResource organization, String name) {

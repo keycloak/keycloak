@@ -40,11 +40,11 @@ import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.util.LDAPRule;
 import org.keycloak.testsuite.util.LDAPTestUtils;
 
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 import org.junit.runners.MethodSorters;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
@@ -118,7 +118,7 @@ public class LDAPGroupMapperSyncWithGroupsPathTest extends AbstractLDAPTest {
             // KEYCLOAK-11415 - This test requires the group mapper to be configured with preserve group inheritance
             // set to 'true' (the default setting). If preservation of group inheritance isn't configured, some of
             // the previous test(s) failed to cleanup properly. Check the requirement as part of running the test
-            Assert.assertEquals(mapperModel.getConfig().getFirst("preserve.group.inheritance"), "true");
+            Assertions.assertEquals(mapperModel.getConfig().getFirst("preserve.group.inheritance"), "true");
 
             // Sync groups with inheritance
             SynchronizationResult syncResult = new GroupLDAPStorageMapperFactory().create(session, mapperModel).syncDataFromFederationProviderToKeycloak(realm);
@@ -126,16 +126,16 @@ public class LDAPGroupMapperSyncWithGroupsPathTest extends AbstractLDAPTest {
 
             // Assert groups are imported to keycloak including their inheritance from LDAP
             GroupModel kcGroup1 = KeycloakModelUtils.findGroupByPath(session, realm, LDAP_GROUPS_PATH + "/group1");
-            Assert.assertNull(KeycloakModelUtils.findGroupByPath(session, realm, LDAP_GROUPS_PATH + "/group11"));
-            Assert.assertNull(KeycloakModelUtils.findGroupByPath(session, realm, LDAP_GROUPS_PATH + "/group12"));
+            Assertions.assertNull(KeycloakModelUtils.findGroupByPath(session, realm, LDAP_GROUPS_PATH + "/group11"));
+            Assertions.assertNull(KeycloakModelUtils.findGroupByPath(session, realm, LDAP_GROUPS_PATH + "/group12"));
             GroupModel kcGroup11 = KeycloakModelUtils.findGroupByPath(session, realm, LDAP_GROUPS_PATH + "/group1/group11");
             GroupModel kcGroup12 = KeycloakModelUtils.findGroupByPath(session, realm, LDAP_GROUPS_PATH + "/group1/group12");
 
-            Assert.assertEquals(2, kcGroup1.getSubGroupsStream().count());
+            Assertions.assertEquals(2, kcGroup1.getSubGroupsStream().count());
 
-            Assert.assertEquals("group1 - description", kcGroup1.getFirstAttribute(descriptionAttrName));
-            Assert.assertNull(kcGroup11.getFirstAttribute(descriptionAttrName));
-            Assert.assertEquals("group12 - description", kcGroup12.getFirstAttribute(descriptionAttrName));
+            Assertions.assertEquals("group1 - description", kcGroup1.getFirstAttribute(descriptionAttrName));
+            Assertions.assertNull(kcGroup11.getFirstAttribute(descriptionAttrName));
+            Assertions.assertEquals("group12 - description", kcGroup12.getFirstAttribute(descriptionAttrName));
 
             // Update description attributes in LDAP
             LDAPObject group1 = groupMapper.loadLDAPGroupByName("group1");
@@ -153,8 +153,8 @@ public class LDAPGroupMapperSyncWithGroupsPathTest extends AbstractLDAPTest {
             // Assert attributes changed in keycloak
             kcGroup1 = KeycloakModelUtils.findGroupByPath(session, realm, LDAP_GROUPS_PATH + "/group1");
             kcGroup12 = KeycloakModelUtils.findGroupByPath(session, realm, LDAP_GROUPS_PATH + "/group1/group12");
-            Assert.assertEquals("group1 - changed description", kcGroup1.getFirstAttribute(descriptionAttrName));
-            Assert.assertNull(kcGroup12.getFirstAttribute(descriptionAttrName));
+            Assertions.assertEquals("group1 - changed description", kcGroup1.getFirstAttribute(descriptionAttrName));
+            Assertions.assertNull(kcGroup12.getFirstAttribute(descriptionAttrName));
         });
     }
 
@@ -169,7 +169,7 @@ public class LDAPGroupMapperSyncWithGroupsPathTest extends AbstractLDAPTest {
             // KEYCLOAK-11415 - This test requires the group mapper to be configured with preserve group inheritance
             // set to 'true' (the default setting). If preservation of group inheritance isn't configured, some of
             // the previous test(s) failed to cleanup properly. Check the requirement as part of running the test
-            Assert.assertEquals(mapperModel.getConfig().getFirst("preserve.group.inheritance"), "true");
+            Assertions.assertEquals(mapperModel.getConfig().getFirst("preserve.group.inheritance"), "true");
 
             // Sync groups with inheritance
             SynchronizationResult syncResult = new GroupLDAPStorageMapperFactory().create(session, mapperModel).syncDataFromFederationProviderToKeycloak(realm);
@@ -177,10 +177,10 @@ public class LDAPGroupMapperSyncWithGroupsPathTest extends AbstractLDAPTest {
 
             // Assert groups are imported to keycloak including their inheritance from LDAP
             GroupModel kcGroup1 = KeycloakModelUtils.findGroupByPath(session, realm, LDAP_GROUPS_PATH + "/group1");
-            Assert.assertNotNull(KeycloakModelUtils.findGroupByPath(session, realm, LDAP_GROUPS_PATH + "/group1/group11"));
-            Assert.assertNotNull(KeycloakModelUtils.findGroupByPath(session, realm, LDAP_GROUPS_PATH + "/group1/group12"));
+            Assertions.assertNotNull(KeycloakModelUtils.findGroupByPath(session, realm, LDAP_GROUPS_PATH + "/group1/group11"));
+            Assertions.assertNotNull(KeycloakModelUtils.findGroupByPath(session, realm, LDAP_GROUPS_PATH + "/group1/group12"));
 
-            Assert.assertEquals(2, kcGroup1.getSubGroupsStream().count());
+            Assertions.assertEquals(2, kcGroup1.getSubGroupsStream().count());
 
             // Create some new groups in keycloak
             GroupModel groupsPathGroup = KeycloakModelUtils.findGroupByPath(session, realm, LDAP_GROUPS_PATH);
@@ -192,11 +192,11 @@ public class LDAPGroupMapperSyncWithGroupsPathTest extends AbstractLDAPTest {
             syncResult = new GroupLDAPStorageMapperFactory().create(session, mapperModel).syncDataFromFederationProviderToKeycloak(realm);
             LDAPTestAsserts.assertSyncEquals(syncResult, 0, 3, 0, 0);
 
-            Assert.assertNotNull(KeycloakModelUtils.findGroupByPath(session, realm, LDAP_GROUPS_PATH + "/group1/group11"));
-            Assert.assertNotNull(KeycloakModelUtils.findGroupByPath(session, realm, LDAP_GROUPS_PATH + "/group1/group12"));
-            Assert.assertNotNull(KeycloakModelUtils.findGroupByPath(session, realm, LDAP_GROUPS_PATH + "/model1"));
-            Assert.assertNotNull(KeycloakModelUtils.findGroupByPath(session, realm, LDAP_GROUPS_PATH + "/group1/model2"));
-            Assert.assertNotNull(KeycloakModelUtils.findGroupByPath(session, realm, "/outside"));
+            Assertions.assertNotNull(KeycloakModelUtils.findGroupByPath(session, realm, LDAP_GROUPS_PATH + "/group1/group11"));
+            Assertions.assertNotNull(KeycloakModelUtils.findGroupByPath(session, realm, LDAP_GROUPS_PATH + "/group1/group12"));
+            Assertions.assertNotNull(KeycloakModelUtils.findGroupByPath(session, realm, LDAP_GROUPS_PATH + "/model1"));
+            Assertions.assertNotNull(KeycloakModelUtils.findGroupByPath(session, realm, LDAP_GROUPS_PATH + "/group1/model2"));
+            Assertions.assertNotNull(KeycloakModelUtils.findGroupByPath(session, realm, "/outside"));
 
             // Update group mapper to drop non-existing groups during sync
             LDAPTestUtils.updateConfigOptions(mapperModel, GroupMapperConfig.DROP_NON_EXISTING_GROUPS_DURING_SYNC, "true");
@@ -204,15 +204,15 @@ public class LDAPGroupMapperSyncWithGroupsPathTest extends AbstractLDAPTest {
 
             // Sync groups again from LDAP. Assert LDAP non-existing groups deleted
             syncResult = new GroupLDAPStorageMapperFactory().create(session, mapperModel).syncDataFromFederationProviderToKeycloak(realm);
-            Assert.assertEquals(3, syncResult.getUpdated());
-            Assert.assertTrue(syncResult.getRemoved() == 2);
+            Assertions.assertEquals(3, syncResult.getUpdated());
+            Assertions.assertTrue(syncResult.getRemoved() == 2);
 
             // Sync and assert groups updated
-            Assert.assertNotNull(KeycloakModelUtils.findGroupByPath(session, realm, LDAP_GROUPS_PATH + "/group1/group11"));
-            Assert.assertNotNull(KeycloakModelUtils.findGroupByPath(session, realm, LDAP_GROUPS_PATH + "/group1/group12"));
-            Assert.assertNull(KeycloakModelUtils.findGroupByPath(session, realm, LDAP_GROUPS_PATH + "/model1"));
-            Assert.assertNull(KeycloakModelUtils.findGroupByPath(session, realm, LDAP_GROUPS_PATH + "/group1/model2"));
-            Assert.assertNotNull(KeycloakModelUtils.findGroupByPath(session, realm, "/outside"));
+            Assertions.assertNotNull(KeycloakModelUtils.findGroupByPath(session, realm, LDAP_GROUPS_PATH + "/group1/group11"));
+            Assertions.assertNotNull(KeycloakModelUtils.findGroupByPath(session, realm, LDAP_GROUPS_PATH + "/group1/group12"));
+            Assertions.assertNull(KeycloakModelUtils.findGroupByPath(session, realm, LDAP_GROUPS_PATH + "/model1"));
+            Assertions.assertNull(KeycloakModelUtils.findGroupByPath(session, realm, LDAP_GROUPS_PATH + "/group1/model2"));
+            Assertions.assertNotNull(KeycloakModelUtils.findGroupByPath(session, realm, "/outside"));
         });
     }
 
@@ -235,7 +235,7 @@ public class LDAPGroupMapperSyncWithGroupsPathTest extends AbstractLDAPTest {
 
             // Load the mapper and assert default group path set
             ComponentRepresentation newMapper = adminClient.realm("test").components().component(newMapperId).toRepresentation();
-            Assert.assertEquals(GroupMapperConfig.DEFAULT_LDAP_GROUPS_PATH, newMapper.getConfig().getFirst(GroupMapperConfig.LDAP_GROUPS_PATH));
+            Assertions.assertEquals(GroupMapperConfig.DEFAULT_LDAP_GROUPS_PATH, newMapper.getConfig().getFirst(GroupMapperConfig.LDAP_GROUPS_PATH));
         } finally {
             // revert new mapper
             adminClient.realm("test").components().component(newMapperId).remove();

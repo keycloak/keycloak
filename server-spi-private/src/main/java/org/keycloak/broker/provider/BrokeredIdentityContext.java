@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 import org.keycloak.models.Constants;
@@ -53,8 +54,11 @@ public class BrokeredIdentityContext {
     private AuthenticationSessionModel authenticationSession;
 
     public BrokeredIdentityContext(String id, IdentityProviderModel idpConfig) {
-        if (id == null) {
-            throw new RuntimeException("No identifier provider for identity.");
+        Objects.requireNonNull(id, "id must not be null");
+        Objects.requireNonNull(idpConfig, "Identity provider config must not be null");
+
+        if (!idpConfig.isEnabled()) {
+            throw new IdentityBrokerException("Identity provider is disabled");
         }
 
         this.id = id;
@@ -62,6 +66,12 @@ public class BrokeredIdentityContext {
     }
 
     public BrokeredIdentityContext(IdentityProviderModel idpConfig) {
+        Objects.requireNonNull(idpConfig, "Identity provider config must not be null");
+
+        if (!idpConfig.isEnabled()) {
+            throw new IdentityBrokerException("Identity provider is disabled");
+        }
+
         this.idpConfig = idpConfig;
     }
 

@@ -30,14 +30,14 @@ import {
   UserRepresentation,
 } from "../api/representations";
 import { Page } from "../components/page/Page";
-import type { Environment } from "../environment";
-import { TFuncKey, i18n } from "../i18n";
+import { type AccountEnvironment } from "..";
+import type { TFuncKey } from "../i18n-type";
 import { useAccountAlerts } from "../utils/useAccountAlerts";
 import { usePromise } from "../utils/usePromise";
 
 export const PersonalInfo = () => {
   const { t } = useTranslation();
-  const context = useEnvironment<Environment>();
+  const context = useEnvironment<AccountEnvironment>();
   const [userProfileMetadata, setUserProfileMetadata] =
     useState<UserProfileMetadata>();
   const [supportedLocales, setSupportedLocales] = useState<string[]>([]);
@@ -72,11 +72,9 @@ export const PersonalInfo = () => {
       await savePersonalInfo(context, { ...user, attributes });
       const locale = attributes["locale"]?.toString();
       if (locale) {
-        await i18n.changeLanguage(locale, (error) => {
-          if (error) {
-            console.warn("Error(s) loading locale", locale, error);
-          }
-        });
+        window.dispatchEvent(
+          new CustomEvent("languageChanged", { detail: { language: locale } }),
+        );
       }
       await context.keycloak.updateToken();
       addAlert(t("accountUpdatedMessage"));

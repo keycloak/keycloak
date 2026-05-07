@@ -54,7 +54,7 @@ public abstract class AbstractCommand {
         } catch (HandledException handled) {
             // Fine to ignore. Was handled already
         } catch (RuntimeException e) {
-            log.error("Error occured during command. ", e);
+            log.error("Error occurred during command. ", e);
         }
     }
 

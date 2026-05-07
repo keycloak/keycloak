@@ -21,6 +21,7 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
@@ -230,6 +231,31 @@ public class ClientManager {
             samlClient.setArtifactBindingIdentifierFrom(newClientId);
 
             newClientRepresentation.getAttributes().put(SamlConfigAttributes.SAML_ARTIFACT_BINDING_IDENTIFIER, samlClient.getArtifactBindingIdentifier());
+        }
+    }
+
+    public Optional<UserModel> getServiceAccountUser(ClientModel client) {
+        UserModel user = realmManager.getSession().users().getServiceAccount(client);
+        if (user == null) {
+            if (client.isServiceAccountsEnabled()) {
+                enableServiceAccount(client);
+                user = realmManager.getSession().users().getServiceAccount(client);
+            }
+        }
+        return Optional.ofNullable(user);
+    }
+
+    public static void updateClientServiceAccount(KeycloakSession session, ClientModel client, Boolean isServiceAccountEnabled) {
+        UserModel serviceAccount = session.users().getServiceAccount(client);
+        boolean serviceAccountScopeAssigned = client.getClientScopes(true).containsKey(ServiceAccountConstants.SERVICE_ACCOUNT_SCOPE);
+        if (Boolean.TRUE.equals(isServiceAccountEnabled)) {
+            if (serviceAccount == null || !serviceAccountScopeAssigned) {
+                new ClientManager(new RealmManager(session)).enableServiceAccount(client);
+            }
+        } else if (Boolean.FALSE.equals(isServiceAccountEnabled) || !client.isServiceAccountsEnabled()) {
+            if (serviceAccount != null || serviceAccountScopeAssigned) {
+                new ClientManager(new RealmManager(session)).disableServiceAccount(client);
+            }
         }
     }
 

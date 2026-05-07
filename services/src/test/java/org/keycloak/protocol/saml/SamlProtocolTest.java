@@ -431,6 +431,16 @@ public class SamlProtocolTest {
         }
 
         @Override
+        public int getMaxSecondaryAuthFailures() {
+            return 100;
+        }
+
+        @Override
+        public void setMaxSecondaryAuthFailures(int maxSecondaryAuthFailures) {
+
+        }
+
+        @Override
         public boolean isVerifyEmail() {
             return false;
         }
@@ -1524,6 +1534,16 @@ public class SamlProtocolTest {
         @Override
         public void setVerifiableCredentialsEnabled(boolean verifiableCredentialsEnabled) {
             // noop
+        }
+
+        @Override
+        public void setScimApiEnabled(boolean enabled) {
+            // noop
+        }
+
+        @Override
+        public boolean isScimApiEnabled() {
+            return false;
         }
 
         @Override

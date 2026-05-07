@@ -35,7 +35,7 @@ public class ShortErrorMessageHandler implements IParameterExceptionHandler {
 
     static int shortErrorMessage(Exception ex, CommandLine cmd) {
         PrintWriter writer = cmd.getErr();
-        String errorMessage = ex.getMessage();
+        String errorMessage = ex.getMessage() != null ? ex.getMessage() : ex.getClass().getSimpleName();
 
         writer.println(cmd.getColorScheme().errorText(errorMessage));
         if (ex instanceof ParameterException) {

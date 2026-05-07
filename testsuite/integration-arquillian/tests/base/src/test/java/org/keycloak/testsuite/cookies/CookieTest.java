@@ -26,14 +26,15 @@ import jakarta.ws.rs.core.HttpHeaders;
 import org.keycloak.cookie.CookieType;
 import org.keycloak.models.Constants;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.auth.page.AuthRealm;
+import org.keycloak.testsuite.events.TestEventsListenerProviderFactory;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.ContainerAssume;
 import org.keycloak.testsuite.util.HttpClientUtils;
-import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 
@@ -59,8 +60,8 @@ import static org.keycloak.testsuite.AbstractAdminTest.loadJson;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.not;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  *
@@ -83,7 +84,7 @@ public class CookieTest extends AbstractKeycloakTest {
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
         RealmRepresentation realmRepresentation = loadJson(getClass().getResourceAsStream("/testrealm.json"), RealmRepresentation.class);
-        RealmBuilder realm = RealmBuilder.edit(realmRepresentation).testEventListener();
+        RealmBuilder realm = RealmBuilder.update(realmRepresentation).eventsListeners(TestEventsListenerProviderFactory.PROVIDER_ID);
         RealmRepresentation testRealm = realm.build();
         testRealms.add(testRealm);
     }
@@ -119,7 +120,7 @@ public class CookieTest extends AbstractKeycloakTest {
             HttpContext localContext = new BasicHttpContext();
             localContext.setAttribute(HttpClientContext.COOKIE_STORE, cookieStore);
 
-            HttpGet get = new HttpGet(oauth.clientId("test-app").redirectUri(oauth.APP_AUTH_ROOT).loginForm().build());
+            HttpGet get = new HttpGet(oauth.client("test-app", "password").redirectUri(oauth.APP_AUTH_ROOT).loginForm().build());
             try (CloseableHttpResponse resp = hc.execute(get, localContext)) {
                 final String pageContent = EntityUtils.toString(resp.getEntity());
 
@@ -157,7 +158,7 @@ public class CookieTest extends AbstractKeycloakTest {
             HttpContext localContext = new BasicHttpContext();
             localContext.setAttribute(HttpClientContext.COOKIE_STORE, cookieStore);
 
-            HttpGet get = new HttpGet(oauth.clientId("test-app").redirectUri(oauth.APP_AUTH_ROOT).loginForm().build());
+            HttpGet get = new HttpGet(oauth.client("test-app", "password").redirectUri(oauth.APP_AUTH_ROOT).loginForm().build());
             try (CloseableHttpResponse resp = hc.execute(get, localContext)) {
                 final String pageContent = EntityUtils.toString(resp.getEntity());
 
@@ -201,7 +202,7 @@ public class CookieTest extends AbstractKeycloakTest {
                 Set<String> cookies = new HashSet<>();
 
                 for (Header header : headers) {
-                    assertTrue("Cookie '" + header.getValue() + "' is duplicated", cookies.add(header.getValue()));
+                    assertTrue(cookies.add(header.getValue()), "Cookie '" + header.getValue() + "' is duplicated");
                 }
 
                 assertFalse(cookies.isEmpty());

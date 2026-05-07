@@ -15,6 +15,7 @@ import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.tests.suites.DatabaseTest;
 import org.keycloak.tests.utils.Assert;
 
 import org.junit.jupiter.api.Assertions;
@@ -30,6 +31,7 @@ public class IdentityProviderTest extends AbstractIdentityProviderTest {
     ManagedRealm managedRealm;
 
     @Test
+    @DatabaseTest
     public void testFind() {
         create(createRep("twitter", "twitter idp","twitter", true, Collections.singletonMap("key1", "value1")));
         create(createRep("linkedin-openid-connect", "linkedin-openid-connect"));
@@ -63,6 +65,7 @@ public class IdentityProviderTest extends AbstractIdentityProviderTest {
     }
 
     @Test
+    @DatabaseTest
     public void testFindForLoginPreservesOrderByAlias() {
 
         create(createRep("twitter", "twitter"));

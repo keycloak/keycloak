@@ -12,9 +12,9 @@ const AuthenticationSection = lazy(() => import("../AuthenticationSection"));
 export const AuthenticationRoute: AppRouteObject = {
   path: "/:realm/authentication",
   element: <AuthenticationSection />,
-  breadcrumb: (t) => t("authentication"),
   handle: {
     access: ["view-realm", "view-identity-providers", "view-clients"],
+    breadcrumb: (t) => t("authentication"),
   },
 };
 

@@ -30,7 +30,6 @@ import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.storage.ldap.LDAPStorageProviderFactory;
 import org.keycloak.storage.ldap.kerberos.LDAPProviderKerberosConfig;
-import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.KerberosEmbeddedServer;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.util.KerberosRule;
@@ -39,6 +38,7 @@ import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.junit.ClassRule;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 import org.junit.runners.MethodSorters;
 
 /**
@@ -89,7 +89,7 @@ public class KerberosLdapMultipleLDAPProvidersTest extends AbstractKerberosTest 
 
         AccessTokenResponse tokenResponse = assertSuccessfulSpnegoLogin("hnelson2@KC2.COM", "hnelson2", "secret");
         AccessToken token = oauth.verifyToken(tokenResponse.getAccessToken());
-        Assert.assertEquals(token.getEmail(), "hnelson2@kc2.com");
+        Assertions.assertEquals(token.getEmail(), "hnelson2@kc2.com");
         UserRepresentation user = assertUser("hnelson2", "hnelson2@kc2.com", "Horatio", "Nelson", "hnelson2@KC2.COM", false);
         assertUserStorageProvider(user, "kerberos-ldap");
     }
@@ -108,7 +108,7 @@ public class KerberosLdapMultipleLDAPProvidersTest extends AbstractKerberosTest 
 
         AccessTokenResponse tokenResponse = assertSuccessfulSpnegoLogin("hnelson2@KC2.COM", "hnelson2", "secret");
         AccessToken token = oauth.verifyToken(tokenResponse.getAccessToken());
-        Assert.assertEquals(token.getEmail(), "hnelson2@kc2.com");
+        Assertions.assertEquals(token.getEmail(), "hnelson2@kc2.com");
         UserRepresentation user = assertUser("hnelson2", "hnelson2@kc2.com", "Horatio", "Nelson", "hnelson2@KC2.COM", false);
         assertUserStorageProvider(user, "kerberos-ldap");
     }

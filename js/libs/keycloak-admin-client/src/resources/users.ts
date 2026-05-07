@@ -15,11 +15,11 @@ import type UserRepresentation from "../defs/userRepresentation.js";
 import type UserSessionRepresentation from "../defs/userSessionRepresentation.js";
 import Resource from "./resource.js";
 
-interface SearchQuery {
+export interface SearchQuery {
   search?: string;
 }
 
-interface PaginationQuery {
+export interface PaginationQuery {
   first?: number;
   max?: number;
 }

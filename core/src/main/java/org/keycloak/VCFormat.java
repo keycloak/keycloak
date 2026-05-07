@@ -39,21 +39,17 @@ public interface VCFormat {
      */
     String SD_JWT_VC = "dc+sd-jwt";
 
-    // [TODO #44875] Proof Type null is not supported for format ldp_vc
-    // https://github.com/keycloak/keycloak/issues/44875
     String[] SUPPORTED_FORMATS = new String[]{JWT_VC, SD_JWT_VC};
 
     static String getFromScope(String scope) {
         String format = SD_JWT_VC; // default format
         if (scope.toLowerCase().endsWith("_jwt")) format = JWT_VC;
-        else if (scope.toLowerCase().endsWith("_ld")) format = LDP_VC;
         return format;
     }
 
     static String getScopeSuffix(String value) {
         String suffix = "";
         if (JWT_VC.equals(value)) suffix = "_jwt";
-        else if (LDP_VC.equals(value)) suffix = "_ld";
         else if (SD_JWT_VC.equals(value)) suffix = "_sd";
         return suffix;
     }

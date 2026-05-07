@@ -21,9 +21,9 @@ import java.util.Map;
 import java.util.Optional;
 
 import org.keycloak.operator.controllers.KeycloakIngressDependentResource;
-import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.IngressSpec;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.IngressSpecBuilder;
+import org.keycloak.operator.crds.v2beta1.deployment.Keycloak;
+import org.keycloak.operator.crds.v2beta1.deployment.spec.IngressSpec;
+import org.keycloak.operator.crds.v2beta1.deployment.spec.IngressSpecBuilder;
 import org.keycloak.operator.testsuite.utils.K8sUtils;
 import org.keycloak.operator.testsuite.utils.MockController;
 

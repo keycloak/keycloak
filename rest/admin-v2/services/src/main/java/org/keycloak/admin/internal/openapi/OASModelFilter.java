@@ -1,0 +1,403 @@
+package org.keycloak.admin.internal.openapi;
+
+
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
+
+import com.fasterxml.jackson.annotation.JsonPropertyDescription;
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import org.eclipse.microprofile.openapi.OASFactory;
+import org.eclipse.microprofile.openapi.OASFilter;
+import org.eclipse.microprofile.openapi.models.OpenAPI;
+import org.eclipse.microprofile.openapi.models.PathItem;
+import org.eclipse.microprofile.openapi.models.media.Discriminator;
+import org.eclipse.microprofile.openapi.models.media.Schema;
+import org.eclipse.microprofile.openapi.models.security.SecurityRequirement;
+import org.eclipse.microprofile.openapi.models.security.SecurityScheme;
+import org.jboss.jandex.AnnotationInstance;
+import org.jboss.jandex.AnnotationValue;
+import org.jboss.jandex.ClassInfo;
+import org.jboss.jandex.FieldInfo;
+import org.jboss.jandex.IndexView;
+import org.jboss.logging.Logger;
+
+import static org.keycloak.utils.StringUtil.isNullOrEmpty;
+
+public class OASModelFilter implements OASFilter {
+
+    private final Logger log = Logger.getLogger(OASModelFilter.class);
+    private final Map<String, ClassInfo> simpleNameToClassInfoMap = new HashMap<>();
+    private final ValidationAnnotationScanner validationScanner;
+
+    public static final String REF_PREFIX = "#/components/schemas/";
+
+    public OASModelFilter(IndexView indexView) {
+        log.debug("Index size: " + indexView.getKnownClasses().size());
+
+        this.validationScanner = new ValidationAnnotationScanner(indexView);
+        indexView.getKnownClasses().forEach(classInfo -> {
+            simpleNameToClassInfoMap.put(classInfo.simpleName(), classInfo);
+        });
+    }
+
+    @Override
+    public void filterOpenAPI(OpenAPI openAPI) {
+        // Sort Paths
+        Map<String, PathItem> newPaths = openAPI.getPaths().getPathItems().entrySet().stream()
+                .collect(Collectors.toMap(
+                        Map.Entry::getKey,
+                        entry -> sortOperationsByMethod(entry.getValue())
+                ));
+
+        // Replace ALL Paths with sorted Paths
+        var paths = OASFactory.createPaths();
+        newPaths.forEach(paths::addPathItem);
+        openAPI.setPaths(paths);
+
+        removeSchemaAndRefs(openAPI, "BaseRepresentation");
+
+        Map<String, Set<Schema>> discriminatorPropertiesToBeAdded = new HashMap<>();
+
+        // Follows https://swagger.io/docs/specification/v3_0/data-models/inheritance-and-polymorphism/
+        addDiscriminatorsToParentSchemas(openAPI, discriminatorPropertiesToBeAdded);
+
+        // Add missing discriminator properties to subclass schemas
+        // Normally, this is handled by Jackson
+        discriminatorPropertiesToBeAdded.forEach((propertyName, schemas) -> {
+            schemas.forEach(schema -> {
+                if (schema.getProperties() == null || !schema.getProperties().containsKey(propertyName)) {
+                    Schema discriminatorPropertySchema = OASFactory.createSchema().addType(Schema.SchemaType.STRING);
+                    schema.addProperty(propertyName, discriminatorPropertySchema);
+                }
+            });
+        });
+
+        addDescriptionsToSchemasProperties(openAPI);
+        addSecurityScheme(openAPI);
+    }
+
+    /**
+     * Removes a schema from components and cleans up allOf/oneOf/anyOf references to it
+     * from all remaining schemas.
+     */
+    private void removeSchemaAndRefs(OpenAPI openAPI, String schemaName) {
+        if (hasNoSchemas(openAPI)) {
+            return;
+        }
+
+        Map<String, Schema> schemas = openAPI.getComponents().getSchemas();
+
+        if (schemas.containsKey(schemaName)) {
+            Map<String, Schema> remainingSchemas = new HashMap<>(schemas);
+            remainingSchemas.remove(schemaName);
+            openAPI.getComponents().setSchemas(remainingSchemas);
+            log.debugf("Removed schema '%s'", schemaName);
+        }
+
+        String ref = REF_PREFIX + schemaName;
+        for (Schema schema : openAPI.getComponents().getSchemas().values()) {
+            filterRef(schema::getAllOf, schema::setAllOf, ref);
+            filterRef(schema::getOneOf, schema::setOneOf, ref);
+            filterRef(schema::getAnyOf, schema::setAnyOf, ref);
+        }
+    }
+
+    private void filterRef(Supplier<List<Schema>> getter, Consumer<List<Schema>> setter, String refToRemove) {
+        List<Schema> schemas = getter.get();
+        if (schemas == null) {
+            return;
+        }
+        List<Schema> filtered = schemas.stream()
+                .filter(s -> !refToRemove.equals(s.getRef()))
+                .collect(Collectors.toList());
+        setter.accept(filtered.isEmpty() ? null : filtered);
+    }
+
+    /**
+     * Adds discriminator and oneOf references to parent schemas that have Jackson @JsonTypeInfo
+     * and @JsonSubTypes annotations. This enables OpenAPI generators to create proper class
+     * hierarchies with inheritance.
+     */
+    private void addDiscriminatorsToParentSchemas(OpenAPI openAPI, Map<String, Set<Schema>> discriminatorPropertiesToBeAdded) {
+        if (hasNoSchemas(openAPI)) {
+            return;
+        }
+
+        // Create a copy of schema names to avoid ConcurrentModificationException
+        Set<String> schemaNames = new HashSet<>(openAPI.getComponents().getSchemas().keySet());
+
+        for (String schemaName : schemaNames) {
+            ClassInfo classInfo = simpleNameToClassInfoMap.get(schemaName);
+            if (classInfo == null) {
+                continue;
+            }
+
+            AnnotationInstance typeInfoAnnotation = classInfo.annotation(JsonTypeInfo.class);
+            AnnotationInstance subTypesAnnotation = classInfo.annotation(JsonSubTypes.class);
+            if (typeInfoAnnotation == null || subTypesAnnotation == null) {
+                continue;
+            }
+
+            AnnotationInstance[] typeAnnotations = Optional.of(subTypesAnnotation.value())
+                    .map(AnnotationValue::asNestedArray)
+                    .orElse(new AnnotationInstance[0]);
+            if (typeAnnotations.length == 0) {
+                continue;
+            }
+
+            // Validate annotations
+            AnnotationValue useValue = typeInfoAnnotation.value("use");
+            if (useValue == null || (!JsonTypeInfo.Id.NAME.name().equals(useValue.asEnum())
+                    && !JsonTypeInfo.Id.SIMPLE_NAME.name().equals(useValue.asEnum()))) {
+                throw new IllegalStateException(
+                        String.format("@JsonTypeInfo on '%s' must use Id.NAME or Id.SIMPLE_NAME, but found: %s",
+                                schemaName, useValue == null ? "null" : useValue.asEnum()));
+            }
+
+            AnnotationValue includeValue = typeInfoAnnotation.value("include");
+            if (includeValue != null && !JsonTypeInfo.As.PROPERTY.name().equals(includeValue.asEnum())
+                    && !JsonTypeInfo.As.EXISTING_PROPERTY.name().equals(includeValue.asEnum())) {
+                throw new IllegalStateException(
+                        String.format("@JsonTypeInfo on '%s' must use As.PROPERTY or As.EXISTING_PROPERTY, but found: %s",
+                                schemaName, includeValue.asEnum()));
+            }
+
+            String discriminatorPropertyName = Optional.of(typeInfoAnnotation.value("property"))
+                    .map(AnnotationValue::asString)
+                    .orElse("");
+            if (discriminatorPropertyName.isEmpty()) {
+                throw new IllegalStateException(
+                        String.format("@JsonTypeInfo on '%s' must specify a non-empty 'property' value", schemaName));
+            }
+
+            Schema parentSchema = openAPI.getComponents().getSchemas().get(schemaName);
+            if (parentSchema == null) {
+                continue;
+            }
+
+            // Create discriminator with mappings only (no oneOf on parent schema)
+            // OpenAPI generators use the discriminator + allOf on subtypes to establish inheritance
+            // Adding oneOf to the parent schema causes generators to merge sibling properties incorrectly
+            Discriminator discriminator = OASFactory.createDiscriminator().propertyName(discriminatorPropertyName);
+
+            for (AnnotationInstance typeAnnotation : typeAnnotations) {
+                String simpleSubClassName = typeAnnotation.value("value").asClass().name().withoutPackagePrefix();
+                String ref = REF_PREFIX + simpleSubClassName;
+
+                // Add mapping to discriminator
+                String typeName = Optional.of(typeAnnotation.value("name"))
+                        .map(AnnotationValue::asString)
+                        .orElse("");
+                if (!typeName.isEmpty()) {
+                    discriminator.addMapping(typeName, ref);
+                }
+
+                // Track subschemas that need discriminator property added
+                Schema subSchema = openAPI.getComponents().getSchemas().get(simpleSubClassName);
+                if (subSchema != null) {
+                    discriminatorPropertiesToBeAdded
+                            .computeIfAbsent(discriminatorPropertyName, k -> new HashSet<>())
+                            .add(subSchema);
+                }
+            }
+
+            parentSchema.setDiscriminator(discriminator);
+            log.debugf("Added discriminator '%s' to schema '%s' with %d subtypes",
+                    discriminatorPropertyName, schemaName, typeAnnotations.length);
+        }
+    }
+
+    /**
+     * Adds a Bearer token security scheme and applies it globally to all operations.
+     * This documents the 401 (Unauthorized) and 403 (Forbidden) responses at the API level
+     * rather than repeating them on every endpoint.
+     */
+    private void addSecurityScheme(OpenAPI openAPI) {
+        String schemeName = "bearer-auth";
+
+        SecurityScheme bearerScheme = OASFactory.createSecurityScheme()
+                .type(SecurityScheme.Type.HTTP)
+                .scheme("bearer")
+                .bearerFormat("JWT")
+                .description("Bearer token authentication using a Keycloak access token");
+
+        if (openAPI.getComponents() == null) {
+            openAPI.setComponents(OASFactory.createComponents());
+        }
+        openAPI.getComponents().addSecurityScheme(schemeName, bearerScheme);
+
+        SecurityRequirement securityRequirement = OASFactory.createSecurityRequirement()
+                .addScheme(schemeName);
+        openAPI.setSecurity(List.of(securityRequirement));
+    }
+
+    private PathItem sortOperationsByMethod(PathItem pathItem) {
+        PathItem sortedPathItem = OASFactory.createPathItem();
+
+        // Add operations order: GET -> POST -> PUT -> PATCH -> DELETE -> HEAD -> OPTIONS -> TRACE
+        if (pathItem.getGET() != null) {
+            sortedPathItem.setGET(pathItem.getGET());
+        }
+        if (pathItem.getPOST() != null) {
+            sortedPathItem.setPOST(pathItem.getPOST());
+        }
+        if (pathItem.getPUT() != null) {
+            sortedPathItem.setPUT(pathItem.getPUT());
+        }
+        if (pathItem.getPATCH() != null) {
+            sortedPathItem.setPATCH(pathItem.getPATCH());
+        }
+        if (pathItem.getDELETE() != null) {
+            sortedPathItem.setDELETE(pathItem.getDELETE());
+        }
+        if (pathItem.getHEAD() != null) {
+            sortedPathItem.setHEAD(pathItem.getHEAD());
+        }
+        if (pathItem.getOPTIONS() != null) {
+            sortedPathItem.setOPTIONS(pathItem.getOPTIONS());
+        }
+        if (pathItem.getTRACE() != null) {
+            sortedPathItem.setTRACE(pathItem.getTRACE());
+        }
+
+        sortedPathItem.setSummary(pathItem.getSummary());
+        sortedPathItem.setDescription(pathItem.getDescription());
+        sortedPathItem.setServers(pathItem.getServers());
+        sortedPathItem.setParameters(pathItem.getParameters());
+
+        return sortedPathItem;
+    }
+
+    private void addDescriptionsToSchemasProperties(OpenAPI openAPI) {
+        if (hasNoSchemas(openAPI)) {
+            return;
+        }
+
+        openAPI.getComponents().getSchemas().forEach((schemaName, schema) -> {
+            if (schema.getProperties() != null) {
+                ClassInfo classInfo = simpleNameToClassInfoMap.get(schemaName);
+                if (classInfo == null) {
+                    log.debugf("No Java class found for schema '%s' — property descriptions from the '%s' annotation will not be added", schemaName, JsonPropertyDescription.class.getName());
+                } else {
+                    // Get class-level validation descriptions (e.g., @UuidUnmodified, @ClientSecretNotBlank)
+                    Map<String, String> classLevelValidations = validationScanner.buildClassLevelDescriptions(classInfo);
+
+                    schema.getProperties().forEach((propertyName, propertySchema) -> {
+                        // First, ensure we have the base description from @JsonPropertyDescription
+                        if (isNullOrEmpty(propertySchema.getDescription())) {
+                            propertySchema.setDescription(findJsonPropertyDescription(classInfo, propertyName));
+                        }
+
+                        // Add machine-readable validation schema properties
+                        validationScanner.applySchemaProperties(classInfo, propertyName, propertySchema);
+
+                        // Build validation description from field-level annotations
+                        String fieldValidation = validationScanner.buildDescription(classInfo, propertyName);
+
+                        // Include class-level validation if this field is affected
+                        String classLevelValidation = classLevelValidations.get(propertyName);
+                        if (classLevelValidation != null) {
+                            fieldValidation = fieldValidation != null
+                                    ? fieldValidation + "; " + classLevelValidation
+                                    : classLevelValidation;
+                        }
+
+                        // Append validation description if any (strip prior suffix: SmallRye may invoke the filter repeatedly)
+                        if (fieldValidation != null) {
+                            fieldValidation = dedupeConstraintPhrases(fieldValidation);
+                            String existingDesc = propertySchema.getDescription();
+                            String base = stripValidationSuffix(existingDesc);
+                            String newDesc = isNullOrEmpty(base)
+                                    ? "Validation: " + fieldValidation
+                                    : base + ". Validation: " + fieldValidation;
+                            propertySchema.setDescription(collapseMirroredValidationClause(newDesc));
+                            log.debugf("Added validation description to '%s.%s': %s", schemaName, propertyName, fieldValidation);
+                        }
+                    });
+                }
+            }
+        });
+    }
+
+    /**
+     * Removes validation clauses previously appended by this filter so repeated OpenAPI filter passes
+     * do not stack duplicate {@code Validation:} text.
+     */
+    private static String stripValidationSuffix(String description) {
+        if (isNullOrEmpty(description)) {
+            return description;
+        }
+        int idx = description.indexOf(". Validation: ");
+        if (idx >= 0) {
+            return description.substring(0, idx);
+        }
+        if (description.startsWith("Validation: ")) {
+            return "";
+        }
+        return description;
+    }
+
+    private static String dedupeConstraintPhrases(String joined) {
+        if (joined == null) {
+            return null;
+        }
+        String[] parts = joined.split("; ");
+        Set<String> seen = new LinkedHashSet<>();
+        for (String part : parts) {
+            String trimmed = part.trim();
+            if (!trimmed.isEmpty()) {
+                seen.add(trimmed);
+            }
+        }
+        return String.join("; ", seen);
+    }
+
+    /**
+     * Collapses {@code X. Validation: X} when {@code X} is repeated verbatim (duplicate filter passes).
+     */
+    private static String collapseMirroredValidationClause(String description) {
+        if (isNullOrEmpty(description)) {
+            return description;
+        }
+        String marker = ". Validation: ";
+        String current = description;
+        while (true) {
+            int i = current.indexOf(marker);
+            if (i <= 0) {
+                break;
+            }
+            String first = current.substring(0, i);
+            String second = current.substring(i + marker.length());
+            if (first.equals(second)) {
+                current = first;
+            } else {
+                break;
+            }
+        }
+        return current;
+    }
+
+    private String findJsonPropertyDescription(ClassInfo classInfo, String fieldName) {
+        FieldInfo field = classInfo.field(fieldName);
+        if (field != null) {
+            AnnotationInstance annotation = field.annotation(JsonPropertyDescription.class);
+            if (annotation != null && annotation.value() != null && !annotation.value().asString().isBlank()) {
+                return annotation.value().asString();
+            }
+        }
+        return null;
+    }
+
+    private static boolean hasNoSchemas(OpenAPI openAPI) {
+        return openAPI.getComponents() == null || openAPI.getComponents().getSchemas() == null;
+    }
+}

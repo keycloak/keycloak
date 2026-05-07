@@ -529,10 +529,10 @@ public class LDAPIdentityStore implements IdentityStore {
                 .collect(Collectors.toSet());
 
         if (!isCreate) {
-            // for updates, assume the PWD_CHANGED_TIME attribute is an operational attribute and read-only
+            // for updates, assume the password modification time attribute is an operational attribute and read-only
             // otherwise, updates will fail when trying to modify the attribute
             // vendors like AD, support the same type of attribute differently and using a mapper
-            ldapObject.addReadOnlyAttributeName(LDAPConstants.PWD_CHANGED_TIME);
+            ldapObject.addReadOnlyAttributeName(getPasswordModificationTimeAttributeName());
         }
 
         for (Map.Entry<String, Set<String>> attrEntry : ldapObject.getAttributes().entrySet()) {
@@ -614,7 +614,13 @@ public class LDAPIdentityStore implements IdentityStore {
     }
 
     public String getPasswordModificationTimeAttributeName() {
-        return getConfig().isActiveDirectory() ? LDAPConstants.PWD_LAST_SET : LDAPConstants.PWD_CHANGED_TIME;
+        if (getConfig().isActiveDirectory()) {
+            return LDAPConstants.PWD_LAST_SET;
+        }
+        if (getConfig().isRHDS()) {
+            return LDAPConstants.PWD_UPDATE_TIME;
+        }
+        return LDAPConstants.PWD_CHANGED_TIME;
     }
 
 }

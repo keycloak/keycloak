@@ -23,6 +23,7 @@ import jakarta.ws.rs.core.Response;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.server.KeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
+import org.keycloak.tests.suites.DatabaseTest;
 import org.keycloak.tests.utils.matchers.Matchers;
 
 import org.junit.jupiter.api.Test;
@@ -36,6 +37,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 public class ClientSearchTest extends AbstractClientSearchTest {
 
     @Test
+    @DatabaseTest
     public void testQuerySearch() {
         search(String.format("%s:%s", ATTR_ORG_NAME, ATTR_ORG_VAL), CLIENT_ID_1);
         search(String.format("%s:%s", ATTR_URL_NAME, ATTR_URL_VAL), CLIENT_ID_1, CLIENT_ID_2);

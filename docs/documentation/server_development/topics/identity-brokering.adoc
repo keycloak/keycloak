@@ -1,4 +1,5 @@
 
+[[_identity-brokering-apis]]
 == Identity Brokering APIs
 
 {project_name} can delegate authentication to a parent IDP for login.  A typical example of this is the case

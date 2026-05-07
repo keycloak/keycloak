@@ -180,7 +180,7 @@ public final class KcSamlBrokerTest extends AbstractAdvancedBrokerTest {
         userResource.roles().realmLevel().add(Collections.singletonList(userRole));
         userResource.roles().realmLevel().add(Collections.singletonList(friendlyManagerRole));
 
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
 
         logInAsUserInIDP();
@@ -195,7 +195,7 @@ public final class KcSamlBrokerTest extends AbstractAdvancedBrokerTest {
 
         userResource.roles().realmLevel().remove(Collections.singletonList(friendlyManagerRole));
 
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
 
         logInAsUserInIDP();
@@ -246,7 +246,7 @@ public final class KcSamlBrokerTest extends AbstractAdvancedBrokerTest {
         userResourceProv.roles().realmLevel().add(Collections.singletonList(userRole));
         userResourceProv.roles().realmLevel().add(Collections.singletonList(userRoleDotGuide));
 
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
 
         logInAsUserInIDP();
@@ -263,7 +263,7 @@ public final class KcSamlBrokerTest extends AbstractAdvancedBrokerTest {
         urp.setAttributes(new HashMap<>());
         userResourceProv.update(urp);
 
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
 
         logInAsUserInIDP();

@@ -21,30 +21,30 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.util.List;
-import java.util.Map;
 
+import org.keycloak.events.Details;
 import org.keycloak.events.Event;
 import org.keycloak.events.EventStoreProvider;
 import org.keycloak.events.EventType;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
-import org.keycloak.testframework.events.EventMatchers;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
 import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
-import org.keycloak.testframework.realm.RealmConfigBuilder;
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testframework.ui.annotations.InjectPage;
 import org.keycloak.testframework.ui.page.LoginPage;
+import org.keycloak.tests.suites.DatabaseTest;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * Test getting and filtering login-related events.
@@ -52,6 +52,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
  * @author Stan Silvert ssilvert@redhat.com (C) 2016 Red Hat Inc.
  */
 @KeycloakIntegrationTest
+@DatabaseTest
 public class LoginEventsTest {
 
     @InjectRealm(config = LoginEventsRealmConfig.class)
@@ -94,22 +95,17 @@ public class LoginEventsTest {
         badLogin();
         List<EventRepresentation> events = events();
         Assertions.assertEquals(1, events.size());
-        EventRepresentation event = events.get(0);
-        assertThat(event.getId(), EventMatchers.isUUID());
-        Assertions.assertTrue(event.getTime() > 0);
-        Assertions.assertNotNull(event.getIpAddress());
-        Assertions.assertEquals("LOGIN_ERROR", event.getType());
-        Assertions.assertEquals(managedRealm.getId(), event.getRealmId());
-        Assertions.assertNull(event.getUserId()); // no user for bad login
-        Assertions.assertNull(event.getSessionId()); // no session for bad login
-        Assertions.assertEquals("user_not_found", event.getError());
-
-        Map<String, String> details = event.getDetails();
-        Assertions.assertEquals("openid-connect", details.get("auth_method"));
-        Assertions.assertEquals("code", details.get("auth_type"));
-        Assertions.assertNotNull(details.get("redirect_uri"));
-        Assertions.assertNotNull(details.get("code_id"));
-        Assertions.assertEquals("bad", details.get("username"));
+        EventAssertion.assertError(events.get(0))
+                .type(EventType.LOGIN_ERROR).isCodeId()
+                .error("user_not_found")
+                .userId(null)
+                .sessionId(null)
+                .isCodeId()
+                .hasIpAddress()
+                .details(Details.AUTH_METHOD, "openid-connect")
+                .details(Details.AUTH_TYPE, "code")
+                .details(Details.USERNAME, "bad")
+                .details(Details.REDIRECT_URI, oAuthClient.getRedirectUri());
     }
 
     @Test
@@ -130,7 +126,7 @@ public class LoginEventsTest {
         badLogin();
         Assertions.assertEquals(0, events().size());
 
-        managedRealm.updateWithCleanup(r -> r.setEnabledEventTypes("LOGIN_ERROR"));
+        managedRealm.updateWithCleanup(r -> r.setEnabledEventTypes(List.of("LOGIN_ERROR")));
 
         badLogin();
         Assertions.assertEquals(1, events().size());
@@ -264,7 +260,7 @@ public class LoginEventsTest {
     private static class LoginEventsRealmConfig implements RealmConfig {
 
         @Override
-        public RealmConfigBuilder configure(RealmConfigBuilder realm) {
+        public RealmBuilder configure(RealmBuilder realm) {
             return realm.eventsEnabled(true);
         }
     }

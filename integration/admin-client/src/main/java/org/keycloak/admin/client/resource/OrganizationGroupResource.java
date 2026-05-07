@@ -41,7 +41,7 @@ public interface OrganizationGroupResource {
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    GroupRepresentation toRepresentation();
+    GroupRepresentation toRepresentation(@QueryParam("subGroupsCount") boolean subGroupsCount);
 
     @PUT
     @Consumes(MediaType.APPLICATION_JSON)

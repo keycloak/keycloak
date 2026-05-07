@@ -17,10 +17,13 @@
 
 package org.keycloak.protocol.oidc.grants;
 
+import java.util.List;
+
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
+import org.keycloak.authentication.authenticators.client.ClientAssertionState;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.JWTAuthorizationGrantProvider;
 import org.keycloak.cache.AlternativeLookupProvider;
@@ -31,6 +34,7 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.IdentityProviderType;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
@@ -71,7 +75,7 @@ public class JWTAuthorizationGrantType extends OAuth2GrantTypeBase {
             //select the idp using the issuer claim
             String jwtIssuer = authorizationGrantContext.getIssuer();
             AlternativeLookupProvider lookupProvider = context.getSession().getProvider(AlternativeLookupProvider.class);
-            IdentityProviderModel identityProviderModel = lookupProvider.lookupIdentityProviderFromIssuer(session, jwtIssuer);
+            IdentityProviderModel identityProviderModel = lookupProvider.lookupIdentityProviderFromIssuer(session, IdentityProviderType.JWT_AUTHORIZATION_GRANT, jwtIssuer);
             if (identityProviderModel == null) {
                 throw new RuntimeException("No Identity Provider for provided issuer");
             }
@@ -81,7 +85,8 @@ public class JWTAuthorizationGrantType extends OAuth2GrantTypeBase {
                 throw new RuntimeException("Identity Provider is not enabled");
             }
 
-            if(!OIDCAdvancedConfigWrapper.fromClientModel(context.getClient()).getJWTAuthorizationGrantAllowedIdentityProviders().contains(identityProviderModel.getAlias())) {
+            OIDCAdvancedConfigWrapper oidcClient = OIDCAdvancedConfigWrapper.fromClientModel(context.getClient());
+            if(!oidcClient.getJWTAuthorizationGrantAllowedIdentityProviders().contains(identityProviderModel.getAlias())) {
                 throw new RuntimeException("Identity Provider is not allowed for the client");
             }
 
@@ -104,7 +109,7 @@ public class JWTAuthorizationGrantType extends OAuth2GrantTypeBase {
 
             //user must exist in keycloak
             FederatedIdentityModel federatedIdentityModel = new FederatedIdentityModel(identityProviderModel.getAlias(), brokeredIdentityContext.getId(), brokeredIdentityContext.getUsername(), brokeredIdentityContext.getToken());
-            UserModel user = this.session.users().getUserByFederatedIdentity(realm, federatedIdentityModel);
+            UserModel user = lookupUserByFederatedIdentity(federatedIdentityModel, authorizationGrantContext.getState());
             if (user == null) {
                 throw new RuntimeException("User not found");
             }
@@ -120,7 +125,7 @@ public class JWTAuthorizationGrantType extends OAuth2GrantTypeBase {
             String scopeParam = getRequestedScopes();
 
             try {
-                session.clientPolicy().triggerOnEvent(new JWTAuthorizationGrantContext(authorizationGrantContext, identityProviderModel));
+                session.clientPolicy().triggerOnEvent(new JWTAuthorizationGrantContext(context.getSession(), authorizationGrantContext, identityProviderModel.getAlias()));
             } catch (ClientPolicyException cpe) {
                 event.detail(Details.REASON, Details.CLIENT_POLICY_ERROR);
                 event.detail(Details.CLIENT_POLICY_ERROR, cpe.getError());
@@ -130,9 +135,11 @@ public class JWTAuthorizationGrantType extends OAuth2GrantTypeBase {
             }
 
             // Validate audience if not validated previously by client policies
-            if (!authorizationGrantContext.isAudienceAlreadyValidated()) {
-                authorizationGrantContext.validateTokenAudience(jwtAuthorizationGrantProvider.getAllowedAudienceForJWTGrant(), false);
+            List<String> validAudiences = oidcClient.getJWTAuthorizationGrantAudience().get(identityProviderModel.getAlias());
+            if (validAudiences == null) {
+                validAudiences = jwtAuthorizationGrantProvider.getAllowedAudienceForJWTGrant();
             }
+            authorizationGrantContext.validateTokenAudience(validAudiences, false);
 
             RootAuthenticationSessionModel rootAuthSession = new AuthenticationSessionManager(session).createAuthenticationSession(realm, false);
             AuthenticationSessionModel authSession = createSessionModel(rootAuthSession, user, client, scopeParam);
@@ -157,6 +164,10 @@ public class JWTAuthorizationGrantType extends OAuth2GrantTypeBase {
         }
     }
 
+    protected UserModel lookupUserByFederatedIdentity(FederatedIdentityModel federatedIdentityModel, ClientAssertionState clientAssertionState) {
+        return this.session.users().getUserByFederatedIdentity(realm, federatedIdentityModel);
+    }
+
     protected AuthenticationSessionModel createSessionModel(RootAuthenticationSessionModel rootAuthSession, UserModel targetUser, ClientModel client, String scope) {
         AuthenticationSessionModel authSession = rootAuthSession.createAuthenticationSession(client);
         authSession.setAuthenticatedUser(targetUser);
@@ -173,6 +184,6 @@ public class JWTAuthorizationGrantType extends OAuth2GrantTypeBase {
 
     @Override
     public EventType getEventType() {
-        return EventType.LOGIN;
+        return EventType.JWT_AUTHORIZATION_GRANT;
     }
 }

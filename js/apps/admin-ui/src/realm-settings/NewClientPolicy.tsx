@@ -175,8 +175,11 @@ export default function NewClientPolicy() {
 
   const save = async () => {
     const createdForm = form.getValues();
+    const existingPolicy = policies?.find((p) => p.name === policyName);
     const createdPolicy = {
       ...createdForm,
+      conditions: existingPolicy?.conditions ?? [],
+      profiles: existingPolicy?.profiles ?? [],
     };
 
     const getAllPolicies = () => {
@@ -188,17 +191,18 @@ export default function NewClientPolicy() {
         return policies?.map((policy) =>
           policy.name === createdPolicy.name ? createdPolicy : policy,
         );
-      } else if (createdForm.name !== policyName) {
+      } else if (createdPolicy.name !== policyName) {
         return policies
           ?.filter((item) => item.name !== policyName)
-          .concat(createdForm);
+          .concat(createdPolicy);
       }
-      return policies?.concat(createdForm);
+      return policies?.concat(createdPolicy);
     };
 
     try {
+      const updatedPolicies = getAllPolicies();
       await adminClient.clientPolicies.updatePolicy({
-        policies: getAllPolicies(),
+        policies: updatedPolicies,
       });
       addAlert(
         policyName
@@ -206,7 +210,10 @@ export default function NewClientPolicy() {
           : t("createClientPolicySuccess"),
         AlertVariant.success,
       );
-      navigate(toEditClientPolicy({ realm, policyName: createdForm.name! }));
+      setPolicies(updatedPolicies ?? []);
+      setAllPolicies([...(globalPolicies ?? []), ...(updatedPolicies ?? [])]);
+      setCurrentPolicy(createdPolicy);
+      navigate(toEditClientPolicy({ realm, policyName: createdPolicy.name! }));
       setShowAddConditionsAndProfilesForm(true);
     } catch (error) {
       addError("createClientPolicyError", error);
@@ -478,7 +485,10 @@ export default function NewClientPolicy() {
               rules={{
                 required: t("required"),
                 validate: (value) =>
-                  policies.some((policy) => policy.name === value)
+                  policies.some(
+                    (policy) =>
+                      policy.name === value && policy.name !== policyName,
+                  )
                     ? t("createClientProfileNameHelperText")
                     : true,
               }}

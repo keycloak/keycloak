@@ -22,5 +22,5 @@ public class CredentialOfferStorageSpi implements Spi {
     @Override public String getName() { return "credential-offer-storage"; }
     @Override public Class<CredentialOfferStorage> getProviderClass() { return CredentialOfferStorage.class; }
     @Override public Class<CredentialOfferStorageFactory> getProviderFactoryClass() { return CredentialOfferStorageFactory.class; }
-    @Override public boolean isInternal() { return false; }
+    @Override public boolean isInternal() { return true; }
 }

@@ -23,6 +23,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -32,7 +33,6 @@ import org.keycloak.config.HttpOptions;
 import org.keycloak.config.LoggingOptions;
 import org.keycloak.config.Option;
 import org.keycloak.config.SecurityOptions;
-import org.keycloak.platform.Platform;
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.KeycloakMain;
 import org.keycloak.quarkus.runtime.cli.Picocli;
@@ -56,8 +56,8 @@ import io.quarkus.bootstrap.workspace.WorkspaceModuleId;
 import io.quarkus.maven.dependency.Dependency;
 import io.quarkus.maven.dependency.DependencyBuilder;
 import io.quarkus.runtime.configuration.QuarkusConfigFactory;
+import org.apache.commons.io.FileUtils;
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
-import picocli.CommandLine;
 
 import static java.util.Optional.ofNullable;
 
@@ -115,7 +115,7 @@ public class Keycloak {
 
         public Keycloak start(List<String> rawArgs) {
             if (homeDir == null) {
-                homeDir = Platform.getPlatform().getTmpDirectory().toPath();
+                homeDir = initTempDirectory("keycloak-home");
             }
 
             List<String> args = new ArrayList<>(rawArgs);
@@ -179,6 +179,7 @@ public class Keycloak {
     private List<Dependency> dependencies;
     private boolean fipsEnabled;
     private Properties systemProperties;
+    private CountDownLatch closed;
 
     public Keycloak() {
         this(null, Version.VERSION, List.of(), false);
@@ -212,10 +213,9 @@ public class Keycloak {
             if (!initSys(args.toArray(String[]::new))) {
                 return this;
             }
-            System.setProperty(Environment.KC_TEST_REBUILD, "true");
             StartupAction startupAction = action.createInitialRuntimeApplication();
-            System.getProperties().remove(Environment.KC_TEST_REBUILD);
-
+            closed = new CountDownLatch(1);
+            startupAction.addRuntimeCloseTask(closed::countDown);
             application = startupAction.runMainClass(args.toArray(new String[0]));
 
             return this;
@@ -308,6 +308,11 @@ public class Keycloak {
             } catch (Exception cause) {
                 cause.printStackTrace();
             }
+            try {
+                closed.await(); // wait for an orderly completion of all cleanup in the other thread
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
         }
 
         QuarkusConfigFactory.setConfig(null);
@@ -346,14 +351,6 @@ public class Keycloak {
             }
 
             @Override
-            protected int execute(CommandLine cmd, String[] argArray) {
-                if (this.getParsedCommand().filter(ac -> ac instanceof AbstractAutoBuildCommand).isPresent()) {
-                    return super.execute(cmd, argArray);
-                }
-                return 0;
-            }
-
-            @Override
             public void exit(int exitCode) {
                 result.set(exitCode == AbstractAutoBuildCommand.REBUILT_EXIT_CODE);
             }
@@ -362,4 +359,24 @@ public class Keycloak {
         System.setProperty(Environment.KC_CONFIG_BUILT, "true");
         return result.get();
     }
+
+    public static Path initTempDirectory(String name) {
+        String buildDir = System.getProperty("project.build.directory");
+        if (buildDir == null) {
+            try {
+                return Files.createTempDirectory(name).toAbsolutePath();
+            } catch (IOException e) {
+                throw new RuntimeException("Could not create temporary directory", e);
+            }
+        } else {
+            Path homeDir = Path.of(buildDir, name);
+            try {
+                FileUtils.deleteDirectory(homeDir.toFile());
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            return homeDir;
+        }
+    }
+
 }

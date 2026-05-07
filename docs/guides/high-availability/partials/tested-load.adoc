@@ -7,10 +7,12 @@
 
 We regularly test {project_name} with the following load:
 
-<@profile.ifProduct>
-* 100,000 users
-</@profile.ifProduct>
-<@profile.ifCommunity>
 * 1,000,000 users
-</@profile.ifCommunity>
 * 300 requests per second
+
+[IMPORTANT]
+====
+It is imperative that your production deployments are integrated with an observability stack in order to identify issues
+early and facilitate troubleshooting when they do arise. Additional demand on {project_name} makes isolating issues harder,
+therefore this becomes increasingly pertinent as the total number of users and requests per second increases.
+====

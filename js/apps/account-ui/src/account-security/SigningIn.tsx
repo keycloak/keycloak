@@ -34,9 +34,10 @@ import {
 } from "../api/representations";
 import { EmptyRow } from "../components/datalist/EmptyRow";
 import { Page } from "../components/page/Page";
-import { TFuncKey } from "../i18n";
+import type { TFuncKey } from "../i18n-type";
 import { formatDate } from "../utils/formatDate";
 import { usePromise } from "../utils/usePromise";
+import { AccountEnvironment } from "..";
 
 type MobileLinkProps = {
   title: string;
@@ -84,7 +85,7 @@ const MobileLink = ({ title, onClick, testid }: MobileLinkProps) => {
 
 export const SigningIn = () => {
   const { t } = useTranslation();
-  const context = useEnvironment();
+  const context = useEnvironment<AccountEnvironment>();
   const { login } = context.keycloak;
 
   const [credentials, setCredentials] = useState<CredentialContainer[]>();
@@ -119,9 +120,16 @@ export const SigningIn = () => {
           key={"created" + credential.id}
           data-testrole="created-at"
         >
-          <Trans i18nKey="credentialCreatedAt">
+          <Trans
+            i18nKey="credentialCreatedAt"
+            values={{
+              date: formatDate(
+                new Date(credential.createdDate),
+                context.environment.locale,
+              ),
+            }}
+          >
             <strong className="pf-v5-u-mr-md"></strong>
-            {{ date: formatDate(new Date(credential.createdDate)) }}
           </Trans>
         </DataListCell>,
       );

@@ -11,6 +11,12 @@ public class CertificatesConfigBuilder {
     public CertificatesConfigBuilder() {
     }
 
+    /**
+     * Use the specified keystore format
+     *
+     * @param keystoreFormat the keystore format to use
+     * @return
+     */
     public CertificatesConfigBuilder keystoreFormat(KeystoreUtil.KeystoreFormat keystoreFormat) {
         this.keystoreFormat = keystoreFormat;
         return this;
@@ -20,6 +26,12 @@ public class CertificatesConfigBuilder {
         return this.keystoreFormat;
     }
 
+    /**
+     * Enable TLS
+     *
+     * @param tlsEnabled <code>true</code> if tls should be enabled
+     * @return
+     */
     public CertificatesConfigBuilder tlsEnabled(boolean tlsEnabled) {
         this.tlsEnabled = tlsEnabled;
         return this;
@@ -29,6 +41,12 @@ public class CertificatesConfigBuilder {
         return tlsEnabled || mTlsEnabled;
     }
 
+    /**
+     * Enable mTLS authentication between Keycloak and clients
+     *
+     * @param mTlsEnabled <code>true</code> if mTLS should be enabled
+     * @return
+     */
     public CertificatesConfigBuilder mTlsEnabled(boolean mTlsEnabled) {
         this.mTlsEnabled = mTlsEnabled;
         return this;

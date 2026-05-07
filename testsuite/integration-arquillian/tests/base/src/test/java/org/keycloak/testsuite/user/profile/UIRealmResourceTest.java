@@ -48,28 +48,28 @@ import org.keycloak.representations.userprofile.config.UPAttributePermissions;
 import org.keycloak.representations.userprofile.config.UPAttributeRequired;
 import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.representations.userprofile.config.UPConfig.UnmanagedAttributePolicy;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.RegisterPage;
 import org.keycloak.testsuite.util.AssertAdminEvents;
-import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.userprofile.config.UPConfigUtils;
 import org.keycloak.util.JsonSerialization;
 
 import org.hamcrest.Matchers;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.AfterClass;
-import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
  *
@@ -144,7 +144,7 @@ public class UIRealmResourceTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     public void testNoUpdateUserProfile() throws IOException {
-        RealmRepresentation rep = testRealm().toRepresentation();
+        RealmRepresentation rep = managedRealm.admin().toRepresentation();
         updateRealmExt(toUIRealmRepresentation(rep, null));
 
         assertAdminEvents.assertEvent(TEST_REALM_NAME, OperationType.UPDATE, Matchers.nullValue(String.class), ResourceType.REALM);
@@ -153,8 +153,8 @@ public class UIRealmResourceTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     public void testSameUpdateUserProfile() throws IOException {
-        RealmRepresentation rep = testRealm().toRepresentation();
-        UPConfig upConfig = testRealm().users().userProfile().getConfiguration();
+        RealmRepresentation rep = managedRealm.admin().toRepresentation();
+        UPConfig upConfig = managedRealm.admin().users().userProfile().getConfiguration();
 
         updateRealmExt(toUIRealmRepresentation(rep, upConfig));
         assertAdminEvents.assertEvent(TEST_REALM_NAME, OperationType.UPDATE, Matchers.nullValue(String.class), ResourceType.REALM);
@@ -163,17 +163,17 @@ public class UIRealmResourceTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     public void testUpdateUserProfileModification() throws IOException {
-        RealmRepresentation rep = testRealm().toRepresentation();
-        UPConfig upConfigOrig = testRealm().users().userProfile().getConfiguration();
+        RealmRepresentation rep = managedRealm.admin().toRepresentation();
+        UPConfig upConfigOrig = managedRealm.admin().users().userProfile().getConfiguration();
 
         try {
-            UPConfig upConfig = testRealm().users().userProfile().getConfiguration();
+            UPConfig upConfig = managedRealm.admin().users().userProfile().getConfiguration();
             upConfig.addOrReplaceAttribute(new UPAttribute("foo",
                     new UPAttributePermissions(Set.of(), Set.of(UPConfigUtils.ROLE_USER, UPConfigUtils.ROLE_ADMIN))));
 
             updateRealmExt(toUIRealmRepresentation(rep, upConfig));
             AdminEventRepresentation adminEvent = assertAdminEvents.assertEvent(TEST_REALM_NAME, OperationType.UPDATE, Matchers.nullValue(String.class), ResourceType.REALM);
-            Assert.assertNotNull(adminEvent.getRepresentation());
+            Assertions.assertNotNull(adminEvent.getRepresentation());
             adminEvent = assertAdminEvents.assertEvent(TEST_REALM_NAME, OperationType.UPDATE, "ui-ext", ResourceType.USER_PROFILE);
             assertEquals(upConfig, toUpConfig(adminEvent.getRepresentation()));
 
@@ -211,16 +211,16 @@ public class UIRealmResourceTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     public void testRegistrationFormWithNotReadableOrWritableRequiredEmail() throws IOException {
-        RealmRepresentation testRealm = testRealm().toRepresentation();
+        RealmRepresentation testRealm = managedRealm.admin().toRepresentation();
         testRealm.setRegistrationEmailAsUsername(true);
         getCleanup().addCleanup(() -> {
             testRealm.setRegistrationEmailAsUsername(false);
-            testRealm().update(testRealm);
+            managedRealm.admin().update(testRealm);
         });
-        testRealm().update(testRealm);
+        managedRealm.admin().update(testRealm);
 
         // set email as not readable or writable for a user
-        UPConfig upConfig = testRealm().users().userProfile().getConfiguration();
+        UPConfig upConfig = managedRealm.admin().users().userProfile().getConfiguration();
         upConfig.addOrReplaceAttribute(new UPAttribute("email",
                 new UPAttributePermissions(Set.of(UPConfigUtils.ROLE_ADMIN), Set.of(UPConfigUtils.ROLE_ADMIN))));
         updateRealmExt(toUIRealmRepresentation(testRealm, upConfig));
@@ -230,25 +230,25 @@ public class UIRealmResourceTest extends AbstractTestRealmKeycloakTest {
         loginPage.form().register();
         registerPage.assertCurrent();
 
-        Assert.assertTrue("Email is missing on the registration page.", registerPage.isEmailPresent());
+        Assertions.assertTrue(registerPage.isEmailPresent(), "Email is missing on the registration page.");
 
         registerPage.registerWithEmailAsUsername("Tom", "Brady", "tbrady@email.com", "password", "password");
 
-        Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assert.assertNotNull(oauth.parseLoginResponse().getCode());
+        Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
 
         String userId = events.expectRegister("tbrady@email.com", "tbrady@email.com").assertEvent().getUserId();
-        UserRepresentation user = testRealm().users().get(userId).toRepresentation();
+        UserRepresentation user = managedRealm.admin().users().get(userId).toRepresentation();
         assertEquals("Tom", user.getFirstName());
         assertEquals("Brady", user.getLastName());
     }
 
     @Test
     public void testRegistrationFormWithReadonlyUsernameAndEmail() throws IOException {
-        RealmRepresentation testRealm = testRealm().toRepresentation();
+        RealmRepresentation testRealm = managedRealm.admin().toRepresentation();
 
         // set username and email as readonly for a user
-        UPConfig upConfig = testRealm().users().userProfile().getConfiguration();
+        UPConfig upConfig = managedRealm.admin().users().userProfile().getConfiguration();
         upConfig.addOrReplaceAttribute(new UPAttribute("username",
                 new UPAttributePermissions(Set.of(UPConfigUtils.ROLE_USER, UPConfigUtils.ROLE_ADMIN), Set.of(UPConfigUtils.ROLE_ADMIN))));
         upConfig.addOrReplaceAttribute(new UPAttribute("email",
@@ -260,16 +260,16 @@ public class UIRealmResourceTest extends AbstractTestRealmKeycloakTest {
         loginPage.form().register();
         registerPage.assertCurrent();
 
-        Assert.assertTrue("Username is missing on the registration page.", registerPage.isUsernamePresent());
-        Assert.assertFalse("Email should not be present on the registration page.", registerPage.isEmailPresent());
+        Assertions.assertTrue(registerPage.isUsernamePresent(), "Username is missing on the registration page.");
+        Assertions.assertFalse(registerPage.isEmailPresent(), "Email should not be present on the registration page.");
 
         registerPage.register("Alice", "Wood",  null, "awood", "password", "password");
 
-        Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assert.assertNotNull(oauth.parseLoginResponse().getCode());
+        Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
 
         String userId = events.expectRegister("awood", null).removeDetail("email").assertEvent().getUserId();
-        UserRepresentation user = testRealm().users().get(userId).toRepresentation();
+        UserRepresentation user = managedRealm.admin().users().get(userId).toRepresentation();
         assertEquals("awood", user.getUsername());
         assertEquals("Alice", user.getFirstName());
         assertEquals("Wood", user.getLastName());
@@ -295,8 +295,8 @@ public class UIRealmResourceTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     public void testRenameRealm() throws IOException {
-        RealmRepresentation rep = testRealm().toRepresentation();
-        UPConfig upConfig = testRealm().users().userProfile().getConfiguration();
+        RealmRepresentation rep = managedRealm.admin().toRepresentation();
+        UPConfig upConfig = managedRealm.admin().users().userProfile().getConfiguration();
         upConfig.setUnmanagedAttributePolicy(UnmanagedAttributePolicy.ADMIN_VIEW);
         String originalRealmName = rep.getRealm();
         String updatedName = originalRealmName + "changed";
@@ -322,7 +322,7 @@ public class UIRealmResourceTest extends AbstractTestRealmKeycloakTest {
                 .firstName(username + "-first")
                 .lastName(username + "-last")
                 .password(TEST_PWD)
-                .role(clientId, roleName)
+                .clientRoles(clientId, roleName)
                 .build();
     }
 

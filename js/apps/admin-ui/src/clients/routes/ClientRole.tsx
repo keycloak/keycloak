@@ -21,9 +21,9 @@ const RealmRoleTabs = lazy(() => import("../../realm-roles/RealmRoleTabs"));
 export const ClientRoleRoute: AppRouteObject = {
   path: "/:realm/clients/:clientId/roles/:id/:tab" as const,
   element: <RealmRoleTabs />,
-  breadcrumb: (t) => t("roleDetails"),
   handle: {
     access: "query-clients",
+    breadcrumb: (t) => t("roleDetails"),
   },
 } satisfies AppRouteObject;
 

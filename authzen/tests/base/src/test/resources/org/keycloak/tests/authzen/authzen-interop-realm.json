@@ -1,0 +1,299 @@
+{
+    "enabled": true,
+    "roles": {
+        "realm": [
+            { "name": "admin" },
+            { "name": "editor" },
+            { "name": "viewer" }
+        ]
+    },
+    "users": [
+        {
+            "username": "CiRmZDA2MTRkMy1jMzlhLTQ3ODEtYjdiZC04Yjk2ZjVhNTEwMGQSBWxvY2Fs",
+            "enabled": true,
+            "firstName": "Rick",
+            "lastName": "Sanchez",
+            "email": "rick@the-citadel.com",
+            "credentials": [
+                { "type": "password", "value": "password" }
+            ],
+            "realmRoles": ["admin"]
+        },
+        {
+            "username": "CiRmZDE2MTRkMy1jMzlhLTQ3ODEtYjdiZC04Yjk2ZjVhNTEwMGQSBWxvY2Fs",
+            "enabled": true,
+            "firstName": "Morty",
+            "lastName": "Smith",
+            "email": "morty@the-citadel.com",
+            "credentials": [
+                { "type": "password", "value": "password" }
+            ],
+            "realmRoles": ["editor"]
+        },
+        {
+            "username": "CiRmZDI2MTRkMy1jMzlhLTQ3ODEtYjdiZC04Yjk2ZjVhNTEwMGQSBWxvY2Fs",
+            "enabled": true,
+            "firstName": "Summer",
+            "lastName": "Smith",
+            "email": "summer@the-smiths.com",
+            "credentials": [
+                { "type": "password", "value": "password" }
+            ],
+            "realmRoles": ["editor"]
+        },
+        {
+            "username": "CiRmZDM2MTRkMy1jMzlhLTQ3ODEtYjdiZC04Yjk2ZjVhNTEwMGQSBWxvY2Fs",
+            "enabled": true,
+            "firstName": "Beth",
+            "lastName": "Smith",
+            "email": "beth@the-smiths.com",
+            "credentials": [
+                { "type": "password", "value": "password" }
+            ],
+            "realmRoles": ["viewer"]
+        },
+        {
+            "username": "CiRmZDQ2MTRkMy1jMzlhLTQ3ODEtYjdiZC04Yjk2ZjVhNTEwMGQSBWxvY2Fs",
+            "enabled": true,
+            "firstName": "Jerry",
+            "lastName": "Smith",
+            "email": "jerry@the-smiths.com",
+            "credentials": [
+                { "type": "password", "value": "password" }
+            ],
+            "realmRoles": ["viewer"]
+        }
+    ],
+    "clients": [
+        {
+            "clientId": "authzen-pdp",
+            "enabled": true,
+            "secret": "authzen-pdp-secret",
+            "serviceAccountsEnabled": true,
+            "directAccessGrantsEnabled": false,
+            "authorizationServicesEnabled": true,
+            "authorizationSettings": {
+                "scopes": [
+                    { "name": "can_read_user" },
+                    { "name": "can_read_todos" },
+                    { "name": "can_create_todo" },
+                    { "name": "can_update_todo" },
+                    { "name": "can_delete_todo" }
+                ],
+                "resources": [
+                    {
+                        "name": "beth@the-smiths.com",
+                        "type": "user",
+                        "scopes": [{ "name": "can_read_user" }]
+                    },
+                    {
+                        "name": "rick@the-citadel.com",
+                        "type": "user",
+                        "scopes": [{ "name": "can_read_user" }]
+                    },
+                    {
+                        "name": "morty@the-citadel.com",
+                        "type": "user",
+                        "scopes": [{ "name": "can_read_user" }]
+                    },
+                    {
+                        "name": "summer@the-smiths.com",
+                        "type": "user",
+                        "scopes": [{ "name": "can_read_user" }]
+                    },
+                    {
+                        "name": "jerry@the-smiths.com",
+                        "type": "user",
+                        "scopes": [{ "name": "can_read_user" }]
+                    },
+                    {
+                        "name": "todo-1",
+                        "type": "todo",
+                        "scopes": [
+                            { "name": "can_read_todos" },
+                            { "name": "can_create_todo" },
+                            { "name": "can_update_todo" },
+                            { "name": "can_delete_todo" }
+                        ]
+                    },
+                    {
+                        "name": "7240d0db-8ff0-41ec-98b2-34a096273b92",
+                        "type": "todo",
+                        "scopes": [
+                            { "name": "can_read_todos" },
+                            { "name": "can_create_todo" },
+                            { "name": "can_update_todo" },
+                            { "name": "can_delete_todo" }
+                        ]
+                    },
+                    {
+                        "name": "7240d0db-8ff0-41ec-98b2-34a096273b91",
+                        "type": "todo",
+                        "scopes": [
+                            { "name": "can_read_todos" },
+                            { "name": "can_create_todo" },
+                            { "name": "can_update_todo" },
+                            { "name": "can_delete_todo" }
+                        ]
+                    },
+                    {
+                        "name": "7240d0db-8ff0-41ec-98b2-34a096273b93",
+                        "type": "todo",
+                        "scopes": [
+                            { "name": "can_read_todos" },
+                            { "name": "can_create_todo" },
+                            { "name": "can_update_todo" },
+                            { "name": "can_delete_todo" }
+                        ]
+                    },
+                    {
+                        "name": "7240d0db-8ff0-41ec-98b2-34a096273b94",
+                        "type": "todo",
+                        "scopes": [
+                            { "name": "can_read_todos" },
+                            { "name": "can_create_todo" },
+                            { "name": "can_update_todo" },
+                            { "name": "can_delete_todo" }
+                        ]
+                    },
+                    {
+                        "name": "240d0db-8ff0-41ec-98b2-34a096273b95",
+                        "type": "todo",
+                        "scopes": [
+                            { "name": "can_read_todos" },
+                            { "name": "can_create_todo" },
+                            { "name": "can_update_todo" },
+                            { "name": "can_delete_todo" }
+                        ]
+                    }
+                ],
+                "policies": [
+                    {
+                        "name": "admin-policy",
+                        "type": "role",
+                        "logic": "POSITIVE",
+                        "decisionStrategy": "UNANIMOUS",
+                        "config": {
+                            "roles": "[{\"id\":\"admin\"}]"
+                        }
+                    },
+                    {
+                        "name": "editor-policy",
+                        "type": "role",
+                        "logic": "POSITIVE",
+                        "decisionStrategy": "UNANIMOUS",
+                        "config": {
+                            "roles": "[{\"id\":\"editor\"}]"
+                        }
+                    },
+                    {
+                        "name": "viewer-policy",
+                        "type": "role",
+                        "logic": "POSITIVE",
+                        "decisionStrategy": "UNANIMOUS",
+                        "config": {
+                            "roles": "[{\"id\":\"viewer\"}]"
+                        }
+                    },
+                    {
+                        "name": "owner-policy",
+                        "type": "owner-policy",
+                        "logic": "POSITIVE",
+                        "decisionStrategy": "UNANIMOUS"
+                    },
+                    {
+                        "name": "any-role-policy",
+                        "type": "aggregate",
+                        "logic": "POSITIVE",
+                        "decisionStrategy": "AFFIRMATIVE",
+                        "config": {
+                            "applyPolicies": "[\"admin-policy\",\"editor-policy\",\"viewer-policy\"]"
+                        }
+                    },
+                    {
+                        "name": "admin-or-editor-policy",
+                        "type": "aggregate",
+                        "logic": "POSITIVE",
+                        "decisionStrategy": "AFFIRMATIVE",
+                        "config": {
+                            "applyPolicies": "[\"admin-policy\",\"editor-policy\"]"
+                        }
+                    },
+                    {
+                        "name": "editor-and-owner-policy",
+                        "type": "aggregate",
+                        "logic": "POSITIVE",
+                        "decisionStrategy": "UNANIMOUS",
+                        "config": {
+                            "applyPolicies": "[\"editor-policy\",\"owner-policy\"]"
+                        }
+                    },
+                    {
+                        "name": "admin-or-editor-owner-policy",
+                        "type": "aggregate",
+                        "logic": "POSITIVE",
+                        "decisionStrategy": "AFFIRMATIVE",
+                        "config": {
+                            "applyPolicies": "[\"admin-policy\",\"editor-and-owner-policy\"]"
+                        }
+                    },
+                    {
+                        "name": "read-user-permission",
+                        "type": "scope",
+                        "logic": "POSITIVE",
+                        "decisionStrategy": "UNANIMOUS",
+                        "config": {
+                            "resources": "[\"beth@the-smiths.com\",\"rick@the-citadel.com\",\"morty@the-citadel.com\",\"summer@the-smiths.com\",\"jerry@the-smiths.com\"]",
+                            "scopes": "[\"can_read_user\"]",
+                            "applyPolicies": "[\"any-role-policy\"]"
+                        }
+                    },
+                    {
+                        "name": "read-todos-permission",
+                        "type": "scope",
+                        "logic": "POSITIVE",
+                        "decisionStrategy": "UNANIMOUS",
+                        "config": {
+                            "resources": "[\"todo-1\",\"7240d0db-8ff0-41ec-98b2-34a096273b92\",\"7240d0db-8ff0-41ec-98b2-34a096273b91\",\"7240d0db-8ff0-41ec-98b2-34a096273b93\",\"7240d0db-8ff0-41ec-98b2-34a096273b94\",\"240d0db-8ff0-41ec-98b2-34a096273b95\"]",
+                            "scopes": "[\"can_read_todos\"]",
+                            "applyPolicies": "[\"any-role-policy\"]"
+                        }
+                    },
+                    {
+                        "name": "create-todo-permission",
+                        "type": "scope",
+                        "logic": "POSITIVE",
+                        "decisionStrategy": "UNANIMOUS",
+                        "config": {
+                            "resources": "[\"todo-1\",\"7240d0db-8ff0-41ec-98b2-34a096273b92\",\"7240d0db-8ff0-41ec-98b2-34a096273b91\",\"7240d0db-8ff0-41ec-98b2-34a096273b93\",\"7240d0db-8ff0-41ec-98b2-34a096273b94\",\"240d0db-8ff0-41ec-98b2-34a096273b95\"]",
+                            "scopes": "[\"can_create_todo\"]",
+                            "applyPolicies": "[\"admin-or-editor-policy\"]"
+                        }
+                    },
+                    {
+                        "name": "update-todo-permission",
+                        "type": "scope",
+                        "logic": "POSITIVE",
+                        "decisionStrategy": "UNANIMOUS",
+                        "config": {
+                            "resources": "[\"todo-1\",\"7240d0db-8ff0-41ec-98b2-34a096273b92\",\"7240d0db-8ff0-41ec-98b2-34a096273b91\",\"7240d0db-8ff0-41ec-98b2-34a096273b93\",\"7240d0db-8ff0-41ec-98b2-34a096273b94\",\"240d0db-8ff0-41ec-98b2-34a096273b95\"]",
+                            "scopes": "[\"can_update_todo\"]",
+                            "applyPolicies": "[\"admin-or-editor-owner-policy\"]"
+                        }
+                    },
+                    {
+                        "name": "delete-todo-permission",
+                        "type": "scope",
+                        "logic": "POSITIVE",
+                        "decisionStrategy": "UNANIMOUS",
+                        "config": {
+                            "resources": "[\"todo-1\",\"7240d0db-8ff0-41ec-98b2-34a096273b92\",\"7240d0db-8ff0-41ec-98b2-34a096273b91\",\"7240d0db-8ff0-41ec-98b2-34a096273b93\",\"7240d0db-8ff0-41ec-98b2-34a096273b94\",\"240d0db-8ff0-41ec-98b2-34a096273b95\"]",
+                            "scopes": "[\"can_delete_todo\"]",
+                            "applyPolicies": "[\"admin-or-editor-owner-policy\"]"
+                        }
+                    }
+                ]
+            }
+        }
+    ]
+}

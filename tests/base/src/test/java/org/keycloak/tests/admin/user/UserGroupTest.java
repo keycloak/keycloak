@@ -16,9 +16,10 @@ import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.events.AdminEventAssertion;
-import org.keycloak.testframework.realm.GroupConfigBuilder;
-import org.keycloak.testframework.realm.UserConfigBuilder;
+import org.keycloak.testframework.realm.GroupBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.util.ApiUtil;
+import org.keycloak.tests.suites.DatabaseTest;
 import org.keycloak.tests.utils.admin.AdminEventPaths;
 
 import org.junit.jupiter.api.Test;
@@ -41,11 +42,11 @@ public class UserGroupTest extends AbstractUserTest {
         Map<String, List<String>> attributes = new HashMap<String, List<String>>();
         attributes.put("attribute1", Arrays.asList("attribute1","attribute2"));
 
-        UserRepresentation userRepresentation = UserConfigBuilder.create()
+        UserRepresentation userRepresentation = UserBuilder.create()
                 .username(userName).name("average", "joe").password("password")
                 .email("joe@average.com").emailVerified(true).build();
 
-        GroupRepresentation groupRepresentation = GroupConfigBuilder.create().name(groupName).setAttributes(attributes).build();
+        GroupRepresentation groupRepresentation = GroupBuilder.create().name(groupName).setAttributes(attributes).build();
 
         String userId = createUser(userRepresentation);
         String groupId = createGroup(groupRepresentation).getId();
@@ -69,12 +70,12 @@ public class UserGroupTest extends AbstractUserTest {
         Map<String, List<String>> attributes2 = new HashMap<String, List<String>>();
         attributes2.put("attribute2", Arrays.asList("attribute2"));
 
-        UserRepresentation userRepresentation = UserConfigBuilder.create()
+        UserRepresentation userRepresentation = UserBuilder.create()
                 .username(userName).name("average", "joe").password("password")
                 .email("joe@average.com").emailVerified(true).build();
 
-        GroupRepresentation groupRepresentation = GroupConfigBuilder.create().name(groupName1).setAttributes(attributes1).build();
-        GroupRepresentation groupRepresentation2 = GroupConfigBuilder.create().name(groupName2).setAttributes(attributes2).build();
+        GroupRepresentation groupRepresentation = GroupBuilder.create().name(groupName1).setAttributes(attributes1).build();
+        GroupRepresentation groupRepresentation2 = GroupBuilder.create().name(groupName2).setAttributes(attributes2).build();
 
         String userId = createUser(userRepresentation);
 
@@ -94,8 +95,9 @@ public class UserGroupTest extends AbstractUserTest {
     }
 
     @Test
+    @DatabaseTest
     public void groupMembershipPaginated() {
-        String userId = createUser(UserConfigBuilder.create().username("user-a").build());
+        String userId = createUser(UserBuilder.create().username("user-a").build());
 
         for (int i = 1; i <= 10; i++) {
             GroupRepresentation group = new GroupRepresentation();
@@ -111,8 +113,9 @@ public class UserGroupTest extends AbstractUserTest {
     }
 
     @Test
+    @DatabaseTest
     public void groupMembershipSearch() {
-        String userId = createUser(UserConfigBuilder.create().username("user-b").build());
+        String userId = createUser(UserBuilder.create().username("user-b").build());
 
         for (int i = 1; i <= 10; i++) {
             GroupRepresentation group = new GroupRepresentation();
@@ -144,13 +147,14 @@ public class UserGroupTest extends AbstractUserTest {
     }
 
     @Test
+    @DatabaseTest
     public void createUserWithGroups() {
         String username = "user-with-groups";
         String groupToBeAdded = "test-group";
 
-        createGroup(GroupConfigBuilder.create().name(groupToBeAdded).build());
+        createGroup(GroupBuilder.create().name(groupToBeAdded).build());
 
-        UserRepresentation build = UserConfigBuilder.create()
+        UserRepresentation build = UserBuilder.create()
                 .username(username)
                 .groups(groupToBeAdded)
                 .build();
@@ -173,10 +177,10 @@ public class UserGroupTest extends AbstractUserTest {
         String parentGroupName = "parent-group";
         String subGroupName = "sub-group";
 
-        UserRepresentation userRepresentation = UserConfigBuilder.create().username(username).build();
+        UserRepresentation userRepresentation = UserBuilder.create().username(username).build();
 
-        GroupRepresentation subGroupRep = GroupConfigBuilder.create().name(subGroupName).build();
-        GroupRepresentation parentGroupRep = GroupConfigBuilder.create().name(parentGroupName).subGroups(subGroupRep).build();
+        GroupRepresentation subGroupRep = GroupBuilder.create().name(subGroupName).build();
+        GroupRepresentation parentGroupRep = GroupBuilder.create().name(parentGroupName).subGroups(subGroupRep).build();
 
         String userId = createUser(userRepresentation);
 
@@ -209,9 +213,9 @@ public class UserGroupTest extends AbstractUserTest {
         String parentGroupName = "parent-group";
         String subGroupName = "sub-group";
 
-        UserRepresentation userRepresentation = UserConfigBuilder.create().username(username).build();
-        GroupRepresentation subGroupRep = GroupConfigBuilder.create().name(subGroupName).build();
-        GroupRepresentation parentGroupRep = GroupConfigBuilder.create().name(parentGroupName).subGroups(subGroupRep).build();
+        UserRepresentation userRepresentation = UserBuilder.create().username(username).build();
+        GroupRepresentation subGroupRep = GroupBuilder.create().name(subGroupName).build();
+        GroupRepresentation parentGroupRep = GroupBuilder.create().name(parentGroupName).subGroups(subGroupRep).build();
 
         String userId = createUser(userRepresentation);
         String subGroupId = createGroup(subGroupRep).getId();

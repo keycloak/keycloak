@@ -1,5 +1,5 @@
-[[_fine_grained_permissions]]
 
+[[_fine_grained_permissions]]
 === Delegating realm administration using permissions
 
 You can delegate realm management to other administrators, the realm administrators, using the fine-grained admin permissions
@@ -52,6 +52,7 @@ This feature provides the necessary mechanisms to enforce access controls when m
 * Groups
 * Clients
 * Roles
+* Organizations
 
 You can manage permissions for all resources of a given resource type, such as all users in a realm, or
 for a specific realm resource, such as a specific user or set of users in the realm.
@@ -86,7 +87,7 @@ set of scopes:
 
 | *view*                    | Defines if a realm administrator can view users. This scope should be set whenever you want to make users available from queries. | `view-members`
 | *manage*                  | Defines if a realm administrator can manage users.                                           | `manage-members`
-| *manage-group-membership* | Defines if a realm administrator can assign or unassign users to/from groups.                | None
+| *manage-group-membership* | Defines if a realm administrator can assign or unassign users to/from groups.                | `manage-membership-of-members`
 | *map-roles*               | Defines if a realm administrator can assign or unassign roles to/from users.                 | None
 | *impersonate*             | Defines if a realm administrator can impersonate other users.                                | `impersonate-members`
 | *reset-password*          | Defines if a realm administrator can reset user passwords. If no permission with `reset-password` is found, it falls back to check `manage` scope. | None
@@ -96,6 +97,11 @@ set of scopes:
 The user resource type has a strong relationship with some of the permissions you can set to groups. Most of the time,
 users are members of groups and granting access to `view-members` or `manage-members` of a group should also allow
 a realm administrator to `view` and `manage` members of that group.
+
+To assign or unassign a specific user to or from a group, both sides of the relationship are required: `manage-group-membership`
+on the user and `manage-membership` on the target group.
+The `manage-membership-of-members` scope can be used to grant or deny `manage-group-membership` based on the groups that
+the target user currently belongs to.
 
 [NOTE]
 ====
@@ -125,6 +131,7 @@ set of management operations:
                               This operation applies to any child group in the group hierarchy.
                               This can be prevented by explicitly denying permission for specific subgroups.
 | *manage-membership*       | Defines if a realm administrator can add or remove members from groups.
+| *manage-membership-of-members* | Defines if a realm administrator can grant or deny `manage-group-membership` for members of a group.
 |===
 
 ===== Clients Resource Type
@@ -166,6 +173,22 @@ have user role mapping permissions on the user.
 
 If there is a client resource type permission for the *map-roles*, *map-roles-composite*, or *map-roles-client-scope* scopes,
 it will take precedence over any role resource type permission if the role is a client role.
+
+===== Organizations Resource Type
+
+The *Organizations* realm resource type represents the organizations in a realm. You can manage permissions for organizations based on the following
+set of management operations:
+
+[cols="30%,70%"]
+|===
+| *Operation*               | *Description*
+
+| *view*                    | Defines if a realm administrator can view organizations. This scope should be set whenever you want
+                              to make organizations available from queries.
+| *manage*                  | Defines if a realm administrator can manage organizations, including updating and deleting them.
+|===
+
+Creating new organizations requires `manage` permission on all organizations (the resource type level), not just on a specific organization.
 
 ==== Enabling admin permissions to a realm
 
@@ -346,6 +369,7 @@ need to administer:
 - *query-users* – Required to query realm users.
 - *query-groups* – Required to query realm groups.
 - *query-clients* – Required to query realm clients.
+- *query-organizations* – Required to query realm organizations.
 
 By granting any of these roles to a realm user, they will be able to access the administration console, but only for the
 areas that correspond to roles granted. For instance, if you assign the `query-users` role, the realm administrator
@@ -372,12 +396,16 @@ if a respective admin role is assigned to a realm administrator, permission eval
                              It does not grant the ability to *view* groups.
 | *query-clients*          | A realm administrator can see the *Clients* section in administration console and can search for clients in the realm.
                              It does not grant the ability to *view* clients.
+| *query-organizations*    | A realm administrator can see the *Organizations* section in administration console and can search for organizations in the realm.
+                             It does not grant the ability to *view* organizations.
 | *view-users*             | A realm administrator can *view* all users and groups in the realm.
 | *manage-users*           | A realm administrator can *view*, *map-roles*, *manage-group-membership* and *manage* all users in the realm,
-                             as well as *view*, *manage-membership* and *manage* groups in the realm.
+                             as well as *view*, *manage-membership*, *manage-membership-of-members* and *manage* groups in the realm.
 | *impersonation*          | A realm administrator can *impersonate* all users in the realm.
 | *view-clients*           | A realm administrator can *view* all clients in the realm.
 | *manage-clients*         | A realm administrator can *view* and *manage* all clients and client scopes in the realm.
+| *view-organizations*     | A realm administrator can *view* all organizations in the realm.
+| *manage-organizations*   | A realm administrator can *view* and *manage* all organizations in the realm.
 |===
 
 When this feature is enabled in a realm, only server and realm administrators with the corresponding admin roles can grant these roles

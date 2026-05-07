@@ -100,6 +100,7 @@ public class RealmRepresentation {
     protected Long quickLoginCheckMilliSeconds;
     protected Integer maxDeltaTimeSeconds;
     protected Integer failureFactor;
+    protected Integer maxSecondaryAuthFailures;
     //--- end brute force settings
 
     @Deprecated
@@ -158,6 +159,7 @@ public class RealmRepresentation {
     protected List<String> webAuthnPolicyPasswordlessAcceptableAaguids;
     protected List<String> webAuthnPolicyPasswordlessExtraOrigins;
     protected Boolean webAuthnPolicyPasswordlessPasskeysEnabled;
+    protected String webAuthnPolicyPasswordlessMediation;
 
     // Client Policies/Profiles
 
@@ -239,6 +241,8 @@ public class RealmRepresentation {
     protected List<OAuthClientRepresentation> oauthClients;
     @Deprecated
     protected List<ClientTemplateRepresentation> clientTemplates;
+
+    private Boolean scimApiEnabled;
 
     public String getId() {
         return id;
@@ -851,6 +855,14 @@ public class RealmRepresentation {
         this.failureFactor = failureFactor;
     }
 
+    public Integer getMaxSecondaryAuthFailures() {
+        return maxSecondaryAuthFailures;
+    }
+
+    public void setMaxSecondaryAuthFailures(Integer maxSecondaryAuthFailures) {
+        this.maxSecondaryAuthFailures = maxSecondaryAuthFailures;
+    }
+
     public Boolean isEventsEnabled() {
         return eventsEnabled;
     }
@@ -1275,6 +1287,14 @@ public class RealmRepresentation {
         this.webAuthnPolicyPasswordlessPasskeysEnabled = webAuthnPolicyPasswordlessPasskeysEnabled;
     }
 
+    public String getWebAuthnPolicyPasswordlessMediation() {
+        return webAuthnPolicyPasswordlessMediation;
+    }
+
+    public void setWebAuthnPolicyPasswordlessMediation(String webAuthnPolicyPasswordlessMediation) {
+        this.webAuthnPolicyPasswordlessMediation = webAuthnPolicyPasswordlessMediation;
+    }
+
     // Client Policies/Profiles
 
     @JsonIgnore
@@ -1499,6 +1519,14 @@ public class RealmRepresentation {
             organizations = new ArrayList<>();
         }
         organizations.add(org);
+    }
+
+    public void setScimApiEnabled(Boolean scimApiEnabled) {
+        this.scimApiEnabled = scimApiEnabled;
+    }
+
+    public Boolean isScimApiEnabled() {
+        return scimApiEnabled;
     }
 
     public enum BruteForceStrategy {

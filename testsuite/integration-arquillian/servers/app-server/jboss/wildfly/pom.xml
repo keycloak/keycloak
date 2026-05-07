@@ -31,7 +31,7 @@
     <name>App Server - Wildfly</name>
     
     <properties>
-        <wildfly.server.version>29.0.1.Final</wildfly.server.version>
+        <wildfly.server.version>${wildfly.version}</wildfly.server.version>
         <app.server.jboss>wildfly</app.server.jboss>
         
         <app.server.jboss.groupId>org.wildfly</app.server.jboss.groupId>

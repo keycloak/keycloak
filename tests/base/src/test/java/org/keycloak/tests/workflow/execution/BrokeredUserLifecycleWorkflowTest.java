@@ -23,7 +23,6 @@ import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.workflows.StepExecutionStatus;
 import org.keycloak.representations.workflows.WorkflowRepresentation;
-import org.keycloak.representations.workflows.WorkflowStateRepresentation;
 import org.keycloak.representations.workflows.WorkflowStepRepresentation;
 import org.keycloak.testframework.annotations.InjectClient;
 import org.keycloak.testframework.annotations.InjectRealm;
@@ -34,15 +33,15 @@ import org.keycloak.testframework.mail.MailServer;
 import org.keycloak.testframework.mail.annotations.InjectMailServer;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
+import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.ClientConfig;
-import org.keycloak.testframework.realm.ClientConfigBuilder;
 import org.keycloak.testframework.realm.ManagedClient;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.ManagedUser;
+import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
-import org.keycloak.testframework.realm.RealmConfigBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.realm.UserConfig;
-import org.keycloak.testframework.realm.UserConfigBuilder;
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testframework.ui.annotations.InjectPage;
@@ -54,7 +53,6 @@ import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.tests.workflow.AbstractWorkflowTest;
 import org.keycloak.tests.workflow.config.WorkflowsBlockingServerConfig;
 
-import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -62,12 +60,9 @@ import static org.keycloak.tests.workflow.util.EmailTestUtils.findEmailByRecipie
 import static org.keycloak.tests.workflow.util.EmailTestUtils.verifyEmailContent;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.allOf;
-import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -219,7 +214,7 @@ public class BrokeredUserLifecycleWorkflowTest extends AbstractWorkflowTest {
     }
 
     @Test
-    public void testInvalidateWorkflowOnIdentityProviderRemoval() {
+    public void testWorkflowFailsToActivateOnIdentityProviderRemoval() {
         String workflowId;
         try (Response response = consumerRealm.admin().workflows().create(WorkflowRepresentation.withName("myworkflow")
                 .onEvent(UserCreatedWorkflowEventFactory.ID, UserAuthenticatedWorkflowEventFactory.ID)
@@ -241,20 +236,15 @@ public class BrokeredUserLifecycleWorkflowTest extends AbstractWorkflowTest {
         // remove IDP
         consumerRealm.admin().identityProviders().get(IDP_OIDC_ALIAS).remove();
 
-        // create new user - it will trigger an activation event and therefore should disable the workflow
-        consumerRealm.admin().users().create(UserConfigBuilder.create().username("test").build()).close();
+        // create new user - it will trigger an activation event but the condition is referencing the removed IDP
+        String userId = null;
+        try(Response response = consumerRealm.admin().users().create(UserBuilder.create().username("test").build())) {
+            userId = ApiUtil.getCreatedId(response);
+        }
 
-        Awaitility.await()
-                .timeout(Duration.ofSeconds(30))
-                .pollInterval(Duration.ofSeconds(1))
-                .untilAsserted(() -> {
-                    var rep = consumerRealm.admin().workflows().workflow(workflowId).toRepresentation();
-                    assertThat(rep.getEnabled(), allOf(notNullValue(), is(false)));
-                    WorkflowStateRepresentation status = rep.getState();
-                    assertThat(status, notNullValue());
-                    assertThat(status.getErrors(), hasSize(1));
-                    assertThat(status.getErrors().get(0), containsString("Identity provider %s does not exist.".formatted(IDP_OIDC_ALIAS)));
-                });
+        // check that there are no scheduled workflows for the user even though the right event was processed
+        List<WorkflowRepresentation> scheduledWorkflows = consumerRealm.admin().workflows().getScheduledWorkflows(userId);
+        assertThat(scheduledWorkflows, hasSize(0));
     }
 
     /**
@@ -371,7 +361,7 @@ public class BrokeredUserLifecycleWorkflowTest extends AbstractWorkflowTest {
     private static class ProviderRealmUserConf implements UserConfig {
 
         @Override
-        public UserConfigBuilder configure(UserConfigBuilder builder) {
+        public UserBuilder configure(UserBuilder builder) {
             builder.username("alice");
             builder.password("password");
             builder.email("alice@wonderland.org");
@@ -384,7 +374,7 @@ public class BrokeredUserLifecycleWorkflowTest extends AbstractWorkflowTest {
     private static class ConsumerRealmUserConf implements UserConfig {
 
         @Override
-        public UserConfigBuilder configure(UserConfigBuilder builder) {
+        public UserBuilder configure(UserBuilder builder) {
             builder.username("bob");
             builder.password("password");
             builder.email("bob@wonderland.org");
@@ -397,7 +387,7 @@ public class BrokeredUserLifecycleWorkflowTest extends AbstractWorkflowTest {
     private static class ProviderRealmClientConf implements ClientConfig {
 
         @Override
-        public ClientConfigBuilder configure(ClientConfigBuilder builder) {
+        public ClientBuilder configure(ClientBuilder builder) {
             builder.clientId(CLIENT_ID);
             builder.name(CLIENT_ID);
             builder.secret(CLIENT_SECRET);
@@ -412,8 +402,8 @@ public class BrokeredUserLifecycleWorkflowTest extends AbstractWorkflowTest {
     private static class ConsumerRealmConf implements RealmConfig {
 
         @Override
-        public RealmConfigBuilder configure(RealmConfigBuilder builder) {
-            builder.identityProvider(setUpIdentityProvider());
+        public RealmBuilder configure(RealmBuilder builder) {
+            builder.identityProviders(setUpIdentityProvider());
             return builder;
         }
     }

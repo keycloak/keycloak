@@ -16,34 +16,14 @@
  */
 package org.keycloak.client.admin.cli.commands;
 
-import org.keycloak.client.admin.cli.KcAdmMain;
-import org.keycloak.client.cli.common.BaseAuthOptionsCmd;
-import org.keycloak.client.cli.config.ConfigData;
-
 import picocli.CommandLine.Option;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
  */
-public abstract class AbstractAuthOptionsCmd extends BaseAuthOptionsCmd implements GlobalOptionsCmdHelper {
+public abstract class AbstractAuthOptionsCmd extends AbstractTargetAuthOptionsCmd {
 
     @Option(names = {"-a", "--admin-root"}, description = "URL of Admin REST endpoint root if not default - e.g. http://localhost:8080/admin")
     String adminRestRoot;
-
-    @Option(names = {"-r", "--target-realm"}, description = "Realm to target - when it's different than the realm we authenticate against")
-    String targetRealm;
-
-    @Option(names = "--token", description = "Token to use for invocations.  With this option set, every other authentication option is ignored")
-    public void setToken(String token) {
-        this.externalToken = token;
-    }
-
-    public AbstractAuthOptionsCmd() {
-        super(KcAdmMain.COMMAND_STATE);
-    }
-
-    protected String getTargetRealm(ConfigData config) {
-        return targetRealm != null ? targetRealm : config.getRealm();
-    }
 
 }

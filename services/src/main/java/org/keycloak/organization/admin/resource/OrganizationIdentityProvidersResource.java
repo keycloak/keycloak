@@ -21,11 +21,13 @@ import java.util.stream.Stream;
 
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
@@ -38,16 +40,19 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.StripSecretsUtils;
 import org.keycloak.organization.OrganizationProvider;
+import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.AdminEventBuilder;
+import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
 
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
@@ -61,12 +66,16 @@ public class OrganizationIdentityProvidersResource {
     private final KeycloakSession session;
     private final OrganizationProvider organizationProvider;
     private final OrganizationModel organization;
+    private final AdminEventBuilder adminEvent;
+    private final AdminPermissionEvaluator auth;
 
-    public OrganizationIdentityProvidersResource(KeycloakSession session, OrganizationModel organization, AdminEventBuilder adminEvent) {
+    public OrganizationIdentityProvidersResource(KeycloakSession session, OrganizationModel organization, AdminEventBuilder adminEvent, AdminPermissionEvaluator auth) {
         this.realm = session == null ? null : session.getContext().getRealm();
         this.session = session;
         this.organizationProvider = session == null ? null : session.getProvider(OrganizationProvider.class);
         this.organization = organization;
+        this.adminEvent = adminEvent;
+        this.auth = auth;
     }
 
     @POST
@@ -84,8 +93,11 @@ public class OrganizationIdentityProvidersResource {
         @APIResponse(responseCode = "409", description = "Conflict")
     })
     public Response addIdentityProvider(String id) {
+        auth.orgs().requireManage(organization);
+        // todo: do we want to enforce that admins has to have manage-identity-providers admin role to be able to assign IDP to the org?
+//        auth.realm().requireManageIdentityProviders();
         id = id.trim().replaceAll("^\"|\"$", ""); // fixes https://github.com/keycloak/keycloak/issues/34401
-        
+
         try {
             IdentityProviderModel identityProvider = session.identityProviders().getByIdOrAlias(id);
 
@@ -109,9 +121,13 @@ public class OrganizationIdentityProvidersResource {
     @Tag(name = KeycloakOpenAPI.Admin.Tags.ORGANIZATIONS)
     @Operation(summary = "Returns all identity providers associated with the organization")
     @APIResponses(value = {
-        @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = IdentityProviderRepresentation.class, type = SchemaType.ARRAY)))
+        @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = IdentityProviderRepresentation.class, type = SchemaType.ARRAY))),
+        @APIResponse(responseCode = "403", description = "Forbidden")
     })
     public Stream<IdentityProviderRepresentation> getIdentityProviders() {
+        auth.orgs().requireView(organization);
+        // todo: do we want to enforce that admins has to have view-identity-providers admin role to be able to get the IDPs linked to the org?
+//        auth.realm().requireViewIdentityProviders();
         return organization.getIdentityProviders().map(this::toRepresentation);
     }
 
@@ -125,9 +141,13 @@ public class OrganizationIdentityProvidersResource {
                 "organization, it is returned. Otherwise, an error response with status NOT_FOUND is returned")
     @APIResponses(value = {
         @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = IdentityProviderRepresentation.class))),
+        @APIResponse(responseCode = "403", description = "Forbidden"),
         @APIResponse(responseCode = "404", description = "Not Found")
     })
     public IdentityProviderRepresentation getIdentityProvider(@PathParam("alias") String alias) {
+        auth.orgs().requireView(organization);
+        // todo: do we want to enforce that admins has to have view-identity-providers admin role to be able to get the IDP linked to the org?
+//        auth.realm().requireViewIdentityProviders();
         IdentityProviderModel broker = session.identityProviders().getByAlias(alias);
 
         if (!isOrganizationBroker(broker)) {
@@ -135,6 +155,52 @@ public class OrganizationIdentityProvidersResource {
         }
 
         return toRepresentation(broker);
+    }
+
+    /**
+     * Returns organization groups for the identity provider with the specified alias.
+     * It allows filtering and displaying only the organization groups that are valid for the given identity provider.
+     *
+     * Only returns groups if the identity provider is associated with the organization and the organization
+     * is enabled. Otherwise, returns an error or empty stream.
+     *
+     * @param alias the identity provider alias
+     * @param search a string to search for in group names
+     * @param searchQuery a query to search for group attributes, in the format 'key1:value1 key2:value2'
+     * @param exact if true, perform exact match on the search parameter
+     * @param first the position of the first result (pagination offset)
+     * @param max the maximum number of results to return
+     * @param briefRepresentation if true, return brief group representation; otherwise return full representation
+     * @return a stream of organization groups associated with the organization
+     */
+    @Path("{alias}/groups")
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @NoCache
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.ORGANIZATIONS)
+    @Operation(summary = "Returns organization groups for the identity provider",
+        description = "Returns organization groups that can be used in identity provider mappers. " +
+                "Only returns groups if the identity provider is associated with the organization.")
+    @APIResponses(value = {
+        @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = GroupRepresentation.class, type = SchemaType.ARRAY))),
+        @APIResponse(responseCode = "403", description = "Forbidden"),
+        @APIResponse(responseCode = "404", description = "Not Found")
+    })
+    public Stream<GroupRepresentation> getGroups(
+            @Parameter(description = "The alias of the identity provider") @PathParam("alias") String alias,
+            @Parameter(description = "A string to search for in group names") @QueryParam("search") String search,
+            @Parameter(description = "A query to search for group attributes, in the format 'key1:value1 key2:value2'") @QueryParam("q") String searchQuery,
+            @Parameter(description = "If true, perform exact match on the search parameter") @QueryParam("exact") @DefaultValue("false") Boolean exact,
+            @Parameter(description = "The position of the first result (pagination offset)") @QueryParam("first") Integer first,
+            @Parameter(description = "The maximum number of results to return") @QueryParam("max") Integer max,
+            @Parameter(description = "If true, return brief representation; otherwise return full representation") @QueryParam("briefRepresentation") @DefaultValue("true") boolean briefRepresentation,
+            @Parameter(description = "If true, include subgroups count in the response") @QueryParam("subGroupsCount") @DefaultValue("false") boolean subGroupsCount) {
+
+        // Validate that the identity provider is associated with the organization and the caller can view the org
+        getIdentityProvider(alias);
+
+        OrganizationGroupsResource groupsResource = new OrganizationGroupsResource(session, organization, adminEvent, auth);
+        return groupsResource.getGroups(search, searchQuery, exact, first, max, briefRepresentation, false, subGroupsCount);
     }
 
     @Path("{alias}")
@@ -147,9 +213,13 @@ public class OrganizationIdentityProvidersResource {
     @APIResponses(value = {
         @APIResponse(responseCode = "204", description = "No Content"),
         @APIResponse(responseCode = "400", description = "Bad Request"),
+        @APIResponse(responseCode = "403", description = "Forbidden"),
         @APIResponse(responseCode = "404", description = "Not Found")
     })
     public Response delete(@PathParam("alias") String alias) {
+        auth.orgs().requireManage(organization);
+        // todo: do we want to enforce that admins has to have manage-identity-providers admin role to be able to unassign IDP to the org?
+//        auth.realm().requireManageIdentityProviders();
         IdentityProviderModel broker = session.identityProviders().getByAlias(alias);
 
         if (!isOrganizationBroker(broker)) {

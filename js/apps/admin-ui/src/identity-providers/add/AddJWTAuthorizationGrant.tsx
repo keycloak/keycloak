@@ -55,7 +55,7 @@ export default function AddJWTAuthorizationGrantConnect() {
           tab: "settings",
         }),
       );
-    } catch (error: any) {
+    } catch (error) {
       addError("createIdentityProviderError", error);
     }
   };

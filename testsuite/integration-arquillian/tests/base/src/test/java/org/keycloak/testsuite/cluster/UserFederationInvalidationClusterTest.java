@@ -14,7 +14,7 @@ import org.keycloak.testsuite.federation.DummyUserFederationProviderFactory;
 import org.apache.commons.lang.RandomStringUtils;
 import org.junit.Before;
 
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 public class UserFederationInvalidationClusterTest extends AbstractInvalidationClusterTestWithTestRealm<ComponentRepresentation, ComponentResource> {
 

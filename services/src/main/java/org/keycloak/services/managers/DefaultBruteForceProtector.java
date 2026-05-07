@@ -21,6 +21,8 @@ import java.security.cert.X509Certificate;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 
 import jakarta.ws.rs.core.HttpHeaders;
@@ -43,6 +45,9 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserLoginFailureModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.credential.OTPCredentialModel;
+import org.keycloak.models.credential.PasswordCredentialModel;
+import org.keycloak.models.credential.RecoveryAuthnCodesCredentialModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.storage.ReadOnlyException;
@@ -60,6 +65,16 @@ import static org.keycloak.models.UserModel.DISABLED_REASON;
 public class DefaultBruteForceProtector implements BruteForceProtector {
     private static final Logger logger = Logger.getLogger(DefaultBruteForceProtector.class);
 
+    public static final List<String> ALLOWED_AUTHENTICATION_CATEGORIES = new ArrayList<>(
+            List.of(
+                PasswordCredentialModel.TYPE,
+                OTPCredentialModel.TYPE,
+                RecoveryAuthnCodesCredentialModel.TYPE
+            )
+    );
+
+    public static final String OTP_CATEGORY = OTPCredentialModel.TYPE;
+
     protected int maxDeltaTimeSeconds = 60 * 60 * 12; // 12 hours
     protected KeycloakSessionFactory factory;
 
@@ -67,8 +82,9 @@ public class DefaultBruteForceProtector implements BruteForceProtector {
         this.factory = factory;
     }
 
-    protected void failure(KeycloakSession session, RealmModel realm, String userId, String remoteAddr, long failureTime) {
-        logger.debug("failure");
+    protected void failure(KeycloakSession session, RealmModel realm, String userId, String remoteAddr, long failureTime, String category) {
+        logger.debugf("failure (category=%s)", category);
+        if (category != null && !ALLOWED_AUTHENTICATION_CATEGORIES.contains(category)) return;
 
         UserLoginFailureModel userLoginFailure = getUserFailureModel(session, realm, userId);
         if (userLoginFailure == null) {
@@ -89,7 +105,7 @@ public class DefaultBruteForceProtector implements BruteForceProtector {
             }
         }
         userLoginFailure.incrementFailures();
-        logger.debugv("new num failures: {0}", userLoginFailure.getNumFailures());
+        logger.debugf("new num failures: %s", userLoginFailure.getNumFailures());
 
         long waitSeconds = 0L;
         if (!(realm.isPermanentLockout() && realm.getMaxTemporaryLockouts() == 0)) {
@@ -128,27 +144,43 @@ public class DefaultBruteForceProtector implements BruteForceProtector {
             }
         }
 
+        if (OTP_CATEGORY.equals(category)) {
+            int maxSecondaryAuthFailures = realm.getMaxSecondaryAuthFailures();
+            boolean lockoutEnabled = maxSecondaryAuthFailures > 0;
+            userLoginFailure.incrementSecondaryAuthFailures();
+            logger.debugv("new num secondaryAuthFailures: {0}", Integer.valueOf(userLoginFailure.getNumSecondaryAuthFailures()));
+            if (lockoutEnabled && userLoginFailure.getNumSecondaryAuthFailures() > maxSecondaryAuthFailures) {
+                // permanently lock user account anyway
+                permanentUserLockOut(session, realm, userLoginFailure);
+            }
+        }
+
         if(!realm.isPermanentLockout()) {
             return;
         }
 
         if(userLoginFailure.getNumTemporaryLockouts() > realm.getMaxTemporaryLockouts() ||
                 (realm.getMaxTemporaryLockouts() == 0 && userLoginFailure.getNumFailures() >= realm.getFailureFactor())) {
-            UserModel user = session.users().getUserById(realm, userId);
-            if (user == null) {
-                return;
-            }
-            logger.debugv("user {0} locked permanently due to too many login attempts", user.getUsername());
-            user.setEnabled(false);
-            try {
-                user.setSingleAttribute(DISABLED_REASON, DISABLED_BY_PERMANENT_LOCKOUT);
-            }catch (ReadOnlyException e){
-                logger.debug("Cannot set disabled reason on read only user");
-            }
-            // Send event
-            sendEvent(session, realm, userLoginFailure, EventType.USER_DISABLED_BY_PERMANENT_LOCKOUT);
+            permanentUserLockOut(session, realm, userLoginFailure);
         }
     }
+
+    private void permanentUserLockOut(KeycloakSession session, RealmModel realm, UserLoginFailureModel userLoginFailure) {
+        UserModel user = session.users().getUserById(realm, userLoginFailure.getUserId());
+        if (user == null) {
+            return;
+        }
+        logger.debugv("user {0} locked permanently due to too many login attempts", user.getUsername());
+        user.setEnabled(false);
+        try {
+            user.setSingleAttribute(DISABLED_REASON, DISABLED_BY_PERMANENT_LOCKOUT);
+        }catch (ReadOnlyException e){
+            logger.debug("Cannot set disabled reason on read only user");
+        }
+        // Send event
+        sendEvent(session, realm, userLoginFailure, EventType.USER_DISABLED_BY_PERMANENT_LOCKOUT);
+    }
+
 
     protected UserLoginFailureModel getUserFailureModel(KeycloakSession session, RealmModel realm, String userId) {
         if (realm == null) return null;
@@ -177,19 +209,29 @@ public class DefaultBruteForceProtector implements BruteForceProtector {
 
     public void shutdown() {}
 
-    protected void success(KeycloakSession session, RealmModel realm, String userId) {
+    protected void success(KeycloakSession session, RealmModel realm, String userId, String category) {
         UserLoginFailureModel userLoginFailure = getUserFailureModel(session, realm, userId);
         if(userLoginFailure == null) return;
         if (logger.isDebugEnabled()) {
             UserModel model = session.users().getUserById(realm, userId);
-            logger.debugv("user {0} successfully logged in, clearing all failures", model.getUsername());
+            logger.debugv("user {0} successfully logged in:", model.getUsername());
         }
-        userLoginFailure.clearFailures();
+        if (OTP_CATEGORY.equals(category)) {
+            logger.debug("clearing primary and secondary (OTP) failures");
+            userLoginFailure.clearPrimaryAndSecondaryAuthFailures();
+        } else {
+            logger.debug("clearing primary failures");
+            userLoginFailure.clearFailures();
+        }
     }
 
     @Override
-    public void failedLogin(RealmModel realm, UserModel user, ClientConnection clientConnection, UriInfo uriInfo) {
-        processLogin(realm, user, clientConnection, uriInfo, false);
+    public void failedLogin(RealmModel realm, UserModel user, ClientConnection clientConnection, UriInfo uriInfo, String authenticationCategory) {
+        if (authenticationCategory != null && !ALLOWED_AUTHENTICATION_CATEGORIES.contains(authenticationCategory)) {
+            logger.debugf("'%s' authentication category not allowed for brute force", authenticationCategory);
+            return;
+        }
+        processLogin(realm, user, clientConnection, uriInfo, false, authenticationCategory);
         // wait a minimum of seconds for type to process so that a hacker
         // cannot flood with failed logins and overwhelm the queue and not have notBefore updated to block next requests
         // todo failure HTTP responses should be queued via async HTTP
@@ -198,12 +240,16 @@ public class DefaultBruteForceProtector implements BruteForceProtector {
     }
 
     @Override
-    public void successfulLogin(RealmModel realm, UserModel user, ClientConnection clientConnection, UriInfo uriInfo) {
-        processLogin(realm, user, clientConnection, uriInfo, true);
+    public void successfulLogin(RealmModel realm, UserModel user, ClientConnection clientConnection, UriInfo uriInfo, String authenticationCategory) {
+        if (authenticationCategory != null && !ALLOWED_AUTHENTICATION_CATEGORIES.contains(authenticationCategory)) {
+            logger.debugf("'%s' authentication category not allowed for brute force", authenticationCategory);
+            return;
+        }
+        processLogin(realm, user, clientConnection, uriInfo, true, authenticationCategory);
         logger.trace("sent success event");
     }
 
-    protected void processLogin(RealmModel realm, UserModel user, ClientConnection clientConnection, UriInfo uriInfo, boolean success) {
+    protected void processLogin(RealmModel realm, UserModel user, ClientConnection clientConnection, UriInfo uriInfo, boolean success, String category) {
         ExecutorService executor = KeycloakModelUtils.runJobInTransactionWithResult(factory, session -> {
             ExecutorsProvider provider = session.getProvider(ExecutorsProvider.class);
             return provider.getExecutor("bruteforce");
@@ -215,9 +261,9 @@ public class DefaultBruteForceProtector implements BruteForceProtector {
             s.getContext().setHttpRequest(bruteForceHttpRequest);
             s.getContext().setHttpResponse(bruteForceHttpResponse);
             if (success) {
-                success(s, realm, user.getId());
+                success(s, realm, user.getId(), category);
             } else {
-                failure(s, realm, user.getId(), clientConnection.getRemoteHost(), Time.currentTimeMillis());
+                failure(s, realm, user.getId(), clientConnection.getRemoteHost(), Time.currentTimeMillis(), category);
             }
         }));
     }

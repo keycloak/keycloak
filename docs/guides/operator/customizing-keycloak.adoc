@@ -32,7 +32,7 @@ To provide a custom image, you define the `image` field in the Keycloak CR as sh
 
 [source,yaml]
 ----
-apiVersion: k8s.keycloak.org/v2alpha1
+apiVersion: k8s.keycloak.org/v2beta1
 kind: Keycloak
 metadata:
   name: example-kc
@@ -56,7 +56,7 @@ While it is considered a best practice to use a pre-augmented image, if you want
 
 [source,yaml]
 ----
-apiVersion: k8s.keycloak.org/v2alpha1
+apiVersion: k8s.keycloak.org/v2beta1
 kind: Keycloak
 metadata:
   name: example-kc

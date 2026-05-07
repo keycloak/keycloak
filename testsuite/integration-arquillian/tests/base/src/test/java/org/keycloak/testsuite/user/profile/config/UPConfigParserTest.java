@@ -32,14 +32,14 @@ import org.keycloak.representations.userprofile.config.UPAttributePermissions;
 import org.keycloak.representations.userprofile.config.UPAttributeRequired;
 import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.representations.userprofile.config.UPGroup;
+import org.keycloak.testframework.realm.ClientScopeBuilder;
+import org.keycloak.testframework.remote.providers.runonserver.RunOnServer;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
-import org.keycloak.testsuite.runonserver.RunOnServer;
-import org.keycloak.testsuite.util.ClientScopeBuilder;
 import org.keycloak.userprofile.config.UPConfigUtils;
 
 import com.fasterxml.jackson.databind.JsonMappingException;
-import org.junit.Assert;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 import static org.keycloak.userprofile.config.UPConfigUtils.readConfig;
 import static org.keycloak.userprofile.config.UPConfigUtils.validate;
@@ -65,18 +65,18 @@ public class UPConfigParserTest extends AbstractTestRealmKeycloakTest {
     @Test
     public void attributeNameIsValid() {
         // few invalid cases
-        Assert.assertFalse(UPConfigUtils.isValidAttributeName(""));
-        Assert.assertFalse(UPConfigUtils.isValidAttributeName(" "));
-        Assert.assertFalse(UPConfigUtils.isValidAttributeName("a b"));
-        Assert.assertFalse(UPConfigUtils.isValidAttributeName("a*b"));
-        Assert.assertFalse(UPConfigUtils.isValidAttributeName("a%b"));
-        Assert.assertFalse(UPConfigUtils.isValidAttributeName("a$b"));
+        Assertions.assertFalse(UPConfigUtils.isValidAttributeName(""));
+        Assertions.assertFalse(UPConfigUtils.isValidAttributeName(" "));
+        Assertions.assertFalse(UPConfigUtils.isValidAttributeName("a b"));
+        Assertions.assertFalse(UPConfigUtils.isValidAttributeName("a*b"));
+        Assertions.assertFalse(UPConfigUtils.isValidAttributeName("a%b"));
+        Assertions.assertFalse(UPConfigUtils.isValidAttributeName("a$b"));
 
         // few valid cases
-        Assert.assertTrue(UPConfigUtils.isValidAttributeName("a-b"));
-        Assert.assertTrue(UPConfigUtils.isValidAttributeName("a.b"));
-        Assert.assertTrue(UPConfigUtils.isValidAttributeName("a_b"));
-        Assert.assertTrue(UPConfigUtils.isValidAttributeName("a3B"));
+        Assertions.assertTrue(UPConfigUtils.isValidAttributeName("a-b"));
+        Assertions.assertTrue(UPConfigUtils.isValidAttributeName("a.b"));
+        Assertions.assertTrue(UPConfigUtils.isValidAttributeName("a_b"));
+        Assertions.assertTrue(UPConfigUtils.isValidAttributeName("a3B"));
     }
 
     @Test
@@ -84,70 +84,70 @@ public class UPConfigParserTest extends AbstractTestRealmKeycloakTest {
         UPConfig config = readConfig(getValidConfigFileIS());
 
         // only basic assertion to check config is loaded, more detailed tests follow
-        Assert.assertEquals(5, config.getAttributes().size());
+        Assertions.assertEquals(5, config.getAttributes().size());
     }
 
     @Test
     public void parseConfigurationFile_OK() throws IOException {
         UPConfig config = loadValidConfig();
 
-        Assert.assertNotNull(config);
+        Assertions.assertNotNull(config);
 
         // assert *** attributes ***
-        Assert.assertEquals(5, config.getAttributes().size());
+        Assertions.assertEquals(5, config.getAttributes().size());
         UPAttribute att = config.getAttributes().get(1);
-        Assert.assertNotNull(att);
-        Assert.assertEquals("email", att.getName());
+        Assertions.assertNotNull(att);
+        Assertions.assertEquals("email", att.getName());
         // validation
-        Assert.assertEquals(3, att.getValidations().size());
-        Assert.assertEquals(1, att.getValidations().get("length").size());
-        Assert.assertEquals(255, att.getValidations().get("length").get("max"));
+        Assertions.assertEquals(3, att.getValidations().size());
+        Assertions.assertEquals(1, att.getValidations().get("length").size());
+        Assertions.assertEquals(255, att.getValidations().get("length").get("max"));
         // annotations
-        Assert.assertEquals("userEmailFormFieldHint", att.getAnnotations().get("formHintKey"));
+        Assertions.assertEquals("userEmailFormFieldHint", att.getAnnotations().get("formHintKey"));
 
         att = config.getAttributes().get(4);
         // required
-        Assert.assertNotNull(att.getRequired());
-        Assert.assertFalse(att.getRequired().isAlways());
-        Assert.assertNotNull(att.getRequired().getScopes());
-        Assert.assertNotNull(att.getRequired().getRoles());
-        Assert.assertEquals(2, att.getRequired().getRoles().size());
+        Assertions.assertNotNull(att.getRequired());
+        Assertions.assertFalse(att.getRequired().isAlways());
+        Assertions.assertNotNull(att.getRequired().getScopes());
+        Assertions.assertNotNull(att.getRequired().getRoles());
+        Assertions.assertEquals(2, att.getRequired().getRoles().size());
         
         att = config.getAttributes().get(3);
-        Assert.assertTrue(att.getRequired().isAlways());
+        Assertions.assertTrue(att.getRequired().isAlways());
         
         // permissions
-        Assert.assertNotNull(att.getPermissions());
-        Assert.assertNotNull(att.getPermissions().getEdit());
-        Assert.assertEquals(1, att.getPermissions().getEdit().size());
-        Assert.assertTrue(att.getPermissions().getEdit().contains("admin"));
-        Assert.assertNotNull(att.getPermissions().getView());
-        Assert.assertEquals(2, att.getPermissions().getView().size());
-        Assert.assertTrue(att.getPermissions().getView().contains("admin"));
-        Assert.assertTrue(att.getPermissions().getView().contains("user"));
+        Assertions.assertNotNull(att.getPermissions());
+        Assertions.assertNotNull(att.getPermissions().getEdit());
+        Assertions.assertEquals(1, att.getPermissions().getEdit().size());
+        Assertions.assertTrue(att.getPermissions().getEdit().contains("admin"));
+        Assertions.assertNotNull(att.getPermissions().getView());
+        Assertions.assertEquals(2, att.getPermissions().getView().size());
+        Assertions.assertTrue(att.getPermissions().getView().contains("admin"));
+        Assertions.assertTrue(att.getPermissions().getView().contains("user"));
         
         //selector
         att = config.getAttributes().get(4);
-        Assert.assertNotNull(att.getSelector().getScopes());
-        Assert.assertEquals(3, att.getSelector().getScopes().size());
-        Assert.assertTrue(att.getSelector().getScopes().contains("phone-3-sel"));
+        Assertions.assertNotNull(att.getSelector().getScopes());
+        Assertions.assertEquals(3, att.getSelector().getScopes().size());
+        Assertions.assertTrue(att.getSelector().getScopes().contains("phone-3-sel"));
         
         //displayName
         att = config.getAttributes().get(4);
-        Assert.assertEquals("${profile.phone}", att.getDisplayName());
+        Assertions.assertEquals("${profile.phone}", att.getDisplayName());
 
         // group
-        Assert.assertEquals("contact", att.getGroup());
+        Assertions.assertEquals("contact", att.getGroup());
 
         // assert *** groups ***
-        Assert.assertEquals(1, config.getGroups().size());
+        Assertions.assertEquals(1, config.getGroups().size());
 
         UPGroup group = config.getGroups().get(0);
-        Assert.assertEquals("contact", group.getName());
-        Assert.assertEquals("Contact information", group.getDisplayHeader());
-        Assert.assertEquals("Required to contact you in case of emergency", group.getDisplayDescription());
-        Assert.assertEquals(1, group.getAnnotations().size());
-        Assert.assertEquals("value1", group.getAnnotations().get("contactanno1"));
+        Assertions.assertEquals("contact", group.getName());
+        Assertions.assertEquals("Contact information", group.getDisplayHeader());
+        Assertions.assertEquals("Required to contact you in case of emergency", group.getDisplayDescription());
+        Assertions.assertEquals(1, group.getAnnotations().size());
+        Assertions.assertEquals("value1", group.getAnnotations().get("contactanno1"));
     }
 
     /**
@@ -186,7 +186,7 @@ public class UPConfigParserTest extends AbstractTestRealmKeycloakTest {
 
     public static void validateConfiguration_OK(KeycloakSession session) throws IOException {
         List<String> errors = validate(session, loadValidConfig());
-        Assert.assertTrue(errors.isEmpty());
+        Assertions.assertTrue(errors.isEmpty());
     }
 
     @Test
@@ -202,21 +202,21 @@ public class UPConfigParserTest extends AbstractTestRealmKeycloakTest {
 
         attConfig.setName(null);
         List<String> errors = validate(session, config);
-        Assert.assertEquals(1, errors.size());
+        Assertions.assertEquals(1, errors.size());
 
         attConfig.setName(" ");
         errors = validate(session, config);
-        Assert.assertEquals(1, errors.size());
+        Assertions.assertEquals(1, errors.size());
 
         // duplicate attribute name
         attConfig.setName("lastName");
         errors = validate(session, config);
-        Assert.assertEquals(1, errors.size());
+        Assertions.assertEquals(1, errors.size());
 
         // attribute name format error - unallowed character
         attConfig.setName("ema il");
         errors = validate(session, config);
-        Assert.assertEquals(1, errors.size());
+        Assertions.assertEquals(1, errors.size());
     }
 
     @Test
@@ -233,32 +233,32 @@ public class UPConfigParserTest extends AbstractTestRealmKeycloakTest {
         // no permissions configures at all
         attConfig.setPermissions(null);
         List<String> errors = validate(session, config);
-        Assert.assertEquals(0, errors.size());
+        Assertions.assertEquals(0, errors.size());
 
         // no permissions structure fields configured
         UPAttributePermissions permsConfig = new UPAttributePermissions();
         attConfig.setPermissions(permsConfig);
         errors = validate(session, config);
-        Assert.assertTrue(errors.isEmpty());
+        Assertions.assertTrue(errors.isEmpty());
 
         // valid if both are present, even empty
         permsConfig.setEdit(Collections.emptySet());
         permsConfig.setView(Collections.emptySet());
         attConfig.setPermissions(permsConfig);
         errors = validate(session, config);
-        Assert.assertEquals(0, errors.size());
+        Assertions.assertEquals(0, errors.size());
 
         Set<String> withInvRole = Collections.singleton("invalid");
 
         // invalid role used for view
         permsConfig.setView(withInvRole);
         errors = validate(session, config);
-        Assert.assertEquals(1, errors.size());
+        Assertions.assertEquals(1, errors.size());
 
         // invalid role used for edit also
         permsConfig.setEdit(withInvRole);
         errors = validate(session, config);
-        Assert.assertEquals(2, errors.size());
+        Assertions.assertEquals(2, errors.size());
     }
 
     @Test
@@ -275,20 +275,20 @@ public class UPConfigParserTest extends AbstractTestRealmKeycloakTest {
         // it is OK without requirements configures at all
         attConfig.setRequired(null);
         List<String> errors = validate(session, config);
-        Assert.assertEquals(0, errors.size());
+        Assertions.assertEquals(0, errors.size());
 
         // it is OK with empty config as it means ALWAYS required
         UPAttributeRequired reqConfig = new UPAttributeRequired();
         attConfig.setRequired(reqConfig);
         errors = validate(session, config);
-        Assert.assertEquals(0, errors.size());
-        Assert.assertTrue(reqConfig.isAlways());
+        Assertions.assertEquals(0, errors.size());
+        Assertions.assertTrue(reqConfig.isAlways());
 
         // invalid role used
         reqConfig.setRoles(Collections.singleton("invalid"));
         errors = validate(session, config);
-        Assert.assertEquals(1, errors.size());
-        Assert.assertFalse(reqConfig.isAlways());
+        Assertions.assertEquals(1, errors.size());
+        Assertions.assertFalse(reqConfig.isAlways());
 
     }
 
@@ -312,7 +312,7 @@ public class UPConfigParserTest extends AbstractTestRealmKeycloakTest {
         // empty validator name
         validationConfig.put(" ",null);
         List<String> errors = validate(session, config);
-        Assert.assertEquals(1, errors.size());
+        Assertions.assertEquals(1, errors.size());
 
 
         // wrong configuration for "length" validator
@@ -321,7 +321,7 @@ public class UPConfigParserTest extends AbstractTestRealmKeycloakTest {
         vc.put("min", "aaa");
 		validationConfig.put("length", vc );
         errors = validate(session, config);
-        Assert.assertEquals(1, errors.size());
+        Assertions.assertEquals(1, errors.size());
     }
 
     @Test
@@ -336,8 +336,8 @@ public class UPConfigParserTest extends AbstractTestRealmKeycloakTest {
         UPGroup groupWithoutName = new UPGroup();
         config.addGroup(groupWithoutName);
         List<String> errors = validate(session, config);
-        Assert.assertEquals(1, errors.size());
-        Assert.assertEquals("Name is mandatory for groups, found 1 group(s) without name.", errors.get(0));
+        Assertions.assertEquals(1, errors.size());
+        Assertions.assertEquals("Name is mandatory for groups, found 1 group(s) without name.", errors.get(0));
     }
 
     @Test
@@ -352,8 +352,8 @@ public class UPConfigParserTest extends AbstractTestRealmKeycloakTest {
         UPAttribute firstAttribute = config.getAttributes().get(0);
         firstAttribute.setGroup("non-existing-group");
         List<String> errors = validate(session, config);
-        Assert.assertEquals(1, errors.size());
-        Assert.assertEquals("Attribute 'username' references unknown group 'non-existing-group'", errors.get(0));
+        Assertions.assertEquals(1, errors.size());
+        Assertions.assertEquals("Attribute 'username' references unknown group 'non-existing-group'", errors.get(0));
     }
     
     @Test
@@ -370,7 +370,7 @@ public class UPConfigParserTest extends AbstractTestRealmKeycloakTest {
         att.getAnnotations().put("inputOptionLabels", "");
         
         List<String> errors = validate(session, config);
-        Assert.assertEquals(2, errors.size());
+        Assertions.assertEquals(2, errors.size());
     }
 
 }

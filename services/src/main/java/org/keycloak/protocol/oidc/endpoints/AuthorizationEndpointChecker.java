@@ -40,6 +40,9 @@ import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.protocol.oidc.endpoints.request.AuthorizationEndpointRequest;
 import org.keycloak.protocol.oidc.endpoints.request.AuthorizationEndpointRequestParserProcessor;
 import org.keycloak.protocol.oidc.endpoints.request.RequestUriType;
+import org.keycloak.protocol.oidc.rar.AuthorizationDetailsProcessorManager;
+import org.keycloak.protocol.oidc.resourceindicators.ResourceIndicatorConstants;
+import org.keycloak.protocol.oidc.resourceindicators.ResourceIndicatorValidation;
 import org.keycloak.protocol.oidc.utils.OIDCResponseMode;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
 import org.keycloak.protocol.oidc.utils.RedirectUtils;
@@ -55,6 +58,8 @@ import org.keycloak.util.TokenUtil;
 import org.keycloak.utils.StringUtil;
 
 import org.jboss.logging.Logger;
+
+import static org.keycloak.OAuth2Constants.AUTHORIZATION_DETAILS;
 
 /**
  * Implements some checks typical for OIDC Authorization Endpoint. Useful to consolidate various checks on single place to avoid duplicated
@@ -207,6 +212,16 @@ public class AuthorizationEndpointChecker {
             event.error(Errors.NOT_ALLOWED);
             throw new AuthorizationCheckException(Response.Status.UNAUTHORIZED, OAuthErrorException.UNAUTHORIZED_CLIENT, errorMessage);
         }
+
+        // DPoP is not supported for implicit and hybrid flows
+        OIDCAdvancedConfigWrapper clientConfig = OIDCAdvancedConfigWrapper.fromClientModel(client);
+        if (clientConfig.isUseDPoP() && parsedResponseType.isImplicitOrHybridFlow()) {
+            ServicesLogger.LOGGER.flowNotAllowed("Implicit/Hybrid with DPoP");
+            String errorMessage = "DPoP is not supported for implicit and hybrid flows. Client requires DPoP bound access tokens.";
+            event.detail(Details.REASON, errorMessage);
+            event.error(Errors.NOT_ALLOWED);
+            throw new AuthorizationCheckException(Response.Status.UNAUTHORIZED, OAuthErrorException.UNAUTHORIZED_CLIENT, errorMessage);
+        }
     }
 
     public boolean isInvalidResponseType(AuthorizationEndpointChecker.AuthorizationCheckException ex) {
@@ -226,6 +241,18 @@ public class AuthorizationEndpointChecker {
         }
     }
 
+    public void checkAuthorizationDetails() throws AuthorizationCheckException {
+        String authDetailsParam = request.getAdditionalReqParams().get(AUTHORIZATION_DETAILS);
+        if (authDetailsParam != null) {
+            try {
+                new AuthorizationDetailsProcessorManager(session).validateAuthorizationDetail(authDetailsParam);
+            } catch (Exception e) {
+                event.error(Errors.INVALID_REQUEST);
+                throw new AuthorizationCheckException(Response.Status.BAD_REQUEST, Errors.INVALID_REQUEST, e.getMessage());
+            }
+        }
+    }
+
     public void checkValidScope() throws AuthorizationCheckException {
         boolean validScopes;
         if (Profile.isFeatureEnabled(Profile.Feature.DYNAMIC_SCOPES)) {
@@ -239,6 +266,16 @@ public class AuthorizationEndpointChecker {
             event.detail(Details.REASON, errorMessage);
             event.error(Errors.INVALID_REQUEST);
             throw new AuthorizationCheckException(Response.Status.BAD_REQUEST, OAuthErrorException.INVALID_SCOPE, errorMessage);
+        }
+    }
+
+    public void checkValidResource() throws AuthorizationCheckException {
+        if (!ResourceIndicatorValidation.isValidResourceIndicator(request.getResource())) {
+            ServicesLogger.LOGGER.invalidParameter(OIDCLoginProtocol.SCOPE_PARAM);
+            String errorMessage = "Invalid resource: " + request.getResource();
+            event.detail(Details.REASON, errorMessage);
+            event.error(Errors.INVALID_REQUEST);
+            throw new AuthorizationCheckException(Response.Status.BAD_REQUEST, OAuthErrorException.INVALID_TARGET, ResourceIndicatorConstants.ERROR_INVALID_RESOURCE);
         }
     }
 

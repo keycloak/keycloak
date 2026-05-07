@@ -84,6 +84,7 @@ public class DatabaseContainer {
 
     private JdbcDatabaseContainer<?> configureJdbcContainer(JdbcDatabaseContainer<?> jdbcDatabaseContainer) {
         if (jdbcDatabaseContainer instanceof MSSQLServerContainer) {
+            jdbcDatabaseContainer.withEnv("MSSQL_COLLATION", "Latin1_General_100_CI_AS_SC_UTF8");
             return jdbcDatabaseContainer;
         }
 

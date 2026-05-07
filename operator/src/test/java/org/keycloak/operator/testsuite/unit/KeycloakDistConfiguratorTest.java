@@ -28,11 +28,11 @@ import java.util.stream.Collectors;
 import org.keycloak.common.util.CollectionUtil;
 import org.keycloak.operator.Constants;
 import org.keycloak.operator.controllers.KeycloakDistConfigurator;
-import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
-import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatus;
-import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusAggregator;
-import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusCondition;
-import org.keycloak.operator.crds.v2alpha1.deployment.ValueOrSecret;
+import org.keycloak.operator.crds.v2beta1.deployment.Keycloak;
+import org.keycloak.operator.crds.v2beta1.deployment.KeycloakStatus;
+import org.keycloak.operator.crds.v2beta1.deployment.KeycloakStatusAggregator;
+import org.keycloak.operator.crds.v2beta1.deployment.KeycloakStatusCondition;
+import org.keycloak.operator.crds.v2beta1.deployment.ValueOrSecret;
 import org.keycloak.operator.testsuite.utils.K8sUtils;
 
 import io.fabric8.kubernetes.api.model.EnvVar;

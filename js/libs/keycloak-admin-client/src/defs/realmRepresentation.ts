@@ -63,6 +63,7 @@ export default interface RealmRepresentation {
   eventsExpiration?: number;
   eventsListeners?: string[];
   failureFactor?: number;
+  maxSecondaryAuthFailures?: number;
   federatedUsers?: UserRepresentation[];
   groups?: GroupRepresentation[];
   id?: string;
@@ -131,6 +132,7 @@ export default interface RealmRepresentation {
   users?: UserRepresentation[];
   verifyEmail?: boolean;
   waitIncrementSeconds?: number;
+  scimApiEnabled?: boolean;
 }
 
 export type PartialImportRealmRepresentation = RealmRepresentation & {

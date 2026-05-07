@@ -120,6 +120,8 @@ public class WebAuthnAuthenticator implements Authenticator, CredentialValidator
         String userVerificationRequirement = policy.getUserVerificationRequirement();
         form.setAttribute(WebAuthnConstants.USER_VERIFICATION, userVerificationRequirement);
         form.setAttribute(WebAuthnConstants.SHOULD_DISPLAY_AUTHENTICATORS, shouldDisplayAuthenticators(context));
+        form.setAttribute(WebAuthnConstants.MEDIATION, policy.getMediation());
+        form.setAttribute(WebAuthnConstants.AUTHENTICATOR_ATTACHMENT, policy.getAuthenticatorAttachment());
 
         return form;
     }
@@ -169,7 +171,7 @@ public class WebAuthnAuthenticator implements Authenticator, CredentialValidator
 
         Origin origin = new Origin(baseUrl);
         Challenge challenge = new DefaultChallenge(context.getAuthenticationSession().getAuthNote(WebAuthnConstants.AUTH_CHALLENGE_NOTE));
-        ServerProperty server = new ServerProperty(origin, rpId, challenge, null);
+        ServerProperty server = new ServerProperty(origin, rpId, challenge);
 
         byte[] credentialId = Base64Url.decode(params.getFirst(WebAuthnConstants.CREDENTIAL_ID));
         byte[] clientDataJSON = Base64Url.decode(params.getFirst(WebAuthnConstants.CLIENT_DATA_JSON));

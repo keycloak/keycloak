@@ -24,17 +24,18 @@ import org.keycloak.OAuthErrorException;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
+import org.keycloak.events.EventType;
 import org.keycloak.jose.jws.JWSHeader;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.crypto.HashUtils;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testsuite.AbstractAdminTest;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
-import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.util.ClientManager;
@@ -45,11 +46,12 @@ import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Abstract test for various values of response_type
@@ -84,13 +86,13 @@ public abstract class AbstractOIDCResponseTypeTest extends AbstractTestRealmKeyc
         EventRepresentation loginEvent = loginUser("abcdef123456");
 
         AuthorizationEndpointResponse authzResponse = oauth.parseLoginResponse();
-        Assert.assertNotNull(authzResponse.getSessionState());
+        Assertions.assertNotNull(authzResponse.getSessionState());
 
         List<IDToken> idTokens = testAuthzResponseAndRetrieveIDTokens(authzResponse, loginEvent);
 
         for (IDToken idToken : idTokens) {
-            Assert.assertEquals("abcdef123456", idToken.getNonce());
-            Assert.assertEquals(authzResponse.getSessionState(), idToken.getSessionState());
+            Assertions.assertEquals("abcdef123456", idToken.getNonce());
+            Assertions.assertEquals(authzResponse.getSessionState(), idToken.getSessionState());
         }
     }
 
@@ -100,12 +102,12 @@ public abstract class AbstractOIDCResponseTypeTest extends AbstractTestRealmKeyc
         EventRepresentation loginEvent = loginUserWithRedirect("abcdef123456", OAuthClient.APP_ROOT + "/auth?session_state=foo");
 
         AuthorizationEndpointResponse authzResponse = oauth.parseLoginResponse();
-        Assert.assertNotNull(authzResponse.getSessionState());
+        Assertions.assertNotNull(authzResponse.getSessionState());
 
         List<IDToken> idTokens = testAuthzResponseAndRetrieveIDTokens(authzResponse, loginEvent);
 
         for (IDToken idToken : idTokens) {
-            Assert.assertEquals(authzResponse.getSessionState(), idToken.getSessionState());
+            Assertions.assertEquals(authzResponse.getSessionState(), idToken.getSessionState());
         }
     }
 
@@ -117,10 +119,10 @@ public abstract class AbstractOIDCResponseTypeTest extends AbstractTestRealmKeyc
 
         // Always read error from the "query"
         AuthorizationEndpointResponse errorResponse = oauth.parseLoginResponse();
-        org.junit.Assert.assertTrue(errorResponse.isRedirected());
-        org.junit.Assert.assertEquals(errorResponse.getError(), OAuthErrorException.INVALID_REQUEST);
+        Assertions.assertTrue(errorResponse.isRedirected());
+        Assertions.assertEquals(errorResponse.getError(), OAuthErrorException.INVALID_REQUEST);
 
-        events.expectLogin().error(Errors.INVALID_REQUEST).user((String) null).session((String) null).clearDetails().assertEvent();
+        EventAssertion.assertError(events.poll()).type(EventType.LOGIN_ERROR).error(Errors.INVALID_REQUEST).userId(null).sessionId(null);
     }
 
     protected void validateNonceNotUsedSuccessExpected() {
@@ -135,10 +137,10 @@ public abstract class AbstractOIDCResponseTypeTest extends AbstractTestRealmKeyc
 
         // Assert error response was sent because not logged in
         AuthorizationEndpointResponse resp = oauth.parseLoginResponse();
-        Assert.assertNull(resp.getCode());
-        Assert.assertNull(resp.getIdToken());
-        Assert.assertEquals(OAuthErrorException.INVALID_REQUEST, resp.getError());
-        Assert.assertEquals("Missing parameter: nonce", resp.getErrorDescription());
+        Assertions.assertNull(resp.getCode());
+        Assertions.assertNull(resp.getIdToken());
+        Assertions.assertEquals(OAuthErrorException.INVALID_REQUEST, resp.getError());
+        Assertions.assertEquals("Missing parameter: nonce", resp.getErrorDescription());
     }
 
 
@@ -149,11 +151,11 @@ public abstract class AbstractOIDCResponseTypeTest extends AbstractTestRealmKeyc
         oauth.openLoginForm();
 
         AuthorizationEndpointResponse errorResponse = oauth.parseLoginResponse();
-        Assert.assertTrue(errorResponse.isRedirected());
-        Assert.assertEquals(errorResponse.getError(), OAuthErrorException.UNAUTHORIZED_CLIENT);
-        Assert.assertEquals(errorResponse.getErrorDescription(), "Client is not allowed to initiate browser login with given response_type. Implicit flow is disabled for the client.");
+        Assertions.assertTrue(errorResponse.isRedirected());
+        Assertions.assertEquals(errorResponse.getError(), OAuthErrorException.UNAUTHORIZED_CLIENT);
+        Assertions.assertEquals(errorResponse.getErrorDescription(), "Client is not allowed to initiate browser login with given response_type. Implicit flow is disabled for the client.");
 
-        events.expectLogin().error(Errors.NOT_ALLOWED).user((String) null).session((String) null).clearDetails().assertEvent();
+        EventAssertion.assertError(events.poll()).type(EventType.LOGIN_ERROR).error(Errors.NOT_ALLOWED).userId(null).sessionId(null);
 
         // Revert
         clientManagerBuilder().implicitFlow(true);
@@ -167,11 +169,11 @@ public abstract class AbstractOIDCResponseTypeTest extends AbstractTestRealmKeyc
         oauth.openLoginForm();
 
         AuthorizationEndpointResponse errorResponse = oauth.parseLoginResponse();
-        Assert.assertTrue(errorResponse.isRedirected());
-        Assert.assertEquals(errorResponse.getError(), OAuthErrorException.UNAUTHORIZED_CLIENT);
-        Assert.assertEquals(errorResponse.getErrorDescription(), "Client is not allowed to initiate browser login with given response_type. Standard flow is disabled for the client.");
+        Assertions.assertTrue(errorResponse.isRedirected());
+        Assertions.assertEquals(errorResponse.getError(), OAuthErrorException.UNAUTHORIZED_CLIENT);
+        Assertions.assertEquals(errorResponse.getErrorDescription(), "Client is not allowed to initiate browser login with given response_type. Standard flow is disabled for the client.");
 
-        events.expectLogin().error(Errors.NOT_ALLOWED).user((String) null).session((String) null).clearDetails().assertEvent();
+        EventAssertion.assertError(events.poll()).type(EventType.LOGIN_ERROR).error(Errors.NOT_ALLOWED).userId(null).sessionId(null);
 
         // Revert
         clientManagerBuilder().standardFlow(true);
@@ -184,9 +186,11 @@ public abstract class AbstractOIDCResponseTypeTest extends AbstractTestRealmKeyc
 
         loginPage.assertCurrent();
         loginPage.login("test-user@localhost", "password");
-        Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-        return events.expectLogin().detail(Details.USERNAME, "test-user@localhost").assertEvent();
+        EventRepresentation eventRep = events.poll();
+        EventAssertion.expectLoginSuccess(eventRep).details(Details.USERNAME, "test-user@localhost");
+        return eventRep;
     }
 
     protected EventRepresentation loginUserWithRedirect(String nonce, String redirectUri) {
@@ -198,9 +202,13 @@ public abstract class AbstractOIDCResponseTypeTest extends AbstractTestRealmKeyc
 
         loginPage.assertCurrent();
         loginPage.login("test-user@localhost", "password");
-        Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-        return events.expectLogin().detail(Details.REDIRECT_URI, redirectUri).detail(Details.USERNAME, "test-user@localhost").assertEvent();
+        EventRepresentation eventRep = events.poll();
+        EventAssertion.expectLoginSuccess(eventRep)
+                .details(Details.REDIRECT_URI, redirectUri)
+                .details(Details.USERNAME, "test-user@localhost");
+        return eventRep;
     }
 
     protected abstract boolean isFragment();
@@ -215,7 +223,7 @@ public abstract class AbstractOIDCResponseTypeTest extends AbstractTestRealmKeyc
         EventRepresentation loginEvent = loginUser("abcdef123456");
 
         AuthorizationEndpointResponse authzResponse = oauth.parseLoginResponse();
-        Assert.assertNotNull(authzResponse.getSessionState());
+        Assertions.assertNotNull(authzResponse.getSessionState());
 
         JWSHeader header = null;
         String idToken = authzResponse.getIdToken();
@@ -236,8 +244,8 @@ public abstract class AbstractOIDCResponseTypeTest extends AbstractTestRealmKeyc
         List<IDToken> idTokens = testAuthzResponseAndRetrieveIDTokens(authzResponse, loginEvent);
 
         for (IDToken idt : idTokens) {
-            Assert.assertEquals("abcdef123456", idt.getNonce());
-            Assert.assertEquals(authzResponse.getSessionState(), idt.getSessionState());
+            Assertions.assertEquals("abcdef123456", idt.getNonce());
+            Assertions.assertEquals(authzResponse.getSessionState(), idt.getSessionState());
         }
     }
 
@@ -280,12 +288,12 @@ public abstract class AbstractOIDCResponseTypeTest extends AbstractTestRealmKeyc
             setIdTokenSignatureAlgorithm(expectedIdTokenAlg);
             // Realm setting is used for access token signature algorithm
             TokenSignatureUtil.changeRealmTokenSignatureProvider(adminClient, expectedAccessAlg);
-            TokenSignatureUtil.changeClientIdTokenSignatureProvider(ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app"), expectedIdTokenAlg);
+            TokenSignatureUtil.changeClientIdTokenSignatureProvider(AdminApiUtil.findClientByClientId(adminClient.realm("test"), "test-app"), expectedIdTokenAlg);
             oidcFlow(expectedAccessAlg, expectedIdTokenAlg);
         } finally {
             setIdTokenSignatureAlgorithm(Algorithm.RS256);
             TokenSignatureUtil.changeRealmTokenSignatureProvider(adminClient, Algorithm.RS256);
-            TokenSignatureUtil.changeClientIdTokenSignatureProvider(ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app"), Algorithm.RS256);
+            TokenSignatureUtil.changeClientIdTokenSignatureProvider(AdminApiUtil.findClientByClientId(adminClient.realm("test"), "test-app"), Algorithm.RS256);
         }
     }
 
@@ -305,8 +313,8 @@ public abstract class AbstractOIDCResponseTypeTest extends AbstractTestRealmKeyc
      */
     protected void assertValidAccessTokenHash(String accessTokenHash, String accessToken) {
 
-        Assert.assertNotNull(accessTokenHash);
-        Assert.assertNotNull(accessToken);
+        Assertions.assertNotNull(accessTokenHash);
+        Assertions.assertNotNull(accessToken);
         assertEquals(accessTokenHash, HashUtils.accessTokenHash(getIdTokenSignatureAlgorithm(), accessToken));
     }
 
@@ -317,8 +325,8 @@ public abstract class AbstractOIDCResponseTypeTest extends AbstractTestRealmKeyc
      */
     protected void assertValidCodeHash(String codeHash, String code) {
 
-        Assert.assertNotNull(codeHash);
-        Assert.assertNotNull(code);
-        Assert.assertEquals(codeHash, HashUtils.accessTokenHash(getIdTokenSignatureAlgorithm(), code));
+        Assertions.assertNotNull(codeHash);
+        Assertions.assertNotNull(code);
+        Assertions.assertEquals(codeHash, HashUtils.accessTokenHash(getIdTokenSignatureAlgorithm(), code));
     }
 }

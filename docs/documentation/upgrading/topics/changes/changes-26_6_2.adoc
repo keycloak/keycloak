@@ -1,0 +1,12 @@
+== Notable changes
+
+Notable changes may include internal behavior changes that prevent common misconfigurations, bugs that are fixed, or changes to simplify running {project_name}.
+It also lists significant changes to internal APIs.
+
+=== WebAuthn acceptable AAGUIDs option restricts authenticators strictly
+
+The WebAuthn policy presents the option **Acceptable AAGUIDs** to restrict the authenticators that are allowed to register new credentials. The AAGUID (Authenticator Attestation Global Unique Identifier) is an identifier for the authenticator's type (e.g., make and model). This option requires the **Attestation conveyance preference** to be configured too (normally `Direct`), in order to force the authenticator to include the attestation inside the registration data.
+
+Since this release, when this option is set up, the attestation is required to be present and signed with a valid certificate for the {project_name} trust-store. The `None` attestation format is explicitly not permitted. Previously, there were some corner cases in which a self attestation was accepted. The change is expected to be harmless, but maybe there are combinations of authenticators and WebAuthn policies that can present issues.
+
+See chapter link:{adminguide_link}#_webauthn-policy[Managing policy] in the {adminguide_name} for more information.

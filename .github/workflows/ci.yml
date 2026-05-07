@@ -5,6 +5,7 @@ on:
     branches-ignore:
       - main
       - dependabot/**
+      - copilot/**
   pull_request:
   workflow_dispatch:
 
@@ -87,6 +88,18 @@ jobs:
           fi
           echo "run-additional-dbs-tests=$RUN_ADDITIONAL_DBS_TESTS" >> $GITHUB_OUTPUT
 
+  testsuite-deprecation-check:
+    name: Testsuite Deprecation Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+
+      - id: conditional
+        uses: ./.github/actions/testsuite-deprecation-check
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+
   build:
     name: Build
     if: needs.conditional.outputs.ci == 'true'
@@ -94,6 +107,9 @@ jobs:
     needs: conditional
     steps:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+
+      - name: Check base testsuites
+        run: tests/base/check-base-suites.sh
 
       - name: Build Keycloak
         uses: ./.github/actions/build-keycloak
@@ -225,6 +241,7 @@ jobs:
     strategy:
       matrix:
         os: [ ubuntu-latest, windows-latest ]
+      fail-fast: false
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
@@ -460,6 +477,10 @@ jobs:
         name: Node cache
         uses: ./.github/actions/node-cache
 
+      - name: Restore Quarkus snapshot cache
+        if: github.ref == 'refs/heads/quarkus-next' || github.base_ref == 'quarkus-next'
+        uses: ./.github/actions/quarkus-snapshot-cache
+
       - id: aurora-init
         name: Initialize Aurora environment
         run: |
@@ -499,15 +520,15 @@ jobs:
           
           git archive --format=zip --output /tmp/keycloak.zip $GITHUB_REF
           zip -u /tmp/keycloak.zip aws.pem
-          tar -C ~/ -czvf m2.tar.gz .m2
- 
+          tar -C ~/ -czvf /tmp/m2.tar.gz .m2
+
           cd .github/scripts/ansible
           python3 -m venv .venv
           source .venv/bin/activate
           ./aws_ec2.sh requirements
           pipx inject ansible-core boto3 botocore
           ./aws_ec2.sh create ${AWS_REGION} ${EC2_CLUSTER_NAME}
-          ./keycloak_remote_installer.sh ${AWS_REGION} ${EC2_CLUSTER_NAME} /tmp/keycloak.zip m2.tar.gz
+          ./keycloak_remote_installer.sh ${AWS_REGION} ${EC2_CLUSTER_NAME} /tmp/keycloak.zip /tmp/m2.tar.gz
           ./mvn_remote_runner.sh ${AWS_REGION} ${EC2_CLUSTER_NAME} "clean install -B -DskipTests -Pdistribution -DskipProtoLock=true"
           ./mvn_remote_runner.sh ${AWS_REGION} ${EC2_CLUSTER_NAME} "clean install -B -DskipTests -pl testsuite/integration-arquillian/servers/auth-server/quarkus -Pauth-server-quarkus -Pdb-aurora-postgres -Dmaven.build.cache.enabled=true"
 
@@ -515,6 +536,7 @@ jobs:
         id: aurora-migration-tests
         env:
           old-version: 24.0.4
+          JAVA_VERSION: 21 # Keycloak 24 is not compatible with Java 25+
         run: |
           EC2_CLUSTER_NAME=${{ steps.ec2-create.outputs.ec2_cluster }}
           AWS_REGION=${{ steps.aurora-init.outputs.region }}
@@ -541,7 +563,7 @@ jobs:
 
       - name: EC2 Maven Logs
         if: failure()
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: auroraDB-migration-tests-mvn-logs
           path: .github/scripts/ansible/files
@@ -574,7 +596,7 @@ jobs:
 
       - name: EC2 Maven Logs
         if: failure()
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: aurora-integration-tests-mvn-logs
           path: .github/scripts/ansible/files
@@ -618,7 +640,7 @@ jobs:
 
       - name: EC2 Maven Logs
         if: failure()
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: aurora-new-integration-tests-mvn-logs
           path: .github/scripts/ansible/files
@@ -657,6 +679,10 @@ jobs:
         name: Node cache
         uses: ./.github/actions/node-cache
 
+      - name: Restore Quarkus snapshot cache
+        if: github.ref == 'refs/heads/quarkus-next' || github.base_ref == 'quarkus-next'
+        uses: ./.github/actions/quarkus-snapshot-cache
+
       - id: azure-init
         name: Initialize Azure environment
         run: |
@@ -684,7 +710,7 @@ jobs:
           echo "subscription=$SUBSCRIPTION" >> $GITHUB_OUTPUT
 
       - name: Login to Azure
-        uses: azure/login@a457da9ea143d694b1b9c7c869ebb04ebe844ef5 # v2.3.0
+        uses: azure/login@532459ea530d8321f2fb9bb10d1e0bcf23869a43 # v3.0.0
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
@@ -710,12 +736,12 @@ jobs:
           echo "az_vm_cluster=${AZ_VM_CLUSTER_NAME}" >> $GITHUB_OUTPUT
 
           git archive --format=zip --output /tmp/keycloak.zip $GITHUB_REF
-          tar -C ~/ -czvf m2.tar.gz .m2 || true
+          tar -C ~/ -czvf /tmp/m2.tar.gz .m2 || true
 
           cd .github/scripts/ansible
           ./azure_vm_manager.sh create ${AZURE_REGION} ${AZ_VM_CLUSTER_NAME}
 
-          ./keycloak_remote_installer.sh ${AZURE_REGION} ${AZ_VM_CLUSTER_NAME} /tmp/keycloak.zip m2.tar.gz
+          ./keycloak_remote_installer.sh ${AZURE_REGION} ${AZ_VM_CLUSTER_NAME} /tmp/keycloak.zip /tmp/m2.tar.gz
           ./mvn_remote_runner.sh ${AZURE_REGION} ${AZ_VM_CLUSTER_NAME} "clean install -B -DskipTests -Pdistribution -DskipProtoLock=true -Dmaven.build.cache.enabled=true"
           ./mvn_remote_runner.sh ${AZURE_REGION} ${AZ_VM_CLUSTER_NAME} "clean install -B -DskipTests -pl testsuite/integration-arquillian/servers/auth-server/quarkus -Pdb-mssql-azure -Dmaven.build.cache.enabled=true"
 
@@ -723,10 +749,11 @@ jobs:
         id: azure-migration-build
         env:
           old-version: 24.0.4
+          JAVA_VERSION: 21 # Keycloak 24 is not compatible with Java 25+
         run: |
           AZ_VM_CLUSTER_NAME=${{ steps.vm-create.outputs.az_vm_cluster }}
           AZURE_REGION=${{ steps.azure-init.outputs.region }}
-          
+
           cd .github/scripts/ansible
           ./mvn_remote_runner.sh ${AZURE_REGION} ${AZ_VM_CLUSTER_NAME} 'clean install -B -DskipTests -pl testsuite/integration-arquillian/servers/migration -Pauth-server-migration -Dmigrated.auth.server.version=${{ env.old-version }} -Dmaven.build.cache.enabled=true -Pdb-mssql-azure -Dkeycloak.connectionsJpa.user=${{ steps.azure-create.outputs.username }} -Dkeycloak.connectionsJpa.password="${{ env.AZURE_DB_PASSWORD }}" -Dkeycloak.connectionsJpa.database=${{ steps.azure-create.outputs.db }} -Dkeycloak.connectionsJpa.url="jdbc:sqlserver://${{ steps.azure-create.outputs.endpoint }}:1433;databaseName=${{ steps.azure-create.outputs.db }};encrypt=true;trustServerCertificate=false;sendStringParametersAsUnicode=false" -Djdbc.driver.tmp.dir=target/unpacked/keycloak-${{ env.old-version }}/providers'
 
@@ -734,6 +761,7 @@ jobs:
         id: azure-migration-tests
         env:
           old-version: 24.0.4
+          JAVA_VERSION: 21 # Keycloak 24 is not compatible with Java 25+
         run: |
           AZ_VM_CLUSTER_NAME=${{ steps.vm-create.outputs.az_vm_cluster }}
           AZURE_REGION=${{ steps.azure-init.outputs.region }}
@@ -749,10 +777,11 @@ jobs:
         id: azure-integration-build
         env:
           old-version: 24.0.4
+          JAVA_VERSION: 21 # Keycloak 24 is not compatible with Java 25+
         run: |
           AZ_VM_CLUSTER_NAME=${{ steps.vm-create.outputs.az_vm_cluster }}
           AZURE_REGION=${{ steps.azure-init.outputs.region }}
-          
+
           cd .github/scripts/ansible
           ./mvn_remote_runner.sh ${AZURE_REGION} ${AZ_VM_CLUSTER_NAME} 'clean install -B -DskipTests -pl testsuite/integration-arquillian/servers/migration -Pauth-server-migration -Dmigrated.auth.server.version=${{ env.old-version }} -Dmaven.build.cache.enabled=true -Pdb-mssql-azure -Dkeycloak.connectionsJpa.user=${{ steps.azure-create.outputs.username }} -Dkeycloak.connectionsJpa.password="${{ env.AZURE_DB_PASSWORD }}" -Dkeycloak.connectionsJpa.database=${{ steps.azure-create.outputs.db }} -Dkeycloak.connectionsJpa.url="jdbc:sqlserver://${{ steps.azure-create.outputs.endpoint }}:1433;databaseName=${{ steps.azure-create.outputs.db }};encrypt=true;trustServerCertificate=false;sendStringParametersAsUnicode=false" -Djdbc.driver.tmp.dir=target/unpacked/keycloak-${{ env.old-version }}/providers'
 
@@ -784,7 +813,7 @@ jobs:
 
       - name: Azure VM Maven Logs
         if: failure()
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: azure-integration-tests-mvn-logs
           path: .github/scripts/ansible/files
@@ -834,7 +863,7 @@ jobs:
 
       - name: Azure VM Maven Logs
         if: failure()
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: azure-new-integration-tests-mvn-logs
           path: .github/scripts/ansible/files
@@ -877,7 +906,7 @@ jobs:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
 
       - name: Login to Quay.io
-        uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef # v3.6.0
+        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # v4.1.0
         with:
           username: ${{ secrets.PRIVATE_DBS_QUAY_USERNAME }}
           password: ${{ secrets.PRIVATE_DBS_QUAY_TOKEN }}
@@ -956,13 +985,13 @@ jobs:
           sudo insmod fake_fips.ko
 
       - name: Run crypto tests
-        run: docker run --rm --workdir /github/workspace -v "${{ github.workspace }}":"/github/workspace" -v "$HOME/.m2":"/root/.m2" registry.access.redhat.com/ubi8/ubi:latest .github/scripts/run-fips-ut.sh
+        run: docker run --rm --workdir /github/workspace -v "${{ github.workspace }}":"/github/workspace" -v "$HOME/.m2":"/root/.m2" registry.access.redhat.com/ubi9/ubi:latest .github/scripts/run-fips-ut.sh
 
   fips-integration-tests:
     name: FIPS IT
     needs: build
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 60
     strategy:
       matrix:
         mode: [non-strict, strict]
@@ -983,7 +1012,7 @@ jobs:
           sudo insmod fake_fips.ko
 
       - name: Run base tests
-        run: docker run --rm --workdir /github/workspace -e "SUREFIRE_RERUN_FAILING_COUNT" -v "${{ github.workspace }}":"/github/workspace" -v "$HOME/.m2":"/root/.m2" registry.access.redhat.com/ubi8/ubi:latest .github/scripts/run-fips-it.sh ${{ matrix.mode }}
+        run: docker run --rm --workdir /github/workspace -e "SUREFIRE_RERUN_FAILING_COUNT" -v "${{ github.workspace }}":"/github/workspace" -v "$HOME/.m2":"/root/.m2" registry.access.redhat.com/ubi9/ubi:latest .github/scripts/run-fips-it.sh ${{ matrix.mode }}
 
       - uses: ./.github/actions/upload-flaky-tests
         name: Upload flaky tests
@@ -1083,7 +1112,7 @@ jobs:
 
       - id: cache-maven-repository
         name: ipa-data cache
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:
           path: ~/ipa-data.tar
           key: ${{ steps.weekly-cache-key.outputs.key }}
@@ -1146,7 +1175,7 @@ jobs:
         run: ./mvnw package -f test-framework/pom.xml
 
       - name: Run tests with embedded server
-        run: KC_TEST_SERVER=embedded ./mvnw package -f test-framework/examples/pom.xml -Dtest=CustomConfigTest,RunOnServerTest,TlsEnabledTest
+        run: KC_TEST_SERVER=embedded ./mvnw package -f test-framework/tests/pom.xml -Dtest=CustomConfigTest,RunOnServerTest,TlsEnabledTest
 
   base-new-integration-tests:
     name: Base IT (new)
@@ -1171,6 +1200,46 @@ jobs:
 
       - name: Run tests
         run: ./mvnw package -f tests/pom.xml -Dtest=${{ matrix.suite }}
+
+  scim-integration-tests:
+    name: SCIM IT
+    runs-on: ubuntu-latest
+    needs:
+      - build
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+
+      - id: integration-test-setup
+        name: Integration test setup
+        uses: ./.github/actions/integration-test-setup
+
+        # This step is necessary because test/clustering requires building a new Keycloak image built from tar.gz
+        # file that is not part of m2-keycloak.tzts archive
+      - name: Build tar keycloak-quarkus-dist
+        run: ./mvnw package -pl quarkus/server/,quarkus/dist/
+
+      - name: Run tests
+        run: ./mvnw package -f scim/tests/pom.xml
+
+  authzen-integration-tests:
+    name: AuthZen IT
+    runs-on: ubuntu-latest
+    needs:
+      - build
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+
+      - id: integration-test-setup
+        name: Integration test setup
+        uses: ./.github/actions/integration-test-setup
+
+      - name: Build tar keycloak-quarkus-dist
+        run: ./mvnw package -pl quarkus/server/,quarkus/dist/
+
+      - name: Run tests
+        run: ./mvnw package -f authzen/tests/pom.xml
 
   admin-v2-tests:
     name: Admin v2
@@ -1247,7 +1316,9 @@ jobs:
       - test-framework
       - base-new-integration-tests
       - mixed-cluster-compatibility-tests
+      - authzen-integration-tests
       - admin-v2-tests
+      - testsuite-deprecation-check
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0

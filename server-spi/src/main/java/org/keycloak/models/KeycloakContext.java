@@ -131,4 +131,10 @@ public interface KeycloakContext {
      * @return the {@link UserModel} bound to this context.
      */
     UserModel getUser();
+
+    /**
+     * Returns the permissions evaluator that can be used to check if the current user has permissions to perform an action on realm resources.
+     * @return the permissions evaluator
+     */
+    Permissions getPermissions();
 }

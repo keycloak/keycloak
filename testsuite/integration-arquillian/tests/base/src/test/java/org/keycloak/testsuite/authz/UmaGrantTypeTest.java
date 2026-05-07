@@ -52,9 +52,8 @@ import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ResourcePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.util.AdminClientUtil;
-import org.keycloak.testsuite.util.UserBuilder;
-import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.keycloak.util.BasicAuthHelper;
 import org.keycloak.util.JsonSerialization;
 
@@ -71,12 +70,12 @@ import static org.keycloak.testsuite.util.oauth.OAuthClient.AUTH_SERVER_ROOT;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.equalTo;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -424,7 +423,7 @@ public class UmaGrantTypeTest extends AbstractResourceServerTest {
         AccessTokenResponse accessTokenResponse = getAuthzClient().obtainAccessToken("marta", "password");
 
         UserRepresentation userRepresentation = getRealm().users().search("marta").get(0);
-        UserRepresentation updatedUser = UserBuilder.edit(userRepresentation).enabled(false).build();
+        UserRepresentation updatedUser = UserBuilder.update(userRepresentation).enabled(false).build();
         getRealm().users().get(userRepresentation.getId()).update(updatedUser);
 
         PermissionRequest permissions = new PermissionRequest("Resource A", "ScopeA", "ScopeB");
@@ -442,7 +441,7 @@ public class UmaGrantTypeTest extends AbstractResourceServerTest {
         post.setEntity(formEntity);
 
         try (CloseableHttpResponse response = oauth.httpClient().get().execute(post)) {
-            assertEquals(401, response.getStatusLine().getStatusCode());
+            assertEquals(400, response.getStatusLine().getStatusCode());
             assertEquals("http://localhost", response.getFirstHeader("Access-Control-Allow-Origin").getValue());
         }
     }
@@ -528,7 +527,7 @@ public class UmaGrantTypeTest extends AbstractResourceServerTest {
     }
 
     @Test
-    public void testObtainRptWithIDToken() throws Exception {
+    public void testObtainRptWithIDToken() {
         String idToken = getIdToken("marta", "password");
         AuthorizationResponse response = authorize("Resource A", new String[] {"ScopeA", "ScopeB"}, idToken, "http://openid.net/specs/openid-connect-core-1_0.html#IDToken");
         String rpt = response.getToken();
@@ -621,11 +620,7 @@ public class UmaGrantTypeTest extends AbstractResourceServerTest {
 
     private String getIdToken(String username, String password) {
         oauth.realm("authz-test");
-        oauth.client("test-app");
-        oauth.openLoginForm();
-        AuthorizationEndpointResponse resp = oauth.doLogin(username, password);
-        String code = resp.getCode();
-        org.keycloak.testsuite.util.oauth.AccessTokenResponse response = oauth.doAccessTokenRequest(code);
-        return response.getIdToken();
+        oauth.client(getAuthzClient().getConfiguration().getResource(), getAuthzClient().getConfiguration().getCredentials().get("secret").toString());
+        return oauth.doPasswordGrantRequest(username, password).getIdToken();
     }
 }

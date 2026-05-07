@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import jakarta.ws.rs.BadRequestException;
@@ -13,9 +14,11 @@ import jakarta.ws.rs.core.Response;
 
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.common.util.ObjectUtil;
+import org.keycloak.events.Details;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.credential.OTPCredentialModel;
+import org.keycloak.representations.idm.AdminEventRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testframework.annotations.InjectUser;
@@ -24,8 +27,9 @@ import org.keycloak.testframework.events.AdminEventAssertion;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
 import org.keycloak.testframework.realm.ManagedUser;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.realm.UserConfig;
-import org.keycloak.testframework.realm.UserConfigBuilder;
+import org.keycloak.tests.suites.DatabaseTest;
 import org.keycloak.tests.utils.admin.AdminApiUtil;
 import org.keycloak.tests.utils.admin.AdminEventPaths;
 import org.keycloak.testsuite.util.AccountHelper;
@@ -57,8 +61,9 @@ public class UserCredentialTest extends AbstractUserTest {
     ManagedUser testUser;
 
     @Test
+    @DatabaseTest
     public void resetUserPassword() {
-        UserRepresentation userRep = UserConfigBuilder.create()
+        UserRepresentation userRep = UserBuilder.create()
                 .username("user1").name("User", "One").email("user1@localhost").build();
 
         String userId = createUser(userRep);
@@ -105,7 +110,7 @@ public class UserCredentialTest extends AbstractUserTest {
     public void loginShouldFailAfterPasswordDeleted() {
         String userName = "credential-tester";
         String userPass = "s3cr37";
-        UserRepresentation userRep = UserConfigBuilder.create()
+        UserRepresentation userRep = UserBuilder.create()
                 .username(userName).password(userPass).name("credential", "tester").email("credential@tester").build();
         String userId = createUser(userRep);
 
@@ -131,6 +136,7 @@ public class UserCredentialTest extends AbstractUserTest {
     }
 
     @Test
+    @DatabaseTest
     public void testUpdateCredentials() {
         // both credentials have a null priority - stable ordering is not guaranteed between calls
         // Get user user-with-one-configured-otp and assert he has no label linked to its OTP credential
@@ -191,6 +197,7 @@ public class UserCredentialTest extends AbstractUserTest {
     }
 
     @Test
+    @DatabaseTest
     public void testDeleteCredentials() {
         UserResource user = johnDoh.admin();
         List<CredentialRepresentation> creds = user.credentials();
@@ -294,6 +301,40 @@ public class UserCredentialTest extends AbstractUserTest {
         );
     }
 
+    @Test
+    public void testDeleteOtpCredentialEmitsAdminEventWithCredentialDetails() {
+        UserRepresentation userRep = UserBuilder.create()
+                .username("otp-remove-subject")
+                .name("Otp", "Removable")
+                .email("otp-remove-subject@localhost")
+                .emailVerified(true)
+                .password("password")
+                .totpSecret("DJmQfC73VGFhw7D4QJ8A")
+                .build();
+        String userId = createUser(userRep);
+
+        UserResource user = managedRealm.admin().users().get(userId);
+        CredentialRepresentation otpCred = user.credentials().stream()
+                .filter(c -> OTPCredentialModel.TYPE.equals(c.getType()))
+                .findFirst().orElseThrow();
+
+        user.setCredentialUserLabel(otpCred.getId(), "My Phone");
+        adminEvents.clear();
+
+        user.removeCredential(otpCred.getId());
+
+        AdminEventRepresentation event = adminEvents.poll();
+        AdminEventAssertion.assertSuccess(event)
+                .operationType(OperationType.ACTION)
+                .resourceType(ResourceType.USER);
+
+        Map<String, String> details = event.getDetails();
+        Assertions.assertNotNull(details, "admin event must expose credential details");
+        Assertions.assertEquals(otpCred.getId(), details.get(Details.CREDENTIAL_ID));
+        Assertions.assertEquals(OTPCredentialModel.TYPE, details.get(Details.CREDENTIAL_TYPE));
+        Assertions.assertEquals("My Phone", details.get(Details.CREDENTIAL_USER_LABEL));
+    }
+
     private void assertSameIds(List<String> expectedIds, List<CredentialRepresentation> actual) {
         Assertions.assertEquals(expectedIds.size(), actual.size());
         for (int i = 0; i < expectedIds.size(); i++) {
@@ -304,7 +345,7 @@ public class UserCredentialTest extends AbstractUserTest {
     private static class UserCredentialJohnDohUserConf implements UserConfig {
 
         @Override
-        public UserConfigBuilder configure(UserConfigBuilder builder) {
+        public UserBuilder configure(UserBuilder builder) {
             builder.username("john-doh@localhost");
             builder.password("password");
             builder.name("John", "Doh");
@@ -318,7 +359,7 @@ public class UserCredentialTest extends AbstractUserTest {
     private static class UserCredentialTestUserConf implements UserConfig {
 
         @Override
-        public UserConfigBuilder configure(UserConfigBuilder builder) {
+        public UserBuilder configure(UserBuilder builder) {
             builder.username("test-user@localhost");
             builder.password("password");
             builder.name("Tom", "Brady");
@@ -332,7 +373,7 @@ public class UserCredentialTest extends AbstractUserTest {
     private static class UserCredentialOtp1UserConf implements UserConfig {
 
         @Override
-        public UserConfigBuilder configure(UserConfigBuilder builder) {
+        public UserBuilder configure(UserBuilder builder) {
             builder.username("user-with-one-configured-otp");
             builder.password("password");
             builder.name("Otp", "1");
@@ -347,7 +388,7 @@ public class UserCredentialTest extends AbstractUserTest {
     private static class UserCredentialOtp2UserConf implements UserConfig {
 
         @Override
-        public UserConfigBuilder configure(UserConfigBuilder builder) {
+        public UserBuilder configure(UserBuilder builder) {
             builder.username("user-with-two-configured-otp");
             builder.password("password");
             builder.name("Otp", "2");

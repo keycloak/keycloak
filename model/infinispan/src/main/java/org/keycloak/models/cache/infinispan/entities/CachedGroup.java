@@ -42,6 +42,8 @@ public class CachedGroup extends AbstractRevisioned implements InRealm {
     private final String name;
     private final String description;
     private final String parentId;
+    private final Long createdTimestamp;
+    private final Long lastModifiedTimestamp;
     private final LazyLoader<GroupModel, MultivaluedHashMap<String, String>> attributes;
     private final LazyLoader<GroupModel, Set<String>> roleMappings;
     /**
@@ -59,6 +61,8 @@ public class CachedGroup extends AbstractRevisioned implements InRealm {
         this.name = group.getName();
         this.description = group.getDescription();
         this.parentId = group.getParentId();
+        this.createdTimestamp = group.getCreatedTimestamp();
+        this.lastModifiedTimestamp = group.getLastModifiedTimestamp();
         this.attributes = new DefaultLazyLoader<>(source -> new MultivaluedHashMap<>(source.getAttributes()), MultivaluedHashMap::new);
         this.roleMappings = new DefaultLazyLoader<>(source -> source.getRoleMappingsStream().map(RoleModel::getId).collect(Collectors.toSet()), Collections::emptySet);
         this.subGroups = new DefaultLazyLoader<>(source -> source.getSubGroupsStream().map(GroupModel::getId).collect(Collectors.toSet()), Collections::emptySet);
@@ -90,6 +94,14 @@ public class CachedGroup extends AbstractRevisioned implements InRealm {
 
     public String getName() {
         return name;
+    }
+
+    public Long getCreatedTimestamp() {
+        return createdTimestamp;
+    }
+
+    public Long getLastModifiedTimestamp() {
+        return lastModifiedTimestamp;
     }
 
     public String getDescription() {

@@ -45,10 +45,11 @@ import org.keycloak.testframework.events.Events;
 import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
-import org.keycloak.testframework.realm.ClientConfigBuilder;
+import org.keycloak.testframework.realm.ClientBuilder;
+import org.keycloak.testframework.realm.IdentityProviderBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.ManagedUser;
-import org.keycloak.testframework.realm.RealmConfigBuilder;
+import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testframework.server.KeycloakServerConfig;
@@ -64,9 +65,8 @@ import org.keycloak.testframework.ui.page.OAuthGrantPage;
 import org.keycloak.testframework.ui.page.TermsAndConditionsPage;
 import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 import org.keycloak.tests.common.BasicUserConfig;
-import org.keycloak.testsuite.forms.ClickThroughAuthenticator;
+import org.keycloak.tests.providers.forms.ClickThroughAuthenticator;
 import org.keycloak.testsuite.util.FlowUtil;
-import org.keycloak.testsuite.util.IdentityProviderBuilder;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -478,22 +478,22 @@ public class LoginPageTest {
     public static class LoginPageRealmConfig extends RealmWithInternationalization {
 
         @Override
-        public RealmConfigBuilder configure(RealmConfigBuilder realm) {
+        public RealmBuilder configure(RealmBuilder realm) {
             realm = super.configure(realm);
-            realm.identityProvider(IdentityProviderBuilder.create()
+            realm.identityProviders(IdentityProviderBuilder.create()
                         .providerId("github")
                         .alias("github")
                         .build());
-            realm.identityProvider(IdentityProviderBuilder.create()
+            realm.identityProviders(IdentityProviderBuilder.create()
                         .providerId("saml")
                         .alias("mysaml")
                         .build());
-            realm.identityProvider(IdentityProviderBuilder.create()
+            realm.identityProviders(IdentityProviderBuilder.create()
                         .providerId("oidc")
                         .alias("myoidc")
                         .displayName("MyOIDC")
                         .build());
-            realm.client(ClientConfigBuilder.create().clientId("third-party").secret("password").consentRequired(true).redirectUris("*").build());
+            realm.clients(ClientBuilder.create().clientId("third-party").secret("password").consentRequired(true).redirectUris("*"));
             return realm;
         }
     }

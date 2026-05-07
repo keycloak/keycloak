@@ -28,6 +28,7 @@ import org.keycloak.admin.client.resource.OrganizationResource;
 import org.keycloak.representations.idm.OrganizationInvitationRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testsuite.updaters.OrganizationAttributeUpdater;
 import org.keycloak.testsuite.util.MailServer;
 
 import org.junit.After;
@@ -45,7 +46,7 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Integration tests for Organization Invitation Management functionality
@@ -61,7 +62,7 @@ public class OrganizationInvitationManagementTest extends AbstractOrganizationTe
         MailServer.start();
         OrganizationRepresentation orgRep = createOrganization("test-org", "test-org.com");
         organizationId = orgRep.getId();
-        organization = testRealm().organizations().get(organizationId);
+        organization = managedRealm.admin().organizations().get(organizationId);
     }
 
     @After
@@ -280,11 +281,91 @@ public class OrganizationInvitationManagementTest extends AbstractOrganizationTe
     }
 
     @Test
+    public void testInvitationSearchWithSqlWildcards() {
+        // Create invitations with SQL wildcard characters in email
+        sendInvitation("john_doe@test-org.com", "John", "Doe");
+        sendInvitation("johnadoe@test-org.com", "Johna", "Doe");
+        sendInvitation("johnbdoe@test-org.com", "Johnb", "Doe");
+
+        // Search by email with underscore - should match literally
+        List<OrganizationInvitationRepresentation> invitations =
+            organization.invitations().list(null, "john_", null, null, null, null, null);
+        assertThat(invitations, hasSize(1));
+        assertThat(invitations.get(0).getEmail(), equalTo("john_doe@test-org.com"));
+
+        // Create invitations with percent character
+        sendInvitation("50%@test-org.com", "Fifty", "Percent");
+        sendInvitation("500@test-org.com", "Five", "Hundred");
+        sendInvitation("50abc@test-org.com", "Fiftyabc", "Test");
+
+        // Search by email with percent - should match literally
+        invitations = organization.invitations().list(null, "50%", null, null, null, null, null);
+        assertThat(invitations, hasSize(1));
+        assertThat(invitations.get(0).getEmail(), equalTo("50%@test-org.com"));
+
+        // Test search by first name with SQL wildcards
+        sendInvitation("test_fn@test-org.com", "Test_Name", "LastName");
+        sendInvitation("testafn@test-org.com", "TestaName", "LastName");
+
+        invitations = organization.invitations().list(null, null, "Test_", null, null, null, null);
+        assertThat(invitations, hasSize(1));
+        assertThat(invitations.get(0).getFirstName(), equalTo("Test_Name"));
+
+        // Test search by last name with SQL wildcards
+        sendInvitation("test_ln@test-org.com", "FirstName", "50%_Last");
+        sendInvitation("test_ln2@test-org.com", "FirstName", "50a_Last");
+
+        invitations = organization.invitations().list(null, null, null, null, "50%_", null, null);
+        assertThat(invitations, hasSize(1));
+        assertThat(invitations.get(0).getLastName(), equalTo("50%_Last"));
+    }
+
+    @Test
+    public void testCrossOrganizationInvitationAccess() {
+        // Create second organization
+        OrganizationRepresentation org2Rep = createOrganization("test-org-2", "test-org-2.com");
+        OrganizationResource organization2 = managedRealm.admin().organizations().get(org2Rep.getId());
+
+        // Create invitation in org1
+        sendInvitation("user@test-org.com", "User", "One");
+        String org1InvitationId = organization.invitations().list().get(0).getId();
+
+        // Create invitation in org2
+        sendInvitationToOrganization(organization2, "user@test-org-2.com", "User", "Two");
+        String org2InvitationId = organization2.invitations().list().get(0).getId();
+
+        // Try to get org1's invitation via org2 - should return 404
+        try {
+            organization2.invitations().get(org1InvitationId);
+            fail("Should not be able to get invitation from another organization");
+        } catch (NotFoundException expected) {
+        }
+
+        // Try to delete org1's invitation via org2 - should return 404
+        try (Response response = organization2.invitations().delete(org1InvitationId)) {
+            assertThat(response.getStatus(), equalTo(404));
+        }
+
+        // Try to resend org1's invitation via org2 - should return 404
+        try (Response response = organization2.invitations().resend(org1InvitationId)) {
+            assertThat(response.getStatus(), equalTo(404));
+        }
+
+        // Verify the invitations are still intact in their respective orgs
+        assertThat(organization.invitations().list(), hasSize(1));
+        assertThat(organization2.invitations().list(), hasSize(1));
+
+        // Verify accessing own invitations still works
+        assertThat(organization.invitations().get(org1InvitationId).getEmail(), equalTo("user@test-org.com"));
+        assertThat(organization2.invitations().get(org2InvitationId).getEmail(), equalTo("user@test-org-2.com"));
+    }
+
+    @Test
     public void testMultipleOrganizationInvitationIsolation() {
         // Create second organization
         OrganizationRepresentation org2Rep = createOrganization("test-org-2", "test-org-2.com");
-        OrganizationResource organization2 = testRealm().organizations().get(org2Rep.getId());
-        
+        OrganizationResource organization2 = managedRealm.admin().organizations().get(org2Rep.getId());
+
         // Create invitations in both organizations
         sendInvitation("user@test-org.com", "User", "One");
         sendInvitationToOrganization(organization2, "user@test-org-2.com", "User", "Two");
@@ -300,6 +381,47 @@ public class OrganizationInvitationManagementTest extends AbstractOrganizationTe
         assertThat(org2Invitations, hasSize(1));
         assertThat(org2Invitations.get(0).getEmail(), equalTo("user@test-org-2.com"));
         assertThat(org2Invitations.get(0).getOrganizationId(), equalTo(org2Rep.getId()));
+    }
+
+    @Test
+    public void testSendInvitationToDisabledOrganization() throws Exception {
+        try (OrganizationAttributeUpdater oau = new OrganizationAttributeUpdater(organization).setEnabled(false).update()) {
+            try (Response response = organization.members().inviteUser("user@test-org.com", "John", "Doe")) {
+                assertThat(response.getStatus(), equalTo(400));
+                assertThat(response.readEntity(String.class), containsString("Organization is disabled"));
+            }
+        }
+    }
+
+    @Test
+    public void testResendInvitationToDisabledOrganization() throws Exception {
+        sendInvitation("user@test-org.com", "John", "Doe");
+
+        List<OrganizationInvitationRepresentation> invitations = organization.invitations().list();
+        assertThat(invitations, hasSize(1));
+        String invitationId = invitations.get(0).getId();
+
+        try (OrganizationAttributeUpdater oau = new OrganizationAttributeUpdater(organization).setEnabled(false).update()) {
+            try (Response response = organization.invitations().resend(invitationId)) {
+                assertThat(response.getStatus(), equalTo(400));
+                assertThat(response.readEntity(String.class), containsString("Organization is disabled"));
+            }
+        }
+    }
+
+    @Test
+    public void testInvitationWorksAfterReEnablingOrganization() throws Exception {
+        try (OrganizationAttributeUpdater oau = new OrganizationAttributeUpdater(organization).setEnabled(false).update()) {
+            try (Response response = organization.members().inviteUser("user@test-org.com", "John", "Doe")) {
+                assertThat(response.getStatus(), equalTo(400));
+            }
+        }
+
+        // After re-enabling (OrganizationAttributeUpdater restores original state), invitation should work
+        sendInvitation("user@test-org.com", "John", "Doe");
+        List<OrganizationInvitationRepresentation> invitations = organization.invitations().list();
+        assertThat(invitations, hasSize(1));
+        assertThat(invitations.get(0).getEmail(), equalTo("user@test-org.com"));
     }
 
     private void sendInvitation(String email, String firstName, String lastName) {

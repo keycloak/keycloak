@@ -139,12 +139,7 @@ public final class Maven {
 
     public static Path getKeycloakQuarkusModulePath() {
         // Find keycloak-parent module first
-        BootstrapMavenContext ctx = null;
-        try {
-            ctx = bootstrapCurrentMavenContext();
-        } catch (BootstrapMavenException | URISyntaxException e) {
-            throw new RuntimeException("Failed bootstrap maven context", e);
-        }
+        BootstrapMavenContext ctx = bootstrapCurrentMavenContext();
         for (LocalProject m = ctx.getCurrentProject(); m != null; m = m.getLocalParent()) {
             if ("keycloak-parent".equals(m.getArtifactId())) {
                 // When found, advance to quarkus module
@@ -155,14 +150,18 @@ public final class Maven {
         throw new RuntimeException("Failed to find keycloak-parent module.");
     }
 
-    public static BootstrapMavenContext bootstrapCurrentMavenContext() throws BootstrapMavenException, URISyntaxException {
-        if (context == null) {
-            Path classPathDir = Paths.get(Thread.currentThread().getContextClassLoader().getResource(".").toURI());
-            Path projectDir = BuildToolHelper.getProjectDir(classPathDir);
-            context = new BootstrapMavenContext(
-                    BootstrapMavenContext.config().setPreferPomsFromWorkspace(true).setWorkspaceModuleParentHierarchy(true)
-                            .setCurrentProject(projectDir.toString()));
+    public static BootstrapMavenContext bootstrapCurrentMavenContext() {
+        try {
+            if (context == null) {
+                Path classPathDir = Paths.get(Thread.currentThread().getContextClassLoader().getResource(".").toURI());
+                Path projectDir = BuildToolHelper.getProjectDir(classPathDir);
+                context = new BootstrapMavenContext(
+                        BootstrapMavenContext.config().setPreferPomsFromWorkspace(true).setWorkspaceModuleParentHierarchy(true)
+                                .setCurrentProject(projectDir.toString()));
+            }
+            return context;
+        } catch (BootstrapMavenException | URISyntaxException e) {
+            throw new RuntimeException("Failed bootstrap maven context", e);
         }
-        return context;
     }
 }

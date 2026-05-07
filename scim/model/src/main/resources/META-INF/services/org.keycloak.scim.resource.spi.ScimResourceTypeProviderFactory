@@ -1,0 +1,5 @@
+org.keycloak.scim.model.user.UserResourceTypeProviderFactory
+org.keycloak.scim.model.group.GroupResourceTypeProviderFactory
+org.keycloak.scim.model.config.ServiceProviderConfigResourceTypeProviderFactory
+org.keycloak.scim.model.resourcetype.ResourceTypeProviderFactory
+org.keycloak.scim.model.schema.SchemaResourceTypeProviderFactory

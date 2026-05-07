@@ -25,9 +25,9 @@ import org.keycloak.testsuite.federation.ldap.LDAPMultipleAttributesTest;
 import org.keycloak.testsuite.federation.ldap.LDAPTestAsserts;
 import org.keycloak.testsuite.federation.ldap.LDAPTestContext;
 
-import org.junit.Assert;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 import org.junit.runners.MethodSorters;
 
 /**
@@ -52,8 +52,8 @@ public class LDAPMultipleAttributesNoImportTest extends LDAPMultipleAttributesTe
 
             // Test user NOT imported in local storage now. He is available just through "session.users()"
             UserModel user = session.users().getUserByUsername(appRealm, "jbrown");
-            Assert.assertNotNull(user);
-            Assert.assertNull(UserStoragePrivateUtil.userLocalStorage(session).getUserById(appRealm, user.getId()));
+            Assertions.assertNotNull(user);
+            Assertions.assertNull(UserStoragePrivateUtil.userLocalStorage(session).getUserById(appRealm, user.getId()));
             LDAPTestAsserts.assertUserImported(session.users(), appRealm, "jbrown", "James", "Brown", "jbrown@keycloak.org", "88441");
         });
     }

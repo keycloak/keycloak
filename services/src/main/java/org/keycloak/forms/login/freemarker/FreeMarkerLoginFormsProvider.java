@@ -101,10 +101,12 @@ import org.keycloak.theme.beans.MessageBean;
 import org.keycloak.theme.beans.MessageFormatterMethod;
 import org.keycloak.theme.beans.MessagesPerFieldBean;
 import org.keycloak.theme.freemarker.FreeMarkerProvider;
+import org.keycloak.tracing.TracingProvider;
 import org.keycloak.userprofile.UserProfileContext;
 import org.keycloak.utils.MediaType;
 import org.keycloak.utils.MediaTypeMatcher;
 
+import io.opentelemetry.api.trace.SpanContext;
 import org.jboss.logging.Logger;
 
 import static org.keycloak.models.UserModel.RequiredAction.UPDATE_PASSWORD;
@@ -141,6 +143,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
     protected UriInfo uriInfo;
 
     protected FreeMarkerProvider freeMarker;
+    protected TracingProvider tracing;
 
     protected UserModel user;
 
@@ -152,6 +155,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
     public FreeMarkerLoginFormsProvider(KeycloakSession session) {
         this.session = session;
         this.freeMarker = session.getProvider(FreeMarkerProvider.class);
+        this.tracing = session.getProvider(TracingProvider.class);
         this.attributes.put("scripts", new LinkedList<>());
         this.realm = session.getContext().getRealm();
         this.client = session.getContext().getClient();
@@ -333,9 +337,11 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
                 break;
             case FRONTCHANNEL_LOGOUT:
                 attributes.put("logout", new FrontChannelLogoutBean(session));
+                attributes.put("title", getMessage("frontchannel-logout.title"));
                 break;
             case LOGOUT_CONFIRM:
                 attributes.put("logoutConfirm", new LogoutConfirmBean(accessCode, authenticationSession));
+                attributes.put("title", getMessage("logoutConfirmTitle"));
                 break;
         }
 
@@ -495,7 +501,9 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
         }
 
         if (realm != null) {
-            attributes.put("realm", new RealmBean(realm));
+            RealmBean realmBean = new RealmBean(realm);
+            attributes.put("realm", realmBean);
+            attributes.put("title", getMessage("loginTitle", realmBean.getDisplayName()));
 
             IdentityProviderBean idpBean = new IdentityProviderBean(session, realm, baseUriWithCodeAndClientId, context);
 
@@ -507,6 +515,9 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
             attributes.put("url", new UrlBean(realm, theme, baseUri, this.actionUri));
             attributes.put("requiredActionUrl", new RequiredActionUrlFormatterMethod(realm, baseUri));
             attributes.put("auth", new AuthenticationContextBean(context, page));
+            if (authenticationSession != null && Boolean.parseBoolean(authenticationSession.getAuthNote(OrganizationModel.ORGANIZATION_SWITCHABLE_ATTRIBUTE))) {
+                attributes.put("switchOrganizationEnabled", true);
+            }
             if (authenticationSession != null && Boolean.parseBoolean(authenticationSession.getAuthNote(AbstractUsernameFormAuthenticator.USERNAME_HIDDEN))) {
                 attributes.put(LoginFormsProvider.USERNAME_HIDDEN, Boolean.TRUE.toString());
             }
@@ -596,6 +607,11 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
         }
 
         attributes.put("lang", lang);
+
+        SpanContext spanContext = tracing.getCurrentSpan().getSpanContext();
+        if (spanContext.isValid()) {
+            attributes.put("traceId", spanContext.getTraceId());
+        }
     }
 
     private UriBuilder getDefaultPageUriForLocale(URI baseUri) {

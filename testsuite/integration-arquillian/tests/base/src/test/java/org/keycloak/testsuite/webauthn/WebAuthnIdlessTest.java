@@ -39,9 +39,10 @@ import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testsuite.AbstractAdminTest;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.IgnoreBrowserDriver;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
@@ -205,7 +206,7 @@ public class WebAuthnIdlessTest extends AbstractWebAuthnVirtualTest {
                 WebAuthnRegisterFactory.PROVIDER_ID;
         String credType = isPasswordless ? WebAuthnCredentialModel.TYPE_PASSWORDLESS: WebAuthnCredentialModel.TYPE_TWOFACTOR;
         String userId = getUserRepresentation(username).getId();
-        UserResource userRes = testRealm().users().get(userId);
+        UserResource userRes = managedRealm.admin().users().get(userId);
 
         assertThat(userRes.credentials().stream().filter(cred ->
                 cred.getType().equals(credType)).collect(Collectors.toList()).size(), is(0));
@@ -213,7 +214,7 @@ public class WebAuthnIdlessTest extends AbstractWebAuthnVirtualTest {
         assertThat(getVirtualAuthManager().getCurrent().getAuthenticator().getCredentials().stream().filter(cred ->
                 cred.isResidentCredential() == isPasswordless).collect(Collectors.toList()).size(), is(0));
 
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.assertCurrent();
         loginPage.login(username, getPassword(username));
 
@@ -256,22 +257,24 @@ public class WebAuthnIdlessTest extends AbstractWebAuthnVirtualTest {
                     .collect(Collectors.toList()).size(), is(1));
         }
 
-        String sessionId = events.expectLogin()
-                .user(userId)
-                .assertEvent().getSessionId();
+        EventRepresentation eventRepWithSession = events.poll();
+        EventAssertion.expectLoginSuccess(eventRepWithSession).userId(userId);
+        String sessionId = eventRepWithSession.getSessionId();
+
         events.clear();
         logout();
-        events.expectLogout(sessionId)
-                .removeDetail(Details.REDIRECT_URI)
-                .user(userId)
-                .client("account")
-                .assertEvent();
+        EventAssertion.assertSuccess(events.poll())
+                .type(EventType.LOGOUT)
+                .sessionId(sessionId)
+                .userId(userId)
+                .clientId("account")
+                .withoutDetails(Details.REDIRECT_URI);
         return credentialId2;
     }
 
     protected void checkTryAnotherWay() {
 
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.assertCurrent();
         loginPage.assertTryAnotherWayLinkAvailability(true);
         loginPage.clickTryAnotherWayLink();
@@ -298,7 +301,7 @@ public class WebAuthnIdlessTest extends AbstractWebAuthnVirtualTest {
 
         String userId = getUserRepresentation(username).getId();
 
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.assertCurrent();
         loginPage.assertTryAnotherWayLinkAvailability(true);
         loginPage.clickTryAnotherWayLink();
@@ -310,26 +313,28 @@ public class WebAuthnIdlessTest extends AbstractWebAuthnVirtualTest {
         webAuthnLoginPage.clickAuthenticate();
         appPage.assertCurrent();
 
-        String sessionId = events.expectLogin()
-                .user(userId)
-                .detail(WebAuthnConstants.PUBKEY_CRED_ID_ATTR, credentialId)
-                .detail("web_authn_authenticator_user_verification_checked", Boolean.FALSE.toString())
-                .assertEvent().getSessionId();
+        EventRepresentation eventRepWithSession = events.poll();
+        EventAssertion.expectLoginSuccess(eventRepWithSession)
+                .userId(userId)
+                .details(WebAuthnConstants.PUBKEY_CRED_ID_ATTR, credentialId)
+                .details("web_authn_authenticator_user_verification_checked", Boolean.FALSE.toString());
+        String sessionId = eventRepWithSession.getSessionId();
 
         events.clear();
         logout();
-        events.expectLogout(sessionId)
-                .removeDetail(Details.REDIRECT_URI)
-                .user(userId)
-                .client("account")
-                .assertEvent();
+        EventAssertion.assertSuccess(events.poll())
+                .type(EventType.LOGOUT)
+                .sessionId(sessionId)
+                .userId(userId)
+                .clientId("account")
+                .withoutDetails(Details.REDIRECT_URI);
     }
 
     protected void usernameAndWebAuthnPasswordlessAuthentication(String username, String credentialId) {
 
         String userId = getUserRepresentation(username).getId();
 
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.assertCurrent();
         loginPage.assertTryAnotherWayLinkAvailability(true);
         loginPage.clickTryAnotherWayLink();
@@ -341,26 +346,28 @@ public class WebAuthnIdlessTest extends AbstractWebAuthnVirtualTest {
         webAuthnLoginPage.clickAuthenticate();
         appPage.assertCurrent();
 
-        String sessionId = events.expectLogin()
-                .user(userId)
-                .detail(WebAuthnConstants.PUBKEY_CRED_ID_ATTR, credentialId)
-                .detail("web_authn_authenticator_user_verification_checked", Boolean.TRUE.toString())
-                .assertEvent().getSessionId();
+        EventRepresentation eventRepWithSession = events.poll();
+        EventAssertion.expectLoginSuccess(eventRepWithSession)
+                .userId(userId)
+                .details(WebAuthnConstants.PUBKEY_CRED_ID_ATTR, credentialId)
+                .details("web_authn_authenticator_user_verification_checked", Boolean.TRUE.toString());
+        String sessionId = eventRepWithSession.getSessionId();
 
         events.clear();
         logout();
-        events.expectLogout(sessionId)
-                .removeDetail(Details.REDIRECT_URI)
-                .user(userId)
-                .client("account")
-                .assertEvent();
+        EventAssertion.assertSuccess(events.poll())
+                .type(EventType.LOGOUT)
+                .sessionId(sessionId)
+                .userId(userId)
+                .clientId("account")
+                .withoutDetails(Details.REDIRECT_URI);
     }
 
     protected void idlessAuthentication(String username, String credentialId, boolean tryAnotherMethod, boolean shouldSuccess) {
 
         String userId = getUserRepresentation(username).getId();
 
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.assertCurrent();
         if (tryAnotherMethod) {
             loginPage.assertTryAnotherWayLinkAvailability(true);
@@ -375,19 +382,21 @@ public class WebAuthnIdlessTest extends AbstractWebAuthnVirtualTest {
         if (shouldSuccess) {
             appPage.assertCurrent();
 
-            String sessionId = events.expectLogin()
-                    .user(userId)
-                    .detail(WebAuthnConstants.PUBKEY_CRED_ID_ATTR, credentialId)
-                    .detail("web_authn_authenticator_user_verification_checked", Boolean.TRUE.toString())
-                    .assertEvent().getSessionId();
+            EventRepresentation eventRepWithSession = events.poll();
+            EventAssertion.expectLoginSuccess(eventRepWithSession)
+                    .userId(userId)
+                    .details(WebAuthnConstants.PUBKEY_CRED_ID_ATTR, credentialId)
+                    .details("web_authn_authenticator_user_verification_checked", Boolean.TRUE.toString());
+            String sessionId = eventRepWithSession.getSessionId();
 
             events.clear();
             logout();
-            events.expectLogout(sessionId)
-                    .removeDetail(Details.REDIRECT_URI)
-                    .user(userId)
-                    .client("account")
-                    .assertEvent();
+            EventAssertion.assertSuccess(events.poll())
+                    .type(EventType.LOGOUT)
+                    .sessionId(sessionId)
+                    .userId(userId)
+                    .clientId("account")
+                    .withoutDetails(Details.REDIRECT_URI);
         }
         else {
             loginPage.assertCurrent();
@@ -403,7 +412,7 @@ public class WebAuthnIdlessTest extends AbstractWebAuthnVirtualTest {
         String waplRequireRKString = waplRequireRK ? YES.getValue() : NO.getValue();
         String waplRequireUVString = waplRequireUV ? Constants.WEBAUTHN_POLICY_OPTION_REQUIRED : Constants.WEBAUTHN_POLICY_OPTION_DISCOURAGED;
 
-        RealmRepresentation realmRep = testRealm().toRepresentation();
+        RealmRepresentation realmRep = managedRealm.admin().toRepresentation();
 
         realmRep.setWebAuthnPolicyPasswordlessRequireResidentKey(waplRequireRKString);
         realmRep.setWebAuthnPolicyPasswordlessUserVerificationRequirement(waplRequireUVString);
@@ -415,8 +424,8 @@ public class WebAuthnIdlessTest extends AbstractWebAuthnVirtualTest {
         realmRep.setWebAuthnPolicyRpEntityName("localhost");
         realmRep.setWebAuthnPolicyRpId("localhost");
 
-        testRealm().update(realmRep);
-        realmRep = testRealm().toRepresentation();
+        managedRealm.admin().update(realmRep);
+        realmRep = managedRealm.admin().toRepresentation();
 
         assertThat(realmRep.getWebAuthnPolicyPasswordlessRequireResidentKey(), containsString(waplRequireRKString));
         assertThat(realmRep.getWebAuthnPolicyPasswordlessUserVerificationRequirement(), containsString(waplRequireUVString));
@@ -455,7 +464,7 @@ public class WebAuthnIdlessTest extends AbstractWebAuthnVirtualTest {
     protected UserRepresentation getUserRepresentation(String username)
     {
         if (username != null)
-            return ApiUtil.findUserByUsername(testRealm(), username);
+            return AdminApiUtil.findUserByUsername(managedRealm.admin(), username);
         else
             return null;
     }
@@ -475,7 +484,7 @@ public class WebAuthnIdlessTest extends AbstractWebAuthnVirtualTest {
             user.getRequiredActions().add(WebAuthnRegisterFactory.PROVIDER_ID);
         }
 
-        UserResource userResource = testRealm().users().get(user.getId());
+        UserResource userResource = managedRealm.admin().users().get(user.getId());
         assertThat(userResource, notNullValue());
         userResource.update(user);
 

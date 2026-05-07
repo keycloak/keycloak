@@ -44,16 +44,16 @@ import org.keycloak.protocol.oid4vc.model.CredentialSubject;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.testsuite.runonserver.RunOnServerException;
+import org.keycloak.testframework.remote.providers.runonserver.RunOnServerException;
 import org.keycloak.util.JsonSerialization;
 
 import org.jboss.logging.Logger;
 import org.junit.Before;
 import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.fail;
 
 
 public class JwtCredentialSignerTest extends OID4VCTest {
@@ -211,30 +211,30 @@ public class JwtCredentialSignerTest extends OID4VCTest {
         try {
             JsonWebToken theToken = verifier.getToken();
 
-            assertEquals("JWT claim in JWT encoded VC or VP MUST be used to set the value of the “expirationDate” of the VC", TEST_EXPIRATION_DATE.getEpochSecond(), theToken.getExp().longValue());
+            assertEquals(TEST_EXPIRATION_DATE.getEpochSecond(), theToken.getExp().longValue(), "JWT claim in JWT encoded VC or VP MUST be used to set the value of the “expirationDate” of the VC");
             if (claims.containsKey("issuanceDate")) {
-                assertEquals("VC Data Model v1.1 specifies that “issuanceDate” property MUST be represented as an nbf JWT claim, and not iat JWT claim.", ((Instant) claims.get("issuanceDate")).getEpochSecond(), theToken.getNbf().longValue());
+                assertEquals(((Instant) claims.get("issuanceDate")).getEpochSecond(), theToken.getNbf().longValue(), "VC Data Model v1.1 specifies that “issuanceDate” property MUST be represented as an nbf JWT claim, and not iat JWT claim.");
             } else {
                 // if not specific date is set, check against "currentTime"
-                assertEquals("VC Data Model v1.1 specifies that “issuanceDate” property MUST be represented as an nbf JWT claim, and not iat JWT claim.", TEST_ISSUANCE_DATE.getEpochSecond(), theToken.getNbf().longValue());
+                assertEquals(TEST_ISSUANCE_DATE.getEpochSecond(), theToken.getNbf().longValue(), "VC Data Model v1.1 specifies that “issuanceDate” property MUST be represented as an nbf JWT claim, and not iat JWT claim.");
             }
-            assertEquals("The issuer should be set in the token.", TEST_DID.toString(), theToken.getIssuer());
-            assertEquals("The credential ID should be set as the token ID.", testCredential.getId().toString(), theToken.getId());
-            Optional.ofNullable(testCredential.getCredentialSubject().getClaims().get("id")).ifPresent(id -> assertEquals("If the credentials subject id is set, it should be set as the token subject.", id.toString(), theToken.getSubject()));
+            assertEquals(TEST_DID.toString(), theToken.getIssuer(), "The issuer should be set in the token.");
+            assertEquals(testCredential.getId().toString(), theToken.getId(), "The credential ID should be set as the token ID.");
+            Optional.ofNullable(testCredential.getCredentialSubject().getClaims().get("id")).ifPresent(id -> assertEquals(id.toString(), theToken.getSubject(), "If the credentials subject id is set, it should be set as the token subject."));
 
-            assertNotNull("The credentials should be included at the vc-claim.", theToken.getOtherClaims().get("vc"));
+            assertNotNull(theToken.getOtherClaims().get("vc"), "The credentials should be included at the vc-claim.");
             VerifiableCredential credential = JsonSerialization.mapper.convertValue(theToken.getOtherClaims().get("vc"), VerifiableCredential.class);
-            assertEquals("The types should be included", TEST_TYPES, credential.getType());
-            assertEquals("The issuer should be included", TEST_DID, credential.getIssuer());
-            assertEquals("The expiration date should be included", TEST_EXPIRATION_DATE, credential.getExpirationDate());
+            assertEquals(TEST_TYPES, credential.getType(), "The types should be included");
+            assertEquals(TEST_DID, credential.getIssuer(), "The issuer should be included");
+            assertEquals(TEST_EXPIRATION_DATE, credential.getExpirationDate(), "The expiration date should be included");
             if (claims.containsKey("issuanceDate")) {
-                assertEquals("The issuance date should be included", claims.get("issuanceDate"), credential.getIssuanceDate());
+                assertEquals(claims.get("issuanceDate"), credential.getIssuanceDate(), "The issuance date should be included");
             }
 
             CredentialSubject subject = credential.getCredentialSubject();
             claims.entrySet().stream()
                     .filter(e -> !e.getKey().equals("issuanceDate"))
-                    .forEach(e -> assertEquals(String.format("All additional claims should be set - %s is incorrect", e.getKey()), e.getValue(), subject.getClaims().get(e.getKey())));
+                    .forEach(e -> assertEquals(e.getValue(), subject.getClaims().get(e.getKey()), String.format("All additional claims should be set - %s is incorrect", e.getKey())));
         } catch (VerificationException e) {
             fail("Was not able to get the token from the verifier.");
         }

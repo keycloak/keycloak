@@ -24,6 +24,8 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.text.DecimalFormat;
+import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -32,6 +34,8 @@ import java.util.function.Supplier;
 import org.keycloak.Config;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.provider.ProviderConfigurationBuilder;
 
 import com.google.common.hash.BloomFilter;
 import com.google.common.hash.Funnels;
@@ -82,7 +86,11 @@ public class BlacklistPasswordPolicyProviderFactory implements PasswordPolicyPro
 
     public static final String BLACKLISTS_FALSE_POSITIVE_PROBABILITY_PROPERTY = "falsePositiveProbability";
 
+    public static final String CHECK_INTERVAL_SECONDS_PROPERTY = "checkIntervalSeconds";
+
     public static final double DEFAULT_FALSE_POSITIVE_PROBABILITY = 0.0001;
+
+    public static final int DEFAULT_CHECK_INTERVAL_SECONDS = 60;
 
     public static final String JBOSS_SERVER_DATA_DIR = "jboss.server.data.dir";
 
@@ -173,9 +181,7 @@ public class BlacklistPasswordPolicyProviderFactory implements PasswordPolicyPro
 
         return blacklistRegistry.computeIfAbsent(listName, (name) -> {
             double fpp = getFalsePositiveProbability();
-            FileBasedPasswordBlacklist pbl = new FileBasedPasswordBlacklist(this.blacklistsBasePath, name, fpp);
-            pbl.lazyInit();
-            return pbl;
+            return new FileBasedPasswordBlacklist(this.blacklistsBasePath, name, fpp, getCheckIntervalSeconds() * 1000L);
         });
     }
 
@@ -196,6 +202,49 @@ public class BlacklistPasswordPolicyProviderFactory implements PasswordPolicyPro
             LOG.warnf("Could not parse false positive probability from string %s", falsePositiveProbString);
             return DEFAULT_FALSE_POSITIVE_PROBABILITY;
         }
+    }
+
+    protected int getCheckIntervalSeconds() {
+
+        if (config == null) {
+            return DEFAULT_CHECK_INTERVAL_SECONDS;
+        }
+
+        String checkIntervalString = config.get(CHECK_INTERVAL_SECONDS_PROPERTY);
+        if (checkIntervalString == null) {
+            return DEFAULT_CHECK_INTERVAL_SECONDS;
+        }
+
+        try {
+            return Integer.parseInt(checkIntervalString);
+        } catch (NumberFormatException nfe) {
+            LOG.warnf("Could not parse check interval seconds from string %s", checkIntervalString);
+            return DEFAULT_CHECK_INTERVAL_SECONDS;
+        }
+    }
+
+    @Override
+    public List<ProviderConfigProperty> getConfigMetadata() {
+        ProviderConfigurationBuilder builder = ProviderConfigurationBuilder.create();
+
+        DecimalFormat df = new DecimalFormat();
+        df.setMaximumFractionDigits(Integer.MAX_VALUE);
+
+        builder.property()
+                .name(BLACKLISTS_FALSE_POSITIVE_PROBABILITY_PROPERTY)
+                .type("string")
+                .helpText("False positive probability of the bloom filter to reject a valid password.")
+                .defaultValue(df.format(DEFAULT_FALSE_POSITIVE_PROBABILITY))
+                .add();
+
+        builder.property()
+                .name(CHECK_INTERVAL_SECONDS_PROPERTY)
+                .type("string")
+                .helpText("Interval in number of seconds when the server should check the password file for changes and reload it. Set to 0 to disable reloading.")
+                .defaultValue(DEFAULT_CHECK_INTERVAL_SECONDS)
+                .add();
+
+        return builder.build();
     }
 
     /**
@@ -244,22 +293,17 @@ public class BlacklistPasswordPolicyProviderFactory implements PasswordPolicyPro
 
         private final double falsePositiveProbability;
 
-        /**
-         * Initialized lazily via {@link #lazyInit()}
-         */
-        private BloomFilter<String> blacklist;
+        private volatile BloomFilter<String> blacklist;
 
-        /**
-         * Creates a new {@link FileBasedPasswordBlacklist} with {@link #DEFAULT_FALSE_POSITIVE_PROBABILITY}.
-         *
-         * @param blacklistBasePath folder containing the blacklists
-         * @param name name of blacklist file
-         */
-        public FileBasedPasswordBlacklist(Path blacklistBasePath, String name) {
-            this(blacklistBasePath, name, DEFAULT_FALSE_POSITIVE_PROBABILITY);
-        }
+        private final long checkIntervalMillis;
 
-        public FileBasedPasswordBlacklist(Path blacklistBasePath, String name, double falsePositiveProbability) {
+        private volatile long lastCheckedMillis;
+
+        private long lastModifiedMillis;
+
+        private long lastSizeBytes;
+
+        public FileBasedPasswordBlacklist(Path blacklistBasePath, String name, double falsePositiveProbability, long checkIntervalMillis) {
 
             if (name.contains("/")) {
                 // disallow '/' to avoid accidental filesystem traversal
@@ -269,10 +313,16 @@ public class BlacklistPasswordPolicyProviderFactory implements PasswordPolicyPro
             this.name = name;
             this.path = blacklistBasePath.resolve(name);
             this.falsePositiveProbability = falsePositiveProbability;
+            this.checkIntervalMillis = checkIntervalMillis;
 
             if (!Files.exists(this.path)) {
                 throw new IllegalArgumentException("Password blacklist " + name + " not found!");
             }
+
+            this.lastModifiedMillis = path.toFile().lastModified();
+            this.lastSizeBytes = path.toFile().length();
+            this.blacklist = load();
+            this.lastCheckedMillis = System.currentTimeMillis();
         }
 
         public String getName() {
@@ -284,16 +334,40 @@ public class BlacklistPasswordPolicyProviderFactory implements PasswordPolicyPro
         }
 
         public boolean contains(String password) {
-            return blacklist != null && blacklist.mightContain(password);
+            reloadIfNeeded();
+            return blacklist.mightContain(password);
         }
 
-        void lazyInit() {
-
-            if (blacklist != null) {
+        /**
+         * Check the modification time and file size and reload if it has changed since the last load.
+         * Uses double-checked locking to avoid redundant reloads by concurrent threads.
+         */
+        private void reloadIfNeeded() {
+            if (checkIntervalMillis == 0) {
                 return;
             }
-
-            this.blacklist = load();
+            long now = System.currentTimeMillis();
+            if (now - lastCheckedMillis < checkIntervalMillis) {
+                return;
+            }
+            synchronized (this) {
+                now = System.currentTimeMillis();
+                if (now - lastCheckedMillis < checkIntervalMillis) {
+                    return;
+                }
+                try {
+                    long currentModified = Files.getLastModifiedTime(path).toMillis();
+                    long currentSize = Files.size(path);
+                    if (currentModified != lastModifiedMillis || currentSize != lastSizeBytes) {
+                        blacklist = load();
+                        lastModifiedMillis = currentModified;
+                        lastSizeBytes = currentSize;
+                    }
+                } catch (Exception e) {
+                    LOG.warnf("Failed to reload blacklist %s, continuing with cached version: %s", name, e.getMessage());
+                }
+                lastCheckedMillis = now;
+            }
         }
 
         /**
@@ -305,6 +379,7 @@ public class BlacklistPasswordPolicyProviderFactory implements PasswordPolicyPro
 
             try {
                 LOG.infof("Loading blacklist start: name=%s path=%s", name, path);
+                long loadStartMillis = System.currentTimeMillis();
 
                 long passwordCount = countPasswordsInBlacklistFile();
                 double fpp = getFalsePositiveProbability();
@@ -317,8 +392,9 @@ public class BlacklistPasswordPolicyProviderFactory implements PasswordPolicyPro
                 insertPasswordsInto(filter);
 
                 double expectedFfp = filter.expectedFpp();
-                LOG.infof("Loading blacklist finished: name=%s passwords=%s path=%s falsePositiveProbability=%s expectedFalsePositiveProbability=%s",
-                        name, passwordCount, path, fpp, expectedFfp);
+                long loadTimeMillis = System.currentTimeMillis() - loadStartMillis;
+                LOG.infof("Loading blacklist finished: name=%s passwords=%s path=%s falsePositiveProbability=%s expectedFalsePositiveProbability=%s loadTime=%dms",
+                        name, passwordCount, path, fpp, expectedFfp, loadTimeMillis);
 
                 return filter;
             } catch (IOException e) {

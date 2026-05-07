@@ -30,6 +30,7 @@ import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ClientScopeResource;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.events.Details;
+import org.keycloak.events.EventType;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
@@ -45,22 +46,27 @@ import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.events.EventAssertion;
+import org.keycloak.testframework.realm.RoleBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.Assert;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.pages.OAuthGrantPage;
 import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.ClientManager;
-import org.keycloak.testsuite.util.RoleBuilder;
-import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.util.TokenUtil;
 
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
+import static org.keycloak.OAuthErrorException.INVALID_SCOPE;
 import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Test for OAuth2 'scope' parameter and for some other aspects of client scopes
@@ -81,9 +87,9 @@ public class OIDCScopeTest extends AbstractOIDCScopeTest {
                 .firstName("John")
                 .lastName("Doe")
                 .password("password")
-                .role("account", "manage-account")
-                .role("account", "view-profile")
-                .addRoles("role-1", "role-2")
+                .clientRoles("account", "manage-account")
+                .clientRoles("account", "view-profile")
+                .realmRoles("role-1", "role-2")
                 .build();
 
         user.setEmailVerified(true);
@@ -122,7 +128,7 @@ public class OIDCScopeTest extends AbstractOIDCScopeTest {
                 .username("role-1-user")
                 .enabled(true)
                 .password("password")
-                .addRoles("role-1")
+                .realmRoles("role-1")
                 .build();
         testRealm.getUsers().add(user);
 
@@ -130,7 +136,7 @@ public class OIDCScopeTest extends AbstractOIDCScopeTest {
                 .username("role-2-user")
                 .enabled(true)
                 .password("password")
-                .addRoles("role-2")
+                .realmRoles("role-2")
                 .build();
         testRealm.getUsers().add(user);
 
@@ -138,7 +144,7 @@ public class OIDCScopeTest extends AbstractOIDCScopeTest {
                 .username("role-parent-user")
                 .enabled(true)
                 .password("password")
-                .addRoles("role-parent")
+                .realmRoles("role-parent")
                 .build();
         testRealm.getUsers().add(user);
 
@@ -146,7 +152,7 @@ public class OIDCScopeTest extends AbstractOIDCScopeTest {
                 .username("group-role-1-user")
                 .enabled(true)
                 .password("password")
-                .addGroups("group-role-1")
+                .groups("group-role-1")
                 .build();
         testRealm.getUsers().add(user);
     }
@@ -160,7 +166,7 @@ public class OIDCScopeTest extends AbstractOIDCScopeTest {
     @Before
     public void clientConfiguration() {
         ClientManager.realm(adminClient.realm("test")).clientId("test-app").directAccessGrant(true);
-        oauth.clientId("test-app");
+        oauth.client("test-app", "password");
         oauth.scope(null);
     }
 
@@ -178,9 +184,8 @@ public class OIDCScopeTest extends AbstractOIDCScopeTest {
     public void testBuiltinOptionalScopes() throws Exception {
         // Login. Assert that just 'profile' and 'email' data are there. 'Address' and 'phone' not
         oauth.doLogin("john", "password");
-        EventRepresentation loginEvent = events.expectLogin()
-                .user(userId)
-                .assertEvent();
+        EventRepresentation loginEvent = events.poll();
+        EventAssertion.expectLoginSuccess(loginEvent).userId(userId);
 
         Tokens tokens = sendTokenRequest(loginEvent, userId, "openid email profile", "test-app");
         IDToken idToken = tokens.idToken;
@@ -195,17 +200,18 @@ public class OIDCScopeTest extends AbstractOIDCScopeTest {
 
         // Logout
         oauth.doLogout(tokens.refreshToken);
-        events.expectLogout(idToken.getSessionState())
-                .client("test-app")
-                .user(userId)
-                .removeDetail(Details.REDIRECT_URI).assertEvent();
+        EventAssertion.assertSuccess(events.poll())
+                .type(EventType.LOGOUT)
+                .sessionId(idToken.getSessionState())
+                .clientId(oauth.getClientId())
+                .userId(userId)
+                .withoutDetails(Details.REDIRECT_URI);
 
         // Login with optional scopes. Assert that everything is there
         oauth.scope("openid address phone microprofile-jwt");
         oauth.doLogin("john", "password");
-        loginEvent = events.expectLogin()
-                .user(userId)
-                .assertEvent();
+        loginEvent = events.poll();
+        EventAssertion.expectLoginSuccess(loginEvent).userId(userId);
         tokens = sendTokenRequest(loginEvent, userId,"openid email profile address phone microprofile-jwt", "test-app");
         idToken = tokens.idToken;
 
@@ -220,27 +226,27 @@ public class OIDCScopeTest extends AbstractOIDCScopeTest {
 
     private void assertProfile(IDToken idToken, boolean claimsIn) {
         if (claimsIn) {
-            Assert.assertEquals("john", idToken.getPreferredUsername());
-            Assert.assertEquals("John", idToken.getGivenName());
-            Assert.assertEquals("Doe", idToken.getFamilyName());
-            Assert.assertEquals("John Doe", idToken.getName());
-            Assert.assertEquals(Long.valueOf(1643282255L),idToken.getUpdatedAt());
+            Assertions.assertEquals("john", idToken.getPreferredUsername());
+            Assertions.assertEquals("John", idToken.getGivenName());
+            Assertions.assertEquals("Doe", idToken.getFamilyName());
+            Assertions.assertEquals("John Doe", idToken.getName());
+            Assertions.assertEquals(Long.valueOf(1643282255L),idToken.getUpdatedAt());
         } else {
-            Assert.assertNull(idToken.getPreferredUsername());
-            Assert.assertNull(idToken.getGivenName());
-            Assert.assertNull(idToken.getFamilyName());
-            Assert.assertNull(idToken.getName());
+            Assertions.assertNull(idToken.getPreferredUsername());
+            Assertions.assertNull(idToken.getGivenName());
+            Assertions.assertNull(idToken.getFamilyName());
+            Assertions.assertNull(idToken.getName());
         }
     }
 
 
     private void assertEmail(IDToken idToken, boolean claimsIn) {
         if (claimsIn) {
-            Assert.assertEquals("john@email.cz", idToken.getEmail());
-            Assert.assertEquals(true, idToken.getEmailVerified());
+            Assertions.assertEquals("john@email.cz", idToken.getEmail());
+            Assertions.assertEquals(true, idToken.getEmailVerified());
         } else {
-            Assert.assertNull(idToken.getEmail());
-            Assert.assertNull(idToken.getEmailVerified());
+            Assertions.assertNull(idToken.getEmail());
+            Assertions.assertNull(idToken.getEmailVerified());
         }
     }
 
@@ -248,36 +254,36 @@ public class OIDCScopeTest extends AbstractOIDCScopeTest {
     private void assertAddress(IDToken idToken, boolean claimsIn) {
         AddressClaimSet address = idToken.getAddress();
         if (claimsIn) {
-            Assert.assertNotNull(address);
-            Assert.assertEquals("Elm 5", address.getStreetAddress());
+            Assertions.assertNotNull(address);
+            Assertions.assertEquals("Elm 5", address.getStreetAddress());
         } else {
-            Assert.assertNull(address);
+            Assertions.assertNull(address);
         }
     }
 
 
     private void assertPhone(IDToken idToken, boolean claimsIn) {
         if (claimsIn) {
-            Assert.assertEquals("111-222-333", idToken.getPhoneNumber());
-            Assert.assertEquals(true, idToken.getPhoneNumberVerified());
+            Assertions.assertEquals("111-222-333", idToken.getPhoneNumber());
+            Assertions.assertEquals(true, idToken.getPhoneNumberVerified());
         } else {
-            Assert.assertNull(idToken.getPhoneNumber());
-            Assert.assertNull(idToken.getPhoneNumberVerified());
+            Assertions.assertNull(idToken.getPhoneNumber());
+            Assertions.assertNull(idToken.getPhoneNumberVerified());
         }
     }
 
 
     private void assertMicroprofile(IDToken idToken, boolean claimsIn) {
         if (claimsIn) {
-            Assert.assertTrue(idToken.getOtherClaims().containsKey("upn"));
-            Assert.assertEquals("john", idToken.getOtherClaims().get("upn"));
-            Assert.assertTrue(idToken.getOtherClaims().containsKey("groups"));
+            Assertions.assertTrue(idToken.getOtherClaims().containsKey("upn"));
+            Assertions.assertEquals("john", idToken.getOtherClaims().get("upn"));
+            Assertions.assertTrue(idToken.getOtherClaims().containsKey("groups"));
             List<String> groups = (List<String>) idToken.getOtherClaims().get("groups");
-            Assert.assertNotNull(groups);
-            Assert.assertTrue(groups.containsAll(Arrays.asList("role-1", "role-2")));
+            Assertions.assertNotNull(groups);
+            Assertions.assertTrue(groups.containsAll(Arrays.asList("role-1", "role-2")));
         } else {
-            Assert.assertFalse(idToken.getOtherClaims().containsKey("upn"));
-            Assert.assertFalse(idToken.getOtherClaims().containsKey("groups"));
+            Assertions.assertFalse(idToken.getOtherClaims().containsKey("upn"));
+            Assertions.assertFalse(idToken.getOtherClaims().containsKey("groups"));
         }
     }
 
@@ -285,19 +291,18 @@ public class OIDCScopeTest extends AbstractOIDCScopeTest {
     @Test
     public void testRemoveScopes() throws Exception {
         // Add 'profile' as optional scope. Remove 'email' scope entirely
-        String profileScopeId = ApiUtil.findClientScopeByName(testRealm(), "profile").toRepresentation().getId();
-        String emailScopeId = ApiUtil.findClientScopeByName(testRealm(), "email").toRepresentation().getId();
+        String profileScopeId = AdminApiUtil.findClientScopeByName(managedRealm.admin(), "profile").toRepresentation().getId();
+        String emailScopeId = AdminApiUtil.findClientScopeByName(managedRealm.admin(), "email").toRepresentation().getId();
 
-        ClientResource testApp = ApiUtil.findClientByClientId(testRealm(), "test-app");
+        ClientResource testApp = AdminApiUtil.findClientByClientId(managedRealm.admin(), "test-app");
         testApp.removeDefaultClientScope(profileScopeId);
         testApp.removeDefaultClientScope(emailScopeId);
         testApp.addOptionalClientScope(profileScopeId);
 
         // Login without scope parameter. Assert 'profile' and 'email' info not there
         oauth.doLogin("john", "password");
-        EventRepresentation loginEvent = events.expectLogin()
-                .user(userId)
-                .assertEvent();
+        EventRepresentation loginEvent = events.poll();
+        EventAssertion.expectLoginSuccess(loginEvent).userId(userId);
 
         Tokens tokens = sendTokenRequest(loginEvent, userId,"openid", "test-app");
         IDToken idToken = tokens.idToken;
@@ -309,17 +314,18 @@ public class OIDCScopeTest extends AbstractOIDCScopeTest {
 
         // Logout
         oauth.doLogout(tokens.refreshToken);
-        events.expectLogout(idToken.getSessionState())
-                .client("test-app")
-                .user(userId)
-                .removeDetail(Details.REDIRECT_URI).assertEvent();
+        EventAssertion.assertSuccess(events.poll())
+                .type(EventType.LOGOUT)
+                .sessionId(idToken.getSessionState())
+                .clientId(oauth.getClientId())
+                .userId(userId)
+                .withoutDetails(Details.REDIRECT_URI);
 
         // Login with scope parameter. Just 'profile' is there
         oauth.scope("openid profile");
         oauth.doLogin("john", "password");
-        loginEvent = events.expectLogin()
-                .user(userId)
-                .assertEvent();
+        loginEvent = events.poll();
+        EventAssertion.expectLoginSuccess(loginEvent).userId(userId);
         tokens = sendTokenRequest(loginEvent, userId,"openid profile", "test-app");
         idToken = tokens.idToken;
 
@@ -338,23 +344,24 @@ public class OIDCScopeTest extends AbstractOIDCScopeTest {
     @Test
     public void testOptionalScopesWithConsentRequired() throws Exception {
         // Remove "displayOnConsentScreen" from address
-        ClientScopeResource addressScope = ApiUtil.findClientScopeByName(testRealm(), "address");
+        ClientScopeResource addressScope = AdminApiUtil.findClientScopeByName(managedRealm.admin(), "address");
         ClientScopeRepresentation addressScopeRep = addressScope.toRepresentation();
         addressScopeRep.getAttributes().put(ClientScopeModel.DISPLAY_ON_CONSENT_SCREEN, "false");
         addressScope.update(addressScopeRep);
 
-        oauth.clientId("third-party");
+        oauth.client("third-party");
         oauth.doLogin("john", "password");
 
         grantPage.assertCurrent();
         grantPage.assertGrants(OAuthGrantPage.PROFILE_CONSENT_TEXT, OAuthGrantPage.EMAIL_CONSENT_TEXT, OAuthGrantPage.ROLES_CONSENT_TEXT);
         grantPage.accept();
 
-        EventRepresentation loginEvent = events.expectLogin()
-                .user(userId)
-                .client("third-party")
-                .detail(Details.CONSENT, Details.CONSENT_VALUE_CONSENT_GRANTED)
-                .assertEvent();
+        EventRepresentation loginEvent = events.poll();
+        EventAssertion.expectLoginSuccess(loginEvent)
+                .userId(userId)
+                .clientId("third-party")
+                .details(Details.REDIRECT_URI, oauth.getRedirectUri())
+                .details(Details.CONSENT, Details.CONSENT_VALUE_CONSENT_GRANTED);
 
         Tokens tokens = sendTokenRequest(loginEvent, userId,"openid email profile", "third-party");
         IDToken idToken = tokens.idToken;
@@ -366,10 +373,12 @@ public class OIDCScopeTest extends AbstractOIDCScopeTest {
 
         // Logout
         oauth.doLogout(tokens.refreshToken);
-        events.expectLogout(idToken.getSessionState())
-                .client("third-party")
-                .user(userId)
-                .removeDetail(Details.REDIRECT_URI).assertEvent();
+        EventAssertion.assertSuccess(events.poll())
+                .type(EventType.LOGOUT)
+                .sessionId(idToken.getSessionState())
+                .clientId("third-party")
+                .userId(userId)
+                .withoutDetails(Details.REDIRECT_URI);
 
         // Login with optional scopes. Grant screen should have just "phone"
         oauth.scope("openid address phone");
@@ -379,11 +388,12 @@ public class OIDCScopeTest extends AbstractOIDCScopeTest {
         grantPage.assertGrants(OAuthGrantPage.PHONE_CONSENT_TEXT);
         grantPage.accept();
 
-        loginEvent = events.expectLogin()
-                .client("third-party")
-                .detail(Details.CONSENT, Details.CONSENT_VALUE_CONSENT_GRANTED)
-                .user(userId)
-                .assertEvent();
+        loginEvent = events.poll();
+        EventAssertion.expectLoginSuccess(loginEvent)
+            .userId(userId)
+            .clientId("third-party")
+            .details(Details.REDIRECT_URI, oauth.getRedirectUri())
+            .details(Details.CONSENT, Details.CONSENT_VALUE_CONSENT_GRANTED);
         tokens = sendTokenRequest(loginEvent, userId,"openid email profile address phone", "third-party");
         idToken = tokens.idToken;
 
@@ -401,25 +411,26 @@ public class OIDCScopeTest extends AbstractOIDCScopeTest {
     @Test
     public void testClientDisplayedOnConsentScreen() throws Exception {
         // Add "displayOnConsentScreen" to client
-        ClientResource thirdParty = ApiUtil.findClientByClientId(testRealm(), "third-party");
+        ClientResource thirdParty = AdminApiUtil.findClientByClientId(managedRealm.admin(), "third-party");
         ClientRepresentation thirdPartyRep = thirdParty.toRepresentation();
         thirdPartyRep.getAttributes().put(ClientScopeModel.DISPLAY_ON_CONSENT_SCREEN, "true");
         thirdPartyRep.getAttributes().put(ClientScopeModel.CONSENT_SCREEN_TEXT, "ThirdParty permissions");
         thirdParty.update(thirdPartyRep);
 
         // Login. Client should be displayed on consent screen
-        oauth.clientId("third-party");
+        oauth.client("third-party");
         oauth.doLogin("john", "password");
 
         grantPage.assertCurrent();
         grantPage.assertGrants(OAuthGrantPage.PROFILE_CONSENT_TEXT, OAuthGrantPage.EMAIL_CONSENT_TEXT, OAuthGrantPage.ROLES_CONSENT_TEXT, "ThirdParty permissions");
         grantPage.accept();
 
-        EventRepresentation loginEvent = events.expectLogin()
-                .user(userId)
-                .client("third-party")
-                .detail(Details.CONSENT, Details.CONSENT_VALUE_CONSENT_GRANTED)
-                .assertEvent();
+        EventRepresentation loginEvent = events.poll();
+        EventAssertion.expectLoginSuccess(loginEvent)
+                .userId(userId)
+                .clientId("third-party")
+                .details(Details.REDIRECT_URI, oauth.getRedirectUri())
+                .details(Details.CONSENT, Details.CONSENT_VALUE_CONSENT_GRANTED);
 
         Tokens tokens = sendTokenRequest(loginEvent, userId,"openid email profile", "third-party");
         IDToken idToken = tokens.idToken;
@@ -439,20 +450,20 @@ public class OIDCScopeTest extends AbstractOIDCScopeTest {
     @Test
     public void testClientDisplayedOnConsentScreenWithEmptyConsentText() throws Exception {
         // Add "displayOnConsentScreen" to client
-        ClientResource thirdParty = ApiUtil.findClientByClientId(testRealm(), "third-party");
+        ClientResource thirdParty = AdminApiUtil.findClientByClientId(managedRealm.admin(), "third-party");
         ClientRepresentation thirdPartyRep = thirdParty.toRepresentation();
         thirdPartyRep.getAttributes().put(ClientScopeModel.DISPLAY_ON_CONSENT_SCREEN, "true");
         thirdPartyRep.getAttributes().put(ClientScopeModel.CONSENT_SCREEN_TEXT, "");
         thirdParty.update(thirdPartyRep);
 
         // Change consent text on profile scope
-        ClientScopeResource profileScope = ApiUtil.findClientScopeByName(testRealm(), OAuth2Constants.SCOPE_PROFILE);
+        ClientScopeResource profileScope = AdminApiUtil.findClientScopeByName(managedRealm.admin(), OAuth2Constants.SCOPE_PROFILE);
         ClientScopeRepresentation profileScopeRep = profileScope.toRepresentation();
         profileScopeRep.getAttributes().put(ClientScopeModel.CONSENT_SCREEN_TEXT, " ");
         profileScope.update(profileScopeRep);
 
         // Login. ConsentTexts are empty for the client and for the "profile" scope, so it should fallback to name/clientId
-        oauth.clientId("third-party");
+        oauth.client("third-party");
         oauth.doLogin("john", "password");
 
         grantPage.assertCurrent();
@@ -471,18 +482,19 @@ public class OIDCScopeTest extends AbstractOIDCScopeTest {
     @Test
     public void testRefreshTokenWithConsentRequired() {
         // Login with consentRequired
-        oauth.clientId("third-party");
+        oauth.client("third-party");
         oauth.doLogin("john", "password");
 
         grantPage.assertCurrent();
         grantPage.assertGrants(OAuthGrantPage.PROFILE_CONSENT_TEXT, OAuthGrantPage.EMAIL_CONSENT_TEXT, OAuthGrantPage.ROLES_CONSENT_TEXT);
         grantPage.accept();
 
-        EventRepresentation loginEvent = events.expectLogin()
-                .user(userId)
-                .client("third-party")
-                .detail(Details.CONSENT, Details.CONSENT_VALUE_CONSENT_GRANTED)
-                .assertEvent();
+        EventRepresentation loginEvent = events.poll();
+        EventAssertion.expectLoginSuccess(loginEvent)
+                .userId(userId)
+                .clientId("third-party")
+                .details(Details.REDIRECT_URI, oauth.getRedirectUri())
+                .details(Details.CONSENT, Details.CONSENT_VALUE_CONSENT_GRANTED);
 
         Tokens tokens = sendTokenRequest(loginEvent, userId,"openid email profile", "third-party");
         IDToken idToken = tokens.idToken;
@@ -495,7 +507,7 @@ public class OIDCScopeTest extends AbstractOIDCScopeTest {
 
         // Ensure that I can refresh token
         AccessTokenResponse refreshResponse = oauth.doRefreshTokenRequest(tokens.refreshToken);
-        Assert.assertEquals(200, refreshResponse.getStatusCode());
+        Assertions.assertEquals(200, refreshResponse.getStatusCode());
         idToken = oauth.verifyIDToken(refreshResponse.getIdToken());
 
         assertProfile(idToken, true);
@@ -512,7 +524,7 @@ public class OIDCScopeTest extends AbstractOIDCScopeTest {
         events.clear();
         AccountHelper.revokeConsents(adminClient.realm(TEST), "john", "third-party");
         List<Map<String, Object>> userConsents = AccountHelper.getUserConsents(adminClient.realm(TEST), "john");
-        Assert.assertEquals(userConsents.size(), 0);
+        Assertions.assertEquals(userConsents.size(), 0);
 
         // Ensure I can't refresh anymore
         refreshResponse = oauth.doRefreshTokenRequest(refreshResponse.getRefreshToken());
@@ -534,7 +546,7 @@ public class OIDCScopeTest extends AbstractOIDCScopeTest {
         ClientScopeRepresentation clientScope1 = new ClientScopeRepresentation();
         clientScope1.setName("scope-role-1");
         clientScope1.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
-        Response response = testRealm().clientScopes().create(clientScope1);
+        Response response = managedRealm.admin().clientScopes().create(clientScope1);
         String scope1Id = ApiUtil.getCreatedId(response);
         getCleanup().addClientScopeId(scope1Id);
         response.close();
@@ -542,19 +554,19 @@ public class OIDCScopeTest extends AbstractOIDCScopeTest {
         ClientScopeRepresentation clientScope2 = new ClientScopeRepresentation();
         clientScope2.setName("scope-role-2");
         clientScope2.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
-        response = testRealm().clientScopes().create(clientScope2);
+        response = managedRealm.admin().clientScopes().create(clientScope2);
         String scope2Id = ApiUtil.getCreatedId(response);
         getCleanup().addClientScopeId(scope2Id);
         response.close();
 
-        RoleRepresentation role1 = testRealm().roles().get("role-1").toRepresentation();
-        testRealm().clientScopes().get(scope1Id).getScopeMappings().realmLevel().add(Arrays.asList(role1));
+        RoleRepresentation role1 = managedRealm.admin().roles().get("role-1").toRepresentation();
+        managedRealm.admin().clientScopes().get(scope1Id).getScopeMappings().realmLevel().add(Arrays.asList(role1));
 
-        RoleRepresentation role2 = testRealm().roles().get("role-2").toRepresentation();
-        testRealm().clientScopes().get(scope2Id).getScopeMappings().realmLevel().add(Arrays.asList(role2));
+        RoleRepresentation role2 = managedRealm.admin().roles().get("role-2").toRepresentation();
+        managedRealm.admin().clientScopes().get(scope2Id).getScopeMappings().realmLevel().add(Arrays.asList(role2));
 
         // Add client scopes to our client. Disable fullScopeAllowed
-        ClientResource testApp = ApiUtil.findClientByClientId(testRealm(), "test-app");
+        ClientResource testApp = AdminApiUtil.findClientByClientId(managedRealm.admin(), "test-app");
         ClientRepresentation testAppRep = testApp.toRepresentation();
         testAppRep.setFullScopeAllowed(false);
         testApp.update(testAppRep);
@@ -564,36 +576,37 @@ public class OIDCScopeTest extends AbstractOIDCScopeTest {
         // Login with scope-role-1. Save refresh token
         oauth.scope("scope-role-1");
         oauth.doLogin("john", "password");
-        EventRepresentation loginEvent = events.expectLogin()
-                .user(userId)
-                .assertEvent();
+        EventRepresentation loginEvent = events.poll();
+        EventAssertion.expectLoginSuccess(loginEvent)
+                .userId(userId);
 
         Tokens tokens1 = sendTokenRequest(loginEvent, userId,"openid email profile scope-role-1", "test-app");
-        Assert.assertTrue(tokens1.accessToken.getRealmAccess().isUserInRole("role-1"));
-        Assert.assertFalse(tokens1.accessToken.getRealmAccess().isUserInRole("role-2"));
+        Assertions.assertTrue(tokens1.accessToken.getRealmAccess().isUserInRole("role-1"));
+        Assertions.assertFalse(tokens1.accessToken.getRealmAccess().isUserInRole("role-2"));
 
         //SSO login with scope-role-2. Save refresh token
         oauth.scope("scope-role-2");
         oauth.openLoginForm();
-        loginEvent = events.expectLogin().user(userId).removeDetail(Details.USERNAME).client("test-app").assertEvent();
+        loginEvent = events.poll();
+        EventAssertion.expectLoginSuccess(loginEvent).userId(userId).clientId("test-app");
         Tokens tokens2 = sendTokenRequest(loginEvent, userId,"openid email profile scope-role-2", "test-app");
-        Assert.assertFalse(tokens2.accessToken.getRealmAccess().isUserInRole("role-1"));
-        Assert.assertTrue(tokens2.accessToken.getRealmAccess().isUserInRole("role-2"));
+        Assertions.assertFalse(tokens2.accessToken.getRealmAccess().isUserInRole("role-1"));
+        Assertions.assertTrue(tokens2.accessToken.getRealmAccess().isUserInRole("role-2"));
 
         // Ensure I can refresh refreshToken1. Just role1 is present
         oauth.scope(null);
         AccessTokenResponse refreshResponse1 = oauth.doRefreshTokenRequest(tokens1.refreshToken);
-        Assert.assertEquals(200, refreshResponse1.getStatusCode());
+        Assertions.assertEquals(200, refreshResponse1.getStatusCode());
         AccessToken accessToken1 = oauth.verifyToken(refreshResponse1.getAccessToken());
-        Assert.assertTrue(accessToken1.getRealmAccess().isUserInRole("role-1"));
-        Assert.assertFalse(accessToken1.getRealmAccess().isUserInRole("role-2"));
+        Assertions.assertTrue(accessToken1.getRealmAccess().isUserInRole("role-1"));
+        Assertions.assertFalse(accessToken1.getRealmAccess().isUserInRole("role-2"));
 
         // Ensure I can refresh refreshToken2. Just role2 is present
         AccessTokenResponse refreshResponse2 = oauth.doRefreshTokenRequest(tokens2.refreshToken);
-        Assert.assertEquals(200, refreshResponse2.getStatusCode());
+        Assertions.assertEquals(200, refreshResponse2.getStatusCode());
         AccessToken accessToken2 = oauth.verifyToken(refreshResponse2.getAccessToken());
-        Assert.assertFalse(accessToken2.getRealmAccess().isUserInRole("role-1"));
-        Assert.assertTrue(accessToken2.getRealmAccess().isUserInRole("role-2"));
+        Assertions.assertFalse(accessToken2.getRealmAccess().isUserInRole("role-1"));
+        Assertions.assertTrue(accessToken2.getRealmAccess().isUserInRole("role-2"));
 
         // Revert
         testAppRep.setFullScopeAllowed(true);
@@ -610,7 +623,7 @@ public class OIDCScopeTest extends AbstractOIDCScopeTest {
         ClientScopeRepresentation clientScope1 = new ClientScopeRepresentation();
         clientScope1.setName("scope-role-1");
         clientScope1.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
-        Response response = testRealm().clientScopes().create(clientScope1);
+        Response response = managedRealm.admin().clientScopes().create(clientScope1);
         String scope1Id = ApiUtil.getCreatedId(response);
         getCleanup().addClientScopeId(scope1Id);
         response.close();
@@ -618,19 +631,19 @@ public class OIDCScopeTest extends AbstractOIDCScopeTest {
         ClientScopeRepresentation clientScopeParent = new ClientScopeRepresentation();
         clientScopeParent.setName("scope-role-parent");
         clientScopeParent.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
-        response = testRealm().clientScopes().create(clientScopeParent);
+        response = managedRealm.admin().clientScopes().create(clientScopeParent);
         String scopeParentId = ApiUtil.getCreatedId(response);
         getCleanup().addClientScopeId(scopeParentId);
         response.close();
 
-        RoleRepresentation role1 = testRealm().roles().get("role-1").toRepresentation();
-        testRealm().clientScopes().get(scope1Id).getScopeMappings().realmLevel().add(Arrays.asList(role1));
+        RoleRepresentation role1 = managedRealm.admin().roles().get("role-1").toRepresentation();
+        managedRealm.admin().clientScopes().get(scope1Id).getScopeMappings().realmLevel().add(Arrays.asList(role1));
 
-        RoleRepresentation roleParent = testRealm().roles().get("role-parent").toRepresentation();
-        testRealm().clientScopes().get(scopeParentId).getScopeMappings().realmLevel().add(Arrays.asList(roleParent));
+        RoleRepresentation roleParent = managedRealm.admin().roles().get("role-parent").toRepresentation();
+        managedRealm.admin().clientScopes().get(scopeParentId).getScopeMappings().realmLevel().add(Arrays.asList(roleParent));
 
         // Add client scopes to our client
-        ClientResource testApp = ApiUtil.findClientByClientId(testRealm(), "test-app");
+        ClientResource testApp = AdminApiUtil.findClientByClientId(managedRealm.admin(), "test-app");
         ClientRepresentation testAppRep = testApp.toRepresentation();
         testApp.update(testAppRep);
         testApp.addDefaultClientScope(scope1Id);
@@ -654,24 +667,53 @@ public class OIDCScopeTest extends AbstractOIDCScopeTest {
         testApp.removeOptionalClientScope(scopeParentId);
     }
 
+    @Test
+    public void testLengthyScopeParameter() {
+        // Scope parameter too long (longer than 4000 characters). Will be ignored
+        String scope = getLongScopeParameter(1000);
+        oauth.scope(scope);
+        AccessTokenResponse response = oauth.doPasswordGrantRequest("john", "password");
+        assertEquals(200, response.getStatusCode());
+        AccessToken token = oauth.verifyToken(response.getAccessToken());
+        Assertions.assertFalse(TokenUtil.isOIDCRequest(token.getScope()));
+
+        // Scope parameter relatively long. Should not be ignored
+        scope = getLongScopeParameter(800);
+        oauth.scope(scope);
+        response = oauth.doPasswordGrantRequest("john", "password");
+        assertEquals(400, response.getStatusCode());
+        assertEquals(INVALID_SCOPE, response.getError());
+    }
+
+    // Get very long "scope" parameter created from big list of some unknown scopes
+    private String getLongScopeParameter(int scopesCount) {
+        StringBuilder scopeParam = new StringBuilder("openid");
+        for (int i = 0 ; i < scopesCount ; i++) {
+            scopeParam.append(" s").append(i);
+        }
+        String scope = scopeParam.toString();
+        getLogger().infof("Scopes count: %d, Scope param length: %d", scopesCount, scope.length());
+        return scope;
+    }
 
     private void testLoginAndClientScopesPermissions(String username, String expectedRoleScopes, String... expectedRoles) {
-        String userId = ApiUtil.findUserByUsername(testRealm(), username).getId();
+        String userId = AdminApiUtil.findUserByUsername(managedRealm.admin(), username).getId();
 
         oauth.openLoginForm();
         oauth.doLogin(username, "password");
-        EventRepresentation loginEvent = events.expectLogin()
-                .user(userId)
-                .assertEvent();
+        EventRepresentation loginEvent = events.poll();
+        EventAssertion.expectLoginSuccess(loginEvent).userId(userId);
 
         Tokens tokens = sendTokenRequest(loginEvent, userId,"openid email profile " + expectedRoleScopes, "test-app");
         Assert.assertNames(tokens.accessToken.getRealmAccess().getRoles(), expectedRoles);
 
         oauth.doLogout(tokens.refreshToken);
-        events.expectLogout(tokens.idToken.getSessionState())
-                .client("test-app")
-                .user(userId)
-                .removeDetail(Details.REDIRECT_URI).assertEvent();
+        EventAssertion.assertSuccess(events.poll())
+                .type(EventType.LOGOUT)
+                .sessionId(tokens.idToken.getSessionState())
+                .clientId(oauth.getClientId())
+                .userId(userId)
+                .withoutDetails(Details.REDIRECT_URI);
     }
 
 

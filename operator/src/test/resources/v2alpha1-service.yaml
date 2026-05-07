@@ -1,0 +1,28 @@
+apiVersion: "v1"
+kind: "Service"
+metadata:
+  labels:
+    app: "keycloak"
+    app.kubernetes.io/instance: "example-kc"
+    app.kubernetes.io/managed-by: "keycloak-operator"
+  name: "example-kc-service"
+spec:
+  internalTrafficPolicy: "Cluster"
+  ipFamilies:
+  - "IPv4"
+  ipFamilyPolicy: "SingleStack"
+  ports:
+  - name: "https"
+    port: 8443
+    protocol: "TCP"
+    targetPort: 8443
+  - name: "management"
+    port: 9000
+    protocol: "TCP"
+    targetPort: 9000
+  selector:
+    app: "keycloak"
+    app.kubernetes.io/instance: "example-kc"
+    app.kubernetes.io/managed-by: "keycloak-operator"
+  sessionAffinity: "None"
+  type: "ClusterIP"

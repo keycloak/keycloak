@@ -20,8 +20,10 @@ package org.keycloak.quarkus.runtime.integration.cdi;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.enterprise.inject.Disposes;
+import jakarta.inject.Inject;
 
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.quarkus.runtime.integration.QuarkusKeycloakSessionFactory;
 import org.keycloak.quarkus.runtime.transaction.TransactionalSessionHandler;
 import org.keycloak.utils.KeycloakSessionUtil;
 
@@ -31,9 +33,12 @@ import io.quarkus.arc.Unremovable;
 @Unremovable
 public class KeycloakBeanProducer implements TransactionalSessionHandler {
 
+    @Inject
+    QuarkusKeycloakSessionFactory factory;
+
     @RequestScoped
     public KeycloakSession getKeycloakSession() {
-        return create();
+        return factory.create();
     }
 
     void dispose(@Disposes KeycloakSession session) {

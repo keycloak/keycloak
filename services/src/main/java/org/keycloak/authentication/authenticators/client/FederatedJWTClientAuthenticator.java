@@ -26,11 +26,8 @@ import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.services.resources.IdentityBrokerService;
 
-import org.jboss.logging.Logger;
 
 public class FederatedJWTClientAuthenticator extends AbstractClientAuthenticator implements EnvironmentDependentProviderFactory {
-
-    private static final Logger LOGGER = Logger.getLogger(FederatedJWTClientAuthenticator.class);
 
     public static final String PROVIDER_ID = "federated-jwt";
 
@@ -113,7 +110,7 @@ public class FederatedJWTClientAuthenticator extends AbstractClientAuthenticator
                 context.failure(AuthenticationFlowError.INVALID_CLIENT_CREDENTIALS);
             }
         } catch (Exception e) {
-            LOGGER.warn("Authentication failed", e);
+            logger.warn("Authentication failed", e);
             context.failure(AuthenticationFlowError.INVALID_CLIENT_CREDENTIALS);
         }
     }

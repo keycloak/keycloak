@@ -75,7 +75,7 @@ final class CachingPropertyMappers implements PropertyMapperGrouping {
                         .to("kc.spi-cache-embedded--default--config-mutate")
                         .build(),
                 fromOption(CachingOptions.CACHE_EMBEDDED_MTLS_ENABLED)
-                        .to("kc.spi-jgroups-mtls--default--enabled")
+                        .to("kc.spi-jgroups-mtls--default--activated")
                         .isEnabled(CachingPropertyMappers::getDefaultMtlsEnabled, "a TCP based cache-stack is used")
                         .build(),
                 fromOption(CachingOptions.CACHE_EMBEDDED_MTLS_KEYSTORE.withRuntimeSpecificDefault(getConfPathValue("cache-mtls-keystore.p12")))

@@ -44,7 +44,8 @@ import org.keycloak.testframework.events.AdminEvents;
 import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.realm.ManagedClient;
 import org.keycloak.testframework.realm.ManagedRealm;
-import org.keycloak.testframework.realm.RoleConfigBuilder;
+import org.keycloak.testframework.realm.RoleBuilder;
+import org.keycloak.tests.suites.DatabaseTest;
 import org.keycloak.tests.utils.Assert;
 import org.keycloak.tests.utils.admin.AdminEventPaths;
 
@@ -88,12 +89,12 @@ public class RoleByIdResourceTest {
 
     @BeforeEach
     public void before() {
-        managedRealm.admin().roles().create(RoleConfigBuilder.create().name(roleNameA).description("Role A").build());
-        managedRealm.admin().roles().create(RoleConfigBuilder.create().name(roleNameB).description("Role B").build());
+        managedRealm.admin().roles().create(RoleBuilder.create().name(roleNameA).description("Role A").build());
+        managedRealm.admin().roles().create(RoleBuilder.create().name(roleNameB).description("Role B").build());
         // add a role that is a composite role
-        RoleRepresentation roleD = RoleConfigBuilder.create().name(roleNameD).description("Role D").build();
+        RoleRepresentation roleD = RoleBuilder.create().name(roleNameD).description("Role D").build();
         managedRealm.admin().roles().create(roleD);
-        managedRealm.admin().roles().create(RoleConfigBuilder.create()
+        managedRealm.admin().roles().create(RoleBuilder.create()
                 .name(roleNameCompositeWihD)
                 .description("Composite Role with Role D")
                 .composite(true)
@@ -101,7 +102,7 @@ public class RoleByIdResourceTest {
                 .build()
         );
 
-        managedRealm.admin().clients().get(managedClient.getId()).roles().create(RoleConfigBuilder.create().name(roleNameC).description("Role C").build());
+        managedRealm.admin().clients().get(managedClient.getId()).roles().create(RoleBuilder.create().name(roleNameC).description("Role C").build());
 
         managedRealm.admin().roles().list()
                 .forEach(r -> roleIds.put(r.getName(), r.getId()));
@@ -123,6 +124,7 @@ public class RoleByIdResourceTest {
     }
 
     @Test
+    @DatabaseTest
     public void updateRole() {
         RoleRepresentation role = resource.getRole(roleIds.get(roleNameA));
 
@@ -141,6 +143,7 @@ public class RoleByIdResourceTest {
     }
 
     @Test
+    @DatabaseTest
     public void deleteRole() {
         assertNotNull(resource.getRole(roleIds.get(roleNameA)));
         resource.deleteRole(roleIds.get(roleNameA));
@@ -155,13 +158,14 @@ public class RoleByIdResourceTest {
     }
 
     @Test
+    @DatabaseTest
     public void composites() {
         assertFalse(resource.getRole(roleIds.get(roleNameA)).isComposite());
         assertEquals(0, resource.getRoleComposites(roleIds.get(roleNameA)).size());
 
         List<RoleRepresentation> l = new LinkedList<>();
-        l.add(RoleConfigBuilder.create().id(roleIds.get(roleNameB)).build());
-        l.add(RoleConfigBuilder.create().id(roleIds.get(roleNameC)).build());
+        l.add(RoleBuilder.create().id(roleIds.get(roleNameB)).build());
+        l.add(RoleBuilder.create().id(roleIds.get(roleNameC)).build());
         resource.addComposites(roleIds.get(roleNameA), l);
 
         AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.CREATE, AdminEventPaths.roleByIdResourceCompositesPath(roleIds.get(roleNameA)), l, ResourceType.REALM_ROLE);
@@ -205,7 +209,7 @@ public class RoleByIdResourceTest {
      */
     @Test
     public void createNewMixedRealmCompositeRole() {
-        RoleRepresentation newRoleComp = RoleConfigBuilder.create()
+        RoleRepresentation newRoleComp = RoleBuilder.create()
                 .name("role-mixed-comp")
                 .composite(true)
                 .realmComposite(roleNameA)
@@ -239,7 +243,7 @@ public class RoleByIdResourceTest {
     @Test
     public void createNewMixedRealmCompositeRoleWithUnknownRealmRoleShouldThrow() {
         String unknownRealmRole = "realm-role-unknown";
-        RoleRepresentation newRoleComp = RoleConfigBuilder.create()
+        RoleRepresentation newRoleComp = RoleBuilder.create()
                 .name("role-broken-comp1")
                 .composite(true)
                 .realmComposite(unknownRealmRole)
@@ -255,7 +259,7 @@ public class RoleByIdResourceTest {
     @Test
     public void createNewMixedRealmCompositeRoleWithUnknownClientRoleShouldThrow() {
         String unknownClientRole = "client-role-unknown";
-        RoleRepresentation newRoleComp = RoleConfigBuilder.create()
+        RoleRepresentation newRoleComp = RoleBuilder.create()
                 .name("role-broken-comp2")
                 .composite(true)
                 .realmComposite(roleNameA)
@@ -317,7 +321,7 @@ public class RoleByIdResourceTest {
     @Test
     public void renameRoleToNamePreviouslyCached() {
         String roleName = "realm-role-new-" + new Random().nextInt();
-        RoleRepresentation newRoleRepresentation = RoleConfigBuilder.create()
+        RoleRepresentation newRoleRepresentation = RoleBuilder.create()
                 .name(roleName)
                 .build();
         managedRealm.admin().roles().create(newRoleRepresentation);
@@ -326,7 +330,7 @@ public class RoleByIdResourceTest {
         String newRoleName = "realm-role-renamed-" + new Random().nextInt();
         cacheMissingRoleName(newRoleName);
 
-        RoleRepresentation updatedRoleRepresentation = RoleConfigBuilder.create()
+        RoleRepresentation updatedRoleRepresentation = RoleBuilder.create()
                 .id(roleRepresentation.getId())
                 .name(newRoleName)
                 .build();
@@ -345,7 +349,7 @@ public class RoleByIdResourceTest {
     @Test
     public void createRolePreviouslyCached() {
         String roleName = "realm-role-new-" + new Random().nextInt();
-        RoleRepresentation roleRepresentation = RoleConfigBuilder.create()
+        RoleRepresentation roleRepresentation = RoleBuilder.create()
                 .name(roleName)
                 .build();
 

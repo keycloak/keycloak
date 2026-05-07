@@ -138,6 +138,7 @@ export const AdvancedTab = ({ save, client }: AdvancedProps) => {
                       "use.refresh.tokens",
                       "client_credentials.use_refresh_token",
                       "token.response.type.bearer.lower-case",
+                      "oauth2.jwt.authorization.grant.audience",
                     ])
                   }
                 />

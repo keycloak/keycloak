@@ -35,6 +35,7 @@ import org.keycloak.jose.jws.AlgorithmType;
 import org.keycloak.jose.jws.JWSHeader;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
+import org.keycloak.jose.jws.crypto.ECDSAProvider;
 import org.keycloak.jose.jws.crypto.HMACProvider;
 import org.keycloak.jose.jws.crypto.RSAProvider;
 import org.keycloak.representations.JsonWebToken;
@@ -440,15 +441,23 @@ public class TokenVerifier<T extends JsonWebToken> {
             }
         } else {
             AlgorithmType algorithmType = getHeader().getAlgorithm().getType();
-
             if (null == algorithmType) {
                 throw new VerificationException("Unknown or unsupported token algorithm");
-            } else switch (algorithmType) {
+            }
+            switch (algorithmType) {
                 case RSA:
                     if (publicKey == null) {
                         throw new VerificationException("Public key not set");
                     }
                     if (!RSAProvider.verify(jws, publicKey)) {
+                        throw new TokenSignatureInvalidException(token, "Invalid token signature");
+                    }
+                    break;
+                case ECDSA:
+                    if (publicKey == null) {
+                        throw new VerificationException("Public key not set");
+                    }
+                    if (!ECDSAProvider.verify(jws, publicKey)) {
                         throw new TokenSignatureInvalidException(token, "Invalid token signature");
                     }
                     break;

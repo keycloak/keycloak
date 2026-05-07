@@ -218,16 +218,18 @@ public class Rfc9440ClientCertificateLookupTest {
     }
 
     @Test
-    public void testErrorOnTooLongChain() {
+    public void testTruncatesChainWhenExceedsLimit() throws GeneralSecurityException {
         Rfc9440ClientCertificateLookup subject = createSubject(1);
         HttpRequest httpRequest = createHttpRequest(headers -> {
             headers.add(CLIENT_CERT_HEADER, clientCertHeaderValue);
             headers.add(CLIENT_CHAIN_HEADER, clientChainHeaderValue);
         });
 
-        assertThrows(GeneralSecurityException.class, () -> {
-            subject.getCertificateChain(httpRequest);
-        });
+        X509Certificate[] actualChain = subject.getCertificateChain(httpRequest);
+
+        assertThat(actualChain, is(not(nullValue())));
+        // client cert + 1 chain cert (truncated from 2)
+        assertThat(actualChain, is(arrayWithSize(2)));
     }
 
     private static Rfc9440ClientCertificateLookup createSubject(int certificateChainLength) {

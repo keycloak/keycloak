@@ -116,8 +116,17 @@ public class RealmAttributeUpdater extends ServerResourceUpdater<RealmAttributeU
         return this;
     }
 
+    public RealmAttributeUpdater setFailureFactor(Integer value) {
+        rep.setFailureFactor(value);
+        return this;
+    }
     public RealmAttributeUpdater setMaxDeltaTimeSeconds(Integer value) {
         rep.setMaxDeltaTimeSeconds(value);
+        return this;
+    }
+
+    public RealmAttributeUpdater setMaxSecondaryAuthFailures(Integer value) {
+        rep.setMaxSecondaryAuthFailures(value);
         return this;
     }
 

@@ -10,6 +10,12 @@ public class ManagedRealmCleanup {
 
     private final List<RealmCleanup> cleanupTasks = new LinkedList<>();
 
+    /**
+     * Add a cleanup task to perform on the realm once the test has completed
+     *
+     * @param realmCleanup the cleanup to perform on the realm
+     * @return
+     */
     public ManagedRealmCleanup add(RealmCleanup realmCleanup) {
         this.cleanupTasks.add(realmCleanup);
         return this;

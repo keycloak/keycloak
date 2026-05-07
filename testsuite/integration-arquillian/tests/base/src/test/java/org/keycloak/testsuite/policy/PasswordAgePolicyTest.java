@@ -28,23 +28,23 @@ import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.realm.ClientBuilder;
+import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testsuite.AbstractAuthTest;
-import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.auth.page.AuthRealm;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.RegisterPage;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
-import org.keycloak.testsuite.util.ClientBuilder;
-import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 import static org.keycloak.representations.idm.CredentialRepresentation.PASSWORD;
 import static org.keycloak.testsuite.admin.ApiUtil.getCreatedId;
@@ -134,7 +134,7 @@ public class PasswordAgePolicyTest extends AbstractAuthTest {
     public void addTestRealms(List<RealmRepresentation> testRealms) {
         testRealms.add(RealmBuilder.create()
                 .name(AuthRealm.TEST)
-                .client(ClientBuilder.create()
+                .clients(ClientBuilder.create()
                         .clientId("test-app")
                         .redirectUris(
                                 "http://localhost:8180/auth/realms/master/app/auth/*",
@@ -318,12 +318,12 @@ public class PasswordAgePolicyTest extends AbstractAuthTest {
 
             registerPage.register("firstName", "lastName", "registration-user@localhost", "registration-user", "password", "password");
 
-            Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+            Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
             AuthorizationEndpointResponse response = oauth.parseLoginResponse();
-            Assert.assertNull(response.getError());
-            Assert.assertNotNull(response.getCode());
+            Assertions.assertNull(response.getError());
+            Assertions.assertNotNull(response.getCode());
 
-            ApiUtil.findUserByUsernameId(testRealmResource(), "registration-user").remove();
+            AdminApiUtil.findUserByUsernameId(testRealmResource(), "registration-user").remove();
         }
     }
 }

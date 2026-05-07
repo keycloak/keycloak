@@ -48,6 +48,10 @@
         <!-- Fabric8 -->
         <dependency>
             <groupId>io.fabric8</groupId>
+            <artifactId>crd-generator-api-v2</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.fabric8</groupId>
             <artifactId>generator-annotations</artifactId>
             <scope>provided</scope>
         </dependency>
@@ -118,10 +122,6 @@
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-admin-v2-api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-admin-v2-rest</artifactId>
         </dependency>
 
         <!-- Test -->

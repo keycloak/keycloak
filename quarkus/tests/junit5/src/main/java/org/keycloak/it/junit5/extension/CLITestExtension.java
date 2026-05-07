@@ -22,7 +22,6 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -34,8 +33,6 @@ import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.cli.command.DryRunMixin;
 import org.keycloak.quarkus.runtime.cli.command.Start;
 import org.keycloak.quarkus.runtime.cli.command.StartDev;
-import org.keycloak.quarkus.runtime.configuration.Configuration;
-import org.keycloak.quarkus.runtime.integration.QuarkusPlatform;
 
 import io.quarkus.deployment.util.FileUtil;
 import io.quarkus.runtime.configuration.QuarkusConfigFactory;
@@ -43,8 +40,6 @@ import io.quarkus.test.junit.QuarkusMainTestExtension;
 import io.quarkus.test.junit.main.Launch;
 import io.quarkus.test.junit.main.LaunchResult;
 import org.junit.jupiter.api.extension.ExtensionContext;
-import org.junit.jupiter.api.extension.ExtensionContext.Namespace;
-import org.junit.jupiter.api.extension.ExtensionContext.Store;
 import org.junit.jupiter.api.extension.ParameterContext;
 import org.junit.jupiter.api.extension.ParameterResolutionException;
 import org.junit.jupiter.api.extension.ReflectiveInvocationContext;
@@ -57,7 +52,6 @@ import static org.keycloak.quarkus.runtime.Environment.forceTestLaunchMode;
 
 public class CLITestExtension extends QuarkusMainTestExtension {
 
-    private static final String SYS_PROPS = "sys-props";
     private KeycloakDistribution dist;
     private DatabaseContainer databaseContainer;
     private InfinispanContainer infinispanContainer;
@@ -67,7 +61,6 @@ public class CLITestExtension extends QuarkusMainTestExtension {
     public void beforeEach(ExtensionContext context) throws Exception {
         DistributionTest distConfig = getDistributionConfig(context);
         Launch launch = context.getRequiredTestMethod().getAnnotation(Launch.class);
-        getStore(context).put(SYS_PROPS, new HashMap<>(System.getProperties()));
 
         if (launch != null && distConfig == null) {
             Stream.of(launch.value()).forEach(arg -> {
@@ -116,10 +109,6 @@ public class CLITestExtension extends QuarkusMainTestExtension {
             configureProfile(context);
             super.beforeEach(context);
         }
-    }
-
-    private Store getStore(ExtensionContext context) {
-        return context.getStore(Namespace.create(context.getRequiredTestClass(), context.getRequiredTestMethod()));
     }
 
     private static Storage getStoreConfig(ExtensionContext context) {
@@ -194,12 +183,6 @@ public class CLITestExtension extends QuarkusMainTestExtension {
 
     private void reset(DistributionTest distConfig, ExtensionContext context) {
         QuarkusConfigFactory.setConfig(null);
-        HashMap props = getStore(context).remove(SYS_PROPS, HashMap.class);
-        System.getProperties().clear();
-        System.getProperties().putAll(props);
-        // TODO: for in-vm tests this is not all that it takes to reset static state
-        // may want to call AbstractConfigurationTest.resetConfiguration
-        Configuration.resetConfig();
         if (databaseContainer != null && databaseContainer.isRunning()) {
             databaseContainer.stop();
             databaseContainer = null;
@@ -333,9 +316,9 @@ public class CLITestExtension extends QuarkusMainTestExtension {
 
                 dist.run("build");
             }
-        } else {
+        } else if (dist == null) {
             // This is for re-creating the H2 database instead of using the default in home
-            setProperty("kc.db-url-path", new QuarkusPlatform().getTmpDirectory().getAbsolutePath());
+            setProperty("kc.db-url-path", Keycloak.initTempDirectory("h2-home").toFile().getAbsolutePath());
         }
     }
 

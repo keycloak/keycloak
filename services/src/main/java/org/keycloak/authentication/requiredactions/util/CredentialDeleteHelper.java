@@ -32,9 +32,13 @@ import org.keycloak.credential.CredentialModel;
 import org.keycloak.credential.CredentialProvider;
 import org.keycloak.credential.CredentialTypeMetadata;
 import org.keycloak.credential.CredentialTypeMetadataContext;
+import org.keycloak.models.AuthenticationFlowBindings;
+import org.keycloak.models.AuthenticationFlowModel;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.utils.AuthenticationFlowResolver;
 
 import org.jboss.logging.Logger;
 
@@ -107,7 +111,7 @@ public class CredentialDeleteHelper {
     }
 
     private static void checkAuthenticatedLoASufficientForCredentialRemove(KeycloakSession session, String credentialType, Supplier<Integer> currentLoAProvider) {
-        int requestedLoaForCredentialRemove = getRequestedLoaForCredential(session, session.getContext().getRealm(), credentialType);
+        int requestedLoaForCredentialRemove = getRequestedLoaForCredential(session, credentialType);
 
         int currentAuthenticatedLevel = currentLoAProvider.get();
         if (currentAuthenticatedLevel < requestedLoaForCredentialRemove) {
@@ -115,8 +119,15 @@ public class CredentialDeleteHelper {
         }
     }
 
-    private static int getRequestedLoaForCredential(KeycloakSession session, RealmModel realm, String credentialType) {
-        Map<String, Integer> credentialTypesToLoa = LoAUtil.getCredentialTypesToLoAMap(session, realm, realm.getBrowserFlow());
+    private static int getRequestedLoaForCredential(KeycloakSession session, String credentialType) {
+        RealmModel realm = session.getContext().getRealm();
+        ClientModel client = session.getContext().getClient();
+        AuthenticationFlowModel authFlow = AuthenticationFlowResolver.resolveBindingOverrideFlowForClient(client, AuthenticationFlowBindings.BROWSER_BINDING);
+        if (authFlow == null) {
+            authFlow = realm.getBrowserFlow();
+        }
+
+        Map<String, Integer> credentialTypesToLoa = LoAUtil.getCredentialTypesToLoAMap(session, realm, authFlow);
         return credentialTypesToLoa.getOrDefault(credentialType, NO_LOA);
     }
 }

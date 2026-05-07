@@ -25,7 +25,6 @@ import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.storage.ldap.LDAPStorageProviderFactory;
 import org.keycloak.storage.ldap.kerberos.LDAPProviderKerberosConfig;
-import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.KerberosEmbeddedServer;
 import org.keycloak.testsuite.util.KerberosRule;
 import org.keycloak.testsuite.util.TestAppHelper;
@@ -34,6 +33,7 @@ import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.junit.ClassRule;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 import org.junit.runners.MethodSorters;
 
 /**
@@ -74,7 +74,7 @@ public class KerberosLdapCrossRealmTrustTest extends AbstractKerberosTest {
         AccessTokenResponse tokenResponse = assertSuccessfulSpnegoLogin("hnelson2@KC2.COM", "hnelson2", "secret");
         AccessToken token = oauth.verifyToken(tokenResponse.getAccessToken());
 
-        Assert.assertEquals(token.getEmail(), "hnelson2@kc2.com");
+        Assertions.assertEquals(token.getEmail(), "hnelson2@kc2.com");
         assertUser("hnelson2", "hnelson2@kc2.com", "Horatio", "Nelson", "hnelson2@KC2.COM", false);
 
         // Logout
@@ -90,7 +90,7 @@ public class KerberosLdapCrossRealmTrustTest extends AbstractKerberosTest {
         AccessTokenResponse tokenResponse = assertSuccessfulSpnegoLogin("jduke@KC2.COM", "jduke2", "theduke2");
         AccessToken token = oauth.verifyToken(tokenResponse.getAccessToken());
 
-        Assert.assertEquals(token.getEmail(), "jduke2@kc2.com");
+        Assertions.assertEquals(token.getEmail(), "jduke2@kc2.com");
         assertUser("jduke2", "jduke2@kc2.com", "Java", "Duke", "jduke@KC2.COM", false);
 
         // Logout
@@ -100,7 +100,7 @@ public class KerberosLdapCrossRealmTrustTest extends AbstractKerberosTest {
         // Another login to check the scenario when user is in local storage
         tokenResponse = assertSuccessfulSpnegoLogin("jduke@KC2.COM", "jduke2", "theduke2");
         token = oauth.verifyToken(tokenResponse.getAccessToken());
-        Assert.assertEquals(token.getEmail(), "jduke2@kc2.com");
+        Assertions.assertEquals(token.getEmail(), "jduke2@kc2.com");
 
         // Logout
         oauth.logoutForm().idTokenHint(tokenResponse.getIdToken()).open();
@@ -112,12 +112,12 @@ public class KerberosLdapCrossRealmTrustTest extends AbstractKerberosTest {
     public void test03SpnegoLoginUsernamePassword() throws Exception {
         // User jduke@KC2.COM
         TestAppHelper testAppHelper = new TestAppHelper(oauth, loginPage, appPage);
-        Assert.assertFalse(testAppHelper.login("jduke2", "theduke"));
-        Assert.assertTrue(testAppHelper.login("jduke2", "theduke2"));
-        Assert.assertTrue(testAppHelper.logout());
+        Assertions.assertFalse(testAppHelper.login("jduke2", "theduke"));
+        Assertions.assertTrue(testAppHelper.login("jduke2", "theduke2"));
+        Assertions.assertTrue(testAppHelper.logout());
 
         // User jduke@KEYCLOAK.ORG
-        Assert.assertTrue(testAppHelper.login("jduke", "theduke"));
+        Assertions.assertTrue(testAppHelper.login("jduke", "theduke"));
 
         // Logout
         testAppHelper.logout();
@@ -133,7 +133,7 @@ public class KerberosLdapCrossRealmTrustTest extends AbstractKerberosTest {
         AccessTokenResponse tokenResponse = assertSuccessfulSpnegoLogin("jduke@KC2.COM", "jduke", "theduke2");
         AccessToken token = oauth.verifyToken(tokenResponse.getAccessToken());
 
-        Assert.assertEquals(token.getEmail(), "jduke@keycloak.org");
+        Assertions.assertEquals(token.getEmail(), "jduke@keycloak.org");
         assertUser("jduke", "jduke@keycloak.org", "Java", "Duke", null, false);
 
         // Logout
@@ -144,7 +144,7 @@ public class KerberosLdapCrossRealmTrustTest extends AbstractKerberosTest {
         tokenResponse = assertSuccessfulSpnegoLogin("jduke@KEYCLOAK.ORG", "jduke", "theduke");
         token = oauth.verifyToken(tokenResponse.getAccessToken());
 
-        Assert.assertEquals(token.getEmail(), "jduke@keycloak.org");
+        Assertions.assertEquals(token.getEmail(), "jduke@keycloak.org");
 
         // Logout
         oauth.logoutForm().idTokenHint(tokenResponse.getIdToken()).open();
@@ -162,7 +162,7 @@ public class KerberosLdapCrossRealmTrustTest extends AbstractKerberosTest {
         // as it's not possible to start GSS context ( initSecContext ) due the missing trust among realms.
         try {
             Response spnegoResponse = spnegoLogin("hnelson2@KC2.COM", "secret");
-            Assert.fail("Not expected to successfully login");
+            Assertions.fail("Not expected to successfully login");
         } catch (Exception e) {
             // Expected
         }

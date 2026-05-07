@@ -67,7 +67,7 @@ public class PolicyJsInjectionTest extends AbstractWebAuthnVirtualTest {
                 .setWebAuthnPolicyRpId(PROMPT_SCRIPT)
                 .update()) {
 
-            WebAuthnRealmData data = new WebAuthnRealmData(testRealm().toRepresentation(), isPasswordless());
+            WebAuthnRealmData data = new WebAuthnRealmData(managedRealm.admin().toRepresentation(), isPasswordless());
             assertThat(data.getRpId(), is(PROMPT_SCRIPT));
 
             registerDefaultUser(false);
@@ -151,7 +151,7 @@ public class PolicyJsInjectionTest extends AbstractWebAuthnVirtualTest {
         if (!isPasswordless()) {
             logout();
 
-            loginPage.open();
+            oauth.openLoginForm();
             loginPage.assertCurrent(TEST_REALM_NAME);
             loginPage.login(USERNAME, getPassword(USERNAME));
 
@@ -182,7 +182,7 @@ public class PolicyJsInjectionTest extends AbstractWebAuthnVirtualTest {
 
         try (Closeable u = updater.update()) {
 
-            WebAuthnRealmData data = new WebAuthnRealmData(testRealm().toRepresentation(), isPasswordless());
+            WebAuthnRealmData data = new WebAuthnRealmData(managedRealm.admin().toRepresentation(), isPasswordless());
             assertThat(realmGetter.apply(data), is(expectedValue));
 
             boolean shouldSuccess = StringUtil.isBlank(errorMessage);

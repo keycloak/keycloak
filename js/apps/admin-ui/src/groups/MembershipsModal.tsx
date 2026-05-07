@@ -17,18 +17,22 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useAdminClient } from "../admin-client";
 import { GroupPath } from "../components/group/GroupPath";
+import { useGroupResource } from "../context/group-resource/GroupResourceContext";
 
 type CredentialDataDialogProps = {
   user: UserRepresentation;
   onClose: () => void;
+  orgId?: string;
 };
 
 export const MembershipsModal = ({
   user,
   onClose,
+  orgId,
 }: CredentialDataDialogProps) => {
   const { t } = useTranslation();
   const { adminClient } = useAdminClient();
+  const groupsResource = useGroupResource();
   const [key, setKey] = useState(0);
   const refresh = () => setKey(key + 1);
   const [isDirectMembership, setDirectMembership] = useState(true);
@@ -48,10 +52,15 @@ export const MembershipsModal = ({
       params.search = searchParam;
     }
 
-    const joinedUserGroups = await adminClient.users.listGroups({
-      ...params,
-      id: user.id!,
-    });
+    const joinedUserGroups = orgId
+      ? await groupsResource.listOrgGroups({
+          ...params,
+          id: user.id!,
+        })
+      : await adminClient.users.listGroups({
+          ...params,
+          id: user.id!,
+        });
 
     const indirect: GroupRepresentation[] = [];
     if (!isDirectMembership)

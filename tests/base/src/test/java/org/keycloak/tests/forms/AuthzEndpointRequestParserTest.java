@@ -8,8 +8,8 @@ import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.ManagedUser;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.realm.UserConfig;
-import org.keycloak.testframework.realm.UserConfigBuilder;
 import org.keycloak.testframework.ui.annotations.InjectPage;
 import org.keycloak.testframework.ui.annotations.InjectWebDriver;
 import org.keycloak.testframework.ui.page.LoginPage;
@@ -107,7 +107,7 @@ public class AuthzEndpointRequestParserTest {
     private static class TestUserConfig implements UserConfig {
 
         @Override
-        public UserConfigBuilder configure(UserConfigBuilder user) {
+        public UserBuilder configure(UserBuilder user) {
             user.username("test-user");
             user.password("password");
             user.name("My", "Test");

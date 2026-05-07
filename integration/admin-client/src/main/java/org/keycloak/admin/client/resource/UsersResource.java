@@ -274,6 +274,40 @@ public interface UsersResource {
                   @QueryParam("enabled") Boolean enabled,
                   @QueryParam("q") String searchQuery);
 
+    /**
+     * Search for users based on the given filters, including creation timestamp filters.
+     *
+     * @param username a value contained in username
+     * @param firstName a value contained in first name
+     * @param lastName a value contained in last name
+     * @param email a value contained in email
+     * @param emailVerified whether the email has been verified
+     * @param idpAlias the alias of the Identity Provider
+     * @param idpUserId the userId at the Identity Provider
+     * @param firstResult the position of the first result to retrieve
+     * @param maxResults the maximum number of results to retrieve
+     * @param enabled only return enabled or disabled users
+     * @param briefRepresentation Only return basic information
+     * @param createdAfter only return users created after (inclusive) the given date, in ISO-8601 format (yyyy-MM-dd) or epoch milliseconds
+     * @param createdBefore only return users created before (inclusive) the given date, in ISO-8601 format (yyyy-MM-dd) or epoch milliseconds
+     * @return a list of {@link UserRepresentation}
+     */
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    List<UserRepresentation> search(@QueryParam("username") String username,
+                                    @QueryParam("firstName") String firstName,
+                                    @QueryParam("lastName") String lastName,
+                                    @QueryParam("email") String email,
+                                    @QueryParam("emailVerified") Boolean emailVerified,
+                                    @QueryParam("idpAlias") String idpAlias,
+                                    @QueryParam("idpUserId") String idpUserId,
+                                    @QueryParam("first") Integer firstResult,
+                                    @QueryParam("max") Integer maxResults,
+                                    @QueryParam("enabled") Boolean enabled,
+                                    @QueryParam("briefRepresentation") Boolean briefRepresentation,
+                                    @QueryParam("createdAfter") String createdAfter,
+                                    @QueryParam("createdBefore") String createdBefore);
+
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     List<UserRepresentation> list(@QueryParam("first") Integer firstResult,
@@ -432,6 +466,42 @@ public interface UsersResource {
                   @QueryParam("idpUserId") String idpUserId,
                   @QueryParam("exact") Boolean exact,
                   @QueryParam("q") String searchQuery);
+
+    /**
+     * Returns the number of users that can be viewed and match the given filters,
+     * including creation timestamp filters.
+     *
+     * @param search        arbitrary search string for all the fields below
+     * @param last          last name field of a user
+     * @param first         first name field of a user
+     * @param email         email field of a user
+     * @param emailVerified emailVerified field of a user
+     * @param username      username field of a user
+     * @param enabled       Boolean representing if user is enabled or not
+     * @param idpAlias      The alias of an Identity Provider linked to the user
+     * @param idpUserId     The userId at an Identity Provider linked to the user
+     * @param exact         Boolean which defines whether the params must match exactly
+     * @param searchQuery   A query to search for custom attributes
+     * @param createdAfter  only count users created after (inclusive) the given date, in ISO-8601 format (yyyy-MM-dd) or epoch milliseconds
+     * @param createdBefore only count users created before (inclusive) the given date, in ISO-8601 format (yyyy-MM-dd) or epoch milliseconds
+     * @return number of users matching the given filters
+     */
+    @Path("count")
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    Integer count(@QueryParam("search") String search,
+                  @QueryParam("lastName") String last,
+                  @QueryParam("firstName") String first,
+                  @QueryParam("email") String email,
+                  @QueryParam("emailVerified") Boolean emailVerified,
+                  @QueryParam("username") String username,
+                  @QueryParam("enabled") Boolean enabled,
+                  @QueryParam("idpAlias") String idpAlias,
+                  @QueryParam("idpUserId") String idpUserId,
+                  @QueryParam("exact") Boolean exact,
+                  @QueryParam("q") String searchQuery,
+                  @QueryParam("createdAfter") String createdAfter,
+                  @QueryParam("createdBefore") String createdBefore);
 
     /**
      * Returns the number of users with the given status for emailVerified.

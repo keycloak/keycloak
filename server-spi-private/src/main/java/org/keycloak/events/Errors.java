@@ -49,6 +49,7 @@ public interface Errors {
     String EMAIL_IN_USE = "email_in_use";
     String EMAIL_ALREADY_VERIFIED = "email_already_verified";
     String ORG_NOT_FOUND = "org_not_found";
+    String ORG_DISABLED = "org_disabled";
     String USER_ORG_MEMBER_ALREADY = "user_org_member_already";
 
     String INVALID_REDIRECT_URI = "invalid_redirect_uri";
@@ -68,6 +69,8 @@ public interface Errors {
     String INVALID_FORM = "invalid_form";
     String INVALID_CONFIG = "invalid_config";
     String EXPIRED_CODE = "expired_code";
+    String MISSING_TX_CODE = "missing_tx_code";
+    String INVALID_TX_CODE = "invalid_tx_code";
     String INVALID_INPUT = "invalid_input";
     String COOKIE_NOT_FOUND = "cookie_not_found";
     String ALREADY_LOGGED_IN = "already_logged_in";

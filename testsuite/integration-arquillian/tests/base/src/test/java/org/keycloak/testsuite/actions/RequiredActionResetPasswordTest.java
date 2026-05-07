@@ -33,9 +33,10 @@ import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.UserSessionRepresentation;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.LoginPage;
@@ -54,14 +55,14 @@ import org.hamcrest.Matchers;
 import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 import org.openqa.selenium.WebDriver;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -97,13 +98,13 @@ public class RequiredActionResetPasswordTest extends AbstractTestRealmKeycloakTe
 
     @After
     public void after() {
-        ApiUtil.resetUserPassword(testRealm().users().get(findUser("test-user@localhost").getId()), "password", false);
+        AdminApiUtil.resetUserPassword(managedRealm.admin().users().get(findUser("test-user@localhost").getId()), "password", false);
     }
 
     @Test
     public void tempPassword() throws Exception {
         requireUpdatePassword();
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("test-user@localhost", "password");
 
         changePasswordPage.assertCurrent();
@@ -114,19 +115,20 @@ public class RequiredActionResetPasswordTest extends AbstractTestRealmKeycloakTe
         events.expectRequiredAction(EventType.UPDATE_PASSWORD).detail(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE).assertEvent();
         events.expectRequiredAction(EventType.UPDATE_CREDENTIAL).detail(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE).assertEvent();
 
-        Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-        EventRepresentation loginEvent = events.expectLogin().assertEvent();
+        EventRepresentation loginEvent = events.poll();
+        EventAssertion.expectLoginSuccess(loginEvent);
 
         AccessTokenResponse tokenResponse = sendTokenRequestAndGetResponse(loginEvent);
         oauth.logoutForm().idTokenHint(tokenResponse.getIdToken()).withRedirect().open();
 
-        events.expectLogout(loginEvent.getSessionId()).assertEvent();
+        EventAssertion.assertSuccess(events.poll()).type(EventType.LOGOUT).sessionId(loginEvent.getSessionId()).withoutDetails(Details.CODE_ID);
 
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("test-user@localhost", "new-password");
 
-        events.expectLogin().assertEvent();
+        EventAssertion.expectLoginSuccess(events.poll());
     }
 
     @Test
@@ -142,9 +144,10 @@ public class RequiredActionResetPasswordTest extends AbstractTestRealmKeycloakTe
     private void resetPassword(boolean logoutOtherSessions) {
         // create a regular session
         OAuthClient oauth2 = oauth.newConfig().driver(driver2);
-        UserResource testUser = testRealm().users().get(findUser("test-user@localhost").getId());
+        UserResource testUser = managedRealm.admin().users().get(findUser("test-user@localhost").getId());
         oauth2.doLogin("test-user@localhost", "password");
-        EventRepresentation regularSession = events.expectLogin().assertEvent();
+        EventRepresentation regularSession = events.poll();
+        EventAssertion.expectLoginSuccess(regularSession);
         assertEquals(1, testUser.getUserSessions().size());
 
         // navigate to a neutral URL to then clear the cookies on that domain
@@ -154,14 +157,17 @@ public class RequiredActionResetPasswordTest extends AbstractTestRealmKeycloakTe
         // create an offline session
         oauth2.scope(OAuth2Constants.OFFLINE_ACCESS);
         AuthorizationEndpointResponse os = oauth2.doLogin("test-user@localhost", "password");
-        EventRepresentation offlineSession = events.expectLogin().assertEvent();
+        EventRepresentation offlineSession = events.poll();
+        EventAssertion.expectLoginSuccess(offlineSession);
         AccessTokenResponse at = oauth2.doAccessTokenRequest(os.getCode());
-        String clientUuid = testRealm().clients().findByClientId(oauth2.getClientId()).get(0).getId();
+        EventAssertion.assertSuccess(events.poll()).type(EventType.CODE_TO_TOKEN)
+                .sessionId(offlineSession.getSessionId()).clientId(oauth2.getClientId());
+        String clientUuid = managedRealm.admin().clients().findByClientId(oauth2.getClientId()).get(0).getId();
         assertEquals(1, testUser.getOfflineSessions(clientUuid).size());
 
         requireUpdatePassword();
 
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("test-user@localhost", "password");
         changePasswordPage.assertCurrent();
         assertTrue(changePasswordPage.isLogoutSessionDisplayed());
@@ -172,18 +178,19 @@ public class RequiredActionResetPasswordTest extends AbstractTestRealmKeycloakTe
         changePasswordPage.changePassword("All Right Then, Keep Your Secrets", "All Right Then, Keep Your Secrets");
 
         if (logoutOtherSessions) {
-            events.expectLogout(regularSession.getSessionId())
-                    .detail(Details.LOGOUT_TRIGGERED_BY_REQUIRED_ACTION, RequiredAction.UPDATE_PASSWORD.name())
-                    .assertEvent(true);
-            events.expectLogout(offlineSession.getSessionId())
-                    .detail(Details.LOGOUT_TRIGGERED_BY_REQUIRED_ACTION, RequiredAction.UPDATE_PASSWORD.name())
-                    .assertEvent();
+            EventAssertion.expectLogoutSuccess(events.poll())
+                    .sessionId(regularSession.getSessionId())
+                    .details(Details.LOGOUT_TRIGGERED_BY_REQUIRED_ACTION, RequiredAction.UPDATE_PASSWORD.name());
+            EventAssertion.expectLogoutSuccess(events.poll())
+                    .sessionId(offlineSession.getSessionId())
+                    .details(Details.LOGOUT_TRIGGERED_BY_REQUIRED_ACTION, RequiredAction.UPDATE_PASSWORD.name());
         }
 
         events.expectRequiredAction(EventType.UPDATE_PASSWORD).detail(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE).assertEvent(true);
         events.expectRequiredAction(EventType.UPDATE_CREDENTIAL).detail(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE).assertEvent();
 
-        EventRepresentation event2 = events.expectLogin().assertEvent();
+        EventRepresentation event2 = events.poll();
+        EventAssertion.expectLoginSuccess(event2);
         List<UserSessionRepresentation> regularSessions = testUser.getUserSessions();
         List<UserSessionRepresentation> offlineSessions = testUser.getOfflineSessions(clientUuid);
         if (logoutOtherSessions) {
@@ -204,7 +211,7 @@ public class RequiredActionResetPasswordTest extends AbstractTestRealmKeycloakTe
         String newFlowAlias = "browser - username only";
 
         try {
-            RealmManager.realm(testRealm()).passwordPolicy("forceExpiredPasswordChange(1)");
+            RealmManager.realm(managedRealm.admin()).passwordPolicy("forceExpiredPasswordChange(1)");
             setTimeOffset(60 * 60 * 48);
 
             //create username only flow
@@ -215,25 +222,25 @@ public class RequiredActionResetPasswordTest extends AbstractTestRealmKeycloakTe
                     .addAuthenticatorExecution(AuthenticationExecutionModel.Requirement.REQUIRED, UsernameFormFactory.PROVIDER_ID)
                     .defineAsBrowserFlow() // Activate this new flow
             );
-            loginUsernameOnlyPage.open();
+            oauth.openLoginForm();
             loginUsernameOnlyPage.login("test-user@localhost");
-            events.expectLogin().assertEvent();
+            EventAssertion.expectLoginSuccess(events.poll());
         } finally {
             //reset browser flow and delete username only flow
-            RealmRepresentation realm = testRealm().toRepresentation();
+            RealmRepresentation realm = managedRealm.admin().toRepresentation();
             realm.setBrowserFlow(DefaultAuthenticationFlows.BROWSER_FLOW);
-            testRealm().update(realm);
+            managedRealm.admin().update(realm);
 
-            testRealm().flows()
+            managedRealm.admin().flows()
                     .getFlows()
                     .stream()
                     .filter(flowRep -> flowRep.getAlias().equals(newFlowAlias))
                     .findFirst()
                     .ifPresent(authenticationFlowRepresentation ->
-                            testRealm().flows().deleteFlow(authenticationFlowRepresentation.getId()));
+                            managedRealm.admin().flows().deleteFlow(authenticationFlowRepresentation.getId()));
 
             setTimeOffset(0);
-            RealmManager.realm(testRealm()).passwordPolicy(null);
+            RealmManager.realm(managedRealm.admin()).passwordPolicy(null);
         }
     }
 
@@ -243,7 +250,7 @@ public class RequiredActionResetPasswordTest extends AbstractTestRealmKeycloakTe
             userRep.setRequiredActions(new LinkedList<>());
         }
         userRep.getRequiredActions().add(RequiredAction.UPDATE_PASSWORD.name());
-        testRealm().users().get(userRep.getId()).update(userRep);
+        managedRealm.admin().users().get(userRep.getId()).update(userRep);
     }
 
 }

@@ -25,6 +25,7 @@ public enum OptionCategory {
     EXPORT("Export", 130, ConfigSupportLevel.SUPPORTED),
     IMPORT("Import", 140, ConfigSupportLevel.SUPPORTED),
     OPENAPI("OpenAPI configuration", 150, ConfigSupportLevel.SUPPORTED),
+    SERVER("Server configuration", 160, ConfigSupportLevel.SUPPORTED),
     BOOTSTRAP_ADMIN("Bootstrap Admin", 998, ConfigSupportLevel.SUPPORTED),
     GENERAL("General", 999, ConfigSupportLevel.SUPPORTED);
 

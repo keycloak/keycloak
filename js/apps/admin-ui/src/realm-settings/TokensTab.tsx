@@ -70,6 +70,8 @@ export const RealmSettingsTokensTab = ({
 
   const { control, register, reset, formState, handleSubmit } =
     useFormContext<RealmRepresentation>();
+  const credentialOfferLifespanDefaultValue =
+    realm.attributes?.["credentialOfferLifespanS"] ?? 30;
 
   // Show a global error notification if validation fails
   const onError = () => {
@@ -94,18 +96,12 @@ export const RealmSettingsTokensTab = ({
     defaultValue: false,
   });
 
-  const signedMetadataEnabled = useWatch({
+  const requestEncryptionRequired = useWatch({
     control,
     name: convertAttributeNameToForm(
-      "attributes.oid4vci.signed_metadata.enabled",
+      "attributes.oid4vci.request.encryption.required",
     ),
-    defaultValue: realm.attributes?.["oid4vci.signed_metadata.enabled"],
-  });
-
-  const encryptionRequired = useWatch({
-    control,
-    name: convertAttributeNameToForm("attributes.oid4vci.encryption.required"),
-    defaultValue: realm.attributes?.["oid4vci.encryption.required"],
+    defaultValue: realm.attributes?.["oid4vci.request.encryption.required"],
   });
 
   const strategy = useWatch({
@@ -692,67 +688,63 @@ export const RealmSettingsTokensTab = ({
           />
           <TimeSelectorControl
             name={convertAttributeNameToForm(
-              "attributes.preAuthorizedCodeLifespanS",
+              "attributes.credentialOfferLifespanS",
             )}
-            label={t("preAuthorizedCodeLifespan")}
-            labelIcon={t("preAuthorizedCodeLifespanHelp")}
+            label={t("credentialOfferLifespan")}
+            labelIcon={t("credentialOfferLifespanHelp")}
             controller={{
-              defaultValue: 30,
+              defaultValue: credentialOfferLifespanDefaultValue,
               rules: { min: 30 },
             }}
             min={30}
             units={["second", "minute", "hour"]}
           />
+          <TimeSelectorControl
+            name={convertAttributeNameToForm(
+              "attributes.oid4vci.signed_metadata.lifespan",
+            )}
+            label={t("signedMetadataLifespan")}
+            labelIcon={t("signedMetadataLifespanHelp")}
+            controller={{
+              defaultValue: 60,
+            }}
+            units={["second", "minute", "hour"]}
+            data-testid="signed-metadata-lifespan"
+          />
+          <SelectControl
+            name={convertAttributeNameToForm(
+              "attributes.oid4vci.signed_metadata.alg",
+            )}
+            label={t("signedMetadataSigningAlgorithm")}
+            labelIcon={t("signedMetadataSigningAlgorithmHelp")}
+            controller={{
+              defaultValue: "RS256",
+            }}
+            options={asymmetricSigAlgOptions.map((p) => ({
+              key: p,
+              value: p,
+            }))}
+            data-testid="signed-metadata-signing-algorithm"
+          />
           <DefaultSwitchControl
             name={convertAttributeNameToForm(
-              "attributes.oid4vci.signed_metadata.enabled",
+              "attributes.oid4vci.request.encryption.required",
             )}
-            label={t("signedIssuerMetadata")}
-            labelIcon={t("signedIssuerMetadataHelp")}
+            label={t("requireRequestEncryption")}
+            labelIcon={t("requireRequestEncryptionHelp")}
             stringify
-            data-testid="signed-metadata-switch"
+            data-testid="require-request-encryption-switch"
           />
-          {signedMetadataEnabled === "true" && (
-            <>
-              <TimeSelectorControl
-                name={convertAttributeNameToForm(
-                  "attributes.oid4vci.signed_metadata.lifespan",
-                )}
-                label={t("signedMetadataLifespan")}
-                labelIcon={t("signedMetadataLifespanHelp")}
-                controller={{
-                  defaultValue: 60,
-                }}
-                units={["second", "minute", "hour"]}
-                data-testid="signed-metadata-lifespan"
-              />
-              <SelectControl
-                name={convertAttributeNameToForm(
-                  "attributes.oid4vci.signed_metadata.alg",
-                )}
-                label={t("signedMetadataSigningAlgorithm")}
-                labelIcon={t("signedMetadataSigningAlgorithmHelp")}
-                controller={{
-                  defaultValue: "RS256",
-                }}
-                options={asymmetricSigAlgOptions.map((p) => ({
-                  key: p,
-                  value: p,
-                }))}
-                data-testid="signed-metadata-signing-algorithm"
-              />
-            </>
-          )}
           <DefaultSwitchControl
             name={convertAttributeNameToForm(
-              "attributes.oid4vci.encryption.required",
+              "attributes.oid4vci.response.encryption.required",
             )}
-            label={t("requireEncryption")}
-            labelIcon={t("requireEncryptionHelp")}
+            label={t("requireResponseEncryption")}
+            labelIcon={t("requireResponseEncryptionHelp")}
             stringify
-            data-testid="require-encryption-switch"
+            data-testid="require-response-encryption-switch"
           />
-          {encryptionRequired === "true" && (
+          {requestEncryptionRequired === "true" && (
             <DefaultSwitchControl
               name={convertAttributeNameToForm(
                 "attributes.oid4vci.request.zip.algorithms",

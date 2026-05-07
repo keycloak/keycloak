@@ -22,6 +22,7 @@ import org.keycloak.models.UserModel.RequiredAction;
 import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.pages.AppPage;
@@ -31,9 +32,9 @@ import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
 import org.keycloak.testsuite.pages.LoginUpdateProfileEditUsernameAllowedPage;
 
 import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -63,7 +64,7 @@ public class RequiredActionMultipleActionsTest extends AbstractTestRealmKeycloak
 
     @Test
     public void updateProfileAndPassword() throws Exception {
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("test-user@localhost", "password");
 
         String codeId = null;
@@ -78,12 +79,12 @@ public class RequiredActionMultipleActionsTest extends AbstractTestRealmKeycloak
             changePasswordPage.assertCurrent();
             updatePassword(codeId);
         } else {
-            Assert.fail("Expected to update password and profile before login");
+            Assertions.fail("Expected to update password and profile before login");
         }
 
-        Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-        events.expectLogin().session(codeId).assertEvent();
+        EventAssertion.expectLoginSuccess(events.poll()).sessionId(codeId);
     }
 
     public String updatePassword(String codeId) {
@@ -101,7 +102,7 @@ public class RequiredActionMultipleActionsTest extends AbstractTestRealmKeycloak
         }
         EventRepresentation eventRep2 = expectedEvent2.assertEvent();
 
-        Assert.assertEquals(eventRep1.getDetails().get(Details.CODE_ID), eventRep2.getDetails().get(Details.CODE_ID));
+        Assertions.assertEquals(eventRep1.getDetails().get(Details.CODE_ID), eventRep2.getDetails().get(Details.CODE_ID));
         return eventRep2.getDetails().get(Details.CODE_ID);
     }
 

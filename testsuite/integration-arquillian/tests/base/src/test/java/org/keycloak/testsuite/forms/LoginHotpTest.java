@@ -24,6 +24,8 @@ import org.keycloak.models.credential.OTPCredentialModel;
 import org.keycloak.models.utils.HmacOTP;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.events.EventAssertion;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AbstractChangeImportedUserPasswordsTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.pages.AppPage;
@@ -32,13 +34,12 @@ import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginTotpPage;
 import org.keycloak.testsuite.util.GreenMailRule;
 import org.keycloak.testsuite.util.RealmRepUtil;
-import org.keycloak.testsuite.util.UserBuilder;
 
 import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -56,9 +57,8 @@ public class LoginHotpTest extends AbstractChangeImportedUserPasswordsTest {
         testRealm.setOtpPolicyLookAheadWindow(2);
         testRealm.setOtpPolicyDigits(6);
         UserRepresentation user = RealmRepUtil.findUser(testRealm, "test-user@localhost");
-        UserBuilder.edit(user)
-                   .hotpSecret("hotpSecret")
-                   .otpEnabled();
+        UserBuilder.update(user)
+                   .hotpSecret("hotpSecret");
     }
 
     @Rule
@@ -84,7 +84,7 @@ public class LoginHotpTest extends AbstractChangeImportedUserPasswordsTest {
 
     @Before
     public void before() throws MalformedURLException {
-        RealmRepresentation testRealm = testRealm().toRepresentation();
+        RealmRepresentation testRealm = managedRealm.admin().toRepresentation();
 
         policy = new OTPPolicy();
         policy.setAlgorithm(testRealm.getOtpPolicyAlgorithm());
@@ -99,69 +99,69 @@ public class LoginHotpTest extends AbstractChangeImportedUserPasswordsTest {
 
     @Test
     public void loginWithHotpFailure() throws Exception {
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("test-user@localhost", getPassword("test-user@localhost"));
 
-        Assert.assertTrue(loginTotpPage.isCurrent());
+        Assertions.assertTrue(loginTotpPage.isCurrent());
 
         loginTotpPage.login("123456");
         loginTotpPage.assertCurrent();
-        Assert.assertEquals("Invalid authenticator code.", loginTotpPage.getInputError());
+        Assertions.assertEquals("Invalid authenticator code.", loginTotpPage.getInputError());
 
         //loginPage.assertCurrent();  // Invalid authenticator code.
         //Assert.assertEquals("Invalid username or password.", loginPage.getError());
 
-        events.expectLogin().error("invalid_user_credentials").session((String) null)
-                .removeDetail(Details.CONSENT)
-                .assertEvent();
+        EventAssertion.expectLoginError(events.poll()).error("invalid_user_credentials").sessionId(null)
+                .details(Details.REDIRECT_URI, oauth.getRedirectUri())
+                .withoutDetails(Details.CONSENT);
     }
 
     @Test
     public void loginWithMissingHotp() throws Exception {
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("test-user@localhost", getPassword("test-user@localhost"));
 
-        Assert.assertTrue(loginTotpPage.isCurrent());
+        Assertions.assertTrue(loginTotpPage.isCurrent());
 
         loginTotpPage.login(null);
         loginTotpPage.assertCurrent();
-        Assert.assertEquals("Invalid authenticator code.", loginTotpPage.getInputError());
+        Assertions.assertEquals("Invalid authenticator code.", loginTotpPage.getInputError());
 
         //loginPage.assertCurrent();  // Invalid authenticator code.
         //Assert.assertEquals("Invalid username or password.", loginPage.getError());
 
-        events.expectLogin().error("invalid_user_credentials").session((String) null)
-                .removeDetail(Details.CONSENT)
-                .assertEvent();
+        EventAssertion.expectLoginError(events.poll()).error("invalid_user_credentials").sessionId(null)
+                .details(Details.REDIRECT_URI, oauth.getRedirectUri())
+                .withoutDetails(Details.CONSENT);
     }
 
     @Test
     public void loginWithHotpSuccess() throws Exception {
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("test-user@localhost", getPassword("test-user@localhost"));
 
-        Assert.assertTrue("expecting totpPage got: " + driver.getCurrentUrl(), loginTotpPage.isCurrent());
+        Assertions.assertTrue(loginTotpPage.isCurrent(), "expecting totpPage got: " + driver.getCurrentUrl());
 
         loginTotpPage.login(otp.generateHOTP("hotpSecret", counter++));
 
         appPage.assertCurrent();
 
-        Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-        events.expectLogin().assertEvent();
+        EventAssertion.expectLoginSuccess(events.poll());
     }
 
     @Test
     public void loginWithHotpInvalidPassword() throws Exception {
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("test-user@localhost", "invalid");
 
-        Assert.assertTrue(loginPage.isCurrent());
+        Assertions.assertTrue(loginPage.isCurrent());
 
-        Assert.assertEquals("Invalid username or password.", loginPage.getInputError());
+        Assertions.assertEquals("Invalid username or password.", loginPage.getInputError());
 
-        events.expectLogin().error("invalid_user_credentials").session((String) null)
-                .removeDetail(Details.CONSENT)
-                .assertEvent();
+        EventAssertion.expectLoginError(events.poll()).error("invalid_user_credentials").sessionId(null)
+                .details(Details.REDIRECT_URI, oauth.getRedirectUri())
+                .withoutDetails(Details.CONSENT);
     }
 }

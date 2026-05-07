@@ -2,20 +2,19 @@ package org.keycloak.operator.controllers;
 
 import org.keycloak.operator.Constants;
 import org.keycloak.operator.Utils;
-import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImport;
+import org.keycloak.operator.crds.v2beta1.realmimport.KeycloakRealmImport;
 
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.client.utils.KubernetesResourceUtil;
 import io.javaoperatorsdk.operator.api.config.informer.Informer;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
-import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 
 @KubernetesDependent(
         informer = @Informer(labelSelector = Constants.DEFAULT_LABELS_AS_STRING)
 )
-public class KeycloakRealmImportSecretDependentResource extends CRUDKubernetesDependentResource<Secret, KeycloakRealmImport> {
+public class KeycloakRealmImportSecretDependentResource extends VersionTolerantCRUDKubernetesDependentResource<Secret, KeycloakRealmImport> {
 
     public static final String DEPENDENT_NAME = "realm-import-secret";
 

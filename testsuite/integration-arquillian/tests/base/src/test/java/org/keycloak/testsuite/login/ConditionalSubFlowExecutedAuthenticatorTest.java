@@ -30,6 +30,7 @@ import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.representations.idm.AuthenticationExecutionInfoRepresentation;
 import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.auth.page.login.OneTimeCode;
@@ -39,9 +40,9 @@ import org.keycloak.testsuite.pages.LoginTotpPage;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
 import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 /**
  * <p>Test for the ConditionalSubFlowExecutedAuthenticator. A <em>test</em> parent
@@ -142,26 +143,26 @@ public class ConditionalSubFlowExecutedAuthenticatorTest extends AbstractTestRea
 
     private void checkDenied() {
         errorPage.assertCurrent();
-        Assert.assertEquals("Access denied", errorPage.getError());
+        Assertions.assertEquals("Access denied", errorPage.getError());
 
         events.expect(EventType.LOGIN_ERROR).user((String) null).error(Errors.ACCESS_DENIED).assertEvent();
     }
 
     private void checkAllowed(String username) {
         String code = oauth.parseLoginResponse().getCode();
-        Assert.assertNotNull(code);
+        Assertions.assertNotNull(code);
         AccessTokenResponse res = oauth.doAccessTokenRequest(code);
-        Assert.assertNull(res.getError());
-        Assert.assertNotNull(res.getAccessToken());
+        Assertions.assertNull(res.getError());
+        Assertions.assertNotNull(res.getAccessToken());
 
-        events.expectLogin().user(AssertEvents.isUUID()).detail(Details.USERNAME, username).assertEvent();
+        EventAssertion.expectLoginSuccess(events.poll()).hasUserId().details(Details.USERNAME, username);
     }
 
     private void configureConditionalSubFlowExecutedAuthenticatorInFlow(String flowName, String check) {
         // clone the browser flow and add another conditional flow that checks
         // if the OTP flow was executed or not executed to deny the access
 
-        RealmResource realmRes = testRealm();
+        RealmResource realmRes = managedRealm.admin();
         AuthenticationManagementResource authRes = realmRes.flows();
 
         // revert the flows if already changed

@@ -46,11 +46,16 @@ import org.keycloak.representations.idm.AuthenticationExecutionRepresentation;
 import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
 import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.userprofile.config.UPAttribute;
 import org.keycloak.representations.userprofile.config.UPAttributePermissions;
 import org.keycloak.representations.userprofile.config.UPConfig;
+import org.keycloak.testframework.events.EventAssertion;
+import org.keycloak.testframework.realm.ClientBuilder;
+import org.keycloak.testframework.realm.RealmBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
@@ -62,23 +67,21 @@ import org.keycloak.testsuite.pages.x509.X509IdentityConfirmationPage;
 import org.keycloak.testsuite.updaters.SetSystemProperty;
 import org.keycloak.testsuite.util.AdminEventPaths;
 import org.keycloak.testsuite.util.AssertAdminEvents;
-import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.DroneUtils;
 import org.keycloak.testsuite.util.HtmlUnitBrowser;
-import org.keycloak.testsuite.util.RealmBuilder;
-import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.testsuite.util.WaitUtils;
 import org.keycloak.userprofile.UserProfileConstants;
 
+import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.logging.Logger;
 import org.junit.AfterClass;
-import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Rule;
+import org.junit.jupiter.api.Assertions;
 import org.openqa.selenium.WebDriver;
 
 import static org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel.IdentityMapperType.USERNAME_EMAIL;
@@ -223,7 +226,7 @@ public abstract class AbstractX509AuthenticationTest extends AbstractTestRealmKe
     }
 
     private void configureUserProfile() {
-        UserProfileResource userProfileResource = testRealm().users().userProfile();
+        UserProfileResource userProfileResource = managedRealm.admin().users().userProfile();
         UPConfig config = userProfileResource.getConfiguration();
         config.addOrReplaceAttribute(createUpAttribute("x509_certificate_identity"));
         config.addOrReplaceAttribute(createUpAttribute("alternative_email"));
@@ -245,29 +248,29 @@ public abstract class AbstractX509AuthenticationTest extends AbstractTestRealmKe
         this.realmId = adminClient.realm(REALM_NAME).toRepresentation().getId();
 
         AuthenticationFlowRepresentation browserFlow = copyBrowserFlow();
-        Assert.assertNotNull(browserFlow);
+        Assertions.assertNotNull(browserFlow);
 
         AuthenticationFlowRepresentation directGrantFlow = createDirectGrantFlow();
-        Assert.assertNotNull(directGrantFlow);
+        Assertions.assertNotNull(directGrantFlow);
 
         setBrowserFlow(browserFlow);
-        Assert.assertEquals(testRealm().toRepresentation().getBrowserFlow(), browserFlow.getAlias());
+        Assertions.assertEquals(managedRealm.admin().toRepresentation().getBrowserFlow(), browserFlow.getAlias());
 
         setDirectGrantFlow(directGrantFlow);
-        Assert.assertEquals(testRealm().toRepresentation().getDirectGrantFlow(), directGrantFlow.getAlias());
-        Assert.assertEquals(0, directGrantFlow.getAuthenticationExecutions().size());
+        Assertions.assertEquals(managedRealm.admin().toRepresentation().getDirectGrantFlow(), directGrantFlow.getAlias());
+        Assertions.assertEquals(0, directGrantFlow.getAuthenticationExecutions().size());
 
         // Add X509 cert authenticator to the direct grant flow
         directGrantExecution = addAssertExecution(directGrantFlow, ValidateX509CertificateUsernameFactory.PROVIDER_ID, REQUIRED);
-        Assert.assertNotNull(directGrantExecution);
+        Assertions.assertNotNull(directGrantExecution);
 
         directGrantFlow = authMgmtResource.getFlow(directGrantFlow.getId());
-        Assert.assertNotNull(directGrantFlow.getAuthenticationExecutions());
-        Assert.assertEquals(1, directGrantFlow.getAuthenticationExecutions().size());
+        Assertions.assertNotNull(directGrantFlow.getAuthenticationExecutions());
+        Assertions.assertEquals(1, directGrantFlow.getAuthenticationExecutions().size());
 
         // Add X509 authenticator to the browser flow
         browserExecution = addAssertExecution(browserFlow, X509ClientCertificateAuthenticatorFactory.PROVIDER_ID, ALTERNATIVE);
-        Assert.assertNotNull(browserExecution);
+        Assertions.assertNotNull(browserExecution);
 
         // Raise the priority of the authenticator to position it right before
         // the Username/password authentication
@@ -297,7 +300,7 @@ public abstract class AbstractX509AuthenticationTest extends AbstractTestRealmKe
         // TODO the following statement asserts, the actual value is null?
         //assertAdminEvents.assertEvent(REALM_NAME, OperationType.CREATE, AssertAdminEvents.isExpectedPrefixFollowedByUuid(AdminEventPaths.authMgmtBasePath() + "/executions"), rep);
         try {
-            Assert.assertEquals("added execution", 201, response.getStatus());
+            Assertions.assertEquals(201, response.getStatus(), "added execution");
         } finally {
             response.close();
         }
@@ -320,7 +323,7 @@ public abstract class AbstractX509AuthenticationTest extends AbstractTestRealmKe
         ClientRepresentation app = ClientBuilder.create()
                 .id(KeycloakModelUtils.generateId())
                 .clientId("resource-owner")
-                .directAccessGrants()
+                .directAccessGrantsEnabled()
                 .secret("secret")
                 .build();
 
@@ -330,7 +333,7 @@ public abstract class AbstractX509AuthenticationTest extends AbstractTestRealmKe
                 .email("localhost@localhost")
                 .enabled(true)
                 .password("password")
-                .addAttribute("x509_issuer_identity", "Keycloak Intermediate CA")
+                .attribute("x509_issuer_identity", "Keycloak Intermediate CA")
                 .build();
 
         ClientRepresentation client = findTestApp(testRealm);
@@ -341,9 +344,9 @@ public abstract class AbstractX509AuthenticationTest extends AbstractTestRealmKe
         testRealm.setBruteForceProtected(true);
         testRealm.setFailureFactor(2);
 
-        RealmBuilder.edit(testRealm)
-                .user(user)
-                .client(app);
+        RealmBuilder.update(testRealm)
+                .users(user)
+                .clients(app);
     }
 
     @Override
@@ -355,7 +358,7 @@ public abstract class AbstractX509AuthenticationTest extends AbstractTestRealmKe
     AuthenticationFlowRepresentation createFlow(AuthenticationFlowRepresentation flowRep) {
         Response response = authMgmtResource.createFlow(flowRep);
         try {
-            org.keycloak.testsuite.Assert.assertEquals(201, response.getStatus());
+            Assertions.assertEquals(201, response.getStatus());
         }
         finally {
             response.close();
@@ -377,7 +380,7 @@ public abstract class AbstractX509AuthenticationTest extends AbstractTestRealmKe
         Response response = authMgmtResource.copy(existingFlow, params);
         assertAdminEvents.assertEvent(realmId, OperationType.CREATE, Encode.decode(AdminEventPaths.authCopyFlowPath(existingFlow)), params, ResourceType.AUTH_FLOW);
         try {
-            Assert.assertEquals("Copy flow", 201, response.getStatus());
+            Assertions.assertEquals(201, response.getStatus(), "Copy flow");
         } finally {
             response.close();
         }
@@ -407,20 +410,20 @@ public abstract class AbstractX509AuthenticationTest extends AbstractTestRealmKe
 
     AuthenticationFlowRepresentation copyBrowserFlow() {
 
-        RealmRepresentation realm = testRealm().toRepresentation();
+        RealmRepresentation realm = managedRealm.admin().toRepresentation();
         return copyFlow(realm.getBrowserFlow(), "Copy-of-browser");
     }
 
     void setBrowserFlow(AuthenticationFlowRepresentation flow) {
-        RealmRepresentation realm = testRealm().toRepresentation();
+        RealmRepresentation realm = managedRealm.admin().toRepresentation();
         realm.setBrowserFlow(flow.getAlias());
-        testRealm().update(realm);
+        managedRealm.admin().update(realm);
     }
 
     void setDirectGrantFlow(AuthenticationFlowRepresentation flow) {
-        RealmRepresentation realm = testRealm().toRepresentation();
+        RealmRepresentation realm = managedRealm.admin().toRepresentation();
         realm.setDirectGrantFlow(flow.getAlias());
-        testRealm().update(realm);
+        managedRealm.admin().update(realm);
     }
 
     static AuthenticatorConfigRepresentation newConfig(String alias, Map<String,String> params) {
@@ -433,7 +436,7 @@ public abstract class AbstractX509AuthenticationTest extends AbstractTestRealmKe
     protected String createConfig(String executionId, AuthenticatorConfigRepresentation cfg) {
         Response resp = authMgmtResource.newExecutionConfig(executionId, cfg);
         try {
-            Assert.assertEquals(201, resp.getStatus());
+            Assertions.assertEquals(201, resp.getStatus());
         }
         finally {
             resp.close();
@@ -525,7 +528,7 @@ public abstract class AbstractX509AuthenticationTest extends AbstractTestRealmKe
 
     protected void setUserEnabled(String userName, boolean enabled) {
         UserRepresentation user = findUser(userName);
-        Assert.assertNotNull(user);
+        Assertions.assertNotNull(user);
 
         user.setEnabled(enabled);
 
@@ -564,34 +567,27 @@ public abstract class AbstractX509AuthenticationTest extends AbstractTestRealmKe
 
         AuthenticatorConfigRepresentation cfg = newConfig("x509-browser-config", config.getConfig());
         String cfgId = createConfig(browserExecution.getId(), cfg);
-        Assert.assertNotNull(cfgId);
+        Assertions.assertNotNull(cfgId);
 
         oauth.openLoginForm();
 
         WaitUtils.waitForPageToLoad();
 
-        Assert.assertTrue(loginConfirmationPage.getSubjectDistinguishedNameText().startsWith("EMAILADDRESS=test-user@localhost"));
-        Assert.assertEquals(username, loginConfirmationPage.getUsernameText());
+        Assertions.assertTrue(loginConfirmationPage.getSubjectDistinguishedNameText().startsWith("EMAILADDRESS=test-user@localhost"));
+        Assertions.assertEquals(username, loginConfirmationPage.getUsernameText());
 
         loginConfirmationPage.confirm();
 
-        Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assert.assertNotNull(oauth.parseLoginResponse().getCode());
+        Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
 
-        AssertEvents.ExpectedEvent expectedEvent = events.expectLogin()
-                .user(userId)
-                .detail(Details.USERNAME, attemptedUsername)
-                .removeDetail(Details.REDIRECT_URI);
+        EventRepresentation eventRep = events.poll();
+        EventAssertion.expectLoginSuccess(eventRep)
+                .userId(userId)
+                .details(Details.USERNAME, attemptedUsername);
 
-        addX509CertificateDetails(expectedEvent)
-                .assertEvent();
-    }
-
-
-    protected AssertEvents.ExpectedEvent addX509CertificateDetails(AssertEvents.ExpectedEvent expectedEvent) {
-        return expectedEvent
-                .detail(Details.X509_CERTIFICATE_SERIAL_NUMBER, Matchers.not(is(emptyOrNullString())))
-                .detail(Details.X509_CERTIFICATE_SUBJECT_DISTINGUISHED_NAME, Matchers.startsWith("EMAILADDRESS=test-user@localhost"))
-                .detail(Details.X509_CERTIFICATE_ISSUER_DISTINGUISHED_NAME, Matchers.startsWith("EMAILADDRESS=contact@keycloak.org"));
+        MatcherAssert.assertThat(eventRep.getDetails().get(Details.X509_CERTIFICATE_SERIAL_NUMBER), Matchers.not(is(emptyOrNullString())));
+        MatcherAssert.assertThat(eventRep.getDetails().get(Details.X509_CERTIFICATE_SUBJECT_DISTINGUISHED_NAME), Matchers.startsWith("EMAILADDRESS=test-user@localhost"));
+        MatcherAssert.assertThat(eventRep.getDetails().get(Details.X509_CERTIFICATE_ISSUER_DISTINGUISHED_NAME), Matchers.startsWith("EMAILADDRESS=contact@keycloak.org"));
     }
 }

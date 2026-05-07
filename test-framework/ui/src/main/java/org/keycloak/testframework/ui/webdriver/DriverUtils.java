@@ -4,6 +4,7 @@ import java.io.File;
 
 import org.keycloak.testframework.config.Config;
 
+import org.htmlunit.WebClientOptions;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeDriverService;
 import org.openqa.selenium.firefox.FirefoxDriver;
@@ -39,7 +40,14 @@ class DriverUtils {
 
     static HtmlUnitDriver createHtmlUnitDriver() {
         HtmlUnitDriver driver = new HtmlUnitDriver(DriverOptions.createHtmlUnitOptions());
-        driver.getWebClient().getOptions().setCssEnabled(false);
+        WebClientOptions options = driver.getWebClient().getOptions();
+        options.setCssEnabled(false);
+
+        // HtmlUnit doesn't work very well with JS and it's recommended to use this settings.
+        // HtmlUnit validates all scripts and then fails. It turned off the validation.
+        options.setThrowExceptionOnScriptError(false);
+        options.setThrowExceptionOnFailingStatusCode(false);
+
         return driver;
     }
 

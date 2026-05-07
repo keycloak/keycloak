@@ -64,22 +64,46 @@ on the realm resource associated with the event, so that each realm resource typ
 |Step
 |Description
 |Configuration
-| `set-user-required-action` | Set a required action to the user a|
+| `add-required-action` | Add a required action to the user a|
 * `action`: The name of the required action
-| `delete-user` | Delete the user | None
-| `disable-user` | Disable the user | None
+| `remove-required-action` | Remove a required action from the user a|
+* `action`: The name of the required action
+| `grant-role` | Grant one or more roles to the user a|
+* `role`: One or more role names to grant. This can be a single value or a list of values (e.g., `[value1, value2]`)
+| `revoke-role` | Revoke one or more roles from the user a|
+* `role`: One or more role names to revoke. This can be a single value or a list of values (e.g., `[value1, value2]`)
+| `join-group` | Add the user to one or more groups a|
+* `group`: One or more group names or paths to join. This can be a single value or a list of values (e.g., `[value1, value2]`)
+| `leave-group` | Remove the user from one or more groups a|
+* `group`: One or more group names or paths to leave. This can be a single value or a list of values (e.g., `[value1, value2]`)
+| `set-user-attribute` | Set one or more attributes on the user. Allows providing multiple `<name>`/`<value>` pairs a|
+* `<name>`: The attribute name
+* `<value>`: The value of the attribute
+| `remove-user-attribute` | Remove one or more attributes from the user a|
+* `attribute`: One or more attribute names to remove. This can be a single value or a list of values (e.g., `[value1, value2]`)
+| `notify-user` | Notify the user by email a|
+* `subject`: The email subject
+* `message`: The email message in plain text or HTML format
+* `to`: The recipient email address. If not provided, the user's email address will be used
 | `unlink-user` | Unlink the user from one or more external Identity Providers a|
 * `idp`: One or more Identity Provider aliases to unlink. This can be:
 ** Single value
-** List of values (i.e., `["value", "value2"]`) 
+** List of values (e.g., `[value1, value2]`)
 ** `*` to unlink user from all linked Identity Providers
-| `notify-user` | Notify the user by email a|
-- `subject`: The email subject
-- `message`: The email message in plain text or HTML format
-- `to`: The recipient email address. If not provided, the user's email address will be used
-| `set-user-attribute` | Set an attribute to the user. Allows providing multiple `<name>`/`<value>` pairs a|
-- `<name>`: The attribute name
-- `<value>`: The value of the attribute
+| `disable-user` | Disable the user | None
+| `delete-user` | Delete the user | None
+|===
+
+[[_workflow_client_steps_]]
+== Client steps
+
+[cols="3*", options="header"]
+|===
+|Step
+|Description
+|Configuration
+| `delete-client` | Delete the client | None
+| `disable-client` | Disable the client | None
 |===
 
 [[_workflow_immediate_steps_]]

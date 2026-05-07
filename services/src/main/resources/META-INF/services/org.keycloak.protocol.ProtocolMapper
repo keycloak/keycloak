@@ -61,3 +61,4 @@ org.keycloak.protocol.oidc.mappers.SessionStateMapper
 org.keycloak.protocol.oidc.mappers.SubMapper
 org.keycloak.organization.protocol.mappers.saml.OrganizationMembershipMapper
 org.keycloak.organization.protocol.mappers.saml.OrganizationGroupMembershipMapper
+org.keycloak.protocol.saml.mappers.AuthnContextClassRefMapper

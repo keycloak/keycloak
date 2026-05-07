@@ -35,7 +35,7 @@ import org.openqa.selenium.JavascriptExecutor;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

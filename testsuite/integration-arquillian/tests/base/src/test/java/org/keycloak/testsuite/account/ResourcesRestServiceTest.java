@@ -52,31 +52,35 @@ import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 import org.keycloak.services.resources.account.resources.AbstractResourceService;
 import org.keycloak.services.resources.account.resources.AbstractResourceService.Permission;
 import org.keycloak.services.resources.account.resources.AbstractResourceService.Resource;
+import org.keycloak.testframework.realm.ClientBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.broker.util.SimpleHttpDefault;
-import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.TokenUtil;
-import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.util.JsonSerialization;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.junit.BeforeClass;
+import org.junit.Rule;
 import org.junit.Test;
 
 import static org.keycloak.common.util.Encode.encodePathAsIs;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.empty;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
 public class ResourcesRestServiceTest extends AbstractRestServiceTest {
+
+    @Rule
+    public TokenUtil tokenUtil = new TokenUtil("test-authz-user@localhost", "password");
 
     private AuthzClient authzClient;
     private List<String> userNames = new ArrayList<>(Arrays.asList("alice", "jdoe", "bob"));
@@ -89,13 +93,17 @@ public class ResourcesRestServiceTest extends AbstractRestServiceTest {
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
         super.configureTestRealm(testRealm);
-        RealmRepresentation realmRepresentation = testRealm;
 
-        realmRepresentation.setUserManagedAccessAllowed(true);
+        testRealm.setUserManagedAccessAllowed(true);
 
-        testRealm.getUsers().add(createUser("alice", "password"));
-        testRealm.getUsers().add(createUser("jdoe", "password"));
-        testRealm.getUsers().add(createUser("bob", "password"));
+        testRealm.getUsers().add(createUser("alice", "password", "Alice", "A", "alice@localhost"));
+        testRealm.getUsers().add(createUser("jdoe", "password", "John", "Doe", "jdoe@localhost"));
+        testRealm.getUsers().add(createUser("bob", "password", "Bob", "B", "bob@localhost"));
+        testRealm.getUsers().add(UserBuilder.create().username("test-authz-user@localhost").password("password")
+                .realmRoles("uma_authorization", "uma_protection")
+                .clientRoles("my-resource-server", "uma_protection")
+                .clientRoles("account", AccountRoles.MANAGE_ACCOUNT)
+                .build());
 
         ClientRepresentation client = ClientBuilder.create()
                 .clientId("my-resource-server")
@@ -104,7 +112,7 @@ public class ResourcesRestServiceTest extends AbstractRestServiceTest {
                 .secret("secret")
                 .name("My Resource Server")
                 .baseUrl("http://resourceserver.com")
-                .directAccessGrants().build();
+                .directAccessGrantsEnabled().build();
 
         testRealm.getClients().add(client);
     }
@@ -149,13 +157,13 @@ public class ResourcesRestServiceTest extends AbstractRestServiceTest {
                 ticket.setResource(resource.getId());
                 ticket.setScopeName(scope);
 
-                authzClient.protection("test-user@localhost", "password").permission().create(ticket);
+                authzClient.protection("test-authz-user@localhost", "password").permission().create(ticket);
             }
         }
     }
 
     private ClientResource getResourceServer() {
-        ClientsResource clients = testRealm().clients();
+        ClientsResource clients = managedRealm.admin().clients();
         return clients.get(clients.findByClientId("my-resource-server").get(0).getId());
     }
 
@@ -330,6 +338,30 @@ public class ResourcesRestServiceTest extends AbstractRestServiceTest {
     }
 
     @Test
+    public void testUserLookupReturnsMinimalData() {
+        Resource resource = getMyResources().get(0);
+
+        UserRepresentation user = doGet("/" + encodePathAsIs(resource.getId()) + "/user?value=alice", UserRepresentation.class);
+
+        assertNotNull(user);
+        assertNotNull(user.getId());
+        assertEquals("alice", user.getUsername());
+        assertEquals("Alice", user.getFirstName());
+        assertEquals("A", user.getLastName());
+        assertEquals("alice@localhost", user.getEmail());
+
+        assertNull(user.getAttributes(), "User attributes should not be exposed");
+        assertNull(user.isTotp(), "TOTP status should not be exposed");
+        assertNull(user.getRequiredActions(), "Required actions should not be exposed");
+        assertNull(user.getDisableableCredentialTypes(), "Disableable credential types should not be exposed");
+        assertNull(user.getCreatedTimestamp(), "Created timestamp should not be exposed");
+        assertNull(user.isEnabled(), "Enabled status should not be exposed");
+        assertNull(user.isEmailVerified(), "Email verified should not be exposed");
+        assertNull(user.getFederationLink(), "Federation link should not be exposed");
+        assertNull(user.getNotBefore(), "NotBefore should not be exposed");
+    }
+
+    @Test
     public void testGetPermissions() throws Exception {
         Resource resource = getMyResources().get(0);
         List<Permission> shares = doGet("/" + encodePathAsIs(resource.getId()) + "/permissions", new TypeReference<List<Permission>>() {});
@@ -450,17 +482,21 @@ public class ResourcesRestServiceTest extends AbstractRestServiceTest {
 
         // test read access
         for (String url : Arrays.asList(resourcesUrl, sharedWithOthersUrl, sharedWithMeUrl, resourceUrl, permissionsUrl, requestsUrl)) {
-            assertEquals( "no-account-access GET " + url, 403,
-                    SimpleHttpDefault.doGet(url, httpClient).acceptJson().auth(noAccessTokenUtil.getToken()).asStatus());
-            assertEquals("view-account-access GET " + url,200,
-                    SimpleHttpDefault.doGet(url, httpClient).acceptJson().auth(viewProfileTokenUtil.getToken()).asStatus());
+            assertEquals( 403,
+                    SimpleHttpDefault.doGet(url, httpClient).acceptJson().auth(noAccessTokenUtil.getToken()).asStatus(),
+                    "no-account-access GET " + url);
+            assertEquals(200,
+                    SimpleHttpDefault.doGet(url, httpClient).acceptJson().auth(viewProfileTokenUtil.getToken()).asStatus(),
+                    "view-account-access GET " + url);
         }
 
         // test write access
-        assertEquals( "no-account-access PUT " + permissionsUrl, 403,
-                SimpleHttpDefault.doPut(permissionsUrl, httpClient).acceptJson().auth(noAccessTokenUtil.getToken()).json(Collections.emptyList()).asStatus());
-        assertEquals( "view-account-access PUT " + permissionsUrl, 403,
-                SimpleHttpDefault.doPut(permissionsUrl, httpClient).acceptJson().auth(viewProfileTokenUtil.getToken()).json(Collections.emptyList()).asStatus());
+        assertEquals( 403,
+                SimpleHttpDefault.doPut(permissionsUrl, httpClient).acceptJson().auth(noAccessTokenUtil.getToken()).json(Collections.emptyList()).asStatus(),
+                "no-account-access PUT " + permissionsUrl);
+        assertEquals( 403,
+                SimpleHttpDefault.doPut(permissionsUrl, httpClient).acceptJson().auth(viewProfileTokenUtil.getToken()).json(Collections.emptyList()).asStatus(),
+                "view-account-access PUT " + permissionsUrl);
     }
 
     @Test
@@ -524,12 +560,12 @@ public class ResourcesRestServiceTest extends AbstractRestServiceTest {
                 PermissionTicketRepresentation ticket = new PermissionTicketRepresentation();
 
                 ticket.setGranted(false);
-                ticket.setOwner("test-user@localhost");
+                ticket.setOwner("test-authz-user@localhost");
                 ticket.setRequesterName(userName);
                 ticket.setResource(resource.getId());
                 ticket.setScopeName(scope);
 
-                authzClient.protection("test-user@localhost", "password").permission().create(ticket);
+                authzClient.protection("test-authz-user@localhost", "password").permission().create(ticket);
             }
         }
 
@@ -588,12 +624,12 @@ public class ResourcesRestServiceTest extends AbstractRestServiceTest {
                 PermissionTicketRepresentation ticket = new PermissionTicketRepresentation();
 
                 ticket.setGranted(false);
-                ticket.setOwner("test-user@localhost");
+                ticket.setOwner("test-authz-user@localhost");
                 ticket.setRequesterName(userName);
                 ticket.setResource(resource.getId());
                 ticket.setScopeName(scope);
 
-                authzClient.protection("test-user@localhost", "password").permission().create(ticket);
+                authzClient.protection("test-authz-user@localhost", "password").permission().create(ticket);
             }
         }
 
@@ -721,16 +757,20 @@ public class ResourcesRestServiceTest extends AbstractRestServiceTest {
 
         return AuthzClient
                 .create(new Configuration(suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth",
-                        testRealm().toRepresentation().getRealm(), client.getClientId(),
+                        managedRealm.admin().toRepresentation().getRealm(), client.getClientId(),
                         credentials, httpClient));
     }
 
-    private UserRepresentation createUser(String userName, String password) {
+    private UserRepresentation createUser(String userName, String password, String firstName, String lastName, String email) {
         return UserBuilder.create()
                 .username(userName)
                 .enabled(true)
                 .password(password)
-                .role("account", AccountRoles.MANAGE_ACCOUNT)
+                .firstName(firstName)
+                .lastName(lastName)
+                .email(email)
+                .attribute("secret-attr", "secret-value")
+                .clientRoles("account", AccountRoles.MANAGE_ACCOUNT)
                 .build();
     }
 

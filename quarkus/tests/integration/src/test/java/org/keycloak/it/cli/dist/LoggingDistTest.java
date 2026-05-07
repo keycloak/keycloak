@@ -275,6 +275,19 @@ public class LoggingDistTest {
     }
 
     @Test
+    @Launch({"start-dev", "--log=console,file", "--log-console-output=json", "--log-console-json-format=ecs", "--log-file-output=json", "--log-file-json-format=ecs", "--log-service-name=my-custom-service", "--log-service-environment=my-custom-env"})
+    void ecsFormatServiceFields(CLIResult cliResult, RawDistRootPath path) {
+        var output = cliResult.getOutput();
+
+        assertThat(output, containsString("\"service.name\":\"my-custom-service\""));
+        assertThat(output, containsString("\"service.environment\":\"my-custom-env\""));
+
+        String data = readDefaultFileLog(path);
+        assertThat(data, containsString("\"service.name\":\"my-custom-service\""));
+        assertThat(data, containsString("\"service.environment\":\"my-custom-env\""));
+    }
+
+    @Test
     @Launch({"start-dev", "--log-async=true"})
     void asyncLogging(CLIResult cliResult) {
         cliResult.assertStartedDevMode();

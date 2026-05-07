@@ -19,7 +19,7 @@ public class JoinGroupStepProvider extends GroupBasedStepProvider {
 
     @Override
     protected void run(UserModel user, GroupModel group) {
-        log.debugv("Adding user %s to group %s)", user.getId(), buildGroupPath(group));
+        log.debugv("Adding user {0} to group {1}", user.getId(), buildGroupPath(group));
         user.joinGroup(group);
     }
 }

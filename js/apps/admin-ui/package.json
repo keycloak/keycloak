@@ -8,7 +8,8 @@
     ".": {
       "import": "./lib/keycloak-admin-ui.js",
       "types": "./lib/keycloak-admin-ui.d.ts"
-    }
+    },
+    "./styles.css": "./lib/keycloak-admin-ui.css"
   },
   "files": [
     "lib"
@@ -94,23 +95,21 @@
     "@patternfly/react-styles": "^5.4.1",
     "@patternfly/react-table": "^5.4.16",
     "@uiw/react-textarea-code-editor": "^3.1.1",
-    "admin-ui": "file:",
     "file-saver": "^2.0.5",
     "flat": "^6.0.1",
     "i18next": "^25.7.3",
     "i18next-fetch-backend": "^7.0.0",
     "jszip": "^3.10.1",
     "keycloak-js": "^26.2.2",
-    "lodash-es": "^4.17.23",
+    "lodash-es": "^4.18.1",
     "p-debounce": "^5.1.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-hook-form": "^7.70.0",
     "react-i18next": "^16.5.1",
-    "react-router-dom": "^6.30.2",
+    "react-router-dom": "^6.30.3",
     "reactflow": "^11.11.4",
-    "use-react-router-breadcrumbs": "^4.0.1",
-    "yaml": "^2.8.2"
+    "yaml": "^2.8.3"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.11.0",
@@ -130,7 +129,7 @@
     "properties-file": "^3.6.3",
     "ts-node": "^10.9.2",
     "uuid": "^13.0.0",
-    "vite": "^7.3.0",
+    "vite": "^7.3.2",
     "vite-plugin-checker": "^0.12.0",
     "vite-plugin-dts": "^4.5.4",
     "vitest": "^4.0.16"

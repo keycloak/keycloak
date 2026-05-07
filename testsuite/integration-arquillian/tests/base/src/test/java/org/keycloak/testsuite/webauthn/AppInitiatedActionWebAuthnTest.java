@@ -35,8 +35,9 @@ import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.UserSessionRepresentation;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testsuite.actions.AbstractAppInitiatedActionTest;
-import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.IgnoreBrowserDriver;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginUsernameOnlyPage;
@@ -66,8 +67,8 @@ import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
  * @author <a href="mailto:mabartos@redhat.com">Martin Bartos</a>
@@ -183,16 +184,17 @@ public class AppInitiatedActionWebAuthnTest extends AbstractAppInitiatedActionTe
     }
 
     protected void testWebAuthnLogoutOtherSessions(boolean logoutOtherSessions) throws IOException {
-        UserResource testUser = testRealm().users().get(findUser(DEFAULT_USERNAME).getId());
+        UserResource testUser = managedRealm.admin().users().get(findUser(DEFAULT_USERNAME).getId());
 
         // perform a login using normal user/password form to have an old session
         EventRepresentation event1;
-        try (RealmAttributeUpdater rau = new RealmAttributeUpdater(testRealm())
+        try (RealmAttributeUpdater rau = new RealmAttributeUpdater(managedRealm.admin())
                 .setBrowserFlow("browser")
                 .update()) {
             OAuthClient oauth2 = oauth.newConfig().driver(driver2);
             oauth2.doLogin(DEFAULT_USERNAME, getPassword(DEFAULT_USERNAME));
-            event1 = events.expectLogin().assertEvent();
+            event1 = events.poll();
+            EventAssertion.expectLoginSuccess(event1);
             assertEquals(1, testUser.getUserSessions().size());
         }
 
@@ -201,7 +203,7 @@ public class AppInitiatedActionWebAuthnTest extends AbstractAppInitiatedActionTe
 
         doAIA();
 
-        final Supplier<Integer> getCredentialCount = () -> Optional.ofNullable(ApiUtil.findUserByUsernameId(testRealm(), DEFAULT_USERNAME))
+        final Supplier<Integer> getCredentialCount = () -> Optional.ofNullable(AdminApiUtil.findUserByUsernameId(managedRealm.admin(), DEFAULT_USERNAME))
                 .map(UserResource::credentials)
                 .map(List::size)
                 .orElse(0);
@@ -243,8 +245,9 @@ public class AppInitiatedActionWebAuthnTest extends AbstractAppInitiatedActionTe
         assertThat(appPage.getRequestType(), is(AppPage.RequestType.AUTH_RESPONSE));
         assertNotNull(oauth.parseLoginResponse().getCode());
 
-        return events.expectLogin()
-                .detail(Details.USERNAME, DEFAULT_USERNAME)
-                .assertEvent();
+        EventRepresentation eventRep = events.poll();
+        EventAssertion.expectLoginSuccess(eventRep)
+                .details(Details.USERNAME, DEFAULT_USERNAME);
+        return eventRep;
     }
 }

@@ -1,0 +1,579 @@
+package org.keycloak.tests.oid4vc;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.function.Consumer;
+
+import org.keycloak.OID4VCConstants;
+import org.keycloak.admin.client.Keycloak;
+import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.admin.client.resource.UserResource;
+import org.keycloak.authentication.authenticators.client.AttestationBasedClientAuthenticator.ClientAttestationPoPJwt;
+import org.keycloak.crypto.AsymmetricSignatureSignerContext;
+import org.keycloak.crypto.KeyWrapper;
+import org.keycloak.jose.jwk.JWK;
+import org.keycloak.jose.jwk.JWKBuilder;
+import org.keycloak.jose.jws.JWSBuilder;
+import org.keycloak.jose.jws.JWSInput;
+import org.keycloak.jose.jws.JWSInputException;
+import org.keycloak.protocol.oid4vc.model.CredentialIssuer;
+import org.keycloak.protocol.oid4vc.model.CredentialOfferURI;
+import org.keycloak.protocol.oid4vc.model.CredentialRequest;
+import org.keycloak.protocol.oid4vc.model.CredentialResponse;
+import org.keycloak.protocol.oid4vc.model.CredentialResponse.Credential;
+import org.keycloak.protocol.oid4vc.model.CredentialsOffer;
+import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
+import org.keycloak.protocol.oid4vc.model.ProofType;
+import org.keycloak.protocol.oid4vc.model.Proofs;
+import org.keycloak.protocol.oid4vc.model.SupportedCredentialConfiguration;
+import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
+import org.keycloak.representations.JsonWebToken;
+import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.oauth.OAuthClient;
+import org.keycloak.tests.oid4vc.abca.OIDCClientAttester;
+import org.keycloak.tests.oid4vc.abca.OIDCMockClientAttester;
+import org.keycloak.testsuite.util.oauth.AccessTokenRequest;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
+import org.keycloak.testsuite.util.oauth.LoginUrlBuilder;
+import org.keycloak.testsuite.util.oauth.PkceGenerator;
+import org.keycloak.testsuite.util.oauth.oid4vc.CredentialOfferRequest;
+import org.keycloak.testsuite.util.oauth.oid4vc.CredentialOfferResponse;
+import org.keycloak.testsuite.util.oauth.oid4vc.CredentialOfferUriRequest;
+import org.keycloak.testsuite.util.oauth.oid4vc.CredentialOfferUriResponse;
+import org.keycloak.testsuite.util.oauth.oid4vc.Oid4vcCredentialRequest;
+import org.keycloak.testsuite.util.oauth.oid4vc.Oid4vcCredentialResponse;
+import org.keycloak.testsuite.util.oauth.oid4vc.PreAuthorizedCodeGrantRequest;
+import org.keycloak.util.JsonSerialization;
+
+import static org.keycloak.OAuth2Constants.AUTHORIZATION_DETAILS;
+import static org.keycloak.authentication.authenticators.client.AttestationBasedClientAuthenticator.OAUTH_CLIENT_ATTESTATION_POP_JWT_TYPE;
+import static org.keycloak.constants.OID4VCIConstants.CREDENTIAL_OFFER_CREATE;
+import static org.keycloak.tests.oid4vc.OID4VCIssuerTestBase.TEST_PASSWORD;
+import static org.keycloak.tests.oid4vc.OID4VCIssuerTestBase.VCTestRealmConfig.TEST_REALM_NAME;
+import static org.keycloak.tests.oid4vc.OID4VCProofTestUtils.createRsaKeyPair;
+import static org.keycloak.tests.oid4vc.OID4VCTestContext.ACCESS_TOKEN_RESPONSE_ATTACHMENT_KEY;
+import static org.keycloak.tests.oid4vc.OID4VCTestContext.AUTHORIZATION_SERVER_METADATA_ATTACHMENT_KEY;
+import static org.keycloak.tests.oid4vc.OID4VCTestContext.AttachmentKey;
+import static org.keycloak.tests.oid4vc.OID4VCTestContext.CLIENT_ATTESTER_ATTACHMENT_KEY;
+import static org.keycloak.tests.oid4vc.OID4VCTestContext.CREDENTIALS_OFFER_RESPONSE_ATTACHMENT_KEY;
+import static org.keycloak.tests.oid4vc.OID4VCTestContext.CREDENTIALS_OFFER_URI_RESPONSE_ATTACHMENT_KEY;
+import static org.keycloak.tests.oid4vc.OID4VCTestContext.CREDENTIALS_RESPONSE_ATTACHMENT_KEY;
+import static org.keycloak.tests.oid4vc.OID4VCTestContext.ISSUER_METADATA_ATTACHMENT_KEY;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+
+/**
+ * A specialized Wallet facade for OID4VCI integration tests.
+ *
+ * <p>This class orchestrates OID4VCI message flows (Credential Offer, Authorization Request,
+ * Token Exchange, Credential Request) using the Keycloak test framework.
+ *
+ * <p>It maintains internal session state (tracks logged-in users) to facilitate
+ * automated cleanup and mimics the behavior of a mobile wallet app.
+ *
+ * @author <a href="mailto:tdiesler@ibm.com">Thomas Diesler</a>
+ */
+public class OID4VCBasicWallet {
+
+    private final Keycloak keycloak;
+    private final OAuthClient oauth;
+
+    final Set<String> loginUsers = new HashSet<>();
+
+    public OID4VCBasicWallet(Keycloak keycloak, OAuthClient oauth) {
+        this.keycloak = keycloak;
+        this.oauth = oauth;
+    }
+
+    /**
+     * A composite action to create a credential offer uri with caller provided properties
+     */
+    public CredentialOfferURI createCredentialOfferUri(OID4VCTestContext ctx, Consumer<CredentialOfferUriRequest> consumer) {
+
+        // Get Issuer AccessToken
+        //
+        AccessTokenResponse issTokenResponse = getAccessToken(ctx.getIssuer());
+
+        // Exclude scope: <credScope>
+        // Require role: credential-offer-create
+        String issToken = validateIssuerAccessToken(issTokenResponse,
+                List.of(), List.of(ctx.getScope()),
+                List.of(CREDENTIAL_OFFER_CREATE.getName()), List.of());
+
+        // Create CredentialOfferURI
+        //
+        CredentialOfferUriResponse credOfferUriRes;
+        try {
+            String credConfigId = ctx.getCredentialConfigurationId();
+            var uriRequest = credentialOfferUriRequest(ctx, credConfigId);
+            consumer.accept(uriRequest.bearerToken(issToken));
+            credOfferUriRes = uriRequest.send();
+        } finally {
+            logout(ctx.getIssuer());
+        }
+
+        return credOfferUriRes.getCredentialOfferURI();
+    }
+
+    /**
+     * A composite action to create a credential offer with caller provided properties
+     */
+    public CredentialsOffer createCredentialOffer(OID4VCTestContext ctx, Consumer<CredentialOfferUriRequest> consumer) {
+
+        // Create CredentialOfferURI
+        //
+        CredentialOfferURI credOfferUri = createCredentialOfferUri(ctx, consumer);
+
+        // Fetch the CredentialsOffer
+        //
+        CredentialOfferResponse credOfferResponse = credentialsOfferRequest(ctx, credOfferUri).send();
+        return credOfferResponse.getCredentialsOffer();
+    }
+
+    public AccessTokenResponse getAccessToken(String username, String... scope) {
+        PkceGenerator pkce = PkceGenerator.s256();
+        AuthorizationEndpointResponse authResponse = authorizationRequest()
+                .scope(scope)
+                .codeChallenge(pkce)
+                .send(username, TEST_PASSWORD);
+        String authCode = authResponse.getCode();
+        assertNotNull(authCode, "No auth code");
+        AccessTokenResponse tokenResponse = oauth.accessTokenRequest(authCode)
+                .codeVerifier(pkce)
+                .send();
+        assertNotNull(tokenResponse.getAccessToken(), "No AccessToken");
+        return tokenResponse;
+    }
+
+    public CredentialIssuer getIssuerMetadata(OID4VCTestContext ctx) {
+        var issuerMetadata = Optional.ofNullable(ctx.getAttachment(ISSUER_METADATA_ATTACHMENT_KEY))
+                .orElse(oauth.oid4vc().doIssuerMetadataRequest().getMetadata());
+        ctx.putAttachment(ISSUER_METADATA_ATTACHMENT_KEY, issuerMetadata);
+        return issuerMetadata;
+    }
+
+    public OIDCConfigurationRepresentation getAuthorizationServerMetadata(OID4VCTestContext ctx) {
+        var authServerMetadata = Optional.ofNullable(ctx.getAttachment(AUTHORIZATION_SERVER_METADATA_ATTACHMENT_KEY))
+                .orElse(oauth.doWellKnownRequest());
+        ctx.putAttachment(AUTHORIZATION_SERVER_METADATA_ATTACHMENT_KEY, authServerMetadata);
+        return authServerMetadata;
+    }
+
+    public OIDCClientAttester getClientAttester(OID4VCTestContext ctx) {
+        OIDCClientAttester attester = ctx.getAttachment(CLIENT_ATTESTER_ATTACHMENT_KEY);
+        if (attester == null) {
+            var kw = createRsaKeyPair("openid-abca-attester-key");
+            attester = new OIDCMockClientAttester(kw);
+            ctx.putAttachment(CLIENT_ATTESTER_ATTACHMENT_KEY, attester);
+        }
+        return attester;
+    }
+
+    public String buildClientAttestationJWT(OID4VCTestContext ctx, KeyWrapper walletKey) {
+        KeyWrapper pubKeyWrapper = walletKey.cloneKey();
+        pubKeyWrapper.setPrivateKey(null);
+        String clientId = ctx.getClient().getClientId();
+        OIDCClientAttester attester = getClientAttester(ctx);
+        String attestationJwt = attester.attestWalletKey(clientId, pubKeyWrapper);
+        return attestationJwt;
+    }
+
+    public String buildClientAttestationPoPJWT(OID4VCTestContext ctx, KeyWrapper walletKey) {
+        var issuer = getIssuerMetadata(ctx).getCredentialIssuer();
+
+        // Build Client Attestation PoP JWT
+        //
+        String clientId = ctx.getClient().getClientId();
+        ClientAttestationPoPJwt body = new ClientAttestationPoPJwt()
+                .audience(issuer)
+                .issuer(clientId)
+                .issuedNowWithTTL(300) // 5min
+                .randomId();
+
+        String attestationPoPJwt = new JWSBuilder()
+                .type(OAUTH_CLIENT_ATTESTATION_POP_JWT_TYPE)
+                .kid(walletKey.getKid())
+                .jsonContent(body)
+                .sign(new AsymmetricSignatureSignerContext(walletKey));
+        return attestationPoPJwt;
+    }
+
+    public Proofs generateAttestationProof(OID4VCTestContext ctx, Consumer<KeyWrapper> attestationKeyConsumer) {
+        KeyWrapper attestationKey = getECKeyPair(ctx, "attestationKey");
+        KeyWrapper proofKey = getECKeyPair(ctx, "proofKey");
+
+        JWK proofJwk = JWKBuilder.create().ec(proofKey.getPublicKey());
+        proofJwk.setKeyId(proofKey.getKid());
+        proofJwk.setAlgorithm(proofKey.getAlgorithm());
+
+        String nonce = oauth.oid4vc().doNonceRequest().getNonce();
+        Proofs proofs = Proofs.create(ProofType.ATTESTATION, OID4VCProofTestUtils.generateAttestationProof(
+                attestationKey,
+                nonce,
+                List.of(proofJwk),
+                List.of(OID4VCConstants.KeyAttestationResistanceLevels.HIGH),
+                List.of(OID4VCConstants.KeyAttestationResistanceLevels.HIGH),
+                null
+        ));
+        attestationKeyConsumer.accept(attestationKey);
+        return proofs;
+    }
+
+    public Proofs generateJwtProof(OID4VCTestContext ctx) {
+        String aud = getIssuerMetadata(ctx).getCredentialIssuer();
+        String nonce = oauth.oid4vc().doNonceRequest().getNonce();
+        KeyWrapper kw = getECKeyPair(ctx, null);
+        return Proofs.create(ProofType.JWT, OID4VCProofTestUtils.generateJwtProof(aud, kw, nonce));
+    }
+
+    public KeyWrapper getECKeyPair(OID4VCTestContext ctx) {
+        return getECKeyPair(ctx, null);
+    }
+
+    public KeyWrapper getECKeyPair(OID4VCTestContext ctx, String keyId) {
+        String cacheKey = keyId != null ? keyId : ctx.getHolder() + "_ec_key";
+        AttachmentKey<KeyWrapper> attachmentKey = new AttachmentKey<>(cacheKey, KeyWrapper.class);
+        KeyWrapper kw = ctx.getAttachment(attachmentKey);
+        if (kw == null) {
+            kw = OID4VCProofTestUtils.createEcKeyPair(keyId);
+            ctx.putAttachment(attachmentKey, kw);
+        }
+        return kw;
+    }
+
+    public KeyWrapper getRSAKeyPair(OID4VCTestContext ctx) {
+        return getRSAKeyPair(ctx, null);
+    }
+
+    public KeyWrapper getRSAKeyPair(OID4VCTestContext ctx, String keyId) {
+        String cacheKey = keyId != null ? keyId : ctx.getHolder() + "_rsa_key";
+        AttachmentKey<KeyWrapper> attachmentKey = new AttachmentKey<>(cacheKey, KeyWrapper.class);
+        KeyWrapper kw = ctx.getAttachment(attachmentKey);
+        if (kw == null) {
+            kw = OID4VCProofTestUtils.createRsaKeyPair(keyId);
+            ctx.putAttachment(attachmentKey, kw);
+        }
+        return kw;
+    }
+
+    public AuthorizationEndpointRequest authorizationRequest() {
+        AuthorizationEndpointRequest request = new AuthorizationEndpointRequest() {
+            public AuthorizationEndpointResponse send(String username, String password) {
+                loginUsers.add(username);
+                return super.send(username, password);
+            }
+        };
+        return request;
+    }
+
+    public AccessTokenRequest accessTokenRequest(OID4VCTestContext ctx, String authCode) {
+        AccessTokenRequest request = new AccessTokenRequest(oauth, authCode) {
+            public AccessTokenResponse send() {
+                AccessTokenResponse response = super.send();
+                ctx.putAttachment(ACCESS_TOKEN_RESPONSE_ATTACHMENT_KEY, response);
+                return response;
+            }
+        };
+        return request;
+    }
+
+    public PreAuthorizedCodeGrantRequest accessTokenRequestPreAuth(OID4VCTestContext ctx, String preAuthCode) {
+        PreAuthorizedCodeGrantRequest request = new PreAuthorizedCodeGrantRequest(oauth, preAuthCode) {
+            public AccessTokenResponse send() {
+                AccessTokenResponse response = super.send();
+                ctx.putAttachment(ACCESS_TOKEN_RESPONSE_ATTACHMENT_KEY, response);
+                return response;
+            }
+        };
+        return request;
+    }
+
+    public CredentialOfferUriRequest credentialOfferUriRequest(OID4VCTestContext ctx, String credConfigId) {
+        CredentialOfferUriRequest request = new CredentialOfferUriRequest(oauth, credConfigId) {
+            public CredentialOfferUriResponse send() {
+                CredentialOfferUriResponse response = super.send();
+                ctx.putAttachment(CREDENTIALS_OFFER_URI_RESPONSE_ATTACHMENT_KEY, response);
+                return response;
+            }
+        };
+        return request;
+    }
+
+    public CredentialOfferRequest credentialsOfferRequest(OID4VCTestContext ctx, CredentialOfferURI credOfferUri) {
+        CredentialOfferRequest request = new CredentialOfferRequest(oauth, credOfferUri) {
+            public CredentialOfferResponse send() {
+                CredentialOfferResponse response = super.send();
+                ctx.putAttachment(CREDENTIALS_OFFER_RESPONSE_ATTACHMENT_KEY, response);
+                return response;
+            }
+        };
+        return request;
+    }
+
+    public Oid4vcCredentialRequest credentialRequest(OID4VCTestContext ctx, String accessToken) {
+        Oid4vcCredentialRequest request = new Oid4vcCredentialRequest(oauth, new CredentialRequest()) {
+            public Oid4vcCredentialResponse send() {
+                Oid4vcCredentialResponse response = super.send();
+                ctx.putAttachment(CREDENTIALS_RESPONSE_ATTACHMENT_KEY, response);
+                return response;
+            }
+        };
+        request.bearerToken(accessToken);
+        return request;
+    }
+
+    public Oid4vcCredentialResponse fetchCredentialByOffer(OID4VCTestContext ctx, CredentialsOffer offer) {
+        AccessTokenResponse tokenResponse;
+        if (offer.hasPreAuthorizedGrant()) {
+            tokenResponse = accessTokenRequestPreAuth(ctx, offer.getPreAuthorizedCode()).send();
+        } else {
+            String scope = ctx.getScope();
+            String issuerState = offer.getIssuerState();
+            String credConfigId = offer.getCredentialConfigurationIds().get(0);
+            if (!ctx.getCredentialConfigurationId().equals(credConfigId)) {
+                SupportedCredentialConfiguration credConfig = getIssuerMetadata(ctx).getCredentialsSupported().get(credConfigId);
+                scope = credConfig.getScope();
+            }
+            String authCode = authorizationRequest()
+                    .scope(scope)
+                    .issuerState(issuerState)
+                    .send(ctx.getHolder(), TEST_PASSWORD)
+                    .getCode();
+            tokenResponse = accessTokenRequest(ctx, authCode).send();
+        }
+        String credentialIdentifier = ctx.getAuthorizedCredentialIdentifier();
+        Oid4vcCredentialResponse credResponse = credentialRequest(ctx, tokenResponse.getAccessToken())
+                .credentialIdentifier(credentialIdentifier)
+                .proofs(generateJwtProof(ctx))
+                .send();
+        return credResponse;
+    }
+
+    public Oid4vcCredentialResponse fetchCredentialByScope(OID4VCTestContext ctx, String scope) {
+        String authCode = authorizationRequest()
+                .scope(scope)
+                .send(ctx.getHolder(), TEST_PASSWORD)
+                .getCode();
+        AccessTokenResponse tokenResponse = accessTokenRequest(ctx, authCode).send();
+        String credentialIdentifier = ctx.getAuthorizedCredentialIdentifier();
+        Oid4vcCredentialResponse credResponse = credentialRequest(ctx, tokenResponse.getAccessToken())
+                .credentialIdentifier(credentialIdentifier)
+                .proofs(generateJwtProof(ctx))
+                .send();
+        return credResponse;
+    }
+
+    /**
+     * Terminates all active user sessions tracked by this wallet instance.
+     * Recommended to be called in {@code @AfterEach} methods.
+     */
+    public void logout() {
+        for (String user : loginUsers) {
+            logout(user);
+        }
+        loginUsers.clear();
+    }
+
+    /**
+     * Terminates a specific user session via the Keycloak Admin API.
+     *
+     * @param username the username of the user to logout.
+     */
+    public void logout(String username) {
+        RealmResource realm = keycloak.realm(TEST_REALM_NAME);
+        UserRepresentation userRep = realm.users().search(username, true).stream()
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("User not found for logout: " + username));
+        UserResource userResource = realm.users().get(userRep.getId());
+        userResource.logout();
+    }
+
+    // State Validation ------------------------------------------------------------------------------------------------
+
+    public void verifyCredentialsSignature(CredentialResponse credResponse) {
+        for (Credential credEntry : credResponse.getCredentials()) {
+            String encodedCredential = credEntry.getCredential().toString();
+            oauth.verifyToken(encodedCredential, JsonWebToken.class);
+        }
+    }
+
+    public String validateIssuerAccessToken(
+            AccessTokenResponse tokenResponse,
+            List<String> includeScopes, List<String> excludeScopes,
+            List<String> includeRoles, List<String> excludeRoles
+    ) {
+
+        String accessToken = tokenResponse.getAccessToken();
+
+        JsonWebToken jwt;
+        try {
+            jwt = JsonSerialization.readValue(new JWSInput(accessToken).getContent(), JsonWebToken.class);
+        } catch (IOException | JWSInputException ex) {
+            throw new IllegalStateException(ex);
+        }
+
+        List<String> wasScopes = Arrays.stream(((String) jwt.getOtherClaims().get("scope")).split("\\s")).toList();
+        includeScopes.forEach(it -> assertTrue(wasScopes.contains(it), "Missing scope: " + it));
+        excludeScopes.forEach(it -> assertFalse(wasScopes.contains(it), "Invalid scope: " + it));
+
+        List<String> allRoles = new ArrayList<>();
+        Object realmAccess = jwt.getOtherClaims().get("realm_access");
+        if (realmAccess != null) {
+            @SuppressWarnings("unchecked")
+            var realmRoles = ((Map<String, List<String>>) realmAccess).get("roles");
+            allRoles.addAll(realmRoles);
+        }
+        Object resourceAccess = jwt.getOtherClaims().get("resource_access");
+        if (resourceAccess != null) {
+            @SuppressWarnings("unchecked")
+            var resourceAccessMapping = (Map<String, Map<String, List<String>>>) resourceAccess;
+            resourceAccessMapping.forEach((k, v) ->
+                allRoles.addAll(v.get("roles")));
+        }
+        includeRoles.forEach(it -> assertTrue(allRoles.contains(it), "Missing role: " + it));
+        excludeRoles.forEach(it -> assertFalse(allRoles.contains(it), "Invalid role: " + it));
+
+        return accessToken;
+    }
+
+    public String validateHolderAccessToken(OID4VCTestContext ctx, AccessTokenResponse tokenResponse) {
+
+        // Check that we can extract the AccessToken
+        if (!tokenResponse.isSuccess()) {
+            fail("Error in AccessToken response: " + tokenResponse.getErrorDescription());
+        }
+
+        String accessToken = tokenResponse.getAccessToken();
+        assertNotNull(accessToken, "No AccessToken");
+
+        // Extract authorization_details from AccessTokenResponse
+        //
+        List<OID4VCAuthorizationDetail> tokenAuthDetails = tokenResponse.getOID4VCAuthorizationDetails();
+        assertTrue(tokenAuthDetails != null && !tokenAuthDetails.isEmpty(), "No authorization_details in AccessTokenResponse");
+
+        // Extract authorization_details from AccessToken (JWT)
+        //
+
+        JsonWebToken jwt;
+        try {
+            jwt = new JWSInput(tokenResponse.getAccessToken()).readJsonContent(JsonWebToken.class);
+        } catch (JWSInputException ex) {
+            throw new IllegalStateException(ex);
+        }
+
+        Object authDetailsClaim = jwt.getOtherClaims().get(AUTHORIZATION_DETAILS);
+        String authDetailsJson = Optional.ofNullable(authDetailsClaim)
+                .map(JsonSerialization::valueAsString)
+                .orElse(null);
+        List<OID4VCAuthorizationDetail> jwtAuthDetails = Optional.ofNullable(authDetailsJson)
+                .map(it -> JsonSerialization.valueFromString(it, OID4VCAuthorizationDetail[].class))
+                .map(Arrays::asList)
+                .orElse(null);
+        assertTrue(jwtAuthDetails != null && !jwtAuthDetails.isEmpty(), "No authorization_details in AccessTokenJWT");
+
+        assertEquals(1, tokenAuthDetails.size(), "Expected one authorization_details entry");
+        var tokenAuthDetail = tokenAuthDetails.get(0);
+
+        assertEquals(1, jwtAuthDetails.size(), "Expected one authorization_details entry");
+        var jwtAuthDetail = jwtAuthDetails.get(0);
+
+        assertEquals(ctx.getCredentialConfigurationId(), tokenAuthDetail.getCredentialConfigurationId());
+        assertEquals(tokenAuthDetail, jwtAuthDetail);
+
+        return accessToken;
+    }
+
+    /**
+     * The Authorization request/response follows the known pattern that we have for other message exchanges on
+     * 'OID4VCClient'. The response does not only capture a successful authorization, but (like the other APIs)
+     * also error cases, like ...
+     *
+     *      - login page does not get displayed, because of an invalid request
+     *      - invalid credentials on login page (i.e. redirect url without code)
+     *
+     * In all three cases (i.e. success + 2x error cases), we like to return a response as soon as we have it,
+     * instead of waiting for a timeout like we currently have with authorization through the 'OAuthClient'.
+     *
+     * This API also abstracts to the low level details of web driver and login forms that are specific for the interactive
+     * Authorization Code Flow. In future, we can use the same API for non-interactive flows (e.g. as required by EBSI)
+     *
+     * Historically, this Authorization request abstractions was with the 'OID4VCClient', rather than with the 'OAuthClient'
+     * because we did not want to expose all Keycloak tests to go through this still experimental code. It never got
+     * approved there and is now only available through the Wallet. We can assume that code similar to this would be found
+     * in a real OID4VCI Wallet.
+     *
+     * 'OID4VCPublicClientTest' covers authorization success and the error cases.
+     */
+    public class AuthorizationEndpointRequest {
+
+        private final LoginUrlBuilder loginForm;
+
+        public AuthorizationEndpointRequest() {
+            this.loginForm = oauth.loginForm();
+        }
+
+        public AuthorizationEndpointRequest authorizationDetails(OID4VCAuthorizationDetail authDetail) {
+            loginForm.authorizationDetails(List.of(authDetail));
+            return this;
+        }
+
+        public AuthorizationEndpointRequest codeChallenge(PkceGenerator pkce) {
+            loginForm.codeChallenge(pkce);
+            return this;
+        }
+
+        public AuthorizationEndpointRequest issuerState(String issuerState) {
+            loginForm.issuerState(issuerState);
+            return this;
+        }
+
+        public AuthorizationEndpointRequest request(String request) {
+            loginForm.request(request);
+            return this;
+        }
+
+        public AuthorizationEndpointRequest scope(String... scopes) {
+            if (scopes != null && scopes.length > 0) {
+                loginForm.scope(scopes);
+            }
+            return this;
+        }
+
+        public boolean openLoginForm() {
+            loginForm.open();
+            String currUrl = oauth.getDriver().getCurrentUrl();
+            return currUrl != null && !currUrl.contains("error=") && !currUrl.contains("error_description=");
+        }
+
+        public AuthorizationEndpointRequest fillLoginForm(String username, String password) {
+            oauth.fillLoginForm(username, password);
+            return this;
+        }
+
+        public AuthorizationEndpointResponse parseLoginResponse() {
+            return oauth.parseLoginResponse();
+        }
+
+        public AuthorizationEndpointResponse send(String username, String password) {
+            openLoginForm();
+            fillLoginForm(username, password);
+            return parseLoginResponse();
+        }
+
+        public AuthorizationEndpointResponse send() {
+            openLoginForm();
+            return parseLoginResponse();
+        }
+    }
+}

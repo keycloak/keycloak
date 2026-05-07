@@ -8,18 +8,30 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.crypto.KeyStatus;
+import org.keycloak.events.Details;
+import org.keycloak.events.Errors;
+import org.keycloak.events.EventType;
 import org.keycloak.models.Constants;
+import org.keycloak.protocol.docker.DockerAuthV2Protocol;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.KeysMetadataRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testsuite.AbstractKeycloakTest;
+import org.keycloak.testsuite.AssertEvents;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 
-import org.junit.Assert;
+import org.hamcrest.Matchers;
 import org.junit.BeforeClass;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.BindMode;
 import org.testcontainers.containers.Container;
@@ -31,7 +43,9 @@ import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_PORT_HTTP;
 import static org.keycloak.testsuite.util.WaitUtils.pause;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
 import static org.junit.Assume.assumeTrue;
 
 @EnableFeature(Profile.Feature.DOCKER)
@@ -47,6 +61,9 @@ public class DockerClientTest extends AbstractKeycloakTest {
 
     private GenericContainer dockerRegistryContainer = null;
     private GenericContainer dockerClientContainer = null;
+
+    @Rule
+    public AssertEvents events = new AssertEvents(this);
 
     private static String hostIp;
 
@@ -64,7 +81,7 @@ public class DockerClientTest extends AbstractKeycloakTest {
                 hostIp = foundHostIp.get();
             }
         }
-        Assert.assertNotNull("Could not resolve host machine's IP address for docker adapter, and 'host.ip' system poperty not set. Client will not be able to authenticate against the keycloak server!", hostIp);
+        Assertions.assertNotNull(hostIp, "Could not resolve host machine's IP address for docker adapter, and 'host.ip' system poperty not set. Client will not be able to authenticate against the keycloak server!");
     }
 
     @Override
@@ -143,10 +160,13 @@ public class DockerClientTest extends AbstractKeycloakTest {
 
     @Test
     public void shouldPerformDockerAuthAgainstRegistry() throws Exception {
+        UserRepresentation dockerUser = AdminApiUtil.findUserByUsername(adminClient.realm(REALM_ID), DOCKER_USER);
+
         log.info("Starting the attempt for login...");
         Container.ExecResult result = dockerClientContainer.execInContainer("docker", "login", "-u", DOCKER_USER, "-p", DOCKER_USER_PASSWORD, REGISTRY_HOSTNAME + ":" + REGISTRY_PORT);
         printCommandResult(result);
         assertThat("Error performing login", result.getExitCode(), is(0));
+        assertLogin(dockerUser);
 
         // create a empty Dockerfile in /tmp
         result = dockerClientContainer.execInContainer("sh", "-c", "echo -e \"FROM scratch\\nWORKDIR /\" > /tmp/Dockerfile");
@@ -162,10 +182,50 @@ public class DockerClientTest extends AbstractKeycloakTest {
         result = dockerClientContainer.execInContainer("docker", "push", REGISTRY_HOSTNAME + ":" + REGISTRY_PORT + "/empty");
         printCommandResult(result);
         assertThat("Error pushing to registry", result.getExitCode(), is(0));
+        assertLogin(dockerUser);
+
+        // logout
+        result = dockerClientContainer.execInContainer("docker", "logout");
+        printCommandResult(result);
+        assertThat("Error performing logout", result.getExitCode(), is(0));
+        assertLogin(dockerUser);
+
+        // disable and login should fail
+        ClientResource client = AdminApiUtil.findClientByClientId(adminClient.realm(REALM_ID), CLIENT_ID);
+        ClientRepresentation clientRep = client.toRepresentation();
+        clientRep.setEnabled(Boolean.FALSE);
+        client.update(clientRep);
+
+        result = dockerClientContainer.execInContainer("docker", "login", "-u", DOCKER_USER, "-p", DOCKER_USER_PASSWORD, REGISTRY_HOSTNAME + ":" + REGISTRY_PORT);
+        printCommandResult(result);
+        assertThat("Error performing login", result.getExitCode(), not(is(0)));
+        assertThat("Service is not disabled", result.getStderr(), containsString("Client specified by 'service' is disabled"));
+        assertLoginErrorClientDisabled();
     }
 
     private void printCommandResult(Container.ExecResult result) {
         log.infof("Command executed with exit code %d. Output follows:\nSTDOUT: %s\n---\nSTDERR: %s",
                 result.getExitCode(), result.getStdout(), result.getStderr());
+    }
+
+    private void assertLogin(UserRepresentation dockerUser) {
+        EventAssertion.assertSuccess(events.poll())
+                .type(EventType.LOGIN)
+                .isCodeId()
+                .clientId(CLIENT_ID)
+                .userId(dockerUser.getId())
+                .details(Details.AUTH_METHOD, DockerAuthV2Protocol.LOGIN_PROTOCOL)
+                .details(Details.USERNAME, DOCKER_USER)
+                .withoutDetails(Details.REDIRECT_URI);
+    }
+
+    private void assertLoginErrorClientDisabled() {
+        events.expect(EventType.LOGIN_ERROR)
+                .realm(REALM_ID)
+                .ipAddress(Matchers.any(String.class))
+                .client(CLIENT_ID)
+                .user((String) null)
+                .error(Errors.CLIENT_DISABLED)
+                .assertEvent();
     }
 }

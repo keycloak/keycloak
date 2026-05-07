@@ -82,6 +82,7 @@ public class OIDCLoginProtocol implements LoginProtocol {
     public static final String LOGIN_PROTOCOL = Constants.OIDC_PROTOCOL;
     public static final String STATE_PARAM = "state";
     public static final String SCOPE_PARAM = "scope";
+    public static final String RESOURCE_PARAM = OAuth2Constants.RESOURCE;
     public static final String CODE_PARAM = "code";
     public static final String RESPONSE_TYPE_PARAM = "response_type";
     public static final String GRANT_TYPE_PARAM = "grant_type";
@@ -120,6 +121,7 @@ public class OIDCLoginProtocol implements LoginProtocol {
     public static final String CLIENT_SECRET_JWT = "client_secret_jwt";
     public static final String PRIVATE_KEY_JWT = "private_key_jwt";
     public static final String TLS_CLIENT_AUTH = "tls_client_auth";
+    public static final String ATTEST_JWT_CLIENT_AUTH = "attest_jwt_client_auth";
 
     /**
      * This is just for legacy setups which expect an unencoded, non-RFC6749 compliant client secret send from Keycloak to an IdP.
@@ -262,6 +264,7 @@ public class OIDCLoginProtocol implements LoginProtocol {
                 Time.currentTime() + userSession.getRealm().getAccessCodeLifespan(),
                 nonce,
                 authSession.getClientNote(OAuth2Constants.SCOPE),
+                authSession.getClientNote(OAuth2Constants.RESOURCE),
                 authSession.getClientNote(OIDCLoginProtocol.REDIRECT_URI_PARAM),
                 authSession.getClientNote(OIDCLoginProtocol.CODE_CHALLENGE_PARAM),
                 authSession.getClientNote(OIDCLoginProtocol.CODE_CHALLENGE_METHOD_PARAM),
@@ -450,6 +453,7 @@ public class OIDCLoginProtocol implements LoginProtocol {
                 return new OAuth2ErrorRepresentation(OAuthErrorException.ACCESS_DENIED, "User cancelled application-initiated action.");
             case CANCELLED_BY_USER:
             case CONSENT_DENIED:
+            case LOA_INVALID:
                 return new OAuth2ErrorRepresentation(OAuthErrorException.ACCESS_DENIED, errorMessage);
             case PASSIVE_INTERACTION_REQUIRED:
                 return new OAuth2ErrorRepresentation(OAuthErrorException.INTERACTION_REQUIRED, null);

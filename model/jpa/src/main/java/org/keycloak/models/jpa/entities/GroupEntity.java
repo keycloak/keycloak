@@ -78,6 +78,12 @@ public class GroupEntity {
     @Column(name = "TYPE")
     private int type;
 
+    @Column(name = "CREATED_TIMESTAMP")
+    private Long createdTimestamp;
+
+    @Column(name = "LAST_MODIFIED_TIMESTAMP")
+    private Long lastModifiedTimestamp;
+
     /**
      * In case of {@link org.keycloak.models.GroupModel.Type#ORGANIZATION},
      * this points to the Organization that owns this group
@@ -156,6 +162,22 @@ public class GroupEntity {
 
     public void setOrganization(OrganizationEntity organization) {
         this.organization = organization;
+    }
+
+    public Long getCreatedTimestamp() {
+        return createdTimestamp;
+    }
+
+    public void setCreatedTimestamp(Long createdTimestamp) {
+        this.createdTimestamp = createdTimestamp;
+    }
+
+    public Long getLastModifiedTimestamp() {
+        return lastModifiedTimestamp;
+    }
+
+    public void setLastModifiedTimestamp(Long lastModifiedTimestamp) {
+        this.lastModifiedTimestamp = lastModifiedTimestamp;
     }
 
     @Override

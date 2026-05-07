@@ -21,11 +21,12 @@ import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.events.AdminEventAssertion;
-import org.keycloak.testframework.realm.GroupConfigBuilder;
+import org.keycloak.testframework.realm.GroupBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
-import org.keycloak.testframework.realm.RealmConfigBuilder;
 import org.keycloak.testframework.util.ApiUtil;
+import org.keycloak.tests.suites.DatabaseTest;
 import org.keycloak.tests.utils.admin.AdminEventPaths;
 
 import com.google.common.collect.Comparators;
@@ -48,6 +49,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @KeycloakIntegrationTest
+@DatabaseTest
 public class GroupSearchTest extends AbstractGroupTest {
 
     @InjectRealm(config = GroupSearchTestRealmConfig.class)
@@ -60,7 +62,7 @@ public class GroupSearchTest extends AbstractGroupTest {
     @Test
     public void querySubGroups() {
         // create a parent group
-        GroupRepresentation parentGroup = GroupConfigBuilder.create()
+        GroupRepresentation parentGroup = GroupBuilder.create()
                 .name("parentGroup")
                 .attribute(ATTR_ORG_NAME, "parentOrg")
                 .build();
@@ -69,7 +71,7 @@ public class GroupSearchTest extends AbstractGroupTest {
 
         // create a subgroups in the parent
         for (int i = 1; i <= 5; i++) {
-            GroupRepresentation testGroup = GroupConfigBuilder.create()
+            GroupRepresentation testGroup = GroupBuilder.create()
                     .name("kcgroup-" + i)
                     .attribute(ATTR_ORG_NAME, "kcgroup-" + i)
                     .attribute(ATTR_QUOTES_NAME, ATTR_QUOTES_VAL)
@@ -77,7 +79,7 @@ public class GroupSearchTest extends AbstractGroupTest {
             addSubGroup(managedRealm, parentGroup, testGroup);
 
             if (i == 2) {
-                GroupRepresentation subGroup = GroupConfigBuilder.create()
+                GroupRepresentation subGroup = GroupBuilder.create()
                         .name("kcsubgroup-" + i)
                         .build();
 
@@ -85,7 +87,7 @@ public class GroupSearchTest extends AbstractGroupTest {
             }
         }
         for (int i = 1; i <= 3; i++) {
-            GroupRepresentation testGroup = GroupConfigBuilder.create()
+            GroupRepresentation testGroup = GroupBuilder.create()
                     .name("testgroup-" + i)
                     .build();
             addSubGroup(managedRealm, parentGroup, testGroup);
@@ -161,13 +163,13 @@ public class GroupSearchTest extends AbstractGroupTest {
          * /g3/g3.1-test1234/g3.1.1
          */
         String needle = "test1234";
-        GroupRepresentation g1 = GroupConfigBuilder.create().name("g1").build();
-        GroupRepresentation g1_1 = GroupConfigBuilder.create().name("g1.1-bubu").build();
-        GroupRepresentation g1_2 = GroupConfigBuilder.create().name("g1.2-" + needle).build();
-        GroupRepresentation g2 = GroupConfigBuilder.create().name("g2-" + needle).build();
-        GroupRepresentation g3 = GroupConfigBuilder.create().name("g3").build();
-        GroupRepresentation g3_1 = GroupConfigBuilder.create().name("g3.1-" + needle).build();
-        GroupRepresentation g3_1_1 = GroupConfigBuilder.create().name("g3.1.1").build();
+        GroupRepresentation g1 = GroupBuilder.create().name("g1").build();
+        GroupRepresentation g1_1 = GroupBuilder.create().name("g1.1-bubu").build();
+        GroupRepresentation g1_2 = GroupBuilder.create().name("g1.2-" + needle).build();
+        GroupRepresentation g2 = GroupBuilder.create().name("g2-" + needle).build();
+        GroupRepresentation g3 = GroupBuilder.create().name("g3").build();
+        GroupRepresentation g3_1 = GroupBuilder.create().name("g3.1-" + needle).build();
+        GroupRepresentation g3_1_1 = GroupBuilder.create().name("g3.1.1").build();
 
         createGroup(managedRealm, g1);
         createGroup(managedRealm, g2);
@@ -193,8 +195,8 @@ public class GroupSearchTest extends AbstractGroupTest {
 
     @Test
     public void searchGroupsByName() {
-        createGroup(managedRealm, GroupConfigBuilder.create().name("group-name-1").build());
-        createGroup(managedRealm, GroupConfigBuilder.create().name("group-name-2").build());
+        createGroup(managedRealm, GroupBuilder.create().name("group-name-1").build());
+        createGroup(managedRealm, GroupBuilder.create().name("group-name-2").build());
 
         GroupsResource groupsResource = managedRealm.admin().groups();
         List<GroupRepresentation> groups;
@@ -218,7 +220,7 @@ public class GroupSearchTest extends AbstractGroupTest {
 
         // Add 20 new groups with known names
         for (int i = 0; i < 20; i++) {
-            String groupId = createGroup(managedRealm, GroupConfigBuilder.create().name("group" + i).build());
+            String groupId = createGroup(managedRealm, GroupBuilder.create().name("group" + i).build());
             if (i == 0) {
                 firstGroupId = groupId;
             }
@@ -418,10 +420,44 @@ public class GroupSearchTest extends AbstractGroupTest {
         testParentAndChildGroup("parent/slash", "child/slash");
     }
 
+    @Test
+    public void sqlWildcardEscaping() {
+        // Test underscore in group names doesn't act as SQL wildcard
+        createGroup(managedRealm, GroupBuilder.create().name("test_group").build());
+        createGroup(managedRealm, GroupBuilder.create().name("testagroup").build());
+        createGroup(managedRealm, GroupBuilder.create().name("testbgroup").build());
+
+        GroupsResource groupsResource = managedRealm.admin().groups();
+        List<GroupRepresentation> groups;
+
+        // Underscore should match literally, not as wildcard
+        groups = groupsResource.groups("test_", false, 0, 20, false);
+        assertEquals(1, groups.size());
+        assertEquals("test_group", groups.get(0).getName());
+
+        // Test percent character doesn't act as SQL wildcard
+        createGroup(managedRealm, GroupBuilder.create().name("50%").build());
+        createGroup(managedRealm, GroupBuilder.create().name("500").build());
+        createGroup(managedRealm, GroupBuilder.create().name("50abc").build());
+
+        groups = groupsResource.groups("50%", false, 0, 20, false);
+        assertEquals(1, groups.size());
+        assertEquals("50%", groups.get(0).getName());
+
+        // Test exact match with SQL wildcards
+        groups = groupsResource.groups("test_group", true, 0, 20, false);
+        assertEquals(1, groups.size());
+        assertEquals("test_group", groups.get(0).getName());
+
+        groups = groupsResource.groups("50%", true, 0, 20, false);
+        assertEquals(1, groups.size());
+        assertEquals("50%", groups.get(0).getName());
+    }
+
     private static class GroupSearchTestRealmConfig implements RealmConfig {
 
         @Override
-        public RealmConfigBuilder configure(RealmConfigBuilder realm) {
+        public RealmBuilder configure(RealmBuilder realm) {
             return realm.eventsEnabled(true);
         }
     }

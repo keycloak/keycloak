@@ -53,8 +53,8 @@ import org.keycloak.testframework.annotations.InjectClient;
 import org.keycloak.testframework.annotations.InjectKeycloakUrls;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.ManagedClient;
-import org.keycloak.testframework.realm.RoleConfigBuilder;
-import org.keycloak.testframework.realm.UserConfigBuilder;
+import org.keycloak.testframework.realm.RoleBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.server.KeycloakUrls;
 import org.keycloak.testframework.util.ApiUtil;
 
@@ -96,7 +96,7 @@ public class UserResourceTypeFilteringTest extends AbstractPermissionTest {
     @BeforeEach
     public void onBeforeEach() {
         for (int i = 0; i < 50; i++) {
-            realm.admin().users().create(UserConfigBuilder.create().username("user-" + i).build()).close();
+            realm.admin().users().create(UserBuilder.create().username("user-" + i).build()).close();
         }
     }
 
@@ -374,7 +374,7 @@ public class UserResourceTypeFilteringTest extends AbstractPermissionTest {
         List<UserRepresentation> search = realmAdminClient.realm(realm.getName()).users().search(null, 0, 10);
         assertTrue(search.isEmpty());
 
-        RoleRepresentation role = RoleConfigBuilder.create().name("myrole").build();
+        RoleRepresentation role = RoleBuilder.create().name("myrole").build();
         realm.admin().roles().create(role);
         role = realm.admin().roles().get(role.getName()).toRepresentation();
 
@@ -400,12 +400,12 @@ public class UserResourceTypeFilteringTest extends AbstractPermissionTest {
         List<UserRepresentation> search = realmAdminClient.realm(realm.getName()).users().search(null, 0, 10);
         assertTrue(search.isEmpty());
 
-        RoleRepresentation role = RoleConfigBuilder.create().name("myrole").build();
+        RoleRepresentation role = RoleBuilder.create().name("myrole").build();
 
         realm.admin().roles().create(role);
         role = realm.admin().roles().get(role.getName()).toRepresentation();
 
-        RoleRepresentation compositeRole = RoleConfigBuilder.create()
+        RoleRepresentation compositeRole = RoleBuilder.create()
                 .name("mycompositerole")
                 .composite(true)
                 .realmComposite(role.getName())
@@ -438,7 +438,7 @@ public class UserResourceTypeFilteringTest extends AbstractPermissionTest {
 
         // create users
         for (int i = 0; i < 4; i++) {
-            String userId = ApiUtil.getCreatedId(realm.admin().users().create(UserConfigBuilder.create()
+            String userId = ApiUtil.getCreatedId(realm.admin().users().create(UserBuilder.create()
                     .username("user" + i)
                     .password("password")
                     .firstName("user")
@@ -507,7 +507,7 @@ public class UserResourceTypeFilteringTest extends AbstractPermissionTest {
 
         // assign role to users
         for (String username : List.of("user_x", "user_y", "user_z")) {
-            String userId = ApiUtil.getCreatedId(realm.admin().users().create(UserConfigBuilder.create()
+            String userId = ApiUtil.getCreatedId(realm.admin().users().create(UserBuilder.create()
                     .username(username)
                     .password("password")
                     .firstName("user")

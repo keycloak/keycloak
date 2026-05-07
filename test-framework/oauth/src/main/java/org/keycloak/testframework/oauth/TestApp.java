@@ -2,6 +2,9 @@ package org.keycloak.testframework.oauth;
 
 import com.sun.net.httpserver.HttpServer;
 
+/**
+ * Mock OAuth client exposed on an HTTP server so Keycloak can send callbacks to the client
+ */
 public class TestApp {
 
     public static final String OAUTH_CALLBACK_PATH = "/callback/oauth";

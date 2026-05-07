@@ -218,6 +218,7 @@ public class DefaultExportImportManager implements ExportImportManager {
         if (rep.getQuickLoginCheckMilliSeconds() != null) newRealm.setQuickLoginCheckMilliSeconds(checkNonNegativeNumber(rep.getQuickLoginCheckMilliSeconds().intValue(), "Quick login check milliseconds"));
         if (rep.getMaxDeltaTimeSeconds() != null) newRealm.setMaxDeltaTimeSeconds(checkNonNegativeNumber(rep.getMaxDeltaTimeSeconds(),"Maximum delta time seconds"));
         if (rep.getFailureFactor() != null) newRealm.setFailureFactor(checkNonNegativeNumber(rep.getFailureFactor(),"Failure factor"));
+        if (rep.getMaxSecondaryAuthFailures() != null) newRealm.setMaxSecondaryAuthFailures(checkNonNegativeNumber(rep.getMaxSecondaryAuthFailures(),"Maximum secondary authentication failures"));
         if (rep.isEventsEnabled() != null) newRealm.setEventsEnabled(rep.isEventsEnabled());
         if (rep.getEnabledEventTypes() != null)
             newRealm.setEnabledEventTypes(new HashSet<>(rep.getEnabledEventTypes()));
@@ -311,6 +312,7 @@ public class DefaultExportImportManager implements ExportImportManager {
         if (rep.isResetPasswordAllowed() != null) newRealm.setResetPasswordAllowed(rep.isResetPasswordAllowed());
         if (rep.isEditUsernameAllowed() != null) newRealm.setEditUsernameAllowed(rep.isEditUsernameAllowed());
         if (rep.isOrganizationsEnabled() != null) newRealm.setOrganizationsEnabled(rep.isOrganizationsEnabled());
+        if (rep.isScimApiEnabled() != null) newRealm.setScimApiEnabled(rep.isScimApiEnabled());
         if (rep.isAdminPermissionsEnabled() != null) newRealm.setAdminPermissionsEnabled(rep.isAdminPermissionsEnabled());
         if (rep.getLoginTheme() != null) newRealm.setLoginTheme(rep.getLoginTheme());
         if (rep.getAccountTheme() != null) newRealm.setAccountTheme(rep.getAccountTheme());
@@ -813,6 +815,7 @@ public class DefaultExportImportManager implements ExportImportManager {
         if (rep.getQuickLoginCheckMilliSeconds() != null) realm.setQuickLoginCheckMilliSeconds(checkNonNegativeNumber(rep.getQuickLoginCheckMilliSeconds().intValue(), "Quick login check milliseconds"));
         if (rep.getMaxDeltaTimeSeconds() != null) realm.setMaxDeltaTimeSeconds(checkNonNegativeNumber(rep.getMaxDeltaTimeSeconds(),"Maximum delta time seconds"));
         if (rep.getFailureFactor() != null) realm.setFailureFactor(checkNonNegativeNumber(rep.getFailureFactor(),"Failure factor"));
+        if (rep.getMaxSecondaryAuthFailures() != null) realm.setMaxSecondaryAuthFailures(checkNonNegativeNumber(rep.getMaxSecondaryAuthFailures(), "Maximum secondary authentication failures"));
         if (rep.isRegistrationAllowed() != null) realm.setRegistrationAllowed(rep.isRegistrationAllowed());
         if (rep.isRegistrationEmailAsUsername() != null)
             realm.setRegistrationEmailAsUsername(rep.isRegistrationEmailAsUsername());
@@ -823,6 +826,7 @@ public class DefaultExportImportManager implements ExportImportManager {
         if (rep.isResetPasswordAllowed() != null) realm.setResetPasswordAllowed(rep.isResetPasswordAllowed());
         if (rep.isEditUsernameAllowed() != null) realm.setEditUsernameAllowed(rep.isEditUsernameAllowed());
         if (rep.isOrganizationsEnabled() != null) realm.setOrganizationsEnabled(rep.isOrganizationsEnabled());
+        if (rep.isScimApiEnabled() != null) realm.setScimApiEnabled(rep.isScimApiEnabled());
         if (rep.isAdminPermissionsEnabled() != null) realm.setAdminPermissionsEnabled(rep.isAdminPermissionsEnabled());
         if (rep.isVerifiableCredentialsEnabled() != null) realm.setVerifiableCredentialsEnabled(rep.isVerifiableCredentialsEnabled());
         if (rep.getSslRequired() != null) realm.setSslRequired(SslRequired.valueOf(rep.getSslRequired().toUpperCase()));
@@ -1422,6 +1426,12 @@ public class DefaultExportImportManager implements ExportImportManager {
             webAuthnPolicyPasswordlessPasskeysEnabled = defaultConfig.isPasskeysEnabled();
         }
         webAuthnPolicy.setPasskeysEnabled(webAuthnPolicyPasswordlessPasskeysEnabled);
+
+        String webAuthnPolicyPasswordlessMediation = rep.getWebAuthnPolicyPasswordlessMediation();
+        if (webAuthnPolicyPasswordlessMediation == null || webAuthnPolicyPasswordlessMediation.isEmpty()) {
+            webAuthnPolicyPasswordlessMediation = defaultConfig.getMediation();
+        }
+        webAuthnPolicy.setMediation(webAuthnPolicyPasswordlessMediation);
 
         return webAuthnPolicy;
     }

@@ -39,7 +39,7 @@ import org.keycloak.testframework.annotations.InjectKeycloakUrls;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.mail.MailServer;
 import org.keycloak.testframework.mail.annotations.InjectMailServer;
-import org.keycloak.testframework.realm.UserConfigBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.server.KeycloakUrls;
 import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.tests.utils.MailUtils;
@@ -91,7 +91,7 @@ public class NotificationStepTest extends AbstractWorkflowTest {
                                 .build()
                 ).build()).close();
 
-        managedRealm.admin().users().create(UserConfigBuilder.create().username("testuser").email("test@example.com").name("John", "").build()).close();
+        managedRealm.admin().users().create(UserBuilder.create().username("testuser").email("test@example.com").name("John", "").build()).close();
 
         // Simulate user being 7 days old (eligible for notify step)
         runScheduledSteps(Duration.ofDays(7));
@@ -119,7 +119,7 @@ public class NotificationStepTest extends AbstractWorkflowTest {
                                 .build()
                 ).build()).close();
 
-        managedRealm.admin().users().create(UserConfigBuilder.create().username("testuser2").email("test2@example.com").name("Jane", "").build()).close();
+        managedRealm.admin().users().create(UserBuilder.create().username("testuser2").email("test2@example.com").name("Jane", "").build()).close();
 
         // Simulate user being 15 days old
         runScheduledSteps(Duration.ofDays(15));
@@ -146,7 +146,7 @@ public class NotificationStepTest extends AbstractWorkflowTest {
                 ).build()).close();
 
         String userId;
-        try (Response response = managedRealm.admin().users().create(UserConfigBuilder.create().username("testuser4").name("NoEmail", "").build())) {
+        try (Response response = managedRealm.admin().users().create(UserBuilder.create().username("testuser4").name("NoEmail", "").build())) {
             userId = ApiUtil.getCreatedId(response);
         }
 
@@ -180,7 +180,7 @@ public class NotificationStepTest extends AbstractWorkflowTest {
                                 .build()
                 ).build()).close();
 
-        managedRealm.admin().users().create(UserConfigBuilder.create().username("testuser5").email("testuser5@example.com").name("TestUser5", "").build()).close();
+        managedRealm.admin().users().create(UserBuilder.create().username("testuser5").email("testuser5@example.com").name("TestUser5", "").build()).close();
 
         // Day 15: First notification - this should run the notify step and schedule the disable step
         runScheduledSteps(Duration.ofDays(15));
@@ -239,7 +239,7 @@ public class NotificationStepTest extends AbstractWorkflowTest {
 
         try {
             managedRealm.admin().users().create(
-                    UserConfigBuilder.create()
+                    UserBuilder.create()
                             .username("testuser3")
                             .email("test3@example.com")
                             .name("Bob", "Doe")
@@ -276,7 +276,7 @@ public class NotificationStepTest extends AbstractWorkflowTest {
                                 .build()
                 ).build()).close();
 
-        managedRealm.admin().users().create(UserConfigBuilder.create().username("userXYZ").email("user@example.com").name("User", "XYZ").build()).close();
+        managedRealm.admin().users().create(UserBuilder.create().username("userXYZ").email("user@example.com").name("User", "XYZ").build()).close();
 
         // Verify email was sent to admin@example.com
         MimeMessage message = mailServer.getLastReceivedMessage();

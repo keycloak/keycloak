@@ -25,7 +25,6 @@ import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
-import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.ErrorPage;
@@ -35,6 +34,7 @@ import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Rule;
+import org.junit.jupiter.api.Assertions;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -63,7 +63,7 @@ public abstract class AbstractOIDCScopeTest extends AbstractTestRealmKeycloakTes
 
         String code = oauth.parseLoginResponse().getCode();
         AccessTokenResponse response = oauth.client(clientId, "password").doAccessTokenRequest(code);
-        Assert.assertEquals(200, response.getStatusCode());
+        Assertions.assertEquals(200, response.getStatusCode());
 
         // Test scopes
         log.info("expectedScopes = " + expectedScope);
@@ -90,8 +90,8 @@ public abstract class AbstractOIDCScopeTest extends AbstractTestRealmKeycloakTes
     public static void assertScopes(String expectedScope, String receivedScope) {
         Collection<String> expectedScopes = Arrays.asList(expectedScope.split(" "));
         Collection<String> receivedScopes = Arrays.asList(receivedScope.split(" "));
-        Assert.assertTrue("Not matched. expectedScope: " + expectedScope + ", receivedScope: " + receivedScope,
-                expectedScopes.containsAll(receivedScopes) && receivedScopes.containsAll(expectedScopes));
+        Assertions.assertTrue(expectedScopes.containsAll(receivedScopes) && receivedScopes.containsAll(expectedScopes),
+                "Not matched. expectedScope: " + expectedScope + ", receivedScope: " + receivedScope);
     }
 
     static class Tokens {

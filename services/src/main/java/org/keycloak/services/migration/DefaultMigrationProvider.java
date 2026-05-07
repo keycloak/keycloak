@@ -32,6 +32,8 @@ import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.LoginProtocolFactory;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
+import org.keycloak.protocol.saml.SamlProtocol;
+import org.keycloak.protocol.saml.SamlProtocolFactory;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.services.managers.RealmManager;
 
@@ -86,6 +88,10 @@ public class DefaultMigrationProvider implements MigrationProvider {
         return (OIDCLoginProtocolFactory) session.getKeycloakSessionFactory().getProviderFactory(LoginProtocol.class, OIDCLoginProtocol.LOGIN_PROTOCOL);
     }
 
+    private SamlProtocolFactory getSamlProtocolFactory() {
+        return (SamlProtocolFactory) session.getKeycloakSessionFactory().getProviderFactory(LoginProtocol.class, SamlProtocol.LOGIN_PROTOCOL);
+    }
+
     @Override
     public ClientScopeModel addOIDCRolesClientScope(RealmModel realm) {
         return getOIDCLoginProtocolFactory().addRolesClientScope(realm);
@@ -115,6 +121,11 @@ public class DefaultMigrationProvider implements MigrationProvider {
     @Override
     public ClientScopeModel addOIDCServiceAccountClientScope(RealmModel realm) {
         return getOIDCLoginProtocolFactory().addServiceAccountClientScope(realm);
+    }
+
+    @Override
+    public ClientScopeModel addSamlAuthnContextClassRefClientScope(RealmModel realm) {
+        return getSamlProtocolFactory().addSamlAuthnContextClassRefClientScope(realm);
     }
 
     @Override

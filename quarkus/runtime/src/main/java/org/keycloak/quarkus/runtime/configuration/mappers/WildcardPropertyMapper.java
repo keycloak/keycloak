@@ -111,7 +111,7 @@ public class WildcardPropertyMapper<T> extends PropertyMapper<T> {
 
     public Optional<String> extractWildcardValue(String key) {
         String result = null;
-        if (key.startsWith(fromPrefix)) {
+        if (!this.option.isSynthetic() && key.startsWith(fromPrefix)) {
             result = key.substring(fromPrefix.length());
         } else if (key.startsWith(toPrefix) && key.endsWith(toSuffix)) {
             // TODO: this presumes that the quarkus value is quoted

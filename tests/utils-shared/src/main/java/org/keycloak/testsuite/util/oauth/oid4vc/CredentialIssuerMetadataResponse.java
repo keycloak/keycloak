@@ -3,17 +3,22 @@ package org.keycloak.testsuite.util.oauth.oid4vc;
 import java.io.IOException;
 import java.util.Optional;
 
+import jakarta.ws.rs.core.HttpHeaders;
+
+import org.keycloak.jose.jws.JWSInput;
+import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.protocol.oid4vc.model.CredentialIssuer;
 import org.keycloak.testsuite.util.oauth.AbstractHttpResponse;
 import org.keycloak.util.JsonSerialization;
+import org.keycloak.util.Strings;
+import org.keycloak.utils.MediaType;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import org.apache.http.client.methods.CloseableHttpResponse;
 
 public class CredentialIssuerMetadataResponse extends AbstractHttpResponse {
 
     private CredentialIssuer metadata;
-    private String content;
+    private Object content;
 
     public CredentialIssuerMetadataResponse(CloseableHttpResponse response) throws IOException {
         super(response);
@@ -21,27 +26,31 @@ public class CredentialIssuerMetadataResponse extends AbstractHttpResponse {
 
     @Override
     protected void parseContent() throws IOException {
-        content = asString();
-        String contentType = getHeader("Content-Type");
-        if (contentType != null && contentType.startsWith("application/json")) {
-            // Check if this is OID4VC metadata (has "credential_issuer") vs JWT VC metadata (has "issuer" only)
-            // JWT VC metadata uses JWTVCIssuerMetadata model with "issuer" field
-            // OID4VC metadata uses CredentialIssuer model with "credential_issuer" field
-            // Only parse if it's OID4VC format - JWT VC endpoints return different format
-            JsonNode node = JsonSerialization.readValue(content, JsonNode.class);
-            if (node.has("credential_issuer")) {
-                metadata = JsonSerialization.mapper.treeToValue(node, CredentialIssuer.class);
+        String contentType = getHeader(HttpHeaders.CONTENT_TYPE);
+        if (contentType != null && contentType.startsWith(MediaType.APPLICATION_JWT)) {
+            try {
+                JWSInput jwsInput = (JWSInput) (content = new JWSInput(asString()));
+                metadata = JsonSerialization.readValue(jwsInput.getContent(), CredentialIssuer.class);
+            } catch (JWSInputException | IOException e) {
+                throw new RuntimeException(e);
             }
+        } else {
+            String jsonInput = (String) (content = asString());
+            metadata = JsonSerialization.valueFromString(jsonInput, CredentialIssuer.class);
+        }
+        // Sanity check that we have an 'issuer'
+        if (Strings.isEmpty(metadata.getCredentialIssuer())) {
+            throw new IllegalStateException("Invalid issuer metadata: " + content);
         }
     }
 
-    public String getContent() {
+    public Object getContent() {
         return Optional.ofNullable(content).orElseThrow(() ->
-                new IllegalStateException(String.format("[%s] %s", getError(), getErrorDescription())));
+                new IllegalStateException(getError()));
     }
 
     public CredentialIssuer getMetadata() {
         return Optional.ofNullable(metadata).orElseThrow(() ->
-                new IllegalStateException(String.format("[%s] %s", getError(), getErrorDescription())));
+                new IllegalStateException(getError()));
     }
 }

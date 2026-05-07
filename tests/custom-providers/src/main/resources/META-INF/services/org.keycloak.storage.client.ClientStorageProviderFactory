@@ -1,1 +1,1 @@
-org.keycloak.testsuite.federation.HardcodedClientStorageProviderFactory
+org.keycloak.tests.providers.federation.HardcodedClientStorageProviderFactory

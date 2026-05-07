@@ -56,7 +56,7 @@ export default function AddSamlConnect() {
           tab: "settings",
         }),
       );
-    } catch (error: any) {
+    } catch (error) {
       addError("createIdentityProviderError", error);
     }
   };

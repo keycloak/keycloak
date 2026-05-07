@@ -39,6 +39,8 @@ public class Messages {
 
     public static final String ORG_NOT_FOUND = "orgNotFoundMessage";
 
+    public static final String ORG_DISABLED = "orgDisabledMessage";
+
     public static final String ORG_MEMBER_ALREADY = "orgMemberAlready";
 
     public static final String INVALID_ORG_INVITE = "invalidOrgInviteMessage";

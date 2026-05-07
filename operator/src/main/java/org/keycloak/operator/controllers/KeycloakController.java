@@ -28,12 +28,12 @@ import org.keycloak.operator.Config;
 import org.keycloak.operator.Constants;
 import org.keycloak.operator.ContextUtils;
 import org.keycloak.operator.Utils;
-import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
-import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakBuilder;
-import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatus;
-import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusAggregator;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.HostnameSpec;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.HostnameSpecBuilder;
+import org.keycloak.operator.crds.v2beta1.deployment.Keycloak;
+import org.keycloak.operator.crds.v2beta1.deployment.KeycloakBuilder;
+import org.keycloak.operator.crds.v2beta1.deployment.KeycloakStatus;
+import org.keycloak.operator.crds.v2beta1.deployment.KeycloakStatusAggregator;
+import org.keycloak.operator.crds.v2beta1.deployment.spec.HostnameSpec;
+import org.keycloak.operator.crds.v2beta1.deployment.spec.HostnameSpecBuilder;
 import org.keycloak.operator.update.UpdateLogicFactory;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
@@ -49,6 +49,7 @@ import io.fabric8.kubernetes.client.readiness.Readiness;
 import io.fabric8.kubernetes.client.utils.KubernetesResourceUtil;
 import io.fabric8.kubernetes.client.utils.Serialization;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.ErrorStatusUpdateControl;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceUtils;
@@ -73,6 +74,8 @@ import io.quarkus.logging.Log;
               activationCondition = KeycloakServiceMonitorDependentResource.ActivationCondition.class
         ),
     })
+// to allow for reactions to annotation changes
+@ControllerConfiguration(generationAwareEventProcessing = false)
 public class KeycloakController implements Reconciler<Keycloak> {
 
     public static final String OPENSHIFT_DEFAULT = "openshift-default";
@@ -101,6 +104,9 @@ public class KeycloakController implements Reconciler<Keycloak> {
 
     @Override
     public UpdateControl<Keycloak> reconcile(Keycloak kc, Context<Keycloak> context) {
+        if (Boolean.valueOf(kc.getMetadata().getAnnotations().get(Constants.KEYCLOAK_PAUSE_ANNOTATION))) {
+            return UpdateControl.noUpdate(); // do nothing while paused
+        }
         String kcName = kc.getMetadata().getName();
         String namespace = kc.getMetadata().getNamespace();
 
@@ -135,7 +141,7 @@ public class KeycloakController implements Reconciler<Keycloak> {
                     .endMetadata()
                     .withSpec(kc.getSpec())
                     .build();
-            return UpdateControl.patchResource(patchedKc);
+            return UpdateControl.<Keycloak>patchResource(patchedKc).rescheduleAfter(0L);
         }
 
         var existingDeployment = context.getSecondaryResource(StatefulSet.class).filter(ss -> ss.hasOwnerReferenceFor(kc)).orElse(null);

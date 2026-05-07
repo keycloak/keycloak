@@ -28,6 +28,8 @@ import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.messages.Messages;
+import org.keycloak.testframework.events.EventAssertion;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AbstractChangeImportedUserPasswordsTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.arquillian.annotation.IgnoreBrowserDriver;
@@ -37,16 +39,14 @@ import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.TermsAndConditionsPage;
 import org.keycloak.testsuite.util.DroneUtils;
 import org.keycloak.testsuite.util.UIUtils;
-import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.testsuite.util.WaitUtils;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 
-import org.hamcrest.Matchers;
 import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
@@ -56,10 +56,10 @@ import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -81,7 +81,7 @@ public class TermsAndConditionsTest extends AbstractChangeImportedUserPasswordsT
     @Before
     public void addTermsAndConditionRequiredAction() {
         UserRepresentation user = ActionUtil.findUserWithAdminClient(adminClient, "test-user@localhost");
-        UserBuilder.edit(user).requiredAction(TermsAndConditions.PROVIDER_ID);
+        UserBuilder.update(user).requiredActions(TermsAndConditions.PROVIDER_ID);
         adminClient.realm("test").users().get(user.getId()).update(user);
 
         RequiredActionProviderRepresentation rep = adminClient.realm("test").flows().getRequiredAction(UserModel.RequiredAction.TERMS_AND_CONDITIONS.name());
@@ -91,32 +91,32 @@ public class TermsAndConditionsTest extends AbstractChangeImportedUserPasswordsT
 
     @Test
     public void termsAccepted() {
-        loginPage.open();
+        oauth.openLoginForm();
 
         loginPage.login("test-user@localhost", getPassword("test-user@localhost"));
 
-        Assert.assertTrue(termsPage.isCurrent());
+        Assertions.assertTrue(termsPage.isCurrent());
 
         termsPage.acceptTerms();
 
         events.expectRequiredAction(EventType.CUSTOM_REQUIRED_ACTION).removeDetail(Details.REDIRECT_URI).detail(Details.CUSTOM_REQUIRED_ACTION, TermsAndConditions.PROVIDER_ID).assertEvent();
 
-        Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
         AuthorizationEndpointResponse response = oauth.parseLoginResponse();
-        Assert.assertNotNull(response.getCode());
+        Assertions.assertNotNull(response.getCode());
 
-        events.expectLogin().assertEvent();
+        EventAssertion.expectLoginSuccess(events.poll());
 
         // assert user attribute is properly set
         UserRepresentation user = ActionUtil.findUserWithAdminClient(adminClient, "test-user@localhost");
         Map<String,List<String>> attributes = user.getAttributes();
-        assertNotNull("timestamp for terms acceptance was not stored in user attributes", attributes);
+        assertNotNull(attributes, "timestamp for terms acceptance was not stored in user attributes");
         List<String> termsAndConditions = attributes.get(TermsAndConditions.USER_ATTRIBUTE);
-        assertTrue("timestamp for terms acceptance was not stored in user attributes as "
-                + TermsAndConditions.USER_ATTRIBUTE, termsAndConditions.size() == 1);
+        assertTrue(termsAndConditions.size() == 1, "timestamp for terms acceptance was not stored in user attributes as "
+                + TermsAndConditions.USER_ATTRIBUTE);
         String timestamp = termsAndConditions.get(0);
-        assertNotNull("expected non-null timestamp for terms acceptance in user attribute "
-                + TermsAndConditions.USER_ATTRIBUTE, timestamp);
+        assertNotNull(timestamp, "expected non-null timestamp for terms acceptance in user attribute "
+                + TermsAndConditions.USER_ATTRIBUTE);
         try {
             Integer.valueOf(timestamp);
         } catch (NumberFormatException e) {
@@ -126,33 +126,32 @@ public class TermsAndConditionsTest extends AbstractChangeImportedUserPasswordsT
 
     @Test
     public void termsDeclined() throws Exception {
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("test-user@localhost", getPassword("test-user@localhost"));
-        Assert.assertTrue(termsPage.isCurrent());
+        Assertions.assertTrue(termsPage.isCurrent());
 
         termsPage.declineTerms();
         WaitUtils.waitForPageToLoad();
 
         // assert on app page with reject login
-        Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
         AuthorizationEndpointResponse response = oauth.parseLoginResponse();
-        Assert.assertNull(response.getCode());
-        Assert.assertEquals(Errors.ACCESS_DENIED, response.getError());
-        Assert.assertEquals(Messages.TERMS_AND_CONDITIONS_DECLINED, response.getErrorDescription());
+        Assertions.assertNull(response.getCode());
+        Assertions.assertEquals(Errors.ACCESS_DENIED, response.getError());
+        Assertions.assertEquals(Messages.TERMS_AND_CONDITIONS_DECLINED, response.getErrorDescription());
 
         // assert event
-        events.expectLogin().event(EventType.CUSTOM_REQUIRED_ACTION_ERROR).detail(Details.CUSTOM_REQUIRED_ACTION, TermsAndConditions.PROVIDER_ID)
+        EventAssertion.assertError(events.poll()).type(EventType.CUSTOM_REQUIRED_ACTION_ERROR).details(Details.CUSTOM_REQUIRED_ACTION, TermsAndConditions.PROVIDER_ID)
                 .error(Errors.REJECTED_BY_USER)
-                .removeDetail(Details.CONSENT)
-                .session(Matchers.nullValue(String.class))
-                .assertEvent();
+                .withoutDetails(Details.CONSENT)
+                .sessionId(null);
 
         // assert user attribute is properly removed
         UserRepresentation user = ActionUtil.findUserWithAdminClient(adminClient, "test-user@localhost");
         Map<String,List<String>> attributes = user.getAttributes();
         if (attributes != null) {
-            assertNull("expected null for terms acceptance user attribute " + TermsAndConditions.USER_ATTRIBUTE,
-                    attributes.get(TermsAndConditions.USER_ATTRIBUTE));
+            assertNull(attributes.get(TermsAndConditions.USER_ATTRIBUTE),
+                    "expected null for terms acceptance user attribute " + TermsAndConditions.USER_ATTRIBUTE);
         }
     }
 
@@ -166,31 +165,30 @@ public class TermsAndConditionsTest extends AbstractChangeImportedUserPasswordsT
 
         loginPage.login("test-user@localhost", getPassword("test-user@localhost"));
 
-        Assert.assertTrue(termsPage.isCurrent());
+        Assertions.assertTrue(termsPage.isCurrent());
 
         termsPage.declineTerms();
 
         WaitUtils.waitForPageToLoad();
 
-        events.expectLogin().event(EventType.CUSTOM_REQUIRED_ACTION_ERROR).detail(Details.CUSTOM_REQUIRED_ACTION, TermsAndConditions.PROVIDER_ID)
+        EventAssertion.assertError(events.poll()).type(EventType.CUSTOM_REQUIRED_ACTION_ERROR).details(Details.CUSTOM_REQUIRED_ACTION, TermsAndConditions.PROVIDER_ID)
                 .error(Errors.REJECTED_BY_USER)
-                .removeDetail(Details.CONSENT)
-                .session(Matchers.nullValue(String.class))
-                .client(Constants.ACCOUNT_CONSOLE_CLIENT_ID)
-                .detail(Details.REDIRECT_URI, getAuthServerContextRoot() + "/auth/realms/" + TEST_REALM_NAME + "/account")
-                .assertEvent();
+                .withoutDetails(Details.CONSENT)
+                .sessionId(null)
+                .clientId(Constants.ACCOUNT_CONSOLE_CLIENT_ID)
+                .details(Details.REDIRECT_URI, getAuthServerContextRoot() + "/auth/realms/" + TEST_REALM_NAME + "/account");
 
 
         // assert user attribute is properly removed
         UserRepresentation user = ActionUtil.findUserWithAdminClient(adminClient, "test-user@localhost");
         Map<String,List<String>> attributes = user.getAttributes();
         if (attributes != null) {
-            assertNull("expected null for terms acceptance user attribute " + TermsAndConditions.USER_ATTRIBUTE,
-                    attributes.get(TermsAndConditions.USER_ATTRIBUTE));
+            assertNull(attributes.get(TermsAndConditions.USER_ATTRIBUTE),
+                    "expected null for terms acceptance user attribute " + TermsAndConditions.USER_ATTRIBUTE);
         }
         assertThat(DroneUtils.getCurrentDriver().getTitle(), equalTo("Account Management"));
-        Assert.assertTrue(DroneUtils.getCurrentDriver().getPageSource().contains("Access denied"));
-        Assert.assertFalse(DroneUtils.getCurrentDriver().getPageSource().contains("An unexpected error occurred"));
+        Assertions.assertTrue(DroneUtils.getCurrentDriver().getPageSource().contains("Access denied"));
+        Assertions.assertFalse(DroneUtils.getCurrentDriver().getPageSource().contains("An unexpected error occurred"));
 
         WebElement tryAgainButton = DroneUtils.getCurrentDriver().findElement(By.tagName("button"));
         assertThat(tryAgainButton.getText(), equalTo("Try again"));
@@ -207,13 +205,13 @@ public class TermsAndConditionsTest extends AbstractChangeImportedUserPasswordsT
         rep.setEnabled(false);
         adminClient.realm("test").flows().updateRequiredAction(UserModel.RequiredAction.TERMS_AND_CONDITIONS.name(), rep);
 
-        loginPage.open();
+        oauth.openLoginForm();
 
         loginPage.login("test-user@localhost", getPassword("test-user@localhost"));
 
         assertTrue(appPage.isCurrent());
 
-        events.expectLogin().assertEvent();
+        EventAssertion.expectLoginSuccess(events.poll());
 
     }
 

@@ -103,7 +103,8 @@ public class ComponentResource {
     @Operation()
     public Stream<ComponentRepresentation> getComponents(@QueryParam("parent") String parent,
                                                        @QueryParam("type") String type,
-                                                       @QueryParam("name") String name) {
+                                                       @QueryParam("name") String name,
+                                                       @QueryParam("providerId") String providerId) {
         auth.realm().requireViewRealm();
         Stream<ComponentModel> components;
         if (parent == null && type == null) {
@@ -119,6 +120,7 @@ public class ComponentResource {
 
         return components
                 .filter(component -> Objects.isNull(name) || Objects.equals(component.getName(), name))
+                .filter(component -> Objects.isNull(providerId) || Objects.equals(component.getProviderId(), providerId))
                 .map(component -> {
                     try {
                         return ModelToRepresentation.toRepresentation(session, component, false);

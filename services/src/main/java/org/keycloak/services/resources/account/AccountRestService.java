@@ -445,7 +445,7 @@ public class AccountRestService {
     @Produces(MediaType.APPLICATION_JSON)
     //TODO GROUPS this isn't paginated
     public Stream<GroupRepresentation> groupMemberships(@QueryParam("briefRepresentation") @DefaultValue("true") boolean briefRepresentation) {
-        auth.require(AccountRoles.VIEW_GROUPS);
+        auth.requireOneOf(AccountRoles.MANAGE_ACCOUNT, AccountRoles.VIEW_GROUPS);
         return user.getGroupsStream().map(g -> ModelToRepresentation.toRepresentation(g, !briefRepresentation));
     }
 

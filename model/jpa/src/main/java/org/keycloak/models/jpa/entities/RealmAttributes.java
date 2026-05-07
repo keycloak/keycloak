@@ -22,8 +22,6 @@ package org.keycloak.models.jpa.entities;
  */
 public interface RealmAttributes {
 
-    String DISPLAY_NAME = "displayName";
-
     String DISPLAY_NAME_HTML = "displayNameHtml";
 
     String ACTION_TOKEN_GENERATED_BY_ADMIN_LIFESPAN = "actionTokenGeneratedByAdminLifespan";
@@ -52,6 +50,7 @@ public interface RealmAttributes {
     String WEBAUTHN_POLICY_ACCEPTABLE_AAGUIDS = "webAuthnPolicyAcceptableAaguids";
     String WEBAUTHN_POLICY_EXTRA_ORIGINS = "webAuthnPolicyExtraOrigins";
     String WEBAUTHN_POLICY_PASSKEYS_ENABLED = "webAuthnPolicyPasskeysEnabled";
+    String WEBAUTHN_POLICY_MEDIATION = "webAuthnPolicyMediation";
 
     String ADMIN_EVENTS_EXPIRATION = "adminEventsExpiration";
 
@@ -62,4 +61,5 @@ public interface RealmAttributes {
     String ORGANIZATIONS_ENABLED = "organizationsEnabled";
     String ADMIN_PERMISSIONS_ENABLED = "adminPermissionsEnabled";
     String ADMIN_PERMISSIONS_CLIENT_ID = "adminPermissionsClientId";
+    String SCIM_API_ENABLED = "scimApiEnabled";
 }

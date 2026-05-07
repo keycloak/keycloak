@@ -24,6 +24,7 @@ import java.util.stream.Stream;
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.POST;
@@ -42,7 +43,6 @@ import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.client.clienttype.ClientTypeException;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.Profile;
-import org.keycloak.common.constants.ServiceAccountConstants;
 import org.keycloak.common.util.Time;
 import org.keycloak.events.Errors;
 import org.keycloak.events.admin.OperationType;
@@ -210,13 +210,14 @@ public class ClientResource {
     }
 
     public ClientModel viewClientModel() {
+        auth.clients().requireView(client);
+
         try {
             session.clientPolicy().triggerOnEvent(new AdminClientViewContext(client, auth.adminAuth()));
         } catch (ClientPolicyException cpe) {
             throw new ErrorResponseException(cpe.getError(), cpe.getErrorDetail(), Response.Status.BAD_REQUEST);
         }
 
-        auth.clients().requireView(client);
         return client;
     }
 
@@ -301,7 +302,7 @@ public class ClientResource {
 
             ClientRepresentation representation = ModelToRepresentation.toRepresentation(client, session);
             ClientSecretRotationContext secretRotationContext = new ClientSecretRotationContext(
-                representation, client, client.getSecret());
+                representation, client, client.getSecret(), auth.adminAuth());
 
             String secret = KeycloakModelUtils.generateSecret(client);
 
@@ -506,15 +507,8 @@ public class ClientResource {
     public UserRepresentation getServiceAccountUser() {
         auth.clients().requireView(client);
 
-        UserModel user = session.users().getServiceAccount(client);
-        if (user == null) {
-            if (client.isServiceAccountsEnabled()) {
-                new ClientManager(new RealmManager(session)).enableServiceAccount(client);
-                user = session.users().getServiceAccount(client);
-            } else {
-                throw new BadRequestException("Service account not enabled for the client '" + client.getClientId() + "'");
-            }
-        }
+        UserModel user = new ClientManager(new RealmManager(session)).getServiceAccountUser(client)
+                .orElseThrow(() -> new BadRequestException("Service account not enabled for the client '" + client.getClientId() + "'"));
 
         return ModelToRepresentation.toRepresentation(session, realm, user);
     }
@@ -576,8 +570,8 @@ public class ClientResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENTS)
-    @Operation( summary = "Get user sessions for client Returns a list of user sessions associated with this client\n")
-    public Stream<UserSessionRepresentation> getUserSessions(@Parameter(description = "Paging offset") @QueryParam("first") Integer firstResult, @Parameter(description = "Maximum results size (defaults to 100)") @QueryParam("max") Integer maxResults) {
+    @Operation( summary = "Get user sessions for client. Returns a list of user sessions associated with this client.\n")
+    public Stream<UserSessionRepresentation> getUserSessions(@Parameter(description = "Paging offset") @QueryParam("first") Integer firstResult, @Parameter(description = "Maximum results size.") @QueryParam("max") @DefaultValue(Constants.DEFAULT_MAX_RESULTS_STR) Integer maxResults) {
         auth.clients().requireView(client);
         return session.sessions()
                 .readOnlyStreamUserSessions(client.getRealm(), client, computeFirstResult(firstResult), computeMaxResults(maxResults))
@@ -623,8 +617,8 @@ public class ClientResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENTS)
-    @Operation( summary = "Get offline sessions for client Returns a list of offline user sessions associated with this client")
-    public Stream<UserSessionRepresentation> getOfflineUserSessions(@Parameter(description = "Paging offset") @QueryParam("first") Integer firstResult, @Parameter(description = "Maximum results size (defaults to 100)") @QueryParam("max") Integer maxResults) {
+    @Operation( summary = "Get offline sessions for client. Returns a list of offline user sessions associated with this client")
+    public Stream<UserSessionRepresentation> getOfflineUserSessions(@Parameter(description = "Paging offset") @QueryParam("first") Integer firstResult, @Parameter(description = "Maximum results size.") @QueryParam("max") @DefaultValue(Constants.DEFAULT_MAX_RESULTS_STR) Integer maxResults) {
         auth.clients().requireView(client);
         return session.sessions()
                 .readOnlyStreamOfflineUserSessions(client.getRealm(), client, computeFirstResult(firstResult), computeMaxResults(maxResults))
@@ -864,17 +858,7 @@ public class ClientResource {
     }
 
     public static void updateClientServiceAccount(KeycloakSession session, ClientModel client, Boolean isServiceAccountEnabled) {
-        UserModel serviceAccount = session.users().getServiceAccount(client);
-        boolean serviceAccountScopeAssigned = client.getClientScopes(true).containsKey(ServiceAccountConstants.SERVICE_ACCOUNT_SCOPE);
-        if (Boolean.TRUE.equals(isServiceAccountEnabled)) {
-            if (serviceAccount == null || !serviceAccountScopeAssigned) {
-                new ClientManager(new RealmManager(session)).enableServiceAccount(client);
-            }
-        } else if (Boolean.FALSE.equals(isServiceAccountEnabled) || !client.isServiceAccountsEnabled()) {
-            if (serviceAccount != null || serviceAccountScopeAssigned) {
-                new ClientManager(new RealmManager(session)).disableServiceAccount(client);
-            }
-        }
+        ClientManager.updateClientServiceAccount(session, client, isServiceAccountEnabled);
     }
 
     private void updateAuthorizationSettings(ClientRepresentation rep) {

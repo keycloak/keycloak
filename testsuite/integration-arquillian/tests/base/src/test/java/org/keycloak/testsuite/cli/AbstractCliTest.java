@@ -8,7 +8,7 @@ import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
 import org.keycloak.testsuite.cli.exec.AbstractExec;
 
-import org.junit.Assert;
+import org.junit.jupiter.api.Assertions;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
@@ -42,7 +42,7 @@ public abstract class AbstractCliTest extends AbstractKeycloakTest {
     }
 
     public void assertExitCodeAndStreamSizes(AbstractExec exe, int exitCode, int stdOutLineCount, int stdErrLineCount) {
-        Assert.assertEquals("exitCode == " + exitCode, exitCode, exe.exitCode());
+        Assertions.assertEquals(exitCode, exe.exitCode(), "exitCode == " + exitCode);
         if (stdOutLineCount != -1) {
             assertLineCount("STDOUT: " + exe.stdoutString(), exe.stdoutLines(), stdOutLineCount);
         }
@@ -63,7 +63,7 @@ public abstract class AbstractCliTest extends AbstractKeycloakTest {
                 return;
             }
         }
-        Assert.assertTrue(label + " has " + lines.size() + " lines (expected: " + count + ")", lines.size() == count);
+        Assertions.assertTrue(lines.size() == count, label + " has " + lines.size() + " lines (expected: " + count + ")");
     }
 
     private boolean isFipsDisabled() {

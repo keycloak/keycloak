@@ -2,7 +2,6 @@ package org.keycloak.testframework.ui.webdriver;
 
 
 import org.keycloak.testframework.injection.InstanceContext;
-import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.injection.RequestedInstance;
 import org.keycloak.testframework.injection.Supplier;
 import org.keycloak.testframework.ui.annotations.InjectWebDriver;
@@ -18,12 +17,7 @@ public abstract class AbstractWebDriverSupplier implements Supplier<ManagedWebDr
 
     @Override
     public boolean compatible(InstanceContext<ManagedWebDriver, InjectWebDriver> a, RequestedInstance<ManagedWebDriver, InjectWebDriver> b) {
-        return true;
-    }
-
-    @Override
-    public LifeCycle getDefaultLifecycle() {
-        return LifeCycle.GLOBAL;
+        return a.getAnnotation().ref().equals(b.getAnnotation().ref());
     }
 
     @Override

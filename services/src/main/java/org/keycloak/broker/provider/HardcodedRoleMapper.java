@@ -93,19 +93,19 @@ public class HardcodedRoleMapper extends AbstractIdentityProviderMapper {
 
     @Override
     public void importNewUser(KeycloakSession session, RealmModel realm, UserModel user, IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
-        grantUserRole(realm, user, mapperModel);
+        grantUserRole(session, realm, user, mapperModel);
     }
 
-    private void grantUserRole(RealmModel realm, UserModel user, IdentityProviderMapperModel mapperModel) {
-        RoleModel role = getRole(realm, mapperModel);
+    private void grantUserRole(KeycloakSession session, RealmModel realm, UserModel user, IdentityProviderMapperModel mapperModel) {
+        RoleModel role = getRole(session, realm, mapperModel);
         if (role != null) {
             user.grantRole(role);
         }
     }
 
-    private RoleModel getRole(final RealmModel realm, final IdentityProviderMapperModel mapperModel) {
+    private RoleModel getRole(KeycloakSession session, final RealmModel realm, final IdentityProviderMapperModel mapperModel) {
         String roleName = mapperModel.getConfig().get(ConfigConstants.ROLE);
-        RoleModel role = KeycloakModelUtils.getRoleFromString(realm, roleName);
+        RoleModel role = KeycloakModelUtils.getRoleFromString(session, realm, roleName);
 
         if (role == null) {
             LOG.warnf("Unable to find role '%s' referenced by mapper '%s' on realm '%s'.", roleName,
@@ -117,7 +117,7 @@ public class HardcodedRoleMapper extends AbstractIdentityProviderMapper {
 
     @Override
     public void updateBrokeredUser(KeycloakSession session, RealmModel realm, UserModel user, IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
-        grantUserRole(realm, user, mapperModel);
+        grantUserRole(session, realm, user, mapperModel);
     }
 
     @Override

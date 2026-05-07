@@ -5,6 +5,8 @@ package org.keycloak;
  */
 public class OID4VCConstants {
 
+    public static final String OID4VCI_ENABLED_ATTRIBUTE_KEY = "oid4vci.enabled";
+
     // Sd-JWT constants
     public static final String SDJWT_DELIMITER = "~";
     public static final String SD_HASH = "sd_hash";

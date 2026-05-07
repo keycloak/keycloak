@@ -4,8 +4,9 @@ import jakarta.ws.rs.core.Response;
 
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.events.AdminEventAssertion;
-import org.keycloak.testframework.realm.UserConfigBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.util.ApiUtil;
+import org.keycloak.tests.suites.DatabaseTest;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -16,8 +17,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 public class UserDeleteTest extends AbstractUserTest {
 
     @Test
+    @DatabaseTest
     public void delete() {
-        String userId = ApiUtil.getCreatedId(managedRealm.admin().users().create(UserConfigBuilder.create().username("user1").email("user1@localhost.com").build()));
+        String userId = ApiUtil.getCreatedId(managedRealm.admin().users().create(UserBuilder.create().username("user1").email("user1@localhost.com").build()));
         AdminEventAssertion.assertSuccess(adminEvents.poll());
         deleteUser(userId);
     }

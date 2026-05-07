@@ -64,6 +64,7 @@ import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.cors.Cors;
 import org.keycloak.services.util.AuthorizationContextUtil;
 import org.keycloak.services.util.MtlsHoKTokenUtil;
+import org.keycloak.sessions.RootAuthenticationSessionModel;
 import org.keycloak.util.TokenUtil;
 
 import org.jboss.logging.Logger;
@@ -114,7 +115,8 @@ public abstract class OAuth2GrantTypeBase implements OAuth2GrantType {
 
     protected TokenManager.AccessTokenResponseBuilder createTokenResponseBuilder(UserModel user, UserSessionModel userSession, ClientSessionContext clientSessionCtx,  String scopeParam, Function<TokenManager.AccessTokenResponseBuilder, ClientPolicyContext> clientPolicyContextGenerator) {
         clientSessionCtx.setAttribute(Constants.GRANT_TYPE, context.getGrantType());
-        AccessToken token = tokenManager.createClientAccessToken(session, realm, client, user, userSession, clientSessionCtx);
+        clientSessionCtx.setAttribute(OAuth2Constants.RESOURCE, formParams.getFirst(OAuth2Constants.RESOURCE));
+        AccessToken token = tokenManager.createClientAccessToken(session, realm, client, user, userSession, clientSessionCtx, clientSessionCtx.isOfflineTokenRequested());
 
         TokenManager.AccessTokenResponseBuilder responseBuilder = tokenManager
                 .responseBuilder(realm, client, event, session, userSession, clientSessionCtx).accessToken(token);
@@ -125,6 +127,13 @@ public abstract class OAuth2GrantTypeBase implements OAuth2GrantType {
                     && clientSessionCtx.getClientSession().getNote(AuthenticationProcessor.FIRST_OFFLINE_ACCESS) != null) {
                 // the online session can be removed if first created for offline access
                 session.sessions().removeUserSession(realm, userSession);
+                // also remove the root authentication session to prevent AUTH_SESSION_ID cookie reuse by a different user
+                // consistent with backchannel logout and logout endpoint which both clean up root auth sessions
+                logger.tracef("Removing root authentication session '%s' after first offline access", userSession.getId());
+                RootAuthenticationSessionModel rootAuthSession = session.authenticationSessions().getRootAuthenticationSession(realm, userSession.getId());
+                if (rootAuthSession != null) {
+                    session.authenticationSessions().removeRootAuthenticationSession(realm, rootAuthSession);
+                }
             }
         } else {
             TokenContextEncoderProvider encoder = session.getProvider(TokenContextEncoderProvider.class);
@@ -265,7 +274,7 @@ public abstract class OAuth2GrantTypeBase implements OAuth2GrantType {
         clientAuthAttributes = clientAuth.getClientAuthAttributes();
         clientConfig = OIDCAdvancedConfigWrapper.fromClientModel(client);
 
-        cors.allowedOrigins(session, client);
+        cors.checkAllowedOrigins(session, client);
 
         if (client.isBearerOnly()) {
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_CLIENT, "Bearer-only not allowed", Response.Status.BAD_REQUEST);
@@ -308,8 +317,8 @@ public abstract class OAuth2GrantTypeBase implements OAuth2GrantType {
         String authorizationDetailsParam = formParams.getFirst(AUTHORIZATION_DETAILS);
         if (authorizationDetailsParam != null) {
             try {
-                return new AuthorizationDetailsProcessorManager()
-                        .processAuthorizationDetails(session, userSession, clientSessionCtx, authorizationDetailsParam);
+                return new AuthorizationDetailsProcessorManager(session)
+                        .processAuthorizationDetails(userSession, clientSessionCtx, authorizationDetailsParam);
             } catch (InvalidAuthorizationDetailsException e) {
                 logger.warnf(e, "Error when processing authorization_details");
                 event.detail(Details.REASON, e.getMessage());
@@ -330,7 +339,8 @@ public abstract class OAuth2GrantTypeBase implements OAuth2GrantType {
      */
     protected List<AuthorizationDetailsJSONRepresentation> handleMissingAuthorizationDetails(UserSessionModel userSession, ClientSessionContext clientSessionCtx) {
         try {
-            return new AuthorizationDetailsProcessorManager().handleMissingAuthorizationDetails(session, userSession, clientSessionCtx);
+            return new AuthorizationDetailsProcessorManager(session)
+                    .handleMissingAuthorizationDetails(userSession, clientSessionCtx);
         } catch (RuntimeException e) {
             logger.warnf(e, "Error when handling missing authorization_details");
             event.detail(Details.REASON, e.getMessage());
@@ -354,8 +364,8 @@ public abstract class OAuth2GrantTypeBase implements OAuth2GrantType {
         if (storedAuthDetails != null) {
             logger.debugf("Found authorization_details in client session, processing it");
             try {
-                return new AuthorizationDetailsProcessorManager()
-                        .processStoredAuthorizationDetails(session, userSession, clientSessionCtx, storedAuthDetails);
+                return new AuthorizationDetailsProcessorManager(session)
+                        .processStoredAuthorizationDetails(userSession, clientSessionCtx, storedAuthDetails);
             } catch (InvalidAuthorizationDetailsException e) {
                 logger.warnf(e, "Error when processing stored authorization_details");
                 event.detail(Details.REASON, e.getMessage());

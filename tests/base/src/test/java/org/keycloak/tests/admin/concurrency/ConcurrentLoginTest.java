@@ -54,17 +54,18 @@ import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
-import org.keycloak.testframework.realm.ClientConfigBuilder;
+import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.ManagedUser;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.realm.UserConfig;
-import org.keycloak.testframework.realm.UserConfigBuilder;
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testframework.server.KeycloakUrls;
 import org.keycloak.testframework.ui.annotations.InjectWebDriver;
 import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 import org.keycloak.testframework.util.ApiUtil;
+import org.keycloak.tests.suites.DatabaseTest;
 import org.keycloak.tests.utils.admin.AdminApiUtil;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
@@ -134,7 +135,7 @@ public class ConcurrentLoginTest extends AbstractConcurrencyTest {
     protected void createClients() {
         final ClientsResource clients = managedRealm.admin().clients();
         for (int i = 0; i < DEFAULT_CLIENTS_COUNT; i++) {
-            ClientRepresentation client = ClientConfigBuilder.create()
+            ClientRepresentation client = ClientBuilder.create()
               .clientId("client" + i)
               .directAccessGrantsEnabled(true)
               .redirectUris("*")
@@ -228,6 +229,7 @@ public class ConcurrentLoginTest extends AbstractConcurrencyTest {
     }
 
     @Test
+    @DatabaseTest
     public void concurrentLoginMultipleUsers() throws Throwable {
         LOGGER.info("*********************************************");
         long start = System.currentTimeMillis();
@@ -516,7 +518,7 @@ public class ConcurrentLoginTest extends AbstractConcurrencyTest {
     private static class ConcurrentUserConfigOne implements UserConfig {
 
         @Override
-        public UserConfigBuilder configure(UserConfigBuilder config) {
+        public UserBuilder configure(UserBuilder config) {
             return config.username("username1").password("password").emailVerified(true).name("User 1", "Name").email("user1@name.com");
         }
     }
@@ -524,7 +526,7 @@ public class ConcurrentLoginTest extends AbstractConcurrencyTest {
     private static class ConcurrentUserConfigTwo implements UserConfig {
 
         @Override
-        public UserConfigBuilder configure(UserConfigBuilder config) {
+        public UserBuilder configure(UserBuilder config) {
             return config.username("username2").password("password").emailVerified(true).name("User 2", "Name").email("user2@name.com");
         }
     }
@@ -532,7 +534,7 @@ public class ConcurrentLoginTest extends AbstractConcurrencyTest {
     private static class ConcurrentUserConfigThree implements UserConfig {
 
         @Override
-        public UserConfigBuilder configure(UserConfigBuilder config) {
+        public UserBuilder configure(UserBuilder config) {
             return config.username("username3").password("password").emailVerified(true).name("User 3", "Name").email("user3@name.com");
         }
     }

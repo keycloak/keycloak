@@ -131,7 +131,7 @@ Theme properties are set in the file `<THEME TYPE>/theme.properties` in the them
 * parent - Parent theme to extend
 * import - Import resources from another theme
 * abstract - Boolean that, when present and `true`, marks the theme is only used as base for other extensions and is not displayed to be selected in the admin console on the realm themes page. Examples of this are the `base` themes described on this guide.
-* common - Override the common resource path. The default value is `common/keycloak` when not specified. This value would be used as value of suffix of ${r"`${url.resourcesCommonPath}`"}, which is used typically in freemarker templates (prefix of ${r"`${url.resoucesCommonPath}`"} value is theme root uri).
+* common - Override the common resource path. The default value is `common/keycloak` when not specified. This value would be used as value of suffix of ${r"`${url.resourcesCommonPath}`"} and ${r"`${url.resourcesCommonUrl}`"}, which are used typically in freemarker templates. ${r"`${url.resourcesCommonPath}`"} returns only the path, while ${r"`${url.resourcesCommonUrl}`"} returns the full URL including scheme and host, which is required for email templates.
 * styles - Space-separated list of styles to include
 * locales - Comma-separated list of supported locales
 * contentHashPattern - Regex pattern of a file path in the theme where files have a content hash as part of their file name.
@@ -286,6 +286,15 @@ To use directly in HTML templates add the following to a custom HTML template:
 <img src="${r"${url.resourcesUrl}"}/img/image.jpg" alt="My image description">
 ----
 
+To reference images from common theme resources in email templates, use `url.resourcesCommonUrl` which provides the full URL (including scheme and host) required by email clients:
+
+[source,html]
+----
+<img src="${r"${url.resourcesCommonUrl}"}/img/logo.png" alt="My logo">
+----
+
+NOTE: Email clients require absolute URLs for images since they cannot resolve relative paths. Use `url.resourcesCommonUrl` or `url.resourcesUrl` instead of their `Path` counterparts (`url.resourcesCommonPath`, `url.resourcesPath`) in email templates.
+
 [[custom-identity-providers-icons]]
 === Adding custom Identity Providers icons
 
@@ -367,6 +376,9 @@ passwordResetBodyHtml=<a href="{0}">Reset password</a>
 Themes can be deployed to {project_name} by copying the theme directory to `themes` or it can be deployed as an archive. During development you can copy the
 theme to the `themes` directory, but in production you may want to consider using an `archive`. An `archive` makes it simpler to have a versioned copy of
 the theme, especially when you have multiple instances of {project_name} for example with clustering.
+
+WARNING: Themes contain FreeMarker templates that the server renders at runtime, so a malicious template can run code as the {project_name} process. Install themes only from trusted sources, and restrict write access to the `themes` directory and to theme JARs under `providers/` to trusted operators.
+
 
 .Procedure
 

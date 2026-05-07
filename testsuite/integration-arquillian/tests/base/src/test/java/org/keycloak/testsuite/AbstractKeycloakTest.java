@@ -58,7 +58,7 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.arquillian.KcArquillian;
 import org.keycloak.testsuite.arquillian.SuiteContext;
 import org.keycloak.testsuite.arquillian.TestContext;
@@ -77,6 +77,7 @@ import org.keycloak.testsuite.util.TestCleanup;
 import org.keycloak.testsuite.util.TestEventsLogger;
 import org.keycloak.testsuite.util.WaitUtils;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
+import org.keycloak.testsuite.util.runonserver.RunHelpers;
 
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.PropertiesConfiguration;
@@ -108,12 +109,13 @@ import static org.keycloak.testsuite.util.URLUtils.navigateToUri;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  *
  * @author tkyjovsk
  */
+@Deprecated(forRemoval = true)
 @RunWith(KcArquillian.class)
 @RunAsClient
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
@@ -134,6 +136,8 @@ public abstract class AbstractKeycloakTest {
     protected Keycloak adminClient;
 
     protected KeycloakTestingClient testingClient;
+
+    protected KeycloakTestingClient.Server runOnServer;
 
     @ArquillianResource
     protected OAuthClient oauth;
@@ -180,6 +184,7 @@ public abstract class AbstractKeycloakTest {
         }
 
         getTestingClient();
+        runOnServer = testingClient.server();
 
         setDefaultPageUriParameters();
 
@@ -243,7 +248,7 @@ public abstract class AbstractKeycloakTest {
         } else {
             log.info("calling all TestCleanup");
             // Remove all sessions
-            testContext.getTestRealmReps().stream().forEach((r)->testingClient.testing().removeUserSessions(r.getRealm()));
+            testContext.getTestRealmReps().stream().forEach((r)->runOnServer.run(RunHelpers.removeUserSessions(r.getRealm())));
 
             // Cleanup objects
             for (TestCleanup cleanup : testContext.getCleanups().values()) {
@@ -555,18 +560,18 @@ public abstract class AbstractKeycloakTest {
         UserRepresentation homer = createUserRepresentation(username, password);
         homer.setRequiredActions(Arrays.asList(requiredActions));
 
-        return ApiUtil.createUserWithAdminClient(adminClient.realm(realm), homer);
+        return AdminApiUtil.createUserWithAdminClient(adminClient.realm(realm), homer);
     }
 
     public String createUser(String realm, String username, String password, String firstName, String lastName, String email, Consumer<UserRepresentation> customizer) {
         UserRepresentation user = createUserRepresentation(username, email, firstName, lastName, true, password);
         customizer.accept(user);
-        return ApiUtil.createUserWithAdminClient(adminClient.realm(realm), user);
+        return AdminApiUtil.createUserWithAdminClient(adminClient.realm(realm), user);
     }
 
     public String createUser(String realm, String username, String password, String firstName, String lastName, String email) {
         UserRepresentation homer = createUserRepresentation(username, email, firstName, lastName, true, password);
-        return ApiUtil.createUserWithAdminClient(adminClient.realm(realm), homer);
+        return AdminApiUtil.createUserWithAdminClient(adminClient.realm(realm), homer);
     }
 
     public static UserRepresentation createUserRepresentation(String id, String username, String email, String firstName, String lastName, List<String> groups, boolean enabled) {
@@ -783,7 +788,7 @@ public abstract class AbstractKeycloakTest {
             } while (expectedEndTime - System.nanoTime() > 0);
 
             //last attempt
-            assertEquals(message, expected, actual.get());
+            assertEquals(expected, actual.get(), message);
         } catch (Exception e) {
             throw new RuntimeException("Unexpected!", e);
         }

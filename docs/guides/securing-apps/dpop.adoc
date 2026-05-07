@@ -2,7 +2,7 @@
 <#import "/templates/links.adoc" as links>
 
 <@tmpl.guide
-title="Securing applications with DPoP"
+title="Securing applications with Demonstrating Proof-of-Possession (DPoP)"
 priority=150
 summary="Guide for securing applications with DPoP using Keycloak">
 
@@ -24,6 +24,12 @@ Typical use cases include:
 * *Browser-based applications*: Where tokens might be exposed via XSS, browser storage, or malicious extensions.
 * *High-security environments*: Where preventing token replay is a strict compliance requirement (e.g., Financial Grade API).
 * *Avoid chaining of services*: Application authenticated with Keycloak invokes the REST service service1 with the access token. The service1 should be able to consume the access token, but it should not be able to use that token to invoke further services on behalf of the original application.
+
+== DPoP Limitations
+
+DPoP is not supported for flows that issue access tokens in the front channel (implicit and hybrid flows).
+
+If a client has **Require DPoP bound tokens** enabled, authorization requests using these response types will be rejected.
 
 == DPoP Concepts
 
@@ -173,5 +179,18 @@ For granular control, you can use the **dpop-bind-enforcer** executor within Cli
 * **Auto-Configuration:** Automatically enable DPoP requirements for all newly registered clients.
 * **Refresh Token Only:** Enforce DPoP binding only for the Refresh Token while keeping the access token as a standard Bearer token. This increases security for public clients while maintaining compatibility with legacy resource servers that do not support DPoP.
 * **Strict OIDC Enforcement:** Require clients to send the `dpop_jkt` parameter during the initial Authorization Code flow, binding the entire flow.
+
+== DPoP with Standard Token Exchange
+
+* Standard Token Exchange does not support DPoP-bound tokens (as defined in RFC 7800) as the `subject_token` parameter. Only Bearer access tokens can be exchanged. If you attempt to use a DPoP-bound token as the subject token, the request will be rejected with an `invalid_request` error.
+* While DPoP-bound tokens cannot be used as `subject_token` to token exchange, you can obtain DPoP-bound tokens as **output**.
+
+=== When to Use Token Exchange with DPoP
+
+Token exchange with DPoP is useful when:
+
+* You need to upgrade a Bearer token to a DPoP-bound token for increased security
+* You want to down-scope or change audiences while simultaneously adding DPoP binding
+* Your backend services require DPoP but the original token was issued as Bearer
 
 </@tmpl.guide>

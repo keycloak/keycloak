@@ -86,7 +86,7 @@ public class PubKeySignRegisterTest extends AbstractWebAuthnVirtualTest {
                 .update()) {
 
             if (!algorithms.isEmpty()) {
-                WebAuthnRealmData realmData = new WebAuthnRealmData(testRealm().toRepresentation(), isPasswordless());
+                WebAuthnRealmData realmData = new WebAuthnRealmData(managedRealm.admin().toRepresentation(), isPasswordless());
                 assertThat(realmData.getSignatureAlgorithms(), is(algorithms));
             }
 

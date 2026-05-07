@@ -62,6 +62,7 @@ import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.keycloak.util.BasicAuthHelper;
 
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 import static org.keycloak.broker.oidc.OAuth2IdentityProviderConfig.TOKEN_ENDPOINT_URL;
 import static org.keycloak.broker.oidc.OAuth2IdentityProviderConfig.TOKEN_INTROSPECTION_URL;
@@ -74,7 +75,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Test for external-internal token exchange using token_exchange_external_internal:v2
@@ -136,7 +137,7 @@ public class ExternalInternalTokenExchangeV2Test extends AbstractInitializedBase
     private static void setupRealm(KeycloakSession session) {
         RealmModel realm = session.getContext().getRealm();
         IdentityProviderModel idp = session.identityProviders().getByAlias(IDP_OIDC_ALIAS);
-        org.junit.Assert.assertNotNull(idp);
+        Assertions.assertNotNull(idp);
 
         ClientModel client = realm.addClient("test-app");
         client.setClientId("test-app");

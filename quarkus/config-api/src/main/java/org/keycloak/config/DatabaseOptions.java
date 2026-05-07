@@ -1,10 +1,13 @@
 package org.keycloak.config;
 
+import java.io.File;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Consumer;
+import java.util.stream.Stream;
 
 import org.keycloak.config.database.Database;
 
@@ -115,9 +118,51 @@ public class DatabaseOptions {
             .description("If the named datasource <datasource> should be enabled at runtime.")
             .build();
 
-    public static final Option<String> DB_POSTGRESQL_TARGET_SERVER_TYPE = new OptionBuilder<>("db-postgres-target-server-type", String.class)
+    public static final Option<String> DB_CONNECT_TIMEOUT = new OptionBuilder<>("db-connect-timeout", String.class)
+            .category(OptionCategory.DATABASE)
+            .description("Sets the JDBC driver connection timeout and login timeout. " + DURATION_DESCRIPTION)
+            .defaultValue("10s")
+            .build();
+
+    public static final Option<String> DB_POOL_ACQUISITION_TIMEOUT = new OptionBuilder<>("db-pool-acquisition-timeout", String.class)
             .category(OptionCategory.DATABASE)
             .hidden()
+            .build();
+    public static final Option<String> DB_TLS_MODE = new OptionBuilder<>("db-tls-mode", String.class)
+            .category(OptionCategory.DATABASE)
+            .expectedValues(Arrays.stream(DatabaseTlsMode.values()).map(DatabaseTlsMode::toCliValue).toList())
+            .defaultValue(DatabaseTlsMode.DISABLED.toCliValue())
+            .description("Sets the TLS mode for the database connection. If disabled, it uses the driver's default value. When set to verify-server, it enables encryption and server identity verification. The database server certificate or Certificate Authority (CA) certificate is required.")
+            .build();
+
+    public static final Option<File> DB_TLS_TRUST_STORE_FILE = new OptionBuilder<>("db-tls-trust-store-file", File.class)
+            .category(OptionCategory.DATABASE)
+            .description("The path to the truststore file containing the database server certificates or Certificate Authority (CA) certificates used to verify the database server's identity.")
+            .build();
+
+    public static final Option<String> DB_TLS_TRUST_STORE_PASSWORD = new OptionBuilder<>("db-tls-trust-store-password", String.class)
+            .category(OptionCategory.DATABASE)
+            .description("The password to access the truststore file specified in db-tls-trust-store-file (if required and supported by the JDBC driver).")
+            .build();
+    public static final Option<String> DB_TLS_TRUST_STORE_TYPE = new OptionBuilder<>("db-tls-trust-store-type", String.class)
+            .category(OptionCategory.DATABASE)
+            .description("The type of the truststore file. Common values include 'JKS' (Java KeyStore) and 'PKCS12'. If not specified, it uses the driver's default.")
+            .build();
+
+    // mTLS keystore options
+    public static final Option<File> DB_MTLS_KEY_STORE_FILE = new OptionBuilder<>("db-mtls-key-store-file", File.class)
+            .category(OptionCategory.DATABASE)
+            .description("The path to the keystore file containing the client certificate and private key used for mTLS authentication with the database server.")
+            .build();
+
+    public static final Option<String> DB_MTLS_KEY_STORE_PASSWORD = new OptionBuilder<>("db-mtls-key-store-password", String.class)
+            .category(OptionCategory.DATABASE)
+            .description("The password to access the keystore file specified in db-mtls-key-store-file.")
+            .build();
+
+    public static final Option<String> DB_MTLS_KEY_STORE_TYPE = new OptionBuilder<>("db-mtls-key-store-type", String.class)
+            .category(OptionCategory.DATABASE)
+            .description("The type of the keystore file. Common values include 'JKS' (Java KeyStore) and 'PKCS12'. If not specified, it uses the driver's default.")
             .build();
 
     public static final class Datasources {
@@ -125,7 +170,8 @@ public class DatabaseOptions {
          * Options that have their sibling for a named datasource
          * Example: for `db-dialect`, `db-dialect-<datasource>` is created
          */
-        public static final List<Option<?>> OPTIONS_DATASOURCES = List.of(
+        public static final List<String> OPTIONS_DATASOURCES = Stream.of(
+                DB_CONNECT_TIMEOUT,
                 DB_DIALECT,
                 DB_DRIVER,
                 DB,
@@ -141,8 +187,15 @@ public class DatabaseOptions {
                 DB_POOL_MIN_SIZE,
                 DB_POOL_MAX_SIZE,
                 DB_SQL_JPA_DEBUG,
-                DB_SQL_LOG_SLOW_QUERIES
-        );
+                DB_SQL_LOG_SLOW_QUERIES,
+                DB_TLS_MODE,
+                DB_TLS_TRUST_STORE_FILE,
+                DB_TLS_TRUST_STORE_PASSWORD,
+                DB_TLS_TRUST_STORE_TYPE,
+                DB_MTLS_KEY_STORE_FILE,
+                DB_MTLS_KEY_STORE_PASSWORD,
+                DB_MTLS_KEY_STORE_TYPE
+        ).map(Option::getKey).toList();
 
         /**
          * In order to avoid ambiguity, we need to have unique option names for wildcard options.
@@ -159,10 +212,7 @@ public class DatabaseOptions {
         private static final Map<Option<?>, Consumer<OptionBuilder<?>>> DATASOURCES_OVERRIDES_OPTIONS = Map.of(
                 DatabaseOptions.DB, builder -> builder
                         .defaultValue(Optional.empty()) // no default value for DB kind for datasources
-                        .connectedOptions(
-                                getDatasourceOption(DatabaseOptions.DB_URL).orElseThrow(),
-                                TransactionOptions.TRANSACTION_XA_ENABLED_DATASOURCE
-                        )
+                        .connectedOptions(TransactionOptions.TRANSACTION_XA_ENABLED_DATASOURCE)
         );
 
         private static final Map<String, Option<?>> cachedDatasourceOptions = new HashMap<>();
@@ -179,7 +229,7 @@ public class DatabaseOptions {
          */
         @SuppressWarnings("unchecked")
         public static <T> Optional<Option<T>> getDatasourceOption(Option<T> parentOption) {
-            if (!OPTIONS_DATASOURCES.contains(parentOption)) {
+            if (!OPTIONS_DATASOURCES.contains(parentOption.getKey())) {
                 return Optional.empty();
             }
 
@@ -225,7 +275,7 @@ public class DatabaseOptions {
      */
     public static Optional<String> getKeyForDatasource(String option) {
         return Optional.of(option)
-                .filter(o -> OPTIONS_DATASOURCES.stream().map(Option::getKey).anyMatch(o::equals))
+                .filter(OPTIONS_DATASOURCES::contains)
                 .map(key -> key.concat(DATASOURCES_OVERRIDES_SUFFIX.getOrDefault(key, "")))
                 .map(key -> key.concat("-<datasource>"));
     }
@@ -240,6 +290,19 @@ public class DatabaseOptions {
          */
         public static Optional<String> getNamedKey(Option<?> option, String namedProperty) {
             return getKeyForDatasource(option).map(key -> getWildcardNamedKey(key, namedProperty));
+        }
+    }
+
+    public enum DatabaseTlsMode {
+        DISABLED,
+        VERIFY_SERVER;
+
+        public String toCliValue() {
+            return name().toLowerCase().replace('_', '-');
+        }
+
+        public static DatabaseTlsMode fromCliValue(String value) {
+            return valueOf(value.toUpperCase().replace('-', '_'));
         }
     }
 }

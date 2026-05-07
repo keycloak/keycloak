@@ -117,7 +117,7 @@ public class JWTClientAuthenticator extends AbstractClientAuthenticator {
                 if (!signatureProvider.isAsymmetricAlgorithm()) {
                     throw new RuntimeException("Algorithm is not asymmetric");
                 }
-            }, JsonWebToken.class);
+            }, JsonWebToken.class, false);
             signatureValid = jwt != null;
         } catch (RuntimeException e) {
             Throwable cause = e.getCause() != null ? e.getCause() : e;

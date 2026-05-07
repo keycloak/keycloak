@@ -31,17 +31,17 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.util.AuthorizationContextUtil;
+import org.keycloak.testframework.realm.RealmBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.util.ClientManager;
-import org.keycloak.testsuite.util.RealmBuilder;
-import org.keycloak.testsuite.util.UserBuilder;
 
 import org.junit.Before;
 import org.junit.Rule;
 
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 
 /**
@@ -67,8 +67,8 @@ public abstract class AbstractRARParserTest extends AbstractTestRealmKeycloakTes
                 .password("password")
                 .build();
 
-        RealmBuilder.edit(testRealm)
-                .user(user);
+        RealmBuilder.update(testRealm)
+                .users(user);
     }
 
     @Override
@@ -80,7 +80,7 @@ public abstract class AbstractRARParserTest extends AbstractTestRealmKeycloakTes
     @Before
     public void clientConfiguration() {
         ClientManager.realm(adminClient.realm("test")).clientId("test-app").directAccessGrant(true);
-        oauth.clientId("test-app");
+        oauth.client("test-app", "password");
         oauth.scope(null);
     }
 
@@ -107,7 +107,7 @@ public abstract class AbstractRARParserTest extends AbstractTestRealmKeycloakTes
                     .collect(Collectors.toList());
             return new AuthorizationRequestContextHolder(authorizationRequestHolders);
         }, AuthorizationRequestContextHolder.class);
-        assertNotNull("the fetched AuthorizationRequestContext can't be null", authorizationRequestContextHolder);
+        assertNotNull(authorizationRequestContextHolder, "the fetched AuthorizationRequestContext can't be null");
         return authorizationRequestContextHolder;
     }
 

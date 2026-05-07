@@ -29,8 +29,8 @@ import org.keycloak.testsuite.util.SamlClient;
 import org.keycloak.testsuite.util.SamlClient.Binding;
 import org.keycloak.testsuite.util.SamlClientBuilder;
 
-import org.junit.Assert;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 import org.w3c.dom.Document;
 
 import static org.keycloak.testsuite.broker.BrokerTestTools.getConsumerRoot;
@@ -70,7 +70,7 @@ public final class KcSamlForceAuthnBrokerTest extends AbstractBrokerTest {
                     {
                         // Find the AuthnRequest ForceAuthN attribute
                         String attrValue = document.getDocumentElement().getAttributes().getNamedItem("ForceAuthn").getNodeValue();
-                        Assert.assertEquals("Unexpected ForceAuthn attribute value", "false", attrValue);
+                        Assertions.assertEquals("false", attrValue, "Unexpected ForceAuthn attribute value");
                     }
                     catch (Exception ex)
                     {
@@ -108,7 +108,7 @@ public final class KcSamlForceAuthnBrokerTest extends AbstractBrokerTest {
                     {
                         // Find the AuthnRequest ForceAuthN attribute
                         String attrValue = document.getDocumentElement().getAttributes().getNamedItem("ForceAuthn").getNodeValue();
-                        Assert.assertEquals("Unexpected ForceAuthn attribute value", "true", attrValue);
+                        Assertions.assertEquals("true", attrValue, "Unexpected ForceAuthn attribute value");
                     }
                     catch (Exception ex)
                     {

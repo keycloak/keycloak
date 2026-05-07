@@ -11,7 +11,8 @@ import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
-import org.keycloak.testframework.realm.UserConfigBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
+import org.keycloak.tests.suites.DatabaseTest;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -61,6 +62,7 @@ public class RealmRolesUserTest extends AbstractRealmRolesTest {
      * KEYCLOAK-2035 Verifies that Role Membership is ok after user removal
      */
     @Test
+    @DatabaseTest
     public void roleMembershipAfterUserRemoval() {
         RoleResource role = managedRealm.admin().roles().get("role-with-users");
 
@@ -80,11 +82,12 @@ public class RealmRolesUserTest extends AbstractRealmRolesTest {
         managedRealm.admin().users().delete(userRep.getId());
         assertThat(roleResource.getUserMembers(), is(empty()));
 
-        managedRealm.cleanup().add(r -> r.users().create(UserConfigBuilder.create().username("test-role-member").name("Test", "Role User").
-                email("test-role-member@test-role-member.com").roles("default-roles-default").emailVerified(true).requiredActions().build()));
+        managedRealm.cleanup().add(r -> r.users().create(UserBuilder.create().username("test-role-member").name("Test", "Role User").
+                email("test-role-member@test-role-member.com").realmRoles("default-roles-default").emailVerified(true).requiredActions().build()));
     }
 
     @Test
+    @DatabaseTest
     public void testRoleMembershipWithPagination() {
         RoleResource role = managedRealm.admin().roles().get("role-with-users");
 

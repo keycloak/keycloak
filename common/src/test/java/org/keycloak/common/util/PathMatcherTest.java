@@ -2,8 +2,8 @@ package org.keycloak.common.util;
 
 import java.util.Collection;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 public class PathMatcherTest {
 
@@ -11,7 +11,7 @@ public class PathMatcherTest {
     public void keycloak15833Test() {
         TestingPathMatcher matcher = new TestingPathMatcher();
 
-        Assert.assertEquals("/api/v1/1/campaigns/*/excelFiles", matcher.customBuildUriFromTemplate("/api/v1/{clientId}/campaigns/*/excelFiles", "/api/v1/1/contentConnectorConfigs/29/contentConnectorContents", false));
+        Assertions.assertEquals("/api/v1/1/campaigns/*/excelFiles", matcher.customBuildUriFromTemplate("/api/v1/{clientId}/campaigns/*/excelFiles", "/api/v1/1/contentConnectorConfigs/29/contentConnectorContents", false));
     }
     
     private static final class TestingPathMatcher extends PathMatcher<Object> {

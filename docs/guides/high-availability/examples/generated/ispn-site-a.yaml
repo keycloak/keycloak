@@ -36,6 +36,7 @@ data:
         metrics:
           namesAsTags: true
           histograms: false
+          legacy: true
         tracing:
           enabled: true
           collector-endpoint: "http://tempo-tempo.monitoring.svc:4318"
@@ -178,7 +179,7 @@ spec:
 ---
 # Source: ispn-helm/templates/infinispan.yaml
 # tag::infinispan-cache-actionTokens[]
-apiVersion: infinispan.org/v2alpha1
+apiVersion: infinispan.org/v2beta1
 kind: Cache
 metadata:
   name: actiontokens
@@ -213,7 +214,7 @@ spec:
 ---
 # Source: ispn-helm/templates/infinispan.yaml
 # tag::infinispan-cache-authenticationSessions[]
-apiVersion: infinispan.org/v2alpha1
+apiVersion: infinispan.org/v2beta1
 kind: Cache
 metadata:
   name: authenticationsessions
@@ -240,6 +241,7 @@ spec:
         enabled: true
         indexed-entities:
         - keycloak.RootAuthenticationSessionEntity
+        startupMode: NONE
       backups:
         site-b: # <3>
           backup:
@@ -252,7 +254,7 @@ spec:
 ---
 # Source: ispn-helm/templates/infinispan.yaml
 # tag::infinispan-cache-loginFailures[]
-apiVersion: infinispan.org/v2alpha1
+apiVersion: infinispan.org/v2beta1
 kind: Cache
 metadata:
   name: loginfailures
@@ -279,6 +281,7 @@ spec:
         enabled: true
         indexed-entities:
         - keycloak.LoginFailureEntity
+        startupMode: NONE
       backups:
         site-b: # <3>
           backup:
@@ -291,7 +294,7 @@ spec:
 ---
 # Source: ispn-helm/templates/infinispan.yaml
 # tag::infinispan-cache-work[]
-apiVersion: infinispan.org/v2alpha1
+apiVersion: infinispan.org/v2beta1
 kind: Cache
 metadata:
   name: work
@@ -346,7 +349,7 @@ spec:
     type: Route
   configMapName: "cluster-config"
   image: 
-  version: 16.0.5
+  version: 16.0.8
   configListener:
     enabled: false
   container:

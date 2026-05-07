@@ -15,7 +15,6 @@ import { useEffect } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
 import { Trans, useTranslation } from "react-i18next";
 import { useRealm } from "../../../context/realm-context/RealmContext";
-import { i18n } from "../../../i18n/i18n";
 import { beerify, debeerify } from "../../../util";
 import useToggle from "../../../utils/useToggle";
 import { AddTranslationsDialog } from "./AddTranslationsDialog";
@@ -60,7 +59,6 @@ export const saveTranslations = async ({
       )
       .flat(),
   );
-  await i18n.reloadResources();
 };
 
 type TranslatableFieldProps = {

@@ -62,6 +62,8 @@ import org.keycloak.userprofile.UserProfileContext;
 import org.keycloak.userprofile.UserProfileProvider;
 import org.keycloak.userprofile.ValidationException;
 
+import static org.keycloak.services.managers.AuthenticationManager.NEW_USER_REGISTERED;
+
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
@@ -153,6 +155,7 @@ public class RegistrationUserCreation implements FormAction, FormActionFactory {
 
         UserProfile profile = getOrCreateUserProfile(context, formData);
         UserModel user = profile.create();
+        context.getAuthenticationSession().setAuthNote(NEW_USER_REGISTERED, "true");
 
         addOrganizationMember(context, user);
 
@@ -319,6 +322,11 @@ public class RegistrationUserCreation implements FormAction, FormActionFactory {
                 return false;
             }
 
+            if (!organization.isEnabled()) {
+                error.accept(List.of(new FormMessage("The organization is not available at this time.")));
+                return false;
+            }
+
             // make sure the organization is set to the session so that UP org-related validators can run
             session.getContext().setOrganization(organization);
             session.setAttribute(InviteOrgActionToken.class.getName(), token);
@@ -355,12 +363,19 @@ public class RegistrationUserCreation implements FormAction, FormActionFactory {
                 OrganizationProvider provider = session.getProvider(OrganizationProvider.class);
                 OrganizationModel orgModel = provider.getById(token.getOrgId());
                 provider.addManagedMember(orgModel, user);
-                context.getEvent().detail(Details.ORG_ID, orgModel.getId());
                 context.getAuthenticationSession().setRedirectUri(token.getRedirectUri());
 
                 // Delete the invitation since it has been used
                 InvitationManager invitationManager = provider.getInvitationManager();
                 invitationManager.remove(token.getId());
+
+                context.getEvent()
+                    .clone()
+                    .event(EventType.INVITE_ORG)
+                    .user(user)
+                    .detail(Details.USERNAME, user.getUsername())
+                    .detail(Details.ORG_ID, orgModel.getId())
+                    .success();
             }
         }
     }

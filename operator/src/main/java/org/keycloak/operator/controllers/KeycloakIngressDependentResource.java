@@ -23,8 +23,8 @@ import java.util.Optional;
 
 import org.keycloak.operator.Constants;
 import org.keycloak.operator.Utils;
-import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.IngressSpec;
+import org.keycloak.operator.crds.v2beta1.deployment.Keycloak;
+import org.keycloak.operator.crds.v2beta1.deployment.spec.IngressSpec;
 
 import io.fabric8.kubernetes.api.model.networking.v1.Ingress;
 import io.fabric8.kubernetes.api.model.networking.v1.IngressBuilder;
@@ -33,18 +33,17 @@ import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.javaoperatorsdk.operator.api.config.informer.Informer;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
-import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.Condition;
 import io.quarkus.logging.Log;
 import org.jboss.logging.Logger;
 
-import static org.keycloak.operator.crds.v2alpha1.CRDUtils.isTlsConfigured;
+import static org.keycloak.operator.crds.v2beta1.CRDUtils.isTlsConfigured;
 
 @KubernetesDependent(
         informer = @Informer(labelSelector = Constants.DEFAULT_LABELS_AS_STRING)
 )
-public class KeycloakIngressDependentResource extends CRUDKubernetesDependentResource<Ingress, Keycloak> {
+public class KeycloakIngressDependentResource extends VersionTolerantCRUDKubernetesDependentResource<Ingress, Keycloak> {
 
     private static final Logger LOG = Logger.getLogger(KeycloakIngressDependentResource.class.getName());
 

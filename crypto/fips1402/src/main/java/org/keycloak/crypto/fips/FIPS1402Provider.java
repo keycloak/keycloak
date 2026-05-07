@@ -1,12 +1,14 @@
 package org.keycloak.crypto.fips;
 
 import java.io.IOException;
-import java.lang.reflect.Method;
+import java.io.InputStream;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketAddress;
 import java.net.UnknownHostException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.KeyFactory;
 import java.security.KeyPairGenerator;
@@ -34,6 +36,7 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.regex.Pattern;
 import javax.crypto.Cipher;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKeyFactory;
@@ -75,6 +78,9 @@ import org.jboss.logging.Logger;
 public class FIPS1402Provider implements CryptoProvider {
 
     private static final Logger log = Logger.getLogger(FIPS1402Provider.class);
+    private static final String FIPS_FILE = "/proc/sys/crypto/fips_enabled";
+    // The fips provider is different in 21 and 25
+    private static final String PKCS11_FIPS_NAME = "SunPKCS11(-NSS)?-FIPS";
 
     private final BouncyCastleFipsProvider bcFipsProvider;
     private final Map<String, Object> providers = new ConcurrentHashMap<>();
@@ -94,19 +100,19 @@ public class FIPS1402Provider implements CryptoProvider {
         providers.put(CryptoConstants.ECDH_ES_A256KW, new BCFIPSEcdhEsAlgorithmProvider());
 
         if (existingBcFipsProvider == null) {
+            final String isSystemFipsEnabled = isSystemFipsEnabled();
             checkSecureRandom(() -> Security.insertProviderAt(this.bcFipsProvider, 1));
             Provider bcJsseProvider = new BouncyCastleJsseProvider("fips:BCFIPS");
             Security.insertProviderAt(bcJsseProvider, 2);
             // force the key and trust manager factories if default values not present in BCJSSE
             modifyKeyTrustManagerSecurityProperties(bcJsseProvider);
+            log.infof("FIPS1402Provider created: KC(%s%s, FIPS-JVM: %s)", bcFipsProvider,
+                    CryptoServicesRegistrar.isInApprovedOnlyMode() ? " Approved Mode" : "",
+                    isSystemFipsEnabled);
             log.debugf("Inserted security providers: %s", Arrays.asList(this.bcFipsProvider.getName(),bcJsseProvider.getName()));
         } else {
             log.debugf("Security provider %s already loaded", existingBcFipsProvider.getName());
         }
-
-        log.infof("FIPS1402Provider created: KC(%s%s, FIPS-JVM: %s)", bcFipsProvider,
-                CryptoServicesRegistrar.isInApprovedOnlyMode() ? " Approved Mode" : "",
-                isSystemFipsEnabled());
     }
 
 
@@ -395,21 +401,14 @@ public class FIPS1402Provider implements CryptoProvider {
     }
 
     public static String isSystemFipsEnabled() {
-        Method isSystemFipsEnabled = null;
-
-        try {
-            Class<?> securityConfigurator = FIPS1402Provider.class.getClassLoader().loadClass("java.security.SystemConfigurator");
-            isSystemFipsEnabled = securityConfigurator.getDeclaredMethod("isSystemFipsEnabled");
-            isSystemFipsEnabled.setAccessible(true);
-            boolean isEnabled = (boolean) isSystemFipsEnabled.invoke(null);
-            return isEnabled ? "enabled" : "disabled";
+        // java 25 does not have any class and checks directly the file
+        // check kernel file is 1 and the first security provider is the FIPS one
+        try (InputStream is = Files.newInputStream(Paths.get(FIPS_FILE))) {
+            final String name =  Security.getProviders()[0].getName();
+            return is.read() == '1' && Pattern.matches(PKCS11_FIPS_NAME, name) ? "enabled" : "disabled";
         } catch (Throwable ignore) {
             log.debug("Could not detect if FIPS is enabled from the host", ignore);
             return "unknown";
-        } finally {
-            if (isSystemFipsEnabled != null) {
-                isSystemFipsEnabled.setAccessible(false);
-            }
         }
     }
 }

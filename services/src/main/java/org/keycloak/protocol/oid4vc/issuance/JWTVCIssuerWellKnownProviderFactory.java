@@ -58,4 +58,9 @@ public class JWTVCIssuerWellKnownProviderFactory implements WellKnownProviderFac
     public String getId() {
         return PROVIDER_ID;
     }
+
+    @Override
+    public boolean isAvailableViaServerMetadata() {
+        return true;
+    }
 }

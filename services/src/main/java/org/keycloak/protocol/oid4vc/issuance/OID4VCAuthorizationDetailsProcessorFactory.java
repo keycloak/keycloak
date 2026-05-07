@@ -41,7 +41,7 @@ public class OID4VCAuthorizationDetailsProcessorFactory implements Authorization
 
     @Override
     public void init(Config.Scope config) {
-        AuthorizationDetailsParser.registerParser(OPENID_CREDENTIAL, new OID4VCAuthorizationDetailsProcessor.OID4VCAuthorizationDetailsParser());
+        AuthorizationDetailsParser.registerParser(OPENID_CREDENTIAL, new OID4VCAuthorizationDetailsParser());
     }
 
     @Override

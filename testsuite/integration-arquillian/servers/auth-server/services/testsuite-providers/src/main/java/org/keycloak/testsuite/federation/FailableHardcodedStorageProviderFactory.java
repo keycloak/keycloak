@@ -36,10 +36,11 @@ import org.keycloak.storage.user.SynchronizationResult;
 public class FailableHardcodedStorageProviderFactory implements UserStorageProviderFactory<FailableHardcodedStorageProvider>, ImportSynchronization {
 
     public static final String PROVIDER_ID = "failable-hardcoded-storage";
+    private boolean failOnValidation;
 
     @Override
     public FailableHardcodedStorageProvider create(KeycloakSession session, ComponentModel model) {
-        return new FailableHardcodedStorageProvider(model, session);
+        return new FailableHardcodedStorageProvider(model, session, isFailOnValidation());
     }
 
     @Override
@@ -67,5 +68,13 @@ public class FailableHardcodedStorageProviderFactory implements UserStorageProvi
     public SynchronizationResult syncSince(Date lastSync, KeycloakSessionFactory sessionFactory, String realmId, UserStorageProviderModel model) {
         if (FailableHardcodedStorageProvider.isInFailMode(model)) FailableHardcodedStorageProvider.throwFailure();
         return SynchronizationResult.empty();
+    }
+
+    public void setFailOnValidation(boolean enabled) {
+        this.failOnValidation = enabled;
+    }
+
+    public boolean isFailOnValidation() {
+        return failOnValidation;
     }
 }

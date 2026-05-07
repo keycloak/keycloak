@@ -99,7 +99,9 @@ public class TokenIntrospectionEndpoint {
         TokenIntrospectionProvider provider = this.session.getProvider(TokenIntrospectionProvider.class, tokenTypeHint);
 
         if (provider == null) {
-            throw throwErrorResponseException(Errors.INVALID_REQUEST, "Unsupported token type [" + tokenTypeHint + "].", Status.BAD_REQUEST);
+            event.detail(Details.TOKEN_TYPE, tokenTypeHint);
+            event.error(Errors.INVALID_REQUEST);
+            throw throwErrorResponseException(Errors.INVALID_REQUEST, "Unsupported token type.", Status.BAD_REQUEST);
         }
 
         try {

@@ -7,7 +7,7 @@ import org.keycloak.models.workflow.events.UserCreatedWorkflowEventFactory;
 import org.keycloak.representations.workflows.WorkflowRepresentation;
 import org.keycloak.representations.workflows.WorkflowStepRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
-import org.keycloak.testframework.realm.UserConfigBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.tests.workflow.AbstractWorkflowTest;
 import org.keycloak.tests.workflow.config.WorkflowsBlockingServerConfig;
 
@@ -38,7 +38,7 @@ public class ImmediateWorkflowExecutionTest extends AbstractWorkflowTest {
                 ).build()).close();
 
         // create a new user - should be bound to the new workflow and all steps should run right away
-        managedRealm.admin().users().create(UserConfigBuilder.create().username("testuser").build()).close();
+        managedRealm.admin().users().create(UserBuilder.create().username("testuser").build()).close();
 
         // check the user has the attribute set and is disabled
         runOnServer.run(session -> {

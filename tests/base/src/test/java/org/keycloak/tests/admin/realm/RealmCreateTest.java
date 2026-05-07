@@ -18,7 +18,8 @@ import org.keycloak.models.Constants;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
-import org.keycloak.testframework.realm.UserConfigBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
+import org.keycloak.tests.suites.DatabaseTest;
 import org.keycloak.tests.utils.Assert;
 import org.keycloak.util.JsonSerialization;
 
@@ -78,7 +79,7 @@ public class RealmCreateTest extends AbstractRealmTest {
         RealmRepresentation rep = new RealmRepresentation();
         rep.setRealm(realmNameWithSpaces);
         rep.setEnabled(Boolean.TRUE);
-        rep.setUsers(Collections.singletonList(UserConfigBuilder.create()
+        rep.setUsers(Collections.singletonList(UserBuilder.create()
                 .username("new-realm-admin")
                 .name("new-realm-admin", "new-realm-admin")
                 .email("new-realm-admin@keycloak.org")
@@ -152,6 +153,7 @@ public class RealmCreateTest extends AbstractRealmTest {
     }
 
     @Test
+    @DatabaseTest
     public void createRealmFromJson() throws IOException {
         RealmRepresentation rep = JsonSerialization.readValue(getClass().getResourceAsStream("testrealm.json"), RealmRepresentation.class);
         adminClient.realms().create(rep);

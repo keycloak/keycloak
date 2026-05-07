@@ -34,9 +34,9 @@ import org.keycloak.exportimport.util.ExportImportSessionTask.Mode;
 import org.keycloak.exportimport.util.ImportUtils;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.platform.Platform;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.ServicesLogger;
+import org.keycloak.services.resources.KeycloakApplication;
 import org.keycloak.storage.datastore.DefaultExportImportManager;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.utils.KeycloakSessionUtil;
@@ -80,7 +80,7 @@ public class DirImportProvider extends AbstractFileBasedImportProvider {
 
     private File getRootDirectory() {
         if (rootDirectory == null) {
-            this.rootDirectory = new File(Platform.getPlatform().getTmpDirectory(), "keycloak-export");
+            this.rootDirectory = new File(KeycloakApplication.getTmpDirectory(), "keycloak-export");
             if (!this.rootDirectory.exists()) {
                 throw new IllegalStateException("Directory " + this.rootDirectory + " doesn't exist");
             }

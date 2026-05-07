@@ -35,10 +35,10 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.UserSessionRepresentation;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
+import org.keycloak.testframework.realm.ClientBuilder;
+import org.keycloak.testframework.realm.IdentityProviderBuilder;
 import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.updaters.IdentityProviderCreator;
-import org.keycloak.testsuite.util.ClientBuilder;
-import org.keycloak.testsuite.util.IdentityProviderBuilder;
 import org.keycloak.testsuite.util.Matchers;
 import org.keycloak.testsuite.util.SamlClient.Binding;
 import org.keycloak.testsuite.util.SamlClientBuilder;
@@ -177,7 +177,7 @@ public class IdpInitiatedLoginTest extends AbstractSamlTest {
     @Test
     public void testIdpInitiatedLoginWithOIDCClient() {
         ClientRepresentation clientRep = adminClient.realm(REALM_NAME).clients().findByClientId(SAML_CLIENT_ID_SALES_POST).get(0);
-        adminClient.realm(REALM_NAME).clients().get(clientRep.getId()).update(ClientBuilder.edit(clientRep)
+        adminClient.realm(REALM_NAME).clients().get(clientRep.getId()).update(ClientBuilder.update(clientRep)
                 .protocol(OIDCLoginProtocol.LOGIN_PROTOCOL).build());
 
         new SamlClientBuilder()
@@ -188,7 +188,7 @@ public class IdpInitiatedLoginTest extends AbstractSamlTest {
                 });
 
 
-        adminClient.realm(REALM_NAME).clients().get(clientRep.getId()).update(ClientBuilder.edit(clientRep)
+        adminClient.realm(REALM_NAME).clients().get(clientRep.getId()).update(ClientBuilder.update(clientRep)
                 .protocol(SamlProtocol.LOGIN_PROTOCOL).build());
     }
 
@@ -216,8 +216,8 @@ public class IdpInitiatedLoginTest extends AbstractSamlTest {
                 IdentityProviderBuilder.create()
                     .alias("saml-idp")
                     .providerId("saml")
-                    .setAttribute(SAMLIdentityProviderConfig.SINGLE_SIGN_ON_SERVICE_URL, "https://saml-idp-sso-service/")
-                    .setAttribute(SAMLIdentityProviderConfig.POST_BINDING_AUTHN_REQUEST, "true")
+                    .attribute(SAMLIdentityProviderConfig.SINGLE_SIGN_ON_SERVICE_URL, "https://saml-idp-sso-service/")
+                    .attribute(SAMLIdentityProviderConfig.POST_BINDING_AUTHN_REQUEST, "true")
                     .build())) {
             new SamlClientBuilder()
                 .idpInitiatedLogin(getAuthServerSamlEndpoint(REALM_NAME), "sales-post").build()

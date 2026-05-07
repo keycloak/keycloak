@@ -27,9 +27,9 @@ public class AdminClientUpdatedContext extends AbstractAdminClientCRUDContext {
     private final ClientRepresentation proposedClientRepresentation;
     private final ClientModel updatedClient;
 
-    public AdminClientUpdatedContext(ClientRepresentation roposedClientRepresentation, ClientModel updatedClient, AdminAuth adminAuth) {
+    public AdminClientUpdatedContext(ClientRepresentation proposedClientRepresentation, ClientModel updatedClient, AdminAuth adminAuth) {
         super(adminAuth);
-        this.proposedClientRepresentation = roposedClientRepresentation;
+        this.proposedClientRepresentation = proposedClientRepresentation;
         this.updatedClient = updatedClient;
     }
 

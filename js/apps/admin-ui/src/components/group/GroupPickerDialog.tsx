@@ -251,6 +251,11 @@ export const GroupPickerDialog = ({
                     key={g.id}
                     group={g}
                     isRowDisabled={isRowDisabled}
+                    onSelect={(group) => {
+                      setGroupId(group.id);
+                      setFilter("");
+                      setFirst(0);
+                    }}
                     type={type}
                     isSearching
                     selectedRows={selectedRows}

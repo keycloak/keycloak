@@ -37,6 +37,11 @@ When using `distribution` mode it is possible to leave the Keycloak server runni
 tests quickly without waiting for the server to start again. This will also restart the server if the test requires
 different server config. To enable re-use use the `KC_TEST_SERVER_REUSE=true` option.
 
+### Hot deployment
+
+When using `distribution` mode, hot deployment can be enabled with `KC_TEST_SERVER_HOT_DEPLOY=true`. This affects
+how dependencies are deployed to the server. See [WRITING_TESTS](WRITING_TESTS.md#hot-deployment) for details.
+
 ### `kcw`
 
 When using the `remote` mode if Keycloak is not already running the test framework will output the required server

@@ -21,9 +21,9 @@ import java.util.List;
 
 import org.keycloak.operator.Constants;
 import org.keycloak.operator.controllers.KeycloakNetworkPolicyDependentResource;
-import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
-import org.keycloak.operator.crds.v2alpha1.deployment.ValueOrSecret;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.NetworkPolicySpec;
+import org.keycloak.operator.crds.v2beta1.deployment.Keycloak;
+import org.keycloak.operator.crds.v2beta1.deployment.ValueOrSecret;
+import org.keycloak.operator.crds.v2beta1.deployment.spec.NetworkPolicySpec;
 import org.keycloak.operator.testsuite.utils.CRAssert;
 import org.keycloak.operator.testsuite.utils.K8sUtils;
 import org.keycloak.operator.testsuite.utils.MockController;

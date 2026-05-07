@@ -460,9 +460,10 @@ public class InfinispanIckleQueryTest extends KeycloakModelTest {
         assertQuery(query2, objects -> objects.createCacheKey().toString(), expectedResults);
 
         // each client has user-session active client sessions
-        query = ClientSessionQueries.activeClientCount(cache, realm);
-        expectedResults = CLIENTS.stream().map(s -> String.format("%s-%s", s, USER_SESSIONS.size())).collect(Collectors.toSet());
-        assertQuery(query, objects -> String.format("%s-%s", objects[0], objects[1]), expectedResults);
+        // Disable test until https://github.com/infinispan/infinispan/issues/16761 is fixed
+//        query = ClientSessionQueries.activeClientCount(cache, realm);
+//        expectedResults = CLIENTS.stream().map(s -> String.format("%s-%s", s, USER_SESSIONS.size())).collect(Collectors.toSet());
+//        assertQuery(query, objects -> String.format("%s-%s", objects[0], objects[1]), expectedResults);
     }
 
     private static <T> void assertQuery(Query<T> query, Function<T, String> resultMapping, Set<String> expectedResults) {

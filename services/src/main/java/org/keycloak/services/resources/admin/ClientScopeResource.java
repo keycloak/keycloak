@@ -277,7 +277,9 @@ public class ClientScopeResource {
         validateClientScopeName(rep.getName());
 
         // Only check this if the representation has been sent to make it dynamic
-        if (rep.getAttributes() != null && rep.getAttributes().getOrDefault(ClientScopeModel.IS_DYNAMIC_SCOPE, "false").equalsIgnoreCase("true")) {
+        if (rep.getAttributes() != null
+                && rep.getAttributes().getOrDefault(ClientScopeModel.IS_DYNAMIC_SCOPE, "false").equalsIgnoreCase("true")
+                && !clientScope.isDynamicScope()) {
             Optional<String> scopeModelOpt = realm.getClientsStream()
                     .flatMap(clientModel -> clientModel.getClientScopes(true).values().stream())
                     .map(ClientScopeModel::getId)

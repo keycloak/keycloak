@@ -18,7 +18,7 @@ abstract class AbstractMojoTest {
 
     @BeforeEach
     void init() throws IOException {
-        testDir = Files.createTempDirectory(ChangeSetSupportedMojoTest.class.getSimpleName());
+        testDir = Files.createTempDirectory(SupportedMojoTest.class.getSimpleName());
         supportedFile = testDir.resolve("supported.json").toFile();
         unsupportedFile = testDir.resolve("unsupported.json").toFile();
     }

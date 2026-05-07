@@ -52,7 +52,7 @@ public class KcCustomOidcBrokerTest extends AbstractInitializedBaseBrokerTest {
 
     @Test
     public void testCustomDisplayIcon() {
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
         assertThat(driver.getPageSource(), containsString("my-custom-idp-icon"));
     }

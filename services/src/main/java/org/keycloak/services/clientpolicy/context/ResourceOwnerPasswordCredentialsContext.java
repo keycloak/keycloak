@@ -19,23 +19,37 @@ package org.keycloak.services.clientpolicy.context;
 
 import jakarta.ws.rs.core.MultivaluedMap;
 
-import org.keycloak.services.clientpolicy.ClientPolicyContext;
+import org.keycloak.OAuth2Constants;
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.services.clientpolicy.ClientPolicyEvent;
 
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
  */
-public class ResourceOwnerPasswordCredentialsContext implements ClientPolicyContext {
+public class ResourceOwnerPasswordCredentialsContext implements ClientModelContext, ScopeParameterContext {
 
+    private final KeycloakSession session;
     private final MultivaluedMap<String, String> params;
 
-    public ResourceOwnerPasswordCredentialsContext(MultivaluedMap<String, String> params) {
+    public ResourceOwnerPasswordCredentialsContext(KeycloakSession session, MultivaluedMap<String, String> params) {
+        this.session = session;
         this.params = params;
     }
 
     @Override
     public ClientPolicyEvent getEvent() {
         return ClientPolicyEvent.RESOURCE_OWNER_PASSWORD_CREDENTIALS_REQUEST;
+    }
+
+    @Override
+    public ClientModel getClient() {
+        return session.getContext().getClient();
+    }
+
+    @Override
+    public String getScopeParameter() {
+        return this.params.getFirst(OAuth2Constants.SCOPE);
     }
 
     public MultivaluedMap<String, String> getParams() {

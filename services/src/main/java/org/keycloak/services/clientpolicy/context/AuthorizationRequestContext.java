@@ -19,6 +19,7 @@ package org.keycloak.services.clientpolicy.context;
 
 import jakarta.ws.rs.core.MultivaluedMap;
 
+import org.keycloak.models.ClientModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.endpoints.request.AuthorizationEndpointRequest;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
@@ -29,7 +30,7 @@ import org.keycloak.sessions.AuthenticationSessionModel;
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
  */
-public class AuthorizationRequestContext implements ClientPolicyContext {
+public class AuthorizationRequestContext implements ClientPolicyContext, ClientModelContext, ScopeParameterContext {
 
     private final OIDCResponseType parsedResponseType;
     private final AuthorizationEndpointRequest request;
@@ -77,5 +78,15 @@ public class AuthorizationRequestContext implements ClientPolicyContext {
 
     public AuthenticationSessionModel getAuthenticationSession() {
         return authenticationSession;
+    }
+
+    @Override
+    public ClientModel getClient() {
+        return authenticationSession.getClient();
+    }
+
+    @Override
+    public String getScopeParameter() {
+        return request.getScope();
     }
 }

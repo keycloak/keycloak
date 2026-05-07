@@ -88,7 +88,11 @@ import org.keycloak.services.clientpolicy.executor.SecureResponseTypeExecutorFac
 import org.keycloak.services.clientpolicy.executor.SecureSessionEnforceExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.SecureSigningAlgorithmExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.SecureSigningAlgorithmForSignedJwtExecutorFactory;
-import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testframework.events.EventAssertion;
+import org.keycloak.testframework.realm.ClientBuilder;
+import org.keycloak.testframework.realm.RoleBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.client.resources.TestApplicationResourceUrls;
 import org.keycloak.testsuite.client.resources.TestOIDCEndpointsApplicationResource;
@@ -97,14 +101,11 @@ import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LogoutConfirmPage;
 import org.keycloak.testsuite.pages.OAuthGrantPage;
 import org.keycloak.testsuite.rest.resource.TestingOIDCEndpointsApplicationResource.AuthorizationEndpointRequestObject;
-import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientPoliciesBuilder;
 import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientPolicyBuilder;
 import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientProfileBuilder;
 import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientProfilesBuilder;
-import org.keycloak.testsuite.util.RoleBuilder;
 import org.keycloak.testsuite.util.SignatureSignerUtil;
-import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
@@ -124,8 +125,8 @@ import org.apache.http.message.BasicNameValuePair;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Assert;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 import static org.keycloak.testsuite.AbstractAdminTest.loadJson;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createAnyClientConditionConfig;
@@ -139,10 +140,10 @@ import static org.keycloak.testsuite.util.ClientPoliciesUtil.createSecureSigning
 
 import static org.hamcrest.Matchers.emptyOrNullString;
 import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * This test class is for testing an executor of client policies.
@@ -260,10 +261,10 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
         successfulLoginAndLogout(clientId, "secret");
 
         // Add role to the client
-        ClientResource clientResource = ApiUtil.findClientByClientId(adminClient.realm(REALM_NAME), clientId);
+        ClientResource clientResource = AdminApiUtil.findClientByClientId(adminClient.realm(REALM_NAME), clientId);
         assert clientResource != null;
         ClientRepresentation clientRep = clientResource.toRepresentation();
-        Assert.assertEquals(ClientIdAndSecretAuthenticator.PROVIDER_ID, clientRep.getClientAuthenticatorType());
+        Assertions.assertEquals(ClientIdAndSecretAuthenticator.PROVIDER_ID, clientRep.getClientAuthenticatorType());
         clientResource.roles().create(RoleBuilder.create().name(roleAlphaName).build());
 
         // Not allowed to client authentication with clientIdAndSecret anymore. Client matches policy now
@@ -320,7 +321,7 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
         oauth.responseType(OIDCResponseType.CODE + " " + OIDCResponseType.ID_TOKEN);
         oauth.loginForm().nonce("vbwe566fsfffds").doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
 
-        EventRepresentation loginEvent = events.expectLogin().client(clientId).assertEvent();
+        EventRepresentation loginEvent = EventAssertion.expectLoginSuccess(events.poll()).clientId(clientId).getEvent();
         String sessionId = loginEvent.getSessionId();
         String codeId = loginEvent.getDetails().get(Details.CODE_ID);
         String code = oauth.parseLoginResponse().getCode();
@@ -329,7 +330,8 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
         events.expectCodeToToken(codeId, sessionId).client(clientId).assertEvent();
 
         oauth.doLogout(res.getRefreshToken());
-        events.expectLogout(sessionId).client(clientId).clearDetails().assertEvent();
+        EventAssertion.assertSuccess(events.poll()).type(EventType.LOGOUT)
+                .sessionId(sessionId).clientId(clientId).withoutDetails(Details.REDIRECT_URI);
 
         // update profiles
         json = (new ClientProfilesBuilder()).addProfile(
@@ -342,7 +344,7 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
         oauth.responseType(OIDCResponseType.CODE + " " + OIDCResponseType.ID_TOKEN + " " + OIDCResponseType.TOKEN); // token response type allowed
         oauth.loginForm().nonce("cie8cjcwiw").doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
 
-        loginEvent = events.expectLogin().client(clientId).assertEvent();
+        loginEvent = EventAssertion.expectLoginSuccess(events.poll()).clientId(clientId).getEvent();
         sessionId = loginEvent.getSessionId();
         codeId = loginEvent.getDetails().get(Details.CODE_ID);
         code = oauth.parseLoginResponse().getCode();
@@ -351,7 +353,8 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
         events.expectCodeToToken(codeId, sessionId).client(clientId).assertEvent();
 
         oauth.doLogout(res.getRefreshToken());
-        events.expectLogout(sessionId).client(clientId).clearDetails().assertEvent();
+        EventAssertion.assertSuccess(events.poll()).type(EventType.LOGOUT)
+                .sessionId(sessionId).clientId(clientId).withoutDetails(Details.REDIRECT_URI);
 
         // shall allow code using response_mode jwt
         oauth.responseType(OIDCResponseType.CODE);
@@ -451,7 +454,7 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
         oauth.responseType(OIDCResponseType.CODE + " " + OIDCResponseType.ID_TOKEN);
         oauth.loginForm().nonce("LIVieviDie028f").doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
 
-        EventRepresentation loginEvent = events.expectLogin().client(clientId).assertEvent();
+        EventRepresentation loginEvent = EventAssertion.expectLoginSuccess(events.poll()).clientId(clientId).getEvent();
         String sessionId = loginEvent.getSessionId();
         String codeId = loginEvent.getDetails().get(Details.CODE_ID);
         authorizationEndpointResponse = oauth.parseLoginResponse();
@@ -459,22 +462,23 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
 
         IDToken idToken = oauth.verifyIDToken(authorizationEndpointResponse.getIdToken());
         // confirm ID token as detached signature does not include authenticated user's claims
-        Assert.assertNull(idToken.getEmailVerified());
-        Assert.assertNull(idToken.getName());
-        Assert.assertNull(idToken.getPreferredUsername());
-        Assert.assertNull(idToken.getGivenName());
-        Assert.assertNull(idToken.getFamilyName());
-        Assert.assertNull(idToken.getEmail());
+        Assertions.assertNull(idToken.getEmailVerified());
+        Assertions.assertNull(idToken.getName());
+        Assertions.assertNull(idToken.getPreferredUsername());
+        Assertions.assertNull(idToken.getGivenName());
+        Assertions.assertNull(idToken.getFamilyName());
+        Assertions.assertNull(idToken.getEmail());
         assertEquals("LIVieviDie028f", idToken.getNonce());
         // confirm an access token not returned
-        Assert.assertNull(authorizationEndpointResponse.getAccessToken());
+        Assertions.assertNull(authorizationEndpointResponse.getAccessToken());
 
         AccessTokenResponse res = oauth.doAccessTokenRequest(code);
         assertEquals(200, res.getStatusCode());
         events.expectCodeToToken(codeId, sessionId).client(clientId).assertEvent();
 
         oauth.doLogout(res.getRefreshToken());
-        events.expectLogout(sessionId).client(clientId).clearDetails().assertEvent();
+        EventAssertion.assertSuccess(events.poll()).type(EventType.LOGOUT)
+                .sessionId(sessionId).clientId(clientId).withoutDetails(Details.REDIRECT_URI);
     }
 
     @Test
@@ -964,7 +968,7 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
                 .codeChallenge(PkceGenerator.s256())
                 .open();
         loginPage.assertCurrent();
-        Assert.assertEquals("Sign in to your account", loginPage.getTitleText());
+        Assertions.assertEquals("Sign in to your account", loginPage.getTitleText());
     }
 
     @Test
@@ -1418,7 +1422,7 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
         adminClient.realm(REALM_NAME).clients().get(cid).roles().create(RoleBuilder.create().name(roleCommonName).build());
 
 
-        ClientResource clientResource = ApiUtil.findClientByClientId(adminClient.realm(REALM_NAME), clientId);
+        ClientResource clientResource = AdminApiUtil.findClientByClientId(adminClient.realm(REALM_NAME), clientId);
         assert clientResource != null;
         ClientRepresentation clientRep = clientResource.toRepresentation();
 
@@ -1430,9 +1434,8 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
 
         oauth.client(clientId);
         oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
-        EventRepresentation loginEvent = events.expectLogin()
-                .client(clientId)
-                .assertEvent();
+        EventRepresentation loginEvent = EventAssertion.expectLoginSuccess(events.poll())
+                .clientId(clientId).getEvent();
         String sessionId = loginEvent.getSessionId();
         String code = oauth.parseLoginResponse().getCode();
 
@@ -1509,7 +1512,7 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
         adminClient.realm(REALM_NAME).clients().get(cid).roles().create(RoleBuilder.create().name(roleAlphaName).build());
         adminClient.realm(REALM_NAME).clients().get(cid).roles().create(RoleBuilder.create().name(roleCommonName).build());
 
-        ClientResource clientResource = ApiUtil.findClientByClientId(adminClient.realm(REALM_NAME), clientId);
+        ClientResource clientResource = AdminApiUtil.findClientByClientId(adminClient.realm(REALM_NAME), clientId);
         assert clientResource != null;
         ClientRepresentation clientRep = clientResource.toRepresentation();
 
@@ -1521,7 +1524,7 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
 
         oauth.client(clientId);
         oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
-        events.expectLogin().client(clientId).assertEvent();
+        EventAssertion.expectLoginSuccess(events.poll()).clientId(clientId);
         String code = oauth.parseLoginResponse().getCode();
 
         // obtain access token
@@ -1740,7 +1743,7 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
         String clientId = generateSuffixedName(CLIENT_NAME);
         createClientByAdmin(clientId, (ClientRepresentation clientRep) -> clientRep.setClientAuthenticatorType(JWTClientAuthenticator.PROVIDER_ID));
 
-        ClientResource clientResource = ApiUtil.findClientByClientId(adminClient.realm(REALM_NAME), clientId);
+        ClientResource clientResource = AdminApiUtil.findClientByClientId(adminClient.realm(REALM_NAME), clientId);
         assert clientResource != null;
         ClientRepresentation clientRep = clientResource.toRepresentation();
 
@@ -1787,7 +1790,7 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
         assertEquals(400, tokenResponse.getStatusCode());
 
         // Send a token request with valid 'aud' . Should succeed
-        UserResource user = ApiUtil.findUserByUsernameId(adminClient.realm(REALM_NAME), TEST_USER_NAME);
+        UserResource user = AdminApiUtil.findUserByUsernameId(adminClient.realm(REALM_NAME), TEST_USER_NAME);
         user.logout();
 
         loginResponse = oauth.loginForm().doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);

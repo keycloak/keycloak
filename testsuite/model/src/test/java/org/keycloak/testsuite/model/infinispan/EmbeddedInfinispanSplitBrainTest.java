@@ -1,8 +1,9 @@
 package org.keycloak.testsuite.model.infinispan;
 
-import java.util.Set;
-import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.BrokenBarrierException;
+import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.keycloak.common.Profile;
@@ -19,11 +20,9 @@ import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.rules.TestRule;
 
-import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.WORK_CACHE_NAME;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
   Tests to ensure that Keycloak correctly handles various split-brain scenarios when an Embedded Infinispan instance
@@ -62,11 +61,9 @@ public class EmbeddedInfinispanSplitBrainTest extends KeycloakModelTest {
    @Test
    public void testLocalCacheClearedOnMergeEvent() throws InterruptedException {
       var numFactories = 2;
-      var partitionManager = new PartitionManager(numFactories, Set.of(WORK_CACHE_NAME));
+      var partitionManager = new PartitionManager(numFactories);
       var factoryIndex = new AtomicInteger(0);
-      var addManagerLatch = new CountDownLatch(numFactories);
-      var splitLatch = new CountDownLatch(1);
-      var mergeLatch = new CountDownLatch(1);
+      var barrier = new CyclicBarrier(numFactories);
       closeKeycloakSessionFactory();
       inIndependentFactories(numFactories, 60, () -> {
          var customDisplayName = "custom-value";
@@ -78,41 +75,43 @@ public class EmbeddedInfinispanSplitBrainTest extends KeycloakModelTest {
                   .getCache(InfinispanConnectionProvider.USER_CACHE_NAME)
                   .getCacheManager();
             partitionManager.addManager(index, cm);
-            addManagerLatch.countDown();
          });
-         awaitLatch(addManagerLatch);
+         awaitBarrier(barrier);
 
          // Split the cluster and update the realm on the 1st partition
          if (index == 0) {
             partitionManager.splitCluster(new int[]{0}, new int[]{1});
             withRealmConsumer(realmId, (session, realm) -> realm.setDisplayNameHtml(customDisplayName));
-            splitLatch.countDown();
          }
-         awaitLatch(splitLatch);
+         awaitBarrier(barrier);
 
          // Assert that the display name has not been updated on the 2nd partition
          if (index == 1) {
             withRealmConsumer(realmId, (session, realm) -> assertNotEquals(customDisplayName, realm.getDisplayNameHtml()));
          }
+         awaitBarrier(barrier);
 
          // Heal the cluster by merging the two partitions
          if (index == 0) {
             partitionManager.merge(0, 1);
-            mergeLatch.countDown();
          }
-         awaitLatch(mergeLatch);
+         awaitBarrier(barrier);
 
          // Ensure that both nodes see the updated realm entity after merge
          withRealmConsumer(realmId, (session, realm) -> assertEquals(customDisplayName, realm.getDisplayNameHtml()));
       });
    }
 
-   private void awaitLatch(CountDownLatch latch) {
+   private void awaitBarrier(CyclicBarrier barrier) {
       try {
-         assertTrue(latch.await(10, TimeUnit.SECONDS));
+         barrier.await(10, TimeUnit.SECONDS);
       } catch (InterruptedException e) {
+         log.error("Interrupted while waiting in barrier");
          Thread.currentThread().interrupt();
-         throw new RuntimeException(e);
+         fail("Interrupted while waiting in barrier");
+      } catch (BrokenBarrierException | TimeoutException e) {
+         log.error("Exception while waiting in barrier", e);
+         fail("Exception while waiting in barrier");
       }
    }
 }

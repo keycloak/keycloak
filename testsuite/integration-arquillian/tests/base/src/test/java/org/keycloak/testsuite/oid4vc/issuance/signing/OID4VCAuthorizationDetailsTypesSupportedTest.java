@@ -35,11 +35,11 @@ import org.junit.Test;
 
 import static org.keycloak.OID4VCConstants.OPENID_CREDENTIAL;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Test to verify that authorization_details_types_supported is included in the OAuth Authorization Server
@@ -55,9 +55,9 @@ public class OID4VCAuthorizationDetailsTypesSupportedTest extends OID4VCIssuerEn
     }
 
     public void enableOpenID4VC(boolean enabled) {
-        RealmRepresentation realmRep = adminClient.realm(TEST_REALM_NAME).toRepresentation();
+        RealmRepresentation realmRep = managedRealm.admin().toRepresentation();
         realmRep.setVerifiableCredentialsEnabled(enabled);
-        adminClient.realm(TEST_REALM_NAME).update(realmRep);
+        managedRealm.admin().update(realmRep);
     }
 
     @Test
@@ -67,13 +67,13 @@ public class OID4VCAuthorizationDetailsTypesSupportedTest extends OID4VCIssuerEn
             OIDCConfigurationRepresentation oauthConfig = getOAuth2WellKnownConfiguration(client);
 
             // Verify that authorization_details_types_supported is present
-            assertNotNull("authorization_details_types_supported should be present",
-                    oauthConfig.getAuthorizationDetailsTypesSupported());
+            assertNotNull(oauthConfig.getAuthorizationDetailsTypesSupported(),
+                    "authorization_details_types_supported should be present");
 
             // Verify that it contains openid_credential
             List<String> supportedTypes = oauthConfig.getAuthorizationDetailsTypesSupported();
-            assertTrue("authorization_details_types_supported should contain openid_credential",
-                    supportedTypes.contains(OPENID_CREDENTIAL));
+            assertTrue(supportedTypes.contains(OPENID_CREDENTIAL),
+                    "authorization_details_types_supported should contain openid_credential");
 
         }
     }
@@ -83,17 +83,17 @@ public class OID4VCAuthorizationDetailsTypesSupportedTest extends OID4VCIssuerEn
         try (Client client = AdminClientUtil.createResteasyClient()) {
             // Get credential issuer metadata
             CredentialIssuer credentialIssuer = getCredentialIssuerMetadata();
-            assertNotNull("Credential issuer should not be null", credentialIssuer);
-            assertNotNull("Authorization servers should be present", credentialIssuer.getAuthorizationServers());
-            assertFalse("Authorization servers should not be empty", credentialIssuer.getAuthorizationServers().isEmpty());
+            assertNotNull(credentialIssuer, "Credential issuer should not be null");
+            assertNotNull(credentialIssuer.getAuthorizationServers(), "Authorization servers should be present");
+            assertFalse(credentialIssuer.getAuthorizationServers().isEmpty(), "Authorization servers should not be empty");
 
             // Verify the authorization server from credential issuer metadata
             String authServerUri = credentialIssuer.getAuthorizationServers().get(0);
             OIDCConfigurationRepresentation authServerConfig = getOAuth2WellKnownConfiguration(client, authServerUri + "/.well-known/oauth-authorization-server");
-            assertNotNull("Authorization server should support authorization_details_types_supported",
-                    authServerConfig.getAuthorizationDetailsTypesSupported());
-            assertTrue("Authorization server should support openid_credential",
-                    authServerConfig.getAuthorizationDetailsTypesSupported().contains(OPENID_CREDENTIAL));
+            assertNotNull(authServerConfig.getAuthorizationDetailsTypesSupported(),
+                    "Authorization server should support authorization_details_types_supported");
+            assertTrue(authServerConfig.getAuthorizationDetailsTypesSupported().contains(OPENID_CREDENTIAL),
+                    "Authorization server should support openid_credential");
         }
     }
 
@@ -107,8 +107,8 @@ public class OID4VCAuthorizationDetailsTypesSupportedTest extends OID4VCIssuerEn
             OIDCConfigurationRepresentation oauth2Config = getOAuth2WellKnownConfiguration(client);
 
             // Verify that authorization_details_types_supported is not present
-            assertNull("authorization_details_types_supported should not be present when OID4VC is disabled",
-                    oauth2Config.getAuthorizationDetailsTypesSupported());
+            assertNull(oauth2Config.getAuthorizationDetailsTypesSupported(),
+                    "authorization_details_types_supported should not be present when OID4VC is disabled");
 
         }
     }
@@ -122,7 +122,7 @@ public class OID4VCAuthorizationDetailsTypesSupportedTest extends OID4VCIssuerEn
                 .request()
                 .get();
 
-        assertEquals("OAuth Authorization Server metadata endpoint should return 200", 200, response.getStatus());
+        assertEquals(200, response.getStatus(), "OAuth Authorization Server metadata endpoint should return 200");
 
         return response.readEntity(OIDCConfigurationRepresentation.class);
     }

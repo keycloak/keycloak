@@ -14,5 +14,6 @@ Tests simply declare what they want, including specific configuration, and the f
 * [Configuring logging](LOGGING.md) - How to configure logging when running tests
 * [Using test suites](SUITES.md) - How to use tests suites with custom configuration
 * [Best practices](BEST_PRACTICES.md) - Best practices and common pitfalls
+* [Debugging](DEBUGGING.md) - Debugging Keycloak and extensions
 * [Writing extensions](EXTENSIONS.md) - Writing test framework extensions
 * [GitHub Actions](GITHUB.md) - Support for creating job summary on GitHub Actions

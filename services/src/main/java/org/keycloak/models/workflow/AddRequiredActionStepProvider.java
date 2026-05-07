@@ -40,7 +40,7 @@ public class AddRequiredActionStepProvider implements WorkflowStepProvider {
                     log.warnv("Required action {0} is not enabled in realm {1}", action, realm.getName());
                     return;
                 }
-                log.debugv("Adding required action {0} to user {1})", action, user.getId());
+                log.debugv("Adding required action {0} to user {1}", action, user.getId());
                 user.addRequiredAction(action);
             } catch (IllegalArgumentException e) {
                 log.warnv("Invalid required action {0} configured in {1}", stepModel.getConfig().getFirst(REQUIRED_ACTION_KEY),

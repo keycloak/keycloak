@@ -122,7 +122,7 @@ The configurable items and their description are as follows:
 |If enabled, {project_name} cannot re-register an already registered WebAuthn authenticator.
 
 |Acceptable AAGUIDs
-|The white list of AAGUIDs which a WebAuthn authenticator must register against.
+|The list of allowed AAGUIDs which a WebAuthn authenticator must register against. An AAGUID (Authenticator Attestation Global Unique Identifier) is a 128-bit identifier indicating the authenticator's type (e.g., make and model). This option needs the **Attestation conveyance preference** to be configured (normally `Direct`) to ensure a trusted AAGUID is passed. Default attestation `None` is not reliable, and can anonymize the AAGUID to zero value. If you setup **Acceptable AAGUIDs** only those authenticators are valid to register new WebAuthn credentials.
 
 |===
 

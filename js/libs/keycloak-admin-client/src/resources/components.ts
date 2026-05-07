@@ -7,6 +7,7 @@ export interface ComponentQuery {
   name?: string;
   parent?: string;
   type?: string;
+  providerId?: string;
 }
 
 export class Components extends Resource<{ realm?: string }> {

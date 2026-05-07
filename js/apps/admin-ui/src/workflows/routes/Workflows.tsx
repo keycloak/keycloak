@@ -10,9 +10,9 @@ const WorkflowsSection = lazy(() => import("../WorkflowsSection"));
 export const WorkflowsRoute: AppRouteObject = {
   path: "/:realm/workflows",
   element: <WorkflowsSection />,
-  breadcrumb: (t) => t("workflows"),
   handle: {
     access: "manage-realm",
+    breadcrumb: (t) => t("workflows"),
   },
 };
 

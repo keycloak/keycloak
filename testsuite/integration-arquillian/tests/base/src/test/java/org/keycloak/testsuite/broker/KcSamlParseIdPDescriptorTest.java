@@ -25,8 +25,8 @@ import jakarta.ws.rs.core.MediaType;
 import org.keycloak.broker.saml.SAMLIdentityProviderConfig;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
+import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testsuite.AbstractKeycloakTest;
-import org.keycloak.testsuite.util.RealmBuilder;
 
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
@@ -34,8 +34,8 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.util.EntityUtils;
 import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataOutput;
-import org.junit.Assert;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 /**
  *
@@ -56,17 +56,17 @@ public class KcSamlParseIdPDescriptorTest extends AbstractKeycloakTest {
         output.addFormData("providerId", "saml", MediaType.TEXT_PLAIN_TYPE);
         output.addFormData("file", descriptor, MediaType.TEXT_XML_TYPE);
         Map<String, String> response = adminClient.realm("test").identityProviders().importFrom(output);
-        Assert.assertNotNull(response.get(SAMLIdentityProviderConfig.SIGNING_CERTIFICATE_KEY));
-        Assert.assertEquals(authServerPage.toString() + "/realms/test", response.get(SAMLIdentityProviderConfig.IDP_ENTITY_ID));
-        Assert.assertEquals("true", response.get(SAMLIdentityProviderConfig.VALIDATE_SIGNATURE));
-        Assert.assertEquals("true", response.get(SAMLIdentityProviderConfig.POST_BINDING_LOGOUT));
-        Assert.assertEquals("true", response.get(SAMLIdentityProviderConfig.POST_BINDING_RESPONSE));
-        Assert.assertEquals("true", response.get(SAMLIdentityProviderConfig.POST_BINDING_AUTHN_REQUEST));
-        Assert.assertEquals("true", response.get(SAMLIdentityProviderConfig.WANT_AUTHN_REQUESTS_SIGNED));
-        Assert.assertEquals(JBossSAMLURIConstants.NAMEID_FORMAT_PERSISTENT.get(), response.get("nameIDPolicyFormat"));
-        Assert.assertEquals(authServerPage.toString() + "/realms/test/protocol/saml", response.get(SAMLIdentityProviderConfig.SINGLE_SIGN_ON_SERVICE_URL));
-        Assert.assertEquals(authServerPage.toString() + "/realms/test/protocol/saml", response.get(SAMLIdentityProviderConfig.SINGLE_LOGOUT_SERVICE_URL));
-        Assert.assertEquals(authServerPage.toString() + "/realms/test/protocol/saml/resolve", response.get(SAMLIdentityProviderConfig.ARTIFACT_RESOLUTION_SERVICE_URL));
+        Assertions.assertNotNull(response.get(SAMLIdentityProviderConfig.SIGNING_CERTIFICATE_KEY));
+        Assertions.assertEquals(authServerPage.toString() + "/realms/test", response.get(SAMLIdentityProviderConfig.IDP_ENTITY_ID));
+        Assertions.assertEquals("true", response.get(SAMLIdentityProviderConfig.VALIDATE_SIGNATURE));
+        Assertions.assertEquals("true", response.get(SAMLIdentityProviderConfig.POST_BINDING_LOGOUT));
+        Assertions.assertEquals("true", response.get(SAMLIdentityProviderConfig.POST_BINDING_RESPONSE));
+        Assertions.assertEquals("true", response.get(SAMLIdentityProviderConfig.POST_BINDING_AUTHN_REQUEST));
+        Assertions.assertEquals("true", response.get(SAMLIdentityProviderConfig.WANT_AUTHN_REQUESTS_SIGNED));
+        Assertions.assertEquals(JBossSAMLURIConstants.NAMEID_FORMAT_PERSISTENT.get(), response.get("nameIDPolicyFormat"));
+        Assertions.assertEquals(authServerPage.toString() + "/realms/test/protocol/saml", response.get(SAMLIdentityProviderConfig.SINGLE_SIGN_ON_SERVICE_URL));
+        Assertions.assertEquals(authServerPage.toString() + "/realms/test/protocol/saml", response.get(SAMLIdentityProviderConfig.SINGLE_LOGOUT_SERVICE_URL));
+        Assertions.assertEquals(authServerPage.toString() + "/realms/test/protocol/saml/resolve", response.get(SAMLIdentityProviderConfig.ARTIFACT_RESOLUTION_SERVICE_URL));
 
         // modify it with WantAuthnRequestsSigned=false
         descriptor = descriptor.replaceFirst("WantAuthnRequestsSigned=\"true\"", "WantAuthnRequestsSigned=\"false\"");
@@ -74,8 +74,8 @@ public class KcSamlParseIdPDescriptorTest extends AbstractKeycloakTest {
         output.addFormData("providerId", "saml", MediaType.TEXT_PLAIN_TYPE);
         output.addFormData("file", descriptor, MediaType.TEXT_XML_TYPE);
         response = adminClient.realm("test").identityProviders().importFrom(output);
-        Assert.assertEquals("false", response.get(SAMLIdentityProviderConfig.WANT_AUTHN_REQUESTS_SIGNED));
-        Assert.assertEquals("true", response.get(SAMLIdentityProviderConfig.VALIDATE_SIGNATURE));
+        Assertions.assertEquals("false", response.get(SAMLIdentityProviderConfig.WANT_AUTHN_REQUESTS_SIGNED));
+        Assertions.assertEquals("true", response.get(SAMLIdentityProviderConfig.VALIDATE_SIGNATURE));
     }
 
     private String readSamlIdPDescriptor() throws IOException {

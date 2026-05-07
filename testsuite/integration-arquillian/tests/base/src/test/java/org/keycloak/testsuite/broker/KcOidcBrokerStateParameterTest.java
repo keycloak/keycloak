@@ -113,7 +113,7 @@ public class KcOidcBrokerStateParameterTest extends AbstractInitializedBaseBroke
 
     @Test
     public void testCorrectStateParameterButIncorrectCode() {
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
 
         waitForPage(driver, "sign in to", true);

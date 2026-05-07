@@ -22,6 +22,7 @@ import java.net.URL;
 import java.security.KeyStore;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 
 import org.junit.Test;
 
@@ -68,6 +69,64 @@ public class TruststoreBuilderTest {
 
         assertThrows(RuntimeException.class, () -> TruststoreBuilder
                 .createMergedTruststore(new String[] { new File(url.getPath()).getAbsolutePath() }, false));
+    }
+
+    @Test
+    public void testKubernetesCaAndServiceCaIncludedWhenFilesExist() throws Exception {
+        URL url = TruststoreBuilderTest.class.getResource("/truststores/keycloak.pem");
+        String existingFile = new File(url.getPath()).getAbsolutePath();
+
+        List<String> trustStores = new ArrayList<>();
+        TruststoreBuilder.includeKubernetesTrustStorePaths(trustStores, existingFile, existingFile);
+
+        assertEquals(2, trustStores.size());
+        assertEquals(existingFile, trustStores.get(0));
+        assertEquals(existingFile, trustStores.get(1));
+    }
+
+    @Test
+    public void testKubernetesCaAndServiceCaNotIncludedWhenFilesDoNotExist() throws Exception {
+        List<String> trustStores = new ArrayList<>();
+        TruststoreBuilder.includeKubernetesTrustStorePaths(trustStores, "/non/existing/ca.crt", "/non/existing/service-ca.crt");
+
+        assertTrue(trustStores.isEmpty());
+    }
+
+    @Test
+    public void testOnlyKubernetesCaIncludedWhenServiceCaDoesNotExist() throws Exception {
+        URL url = TruststoreBuilderTest.class.getResource("/truststores/keycloak.pem");
+        String existingFile = new File(url.getPath()).getAbsolutePath();
+
+        List<String> trustStores = new ArrayList<>();
+        TruststoreBuilder.includeKubernetesTrustStorePaths(trustStores, existingFile, "/non/existing/service-ca.crt");
+
+        assertEquals(1, trustStores.size());
+        assertEquals(existingFile, trustStores.get(0));
+    }
+
+    @Test
+    public void testKubernetesCaPreservesExistingTrustStoreEntries() throws Exception {
+        URL url = TruststoreBuilderTest.class.getResource("/truststores/keycloak.pem");
+        String existingFile = new File(url.getPath()).getAbsolutePath();
+
+        List<String> trustStores = new ArrayList<>();
+        trustStores.add("/some/existing/truststore.p12");
+        TruststoreBuilder.includeKubernetesTrustStorePaths(trustStores, existingFile, "/non/existing/service-ca.crt");
+
+        assertEquals(2, trustStores.size());
+        assertEquals("/some/existing/truststore.p12", trustStores.get(0));
+        assertEquals(existingFile, trustStores.get(1));
+    }
+
+    @Test
+    public void testKubernetesCaIgnoresDirectories() throws Exception {
+        URL url = TruststoreBuilderTest.class.getResource("/truststores/keycloak.pem");
+        String directory = new File(url.getPath()).getParent();
+
+        List<String> trustStores = new ArrayList<>();
+        TruststoreBuilder.includeKubernetesTrustStorePaths(trustStores, directory, "/non/existing/service-ca.crt");
+
+        assertTrue(trustStores.isEmpty());
     }
 
 }

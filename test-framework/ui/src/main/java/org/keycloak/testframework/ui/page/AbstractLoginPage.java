@@ -17,6 +17,8 @@
 
 package org.keycloak.testframework.ui.page;
 
+import java.util.Optional;
+
 import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 
 import org.openqa.selenium.By;
@@ -37,6 +39,15 @@ public abstract class AbstractLoginPage extends AbstractPage {
 
     @FindBy(id = "kc-locale-dropdown")
     private WebElement localeDropdownBase;  // base theme
+
+    @FindBy(id = "kc-attempted-username") // Username during re-authentication
+    private WebElement attemptedUsernameLabel;
+
+    @FindBy(className = "pf-m-info")
+    private WebElement loginInfoMessage;
+
+    @FindBy(className = "pf-m-danger")
+    private WebElement loginErrorMessage;
 
     public AbstractLoginPage(ManagedWebDriver driver) {
         super(driver);
@@ -63,4 +74,29 @@ public abstract class AbstractLoginPage extends AbstractPage {
         }
     }
 
+    public String getAttemptedUsername() {
+        try {
+            String text = attemptedUsernameLabel.getAttribute("value");
+            if (text == null) return attemptedUsernameLabel.getText();
+            return text;
+        } catch (NoSuchElementException e) {
+            return null;
+        }
+    }
+
+    public Optional<String> getInfoMessage() {
+        try {
+            return Optional.of(loginInfoMessage.getText());
+        } catch (NoSuchElementException e) {
+            return Optional.empty();
+        }
+    }
+
+    public Optional<String> getErrorMessage() {
+        try {
+            return Optional.of(loginErrorMessage.getText());
+        } catch (NoSuchElementException e) {
+            return Optional.empty();
+        }
+    }
 }

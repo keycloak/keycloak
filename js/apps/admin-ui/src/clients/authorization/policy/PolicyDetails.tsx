@@ -101,6 +101,20 @@ export default function PolicyDetails() {
           policies: result[1].map((p) => p.id),
         };
       }
+      if (!isValidComponentType(policyType!)) {
+        const providers = await adminClient.clients.listPolicyProviders({
+          id: permissionClientId ?? id,
+        });
+        const provider = providers.find((p) => p.type === policyType);
+        if (provider) {
+          return {
+            policy: {
+              code: provider.code,
+              description: provider.description,
+            } as PolicyRepresentation,
+          };
+        }
+      }
       return {};
     },
     ({ policy, policies }) => {

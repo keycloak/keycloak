@@ -30,18 +30,19 @@ import org.keycloak.operator.Utils;
 import org.keycloak.operator.controllers.KeycloakClientBaseController;
 import org.keycloak.operator.controllers.KeycloakOIDCClientController;
 import org.keycloak.operator.controllers.KeycloakSAMLClientController;
+import org.keycloak.operator.crds.v2alpha1.client.KeycloakClientStatus;
 import org.keycloak.operator.crds.v2alpha1.client.KeycloakClientStatusCondition;
 import org.keycloak.operator.crds.v2alpha1.client.KeycloakOIDCClient;
 import org.keycloak.operator.crds.v2alpha1.client.KeycloakOIDCClientBuilder;
 import org.keycloak.operator.crds.v2alpha1.client.KeycloakOIDCClientRepresentation.AuthWithSecretRef;
 import org.keycloak.operator.crds.v2alpha1.client.KeycloakSAMLClient;
 import org.keycloak.operator.crds.v2alpha1.client.KeycloakSAMLClientBuilder;
-import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
-import org.keycloak.operator.crds.v2alpha1.deployment.ValueOrSecret;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.AdminSpec;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.BootstrapAdminSpec;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.FeatureSpecBuilder;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.TruststoreBuilder;
+import org.keycloak.operator.crds.v2beta1.deployment.Keycloak;
+import org.keycloak.operator.crds.v2beta1.deployment.ValueOrSecret;
+import org.keycloak.operator.crds.v2beta1.deployment.spec.AdminSpec;
+import org.keycloak.operator.crds.v2beta1.deployment.spec.BootstrapAdminSpec;
+import org.keycloak.operator.crds.v2beta1.deployment.spec.FeatureSpecBuilder;
+import org.keycloak.operator.crds.v2beta1.deployment.spec.TruststoreBuilder;
 import org.keycloak.operator.testsuite.apiserver.DisabledIfApiServerTest;
 import org.keycloak.operator.testsuite.utils.K8sUtils;
 
@@ -57,9 +58,10 @@ import org.junit.jupiter.api.Test;
 
 import static org.keycloak.operator.testsuite.utils.K8sUtils.deployKeycloak;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
-@DisabledIfApiServerTest
 @Tag(BaseOperatorTest.SLOW)
 @QuarkusTest
 public class KeycloakClientTest extends BaseOperatorTest {
@@ -72,6 +74,10 @@ public class KeycloakClientTest extends BaseOperatorTest {
 
     @Inject
     Config config;
+
+    protected Keycloak getTestDeployment(boolean disableProbes) {
+        return BaseOperatorTest.getTestKeycloakDeployment(disableProbes);
+    }
 
     static String initCustomBootstrapAdminServiceAccount(Keycloak kc) {
         String secretName = kc.getMetadata().getName() + "-admin";
@@ -93,9 +99,10 @@ public class KeycloakClientTest extends BaseOperatorTest {
         k8sclient.secrets().withName(CLIENT_TLS_SECRET).delete();
     }
 
+    @DisabledIfApiServerTest
     @Test
     public void testBasicSamlClientCreationAndDeletionHttp() throws InterruptedException {
-        var kc = getTestKeycloakDeployment(false);
+        var kc = getTestDeployment(false);
         deployKeycloakWithAdminApiV2(false, kc);
         String addressOverride = createNodePort(false, kc);
         var deploymentName = kc.getMetadata().getName();
@@ -112,10 +119,12 @@ public class KeycloakClientTest extends BaseOperatorTest {
                         .noneMatch(c -> Boolean.TRUE.equals(c.getStatus())
                                 && KeycloakClientStatusCondition.HAS_ERRORS.equals(c.getType())));
 
-        // TODO: a success or ready status?
-
         try (var adminClient = KeycloakClientBaseController.getAdminClient(k8sclient, kc, addressOverride)) {
             Awaitility.await().until(() -> adminClient.realm("master").clients().findAll().stream().anyMatch(cr -> cr.getClientId().equals(clientName)));
+
+            KeycloakClientStatus status = k8sclient.resource(client).get().getStatus();
+            String clientUuid = adminClient.realm("master").clients().findByClientId(clientName).get(0).getId();
+            assertThat(status.getUuid(), is(clientUuid));
 
             k8sclient.resource(client).withTimeout(10, TimeUnit.SECONDS).delete();
 
@@ -126,17 +135,19 @@ public class KeycloakClientTest extends BaseOperatorTest {
     }
 
     @Test
+    @DisabledIfApiServerTest
     public void testBasicOIDCClientCreationAndDeletionHttp() throws InterruptedException {
         helpTestBasicOIDCClientCreationAndDeletion(false);
     }
 
     @Test
+    @DisabledIfApiServerTest
     public void testBasicOIDCClientCreationAndDeletionHttps() throws InterruptedException {
         helpTestBasicOIDCClientCreationAndDeletion(true);
     }
 
     public void helpTestBasicOIDCClientCreationAndDeletion(boolean https) throws InterruptedException {
-        var kc = getTestKeycloakDeployment(false);
+        var kc = getTestDeployment(false);
         deployKeycloakWithAdminApiV2(https, kc);
         String addressOverride = createNodePort(https, kc);
         var deploymentName = kc.getMetadata().getName();
@@ -166,10 +177,12 @@ public class KeycloakClientTest extends BaseOperatorTest {
                         .noneMatch(c -> Boolean.TRUE.equals(c.getStatus())
                                 && KeycloakClientStatusCondition.HAS_ERRORS.equals(c.getType())));
 
-        // TODO: a success or ready status?
-
         try (var adminClient = KeycloakClientBaseController.getAdminClient(k8sclient, kc, addressOverride)) {
             Awaitility.await().until(() -> adminClient.realm("master").clients().findAll().stream().anyMatch(cr -> cr.getClientId().equals(clientName)));
+
+            KeycloakClientStatus status = k8sclient.resource(client).get().getStatus();
+            String clientUuid = adminClient.realm("master").clients().findByClientId(clientName).get(0).getId();
+            assertThat(status.getUuid(), is(clientUuid));
 
             k8sclient.resource(client).withTimeout(10, TimeUnit.SECONDS).delete();
 
@@ -219,6 +232,26 @@ public class KeycloakClientTest extends BaseOperatorTest {
         // we don't expect users to do this
         initCustomBootstrapAdminServiceAccount(kc);
         deployKeycloak(k8sclient, kc, true);
+    }
+    
+    @Test
+    public void testFeatureRequired() {
+        var kc = getTestDeployment(true);
+        K8sUtils.deployKeycloak(k8sclient, kc, false);
+
+        KeycloakSAMLClient client = new KeycloakSAMLClientBuilder().withNewMetadata().withName("new-client")
+                .endMetadata().withNewSpec().withRealm("master").withKeycloakCRName(kc.getMetadata().getName())
+                .withNewClient().withEnabled(true).endClient().endSpec().build();
+
+        K8sUtils.set(k8sclient, client);
+
+        Awaitility.await().ignoreExceptions()
+                .until(() -> Optional.ofNullable(k8sclient.resource(client).get().getStatus())
+                        .filter(s -> s.getConditions().stream()
+                                .anyMatch(c -> Boolean.TRUE.equals(c.getStatus())
+                                        && KeycloakClientStatusCondition.HAS_ERRORS.equals(c.getType())
+                                        && c.getMessage().contains(KeycloakClientBaseController.CLIENT_ADMIN_API_V2)))
+                        .isPresent());
     }
 
 }

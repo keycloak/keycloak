@@ -53,8 +53,9 @@ import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testframework.server.KeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 import org.keycloak.testframework.util.ApiUtil;
-import org.keycloak.testsuite.components.TestComponentProvider;
-import org.keycloak.testsuite.components.TestComponentProviderFactory;
+import org.keycloak.tests.providers.components.TestComponentProvider;
+import org.keycloak.tests.providers.components.TestComponentProviderFactory;
+import org.keycloak.tests.suites.DatabaseTest;
 
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -79,6 +80,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 @KeycloakIntegrationTest(config = ComponentsTest.ComponentsTestServerConfig.class)
+@DatabaseTest
 public class ComponentsTest {
 
     @InjectRealm(lifecycle = LifeCycle.METHOD)

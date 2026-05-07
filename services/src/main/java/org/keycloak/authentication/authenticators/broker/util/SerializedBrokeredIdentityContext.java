@@ -268,7 +268,7 @@ public class SerializedBrokeredIdentityContext implements UpdateProfileContext {
         RealmModel realm = authSession.getRealm();
         IdentityProviderModel idpConfig = session.identityProviders().getByAlias(getIdentityProviderId());
 
-        if (idpConfig == null) {
+        if (idpConfig == null || !idpConfig.isEnabled()) {
             throw new ModelException("Can't find identity provider with ID " + getIdentityProviderId() + " in realm " + realm.getName());
         }
 

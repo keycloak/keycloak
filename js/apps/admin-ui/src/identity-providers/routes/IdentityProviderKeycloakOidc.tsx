@@ -10,9 +10,9 @@ const AddOpenIdConnect = lazy(() => import("../add/AddOpenIdConnect"));
 export const IdentityProviderKeycloakOidcRoute: AppRouteObject = {
   path: "/:realm/identity-providers/keycloak-oidc/add",
   element: <AddOpenIdConnect />,
-  breadcrumb: (t) => t("addKeycloakOpenIdProvider"),
   handle: {
     access: "manage-identity-providers",
+    breadcrumb: (t) => t("addKeycloakOpenIdProvider"),
   },
 };
 

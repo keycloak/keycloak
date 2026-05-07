@@ -67,6 +67,7 @@ import com.webauthn4j.data.RegistrationRequest;
 import com.webauthn4j.data.attestation.authenticator.AttestedCredentialData;
 import com.webauthn4j.data.attestation.statement.AttestationStatement;
 import com.webauthn4j.data.attestation.statement.COSEAlgorithmIdentifier;
+import com.webauthn4j.data.attestation.statement.NoneAttestationStatement;
 import com.webauthn4j.data.client.Origin;
 import com.webauthn4j.data.client.challenge.Challenge;
 import com.webauthn4j.data.client.challenge.DefaultChallenge;
@@ -247,7 +248,7 @@ public class WebAuthnRegister implements RequiredActionProvider, CredentialRegis
                 .collect(Collectors.toSet());
         allOrigins.add(origin);
         Challenge challenge = new DefaultChallenge(context.getAuthenticationSession().getAuthNote(WebAuthnConstants.AUTH_CHALLENGE_NOTE));
-        ServerProperty serverProperty = new ServerProperty(allOrigins, rpId, challenge, null);
+        ServerProperty serverProperty = new ServerProperty(allOrigins, rpId, challenge);
         // check User Verification by considering a malicious user might modify the result of calling WebAuthn API
         boolean isUserVerificationRequired = policy.getUserVerificationRequirement().equals(Constants.WEBAUTHN_POLICY_OPTION_REQUIRED);
 
@@ -268,7 +269,7 @@ public class WebAuthnRegister implements RequiredActionProvider, CredentialRegis
             AuthenticatorUtil.logoutOtherSessions(context);
         }
 
-        WebAuthnRegistrationManager webAuthnRegistrationManager = createWebAuthnRegistrationManager(policy.getAttestationConveyancePreference());
+        WebAuthnRegistrationManager webAuthnRegistrationManager = createWebAuthnRegistrationManager(policy);
         try {
             // parse
             RegistrationData registrationData = webAuthnRegistrationManager.parse(registrationRequest);
@@ -318,11 +319,12 @@ public class WebAuthnRegister implements RequiredActionProvider, CredentialRegis
      * Create WebAuthnRegistrationManager instance
      * Can be overridden in subclasses to customize the used attestation validators
      *
-     * @param attestationPreference The attestation selected in the policy
+     * @param policy The webauthn policy defined
      * @return webauthn4j WebAuthnRegistrationManager instance
      */
-    protected WebAuthnRegistrationManager createWebAuthnRegistrationManager(String attestationPreference) {
+    protected WebAuthnRegistrationManager createWebAuthnRegistrationManager(WebAuthnPolicy policy) {
         List<AttestationStatementVerifier> verifiers = new ArrayList<>(6);
+        final String attestationPreference = policy.getAttestationConveyancePreference();
         if (attestationPreference == null
                 || Constants.DEFAULT_WEBAUTHN_POLICY_NOT_SPECIFIED.equals(attestationPreference)
                 || AttestationConveyancePreference.NONE.getValue().equals(attestationPreference)) {
@@ -334,10 +336,15 @@ public class WebAuthnRegister implements RequiredActionProvider, CredentialRegis
         verifiers.add(new AndroidSafetyNetAttestationStatementVerifier());
         verifiers.add(new FIDOU2FAttestationStatementVerifier());
 
+        DefaultSelfAttestationTrustworthinessVerifier selfAttestationVerifier = new DefaultSelfAttestationTrustworthinessVerifier();
+        final List<String> acceptableAaguids = policy.getAcceptableAaguids();
+        // self attestation should be disabled to be sure the AAGUID can be trusted
+        selfAttestationVerifier.setSelfAttestationAllowed(acceptableAaguids == null || acceptableAaguids.isEmpty());
+
         return new WebAuthnRegistrationManager(
                 verifiers,
                 this.certPathtrustVerifier,
-                new DefaultSelfAttestationTrustworthinessVerifier(),
+                selfAttestationVerifier,
                 Collections.emptyList(), // Custom Registration Verifier is not supported
                 new ObjectConverter()
         );
@@ -406,20 +413,12 @@ public class WebAuthnRegister implements RequiredActionProvider, CredentialRegis
     private void checkAcceptedAuthenticator(RegistrationData response, WebAuthnPolicy policy) throws Exception {
         String aaguid = response.getAttestationObject().getAuthenticatorData().getAttestedCredentialData().getAaguid().toString();
         List<String> acceptableAaguids = policy.getAcceptableAaguids();
-        boolean isAcceptedAuthenticator = false;
         if (acceptableAaguids != null && !acceptableAaguids.isEmpty()) {
-            for(String acceptableAaguid : acceptableAaguids) {
-                if (aaguid.equals(acceptableAaguid)) {
-                    isAcceptedAuthenticator = true;
-                    break;
-                }
+            if (NoneAttestationStatement.FORMAT.equals(response.getAttestationObject().getFormat())) {
+                throw new WebAuthnException("Acceptable AAGUIDs require an attestation format other than 'none'.");
+            } else if (acceptableAaguids.stream().noneMatch(acceptableAaguid -> aaguid.equals(acceptableAaguid))) {
+                throw new WebAuthnException("not acceptable aaguid = " + aaguid);
             }
-        } else {
-            // no accepted authenticators means accepting any kind of authenticator
-            isAcceptedAuthenticator = true;
-        }
-        if (!isAcceptedAuthenticator) {
-            throw new WebAuthnException("not acceptable aaguid = " + aaguid);
         }
     }
 

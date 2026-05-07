@@ -44,19 +44,20 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.events.EventAssertion;
+import org.keycloak.testframework.realm.RealmBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AbstractKeycloakTest;
-import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.admin.AdminApiUtil;
+import org.keycloak.testsuite.events.TestEventsListenerProviderFactory;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.ClientManager;
 import org.keycloak.testsuite.util.Matchers;
 import org.keycloak.testsuite.util.ProtocolMapperUtil;
-import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.TokenSignatureUtil;
-import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.LogoutResponse;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
@@ -70,14 +71,15 @@ import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 import static org.keycloak.testsuite.AbstractAdminTest.loadJson;
 
 import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Tests mostly for backchannel logout scenarios with refresh token (Legacy Logout endpoint not compliant with OIDC specification) and admin logout scenarios
@@ -106,7 +108,7 @@ public class LogoutTest extends AbstractKeycloakTest {
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
         RealmRepresentation realmRepresentation = loadJson(getClass().getResourceAsStream("/testrealm.json"), RealmRepresentation.class);
-        RealmBuilder realm = RealmBuilder.edit(realmRepresentation).testEventListener();
+        RealmBuilder realm = RealmBuilder.update(realmRepresentation).eventsListeners(TestEventsListenerProviderFactory.PROVIDER_ID);
 
         testRealms.add(realm.build());
     }
@@ -157,7 +159,7 @@ public class LogoutTest extends AbstractKeycloakTest {
         driver.navigate().refresh();
         oauth.fillLoginForm("test-user@localhost", "password");
 
-        Assert.assertFalse(loginPage.isCurrent());
+        Assertions.assertFalse(loginPage.isCurrent());
 
         String code = oauth.parseLoginResponse().getCode();
         AccessTokenResponse tokenResponse2 = oauth.doAccessTokenRequest(code);
@@ -200,14 +202,14 @@ public class LogoutTest extends AbstractKeycloakTest {
             oauth.doLogin("test-user@localhost", "password");
             AccessTokenResponse tokenResponse = oauth.accessTokenRequest(oauth.parseLoginResponse().getCode())
                     .param(AdapterConstants.CLIENT_SESSION_STATE, "client-session").send();
-            Assert.assertNull(tokenResponse.getError());
+            Assertions.assertNull(tokenResponse.getError());
 
             // login with test-app-scope
             oauth.client("test-app-scope", "password");
             oauth.openLoginForm();
             AccessTokenResponse tokenResponse2 = oauth.accessTokenRequest(oauth.parseLoginResponse().getCode())
                     .param(AdapterConstants.CLIENT_SESSION_STATE, "client-session").send();
-            Assert.assertNull(tokenResponse2.getError());
+            Assertions.assertNull(tokenResponse2.getError());
             AccessToken accessToken = new JWSInput(tokenResponse2.getAccessToken()).readJsonContent(AccessToken.class);
 
             // logout from test-app-scope
@@ -240,10 +242,10 @@ public class LogoutTest extends AbstractKeycloakTest {
                     .lastName("last")
                     .enabled(true)
                     .build()).close();
-            UserRepresentation user = ApiUtil.findUserByUsername(realm, "user-0");
-            Assert.assertNotNull(user);
+            UserRepresentation user = AdminApiUtil.findUserByUsername(realm, "user-0");
+            Assertions.assertNotNull(user);
 
-            loginPage.open();
+            oauth.openLoginForm();
             loginPage.login("user-0", "password");
 
             String code = oauth.parseLoginResponse().getCode();
@@ -265,7 +267,7 @@ public class LogoutTest extends AbstractKeycloakTest {
                     .enabled(true)
                     .build()).close();
 
-            loginPage.open();
+            oauth.openLoginForm();
             loginPage.login("user-1", "password");
             code = oauth.parseLoginResponse().getCode();
             tokenResponse = oauth.accessTokenRequest(code).param(AdapterConstants.CLIENT_SESSION_STATE, "client-session").send();
@@ -274,28 +276,28 @@ public class LogoutTest extends AbstractKeycloakTest {
                     .idTokenHint(idTokenString)
                     .postLogoutRedirectUri(oauth.APP_AUTH_ROOT)
                     .open();
-            user = ApiUtil.findUserByUsername(realm, "user-1");
-            Assert.assertNotNull(user);
+            user = AdminApiUtil.findUserByUsername(realm, "user-1");
+            Assertions.assertNotNull(user);
             realm.users().get(user.getId()).remove();
         }
     }
 
     @Test
     public void logoutUserByAdmin() {
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("test-user@localhost", "password");
-        String sessionId = events.expectLogin().assertEvent().getSessionId();
+        EventAssertion.expectLoginSuccess(events.poll());
 
-        UserRepresentation user = ApiUtil.findUserByUsername(adminClient.realm("test"), "test-user@localhost");
-        Assert.assertEquals((Object) 0, user.getNotBefore());
+        UserRepresentation user = AdminApiUtil.findUserByUsername(adminClient.realm("test"), "test-user@localhost");
+        Assertions.assertEquals((Object) 0, user.getNotBefore());
 
         adminClient.realm("test").users().get(user.getId()).logout();
 
         Retry.execute(() -> {
             UserRepresentation u = adminClient.realm("test").users().get(user.getId()).toRepresentation();
-            Assert.assertTrue(u.getNotBefore() > 0);
+            Assertions.assertTrue(u.getNotBefore() > 0);
 
-            loginPage.open();
+            oauth.openLoginForm();
             loginPage.assertCurrent();
         }, 10, 200);
     }
@@ -339,11 +341,11 @@ public class LogoutTest extends AbstractKeycloakTest {
     public void backchannelLogoutRequest_RealmRS384_ClientRS512() throws Exception {
         try {
             TokenSignatureUtil.changeRealmTokenSignatureProvider(adminClient, "RS384");
-            TokenSignatureUtil.changeClientAccessTokenSignatureProvider(ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app"), "RS512");
+            TokenSignatureUtil.changeClientAccessTokenSignatureProvider(AdminApiUtil.findClientByClientId(adminClient.realm("test"), "test-app"), "RS512");
             backchannelLogoutRequest(Constants.INTERNAL_SIGNATURE_ALGORITHM, "RS512", "RS384");
         } finally {
             TokenSignatureUtil.changeRealmTokenSignatureProvider(adminClient, "RS256");
-            TokenSignatureUtil.changeClientAccessTokenSignatureProvider(ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app"), "RS256");
+            TokenSignatureUtil.changeClientAccessTokenSignatureProvider(AdminApiUtil.findClientByClientId(adminClient.realm("test"), "test-app"), "RS256");
         }
     }
 
@@ -357,7 +359,7 @@ public class LogoutTest extends AbstractKeycloakTest {
         clients.get(rep.getId()).update(rep);
 
         oauth.doLogin("test-user@localhost", "password");
-        String sessionId = events.expectLogin().assertEvent().getSessionId();
+        String sessionId = EventAssertion.expectLoginSuccess(events.poll()).getEvent().getSessionId();
 
         String code = oauth.parseLoginResponse().getCode();
 
@@ -376,10 +378,10 @@ public class LogoutTest extends AbstractKeycloakTest {
         }
 
         // Assert logout event triggered for backchannel logout
-        events.expectLogout(sessionId)
-                .client(AssertEvents.DEFAULT_CLIENT_ID)
-                .detail(Details.REDIRECT_URI, oauth.APP_AUTH_ROOT)
-                .assertEvent();
+        EventAssertion.expectLogoutSuccess(events.poll())
+                .sessionId(sessionId)
+                .clientId(oauth.getClientId())
+                .details(Details.REDIRECT_URI, oauth.APP_AUTH_ROOT);
 
         assertNotNull(testingClient.testApp().getAdminLogoutAction());
     }
@@ -473,17 +475,17 @@ public class LogoutTest extends AbstractKeycloakTest {
      * Validate the token matches the spec at <a href="https://openid.net/specs/openid-connect-backchannel-1_0.html#LogoutToken">OpenID Connect Back-Channel Logout 1.0 incorporating errata set 1</a>
      */
     private void validateLogoutToken(LogoutToken backChannelLogoutToken) {
-        assertNotNull("token must be present", backChannelLogoutToken);
-        assertNotNull("iss must be present", backChannelLogoutToken.getIssuer());
-        assertNotNull("aud must be present", backChannelLogoutToken.getAudience());
-        assertNotNull("iat must be present", backChannelLogoutToken.getIat());
-        assertNotNull("exp must be present", backChannelLogoutToken.getExp());
-        assertNotNull("jti must be present", backChannelLogoutToken.getId());
+        assertNotNull(backChannelLogoutToken, "token must be present");
+        assertNotNull(backChannelLogoutToken.getIssuer(), "iss must be present");
+        assertNotNull(backChannelLogoutToken.getAudience(), "aud must be present");
+        assertNotNull(backChannelLogoutToken.getIat(), "iat must be present");
+        assertNotNull(backChannelLogoutToken.getExp(), "exp must be present");
+        assertNotNull(backChannelLogoutToken.getId(), "jti must be present");
         Map<String, Object> events = backChannelLogoutToken.getEvents();
-        assertNotNull("events must be present", events);
+        assertNotNull(events, "events must be present");
         Object backchannelLogoutEvent = events.get("http://schemas.openid.net/event/backchannel-logout");
-        assertNotNull("back-channel logout event must be present", backchannelLogoutEvent);
-        assertTrue("back-channel logout event must have a member object", backchannelLogoutEvent instanceof Map);
+        assertNotNull(backchannelLogoutEvent, "back-channel logout event must be present");
+        assertTrue(backchannelLogoutEvent instanceof Map, "back-channel logout event must have a member object");
         MatcherAssert.assertThat("map of back-channel logout event member object should be an empty object", (Map<?, ?>) backchannelLogoutEvent, org.hamcrest.Matchers.anEmptyMap());
     }
 

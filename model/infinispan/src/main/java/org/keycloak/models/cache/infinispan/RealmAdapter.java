@@ -29,6 +29,7 @@ import java.util.stream.Stream;
 import org.keycloak.Config;
 import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.common.Profile;
+import org.keycloak.common.Profile.Feature;
 import org.keycloak.common.enums.SslRequired;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.AbstractKeycloakTransaction;
@@ -415,6 +416,18 @@ public class RealmAdapter implements CachedRealmModel {
     public void setFailureFactor(int failureFactor) {
         getDelegateForUpdate();
         updated.setFailureFactor(failureFactor);
+    }
+
+    @Override
+    public int getMaxSecondaryAuthFailures() {
+        if (isUpdated()) return updated.getMaxSecondaryAuthFailures();
+        return cached.getMaxSecondaryAuthFailures();
+    }
+
+    @Override
+    public void setMaxSecondaryAuthFailures(int maxSecondaryAuthFailures) {
+        getDelegateForUpdate();
+        updated.setMaxSecondaryAuthFailures(maxSecondaryAuthFailures);
     }
 
     @Override
@@ -1915,6 +1928,18 @@ public class RealmAdapter implements CachedRealmModel {
     public void setVerifiableCredentialsEnabled(boolean verifiableCredentialsEnabled) {
         getDelegateForUpdate();
         updated.setVerifiableCredentialsEnabled(verifiableCredentialsEnabled);
+    }
+
+    @Override
+    public boolean isScimApiEnabled() {
+        if (isUpdated()) return featureAwareIsEnabled(Feature.SCIM_API, updated.isScimApiEnabled());
+        return featureAwareIsEnabled(Feature.SCIM_API, cached.isScimApiEnabled());
+    }
+
+    @Override
+    public void setScimApiEnabled(boolean enabled) {
+        getDelegateForUpdate();
+        updated.setScimApiEnabled(enabled);
     }
 
     private boolean featureAwareIsEnabled(Profile.Feature feature, boolean isEnabled) {

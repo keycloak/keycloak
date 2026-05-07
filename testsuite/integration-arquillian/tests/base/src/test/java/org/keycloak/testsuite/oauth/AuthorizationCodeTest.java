@@ -36,6 +36,7 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.utils.OIDCResponseMode;
 import org.keycloak.representations.AuthorizationResponseToken;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.pages.ErrorPage;
@@ -51,6 +52,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 import org.openqa.selenium.By;
 
 import static org.keycloak.testsuite.AbstractAdminTest.loadJson;
@@ -59,8 +61,8 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -93,12 +95,12 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
         AuthorizationEndpointResponse response = oauth.loginForm().state("OpenIdConnect.AuthenticationProperties=2302984sdlk").doLogin("test-user@localhost", "password");
 
         assertTrue(response.isRedirected());
-        Assert.assertNotNull(response.getCode());
+        Assertions.assertNotNull(response.getCode());
         assertEquals("OpenIdConnect.AuthenticationProperties=2302984sdlk", response.getState());
-        Assert.assertNull(response.getError());
+        Assertions.assertNull(response.getError());
         assertEquals(oauth.AUTH_SERVER_ROOT + "/realms/test", response.getIssuer());
 
-        String codeId = events.expectLogin().assertEvent().getDetails().get(Details.CODE_ID);
+        EventAssertion.expectLoginSuccess(events.poll());
     }
 
     @Test
@@ -110,7 +112,7 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
 
         installedAppPage.getSuccessCode();
 
-        events.expectLogin().detail(Details.REDIRECT_URI, oauth.AUTH_SERVER_ROOT + "/realms/test/protocol/openid-connect/oauth/oob").assertEvent().getDetails().get(Details.CODE_ID);
+        EventAssertion.expectLoginSuccess(events.poll()).details(Details.REDIRECT_URI, oauth.AUTH_SERVER_ROOT + "/realms/test/protocol/openid-connect/oauth/oob");
 
         ClientManager.realm(adminClient.realm("test")).clientId("test-app").removeRedirectUris(Constants.INSTALLED_APP_URN);
     }
@@ -122,14 +124,14 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
 
         // Assert text escaped
         installedAppPage.assertLinkBackToApplicationNotPresent();
-        Assert.assertEquals("Error code: <p><a href=\"javascript&amp;colon;alert(document.domain);\">Back to application</a></p>", installedAppPage.getPageTitleText());
+        Assertions.assertEquals("Error code: <p><a href=\"javascript&amp;colon;alert(document.domain);\">Back to application</a></p>", installedAppPage.getPageTitleText());
 
         error = "<p><a href=\"http://foo.com\">Back to application</a></p>";
         installedAppPage.open("test", null, error, null);
 
         // Assert text is escaped
         installedAppPage.assertLinkBackToApplicationNotPresent();
-        Assert.assertEquals("Error code: <p><a href=\"http://foo.com\">Back to application</a></p>", installedAppPage.getPageTitleText());
+        Assertions.assertEquals("Error code: <p><a href=\"http://foo.com\">Back to application</a></p>", installedAppPage.getPageTitleText());
     }
 
     @Test
@@ -139,9 +141,9 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
         AuthorizationEndpointResponse response = oauth.doLogin("test-user@localhost", "password");
 
         assertTrue(response.isRedirected());
-        Assert.assertNotNull(response.getCode());
+        Assertions.assertNotNull(response.getCode());
 
-        String codeId = events.expectLogin().assertEvent().getDetails().get(Details.CODE_ID);
+        EventAssertion.expectLoginSuccess(events.poll());
     }
 
     @Test
@@ -173,16 +175,27 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
     }
 
     @Test
+    public void testInvalidESCCharacterClientId() {
+        ClientManager.realm(adminClient.realm("test")).clientId("test-app").addRedirectUris(oauth.getRedirectUri());
+
+        oauth.client("%1B");
+        oauth.openLoginForm();
+
+        assertTrue(errorPage.isCurrent());
+        assertEquals("An internal server error has occurred", errorPage.getError());
+    }
+
+    @Test
     public void authorizationRequestNoState() throws IOException {
         AuthorizationEndpointResponse response = oauth.doLogin("test-user@localhost", "password");
 
         assertTrue(response.isRedirected());
-        Assert.assertNotNull(response.getCode());
-        Assert.assertNull(response.getState());
-        Assert.assertNull(response.getError());
+        Assertions.assertNotNull(response.getCode());
+        Assertions.assertNull(response.getState());
+        Assertions.assertNull(response.getError());
         assertEquals(oauth.AUTH_SERVER_ROOT + "/realms/test", response.getIssuer());
 
-        String codeId = events.expectLogin().assertEvent().getDetails().get(Details.CODE_ID);
+        EventAssertion.expectLoginSuccess(events.poll());
     }
 
     @Test
@@ -192,10 +205,10 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
 
         AuthorizationEndpointResponse errorResponse = oauth.parseLoginResponse();
         assertTrue(errorResponse.isRedirected());
-        Assert.assertEquals(errorResponse.getError(), OAuthErrorException.UNSUPPORTED_RESPONSE_TYPE);
-        Assert.assertEquals(oauth.AUTH_SERVER_ROOT + "/realms/test", errorResponse.getIssuer());
+        Assertions.assertEquals(errorResponse.getError(), OAuthErrorException.UNSUPPORTED_RESPONSE_TYPE);
+        Assertions.assertEquals(oauth.AUTH_SERVER_ROOT + "/realms/test", errorResponse.getIssuer());
 
-        events.expectLogin().error(Errors.INVALID_REQUEST).user((String) null).session((String) null).clearDetails().detail(Details.RESPONSE_TYPE, "tokenn").assertEvent();
+        EventAssertion.assertError(events.poll()).type(EventType.LOGIN_ERROR).error(Errors.INVALID_REQUEST).userId(null).sessionId(null).details(Details.RESPONSE_TYPE, "tokenn");
     }
 
     // Issue 29866
@@ -207,7 +220,7 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
 
         assertThat(response.getStatus(), is(equalTo(302)));
         String cacheControl = response.getHeaderString(HttpHeaders.CACHE_CONTROL);
-        Assert.assertNotNull(cacheControl);
+        Assertions.assertNotNull(cacheControl);
         Assert.assertThat(cacheControl, containsString("no-store"));
         Assert.assertThat(cacheControl, containsString("must-revalidate"));
     }
@@ -256,7 +269,7 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
 
         assertEquals("OpenIdConnect.AuthenticationProperties=2302984sdlk", state);
 
-        String codeId = events.expectLogin().assertEvent().getDetails().get(Details.CODE_ID);
+        EventAssertion.expectLoginSuccess(events.poll());
     }
 
     @Test
@@ -272,7 +285,7 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
             errorPage.assertCurrent();
             assertEquals("Invalid parameter: redirect_uri", errorPage.getError());
 
-            events.expectLogin().error(Errors.INVALID_REDIRECT_URI).user((String) null).session((String) null).clearDetails().assertEvent();
+            EventAssertion.assertError(events.poll()).type(EventType.LOGIN_ERROR).error(Errors.INVALID_REDIRECT_URI).userId(null).sessionId(null);
         }
     }
 
@@ -292,10 +305,10 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
 
             WaitUtils.waitForPageToLoad();
             // if not properly encoded %3E would be received instead of &gt;
-            Assert.assertEquals("Redirect page was not encoded", redirectUri, oauth.getDriver().getCurrentUrl());
+            Assertions.assertEquals(redirectUri, oauth.getDriver().getCurrentUrl(), "Redirect page was not encoded");
             String state = driver.findElement(By.id("state")).getText();
-            Assert.assertEquals(requestState, state);
-            Assert.assertNotNull(driver.findElement(By.id("code")).getText());
+            Assertions.assertEquals(requestState, state);
+            Assertions.assertNotNull(driver.findElement(By.id("code")).getText());
 
             events.expect(EventType.LOGIN)
                     .user(AssertEvents.isUUID())
@@ -322,14 +335,14 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
 
             WaitUtils.waitForPageToLoad();
             // if not properly encoded %3E would be received instead of &gt;
-            Assert.assertEquals("Redirect page was not encoded", redirectUri, oauth.getDriver().getCurrentUrl());
+            Assertions.assertEquals(redirectUri, oauth.getDriver().getCurrentUrl(), "Redirect page was not encoded");
             String responseTokenEncoded = driver.findElement(By.id("response")).getText();
             AuthorizationResponseToken responseToken = oauth.verifyAuthorizationResponseToken(responseTokenEncoded);
             assertEquals("test-app", responseToken.getAudience()[0]);
-            Assert.assertNotNull(responseToken.getOtherClaims().get("code"));
-            Assert.assertNull(responseToken.getOtherClaims().get("error"));
-            Assert.assertEquals(requestState, responseToken.getOtherClaims().get("state"));
-            Assert.assertNotNull(responseToken.getOtherClaims().get("code"));
+            Assertions.assertNotNull(responseToken.getOtherClaims().get("code"));
+            Assertions.assertNull(responseToken.getOtherClaims().get("error"));
+            Assertions.assertEquals(requestState, responseToken.getOtherClaims().get("state"));
+            Assertions.assertNotNull(responseToken.getOtherClaims().get("code"));
 
             events.expect(EventType.LOGIN)
                     .user(AssertEvents.isUUID())
@@ -354,7 +367,7 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
 
         assertEquals("\"><foo>bar_baz(2)far</foo>", state);
 
-        String codeId = events.expectLogin().assertEvent().getDetails().get(Details.CODE_ID);
+        EventAssertion.expectLoginSuccess(events.poll());
     }
 
 
@@ -364,25 +377,25 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
         oauth.responseMode(OIDCResponseMode.FRAGMENT.value());
         AuthorizationEndpointResponse response = oauth.loginForm().state("authorizationRequestFragmentResponseModeNotKept").doLogin("test-user@localhost", "password");
 
-        Assert.assertNotNull(response.getCode());
-        Assert.assertNotNull(response.getState());
+        Assertions.assertNotNull(response.getCode());
+        Assertions.assertNotNull(response.getState());
 
         URI currentUri = new URI(driver.getCurrentUrl());
-        Assert.assertNull(currentUri.getRawQuery());
-        Assert.assertNotNull(currentUri.getRawFragment());
+        Assertions.assertNull(currentUri.getRawQuery());
+        Assertions.assertNotNull(currentUri.getRawFragment());
 
         // Unset response_mode. The initial OIDC AuthenticationRequest won't contain "response_mode" parameter now and hence it should fallback to "query".
         oauth.responseMode(null);
         oauth.loginForm().state("authorizationRequestFragmentResponseModeNotKept2").open();
         response = oauth.parseLoginResponse();
 
-        Assert.assertNotNull(response.getCode());
-        Assert.assertNotNull(response.getState());
-        Assert.assertEquals(oauth.AUTH_SERVER_ROOT + "/realms/test", response.getIssuer());
+        Assertions.assertNotNull(response.getCode());
+        Assertions.assertNotNull(response.getState());
+        Assertions.assertEquals(oauth.AUTH_SERVER_ROOT + "/realms/test", response.getIssuer());
 
         currentUri = new URI(driver.getCurrentUrl());
-        Assert.assertNotNull(currentUri.getRawQuery());
-        Assert.assertNull(currentUri.getRawFragment());
+        Assertions.assertNotNull(currentUri.getRawQuery());
+        Assertions.assertNull(currentUri.getRawFragment());
     }
 
     @Test
@@ -398,7 +411,7 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
         assertEquals("invalid_request", response.getError());
         assertEquals("duplicated parameter", response.getErrorDescription());
 
-        events.expectLogin().error(Errors.INVALID_REQUEST).user((String) null).session((String) null).clearDetails().assertEvent();
+        EventAssertion.assertError(events.poll()).type(EventType.LOGIN_ERROR).error(Errors.INVALID_REQUEST).userId(null).sessionId(null);
     }
 
     @Test
@@ -414,7 +427,7 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
         assertTrue(errorPage.isCurrent());
         assertEquals("Invalid Request", errorPage.getError());
 
-        events.expectLogin().error(Errors.INVALID_REQUEST).user((String) null).session((String) null).client((String) null).clearDetails().assertEvent();
+        EventAssertion.assertError(events.poll()).type(EventType.LOGIN_ERROR).error(Errors.INVALID_REQUEST).userId(null).sessionId(null).clientId(null);
     }
 
 }

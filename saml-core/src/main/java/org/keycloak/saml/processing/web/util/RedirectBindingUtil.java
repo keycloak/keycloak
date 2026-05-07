@@ -152,8 +152,22 @@ public class RedirectBindingUtil {
      * @throws IOException
      */
     public static InputStream urlBase64DeflateDecode(String encodedString) throws IOException {
+        return urlBase64DeflateDecode(encodedString, DeflateUtil.DEFAULT_MAX_INFLATING_SIZE);
+    }
+
+    /**
+     * Apply URL decoding, followed by base64 decoding followed by deflate decompression
+     *
+     * @param encodedString
+     * @param maxInflatingSize
+     *
+     * @return
+     *
+     * @throws IOException
+     */
+    public static InputStream urlBase64DeflateDecode(String encodedString, long maxInflatingSize) throws IOException {
         byte[] deflatedString = urlBase64Decode(encodedString);
-        return DeflateUtil.decode(deflatedString);
+        return DeflateUtil.decode(deflatedString, maxInflatingSize);
     }
 
     /**
@@ -166,8 +180,22 @@ public class RedirectBindingUtil {
      * @throws IOException
      */
     public static InputStream base64DeflateDecode(String encodedString) throws IOException {
+        return base64DeflateDecode(encodedString, DeflateUtil.DEFAULT_MAX_INFLATING_SIZE);
+    }
+
+    /**
+     * Base64 decode followed by Deflate decoding
+     *
+     * @param encodedString
+     * @param maxInflatingSize
+     *
+     * @return
+     *
+     * @throws IOException
+     */
+    public static InputStream base64DeflateDecode(String encodedString, long maxInflatingSize) throws IOException {
         byte[] base64decodedMsg = Base64.getMimeDecoder().decode(encodedString);
-        return DeflateUtil.decode(base64decodedMsg);
+        return DeflateUtil.decode(base64decodedMsg, maxInflatingSize);
     }
 
     /**

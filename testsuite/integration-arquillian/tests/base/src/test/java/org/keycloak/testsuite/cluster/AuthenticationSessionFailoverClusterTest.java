@@ -22,18 +22,18 @@ import java.io.IOException;
 import jakarta.mail.MessagingException;
 
 import org.keycloak.cookie.CookieType;
-import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
 import org.keycloak.testsuite.pages.LoginUpdateProfilePage;
 
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 import org.openqa.selenium.Cookie;
 import org.openqa.selenium.WebDriver;
 
 import static org.keycloak.testsuite.util.WaitUtils.pause;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -63,16 +63,16 @@ public class AuthenticationSessionFailoverClusterTest extends AbstractFailoverCl
 
 
     protected void failoverTest(boolean expectSuccessfulFailover) throws IOException, MessagingException {
-        loginPage.open();
+        oauth.openLoginForm();
 
         String cookieValue1 = getAuthSessionCookieValue(driver);
 
-        // Login and assert on "updatePassword" page
+        // Login and assert on "updateProfile" page
         loginPage.login("login-test", "password");
-        updatePasswordPage.assertCurrent();
+        updateProfilePage.assertCurrent();
 
         // Route didn't change
-        Assert.assertEquals(cookieValue1, getAuthSessionCookieValue(driver));
+        Assertions.assertEquals(cookieValue1, getAuthSessionCookieValue(driver));
 
         log.info("Authentication session cookie: " + cookieValue1);
 
@@ -83,41 +83,41 @@ public class AuthenticationSessionFailoverClusterTest extends AbstractFailoverCl
         logFailoverSetup();
 
         // Trigger the action now
-        updatePasswordPage.changePassword("password", "password");
+        updateProfilePage.prepareUpdate().firstName("John").lastName("Doe3").email("john@doe3.com").submit();
 
         if (expectSuccessfulFailover) {
             //Action was successful
-            updateProfilePage.assertCurrent();
+            updatePasswordPage.assertCurrent();
 
             String cookieValue2 = getAuthSessionCookieValue(driver);
 
             log.info("Authentication session cookie after failover: " + cookieValue2);
 
             // Cookie was moved to the second node
-            Assert.assertEquals(cookieValue1.substring(0, 36), cookieValue2.substring(0, 36));
-            Assert.assertNotEquals(cookieValue1, cookieValue2);
+            Assertions.assertEquals(cookieValue1.substring(0, 36), cookieValue2.substring(0, 36));
+            Assertions.assertNotEquals(cookieValue1, cookieValue2);
 
         } else {
             loginPage.assertCurrent();
             String error = loginPage.getError();
             log.info("Failover not successful as expected. Error on login page: " + error);
-            Assert.assertNotNull(error);
+            Assertions.assertNotNull(error);
 
             loginPage.login("login-test", "password");
-            updatePasswordPage.changePassword("password", "password");
+            updateProfilePage.prepareUpdate().firstName("John").lastName("Doe3").email("john@doe3.com").submit();
         }
 
 
-        updateProfilePage.assertCurrent();
+        updatePasswordPage.assertCurrent();
 
-        // Successfully update profile and assert user logged
-        updateProfilePage.prepareUpdate().firstName("John").lastName("Doe3").email("john@doe3.com").submit();
+        // Successfully update password and assert user logged
+        updatePasswordPage.changePassword("password", "password");
         appPage.assertCurrent();
     }
 
     public static String getAuthSessionCookieValue(WebDriver driver) {
         Cookie authSessionCookie = driver.manage().getCookieNamed(CookieType.AUTH_SESSION_ID.getName());
-        Assert.assertNotNull(authSessionCookie);
+        Assertions.assertNotNull(authSessionCookie);
         return authSessionCookie.getValue();
     }
 }

@@ -29,6 +29,7 @@ import org.keycloak.admin.client.Keycloak;
 import org.keycloak.authentication.authenticators.browser.OTPFormAuthenticatorFactory;
 import org.keycloak.authentication.authenticators.browser.UsernamePasswordFormFactory;
 import org.keycloak.events.Details;
+import org.keycloak.events.EventType;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.Constants;
@@ -47,19 +48,20 @@ import org.keycloak.services.clientpolicy.condition.AcrCondition;
 import org.keycloak.services.clientpolicy.condition.AcrConditionFactory;
 import org.keycloak.services.clientpolicy.executor.AuthenticationFlowSelectorExecutor;
 import org.keycloak.services.clientpolicy.executor.AuthenticationFlowSelectorExecutorFactory;
+import org.keycloak.testframework.events.EventAssertion;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginTotpPage;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.ClientPoliciesUtil;
 import org.keycloak.testsuite.util.FlowUtil;
-import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.util.JsonSerialization;
 
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 /**
  * @author <a href="mailto:ggrazian@redhat.com">Giuseppe Graziano</a>
@@ -144,8 +146,7 @@ public class AcrAuthFlowTest extends AbstractOIDCScopeTest{
                 .password(password);
 
         if (totpSecret != null){
-            builder.totpSecret(totpSecret)
-                    .otpEnabled();
+            builder.totpSecret(totpSecret);
         }
 
         return builder.build();
@@ -192,12 +193,12 @@ public class AcrAuthFlowTest extends AbstractOIDCScopeTest{
      */
     @Before
     public void setupTest() {
-        oauth.clientId(CLIENT_ID);
+        oauth.client(CLIENT_ID);
         createPasswordFlow();
         createOTPFlow();
 
         // needed otherwise multiple OTP tests will fail due to token reuse
-        new RealmAttributeUpdater(testRealm())
+        new RealmAttributeUpdater(managedRealm.admin())
                 .setOtpPolicyCodeReusable(true)
                 .update();
     }
@@ -209,14 +210,14 @@ public class AcrAuthFlowTest extends AbstractOIDCScopeTest{
     public void cleanupTest() {
         try {
             ClientPoliciesRepresentation clientPolicies = JsonSerialization.readValue("{}", ClientPoliciesRepresentation.class);
-            adminClient.realm(TEST_REALM_NAME).clientPoliciesPoliciesResource().updatePolicies(clientPolicies);
+            managedRealm.admin().clientPoliciesPoliciesResource().updatePolicies(clientPolicies);
 
             ClientProfilesRepresentation clientProfilesRepresentation = JsonSerialization.readValue("{}", ClientProfilesRepresentation.class);
 
-            adminClient.realm(TEST_REALM_NAME).clientPoliciesProfilesResource().updateProfiles(clientProfilesRepresentation);
+            managedRealm.admin().clientPoliciesProfilesResource().updateProfiles(clientProfilesRepresentation);
         }
         catch (Exception e) {
-            Assert.fail();
+            Assertions.fail();
         }
 
     }
@@ -402,7 +403,7 @@ public class AcrAuthFlowTest extends AbstractOIDCScopeTest{
             adminClient.realm(realm).clientPoliciesPoliciesResource().updatePolicies(clientPolicies);
         }
         catch (Exception e) {
-            Assert.fail();
+            Assertions.fail();
         }
     }
 
@@ -434,7 +435,7 @@ public class AcrAuthFlowTest extends AbstractOIDCScopeTest{
      * @return The flow ID
      */
     private String findFlowByAlias(String alias){
-        return testRealm().flows().getFlows().stream().filter(f -> f.getAlias().equals(alias)).findFirst().orElseThrow().getId();
+        return managedRealm.admin().flows().getFlows().stream().filter(f -> f.getAlias().equals(alias)).findFirst().orElseThrow().getId();
     }
 
 
@@ -446,10 +447,12 @@ public class AcrAuthFlowTest extends AbstractOIDCScopeTest{
     private void logout(String userId, Tokens tokens){
         // Logout
         oauth.doLogout(tokens.refreshToken);
-        events.expectLogout(tokens.idToken.getSessionState())
-                .client(CLIENT_ID)
-                .user(userId)
-                .removeDetail(Details.REDIRECT_URI).assertEvent();
+        EventAssertion.assertSuccess(events.poll())
+                .type(EventType.LOGOUT)
+                .sessionId(tokens.idToken.getSessionState())
+                .clientId(CLIENT_ID)
+                .userId(userId)
+                .withoutDetails(Details.REDIRECT_URI);
     }
 
     /**
@@ -458,7 +461,7 @@ public class AcrAuthFlowTest extends AbstractOIDCScopeTest{
      * @param password The password to log in with
      */
     private void authenticatePassword(String username, String password){
-        Assert.assertTrue(loginPage.isCurrent());
+        Assertions.assertTrue(loginPage.isCurrent());
         loginPage.login(username, password);
     }
 
@@ -467,7 +470,7 @@ public class AcrAuthFlowTest extends AbstractOIDCScopeTest{
      * @param totpSecret The secret to use to generate the TOTP token
      */
     private void authenticateTOTP(String totpSecret){
-        Assert.assertTrue(loginTotpPage.isCurrent());
+        Assertions.assertTrue(loginTotpPage.isCurrent());
         setOtpTimeOffset(TimeBasedOTP.DEFAULT_INTERVAL_SECONDS, totp);
 
         loginTotpPage.login(totp.generateTOTP(totpSecret));
@@ -480,9 +483,8 @@ public class AcrAuthFlowTest extends AbstractOIDCScopeTest{
      * @return The tokens from a successful login
      */
     private Tokens assertLoginWithAcr(String userId, String expectedAcr){
-        EventRepresentation loginEvent = events.expectLogin()
-                .user(userId)
-                .assertEvent();
+        EventRepresentation loginEvent = EventAssertion.expectLoginSuccess(events.poll())
+                .userId(userId).getEvent();
 
         Tokens tokens = sendTokenRequest(loginEvent, userId, "openid", CLIENT_ID);
         assertAcr(tokens.idToken, expectedAcr);
@@ -501,10 +503,10 @@ public class AcrAuthFlowTest extends AbstractOIDCScopeTest{
         String acr = token.getAcr();
         getLogger().infof("Response acr = %s", acr);
         if (expectedAcr != null) {
-            Assert.assertNotNull(acr);
+            Assertions.assertNotNull(acr);
         }
 
-        Assert.assertEquals(acr, expectedAcr);
+        Assertions.assertEquals(acr, expectedAcr);
     }
 
 }

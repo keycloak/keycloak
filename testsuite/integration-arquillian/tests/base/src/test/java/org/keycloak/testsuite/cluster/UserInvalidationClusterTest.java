@@ -11,7 +11,7 @@ import org.keycloak.testsuite.arquillian.ContainerInfo;
 
 import org.apache.commons.lang.RandomStringUtils;
 
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 /**
  *

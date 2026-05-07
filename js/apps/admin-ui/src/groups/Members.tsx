@@ -143,12 +143,23 @@ export const Members = () => {
           membersQuery={(first, max) =>
             groups.listMembers({ id: id!, first, max })
           }
+          orgId={groups.getOrgId()}
           onAdd={async (selectedRows) => {
             try {
               await Promise.all(
-                selectedRows.map((user) =>
-                  adminClient.users.addToGroup({ id: user.id!, groupId: id! }),
-                ),
+                selectedRows.map(async (user) => {
+                  if (!groups.isOrgGroups()) {
+                    await adminClient.users.addToGroup({
+                      id: user.id!,
+                      groupId: id!,
+                    });
+                  } else {
+                    await groups.addMemberToOrgGroup({
+                      groupId: id!,
+                      userId: user.id!,
+                    });
+                  }
+                }),
               );
               addAlert(t("usersAdded", { count: selectedRows.length }));
             } catch (error) {
@@ -167,6 +178,7 @@ export const Members = () => {
             toggleShowMemberships();
           }}
           user={selectedUser!}
+          orgId={groups.getOrgId()}
         />
       )}
       <KeycloakDataTable
@@ -189,15 +201,17 @@ export const Members = () => {
                   {t("addMember")}
                 </Button>
               </ToolbarItem>
-              <ToolbarItem>
-                <Checkbox
-                  data-testid="includeSubGroupsCheck"
-                  label={t("includeSubGroups")}
-                  id="kc-include-sub-groups"
-                  isChecked={includeSubGroup}
-                  onChange={() => setIncludeSubGroup(!includeSubGroup)}
-                />
-              </ToolbarItem>
+              {!groups.isOrgGroups() && (
+                <ToolbarItem>
+                  <Checkbox
+                    data-testid="includeSubGroupsCheck"
+                    label={t("includeSubGroups")}
+                    id="kc-include-sub-groups"
+                    isChecked={includeSubGroup}
+                    onChange={() => setIncludeSubGroup(!includeSubGroup)}
+                  />
+                </ToolbarItem>
+              )}
               <ToolbarItem>
                 <Dropdown
                   onOpenChange={(isOpen) => setIsKebabOpen(isOpen)}
@@ -224,12 +238,19 @@ export const Members = () => {
                       onClick={async () => {
                         try {
                           await Promise.all(
-                            selectedRows.map((user) =>
-                              adminClient.users.delFromGroup({
-                                id: user.id!,
-                                groupId: id!,
-                              }),
-                            ),
+                            selectedRows.map(async (user) => {
+                              if (!groups.isOrgGroups()) {
+                                await adminClient.users.delFromGroup({
+                                  id: user.id!,
+                                  groupId: id!,
+                                });
+                              } else {
+                                await groups.removeMemberFromOrgGroup({
+                                  groupId: id!,
+                                  userId: user.id!,
+                                });
+                              }
+                            }),
                           );
                           setIsKebabOpen(false);
                           addAlert(
@@ -257,10 +278,17 @@ export const Members = () => {
                   title: t("leave"),
                   onRowClick: async (user) => {
                     try {
-                      await adminClient.users.delFromGroup({
-                        id: user.id!,
-                        groupId: id!,
-                      });
+                      if (!groups.isOrgGroups()) {
+                        await adminClient.users.delFromGroup({
+                          id: user.id!,
+                          groupId: id!,
+                        });
+                      } else {
+                        await groups.removeMemberFromOrgGroup({
+                          groupId: id!,
+                          userId: user.id!,
+                        });
+                      }
                       addAlert(t("usersLeft", { count: 1 }));
                     } catch (error) {
                       addError("usersLeftError", error);
@@ -306,12 +334,16 @@ export const Members = () => {
             instructions={isManager ? t("emptyInstructions") : undefined}
             primaryActionText={isManager ? t("addMember") : undefined}
             onPrimaryAction={() => setAddMembers(true)}
-            secondaryActions={[
-              {
-                text: t("includeSubGroups"),
-                onClick: () => setIncludeSubGroup(true),
-              },
-            ]}
+            secondaryActions={
+              !groups.isOrgGroups()
+                ? [
+                    {
+                      text: t("includeSubGroups"),
+                      onClick: () => setIncludeSubGroup(true),
+                    },
+                  ]
+                : []
+            }
           />
         }
       />

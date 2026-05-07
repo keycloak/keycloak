@@ -29,7 +29,8 @@ public class TimeOffsetSupplier implements Supplier<TimeOffSet, InjectTimeOffSet
         KeycloakUrls keycloakUrls = instanceContext.getDependency(KeycloakUrls.class);
 
         int initOffset = instanceContext.getAnnotation().offset();
-        return new TimeOffSet(httpClient, keycloakUrls.getMasterRealm(), initOffset);
+        boolean caches = instanceContext.getAnnotation().enableForCaches();
+        return new TimeOffSet(httpClient, keycloakUrls.getMasterRealm(), initOffset, caches);
     }
 
     @Override

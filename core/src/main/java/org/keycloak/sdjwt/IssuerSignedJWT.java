@@ -170,7 +170,8 @@ public class IssuerSignedJWT extends JwsToken {
         }
         if (sdArray.size() > 0 || nestedDisclosures) {
             // add sd alg only if ay disclosure.
-            payload.put(CLAIM_NAME_SD_HASH_ALGORITHM, hashAlg);
+            // Normalize to lowercase to comply with IANA registered hash algorithm names
+            payload.put(CLAIM_NAME_SD_HASH_ALGORITHM, hashAlg.toLowerCase());
         }
 
         // then put all other claims in the paypload

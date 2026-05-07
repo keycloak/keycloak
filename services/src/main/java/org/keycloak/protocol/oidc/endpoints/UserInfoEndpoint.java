@@ -121,6 +121,7 @@ public class UserInfoEndpoint {
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_JWT})
     public Response issueUserInfoGet() {
+        setNoCacheHeaders();
         setupCors();
         AppAuthManager.AuthHeader accessToken = AppAuthManager.extractAuthorizationHeaderTokenOrReturnNull(session.getContext().getRequestHeaders());
         authorization(accessToken);
@@ -132,6 +133,7 @@ public class UserInfoEndpoint {
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_JWT})
     public Response issueUserInfoPost() {
+        setNoCacheHeaders();
         setupCors();
 
         // Try header first
@@ -148,7 +150,7 @@ public class UserInfoEndpoint {
                 MultivaluedMap<String, String> formParams = request.getDecodedFormParameters();
                 checkAccessTokenDuplicated(formParams);
                 String accessToken = formParams.getFirst(OAuth2Constants.ACCESS_TOKEN);
-                authHeader = accessToken == null ? null : new AppAuthManager.AuthHeader(AppAuthManager.BEARER, accessToken);
+                authHeader = accessToken == null ? null : new AppAuthManager.AuthHeader(TokenUtil.TOKEN_TYPE_BEARER, accessToken);
                 authorization(authHeader);
             }
         } catch (IllegalArgumentException e) {
@@ -207,7 +209,7 @@ public class UserInfoEndpoint {
                 throw error.invalidToken("Client not found");
             }
 
-            cors.allowedOrigins(session, clientModel);
+            cors.checkAllowedOrigins(session, clientModel);
 
             TokenVerifier.createWithoutSignature(token)
                     .withChecks(NotBeforeCheck.forModel(clientModel), new TokenManager.TokenRevocationCheck(session))
@@ -279,7 +281,7 @@ public class UserInfoEndpoint {
 
         AccessToken userInfo = new AccessToken();
 
-        userInfo = tokenManager.transformUserInfoAccessToken(session, userInfo, userSession, clientSessionCtx);
+        userInfo = tokenManager.transformUserInfoAccessToken(session, token, userInfo, userSession, clientSessionCtx);
         Map<String, Object> claims = tokenManager.generateUserInfoClaims(userInfo, userModel);
 
         Response.ResponseBuilder responseBuilder;
@@ -366,6 +368,11 @@ public class UserInfoEndpoint {
     private void setupCors() {
         cors = Cors.builder().auth().allowedMethods(request.getHttpMethod()).auth().exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS);
         error.cors(cors);
+    }
+
+    private void setNoCacheHeaders() {
+        session.getContext().getHttpResponse().setHeader(HttpHeaders.CACHE_CONTROL, "no-store");
+        session.getContext().getHttpResponse().setHeader("Pragma", "no-cache");
     }
 
     private void authorization(AppAuthManager.AuthHeader authHeader) {

@@ -15,8 +15,8 @@ import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 
-import static org.keycloak.testsuite.admin.ApiUtil.findClientByClientId;
-import static org.keycloak.testsuite.admin.ApiUtil.findProtocolMapperByName;
+import static org.keycloak.testsuite.admin.AdminApiUtil.findClientByClientId;
+import static org.keycloak.testsuite.admin.AdminApiUtil.findProtocolMapperByName;
 
 /**
  * @author <a href="mailto:bruno@abstractj.org">Bruno Oliveira</a>.

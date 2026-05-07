@@ -17,17 +17,9 @@
 
 package org.keycloak.utils;
 
-import java.io.ByteArrayOutputStream;
-import java.util.Base64;
-
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.Base32;
-
-import com.google.zxing.BarcodeFormat;
-import com.google.zxing.client.j2se.MatrixToImageWriter;
-import com.google.zxing.common.BitMatrix;
-import com.google.zxing.qrcode.QRCodeWriter;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -53,14 +45,7 @@ public class TotpUtils {
             int width = 246;
             int height = 246;
 
-            QRCodeWriter writer = new QRCodeWriter();
-            final BitMatrix bitMatrix = writer.encode(keyUri, BarcodeFormat.QR_CODE, width, height);
-
-            ByteArrayOutputStream bos = new ByteArrayOutputStream();
-            MatrixToImageWriter.writeToStream(bitMatrix, "png", bos);
-            bos.close();
-
-            return Base64.getEncoder().encodeToString(bos.toByteArray());
+            return QRCodeUtils.encodeAsQRString(keyUri, width, height);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

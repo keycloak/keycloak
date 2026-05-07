@@ -103,7 +103,7 @@ import static org.keycloak.testsuite.util.SamlUtils.getSamlDeploymentForClient;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author hmlnarik
@@ -713,8 +713,8 @@ public class SamlClient {
 
         String samlResponse = encodedParams.getFirst(GeneralConstants.SAML_RESPONSE_KEY);
         String samlRequest = encodedParams.getFirst(GeneralConstants.SAML_REQUEST_KEY);
-        assertTrue("Only one SAMLRequest/SAMLResponse check", (samlResponse != null && samlRequest == null)
-                || (samlResponse == null && samlRequest != null));
+        assertTrue((samlResponse != null && samlRequest == null)
+                || (samlResponse == null && samlRequest != null), "Only one SAMLRequest/SAMLResponse check");
 
         String samlDoc = RedirectBindingUtil.urlDecode(samlResponse != null? samlResponse : samlRequest);
         SAMLDocumentHolder documentHolder = SAMLRequestParser.parseResponseRedirectBinding(samlDoc);

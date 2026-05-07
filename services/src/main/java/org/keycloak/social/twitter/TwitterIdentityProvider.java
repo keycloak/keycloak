@@ -289,6 +289,12 @@ public class TwitterIdentityProvider extends AbstractIdentityProvider<OAuth2Iden
     }
 
     @Override
+    public Response retrieveToken(KeycloakSession session, FederatedIdentityModel identity, UserSessionModel userSession, UserModel user) {
+        // not supported, this way we can remove this insecure management when V1 is removed
+        return exchangeNotSupported();
+    }
+
+    @Override
     public void authenticationFinished(AuthenticationSessionModel authSession, BrokeredIdentityContext context) {
         authSession.setUserSessionNote(UserAuthenticationIdentityProvider.FEDERATED_ACCESS_TOKEN, (String) context.getContextData().get(UserAuthenticationIdentityProvider.FEDERATED_ACCESS_TOKEN));
 

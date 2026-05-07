@@ -11,10 +11,12 @@ export const OID4VC_ATTRIBUTE_KEYS = [
   "vc.expiry_in_seconds",
   "vc.credential_build_config.token_jws_type",
   "vc.supported_credential_types",
-  "vc.credential_signing_alg",
   "vc.verifiable_credential_type",
   "vc.credential_build_config.sd_jwt.visible_claims",
   "vc.display",
+  "vc.binding_required",
+  "vc.binding_required_proof_types",
+  "vc.cryptographic_binding_methods_supported",
 ] as const;
 
 const isEmptyValue = (value: unknown) =>

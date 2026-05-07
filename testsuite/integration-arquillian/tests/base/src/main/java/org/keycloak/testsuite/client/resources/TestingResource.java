@@ -46,6 +46,7 @@ import org.infinispan.commons.time.TimeService;
 import org.jboss.resteasy.reactive.NoCache;
 
 /**
+ * For an implementation see TestingResourceProvider
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
  */
 
@@ -83,109 +84,6 @@ public interface TestingResource {
     @Path("/clear-admin-event-queue")
     @Produces(MediaType.APPLICATION_JSON)
     void clearAdminEventQueue();
-
-    @GET
-    @Path("/clear-event-store-for-realm")
-    @Produces(MediaType.APPLICATION_JSON)
-    void clearEventStore(@QueryParam("realmId") String realmId);
-
-    @GET
-    @Path("/clear-expired-events")
-    @Produces(MediaType.APPLICATION_JSON)
-    void clearExpiredEvents();
-
-    /**
-     * Query events
-     * <p>
-     * Returns all events, or filters them based on URL query parameters listed here
-     *
-     * @param realmId     The realm
-     * @param types       The types of events to return
-     * @param client      App or oauth client name
-     * @param user        User id
-     * @param dateFrom    From date
-     * @param dateTo      To date
-     * @param ipAddress   IP address
-     * @param firstResult Paging offset
-     * @param maxResults  Paging size
-     * @return
-     */
-    @Path("query-events")
-    @GET
-    @NoCache
-    @Produces(MediaType.APPLICATION_JSON)
-    public List<EventRepresentation> queryEvents(@QueryParam("realmId") String realmId, @QueryParam("type") List<String> types, @QueryParam("client") String client,
-                                                 @QueryParam("user") String user, @QueryParam("dateFrom") String dateFrom, @QueryParam("dateTo") String dateTo,
-                                                 @QueryParam("ipAddress") String ipAddress, @QueryParam("first") Integer firstResult,
-                                                 @QueryParam("max") Integer maxResults);
-
-    @PUT
-    @Path("/on-event")
-    @Consumes(MediaType.APPLICATION_JSON)
-    public void onEvent(final EventRepresentation rep);
-
-    @GET
-    @Path("/clear-admin-event-store-for-realm")
-    @Produces(MediaType.APPLICATION_JSON)
-    void clearAdminEventStore(@QueryParam("realmId") String realmId);
-
-    @GET
-    @Path("/clear-admin-event-store-older-than")
-    @Produces(MediaType.APPLICATION_JSON)
-    void clearAdminEventStore(@QueryParam("realmId") String realmId, @QueryParam("olderThan") long olderThan);
-
-    /**
-     * Get admin events
-     * <p>
-     * Returns all admin events, or filters events based on URL query parameters listed here
-     *
-     * @param realmId
-     * @param operationTypes
-     * @param authRealm
-     * @param authClient
-     * @param authUser       user id
-     * @param authIpAddress
-     * @param resourcePath
-     * @param dateFrom
-     * @param dateTo
-     * @param firstResult
-     * @param maxResults
-     * @return
-     */
-    @Path("query-admin-events")
-    @GET
-    @NoCache
-    @Produces(MediaType.APPLICATION_JSON)
-    public List<AdminEventRepresentation> getAdminEvents(@QueryParam("realmId") String realmId, @QueryParam("operationTypes") List<String> operationTypes, @QueryParam("authRealm") String authRealm, @QueryParam("authClient") String authClient,
-                                                         @QueryParam("authUser") String authUser, @QueryParam("authIpAddress") String authIpAddress,
-                                                         @QueryParam("resourcePath") String resourcePath, @QueryParam("dateFrom") String dateFrom,
-                                                         @QueryParam("dateTo") String dateTo, @QueryParam("first") Integer firstResult,
-                                                         @QueryParam("max") Integer maxResults);
-
-    @POST
-    @Path("/on-admin-event")
-    @Consumes(MediaType.APPLICATION_JSON)
-    void onAdminEvent(final AdminEventRepresentation rep, @QueryParam("includeRepresentation") boolean includeRepresentation);
-
-    @GET
-    @Path("/get-sso-cookie")
-    @Produces(MediaType.APPLICATION_JSON)
-    String getSSOCookieValue();
-
-    @POST
-    @Path("/remove-user-session")
-    @Produces(MediaType.APPLICATION_JSON)
-    void removeUserSession(@QueryParam("realm") final String realm, @QueryParam("session") final String sessionId);
-
-    @POST
-    @Path("/remove-user-sessions")
-    @Produces(MediaType.APPLICATION_JSON)
-    void removeUserSessions(@QueryParam("realm") final String realm);
-
-    @GET
-    @Path("/get-last-session-refresh")
-    @Produces(MediaType.APPLICATION_JSON)
-    Integer getLastSessionRefresh(@QueryParam("realm") final String realm, @QueryParam("session") final String sessionId, @QueryParam("offline") boolean offline);
 
     @POST
     @Path("/remove-expired")
@@ -265,34 +163,10 @@ public interface TestingResource {
     Map<String, Map<String, Object>> getTestAmphibianComponentDetails();
 
 
-    @GET
-    @Path("/identity-config")
-    @Produces(MediaType.APPLICATION_JSON)
-    Map<String, String> getIdentityProviderConfig(@QueryParam("alias") String alias);
-
     @PUT
     @Path("/set-krb5-conf-file")
     @Consumes(MediaType.APPLICATION_JSON)
     void setKrb5ConfFile(@QueryParam("krb5-conf-file") String krb5ConfFile);
-
-    @POST
-    @Path("/suspend-periodic-tasks")
-    @Produces(MediaType.APPLICATION_JSON)
-    Response suspendPeriodicTasks();
-
-    @POST
-    @Path("/restore-periodic-tasks")
-    @Produces(MediaType.APPLICATION_JSON)
-    Response restorePeriodicTasks();
-
-    @GET
-    @Path("/uncaught-error")
-    @Produces(MediaType.TEXT_HTML_UTF_8)
-    Response uncaughtError();
-
-    @GET
-    @Path("/uncaught-error")
-    Response uncaughtErrorJson();
 
     @POST
     @Path("/run-on-server")
@@ -376,16 +250,6 @@ public interface TestingResource {
     @Produces(MediaType.TEXT_HTML_UTF_8)
     Response simulatePostRequest(@QueryParam("postRequestUrl") String postRequestUrl,
                                  @QueryParam("encodedFormParameters") String encodedFormParameters);
-
-    /**
-     * Display message to Error Page - for testing purposes
-     *
-     * @param message message
-     */
-    @GET
-    @Produces(MediaType.APPLICATION_JSON)
-    @Path("/display-error-message")
-    Response displayErrorMessage(@QueryParam("message") String message);
 
     /**
      * @param providerClass Full name of class such as for example "org.keycloak.authentication.Authenticator"

@@ -61,9 +61,11 @@ According to the https://modelcontextprotocol.io/specification/draft/basic/autho
 | SHOULD
 | -
 | -
-| Not supported
+| Supported
 
 |======
+
+WARNING: The OAuth Client ID Metadata Document support in {project_name} is an experimental feature. It may introduce breaking changes in future versions of {project_name}.
 
 The MCP specification adopts https://datatracker.ietf.org/doc/html/rfc9728[OAuth 2.0 Protected Resource Metadata (RFC 9728)]. The standard is for an MCP server and not for an authorization server like {project_name}. Therefore, it is not included in the above table.
 
@@ -84,7 +86,7 @@ According to these criteria, the following table shows which MCP version {projec
 | Partially Supported without Resource Indicators for OAuth 2.0
 
 | https://modelcontextprotocol.io/specification/2025-11-25/basic/authorization[2025-11-25]
-| Partially Supported without Resource Indicators for OAuth 2.0 and OAuth Client ID Metadata Document
+| Partially Supported without Resource Indicators for OAuth 2.0
 
 |===
 
@@ -155,7 +157,114 @@ According to https://modelcontextprotocol.io/specification/2025-11-25/basic/auth
 * Pre-registration: When client and server have an existing relationship
 * Dynamic Client Registration: For backwards compatibility or specific requirements
 
-The Keycloak community is planning to support OAuth Client ID Metadata Document in the future. Until the support is completed, {project_name} can still accommodate an MCP client by pre-registration or Dynamic Client Registration.
+{project_name} supports OAuth Client ID Metadata Document. To use Client ID Metadata Documents, you need to enable the feature and set up a client policy so that {project_name} processes the `client_id` parameter formatted as a URL and fetches the client metadata from that URL.
+
+WARNING: The OAuth Client ID Metadata Document support is an experimental feature in {project_name}. As such, it may introduce breaking changes in future versions of {project_name}. To enable it, start {project_name} with `--features=cimd`.
+
+===== Setting up the client profile for OAuth Client ID Metadata Document
+
+To process an authorization request whose `client_id` metadata is a URL pointing to a Client ID Metadata Document, you need to create the profile including `client-id-metadata-document` executor.
+
+To configure the executor, create a client policy profile in the {project_name} Admin Console:
+
+. Navigate to *Realm Settings* -> *Client Policies* -> *Profiles* tab.
+. Click *Create client profile*.
+. Give the profile a name such as `cimd-profile` and click *Save*.
+. Click *Add executor* and select `client-id-metadata-document` from the list.
+. Configure the executor with the following options:
++
+* *Allow http scheme*: If `ON`, allows `http` scheme for the Client ID URL and Client Metadata URLs (e.g., `client_uri`, `logo_uri`, `tos_uri`, `policy_uri`, `jwks_uri`). This should only be `ON` in a development environment and must be `OFF` in a production environment.
+* *Trusted domains*: A list of domain patterns (wildcard) that the executor accepts for the Client ID URL and Client Metadata URL properties. For example, use `*.example.org` to accept any subdomain of `example.org`. If empty, all domains are denied.
+* *Restrict same domain*: If `ON`, the executor verifies that the Client ID URL and Redirect URI in an authorization request, as well as URL-valued properties of the client metadata, are all under the same trusted domain.
+* *Required properties*: A list of client metadata properties that must be present in the Client ID Metadata Document. If the fetched document does not include all the listed properties, the request is rejected.
+* *Only Allow Confidential Client*: If `ON`, the executor only accepts a Client Metadata Document representing a confidential client. In this case, the client metadata must include either a `jwks` or `jwks_uri` property and must use `private_key_jwt` or `tls_client_auth` as the token endpoint authentication method.
++
+. Click *Save*.
+
+===== Setting up the client policy for OAuth Client ID Metadata Document
+
+To trigger the profile created above when the `client_id` parameter in an authorization request is a URI matching a specified scheme (e.g., `https`), you need to create the policy including `client-id-uri` condition.
+
+To configure the condition, create a client policy in the {project_name} Admin Console:
+
+. Navigate to *Realm Settings* -> *Client Policies* -> *Policies* tab.
+. Click *Create client policy*.
+. Give the policy a name such as `cimd-policy` and click *Save*.
+. Under *Conditions*, click *Add condition* and select `client-id-uri` from the list.
+. Configure the condition with the following options:
++
+* *URI scheme*: A list of URI schemes to match against the `client_id` parameter (e.g., `https`). In a production environment, only `https` should be used.
+* *Trusted domains*: A list of domain patterns (wildcard) that the condition accepts for the host part of the `client_id` URI. If domains are filled, the condition evaluates to true only when the host part of the `client_id` matches one of the domains. If not filled, the condition evaluates to false regardless. For example, use `*.example.org` to accept any subdomain of `example.org`.
++
+. Click *Save*.
+. Under *Associated client profiles*, add the `cimd-profile` profile created in the previous step.
+. Click *Save*.
+
+With this configuration, when an MCP client sends an authorization request with a `client_id` value that is an `https` URL matching a trusted domain, {project_name} fetches the Client ID Metadata Document from that URL and uses the metadata to process the request.
+
+===== System-wide settings for the Client ID Metadata Document executor
+
+The `client-id-metadata-document` executor has the following system-wide settings that control caching and metadata size limits. These settings cannot be configured through the Admin Console. Instead, they are configured as SPI options when starting {project_name}.
+
+* *min-cache-time*: The minimum time (in seconds) that a fetched Client ID Metadata Document is cached. Default: `300` (5 minutes).
+* *max-cache-time*: The maximum time (in seconds) that a fetched Client ID Metadata Document is cached. Default: `259200` (3 days).
+* *upper-limit-metadata-bytes*: The maximum size (in bytes) of a Client ID Metadata Document that {project_name} accepts. Default: `5000` (5 KB).
+
+To configure these settings, use the `--spi-client-policy-executor--client-id-metadata-document--<property>=<value>` command-line option when starting {project_name}. For example:
+
+```bash
+bin/kc.[sh|bat] start --spi-client-policy-executor--client-id-metadata-document--min-cache-time=600 --spi-client-policy-executor--client-id-metadata-document--max-cache-time=86400 --spi-client-policy-executor--client-id-metadata-document--upper-limit-metadata-bytes=10000
+```
+
+=== Visual Studio Code desktop integration
+
+https://code.visualstudio.com/[Microsoft Visual Studio Code] (VS Code) desktop is an MCP client that supports OAuth Client ID Metadata Document. When VS Code desktop connects to an MCP server that requires authorization, it sends an authorization request with a `client_id` parameter that is an `https` URL hosted on `vscode.dev` (e.g., `+https://vscode.dev/mcp-client+`). {project_name} fetches the Client ID Metadata Document from this URL and uses the metadata to process the request.
+
+VS Code desktop uses localhost callbacks for the OAuth redirect. It starts a local HTTP server and uses a redirect URI such as `+http://127.0.0.1:<port>/callback+`. Because the redirect URI is on `127.0.0.1` rather than on the `vscode.dev` domain, the *Restrict same domain* option in the client profile executor must be set to `OFF`.
+
+To configure {project_name} for VS Code desktop's MCP client, follow the steps below.
+
+NOTE: VS Code desktop is a public client that uses PKCE (Proof Key for Code Exchange) for OAuth. It does not use a client secret.
+
+==== Starting {project_name} with the CIMD feature
+
+Start {project_name} with the `cimd` feature flag enabled:
+
+```bash
+bin/kc.[sh|bat] start --features=cimd
+```
+
+==== Setting up the client profile for VS Code desktop
+
+. Navigate to *Realm Settings* -> *Client Policies* -> *Profiles* tab.
+. Click *Create client profile*.
+. Give the profile a name such as `vscode-cimd-profile` and click *Save*.
+. Click *Add executor* and select `client-id-metadata-document` from the list.
+. Configure the executor with the following options:
++
+* *Allow http scheme*: `OFF`
+* *Trusted domains*: `vscode.dev`, `127.0.0.1`
+* *Restrict same domain*: `OFF` (VS Code desktop uses a localhost redirect URI such as `+http://127.0.0.1:<port>/callback+`, which is not on the same domain as `vscode.dev`)
+* *Only Allow Confidential Client*: `OFF` (VS Code desktop is a public client)
++
+. Click *Save*.
+
+==== Setting up the client policy for VS Code desktop
+
+. Navigate to *Realm Settings* -> *Client Policies* -> *Policies* tab.
+. Click *Create client policy*.
+. Give the policy a name such as `vscode-cimd-policy` and click *Save*.
+. Under *Conditions*, click *Add condition* and select `client-id-uri` from the list.
+. Configure the condition with the following options:
++
+* *URI scheme*: `https`
+* *Trusted domains*: `vscode.dev`
++
+. Click *Save*.
+. Under *Associated client profiles*, add the `vscode-cimd-profile` profile created in the previous step.
+. Click *Save*.
+
+With this configuration, when VS Code desktop sends an authorization request, {project_name} recognizes the `client_id` as a URL on `vscode.dev`, fetches the Client ID Metadata Document, and uses a localhost callback to complete the OAuth flow.
 
 
 </@tmpl.guide>

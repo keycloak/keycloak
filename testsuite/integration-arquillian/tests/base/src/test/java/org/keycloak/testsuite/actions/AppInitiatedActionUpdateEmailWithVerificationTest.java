@@ -33,7 +33,7 @@ import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.IgnoreBrowserDriver;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.InfoPage;
@@ -43,9 +43,9 @@ import org.keycloak.testsuite.util.WaitUtils;
 
 import org.hamcrest.Matchers;
 import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
@@ -54,8 +54,8 @@ import org.openqa.selenium.firefox.FirefoxDriver;
 import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class AppInitiatedActionUpdateEmailWithVerificationTest extends AbstractAppInitiatedActionUpdateEmailTest {
 
@@ -88,7 +88,7 @@ public class AppInitiatedActionUpdateEmailWithVerificationTest extends AbstractA
 		emailUpdatePage.changeEmail(newEmail);
 
 		events.expect(EventType.SEND_VERIFY_EMAIL).detail(Details.EMAIL, newEmail).assertEvent();
-		Assert.assertEquals("test-user@localhost", ActionUtil.findUserWithAdminClient(adminClient, "test-user@localhost").getEmail());
+		Assertions.assertEquals("test-user@localhost", ActionUtil.findUserWithAdminClient(adminClient, "test-user@localhost").getEmail());
 
 		driver.navigate().to(fetchEmailConfirmationLink(newEmail));
 
@@ -104,7 +104,7 @@ public class AppInitiatedActionUpdateEmailWithVerificationTest extends AbstractA
 				.detail(Details.PREVIOUS_EMAIL, "test-user@localhost")
 				.detail(Details.UPDATED_EMAIL, "new@localhost");
 
-		Assert.assertEquals("new@localhost", ActionUtil.findUserWithAdminClient(adminClient, "test-user@localhost").getEmail());
+		Assertions.assertEquals("new@localhost", ActionUtil.findUserWithAdminClient(adminClient, "test-user@localhost").getEmail());
 	}
 
 	@Test
@@ -120,7 +120,7 @@ public class AppInitiatedActionUpdateEmailWithVerificationTest extends AbstractA
 		UserRepresentation user = ActionUtil.findUserWithAdminClient(adminClient, "test-user@localhost");
 		user.setEmail("very-new@localhost");
 		user.setEmailVerified(true);
-		testRealm().users().get(user.getId()).update(user);
+		managedRealm.admin().users().get(user.getId()).update(user);
 
 		driver.navigate().to(confirmationLink);
 
@@ -141,7 +141,7 @@ public class AppInitiatedActionUpdateEmailWithVerificationTest extends AbstractA
 		UserRepresentation otherUser = ActionUtil.findUserWithAdminClient(adminClient, "john-doh@localhost");
 		otherUser.setEmail("new@localhost");
 		otherUser.setEmailVerified(true);
-		testRealm().users().get(otherUser.getId()).update(otherUser);
+		managedRealm.admin().users().get(otherUser.getId()).update(otherUser);
 
 		driver.navigate().to(confirmationLink);
 
@@ -151,10 +151,10 @@ public class AppInitiatedActionUpdateEmailWithVerificationTest extends AbstractA
 
 	private String fetchEmailConfirmationLink(String emailRecipient) throws MessagingException, IOException {
 		MimeMessage[] receivedMessages = greenMail.getReceivedMessages();
-		Assert.assertEquals(1, receivedMessages.length);
+		Assertions.assertEquals(1, receivedMessages.length);
 		MimeMessage message = receivedMessages[0];
 		Address[] recipients = message.getRecipients(Message.RecipientType.TO);
-		Assert.assertTrue(recipients.length >= 1);
+		Assertions.assertTrue(recipients.length >= 1);
 		assertEquals(emailRecipient, recipients[0].toString());
 
 		return MailUtils.getPasswordResetEmailLink(message).trim();
@@ -170,7 +170,7 @@ public class AppInitiatedActionUpdateEmailWithVerificationTest extends AbstractA
 		emailUpdatePage.changeEmail("new@localhost");
 
 		events.expect(EventType.SEND_VERIFY_EMAIL).detail(Details.EMAIL, "new@localhost").assertEvent();
-		Assert.assertEquals("test-user@localhost", ActionUtil.findUserWithAdminClient(adminClient, "test-user@localhost").getEmail());
+		Assertions.assertEquals("test-user@localhost", ActionUtil.findUserWithAdminClient(adminClient, "test-user@localhost").getEmail());
 		String link = fetchEmailConfirmationLink("new@localhost");
 		String token = link.substring(link.indexOf("key=") + "key=".length()).split("&")[0];
 		try {
@@ -191,13 +191,13 @@ public class AppInitiatedActionUpdateEmailWithVerificationTest extends AbstractA
 		events.expect(EventType.UPDATE_EMAIL)
 				.detail(Details.PREVIOUS_EMAIL, "test-user@localhost")
 				.detail(Details.UPDATED_EMAIL, "new@localhost");
-		Assert.assertEquals("new@localhost", ActionUtil.findUserWithAdminClient(adminClient, "test-user@localhost").getEmail());
+		Assertions.assertEquals("new@localhost", ActionUtil.findUserWithAdminClient(adminClient, "test-user@localhost").getEmail());
 	}
 
 	@Test
 	@IgnoreBrowserDriver(value={ChromeDriver.class, FirefoxDriver.class}, negate=true)
 	public void updateEmailWithVerificationBackToApplicationInCleanBrowserShouldTriggerAuth() throws Exception {
-		ClientRepresentation client = ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app").toRepresentation();
+		ClientRepresentation client = AdminApiUtil.findClientByClientId(adminClient.realm("test"), "test-app").toRepresentation();
 		String originalBaseUrl = client.getBaseUrl();
 		List<String> originalRedirectUris = new ArrayList<>(client.getRedirectUris());
 		
@@ -205,7 +205,7 @@ public class AppInitiatedActionUpdateEmailWithVerificationTest extends AbstractA
 		String authServerBaseUrl = getAuthServerContextRoot() + "/auth";
 		client.setBaseUrl(authServerBaseUrl + "/admin/master/console/");
 		client.setRedirectUris(List.of(authServerBaseUrl + "/realms/master/app/auth/*", authServerBaseUrl + "/realms/test/app/auth/*"));
-		testRealm().clients().get(client.getId()).update(client);
+		managedRealm.admin().clients().get(client.getId()).update(client);
 		
 		try {
 			doAIA();
@@ -238,13 +238,13 @@ public class AppInitiatedActionUpdateEmailWithVerificationTest extends AbstractA
             events.expect(EventType.UPDATE_EMAIL)
                     .detail(Details.PREVIOUS_EMAIL, "test-user@localhost")
                     .detail(Details.UPDATED_EMAIL, "new@localhost");
-            Assert.assertEquals("new@localhost", ActionUtil.findUserWithAdminClient(adminClient, "test-user@localhost").getEmail());
+            Assertions.assertEquals("new@localhost", ActionUtil.findUserWithAdminClient(adminClient, "test-user@localhost").getEmail());
 		
 		} finally {
 			// Restore original client configuration
 			client.setBaseUrl(originalBaseUrl);
 			client.setRedirectUris(originalRedirectUris);
-			testRealm().clients().get(client.getId()).update(client);
+			managedRealm.admin().clients().get(client.getId()).update(client);
 		}
 	}
 }

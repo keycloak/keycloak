@@ -1,4 +1,4 @@
-import { test } from "@playwright/test";
+import { test, expect } from "@playwright/test";
 import adminClient from "../utils/AdminClient.ts";
 import { clickSaveButton } from "../utils/form.ts";
 import { login } from "../utils/login.ts";
@@ -6,17 +6,24 @@ import {
   assertAxeViolations,
   assertNotificationMessage,
 } from "../utils/masthead.ts";
+import { confirmModal } from "../utils/modal.ts";
 import { goToClients, goToRealm } from "../utils/sidebar.ts";
 import {
   assertRowExists,
+  clickRowKebabItem,
   clickTableRowItem,
   searchItem,
 } from "../utils/table.ts";
 import {
   assertClipboardHasText,
   assertDownload,
+  assertEmptyStateNotVisible,
+  assertTableIsPopulated,
+  assertResource,
+  assertRowNotVisible,
   clickAuthenticationSaveButton,
   clickCopyButton,
+  clickNextPage,
   createAuthorizationScope,
   createPermission,
   createPolicy,
@@ -87,6 +94,44 @@ test.describe.serial("Client authentication subtab", () => {
     await clickSaveButton(page);
 
     await assertNotificationMessage(page, "Resource successfully updated");
+  });
+
+  test("Should navigate to previous page when last resource on current page is deleted", async ({
+    page,
+  }) => {
+    for (let i = 0; i < 15; i++) {
+      const paddedIndex = i.toString().padStart(2, "0");
+      await adminClient.createResource(clientId, {
+        name: `Z Paginated Resource ${paddedIndex}`,
+      });
+    }
+
+    try {
+      await goToResourcesSubTab(page);
+      await assertTableIsPopulated(page);
+
+      await clickNextPage(page);
+      await assertResource(page, "Z Paginated Resource 10");
+
+      for (let i = 10; i < 15; i++) {
+        const paddedIndex = i.toString().padStart(2, "0");
+        const resourceName = `Z Paginated Resource ${paddedIndex}`;
+
+        await clickRowKebabItem(page, resourceName, "Delete");
+        await confirmModal(page);
+        await assertRowNotVisible(page, resourceName);
+      }
+
+      await assertEmptyStateNotVisible(page);
+      await assertTableIsPopulated(page);
+    } finally {
+      for (let i = 0; i < 15; i++) {
+        const paddedIndex = i.toString().padStart(2, "0");
+        await adminClient.deleteResource(clientId, {
+          name: `Z Paginated Resource ${paddedIndex}`,
+        });
+      }
+    }
   });
 
   test("Should create a scope", async ({ page }) => {
@@ -258,5 +303,52 @@ test.describe.serial("Accessibility tests for client authorization", () => {
     page,
   }) => {
     await assertAxeViolations(page);
+  });
+});
+
+test.describe.serial("Client authorization resources pagination", () => {
+  const clientId = `client-authz-pagination-${crypto.randomUUID()}`;
+
+  test.beforeAll(async () => {
+    await adminClient.createClient({
+      protocol: "openid-connect",
+      clientId,
+      publicClient: false,
+      authorizationServicesEnabled: true,
+      serviceAccountsEnabled: true,
+      standardFlowEnabled: true,
+    });
+
+    for (let i = 1; i <= 11; i++) {
+      await adminClient.createResource(clientId, {
+        name: `Resource-${i.toString().padStart(2, "0")}`,
+        displayName: `Display Resource ${i}`,
+        type: "urn:pagination:test",
+      });
+    }
+  });
+
+  test.afterAll(async () => {
+    await adminClient.deleteClient(clientId);
+  });
+
+  test.beforeEach(async ({ page }) => {
+    await login(page);
+    await goToClients(page);
+    await searchItem(page, "Search for client", clientId);
+    await clickTableRowItem(page, clientId);
+    await goToAuthorizationTab(page);
+    await goToResourcesSubTab(page);
+  });
+
+  test("Should not duplicate the 10th item on the 2nd page", async ({
+    page,
+  }) => {
+    await page.waitForSelector("table");
+    await expect(page.getByText("Resource-10", { exact: true })).toBeVisible();
+    await expect(page.getByText("Resource-11", { exact: true })).toBeHidden();
+    await page.locator('[aria-label="Go to next page"]').first().click();
+    await expect(page.getByText("Resource-11", { exact: true })).toBeVisible();
+    await expect(page.getByText("Resource-10", { exact: true })).toBeHidden();
   });
 });

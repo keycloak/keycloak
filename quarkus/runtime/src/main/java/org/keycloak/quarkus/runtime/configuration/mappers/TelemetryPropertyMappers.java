@@ -22,7 +22,6 @@ import io.quarkus.runtime.configuration.DurationConverter;
 import io.smallrye.config.ConfigSourceInterceptorContext;
 import org.jboss.logging.Logger;
 
-import static org.keycloak.config.TelemetryOptions.TELEMETRY_ENABLED;
 import static org.keycloak.config.TelemetryOptions.TELEMETRY_ENDPOINT;
 import static org.keycloak.config.TelemetryOptions.TELEMETRY_HEADER;
 import static org.keycloak.config.TelemetryOptions.TELEMETRY_LOGS_ENABLED;
@@ -44,12 +43,12 @@ import static org.keycloak.config.TracingOptions.TRACING_HEADER;
 import static org.keycloak.config.WildcardOptionsUtil.getWildcardPrefix;
 import static org.keycloak.config.WildcardOptionsUtil.getWildcardValue;
 import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX;
+import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromFeature;
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
 
 public class TelemetryPropertyMappers implements PropertyMapperGrouping{
     private static final Logger log = Logger.getLogger(TelemetryPropertyMappers.class);
 
-    private static final String OTEL_FEATURE_ENABLED_MSG = "'opentelemetry' feature is enabled";
     private static final String OTEL_COLLECTOR_ENABLED_MSG = "any of available OpenTelemetry components (Logs, Metrics, Traces) is turned on";
     private static final String OTEL_LOGS_FEATURE_ENABLED_MSG = "feature '%s' is enabled".formatted(Profile.Feature.OPENTELEMETRY_LOGS.getVersionedKey());
     private static final String OTEL_LOGS_ENABLED_MSG = "Telemetry Logs functionality ('%s') is enabled".formatted(TELEMETRY_LOGS_ENABLED.getKey());
@@ -60,8 +59,7 @@ public class TelemetryPropertyMappers implements PropertyMapperGrouping{
     public List<? extends PropertyMapper<?>> getPropertyMappers() {
         TELEMETRY_HEADERS_CACHE = null;
         return List.of(
-                fromOption(TELEMETRY_ENABLED)
-                        .isEnabled(TelemetryPropertyMappers::isOtelFeatureEnabled, OTEL_FEATURE_ENABLED_MSG)
+                fromFeature(Profile.Feature.OPENTELEMETRY)
                         .transformer(TelemetryPropertyMappers::checkIfDependantsAreEnabled)
                         .to("quarkus.otel.enabled")
                         .build(),

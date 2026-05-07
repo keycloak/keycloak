@@ -49,6 +49,14 @@ public interface WorkflowsResource {
     @Path("{id}")
     WorkflowResource workflow(@PathParam("id") String id);
 
+    /**
+     * Migrate scheduled resources from one step to another
+     *
+     * @param stepFrom A String representing the id of the step to migrate from
+     * @param stepTo A String representing the id of the step to migrate to
+     * @return No content response (status 204) if everything is OK. Error response (status 400) otherwise
+     * @since Keycloak server 26.6.0
+     */
     @POST
     @Path("migrate")
     Response migrate(@QueryParam("from") String stepFrom, @QueryParam("to") String stepTo);

@@ -104,7 +104,7 @@ public final class ExportPropertyMappers implements PropertyMapperGrouping {
             .category(OptionCategory.EXPORT)
             .description("Placeholder for determining export mode")
             .buildTime(false)
-            .hidden()
+            .synthetic()
             .build();
 
     private static boolean isSingleFileProvider() {

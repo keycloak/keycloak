@@ -32,12 +32,13 @@ import org.keycloak.organization.authentication.authenticators.browser.Organizat
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.idm.AuthenticationExecutionInfoRepresentation;
 import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
+import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.OrganizationDomainRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testsuite.AbstractAdminTest;
-import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.IgnoreBrowserDriver;
 import org.keycloak.testsuite.util.WaitUtils;
@@ -47,6 +48,7 @@ import org.keycloak.testsuite.webauthn.authenticators.DefaultVirtualAuthOptions;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 import org.openqa.selenium.By;
 import org.openqa.selenium.firefox.FirefoxDriver;
 
@@ -109,12 +111,11 @@ public class PasskeysOrganizationAuthenticationTest extends AbstractWebAuthnVirt
 
             appPage.assertCurrent();
 
-            events.expectLogin()
-                    .user(user.getId())
-                    .detail(Details.USERNAME, user.getUsername())
-                    .detail(Details.CREDENTIAL_TYPE, WebAuthnCredentialModel.TYPE_PASSWORDLESS)
-                    .detail(WebAuthnConstants.USER_VERIFICATION_CHECKED, "true")
-                    .assertEvent();
+            EventAssertion.expectLoginSuccess(events.poll())
+                    .userId(user.getId())
+                    .details(Details.USERNAME, user.getUsername())
+                    .details(Details.CREDENTIAL_TYPE, WebAuthnCredentialModel.TYPE_PASSWORDLESS)
+                    .details(WebAuthnConstants.USER_VERIFICATION_CHECKED, "true");
 
             logout();
             events.clear();
@@ -126,12 +127,11 @@ public class PasskeysOrganizationAuthenticationTest extends AbstractWebAuthnVirt
 
             appPage.assertCurrent();
 
-            events.expectLogin()
-                    .user(user.getId())
-                    .detail(Details.USERNAME, user.getUsername())
-                    .detail(Details.CREDENTIAL_TYPE, WebAuthnCredentialModel.TYPE_PASSWORDLESS)
-                    .detail(WebAuthnConstants.USER_VERIFICATION_CHECKED, "true")
-                    .assertEvent();
+            EventAssertion.expectLoginSuccess(events.poll())
+                    .userId(user.getId())
+                    .details(Details.USERNAME, user.getUsername())
+                    .details(Details.CREDENTIAL_TYPE, WebAuthnCredentialModel.TYPE_PASSWORDLESS)
+                    .details(WebAuthnConstants.USER_VERIFICATION_CHECKED, "true");
 
             logout();
         }
@@ -142,16 +142,16 @@ public class PasskeysOrganizationAuthenticationTest extends AbstractWebAuthnVirt
         getVirtualAuthManager().useAuthenticator(DefaultVirtualAuthOptions.PASSKEYS.getOptions());
 
         // enable organization configuration
-        AuthenticationExecutionInfoRepresentation organizationExec = testRealm().flows().getExecutions("browser-webauthn-conditional-organization").stream()
+        AuthenticationExecutionInfoRepresentation organizationExec = managedRealm.admin().flows().getExecutions("browser-webauthn-conditional-organization").stream()
                 .filter(exec -> OrganizationAuthenticatorFactory.ID.equals(exec.getProviderId()))
                 .findAny()
                 .orElse(null);
-        Assert.assertNotNull("Organization execution not found", organizationExec);
+        Assertions.assertNotNull(organizationExec, "Organization execution not found");
 
         AuthenticatorConfigRepresentation config = new AuthenticatorConfigRepresentation();
         config.setAlias(KeycloakModelUtils.generateId());
         config.getConfig().put(OrganizationAuthenticatorFactory.REQUIRES_USER_MEMBERSHIP, Boolean.TRUE.toString());
-        getCleanup().addAuthenticationConfigId(ApiUtil.getCreatedId(testRealm().flows().newExecutionConfig(organizationExec.getId(), config)));
+        getCleanup().addAuthenticationConfigId(ApiUtil.getCreatedId(managedRealm.admin().flows().newExecutionConfig(organizationExec.getId(), config)));
 
         // set passwordless policy for discoverable keys
         try (Closeable c = getWebAuthnRealmUpdater()
@@ -215,7 +215,7 @@ public class PasskeysOrganizationAuthenticationTest extends AbstractWebAuthnVirt
             MatcherAssert.assertThat(driver.findElement(By.xpath("//form[@id='webauth']")), Matchers.notNullValue());
             loginPage.login("invalid-password");
             loginPage.assertCurrent();
-            MatcherAssert.assertThat(loginPage.getPasswordInputError(), Matchers.is("Invalid password."));
+            MatcherAssert.assertThat(loginPage.getPasswordInputError(), Matchers.is("Invalid username or password."));
             events.expect(EventType.LOGIN_ERROR)
                     .error(Errors.INVALID_USER_CREDENTIALS)
                     .user(user.getId())
@@ -226,11 +226,11 @@ public class PasskeysOrganizationAuthenticationTest extends AbstractWebAuthnVirt
             MatcherAssert.assertThat(driver.findElement(By.xpath("//form[@id='webauth']")), Matchers.notNullValue());
             loginPage.login(getPassword(USERNAME));
             appPage.assertCurrent();
-            events.expectLogin()
-                    .user(user.getId())
-                    .detail(Details.USERNAME, "UserWebAuthn")
-                    .detail(Details.CREDENTIAL_TYPE, Matchers.nullValue())
-                    .assertEvent();
+            EventRepresentation eventRep = events.poll();
+            EventAssertion.expectLoginSuccess(eventRep)
+                    .userId(user.getId())
+                    .details(Details.USERNAME, "UserWebAuthn");
+            MatcherAssert.assertThat(eventRep.getDetails().get(Details.CREDENTIAL_TYPE), Matchers.nullValue());
         }
     }
 
@@ -270,12 +270,11 @@ public class PasskeysOrganizationAuthenticationTest extends AbstractWebAuthnVirt
             webAuthnLoginPage.clickAuthenticate();
             appPage.assertCurrent();
 
-            events.expectLogin()
-                    .user(user.getId())
-                    .detail(Details.USERNAME, user.getUsername())
-                    .detail(Details.CREDENTIAL_TYPE, WebAuthnCredentialModel.TYPE_PASSWORDLESS)
-                    .detail(WebAuthnConstants.USER_VERIFICATION_CHECKED, "true")
-                    .assertEvent();
+            EventAssertion.expectLoginSuccess(events.poll())
+                    .userId(user.getId())
+                    .details(Details.USERNAME, user.getUsername())
+                    .details(Details.CREDENTIAL_TYPE, WebAuthnCredentialModel.TYPE_PASSWORDLESS)
+                    .details(WebAuthnConstants.USER_VERIFICATION_CHECKED, "true");
             logout();
         }
     }
@@ -309,12 +308,11 @@ public class PasskeysOrganizationAuthenticationTest extends AbstractWebAuthnVirt
 
             appPage.assertCurrent();
 
-            events.expectLogin()
-                    .user(user.getId())
-                    .detail(Details.USERNAME, user.getUsername())
-                    .detail(Details.CREDENTIAL_TYPE, WebAuthnCredentialModel.TYPE_PASSWORDLESS)
-                    .detail(WebAuthnConstants.USER_VERIFICATION_CHECKED, "true")
-                    .assertEvent();
+            EventAssertion.expectLoginSuccess(events.poll())
+                    .userId(user.getId())
+                    .details(Details.USERNAME, user.getUsername())
+                    .details(Details.CREDENTIAL_TYPE, WebAuthnCredentialModel.TYPE_PASSWORDLESS)
+                    .details(WebAuthnConstants.USER_VERIFICATION_CHECKED, "true");
 
             // Re-authentication now with prompt=login. Passkeys login should be possible.
             oauth.loginForm()
@@ -328,12 +326,11 @@ public class PasskeysOrganizationAuthenticationTest extends AbstractWebAuthnVirt
             webAuthnLoginPage.clickAuthenticate();
             appPage.assertCurrent();
 
-            events.expectLogin()
-                    .user(user.getId())
-                    .detail(Details.USERNAME, user.getUsername())
-                    .detail(Details.CREDENTIAL_TYPE, WebAuthnCredentialModel.TYPE_PASSWORDLESS)
-                    .detail(WebAuthnConstants.USER_VERIFICATION_CHECKED, "true")
-                    .assertEvent();
+            EventAssertion.expectLoginSuccess(events.poll())
+                    .userId(user.getId())
+                    .details(Details.USERNAME, user.getUsername())
+                    .details(Details.CREDENTIAL_TYPE, WebAuthnCredentialModel.TYPE_PASSWORDLESS)
+                    .details(WebAuthnConstants.USER_VERIFICATION_CHECKED, "true");
 
             logout();
         }

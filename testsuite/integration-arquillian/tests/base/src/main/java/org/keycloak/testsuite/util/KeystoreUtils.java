@@ -40,7 +40,7 @@ import org.keycloak.representations.idm.CertificateRepresentation;
 import org.junit.Assume;
 import org.junit.rules.TemporaryFolder;
 
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

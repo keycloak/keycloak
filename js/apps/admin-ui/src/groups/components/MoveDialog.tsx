@@ -1,10 +1,9 @@
-import type KeycloakAdminClient from "@keycloak/keycloak-admin-client";
 import type GroupRepresentation from "@keycloak/keycloak-admin-client/lib/defs/groupRepresentation";
+import type Groups from "@keycloak/keycloak-admin-client/lib/resources/groups";
 import { useTranslation } from "react-i18next";
-import { useAdminClient } from "../../admin-client";
 import { useAlerts } from "@keycloak/keycloak-ui-shared";
 import { GroupPickerDialog } from "../../components/group/GroupPickerDialog";
-import { GroupResourceContext } from "../../context/group-resource/GroupResourceContext";
+import { useGroupResource } from "../../context/group-resource/GroupResourceContext";
 
 type MoveDialogProps = {
   source: GroupRepresentation;
@@ -13,21 +12,19 @@ type MoveDialogProps = {
 };
 
 const moveToRoot = (
-  adminClient: KeycloakAdminClient,
+  groupsResource: Groups.Groups,
   source: GroupRepresentation,
 ) =>
-  source.id
-    ? adminClient.groups.updateRoot(source)
-    : adminClient.groups.create(source);
+  source.id ? groupsResource.updateRoot(source) : groupsResource.create(source);
 
 const moveToGroup = async (
-  adminClient: KeycloakAdminClient,
+  groupsResource: Groups.Groups,
   source: GroupRepresentation,
   dest: GroupRepresentation,
-) => adminClient.groups.updateChildGroup({ id: dest.id! }, source);
+) => groupsResource.updateChildGroup({ id: dest.id! }, source);
 
 export const MoveDialog = ({ source, onClose, refresh }: MoveDialogProps) => {
-  const { adminClient } = useAdminClient();
+  const groupsResource = useGroupResource();
 
   const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
@@ -35,8 +32,8 @@ export const MoveDialog = ({ source, onClose, refresh }: MoveDialogProps) => {
   const moveGroup = async (group?: GroupRepresentation[]) => {
     try {
       await (group
-        ? moveToGroup(adminClient, source, group[0])
-        : moveToRoot(adminClient, source));
+        ? moveToGroup(groupsResource, source, group[0])
+        : moveToRoot(groupsResource, source));
       refresh();
       addAlert(t("moveGroupSuccess"));
     } catch (error) {
@@ -45,18 +42,16 @@ export const MoveDialog = ({ source, onClose, refresh }: MoveDialogProps) => {
   };
 
   return (
-    <GroupResourceContext value={adminClient.groups}>
-      <GroupPickerDialog
-        type="selectOne"
-        filterGroups={[source]}
-        text={{
-          title: "moveToGroup",
-          ok: "moveHere",
-        }}
-        onClose={onClose}
-        onConfirm={moveGroup}
-        isMove
-      />
-    </GroupResourceContext>
+    <GroupPickerDialog
+      type="selectOne"
+      filterGroups={[source]}
+      text={{
+        title: "moveToGroup",
+        ok: "moveHere",
+      }}
+      onClose={onClose}
+      onConfirm={moveGroup}
+      isMove
+    />
   );
 };

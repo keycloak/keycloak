@@ -37,8 +37,8 @@ import org.keycloak.testsuite.util.UIUtils;
 import org.keycloak.validate.validators.LengthValidator;
 
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.firefox.FirefoxDriver;
 import org.openqa.selenium.support.FindBy;
@@ -47,8 +47,8 @@ import static org.keycloak.userprofile.UserProfileConstants.ROLE_USER;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class AppInitiatedActionUpdateEmailTest extends AbstractAppInitiatedActionUpdateEmailTest {
 
@@ -59,13 +59,13 @@ public class AppInitiatedActionUpdateEmailTest extends AbstractAppInitiatedActio
     public void after() {
         setTimeOffset(0);
         // update email required action max auth age back to default
-        Optional<RequiredActionProviderRepresentation> updateEmailAction = testRealm().flows().getRequiredActions()
+        Optional<RequiredActionProviderRepresentation> updateEmailAction = managedRealm.admin().flows().getRequiredActions()
                 .stream()
                 .filter(requiredAction -> requiredAction.getProviderId().equals(UserModel.RequiredAction.UPDATE_EMAIL.name()))
                 .findFirst();
         if (updateEmailAction.isPresent()) {
             updateEmailAction.get().getConfig().remove(Constants.MAX_AUTH_AGE_KEY);
-            testRealm().flows().updateRequiredAction(UserModel.RequiredAction.UPDATE_EMAIL.name(), updateEmailAction.get());
+            managedRealm.admin().flows().updateRequiredAction(UserModel.RequiredAction.UPDATE_EMAIL.name(), updateEmailAction.get());
         }
     }
 
@@ -79,14 +79,14 @@ public class AppInitiatedActionUpdateEmailTest extends AbstractAppInitiatedActio
         assertKcActionStatus("success");
 
         UserRepresentation user = ActionUtil.findUserWithAdminClient(adminClient, "test-user@localhost");
-        Assert.assertEquals("new@email.com", user.getEmail());
-        Assert.assertEquals("Tom", user.getFirstName());
-        Assert.assertEquals("Brady", user.getLastName());
+        Assertions.assertEquals("new@email.com", user.getEmail());
+        Assertions.assertEquals("Tom", user.getFirstName());
+        Assertions.assertEquals("Brady", user.getLastName());
     }
 
     @Test
     public void testCustomEmailValidator() throws Exception {
-        UserProfileResource userProfile = testRealm().users().userProfile();
+        UserProfileResource userProfile = managedRealm.admin().users().userProfile();
         UPConfig upConfig = userProfile.getConfiguration();
         UPAttribute emailConfig = upConfig.getAttribute(UserModel.EMAIL);
         emailConfig.addValidation(LengthValidator.ID, Map.of("min", "1", "max", "1"));
@@ -108,7 +108,7 @@ public class AppInitiatedActionUpdateEmailTest extends AbstractAppInitiatedActio
 
     @Test
     public void testOnlyEmailSupportedInContext() throws Exception {
-        UserProfileResource userProfile = testRealm().users().userProfile();
+        UserProfileResource userProfile = managedRealm.admin().users().userProfile();
         UPConfig upConfig = userProfile.getConfiguration();
         String unexpectedAttributeName = "unexpectedAttribute";
         upConfig.addOrReplaceAttribute(new UPAttribute(unexpectedAttributeName, new UPAttributePermissions(Set.of(), Set.of(ROLE_USER)), new UPAttributeRequired(Set.of(ROLE_USER), Set.of())));
@@ -172,7 +172,7 @@ public class AppInitiatedActionUpdateEmailTest extends AbstractAppInitiatedActio
     // chrome doesn't work due to "change password popup"
     @IgnoreBrowserDriver(value={FirefoxDriver.class}, negate=true)
     public void testAlwaysReAuthenticateBeforeUpdateEmail() {
-        RequiredActionProviderRepresentation updateEmailAction = testRealm().flows().getRequiredActions()
+        RequiredActionProviderRepresentation updateEmailAction = managedRealm.admin().flows().getRequiredActions()
                 .stream()
                 .filter(requiredAction -> requiredAction.getProviderId().equals(UserModel.RequiredAction.UPDATE_EMAIL.name()))
                 .findFirst()
@@ -180,7 +180,7 @@ public class AppInitiatedActionUpdateEmailTest extends AbstractAppInitiatedActio
 
         // this custom config should be ignored and re-authentication should be always required
         updateEmailAction.getConfig().put(Constants.MAX_AUTH_AGE_KEY, "0");
-        testRealm().flows().updateRequiredAction(UserModel.RequiredAction.UPDATE_EMAIL.name(), updateEmailAction);
+        managedRealm.admin().flows().updateRequiredAction(UserModel.RequiredAction.UPDATE_EMAIL.name(), updateEmailAction);
 
         appPage.open();
         appPage.openAccount();

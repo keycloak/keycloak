@@ -25,7 +25,7 @@ public class AdminClientSupplier implements Supplier<Keycloak, InjectAdminClient
     public List<Dependency> getDependencies(RequestedInstance<Keycloak, InjectAdminClient> instanceContext) {
         DependenciesBuilder builder = DependenciesBuilder.create(AdminClientFactory.class);
         if (instanceContext.getAnnotation().mode().equals(InjectAdminClient.Mode.MANAGED_REALM)) {
-            builder.add(ManagedRealm.class);
+            builder.add(ManagedRealm.class, instanceContext.getAnnotation().realmRef());
         }
         return builder.build();
     }
@@ -42,7 +42,7 @@ public class AdminClientSupplier implements Supplier<Keycloak, InjectAdminClient
         if (mode.equals(InjectAdminClient.Mode.BOOTSTRAP)) {
             adminBuilder.realm("master").clientId(Config.getAdminClientId()).clientSecret(Config.getAdminClientSecret());
         } else if (mode.equals(InjectAdminClient.Mode.MANAGED_REALM)) {
-            ManagedRealm managedRealm = instanceContext.getDependency(ManagedRealm.class);
+            ManagedRealm managedRealm = instanceContext.getDependency(ManagedRealm.class, instanceContext.getAnnotation().realmRef());
             adminBuilder.realm(managedRealm.getName());
 
             String clientId = !annotation.client().isEmpty() ? annotation.client() : null;

@@ -17,6 +17,7 @@
 package org.keycloak.tests.admin.partialimport;
 
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.tests.suites.DatabaseTest;
 
 import org.junit.jupiter.api.Test;
 
@@ -44,6 +45,7 @@ public class PartialImportGroupTest extends AbstractPartialImportTest {
     }
 
     @Test
+    @DatabaseTest
     public void testAddGroupsOverwrite() {
         addGroups();
         testOverwrite();

@@ -17,16 +17,12 @@
 
 package org.keycloak.quarkus.runtime.configuration;
 
-import java.util.Optional;
-
 import org.keycloak.Config;
-import org.keycloak.config.ConfigProviderFactory;
 
-public class MicroProfileConfigProviderFactory implements ConfigProviderFactory {
+public class MicroProfileConfigProviderFactory {
 
-    @Override
-    public Optional<Config.ConfigProvider> create() {
-        return Optional.of(new MicroProfileConfigProvider());
+    public Config.ConfigProvider create() {
+        return new MicroProfileConfigProvider();
     }
 
 }

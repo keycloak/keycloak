@@ -29,12 +29,10 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthenticator;
 import org.keycloak.common.util.Time;
 import org.keycloak.events.Details;
-import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
 import org.keycloak.protocol.oidc.grants.AuthorizationCodeGrantTypeFactory;
 import org.keycloak.protocol.oidc.grants.RefreshTokenGrantTypeFactory;
 import org.keycloak.protocol.oidc.grants.ciba.CibaGrantTypeFactory;
-import org.keycloak.protocol.oidc.grants.device.DeviceGrantTypeFactory;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -47,7 +45,7 @@ import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.hamcrest.Matchers;
 import org.hamcrest.TypeSafeMatcher;
-import org.junit.Assert;
+import org.junit.jupiter.api.Assertions;
 import org.junit.rules.TestRule;
 import org.junit.runners.model.Statement;
 
@@ -96,14 +94,14 @@ public class AssertEvents implements TestRule {
 
     public EventRepresentation poll(int seconds) {
         EventRepresentation event = fetchNextEvent(seconds);
-        Assert.assertNotNull("Event expected", event);
+        Assertions.assertNotNull(event, "Event expected");
 
         return event;
     }
 
     public void assertEmpty() {
         EventRepresentation event = fetchNextEvent();
-        Assert.assertNull("Empty event queue expected, but there is " + event, event);
+        Assertions.assertNull(event, "Empty event queue expected, but there is " + event);
     }
 
     public void clear() {
@@ -153,34 +151,6 @@ public class AssertEvents implements TestRule {
                 .session(sessionId);
     }
 
-    public ExpectedEvent expectDeviceVerifyUserCode(String clientId) {
-        return expect(EventType.OAUTH2_DEVICE_VERIFY_USER_CODE)
-                .user((String) null)
-                .client(clientId)
-                .detail(Details.CODE_ID, isCodeId());
-    }
-
-    public ExpectedEvent expectDeviceLogin(String clientId, String codeId, String userId) {
-        return expect(EventType.LOGIN)
-                .user(userId)
-                .client(clientId)
-                .detail(Details.CODE_ID, codeId)
-                .session(codeId);
-//                .session((String) null);
-    }
-
-    public ExpectedEvent expectDeviceCodeToToken(String clientId, String codeId, String userId) {
-        return expect(EventType.OAUTH2_DEVICE_CODE_TO_TOKEN)
-                .client(clientId)
-                .user(userId)
-                .detail(Details.CODE_ID, codeId)
-                .detail(Details.TOKEN_ID, isAccessTokenId(DeviceGrantTypeFactory.GRANT_SHORTCUT))
-                .detail(Details.REFRESH_TOKEN_ID, isTokenId())
-                .detail(Details.REFRESH_TOKEN_TYPE, TokenUtil.TOKEN_TYPE_REFRESH)
-                .detail(Details.CLIENT_AUTH_METHOD, ClientIdAndSecretAuthenticator.PROVIDER_ID)
-                .session(codeId);
-    }
-
     public ExpectedEvent expectRefresh(String refreshTokenId, String sessionId) {
         return expect(EventType.REFRESH_TOKEN)
                 .detail(Details.TOKEN_ID, isAccessTokenId(RefreshTokenGrantTypeFactory.GRANT_SHORTCUT))
@@ -198,48 +168,6 @@ public class AssertEvents implements TestRule {
                 .detail(Details.REASON, Details.USER_SESSION_EXPIRED_REASON)
                 .client((String) null)
                 .ipAddress((String) null);
-    }
-
-    public void assertRefreshTokenErrorAndMaybeSessionExpired(String sessionId, String userId, String clientId) {
-        // events can be in any order
-        ExpectedEvent expired = expectSessionExpired(sessionId, userId);
-        ExpectedEvent refresh = expect(EventType.REFRESH_TOKEN)
-                .session(sessionId)
-                .client(clientId)
-                .error(Errors.INVALID_TOKEN)
-                .user((String) null);
-        EventRepresentation e = poll(5);
-        if (e.getType().equals(EventType.USER_SESSION_DELETED.name())) {
-            // if we get an expiration event, we must receive the refresh token error event.
-            expired.assertEvent(e);
-            refresh.assertEvent();
-            return;
-        }
-        if (e.getType().equals(EventType.REFRESH_TOKEN_ERROR.name())) {
-            refresh.assertEvent(e);
-            // The session expiration event is optional.
-            // With volatile session send an event because Infinispan sends events on reads.
-            // With persistent session only sends the events during the periodic cleanup task.
-            e = fetchNextEvent();
-            if (e != null) {
-                expired.assertEvent(e);
-            }
-            return;
-        }
-        Assert.fail("Unexpected event type: " + e.getType());
-    }
-
-    public ExpectedEvent expectLogout(String sessionId) {
-        return expect(EventType.LOGOUT)
-                .detail(Details.REDIRECT_URI, Matchers.equalTo(DEFAULT_REDIRECT_URI))
-                .session(sessionId);
-    }
-
-    public ExpectedEvent expectLogoutError(String error) {
-        return expect(EventType.LOGOUT_ERROR)
-                .error(error)
-                .client((String) null)
-                .user((String) null);
     }
 
     public ExpectedEvent expectRegister(String username, String email) {
@@ -461,7 +389,7 @@ public class AssertEvents implements TestRule {
                         }
                     }
                 }
-                Assert.fail("Did not find the event of expected type " + expected.getType() +". Events present: " + presentedEventTypes);
+                Assertions.fail("Did not find the event of expected type " + expected.getType() +". Events present: " + presentedEventTypes);
                 return null; // Unreachable code
             } else {
                 return assertEvent(poll(seconds));
@@ -484,7 +412,7 @@ public class AssertEvents implements TestRule {
                 return actual;
             }
 
-            Assert.assertNotNull(actual.getDetails());
+            Assertions.assertNotNull(actual.getDetails());
             for (Map.Entry<String, Matcher<? super String>> d : details.entrySet()) {
                 String actualValue = actual.getDetails().get(d.getKey());
                 assertThat("Unexpected value for " + d.getKey(), actualValue, d.getValue());

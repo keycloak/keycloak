@@ -21,9 +21,9 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.TimeUnit;
 
-import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
-import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusCondition;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.CacheSpecBuilder;
+import org.keycloak.operator.crds.v2beta1.deployment.Keycloak;
+import org.keycloak.operator.crds.v2beta1.deployment.KeycloakStatusCondition;
+import org.keycloak.operator.crds.v2beta1.deployment.spec.CacheSpecBuilder;
 import org.keycloak.operator.testsuite.apiserver.DisabledIfApiServerTest;
 import org.keycloak.operator.testsuite.utils.CRAssert;
 import org.keycloak.operator.testsuite.utils.K8sUtils;

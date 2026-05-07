@@ -25,6 +25,8 @@ import java.util.Optional;
 
 import jakarta.ws.rs.core.Response;
 
+import org.keycloak.authentication.authenticators.client.AttestationBasedClientAuthenticator;
+import org.keycloak.common.Profile;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.models.AuthenticationExecutionModel;
@@ -77,13 +79,22 @@ public class ClientAuthenticationFlow implements AuthenticationFlow {
             if (client != null) {
                 String expectedClientAuthType = client.getClientAuthenticatorType();
 
-                // Fallback to secret just in case (for backwards compatibility). Also for public clients, ignore the "clientAuthenticatorType", which is set to them and stick to the
+                // Fallback to secret just in case (for backwards compatibility).
+                // Also for public clients, ignore the "clientAuthenticatorType", which is set to them and stick to the
                 // default, which set the client just based on "client_id" parameter
                 if (expectedClientAuthType == null || client.isPublicClient()) {
                     if (expectedClientAuthType == null) {
                         ServicesLogger.LOGGER.authMethodFallback(client.getClientId(), expectedClientAuthType);
                     }
                     expectedClientAuthType = KeycloakModelUtils.getDefaultClientAuthenticatorType();
+                }
+
+                // Use expectedClientAuthType=attestation-based for public client
+                // when AttestationBasedClientAuthenticator is processed
+                //
+                String abcaAuthType = AttestationBasedClientAuthenticator.PROVIDER_ID;
+                if (client.isPublicClient() && factory.getId().equals(abcaAuthType) && Profile.isFeatureEnabled(Profile.Feature.CLIENT_AUTH_ABCA)) {
+                    expectedClientAuthType = abcaAuthType;
                 }
 
                 // Check if client authentication matches

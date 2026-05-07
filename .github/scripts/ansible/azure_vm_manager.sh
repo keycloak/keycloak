@@ -17,6 +17,9 @@ VM_SIZE="Standard_D2s_v5"
 IMAGE="Ubuntu2404"
 
 if [[ "$ACTION" == "create" ]]; then
+  # Pin Azure CLI to 2.82.0 (azure-core 1.38.0+ causes JSON parsing errors with az vm create)
+  sudo apt-get install -y -q --allow-downgrades azure-cli=2.82.0-1~noble
+
   # 1. Resource group (created via idempotent command)
   az group create --name "$CLUSTER" --location "$REGION"
 

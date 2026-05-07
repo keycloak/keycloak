@@ -1,8 +1,13 @@
 
 === Retrieving external IDP tokens
 
-{project_name} allows you to store tokens and responses from the authentication process with the external IDP.
-For that, you can use the `Store Token` configuration option on the IDP's settings page.
+{project_name} allows you to store tokens and responses from the authentication process with the external IDP. There are two versions of this feature that are slightly different in their behavior.
+
+==== Identity brokering API V1
+
+Version 1 or V1 is the old feature and enabled by default. In a future {project_name} release V1 will be deprecated and substituted by V2.
+
+You can use the `Store Tokens` configuration option in the `Advanced settings` section of the IDP's settings page. Once this option is enabled, when a user authenticates using a external Identity provider, the returned token will be stored inside the database for each user and IDP.
 
 Application code can retrieve these tokens and responses to pull in extra user information, or to securely invoke requests on the external IDP.
 For example, an application might want to use the Google token to invoke on other Google services and REST APIs.
@@ -23,4 +28,44 @@ In the broker configuration page you can automatically assign this role to newly
 
 These external tokens can be re-established by either logging in again through the provider, or using the client initiated account linking API.
 
+==== Identity brokering API V2
 
+:tech_feature_name: Identity Brokering API V2
+:tech_feature_id: identity-brokering-api:v2
+include::../templates/techpreview.adoc[]
+
+Version 2 or V2 is the new feature that is now in preview status. The new feature manages two different configuration options in the same Identity Provider page.
+
+* **Store token in session**: New option that stores the returned token in the user session associated to the login.
+* **Store tokens**: Same option used in V1 and with the same meaning. The store token returned by the external provider is stored in the database after a successful login.
+
+.Configuration options for store tokens at Identity Provider
+image::images/retrieve-external-token-identity-provider.png[Configuration options for store tokens at Identity Provider]
+
+The application continues accessing the same endpoint inside the REST API to retrieve the brokering token, but in V2 the call uses `POST` and requires client authentication. It is then restricted to confidential clients only. Besides, instead of using the `read-token` role for the user, the client should be enabled to retrieve tokens for the specified IDP alias. In the client configuration, **Settings**, section **Capability config**, there are two new configuration options.
+
+* **Allow retrieve external tokens**: Flag that allows the client to retrieve tokens via the brokering API.
+* **Allowed Identity Providers for External Tokens**: List of identity provider aliases from which the client can retrieve external tokens.
+
+.Configuration options to retrieve external tokens in the client
+image::images/retrieve-external-token-client.png[Configuration options to retrieve external tokens in the client]
+
+This behavior is more aligned with other features and supported OAuth grants. The access token is passed using the `token` parameter.
+
+[source,subs="attributes+"]
+----
+POST {kc_realms_path}/{realm-name}/broker/{provider_alias}/token HTTP/1.1
+Host: localhost:8080
+Content-Type: application/x-www-form-urlencoded
+Accept: application/json
+
+client_id=test-client&
+client_secret=XXXXX&
+token=ey...
+----
+
+The endpoint tries to obtain the external token from the user session associated to the access token. The database is only used as a fallback in case the token is not present or expired in the session.
+
+The response in V2 is always a JSON access token response, in which the parameter `access_token` is present for a successful request, and parameter `error` is added in case of a problem. Version V2 follows OAuth 2.0 specification in this regard.
+
+V2 also applies client policies when calling the external token endpoint. This way, administrators can configure them to enforce extra security to the client and the Identity provider involved in the call.

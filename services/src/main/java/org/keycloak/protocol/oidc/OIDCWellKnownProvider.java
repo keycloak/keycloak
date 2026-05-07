@@ -44,6 +44,7 @@ import org.keycloak.jose.jws.Algorithm;
 import org.keycloak.models.CibaConfig;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oidc.endpoints.AuthorizationEndpoint;
 import org.keycloak.protocol.oidc.endpoints.TokenEndpoint;
@@ -67,6 +68,8 @@ import org.keycloak.services.util.DPoPUtil;
 import org.keycloak.urls.UrlType;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.wellknown.WellKnownProvider;
+
+import static org.keycloak.protocol.oidc.OIDCLoginProtocol.ATTEST_JWT_CLIENT_AUTH;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -152,10 +155,18 @@ public class OIDCWellKnownProvider implements WellKnownProvider {
 
         config.setPromptValuesSupported(getPromptValuesSupported(realm));
 
-        config.setTokenEndpointAuthMethodsSupported(getClientAuthMethodsSupported());
-        config.setTokenEndpointAuthSigningAlgValuesSupported(getSupportedClientSigningAlgorithms(false));
-        config.setIntrospectionEndpointAuthMethodsSupported(getClientAuthMethodsSupported());
-        config.setIntrospectionEndpointAuthSigningAlgValuesSupported(getSupportedClientSigningAlgorithms(false));
+        List<String> clientAuthMethodsSupported = getClientAuthMethodsSupported();
+        List<String> supportedClientSigningAlgorithms = getSupportedClientSigningAlgorithms(false);
+
+        config.setTokenEndpointAuthMethodsSupported(clientAuthMethodsSupported);
+        config.setTokenEndpointAuthSigningAlgValuesSupported(supportedClientSigningAlgorithms);
+        config.setIntrospectionEndpointAuthMethodsSupported(clientAuthMethodsSupported);
+        config.setIntrospectionEndpointAuthSigningAlgValuesSupported(supportedClientSigningAlgorithms);
+
+        if (clientAuthMethodsSupported.contains(ATTEST_JWT_CLIENT_AUTH)) {
+            config.setClientAttestationSigningAlgValuesSupported(getSupportedSigningAlgorithms(false));
+            config.setClientAttestationPopSigningAlgValuesSupported(getSupportedSigningAlgorithms(false));
+        }
 
         config.setAuthorizationSigningAlgValuesSupported(getSupportedSigningAlgorithms(false));
         config.setAuthorizationEncryptionAlgValuesSupported(getSupportedEncryptionAlg(false));
@@ -198,8 +209,8 @@ public class OIDCWellKnownProvider implements WellKnownProvider {
         // NOTE: Don't hardcode HTTPS checks here. JWKS URI is exposed just in the development/testing environment. For the production environment, the OIDCWellKnownProvider
         // is not exposed over "http" at all.
         config.setRevocationEndpoint(revocationEndpoint.toString());
-        config.setRevocationEndpointAuthMethodsSupported(getClientAuthMethodsSupported());
-        config.setRevocationEndpointAuthSigningAlgValuesSupported(getSupportedClientSigningAlgorithms(false));
+        config.setRevocationEndpointAuthMethodsSupported(clientAuthMethodsSupported);
+        config.setRevocationEndpointAuthSigningAlgValuesSupported(supportedClientSigningAlgorithms);
 
         config.setBackchannelLogoutSupported(true);
         config.setBackchannelLogoutSessionSupported(true);
@@ -219,6 +230,11 @@ public class OIDCWellKnownProvider implements WellKnownProvider {
         List<String> authorizationDetailsTypesSupported = getAuthorizationDetailsTypesSupported();
         if (!authorizationDetailsTypesSupported.isEmpty()) {
             config.setAuthorizationDetailsTypesSupported(authorizationDetailsTypesSupported);
+        }
+
+        // HAIP-1.0 does not want to see this property (don't set to false)
+        if (Profile.isFeatureEnabled(Profile.Feature.CIMD)) {
+            config.setClientIdMetadataDocumentSupported(true);
         }
 
         config = checkConfigOverride(config);
@@ -242,11 +258,12 @@ public class OIDCWellKnownProvider implements WellKnownProvider {
     }
 
     private List<String> getClientAuthMethodsSupported() {
-        return session.getKeycloakSessionFactory().getProviderFactoriesStream(ClientAuthenticator.class)
+        List<String> clientAuthMethods = session.getKeycloakSessionFactory().getProviderFactoriesStream(ClientAuthenticator.class)
                 .map(ClientAuthenticatorFactory.class::cast)
                 .map(caf -> caf.getProtocolAuthenticatorMethods(OIDCLoginProtocol.LOGIN_PROTOCOL))
                 .flatMap(Collection::stream)
                 .collect(Collectors.toList());
+        return clientAuthMethods;
     }
 
     private List<String> getSupportedAlgorithms(Class<? extends Provider> clazz, boolean includeNone) {
@@ -276,13 +293,18 @@ public class OIDCWellKnownProvider implements WellKnownProvider {
     }
 
     private List<String> getGrantTypesSupported() {
-        Stream<String> supportedGrantTypes = session.getKeycloakSessionFactory().getProviderFactoriesStream(OAuth2GrantType.class)
-                    .map(ProviderFactory::getId);
 
-        // Implicit not available as OAuth2GrantType implementation, but should be included. It is served from OIDC authentication endpoint directly
-        return Stream.concat(supportedGrantTypes, Stream.of(OAuth2Constants.IMPLICIT))
-                .sorted()
-                .collect(Collectors.toList());
+        KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
+        Stream<String> providerFactoryStream = sessionFactory
+                .getProviderFactoriesStream(OAuth2GrantType.class)
+                .map(ProviderFactory::getId);
+
+        // Implicit not available as OAuth2GrantType implementation, but should be included.
+        // It is served from OIDC authentication endpoint directly
+        List<String> supportedGrantTypes = Stream.concat(providerFactoryStream, Stream.of(OAuth2Constants.IMPLICIT))
+                .sorted().toList();
+
+        return supportedGrantTypes;
     }
 
     private List<String> getAcrValuesSupported(RealmModel realm) {

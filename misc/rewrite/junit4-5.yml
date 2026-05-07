@@ -1,0 +1,35 @@
+---
+type: specs.openrewrite.org/v1beta/recipe
+name: org.keycloak.JUnit4to5Migration
+displayName: JUnit Jupiter migration from JUnit 4.x
+description: |
+  Migrates JUnit 4.x tests to JUnit Jupiter.
+recipeList:
+  - org.openrewrite.java.testing.junit5.IgnoreToDisabled
+  - org.openrewrite.maven.RemovePluginDependency:
+      pluginGroupId: org.apache.maven.plugins
+      pluginArtifactId: maven-surefire-plugin
+      groupId: org.apache.maven.surefire
+      artifactId: surefire-junit*
+  - org.openrewrite.java.testing.junit5.UpgradeSurefirePlugin
+  - org.openrewrite.java.testing.junit5.AddHamcrestJUnitDependency
+  - org.openrewrite.java.testing.junit5.UseHamcrestAssertThat
+  - org.openrewrite.java.testing.junit5.MigrateAssumptions
+  - org.openrewrite.java.ChangeMethodName:
+      methodPattern: org.junit.Assert assertEquals(.., Object[], Object[])
+      newMethodName: assertArrayEquals
+  - org.openrewrite.java.testing.junit5.AssertToAssertions
+  - org.openrewrite.java.testing.junit5.MigrateAssertionFailedError
+  - org.openrewrite.java.testing.junit5.CleanupJUnitImports
+  - org.openrewrite.java.testing.junit5.TemporaryFolderToTempDir
+  - org.openrewrite.java.testing.junit5.UpdateBeforeAfterAnnotations
+  - org.openrewrite.java.testing.junit5.UpdateTestAnnotation
+  - org.openrewrite.java.testing.junit5.ExpectedExceptionToAssertThrows
+  - org.openrewrite.java.testing.hamcrest.AddHamcrestIfUsed
+  - org.openrewrite.java.dependencies.RemoveDependency:
+      groupId: junit
+      artifactId: junit
+  - org.openrewrite.java.dependencies.AddDependency:
+      groupId: org.junit.jupiter
+      artifactId: junit-jupiter
+      scope: test

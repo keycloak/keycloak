@@ -24,6 +24,8 @@ public class PolicyProviderRepresentation {
     private String type;
     private String name;
     private String group;
+    private String description;
+    private String code;
 
     public String getType() {
         return this.type;
@@ -47,5 +49,21 @@ public class PolicyProviderRepresentation {
 
     public void setGroup( String group) {
         this.group = group;
+    }
+
+    public String getDescription() {
+        return this.description;
+    }
+
+    public void setDescription( String description) {
+        this.description = description;
+    }
+
+    public String getCode() {
+        return this.code;
+    }
+
+    public void setCode( String code) {
+        this.code = code;
     }
 }

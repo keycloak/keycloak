@@ -107,6 +107,10 @@ public final class Main {
             description = "Set the path to a configuration file. By default, configuration properties are read from the \"keycloak.conf\" file in the \"conf\" directory.",
             paramLabel = "file")
     public void setConfigFile(String path) {
+        if (!path.endsWith(".conf")) {
+            throw new CommandLine.ParameterException(spec.commandLine(),
+                    String.format("Configuration file specified via '%s' or '%s' must have the '.conf' extension.", CONFIG_FILE_LONG_NAME, CONFIG_FILE_SHORT_NAME));
+        }
         if (Files.notExists(Path.of(path))) {
             throw new CommandLine.ParameterException(spec.commandLine(),
                     String.format("File specified via '%s' or '%s' option does not exist.", CONFIG_FILE_LONG_NAME, CONFIG_FILE_SHORT_NAME));

@@ -27,6 +27,9 @@ import com.sun.net.httpserver.HttpServer;
 
 import static org.keycloak.common.crypto.CryptoConstants.EC_KEY_SECP256R1;
 
+/**
+ * Mock identity provider that can be used to test various brokering flows
+ */
 public class OAuthIdentityProvider {
 
     private final HttpServer httpServer;

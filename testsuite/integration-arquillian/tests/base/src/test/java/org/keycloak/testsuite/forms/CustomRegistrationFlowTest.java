@@ -20,6 +20,9 @@ import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.representations.idm.AuthenticationExecutionRepresentation;
 import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testframework.events.EventAssertion;
+import org.keycloak.testframework.realm.AuthenticationExecutionBuilder;
+import org.keycloak.testframework.realm.AuthenticationFlowBuilder;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
@@ -27,14 +30,12 @@ import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
 import org.keycloak.testsuite.pages.RegisterPage;
-import org.keycloak.testsuite.util.ExecutionBuilder;
-import org.keycloak.testsuite.util.FlowBuilder;
 
 import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -48,21 +49,21 @@ public class CustomRegistrationFlowTest extends AbstractFlowTest {
 
     @Before
     public void configureFlow() {
-        AuthenticationFlowRepresentation flow = FlowBuilder.create()
+        AuthenticationFlowRepresentation flow = AuthenticationFlowBuilder.create()
                                                            .alias("dummy registration")
                                                            .description("dummy pass through registration")
                                                            .providerId("basic-flow")
                                                            .topLevel(true)
                                                            .builtIn(false)
                                                            .build();
-        testRealm().flows().createFlow(flow);
+        managedRealm.admin().flows().createFlow(flow);
 
         setRegistrationFlow(flow);
 
         // refresh flow to find its id
         flow = findFlowByAlias(flow.getAlias());
 
-        AuthenticationExecutionRepresentation execution = ExecutionBuilder.create()
+        AuthenticationExecutionRepresentation execution = AuthenticationExecutionBuilder.create()
                                                             .parentFlow(flow.getId())
                                                             .requirement(AuthenticationExecutionModel.Requirement.REQUIRED.toString())
                                                             .authenticator(PassThroughRegistration.PROVIDER_ID)
@@ -70,7 +71,7 @@ public class CustomRegistrationFlowTest extends AbstractFlowTest {
                                                             .authenticatorFlow(false)
                                                             .build();
 
-        testRealm().flows().addExecution(execution);
+        managedRealm.admin().flows().addExecution(execution);
     }
 
     @Rule
@@ -93,13 +94,13 @@ public class CustomRegistrationFlowTest extends AbstractFlowTest {
 
     @Test
     public void registerUserSuccess() {
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.clickRegister();
 
-        Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
         String userId = events.expectRegister(PassThroughRegistration.username, PassThroughRegistration.email).assertEvent().getUserId();
-        events.expectLogin().detail("username", PassThroughRegistration.username).user(userId).assertEvent();
+        EventAssertion.expectLoginSuccess(events.poll()).details("username", PassThroughRegistration.username).userId(userId);
     }
 
 

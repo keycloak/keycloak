@@ -1,4 +1,5 @@
 configuration
+supported-configurations
 configuration-production
 bootstrap-admin-recovery
 directory-structure
@@ -6,6 +7,8 @@ containers
 enabletls
 hostname
 reverseproxy
+haproxy-passthrough
+traefik-passthrough
 db
 caching
 outgoinghttp

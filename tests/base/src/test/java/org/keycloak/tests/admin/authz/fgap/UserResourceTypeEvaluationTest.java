@@ -45,7 +45,7 @@ import org.keycloak.testframework.annotations.InjectKeycloakUrls;
 import org.keycloak.testframework.annotations.InjectUser;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.ManagedUser;
-import org.keycloak.testframework.realm.UserConfigBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.server.KeycloakUrls;
 import org.keycloak.testframework.util.ApiUtil;
 
@@ -54,6 +54,8 @@ import org.junit.jupiter.api.Test;
 import static org.keycloak.authorization.fgap.AdminPermissionsSchema.IMPERSONATE;
 import static org.keycloak.authorization.fgap.AdminPermissionsSchema.MANAGE;
 import static org.keycloak.authorization.fgap.AdminPermissionsSchema.MANAGE_GROUP_MEMBERSHIP;
+import static org.keycloak.authorization.fgap.AdminPermissionsSchema.MANAGE_MEMBERSHIP;
+import static org.keycloak.authorization.fgap.AdminPermissionsSchema.MANAGE_MEMBERSHIP_OF_MEMBERS;
 import static org.keycloak.authorization.fgap.AdminPermissionsSchema.MAP_ROLES;
 import static org.keycloak.authorization.fgap.AdminPermissionsSchema.RESET_PASSWORD;
 import static org.keycloak.authorization.fgap.AdminPermissionsSchema.VIEW;
@@ -141,7 +143,7 @@ public class UserResourceTypeEvaluationTest extends AbstractPermissionTest {
     @Test
     public void testManageAllPermission() {
         // myadmin shouldn't be able to create user just yet
-        try (Response response = realmAdminClient.realm(realm.getName()).users().create(UserConfigBuilder.create().username(newUserUsername).build())) {
+        try (Response response = realmAdminClient.realm(realm.getName()).users().create(UserBuilder.create().username(newUserUsername).build())) {
             assertEquals(Response.Status.FORBIDDEN.getStatusCode(), response.getStatus());
         }
 
@@ -150,10 +152,10 @@ public class UserResourceTypeEvaluationTest extends AbstractPermissionTest {
         createAllPermission(client, usersType, policy, Set.of(VIEW, MANAGE));
 
         // creating user requires manage scope
-        String newUserId = ApiUtil.getCreatedId(realmAdminClient.realm(realm.getName()).users().create(UserConfigBuilder.create().username(newUserUsername).build()));
+        String newUserId = ApiUtil.getCreatedId(realmAdminClient.realm(realm.getName()).users().create(UserBuilder.create().username(newUserUsername).build()));
 
         // it should be possible to update the user due to fallback to all-users permission
-        realmAdminClient.realm(realm.getName()).users().get(newUserId).update(UserConfigBuilder.create().email("new@test.com").build());
+        realmAdminClient.realm(realm.getName()).users().get(newUserId).update(UserBuilder.create().email("new@test.com").build());
         assertEquals("new@test.com", realmAdminClient.realm(realm.getName()).users().get(newUserId).toRepresentation().getEmail());
     }
 
@@ -164,17 +166,17 @@ public class UserResourceTypeEvaluationTest extends AbstractPermissionTest {
         ScopePermissionRepresentation allUsersPermission = createAllPermission(client, usersType, policy, Set.of(VIEW, MANAGE));
 
         // creating user requires manage scope
-        String newUserId = ApiUtil.getCreatedId(realmAdminClient.realm(realm.getName()).users().create(UserConfigBuilder.create().username(newUserUsername).build()));
+        String newUserId = ApiUtil.getCreatedId(realmAdminClient.realm(realm.getName()).users().create(UserBuilder.create().username(newUserUsername).build()));
 
         // remove all-users permissions to test user-permission
         allUsersPermission = getScopePermissionsResource(client).findByName(allUsersPermission.getName());
         getScopePermissionsResource(client).findById(allUsersPermission.getId()).remove();
 
         // create user-permissions
-        createPermission(client, UserConfigBuilder.create().id(newUserId).build().getId(), usersType, Set.of(VIEW, MANAGE), policy);
+        createPermission(client, UserBuilder.create().id(newUserId).build().getId(), usersType, Set.of(VIEW, MANAGE), policy);
 
         // it should be possible to update the user due to single user-permission
-        realmAdminClient.realm(realm.getName()).users().get(newUserId).update(UserConfigBuilder.create().email("email@test.com").build());
+        realmAdminClient.realm(realm.getName()).users().get(newUserId).update(UserBuilder.create().email("email@test.com").build());
         assertEquals("email@test.com", realmAdminClient.realm(realm.getName()).users().get(newUserId).toRepresentation().getEmail());
 
         // remove the user permission
@@ -184,7 +186,7 @@ public class UserResourceTypeEvaluationTest extends AbstractPermissionTest {
 
         // updating the user should be denied
         try {
-            realmAdminClient.realm(realm.getName()).users().get(newUserId).update(UserConfigBuilder.create().email("email@test.com").build());
+            realmAdminClient.realm(realm.getName()).users().get(newUserId).update(UserBuilder.create().email("email@test.com").build());
             fail("Expected Exception wasn't thrown.");
         } catch (Exception ex) {
             assertThat(ex, instanceOf(ForbiddenException.class));
@@ -309,50 +311,60 @@ public class UserResourceTypeEvaluationTest extends AbstractPermissionTest {
 
     @Test
     public void testManageGroupMembership() {
+        UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
+        UserPolicyRepresentation allowMyAdminPermission = createUserPolicy(realm, client, "Only My Admin User Policy", myadmin.getId());
+        GroupRepresentation target = createGroup("target");
+        UserRepresentation userBob = createUser("bob");
+
         // myadmin shouldn't be able to manage group membership of the user just yet
         try {
-            realmAdminClient.realm(realm.getName()).users().get(userAlice.getId()).joinGroup("no-such");
+            realmAdminClient.realm(realm.getName()).users().get(userBob.getId()).joinGroup(target.getId());
             fail("Expected Exception wasn't thrown.");
         } catch (Exception ex) {
             assertThat(ex, instanceOf(ForbiddenException.class));
         }
 
-        //create all-users permission for "myadmin" (so that myadmin can add users into a group)
-        UserPolicyRepresentation policy = createUserPolicy(realm, client,"Only My Admin User Policy", realm.admin().users().search("myadmin").get(0).getId());
-        ScopePermissionRepresentation allUsersPermission = createAllPermission(client, usersType, policy, Set.of(MANAGE_GROUP_MEMBERSHIP));
-
-        //check myadmin can manage membership using all-users permission
+        // only the user-side permission is not enough
+        createAllPermission(client, usersType, allowMyAdminPermission, Set.of(MANAGE_GROUP_MEMBERSHIP));
         try {
-            realmAdminClient.realm(realm.getName()).users().get(userAlice.getId()).joinGroup("no-such");
-            fail("Expected Exception wasn't thrown.");
-        } catch (Exception ex) {
-            // expecting here NotFoundException: https://github.com/keycloak/keycloak/blob/b5c95e9f1c58bc500316dd5c0f2d3bb5e197ca99/services/src/main/java/org/keycloak/services/resources/admin/UserResource.java#L1060
-            assertThat(ex, instanceOf(NotFoundException.class));
-        }
-
-        // remove all-users permissions to test user-permission
-        allUsersPermission = getScopePermissionsResource(client).findByName(allUsersPermission.getName());
-        getScopePermissionsResource(client).findById(allUsersPermission.getId()).remove();
-
-        // now myadmin cannot manage membership
-        try {
-            realmAdminClient.realm(realm.getName()).users().get(userAlice.getId()).joinGroup("no-such");
+            realmAdminClient.realm(realm.getName()).users().get(userBob.getId()).joinGroup(target.getId());
             fail("Expected Exception wasn't thrown.");
         } catch (Exception ex) {
             assertThat(ex, instanceOf(ForbiddenException.class));
         }
 
-        // create userPermission
-        createPermission(client, userAlice.getId(), usersType, Set.of(MANAGE_GROUP_MEMBERSHIP), policy);
+        // target group must allow membership changes
+        createAllPermission(client, AdminPermissionsSchema.GROUPS_RESOURCE_TYPE, allowMyAdminPermission, Set.of(MANAGE_MEMBERSHIP));
+        realmAdminClient.realm(realm.getName()).users().get(userBob.getId()).joinGroup(target.getId());
+        assertTrue(realm.admin().users().get(userBob.getId()).groups().stream().anyMatch(group -> target.getId().equals(group.getId())));
+    }
 
-        //check myadmin can manage membership using individual permission
+    @Test
+    public void testManageGroupMembershipDeniedForProtectedGroupMembers() {
+        UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
+        UserPolicyRepresentation allowMyAdminPermission = createUserPolicy(realm, client, "Only My Admin User Policy", myadmin.getId());
+        UserPolicyRepresentation denyMyAdminPermission = createUserPolicy(Logic.NEGATIVE, realm, client, "Not My Admin User Policy", myadmin.getId());
+        GroupRepresentation vault = createGroup("vault");
+        GroupRepresentation target = createGroup("target");
+        UserRepresentation userBob = createUser("bob");
+
+        realm.admin().users().get(userAlice.getId()).joinGroup(vault.getId());
+
+        createAllPermission(client, usersType, allowMyAdminPermission, Set.of(MANAGE_GROUP_MEMBERSHIP));
+        createAllPermission(client, AdminPermissionsSchema.GROUPS_RESOURCE_TYPE, allowMyAdminPermission, Set.of(MANAGE_MEMBERSHIP));
+        createAllPermission(client, AdminPermissionsSchema.GROUPS_RESOURCE_TYPE, allowMyAdminPermission, Set.of(MANAGE_MEMBERSHIP_OF_MEMBERS));
+        createPermission(client, vault.getId(), AdminPermissionsSchema.GROUPS_RESOURCE_TYPE, Set.of(MANAGE_MEMBERSHIP_OF_MEMBERS), denyMyAdminPermission);
+
+        realmAdminClient.realm(realm.getName()).users().get(userBob.getId()).joinGroup(target.getId());
+        assertTrue(realm.admin().users().get(userBob.getId()).groups().stream().anyMatch(group -> target.getId().equals(group.getId())));
+
         try {
-            realmAdminClient.realm(realm.getName()).users().get(userAlice.getId()).joinGroup("no-such");
+            realmAdminClient.realm(realm.getName()).users().get(userAlice.getId()).joinGroup(target.getId());
             fail("Expected Exception wasn't thrown.");
-        } catch (Exception ex) {
-            // expecting here NotFoundException: https://github.com/keycloak/keycloak/blob/b5c95e9f1c58bc500316dd5c0f2d3bb5e197ca99/services/src/main/java/org/keycloak/services/resources/admin/UserResource.java#L1060
-            assertThat(ex, instanceOf(NotFoundException.class));
+        } catch (ForbiddenException expected) {
         }
+
+        assertFalse(realm.admin().users().get(userAlice.getId()).groups().stream().anyMatch(group -> target.getId().equals(group.getId())));
     }
 
     @Test

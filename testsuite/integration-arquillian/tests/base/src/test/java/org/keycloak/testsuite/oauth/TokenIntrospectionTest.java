@@ -27,6 +27,7 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.admin.client.resource.ClientScopesResource;
 import org.keycloak.crypto.Algorithm;
+import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
 import org.keycloak.jose.jws.JWSInput;
@@ -41,10 +42,11 @@ import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.oidc.TokenMetadataRepresentation;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.oidc.AbstractOIDCScopeTest;
 import org.keycloak.testsuite.oidc.OIDCScopeTest;
 import org.keycloak.testsuite.pages.LoginPage;
@@ -69,12 +71,13 @@ import org.hamcrest.Matchers;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -130,7 +133,7 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
 
     @Override
     protected void afterAbstractKeycloakTestRealmImport() {
-        ClientScopesResource clientScopesResource = testRealm().clientScopes();
+        ClientScopesResource clientScopesResource = managedRealm.admin().clientScopes();
         List<ClientScopeRepresentation> clientScopeRepresentations = clientScopesResource.findAll();
         for (ClientScopeRepresentation scope : clientScopeRepresentations) {
             List<ProtocolMapperRepresentation> mappers = scope.getProtocolMappers();
@@ -204,15 +207,15 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
         oauth.client("confidential-cli", "bad_credential");
         IntrospectionResponse tokenResponse = oauth.doIntrospectionAccessTokenRequest(accessTokenResponse.getAccessToken());
 
-        Assert.assertEquals("Authentication failed.", tokenResponse.getErrorDescription());
-        Assert.assertEquals(OAuthErrorException.INVALID_REQUEST, tokenResponse.getError());
+        Assertions.assertEquals("Authentication failed.", tokenResponse.getErrorDescription());
+        Assertions.assertEquals(OAuthErrorException.INVALID_REQUEST, tokenResponse.getError());
     }
 
     @Test
     public void testIntrospectRefreshToken() throws Exception {
         oauth.doLogin("test-user@localhost", "password");
         String code = oauth.parseLoginResponse().getCode();
-        EventRepresentation loginEvent = events.expectLogin().assertEvent();
+        EventRepresentation loginEvent = EventAssertion.expectLoginSuccess(events.poll()).getEvent();
         String sessionId = loginEvent.getSessionId();
         AccessTokenResponse accessTokenResponse = oauth.doAccessTokenRequest(code);
         oauth.client("confidential-cli", "secret1");
@@ -249,9 +252,9 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
 
         driver.navigate().refresh();
         oauth.fillLoginForm("test-user@localhost", "password");
-        events.expectLogin().assertEvent();
+        EventAssertion.expectLoginSuccess(events.poll());
 
-        Assert.assertFalse(loginPage.isCurrent());
+        Assertions.assertFalse(loginPage.isCurrent());
 
         String code = oauth.parseLoginResponse().getCode();
         AccessTokenResponse tokenResponse2 = oauth.doAccessTokenRequest(code);
@@ -274,8 +277,8 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
         oauth.client("public-cli");
         IntrospectionResponse tokenResponse = oauth.doIntrospectionAccessTokenRequest(accessTokenResponse.getAccessToken());
 
-        Assert.assertEquals("Client not allowed.", tokenResponse.getErrorDescription());
-        Assert.assertEquals(OAuthErrorException.INVALID_REQUEST, tokenResponse.getError());
+        Assertions.assertEquals("Client not allowed.", tokenResponse.getErrorDescription());
+        Assertions.assertEquals(OAuthErrorException.INVALID_REQUEST, tokenResponse.getError());
     }
 
     @Test
@@ -308,7 +311,7 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
     public void testIntrospectAccessToken() throws Exception {
         oauth.doLogin("test-user@localhost", "password");
         String code = oauth.parseLoginResponse().getCode();
-        EventRepresentation loginEvent = events.expectLogin().assertEvent();
+        EventRepresentation loginEvent = EventAssertion.expectLoginSuccess(events.poll()).getEvent();
         AccessTokenResponse accessTokenResponse = oauth.doAccessTokenRequest(code);
         oauth.client("confidential-cli", "secret1");
         TokenMetadataRepresentation rep = oauth.doIntrospectionAccessTokenRequest(accessTokenResponse.getAccessToken()).asTokenMetadata();
@@ -331,7 +334,7 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
         testRealm.setClientScopes(List.of());
         adminClient.realm("test").update(testRealm);
         try {
-            EventRepresentation loginEvent = events.expectLogin().client("no-scope").assertEvent();
+            EventRepresentation loginEvent = EventAssertion.expectLoginSuccess(events.poll()).clientId("no-scope").getEvent();
             AccessTokenResponse accessTokenResponse = oauth.doAccessTokenRequest(code);
             oauth.client("no-scope", "password");
             TokenMetadataRepresentation rep = oauth.doIntrospectionAccessTokenRequest(accessTokenResponse.getAccessToken()).asTokenMetadata();
@@ -350,7 +353,7 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
     public void testIntrospectAccessTokenReturnedAsJwt() throws Exception {
         oauth.doLogin("test-user@localhost", "password");
         String code = oauth.parseLoginResponse().getCode();
-        EventRepresentation loginEvent = events.expectLogin().assertEvent();
+        EventRepresentation loginEvent = EventAssertion.expectLoginSuccess(events.poll()).getEvent();
         AccessTokenResponse accessTokenResponse = oauth.doAccessTokenRequest(code);
 
         TokenMetadataRepresentation rep = oauth.introspectionRequest(accessTokenResponse.getAccessToken())
@@ -381,11 +384,11 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
 
     private void testIntrospectAccessToken(String jwaAlgorithm) throws Exception {
         try {
-            TokenSignatureUtil.changeClientAccessTokenSignatureProvider(ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app"), jwaAlgorithm);
+            TokenSignatureUtil.changeClientAccessTokenSignatureProvider(AdminApiUtil.findClientByClientId(adminClient.realm("test"), "test-app"), jwaAlgorithm);
 
             oauth.doLogin("test-user@localhost", "password");
             String code = oauth.parseLoginResponse().getCode();
-            EventRepresentation loginEvent = events.expectLogin().assertEvent();
+            EventRepresentation loginEvent = EventAssertion.expectLoginSuccess(events.poll()).getEvent();
             AccessTokenResponse accessTokenResponse = oauth.doAccessTokenRequest(code);
 
             assertEquals(jwaAlgorithm, new JWSInput(accessTokenResponse.getAccessToken()).getHeader().getAlgorithm().name());
@@ -402,7 +405,7 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
             // Assert expected scope
             OIDCScopeTest.assertScopes("openid email profile", rep.getScope());
         } finally {
-            TokenSignatureUtil.changeClientAccessTokenSignatureProvider(ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app"), Algorithm.RS256);
+            TokenSignatureUtil.changeClientAccessTokenSignatureProvider(AdminApiUtil.findClientByClientId(adminClient.realm("test"), "test-app"), Algorithm.RS256);
         }
     }
 
@@ -493,7 +496,7 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
         String code = oauth.parseLoginResponse().getCode();
         AccessTokenResponse accessTokenResponse = oauth.doAccessTokenRequest(code);
 
-        EventRepresentation loginEvent = events.expectLogin().assertEvent();
+        EventRepresentation loginEvent = EventAssertion.expectLoginSuccess(events.poll()).getEvent();
 
         UserRepresentation userRep = new UserRepresentation();
         try {
@@ -537,7 +540,7 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
     public void testIntrospectWithSamlClient() {
         oauth.doLogin("test-user@localhost", "password");
         String code = oauth.parseLoginResponse().getCode();
-        events.expectLogin().assertEvent();
+        EventAssertion.expectLoginSuccess(events.poll());
         AccessTokenResponse accessTokenResponse = oauth.doAccessTokenRequest(code);
         oauth.client("saml-client", "secret2");
         IntrospectionResponse introspectionResponse = oauth.doIntrospectionAccessTokenRequest(accessTokenResponse.getAccessToken());
@@ -577,6 +580,22 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
         OAuth2ErrorRepresentation errorRep = JsonSerialization.readValue(tokenResponse, OAuth2ErrorRepresentation.class);
         assertEquals("duplicated parameter", errorRep.getErrorDescription());
         assertEquals(OAuthErrorException.INVALID_REQUEST, errorRep.getError());
+    }
+
+    @Test
+    public void testIntrospectionUnknownType() throws Exception {
+        events.clear();
+        String tokenResponse = introspectUnknownTokenType("confidential-cli", "secret1", "xxx");
+
+        OAuth2ErrorRepresentation errorRep = JsonSerialization.readValue(tokenResponse, OAuth2ErrorRepresentation.class);
+        assertEquals("Unsupported token type.", errorRep.getErrorDescription());
+        assertEquals(OAuthErrorException.INVALID_REQUEST, errorRep.getError());
+        events.expect(EventType.INTROSPECT_TOKEN)
+                .client("confidential-cli")
+                .user((String) null)
+                .detail(Details.TOKEN_TYPE, "unknown")
+                .error(Errors.INVALID_REQUEST)
+                .assertEvent();
     }
 
     @Test
@@ -640,6 +659,29 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
             realm.setRevokeRefreshToken(false);
             realm.setRefreshTokenMaxReuse(0);
             adminClient.realm(oauth.getRealm()).update(realm);
+        }
+    }
+
+    private String introspectUnknownTokenType(String clientId, String clientSecret, String tokenToIntrospect) {
+        HttpPost post = new HttpPost(oauth.getEndpoints().getIntrospection());
+
+        String authorization = BasicAuthHelper.createHeader(clientId, clientSecret);
+        post.setHeader("Authorization", authorization);
+
+        List<NameValuePair> parameters = new LinkedList<>();
+
+        parameters.add(new BasicNameValuePair("token", tokenToIntrospect));
+        parameters.add(new BasicNameValuePair("token_type_hint", "unknown"));
+
+        UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, StandardCharsets.UTF_8);
+        post.setEntity(formEntity);
+
+        try (CloseableHttpResponse response = HttpClientBuilder.create().build().execute(post)) {
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            response.getEntity().writeTo(out);
+            return new String(out.toByteArray());
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to retrieve access token", e);
         }
     }
 

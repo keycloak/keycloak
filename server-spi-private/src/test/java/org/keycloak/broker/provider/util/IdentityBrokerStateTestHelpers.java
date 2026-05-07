@@ -780,6 +780,16 @@ public class IdentityBrokerStateTestHelpers {
         }
 
         @Override
+        public int getMaxSecondaryAuthFailures() {
+            return 100;
+        }
+
+        @Override
+        public void setMaxSecondaryAuthFailures(int maxSecondaryAuthFailures) {
+
+        }
+
+        @Override
         public boolean isVerifyEmail() {
             return false;
         }
@@ -1864,6 +1874,16 @@ public class IdentityBrokerStateTestHelpers {
 
         @Override
         public void setVerifiableCredentialsEnabled(boolean verifiableCredentialsEnabled) {
+        }
+
+        @Override
+        public void setScimApiEnabled(boolean enabled) {
+
+        }
+
+        @Override
+        public boolean isScimApiEnabled() {
+            return false;
         }
     }
 }

@@ -24,8 +24,8 @@ import jakarta.ws.rs.core.Response.Status;
 
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.oidc.TokenMetadataRepresentation;
+import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testsuite.AbstractKeycloakTest;
-import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.TokenRevocationResponse;
 
@@ -33,10 +33,10 @@ import org.junit.Test;
 
 import static org.keycloak.testsuite.AbstractAdminTest.loadJson;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author <a href="mailto:yoshiyuki.tabata.jy@hitachi.com">Yoshiyuki Tabata</a>
@@ -50,9 +50,10 @@ public class TokenRevocationCorsTest extends AbstractKeycloakTest {
     public void addTestRealms(List<RealmRepresentation> testRealms) {
         RealmRepresentation realm = loadJson(getClass().getResourceAsStream("/testrealm.json"), RealmRepresentation.class);
         realm.getClients().add(ClientBuilder.create().redirectUris(VALID_CORS_URL + "/realms/master/app")
-            .addWebOrigin(VALID_CORS_URL).clientId("test-app2").secret("password").directAccessGrants().build());
+            .webOrigins(VALID_CORS_URL).clientId("test-app2").secret("password").directAccessGrantsEnabled().build());
         testRealms.add(realm);
     }
+
 
     @Test
     public void testTokenRevocationCorsRequestWithValidUrl() throws Exception {
@@ -80,10 +81,8 @@ public class TokenRevocationCorsTest extends AbstractKeycloakTest {
 
         oauth.origin(INVALID_CORS_URL);
         TokenRevocationResponse response = oauth.tokenRevocationRequest(tokenResponse.getRefreshToken()).refreshToken().send();
-        assertTrue(response.isSuccess());
+        assertEquals(Status.FORBIDDEN.getStatusCode(), response.getStatusCode());
         assertNotCors(response);
-
-        isTokenDisabled(tokenResponse);
     }
 
     private static void assertCors(TokenRevocationResponse response) {

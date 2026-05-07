@@ -22,7 +22,10 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
+import jakarta.ws.rs.ForbiddenException;
+
 import org.keycloak.OAuthErrorException;
+import org.keycloak.admin.client.Keycloak;
 import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthenticator;
 import org.keycloak.authentication.authenticators.client.JWTClientAuthenticator;
 import org.keycloak.authentication.authenticators.client.JWTClientSecretAuthenticator;
@@ -37,29 +40,35 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.services.clientpolicy.ClientPolicyEvent;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
+import org.keycloak.services.clientpolicy.condition.AnyClientConditionFactory;
 import org.keycloak.services.clientpolicy.condition.ClientUpdaterContextConditionFactory;
 import org.keycloak.services.clientpolicy.executor.SecureClientAuthenticatorExecutorFactory;
+import org.keycloak.testframework.realm.ClientBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LogoutConfirmPage;
 import org.keycloak.testsuite.pages.OAuthGrantPage;
-import org.keycloak.testsuite.util.ClientBuilder;
+import org.keycloak.testsuite.services.clientpolicy.executor.TestRaiseExceptionExecutorFactory;
+import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientPoliciesBuilder;
 import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientPolicyBuilder;
 import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientProfileBuilder;
 import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientProfilesBuilder;
-import org.keycloak.testsuite.util.UserBuilder;
 
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Test;
 
 import static org.keycloak.testsuite.AbstractAdminTest.loadJson;
+import static org.keycloak.testsuite.util.ClientPoliciesUtil.createAnyClientConditionConfig;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createClientUpdateContextConditionConfig;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createSecureClientAuthenticatorExecutorConfig;
+import static org.keycloak.testsuite.util.ClientPoliciesUtil.createTestRaiseExeptionExecutorConfig;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * This test class is for testing client policies' related actions done through an admin console, admin CLI, and admin REST API.
@@ -257,5 +266,40 @@ public class ClientPoliciesAdminTest extends AbstractClientPoliciesTest {
         // It is allowed to update authenticator to one of allowed client authenticators. Default client authenticator is not explicitly set in this case
         updateClientByAdmin(cId, (ClientRepresentation clientRep) -> clientRep.setClientAuthenticatorType(JWTClientSecretAuthenticator.PROVIDER_ID));
         assertEquals(JWTClientSecretAuthenticator.PROVIDER_ID, getClientByAdmin(cId).getClientAuthenticatorType());
+    }
+
+    @Test
+    public void testClientViewPolicyExceptionDoesNotLeakClientExistence() throws Exception {
+        String cId = createClientByAdmin(generateSuffixedName(CLIENT_NAME), (ClientRepresentation clientRep) -> {});
+
+        // Register a profile with TestRaiseExceptionExecutor that throws on VIEW events
+        String json = (new ClientProfilesBuilder()).addProfile(
+                (new ClientProfileBuilder()).createProfile(PROFILE_NAME, "View Exception Profile")
+                        .addExecutor(TestRaiseExceptionExecutorFactory.PROVIDER_ID,
+                                createTestRaiseExeptionExecutorConfig(List.of(ClientPolicyEvent.VIEW)))
+                        .toRepresentation()
+        ).toString();
+        updateProfiles(json);
+
+        // Register a policy that applies to any client
+        json = (new ClientPoliciesBuilder()).addPolicy(
+                (new ClientPolicyBuilder()).createPolicy(POLICY_NAME, "View Exception Policy", Boolean.TRUE)
+                        .addCondition(AnyClientConditionFactory.PROVIDER_ID, createAnyClientConditionConfig())
+                        .addProfile(PROFILE_NAME)
+                        .toRepresentation()
+        ).toString();
+        updatePolicies(json);
+
+        // Create a limited admin client as "create-clients" user who does NOT have view-clients permission.
+        // When the client policy throws a ClientPolicyException on VIEW, the response should be 403 Forbidden rather than 400 Bad Request
+        try (Keycloak limitedAdminClient = AdminClientUtil.createAdminClient(suiteContext.isAdapterCompatTesting(),
+                REALM_NAME, "create-clients", "password", Constants.ADMIN_CLI_CLIENT_ID, null)) {
+            try {
+                limitedAdminClient.realm(REALM_NAME).clients().get(cId).toRepresentation();
+                fail("Should have thrown ForbiddenException");
+            } catch (ForbiddenException expected) {
+                // Expected
+            }
+        }
     }
 }

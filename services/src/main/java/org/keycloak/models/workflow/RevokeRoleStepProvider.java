@@ -17,7 +17,7 @@ public class RevokeRoleStepProvider extends RoleBasedStepProvider {
 
     @Override
     protected void run(UserModel user, RoleModel role) {
-        log.debugv("Revoking role %s from user %s)", role.getName(), user.getId());
+        log.debugv("Revoking role {0} from user {1}", role.getName(), user.getId());
         user.deleteRoleMapping(role);
     }
 }

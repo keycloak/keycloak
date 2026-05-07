@@ -69,7 +69,7 @@ public class ClientResourceTypeWorkflowProvider implements ResourceTypeSelector 
     @Override
     public Object resolveResource(String resourceId) {
         Objects.requireNonNull(resourceId, "resourceId");
-        return ResourceType.USERS.resolveResource(session, resourceId);
+        return ResourceType.CLIENTS.resolveResource(session, resourceId);
     }
 
     private Predicate getConditionsPredicate(Workflow workflow, CriteriaBuilder cb, CriteriaQuery<String> query, Root<ClientEntity> path) {

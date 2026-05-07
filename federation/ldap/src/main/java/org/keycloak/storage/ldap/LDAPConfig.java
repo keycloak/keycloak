@@ -126,6 +126,11 @@ public class LDAPConfig {
         return vendor != null && vendor.equals(LDAPConstants.VENDOR_ACTIVE_DIRECTORY);
     }
 
+    public boolean isRHDS() {
+        String vendor = getVendor();
+        return vendor != null && vendor.equals(LDAPConstants.VENDOR_RHDS);
+    }
+
     public boolean isValidatePasswordPolicy() {
         String validatePPolicy = config.getFirst(LDAPConstants.VALIDATE_PASSWORD_POLICY);
         return Boolean.parseBoolean(validatePPolicy);
@@ -255,6 +260,11 @@ public class LDAPConfig {
 
     public String getReferral() {
         return config.getFirst(LDAPConstants.REFERRAL);
+    }
+
+    public boolean isEnableLdapPasswordPolicy() {
+        String enableLdapPasswordPolicy = config.getFirst(LDAPConstants.ENABLE_LDAP_PASSWORD_POLICY);
+        return Boolean.parseBoolean(enableLdapPasswordPolicy);
     }
 
     public void addBinaryAttribute(String attrName) {

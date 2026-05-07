@@ -69,6 +69,9 @@ public class OID4VCStaticClaimMapper extends OID4VCMapper {
     @Override
     public void setClaim(Map<String, Object> claims, UserSessionModel userSessionModel) {
         List<String> attributePath = getMetadataAttributePath();
+        if (attributePath.isEmpty()) {
+            return;
+        }
         String propertyName = attributePath.get(attributePath.size() - 1);
         String staticValue = mapperModel.getConfig().get(STATIC_CLAIM_KEY);
         claims.put(propertyName, staticValue);

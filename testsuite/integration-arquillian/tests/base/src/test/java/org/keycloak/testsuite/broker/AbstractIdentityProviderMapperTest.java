@@ -11,11 +11,11 @@ import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.MappingsRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.testsuite.util.UserBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 
 import org.junit.Before;
 
-import static org.keycloak.testsuite.admin.ApiUtil.createUserAndResetPasswordWithAdminClient;
+import static org.keycloak.testsuite.admin.AdminApiUtil.createUserAndResetPasswordWithAdminClient;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;

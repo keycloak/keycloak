@@ -74,14 +74,14 @@ import org.keycloak.representations.idm.authorization.ResourceServerRepresentati
 import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
+import org.keycloak.testframework.realm.ClientBuilder;
+import org.keycloak.testframework.realm.RealmBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.client.resources.TestApplicationResourceUrls;
-import org.keycloak.testsuite.util.ClientBuilder;
-import org.keycloak.testsuite.util.RealmBuilder;
-import org.keycloak.testsuite.util.RoleBuilder;
-import org.keycloak.testsuite.util.RolesBuilder;
-import org.keycloak.testsuite.util.UserBuilder;
+import org.keycloak.testsuite.events.TestEventsListenerProviderFactory;
+import org.keycloak.testsuite.util.ProtocolMapperUtil;
 import org.keycloak.util.JsonSerialization;
 
 import org.apache.http.client.HttpClient;
@@ -100,12 +100,12 @@ import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -135,39 +135,39 @@ public class EntitlementAPITest extends AbstractAuthzTest {
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
         testRealms.add(RealmBuilder.create().name("authz-test")
-                .roles(RolesBuilder.create().realmRole(RoleBuilder.create().name("uma_authorization").build()))
-                .user(UserBuilder.create().username("marta").password("password").addRoles("uma_authorization"))
-                .user(UserBuilder.create().username("kolo").password("password"))
-                .user(UserBuilder.create().username("offlineuser").password("password").addRoles("offline_access"))
-                .client(ClientBuilder.create().clientId(RESOURCE_SERVER_TEST)
+                .realmRoles("uma_authorization")
+                .users(UserBuilder.create().username("marta").password("password").realmRoles("uma_authorization"))
+                .users(UserBuilder.create().username("kolo").password("password"))
+                .users(UserBuilder.create().username("offlineuser").password("password").realmRoles("offline_access"))
+                .clients(ClientBuilder.create().clientId(RESOURCE_SERVER_TEST)
                         .secret("secret")
                         .authorizationServicesEnabled(true)
                         .redirectUris("http://localhost/resource-server-test")
                         .defaultRoles("uma_protection")
-                        .directAccessGrants())
-                .client(ClientBuilder.create().clientId(PAIRWISE_RESOURCE_SERVER_TEST)
+                        .directAccessGrantsEnabled())
+                .clients(ClientBuilder.create().clientId(PAIRWISE_RESOURCE_SERVER_TEST)
                         .secret("secret")
                         .authorizationServicesEnabled(true)
                         .redirectUris("http://localhost/resource-server-test")
                         .defaultRoles("uma_protection")
-                        .pairwise(TestApplicationResourceUrls.pairwiseSectorIdentifierUri())
-                        .directAccessGrants())
-                .client(ClientBuilder.create().clientId(TEST_CLIENT)
+                        .protocolMappers(ProtocolMapperUtil.createPairwiseMapper(TestApplicationResourceUrls.pairwiseSectorIdentifierUri(), null))
+                        .directAccessGrantsEnabled())
+                .clients(ClientBuilder.create().clientId(TEST_CLIENT)
                         .secret("secret")
                         .authorizationServicesEnabled(true)
                         .redirectUris("http://localhost/test-client")
-                        .directAccessGrants())
-                .client(ClientBuilder.create().clientId(PAIRWISE_TEST_CLIENT)
+                        .directAccessGrantsEnabled())
+                .clients(ClientBuilder.create().clientId(PAIRWISE_TEST_CLIENT)
                         .secret("secret")
                         .authorizationServicesEnabled(true)
                         .redirectUris("http://localhost/test-client")
-                        .pairwise(TestApplicationResourceUrls.pairwiseSectorIdentifierUri())
-                        .directAccessGrants())
-                .client(ClientBuilder.create().clientId(PUBLIC_TEST_CLIENT)
+                        .protocolMappers(ProtocolMapperUtil.createPairwiseMapper(TestApplicationResourceUrls.pairwiseSectorIdentifierUri(), null))
+                        .directAccessGrantsEnabled())
+                .clients(ClientBuilder.create().clientId(PUBLIC_TEST_CLIENT)
                         .secret("secret")
                         .redirectUris("http://localhost:8180/auth/realms/master/app/auth/*", "https://localhost:8543/auth/realms/master/app/auth/*")
                         .publicClient())
-                .testEventListener()
+                .eventsListeners(TestEventsListenerProviderFactory.PROVIDER_ID)
                 .build());
 
         configureSectorIdentifierRedirectUris();
@@ -241,7 +241,7 @@ public class EntitlementAPITest extends AbstractAuthzTest {
     @Test
     public void testInvalidRequestWithClaimsFromPublicClient() throws IOException {
         oauth.realm("authz-test");
-        oauth.clientId(PUBLIC_TEST_CLIENT);
+        oauth.client(PUBLIC_TEST_CLIENT);
 
         oauth.doLogin("marta", "password");
 
@@ -268,7 +268,7 @@ public class EntitlementAPITest extends AbstractAuthzTest {
     @Test
     public void testRequestWithoutClaimsFromPublicClient() {
         oauth.realm("authz-test");
-        oauth.clientId(PUBLIC_TEST_CLIENT);
+        oauth.client(PUBLIC_TEST_CLIENT);
 
         oauth.doLogin("marta", "password");
 
@@ -2006,7 +2006,7 @@ public class EntitlementAPITest extends AbstractAuthzTest {
         authorization.permissions().resource().create(permission).close();
 
         oauth.realm("authz-test");
-        oauth.clientId(PUBLIC_TEST_CLIENT);
+        oauth.client(PUBLIC_TEST_CLIENT);
         oauth.doLogin("marta", "password");
 
         // Token request
@@ -2074,7 +2074,7 @@ public class EntitlementAPITest extends AbstractAuthzTest {
 
         oauth.realm("authz-test");
         oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
-        oauth.clientId(PUBLIC_TEST_CLIENT);
+        oauth.client(PUBLIC_TEST_CLIENT);
         oauth.doLogin("offlineuser", "password");
 
         // Token request
@@ -2121,7 +2121,7 @@ public class EntitlementAPITest extends AbstractAuthzTest {
     @Test
     public void testTokenExpirationRenewalWhenIssuingTokens() {
         oauth.realm("authz-test");
-        oauth.clientId(PUBLIC_TEST_CLIENT);
+        oauth.client(PUBLIC_TEST_CLIENT);
         oauth.doLogin("marta", "password");
         String code = oauth.parseLoginResponse().getCode();
         org.keycloak.testsuite.util.oauth.AccessTokenResponse accessTokenResponse = oauth.doAccessTokenRequest(code);
@@ -2285,10 +2285,10 @@ public class EntitlementAPITest extends AbstractAuthzTest {
 
     @Test
     public void testPermissionsAcrossResourceServers() throws Exception {
-        ClientRepresentation rsA = ClientBuilder.create().clientId("rs-a").secret("secret").serviceAccount().authorizationServicesEnabled(true).build();
+        ClientRepresentation rsA = ClientBuilder.create().clientId("rs-a").secret("secret").serviceAccountsEnabled().authorizationServicesEnabled(true).build();
         getRealm().clients().create(rsA).close();
         String rsBId;
-        try (Response response = getRealm().clients().create(ClientBuilder.create().clientId("rs-b").secret("secret").serviceAccount().authorizationServicesEnabled(true).build())) {
+        try (Response response = getRealm().clients().create(ClientBuilder.create().clientId("rs-b").secret("secret").serviceAccountsEnabled().authorizationServicesEnabled(true).build())) {
             rsBId = ApiUtil.getCreatedId(response);
         }
         ClientResource rsB = getRealm().clients().get(rsBId);

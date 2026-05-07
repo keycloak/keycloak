@@ -24,6 +24,7 @@ import java.util.stream.Stream;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.DefaultValue;
+import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.FormParam;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.NotFoundException;
@@ -36,6 +37,7 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 
+import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.KeycloakSession;
@@ -45,12 +47,14 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.organization.OrganizationProvider;
+import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.MemberRepresentation;
 import org.keycloak.representations.idm.MembershipType;
 import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.AdminEventBuilder;
+import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
 import org.keycloak.utils.StringUtil;
 
 import org.eclipse.microprofile.openapi.annotations.Operation;
@@ -73,13 +77,15 @@ public class OrganizationMemberResource {
     private final OrganizationProvider provider;
     private final OrganizationModel organization;
     private final AdminEventBuilder adminEvent;
+    private final AdminPermissionEvaluator auth;
 
-    public OrganizationMemberResource(KeycloakSession session, OrganizationModel organization, AdminEventBuilder adminEvent) {
+    public OrganizationMemberResource(KeycloakSession session, OrganizationModel organization, AdminEventBuilder adminEvent, AdminPermissionEvaluator auth) {
         this.session = session;
         this.realm = session.getContext().getRealm();
         this.provider = session.getProvider(OrganizationProvider.class);
         this.organization = organization;
         this.adminEvent = adminEvent.resource(ResourceType.ORGANIZATION_MEMBERSHIP);
+        this.auth = auth;
     }
 
     @POST
@@ -93,16 +99,15 @@ public class OrganizationMemberResource {
     @APIResponses(value = {
         @APIResponse(responseCode = "201", description = "Created"),
         @APIResponse(responseCode = "400", description = "Bad Request"),
+        @APIResponse(responseCode = "403", description = "Forbidden"),
         @APIResponse(responseCode = "409", description = "Conflict")
     })
     public Response addMember(String id) {
+        auth.orgs().requireManage(organization);
         id = id.trim().replaceAll("^\"|\"$", ""); // fixes https://github.com/keycloak/keycloak/issues/34401
-        
-        UserModel user = session.users().getUserById(realm, id);
 
-        if (user == null) {
-            throw ErrorResponse.error("User does not exist", Status.BAD_REQUEST);
-        }
+        UserModel user = getUser(id);
+        auth.users().requireManage(user);
 
         try {
             if (provider.addMember(organization, user)) {
@@ -130,13 +135,14 @@ public class OrganizationMemberResource {
     @APIResponses(value = {
         @APIResponse(responseCode = "204", description = "No Content"),
         @APIResponse(responseCode = "400", description = "Bad Request"),
+        @APIResponse(responseCode = "403", description = "Forbidden"),
         @APIResponse(responseCode = "409", description = "Conflict"),
         @APIResponse(responseCode = "500", description = "Internal Server Error")
     })
     public Response inviteUser(@FormParam("email") String email,
                                @FormParam("firstName") String firstName,
                                @FormParam("lastName") String lastName) {
-        return new OrganizationInvitationResource(session, organization, adminEvent).inviteUser(email, firstName, lastName);
+        return new OrganizationInvitationResource(session, organization, adminEvent, auth).inviteUser(email, firstName, lastName);
     }
 
     @POST
@@ -147,10 +153,11 @@ public class OrganizationMemberResource {
     @APIResponses(value = {
         @APIResponse(responseCode = "204", description = "No Content"),
         @APIResponse(responseCode = "400", description = "Bad Request"),
+        @APIResponse(responseCode = "403", description = "Forbidden"),
         @APIResponse(responseCode = "500", description = "Internal Server Error")
     })
     public Response inviteExistingUser(@FormParam("id") String id) {
-        return new OrganizationInvitationResource(session, organization, adminEvent).inviteExistingUser(id);
+        return new OrganizationInvitationResource(session, organization, adminEvent, auth).inviteExistingUser(id);
     }
 
     @GET
@@ -159,7 +166,8 @@ public class OrganizationMemberResource {
     @Tag(name = KeycloakOpenAPI.Admin.Tags.ORGANIZATIONS)
     @Operation( summary = "Returns a paginated list of organization members filtered according to the specified parameters")
     @APIResponses(value = {
-        @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = MemberRepresentation.class, type = SchemaType.ARRAY)))
+        @APIResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = MemberRepresentation.class, type = SchemaType.ARRAY))),
+        @APIResponse(responseCode = "403", description = "Forbidden")
     })
     public Stream<MemberRepresentation> search(
             @Parameter(description = "A String representing either a member's username, e-mail, first name, or last name.") @QueryParam("search") String search,
@@ -168,6 +176,13 @@ public class OrganizationMemberResource {
             @Parameter(description = "The maximum number of results to be returned. Defaults to 10") @QueryParam("max") @DefaultValue("10") Integer max,
             @Parameter(description = "The membership type") @QueryParam("membershipType") String membershipType
     ) {
+        auth.users().requireQuery();
+
+        // if a dedicated admin can query, but cannot view (and FGAP is not enabled) - we can return empty list right away to save a roundtrip to the DB
+        if (!AdminPermissionsSchema.SCHEMA.isAdminPermissionsEnabled(realm) && !auth.users().canView()) {
+            return Stream.empty();
+        }
+
         Map<String, String> filters = new HashMap<>();
 
         if (search != null) {
@@ -190,15 +205,18 @@ public class OrganizationMemberResource {
             "user with the given id. If one is found, and is currently a member of the organization, returns it. Otherwise," +
             "an error response with status NOT_FOUND is returned")
     @APIResponses(value = {
-        @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = MemberRepresentation.class))),
-        @APIResponse(responseCode = "400", description = "Bad Request")
+        @APIResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = MemberRepresentation.class))),
+        @APIResponse(responseCode = "400", description = "Bad Request"),
+        @APIResponse(responseCode = "403", description = "Forbidden")
     })
     public MemberRepresentation get(@PathParam("member-id") String memberId) {
         if (StringUtil.isBlank(memberId)) {
             throw ErrorResponse.error("id cannot be null", Status.BAD_REQUEST);
         }
 
-        return toRepresentation(getMember(memberId));
+        UserModel member = getMember(memberId);
+        auth.users().requireView(member);
+        return toRepresentation(member);
     }
 
     @Path("{member-id}")
@@ -209,14 +227,17 @@ public class OrganizationMemberResource {
             "If no user is found, or if they are not a member of the organization, an error response is returned")
     @APIResponses(value = {
         @APIResponse(responseCode = "204", description = "No Content"),
-        @APIResponse(responseCode = "400", description = "Bad Request")
+        @APIResponse(responseCode = "400", description = "Bad Request"),
+        @APIResponse(responseCode = "403", description = "Forbidden")
     })
     public Response delete(@PathParam("member-id") String memberId) {
+        auth.orgs().requireManage(organization);
         if (StringUtil.isBlank(memberId)) {
             throw ErrorResponse.error("id cannot be null", Status.BAD_REQUEST);
         }
 
         UserModel member = getMember(memberId);
+        auth.users().requireManage(member);
 
         if (provider.removeMember(organization, member)) {
             adminEvent.operation(OperationType.DELETE).resource(ResourceType.ORGANIZATION_MEMBERSHIP)
@@ -238,8 +259,9 @@ public class OrganizationMemberResource {
     @Tag(name = KeycloakOpenAPI.Admin.Tags.ORGANIZATIONS)
     @Operation(summary = "Returns the organizations associated with the user that has the specified id")
     @APIResponses(value = {
-        @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = OrganizationRepresentation.class, type = SchemaType.ARRAY))),
-        @APIResponse(responseCode = "400", description = "Bad Request")
+        @APIResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = OrganizationRepresentation.class, type = SchemaType.ARRAY))),
+        @APIResponse(responseCode = "400", description = "Bad Request"),
+        @APIResponse(responseCode = "403", description = "Forbidden")
     })
     public Stream<OrganizationRepresentation> getOrganizations(
             @PathParam("member-id") String memberId,
@@ -249,10 +271,45 @@ public class OrganizationMemberResource {
             throw ErrorResponse.error("id cannot be null", Status.BAD_REQUEST);
         }
 
-        UserModel member = getUser(memberId);
+        UserModel member = organization == null ? getUser(memberId) : getMember(memberId);
+        auth.users().requireView(member);
+
+        // if a dedicated admin can query, but cannot view (and FGAP is not enabled) - we can return empty list right away to save a roundtrip to the DB
+        if (!AdminPermissionsSchema.SCHEMA.isAdminPermissionsEnabled(realm) && !auth.orgs().canView()) {
+            return Stream.empty();
+        }
 
         return provider.getByMember(member)
                 .map(model -> ModelToRepresentation.toRepresentation(model, briefRepresentation));
+    }
+
+    @Path("{member-id}/groups")
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @NoCache
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.ORGANIZATIONS)
+    @Operation( summary = "Returns the organization group memberships for a member with the specified id", description = "Searches for a" +
+            "user with the given id. If one is found, and is currently a member of the organization, returns the groups from the organization" +
+            "where the user is member of. Otherwise, an error response with status NOT_FOUND is returned")
+    @APIResponses(value = {
+            @APIResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = GroupRepresentation.class, type = SchemaType.ARRAY))),
+            @APIResponse(responseCode = "400", description = "Bad Request"),
+            @APIResponse(responseCode = "403", description = "Forbidden")
+    })
+    public Stream<GroupRepresentation> groupMemberships(@PathParam("member-id") String memberId,
+                                                        @QueryParam("first") Integer firstResult,
+                                                        @QueryParam("max") Integer maxResults,
+                                                        @QueryParam("search") String search,
+                                                        @QueryParam("briefRepresentation") @DefaultValue("true") boolean briefRepresentation) {
+        if (StringUtil.isBlank(memberId)) {
+            throw ErrorResponse.error("id cannot be null", Status.BAD_REQUEST);
+        }
+
+        UserModel member = getMember(memberId);
+        auth.users().requireView(member);
+
+        return provider.getOrganizationGroupsByMember(organization, member, search, firstResult, maxResults)
+                .map(group -> ModelToRepresentation.toRepresentation(group, !briefRepresentation));
     }
 
     @Path("count")
@@ -262,9 +319,17 @@ public class OrganizationMemberResource {
     @Tag(name = KeycloakOpenAPI.Admin.Tags.ORGANIZATIONS)
     @Operation( summary = "Returns number of members in the organization.")
     @APIResponses(value = {
-        @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = Long.class)))
+        @APIResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = Long.class))),
+        @APIResponse(responseCode = "403", description = "Forbidden")
     })
     public Long count() {
+        auth.users().requireQuery();
+
+        // if a dedicated admin can query, but cannot view (and FGAP is not enabled) - we can return 0L right away to save a roundtrip to the DB
+        if (!AdminPermissionsSchema.SCHEMA.isAdminPermissionsEnabled(realm) && !auth.users().canView()) {
+            return 0L;
+        }
+
         return provider.getMembersCount(organization);
     }
 
@@ -272,7 +337,7 @@ public class OrganizationMemberResource {
         UserModel member = provider.getMemberById(organization, id);
 
         if (member == null) {
-            throw new NotFoundException();
+            throw (auth.users().canQuery()) ? new NotFoundException() : new ForbiddenException();
         }
 
         return member;
@@ -282,7 +347,7 @@ public class OrganizationMemberResource {
         UserModel user = session.users().getUserById(realm, id);
 
         if (user == null) {
-            throw new NotFoundException();
+            throw (auth.users().canQuery()) ? new NotFoundException() : new ForbiddenException();
         }
 
         return user;

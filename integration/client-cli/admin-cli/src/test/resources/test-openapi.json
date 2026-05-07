@@ -1,0 +1,39 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Test API",
+    "version": "1.0.0-test"
+  },
+  "paths": {
+    "/admin/api/{realmName}/things/{version}": {
+      "get": {
+        "summary": "List all things",
+        "operationId": "getThings"
+      },
+      "post": {
+        "summary": "Create a thing",
+        "operationId": "createThing"
+      },
+      "parameters": [
+        { "name": "realmName", "in": "path" },
+        { "name": "version", "in": "path" }
+      ]
+    },
+    "/admin/api/{realmName}/things/{version}/{id}": {
+      "get": {
+        "operationId": "getThing"
+      },
+      "patch": {
+        "operationId": "patchThing"
+      },
+      "delete": {
+        "operationId": "deleteThing"
+      },
+      "parameters": [
+        { "name": "realmName", "in": "path" },
+        { "name": "version", "in": "path" },
+        { "name": "id", "in": "path" }
+      ]
+    }
+  }
+}

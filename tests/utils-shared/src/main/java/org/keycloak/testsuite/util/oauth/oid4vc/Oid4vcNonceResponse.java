@@ -25,4 +25,8 @@ public class Oid4vcNonceResponse extends AbstractHttpResponse {
         return Optional.ofNullable(nonceResponse).map(NonceResponse::getNonce).orElseThrow(() ->
                 new IllegalStateException(String.format("[%s] %s", getError(), getErrorDescription())));
     }
+
+    public NonceResponse getNonceResponse() {
+        return nonceResponse;
+    }
 }

@@ -51,14 +51,14 @@ import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.userprofile.config.UPConfig;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
 import org.keycloak.testsuite.client.resources.TestingExportImportResource;
-import org.keycloak.testsuite.runonserver.RunHelpers;
 import org.keycloak.testsuite.util.JsonTestUtils;
-import org.keycloak.testsuite.util.UserBuilder;
+import org.keycloak.testsuite.util.runonserver.RunHelpers;
 import org.keycloak.testsuite.util.userprofile.UserProfileUtil;
 import org.keycloak.userprofile.DeclarativeUserProfileProvider;
 import org.keycloak.util.JsonSerialization;
@@ -68,6 +68,7 @@ import org.hamcrest.Matchers;
 import org.jboss.arquillian.container.spi.client.container.LifecycleException;
 import org.junit.After;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 import static org.keycloak.testsuite.AbstractAdminTest.loadJson;
 
@@ -76,9 +77,9 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  *
@@ -102,7 +103,7 @@ public class ExportImportTest extends AbstractKeycloakTest {
                         .username("user-requiredOTP")
                         .email("User-requiredOTP" + "@test.com")
                         .password("password")
-                        .requiredAction(UserModel.RequiredAction.CONFIGURE_TOTP.name())
+                        .requiredActions(UserModel.RequiredAction.CONFIGURE_TOTP.name())
                         .build()
         );
         testRealm1.getUsers().add(
@@ -110,7 +111,7 @@ public class ExportImportTest extends AbstractKeycloakTest {
                         .username("user-requiredWebAuthn")
                         .email("User-requiredWebAuthn" + "@test.com")
                         .password("password")
-                        .requiredAction(WebAuthnRegisterFactory.PROVIDER_ID)
+                        .requiredActions(WebAuthnRegisterFactory.PROVIDER_ID)
                         .build()
         );
 
@@ -145,10 +146,10 @@ public class ExportImportTest extends AbstractKeycloakTest {
     }
 
     private void checkEventsConfig(RealmEventsConfigRepresentation config) {
-        Assert.assertTrue(config.isEventsEnabled());
-        Assert.assertTrue(config.isAdminEventsEnabled());
-        Assert.assertTrue(config.isAdminEventsDetailsEnabled());
-        Assert.assertEquals((Long) 600L, config.getEventsExpiration());
+        Assertions.assertTrue(config.isEventsEnabled());
+        Assertions.assertTrue(config.isAdminEventsEnabled());
+        Assertions.assertTrue(config.isAdminEventsDetailsEnabled());
+        Assertions.assertEquals((Long) 600L, config.getEventsExpiration());
         Assert.assertNames(new HashSet<>(config.getEnabledEventTypes()),"REGISTER", "REGISTER_ERROR", "LOGIN", "LOGIN_ERROR", "LOGOUT_ERROR");
     }
 
@@ -223,7 +224,7 @@ public class ExportImportTest extends AbstractKeycloakTest {
     }
 
     private static void assertExportContainsGoogleClientSecret(String targetFilePath) throws IOException {
-        assertTrue("Expected an export file to exist", new File(targetFilePath).exists());
+        assertTrue(new File(targetFilePath).exists(), "Expected an export file to exist");
 
         Map<String, RealmRepresentation> realms;
         try (FileInputStream fis = new FileInputStream(targetFilePath)) {
@@ -268,17 +269,17 @@ public class ExportImportTest extends AbstractKeycloakTest {
     public void testImportFromPartialExport() {
         // import a realm with clients without roles
         importRealmFromFile("/import/partial-import.json");
-        Assert.assertTrue("Imported realm hasn't been found!", isRealmPresent("partial-import"));
+        Assertions.assertTrue(isRealmPresent("partial-import"), "Imported realm hasn't been found!");
         addTestRealmToTestRealmReps("partial-import");
 
         // import a realm with clients without roles
         importRealmFromFile("/import/import-without-roles.json");
-        Assert.assertTrue("Imported realm hasn't been found!", isRealmPresent("import-without-roles"));
+        Assertions.assertTrue(isRealmPresent("import-without-roles"), "Imported realm hasn't been found!");
         addTestRealmToTestRealmReps("import-without-roles");
 
         // import a realm with roles without clients
         importRealmFromFile("/import/import-without-clients.json");
-        Assert.assertTrue("Imported realm hasn't been found!", isRealmPresent("import-without-clients"));
+        Assertions.assertTrue(isRealmPresent("import-without-clients"), "Imported realm hasn't been found!");
         addTestRealmToTestRealmReps("import-without-clients");
     }
 
@@ -286,13 +287,13 @@ public class ExportImportTest extends AbstractKeycloakTest {
     public void testImportFromRealmWithPartialAuthenticationFlows() {
         // import a realm with no built-in authentication flows
         importRealmFromFile("/import/partial-authentication-flows-import.json");
-        Assert.assertTrue("Imported realm hasn't been found!", isRealmPresent("partial-authentication-flows-import"));
+        Assertions.assertTrue(isRealmPresent("partial-authentication-flows-import"), "Imported realm hasn't been found!");
     }
 
     @Test
     public void testImportWithNullAuthenticatorConfigAndNoDefaultBrowserFlow() {
         importRealmFromFile("/import/testrealm-authenticator-config-null.json");
-        Assert.assertTrue("Imported realm hasn't been found!", isRealmPresent("cez"));
+        Assertions.assertTrue(isRealmPresent("cez"), "Imported realm hasn't been found!");
     }
 
     @Test
@@ -341,8 +342,8 @@ public class ExportImportTest extends AbstractKeycloakTest {
         // Verify the role exists after creation
         RealmResource realmResource = adminClient.realm(testRealmName);
         RoleRepresentation credentialOfferCreateRole = realmResource.roles().get(OID4VCIConstants.CREDENTIAL_OFFER_CREATE.getName()).toRepresentation();
-        assertNotNull("credential-offer-create role should exist after realm creation", credentialOfferCreateRole);
-        assertEquals("Role name should match", OID4VCIConstants.CREDENTIAL_OFFER_CREATE.getName(), credentialOfferCreateRole.getName());
+        assertNotNull(credentialOfferCreateRole, "credential-offer-create role should exist after realm creation");
+        assertEquals(OID4VCIConstants.CREDENTIAL_OFFER_CREATE.getName(), credentialOfferCreateRole.getName(), "Role name should match");
         
         // Export the realm
         TestingExportImportResource exportImport = testingClient.testing().exportImport();
@@ -359,12 +360,12 @@ public class ExportImportTest extends AbstractKeycloakTest {
             exportedRealms = ImportUtils.getRealmsFromStream(JsonSerialization.mapper, fis);
         }
         RealmRepresentation exportedRealm = exportedRealms.get(testRealmName);
-        assertNotNull("Exported realm should exist", exportedRealm);
-        assertTrue("Exported realm should contain credential-offer-create role",
-                exportedRealm.getRoles() != null && 
+        assertNotNull(exportedRealm, "Exported realm should exist");
+        assertTrue(exportedRealm.getRoles() != null && 
                 exportedRealm.getRoles().getRealm() != null &&
                 exportedRealm.getRoles().getRealm().stream()
-                    .anyMatch(role -> OID4VCIConstants.CREDENTIAL_OFFER_CREATE.getName().equals(role.getName())));
+                    .anyMatch(role -> OID4VCIConstants.CREDENTIAL_OFFER_CREATE.getName().equals(role.getName())),
+                "Exported realm should contain credential-offer-create role");
         
         // Remove the realm
         removeRealm(testRealmName);
@@ -375,12 +376,12 @@ public class ExportImportTest extends AbstractKeycloakTest {
         
         // Verify the realm was imported successfully
         RealmResource importedRealmResource = adminClient.realm(testRealmName);
-        assertNotNull("Imported realm should exist", importedRealmResource);
+        assertNotNull(importedRealmResource, "Imported realm should exist");
         
         // Verify the role still exists after import
         RoleRepresentation importedRole = importedRealmResource.roles().get(OID4VCIConstants.CREDENTIAL_OFFER_CREATE.getName()).toRepresentation();
-        assertNotNull("credential-offer-create role should exist after import", importedRole);
-        assertEquals("Role name should match", OID4VCIConstants.CREDENTIAL_OFFER_CREATE.getName(), importedRole.getName());
+        assertNotNull(importedRole, "credential-offer-create role should exist after import");
+        assertEquals(OID4VCIConstants.CREDENTIAL_OFFER_CREATE.getName(), importedRole.getName(), "Role name should match");
 
         // Cleanup
         removeRealm(testRealmName);
@@ -411,7 +412,7 @@ public class ExportImportTest extends AbstractKeycloakTest {
                 FileUtils.copyFile(testRealm, newFile);
                 FileUtils.copyFileToDirectory(newFile, dest);
             } catch (IOException e) {
-                Assert.fail("Cannot copy file. Details: " + e.getMessage());
+                Assertions.fail("Cannot copy file. Details: " + e.getMessage());
             }
 
             File existingFile = FileUtils.getFile(dest, newFile.getName());
@@ -424,7 +425,7 @@ public class ExportImportTest extends AbstractKeycloakTest {
                 resource.runImport();
                 resource.runImport();
             } catch (Exception e) {
-                Assert.fail("Error with realm importing twice. Details: " + e.getMessage());
+                Assertions.fail("Error with realm importing twice. Details: " + e.getMessage());
             }
         } finally {
             DirExportProvider.recursiveDeleteDir(dest);
@@ -456,7 +457,7 @@ public class ExportImportTest extends AbstractKeycloakTest {
                 FileUtils.copyFile(testRealm, newFile);
                 FileUtils.copyFileToDirectory(newFile, dest);
             } catch (IOException e) {
-                Assert.fail("Cannot copy file. Details: " + e.getMessage());
+                Assertions.fail("Cannot copy file. Details: " + e.getMessage());
             }
 
             File existingFile = FileUtils.getFile(dest, newFile.getName());
@@ -597,7 +598,7 @@ public class ExportImportTest extends AbstractKeycloakTest {
 
         String[] authFlowObjectIdsAfterImport = getSomeAuthenticationFlowsObjectIds();
         // Test that IDs of authentication-flows (both top level and nested) and authenticationConfiguration was preserved
-        Assert.assertArrayEquals(authFlowObjectIdsBeforeImport, authFlowObjectIdsAfterImport);
+        Assertions.assertArrayEquals(authFlowObjectIdsBeforeImport, authFlowObjectIdsAfterImport);
 
         List<ComponentRepresentation> componentsImported = adminClient.realm("test").components().query();
         assertComponents(components, componentsImported);
@@ -666,13 +667,13 @@ public class ExportImportTest extends AbstractKeycloakTest {
                 .findFirst().get().getId();
 
         List<AuthenticationExecutionInfoRepresentation> authExecutions = adminClient.realm("test").flows().getExecutions("User creation or linking");
-        Assert.assertEquals("idp-create-user-if-unique", authExecutions.get(0).getProviderId());
+        Assertions.assertEquals("idp-create-user-if-unique", authExecutions.get(0).getProviderId());
 
         String authConfigId = authExecutions.get(0).getAuthenticationConfig();
-        Assert.assertEquals("create unique user config", adminClient.realm("test").flows().getAuthenticatorConfig(authConfigId).getAlias());
+        Assertions.assertEquals("create unique user config", adminClient.realm("test").flows().getAuthenticatorConfig(authConfigId).getAlias());
 
         String handleExistingAccountSubflowId = authExecutions.get(1).getFlowId();
-        Assert.assertEquals("Handle Existing Account", adminClient.realm("test").flows().getFlow(handleExistingAccountSubflowId).getAlias());
+        Assertions.assertEquals("Handle Existing Account", adminClient.realm("test").flows().getFlow(handleExistingAccountSubflowId).getAlias());
 
         return new String[] {firstBrokerLoginFlowID, handleExistingAccountSubflowId, authConfigId };
     }

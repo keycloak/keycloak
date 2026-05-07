@@ -186,7 +186,8 @@ String registrationAccessToken = client.getRegistrationAccessToken();
 == Client Registration Policies
 
 NOTE: The current plans are for the Client Registration Policies to be removed in favor of the Client Policies described in the link:{adminguide_link}#_client_policies[{adminguide_name}].
-Client Policies are more flexible and support more use cases.
+Client Policies are more flexible and support more use case.
+For example the case of enforcing client URIs like the JWKS to link:{adminguide_link}#ssrf[prevent SSRF attacks] allowing only trusted patterns or domains.
 
 {project_name} currently supports two ways how new clients can be registered through Client Registration Service.
 

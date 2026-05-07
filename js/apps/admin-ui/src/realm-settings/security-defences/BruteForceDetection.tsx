@@ -143,6 +143,15 @@ export const BruteForceDetection = ({
                 rules: { required: t("required"), min: 0 },
               }}
             />
+            <NumberControl
+              name="maxSecondaryAuthFailures"
+              label={t("maxSecondaryAuthFailures")}
+              labelIcon={t("maxSecondaryAuthFailuresHelp")}
+              controller={{
+                defaultValue: 100,
+                rules: { required: t("required"), min: 0 },
+              }}
+            />
             {bruteForceMode ===
               BruteForceMode.PermanentAfterTemporaryLockout && (
               <NumberControl

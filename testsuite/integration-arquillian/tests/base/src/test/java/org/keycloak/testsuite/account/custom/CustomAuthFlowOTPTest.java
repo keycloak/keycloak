@@ -66,8 +66,8 @@ import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  *
@@ -551,7 +551,7 @@ public class CustomAuthFlowOTPTest extends AbstractCustomAccountManagementTest {
         flow.setBuiltIn(false);
         
         try (Response response = getAuthMgmtResource().createFlow(flow)) {
-            assertEquals(flowAlias + " create success", 201, response.getStatus());
+            assertEquals(201, response.getStatus(), flowAlias + " create success");
         }
         
         //add execution - username-password form
@@ -586,7 +586,7 @@ public class CustomAuthFlowOTPTest extends AbstractCustomAccountManagementTest {
 
             //add auth config to the execution
             try (Response response = getAuthMgmtResource().newExecutionConfig(executionId, authConfig)) {
-                assertEquals("new execution success", 201, response.getStatus());
+                assertEquals(201, response.getStatus(), "new execution success");
                 getCleanup().addAuthenticationConfigId(ApiUtil.getCreatedId(response));
             }
         }

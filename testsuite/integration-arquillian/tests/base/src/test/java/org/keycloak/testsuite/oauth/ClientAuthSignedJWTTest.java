@@ -35,6 +35,7 @@ import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.SignatureSignerContext;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
+import org.keycloak.events.EventType;
 import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
@@ -44,8 +45,8 @@ import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.RefreshToken;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.services.util.CertificateInfoHelper;
-import org.keycloak.testsuite.Assert;
-import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testframework.events.EventAssertion;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.util.ClientManager;
 import org.keycloak.testsuite.util.KeyUtils;
 import org.keycloak.testsuite.util.KeystoreUtils;
@@ -57,12 +58,13 @@ import org.apache.http.NameValuePair;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.message.BasicNameValuePair;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -114,12 +116,13 @@ public class ClientAuthSignedJWTTest extends AbstractClientAuthSignedJWTTest {
         // Logout and assert refresh will fail
         HttpResponse logoutResponse = doLogout(response.getRefreshToken(), getClient1SignedJWT());
         assertEquals(204, logoutResponse.getStatusLine().getStatusCode());
-        events.expectLogout(accessToken.getSessionState())
-                .client("client1")
-                .user(client1SAUserId)
-                .removeDetail(Details.REDIRECT_URI)
-                .detail(Details.CLIENT_AUTH_METHOD, JWTClientAuthenticator.PROVIDER_ID)
-                .assertEvent();
+        EventAssertion.assertSuccess(events.poll())
+                .type(EventType.LOGOUT)
+                .sessionId(accessToken.getSessionState())
+                .clientId("client1")
+                .userId(client1SAUserId)
+                .details(Details.CLIENT_AUTH_METHOD, JWTClientAuthenticator.PROVIDER_ID)
+                .withoutDetails(Details.REDIRECT_URI);
 
         response = doRefreshTokenRequest(response.getRefreshToken(), getClient1SignedJWT());
         assertEquals(400, response.getStatusCode());
@@ -197,16 +200,16 @@ public class ClientAuthSignedJWTTest extends AbstractClientAuthSignedJWTTest {
         ClientResource clientResource = null;
         ClientRepresentation clientRep = null;
         try {
-            clientResource = ApiUtil.findClientByClientId(adminClient.realm("test"), "client2");
+            clientResource = AdminApiUtil.findClientByClientId(adminClient.realm("test"), "client2");
             clientRep = clientResource.toRepresentation();
             OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setTokenEndpointAuthSigningAlg(Algorithm.ES256);
             clientResource.update(clientRep);
 
             testCodeToTokenRequestSuccess(Algorithm.ES256, true);
         } catch (Exception e) {
-            Assert.fail();
+            Assertions.fail();
         } finally {
-            clientResource = ApiUtil.findClientByClientId(adminClient.realm("test"), "client2");
+            clientResource = AdminApiUtil.findClientByClientId(adminClient.realm("test"), "client2");
             clientRep = clientResource.toRepresentation();
             OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setTokenEndpointAuthSigningAlg(null);
             clientResource.update(clientRep);
@@ -215,25 +218,25 @@ public class ClientAuthSignedJWTTest extends AbstractClientAuthSignedJWTTest {
 
     @Test
     public void testDirectGrantRequestSuccess() throws Exception {
-        oauth.clientId("client2");
+        oauth.client("client2");
         AccessTokenResponse response = doGrantAccessTokenRequest("test-user@localhost", "password", getClient2SignedJWT());
 
         assertEquals(200, response.getStatusCode());
         AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
         RefreshToken refreshToken = oauth.parseRefreshToken(response.getRefreshToken());
 
-        events.expectLogin()
-                .client("client2")
-                .session(accessToken.getSessionState())
-                .detail(Details.GRANT_TYPE, OAuth2Constants.PASSWORD)
-                .detail(Details.TOKEN_ID, accessToken.getId())
-                .detail(Details.REFRESH_TOKEN_ID, refreshToken.getId())
-                .detail(Details.USERNAME, "test-user@localhost")
-                .detail(Details.CLIENT_AUTH_METHOD, JWTClientAuthenticator.PROVIDER_ID)
-                .removeDetail(Details.CODE_ID)
-                .removeDetail(Details.REDIRECT_URI)
-                .removeDetail(Details.CONSENT)
-                .assertEvent();
+        EventAssertion.assertSuccess(events.poll())
+                .type(EventType.LOGIN)
+                .clientId("client2")
+                .sessionId(accessToken.getSessionState())
+                .details(Details.GRANT_TYPE, OAuth2Constants.PASSWORD)
+                .details(Details.TOKEN_ID, accessToken.getId())
+                .details(Details.REFRESH_TOKEN_ID, refreshToken.getId())
+                .details(Details.USERNAME, "test-user@localhost")
+                .details(Details.CLIENT_AUTH_METHOD, JWTClientAuthenticator.PROVIDER_ID)
+                .withoutDetails(Details.CODE_ID)
+                .withoutDetails(Details.REDIRECT_URI)
+                .withoutDetails(Details.CONSENT);
     }
 
     @Test
@@ -249,7 +252,7 @@ public class ClientAuthSignedJWTTest extends AbstractClientAuthSignedJWTTest {
             PrivateKey privateKey = keyPair.getPrivate();
 
             // test
-            oauth.clientId("client2");
+            oauth.client("client2");
             AccessTokenResponse response = doGrantAccessTokenRequest("test-user@localhost", "password", createSignedRequestToken("client2", getRealmInfoUrl(), privateKey, publicKey, signingAlgorithm));
 
             assertEquals(200, response.getStatusCode());
@@ -270,14 +273,14 @@ public class ClientAuthSignedJWTTest extends AbstractClientAuthSignedJWTTest {
             KeyPair keyPair = setupJwksUrl(signingAlgorithm, false, false, null, clientRepresentation, clientResource);
             PublicKey publicKey = keyPair.getPublic();
             PrivateKey privateKey = keyPair.getPrivate();
-            oauth.clientId("client2");
+            oauth.client("client2");
             AccessTokenResponse response = doGrantAccessTokenRequest("test-user@localhost", "password", createSignedRequestToken("client2", getRealmInfoUrl(), privateKey, publicKey, signingAlgorithm));
             assertEquals(200, response.getStatusCode());
 
             // sending a JWS using another RSA based alg (PS256) should work as alg is not specified
             publicKey = keyPair.getPublic();
             privateKey = keyPair.getPrivate();
-            oauth.clientId("client2");
+            oauth.client("client2");
             response = doGrantAccessTokenRequest("test-user@localhost", "password", createSignedRequestToken("client2", getRealmInfoUrl(), privateKey, publicKey, Algorithm.PS256));
             assertEquals(200, response.getStatusCode());
 
@@ -314,7 +317,7 @@ public class ClientAuthSignedJWTTest extends AbstractClientAuthSignedJWTTest {
             PrivateKey privateKey = keyPair.getPrivate();
 
             // test
-            oauth.clientId("client2");
+            oauth.client("client2");
             JsonWebToken clientAuthJwt = createRequestToken("client2", getRealmInfoUrl());
             AccessTokenResponse response = doGrantAccessTokenRequest("test-user@localhost", "password",
                     createSignledRequestToken(privateKey, publicKey, signingAlgorithm, "my-kid", clientAuthJwt));
@@ -566,7 +569,7 @@ public class ClientAuthSignedJWTTest extends AbstractClientAuthSignedJWTTest {
         }
         final CertificateHolder backupClient1Cert = new CertificateHolder();
 
-        backupClient1Cert.certificate = ApiUtil.findClientByClientId(adminClient.realm("test"), "client1")
+        backupClient1Cert.certificate = AdminApiUtil.findClientByClientId(adminClient.realm("test"), "client1")
                 .toRepresentation().getAttributes().get(JWTClientAuthenticator.CERTIFICATE_ATTR);
 
         ClientManager.realm(adminClient.realm("test")).clientId("client1")
@@ -602,6 +605,17 @@ public class ClientAuthSignedJWTTest extends AbstractClientAuthSignedJWTTest {
         AccessTokenResponse response = new AccessTokenResponse(resp);
 
         assertError(response, "client1", OAuthErrorException.INVALID_CLIENT, AuthenticationFlowError.CLIENT_CREDENTIALS_SETUP_REQUIRED.toString().toLowerCase());
+    }
+
+    @Test
+    public void testAssertionWithNoneAlgorithm() throws Exception {
+        String client1Jwt = getClient1SignedJWT();
+
+        JsonWebToken client1JsonWebToken = new JWSInput(client1Jwt).readJsonContent(JsonWebToken.class);
+        String request = new JWSBuilder().jsonContent(client1JsonWebToken).none();
+        AccessTokenResponse response = doClientCredentialsGrantRequest(request);
+
+        assertError(response, "client1", OAuthErrorException.INVALID_CLIENT, AuthenticationFlowError.INVALID_CLIENT_CREDENTIALS.toString().toLowerCase());
     }
 
 
@@ -759,8 +773,8 @@ public class ClientAuthSignedJWTTest extends AbstractClientAuthSignedJWTTest {
 
         assertEquals(200, response.getStatusCode());
         AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
-        Assert.assertNotNull(accessToken);
-        Assert.assertNull(response.getError());
+        Assertions.assertNotNull(accessToken);
+        Assertions.assertNull(response.getError());
 
         // 2nd attempt to reuse same JWT should fail
         response = doClientCredentialsGrantRequest(clientJwt);
@@ -772,7 +786,7 @@ public class ClientAuthSignedJWTTest extends AbstractClientAuthSignedJWTTest {
     @Test
     public void testAuthenticationFailsWhenClientSecretJWTAuthenticatorSet() throws Exception {
         // Set client authenticator to JWT signed by client secret.
-        ClientResource clientResource = ApiUtil.findClientByClientId(adminClient.realm("test"), "client1");
+        ClientResource clientResource = AdminApiUtil.findClientByClientId(adminClient.realm("test"), "client1");
         ClientRepresentation clientRep = clientResource.toRepresentation();
         clientRep.setClientAuthenticatorType(JWTClientSecretAuthenticator.PROVIDER_ID);
         clientResource.update(clientRep);
@@ -847,16 +861,16 @@ public class ClientAuthSignedJWTTest extends AbstractClientAuthSignedJWTTest {
         ClientResource clientResource = null;
         ClientRepresentation clientRep = null;
         try {
-            clientResource = ApiUtil.findClientByClientId(adminClient.realm("test"), "client2");
+            clientResource = AdminApiUtil.findClientByClientId(adminClient.realm("test"), "client2");
             clientRep = clientResource.toRepresentation();
             OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setTokenEndpointAuthSigningAlg(Algorithm.ES256);
             clientResource.update(clientRep);
 
             testCodeToTokenRequestFailure(Algorithm.RS256, "invalid_client", Errors.INVALID_CLIENT_CREDENTIALS);
         } catch (Exception e) {
-            Assert.fail();
+            Assertions.fail();
         } finally {
-            clientResource = ApiUtil.findClientByClientId(adminClient.realm("test"), "client2");
+            clientResource = AdminApiUtil.findClientByClientId(adminClient.realm("test"), "client2");
             clientRep = clientResource.toRepresentation();
             OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setTokenEndpointAuthSigningAlg(null);
             clientResource.update(clientRep);

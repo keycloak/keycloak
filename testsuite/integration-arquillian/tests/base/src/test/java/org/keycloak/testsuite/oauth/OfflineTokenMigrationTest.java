@@ -33,16 +33,16 @@ import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.RefreshToken;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testframework.remote.providers.runonserver.FetchOnServer;
+import org.keycloak.testframework.remote.providers.runonserver.FetchOnServerWrapper;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.pages.LoginPage;
-import org.keycloak.testsuite.runonserver.FetchOnServer;
-import org.keycloak.testsuite.runonserver.FetchOnServerWrapper;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.util.JsonSerialization;
 
 import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Assert;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 /**
  * Test for simulating token refresh with the offline tokens created in older Keycloak versions.
@@ -97,7 +97,7 @@ public class OfflineTokenMigrationTest extends AbstractTestRealmKeycloakTest {
         oauth.client("direct-grant", "password");
 
         AccessTokenResponse tokenResponse = oauth.doPasswordGrantRequest("test-user@localhost", "password");
-        Assert.assertNull(tokenResponse.getErrorDescription());
+        Assertions.assertNull(tokenResponse.getErrorDescription());
         String offlineTokenString = tokenResponse.getRefreshToken();
 
         // Convert offline token to the format of some old Keycloak version
@@ -120,7 +120,7 @@ public class OfflineTokenMigrationTest extends AbstractTestRealmKeycloakTest {
         // Check it is possible to successfully refresh with the modified offline token
         AccessTokenResponse response = oauth.doRefreshTokenRequest(modifiedOfflineToken);
         AccessToken refreshedToken = oauth.verifyToken(response.getAccessToken());
-        Assert.assertEquals(200, response.getStatusCode());
+        Assertions.assertEquals(200, response.getStatusCode());
     }
 
     public interface OfflineTokenConverter extends Serializable, BiFunction<KeycloakSession, String, String> {

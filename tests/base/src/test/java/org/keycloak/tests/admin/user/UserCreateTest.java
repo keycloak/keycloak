@@ -37,14 +37,15 @@ import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.events.AdminEventAssertion;
 import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.realm.ManagedRealm;
-import org.keycloak.testframework.realm.RoleConfigBuilder;
-import org.keycloak.testframework.realm.UserConfigBuilder;
+import org.keycloak.testframework.realm.RoleBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.server.KeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 import org.keycloak.testframework.util.ApiUtil;
+import org.keycloak.tests.providers.federation.DummyUserFederationProviderFactory;
+import org.keycloak.tests.suites.DatabaseTest;
 import org.keycloak.tests.utils.Assert;
 import org.keycloak.tests.utils.admin.AdminEventPaths;
-import org.keycloak.testsuite.federation.DummyUserFederationProviderFactory;
 import org.keycloak.util.JsonSerialization;
 
 import org.hamcrest.MatcherAssert;
@@ -68,6 +69,7 @@ public class UserCreateTest extends AbstractUserTest {
     AdminClientFactory clientFactory;
 
     @Test
+    @DatabaseTest
     public void verifyCreateUser() {
         createUser();
     }
@@ -100,6 +102,7 @@ public class UserCreateTest extends AbstractUserTest {
     }
 
     @Test
+    @DatabaseTest
     public void createDuplicatedUser1() {
         createUser();
 
@@ -388,6 +391,7 @@ public class UserCreateTest extends AbstractUserTest {
     }
 
     @Test
+    @DatabaseTest
     public void createUserWithFederationLink() {
 
         // add a dummy federation provider
@@ -523,7 +527,7 @@ public class UserCreateTest extends AbstractUserTest {
 
     @Test
     public void failCreateUserUsingRegularUser() throws Exception {
-        managedRealm.admin().users().create(UserConfigBuilder.create().username("regular-user").password("password").email("regular@local").name("Regular", "User").build());
+        managedRealm.admin().users().create(UserBuilder.create().username("regular-user").password("password").email("regular@local").name("Regular", "User").build());
 
         try (Keycloak localAdminClient = clientFactory.create()
                 .realm(managedRealm.getName()).username("regular-user").password("password")
@@ -543,10 +547,10 @@ public class UserCreateTest extends AbstractUserTest {
 
     @Test
     public void testCreateUserDoNotGrantRole() {
-        managedRealm.admin().roles().create(RoleConfigBuilder.create().name("realm-role").build());
+        managedRealm.admin().roles().create(RoleBuilder.create().name("realm-role").build());
 
         try {
-            UserRepresentation userRep = UserConfigBuilder.create().username("alice").password("password").roles("realm-role")
+            UserRepresentation userRep = UserBuilder.create().username("alice").password("password").realmRoles("realm-role")
                     .build();
             String userId = ApiUtil.getCreatedId(managedRealm.admin().users().create(userRep));
             UserResource user = managedRealm.admin().users().get(userId);
@@ -563,7 +567,7 @@ public class UserCreateTest extends AbstractUserTest {
         List<String> invalidNames = List.of("1user\\\\", "2user\\\\%", "3user\\\\*", "4user\\\\_");
 
         for (String invalidName : invalidNames) {
-            UserRepresentation invalidUser = UserConfigBuilder.create().username(invalidName).email("test@invalid.org").build();
+            UserRepresentation invalidUser = UserBuilder.create().username(invalidName).email("test@invalid.org").build();
             Response response = managedRealm.admin().users().create(invalidUser);
             Assert.assertEquals(400, response.getStatus());
             Assert.assertEquals("error-username-invalid-character", response.readEntity(ErrorRepresentation.class).getErrorMessage());

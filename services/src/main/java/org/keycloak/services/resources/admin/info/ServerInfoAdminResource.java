@@ -26,7 +26,9 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -50,6 +52,7 @@ import org.keycloak.events.EventType;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.AdminRoles;
+import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.ModelToRepresentation;
@@ -99,7 +102,7 @@ import org.jboss.resteasy.reactive.NoCache;
 @Extension(name = KeycloakOpenAPI.Profiles.ADMIN , value = "")
 public class ServerInfoAdminResource {
 
-    private static final Map<String, List<String>> ENUMS = createEnumsMap(EventType.class, OperationType.class, ResourceType.class);
+    private static final Map<String, List<String>> ENUMS = createEnumsMap(EventType.class, OperationType.class, ResourceType.class, GroupModel.Type.class);
 
     private final KeycloakSession session;
     private final AdminAuth auth;
@@ -261,7 +264,15 @@ public class ServerInfoAdminResource {
     }
 
     private String getThemeDescription(Theme theme) throws IOException {
-        return theme.getProperties().getProperty("description");
+        Locale locale = session.getContext().resolveLocale(null);
+
+        Properties enhancedMessages = theme.getEnhancedMessages(session.getContext().getRealm(), locale);
+        if (enhancedMessages == null) {
+            return null;
+        }
+
+        String descriptionKey = "theme." + theme.getName() + "." + theme.getType().name().toLowerCase(Locale.ROOT) + ".description";
+        return enhancedMessages.getProperty(descriptionKey);
     }
 
     private LinkedList<String> filterThemes(Theme.Type type, LinkedList<String> themeNames) {

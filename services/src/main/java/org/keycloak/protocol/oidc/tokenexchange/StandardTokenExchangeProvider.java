@@ -135,6 +135,15 @@ public class StandardTokenExchangeProvider extends AbstractTokenExchangeProvider
         UserSessionModel tokenSession = authResult.session();
         AccessToken token = authResult.token();
 
+        // Reject sender-constrained tokens (RFC 7800) as subject_token
+        if (isSenderConstrainedToken(token)) {
+            event.detail(Details.REASON, "Sender-constrained tokens (RFC 7800) cannot be used as subject_token in Token Exchange");
+            event.error(Errors.INVALID_REQUEST);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST,
+                    "Sender-constrained tokens are not supported as subject_token. Use a Bearer token instead.",
+                    Response.Status.BAD_REQUEST);
+        }
+
         event.user(tokenUser);
         event.detail(Details.USERNAME, tokenUser.getUsername());
         if (token.getSessionId() != null) {
@@ -363,5 +372,9 @@ public class StandardTokenExchangeProvider extends AbstractTokenExchangeProvider
         event.detail(Details.REASON, "requested_token_type unsupported");
         event.error(Errors.INVALID_REQUEST);
         throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "requested_token_type unsupported", Response.Status.BAD_REQUEST);
+    }
+
+    private static boolean isSenderConstrainedToken(AccessToken token) {
+        return token.getConfirmation() != null;
     }
 }

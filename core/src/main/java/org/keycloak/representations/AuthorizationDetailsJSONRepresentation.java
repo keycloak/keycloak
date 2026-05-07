@@ -26,6 +26,7 @@ import org.keycloak.util.AuthorizationDetailsParser;
 
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
@@ -139,6 +140,7 @@ public class AuthorizationDetailsJSONRepresentation implements Serializable {
         return AuthorizationDetailsParser.parseToSubtype(this, clazz);
     }
 
+    @JsonIgnore
     public String getScopeNameFromCustomData() {
         if (this.getType().equalsIgnoreCase(DYNAMIC_SCOPE_RAR_TYPE) || this.getType().equalsIgnoreCase(STATIC_SCOPE_RAR_TYPE)) {
             List<String> accessList = (List<String>) this.customData.get("access");
@@ -150,6 +152,7 @@ public class AuthorizationDetailsJSONRepresentation implements Serializable {
         return null;
     }
 
+    @JsonIgnore
     public String getDynamicScopeParamFromCustomData() {
         if(this.getType().equalsIgnoreCase(DYNAMIC_SCOPE_RAR_TYPE)) {
             return (String) this.customData.get("scope_parameter");

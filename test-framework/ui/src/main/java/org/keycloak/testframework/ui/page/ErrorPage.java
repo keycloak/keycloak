@@ -18,6 +18,7 @@ package org.keycloak.testframework.ui.page;
 
 import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 
+import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
@@ -29,6 +30,9 @@ public class ErrorPage extends AbstractLoginPage {
     @FindBy(className = "instruction")
     private WebElement errorMessage;
 
+    @FindBy(id = "traceId")
+    private WebElement traceIdMessage;
+
     @FindBy(id = "backToApplication")
     private WebElement backToApplicationLink;
 
@@ -38,6 +42,18 @@ public class ErrorPage extends AbstractLoginPage {
 
     public String getError() {
         return errorMessage.getText();
+    }
+
+    public String getTraceId() {
+        return traceIdMessage.getText();
+    }
+
+    public boolean isTraceIdPresent() {
+        try {
+            return traceIdMessage.isDisplayed();
+        } catch (NoSuchElementException e) {
+            return false;
+        }
     }
 
     public void clickBackToApplication() {

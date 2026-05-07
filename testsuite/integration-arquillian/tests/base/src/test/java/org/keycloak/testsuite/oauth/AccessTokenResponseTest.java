@@ -11,10 +11,10 @@ import org.keycloak.protocol.oidc.mappers.HardcodedClaim;
 import org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.util.ClientManager;
-import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
 import org.junit.Before;
@@ -23,7 +23,7 @@ import org.junit.Test;
 
 import static org.keycloak.testsuite.AbstractAdminTest.loadJson;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class AccessTokenResponseTest extends AbstractKeycloakTest {
 
@@ -39,7 +39,7 @@ public class AccessTokenResponseTest extends AbstractKeycloakTest {
          * will fail and the clientID will always be "sample-public-client
          * @see AccessTokenTest#testAuthorizationNegotiateHeaderIgnored()
          */
-        oauth.clientId("test-app");
+        oauth.client("test-app", "password");
     }
 
     @Override
@@ -49,7 +49,7 @@ public class AccessTokenResponseTest extends AbstractKeycloakTest {
         UserBuilder user = UserBuilder.create()
                 .id(KeycloakModelUtils.generateId())
                 .username("no-permissions")
-                .addRoles("user")
+                .realmRoles("user")
                 .password("password");
         realm.getUsers().add(user.build());
 

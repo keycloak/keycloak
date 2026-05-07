@@ -22,6 +22,7 @@ import java.io.StringWriter;
 import picocli.CommandLine.Command;
 
 import static org.keycloak.client.admin.cli.KcAdmMain.CMD;
+import static org.keycloak.client.admin.cli.KcAdmMain.V2_FLAG;
 
 
 /**
@@ -36,6 +37,16 @@ public class ConfigCmd extends AbstractAuthOptionsCmd {
 
     public static final String NAME = "config";
 
+    private final boolean v2;
+
+    public ConfigCmd() {
+        this.v2 = false;
+    }
+
+    public ConfigCmd(boolean v2) {
+        this.v2 = v2;
+    }
+
     @Override
     protected void process() {
 
@@ -48,19 +59,27 @@ public class ConfigCmd extends AbstractAuthOptionsCmd {
 
     @Override
     protected String help() {
-        return usage();
+        return usage(v2);
     }
 
     public static String usage() {
+        return usage(false);
+    }
+
+    private static String usage(boolean v2) {
+        String cmd = v2 ? CMD + " " + V2_FLAG : CMD;
+        String subcommands = v2 ? "'credentials', 'truststore', 'openapi'" : "'credentials', 'truststore'";
+        String helpHint = v2 ? cmd + " config SUB_COMMAND --help" : CMD + " help config SUB_COMMAND";
+
         StringWriter sb = new StringWriter();
         PrintWriter out = new PrintWriter(sb);
-        out.println("Usage: " + CMD + " config SUB_COMMAND [ARGUMENTS]");
+        out.println("Usage: " + cmd + " config SUB_COMMAND [ARGUMENTS]");
         out.println();
-        out.println("Where SUB_COMMAND is one of: 'credentials', 'truststore'");
+        out.println("Where SUB_COMMAND is one of: " + subcommands);
         out.println();
         out.println();
-        out.println("Use '" + CMD + " help config SUB_COMMAND' for more info.");
-        out.println("Use '" + CMD + " help' for general information and a list of commands.");
+        out.println("Use '" + helpHint + "' for more info.");
+        out.println("Use '" + cmd + " help' for general information and a list of commands.");
         return sb.toString();
     }
 }

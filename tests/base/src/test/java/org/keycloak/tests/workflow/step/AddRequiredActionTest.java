@@ -12,7 +12,7 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.workflows.WorkflowRepresentation;
 import org.keycloak.representations.workflows.WorkflowStepRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
-import org.keycloak.testframework.realm.UserConfigBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.tests.workflow.AbstractWorkflowTest;
 import org.keycloak.tests.workflow.config.WorkflowsBlockingServerConfig;
@@ -43,7 +43,7 @@ public class AddRequiredActionTest extends AbstractWorkflowTest {
                                 .build()
                 ).build()).close();
 
-        managedRealm.admin().users().create(UserConfigBuilder.create().username("myuser").build()).close();
+        managedRealm.admin().users().create(UserBuilder.create().username("myuser").build()).close();
 
         Awaitility.await()
                 .timeout(Duration.ofSeconds(30))
@@ -73,7 +73,7 @@ public class AddRequiredActionTest extends AbstractWorkflowTest {
 
         // create a user to trigger the workflow
         String userId;
-        try (Response response = managedRealm.admin().users().create(UserConfigBuilder.create().username("myuser").build())) {
+        try (Response response = managedRealm.admin().users().create(UserBuilder.create().username("myuser").build())) {
             assertThat(201, is(response.getStatus()));
             userId = ApiUtil.getCreatedId(response);
         }

@@ -50,7 +50,8 @@ const Component = ({ modulePath }: ComponentProps) => {
   const { environment } = useEnvironment();
 
   const Element = lazy(
-    () => import(joinPath(environment.resourceUrl, modulePath)),
+    () =>
+      import(/* @vite-ignore */ joinPath(environment.resourceUrl, modulePath)),
   );
   return (
     <Suspense fallback={<Spinner />}>

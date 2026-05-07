@@ -143,7 +143,7 @@ You can customize several fields using the Keycloak CRD. For a basic deployment,
 Create YAML file `example-kc.yaml`:
 [source,yaml]
 ----
-apiVersion: k8s.keycloak.org/v2alpha1
+apiVersion: k8s.keycloak.org/v2beta1
 kind: Keycloak
 metadata:
   name: example-kc
@@ -206,7 +206,7 @@ Edit YAML file `example-kc.yaml`:
 
 [source,yaml]
 ----
-apiVersion: k8s.keycloak.org/v2alpha1
+apiVersion: k8s.keycloak.org/v2beta1
 kind: Keycloak
 metadata:
   name: example-kc
@@ -233,7 +233,7 @@ Example TLS Termination YAML:
 
 [source,yaml]
 ----
-apiVersion: k8s.keycloak.org/v2alpha1
+apiVersion: k8s.keycloak.org/v2beta1
 kind: Keycloak
 metadata:
   name: example-kc
@@ -266,7 +266,7 @@ Edit YAML file `example-kc.yaml`:
 
 [source,yaml]
 ----
-apiVersion: k8s.keycloak.org/v2alpha1
+apiVersion: k8s.keycloak.org/v2beta1
 kind: Keycloak
 metadata:
   name: example-kc
@@ -305,7 +305,7 @@ If you Ingress implementation sets and overwrites either `Forwarded` or `X-Forwa
 in the Keycloak CR as follows:
 [source,yaml]
 ----
-apiVersion: k8s.keycloak.org/v2alpha1
+apiVersion: k8s.keycloak.org/v2beta1
 kind: Keycloak
 metadata:
   name: example-kc

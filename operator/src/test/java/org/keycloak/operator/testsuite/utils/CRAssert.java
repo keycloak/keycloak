@@ -35,11 +35,11 @@ import org.keycloak.operator.Utils;
 import org.keycloak.operator.controllers.KeycloakController;
 import org.keycloak.operator.controllers.KeycloakDeploymentDependentResource;
 import org.keycloak.operator.controllers.KeycloakServiceDependentResource;
-import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
-import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatus;
-import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusCondition;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.NetworkPolicySpec;
-import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImport;
+import org.keycloak.operator.crds.v2beta1.deployment.Keycloak;
+import org.keycloak.operator.crds.v2beta1.deployment.KeycloakStatus;
+import org.keycloak.operator.crds.v2beta1.deployment.KeycloakStatusCondition;
+import org.keycloak.operator.crds.v2beta1.deployment.spec.NetworkPolicySpec;
+import org.keycloak.operator.crds.v2beta1.realmimport.KeycloakRealmImport;
 import org.keycloak.operator.update.impl.RecreateOnImageChangeUpdateLogic;
 
 import io.fabric8.kubernetes.api.model.Service;

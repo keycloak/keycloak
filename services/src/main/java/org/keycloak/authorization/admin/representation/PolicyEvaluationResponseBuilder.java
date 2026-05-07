@@ -35,6 +35,7 @@ import org.keycloak.authorization.admin.PolicyEvaluationService.EvaluationDecisi
 import org.keycloak.authorization.common.KeycloakIdentity;
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.authorization.model.PermissionTicket;
+import org.keycloak.authorization.model.PermissionTicket.FilterOption;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
@@ -194,6 +195,7 @@ public class PolicyEvaluationResponseBuilder {
             Map<PermissionTicket.FilterOption, String> filters = new EnumMap<>(PermissionTicket.FilterOption.class);
 
             filters.put(PermissionTicket.FilterOption.POLICY_ID, policy.getId());
+            filters.put(FilterOption.IS_ADMIN, Boolean.TRUE.toString());
 
             List<PermissionTicket> tickets = authorization.getStoreFactory().getPermissionTicketStore().find(resourceServer, filters, -1, 1);
 

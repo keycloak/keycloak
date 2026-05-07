@@ -28,7 +28,7 @@ import org.keycloak.testsuite.util.URLUtils;
 
 import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.logging.Logger;
-import org.junit.Assert;
+import org.junit.jupiter.api.Assertions;
 import org.openqa.selenium.WebDriver;
 
 /**
@@ -109,7 +109,7 @@ public abstract class AbstractPage {
 
     public void assertCurrent() {
         String name = getClass().getSimpleName();
-        Assert.assertTrue("Expected " + name + " but was " + DroneUtils.getCurrentDriver().getTitle() + " (" + DroneUtils.getCurrentDriver().getCurrentUrl() + ")",
-                isCurrent());
+        Assertions.assertTrue(isCurrent(),
+                "Expected " + name + " but was " + DroneUtils.getCurrentDriver().getTitle() + " (" + DroneUtils.getCurrentDriver().getCurrentUrl() + ")");
     }
 }

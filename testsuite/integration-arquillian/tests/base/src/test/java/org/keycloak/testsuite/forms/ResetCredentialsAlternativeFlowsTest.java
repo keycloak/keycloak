@@ -31,9 +31,10 @@ import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AbstractAuthenticationTest;
 import org.keycloak.testsuite.actions.AbstractAppInitiatedActionTest;
-import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginConfigTotpPage;
@@ -50,16 +51,15 @@ import org.keycloak.testsuite.util.FlowUtil;
 import org.keycloak.testsuite.util.GreenMailRule;
 import org.keycloak.testsuite.util.MailUtils;
 import org.keycloak.testsuite.util.URLUtils;
-import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
 import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Test for the various alternatives of reset-credentials flow or browser flow (non-default setup of the  flows)
@@ -124,7 +124,7 @@ public class ResetCredentialsAlternativeFlowsTest extends AbstractAppInitiatedAc
                 .build();
 
         password = generatePassword();
-        userId = ApiUtil.createUserAndResetPasswordWithAdminClient(testRealm(), user, password);
+        userId = AdminApiUtil.createUserAndResetPasswordWithAdminClient(managedRealm.admin(), user, password);
         getCleanup().addUserId(userId);
     }
 
@@ -230,7 +230,7 @@ public class ResetCredentialsAlternativeFlowsTest extends AbstractAppInitiatedAc
             );
 
             // provides username
-            loginUsernameOnlyPage.open();
+            oauth.openLoginForm();
             loginUsernameOnlyPage.login("login-test");
 
             passwordPage.assertCurrent();
@@ -256,8 +256,8 @@ public class ResetCredentialsAlternativeFlowsTest extends AbstractAppInitiatedAc
             updatePasswordPage.changePassword("resetPassword", "resetPassword");
 
             // Assert user authenticated
-            Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
-            Assert.assertNotNull(oauth.parseLoginResponse().getCode());
+            Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+            Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
         } finally {
             revertFlows();
         }
@@ -266,7 +266,7 @@ public class ResetCredentialsAlternativeFlowsTest extends AbstractAppInitiatedAc
 
     private void provideUsernameAndClickResetPassword(String username) {
         // provides username
-        loginUsernameOnlyPage.open();
+        oauth.openLoginForm();
         loginUsernameOnlyPage.login(username);
 
         passwordPage.assertCurrent();
@@ -276,18 +276,18 @@ public class ResetCredentialsAlternativeFlowsTest extends AbstractAppInitiatedAc
 
         // Assert switched to the "reset-credentials" flow, but button "back" not available
         resetPasswordPage.assertCurrent();
-        Assert.assertTrue(URLUtils.currentUrlMatches("/login-actions/reset-credentials"));
+        Assertions.assertTrue(URLUtils.currentUrlMatches("/login-actions/reset-credentials"));
     }
 
 
     private void revertFlows() {
-        List<AuthenticationFlowRepresentation> flows = testRealm().flows().getFlows();
+        List<AuthenticationFlowRepresentation> flows = managedRealm.admin().flows().getFlows();
 
         // Set default flows
-        RealmRepresentation realm = testRealm().toRepresentation();
+        RealmRepresentation realm = managedRealm.admin().toRepresentation();
         realm.setBrowserFlow(DefaultAuthenticationFlows.BROWSER_FLOW);
         realm.setResetCredentialsFlow(DefaultAuthenticationFlows.RESET_CREDENTIALS_FLOW);
-        testRealm().update(realm);
+        managedRealm.admin().update(realm);
 
         // Delete flows previously created within various tests
         final List<String> aliasesOfExistingFlows = Arrays.asList(
@@ -299,7 +299,7 @@ public class ResetCredentialsAlternativeFlowsTest extends AbstractAppInitiatedAc
         for(String existingFlowAlias : aliasesOfExistingFlows) {
             AuthenticationFlowRepresentation flowRepresentation = AbstractAuthenticationTest.findFlowByAlias(existingFlowAlias, flows);
             if (flowRepresentation != null) {
-                testRealm().flows().deleteFlow(flowRepresentation.getId());
+                managedRealm.admin().flows().deleteFlow(flowRepresentation.getId());
             }
         }
     }
@@ -353,7 +353,7 @@ public class ResetCredentialsAlternativeFlowsTest extends AbstractAppInitiatedAc
             );
 
             // Login & set up the initial OTP code for the user
-            loginPage.open();
+            oauth.openLoginForm();
             loginPage.login("login-test", password);
             String code = oauth.parseLoginResponse().getCode();
             AccessTokenResponse response = oauth.doAccessTokenRequest(code);
@@ -370,7 +370,7 @@ public class ResetCredentialsAlternativeFlowsTest extends AbstractAppInitiatedAc
             oauth.logoutForm().idTokenHint(response.getIdToken()).open();
 
             // Go to login page & click "Forgot password" link to perform the custom 'Reset Credential' flow
-            loginPage.open();
+            oauth.openLoginForm();
             loginPage.resetPassword();
 
             // Should be on reset password page now. Provide email of the user & click Submit button
@@ -381,11 +381,11 @@ public class ResetCredentialsAlternativeFlowsTest extends AbstractAppInitiatedAc
             customOtpLabel = "my-reset-otp-label";
 
             // Reset OTP label to a custom value as part of Reset Credentials flow
-            AccountHelper.updateTotpUserLabel(testRealm(), "login-test", customOtpLabel);
+            AccountHelper.updateTotpUserLabel(managedRealm.admin(), "login-test", customOtpLabel);
 
             // Open OTP Authenticator account page
             // Check if OTP credential is present
-            Assert.assertTrue(AccountHelper.totpUserLabelComparator(testRealm(), "login-test", customOtpLabel));
+            Assertions.assertTrue(AccountHelper.totpUserLabelComparator(managedRealm.admin(), "login-test", customOtpLabel));
 
         // Undo setup changes performed within the test
         } finally {
@@ -399,9 +399,9 @@ public class ResetCredentialsAlternativeFlowsTest extends AbstractAppInitiatedAc
     @Test
     public void deviceNameOptionalForFirstOTPCredentialButRequiredForEachNextOne() {
         // Enable 'Default Action' on 'Configure OTP' RA for the 'test' realm
-        RequiredActionProviderRepresentation otpRequiredAction = testRealm().flows().getRequiredAction("CONFIGURE_TOTP");
+        RequiredActionProviderRepresentation otpRequiredAction = managedRealm.admin().flows().getRequiredAction("CONFIGURE_TOTP");
         otpRequiredAction.setDefaultAction(true);
-        testRealm().flows().updateRequiredAction("CONFIGURE_TOTP", otpRequiredAction);
+        managedRealm.admin().flows().updateRequiredAction("CONFIGURE_TOTP", otpRequiredAction);
 
         try {
             // Make a copy of the default Reset Credentials flow, but:
@@ -416,7 +416,7 @@ public class ResetCredentialsAlternativeFlowsTest extends AbstractAppInitiatedAc
             /* Verify the 'Device Name' is optional when creating new OTP credential via the Account page */
 
             // Login & set up the initial OTP code for the user
-            loginPage.open();
+            oauth.openLoginForm();
             loginPage.login("login@test.com", password);
 
             // Create OTP credential with empty label
@@ -428,7 +428,7 @@ public class ResetCredentialsAlternativeFlowsTest extends AbstractAppInitiatedAc
             totpPage.configure(totp.generateTOTP(totpPage.getTotpSecret()), emptyOtpLabel);
             assertKcActionStatus(SUCCESS);
 
-            Assert.assertTrue(AccountHelper.deleteTotpAuthentication(testRealm(), "login-test"));
+            Assertions.assertTrue(AccountHelper.deleteTotpAuthentication(managedRealm.admin(), "login-test"));
 
             // Logout
             oauth.openLogoutForm();
@@ -438,7 +438,7 @@ public class ResetCredentialsAlternativeFlowsTest extends AbstractAppInitiatedAc
             /* Verify the 'Device Name' is optional when creating the first OTP credential via the login config TOTP page */
 
             // Register new user
-            loginPage.open();
+            oauth.openLoginForm();
             loginPage.clickRegister();
             registerPage.assertCurrent();
 
@@ -452,11 +452,11 @@ public class ResetCredentialsAlternativeFlowsTest extends AbstractAppInitiatedAc
 
             // Assert user authenticated
             appPage.assertCurrent();
-            Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
-            Assert.assertNotNull(oauth.parseLoginResponse().getCode());
+            Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+            Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
 
-            Assert.assertTrue(AccountHelper.isTotpPresent(testRealm(), "bwilson"));
-            Assert.assertTrue(AccountHelper.totpUserLabelComparator(testRealm(), "bwilson", ""));
+            Assertions.assertTrue(AccountHelper.isTotpPresent(managedRealm.admin(), "bwilson"));
+            Assertions.assertTrue(AccountHelper.totpUserLabelComparator(managedRealm.admin(), "bwilson", ""));
 
             // Logout
             oauth.openLogoutForm();
@@ -466,7 +466,7 @@ public class ResetCredentialsAlternativeFlowsTest extends AbstractAppInitiatedAc
             /* Verify the 'Device Name' is required for each next OTP credential created via the login config TOTP page */
 
             // Click "Forgot password" to define another OTP credential
-            loginPage.open();
+            oauth.openLoginForm();
             loginPage.resetPassword();
 
             // Should be on reset password page now. Provide email of previously registered user & click Submit button
@@ -476,22 +476,22 @@ public class ResetCredentialsAlternativeFlowsTest extends AbstractAppInitiatedAc
             // Try to create another OTP credential with empty label again. This
             // should fail with error since OTP label is required in this case already
             totpPage.configure(totp.generateTOTP(totpPage.getTotpSecret()), "");
-            Assert.assertTrue(AccountHelper.totpCountEquals(testRealm(), "bwilson", 1));
+            Assertions.assertTrue(AccountHelper.totpCountEquals(managedRealm.admin(), "bwilson", 1));
             // Create 2nd OTP credential with valid (non-empty) Device Name label. This should pass
             final String secondOtpLabel = "My 2nd OTP device";
             totpPage.configure(totp.generateTOTP(totpPage.getTotpSecret()), secondOtpLabel);
 
             // Assert user authenticated
             appPage.assertCurrent();
-            Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
-            Assert.assertNotNull(oauth.parseLoginResponse().getCode());
+            Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+            Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
 
             // Verify 2nd OTP credential was successfully created too
-            Assert.assertTrue(AccountHelper.totpUserLabelComparator(testRealm(), "bwilson", secondOtpLabel));
+            Assertions.assertTrue(AccountHelper.totpUserLabelComparator(managedRealm.admin(), "bwilson", secondOtpLabel));
 
             // Remove both OTP credentials
-            Assert.assertTrue(AccountHelper.deleteTotpAuthentication(testRealm(), "bwilson"));
-            Assert.assertTrue(AccountHelper.deleteTotpAuthentication(testRealm(), "bwilson"));
+            Assertions.assertTrue(AccountHelper.deleteTotpAuthentication(managedRealm.admin(), "bwilson"));
+            Assertions.assertTrue(AccountHelper.deleteTotpAuthentication(managedRealm.admin(), "bwilson"));
 
             // Logout
             oauth.openLogoutForm();
@@ -503,7 +503,7 @@ public class ResetCredentialsAlternativeFlowsTest extends AbstractAppInitiatedAc
             revertFlows();
             // Disable 'Default Action' on 'Configure OTP' RA for the 'test' realm
             otpRequiredAction.setDefaultAction(false);
-            testRealm().flows().updateRequiredAction("CONFIGURE_TOTP", otpRequiredAction);
+            managedRealm.admin().flows().updateRequiredAction("CONFIGURE_TOTP", otpRequiredAction);
             // Remove the within test registered 'bwilson' user
             testingClient.server("test").run(session -> {
                 UserManager um = new UserManager(session);

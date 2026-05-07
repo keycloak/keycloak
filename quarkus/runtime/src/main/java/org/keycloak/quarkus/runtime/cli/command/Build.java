@@ -104,7 +104,7 @@ public final class Build extends AbstractCommand {
             if (Start.NAME.equals(cmd) || Build.NAME.equals(cmd)) {
                 executionError(spec.commandLine(), Messages.devProfileNotAllowedError(cmd));
             }
-        } else if (Configuration.getConfigValue(DB).getConfigSourceOrdinal() == 0) {
+        } else if (Configuration.isDefault(Configuration.getConfigValue(DB))) {
             picocli.warn("Usage of the default value for the db option in the production profile is deprecated. Please explicitly set the db instead.");
         }
     }

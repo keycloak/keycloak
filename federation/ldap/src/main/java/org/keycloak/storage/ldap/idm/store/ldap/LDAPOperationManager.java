@@ -36,6 +36,7 @@ import javax.naming.directory.DirContext;
 import javax.naming.directory.ModificationItem;
 import javax.naming.directory.SearchControls;
 import javax.naming.directory.SearchResult;
+import javax.naming.ldap.BasicControl;
 import javax.naming.ldap.Control;
 import javax.naming.ldap.InitialLdapContext;
 import javax.naming.ldap.LdapContext;
@@ -54,6 +55,9 @@ import org.keycloak.storage.ldap.idm.model.LDAPDn;
 import org.keycloak.storage.ldap.idm.query.Condition;
 import org.keycloak.storage.ldap.idm.query.internal.LDAPQuery;
 import org.keycloak.storage.ldap.idm.query.internal.LDAPQueryConditionsBuilder;
+import org.keycloak.storage.ldap.idm.store.ldap.control.PasswordPolicyControl;
+import org.keycloak.storage.ldap.idm.store.ldap.control.PasswordPolicyControlFactory;
+import org.keycloak.storage.ldap.idm.store.ldap.control.PasswordPolicyPasswordChangeException;
 import org.keycloak.storage.ldap.idm.store.ldap.extended.PasswordModifyRequest;
 import org.keycloak.storage.ldap.mappers.LDAPOperationDecorator;
 import org.keycloak.tracing.TracingProvider;
@@ -497,13 +501,14 @@ public class LDAPOperationManager {
             // Never use connection pool to prevent password caching
             env.put("com.sun.jndi.ldap.connect.pool", "false");
 
-            if(!this.config.isStartTls()) {
-                env.put(Context.SECURITY_AUTHENTICATION, "simple");
-                env.put(Context.SECURITY_PRINCIPAL, dn.toString());
-                env.put(Context.SECURITY_CREDENTIALS, password);
-            }
+            // Prepare to receive password policy response control.
+            env.put(LdapContext.CONTROL_FACTORIES, PasswordPolicyControlFactory.class.getName());
 
+            // Create connection but avoid triggering automatic bind request by not setting security principal and credentials yet.
+            // That allows us to send optional StartTLS request before binding.
             authCtx = new InitialLdapContext(env, null);
+
+            // Send StartTLS request and setup SSL context if needed.
             if (config.isStartTls()) {
                 SSLSocketFactory sslSocketFactory = null;
                 if (LDAPUtil.shouldUseTruststoreSpi(config)) {
@@ -511,13 +516,36 @@ public class LDAPOperationManager {
                     sslSocketFactory = provider.getSSLSocketFactory();
                 }
 
-                tlsResponse = LDAPContextManager.startTLS(authCtx, "simple", dn.toString(), password, sslSocketFactory);
+                tlsResponse = LDAPContextManager.startTLS(authCtx, sslSocketFactory);
 
                 // Exception should be already thrown by LDAPContextManager.startTLS if "startTLS" could not be established, but rather do some additional check
                 if (tlsResponse == null) {
                     throw new AuthenticationException("Null TLS Response returned from the authentication");
                 }
             }
+
+            // Configure given credentials.
+            authCtx.addToEnvironment(Context.SECURITY_AUTHENTICATION, "simple");
+            authCtx.addToEnvironment(Context.SECURITY_PRINCIPAL, dn.toString());
+            authCtx.addToEnvironment(Context.SECURITY_CREDENTIALS, password);
+
+            // Send bind request. Throws AuthenticationException when authentication fails.
+            authCtx.reconnect(getControls());
+
+            // Check for password policy response control in the response.
+            // If present and forced password change is required, throw an exception.
+            Control[] responseControls = authCtx.getResponseControls();
+            if (responseControls != null) {
+                for (Control control : responseControls) {
+                    if (control instanceof PasswordPolicyControl) {
+                        PasswordPolicyControl response = (PasswordPolicyControl) control;
+                        if (response.changeAfterReset()) {
+                            throw new PasswordPolicyPasswordChangeException();
+                        }
+                    }
+                }
+            }
+
         } catch (AuthenticationException ae) {
             if (logger.isDebugEnabled()) {
                 logger.debugf(ae, "Authentication failed for DN [%s]", dn);
@@ -658,6 +686,14 @@ public class LDAPOperationManager {
         } catch (NamingException e) {
             throw new ModelException("Error creating subcontext [" + name + "]", e);
         }
+    }
+
+    private Control[] getControls() {
+        // If enabled, send a passwordPolicyRequest control as non-critical.
+        if (config.isEnableLdapPasswordPolicy()) {
+            return new Control[] { new BasicControl(PasswordPolicyControl.OID, false, null) };
+        }
+        return null;
     }
 
     private String getUuidAttributeName() {

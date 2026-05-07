@@ -22,11 +22,19 @@ package org.keycloak.common;
  * @version $Revision: 1 $
  */
 public class VerificationException extends Exception {
+
+    private String errorType;
+
     public VerificationException() {
     }
 
     public VerificationException(String message) {
         super(message);
+    }
+
+    public VerificationException(String message, String errorType) {
+        super(message);
+        this.errorType = errorType;
     }
 
     public VerificationException(String message, Throwable cause) {
@@ -35,5 +43,9 @@ public class VerificationException extends Exception {
 
     public VerificationException(Throwable cause) {
         super(cause);
+    }
+
+    public String getErrorType() {
+        return errorType;
     }
 }

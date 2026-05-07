@@ -19,7 +19,7 @@ package org.keycloak.operator.testsuite.utils;
 
 import java.util.Optional;
 
-import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
+import org.keycloak.operator.crds.v2beta1.deployment.Keycloak;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;

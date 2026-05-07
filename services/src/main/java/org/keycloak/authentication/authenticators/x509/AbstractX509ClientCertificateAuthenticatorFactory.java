@@ -119,7 +119,7 @@ public abstract class AbstractX509ClientCertificateAuthenticatorFactory implemen
         canonicalDn.setName(CANONICAL_DN);
         canonicalDn.setLabel("Canonical DN representation enabled");
         canonicalDn.setDefaultValue(Boolean.toString(false));
-        canonicalDn.setHelpText("Use the canonical format to determine the distinguished name. This option is relevant for authenticators using a distinguished name.");
+        canonicalDn.setHelpText("Use the canonical format (as defined in the Java Platform) to determine the distinguished name. When enabled, the RFC 2253 conformant string representation is returned, but with some additional normalization rules that alter the original DN in the certificate. This option is relevant for authenticators using a distinguished name.");
 
         ProviderConfigProperty serialnumberHex = new ProviderConfigProperty();
         serialnumberHex.setType(BOOLEAN_TYPE);

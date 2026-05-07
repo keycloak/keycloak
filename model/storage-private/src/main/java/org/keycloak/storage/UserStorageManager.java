@@ -54,11 +54,13 @@ import org.keycloak.models.UserCredentialManager;
 import org.keycloak.models.UserManager;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
+import org.keycloak.models.UserVerifiableCredentialModel;
 import org.keycloak.models.cache.CachedUserModel;
 import org.keycloak.models.cache.OnUserCache;
 import org.keycloak.models.cache.UserCache;
 import org.keycloak.models.utils.ComponentUtil;
 import org.keycloak.models.utils.ReadOnlyUserModelDelegate;
+import org.keycloak.models.utils.StorageUnavailableUserModelDelegate;
 import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.storage.client.ClientStorageProvider;
 import org.keycloak.storage.datastore.DefaultDatastoreProvider;
@@ -168,7 +170,7 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
             return validated;
         } catch (Exception e) {
             logger.warnf(e, "User storage provider %s failed during federated user validation", model.getName());
-            return new ReadOnlyUserModelDelegate(user, false, ignore -> new ReadOnlyException("The user is read-only. The user storage provider '" + model.getName() + "' is currently unavailable. Check the server logs for more details."));
+            return new StorageUnavailableUserModelDelegate(user, ignore -> new ReadOnlyException("The user is read-only. The user storage provider '" + model.getName() + "' is currently unavailable. Check the server logs for more details."));
         }
     }
 
@@ -926,6 +928,33 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
             return localStorage().revokeConsentForClient(realm, userId, clientInternalId);
         } else {
             return getFederatedStorage().revokeConsentForClient(realm, userId, clientInternalId);
+        }
+    }
+
+    @Override
+    public UserVerifiableCredentialModel addVerifiableCredential(String userId, UserVerifiableCredentialModel credentialModel) {
+        if (StorageId.isLocalStorage(userId)) {
+            return localStorage().addVerifiableCredential(userId, credentialModel);
+        } else {
+            throw new UnsupportedOperationException("Verifiable credential operations not yet supported on federated users");
+        }
+    }
+
+    @Override
+    public boolean removeVerifiableCredential(String userId, String credentialScopeName) {
+        if (StorageId.isLocalStorage(userId)) {
+            return localStorage().removeVerifiableCredential(userId, credentialScopeName);
+        } else {
+            throw new UnsupportedOperationException("Verifiable credential operations not yet supported on federated users");
+        }
+    }
+
+    @Override
+    public Stream<UserVerifiableCredentialModel> getVerifiableCredentialsByUser(String userId) {
+        if (StorageId.isLocalStorage(userId)) {
+            return localStorage().getVerifiableCredentialsByUser(userId);
+        } else {
+            throw new UnsupportedOperationException("Verifiable credential operations not yet supported on federated users");
         }
     }
 

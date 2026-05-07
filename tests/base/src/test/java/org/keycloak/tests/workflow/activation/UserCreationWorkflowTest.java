@@ -10,7 +10,7 @@ import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.representations.workflows.WorkflowRepresentation;
 import org.keycloak.representations.workflows.WorkflowStepRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
-import org.keycloak.testframework.realm.UserConfigBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.tests.workflow.AbstractWorkflowTest;
 import org.keycloak.tests.workflow.config.WorkflowsBlockingServerConfig;
@@ -46,7 +46,7 @@ public class UserCreationWorkflowTest extends AbstractWorkflowTest {
 
         // create a test user to trigger the workflow
         String userId;
-        try (Response response = managedRealm.admin().users().create(UserConfigBuilder.create()
+        try (Response response = managedRealm.admin().users().create(UserBuilder.create()
                 .username("generic-user").email("generic-user@example.com").build())) {
             userId = ApiUtil.getCreatedId(response);
         }

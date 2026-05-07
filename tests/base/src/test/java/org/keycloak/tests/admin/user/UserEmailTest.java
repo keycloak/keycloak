@@ -37,11 +37,11 @@ import org.keycloak.testframework.events.AdminEventAssertion;
 import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.mail.MailServer;
 import org.keycloak.testframework.mail.annotations.InjectMailServer;
+import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.ClientConfig;
-import org.keycloak.testframework.realm.ClientConfigBuilder;
 import org.keycloak.testframework.realm.ManagedClient;
 import org.keycloak.testframework.realm.ManagedRealm;
-import org.keycloak.testframework.realm.UserConfigBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.remote.timeoffset.InjectTimeOffSet;
 import org.keycloak.testframework.remote.timeoffset.TimeOffSet;
 import org.keycloak.testframework.server.KeycloakUrls;
@@ -166,7 +166,7 @@ public class UserEmailTest extends AbstractUserTest {
 
     @Test
     public void sendResetPasswordEmailSuccess() throws IOException {
-        UserRepresentation userRep = UserConfigBuilder.create()
+        UserRepresentation userRep = UserBuilder.create()
                 .username("user1").name("User", "One").email("user1@test.com").build();
 
         String id = createUser(userRep);
@@ -282,7 +282,7 @@ public class UserEmailTest extends AbstractUserTest {
 
     @Test
     public void sendResetPasswordEmailWithCustomLifespan() throws IOException {
-        UserRepresentation userRep = UserConfigBuilder.create()
+        UserRepresentation userRep = UserBuilder.create()
                 .username("user1").name("User", "One").email("user1@test.com").build();
 
         String id = createUser(userRep);
@@ -336,7 +336,7 @@ public class UserEmailTest extends AbstractUserTest {
 
     @Test
     public void sendResetPasswordEmailSuccessTwoLinks() throws IOException {
-        UserRepresentation userRep = UserConfigBuilder.create()
+        UserRepresentation userRep = UserBuilder.create()
                 .username("user1").name("User", "One").email("user1@test.com").build();
 
         String id = createUser(userRep);
@@ -377,7 +377,7 @@ public class UserEmailTest extends AbstractUserTest {
 
     @Test
     public void sendResetPasswordEmailSuccessTwoLinksReverse() throws IOException {
-        UserRepresentation userRep = UserConfigBuilder.create()
+        UserRepresentation userRep = UserBuilder.create()
                 .username("user1").name("User", "One").email("user1@test.com").build();
 
         String id = createUser(userRep);
@@ -420,7 +420,7 @@ public class UserEmailTest extends AbstractUserTest {
 
     @Test
     public void sendResetPasswordEmailSuccessLinkOpenDoesNotExpireWhenOpenedOnly() throws IOException {
-        UserRepresentation userRep = UserConfigBuilder.create()
+        UserRepresentation userRep = UserBuilder.create()
                 .username("user1").name("User", "One").email("user1@test.com").build();
 
         String id = createUser(userRep);
@@ -461,7 +461,7 @@ public class UserEmailTest extends AbstractUserTest {
 
     @Test
     public void sendResetPasswordEmailSuccessTokenShortLifespan() throws IOException {
-        UserRepresentation userRep = UserConfigBuilder.create()
+        UserRepresentation userRep = UserBuilder.create()
                 .username("user1").name("User", "One").email("user1@test.com").build();
 
         String id = createUser(userRep);
@@ -501,7 +501,7 @@ public class UserEmailTest extends AbstractUserTest {
 
     @Test
     public void sendResetPasswordEmailSuccessWithRecycledAuthSession() throws IOException {
-        UserRepresentation userRep = UserConfigBuilder.create()
+        UserRepresentation userRep = UserBuilder.create()
                 .username("user1").name("User", "One").email("user1@test.com").build();
 
         String id = createUser(userRep);
@@ -563,7 +563,7 @@ public class UserEmailTest extends AbstractUserTest {
 
     @Test
     public void sendResetPasswordEmailWithRedirect() throws IOException {
-        UserRepresentation userRep = UserConfigBuilder.create()
+        UserRepresentation userRep = UserBuilder.create()
                 .username("user1").name("User", "One").email("user1@test.com").build();
 
         String id = createUser(userRep);
@@ -629,7 +629,7 @@ public class UserEmailTest extends AbstractUserTest {
     @Test
     public void sendResetPasswordEmailWithRedirectAndCustomLifespan() throws IOException {
 
-        UserRepresentation userRep = UserConfigBuilder.create()
+        UserRepresentation userRep = UserBuilder.create()
                 .username("user1").name("User", "One").email("user1@test.com").build();
 
         String id = createUser(userRep);
@@ -711,7 +711,7 @@ public class UserEmailTest extends AbstractUserTest {
 
     @Test
     public void sendVerifyEmail() throws IOException {
-        UserRepresentation userRep = UserConfigBuilder.create()
+        UserRepresentation userRep = UserBuilder.create()
                 .username("user1").name("User", "One").build();
 
         String id = createUser(userRep);
@@ -778,7 +778,7 @@ public class UserEmailTest extends AbstractUserTest {
 
     @Test
     public void sendVerifyEmailWithRedirect() throws IOException {
-        UserRepresentation userRep = UserConfigBuilder.create()
+        UserRepresentation userRep = UserBuilder.create()
                 .username("user1").name("User", "One").email("user1@test.com").build();
 
         String id = createUser(userRep);
@@ -822,7 +822,7 @@ public class UserEmailTest extends AbstractUserTest {
 
     @Test
     public void sendVerifyEmailWithRedirectAndCustomLifespan() throws IOException {
-        UserRepresentation userRep = UserConfigBuilder.create()
+        UserRepresentation userRep = UserBuilder.create()
                 .username("user1").name("User", "One").email("user1@test.com").build();
 
         String id = createUser(userRep);
@@ -890,7 +890,7 @@ public class UserEmailTest extends AbstractUserTest {
 
     private static class UserEmailTestAppClientConf implements ClientConfig {
 
-        public ClientConfigBuilder configure(ClientConfigBuilder builder) {
+        public ClientBuilder configure(ClientBuilder builder) {
             builder.clientId("test-app-email");
             builder.secret("password");
             builder.baseUrl("http://localhost:8080/auth/");

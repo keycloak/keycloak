@@ -58,6 +58,14 @@ public class ClusterConfigDistTest {
     }
 
     @Test
+    @Launch({ "start-dev", "--cache=ispn", "--cache-embedded-network-bind-address=127.0.0.2","--cache-embedded-network-bind-port=7802"})
+    void changeBindAddressAndPort(CLIResult result) {
+        result.assertClusteredCache();
+        result.assertMessage("physical addresses are `[127.0.0.2:7802]`");
+        result.assertMessage("ISPN000078: Starting JGroups channel `ISPN` with stack `jdbc-ping`");
+    }
+
+    @Test
     @Launch({ "start-dev", "--cache=ispn", "--cache-embedded-network-bind-address=127.0.0.1","--cache-embedded-network-bind-port=7801", "--cache-embedded-network-external-address=127.0.0.2", "--cache-embedded-network-external-port=7802"})
     void changeBindAndExternalAddress(CLIResult result) {
         result.assertClusteredCache();

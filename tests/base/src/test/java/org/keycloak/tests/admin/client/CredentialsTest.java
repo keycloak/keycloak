@@ -53,6 +53,7 @@ import org.keycloak.testframework.events.AdminEventAssertion;
 import org.keycloak.testframework.events.AdminEvents;
 import org.keycloak.testframework.realm.ManagedClient;
 import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.tests.suites.DatabaseTest;
 import org.keycloak.tests.utils.admin.AdminEventPaths;
 
 import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataOutput;
@@ -99,6 +100,7 @@ public class CredentialsTest {
     }
 
     @Test
+    @DatabaseTest
     public void testGetAndRegenerateSecret() {
         CredentialRepresentation oldCredential = managedClient.admin().getSecret();
         CredentialRepresentation newCredential = managedClient.admin().generateNewSecret();
@@ -114,6 +116,7 @@ public class CredentialsTest {
     }
 
     @Test
+    @DatabaseTest
     public void testGetAndRegenerateRegistrationAccessToken() {
         ClientRepresentation rep = managedClient.admin().toRepresentation();
         String oldToken = rep.getRegistrationAccessToken();
@@ -130,6 +133,7 @@ public class CredentialsTest {
     }
 
     @Test
+    @DatabaseTest
     public void testGetCertificateResource() {
         ClientAttributeCertificateResource certRsc = managedClient.admin().getCertficateResource("jwt.credential");
         CertificateRepresentation cert = certRsc.generate();
@@ -141,6 +145,7 @@ public class CredentialsTest {
     }
 
     @Test
+    @DatabaseTest
     public void testUploadKeyAndCertificate() throws Exception {
         String certificate2 = "MIICnTCCAYUCBgFPPQDGxTANBgkqhkiG9w0BAQsFADASMRAwDgYDVQQDDAdjbGllbnQxMB4XDTE1MDgxNzE4NTAwNVoXDTI1MDgxNzE4NTE0NVowEjEQMA4GA1UEAwwHY2xpZW50MTCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAMMw3PaBffWxgS2PYSDDBp6As+cNvv9kt2C4f/RDAGmvSIHPFev9kuQiKs3Oaws3ZsV4JG3qHEuYgnh9W4vfe3DwNwtD1bjL5FYBhPBFTw0lAQECYxaBHnkjHwUKp957FqdSPPICm3LjmTcEdlH+9dpp9xHCMbbiNiWDzWI1xSxC8Fs2d0hwz1sd+Q4QeTBPIBWcPM+ICZtNG5MN+ORfayu4X+Me5d0tXG2fQO//rAevk1i5IFjKZuOjTwyKB5SJIY4b8QTeg0g/50IU7Ht00Pxw6CK02dHS+FvXHasZlD3ckomqCDjStTBWdhJo5dST0CbOqalkkpLlCCbGA1yEQRsCAwEAATANBgkqhkiG9w0BAQsFAAOCAQEAUIMeJ+EAo8eNpCG/nXImacjrKakbFnZYBGD/gqeTGaZynkX+jgBSructTHR83zSH+yELEhsAy+3BfK4EEihp+PEcRnK2fASVkHste8AQ7rlzC+HGGirlwrVhWCdizNUCGK80DE537IZ7nmZw6LFG9P5/Q2MvCsOCYjRUvMkukq6TdXBXR9tETwZ+0gpSfsOxjj0ZF7ftTRUSzx4rFfcbM9fRNdVizdOuKGc8HJPA5lLOxV6CyaYIvi3y5RlQI1OHeS34lE4w9CNPRFa/vdxXvN7ClyzA0HMFNWxBN7pC/Ht/FbhSvaAagJBHg+vCrcY5C26Oli7lAglf/zZrwUPs0w==";
 

@@ -31,6 +31,11 @@ public class Events extends AbstractEvents<EventRepresentation> {
     }
 
     @Override
+    protected long getTime(EventRepresentation rep) {
+        return rep.getTime();
+    }
+
+    @Override
     protected void clearServerEvents() {
         realm.admin().clearEvents();
     }

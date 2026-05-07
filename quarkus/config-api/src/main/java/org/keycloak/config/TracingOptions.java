@@ -112,8 +112,7 @@ public class TracingOptions {
 
     public static final Option<List<String>> TRACING_HEADERS = OptionBuilder.listOptionBuilder("tracing-headers", String.class)
             .category(OptionCategory.TRACING)
-            .hidden()
-            .description("Hidden option for OpenTelemetry headers that will be part of the exporter request. Values in format 'key1=val1,key2=val2'. Overrides the 'tracing-header-<header>' options.")
+            .synthetic()
             .build();
 
 }

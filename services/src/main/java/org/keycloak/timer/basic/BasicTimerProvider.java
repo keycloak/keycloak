@@ -52,6 +52,11 @@ public class BasicTimerProvider implements TimerProvider {
 
     @Override
     public void schedule(final Runnable runnable, final long intervalMillis, String taskName) {
+        schedule(runnable, intervalMillis, intervalMillis, taskName);
+    }
+
+    @Override
+    public void schedule(final Runnable runnable, final long initialDelayMillis, final long intervalMillis, String taskName) {
         TimerTask task = new BasicTimerTask(runnable);
 
         TimerTaskContextImpl taskContext = new TimerTaskContextImpl(runnable, task, Time.currentTimeMillis(), intervalMillis);
@@ -61,14 +66,20 @@ public class BasicTimerProvider implements TimerProvider {
             existingTask.timerTask.cancel();
         }
 
-        logger.debugf("Starting task '%s' with interval '%d'", taskName, intervalMillis);
-        timer.schedule(task, intervalMillis, intervalMillis);
+        logger.debugf("Starting task '%s' with initial delay '%d' and interval '%d'", taskName, initialDelayMillis, intervalMillis);
+        timer.schedule(task, initialDelayMillis, intervalMillis);
     }
 
     @Override
     public void scheduleTask(ScheduledTask scheduledTask, long intervalMillis, String taskName) {
         ScheduledTaskRunner scheduledTaskRunner = new ScheduledTaskRunner(session.getKeycloakSessionFactory(), scheduledTask, transactionTimeout);
         this.schedule(scheduledTaskRunner, intervalMillis, taskName);
+    }
+
+    @Override
+    public void scheduleTask(ScheduledTask scheduledTask, long initialDelayMillis, long intervalMillis, String taskName) {
+        ScheduledTaskRunner scheduledTaskRunner = new ScheduledTaskRunner(session.getKeycloakSessionFactory(), scheduledTask, transactionTimeout);
+        this.schedule(scheduledTaskRunner, initialDelayMillis, intervalMillis, taskName);
     }
 
     @Override

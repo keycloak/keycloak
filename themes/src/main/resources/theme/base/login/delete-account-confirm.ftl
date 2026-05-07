@@ -8,13 +8,13 @@
 
     <form action="${url.loginAction}" class="form-vertical" method="post">
 
-       <div class="alert alert-warning" style="margin-top:0 !important;margin-bottom:30px !important">
+       <div class="alert alert-warning kc-alert-delete-account">
            <span class="pficon pficon-warning-triangle-o"></span>
            ${msg("irreversibleAction")}
        </div>
 
        <p>${msg("deletingImplies")}</p>
-       <ul style="color: #72767b;list-style: disc;list-style-position: inside;">
+       <ul class="kc-delete-account-list">
          <li>${msg("loggingOutImmediately")}</li>
          <li>${msg("errasingData")}</li>
        </ul>
@@ -24,7 +24,7 @@
       <div id="kc-form-buttons">
             <input class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonLargeClass!}" type="submit" value="${msg("doConfirmDelete")}" />
             <#if triggered_from_aia>
-            <button class="${properties.kcButtonClass!} ${properties.kcButtonDefaultClass!} ${properties.kcButtonLargeClass!}" style="margin-left: calc(100% - 220px)" type="submit" name="cancel-aia" value="true">${msg("doCancel")}</button>
+            <button class="${properties.kcButtonClass!} ${properties.kcButtonDefaultClass!} ${properties.kcButtonLargeClass!} kc-delete-account-cancel" type="submit" name="cancel-aia" value="true">${msg("doCancel")}</button>
             </#if>
        </div>
     </form>

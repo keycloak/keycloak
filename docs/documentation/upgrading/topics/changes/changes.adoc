@@ -1,13 +1,45 @@
 [[migration-changes]]
 == Migration Changes
 
+=== Migrating to 26.7.0
+
+include::changes-26_7_0.adoc[leveloffset=2]
+
+=== Migrating to 26.6.3
+
+include::changes-26_6_3.adoc[leveloffset=2]
+
+=== Migrating to 26.6.2
+
+include::changes-26_6_2.adoc[leveloffset=2]
+
+=== Migrating to 26.6.1
+
+include::changes-26_6_1.adoc[leveloffset=2]
+
 === Migrating to 26.6.0
 
 include::changes-26_6_0.adoc[leveloffset=2]
 
+=== Migrating to 26.5.7
+
+include::changes-26_5_7.adoc[leveloffset=2]
+
+=== Migrating to 26.5.5
+
+include::changes-26_5_5.adoc[leveloffset=2]
+
 === Migrating to 26.5.4
 
 include::changes-26_5_4.adoc[leveloffset=2]
+
+=== Migrating to 26.5.2
+
+include::changes-26_5_2.adoc[leveloffset=2]
+
+=== Migrating to 26.5.1
+
+include::changes-26_5_1.adoc[leveloffset=2]
 
 === Migrating to 26.5.0
 
@@ -676,7 +708,7 @@ Cross-Datacenter Replication changes::
   * You don't need to configure security anymore in the {jdgserver_name} server configuration file.
 ifeval::[{project_community}==true]
   * The `transaction` element needs to be removed from the configuration of replicated caches in the {jdgserver_name} server
-  configuration file. This is needed because of the infinispan bug https://issues.redhat.com/browse/ISPN-9323.
+  configuration file. This is needed because of the infinispan bug https://redhat.atlassian.net/browse/ISPN-9323.
 endif::[]
 
 === Migration to 4.3.0

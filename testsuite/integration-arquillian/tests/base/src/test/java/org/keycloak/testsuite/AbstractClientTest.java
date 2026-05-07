@@ -27,15 +27,17 @@ import org.keycloak.events.admin.ResourceType;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.realm.RealmBuilder;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.events.TestEventsListenerProviderFactory;
 import org.keycloak.testsuite.util.AdminEventPaths;
 import org.keycloak.testsuite.util.AssertAdminEvents;
-import org.keycloak.testsuite.util.RealmBuilder;
 
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
+import org.junit.jupiter.api.Assertions;
 
 import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
 
@@ -59,14 +61,14 @@ public abstract class AbstractClientTest extends AbstractAuthTest {
     public void setupAdminEvents() {
         RealmRepresentation realm = testRealmResource().toRepresentation();
         if (realm.getEventsListeners() == null || !realm.getEventsListeners().contains(TestEventsListenerProviderFactory.PROVIDER_ID)) {
-            realm = RealmBuilder.edit(testRealmResource().toRepresentation()).testEventListener().build();
+            realm = RealmBuilder.update(testRealmResource().toRepresentation()).eventsListeners(TestEventsListenerProviderFactory.PROVIDER_ID).build();
             testRealmResource().update(realm);
         }
     }
 
     @After
     public void tearDownAdminEvents() {
-        RealmRepresentation realm = RealmBuilder.edit(testRealmResource().toRepresentation()).removeTestEventListener().build();
+        RealmRepresentation realm = RealmBuilder.update(testRealmResource().toRepresentation()).removeEventListeners(TestEventsListenerProviderFactory.PROVIDER_ID).build();
         testRealmResource().update(realm);
     }
 
@@ -88,7 +90,7 @@ public abstract class AbstractClientTest extends AbstractAuthTest {
                 result = user;
             }
         }
-        Assert.assertNotNull("Did not find user with username " + userName, result);
+        Assertions.assertNotNull(result, "Did not find user with username " + userName);
         return result;
     }
 
@@ -116,11 +118,11 @@ public abstract class AbstractClientTest extends AbstractAuthTest {
     }
 
     protected ClientResource findClientResource(String name) {
-        return ApiUtil.findClientResourceByName(testRealmResource(), name);
+        return AdminApiUtil.findClientResourceByName(testRealmResource(), name);
     }
 
     protected ClientResource findClientResourceById(String id) {
-        return ApiUtil.findClientResourceByClientId(testRealmResource(), id);
+        return AdminApiUtil.findClientResourceByClientId(testRealmResource(), id);
     }
 
 }

@@ -35,16 +35,16 @@ import org.keycloak.testsuite.util.ServerURLs;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 
-import org.junit.Assert;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 import static org.keycloak.testsuite.AbstractAdminTest.loadJson;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createAnyClientConditionConfig;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createSecureRedirectUrisEnforcerExecutorConfig;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class SecureRedirectUrisEnforcerExecutorTest extends AbstractClientPoliciesTest {
 
@@ -581,8 +581,8 @@ public class SecureRedirectUrisEnforcerExecutorTest extends AbstractClientPolici
                 clientRep.setPostLogoutRedirectUris(List.of("+"));
         });
         OIDCClientRepresentation clientRepp = reg.oidc().get(clientId);
-        Assert.assertEquals(List.of("https://oauth.redirect/some"), clientRepp.getRedirectUris());
-        Assert.assertEquals(List.of("https://oauth.redirect/some"), clientRepp.getPostLogoutRedirectUris());
+        Assertions.assertEquals(List.of("https://oauth.redirect/some"), clientRepp.getRedirectUris());
+        Assertions.assertEquals(List.of("https://oauth.redirect/some"), clientRepp.getPostLogoutRedirectUris());
 
         // Fail - incorrect domain for post-logout redirect uri
         try {
@@ -601,8 +601,8 @@ public class SecureRedirectUrisEnforcerExecutorTest extends AbstractClientPolici
             clientRep.setPostLogoutRedirectUris(List.of("https://oauth.redirect/some-post-logout"));
         });
         clientRepp = reg.oidc().get(clientId);
-        Assert.assertEquals(List.of("https://oauth.redirect/some"), clientRepp.getRedirectUris());
-        Assert.assertEquals(List.of("https://oauth.redirect/some-post-logout"), clientRepp.getPostLogoutRedirectUris());
+        Assertions.assertEquals(List.of("https://oauth.redirect/some"), clientRepp.getRedirectUris());
+        Assertions.assertEquals(List.of("https://oauth.redirect/some-post-logout"), clientRepp.getPostLogoutRedirectUris());
     }
 
 
@@ -704,7 +704,7 @@ public class SecureRedirectUrisEnforcerExecutorTest extends AbstractClientPolici
         oauth.client(clientId, "secret");
         oauth.redirectUri(redirectUri);
         AuthorizationEndpointResponse response = oauth.doLogin("test-user@localhost", "password");
-        Assert.assertNotNull(response.getCode());
+        Assertions.assertNotNull(response.getCode());
         AccessTokenResponse res = oauth.doAccessTokenRequest(response.getCode());
         assertEquals(200, res.getStatusCode());
         oauth.doLogout(res.getRefreshToken());

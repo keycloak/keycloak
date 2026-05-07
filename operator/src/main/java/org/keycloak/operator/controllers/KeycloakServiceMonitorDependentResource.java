@@ -1,11 +1,14 @@
 package org.keycloak.operator.controllers;
 
 import java.net.HttpURLConnection;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
 
 import org.keycloak.operator.Constants;
 import org.keycloak.operator.Utils;
-import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.ServiceMonitorSpec;
+import org.keycloak.operator.crds.v2beta1.deployment.Keycloak;
+import org.keycloak.operator.crds.v2beta1.deployment.spec.ServiceMonitorSpec;
 
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.Watcher;
@@ -15,19 +18,20 @@ import io.fabric8.openshift.api.model.monitoring.v1.ServiceMonitorBuilder;
 import io.javaoperatorsdk.operator.api.config.informer.Informer;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
-import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.Condition;
+import io.quarkiverse.operatorsdk.annotations.CSVMetadata;
 import io.quarkus.logging.Log;
 
 import static org.keycloak.operator.controllers.KeycloakDeploymentDependentResource.managementEndpoint;
-import static org.keycloak.operator.crds.v2alpha1.CRDUtils.METRICS_ENABLED;
-import static org.keycloak.operator.crds.v2alpha1.CRDUtils.configuredOptions;
+import static org.keycloak.operator.crds.v2beta1.CRDUtils.METRICS_ENABLED;
+import static org.keycloak.operator.crds.v2beta1.CRDUtils.configuredOptions;
 
 @KubernetesDependent(
       informer = @Informer(labelSelector = Constants.DEFAULT_LABELS_AS_STRING)
 )
-public class KeycloakServiceMonitorDependentResource extends CRUDKubernetesDependentResource<ServiceMonitor, Keycloak> {
+@CSVMetadata.Optional
+public class KeycloakServiceMonitorDependentResource extends VersionTolerantCRUDKubernetesDependentResource<ServiceMonitor, Keycloak> {
 
     public static final String OPEN_METRICS_PROTOCOL = "OpenMetricsText1.0.0";
     public static final String WARN_METRICS_NOT_ENABLED = "A ServiceMonitor will not be created because `metrics-enabled` is not true.";
@@ -95,11 +99,19 @@ public class KeycloakServiceMonitorDependentResource extends CRUDKubernetesDepen
         var endpoint = managementEndpoint(primary, context, false);
         var meta = primary.getMetadata();
         var spec = ServiceMonitorSpec.get(primary);
+
+        Map<String,String> allLabels = Utils.allInstanceLabels(primary);
+        var optionalSpec = Optional.ofNullable(spec);
+        optionalSpec.map(ServiceMonitorSpec::getLabels).ifPresent(allLabels::putAll);
+
+        Map<String,String> annotations = optionalSpec.map(ServiceMonitorSpec::getAnnotations).orElse(new HashMap<>());
+
         return new ServiceMonitorBuilder()
               .withNewMetadata()
                 .withName(meta.getName())
                 .withNamespace(meta.getNamespace())
-                .withLabels(Utils.allInstanceLabels(primary))
+                .withLabels(allLabels)
+                .withAnnotations(annotations)
               .endMetadata()
               .withNewSpec()
                 .withNewNamespaceSelector()

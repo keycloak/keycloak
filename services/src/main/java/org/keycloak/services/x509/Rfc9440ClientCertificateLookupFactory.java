@@ -33,6 +33,9 @@ public class Rfc9440ClientCertificateLookupFactory implements X509ClientCertific
     @Override
     public void init(Config.Scope config) {
         certificateChainLength = config.getInt(HTTP_HEADER_CERT_CHAIN_LENGTH, HTTP_HEADER_CERT_CHAIN_LENGTH_DEFAULT);
+        if (certificateChainLength < 0) {
+            throw new IllegalArgumentException(HTTP_HEADER_CERT_CHAIN_LENGTH + " must be >= 0, but was " + certificateChainLength);
+        }
         sslClientCertHttpHeader = config.get(HTTP_HEADER_CLIENT_CERT, HTTP_HEADER_CLIENT_CERT_DEFAULT);
         sslChainHttpHeader = config.get(HTTP_HEADER_CERT_CHAIN, HTTP_HEADER_CERT_CHAIN_DEFAULT);
 

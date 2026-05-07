@@ -5,6 +5,7 @@ on:
     branches-ignore:
       - main
       - dependabot/**
+      - copilot/**
       - quarkus-next
   pull_request:
   workflow_dispatch:
@@ -57,7 +58,7 @@ jobs:
           mv ./quarkus/dist/target/keycloak-999.0.0-SNAPSHOT.tar.gz ./keycloak-999.0.0-SNAPSHOT.tar.gz
 
       - name: Upload Keycloak dist
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: keycloak
           path: keycloak-999.0.0-SNAPSHOT.tar.gz
@@ -159,7 +160,7 @@ jobs:
       - uses: ./.github/actions/pnpm-setup
 
       - name: Download Keycloak server
-        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: keycloak
 
@@ -169,7 +170,7 @@ jobs:
       - name: Start Keycloak server
         run: |
           tar xfvz keycloak-999.0.0-SNAPSHOT.tar.gz
-          keycloak-999.0.0-SNAPSHOT/bin/kc.sh start-dev --features=transient-users,oid4vc-vci &> ~/server.log &
+          keycloak-999.0.0-SNAPSHOT/bin/kc.sh start-dev --features=transient-users,oid4vc-vci,client-admin-api:v2 &> ~/server.log &
         env:
           KC_BOOTSTRAP_ADMIN_USERNAME: admin
           KC_BOOTSTRAP_ADMIN_PASSWORD: admin
@@ -183,7 +184,7 @@ jobs:
         working-directory: js
 
       - name: Upload Playwright report
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: always()
         with:
           name: account-ui-playwright-report-${{ matrix.browser }}
@@ -192,7 +193,7 @@ jobs:
 
       - name: Upload server logs
         if: always()
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: account-ui-server-log-${{ matrix.browser }}
           path: ~/server.log
@@ -220,7 +221,7 @@ jobs:
       - uses: ./.github/actions/pnpm-setup
 
       - name: Download Keycloak server
-        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: keycloak
 
@@ -246,7 +247,7 @@ jobs:
         working-directory: js
 
       - name: Upload Playwright report
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: always()
         with:
           name: admin-ui-playwright-report-${{ matrix.browser }}
@@ -255,7 +256,7 @@ jobs:
 
       - name: Upload server logs
         if: always()
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: admin-ui-server-log-${{ matrix.browser }}
           path: ~/server.log
@@ -274,7 +275,7 @@ jobs:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
 
       - name: Download Keycloak server
-        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: keycloak
 
@@ -284,13 +285,17 @@ jobs:
       - name: Start Keycloak server
         run: |
           tar xfvz keycloak-999.0.0-SNAPSHOT.tar.gz
-          keycloak-999.0.0-SNAPSHOT/bin/kc.sh start-dev --http-port 8180 --features transient-users,oid4vc-vci,declarative-ui,quick-theme,spiffe,kubernetes-service-accounts,workflows,client-auth-federated,jwt-authorization-grant &> ~/server.log &
+          keycloak-999.0.0-SNAPSHOT/bin/kc.sh start-dev --http-port 8180 --features transient-users,oid4vc-vci,declarative-ui,quick-theme,spiffe,kubernetes-service-accounts,workflows,client-auth-federated,jwt-authorization-grant,client-admin-api:v2 &> ~/server.log &
           curl --connect-timeout 5 --max-time 10 --retry 10 --retry-all-errors --retry-delay 10 --retry-max-time 120 -s -o /dev/null http://127.0.0.1:8180
         env:
           KC_BOOTSTRAP_ADMIN_USERNAME: admin
           KC_BOOTSTRAP_ADMIN_PASSWORD: admin
 
       - uses: ./.github/actions/pnpm-setup
+
+      - name: Generate bindings
+        run: pnpm --fail-if-no-match --filter ${{ env.WORKSPACE }} generate:openapi
+        working-directory: js
 
       - name: Run tests
         run: pnpm --fail-if-no-match --filter ${{ env.WORKSPACE }} run test

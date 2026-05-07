@@ -8,6 +8,9 @@ import java.lang.annotation.Target;
 
 import org.junit.jupiter.api.extension.ExtendWith;
 
+/**
+ * Tests annotated with <code>@DisabledForDatabases</code> will be skipped for the specified databases
+ */
 @Target({ElementType.TYPE, ElementType.METHOD})
 @Retention(RetentionPolicy.RUNTIME)
 @Documented

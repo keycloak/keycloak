@@ -135,7 +135,14 @@ export const AuthorizationResources = ({
           resourceId: selectedResource?._id!,
         });
         addAlert(t("resourceDeletedSuccess"), AlertVariant.success);
-        refresh();
+
+        if (resources?.length === 1 && first > 0) {
+          // Go back one page. Changing 'first' will automatically re-trigger
+          // the useFetch hook, so we don't need to call refresh() here.
+          setFirst(first - max);
+        } else {
+          refresh();
+        }
       } catch (error) {
         addError("resourceDeletedError", error);
       }
@@ -207,7 +214,7 @@ export const AuthorizationResources = ({
                   )}
                 </Tr>
               </Thead>
-              {resources.map((resource, rowIndex) => (
+              {resources.slice(0, max).map((resource, rowIndex) => (
                 <Tbody key={resource._id} isExpanded={resource.isExpanded}>
                   <Tr>
                     <Td

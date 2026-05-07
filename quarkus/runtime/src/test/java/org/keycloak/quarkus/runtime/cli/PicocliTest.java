@@ -38,7 +38,6 @@ import org.keycloak.quarkus.runtime.cli.command.AbstractAutoBuildCommand;
 import org.keycloak.quarkus.runtime.cli.command.AbstractCommand;
 import org.keycloak.quarkus.runtime.configuration.AbstractConfigurationTest;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
-import org.keycloak.quarkus.runtime.configuration.KeycloakConfigSourceProvider;
 import org.keycloak.quarkus.runtime.configuration.PersistedConfigSource;
 
 import io.smallrye.config.SmallRyeConfig;
@@ -109,7 +108,6 @@ public class PicocliTest extends AbstractConfigurationTest {
 
         @Override
         public void initConfig(AbstractCommand command) {
-            KeycloakConfigSourceProvider.reload();
             boolean checkBuild = Environment.isRebuildCheck();
             super.initConfig(command);
             if (!checkBuild && PersistedConfigSource.getInstance().getConfigValueProperties().isEmpty()) {
@@ -159,6 +157,8 @@ public class PicocliTest extends AbstractConfigurationTest {
         NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev");
         assertFalse(nonRunningPicocli.getOutString(), nonRunningPicocli.getOutString().toUpperCase().contains("WARN"));
         assertFalse(nonRunningPicocli.getOutString(), nonRunningPicocli.getOutString().toUpperCase().contains("ERROR"));
+        onAfter();
+        assertFalse(Environment.isDevProfile());
     }
 
     @Test
@@ -299,7 +299,7 @@ public class PicocliTest extends AbstractConfigurationTest {
                 containsString(Help.defaultColorScheme(nonRunningPicocli.getColorMode())
                         .errorText("Unknown option: '--db-pasword'").toString()));
         assertThat(nonRunningPicocli.getErrString(), containsString(
-                "Possible solutions: --db-url, --db-url-host, --db-url-database, --db-url-port, --db-url-properties, --db-username, --db-password, --db-schema, --db-pool-initial-size, --db-pool-min-size, --db-pool-max-size, --db-pool-max-lifetime, --db-debug-jpql, --db-log-slow-queries-threshold, --db-driver, --db"));
+                "--db-password, --db-password-<datasource>, --db-mtls-key-store-password, --db-tls-trust-store-password, --db-mtls-key-store-password-<datasource>, --db-tls-trust-store-password-<datasource>, --db"));
     }
 
     @Test
@@ -333,6 +333,7 @@ public class PicocliTest extends AbstractConfigurationTest {
         build("build", "--db=postgres");
         NonRunningPicocli nonRunningPicocli = pseudoLaunch("show-config");
         assertThat(nonRunningPicocli.getOutString(), containsString("postgres (Persisted)"));
+        assertThat(nonRunningPicocli.getOutString(), not(containsString("null")));
     }
 
     @Test
@@ -482,6 +483,12 @@ public class PicocliTest extends AbstractConfigurationTest {
         assertEquals(AbstractAutoBuildCommand.REBUILT_EXIT_CODE, nonRunningPicocli.exitCode);
         assertTrue(nonRunningPicocli.reaug);
         assertEquals("prod", nonRunningPicocli.buildProps.getProperty(org.keycloak.common.util.Environment.PROFILE));
+    }
+
+    @Test
+    public void testSyntheticValidationSkipped() {
+        NonRunningPicocli nonRunningPicocli = build("build", "--db=postgres");
+        assertFalse(nonRunningPicocli.getOutString(), nonRunningPicocli.getOutString().contains("kc.db"));
     }
 
     @Test
@@ -755,7 +762,26 @@ public class PicocliTest extends AbstractConfigurationTest {
     public void derivedPropertyUsage() {
         NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev", "--hostname=localhost", "--spi-hostname-v2-hostname=second-class");
         assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
-        assertThat(nonRunningPicocli.getOutString(), containsString("Please use the first-class option `kc.hostname` instead of `kc.spi-hostname-v2-hostname`"));
+        assertThat(nonRunningPicocli.getOutString(), containsString("With the first-class option `kc.hostname` set, you should remove the usage of `kc.spi-hostname-v2-hostname`"));
+    }
+
+    @Test
+    public void quarkusPropertyInQuarkusPropertiesWarning() {
+        putEnvVar("QUARKUS_HTTP_PORT", "9090");
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getOutString(),
+                containsString("Please use the first-class option `kc.http-port` instead of `quarkus.http.port`"));
+    }
+
+    @Test
+    public void quarkusPropertyInQuarkusPropertiesWarningWhenKcOptionSet() {
+        putEnvVar("QUARKUS_HTTP_PORT", "9090");
+        // When kc.http-port is explicitly set, should still warn about quarkus.http.port
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev", "--http-port=7070");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getOutString(),
+                containsString("With the first-class option `kc.http-port` set, you should remove the usage of `quarkus.http.port`"));
     }
 
     @Test
@@ -1206,12 +1232,6 @@ public class PicocliTest extends AbstractConfigurationTest {
         assertNoError(nonRunningPicocli);
         // the last is accepted
         assertExternalConfig("quarkus.otel.exporter.otlp.logs.headers", "Content-Language=de-DE");
-        onAfter();
-
-        // Hidden 'telemetry-logs-headers' takes precedence
-        nonRunningPicocli = pseudoLaunch("start-dev", "--features=opentelemetry-logs", "--telemetry-logs-enabled=true", "--telemetry-logs-headers=Overridden-by-me=yes", "--telemetry-logs-header-Authorization=Bearer asdlkfjadsflkj", "--telemetry-logs-header-Host=localhost:8080");
-        assertNoError(nonRunningPicocli);
-        assertExternalConfig("quarkus.otel.exporter.otlp.logs.headers", "Overridden-by-me=yes");
     }
 
     @Test
@@ -1244,29 +1264,18 @@ public class PicocliTest extends AbstractConfigurationTest {
         assertNoError(nonRunningPicocli);
         // the last is accepted
         assertExternalConfig("quarkus.otel.exporter.otlp.metrics.headers", "Content-Language=de-DE");
-        onAfter();
-
-        // Hidden 'telemetry-metrics-headers' takes precedence
-        nonRunningPicocli = pseudoLaunch("start-dev", "--features=opentelemetry-metrics", "--telemetry-metrics-enabled=true", "--metrics-enabled=true", "--telemetry-metrics-headers=Overridden-by-me=yes", "--telemetry-metrics-header-Authorization=Bearer asdlkfjadsflkj", "--telemetry-metrics-header-Host=localhost:8080");
-        assertNoError(nonRunningPicocli);
-        assertExternalConfig("quarkus.otel.exporter.otlp.metrics.headers", "Overridden-by-me=yes");
     }
 
     @Test
-    public void tracingHiddenParentHeaders() {
+    public void tracingSyntheticParentHeaders() {
         var nonRunningPicocli = pseudoLaunch("start-dev", "--tracing-headers=Authorization=Bearer asdlkfjadsflkj");
         assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
-        assertThat(nonRunningPicocli.getErrString(), containsString("Disabled option: '--tracing-headers'. Available only when Tracing is enabled"));
+        assertThat(nonRunningPicocli.getErrString(), containsString("Unknown option: '--tracing-headers'"));
         onAfter();
 
         nonRunningPicocli = pseudoLaunch("start-dev", "--tracing-enabled=true", "--tracing-headers=Authorization=Bearer asdlkfjadsflkj");
         assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
-        assertExternalConfig("quarkus.otel.exporter.otlp.traces.headers", "Authorization=Bearer asdlkfjadsflkj");
-        onAfter();
-
-        nonRunningPicocli = pseudoLaunch("start-dev", "--tracing-enabled=true", "--tracing-headers=Authorization=Bearer asdlkfjadsflkj,Host=localhost:8080");
-        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
-        assertExternalConfig("quarkus.otel.exporter.otlp.traces.headers", "Authorization=Bearer asdlkfjadsflkj,Host=localhost:8080");
+        assertExternalConfig("quarkus.otel.exporter.otlp.traces.headers", "");
     }
 
     @Test
@@ -1299,12 +1308,6 @@ public class PicocliTest extends AbstractConfigurationTest {
         assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
         // the last is accepted
         assertExternalConfig("quarkus.otel.exporter.otlp.traces.headers", "Content-Language=de-DE");
-        onAfter();
-
-        // Hidden 'tracing-headers' takes precedence
-        nonRunningPicocli = pseudoLaunch("start-dev", "--tracing-enabled=true", "--tracing-headers=Overridden-by-me=yes", "--tracing-header-Authorization=Bearer asdlkfjadsflkj", "--tracing-header-Host=localhost:8080");
-        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
-        assertExternalConfig("quarkus.otel.exporter.otlp.traces.headers", "Overridden-by-me=yes");
     }
 
     @Test
@@ -1955,6 +1958,42 @@ public class PicocliTest extends AbstractConfigurationTest {
         KeycloakMain.main(new String[] {"tools", "windows-service"}, nonRunningPicocli);
         assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
         assertTrue(nonRunningPicocli.getErrString().contains("Unknown option"));
+    }
+
+    @Test
+    public void failPoolMaxSizeTooLowForJdbcPing() {
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start", "--db=postgres", "--db-pool-max-size=3", "--cache=ispn");
+        assertError(nonRunningPicocli, "db-pool-max-size");
+    }
+
+    @Test
+    public void failPoolMaxSizeTooLowForExplicitJdbcPingStack() {
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start", "--db=postgres", "--db-pool-max-size=3", "--cache=ispn", "--cache-stack=jdbc-ping");
+        assertError(nonRunningPicocli, "db-pool-max-size");
+    }
+
+    @Test
+    public void poolMaxSizeLowAllowedWithoutJdbcPing() {
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev", "--db-pool-max-size=3", "--cache=local");
+        assertNoError(nonRunningPicocli);
+    }
+
+    @Test
+    public void poolMaxSizeLowAllowedWithKubernetesStack() {
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev", "--db-pool-max-size=3", "--cache=ispn", "--cache-stack=kubernetes");
+        assertNoError(nonRunningPicocli);
+    }
+    
+    @Test
+    public void commandSuggestions() {
+        NonRunningPicocli nonRunningPicocli = new NonRunningPicocli() {
+            @Override
+            protected CommandMode getCommandMode() {
+                return CommandMode.UNIX;
+            }
+        };
+        KeycloakMain.main(new String[] {"strt"}, nonRunningPicocli);
+        assertTrue(nonRunningPicocli.getErrString().contains("Did you mean: kc.sh start or kc.sh start-dev or kc.sh bootstrap-admin?"));
     }
 
 }

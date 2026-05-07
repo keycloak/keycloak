@@ -19,7 +19,7 @@ file initialized with an empty array. Both of these files must be committed to t
 A snapshot can be created by executing:
 
 ```
-./mvnw clean install -am -pl model/jpa -Pdb-changeset-snapshot -DskipTests
+./mvnw clean install -am -pl model/jpa -Pdb-snapshot -DskipTests
 ```
 
 

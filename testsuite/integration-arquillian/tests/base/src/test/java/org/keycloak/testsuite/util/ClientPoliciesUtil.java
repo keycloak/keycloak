@@ -38,6 +38,8 @@ import org.keycloak.jose.jwk.JWKBuilder;
 import org.keycloak.jose.jws.Algorithm;
 import org.keycloak.jose.jws.JWSHeader;
 import org.keycloak.models.utils.MapperTypeSerializer;
+import org.keycloak.protocol.oauth2.cimd.clientpolicy.condition.ClientIdUriSchemeCondition;
+import org.keycloak.protocol.oauth2.cimd.clientpolicy.executor.ClientIdMetadataDocumentExecutor;
 import org.keycloak.protocol.oidc.grants.ciba.clientpolicy.executor.SecureCibaAuthenticationRequestSigningAlgorithmExecutor;
 import org.keycloak.representations.idm.ClientPoliciesRepresentation;
 import org.keycloak.representations.idm.ClientPolicyConditionConfigurationRepresentation;
@@ -82,7 +84,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import static org.keycloak.jose.jwk.JWKUtil.toIntegerBytes;
 
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public final class ClientPoliciesUtil {
 
@@ -276,6 +278,40 @@ public final class ClientPoliciesUtil {
     public static SecureRedirectUrisEnforcerExecutor.Configuration createSecureRedirectUrisEnforcerExecutorConfig(
             Consumer<SecureRedirectUrisEnforcerExecutor.Configuration> apply) {
         SecureRedirectUrisEnforcerExecutor.Configuration config = new SecureRedirectUrisEnforcerExecutor.Configuration();
+        if (apply != null) {
+            apply.accept(config);
+        }
+        return config;
+    }
+
+    public static ClientIdMetadataDocumentExecutor.Configuration createClientIdMetadataDocumentExecutorConfig(
+            Consumer<ClientIdMetadataDocumentExecutor.Configuration> apply) {
+        ClientIdMetadataDocumentExecutor.Configuration config = new ClientIdMetadataDocumentExecutor.Configuration();
+        if (apply != null) {
+            apply.accept(config);
+        }
+        return config;
+    }
+
+    public static ClientIdUriSchemeCondition.Configuration createClientIdUriSchemeConditionConfig(
+            Consumer<ClientIdUriSchemeCondition.Configuration> apply) {
+        ClientIdUriSchemeCondition.Configuration config = new ClientIdUriSchemeCondition.Configuration();
+        if (apply != null) {
+            apply.accept(config);
+        }
+        return config;
+    }
+
+    public static <CONFIG extends ClientPolicyExecutorConfigurationRepresentation> CONFIG createExecutorConfig(
+            CONFIG config, Consumer<CONFIG> apply) {
+        if (apply != null) {
+            apply.accept(config);
+        }
+        return config;
+    }
+
+    public static <CONFIG extends ClientPolicyConditionConfigurationRepresentation> CONFIG createConditionConfig(
+            CONFIG config, Consumer<CONFIG> apply) {
         if (apply != null) {
             apply.accept(config);
         }

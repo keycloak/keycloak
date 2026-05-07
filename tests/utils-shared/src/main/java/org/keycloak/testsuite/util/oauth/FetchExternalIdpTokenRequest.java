@@ -17,15 +17,12 @@
 
 package org.keycloak.testsuite.util.oauth;
 
-import java.io.IOException;
 import java.util.Map;
 
 import jakarta.ws.rs.core.UriBuilder;
 
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import org.apache.http.client.methods.CloseableHttpResponse;
 
-public class FetchExternalIdpTokenRequest extends AbstractHttpGetRequest<FetchExternalIdpTokenRequest, AccessTokenResponse> {
+public abstract class FetchExternalIdpTokenRequest<T extends AbstractHttpResponse> extends AbstractHttpGetRequest<FetchExternalIdpTokenRequest, T> {
 
     private final String providerAlias;
     private final String accessToken;
@@ -41,6 +38,7 @@ public class FetchExternalIdpTokenRequest extends AbstractHttpGetRequest<FetchEx
         return UriBuilder.fromUri(client.baseUrl).path("/realms/{realm-name}/broker/{provider_alias}/token").buildFromMap(Map.of("realm-name", client.config.getRealm(), "provider_alias", providerAlias)).toString();
     }
 
+    @Override
     protected void initRequest() {
         header("Authorization", "Bearer " + accessToken);
 
@@ -48,16 +46,4 @@ public class FetchExternalIdpTokenRequest extends AbstractHttpGetRequest<FetchEx
             header("Origin", client.config.getOrigin());
         }
     }
-
-    @Override
-    protected AccessTokenResponse toResponse(CloseableHttpResponse response) throws IOException {
-        return new AccessTokenResponse(response) {
-            @Override
-            protected void parseError() throws IOException {
-                ObjectNode json = asJson(ObjectNode.class);
-                setError(json.has("errorMessage") ? json.get("errorMessage").asText() : null);
-            }
-        };
-    }
-
 }

@@ -43,7 +43,7 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractAdminTest;
 import org.keycloak.testsuite.AbstractChangeImportedUserPasswordsTest;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.InfoPage;
@@ -80,7 +80,7 @@ import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Abstract class for WebAuthn tests which use Virtual Authenticators
@@ -121,6 +121,7 @@ public abstract class AbstractWebAuthnVirtualTest extends AbstractChangeImported
 
     protected static final String ALL_ZERO_AAGUID = "00000000-0000-0000-0000-000000000000";
     protected static final String ALL_ONE_AAGUID = "11111111-1111-1111-1111-111111111111";
+    protected static final String CHROME_AAGUID = "01020304-0506-0708-0102-030405060708";
     protected static final String USERNAME = "UserWebAuthn";
     protected static final String EMAIL = "UserWebAuthn@email";
 
@@ -166,16 +167,16 @@ public abstract class AbstractWebAuthnVirtualTest extends AbstractChangeImported
 
     @Override
     protected void postAfterAbstractKeycloak() {
-        List<UserRepresentation> defaultUser = testRealm().users().search(USERNAME, true);
+        List<UserRepresentation> defaultUser = managedRealm.admin().users().search(USERNAME, true);
         if (defaultUser != null && !defaultUser.isEmpty()) {
-            Response response = testRealm().users().delete(defaultUser.get(0).getId());
+            Response response = managedRealm.admin().users().delete(defaultUser.get(0).getId());
             assertThat(response, notNullValue());
             assertThat(response.getStatus(), is(204));
         }
     }
 
     public UserResource userResource() {
-        return ApiUtil.findUserByUsernameId(testRealm(), USERNAME);
+        return AdminApiUtil.findUserByUsernameId(managedRealm.admin(), USERNAME);
     }
 
     public VirtualAuthenticatorOptions getDefaultAuthenticatorOptions() {
@@ -192,7 +193,7 @@ public abstract class AbstractWebAuthnVirtualTest extends AbstractChangeImported
     }
 
     public AbstractWebAuthnRealmUpdater<?> getWebAuthnRealmUpdater() {
-        return isPasswordless() ? new PasswordLessRealmAttributeUpdater(testRealm()) : new WebAuthnRealmAttributeUpdater(testRealm());
+        return isPasswordless() ? new PasswordLessRealmAttributeUpdater(managedRealm.admin()) : new WebAuthnRealmAttributeUpdater(managedRealm.admin());
     }
 
     public String getCredentialType() {
@@ -232,7 +233,7 @@ public abstract class AbstractWebAuthnVirtualTest extends AbstractChangeImported
     }
 
     protected void registerUser(String username, String password, String email, String authenticatorLabel, boolean shouldSuccess) {
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.clickRegister();
 
         waitForPageToLoad();
@@ -300,7 +301,7 @@ public abstract class AbstractWebAuthnVirtualTest extends AbstractChangeImported
     }
 
     protected void authenticateUser(String username, String password, boolean shouldSuccess) {
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.assertCurrent(TEST_REALM_NAME);
         loginPage.login(username, password);
 
@@ -454,7 +455,7 @@ public abstract class AbstractWebAuthnVirtualTest extends AbstractChangeImported
     }
 
     protected void checkWebAuthnConfiguration(String residentKey, String userVerification) {
-        WebAuthnRealmData realmData = new WebAuthnRealmData(testRealm().toRepresentation(), isPasswordless());
+        WebAuthnRealmData realmData = new WebAuthnRealmData(managedRealm.admin().toRepresentation(), isPasswordless());
         assertThat(realmData, notNullValue());
         assertThat(realmData.getRpEntityName(), is("localhost"));
         assertThat(realmData.getRequireResidentKey(), is(residentKey));

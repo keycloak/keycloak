@@ -28,15 +28,15 @@ import org.keycloak.services.clientpolicy.condition.ClientUpdaterContextConditio
 import org.keycloak.services.clientpolicy.executor.ClientPolicyExecutorSpi;
 import org.keycloak.services.clientpolicy.executor.SecureResponseTypeExecutorFactory;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
-import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
 
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 import static org.keycloak.common.Profile.Feature.CLIENT_POLICIES;
 
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * This test class is for enabling and disabling client policies by feature mechanism.
@@ -64,8 +64,8 @@ public class ClientPoliciesFeatureTest extends AbstractTestRealmKeycloakTest  {
     // Check if the feature really works
     private void checkIfFeatureWorks(boolean shouldWork) {
         try {
-            ClientPoliciesRepresentation clientPolicies = testRealm().clientPoliciesPoliciesResource().getPolicies();
-            Assert.assertTrue(clientPolicies.getPolicies().isEmpty());
+            ClientPoliciesRepresentation clientPolicies = managedRealm.admin().clientPoliciesPoliciesResource().getPolicies();
+            Assertions.assertTrue(clientPolicies.getPolicies().isEmpty());
             if (!shouldWork)
                 fail("Feature is available, but at this moment should be disabled");
 
@@ -81,11 +81,11 @@ public class ClientPoliciesFeatureTest extends AbstractTestRealmKeycloakTest  {
         Set<String> conditionProviderIds = serverInfo.getProviders().get(ClientPolicyConditionSpi.SPI_NAME).getProviders().keySet();
 
         if (shouldWork) {
-            Assert.assertTrue(executorProviderIds.contains(SecureResponseTypeExecutorFactory.PROVIDER_ID));
-            Assert.assertTrue(conditionProviderIds.contains(ClientUpdaterContextConditionFactory.PROVIDER_ID));
+            Assertions.assertTrue(executorProviderIds.contains(SecureResponseTypeExecutorFactory.PROVIDER_ID));
+            Assertions.assertTrue(conditionProviderIds.contains(ClientUpdaterContextConditionFactory.PROVIDER_ID));
         } else {
-            Assert.assertFalse(executorProviderIds.contains(SecureResponseTypeExecutorFactory.PROVIDER_ID));
-            Assert.assertFalse(conditionProviderIds.contains(ClientUpdaterContextConditionFactory.PROVIDER_ID));
+            Assertions.assertFalse(executorProviderIds.contains(SecureResponseTypeExecutorFactory.PROVIDER_ID));
+            Assertions.assertFalse(conditionProviderIds.contains(ClientUpdaterContextConditionFactory.PROVIDER_ID));
         }
     }
 }

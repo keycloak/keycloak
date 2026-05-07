@@ -21,13 +21,13 @@ If an H2 JDBC URL is provided on the command line or in a configuration file, an
 
 If the connection factory for the H2 database is initialized outside Keycloak, that initialization needs to take care of adding the `NON_KEYWORDS` attribute.
 
-See the H2 documentation http://www.h2database.com/html/commands.html#set_non_keywords[on the `NON_KEYWORDS` attribute] for details.
+See the H2 documentation https://www.h2database.com/html/commands.html#set_non_keywords[on the `NON_KEYWORDS` attribute] for details.
 
 == Upgrade of H2 database files
 
 H2 database base files created with H2 version 1.x should not be used with version 2.x.
 
-Purge existing H2 database files to start with an empty database, export and import the realms using Keycloak's export and import functionality, or refer to the http://www.h2database.com/html/migration-to-v2.html[migration notes on the H2 database project's website] for details on how to migrate H2 database contents.
+Purge existing H2 database files to start with an empty database, export and import the realms using Keycloak's export and import functionality, or refer to the https://www.h2database.com/html/migration-to-v2.html[migration notes on the H2 database project's website] for details on how to migrate H2 database contents.
 
 = Breaking changes in the new version of Keycloak Operator
 
@@ -118,7 +118,7 @@ Stream<GroupModel> getGroupsStream(RealmModel realm);
 ----
 +
 More details on streamification work can be found in
-https://issues.redhat.com/browse/KEYCLOAK-14011[KEYCLOAK-14011].
+https://redhat.atlassian.net/browse/KEYCLOAK-14011[KEYCLOAK-14011].
 
 * Consistent parameter ordering - methods now have strict parameter
 ordering where `RealmModel` is always the first parameter.

@@ -79,6 +79,7 @@ public abstract class AuthzEndpointRequestParser {
         KNOWN_REQ_PARAMS.add(OIDCLoginProtocol.REDIRECT_URI_PARAM);
         KNOWN_REQ_PARAMS.add(OIDCLoginProtocol.STATE_PARAM);
         KNOWN_REQ_PARAMS.add(OIDCLoginProtocol.SCOPE_PARAM);
+        KNOWN_REQ_PARAMS.add(OIDCLoginProtocol.RESOURCE_PARAM);
         KNOWN_REQ_PARAMS.add(OIDCLoginProtocol.LOGIN_HINT_PARAM);
         KNOWN_REQ_PARAMS.add(OIDCLoginProtocol.PROMPT_PARAM);
         KNOWN_REQ_PARAMS.add(AdapterConstants.KC_IDP_HINT);
@@ -132,6 +133,7 @@ public abstract class AuthzEndpointRequestParser {
         request.redirectUriParam = replaceIfNotNull(request.redirectUriParam, getAndValidateParameter(OIDCLoginProtocol.REDIRECT_URI_PARAM));
         request.state = replaceIfNotNull(request.state, getAndValidateParameter(OIDCLoginProtocol.STATE_PARAM));
         request.scope = replaceIfNotNull(request.scope, getAndValidateParameter(OIDCLoginProtocol.SCOPE_PARAM));
+        request.resource = replaceIfNotNull(request.resource, getAndValidateParameter(OIDCLoginProtocol.RESOURCE_PARAM));
         request.loginHint = replaceIfNotNull(request.loginHint, getAndValidateParameter(OIDCLoginProtocol.LOGIN_HINT_PARAM));
         request.prompt = replaceIfNotNull(request.prompt, getAndValidateParameter(OIDCLoginProtocol.PROMPT_PARAM));
         request.idpHint = replaceIfNotNull(request.idpHint, getAndValidateParameter(AdapterConstants.KC_IDP_HINT));

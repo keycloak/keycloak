@@ -29,6 +29,10 @@ Database:
                        deprecated, you should explicitly specify the db instead. Possible values
                        are: dev-file, dev-mem, mariadb, mssql, mysql, oracle, postgres, tidb.
                        Default: dev-file.
+--db-connect-timeout <timeout>
+                     Sets the JDBC driver connection timeout and login timeout. May be an ISO 8601
+                       duration value, an integer number of seconds, or an integer followed by one
+                       of [ms, h, m, s, d]. Default: 10s.
 --db-debug-jpql <true|false>
                      Add JPQL information as comments to SQL statements to debug JPA SQL statement
                        generation. Default: false.
@@ -37,6 +41,14 @@ Database:
 --db-log-slow-queries-threshold <milliseconds>
                      Log SQL statements slower than the configured threshold with logger org.
                        hibernate.SQL_SLOW and log-level info. Default: 10000.
+--db-mtls-key-store-file <path>
+                     The path to the keystore file containing the client certificate and private
+                       key used for mTLS authentication with the database server.
+--db-mtls-key-store-password <password>
+                     The password to access the keystore file specified in db-mtls-key-store-file.
+--db-mtls-key-store-type <type>
+                     The type of the keystore file. Common values include 'JKS' (Java KeyStore) and
+                       'PKCS12'. If not specified, it uses the driver's default.
 --db-password <password>
                      The password of the database user.
 --db-pool-initial-size <size>
@@ -51,6 +63,21 @@ Database:
 --db-pool-min-size <size>
                      The minimal size of the connection pool.
 --db-schema <schema> The database schema to be used.
+--db-tls-mode <mode> Sets the TLS mode for the database connection. If disabled, it uses the
+                       driver's default value. When set to verify-server, it enables encryption and
+                       server identity verification. The database server certificate or Certificate
+                       Authority (CA) certificate is required. Possible values are: disabled,
+                       verify-server. Default: disabled.
+--db-tls-trust-store-file <path>
+                     The path to the truststore file containing the database server certificates or
+                       Certificate Authority (CA) certificates used to verify the database server's
+                       identity.
+--db-tls-trust-store-password <password>
+                     The password to access the truststore file specified in
+                       db-tls-trust-store-file (if required and supported by the JDBC driver).
+--db-tls-trust-store-type <type>
+                     The type of the truststore file. Common values include 'JKS' (Java KeyStore)
+                       and 'PKCS12'. If not specified, it uses the driver's default.
 --db-url <jdbc-url>  The full database JDBC URL. If not provided, a default URL is set based on the
                        selected database vendor. For instance, if using 'postgres', the default
                        JDBC URL would be 'jdbc:postgresql://localhost/keycloak'.
@@ -72,6 +99,10 @@ Database:
 
 Database - additional datasources:
 
+--db-connect-timeout-<datasource> <timeout>
+                     Used for named <datasource>. Sets the JDBC driver connection timeout and login
+                       timeout. May be an ISO 8601 duration value, an integer number of seconds, or
+                       an integer followed by one of [ms, h, m, s, d]. Default: 10s.
 --db-debug-jpql-<datasource> <true|false>
                      Used for named <datasource>. Add JPQL information as comments to SQL
                        statements to debug JPA SQL statement generation. Default: false.
@@ -91,6 +122,17 @@ Database - additional datasources:
                      Used for named <datasource>. Log SQL statements slower than the configured
                        threshold with logger org.hibernate.SQL_SLOW and log-level info. Default:
                        10000.
+--db-mtls-key-store-file-<datasource> <path>
+                     Used for named <datasource>. The path to the keystore file containing the
+                       client certificate and private key used for mTLS authentication with the
+                       database server.
+--db-mtls-key-store-password-<datasource> <password>
+                     Used for named <datasource>. The password to access the keystore file
+                       specified in db-mtls-key-store-file.
+--db-mtls-key-store-type-<datasource> <type>
+                     Used for named <datasource>. The type of the keystore file. Common values
+                       include 'JKS' (Java KeyStore) and 'PKCS12'. If not specified, it uses the
+                       driver's default.
 --db-password-<datasource> <password>
                      Used for named <datasource>. The password of the database user.
 --db-pool-initial-size-<datasource> <size>
@@ -102,6 +144,24 @@ Database - additional datasources:
                      Used for named <datasource>. The minimal size of the connection pool.
 --db-schema-<datasource> <schema>
                      Used for named <datasource>. The database schema to be used.
+--db-tls-mode-<datasource> <mode>
+                     Used for named <datasource>. Sets the TLS mode for the database connection. If
+                       disabled, it uses the driver's default value. When set to verify-server, it
+                       enables encryption and server identity verification. The database server
+                       certificate or Certificate Authority (CA) certificate is required. Possible
+                       values are: disabled, verify-server. Default: disabled.
+--db-tls-trust-store-file-<datasource> <path>
+                     Used for named <datasource>. The path to the truststore file containing the
+                       database server certificates or Certificate Authority (CA) certificates used
+                       to verify the database server's identity.
+--db-tls-trust-store-password-<datasource> <password>
+                     Used for named <datasource>. The password to access the truststore file
+                       specified in db-tls-trust-store-file (if required and supported by the JDBC
+                       driver).
+--db-tls-trust-store-type-<datasource> <type>
+                     Used for named <datasource>. The type of the truststore file. Common values
+                       include 'JKS' (Java KeyStore) and 'PKCS12'. If not specified, it uses the
+                       driver's default.
 --db-url-database-<datasource> <dbname>
                      Used for named <datasource>. Sets the database name of the default JDBC URL of
                        the chosen vendor. If the `db-url` option is set, this option is ignored.
@@ -127,6 +187,14 @@ Database - additional datasources:
 
 Transaction:
 
+--transaction-default-timeout <timeout>
+                     The default transaction timeout. May be an ISO 8601 duration value, an integer
+                       number of seconds, or an integer followed by one of [ms, h, m, s, d].
+                       Default: 5m.
+--transaction-setup-timeout <timeout>
+                     The transaction timeout for database migration/import/export transactions. May
+                       be an ISO 8601 duration value, an integer number of seconds, or an integer
+                       followed by one of [ms, h, m, s, d]. Default: 30m.
 --transaction-xa-enabled <true|false>
                      If set to true, XA datasources will be used. Default: false.
 --transaction-xa-enabled-<datasource> <true|false>
@@ -233,6 +301,26 @@ Logging:
                      Set the log output to JSON or default (plain) unstructured logging. Possible
                        values are: default, json. Default: default. Available only when File log
                        handler is activated.
+--log-file-rotation-enabled <true|false>
+                     Enables log file rotation. Default: true. Available only when File log handler
+                       is activated.
+--log-file-rotation-file-suffix <suffix>
+                     Set the log file handler rotation file suffix. When used, the file will be
+                       rotated based on its suffix. Example: `.yyyy-MM-dd` to rotate daily. Note:
+                       If the suffix ends with `.zip` or `.gz`, the rotation file will also be
+                       compressed. Available only when File log handler is activated and log file
+                       rotation is enabled.
+--log-file-rotation-max-backup-index <index>
+                     The maximum number of backup log files to keep. Default: 5. Available only
+                       when File log handler is activated and log file rotation is enabled.
+--log-file-rotation-max-file-size <size>
+                     The maximum log file size, after which a rotation is executed. Supports size
+                       suffixes (e.g. 10M, 1G). Default: 10M. Available only when File log handler
+                       is activated and log file rotation is enabled.
+--log-file-rotation-rotate-on-boot <true|false>
+                     Indicates whether to rotate log files on server start. Default: true.
+                       Available only when File log handler is activated and log file rotation is
+                       enabled.
 --log-level <category:level>
                      The log level of the root category or a comma-separated list of individual
                        categories and their levels. For the root category, you don't need to
@@ -251,6 +339,12 @@ Logging:
                        ipAddress, org, sessionId, authenticationSessionId, authenticationTabId.
                        Default: realmName,clientId,org,sessionId,authenticationSessionId,
                        authenticationTabId. Available only when MDC logging is enabled.
+--log-service-environment <environment>
+                     Set the 'service.environment' field in JSON log entries for all log handlers.
+                       In ECS format, defaults to the Quarkus profile if not set.
+--log-service-name <name>
+                     Set the 'service.name' field in JSON log entries for all log handlers.
+                       Default: keycloak.
 --log-syslog-app-name <name>
                      Set the app name used when formatting the message in RFC5424 format. Default:
                        keycloak. Available only when Syslog is activated.
@@ -464,6 +558,12 @@ Truststore:
                      The TLS hostname verification policy for out-going HTTPS and SMTP requests.
                        ANY should not be used in production. Possible values are: ANY, WILDCARD
                        (deprecated), STRICT (deprecated), DEFAULT. Default: DEFAULT.
+--truststore-kubernetes-enabled <truststore-kubernetes-enabled>
+                     If enabled, the server will automatically include the default Kubernetes
+                       service account CA certificate from "/var/run/secrets/kubernetes.
+                       io/serviceaccount/ca.crt" and the OpenShift service CA certificate from
+                       "/var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt" when running
+                       in a container environment. Default: true.
 --truststore-paths <truststore-paths>
                      List of pkcs12 (p12, pfx, or pkcs12 file extensions), PEM files, or
                        directories containing those files that will be used as a system truststore.
@@ -491,6 +591,15 @@ OpenAPI configuration:
                      If the server should expose OpenApi-UI Endpoint. If enabled, OpenAPI UI is
                        available at '/openapi/ui'. Default: false. Available only when OpenAPI
                        Endpoint is enabled.
+
+Server configuration:
+
+--server-async-bootstrap <enabled>
+                     If true, endpoints are opened while the bootstrap runs in the background. If
+                       false, endpoints are opened after bootstrap completes, ensuring the server
+                       is ready to handle requests. Async bootstrap is enabled by default when the
+                       health endpoints are also enabled, unless this option is explicitly set to
+                       false.
 
 Bootstrap Admin:
 

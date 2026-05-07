@@ -40,8 +40,7 @@ public final class Environment {
 
     public static final String KC_CONFIG_REBUILD_CHECK = "kc.config.rebuild-check";
     public static final String KC_CONFIG_BUILT = "kc.config.built";
-    public static final String KC_TEST_REBUILD = "kc.test.rebuild";
-    private static final String KC_HOME_DIR = "kc.home.dir";
+    public static final String KC_HOME_DIR = "kc.home.dir";
     public static final String PROFILE ="kc.profile";
     public static final String ENV_PROFILE ="KC_PROFILE";
     public static final String DATA_PATH = File.separator + "data";
@@ -92,6 +91,9 @@ public final class Environment {
         }
     }
 
+    /**
+     * Check if the we're currently in or built as dev mode.
+     */
     public static boolean isDevMode() {
         if (org.keycloak.common.util.Environment.isDevMode()) {
             return true;
@@ -101,7 +103,7 @@ public final class Environment {
     }
 
     public static boolean isDevProfile(){
-        return Optional.ofNullable(org.keycloak.common.util.Environment.getProfile()).orElse("").equalsIgnoreCase(org.keycloak.common.util.Environment.DEV_PROFILE_VALUE);
+        return org.keycloak.common.util.Environment.isDevMode();
     }
 
     public static boolean isWindows() {

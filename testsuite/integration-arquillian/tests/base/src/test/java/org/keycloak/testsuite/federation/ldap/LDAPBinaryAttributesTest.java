@@ -50,10 +50,10 @@ import org.keycloak.testsuite.util.userprofile.UserProfileUtil;
 import org.keycloak.validate.validators.LengthValidator;
 
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 import org.junit.runners.MethodSorters;
 
 import static org.hamcrest.CoreMatchers.equalTo;
@@ -97,7 +97,7 @@ public class LDAPBinaryAttributesTest extends AbstractLDAPTest {
         });
 
         // User profile unmanaged attributes supported
-        UserProfileResource userProfileRes = testRealm().users().userProfile();
+        UserProfileResource userProfileRes = managedRealm.admin().users().userProfile();
         UserProfileUtil.enableUnmanagedAttributes(userProfileRes);
     }
 
@@ -124,7 +124,7 @@ public class LDAPBinaryAttributesTest extends AbstractLDAPTest {
             ldapComponentMapper.put(UserAttributeLDAPStorageMapper.IS_BINARY_ATTRIBUTE, true);
             try {
                 appRealm.updateComponent(ldapComponentMapper);
-                Assert.fail("Not expected to successfully update mapper");
+                Assertions.fail("Not expected to successfully update mapper");
             } catch (ComponentValidationException cve) {
                 // Expected
             }
@@ -273,15 +273,15 @@ public class LDAPBinaryAttributesTest extends AbstractLDAPTest {
 
     private UserRepresentation getUserAndAssertPhoto(String username, boolean isPhotoExpected) {
         List<UserRepresentation> johns = adminClient.realm("test").users().search(username, 0, 10);
-        Assert.assertEquals(1, johns.size());
+        Assertions.assertEquals(1, johns.size());
         UserRepresentation john = johns.get(0);
-        Assert.assertEquals(username, john.getUsername());
-        Assert.assertTrue(john.getAttributes().containsKey(LDAPConstants.LDAP_ID)); // Doublecheck it's the LDAP mapped user
+        Assertions.assertEquals(username, john.getUsername());
+        Assertions.assertTrue(john.getAttributes().containsKey(LDAPConstants.LDAP_ID)); // Doublecheck it's the LDAP mapped user
 
         if (isPhotoExpected) {
-            Assert.assertEquals(JPEG_PHOTO_BASE64, john.getAttributes().get(LDAPConstants.JPEG_PHOTO).get(0));
+            Assertions.assertEquals(JPEG_PHOTO_BASE64, john.getAttributes().get(LDAPConstants.JPEG_PHOTO).get(0));
         } else {
-            Assert.assertFalse(john.getAttributes().containsKey(LDAPConstants.JPEG_PHOTO));
+            Assertions.assertFalse(john.getAttributes().containsKey(LDAPConstants.JPEG_PHOTO));
         }
         return john;
     }

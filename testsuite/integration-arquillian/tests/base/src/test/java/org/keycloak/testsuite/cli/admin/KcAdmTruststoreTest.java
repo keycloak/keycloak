@@ -10,8 +10,8 @@ import org.keycloak.testsuite.cli.KcAdmExec;
 import org.keycloak.testsuite.util.TempFileResource;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
 
-import org.junit.Assert;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 import static org.keycloak.client.admin.cli.KcAdmMain.DEFAULT_CONFIG_FILE_PATH;
 import static org.keycloak.client.cli.util.OsUtil.EOL;
@@ -31,8 +31,8 @@ public class KcAdmTruststoreTest extends AbstractAdmCliTest {
         KcAdmExec exe = execute("config truststore --no-config '" + truststore.getAbsolutePath() + "'");
 
         assertExitCodeAndStreamSizes(exe, 2, 0, 2);
-        Assert.assertEquals("stderr first line", "Unsupported option: --no-config", exe.stderrLines().get(0));
-        Assert.assertEquals("try help", "Try '" + KcAdmMain.CMD + " config truststore --help' for more information on the available options.", exe.stderrLines().get(1));
+        Assertions.assertEquals("Unsupported option: --no-config", exe.stderrLines().get(0), "stderr first line");
+        Assertions.assertEquals("Try '" + KcAdmMain.CMD + " config truststore --help' for more information on the available options.", exe.stderrLines().get(1), "try help");
 
         // only run this test if ssl protected keycloak server is available
         if (!AUTH_SERVER_SSL_REQUIRED) {
@@ -101,19 +101,19 @@ public class KcAdmTruststoreTest extends AbstractAdmCliTest {
 
         exe = execute("config truststore --delete '" + truststore.getAbsolutePath() + "'");
         assertExitCodeAndStreamSizes(exe, 2, 0, 2);
-        Assert.assertEquals("incompatible", "Option --delete is mutually exclusive with specifying a TRUSTSTORE", exe.stderrLines().get(0));
-        Assert.assertEquals("try help", "Try '" + KcAdmMain.CMD + " config truststore --help' for more information on the available options.", exe.stderrLines().get(1));
+        Assertions.assertEquals("Option --delete is mutually exclusive with specifying a TRUSTSTORE", exe.stderrLines().get(0), "incompatible");
+        Assertions.assertEquals("Try '" + KcAdmMain.CMD + " config truststore --help' for more information on the available options.", exe.stderrLines().get(1), "try help");
 
         exe = execute("config truststore --delete --trustpass secret");
         assertExitCodeAndStreamSizes(exe, 2, 0, 2);
-        Assert.assertEquals("no truststore error", "Options --trustpass and --delete are mutually exclusive", exe.stderrLines().get(0));
-        Assert.assertEquals("try help", "Try '" + KcAdmMain.CMD + " config truststore --help' for more information on the available options.", exe.stderrLines().get(1));
+        Assertions.assertEquals("Options --trustpass and --delete are mutually exclusive", exe.stderrLines().get(0), "no truststore error");
+        Assertions.assertEquals("Try '" + KcAdmMain.CMD + " config truststore --help' for more information on the available options.", exe.stderrLines().get(1), "try help");
 
         FileConfigHandler cfghandler = new FileConfigHandler();
         FileConfigHandler.setConfigFile(DEFAULT_CONFIG_FILE_PATH);
         ConfigData config = cfghandler.loadConfig();
-        Assert.assertNull("truststore null", config.getTruststore());
-        Assert.assertNull("trustpass null", config.getTrustpass());
+        Assertions.assertNull(config.getTruststore(), "truststore null");
+        Assertions.assertNull(config.getTrustpass(), "trustpass null");
 
 
         // perform no-config CRUD test against ssl protected endpoint

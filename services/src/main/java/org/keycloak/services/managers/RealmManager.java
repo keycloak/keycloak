@@ -19,6 +19,7 @@ package org.keycloak.services.managers;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import jakarta.ws.rs.BadRequestException;
@@ -79,6 +80,7 @@ import org.keycloak.utils.SMTPUtil;
 import org.keycloak.utils.StringUtil;
 
 import static org.keycloak.constants.OID4VCIConstants.CREDENTIAL_OFFER_CREATE;
+import static org.keycloak.models.Constants.CREATE_DEFAULT_CLIENT_SCOPES;
 
 /**
  * Per request object
@@ -241,12 +243,15 @@ public class RealmManager {
         RoleModel queryClients = realmAccess.getRole(AdminRoles.QUERY_CLIENTS);
         RoleModel queryUsers = realmAccess.getRole(AdminRoles.QUERY_USERS);
         RoleModel queryGroups = realmAccess.getRole(AdminRoles.QUERY_GROUPS);
+        RoleModel queryOrganizations = realmAccess.getRole(AdminRoles.QUERY_ORGANIZATIONS);
 
         RoleModel viewClients = realmAccess.getRole(AdminRoles.VIEW_CLIENTS);
         viewClients.addCompositeRole(queryClients);
         RoleModel viewUsers = realmAccess.getRole(AdminRoles.VIEW_USERS);
         viewUsers.addCompositeRole(queryUsers);
         viewUsers.addCompositeRole(queryGroups);
+        RoleModel viewOrganizations = realmAccess.getRole(AdminRoles.VIEW_ORGANIZATIONS);
+        viewOrganizations.addCompositeRole(queryOrganizations);
     }
 
     public String getRealmAdminClientId(RealmModel realm) {
@@ -275,6 +280,7 @@ public class RealmManager {
         realm.setQuickLoginCheckMilliSeconds(1000);
         realm.setMaxDeltaTimeSeconds(60 * 60 * 12); // 12 hours
         realm.setFailureFactor(30);
+        realm.setMaxSecondaryAuthFailures(0);
         realm.setSslRequired(SslRequired.EXTERNAL);
         realm.setOTPPolicy(OTPPolicy.DEFAULT_POLICY);
         realm.setLoginWithEmailAllowed(true);
@@ -647,8 +653,7 @@ public class RealmManager {
                 setupOfflineTokens(realm, rep);
             }
 
-
-            if (rep.getClientScopes() == null) {
+            if (isCreateDefaultClientScopes(rep)) {
                 createDefaultClientScopes(realm);
             }
 
@@ -717,6 +722,12 @@ public class RealmManager {
         }
 
         return realm;
+    }
+
+    private boolean isCreateDefaultClientScopes(RealmRepresentation rep) {
+        Map<String, String> attributes = rep.getAttributesOrEmpty();
+        String createDefaultClientScopes = attributes.remove(CREATE_DEFAULT_CLIENT_SCOPES);
+        return rep.getClientScopes() == null || Boolean.parseBoolean(createDefaultClientScopes);
     }
 
     private String determineDefaultRoleName(RealmRepresentation rep) {

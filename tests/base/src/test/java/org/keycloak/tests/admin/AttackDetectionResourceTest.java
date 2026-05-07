@@ -18,6 +18,7 @@
 package org.keycloak.tests.admin;
 
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import org.keycloak.admin.client.resource.AttackDetectionResource;
 import org.keycloak.events.admin.OperationType;
@@ -32,12 +33,13 @@ import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.ManagedUser;
+import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
-import org.keycloak.testframework.realm.RealmConfigBuilder;
 import org.keycloak.tests.utils.admin.AdminEventPaths;
 
 import org.junit.jupiter.api.Test;
 
+import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -78,6 +80,15 @@ public class AttackDetectionResourceTest {
         oauthClient.doPasswordGrantRequest(testUser2.getUsername(), "invalid");
         oauthClient.doPasswordGrantRequest("nosuchuser", "invalid");
 
+        // Check testUser2 to ensure all failure processing is completed
+        await().atMost(5, TimeUnit.SECONDS)
+                .pollInterval(100, TimeUnit.MILLISECONDS)
+                .untilAsserted(() -> {
+                    Map<String, Object> status = detection.bruteForceUserStatus(testUser2.getId());
+                    assertEquals(2, status.get("numFailures"),
+                            "Waiting for testUser2 processing to complete");
+                });
+
         assertBruteForce(detection.bruteForceUserStatus(testUser.getId()), 2, 1, true, true);
         assertBruteForce(detection.bruteForceUserStatus(testUser2.getId()), 2, 1, true, true);
         assertBruteForce(detection.bruteForceUserStatus("nosuchuser"), 0, 0, false, false);
@@ -96,7 +107,7 @@ public class AttackDetectionResourceTest {
     }
 
     private void assertBruteForce(Map<String, Object> status, Integer expectedNumFailures, Integer expectedNumTemporaryLockouts, Boolean expectedFailure, Boolean expectedDisabled) {
-        assertEquals(6, status.size());
+        assertEquals(7, status.size());
         assertEquals(expectedNumFailures, status.get("numFailures"));
         assertEquals(expectedNumTemporaryLockouts, status.get("numTemporaryLockouts"));
         assertEquals(expectedDisabled, status.get("disabled"));
@@ -115,7 +126,7 @@ public class AttackDetectionResourceTest {
     private static class AttackDetectionResourceRealmConfig implements RealmConfig {
 
         @Override
-        public RealmConfigBuilder configure(RealmConfigBuilder realm) {
+        public RealmBuilder configure(RealmBuilder realm) {
             realm.bruteForceProtected(true);
             realm.failureFactor(2);
 

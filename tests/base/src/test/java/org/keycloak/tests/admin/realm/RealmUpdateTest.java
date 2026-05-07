@@ -19,6 +19,7 @@ import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.events.AdminEventAssertion;
+import org.keycloak.tests.suites.DatabaseTest;
 import org.keycloak.userprofile.UserProfileProvider;
 
 import org.junit.jupiter.api.Assertions;
@@ -58,6 +59,7 @@ public class RealmUpdateTest extends AbstractRealmTest {
     }
 
     @Test
+    @DatabaseTest
     public void renameRealm() {
         String OLD = "old";
         String NEW = "new";
@@ -162,6 +164,7 @@ public class RealmUpdateTest extends AbstractRealmTest {
     }
 
     @Test
+    @DatabaseTest
     public void updateRealm() {
         // first change
         RealmRepresentation rep = managedRealm.admin().toRepresentation();

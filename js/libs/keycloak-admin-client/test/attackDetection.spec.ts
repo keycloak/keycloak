@@ -31,6 +31,7 @@ describe("Attack Detection", () => {
     });
     expect(attackDetection).to.deep.equal({
       numFailures: 0,
+      numSecondaryAuthFailures: 0,
       disabled: false,
       lastIPFailure: "n/a",
       lastFailure: 0,

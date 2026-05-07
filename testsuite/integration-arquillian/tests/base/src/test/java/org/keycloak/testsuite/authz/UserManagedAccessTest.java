@@ -39,17 +39,18 @@ import org.keycloak.representations.idm.authorization.ResourcePermissionRepresen
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
 import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testsuite.AssertEvents;
 
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -315,14 +316,10 @@ public class UserManagedAccessTest extends AbstractResourceServerTest {
 
         String realmId = getRealm().toRepresentation().getId();
         String clientId = client.toRepresentation().getClientId();
-        events.expectLogin().realm(realmId).client(clientId)
-                .user(koloId)
-                .clearDetails()
-                .assertEvent();
-        events.expectLogin().realm(realmId).client(clientId)
-                .user(koloId)
-                .clearDetails()
-                .assertEvent();
+        EventAssertion.assertSuccess(events.poll()).clientId(clientId)
+                .userId(koloId);
+        EventAssertion.assertSuccess(events.poll()).clientId(clientId)
+                .userId(koloId);
         events.expect(EventType.PERMISSION_TOKEN_ERROR).realm(realmId).client(clientId).user(koloId)
                 .session((String) null)
                 .error("access_denied")
@@ -371,14 +368,10 @@ public class UserManagedAccessTest extends AbstractResourceServerTest {
         assertPermissions(permissions, resource.getName(), "ScopeA", "ScopeB");
         assertTrue(permissions.isEmpty());
 
-        events.expectLogin().realm(realmId).client(clientId)
-                .user(koloId)
-                .clearDetails()
-                .assertEvent();
-        events.expectLogin().realm(realmId).client(clientId)
-                .user(koloId)
-                .clearDetails()
-                .assertEvent();
+        EventAssertion.assertSuccess(events.poll()).type(EventType.LOGIN).hasSessionId().clientId(clientId)
+                .userId(koloId);
+        EventAssertion.assertSuccess(events.poll()).type(EventType.LOGIN).hasSessionId().clientId(clientId)
+                .userId(koloId);
         events.expect(EventType.PERMISSION_TOKEN).realm(realmId).client(clientId).user(koloId)
                 .session((String) null)
                 .clearDetails()

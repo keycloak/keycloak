@@ -23,6 +23,7 @@ public class DefaultWorkflowProviderFactory implements WorkflowProviderFactory<D
     private static final long DEFAULT_EXECUTOR_TASK_TIMEOUT = 5000L;
 
     private WorkflowExecutor executor;
+    private WorkflowScheduleEventListener scheduleEventListener;
     private boolean blocking;
     private long taskTimeout;
 
@@ -51,7 +52,9 @@ public class DefaultWorkflowProviderFactory implements WorkflowProviderFactory<D
     @Override
     public void postInit(KeycloakSessionFactory factory) {
         this.executor = new WorkflowExecutor(getTaskExecutor(factory), blocking, taskTimeout);
+        this.scheduleEventListener = new WorkflowScheduleEventListener(factory);
         factory.register(this);
+        factory.register(scheduleEventListener);
     }
 
     @Override
@@ -81,6 +84,10 @@ public class DefaultWorkflowProviderFactory implements WorkflowProviderFactory<D
         }
     }
 
+
+    WorkflowScheduleEventListener getScheduleEventListener() {
+        return scheduleEventListener;
+    }
 
     @Override
     public void close() {

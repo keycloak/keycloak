@@ -76,6 +76,8 @@ public class UserEntity {
     protected String firstName;
     @Column(name = "CREATED_TIMESTAMP")
     protected Long createdTimestamp;
+    @Column(name = "LAST_MODIFIED_TIMESTAMP")
+    protected Long lastModifiedTimestamp;
     @Nationalized
     @Column(name = "LAST_NAME")
     protected String lastName;
@@ -147,6 +149,14 @@ public class UserEntity {
 
     public void setCreatedTimestamp(Long timestamp) {
         createdTimestamp = timestamp;
+    }
+
+    public Long getLastModifiedTimestamp() {
+        return lastModifiedTimestamp;
+    }
+
+    public void setLastModifiedTimestamp(Long timestamp) {
+        lastModifiedTimestamp = timestamp;
     }
 
     public String getFirstName() {

@@ -100,7 +100,7 @@ public class RemoteAuthenticatedClientSessionEntity {
     }
 
     @ProtoField(1)
-    @Basic(projectable = true, sortable = true)
+    @Basic(projectable = true, sortable = true, aggregable = true)
     public String getClientId() {
         return clientId;
     }

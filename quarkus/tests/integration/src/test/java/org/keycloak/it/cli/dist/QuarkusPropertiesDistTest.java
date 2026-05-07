@@ -17,6 +17,7 @@
 
 package org.keycloak.it.cli.dist;
 
+import java.nio.file.Path;
 import java.util.Optional;
 import java.util.function.Consumer;
 
@@ -71,40 +72,6 @@ public class QuarkusPropertiesDistTest {
         cliResult.assertMessage("Keycloak is the best");
     }
 
-    @Test
-    @Launch({"-Dquarkus.log.handler.console.\"console-2\".enable=false", "start", "--http-enabled=true", "--hostname-strict=false"})
-    @DisabledOnOs(value = { OS.WINDOWS })
-    @Order(3)
-    void testIgnoreQuarkusSystemPropertiesAtStart(CLIResult cliResult) {
-        cliResult.assertMessage("Keycloak is the best");
-    }
-
-    @Test
-    @Launch({"-Dquarkus.log.handler.console.\\\"console-2\\\".enable=false", "start", "--http-enabled=true", "--hostname-strict=false"})
-    @EnabledOnOs(value = { OS.WINDOWS }, disabledReason = "Different handling of quotes within arguments on Windows")
-    @Order(3)
-    void testIgnoreQuarkusSystemPropertiesAtStartWin(CLIResult cliResult) {
-        cliResult.assertMessage("Keycloak is the best");
-    }
-
-    @Test
-    @Launch({"-Dquarkus.log.handler.console.\"console-2\".enable=false", "build"})
-    @DisabledOnOs(value = { OS.WINDOWS })
-    @Order(4)
-    void testIgnoreQuarkusSystemPropertyAtBuild(CLIResult cliResult) {
-        cliResult.assertMessage("Keycloak is the best");
-        cliResult.assertBuild();
-    }
-
-    @Test
-    @Launch({"-Dquarkus.log.handler.console.\\\"console-2\\\".enable=false", "build"})
-    @EnabledOnOs(value = { OS.WINDOWS }, disabledReason = "Different handling of quotes within arguments on Windows")
-    @Order(4)
-    void testIgnoreQuarkusSystemPropertyAtBuildWin(CLIResult cliResult) {
-        cliResult.assertMessage("Keycloak is the best");
-        cliResult.assertBuild();
-    }
-
     @DryRun
     @Test
     @BeforeStartDistribution(UpdateConsoleHandlerFromKeycloakConf.class)
@@ -146,7 +113,8 @@ public class QuarkusPropertiesDistTest {
     }
 
     @Test
-    @Launch({ "start", "--http-enabled=true", "--hostname-strict=false", "--config-keystore=../../../../src/test/resources/keystore" })
+    @BeforeStartDistribution(QuarkusPropertiesDistTest.CopyKeystoreToConf.class)
+    @Launch({ "start", "--http-enabled=true", "--hostname-strict=false", "--config-keystore=../conf/keystore" })
     @Order(9)
     void testMissingSmallRyeKeyStorePasswordProperty(CLIResult cliResult) {
         assertTrue(
@@ -185,8 +153,9 @@ public class QuarkusPropertiesDistTest {
     }
 
     @Test
+    @BeforeStartDistribution(QuarkusPropertiesDistTest.CopyKeystoreToConf.class)
     @Launch({ "start", "--http-enabled=true", "--hostname-strict=false",
-            "--config-keystore=../../../../src/test/resources/keystore", "--config-keystore-password=secret" })
+            "--config-keystore=../conf/keystore", "--config-keystore-password=secret" })
     @Order(12)
     void testSmallRyeKeyStoreConfigSource(CLIResult cliResult) {
         // keytool -importpass -alias kc.log-level -keystore keystore -storepass secret -storetype PKCS12 -v (with "org.keycloak.timer:debug" as the stored password)
@@ -250,6 +219,13 @@ public class QuarkusPropertiesDistTest {
         public void accept(KeycloakDistribution distribution) {
             distribution.deleteQuarkusProperties();
             distribution.setQuarkusProperty(QUARKUS_BUILDTIME_HIBERNATE_METRICS_KEY, "true");
+        }
+    }
+
+    public static class CopyKeystoreToConf implements Consumer<KeycloakDistribution> {
+        @Override
+        public void accept(KeycloakDistribution distribution) {
+            distribution.copyOrReplaceFileFromClasspath("/keystore", Path.of("conf", "keystore"));
         }
     }
 

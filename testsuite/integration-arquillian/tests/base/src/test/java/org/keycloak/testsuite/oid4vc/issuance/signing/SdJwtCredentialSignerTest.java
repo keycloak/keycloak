@@ -49,7 +49,7 @@ import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.sdjwt.SdJwt;
 import org.keycloak.sdjwt.SdJwtUtils;
-import org.keycloak.testsuite.runonserver.RunOnServerException;
+import org.keycloak.testframework.remote.providers.runonserver.RunOnServerException;
 import org.keycloak.util.JsonSerialization;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -59,11 +59,11 @@ import static org.keycloak.OID4VCConstants.CLAIM_NAME_SD;
 import static org.keycloak.OID4VCConstants.CLAIM_NAME_SD_HASH_ALGORITHM;
 import static org.keycloak.OID4VCConstants.SDJWT_DELIMITER;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class SdJwtCredentialSignerTest extends OID4VCTest {
 
@@ -252,14 +252,13 @@ public class SdJwtCredentialSignerTest extends OID4VCTest {
                         verifier.verify();
 
                         JWSHeader header = verifier.getHeader();
-                        assertNotNull("x5c header should be present in SD-JWT credential", header.getX5c());
-                        assertFalse("x5c header should contain at least one certificate", header.getX5c().isEmpty());
+                        assertNotNull(header.getX5c(), "x5c header should be present in SD-JWT credential");
+                        assertFalse(header.getX5c().isEmpty(), "x5c header should contain at least one certificate");
 
                         if (keyWrapper.getCertificate() != null) {
                             try {
                                 String expectedCert = Base64.getEncoder().encodeToString(keyWrapper.getCertificate().getEncoded());
-                                assertEquals("First certificate in x5c should match the signing key certificate",
-                                        expectedCert, header.getX5c().get(0));
+                                assertEquals(expectedCert, header.getX5c().get(0), "First certificate in x5c should match the signing key certificate");
                             } catch (CertificateEncodingException e) {
                                 fail("Failed to encode certificate for comparison: " + e.getMessage());
                             }
@@ -332,21 +331,21 @@ public class SdJwtCredentialSignerTest extends OID4VCTest {
         try {
             JsonWebToken theToken = verifier.getToken();
 
-            assertEquals("The issuer should be set in the token.", TEST_DID.toString(), theToken.getIssuer());
-            assertEquals("The type should be included", "https://credentials.example.com/test-credential", theToken.getOtherClaims().get("vct"));
+            assertEquals(TEST_DID.toString(), theToken.getIssuer(), "The issuer should be set in the token.");
+            assertEquals("https://credentials.example.com/test-credential", theToken.getOtherClaims().get("vct"), "The type should be included");
             List<String> sds = (List<String>) theToken.getOtherClaims().get(CLAIM_NAME_SD);
             if (sds != null && !sds.isEmpty()) {
-                assertEquals("The algorithm should be included", OID4VCConstants.SD_HASH_DEFAULT_ALGORITHM, theToken.getOtherClaims().get(CLAIM_NAME_SD_HASH_ALGORITHM));
+                assertEquals(OID4VCConstants.SD_HASH_DEFAULT_ALGORITHM, theToken.getOtherClaims().get(CLAIM_NAME_SD_HASH_ALGORITHM), "The algorithm should be included");
             }
             List<String> disclosed = Arrays.asList(splittedSdToken).subList(1, splittedSdToken.length);
             int numSds = sds != null ? sds.size() : 0;
-            assertEquals("All undisclosed claims and decoys should be provided.",
-                         disclosed.size() + (decoys == 0 ? decoys + SdJwt.DEFAULT_NUMBER_OF_DECOYS : decoys),
-                         numSds);
+            assertEquals(disclosed.size() + (decoys == 0 ? decoys + SdJwt.DEFAULT_NUMBER_OF_DECOYS : decoys),
+                         numSds,
+                         "All undisclosed claims and decoys should be provided.");
             verifyDisclosures(sds, disclosed);
 
             visibleClaims
-                    .forEach(vc -> assertTrue("The visible claims should be present within the token.", theToken.getOtherClaims().containsKey(vc)));
+                    .forEach(vc -> assertTrue(theToken.getOtherClaims().containsKey(vc), "The visible claims should be present within the token."));
         } catch (VerificationException e) {
             fail("Was not able to extract the token.");
         }
@@ -363,7 +362,7 @@ public class SdJwtCredentialSignerTest extends OID4VCTest {
                     }
                 })
                 .map(dl -> new DisclosedClaim((String) dl.get(0), (String) dl.get(1), dl.get(2)))
-                .forEach(dc -> assertTrue("Every disclosure claim should be provided in the undisclosures.", undisclosed.contains(dc.getHash())));
+                .forEach(dc -> assertTrue(undisclosed.contains(dc.getHash()), "Every disclosure claim should be provided in the undisclosures."));
 
     }
 
