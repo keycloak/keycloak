@@ -1,4 +1,5 @@
 AccountRestServiceTest
+AuthorizationCodeTest
 DeployedScriptAuthenticatorTest
 ExportImportTest
 KcOidcBrokerTest
