@@ -49,8 +49,14 @@ public class Attribute<M extends Model, R extends ResourceTypeRepresentation> {
             return null;
         }
 
-        String resourceType = name.substring(name.substring(0, schemaSeparator).length() + 1);
-        return resourceType.substring(0, resourceType.indexOf('.'));
+        String resourceType = name.substring(schemaSeparator + 1);
+        int fieldSeparator = resourceType.indexOf('.');
+
+        if (fieldSeparator == -1) {
+            return null;
+        }
+
+        return resourceType.substring(0, fieldSeparator);
     }
 
     public static String getSimpleName(String name) {
