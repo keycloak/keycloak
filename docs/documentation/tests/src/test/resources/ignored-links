@@ -40,3 +40,4 @@ https://www.npmjs.com/package/*
 # Failing because of broken certificate, can likely be restored later.
 https://docs.kantarainitiative.org*
 https://saml.xml.org*
+https://www.oasis-open.org/standard/saml/
