@@ -19,8 +19,8 @@
 
     <changeSet author="keycloak" id="26.7.0-jdbcping-timestamp">
         <addColumn tableName="JGROUPS_PING">
-            <column name="LAST_UPDATE" type="BIGINT" />
-            <column name="COORDINATED_BY" type="VARCHAR(200)" />
+            <column name="last_update" type="BIGINT" />
+            <column name="coordinated_by" type="VARCHAR(200)" />
         </addColumn>
     </changeSet>
 
