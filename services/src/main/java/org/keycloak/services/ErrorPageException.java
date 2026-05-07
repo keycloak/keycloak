@@ -23,20 +23,53 @@ import jakarta.ws.rs.core.Response;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.sessions.AuthenticationSessionModel;
 
+import static org.keycloak.OAuthErrorException.INVALID_REQUEST;
+
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class ErrorPageException extends WebApplicationException {
 
+    private String error;
+    private String errorMessage;
+    private Object[] parameters;
+
     public ErrorPageException(KeycloakSession session, Response.Status status, String errorMessage, Object... parameters) {
-        super(errorMessage, ErrorPage.error(session, null, status, errorMessage, parameters));
+        this(session, INVALID_REQUEST, status, errorMessage, parameters);
+    }
+
+    public ErrorPageException(KeycloakSession session, String error, Response.Status status, String errorMessage, Object... parameters) {
+        this(session, null, error, status, errorMessage, parameters);
     }
 
     public ErrorPageException(KeycloakSession session, AuthenticationSessionModel authSession, Response.Status status, String errorMessage, Object... parameters) {
+        this(session, authSession, INVALID_REQUEST, status, errorMessage, parameters);
+    }
+
+    public ErrorPageException(KeycloakSession session, AuthenticationSessionModel authSession, String error, Response.Status status, String errorMessage, Object... parameters) {
         super(errorMessage, ErrorPage.error(session, authSession, status, errorMessage, parameters));
+        this.error = error;
+        this.errorMessage = errorMessage;
+        this.parameters = parameters;
     }
 
     public ErrorPageException(Response response) {
         super((Throwable) null, response);
+    }
+
+    public Response.Status getStatus() {
+        return Response.Status.fromStatusCode(getResponse().getStatus());
+    }
+
+    public String getError() {
+        return error;
+    }
+
+    public String getErrorMessage() {
+        return errorMessage;
+    }
+
+    public Object[] getParameters() {
+        return parameters;
     }
 }

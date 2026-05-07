@@ -38,7 +38,6 @@ import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.protocol.oidc.endpoints.request.AuthorizationEndpointRequest;
-import org.keycloak.protocol.oidc.endpoints.request.AuthorizationEndpointRequestParserProcessor;
 import org.keycloak.protocol.oidc.endpoints.request.RequestUriType;
 import org.keycloak.protocol.oidc.rar.AuthorizationDetailsProcessorManager;
 import org.keycloak.protocol.oidc.resourceindicators.ResourceIndicatorConstants;
@@ -48,18 +47,17 @@ import org.keycloak.protocol.oidc.utils.OIDCResponseType;
 import org.keycloak.protocol.oidc.utils.RedirectUtils;
 import org.keycloak.representations.dpop.DPoP;
 import org.keycloak.services.CorsErrorResponseException;
-import org.keycloak.services.ErrorPageException;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.cors.Cors;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.util.DPoPUtil;
-import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.util.TokenUtil;
 import org.keycloak.utils.StringUtil;
 
 import org.jboss.logging.Logger;
 
 import static org.keycloak.OAuth2Constants.AUTHORIZATION_DETAILS;
+import static org.keycloak.protocol.oidc.endpoints.request.AuthorizationEndpointRequestParserProcessor.getRequestUriType;
 
 /**
  * Implements some checks typical for OIDC Authorization Endpoint. Useful to consolidate various checks on single place to avoid duplicated
@@ -127,25 +125,35 @@ public class AuthorizationEndpointChecker {
         return parsedResponseMode;
     }
 
+    public MultivaluedMap<String, String> getRequestParams() {
+        return params;
+    }
+
+    public AuthorizationEndpointRequest getAuthorizationEndpointRequest() {
+        return request;
+    }
+
     public void checkRedirectUri() throws AuthorizationCheckException {
-        String redirectUriParam = request.getRedirectUriParam();
-        boolean isOIDCRequest = TokenUtil.isOIDCRequest(request.getScope());
+        String redirectUriParam = request != null ? request.getRedirectUriParam() : params.getFirst(OIDCLoginProtocol.REDIRECT_URI_PARAM);
+        String scope = request != null ? request.getScope() : params.getFirst(OIDCLoginProtocol.SCOPE_PARAM);
+
+        // The redirect_uri parameter is required for OIDC, but optional for OAuth2
+        boolean isOIDCRequest = TokenUtil.isOIDCRequest(scope);
 
         event.detail(Details.REDIRECT_URI, redirectUriParam);
 
-        // redirect_uri parameter is required per OpenID Connect, but optional per OAuth2
         this.redirectUri = RedirectUtils.verifyRedirectUri(session, redirectUriParam, client, isOIDCRequest);
         if (redirectUri == null) {
             event.error(Errors.INVALID_REDIRECT_URI);
-            throw new AuthorizationCheckException(Response.Status.BAD_REQUEST, Messages.INVALID_PARAMETER, OIDCLoginProtocol.REDIRECT_URI_PARAM);
+            throw new AuthorizationCheckException(OAuthErrorException.INVALID_REDIRECT_URI, Response.Status.BAD_REQUEST, Messages.INVALID_PARAMETER, OIDCLoginProtocol.REDIRECT_URI_PARAM);
         }
     }
 
-
     public void checkResponseType() throws AuthorizationCheckException {
-        String responseType = request.getResponseType();
+        String responseTypeParam = request != null ? request.getResponseType() : params.getFirst(OIDCLoginProtocol.RESPONSE_TYPE_PARAM);
+        String responseModeParam = request != null ? request.getResponseMode() : params.getFirst(OIDCLoginProtocol.RESPONSE_MODE_PARAM);
 
-        if (responseType == null) {
+        if (responseTypeParam == null) {
             ServicesLogger.LOGGER.missingParameter(OAuth2Constants.RESPONSE_TYPE);
             String errorMessage = "Missing parameter: response_type";
             event.detail(Details.REASON, errorMessage);
@@ -153,19 +161,19 @@ public class AuthorizationEndpointChecker {
             throw new AuthorizationCheckException(Response.Status.BAD_REQUEST, OAuthErrorException.INVALID_REQUEST, errorMessage);
         }
 
-        event.detail(Details.RESPONSE_TYPE, responseType);
+        event.detail(Details.RESPONSE_TYPE, responseTypeParam);
 
         try {
-            this.parsedResponseType = OIDCResponseType.parse(responseType);
+            parsedResponseType = OIDCResponseType.parse(responseTypeParam);
         } catch (IllegalArgumentException iae) {
             event.detail(Details.REASON, iae.getMessage());
             event.error(Errors.INVALID_REQUEST);
             throw new AuthorizationCheckException(Response.Status.BAD_REQUEST, OAuthErrorException.UNSUPPORTED_RESPONSE_TYPE, null);
         }
 
-        OIDCResponseMode parsedResponseMode = null;
+        OIDCResponseMode responseMode;
         try {
-            parsedResponseMode = OIDCResponseMode.parse(request.getResponseMode(), parsedResponseType);
+            responseMode = OIDCResponseMode.parse(responseModeParam, parsedResponseType);
         } catch (IllegalArgumentException iae) {
             ServicesLogger.LOGGER.invalidParameter(OIDCLoginProtocol.RESPONSE_MODE_PARAM);
             String errorMessage = "Invalid parameter: " + OIDCLoginProtocol.RESPONSE_MODE_PARAM;
@@ -174,10 +182,10 @@ public class AuthorizationEndpointChecker {
             throw new AuthorizationCheckException(Response.Status.BAD_REQUEST, OAuthErrorException.INVALID_REQUEST, errorMessage);
         }
 
-        event.detail(Details.RESPONSE_MODE, parsedResponseMode.toString().toLowerCase());
+        event.detail(Details.RESPONSE_MODE, responseMode.toString().toLowerCase());
 
         // Disallowed by OIDC specs
-        if (parsedResponseType.isImplicitOrHybridFlow() && parsedResponseMode == OIDCResponseMode.QUERY) {
+        if (parsedResponseType.isImplicitOrHybridFlow() && responseMode == OIDCResponseMode.QUERY) {
             ServicesLogger.LOGGER.responseModeQueryNotAllowed();
             String errorMessage = "Response_mode 'query' not allowed for implicit or hybrid flow";
             event.detail(Details.REASON, errorMessage);
@@ -185,9 +193,9 @@ public class AuthorizationEndpointChecker {
             throw new AuthorizationCheckException(Response.Status.BAD_REQUEST, OAuthErrorException.INVALID_REQUEST, errorMessage);
         }
 
-        this.parsedResponseMode = parsedResponseMode;
+        parsedResponseMode = responseMode;
 
-        if (parsedResponseType.isImplicitOrHybridFlow() && parsedResponseMode == OIDCResponseMode.QUERY_JWT &&
+        if (parsedResponseType.isImplicitOrHybridFlow() && responseMode == OIDCResponseMode.QUERY_JWT &&
                 (!StringUtil.isNotBlank(client.getAttribute(OIDCConfigAttributes.AUTHORIZATION_ENCRYPTED_RESPONSE_ALG)) ||
                 !StringUtil.isNotBlank(client.getAttribute(OIDCConfigAttributes.AUTHORIZATION_ENCRYPTED_RESPONSE_ENC)))) {
             ServicesLogger.LOGGER.responseModeQueryJwtNotAllowed();
@@ -224,14 +232,14 @@ public class AuthorizationEndpointChecker {
         }
     }
 
-    public boolean isInvalidResponseType(AuthorizationEndpointChecker.AuthorizationCheckException ex) {
+    public boolean isInvalidResponseType(AuthorizationCheckException ex) {
         return "Missing parameter: response_type".equals(ex.getErrorDescription()) || OAuthErrorException.UNSUPPORTED_RESPONSE_TYPE.equals(ex.getError());
     }
 
     public void checkInvalidRequestMessage() throws AuthorizationCheckException {
         if (request.getInvalidRequestMessage() != null) {
             event.error(Errors.INVALID_REQUEST);
-            throw new AuthorizationCheckException(Response.Status.BAD_REQUEST, Errors.INVALID_REQUEST, request.getInvalidRequestMessage());
+            throw new AuthorizationCheckException(Response.Status.BAD_REQUEST, OAuthErrorException.INVALID_REQUEST, request.getInvalidRequestMessage());
         }
     }
 
@@ -248,7 +256,7 @@ public class AuthorizationEndpointChecker {
                 new AuthorizationDetailsProcessorManager(session).validateAuthorizationDetail(authDetailsParam);
             } catch (Exception e) {
                 event.error(Errors.INVALID_REQUEST);
-                throw new AuthorizationCheckException(Response.Status.BAD_REQUEST, Errors.INVALID_REQUEST, e.getMessage());
+                throw new AuthorizationCheckException(Response.Status.BAD_REQUEST, OAuthErrorException.INVALID_REQUEST, e.getMessage());
             }
         }
     }
@@ -323,7 +331,7 @@ public class AuthorizationEndpointChecker {
             return;
         }
         String requestUriParam = params.getFirst(OIDCLoginProtocol.REQUEST_URI_PARAM);
-        if (requestUriParam != null && AuthorizationEndpointRequestParserProcessor.getRequestUriType(requestUriParam) == RequestUriType.PAR) {
+        if (requestUriParam != null && getRequestUriType(requestUriParam) == RequestUriType.PAR) {
             return;
         }
         ServicesLogger.LOGGER.missingParameter(OIDCLoginProtocol.REQUEST_URI_PARAM);
@@ -331,6 +339,19 @@ public class AuthorizationEndpointChecker {
         event.detail(Details.REASON, errorMessage);
         event.error(Errors.INVALID_REQUEST);
         throw new AuthorizationCheckException(Response.Status.BAD_REQUEST, OAuthErrorException.INVALID_REQUEST, errorMessage);
+    }
+
+    public void checkParRedirectUri() throws AuthorizationCheckException {
+        String requestUriParam = params.getFirst(OIDCLoginProtocol.REQUEST_URI_PARAM);
+        if (requestUriParam != null && getRequestUriType(requestUriParam) == RequestUriType.PAR) {
+            String requestRedirectUriParam = params.getFirst(OIDCLoginProtocol.REDIRECT_URI_PARAM);
+            if (requestRedirectUriParam != null && request.getRedirectUriParam() == null) {
+                String errorMessage = "PAR is required to have a 'redirect_uri' parameter";
+                event.detail(Details.REASON, errorMessage);
+                event.error(Errors.INVALID_REQUEST);
+                throw new AuthorizationCheckException(Response.Status.BAD_REQUEST, OAuthErrorException.INVALID_REQUEST, errorMessage);
+            }
+        }
     }
 
     public void checkParDPoPParams() throws AuthorizationCheckException {
@@ -437,35 +458,8 @@ public class AuthorizationEndpointChecker {
         }
     }
 
-
-    // Exception propagated to the caller, which will allow caller to send proper error response based on the context (Browser OIDC Authorization Endpoint, PAR etc)
-    public class AuthorizationCheckException extends Exception {
-
-        private final Response.Status status;
-        private final String error;
-        private final String errorDescription;
-
-        public AuthorizationCheckException(Response.Status status, String error, String errorDescription) {
-            this.status = status;
-            this.error = error;
-            this.errorDescription = errorDescription;
-        }
-
-        public void throwAsErrorPageException(AuthenticationSessionModel authenticationSession) {
-            throw new ErrorPageException(session, authenticationSession, status, error, errorDescription);
-        }
-
-        public void throwAsCorsErrorResponseException(Cors cors) {
-            AuthorizationEndpointChecker.this.event.detail("detail", errorDescription).error(error);
-            throw new CorsErrorResponseException(cors, error, errorDescription, status);
-        }
-
-        public String getError() {
-            return error;
-        }
-
-        public String getErrorDescription() {
-            return errorDescription;
-        }
+    public void throwAsCorsErrorResponseException(Cors cors, AuthorizationCheckException ex) {
+        event.detail("detail", ex.getErrorDescription()).error(ex.getError());
+        throw new CorsErrorResponseException(cors, ex.getError(), ex.getErrorDescription(), ex.getStatus());
     }
 }
