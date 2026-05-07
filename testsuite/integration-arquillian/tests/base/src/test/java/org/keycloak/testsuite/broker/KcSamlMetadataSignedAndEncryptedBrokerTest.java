@@ -122,7 +122,7 @@ public class KcSamlMetadataSignedAndEncryptedBrokerTest extends AbstractKcSamlMe
         doSamlLoginError(SamlClient.Binding.POST);
 
         // ofsset to allow the refresh of the key
-        setTimeOffset(35);
+        timeOffSet.set(35);
         doSamlPostLogin();
     }
 
@@ -144,11 +144,11 @@ public class KcSamlMetadataSignedAndEncryptedBrokerTest extends AbstractKcSamlMe
             doSamlLoginError(SamlClient.Binding.REDIRECT);
 
             // offset of 35 is not enough (REDIRECT require iteration of keys)
-            setTimeOffset(35);
+            timeOffSet.set(35);
             doSamlLoginError(SamlClient.Binding.REDIRECT);
 
             // offset more than one day
-            setTimeOffset(24*60*60 + 5);
+            timeOffSet.set(24*60*60 + 5);
             doSamlRedirectLogin();
         }
     }
@@ -172,11 +172,11 @@ public class KcSamlMetadataSignedAndEncryptedBrokerTest extends AbstractKcSamlMe
             doSamlLoginError(SamlClient.Binding.REDIRECT);
 
             // offset of 35 is not enough (REDIRECT require iteration of keys)
-            setTimeOffset(35);
+            timeOffSet.set(35);
             doSamlLoginError(SamlClient.Binding.REDIRECT);
 
             // offset more than one hour defined in the descriptor
-            setTimeOffset(3600 + 5);
+            timeOffSet.set(3600 + 5);
             doSamlRedirectLogin();
         }
     }
@@ -196,7 +196,7 @@ public class KcSamlMetadataSignedAndEncryptedBrokerTest extends AbstractKcSamlMe
         doSamlPostLogin(Response.Status.BAD_REQUEST.getStatusCode(), null, this::identityDocument);
 
         // offset one day to force refresh and use the new encryption key
-        setTimeOffset(24*60*60 + 5);
+        timeOffSet.set(24*60*60 + 5);
         doSamlPostLogin();
     }
 
@@ -219,7 +219,7 @@ public class KcSamlMetadataSignedAndEncryptedBrokerTest extends AbstractKcSamlMe
             doSamlPostLogin(Response.Status.BAD_REQUEST.getStatusCode(), null, this::identityDocument);
 
             // offset 1h to force refresh and use the new encryption key
-            setTimeOffset(3600 + 5);
+            timeOffSet.set(3600 + 5);
             doSamlPostLogin();
         }
     }

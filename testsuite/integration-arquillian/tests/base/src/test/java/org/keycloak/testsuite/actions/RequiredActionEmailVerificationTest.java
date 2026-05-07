@@ -456,11 +456,11 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
         Assertions.assertEquals(1, greenMail.getReceivedMessages().length);
 
         try {
-            setTimeOffset(40);
+            timeOffSet.set(40);
             verifyEmailPage.clickResendEmail();
             Assertions.assertEquals(2, greenMail.getReceivedMessages().length);
         } finally {
-            setTimeOffset(0);
+            timeOffSet.set(0);
         }
 
     }
@@ -681,7 +681,7 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
         events.poll();
 
         try {
-            setTimeOffset(360);
+            timeOffSet.set(360);
 
             driver.navigate().to(verificationUrl.trim());
 
@@ -697,7 +697,7 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
                     .detail(Details.ACTION, VerifyEmailActionToken.TOKEN_TYPE)
                     .assertEvent();
         } finally {
-            setTimeOffset(0);
+            timeOffSet.set(0);
         }
     }
 
@@ -723,7 +723,7 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
         events.poll();
 
         try {
-            setTimeOffset(70);
+            timeOffSet.set(70);
 
             driver.navigate().to(verificationUrl.trim());
 
@@ -739,7 +739,7 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
                     .detail(Details.ACTION, VerifyEmailActionToken.TOKEN_TYPE)
                     .assertEvent();
         } finally {
-            setTimeOffset(0);
+            timeOffSet.set(0);
             realmRep.setAttributes(originalAttributes);
             managedRealm.admin().update(realmRep);
         }
@@ -768,7 +768,7 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
         events.poll();
 
         try {
-            setTimeOffset(70);
+            timeOffSet.set(70);
 
             driver.navigate().to(verificationUrl.trim());
 
@@ -784,7 +784,7 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
                     .detail(Details.ACTION, VerifyEmailActionToken.TOKEN_TYPE)
                     .assertEvent();
         } finally {
-            setTimeOffset(0);
+            timeOffSet.set(0);
             realmRep.setAttributes(originalAttributes);
             managedRealm.admin().update(realmRep);
         }
@@ -806,7 +806,7 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
         events.poll();
 
         try {
-            setTimeOffset(3600);
+            timeOffSet.set(3600);
 
             driver.manage().deleteAllCookies();
 
@@ -824,7 +824,7 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
                     .detail(Details.ACTION, VerifyEmailActionToken.TOKEN_TYPE)
                     .assertEvent();
         } finally {
-            setTimeOffset(0);
+            timeOffSet.set(0);
         }
     }
 
@@ -1191,14 +1191,14 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
         String verificationUrl = getEmailLink(message);
 
         try {
-            setTimeOffset(360);
+            timeOffSet.set(360);
 
             driver.navigate().to(verificationUrl.trim());
 
             loginPage.assertCurrent();
             assertEquals("Action expired. Please start again.", loginPage.getError());
         } finally {
-            setTimeOffset(0);
+            timeOffSet.set(0);
         }
     }
 

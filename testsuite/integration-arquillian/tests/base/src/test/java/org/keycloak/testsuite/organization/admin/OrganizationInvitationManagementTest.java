@@ -241,12 +241,12 @@ public class OrganizationInvitationManagementTest extends AbstractOrganizationTe
         assertThat(invitations, empty());
 
         try {
-            setTimeOffset(Math.toIntExact(Duration.ofDays(2).toSeconds()));
+            timeOffSet.set(Math.toIntExact(Duration.ofDays(2).toSeconds()));
             invitations =
                     organization.invitations().list("EXPIRED", null, null, null);
             assertThat(invitations, hasSize(1));
         } finally {
-            setTimeOffset(0);
+            timeOffSet.set(0);
         }
 
         invitations =

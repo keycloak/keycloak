@@ -17,7 +17,6 @@
 
 package org.keycloak.testsuite.client.resources;
 
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -33,8 +32,6 @@ import jakarta.ws.rs.core.Response;
 
 import org.keycloak.common.Profile;
 import org.keycloak.common.enums.HostnameVerificationPolicy;
-import org.keycloak.events.EventType;
-import org.keycloak.protocol.oidc.encode.AccessTokenContext;
 import org.keycloak.representations.idm.AdminEventRepresentation;
 import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
@@ -53,17 +50,6 @@ import org.jboss.resteasy.reactive.NoCache;
 @Path("/testing")
 @Consumes(MediaType.APPLICATION_JSON)
 public interface TestingResource {
-
-    @GET
-    @Path("/time-offset")
-    @Produces(MediaType.APPLICATION_JSON)
-    Map<String, String> getTimeOffset();
-
-    @PUT
-    @Path("/time-offset")
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Produces(MediaType.APPLICATION_JSON)
-    Map<String, String> setTimeOffset(Map<String, String> time);
 
     @POST
     @Path("/poll-event-queue")
@@ -85,11 +71,6 @@ public interface TestingResource {
     @Produces(MediaType.APPLICATION_JSON)
     void clearAdminEventQueue();
 
-    @POST
-    @Path("/remove-expired")
-    @Produces(MediaType.APPLICATION_JSON)
-    void removeExpired(@QueryParam("realm") final String realm);
-
     /**
      * Will set Inifispan's {@link TimeService} that is aware of Keycloak time shifts to the infinispan {@code CacheManager} before the test.
      * This will allow infinispan expiration to be aware of Keycloak {@link org.keycloak.common.util.Time#setOffset}
@@ -103,11 +84,6 @@ public interface TestingResource {
     @Path("/revert-testing-infinispan-time-service")
     @Produces(MediaType.APPLICATION_JSON)
     void revertTestingInfinispanTimeService();
-
-    @GET
-    @Path("/get-client-sessions-count")
-    @Produces(MediaType.APPLICATION_JSON)
-    Integer getClientSessionsCountInUserSession(@QueryParam("realm") final String realmName, @QueryParam("session") final String sessionId);
 
     @Path("/cache/{cache}")
     TestingCacheResource cache(@PathParam("cache") String cacheName);
@@ -302,40 +278,4 @@ public interface TestingResource {
     @GET
     @Path("/no-cache-annotated-endpoint")
     Response getNoCacheAnnotatedEndpointResponse(@QueryParam("programmatic_max_age_value") Long programmaticMaxAgeValue);
-
-    /**
-     * Return a pre-authorized code for the current session.
-     *
-     * @param realmName     name of the realm to be used
-     * @param userSessionId id of the user session to get a code for
-     * @param clientId      id of the client to be used
-     * @param expiration    expiration time of the code
-     * @return the code
-     */
-    @GET
-    @Path("/pre-authorized-code")
-    String getPreAuthorizedCode(@QueryParam("realm") final String realmName, @QueryParam("userSessionId") final String userSessionId, @QueryParam("clientId") final String clientId, @QueryParam("expiration") final int expiration);
-
-    /**
-     * Adds the following types to the email event listener included list.
-     * @param events The events to be included
-     */
-    @POST
-    @Path("/email-event-listener-provide/add-events")
-    @Consumes(MediaType.APPLICATION_JSON)
-    public void addEventsToEmailEventListenerProvider(List<EventType> events);
-
-    /**
-     * Removes the following types from the email event listener included list.
-     * @param events The events to be removed
-     */
-    @POST
-    @Path("/email-event-listener-provide/remove-events")
-    @Consumes(MediaType.APPLICATION_JSON)
-    public void removeEventsToEmailEventListenerProvider(List<EventType> events);
-
-    @GET
-    @Path("/token-context")
-    @Produces(MediaType.APPLICATION_JSON)
-    AccessTokenContext getTokenContext(@QueryParam("tokenId") String tokenId);
 }

@@ -73,7 +73,7 @@ public class UserInfoEndpointCorsTest extends AbstractKeycloakTest {
         AccessTokenResponse accessTokenResponse = oauth.doPasswordGrantRequest("test-user@localhost", "password");
 
         // Set time offset to make sure that userInfo request will be invalid due the expired token
-        setTimeOffset(600);
+        timeOffSet.set(600);
 
         ResteasyClient resteasyClient = AdminClientUtil.createResteasyClient();
         try {

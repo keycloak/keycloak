@@ -997,7 +997,7 @@ public class ParTest extends AbstractClientPoliciesTest {
         // Authorization Request with request_uri of PAR
         // remove parameters as query strings of uri
         // PAR expired
-        setTimeOffset(expiresIn + 5);
+        timeOffSet.set(expiresIn + 5);
         oauth.redirectUri(null);
         oauth.scope(null);
         oauth.responseType(null);

@@ -527,7 +527,7 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
         organization.members().inviteUser(email, "Homer", "Simpson").close();
 
         try {
-            setTimeOffset((int) TimeUnit.DAYS.toSeconds(1));
+            timeOffSet.set((int) TimeUnit.DAYS.toSeconds(1));
 
             List<OrganizationInvitationRepresentation> list = organization.invitations().list();
             assertThat(list, Matchers.hasSize(1));
@@ -540,7 +540,7 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
             assertThat(driver.getPageSource(), Matchers.containsString("Action expired."));
             assertThat(managedRealm.admin().users().searchByEmail(email, true), Matchers.empty());
         } finally {
-            resetTimeOffset();
+            timeOffSet.set(0);
         }
     }
 

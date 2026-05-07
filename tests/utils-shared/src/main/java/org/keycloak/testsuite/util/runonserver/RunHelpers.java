@@ -6,12 +6,18 @@ import java.util.stream.Collectors;
 import jakarta.ws.rs.NotFoundException;
 
 import org.keycloak.credential.CredentialModel;
+import org.keycloak.events.EventListenerProvider;
+import org.keycloak.events.EventType;
+import org.keycloak.events.email.EmailEventListenerProviderFactory;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmProvider;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.session.UserSessionPersisterProvider;
 import org.keycloak.models.utils.ModelToRepresentation;
+import org.keycloak.protocol.oidc.encode.AccessTokenContext;
+import org.keycloak.protocol.oidc.encode.TokenContextEncoderProvider;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -98,7 +104,74 @@ public class RunHelpers {
         };
     }
 
-    private static RealmModel getRealmByName(KeycloakSession session, String realmName) {
+    public static FetchOnServerWrapper<Integer> getClientSessionsCountInUserSession(String realmName, String sessionId) {
+        return new FetchOnServerWrapper<>() {
+            @Override
+            public FetchOnServer getRunOnServer() {
+                return session -> {
+                    RealmModel realm = getRealmByName(session, realmName);
+
+                    UserSessionModel sessionModel = session.sessions().getUserSession(realm, sessionId);
+                    if (sessionModel == null) {
+                        throw new NotFoundException("Session not found");
+                    }
+
+                    // TODO: Might need optimization to prevent loading client sessions from cache
+                    return sessionModel.getAuthenticatedClientSessions().size();
+                };
+            }
+
+            @Override
+            public Class<Integer> getResultClass() {
+                return Integer.class;
+            }
+        };
+    }
+
+    public static RunOnServer removeExpired(String realmName) {
+        return session -> {
+            RealmModel realm = getRealmByName(session, realmName);
+
+            session.getProvider(UserSessionPersisterProvider.class).removeExpired(realm);
+            session.realms().removeExpiredClientInitialAccess();
+        };
+    }
+
+    public static RunOnServer addEventsToEmailEventListenerProvider(List<EventType> events) {
+        return session -> {
+            if (events != null && !events.isEmpty()) {
+                EmailEventListenerProviderFactory prov = (EmailEventListenerProviderFactory) session.getKeycloakSessionFactory()
+                        .getProviderFactory(EventListenerProvider.class, EmailEventListenerProviderFactory.ID);
+                prov.addIncludedEvents(events.toArray(EventType[]::new));
+            }
+        };
+    }
+
+    public static RunOnServer removeEventsToEmailEventListenerProvider(List<EventType> events) {
+        return session -> {
+            if (events != null && !events.isEmpty()) {
+                EmailEventListenerProviderFactory prov = (EmailEventListenerProviderFactory) session.getKeycloakSessionFactory()
+                        .getProviderFactory(EventListenerProvider.class, EmailEventListenerProviderFactory.ID);
+                prov.removeIncludedEvents(events.toArray(EventType[]::new));
+            }
+        };
+    }
+
+    public static FetchOnServerWrapper<AccessTokenContext> getTokenContext(String tokenId) {
+        return new FetchOnServerWrapper<>() {
+            @Override
+            public FetchOnServer getRunOnServer() {
+                return session -> session.getProvider(TokenContextEncoderProvider.class).getTokenContextFromTokenId(tokenId);
+            }
+
+            @Override
+            public Class<AccessTokenContext> getResultClass() {
+                return AccessTokenContext.class;
+            }
+        };
+    }
+
+    public static RealmModel getRealmByName(KeycloakSession session, String realmName) {
         RealmProvider realmProvider = session.getProvider(RealmProvider.class);
         RealmModel realm = realmProvider.getRealmByName(realmName);
         if (realm == null) {

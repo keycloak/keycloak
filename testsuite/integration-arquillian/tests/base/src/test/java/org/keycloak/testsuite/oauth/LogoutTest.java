@@ -154,7 +154,7 @@ public class LogoutTest extends AbstractKeycloakTest {
 
         oauth.doLogout(refreshToken1);
 
-        setTimeOffset(2);
+        timeOffSet.set(2);
 
         driver.navigate().refresh();
         oauth.fillLoginForm("test-user@localhost", "password");
@@ -496,7 +496,7 @@ public class LogoutTest extends AbstractKeycloakTest {
 
         AccessTokenResponse tokenResponse = oauth.accessTokenRequest(code).param(AdapterConstants.CLIENT_SESSION_STATE, "client-session").send();
 
-        setTimeOffset(1);
+        timeOffSet.set(1);
 
         oauth.loginForm()
                 .prompt(OIDCLoginProtocol.PROMPT_VALUE_LOGIN)

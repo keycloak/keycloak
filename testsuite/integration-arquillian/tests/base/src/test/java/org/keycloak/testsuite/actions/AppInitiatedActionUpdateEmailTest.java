@@ -57,7 +57,7 @@ public class AppInitiatedActionUpdateEmailTest extends AbstractAppInitiatedActio
 
     @After
     public void after() {
-        setTimeOffset(0);
+        timeOffSet.set(0);
         // update email required action max auth age back to default
         Optional<RequiredActionProviderRepresentation> updateEmailAction = managedRealm.admin().flows().getRequiredActions()
                 .stream()
@@ -145,7 +145,7 @@ public class AppInitiatedActionUpdateEmailTest extends AbstractAppInitiatedActio
         appPage.openAccount();
         loginPage.login("test-user@localhost", "password");
 
-        setTimeOffset(400);
+        timeOffSet.set(400);
         UIUtils.clickLink(updateEmailBtn);
         loginPage.assertCurrent();
         loginPage.login("password");

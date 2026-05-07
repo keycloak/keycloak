@@ -54,6 +54,7 @@ import org.keycloak.testsuite.util.KeycloakModelUtils;
 import org.keycloak.testsuite.util.TokenSignatureUtil;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.IntrospectionResponse;
+import org.keycloak.testsuite.util.runonserver.RunHelpers;
 import org.keycloak.util.BasicAuthHelper;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.util.TokenUtil;
@@ -248,7 +249,7 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
         oauth.doLogout(refreshToken1);
         events.clear();
 
-        setTimeOffset(2);
+        timeOffSet.set(2);
 
         driver.navigate().refresh();
         oauth.fillLoginForm("test-user@localhost", "password");
@@ -441,7 +442,7 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
         String code = oauth.parseLoginResponse().getCode();
         AccessTokenResponse accessTokenResponse = oauth.doAccessTokenRequest(code);
 
-        setTimeOffset(86400);
+        timeOffSet.set(86400);
 
         // "Online" session still exists, but is invalid
         accessTokenResponse = oauth.doRefreshTokenRequest(accessTokenResponse.getRefreshToken());
@@ -453,7 +454,7 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
         assertEquals("test-app", rep.getClientId());
 
         // "Online" session doesn't even exists
-        testingClient.testing().removeExpired("test");
+        runOnServer.run(RunHelpers.removeExpired("test"));
 
         oauth.client("test-app", "password");
         accessTokenResponse = oauth.doRefreshTokenRequest(accessTokenResponse.getRefreshToken());
@@ -472,7 +473,7 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
         AccessTokenResponse accessTokenResponse = oauth.doAccessTokenRequest(code);
         accessTokenResponse = oauth.doRefreshTokenRequest(accessTokenResponse.getRefreshToken());
 
-        setTimeOffset(1200);
+        timeOffSet.set(1200);
 
         oauth.client("confidential-cli", "secret1");
         TokenMetadataRepresentation rep = oauth.doIntrospectionRefreshTokenRequest(accessTokenResponse.getRefreshToken()).asTokenMetadata();
@@ -481,7 +482,7 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
         assertEquals("test-user@localhost", rep.getUserName());
         assertEquals("test-app", rep.getClientId());
 
-        setTimeOffset(1200 + 1200);
+        timeOffSet.set(1200 + 1200);
 
         oauth.client("test-app", "password");
 
@@ -522,7 +523,7 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
         String code = oauth.parseLoginResponse().getCode();
         AccessTokenResponse accessTokenResponse = oauth.doAccessTokenRequest(code);
 
-        setTimeOffset(adminClient.realm(oauth.getRealm()).toRepresentation().getAccessTokenLifespan() + 1);
+        timeOffSet.set(adminClient.realm(oauth.getRealm()).toRepresentation().getAccessTokenLifespan() + 1);
         oauth.client("confidential-cli", "secret1");
         TokenMetadataRepresentation rep = oauth.doIntrospectionAccessTokenRequest(accessTokenResponse.getAccessToken()).asTokenMetadata();
 
@@ -555,7 +556,7 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
 
         AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
 
-        setTimeOffset(1);
+        timeOffSet.set(1);
 
         String loginFormUri = oauth.loginForm()
                 .param(OIDCLoginProtocol.PROMPT_PARAM, OIDCLoginProtocol.PROMPT_VALUE_LOGIN)
@@ -639,7 +640,7 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
             AccessTokenResponse accessTokenResponse = oauth.doAccessTokenRequest(code);
             String oldRefreshToken = accessTokenResponse.getRefreshToken();
 
-            setTimeOffset(1);
+            timeOffSet.set(1);
 
             accessTokenResponse = oauth.doRefreshTokenRequest(oldRefreshToken);
 

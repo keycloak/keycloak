@@ -261,7 +261,7 @@ public class ExternalInternalTokenExchangeV2Test extends AbstractInitializedBase
 
         testingClient.server(BrokerTestConstants.REALM_CONS_NAME).run(ExternalInternalTokenExchangeV2Test::setupRealm);
 
-        setTimeOffset(3600);
+        timeOffSet.set(3600);
 
         testTokenExchange(tokenResponse.getAccessToken(), (tokenExchangeResponse) -> {
             assertThat(tokenExchangeResponse.getStatus(), equalTo(400));

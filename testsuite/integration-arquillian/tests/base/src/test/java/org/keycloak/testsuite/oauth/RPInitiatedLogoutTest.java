@@ -44,6 +44,7 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testframework.realm.ClientBuilder;
+import org.keycloak.testframework.remote.providers.runonserver.RunOnServerException;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.AdminApiUtil;
@@ -273,7 +274,7 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
             String idTokenString = tokenResponse.getIdToken();
 
             // expire online user session
-            setTimeOffset(9999);
+            timeOffSet.set(9999);
 
             oauth.logoutForm().postLogoutRedirectUri(APP_REDIRECT_URI).idTokenHint(idTokenString).open();
 
@@ -386,7 +387,7 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
         String idTokenString = tokenResponse.getIdToken();
 
         // Logout should succeed with expired ID token, see KEYCLOAK-3399
-        setTimeOffset(60 * 60 * 24);
+        timeOffSet.set(60 * 60 * 24);
 
         String logoutUrl = oauth.logoutForm()
                 .idTokenHint(idTokenString)
@@ -554,7 +555,7 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
         events.assertEmpty();
 
         // Set time offset to expire "action" inside logoutSession
-        setTimeOffset(310);
+        timeOffSet.set(310);
         logoutConfirmPage.confirmLogout();
 
         errorPage.assertCurrent();
@@ -585,7 +586,7 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
         events.assertEmpty();
 
         // Set time offset to expire "action" inside logoutSession
-        setTimeOffset(1810);
+        timeOffSet.set(1810);
         logoutConfirmPage.confirmLogout();
 
         errorPage.assertCurrent();
@@ -615,7 +616,7 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
         events.assertEmpty();
 
         // Set time offset to expire "action" inside logoutSession
-        setTimeOffset(1810);
+        timeOffSet.set(1810);
         logoutConfirmPage.confirmLogout();
 
         errorPage.assertCurrent();
@@ -688,7 +689,7 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
         events.assertEmpty();
 
         // Set time offset to expire "action" inside logoutSession
-        setTimeOffset(310);
+        timeOffSet.set(310);
         logoutConfirmPage.confirmLogout();
 
         errorPage.assertCurrent();
@@ -1117,10 +1118,13 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
 
     private boolean isSessionActive(String sessionId) {
         try {
-            testingClient.testing().getClientSessionsCountInUserSession("test", sessionId);
+            runOnServer.fetch(RunHelpers.getClientSessionsCountInUserSession("test", sessionId));
             return true;
-        } catch (NotFoundException nfe) {
-            return false;
+        } catch (RunOnServerException nfe) {
+            if (nfe.getCause() instanceof NotFoundException) {
+                return false;
+            }
+            throw nfe;
         }
     }
 

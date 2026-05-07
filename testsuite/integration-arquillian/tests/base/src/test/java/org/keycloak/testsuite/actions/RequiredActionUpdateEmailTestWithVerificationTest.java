@@ -703,7 +703,7 @@ public class RequiredActionUpdateEmailTestWithVerificationTest extends AbstractR
 
         try {
             // Move time forward beyond cooldown period (default 30 seconds)
-            setTimeOffset(40);
+            timeOffSet.set(40);
             
             // Logout and login again to retry after cooldown
             managedRealm.admin().users().get(testUser.getId()).logout();
@@ -715,7 +715,7 @@ public class RequiredActionUpdateEmailTestWithVerificationTest extends AbstractR
             updateEmailPage.changeEmail("newemail@localhost");
             assertEquals(2, greenMail.getReceivedMessages().length, "Second email should be sent after cooldown expires");
         } finally {
-            setTimeOffset(0);
+            timeOffSet.set(0);
         }
     }
 }

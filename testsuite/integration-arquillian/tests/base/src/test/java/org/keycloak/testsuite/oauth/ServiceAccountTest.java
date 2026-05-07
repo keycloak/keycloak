@@ -59,6 +59,7 @@ import org.keycloak.testsuite.util.ClientManager;
 import org.keycloak.testsuite.util.TokenSignatureUtil;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.LogoutResponse;
+import org.keycloak.testsuite.util.runonserver.RunHelpers;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import org.hamcrest.Matchers;
@@ -419,7 +420,7 @@ public class ServiceAccountTest extends AbstractKeycloakTest {
         Assertions.assertNull(accessToken.getSessionState());
         Assertions.assertNull(response.getRefreshToken(), "Refresh-Token should not be present");
 
-        AccessTokenContext ctx = testingClient.testing("test").getTokenContext(accessToken.getId());
+        AccessTokenContext ctx = runOnServer.fetch(RunHelpers.getTokenContext(accessToken.getId()));
         Assertions.assertEquals(ctx.getSessionType(), AccessTokenContext.SessionType.TRANSIENT);
         Assertions.assertEquals(ctx.getTokenType(), AccessTokenContext.TokenType.REGULAR);
         Assertions.assertEquals(ctx.getGrantType(), OAuth2Constants.CLIENT_CREDENTIALS);

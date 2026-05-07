@@ -163,7 +163,7 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
     }
 
     protected void setAdapterAndServerTimeOffset(int timeOffset, String... servletUris) {
-        setTimeOffset(timeOffset);
+        timeOffSet.set(timeOffset);
 
         for (String servletUri : servletUris) {
             setAdapterServletTimeOffset(timeOffset, servletUri);

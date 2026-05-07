@@ -411,7 +411,7 @@ public class KcOidcBrokerIdpLinkActionTest extends AbstractInitializedBaseBroker
         Response response = AccountHelper.addIdentityProvider(adminClient.realm(bc.consumerRealmName()), "user1", adminClient.realm(bc.providerRealmName()), bc.getUserLogin(), bc.getIDPAlias());
         Assertions.assertEquals(204, response.getStatus());
 
-        setTimeOffset(2);
+        timeOffSet.set(2);
 
         // Enforce re-authentication on "consumer" realm. Try to do re-authentication with the use of IDP, but reject consent screen on IDP side
         oauth.loginForm().maxAge(1).open();
