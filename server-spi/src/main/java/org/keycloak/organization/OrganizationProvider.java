@@ -26,6 +26,7 @@ import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.ModelValidationException;
 import org.keycloak.models.OrganizationModel;
+import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.provider.Provider;
 import org.keycloak.representations.idm.MembershipType;
@@ -420,4 +421,60 @@ public interface OrganizationProvider extends Provider {
      * @return the invitation manager
      */
     InvitationManager getInvitationManager();
+
+    /**
+     * Creates a new role scoped to the given organization.
+     */
+    default RoleModel createRole(OrganizationModel organization, String name) {
+        throw new UnsupportedOperationException("Not implemented");
+    }
+
+    /**
+     * Returns all roles of the given organization.
+     */
+    default Stream<RoleModel> getRoles(OrganizationModel organization, Integer first, Integer max) {
+        return Stream.empty();
+    }
+
+    /**
+     * Returns roles filtered by name.
+     */
+    default Stream<RoleModel> searchRolesByName(OrganizationModel organization, String search, Integer first, Integer max) {
+        return Stream.empty();
+    }
+
+    /**
+     * Returns a role by id within the given organization.
+     */
+    default RoleModel getRoleById(OrganizationModel organization, String id) {
+        return null;
+    }
+
+    /**
+     * Removes the given role from the organization.
+     */
+    default boolean removeRole(OrganizationModel organization, RoleModel role) {
+        return false;
+    }
+
+    /**
+     * Grants an organization role to a member.
+     */
+    default void grantRole(OrganizationModel organization, UserModel user, RoleModel role) {
+        throw new UnsupportedOperationException("Not implemented");
+    }
+
+    /**
+     * Revokes an organization role from a member.
+     */
+    default void revokeRole(OrganizationModel organization, UserModel user, RoleModel role) {
+        throw new UnsupportedOperationException("Not implemented");
+    }
+
+    /**
+     * Returns members that have the given organization role.
+     */
+    default Stream<UserModel> getMembersWithRole(OrganizationModel organization, RoleModel role) {
+        return Stream.empty();
+    }
 }
