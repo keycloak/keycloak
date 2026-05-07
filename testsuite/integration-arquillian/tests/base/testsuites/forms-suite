@@ -1,3 +1,2 @@
 org.keycloak.testsuite.forms.**
-org.keycloak.testsuite.actions.RequiredActionUpdateProfileTest
 org.keycloak.testsuite.actions.TermsAndConditionsTest
