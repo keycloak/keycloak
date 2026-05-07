@@ -50,6 +50,7 @@ import org.keycloak.common.Profile.Feature;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
@@ -672,6 +673,47 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
                 return baseAttributes;
             }
         };
+    }
+
+    @Test
+    public void testResolveServiceAccountByClientId() {
+        testingClient.server().run(PolicyEvaluationTest::testResolveServiceAccountByClientId);
+    }
+
+    public static void testResolveServiceAccountByClientId(KeycloakSession session) {
+        RealmModel realm = session.realms().getRealmByName("authz-test");
+        session.getContext().setRealm(realm);
+        AuthorizationProvider authorization = session.getProvider(AuthorizationProvider.class);
+        ClientModel clientModel = session.clients().getClientByClientId(realm, "resource-server-test");
+        StoreFactory storeFactory = authorization.getStoreFactory();
+        ResourceServer resourceServer = storeFactory.getResourceServerStore().findByClient(clientModel);
+
+        // get the service account user and assign a realm role
+        UserModel serviceAccount = session.users().getServiceAccount(clientModel);
+        assertNotNull(serviceAccount);
+        RoleModel roleA = realm.getRole("role-a");
+        assertNotNull(roleA);
+        serviceAccount.grantRole(roleA);
+
+        // create a simple user policy (type doesn't matter, we test through the Realm interface)
+        UserPolicyRepresentation policyRepresentation = new UserPolicyRepresentation();
+        policyRepresentation.setName("testResolveServiceAccountByClientId");
+        policyRepresentation.addUser(serviceAccount.getId());
+        Policy policy = storeFactory.getPolicyStore().create(resourceServer, policyRepresentation);
+
+        DefaultEvaluation evaluation = createEvaluation(session, authorization, resourceServer, policy);
+
+        // resolve service account using the client's internal ID (the fix scenario)
+        Assertions.assertTrue(evaluation.getRealm().isUserInRealmRole(clientModel.getId(), "role-a"),
+                "Service account should be resolved by client internal ID");
+
+        // resolve service account using the service account username (regression check)
+        Assertions.assertTrue(evaluation.getRealm().isUserInRealmRole(serviceAccount.getUsername(), "role-a"),
+                "Service account should still be resolved by username");
+
+        // non-existent ID should not cause errors (NPE check)
+        Assertions.assertFalse(evaluation.getRealm().isUserInRealmRole("non-existent-id", "role-a"),
+                "Non-existent ID should return false without errors");
     }
 
     @Test

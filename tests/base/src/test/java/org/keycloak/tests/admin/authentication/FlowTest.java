@@ -417,6 +417,18 @@ public class FlowTest extends AbstractAuthenticationTest {
     }
 
     @Test
+    public void testCopyFlowWithRestrictedCharInAlias() {
+        HashMap<String, Object> params = new HashMap<>();
+        params.put("newName", "copy/of(browser)");
+
+        try (Response response = authMgmtResource.copy("browser", params)) {
+            Assertions.assertEquals(400, response.getStatus());
+            OAuth2ErrorRepresentation error = response.readEntity(OAuth2ErrorRepresentation.class);
+            Assertions.assertEquals("Character '/' not allowed.", error.getError());
+        }
+    }
+
+    @Test
     @DatabaseTest
     public void testCopyFlow() {
 
