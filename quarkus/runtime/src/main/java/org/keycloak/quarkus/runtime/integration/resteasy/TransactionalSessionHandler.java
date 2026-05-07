@@ -18,9 +18,12 @@
 package org.keycloak.quarkus.runtime.integration.resteasy;
 
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakTransactionManager;
 import org.keycloak.utils.KeycloakSessionUtil;
 
 import io.quarkus.arc.Arc;
+import io.quarkus.arc.ClientProxy;
+import org.jboss.resteasy.reactive.common.core.BlockingOperationSupport;
 import org.jboss.resteasy.reactive.server.core.ResteasyReactiveRequestContext;
 import org.jboss.resteasy.reactive.server.spi.ServerRestHandler;
 
@@ -28,12 +31,19 @@ public final class TransactionalSessionHandler implements ServerRestHandler, org
 
     @Override
     public void handle(ResteasyReactiveRequestContext requestContext) {
+        // This method might be invoked multiple times within a request when resolving sub-resources.
+
         requestContext.requireCDIRequestScope();
-        KeycloakSession currentSession = Arc.container().instance(KeycloakSession.class).get();
-        // this handler might be invoked multiple times when resolving sub-resources
-        // make sure the transaction is began once when the session is first associated with the thread
-        if (KeycloakSessionUtil.setKeycloakSession(currentSession) == null) {
-            beginTransaction(currentSession);
+
+        if (BlockingOperationSupport.isBlockingAllowed()) {
+            // ClientProxy.unwrap() resolves a proxy that is lazily initialized on the first method call or on unwrap.
+            KeycloakSession currentSession = ClientProxy.unwrap(Arc.container().instance(KeycloakSession.class).get());
+            KeycloakTransactionManager transactionManager = currentSession.getTransactionManager();
+            if (!transactionManager.isActive()) {
+                // This handler is always running in a blocking thread.
+                beginTransaction(currentSession);
+            }
+            KeycloakSessionUtil.setKeycloakSession(currentSession);
         }
     }
 }
