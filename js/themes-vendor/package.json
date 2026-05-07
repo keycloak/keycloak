@@ -21,7 +21,7 @@
     }
   },
   "dependencies": {
-    "@noble/hashes": "^2.0.1",
+    "@noble/hashes": "^2.2.0",
     "@patternfly-v5/patternfly": "npm:@patternfly/patternfly@^5.4.2",
     "@patternfly/patternfly": "^4.224.5",
     "patternfly": "^3.59.5",
@@ -31,11 +31,11 @@
     "uuid": "^13.0.0"
   },
   "devDependencies": {
-    "@rollup/plugin-commonjs": "^29.0.0",
+    "@rollup/plugin-commonjs": "^29.0.2",
     "@rollup/plugin-node-resolve": "^16.0.3",
     "@rollup/plugin-replace": "^6.0.3",
     "@rollup/plugin-terser": "^1.0.0",
-    "rollup": "^4.59.0"
+    "rollup": "^4.60.3"
   },
   "author": {
     "name": "Red Hat, Inc.",
