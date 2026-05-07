@@ -124,7 +124,7 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
                 .removeDetail(Details.EMAIL)
                 .user((String) null).error("username_in_use").assertEvent();
     }
- 
+
     @Test
     public void registerExistingEmailForbidden() {
         oauth.openLoginForm();
@@ -148,7 +148,7 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
                 .removeDetail(Details.EMAIL)
                 .user((String) null).error("email_in_use").assertEvent();
     }
- 
+
     @Test
     public void registerExistingEmailAllowed() throws IOException {
         try (RealmAttributeUpdater rau = setDuplicateEmailsAllowed(true).update()) {
@@ -791,6 +791,8 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
     public void testRegisterShouldFailBeforeUserCreationWhenUserIsInContext() {
         oauth.openLoginForm();
         loginPage.clickRegister();
+        String registrationUrl = driver.getCurrentUrl();
+
         registerPage.clickBackToLogin();
         loginPage.assertCurrent(managedRealm.admin().toRepresentation().getRealm());
 
@@ -798,9 +800,9 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
         resetPasswordPage.assertCurrent();
         resetPasswordPage.changePassword("test-user@localhost");
 
-        driver.navigate().back();
-        driver.navigate().back();
         events.clear();
+
+        driver.navigate().to(registrationUrl);
 
         UIUtils.navigateBackWithRefresh(driver, errorPage);
         Assertions.assertEquals("Action expired. Please continue with login now.", errorPage.getError());
@@ -812,6 +814,25 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
                 .detail(Details.EXISTING_USER, "test-user@localhost")
                 .detail(Details.AUTHENTICATION_ERROR_DETAIL, Errors.DIFFERENT_USER_AUTHENTICATING)
                 .error(Errors.GENERIC_AUTHENTICATION_ERROR).assertEvent();
+    }
+
+    @Test
+    public void testLoginPageClearsUserFromContextIfUserNavigatesBackFromResetPassword() {
+        oauth.openLoginForm();
+        loginPage.clickRegister();
+        registerPage.clickBackToLogin();
+        loginPage.assertCurrent(managedRealm.admin().toRepresentation().getRealm());
+
+        loginPage.resetPassword();
+        resetPasswordPage.assertCurrent();
+        resetPasswordPage.changePassword("test-user@localhost");
+
+        driver.navigate().back();
+        driver.navigate().back();
+        events.clear();
+        driver.navigate().back();
+
+        registerPage.assertCurrent();
     }
 
     protected RealmAttributeUpdater configureRealmRegistrationEmailAsUsername(final boolean value) {
