@@ -30,6 +30,7 @@ import org.keycloak.protocol.oid4vc.issuance.TimeProvider;
 import org.keycloak.protocol.oid4vc.issuance.credentialbuilder.JwtCredentialBody;
 import org.keycloak.protocol.oid4vc.issuance.credentialbuilder.JwtCredentialBuilder;
 import org.keycloak.protocol.oid4vc.model.CredentialBuildConfig;
+import org.keycloak.protocol.oid4vc.model.CredentialDefinition;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.tests.oid4vc.OID4VCIssuerTestBase;
@@ -93,9 +94,31 @@ public class JwtCredentialBuilderTest extends CredentialBuilderTest {
         assertEquals(expectedNormalizedNbf, payload.get("nbf").asLong());
     }
 
+    @Test
+    public void buildJwtCredential_AddsVerifiableCredentialType() throws Exception {
+        VerifiableCredential verifiableCredential = getTestCredential(exampleCredentialClaims());
+        verifiableCredential.setType(List.of("oid4vc_natural_person"));
+        CredentialBuildConfig credentialBuildConfig = new CredentialBuildConfig().setTokenJwsType("JWT");
+
+        JwtCredentialBody jwtCredentialBody = builder
+                .buildCredentialBody(verifiableCredential, credentialBuildConfig);
+
+        String jws = jwtCredentialBody.sign(exampleSigner());
+        JWSInput jwsInput = new JWSInput(jws);
+        JsonNode credentialTypes = parseCredentialTypes(jwsInput);
+
+        assertEquals(CredentialDefinition.VERIFIABLE_CREDENTIAL_TYPE, credentialTypes.get(0).asText());
+        assertEquals("oid4vc_natural_person", credentialTypes.get(1).asText());
+    }
+
     private JsonNode parseCredentialSubject(JWSInput jwsInput) throws JWSInputException {
         JsonNode payload = jwsInput.readJsonContent(JsonNode.class);
         return payload.get("vc").get(CREDENTIAL_SUBJECT);
+    }
+
+    private JsonNode parseCredentialTypes(JWSInput jwsInput) throws JWSInputException {
+        JsonNode payload = jwsInput.readJsonContent(JsonNode.class);
+        return payload.get("vc").get("type");
     }
 
     private Map<String, Object> exampleCredentialClaims() {

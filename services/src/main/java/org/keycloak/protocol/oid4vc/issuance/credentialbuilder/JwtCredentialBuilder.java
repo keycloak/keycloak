@@ -18,6 +18,8 @@
 package org.keycloak.protocol.oid4vc.issuance.credentialbuilder;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.UnaryOperator;
@@ -71,6 +73,8 @@ public class JwtCredentialBuilder implements CredentialBuilder {
             VerifiableCredential verifiableCredential,
             CredentialBuildConfig credentialBuildConfig
     ) throws CredentialBuilderException {
+        verifiableCredential.setType(getCredentialTypes(verifiableCredential.getType()));
+
         // Populate the issuer field of the VC
         verifiableCredential.setIssuer(credentialBuildConfig.getCredentialIssuer());
 
@@ -106,6 +110,14 @@ public class JwtCredentialBuilder implements CredentialBuilder {
                 .jsonContent(jsonWebToken);
 
         return new JwtCredentialBody(jwsBuilder);
+    }
+
+    private static List<String> getCredentialTypes(List<String> credentialTypes) {
+        List<String> types = new ArrayList<>(Optional.ofNullable(credentialTypes).orElseGet(List::of));
+        if (!types.contains(CredentialDefinition.VERIFIABLE_CREDENTIAL_TYPE)) {
+            types.add(0, CredentialDefinition.VERIFIABLE_CREDENTIAL_TYPE);
+        }
+        return types;
     }
 
     @Override
