@@ -63,7 +63,7 @@ public abstract class CredentialBuilderTest extends OID4VCIssuerTestBase {
         testCredential.setId(URI.create(String.format("uri:uuid:%s", UUID.randomUUID())));
         testCredential.setContext(List.of(CONTEXT_URL));
         testCredential.setType(TEST_TYPES);
-        testCredential.setIssuer(TEST_DID);
+        testCredential.setIssuer(TEST_ISSUER_DID);
         testCredential.setExpirationDate(TEST_EXPIRATION_DATE);
         if (claims.containsKey("issuanceDate")) {
             testCredential.setIssuanceDate((Instant) claims.get("issuanceDate"));
