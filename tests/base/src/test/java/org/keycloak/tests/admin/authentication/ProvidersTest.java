@@ -209,6 +209,9 @@ public class ProvidersTest extends AbstractAuthenticationTest {
         addProviderInfo(result, "conditional-client-scope", "Condition - client scope", "Condition to evaluate if a configured client scope is present as a client scope of the client requesting authentication");
         addProviderInfo(result, "conditional-credential", "Condition - credential", "Condition to evaluate if a specific credential type has been used (or not used) by the user during the authentication process");
 
+        addProviderInfo(result, "auth-trusted-device", "Trusted Device", "Validates Trusted Device Cookie");
+        addProviderInfo(result, "auth-trusted-device-register", "Trusted Device Register", "Asks the user if they want to 'remember' their device. If they agree, a cookie is set with a configured period of time.");
+
         return result;
     }
 
