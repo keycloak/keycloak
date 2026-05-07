@@ -38,25 +38,24 @@ public class Attribute<M extends Model, R extends ResourceTypeRepresentation> {
             return null;
         }
 
-        return name.substring(0, schemaSeparator) + ":" + getResourceType(name);
+        return name.substring(0, schemaSeparator);
     }
 
     public static String getResourceType(String name) {
         requireNonNull(name, "name is required");
-        int schemaSeparator = name.lastIndexOf(':');
+        String schema = getSchema(name);
 
-        if (schemaSeparator == -1) {
+        if  (schema == null) {
             return null;
         }
 
-        String resourceType = name.substring(schemaSeparator + 1);
-        int fieldSeparator = resourceType.indexOf('.');
+        int resourceTypeSeparator = schema.lastIndexOf(':');
 
-        if (fieldSeparator == -1) {
+        if (resourceTypeSeparator == -1) {
             return null;
         }
 
-        return resourceType.substring(0, fieldSeparator);
+        return schema.substring(resourceTypeSeparator + 1);
     }
 
     public static String getSimpleName(String name) {
