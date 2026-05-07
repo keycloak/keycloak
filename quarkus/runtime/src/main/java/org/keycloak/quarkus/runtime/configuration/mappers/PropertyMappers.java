@@ -34,7 +34,6 @@ import io.smallrye.config.ConfigValue;
 import io.smallrye.config.Expressions;
 import org.jboss.logging.Logger;
 
-import static org.keycloak.quarkus.runtime.Environment.isRebuild;
 import static org.keycloak.quarkus.runtime.Environment.isRebuildCheck;
 import static org.keycloak.quarkus.runtime.configuration.KeycloakConfigSourceProvider.isKeyStoreConfigSource;
 
@@ -72,7 +71,7 @@ public final class PropertyMappers {
         GROUPINGS.forEach(g -> MAPPERS.addAll(g.getPropertyMappers()));
     }
 
-    public static ConfigValue getValue(ConfigSourceInterceptorContext context, String name) {
+    public static ConfigValue getValue(ConfigSourceInterceptorContext context, String name, boolean augmenting) {
         PropertyMapper<?> mapper = getMapper(name);
 
         // During re-aug do not resolve server runtime properties and avoid including in the quarkus default value config source.
@@ -81,7 +80,7 @@ public final class PropertyMappers {
         // and we need to resolve them. That should be fine as they are generally not considered security sensitive.
         // If however expressions are not enabled that means quarkus is specifically looking for runtime defaults, and we should not provide a value
         // See https://github.com/quarkusio/quarkus/pull/42157
-        if ((isRebuild() || Boolean.getBoolean(Environment.KC_TEST_REBUILD)) && isKeycloakRuntime(name, mapper)
+        if (augmenting && isKeycloakRuntime(name, mapper)
                 && (NestedPropertyMappingInterceptor.getResolvingRoot().or(() -> Optional.of(name))
                         .filter(n -> n.startsWith("quarkus.log.") || n.startsWith("quarkus.console.")).isEmpty()
                         || !Expressions.isEnabled())) {

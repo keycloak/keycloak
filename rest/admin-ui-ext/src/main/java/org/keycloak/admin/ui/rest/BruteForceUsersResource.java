@@ -1,8 +1,10 @@
 package org.keycloak.admin.ui.rest;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Stream;
 
@@ -39,7 +41,7 @@ import org.jboss.logging.Logger;
 
 public class BruteForceUsersResource {
     private static final Logger logger = Logger.getLogger(BruteForceUsersResource.class);
-    private static final String SEARCH_ID_PARAMETER = "id:";
+
     private final KeycloakSession session;
     private final RealmModel realm;
     private final AdminPermissionEvaluator auth;
@@ -90,12 +92,11 @@ public class BruteForceUsersResource {
 
         Stream<UserModel> userModels = Stream.empty();
         if (search != null) {
-            if (search.startsWith(SEARCH_ID_PARAMETER)) {
-                UserModel userModel =
-                        session.users().getUserById(realm, search.substring(SEARCH_ID_PARAMETER.length()).trim());
-                if (userModel != null) {
-                    userModels = Stream.of(userModel);
-                }
+            SearchQueryUtils.UserSearchPrefix prefix = SearchQueryUtils.UserSearchPrefix.matching(search);
+            if (prefix != null) {
+                userModels = Arrays.stream(prefix.splitTerms(search))
+                        .map(term -> prefix.lookup(session.users(), realm, term))
+                        .filter(Objects::nonNull);
             } else {
                 Map<String, String> attributes = new HashMap<>();
                 attributes.put(UserModel.SEARCH, search.trim());

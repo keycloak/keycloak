@@ -100,7 +100,6 @@ import static org.keycloak.userprofile.UserProfileContext.USER_API;
 public class UsersResource {
 
     private static final Logger logger = Logger.getLogger(UsersResource.class);
-    private static final String SEARCH_ID_PARAMETER = "id:";
 
     protected final RealmModel realm;
 
@@ -306,9 +305,11 @@ public class UsersResource {
 
         Stream<UserModel> userModels = Stream.empty();
         if (search != null) {
-            if (search.startsWith(SEARCH_ID_PARAMETER)) {
-                String[] userIds = search.substring(SEARCH_ID_PARAMETER.length()).trim().split("\\s+");
-                userModels = Arrays.stream(userIds).map(id -> session.users().getUserById(realm, id)).filter(Objects::nonNull);
+            SearchQueryUtils.UserSearchPrefix prefix = SearchQueryUtils.UserSearchPrefix.matching(search);
+            if (prefix != null) {
+                userModels = Arrays.stream(prefix.splitTerms(search))
+                        .map(term -> prefix.lookup(session.users(), realm, term))
+                        .filter(Objects::nonNull);
                 if (AdminPermissionsSchema.SCHEMA.isAdminPermissionsEnabled(realm)) {
                     userModels = userModels.filter(userPermissionEvaluator::canView);
                 }
@@ -435,9 +436,13 @@ public class UsersResource {
                 ? Collections.emptyMap()
                 : SearchQueryUtils.getFields(searchQuery);
         if (search != null) {
-            if (search.startsWith(SEARCH_ID_PARAMETER)) {
-                UserModel userModel = session.users().getUserById(realm, search.substring(SEARCH_ID_PARAMETER.length()).trim());
-                return userModel != null && userPermissionEvaluator.canView(userModel) ? 1 : 0;
+            SearchQueryUtils.UserSearchPrefix prefix = SearchQueryUtils.UserSearchPrefix.matching(search);
+            if (prefix != null) {
+                return (int) Arrays.stream(prefix.splitTerms(search))
+                        .map(term -> prefix.lookup(session.users(), realm, term))
+                        .filter(Objects::nonNull)
+                        .filter(userPermissionEvaluator::canView)
+                        .count();
             }
 
             Map<String, String> parameters = new HashMap<>();

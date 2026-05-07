@@ -71,3 +71,9 @@ As part of this change, the `displayName` attribute has been promoted from a rea
 
 Before migrating, check the current value of the `displayName` attribute for your realms. If the current value of `displayName` attribute
 exceeds 255 characters, it will be truncated during migration.
+
+=== DPoP not supported for implicit and hybrid flows
+
+DPoP (Demonstrating Proof of Possession) is no longer supported for implicit and hybrid flows. If a client has the *Require DPoP bound tokens* option enabled, authorization requests using implicit or hybrid response types will be rejected with an error.
+
+This change improves security by preventing the use of DPoP with flows that issue access tokens in the front channel, where the sender-constrained token model cannot be properly enforced.

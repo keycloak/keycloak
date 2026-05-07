@@ -90,7 +90,12 @@ public class AccountRestServiceRolesTest {
 
     @Test
     public void accountConsoleFeaturesForViewGroupsUser() throws IOException {
-        assertAccountConsoleFeatures("view-groups-user", false, true);
+        assertAccountConsoleFeatures("view-groups-user", false, false);
+    }
+
+    @Test
+    public void accountConsoleFeaturesForViewGroupsUserWithGroup() throws IOException {
+        assertAccountConsoleFeatures("view-groups-user-with-group", false, true);
     }
 
     @Test
@@ -213,11 +218,12 @@ public class AccountRestServiceRolesTest {
     public static class AccountRolesRealmConfig implements RealmConfig {
         @Override
         public RealmBuilder configure(RealmBuilder realm) {
-            return realm.users(
+            return realm.groups("test-group").users(
                     UserBuilder.create("manage-account-user")
                         .name("Manage", "Account")
                         .email("manage-account@localhost")
                         .password(PASSWORD)
+                        .groups("test-group")
                         .clientRoles(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID, AccountRoles.MANAGE_ACCOUNT, AccountRoles.VIEW_PROFILE),
                     UserBuilder.create("view-applications-user")
                         .name("View", "Applications")
@@ -228,6 +234,12 @@ public class AccountRestServiceRolesTest {
                         .name("View", "Groups")
                         .email("view-groups@localhost")
                         .password(PASSWORD)
+                        .clientRoles(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID, AccountRoles.VIEW_GROUPS, AccountRoles.VIEW_PROFILE),
+                    UserBuilder.create("view-groups-user-with-group")
+                        .name("View", "GroupsMember")
+                        .email("view-groups-member@localhost")
+                        .password(PASSWORD)
+                        .groups("test-group")
                         .clientRoles(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID, AccountRoles.VIEW_GROUPS, AccountRoles.VIEW_PROFILE),
                     UserBuilder.create("no-access-user")
                         .name("No", "Access")

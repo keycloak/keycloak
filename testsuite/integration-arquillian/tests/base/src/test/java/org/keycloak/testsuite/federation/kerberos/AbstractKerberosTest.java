@@ -53,6 +53,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageProviderModel;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testsuite.AbstractAuthTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.AdminApiUtil;
@@ -202,11 +203,10 @@ public abstract class AbstractKerberosTest extends AbstractAuthTest {
 
         List<UserRepresentation> users = testRealmResource().users().search(expectedUsername, 0, 1);
         String userId = users.get(0).getId();
-        events.expectLogin()
-                .client(clientId)
-                .user(userId)
-                .detail(Details.USERNAME, expectedUsername)
-                .assertEvent();
+        EventAssertion.expectLoginSuccess(events.poll())
+                .clientId(clientId)
+                .userId(userId)
+                .details(Details.USERNAME, expectedUsername);
 
         String codeUrl = spnegoResponse.getLocation().toString();
 

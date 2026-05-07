@@ -195,7 +195,7 @@ public class DPoPTest extends AbstractTestRealmKeycloakTest {
 
         get = new HttpGet(oauth.getEndpoints().getUserInfo());
         get.addHeader("Accept", MediaType.APPLICATION_JSON);
-        String authorization = "DPoP" + " " + response.getAccessToken();
+        String authorization = TokenUtil.TOKEN_TYPE_DPOP + " " + response.getAccessToken();
         get.addHeader(HttpHeaders.AUTHORIZATION, authorization);
         get.addHeader(HttpHeaders.AUTHORIZATION, authorization);
 
@@ -214,7 +214,7 @@ public class DPoPTest extends AbstractTestRealmKeycloakTest {
 
         get = new HttpGet(oauth.getEndpoints().getUserInfo());
         get.addHeader("Accept", MediaType.APPLICATION_JSON);
-        String authorization = "Bearer" + " " + response.getAccessToken();
+        String authorization = TokenUtil.TOKEN_TYPE_BEARER + " " + response.getAccessToken();
         get.addHeader(HttpHeaders.AUTHORIZATION, authorization);
 
         UserInfoResponse userInfoResponse = new UserInfoResponse(oauth.httpClient().get().execute(get));
@@ -223,6 +223,21 @@ public class DPoPTest extends AbstractTestRealmKeycloakTest {
         oauth.doLogout(response.getRefreshToken());
     }
 
+    @Test
+    public void testDPoPAccessTokenBearerAuthorizationCaseSensitivity() throws Exception {
+        KeyPair rsaKeyPair = KeyUtils.generateRsaKeyPair(2048);
+        AccessTokenResponse response = getDPoPBindAccessToken(rsaKeyPair);
+
+        get = new HttpGet(oauth.getEndpoints().getUserInfo());
+        get.addHeader("Accept", MediaType.APPLICATION_JSON);
+        String authorization = "BeArEr" + " " + response.getAccessToken();
+        get.addHeader(HttpHeaders.AUTHORIZATION, authorization);
+
+        UserInfoResponse userInfoResponse = new UserInfoResponse(oauth.httpClient().get().execute(get));
+        assertEquals(401, userInfoResponse.getStatusCode());
+
+        oauth.doLogout(response.getRefreshToken());
+    }
 
     @Test
     public void testDPoPByPublicClientWithDpopJkt() throws Exception {
@@ -935,6 +950,53 @@ public class DPoPTest extends AbstractTestRealmKeycloakTest {
         assertEquals(jkt, accessToken.getConfirmation().getKeyThumbprint());
 
         oauth.doLogout(response.getRefreshToken());
+    }
+
+    @Test
+    public void testDPoPBlocksImplicitAndHybridFlows() {
+        modifyClient(TEST_PUBLIC_CLIENT_ID, (clientRepresentation, configWrapper) -> {
+            clientRepresentation.setImplicitFlowEnabled(true);
+        });
+
+        String errorMessage = "DPoP is not supported for implicit and hybrid flows. Client requires DPoP bound access tokens.";
+
+        oauth.client(TEST_PUBLIC_CLIENT_ID);
+
+        // Test implicit flow with response_type=token
+        oauth.responseType("token");
+        oauth.loginForm().open();
+
+        AuthorizationEndpointResponse response = new AuthorizationEndpointResponse(oauth);
+        assertEquals(OAuthErrorException.UNAUTHORIZED_CLIENT, response.getError());
+        assertEquals(errorMessage, response.getErrorDescription());
+
+        // Test implicit flow with response_type=id_token token
+        oauth.responseType("id_token token");
+        oauth.loginForm().open();
+
+        response = new AuthorizationEndpointResponse(oauth);
+        assertEquals(OAuthErrorException.UNAUTHORIZED_CLIENT, response.getError());
+        assertEquals(errorMessage, response.getErrorDescription());
+
+        // Test hybrid flow with response_type=code token
+        oauth.responseType("code token");
+        oauth.loginForm().open();
+
+        response = new AuthorizationEndpointResponse(oauth);
+        assertEquals(OAuthErrorException.UNAUTHORIZED_CLIENT, response.getError());
+        assertEquals(errorMessage, response.getErrorDescription());
+
+        // Test hybrid flow with response_type=code id_token token
+        oauth.responseType("code id_token token");
+        oauth.loginForm().open();
+
+        response = new AuthorizationEndpointResponse(oauth);
+        assertEquals(OAuthErrorException.UNAUTHORIZED_CLIENT, response.getError());
+        assertEquals(errorMessage, response.getErrorDescription());
+
+        modifyClient(TEST_PUBLIC_CLIENT_ID, (clientRepresentation, configWrapper) -> {
+            clientRepresentation.setImplicitFlowEnabled(false);
+        });
     }
 
     @Test

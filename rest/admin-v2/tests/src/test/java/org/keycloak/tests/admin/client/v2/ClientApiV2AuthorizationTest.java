@@ -1,16 +1,14 @@
 package org.keycloak.tests.admin.client.v2;
 
-import java.util.HashMap;
+import java.io.ByteArrayInputStream;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
-import jakarta.ws.rs.core.HttpHeaders;
-import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.ForbiddenException;
+import jakarta.ws.rs.NotFoundException;
 
-import org.keycloak.admin.api.PatchTypeNames;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.common.Profile;
@@ -22,13 +20,10 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.authorization.Logic;
 import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
-import org.keycloak.testframework.admin.AdminClientFactory;
-import org.keycloak.testframework.annotations.InjectAdminClientFactory;
+import org.keycloak.testframework.annotations.InjectAdminClient;
 import org.keycloak.testframework.annotations.InjectClient;
-import org.keycloak.testframework.annotations.InjectHttpClient;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
-import org.keycloak.testframework.annotations.TestSetup;
 import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.ManagedClient;
 import org.keycloak.testframework.realm.ManagedRealm;
@@ -38,23 +33,17 @@ import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.server.KeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import org.apache.http.client.methods.HttpDelete;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpPatch;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.client.methods.HttpPut;
-import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.util.EntityUtils;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Authorization tests for Client API V2.
@@ -67,30 +56,51 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 public class ClientApiV2AuthorizationTest extends AbstractClientApiV2Test {
     private static final String FGAP_USER_ID = "00000000000000000000";
 
-    @InjectHttpClient
-    CloseableHttpClient client;
-
     @InjectRealm(config = AuthorizationRealmConfig.class)
     ManagedRealm testRealm;
-
-    @InjectAdminClientFactory
-    AdminClientFactory adminClientFactory;
 
     @InjectClient(attachTo = Constants.ADMIN_PERMISSIONS_CLIENT_ID)
     ManagedClient adminPermissionClient;
 
+    @InjectAdminClient(mode = InjectAdminClient.Mode.MANAGED_REALM,
+        user = "realm-admin",
+        client = "test-client",
+        ref = "realmAdmin")
+    Keycloak realmAdminAdminClient;
+
+    @InjectAdminClient(mode = InjectAdminClient.Mode.MANAGED_REALM,
+        user = "view-clients",
+        client = "test-client",
+        ref = "viewClients")
+    Keycloak viewClientsAdminClient;
+
+    @InjectAdminClient(mode = InjectAdminClient.Mode.MANAGED_REALM,
+        user = "query-clients",
+        client = "test-client",
+        ref = "queryClients")
+    Keycloak queryClientsAdminClient;
+
+    @InjectAdminClient(mode = InjectAdminClient.Mode.MANAGED_REALM,
+        user = "manage-clients",
+        client = "test-client",
+        ref = "manageClients")
+    Keycloak manageClientsAdminClient;
+
+    @InjectAdminClient(mode = InjectAdminClient.Mode.MANAGED_REALM,
+        user = "no-access",
+        client = "test-client",
+        ref = "noAccess")
+    Keycloak noAccessAdminClient;
+
+    @InjectAdminClient(mode = InjectAdminClient.Mode.MANAGED_REALM,
+        user = "fgap-user",
+        client = "test-client",
+        ref = "fgapUser")
+    Keycloak fgapAdminClient;
+
     @Override
     public String getRealmName() {
-        return "authztest";
-    }
-
-    private static final Map<String, Keycloak> adminClients = new HashMap<>();
-
-    @TestSetup
-    public void setupClients() {
-        for (String currentUser : CURRENT_USERS) {
-            adminClients.put(currentUser, createAdminClient(currentUser));
-        }
+        return testRealm.getName();
     }
 
     /**
@@ -98,44 +108,34 @@ public class ClientApiV2AuthorizationTest extends AbstractClientApiV2Test {
      * Permissions: auth.clients().requireList() || auth.clients().requireView()
      */
     @Test
-    public void listClients() throws Exception {
-        HttpGet request = new HttpGet(getClientsApiUrl());
-
+    public void listClients() {
         // realm-admin: should be able to list clients (has all permissions)
-        setAuthHeader(request, adminClients.get("realm-admin"));
-        try (var response = client.execute(request)) {
-            assertEquals(200, response.getStatusLine().getStatusCode());
-            var clients = mapper.readValue(response.getEntity().getContent(), new TypeReference<List<BaseClientRepresentation>>() {
-            });
-            assertThat(clients.size(), greaterThan(0));
+        try (var response = getClientsApi(realmAdminAdminClient).getClients()) {
+            assertThat(response.toList().size(), greaterThan(0));
         }
 
         // view-clients: should be able to list clients (has requireList via canView)
-        setAuthHeader(request, adminClients.get("view-clients"));
-        try (var response = client.execute(request)) {
-            EntityUtils.consumeQuietly(response.getEntity());
-            assertEquals(200, response.getStatusLine().getStatusCode());
+        try (var response = getClientsApi(viewClientsAdminClient).getClients()) {
+            assertThat(response.toList().size(), greaterThan(0));
         }
 
         // query-clients: should be able to list clients (has requireList via QUERY_CLIENTS role)
-        setAuthHeader(request, adminClients.get("query-clients"));
-        try (var response = client.execute(request)) {
-            EntityUtils.consumeQuietly(response.getEntity());
-            assertEquals(200, response.getStatusLine().getStatusCode());
+        try (var response = getClientsApi(queryClientsAdminClient).getClients()) {
+            assertThat(response.toList().size(), equalTo(0));
         }
 
         // manage-clients: should be able to list clients (has requireList via MANAGE_CLIENTS role)
-        setAuthHeader(request, adminClients.get("manage-clients"));
-        try (var response = client.execute(request)) {
-            EntityUtils.consumeQuietly(response.getEntity());
-            assertEquals(200, response.getStatusLine().getStatusCode());
+        try (var response = getClientsApi(manageClientsAdminClient).getClients()) {
+            assertThat(response.toList().size(), greaterThan(0));
         }
 
         // no-access: should get 403 (lacks requireList)
-        setAuthHeader(request, adminClients.get("no-access"));
-        try (var response = client.execute(request)) {
-            assertEquals(403, response.getStatusLine().getStatusCode());
-        }
+        ForbiddenException ex = assertThrows(
+            ForbiddenException.class,
+            () -> getClientsApi(noAccessAdminClient).getClients()
+        );
+
+        assertTrue(ex.getMessage().contains("HTTP 403 Forbidden"));
     }
 
     /**
@@ -145,44 +145,29 @@ public class ClientApiV2AuthorizationTest extends AbstractClientApiV2Test {
     @Test
     public void createClient() throws Exception {
         // realm-admin: should be able to create clients (has requireManage)
-        HttpPost request = new HttpPost(getClientsApiUrl());
-        setAuthHeader(request, adminClients.get("realm-admin"));
-        request.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
-        request.setEntity(new StringEntity(mapper.writeValueAsString(createClientRep("test-create-realm-admin", "new-role1", "new-role2"))));
-        try (var response = client.execute(request)) {
-            EntityUtils.consumeQuietly(response.getEntity());
-            assertThat(response.getStatusLine().getStatusCode(), is(201));
+        try (var response = getClientsApi(realmAdminAdminClient).createClient(createClientRep("test-create-admin", "new-role1", "new-role2"))) {
+            assertThat(response.getStatus(), is(201));
         }
 
         // manage-clients: should be able to create clients (has requireManage)
-        request = new HttpPost(getClientsApiUrl());
-        setAuthHeader(request, adminClients.get("manage-clients"));
-        request.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
-        request.setEntity(new StringEntity(mapper.writeValueAsString(createClientRep("test-create-manage", "new-role1", "new-role2"))));
-        try (var response = client.execute(request)) {
-            EntityUtils.consumeQuietly(response.getEntity());
-            assertThat(response.getStatusLine().getStatusCode(), is(201));
+        try (var response = getClientsApi(manageClientsAdminClient).createClient(createClientRep("test-create-manage", "new-role1", "new-role2"))) {
+            assertThat(response.getStatus(), is(201));
         }
 
+        var testRep = createClientRep("test-create-view", "new-role1", "new-role2");
         // view-clients: should get 403 (lacks requireManage)
-        request = new HttpPost(getClientsApiUrl());
-        setAuthHeader(request, adminClients.get("view-clients"));
-        request.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
-        request.setEntity(new StringEntity(mapper.writeValueAsString(createClientRep("test-create-view", "new-role1", "new-role2"))));
-        try (var response = client.execute(request)) {
-            assertThat(response.getStatusLine().getStatusCode(), is(403));
+        try (var response = getClientsApi(viewClientsAdminClient).createClient(testRep)) {
+            assertEquals(403, response.getStatus(), "Expected 403 Forbidden when creating client without access");
         }
 
         // query-clients: should get 403 (lacks requireManage)
-        setAuthHeader(request, adminClients.get("query-clients"));
-        try (var response = client.execute(request)) {
-            assertThat(response.getStatusLine().getStatusCode(), is(403));
+        try (var response = getClientsApi(queryClientsAdminClient).createClient(testRep)) {
+            assertEquals(403, response.getStatus(), "Expected 403 Forbidden when creating client without access");
         }
 
         // no-access: should get 403 (lacks requireManage)
-        setAuthHeader(request, adminClients.get("no-access"));
-        try (var response = client.execute(request)) {
-            assertThat(response.getStatusLine().getStatusCode(), is(403));
+        try (var response = getClientsApi(noAccessAdminClient).createClient(testRep)) {
+            assertEquals(403, response.getStatus(), "Expected 403 Forbidden when creating client without access");
         }
     }
 
@@ -191,38 +176,29 @@ public class ClientApiV2AuthorizationTest extends AbstractClientApiV2Test {
      * Permissions: auth.clients().requireView(client) + ClientPolicyEvent.VIEW
      */
     @Test
-    public void getClient() throws Exception {
-        HttpGet request = new HttpGet(getClientsApiUrl() + "/test-client");
-
+    public void getClient() {
         // view-clients: should be able to get individual client (has requireView)
-        setAuthHeader(request, adminClients.get("view-clients"));
-        try (var response = client.execute(request)) {
-            assertEquals(200, response.getStatusLine().getStatusCode());
-            OIDCClientRepresentation client = mapper.createParser(response.getEntity().getContent())
-                    .readValueAs(OIDCClientRepresentation.class);
-            assertThat(client.getClientId(), is("test-client"));
-        }
+        String testClientId = "test-client";
+        BaseClientRepresentation baseRep = getClientsApi(viewClientsAdminClient).client(testClientId).getClient();
+        assertThat(baseRep.getClientId(), is(testClientId));
 
         // manage-clients: should be able to get individual client (has requireView)
-        setAuthHeader(request, adminClients.get("manage-clients"));
-        try (var response = client.execute(request)) {
-            assertEquals(200, response.getStatusLine().getStatusCode());
-            OIDCClientRepresentation client = mapper.createParser(response.getEntity().getContent())
-                    .readValueAs(OIDCClientRepresentation.class);
-            assertThat(client.getClientId(), is("test-client"));
-        }
+        baseRep = getClientsApi(manageClientsAdminClient).client(testClientId).getClient();
+        assertThat(baseRep.getClientId(), is(testClientId));
 
         // query-clients: should get 403 (can list but not view individual clients)
-        setAuthHeader(request, adminClients.get("query-clients"));
-        try (var response = client.execute(request)) {
-            assertThat(response.getStatusLine().getStatusCode(), is(403));
-        }
+        ForbiddenException ex = assertThrows(
+            ForbiddenException.class,
+            () -> getClientsApi(queryClientsAdminClient).client(testClientId).getClient()
+        );
+        assertTrue(ex.getMessage().contains("HTTP 403 Forbidden"));
 
         // no-access: should get 403 (lacks requireView)
-        setAuthHeader(request, adminClients.get("no-access"));
-        try (var response = client.execute(request)) {
-            assertThat(response.getStatusLine().getStatusCode(), is(403));
-        }
+        ex = assertThrows(
+            ForbiddenException.class,
+            () -> getClientsApi(noAccessAdminClient).client(testClientId).getClient()
+        );
+        assertTrue(ex.getMessage().contains("HTTP 403 Forbidden"));
     }
 
     /**
@@ -230,33 +206,25 @@ public class ClientApiV2AuthorizationTest extends AbstractClientApiV2Test {
      * Permissions: if auth.clients().canList() return 404, else return 403
      */
     @Test
-    public void getNonExistentClient() throws Exception {
-        HttpGet request = new HttpGet(getClientsApiUrl() + "/non-existent-client");
+    public void getNonExistentClient() {
+        String nonExistentClientId = "non-existent-client";
 
         // view-clients: should get 404 (has canList, client doesn't exist)
-        setAuthHeader(request, adminClients.get("view-clients"));
-        try (var response = client.execute(request)) {
-            assertThat(response.getStatusLine().getStatusCode(), is(404));
-        }
+        assertThrows(NotFoundException.class,
+            () -> getClientsApi(viewClientsAdminClient).client(nonExistentClientId).getClient());
 
         // manage-clients: should get 404 (has canList, client doesn't exist)
-        setAuthHeader(request, adminClients.get("manage-clients"));
-        try (var response = client.execute(request)) {
-            assertThat(response.getStatusLine().getStatusCode(), is(404));
-        }
+        assertThrows(NotFoundException.class,
+            () -> getClientsApi(manageClientsAdminClient).client(nonExistentClientId).getClient());
 
         // query-clients: should get 404 (has canList, client doesn't exist)
-        setAuthHeader(request, adminClients.get("query-clients"));
-        try (var response = client.execute(request)) {
-            assertThat(response.getStatusLine().getStatusCode(), is(404));
-        }
+        assertThrows(NotFoundException.class,
+            () -> getClientsApi(queryClientsAdminClient).client(nonExistentClientId).getClient());
 
         // no-access: should get 403 (lacks canList, prevents ID phishing)
-        setAuthHeader(request, adminClients.get("no-access"));
-        try (var response = client.execute(request)) {
-            assertThat(response.getStatusLine().getStatusCode(), is(403));
-            assertThat(EntityUtils.toString(response.getEntity()), containsString("HTTP 403 Forbidden"));
-        }
+        ForbiddenException ex = assertThrows(ForbiddenException.class,
+            () -> getClientsApi(noAccessAdminClient).client(nonExistentClientId).getClient());
+        assertTrue(ex.getMessage().contains("HTTP 403 Forbidden"));
     }
 
     /**
@@ -267,46 +235,34 @@ public class ClientApiV2AuthorizationTest extends AbstractClientApiV2Test {
     public void updateClient() throws Exception {
         // realm-admin: should be able to update clients (has requireConfigure)
         createTestClient("test-update-admin");
-        HttpPut request = new HttpPut(getClientsApiUrl() + "/test-update-admin");
-        setAuthHeader(request, adminClients.get("realm-admin"));
-        request.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
-        request.setEntity(new StringEntity(mapper.writeValueAsString(createClientRep("test-update-admin", "role123", "my-role"))));
-        try (var response = client.execute(request)) {
-            assertThat(response.getStatusLine().getStatusCode(), is(200));
-            OIDCClientRepresentation client = mapper.createParser(response.getEntity().getContent())
-                    .readValueAs(OIDCClientRepresentation.class);
+        BaseClientRepresentation updateRep = createClientRep("test-update-admin", "role123", "my-role");
+        try (var response = getClientApi(realmAdminAdminClient, getRealmName(), "test-update-admin").createOrUpdateClient(updateRep)) {
+            assertThat(response.getStatus(), is(200));
+            OIDCClientRepresentation client = response.readEntity(OIDCClientRepresentation.class);
             assertThat(client.getClientId(), is("test-update-admin"));
             assertThat(client.getRoles(), containsInAnyOrder("role123", "my-role"));
         }
 
         // manage-clients: should be able to update clients (has requireConfigure)
         createTestClient("test-update-manage");
-        request = new HttpPut(getClientsApiUrl() + "/test-update-manage");
-        setAuthHeader(request, adminClients.get("manage-clients"));
-        request.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
-        request.setEntity(new StringEntity(mapper.writeValueAsString(createClientRep("test-update-manage", "role123", "my-role"))));
-        try (var response = client.execute(request)) {
-            assertThat(response.getStatusLine().getStatusCode(), is(200));
-            OIDCClientRepresentation client = mapper.createParser(response.getEntity().getContent())
-                    .readValueAs(OIDCClientRepresentation.class);
+        updateRep = createClientRep("test-update-manage", "role123", "my-role");
+        try (var response = getClientApi(manageClientsAdminClient, getRealmName(), "test-update-manage").createOrUpdateClient(updateRep)) {
+            assertThat(response.getStatus(), is(200));
+            OIDCClientRepresentation client = response.readEntity(OIDCClientRepresentation.class);
             assertThat(client.getClientId(), is("test-update-manage"));
             assertThat(client.getRoles(), containsInAnyOrder("role123", "my-role"));
         }
 
         // view-clients: should get 403 (lacks requireConfigure)
         createTestClient("test-update-view");
-        request = new HttpPut(getClientsApiUrl() + "/test-update-view");
-        setAuthHeader(request, adminClients.get("view-clients"));
-        request.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
-        request.setEntity(new StringEntity(mapper.writeValueAsString(createClientRep("test-update-view", "role123", "my-role"))));
-        try (var response = client.execute(request)) {
-            assertThat(response.getStatusLine().getStatusCode(), is(403));
+        BaseClientRepresentation viewRep = createClientRep("test-update-view", "role123", "my-role");
+        try (var response = getClientApi(viewClientsAdminClient, getRealmName(), "test-update-view").createOrUpdateClient(viewRep)) {
+            assertEquals(403, response.getStatus(), "Expected 403 Forbidden when updating client without access");
         }
 
         // query-clients: should get 403 (lacks requireConfigure)
-        setAuthHeader(request, adminClients.get("query-clients"));
-        try (var response = client.execute(request)) {
-            assertThat(response.getStatusLine().getStatusCode(), is(403));
+        try (var response = getClientApi(queryClientsAdminClient, getRealmName(), "test-update-view").createOrUpdateClient(viewRep)) {
+            assertEquals(403, response.getStatus(), "Expected 403 Forbidden when updating client without access");
         }
     }
 
@@ -318,58 +274,32 @@ public class ClientApiV2AuthorizationTest extends AbstractClientApiV2Test {
     public void patchClient() throws Exception {
         // realm-admin: should be able to patch clients (has requireConfigure)
         createTestClient("test-patch-admin");
-        HttpPatch request = new HttpPatch(getClientsApiUrl() + "/test-patch-admin");
-        setAuthHeader(request, adminClients.get("realm-admin"));
-        request.setHeader(HttpHeaders.CONTENT_TYPE, PatchTypeNames.JSON_MERGE);
-        OIDCClientRepresentation patch = new OIDCClientRepresentation();
+        final OIDCClientRepresentation patch = new OIDCClientRepresentation();
         patch.setDescription("Patched");
-        request.setEntity(new StringEntity(mapper.writeValueAsString(patch)));
-        try (var response = client.execute(request)) {
-            EntityUtils.consumeQuietly(response.getEntity());
-            assertThat(response.getStatusLine().getStatusCode(), is(200));
-        }
+        getClientApi(realmAdminAdminClient, getRealmName(), "test-patch-admin").patchClient(new ByteArrayInputStream(mapper.writeValueAsBytes(patch)));
 
         // view-clients: should get 403 (lacks requireConfigure)
         createTestClient("test-patch-view");
-        request = new HttpPatch(getClientsApiUrl() + "/test-patch-view");
-        setAuthHeader(request, adminClients.get("view-clients"));
-        request.setHeader(HttpHeaders.CONTENT_TYPE, PatchTypeNames.JSON_MERGE);
-        request.setEntity(new StringEntity(mapper.writeValueAsString(patch)));
-        try (var response = client.execute(request)) {
-            assertThat(response.getStatusLine().getStatusCode(), is(403));
-        }
+        assertThrows(ForbiddenException.class,
+            () -> getClientApi(viewClientsAdminClient, getRealmName(), "test-patch-view").patchClient(new ByteArrayInputStream(mapper.writeValueAsBytes(patch))));
 
         // query-clients: should get 403 (lacks requireConfigure)
-        setAuthHeader(request, adminClients.get("query-clients"));
-        try (var response = client.execute(request)) {
-            assertThat(response.getStatusLine().getStatusCode(), is(403));
-        }
+        assertThrows(ForbiddenException.class,
+            () -> getClientApi(queryClientsAdminClient, getRealmName(), "test-patch-view").patchClient(new ByteArrayInputStream(mapper.writeValueAsBytes(patch))));
 
         // manage-clients: should be able to patch clients (has manage-clients)
-        setAuthHeader(request, adminClients.get("manage-clients"));
-        try (var response = client.execute(request)) {
-            assertThat(response.getStatusLine().getStatusCode(), is(200));
-        }
+        getClientApi(manageClientsAdminClient, getRealmName(), "test-patch-view").patchClient(new ByteArrayInputStream(mapper.writeValueAsBytes(patch)));
 
         // does not exist
-        request = new HttpPatch(getClientsApiUrl() + "/does-not-exist");
-        request.setHeader(HttpHeaders.CONTENT_TYPE, PatchTypeNames.JSON_MERGE);
-        patch = new OIDCClientRepresentation();
-        patch.setDescription("Patched-non-existing");
-        request.setEntity(new StringEntity(mapper.writeValueAsString(patch)));
-
         // no-access: not existing - should get 403 (lacks canList, prevents ID phishing)
-        setAuthHeader(request, adminClients.get("no-access"));
-        try (var response = client.execute(request)) {
-            assertThat(response.getStatusLine().getStatusCode(), is(403));
-            assertThat(EntityUtils.toString(response.getEntity()), containsString("HTTP 403 Forbidden"));
-        }
+        final OIDCClientRepresentation noAccessPatch = new OIDCClientRepresentation();
+        noAccessPatch.setDescription("Patched-non-existing");
+        assertThrows(ForbiddenException.class,
+            () -> getClientApi(noAccessAdminClient, getRealmName(), "does-not-exist").patchClient(new ByteArrayInputStream(mapper.writeValueAsBytes(noAccessPatch))));
 
         // view-clients: not existing - should get 404
-        setAuthHeader(request, adminClients.get("view-clients"));
-        try (var response = client.execute(request)) {
-            assertThat(response.getStatusLine().getStatusCode(), is(404));
-        }
+        assertThrows(NotFoundException.class,
+            () -> getClientApi(viewClientsAdminClient, getRealmName(), "does-not-exist").patchClient(new ByteArrayInputStream(mapper.writeValueAsBytes(noAccessPatch))));
     }
 
     /**
@@ -380,52 +310,40 @@ public class ClientApiV2AuthorizationTest extends AbstractClientApiV2Test {
     public void deleteClient() throws Exception {
         // realm-admin: should be able to delete clients (has requireManage)
         createTestClient("test-delete-admin");
-        HttpDelete request = new HttpDelete(getClientsApiUrl() + "/test-delete-admin");
-        setAuthHeader(request, adminClients.get("realm-admin"));
-        try (var response = client.execute(request)) {
-            assertEquals(204, response.getStatusLine().getStatusCode());
+        try (var response = getClientApi(realmAdminAdminClient, getRealmName(), "test-delete-admin").deleteClient()) {
+            assertEquals(204, response.getStatus());
         }
 
         // manage-clients: should be able to delete clients (has requireManage)
         createTestClient("test-delete-manage");
-        request = new HttpDelete(getClientsApiUrl() + "/test-delete-manage");
-        setAuthHeader(request, adminClients.get("manage-clients"));
-        try (var response = client.execute(request)) {
-            assertEquals(204, response.getStatusLine().getStatusCode());
+        try (var response = getClientApi(manageClientsAdminClient, getRealmName(), "test-delete-manage").deleteClient()) {
+            assertEquals(204, response.getStatus());
         }
 
         // view-clients: should get 403 (lacks requireManage)
         createTestClient("test-delete-view");
-        request = new HttpDelete(getClientsApiUrl() + "/test-delete-view");
-        setAuthHeader(request, adminClients.get("view-clients"));
-        try (var response = client.execute(request)) {
-            assertThat(response.getStatusLine().getStatusCode(), is(403));
+        try (var response = getClientApi(viewClientsAdminClient, getRealmName(), "test-delete-view").deleteClient()) {
+            assertEquals(403, response.getStatus());
         }
 
         // query-clients: should get 403 (lacks requireManage)
-        setAuthHeader(request, adminClients.get("query-clients"));
-        try (var response = client.execute(request)) {
-            assertThat(response.getStatusLine().getStatusCode(), is(403));
+        try (var response = getClientApi(queryClientsAdminClient, getRealmName(), "test-delete-view").deleteClient()) {
+            assertEquals(403, response.getStatus());
         }
 
         // no-access: should get 403 (lacks requireManage)
-        setAuthHeader(request, adminClients.get("no-access"));
-        try (var response = client.execute(request)) {
-            assertThat(response.getStatusLine().getStatusCode(), is(403));
+        try (var response = getClientApi(noAccessAdminClient, getRealmName(), "test-delete-view").deleteClient()) {
+            assertEquals(403, response.getStatus());
         }
 
         // no-access: not existing - should get 403 (lacks canList, prevents ID phishing)
-        request = new HttpDelete(getClientsApiUrl() + "/does-not-exist");
-        setAuthHeader(request, adminClients.get("no-access"));
-        try (var response = client.execute(request)) {
-            assertThat(response.getStatusLine().getStatusCode(), is(403));
-            assertThat(EntityUtils.toString(response.getEntity()), containsString("HTTP 403 Forbidden"));
+        try (var response = getClientApi(noAccessAdminClient, getRealmName(), "does-not-exist").deleteClient()) {
+            assertEquals(403, response.getStatus(), "Expected 403 Forbidden");
         }
 
         // view-clients: not existing - should get 404
-        setAuthHeader(request, adminClients.get("view-clients"));
-        try (var response = client.execute(request)) {
-            assertThat(response.getStatusLine().getStatusCode(), is(404));
+        try (var response = getClientApi(viewClientsAdminClient, getRealmName(), "does-not-exist").deleteClient()) {
+            assertEquals(404, response.getStatus());
         }
     }
 
@@ -434,27 +352,21 @@ public class ClientApiV2AuthorizationTest extends AbstractClientApiV2Test {
      * Should not allow deletion of the admin permissions client (used for FGAP)
      */
     @Test
-    public void cannotDeleteAdminPermissionsClient() throws Exception {
+    public void cannotDeleteAdminPermissionsClient() {
         var adminPermissionsClientRep = Optional.ofNullable(testRealm.admin().clients().findByClientId(Constants.ADMIN_PERMISSIONS_CLIENT_ID))
-                .filter(f -> !f.isEmpty())
-                .map(f -> f.get(0))
-                .orElseThrow(() -> new AssertionError("Cannot find admin permissions client"));
+            .filter(f -> !f.isEmpty())
+            .map(f -> f.get(0))
+            .orElseThrow(() -> new AssertionError("Cannot find admin permissions client"));
 
-        HttpDelete request = new HttpDelete(getClientsApiUrl() + "/" + adminPermissionsClientRep.getClientId());
-        setAuthHeader(request, adminClients.get("realm-admin"));
-
-        try (var response = client.execute(request)) {
-            assertThat(response.getStatusLine().getStatusCode(), is(400));
-            var body = EntityUtils.toString(response.getEntity());
+        try (var response = getClientApi(realmAdminAdminClient, getRealmName(), adminPermissionsClientRep.getClientId()).deleteClient()) {
+            assertThat(response.getStatus(), is(400));
+            var body = response.readEntity(String.class);
             assertThat(body, containsString("Not supported for this client"));
         }
 
         // Verify the client still exists (was not deleted)
-        HttpGet getRequest = new HttpGet(getClientsApiUrl() + "/" + adminPermissionsClientRep.getClientId());
-        setAuthHeader(getRequest, adminClients.get("realm-admin"));
-        try (var response = client.execute(getRequest)) {
-            assertThat(response.getStatusLine().getStatusCode(), is(200));
-        }
+        BaseClientRepresentation rep = getClientApi(realmAdminAdminClient, getRealmName(), adminPermissionsClientRep.getClientId()).getClient();
+        assertThat(rep.getClientId(), is(adminPermissionsClientRep.getClientId()));
     }
 
     /**
@@ -462,35 +374,19 @@ public class ClientApiV2AuthorizationTest extends AbstractClientApiV2Test {
      * Permissions: if realm == null return 404, if !isAdministrationRealm && !auth.realm.equals(realm) return 403
      */
     @Test
-    public void getRealmAdmin() throws Exception {
-        // Users authenticated to 'authztest' should be able to access 'authztest' realm admin resources
-        String ownRealmUrl = "http://localhost:8080/admin/realms/%s".formatted(getRealmName());
-        HttpGet request = new HttpGet(ownRealmUrl);
-
+    public void getRealmAdmin() {
         // should successfully access own realm (200 OK)
-        setAuthHeader(request, adminClients.get("realm-admin"));
-        try (var response = client.execute(request)) {
-            EntityUtils.consumeQuietly(response.getEntity());
-            assertThat(response.getStatusLine().getStatusCode(), is(200));
-        }
+        assertThat(realmAdminAdminClient.realm(getRealmName()).toRepresentation().getRealm(), is(getRealmName()));
 
         // Test accessing non-existent realm - should return 404
-        String nonExistentRealmUrl = "http://localhost:8080/admin/realms/non-existent-realm";
-        request = new HttpGet(nonExistentRealmUrl);
-        setAuthHeader(request, adminClients.get("realm-admin"));
-        try (var response = client.execute(request)) {
-            assertThat(response.getStatusLine().getStatusCode(), is(404));
-        }
+        assertThrows(NotFoundException.class,
+            () -> realmAdminAdminClient.realm("non-existent-realm").toRepresentation());
 
         // When accessing a different realm from a non-administration realm, should return 403
         // Note: This test validates that when authenticated to 'authztest' realm (which is not an admin realm),
         // trying to access another realm's admin resource should be forbidden
-        String differentRealmUrl = "http://localhost:8080/admin/realms/master";
-        request = new HttpGet(differentRealmUrl);
-        setAuthHeader(request, adminClients.get("realm-admin"));
-        try (var response = client.execute(request)) {
-            assertThat(response.getStatusLine().getStatusCode(), is(403));
-        }
+        assertThrows(ForbiddenException.class,
+            () -> realmAdminAdminClient.realm("master").toRepresentation());
     }
 
     @Test
@@ -498,95 +394,68 @@ public class ClientApiV2AuthorizationTest extends AbstractClientApiV2Test {
         createTestClient("fgap-view-test");
 
         // BEFORE permission: fgap-user cannot view fgap-view-test (403)
-        HttpGet request = new HttpGet(getClientsApiUrl() + "/fgap-view-test");
-        setAuthHeader(request, adminClients.get("fgap-user"));
-        try (var response = client.execute(request)) {
-            assertThat(response.getStatusLine().getStatusCode(), is(403));
-        }
+        assertThrows(ForbiddenException.class,
+            () -> getClientApi(fgapAdminClient, getRealmName(), "fgap-view-test").getClient());
 
         // Create FGAP permission for fgap-view-test
         createFgapPermissionForClient("fgap-view-test");
 
         // AFTER permission: fgap-user CAN view fgap-view-test (200)
-        try (var response = client.execute(request)) {
-            EntityUtils.consumeQuietly(response.getEntity());
-            assertThat(response.getStatusLine().getStatusCode(), is(200));
-        }
+        BaseClientRepresentation rep = getClientApi(fgapAdminClient, getRealmName(), "fgap-view-test").getClient();
+        assertThat(rep.getClientId(), is("fgap-view-test"));
 
         // fgap-user CANNOT view fgap-denied-client (no permission granted) (403)
-        request = new HttpGet(getClientsApiUrl() + "/fgap-denied-client");
-        setAuthHeader(request, adminClients.get("fgap-user"));
-        try (var response = client.execute(request)) {
-            assertThat(response.getStatusLine().getStatusCode(), is(403));
-        }
+        assertThrows(ForbiddenException.class,
+            () -> getClientApi(fgapAdminClient, getRealmName(), "fgap-denied-client").getClient());
     }
 
     @Test
     public void fgapUpdateClient() throws Exception {
         createTestClient("fgap-update-test");
+        BaseClientRepresentation updateRep = createClientRep("fgap-update-test", "updated-role");
 
         // BEFORE permission: fgap-user cannot update fgap-update-test (403)
-        HttpPut request = new HttpPut(getClientsApiUrl() + "/fgap-update-test");
-        setAuthHeader(request, adminClients.get("fgap-user"));
-        request.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
-        request.setEntity(new StringEntity(mapper.writeValueAsString(createClientRep("fgap-update-test", "updated-role"))));
-        try (var response = client.execute(request)) {
-            assertThat(response.getStatusLine().getStatusCode(), is(403));
+        try (var response = getClientApi(fgapAdminClient, getRealmName(), "fgap-update-test").createOrUpdateClient(updateRep)) {
+            assertEquals(403, response.getStatus(), "Expected 403 Forbidden before permission is granted");
+            assertThat(response.readEntity(String.class), containsString("HTTP 403 Forbidden"));
         }
 
         // Create FGAP permission for fgap-update-test
         createFgapPermissionForClient("fgap-update-test");
 
         // AFTER permission: fgap-user CAN update fgap-update-test (200)
-        try (var response = client.execute(request)) {
-            EntityUtils.consumeQuietly(response.getEntity());
-            assertThat(response.getStatusLine().getStatusCode(), is(200));
+        try (var response = getClientApi(fgapAdminClient, getRealmName(), "fgap-update-test").createOrUpdateClient(updateRep)) {
+            assertThat(response.getStatus(), is(200));
         }
 
         // fgap-user CANNOT update fgap-denied-client (no permission granted) (403)
-        request = new HttpPut(getClientsApiUrl() + "/fgap-denied-client");
-        setAuthHeader(request, adminClients.get("fgap-user"));
-        request.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
-        request.setEntity(new StringEntity(mapper.writeValueAsString(createClientRep("fgap-denied-client", "updated-role"))));
-        try (var response = client.execute(request)) {
-            assertThat(response.getStatusLine().getStatusCode(), is(403));
+        BaseClientRepresentation deniedRep = createClientRep("fgap-denied-client", "updated-role");
+        try (var response = getClientApi(fgapAdminClient, getRealmName(), "fgap-denied-client").createOrUpdateClient(deniedRep)) {
+            assertEquals(403, response.getStatus(), "Expected 403 Forbidden for denied client");
+            assertThat(response.readEntity(String.class), containsString("HTTP 403 Forbidden"));
         }
     }
 
     @Test
     public void fgapPatchClient() throws Exception {
         createTestClient("fgap-patch-test");
-
         OIDCClientRepresentation patch = new OIDCClientRepresentation();
         patch.setDescription("Patched by FGAP user");
 
-        // BEFORE permission: fgap-user cannot patch fgap-patch-test (403)  
-        HttpPatch request = new HttpPatch(getClientsApiUrl() + "/fgap-patch-test");
-        setAuthHeader(request, adminClients.get("fgap-user"));
-        request.setHeader(HttpHeaders.CONTENT_TYPE, PatchTypeNames.JSON_MERGE);
-        request.setEntity(new StringEntity(mapper.writeValueAsString(patch)));
-        try (var response = client.execute(request)) {
-            assertThat(response.getStatusLine().getStatusCode(), is(403));
-        }
+        // BEFORE permission: fgap-user cannot patch fgap-patch-test (403)
+        assertThrows(ForbiddenException.class,
+            () -> getClientApi(fgapAdminClient, getRealmName(), "fgap-patch-test").patchClient(new ByteArrayInputStream(mapper.writeValueAsBytes(patch))));
 
         // Create FGAP permission for fgap-patch-test
         createFgapPermissionForClient("fgap-patch-test");
 
         // AFTER permission: fgap-user CAN patch fgap-patch-test (200)
-        try (var response = client.execute(request)) {
-            EntityUtils.consumeQuietly(response.getEntity());
-            assertThat(response.getStatusLine().getStatusCode(), is(200));
-        }
+        getClientApi(fgapAdminClient, getRealmName(), "fgap-patch-test").patchClient(new ByteArrayInputStream(mapper.writeValueAsBytes(patch)));
 
         // fgap-user CANNOT patch fgap-denied-client (no permission granted) (403)
-        request = new HttpPatch(getClientsApiUrl() + "/fgap-denied-client");
-        setAuthHeader(request, adminClients.get("fgap-user"));
-        request.setHeader(HttpHeaders.CONTENT_TYPE, PatchTypeNames.JSON_MERGE);
         patch.setDescription("Should not be patched");
-        request.setEntity(new StringEntity(mapper.writeValueAsString(patch)));
-        try (var response = client.execute(request)) {
-            assertThat(response.getStatusLine().getStatusCode(), is(403));
-        }
+        assertThrows(ForbiddenException.class,
+            () -> getClientApi(fgapAdminClient, getRealmName(), "fgap-denied-client").patchClient(new ByteArrayInputStream(mapper.writeValueAsBytes(patch))));
     }
 
     @Test
@@ -594,25 +463,23 @@ public class ClientApiV2AuthorizationTest extends AbstractClientApiV2Test {
         createTestClient("fgap-delete-test");
 
         // BEFORE permission: fgap-user cannot delete fgap-delete-test (403)
-        HttpDelete request = new HttpDelete(getClientsApiUrl() + "/fgap-delete-test");
-        setAuthHeader(request, adminClients.get("fgap-user"));
-        try (var response = client.execute(request)) {
-            assertThat(response.getStatusLine().getStatusCode(), is(403));
+        try (var response = getClientApi(fgapAdminClient, getRealmName(), "fgap-delete-test").deleteClient()) {
+            assertEquals(403, response.getStatus(), "Expected 403 Forbidden before permission is granted");
+            assertThat(response.readEntity(String.class), containsString("HTTP 403 Forbidden"));
         }
 
         // Create FGAP permission for fgap-delete-test
         createFgapPermissionForClient("fgap-delete-test");
 
         // AFTER permission: fgap-user CAN delete fgap-delete-test (204)
-        try (var response = client.execute(request)) {
-            assertThat(response.getStatusLine().getStatusCode(), is(204));
+        try (var response = getClientApi(fgapAdminClient, getRealmName(), "fgap-delete-test").deleteClient()) {
+            assertThat(response.getStatus(), is(204));
         }
 
         // fgap-user CANNOT delete fgap-denied-client (no permission granted) (403)
-        request = new HttpDelete(getClientsApiUrl() + "/fgap-denied-client");
-        setAuthHeader(request, adminClients.get("fgap-user"));
-        try (var response = client.execute(request)) {
-            assertThat(response.getStatusLine().getStatusCode(), is(403));
+        try (var response = getClientApi(fgapAdminClient, getRealmName(), "fgap-denied-client").deleteClient()) {
+            assertEquals(403, response.getStatus(), "Expected 403 Forbidden for denied client");
+            assertThat(response.readEntity(String.class), containsString("HTTP 403 Forbidden"));
         }
     }
 
@@ -624,25 +491,10 @@ public class ClientApiV2AuthorizationTest extends AbstractClientApiV2Test {
         return rep;
     }
 
-    private void createTestClient(String clientId) throws Exception {
-        HttpPost request = new HttpPost(getClientsApiUrl());
-        setAuthHeader(request, adminClients.get("realm-admin"));
-        request.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
-        request.setEntity(new StringEntity(mapper.writeValueAsString(createClientRep(clientId, "test-role1", "test-role2"))));
-        try (var response = client.execute(request)) {
-            EntityUtils.consumeQuietly(response.getEntity());
-            assertThat(response.getStatusLine().getStatusCode(), is(201));
+    private void createTestClient(String clientId) {
+        try (var response = getClientsApi(realmAdminAdminClient).createClient(createClientRep(clientId, "test-role1", "test-role2"))) {
+            assertThat(response.getStatus(), is(201));
         }
-    }
-
-    private Keycloak createAdminClient(String username) {
-        return adminClientFactory.create()
-                .realm(getRealmName())
-                .clientId("test-client")
-                .clientSecret("test-secret")
-                .username(username)
-                .password("password")
-                .build();
     }
 
     private void createFgapPermissionForClient(String clientId) throws Exception {
@@ -693,8 +545,6 @@ public class ClientApiV2AuthorizationTest extends AbstractClientApiV2Test {
         }
     }
 
-    private static final Set<String> CURRENT_USERS = new HashSet<>();
-
     public static class AuthorizationRealmConfig implements RealmConfig {
         @Override
         public RealmBuilder configure(RealmBuilder realm) {
@@ -709,7 +559,6 @@ public class ClientApiV2AuthorizationTest extends AbstractClientApiV2Test {
                     .emailVerified(true)
                     .password("password")
                     .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.REALM_ADMIN));
-            CURRENT_USERS.add("realm-admin");
 
             // Role: view-clients
             realm.users(UserBuilder.create("view-clients")
@@ -718,7 +567,6 @@ public class ClientApiV2AuthorizationTest extends AbstractClientApiV2Test {
                     .emailVerified(true)
                     .password("password")
                     .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.VIEW_CLIENTS));
-            CURRENT_USERS.add("view-clients");
 
             // Role: manage-clients
             realm.users(UserBuilder.create("manage-clients")
@@ -727,7 +575,6 @@ public class ClientApiV2AuthorizationTest extends AbstractClientApiV2Test {
                     .emailVerified(true)
                     .password("password")
                     .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.MANAGE_CLIENTS));
-            CURRENT_USERS.add("manage-clients");
 
             // Role: query-clients
             realm.users(UserBuilder.create("query-clients")
@@ -736,7 +583,6 @@ public class ClientApiV2AuthorizationTest extends AbstractClientApiV2Test {
                     .emailVerified(true)
                     .password("password")
                     .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.QUERY_CLIENTS));
-            CURRENT_USERS.add("query-clients");
 
             // NO role
             realm.users(UserBuilder.create("no-access")
@@ -744,7 +590,6 @@ public class ClientApiV2AuthorizationTest extends AbstractClientApiV2Test {
                     .email("noaccess@localhost")
                     .emailVerified(true)
                     .password("password"));
-            CURRENT_USERS.add("no-access");
 
             // Role: manage-realm
             realm.users(UserBuilder.create("manage-realm")
@@ -753,7 +598,6 @@ public class ClientApiV2AuthorizationTest extends AbstractClientApiV2Test {
                     .emailVerified(true)
                     .password("password")
                     .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.MANAGE_REALM));
-            CURRENT_USERS.add("manage-realm");
 
             // FGAP v2
             // fgap-user has QUERY_CLIENTS role but will be granted fine-grained permissions for specific clients
@@ -764,7 +608,6 @@ public class ClientApiV2AuthorizationTest extends AbstractClientApiV2Test {
                     .emailVerified(true)
                     .password("password")
                     .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.QUERY_CLIENTS));
-            CURRENT_USERS.add("fgap-user");
 
             realm.clients(ClientBuilder.create("fgap-denied-client").enabled(true));
 

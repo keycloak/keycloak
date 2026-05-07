@@ -39,6 +39,7 @@ import org.keycloak.representations.idm.authorization.PermissionTicketRepresenta
 import org.keycloak.representations.idm.authorization.PermissionTicketToken;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
+import org.keycloak.testframework.realm.ClientBuilder;
 
 import org.junit.Test;
 
@@ -510,5 +511,113 @@ public class PermissionManagementTest extends AbstractResourceServerTest {
 
         Long ticketCount = getAuthzClient().protection().permission().count(resource.getId(), null, null, null, null, true);
         assertEquals(Long.valueOf(4), ticketCount, "Returned number of permissions tickets must match the amount of permission tickets.");
+    }
+
+    @Test
+    public void testISAdminFilterRespectsResourceServer() {
+        // create a second resource server
+        getRealm().clients().create(
+                ClientBuilder.create()
+                        .clientId("resource-server-test-2")
+                        .secret("secret")
+                        .authorizationServicesEnabled(true)
+                        .redirectUris("http://localhost/resource-server-test-2")
+                        .defaultRoles("uma_protection")
+                        .directAccessGrantsEnabled()
+                        .serviceAccountsEnabled(true)
+                        .build()
+        ).close();
+
+        testingClient.server().run(session -> {
+            org.keycloak.models.RealmModel realm = session.realms().getRealmByName("authz-test");
+            session.getContext().setRealm(realm);
+            org.keycloak.authorization.AuthorizationProvider authorization =
+                    session.getProvider(org.keycloak.authorization.AuthorizationProvider.class);
+            org.keycloak.authorization.store.StoreFactory storeFactory = authorization.getStoreFactory();
+            org.keycloak.authorization.store.PermissionTicketStore ticketStore =
+                    storeFactory.getPermissionTicketStore();
+
+            org.keycloak.models.ClientModel client1 = session.clients()
+                    .getClientByClientId(realm, "resource-server-test");
+            org.keycloak.authorization.model.ResourceServer rs1 =
+                    storeFactory.getResourceServerStore().findByClient(client1);
+
+            org.keycloak.models.ClientModel client2 = session.clients()
+                    .getClientByClientId(realm, "resource-server-test-2");
+            org.keycloak.authorization.model.ResourceServer rs2 =
+                    storeFactory.getResourceServerStore().findByClient(client2);
+
+            org.keycloak.authorization.model.Resource resource1 =
+                    storeFactory.getResourceStore().create(rs1, "resource-rs1", client1.getId());
+            org.keycloak.authorization.model.Resource resource2 =
+                    storeFactory.getResourceStore().create(rs2, "resource-rs2", client2.getId());
+
+            String requester = session.users().getUserByUsername(realm, "marta").getId();
+
+            org.keycloak.authorization.model.PermissionTicket ticket1 =
+                    ticketStore.create(rs1, resource1, null, requester);
+            ticket1.setGrantedTimestamp(System.currentTimeMillis());
+
+            org.keycloak.authorization.model.PermissionTicket ticket2 =
+                    ticketStore.create(rs2, resource2, null, requester);
+            ticket2.setGrantedTimestamp(System.currentTimeMillis());
+
+            java.util.Map<org.keycloak.authorization.model.PermissionTicket.FilterOption, String> filters =
+                    new java.util.EnumMap<>(org.keycloak.authorization.model.PermissionTicket.FilterOption.class);
+            filters.put(org.keycloak.authorization.model.PermissionTicket.FilterOption.IS_ADMIN, "true");
+            filters.put(org.keycloak.authorization.model.PermissionTicket.FilterOption.GRANTED, "true");
+
+            java.util.List<org.keycloak.authorization.model.PermissionTicket> rs1Tickets =
+                    ticketStore.find(rs1, filters, null, null);
+            java.util.List<org.keycloak.authorization.model.PermissionTicket> rs2Tickets =
+                    ticketStore.find(rs2, filters, null, null);
+
+            assertEquals(1, rs1Tickets.size());
+            assertEquals(rs1.getId(), rs1Tickets.get(0).getResourceServer().getId());
+
+            assertEquals(1, rs2Tickets.size());
+            assertEquals(rs2.getId(), rs2Tickets.get(0).getResourceServer().getId());
+        });
+
+        testingClient.server().run(session -> {
+            org.keycloak.models.RealmModel realm = session.realms().getRealmByName("authz-test");
+            session.getContext().setRealm(realm);
+            org.keycloak.authorization.AuthorizationProvider authorization =
+                    session.getProvider(org.keycloak.authorization.AuthorizationProvider.class);
+            org.keycloak.authorization.store.StoreFactory storeFactory = authorization.getStoreFactory();
+            org.keycloak.authorization.store.PermissionTicketStore ticketStore =
+                    storeFactory.getPermissionTicketStore();
+            org.keycloak.models.ClientModel client1 = session.clients()
+                    .getClientByClientId(realm, "resource-server-test");
+            org.keycloak.authorization.model.ResourceServer rs1 =
+                    storeFactory.getResourceServerStore().findByClient(client1);
+
+            org.keycloak.models.ClientModel client2 = session.clients()
+                    .getClientByClientId(realm, "resource-server-test-2");
+            org.keycloak.authorization.model.ResourceServer rs2 =
+                    storeFactory.getResourceServerStore().findByClient(client2);
+            java.util.Map<org.keycloak.authorization.model.PermissionTicket.FilterOption, String> filters =
+                    new java.util.EnumMap<>(org.keycloak.authorization.model.PermissionTicket.FilterOption.class);
+            filters.put(org.keycloak.authorization.model.PermissionTicket.FilterOption.IS_ADMIN, "true");
+            filters.put(org.keycloak.authorization.model.PermissionTicket.FilterOption.GRANTED, "true");
+
+            java.util.List<org.keycloak.authorization.model.PermissionTicket> rs1Tickets =
+                    ticketStore.find(rs1, filters, null, null);
+            java.util.List<org.keycloak.authorization.model.PermissionTicket> rs2Tickets =
+                    ticketStore.find(rs2, filters, null, null);
+
+            assertEquals(1, rs1Tickets.size());
+            assertEquals(rs1.getId(), rs1Tickets.get(0).getResourceServer().getId());
+
+            assertEquals(1, rs2Tickets.size());
+            assertEquals(rs2.getId(), rs2Tickets.get(0).getResourceServer().getId());
+
+            rs1Tickets =
+                    ticketStore.find(null, filters, null, null);
+            assertEquals(2, rs1Tickets.size());
+            rs2Tickets =
+                    ticketStore.find(null, filters, null, null);
+            assertEquals(2, rs2Tickets.size());
+        });
     }
 }

@@ -212,6 +212,16 @@ public class AuthorizationEndpointChecker {
             event.error(Errors.NOT_ALLOWED);
             throw new AuthorizationCheckException(Response.Status.UNAUTHORIZED, OAuthErrorException.UNAUTHORIZED_CLIENT, errorMessage);
         }
+
+        // DPoP is not supported for implicit and hybrid flows
+        OIDCAdvancedConfigWrapper clientConfig = OIDCAdvancedConfigWrapper.fromClientModel(client);
+        if (clientConfig.isUseDPoP() && parsedResponseType.isImplicitOrHybridFlow()) {
+            ServicesLogger.LOGGER.flowNotAllowed("Implicit/Hybrid with DPoP");
+            String errorMessage = "DPoP is not supported for implicit and hybrid flows. Client requires DPoP bound access tokens.";
+            event.detail(Details.REASON, errorMessage);
+            event.error(Errors.NOT_ALLOWED);
+            throw new AuthorizationCheckException(Response.Status.UNAUTHORIZED, OAuthErrorException.UNAUTHORIZED_CLIENT, errorMessage);
+        }
     }
 
     public boolean isInvalidResponseType(AuthorizationEndpointChecker.AuthorizationCheckException ex) {

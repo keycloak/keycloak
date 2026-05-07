@@ -143,6 +143,15 @@ public class RoleByIdResourceTest {
     }
 
     @Test
+    public void updateRoleWithoutNameReturnsBadRequest() {
+        RoleRepresentation update = new RoleRepresentation();
+        update.setDescription("Role A updated description");
+
+        String id = roleIds.get(roleNameA);
+        assertThrows(BadRequestException.class, () -> resource.updateRole(id, update));
+    }
+
+    @Test
     @DatabaseTest
     public void deleteRole() {
         assertNotNull(resource.getRole(roleIds.get(roleNameA)));

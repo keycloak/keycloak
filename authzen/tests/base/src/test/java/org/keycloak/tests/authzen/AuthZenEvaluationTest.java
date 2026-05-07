@@ -17,6 +17,7 @@
 package org.keycloak.tests.authzen;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -25,6 +26,7 @@ import jakarta.ws.rs.core.Response;
 import org.keycloak.admin.client.resource.AuthorizationResource;
 import org.keycloak.http.simple.SimpleHttp;
 import org.keycloak.http.simple.SimpleHttpResponse;
+import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.RegexPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ResourcePermissionRepresentation;
@@ -58,17 +60,19 @@ import org.junit.jupiter.api.Test;
 
 import static org.keycloak.authorization.authzen.AuthZen.SubjectType.CLIENT;
 import static org.keycloak.authorization.authzen.AuthZen.SubjectType.USER;
+import static org.keycloak.authorization.authzen.AuthZenRequestIdFilter.X_REQUEST_ID;
 import static org.keycloak.authorization.authzen.AuthZenWellKnownProvider.accessEvaluationEndpoint;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @KeycloakIntegrationTest(config = AuthZenServerConfig.class)
 public class AuthZenEvaluationTest {
 
-    private static final String ADMIN_USER_ID = "a0000000-0000-0000-0000-000000000001";
-    private static final String REGULAR_USER_ID = "a0000000-0000-0000-0000-000000000002";
+    private static final String ADMIN_USER = "admin-user";
+    private static final String REGULAR_USER = "regular-user";
 
     @InjectRealm(config = TestRealmConfig.class)
     ManagedRealm realm;
@@ -107,7 +111,7 @@ public class AuthZenEvaluationTest {
     public void testAdminUserAccessAdminResource() throws IOException {
         EvaluationResult result = authzenClient("admin-user", "password")
               .evaluate(AuthZenClient.evaluationRequest()
-                    .subject(USER, ADMIN_USER_ID)
+                    .subject(USER, ADMIN_USER)
                     .action("read")
                     .resource("endpoint", "/admin")
                     .resourceProperty("ignored", "property")
@@ -115,26 +119,28 @@ public class AuthZenEvaluationTest {
 
         assertEquals(200, result.statusCode());
         assertTrue(result.decision());
+        assertNull(result.header(X_REQUEST_ID));
     }
 
     @Test
     public void testRegularUserDeniedAdminResource() throws IOException {
         EvaluationResult result = authzenClient("regular-user", "password")
               .evaluate(AuthZenClient.evaluationRequest()
-                    .subject(USER, REGULAR_USER_ID)
+                    .subject(USER, REGULAR_USER)
                     .action("read")
                     .resource("endpoint", "/admin")
                     .build());
 
         assertEquals(200, result.statusCode());
         assertFalse(result.decision());
+        assertNull(result.header(X_REQUEST_ID));
     }
 
     @Test
     public void testAdminUserAccessUsersResource() throws IOException {
         EvaluationResult result = authzenClient("admin-user", "password")
               .evaluate(AuthZenClient.evaluationRequest()
-                    .subject(USER, ADMIN_USER_ID)
+                    .subject(USER, ADMIN_USER)
                     .action("read")
                     .resource("endpoint", "/users")
                     .build());
@@ -147,7 +153,7 @@ public class AuthZenEvaluationTest {
     public void testRegularUserAccessUsersResource() throws IOException {
         EvaluationResult result = authzenClient("regular-user", "password")
               .evaluate(AuthZenClient.evaluationRequest()
-                    .subject(USER, REGULAR_USER_ID)
+                    .subject(USER, REGULAR_USER)
                     .action("read")
                     .resource("endpoint", "/users")
                     .build());
@@ -160,7 +166,7 @@ public class AuthZenEvaluationTest {
     public void testContextPassedToClaims() throws IOException {
         EvaluationResult result = authzenClient("admin-user", "password")
               .evaluate(AuthZenClient.evaluationRequest()
-                    .subject(USER, ADMIN_USER_ID)
+                    .subject(USER, ADMIN_USER)
                     .action("read")
                     .resource("endpoint", "/context-protected")
                     .contextProperty("environment", "production")
@@ -174,7 +180,7 @@ public class AuthZenEvaluationTest {
     public void testContextMismatchDeniesAccess() throws IOException {
         EvaluationResult result = authzenClient("admin-user", "password")
               .evaluate(AuthZenClient.evaluationRequest()
-                    .subject(USER, ADMIN_USER_ID)
+                    .subject(USER, ADMIN_USER)
                     .action("read")
                     .resource("endpoint", "/context-protected")
                     .contextProperty("environment", "staging")
@@ -188,7 +194,7 @@ public class AuthZenEvaluationTest {
     public void testMissingContextDeniesAccess() throws IOException {
         EvaluationResult result = authzenClient("admin-user", "password")
               .evaluate(AuthZenClient.evaluationRequest()
-                    .subject(USER, ADMIN_USER_ID)
+                    .subject(USER, ADMIN_USER)
                     .action("read")
                     .resource("endpoint", "/context-protected")
                     .build());
@@ -201,7 +207,7 @@ public class AuthZenEvaluationTest {
     public void testNestedContextPassedToClaims() throws IOException {
         EvaluationResult result = authzenClient("admin-user", "password")
               .evaluate(AuthZenClient.evaluationRequest()
-                    .subject(USER, ADMIN_USER_ID)
+                    .subject(USER, ADMIN_USER)
                     .action("read")
                     .resource("endpoint", "/nested-context")
                     .contextProperty("request", Map.of("ip", "10.0.0.1"))
@@ -215,7 +221,7 @@ public class AuthZenEvaluationTest {
     public void testNestedContextMismatchDeniesAccess() throws IOException {
         EvaluationResult result = authzenClient("admin-user", "password")
               .evaluate(AuthZenClient.evaluationRequest()
-                    .subject(USER, ADMIN_USER_ID)
+                    .subject(USER, ADMIN_USER)
                     .action("read")
                     .resource("endpoint", "/nested-context")
                     .contextProperty("request", Map.of("ip", "192.168.1.1"))
@@ -229,7 +235,7 @@ public class AuthZenEvaluationTest {
     public void testUnknownResourceReturnsDenied() throws IOException {
         EvaluationResult result = authzenClient("admin-user", "password")
               .evaluate(AuthZenClient.evaluationRequest()
-                    .subject(USER, ADMIN_USER_ID)
+                    .subject(USER, ADMIN_USER)
                     .action("read")
                     .resource("endpoint", "/nonexistent")
                     .build());
@@ -243,7 +249,7 @@ public class AuthZenEvaluationTest {
     public void testResourceTypeMismatchReturnsDenied() throws IOException {
         EvaluationResult result = authzenClient("admin-user", "password")
               .evaluate(AuthZenClient.evaluationRequest()
-                    .subject(USER, ADMIN_USER_ID)
+                    .subject(USER, ADMIN_USER)
                     .action("read")
                     .resource("wrong-type", "/admin")
                     .build());
@@ -257,7 +263,7 @@ public class AuthZenEvaluationTest {
     public void testEmptyTypeResourceMatchesEmptyType() throws IOException {
         EvaluationResult result = authzenClient("admin-user", "password")
               .evaluate(AuthZenClient.evaluationRequest()
-                    .subject(USER, ADMIN_USER_ID)
+                    .subject(USER, ADMIN_USER)
                     .action("read")
                     .resource("", "/empty-type")
                     .build());
@@ -272,7 +278,7 @@ public class AuthZenEvaluationTest {
     public void testActionWithoutPermissionDenied() throws IOException {
         EvaluationResult result = authzenClient("admin-user", "password")
               .evaluate(AuthZenClient.evaluationRequest()
-                    .subject(USER, ADMIN_USER_ID)
+                    .subject(USER, ADMIN_USER)
                     .action("write")
                     .resource("endpoint", "/scope-limited")
                     .build());
@@ -287,7 +293,7 @@ public class AuthZenEvaluationTest {
     public void testClientEvaluatesUserSubjectAuthorized() throws IOException {
         EvaluationResult result = authzenClient("regular-user", "password")
               .evaluate(AuthZenClient.evaluationRequest()
-                    .subject(USER, ADMIN_USER_ID)
+                    .subject(USER, ADMIN_USER)
                     .action("read")
                     .resource("endpoint", "/admin")
                     .build());
@@ -302,7 +308,7 @@ public class AuthZenEvaluationTest {
     public void testClientEvaluatesUserSubjectDenied() throws IOException {
         EvaluationResult result = authzenClient("admin-user", "password")
               .evaluate(AuthZenClient.evaluationRequest()
-                    .subject(USER, REGULAR_USER_ID)
+                    .subject(USER, REGULAR_USER)
                     .action("read")
                     .resource("endpoint", "/admin")
                     .build());
@@ -368,7 +374,7 @@ public class AuthZenEvaluationTest {
     public void testSubjectPropertiesPassedToIdentityAttributes() throws IOException {
         EvaluationResult result = authzenClient("admin-user", "password")
               .evaluate(AuthZenClient.evaluationRequest()
-                    .subject(USER, ADMIN_USER_ID)
+                    .subject(USER, ADMIN_USER)
                     .subjectProperty("department", "engineering")
                     .action("read")
                     .resource("endpoint", "/subject-protected")
@@ -382,7 +388,7 @@ public class AuthZenEvaluationTest {
     public void testSubjectPropertiesMismatchDeniesAccess() throws IOException {
         EvaluationResult result = authzenClient("admin-user", "password")
               .evaluate(AuthZenClient.evaluationRequest()
-                    .subject(USER, ADMIN_USER_ID)
+                    .subject(USER, ADMIN_USER)
                     .subjectProperty("department", "marketing")
                     .action("read")
                     .resource("endpoint", "/subject-protected")
@@ -396,7 +402,7 @@ public class AuthZenEvaluationTest {
     public void testMissingSubjectPropertiesDeniesAccess() throws IOException {
         EvaluationResult result = authzenClient("admin-user", "password")
               .evaluate(AuthZenClient.evaluationRequest()
-                    .subject(USER, ADMIN_USER_ID)
+                    .subject(USER, ADMIN_USER)
                     .action("read")
                     .resource("endpoint", "/subject-protected")
                     .build());
@@ -408,7 +414,7 @@ public class AuthZenEvaluationTest {
     @Test
     public void testUnauthenticatedUserReturnsUnauthorized() throws IOException {
         EvaluationResult result = authZenClient.evaluate(AuthZenClient.evaluationRequest()
-              .subject(USER, ADMIN_USER_ID)
+              .subject(USER, ADMIN_USER)
               .action("read")
               .resource("endpoint", "/admin")
               .build());
@@ -431,7 +437,7 @@ public class AuthZenEvaluationTest {
     public void testMissingSubjectTypeReturnsBadRequest() throws IOException {
         EvaluationResult result = authzenClient("admin-user", "password")
               .evaluate(AuthZenClient.evaluationRequest()
-                    .subject(null, ADMIN_USER_ID)
+                    .subject(null, ADMIN_USER)
                     .action("read")
                     .resource("endpoint", "/admin")
                     .build());
@@ -487,7 +493,7 @@ public class AuthZenEvaluationTest {
         String json = """
               {"subject":{"type":"invalid-type","id":"%s"},\
               "resource":{"type":"endpoint","id":"/admin"},\
-              "action":{"name":"read"}}""".formatted(ADMIN_USER_ID);
+              "action":{"name":"read"}}""".formatted(ADMIN_USER);
 
         try (SimpleHttpResponse response = simpleHttp.doPost(url)
               .auth(tokenResponse.getAccessToken())
@@ -502,7 +508,7 @@ public class AuthZenEvaluationTest {
     public void testMissingResourceReturnsBadRequest() throws IOException {
         EvaluationResult result = authzenClient("admin-user", "password")
               .evaluate(AuthZenClient.evaluationRequest()
-                    .subject(USER, ADMIN_USER_ID)
+                    .subject(USER, ADMIN_USER)
                     .action("read")
                     .build());
 
@@ -513,7 +519,7 @@ public class AuthZenEvaluationTest {
     public void testMissingResourceTypeReturnsBadRequest() throws IOException {
         EvaluationResult result = authzenClient("admin-user", "password")
               .evaluate(AuthZenClient.evaluationRequest()
-                    .subject(USER, ADMIN_USER_ID)
+                    .subject(USER, ADMIN_USER)
                     .action("read")
                     .resource(null, "/admin")
                     .build());
@@ -525,7 +531,7 @@ public class AuthZenEvaluationTest {
     public void testMissingResourceIdReturnsBadRequest() throws IOException {
         EvaluationResult result = authzenClient("admin-user", "password")
               .evaluate(AuthZenClient.evaluationRequest()
-                    .subject(USER, ADMIN_USER_ID)
+                    .subject(USER, ADMIN_USER)
                     .action("read")
                     .resource("endpoint", null)
                     .build());
@@ -537,7 +543,7 @@ public class AuthZenEvaluationTest {
     public void testMissingActionReturnsBadRequest() throws IOException {
         EvaluationResult result = authzenClient("admin-user", "password")
               .evaluate(AuthZenClient.evaluationRequest()
-                    .subject(USER, ADMIN_USER_ID)
+                    .subject(USER, ADMIN_USER)
                     .resource("endpoint", "/admin")
                     .build());
 
@@ -548,7 +554,7 @@ public class AuthZenEvaluationTest {
     public void testUndefinedActionReturnsDenied() throws IOException {
         EvaluationResult result = authzenClient("admin-user", "password")
               .evaluate(AuthZenClient.evaluationRequest()
-                    .subject(USER, ADMIN_USER_ID)
+                    .subject(USER, ADMIN_USER)
                     .action("undefined-action")
                     .resource("endpoint", "/admin")
                     .build());
@@ -565,7 +571,7 @@ public class AuthZenEvaluationTest {
 
         EvaluationResult result = authZenClient.withAccessToken(tokenResponse.getAccessToken())
               .evaluate(AuthZenClient.evaluationRequest()
-                    .subject(USER, ADMIN_USER_ID)
+                    .subject(USER, ADMIN_USER)
                     .action("read")
                     .resource("endpoint", "/admin")
                     .build());
@@ -588,6 +594,279 @@ public class AuthZenEvaluationTest {
               .asResponse()) {
             assertEquals(400, response.getStatus());
         }
+    }
+
+    @Test
+    public void testXRequestIdEchoedInResponse() throws IOException {
+        String requestId = "test-request-id-12345";
+        EvaluationResult result = authzenClient("admin-user", "password")
+              .evaluate(
+                    AuthZenClient.evaluationRequest()
+                          .subject(USER, ADMIN_USER)
+                          .action("read")
+                          .resource("endpoint", "/admin")
+                          .build(),
+                    Map.of(X_REQUEST_ID, requestId)
+              );
+
+        assertEquals(200, result.statusCode());
+        assertTrue(result.decision());
+        assertEquals(requestId, result.header(X_REQUEST_ID));
+    }
+
+    @Test
+    public void testXRequestIdEchoedOnUnauthorizedResponse() throws IOException {
+        String requestId = "unauth-request-id";
+
+        EvaluationResult result = new AuthZenClient(simpleHttp, realmUrl())
+              .evaluate(
+                    AuthZenClient.evaluationRequest()
+                          .subject(USER, ADMIN_USER)
+                          .action("read")
+                          .resource("endpoint", "/admin")
+                          .build(),
+                    Map.of(X_REQUEST_ID, requestId)
+              );
+
+        assertEquals(401, result.statusCode());
+        assertFalse(result.decision());
+        assertEquals(requestId, result.header(X_REQUEST_ID));
+    }
+
+    @Test
+    public void testXRequestIdEchoedOnBadRequestResponse() throws IOException {
+        String requestId = "bad-request-id";
+        String url = accessEvaluationEndpoint(realmUrl());
+        AccessTokenResponse tokenResponse = oauth
+              .client(client.getClientId(), client.getSecret())
+              .doPasswordGrantRequest("admin-user", "password");
+
+        try (SimpleHttpResponse response = simpleHttp.doPost(url)
+              .auth(tokenResponse.getAccessToken())
+              .header("Content-Type", "application/json")
+              .header(X_REQUEST_ID, requestId)
+              .entity(new StringEntity("{invalid json"))
+              .asResponse()) {
+            assertEquals(400, response.getStatus());
+            assertEquals(requestId, response.getFirstHeader(X_REQUEST_ID));
+        }
+    }
+
+    @Test
+    public void testUsernameNamespaceResolvesUser() throws IOException {
+        EvaluationResult result = authzenClient("admin-user", "password")
+              .evaluate(AuthZenClient.evaluationRequest()
+                    .subject(USER, "username:" + ADMIN_USER)
+                    .action("read")
+                    .resource("endpoint", "/admin")
+                    .build());
+
+        assertEquals(200, result.statusCode());
+        assertTrue(result.decision());
+    }
+
+    @Test
+    public void testIdNamespaceResolvesUser() throws IOException {
+        String userId = lookupUserId(ADMIN_USER);
+
+        EvaluationResult result = authzenClient("admin-user", "password")
+              .evaluate(AuthZenClient.evaluationRequest()
+                    .subject(USER, "id:" + userId)
+                    .action("read")
+                    .resource("endpoint", "/admin")
+                    .build());
+
+        assertEquals(200, result.statusCode());
+        assertTrue(result.decision());
+    }
+
+    @Test
+    public void testEmailNamespaceResolvesUser() throws IOException {
+        EvaluationResult result = authzenClient("admin-user", "password")
+              .evaluate(AuthZenClient.evaluationRequest()
+                    .subject(USER, "email:admin@localhost")
+                    .action("read")
+                    .resource("endpoint", "/admin")
+                    .build());
+
+        assertEquals(200, result.statusCode());
+        assertTrue(result.decision());
+    }
+
+    @Test
+    public void testEmailNamespaceResolvesCorrectUser() throws IOException {
+        EvaluationResult result = authzenClient("admin-user", "password")
+              .evaluate(AuthZenClient.evaluationRequest()
+                    .subject(USER, "email:regular@localhost")
+                    .action("read")
+                    .resource("endpoint", "/admin")
+                    .build());
+
+        assertEquals(200, result.statusCode());
+        assertFalse(result.decision());
+    }
+
+    @Test
+    public void testNoNamespaceUUIDFallsBackToIdLookup() throws IOException {
+        String userId = lookupUserId(ADMIN_USER);
+
+        EvaluationResult result = authzenClient("admin-user", "password")
+              .evaluate(AuthZenClient.evaluationRequest()
+                    .subject(USER, userId)
+                    .action("read")
+                    .resource("endpoint", "/admin")
+                    .build());
+
+        assertEquals(200, result.statusCode());
+        assertTrue(result.decision());
+    }
+
+    @Test
+    public void testNoNamespaceNonUUIDFallsBackToUsernameLookup() throws IOException {
+        EvaluationResult result = authzenClient("admin-user", "password")
+              .evaluate(AuthZenClient.evaluationRequest()
+                    .subject(USER, ADMIN_USER)
+                    .action("read")
+                    .resource("endpoint", "/admin")
+                    .build());
+
+        assertEquals(200, result.statusCode());
+        assertTrue(result.decision());
+    }
+
+    @Test
+    public void testEmailNamespaceWithDuplicateEmailsReturnsBadRequest() throws IOException {
+        realm.updateWithCleanup(r -> r.duplicateEmailsAllowed(true));
+
+        EvaluationResult result = authzenClient("admin-user", "password")
+              .evaluate(AuthZenClient.evaluationRequest()
+                    .subject(USER, "email:admin@localhost")
+                    .action("read")
+                    .resource("endpoint", "/admin")
+                    .build());
+
+        assertEquals(400, result.statusCode());
+    }
+
+    @Test
+    public void testUsernameNamespaceUnknownUserReturnsDenied() throws IOException {
+        EvaluationResult result = authzenClient("admin-user", "password")
+              .evaluate(AuthZenClient.evaluationRequest()
+                    .subject(USER, "username:nonexistent-user")
+                    .action("read")
+                    .resource("endpoint", "/admin")
+                    .build());
+
+        assertEquals(200, result.statusCode());
+        assertFalse(result.decision());
+    }
+
+    @Test
+    public void testIdNamespaceUnknownUserReturnsDenied() throws IOException {
+        EvaluationResult result = authzenClient("admin-user", "password")
+              .evaluate(AuthZenClient.evaluationRequest()
+                    .subject(USER, "id:00000000-0000-0000-0000-000000000000")
+                    .action("read")
+                    .resource("endpoint", "/admin")
+                    .build());
+
+        assertEquals(200, result.statusCode());
+        assertFalse(result.decision());
+    }
+
+    @Test
+    public void testEmailNamespaceUnknownUserReturnsDenied() throws IOException {
+        EvaluationResult result = authzenClient("admin-user", "password")
+              .evaluate(AuthZenClient.evaluationRequest()
+                    .subject(USER, "email:nonexistent@localhost")
+                    .action("read")
+                    .resource("endpoint", "/admin")
+                    .build());
+
+        assertEquals(200, result.statusCode());
+        assertFalse(result.decision());
+    }
+
+    @Test
+    public void testNoNamespaceUUIDUnknownUserReturnsDenied() throws IOException {
+        EvaluationResult result = authzenClient("admin-user", "password")
+              .evaluate(AuthZenClient.evaluationRequest()
+                    .subject(USER, "f81d4fae-7dec-11d0-a765-00a0c91e6bf6")
+                    .action("read")
+                    .resource("endpoint", "/admin")
+                    .build());
+
+        assertEquals(200, result.statusCode());
+        assertFalse(result.decision());
+    }
+
+    @Test
+    public void testEmptyIdNamespaceReturnsBadRequest() throws IOException {
+        EvaluationResult result = authzenClient("admin-user", "password")
+              .evaluate(AuthZenClient.evaluationRequest()
+                    .subject(USER, "id:")
+                    .action("read")
+                    .resource("endpoint", "/admin")
+                    .build());
+
+        assertEquals(400, result.statusCode());
+    }
+
+    @Test
+    public void testEmptyUsernameNamespaceReturnsBadRequest() throws IOException {
+        EvaluationResult result = authzenClient("admin-user", "password")
+              .evaluate(AuthZenClient.evaluationRequest()
+                    .subject(USER, "username:")
+                    .action("read")
+                    .resource("endpoint", "/admin")
+                    .build());
+
+        assertEquals(400, result.statusCode());
+    }
+
+    @Test
+    public void testEmptyEmailNamespaceReturnsBadRequest() throws IOException {
+        EvaluationResult result = authzenClient("admin-user", "password")
+              .evaluate(AuthZenClient.evaluationRequest()
+                    .subject(USER, "email:")
+                    .action("read")
+                    .resource("endpoint", "/admin")
+                    .build());
+
+        assertEquals(400, result.statusCode());
+    }
+
+    @Test
+    public void testMixedCaseNamespaceFallsBackToUsernameLookup() throws IOException {
+        EvaluationResult result = authzenClient("admin-user", "password")
+              .evaluate(AuthZenClient.evaluationRequest()
+                    .subject(USER, "Email:admin@localhost")
+                    .action("read")
+                    .resource("endpoint", "/admin")
+                    .build());
+
+        assertEquals(200, result.statusCode());
+        // "Email:admin@localhost" is treated as a username, which won't exist
+        assertFalse(result.decision());
+    }
+
+    @Test
+    public void testIdNamespaceWithNonUUIDReturnsDenied() throws IOException {
+        EvaluationResult result = authzenClient("admin-user", "password")
+              .evaluate(AuthZenClient.evaluationRequest()
+                    .subject(USER, "id:not-a-uuid")
+                    .action("read")
+                    .resource("endpoint", "/admin")
+                    .build());
+
+        assertEquals(200, result.statusCode());
+        assertFalse(result.decision());
+    }
+
+    private String lookupUserId(String username) {
+        List<UserRepresentation> users = realm.admin().users().search(username, true);
+        assertEquals(1, users.size(), "Expected exactly one user with username: " + username);
+        return users.get(0).getId();
     }
 
     private String realmUrl() {
@@ -753,14 +1032,14 @@ public class AuthZenEvaluationTest {
             realm.realmRoles("admin");
 
             realm.users(UserBuilder.create("admin-user")
-                  .id(ADMIN_USER_ID)
+                  .username(ADMIN_USER)
                   .name("Admin", "User")
                   .email("admin@localhost")
                   .password("password")
                   .realmRoles("admin"));
 
             realm.users(UserBuilder.create("regular-user")
-                  .id(REGULAR_USER_ID)
+                  .username(REGULAR_USER)
                   .name("Regular", "User")
                   .email("regular@localhost")
                   .password("password"));

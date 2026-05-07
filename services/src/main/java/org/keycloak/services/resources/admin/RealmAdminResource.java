@@ -902,7 +902,7 @@ public class RealmAdminResource {
                                                  @Parameter(description = "To (inclusive) date (yyyy-MM-dd) or time in Epoch timestamp millis (number of milliseconds since January 1, 1970, 00:00:00 GMT)") @QueryParam("dateTo") String dateTo,
                                                  @Parameter(description = "IP Address") @QueryParam("ipAddress") String ipAddress,
                                                  @Parameter(description = "Paging offset") @QueryParam("first") Integer firstResult,
-                                                 @Parameter(description = "Maximum results size (defaults to 100)") @QueryParam("max") Integer maxResults,
+                                                 @Parameter(description = "Maximum results size") @QueryParam("max") @DefaultValue(Constants.DEFAULT_MAX_RESULTS_STR) Integer maxResults,
                                                  @Parameter(description = "The direction to sort events by (asc or desc)") @QueryParam("direction") String direction) {
         auth.realm().requireViewEvents();
 
