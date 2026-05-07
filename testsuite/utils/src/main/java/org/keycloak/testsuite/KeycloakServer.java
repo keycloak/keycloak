@@ -322,8 +322,8 @@ public class KeycloakServer {
 
         // we generate a dynamic jboss.server.data.dir and remove it at the end.
         try {
-          String tempKeycloakFolder = KeycloakApplication.getTmpDirectory();
-          File tmpDataDir = new File(tempKeycloakFolder, "/data");
+          String tempKeycloakFolder = System.getProperty("project.build.directory");
+          File tmpDataDir = new File(tempKeycloakFolder, "/keycloak-data");
 
           if (tmpDataDir.mkdirs()) {
             tmpDataDir.deleteOnExit();
