@@ -94,8 +94,10 @@ public class SecureRedirectUrisEnforcerExecutor implements ClientPolicyExecutorP
         protected boolean allowWildcardContextPath;
         @JsonProperty(SecureRedirectUrisEnforcerExecutorFactory.ALLOW_PERMITTED_DOMAINS)
         protected List<String> allowPermittedDomains = Collections.emptyList();
+        @JsonProperty(SecureRedirectUrisEnforcerExecutorFactory.OAUTH_2_0_COMPLIANT)
+        protected boolean oauth2_0compliant;
         @JsonProperty(SecureRedirectUrisEnforcerExecutorFactory.OAUTH_2_1_COMPLIANT)
-        protected boolean oauth2_1complient;
+        protected boolean oauth2_1compliant;
         @JsonProperty(SecureRedirectUrisEnforcerExecutorFactory.ALLOW_OPEN_REDIRECT)
         protected boolean allowOpenRedirect;
 
@@ -147,12 +149,20 @@ public class SecureRedirectUrisEnforcerExecutor implements ClientPolicyExecutorP
             this.allowPermittedDomains = permittedDomains;
         }
 
-        public boolean isOAuth2_1Compliant() {
-            return oauth2_1complient;
+        public boolean isOAuth2_0Compliant() {
+            return oauth2_0compliant;
         }
 
-        public void setOAuth2_1Compliant(boolean oauth21complient) {
-            this.oauth2_1complient = oauth21complient;
+        public void setOAuth2_0Compliant(boolean oauth20compliant) {
+            this.oauth2_0compliant = oauth20compliant;
+        }
+
+        public boolean isOAuth2_1Compliant() {
+            return oauth2_1compliant;
+        }
+
+        public void setOAuth2_1Compliant(boolean oauth21compliant) {
+            this.oauth2_1compliant = oauth21compliant;
         }
 
         public boolean isAllowOpenRedirect() {
@@ -382,35 +392,37 @@ public class SecureRedirectUrisEnforcerExecutor implements ClientPolicyExecutorP
                 }
             }
 
+            if (config.isOAuth2_0Compliant() || config.isOAuth2_1Compliant()) {
+                if (isIncludeUriFragment()) {
+                    logger.debugv("Invalid LoopbackAddress: URI fragment not allowed - input = {0}", uri.toString());
+                    return false;
+                }
+
+                if (isIncludeWildcard()) {
+                    logger.debugv("Invalid LoopbackAddress: Wildcard not allowed - input = {0}", uri.toString());
+                    return false;
+                }
+            }
+
             if (config.isOAuth2_1Compliant()) {
-                if (isIncludeUriFragment()) { // URL fragment is not allowed
-                    logger.debugv("Invalid LoopbackAddress: URI fragment not allowed - OAuth 2.1 compliant - input = {0}", uri.toString());
-                    return false;
-                }
-
-                if (isIncludeWildcard()) { // wildcard is not allowed
-                    logger.debugv("Invalid LoopbackAddress: Wildcard not allowed - OAuth 2.1 compliant - input = {0}", uri.toString());
-                    return false;
-                }
-
-                if ("localhost".equalsIgnoreCase(uri.getHost())) { // "localhost" is not allowed.
+                if ("localhost".equalsIgnoreCase(uri.getHost())) {
                     logger.debugv("Invalid LoopbackAddress: localhost not allowed - OAuth 2.1 compliant - input = {0}", uri.toString());
                     return false;
                 }
 
                 if (isRedirectUriParameter) {
-                    if (uri.getPort() < 0 || uri.getPort() > 65535) { // only 0 to 65535 are allowed. no port number is not allowed.
+                    if (uri.getPort() < 0 || uri.getPort() > 65535) {
                         logger.debugv("Invalid LoopbackAddress: invalid port number - OAuth 2.1 compliant - redirect_uri parameter - input = {0}", uri.toString());
                         return false;
                     }
                 } else {
-                    if (uri.getPort() > -1) { // any port number is not allowed
+                    if (uri.getPort() > -1) {
                         logger.debugv("Invalid LoopbackAddress: port number not allowed - OAuth 2.1 compliant - input = {0}", uri.toString());
                         return false;
                     }
                 }
 
-                if (!p.test(uri)) return false; // additional tests for OAuth 2.1 compliant
+                if (!p.test(uri)) return false;
             }
             return true;
         }
@@ -430,18 +442,20 @@ public class SecureRedirectUrisEnforcerExecutor implements ClientPolicyExecutorP
                 }
             }
 
+            if (config.isOAuth2_0Compliant() || config.isOAuth2_1Compliant()) {
+                if (isIncludeUriFragment()) {
+                    logger.debugv("Invalid PrivateUseUriScheme: URI fragment not allowed - input = {0}", uri.toString());
+                    return false;
+                }
+
+                if (isIncludeWildcard()) {
+                    logger.debugv("Invalid PrivateUseUriScheme: Wildcard not allowed - input = {0}", uri.toString());
+                    return false;
+                }
+            }
+
             if (config.isOAuth2_1Compliant()) {
-                if (isIncludeUriFragment()) { // URL fragment is not allowed
-                    logger.debugv("Invalid PrivateUseUriScheme: URI fragment not allowed - OAuth 2.1 compliant - input = {0}", uri.toString());
-                    return false;
-                }
-
-                if (isIncludeWildcard()) { // wildcard is not allowed
-                    logger.debugv("Invalid PrivateUseUriScheme: Wildcard not allowed - OAuth 2.1 compliant - input = {0}", uri.toString());
-                    return false;
-                }
-
-                if (uri.getScheme() == null || !uri.getScheme().contains(".")) { // a single word scheme name is not allowed.
+                if (uri.getScheme() == null || !uri.getScheme().contains(".")) {
                     logger.debugv("Invalid PrivateUseUriScheme: a single word scheme name is not allowed - OAuth 2.1 compliant - input = {0}", uri.toString());
                     return false;
                 }
@@ -477,19 +491,21 @@ public class SecureRedirectUrisEnforcerExecutor implements ClientPolicyExecutorP
                 }
             }
 
+            if (config.isOAuth2_0Compliant() || config.isOAuth2_1Compliant()) {
+                if (isIncludeUriFragment()) {
+                    logger.debugv("Invalid NormalUri: URI fragment not allowed - input = {0}", uri.toString());
+                    return false;
+                }
+
+                if (isIncludeWildcard()) {
+                    logger.debugv("Invalid NormalUri: Wildcard not allowed - input = {0}", uri.toString());
+                    return false;
+                }
+            }
+
             if (config.isOAuth2_1Compliant()) {
-                if (!isHttps()) { // only https scheme is allowed.
+                if (!isHttps()) {
                     logger.debugv("Invalid NormalUri: HTTP not allowed - OAuth 2.1 compliant - input = {0}", uri.toString());
-                    return false;
-                }
-
-                if (isIncludeUriFragment()) { // URL fragment is not allowed.
-                    logger.debugv("Invalid NormalUri: URI fragment not allowed - OAuth 2.1 compliant - input = {0}", uri.toString());
-                    return false;
-                }
-
-                if (isIncludeWildcard()) { // wildcard is not allowed.
-                    logger.debugv("Invalid NormalUri: Wildcard not allowed - OAuth 2.1 compliant - input = {0}", uri.toString());
                     return false;
                 }
             }
