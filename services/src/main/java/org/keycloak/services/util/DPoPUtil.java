@@ -39,6 +39,7 @@ import org.keycloak.TokenVerifier;
 import org.keycloak.common.Profile;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.Time;
+import org.keycloak.crypto.CryptoUtils;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.crypto.SignatureProvider;
 import org.keycloak.crypto.SignatureVerifierContext;
@@ -209,7 +210,7 @@ public class DPoPUtil {
 
         key.setAlgorithm(header.getAlgorithm().name());
 
-        SignatureVerifierContext signatureVerifier = session.getProvider(SignatureProvider.class, algorithm).verifier(key);
+        SignatureVerifierContext signatureVerifier = CryptoUtils.getSignatureProvider(session, algorithm).verifier(key);
         verifier.verifierContext(signatureVerifier);
         verifier.withChecks(
                 DPoPClaimsCheck.INSTANCE,
