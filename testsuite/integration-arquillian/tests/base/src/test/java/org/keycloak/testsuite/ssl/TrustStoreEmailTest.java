@@ -94,7 +94,7 @@ public class TrustStoreEmailTest extends AbstractTestRealmKeycloakTest {
         SslMailServer.stop();
     }
 
-    public void verifyEmailWithSslEnabled(Boolean opportunistic) {
+    public void verifyEmailWithSslEnabled(Boolean opportunistic) throws InterruptedException {
         UserResource userResource = AdminApiUtil.findUserByUsernameId(managedRealm.admin(), "test-user@localhost");
         UserRepresentation user = userResource.toRepresentation();
         user.setEmailVerified(false);
@@ -123,8 +123,8 @@ public class TrustStoreEmailTest extends AbstractTestRealmKeycloakTest {
         assertEquals("You need to verify your email address to activate your account.",
                 testRealmVerifyEmailPage.feedbackMessage().getText());
 
-        String verifyEmailUrl = assertEmailAndGetUrl(MailServerConfiguration.FROM, user.getEmail(),
-                "Someone has created a Test account with this email address.", true);
+        String verifyEmailUrl = assertEmailAndGetUrl(SslMailServer.getLastReceivedMessage(), MailServerConfiguration.FROM, user.getEmail(),
+                "Someone has created a Test account with this email address.");
 
         log.info("navigating to url from email: " + verifyEmailUrl);
 
@@ -217,7 +217,7 @@ public class TrustStoreEmailTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
-    public void test04VerifyEmailWithSslEnabled() {
+    public void test04VerifyEmailWithSslEnabled() throws InterruptedException {
         verifyEmailWithSslEnabled(false);
     }
 

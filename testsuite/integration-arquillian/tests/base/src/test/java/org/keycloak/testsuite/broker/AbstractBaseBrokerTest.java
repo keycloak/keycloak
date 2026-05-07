@@ -52,7 +52,6 @@ import org.keycloak.testsuite.pages.OAuthGrantPage;
 import org.keycloak.testsuite.pages.ProceedPage;
 import org.keycloak.testsuite.pages.UpdateAccountInformationPage;
 import org.keycloak.testsuite.pages.VerifyEmailPage;
-import org.keycloak.testsuite.util.MailServer;
 import org.keycloak.testsuite.util.WaitUtils;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.keycloak.testsuite.util.oauth.LogoutUrlBuilder;
@@ -153,8 +152,6 @@ public abstract class AbstractBaseBrokerTest extends AbstractKeycloakTest {
     }
 
     protected void configureSMTPServer() {
-        MailServer.start();
-        MailServer.createEmailAccount(USER_EMAIL, "password");
         RealmResource realm = adminClient.realm(bc.consumerRealmName());
         RealmRepresentation master = realm.toRepresentation();
         master.setSmtpServer(suiteContext.getSmtpServer());
@@ -204,7 +201,6 @@ public abstract class AbstractBaseBrokerTest extends AbstractKeycloakTest {
     public void cleanupUsers() {
         adminClient.realm(bc.consumerRealmName()).remove();
         adminClient.realm(bc.providerRealmName()).remove();
-        MailServer.stop();
     }
 
     protected String createUser(String username, String email) {

@@ -40,7 +40,7 @@ import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
 import org.keycloak.testsuite.pages.LoginUpdateProfilePage;
 import org.keycloak.testsuite.pages.TermsAndConditionsPage;
 import org.keycloak.testsuite.pages.VerifyProfilePage;
-import org.keycloak.testsuite.util.GreenMailRule;
+import org.keycloak.testsuite.util.MailServer;
 
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
@@ -73,7 +73,7 @@ public class RequiredActionPriorityTest extends AbstractTestRealmKeycloakTest {
     public AssertEvents events = new AssertEvents(this);
 
     @Rule
-    public GreenMailRule greenMail = new GreenMailRule();
+    public MailServer mail = new MailServer();
 
     @Page
     protected AppPage appPage;
@@ -294,8 +294,8 @@ public class RequiredActionPriorityTest extends AbstractTestRealmKeycloakTest {
         loginPage.assertCurrent();
         assertEquals("You should receive an email shortly with further instructions.", loginPage.getSuccessMessage());
 
-        assertEquals(1, greenMail.getReceivedMessages().length);
-        final var message = greenMail.getLastReceivedMessage();
+        assertEquals(1, mail.getReceivedMessages().length);
+        final var message = mail.getLastReceivedMessage();
         final var resetUrl = getEmailLink(message);
         assertNotNull(resetUrl);
         driver.navigate().to(resetUrl);

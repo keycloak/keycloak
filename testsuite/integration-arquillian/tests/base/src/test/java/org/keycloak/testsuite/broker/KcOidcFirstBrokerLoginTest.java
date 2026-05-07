@@ -862,8 +862,8 @@ public class KcOidcFirstBrokerLoginTest extends AbstractFirstBrokerLoginTest {
         oauth.openLoginForm();
         logInWithBroker(bc);
         idpConfirmLinkPage.clickLinkAccount();
-        String verificationUrl = assertEmailAndGetUrl(MailServerConfiguration.FROM, USER_EMAIL,
-                "Someone wants to link your", false);
+        String verificationUrl = assertEmailAndGetUrl(mail.getLastReceivedMessage(), MailServerConfiguration.FROM, USER_EMAIL,
+                "Someone wants to link your");
         assertNotNull(verificationUrl);
 
         // confirm the email using a different browser

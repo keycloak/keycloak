@@ -48,7 +48,7 @@ import org.keycloak.testsuite.pages.PasswordPage;
 import org.keycloak.testsuite.pages.RegisterPage;
 import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.FlowUtil;
-import org.keycloak.testsuite.util.GreenMailRule;
+import org.keycloak.testsuite.util.MailServer;
 import org.keycloak.testsuite.util.MailUtils;
 import org.keycloak.testsuite.util.URLUtils;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
@@ -73,7 +73,7 @@ public class ResetCredentialsAlternativeFlowsTest extends AbstractAppInitiatedAc
     private String password;
 
     @Rule
-    public GreenMailRule greenMail = new GreenMailRule();
+    public MailServer mail = new MailServer();
 
     @Page
     protected LoginPage loginPage;
@@ -153,7 +153,7 @@ public class ResetCredentialsAlternativeFlowsTest extends AbstractAppInitiatedAc
             assertEquals("You should receive an email shortly with further instructions.", loginUsernameOnlyPage.getSuccessMessage());
 
             // Assert no email was sent as user was cleared
-            assertEquals(0, greenMail.getReceivedMessages().length);
+            assertEquals(0, mail.getReceivedMessages().length);
 
         } finally {
             revertFlows();
@@ -180,7 +180,7 @@ public class ResetCredentialsAlternativeFlowsTest extends AbstractAppInitiatedAc
             errorPage.assertCurrent();
 
             // Assert no email was sent
-            assertEquals(0, greenMail.getReceivedMessages().length);
+            assertEquals(0, mail.getReceivedMessages().length);
         } finally {
             revertFlows();
         }
@@ -206,7 +206,7 @@ public class ResetCredentialsAlternativeFlowsTest extends AbstractAppInitiatedAc
             assertEquals("You should receive an email shortly with further instructions.", loginUsernameOnlyPage.getSuccessMessage());
 
             // Assert email was sent
-            assertEquals(1, greenMail.getReceivedMessages().length);
+            assertEquals(1, mail.getReceivedMessages().length);
         } finally {
             revertFlows();
         }
@@ -243,10 +243,10 @@ public class ResetCredentialsAlternativeFlowsTest extends AbstractAppInitiatedAc
             assertEquals("You should receive an email shortly with further instructions.", loginUsernameOnlyPage.getSuccessMessage());
 
             // Assert email was sent
-            assertEquals(1, greenMail.getReceivedMessages().length);
+            assertEquals(1, mail.getReceivedMessages().length);
 
             // Successfully reset password
-            MimeMessage message = greenMail.getReceivedMessages()[0];
+            MimeMessage message = mail.getReceivedMessages()[0];
 
             String changePasswordUrl = MailUtils.getPasswordResetEmailLink(message);
 

@@ -34,15 +34,8 @@ public class MailAssert {
 
     private static final Logger log = Logger.getLogger(MailAssert.class);
     
-    public static String assertEmailAndGetUrl(String from, String recipient, String content, Boolean sslEnabled) {
-
+    public static String assertEmailAndGetUrl(MimeMessage message, String from, String recipient, String content) {
         try {
-            MimeMessage message;
-            if (sslEnabled){
-                message= SslMailServer.getLastReceivedMessage();
-            } else {
-                message = MailServer.getLastReceivedMessage();
-            }            
             assertNotNull(message, "There is no received email.");
             assertEquals(recipient, message.getRecipients(RecipientType.TO)[0].toString());
             assertEquals(from, message.getFrom()[0].toString());
@@ -69,7 +62,7 @@ public class MailAssert {
                 }
             }
             return null;
-        } catch (IOException | MessagingException | InterruptedException ex) {
+        } catch (IOException | MessagingException ex) {
             throw new RuntimeException(ex);
         }
     }

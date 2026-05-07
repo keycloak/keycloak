@@ -52,10 +52,12 @@ import org.keycloak.testsuite.pages.IdpConfirmLinkPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.SelectOrganizationPage;
 import org.keycloak.testsuite.pages.UpdateAccountInformationPage;
+import org.keycloak.testsuite.util.MailServer;
 import org.keycloak.testsuite.util.TestCleanup;
 
 import org.hamcrest.Matchers;
 import org.jboss.arquillian.graphene.page.Page;
+import org.junit.Rule;
 import org.junit.jupiter.api.Assertions;
 
 import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
@@ -79,6 +81,8 @@ public abstract class AbstractOrganizationTest extends AbstractAdminTest  {
     protected String memberPassword = "password";
     protected Function<String, BrokerConfiguration> brokerConfigFunction = name -> new BrokerConfigurationWrapper(name, createBrokerConfiguration());
 
+    @Rule
+    public MailServer mail = new MailServer();
 
     @Page
     protected LoginPage loginPage;

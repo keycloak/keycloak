@@ -37,7 +37,7 @@ import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.IgnoreBrowserDriver;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.InfoPage;
-import org.keycloak.testsuite.util.GreenMailRule;
+import org.keycloak.testsuite.util.MailServer;
 import org.keycloak.testsuite.util.MailUtils;
 import org.keycloak.testsuite.util.WaitUtils;
 
@@ -60,7 +60,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class AppInitiatedActionUpdateEmailWithVerificationTest extends AbstractAppInitiatedActionUpdateEmailTest {
 
 	@Rule
-	public GreenMailRule greenMail = new GreenMailRule();
+	public MailServer mail = new MailServer();
 
 	@Page
 	protected InfoPage infoPage;
@@ -150,7 +150,7 @@ public class AppInitiatedActionUpdateEmailWithVerificationTest extends AbstractA
 	}
 
 	private String fetchEmailConfirmationLink(String emailRecipient) throws MessagingException, IOException {
-		MimeMessage[] receivedMessages = greenMail.getReceivedMessages();
+		MimeMessage[] receivedMessages = mail.getReceivedMessages();
 		Assertions.assertEquals(1, receivedMessages.length);
 		MimeMessage message = receivedMessages[0];
 		Address[] recipients = message.getRecipients(Message.RecipientType.TO);
