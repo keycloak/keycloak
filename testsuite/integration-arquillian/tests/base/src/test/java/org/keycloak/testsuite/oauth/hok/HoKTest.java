@@ -343,7 +343,7 @@ public class HoKTest extends AbstractTestRealmKeycloakTest {
         assertThat(actual, allOf(greaterThanOrEqualTo(1799L - OAuthProofKeyForCodeExchangeTest.ALLOWED_CLOCK_SKEW), lessThanOrEqualTo(1800L + OAuthProofKeyForCodeExchangeTest.ALLOWED_CLOCK_SKEW)));
         assertEquals(sessionId, refreshToken.getSessionState());
 
-        setTimeOffset(2);
+        timeOffSet.set(2);
 
         AccessTokenResponse response = null;
         try (CloseableHttpClient client = MutualTLSUtils.newCloseableHttpClientWithDefaultKeyStoreAndTrustStore()) {
@@ -384,7 +384,7 @@ public class HoKTest extends AbstractTestRealmKeycloakTest {
         assertThat(actual, allOf(greaterThanOrEqualTo(1799L - OAuthProofKeyForCodeExchangeTest.ALLOWED_CLOCK_SKEW), lessThanOrEqualTo(1800L + OAuthProofKeyForCodeExchangeTest.ALLOWED_CLOCK_SKEW)));
         assertEquals(sessionId, refreshToken.getSessionState());
 
-        setTimeOffset(2);
+        timeOffSet.set(2);
 
         AccessTokenResponse response = null;
         try (CloseableHttpClient client = MutualTLSUtils.newCloseableHttpClientWithoutKeyStoreAndTrustStore()) {
@@ -444,7 +444,7 @@ public class HoKTest extends AbstractTestRealmKeycloakTest {
         Assertions.assertNotEquals(tokenEvent.getDetails().get(Details.TOKEN_ID), refreshEvent.getDetails().get(Details.TOKEN_ID));
         Assertions.assertNotEquals(tokenEvent.getDetails().get(Details.REFRESH_TOKEN_ID), refreshEvent.getDetails().get(Details.UPDATED_REFRESH_TOKEN_ID));
 
-        setTimeOffset(0);
+        timeOffSet.set(0);
     }
 
     // verify HoK Token - Get UserInfo

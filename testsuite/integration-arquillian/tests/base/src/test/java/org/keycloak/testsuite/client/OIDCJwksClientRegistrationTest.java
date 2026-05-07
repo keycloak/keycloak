@@ -288,7 +288,7 @@ public class OIDCJwksClientRegistrationTest extends AbstractClientRegistrationTe
         // Error should happen. KeyStorageProvider won't yet download new keys because of timeout
         assertAuthenticateClientError(generatedKeys2, response, KEEP_GENERATED_KID);
 
-        setTimeOffset(20);
+        timeOffSet.set(20);
 
         // Now new keys should be successfully downloaded
         assertAuthenticateClientSuccess(generatedKeys2, response, KEEP_GENERATED_KID);

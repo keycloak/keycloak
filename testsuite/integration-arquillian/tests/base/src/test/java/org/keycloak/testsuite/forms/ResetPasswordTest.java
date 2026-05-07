@@ -689,7 +689,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
         String changePasswordUrl = MailUtils.getPasswordResetEmailLink(message);
 
         try {
-            setTimeOffset(360);
+            timeOffSet.set(360);
 
             driver.navigate().to(changePasswordUrl.trim());
 
@@ -699,7 +699,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
 
             events.expectRequiredAction(EventType.EXECUTE_ACTION_TOKEN_ERROR).error("expired_code").client((String) null).user(userId).session((String) null).clearDetails().detail(Details.ACTION, ResetCredentialsActionToken.TOKEN_TYPE).assertEvent();
         } finally {
-            setTimeOffset(0);
+            timeOffSet.set(0);
         }
     }
 
@@ -725,7 +725,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
 
             String changePasswordUrl = MailUtils.getPasswordResetEmailLink(message);
 
-            setTimeOffset(70);
+            timeOffSet.set(70);
 
             driver.navigate().to(changePasswordUrl.trim());
 
@@ -735,7 +735,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
 
             events.expectRequiredAction(EventType.EXECUTE_ACTION_TOKEN_ERROR).error("expired_code").client((String) null).user(userId).session((String) null).clearDetails().detail(Details.ACTION, ResetCredentialsActionToken.TOKEN_TYPE).assertEvent();
         } finally {
-            setTimeOffset(0);
+            timeOffSet.set(0);
 
             realmRep.setActionTokenGeneratedByUserLifespan(originalValue.get());
             managedRealm.admin().update(realmRep);
@@ -763,7 +763,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
 
             String changePasswordUrl = MailUtils.getPasswordResetEmailLink(message);
 
-            setTimeOffset(70);
+            timeOffSet.set(70);
 
             driver.navigate().to(changePasswordUrl.trim());
 
@@ -773,7 +773,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
 
             events.expectRequiredAction(EventType.EXECUTE_ACTION_TOKEN_ERROR).error("expired_code").client((String) null).user(userId).session((String) null).clearDetails().detail(Details.ACTION, ResetCredentialsActionToken.TOKEN_TYPE).assertEvent();
         } finally {
-            setTimeOffset(0);
+            timeOffSet.set(0);
 
             realmRep.setAttributes(originalAttributes);
             managedRealm.admin().update(realmRep);
@@ -803,7 +803,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
 
             String changePasswordUrl = MailUtils.getPasswordResetEmailLink(message);
 
-            setTimeOffset(70);
+            timeOffSet.set(70);
 
             driver.navigate().to(changePasswordUrl.trim());
 
@@ -813,7 +813,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
 
             events.expectRequiredAction(EventType.EXECUTE_ACTION_TOKEN_ERROR).error("expired_code").client((String) null).user(userId).session((String) null).clearDetails().detail(Details.ACTION, ResetCredentialsActionToken.TOKEN_TYPE).assertEvent();
         } finally {
-            setTimeOffset(0);
+            timeOffSet.set(0);
 
             realmRep.setAttributes(originalAttributes);
             managedRealm.admin().update(realmRep);
@@ -846,7 +846,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
             log.debug("Removing cookies."); // This is necessary to delete KC_RESTART cookie that is restricted to /auth/realms/test path
             driver.manage().deleteAllCookies();
 
-            setTimeOffset(70);
+            timeOffSet.set(70);
 
             log.debug("Going to reset password URI.");
             driver.navigate().to(changePasswordUrl.trim());
@@ -858,7 +858,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
 
             events.expectRequiredAction(EventType.EXECUTE_ACTION_TOKEN_ERROR).error("expired_code").client((String) null).user(userId).session((String) null).clearDetails().detail(Details.ACTION, ResetCredentialsActionToken.TOKEN_TYPE).assertEvent();
         } finally {
-            setTimeOffset(0);
+            timeOffSet.set(0);
 
             realmRep.setActionTokenGeneratedByUserLifespan(originalValue.get());
             managedRealm.admin().update(realmRep);
@@ -889,7 +889,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
             log.debug("Removing cookies."); // This is necessary to delete KC_RESTART cookie that is restricted to /auth/realms/test path
             driver.manage().deleteAllCookies();
 
-            setTimeOffset(70);
+            timeOffSet.set(70);
 
             log.debug("Going to reset password URI.");
             URLUtils.navigateToUri(changePasswordUrl.trim());
@@ -901,7 +901,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
 
             events.expectRequiredAction(EventType.EXECUTE_ACTION_TOKEN_ERROR).error("expired_code").client((String) null).user(userId).session((String) null).clearDetails().detail(Details.ACTION, ResetCredentialsActionToken.TOKEN_TYPE).assertEvent();
         } finally {
-            setTimeOffset(0);
+            timeOffSet.set(0);
 
             realmRep.setAttributes(originalAttributes);
             managedRealm.admin().update(realmRep);
@@ -933,7 +933,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
             log.debug("Removing cookies."); // This is necessary to delete KC_RESTART cookie that is restricted to /auth/realms/test path
             driver.manage().deleteAllCookies();
 
-            setTimeOffset(70);
+            timeOffSet.set(70);
 
             log.debug("Going to reset password URI.");
             driver.navigate().to(changePasswordUrl.trim());
@@ -945,7 +945,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
 
             events.expectRequiredAction(EventType.EXECUTE_ACTION_TOKEN_ERROR).error("expired_code").client((String) null).user(userId).session((String) null).clearDetails().detail(Details.ACTION, ResetCredentialsActionToken.TOKEN_TYPE).assertEvent();
         } finally {
-            setTimeOffset(0);
+            timeOffSet.set(0);
 
             realmRep.setAttributes(originalAttributes);
             managedRealm.admin().update(realmRep);
@@ -985,7 +985,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
 
             String changePasswordUrl = MailUtils.getPasswordResetEmailLink(message);
 
-            setTimeOffset(70);
+            timeOffSet.set(70);
 
             driver.navigate().to(changePasswordUrl.trim());
 
@@ -995,7 +995,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
 
             events.expectRequiredAction(EventType.EXECUTE_ACTION_TOKEN_ERROR).error("expired_code").client((String) null).user(userId).session((String) null).clearDetails().detail(Details.ACTION, ResetCredentialsActionToken.TOKEN_TYPE).assertEvent();
         } finally {
-            setTimeOffset(0);
+            timeOffSet.set(0);
 
             realmRep.setActionTokenGeneratedByUserLifespan(originalValue.get());
             managedRealm.admin().update(realmRep);
@@ -1033,7 +1033,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
 
             String changePasswordUrl = MailUtils.getPasswordResetEmailLink(message);
 
-            setTimeOffset(70);
+            timeOffSet.set(70);
 
             driver.navigate().to(changePasswordUrl.trim());
 
@@ -1043,7 +1043,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
 
             events.expectRequiredAction(EventType.EXECUTE_ACTION_TOKEN_ERROR).error("expired_code").client((String) null).user(userId).session((String) null).clearDetails().detail(Details.ACTION, ResetCredentialsActionToken.TOKEN_TYPE).assertEvent();
         } finally {
-            setTimeOffset(0);
+            timeOffSet.set(0);
 
             realmRep.setAttributes(originalAttributes);
             managedRealm.admin().update(realmRep);
@@ -1082,7 +1082,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
 
             String changePasswordUrl = MailUtils.getPasswordResetEmailLink(message);
 
-            setTimeOffset(70);
+            timeOffSet.set(70);
 
             driver.navigate().to(changePasswordUrl.trim());
 
@@ -1092,7 +1092,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
 
             events.expectRequiredAction(EventType.EXECUTE_ACTION_TOKEN_ERROR).error("expired_code").client((String) null).user(userId).session((String) null).clearDetails().detail(Details.ACTION, ResetCredentialsActionToken.TOKEN_TYPE).assertEvent();
         } finally {
-            setTimeOffset(0);
+            timeOffSet.set(0);
 
             realmRep.setAttributes(originalAttributes);
             managedRealm.admin().update(realmRep);
@@ -1258,28 +1258,28 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
         setPasswordPolicy("passwordHistory");
 
         try {
-            setTimeOffset(2000000);
+            timeOffSet.set(2000000);
             resetPassword("login-test", "password1");
 
             resetPasswordInvalidPassword("login-test", "password1", "Invalid password: must not be equal to any of last 3 passwords.");
 
-            setTimeOffset(4000000);
+            timeOffSet.set(4000000);
             resetPassword("login-test", "password2");
 
             resetPasswordInvalidPassword("login-test", "password1", "Invalid password: must not be equal to any of last 3 passwords.");
             resetPasswordInvalidPassword("login-test", "password2", "Invalid password: must not be equal to any of last 3 passwords.");
 
-            setTimeOffset(6000000);
+            timeOffSet.set(6000000);
             resetPassword("login-test", "password3");
 
             resetPasswordInvalidPassword("login-test", "password1", "Invalid password: must not be equal to any of last 3 passwords.");
             resetPasswordInvalidPassword("login-test", "password2", "Invalid password: must not be equal to any of last 3 passwords.");
             resetPasswordInvalidPassword("login-test", "password3", "Invalid password: must not be equal to any of last 3 passwords.");
 
-            setTimeOffset(8000000);
+            timeOffSet.set(8000000);
             resetPassword("login-test", password);
         } finally {
-            setTimeOffset(0);
+            timeOffSet.set(0);
         }
     }
 

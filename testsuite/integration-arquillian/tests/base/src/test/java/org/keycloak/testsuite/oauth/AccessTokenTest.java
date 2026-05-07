@@ -440,13 +440,13 @@ public class AccessTokenTest extends AbstractKeycloakTest {
         String code = oauth.parseLoginResponse().getCode();
 
         try {
-            setTimeOffset(2);
+            timeOffSet.set(2);
 
             AccessTokenResponse response = oauth.doAccessTokenRequest(code);
             Assertions.assertEquals(400, response.getStatusCode());
         } finally {
             getTestingClient().testing().revertTestingInfinispanTimeService();
-            resetTimeOffset();
+            timeOffSet.set(0);
         }
 
         AssertEvents.ExpectedEvent expectedEvent = events.expectCodeToToken(codeId, codeId);
@@ -1107,7 +1107,7 @@ public class AccessTokenTest extends AbstractKeycloakTest {
             // Assert token expiration equals token lifespan
             assertExpiration(response.getExpiresIn(), tokenLifespan);
 
-            setTimeOffset(sessionMax - 60);
+            timeOffSet.set(sessionMax - 60);
 
             response = oauth.doRefreshTokenRequest(response.getRefreshToken());
             assertEquals(200, response.getStatusCode());

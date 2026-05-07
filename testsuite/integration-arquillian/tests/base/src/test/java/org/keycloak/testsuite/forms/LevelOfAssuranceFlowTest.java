@@ -610,14 +610,14 @@ public class LevelOfAssuranceFlowTest extends AbstractChangeImportedUserPassword
         assertLoggedInWithAcr("3");
 
         // Time offset to 210
-        setTimeOffset(210);
+        timeOffSet.set(210);
 
         // Re-auth 2: Should return level 2 (gold) due level 3 expired
         oauth.openLoginForm();
         assertLoggedInWithAcr("gold");
 
         // Time offset to 310
-        setTimeOffset(310);
+        timeOffSet.set(310);
 
         // Re-auth 3: Should return level 0 (copper) due levels 1 and 2 expired
         oauth.openLoginForm();
@@ -642,7 +642,7 @@ public class LevelOfAssuranceFlowTest extends AbstractChangeImportedUserPassword
         assertLoggedInWithAcr("3");
 
         // Time offset to 210
-        setTimeOffset(210);
+        timeOffSet.set(210);
 
         // Re-auth 2: Should ask user for re-authentication with level2 and level3. Level1 did not yet expired and should be automatic
         openLoginFormWithAcrClaim(true, "3");
@@ -651,7 +651,7 @@ public class LevelOfAssuranceFlowTest extends AbstractChangeImportedUserPassword
         assertLoggedInWithAcr("3");
 
         // Time offset to 310
-        setTimeOffset(310);
+        timeOffSet.set(310);
 
         // Re-auth 3: Should ask user for re-authentication with level1. Level2 and Level3 did not yet expired and should be automatic
         openLoginFormWithAcrClaim(true, "3");
@@ -695,7 +695,7 @@ public class LevelOfAssuranceFlowTest extends AbstractChangeImportedUserPassword
         authenticateWithUsernamePassword();
         assertLoggedInWithAcr("silver");
 
-        setTimeOffset(120);
+        timeOffSet.set(120);
 
 
         // Change condition configuration to 60

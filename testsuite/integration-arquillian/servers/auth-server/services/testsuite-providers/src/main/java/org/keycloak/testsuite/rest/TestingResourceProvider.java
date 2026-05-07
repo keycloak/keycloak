@@ -52,7 +52,6 @@ import org.keycloak.common.Profile.Feature;
 import org.keycloak.common.enums.HostnameVerificationPolicy;
 import org.keycloak.common.profile.PropertiesProfileConfigResolver;
 import org.keycloak.common.util.HtmlUtils;
-import org.keycloak.common.util.Time;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.events.Event;
 import org.keycloak.events.EventListenerProvider;
@@ -72,7 +71,6 @@ import org.keycloak.models.UserProvider;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.session.UserSessionPersisterProvider;
 import org.keycloak.models.utils.ModelToRepresentation;
-import org.keycloak.models.utils.ResetTimeOffsetEvent;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider;
 import org.keycloak.protocol.oid4vc.issuance.credentialoffer.CredentialOfferState;
 import org.keycloak.protocol.oid4vc.issuance.credentialoffer.CredentialOfferStorage;
@@ -185,33 +183,6 @@ public class TestingResourceProvider implements RealmResourceProvider {
 
         // TODO: Might need optimization to prevent loading client sessions from cache
         return sessionModel.getAuthenticatedClientSessions().size();
-    }
-
-    @GET
-    @Path("/time-offset")
-    @Produces(MediaType.APPLICATION_JSON)
-    public Map<String, String> getTimeOffset() {
-        Map<String, String> response = new HashMap<>();
-        response.put("currentTime", String.valueOf(Time.currentTime()));
-        response.put("offset", String.valueOf(Time.getOffset()));
-        return response;
-    }
-
-    @PUT
-    @Path("/time-offset")
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Produces(MediaType.APPLICATION_JSON)
-    public Map<String, String> setTimeOffset(Map<String, String> time) {
-        int offset = Integer.parseInt(time.get("offset"));
-
-        Time.setOffset(offset);
-
-        // Time offset was restarted
-        if (offset == 0) {
-            session.getKeycloakSessionFactory().publish(new ResetTimeOffsetEvent());
-        }
-
-        return getTimeOffset();
     }
 
     @POST

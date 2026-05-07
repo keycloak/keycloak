@@ -2137,10 +2137,10 @@ public class EntitlementAPITest extends AbstractAuthzTest {
                 AccessToken accessTokenToken = toAccessToken(authorizationResponse.getToken());
                 assertEquals(refreshToken.getExp() - refreshToken.getIat(), 1800);
                 assertEquals(accessTokenToken.getExp() - accessTokenToken.getIat(), 300);
-                setTimeOffset(i);
+                timeOffSet.set(i);
             }
         } finally {
-            resetTimeOffset();
+            timeOffSet.set(0);
         }
     }
 

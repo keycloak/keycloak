@@ -80,7 +80,7 @@ public class KcSamlMultipleTabsBrokerTest extends AbstractInitializedBaseBrokerT
             Assertions.assertTrue(loginPage.isCurrent("consumer"));
             getLogger().infof("URL in tab2: %s", driver.getCurrentUrl());
 
-            setTimeOffset(7200000);
+            timeOffSet.set(7200000);
 
             // Finish login in tab2
             loginPage.clickSocial(bc.getIDPAlias());
@@ -147,7 +147,7 @@ public class KcSamlMultipleTabsBrokerTest extends AbstractInitializedBaseBrokerT
             Assertions.assertTrue(loginPage.isCurrent("consumer"));
             getLogger().infof("URL in tab2: %s", driver.getCurrentUrl());
 
-            setTimeOffset(3600);
+            timeOffSet.set(3600);
 
             // Finish login in tab2
             logInWithBroker(bc);

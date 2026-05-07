@@ -59,7 +59,7 @@ public class InitialAccessTokenTest extends AbstractClientRegistrationTest {
 
         ClientRepresentation rep = new ClientRepresentation();
 
-        setTimeOffset(10);
+        timeOffSet.set(10);
 
         ClientRepresentation created = reg.create(rep);
         Assertions.assertNotNull(created);
@@ -123,7 +123,7 @@ public class InitialAccessTokenTest extends AbstractClientRegistrationTest {
 
         ClientRepresentation rep = new ClientRepresentation();
 
-        setTimeOffset(10);
+        timeOffSet.set(10);
 
         try {
             reg.create(rep);
