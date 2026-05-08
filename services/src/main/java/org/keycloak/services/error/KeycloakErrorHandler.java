@@ -1,6 +1,5 @@
 package org.keycloak.services.error;
 
-import jakarta.inject.Inject;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import org.jboss.logging.Logger;
@@ -28,6 +27,7 @@ import org.keycloak.utils.MediaType;
 import org.keycloak.utils.MediaTypeMatcher;
 
 import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.ExceptionMapper;
@@ -51,7 +51,7 @@ public class KeycloakErrorHandler implements ExceptionMapper<Throwable> {
     public static final String UNCAUGHT_SERVER_ERROR_TEXT = "Uncaught server error";
     public static final String ERROR_RESPONSE_TEXT = "Error response {0}";
 
-    @Inject
+    @Context
     KeycloakSession session;
 
     @Override
