@@ -285,10 +285,10 @@ public class RealmManager {
         realm.setOTPPolicy(OTPPolicy.DEFAULT_POLICY);
         realm.setLoginWithEmailAllowed(true);
 
-        if (Profile.isFeatureEnabled(Profile.Feature.OID4VC_VCI)) {
+        if (Profile.isFeatureEnabled(Profile.Feature.OID4VC_VCI_REST_CREDENTIAL_OFFER)) {
             // Only create the role if it doesn't exist in the realm representation (during import)
             // or if it doesn't exist in the realm model (during fresh creation)
-            if ((realmRep == null || !hasRealmRole(realmRep, CREDENTIAL_OFFER_CREATE.getName())) 
+            if ((realmRep == null || !hasRealmRole(realmRep, CREDENTIAL_OFFER_CREATE.getName()))
                     && realm.getRole(CREDENTIAL_OFFER_CREATE.getName()) == null) {
                 RoleModel roleModel = realm.addRole(CREDENTIAL_OFFER_CREATE.getName());
                 roleModel.setDescription(CREDENTIAL_OFFER_CREATE.getDescription());
