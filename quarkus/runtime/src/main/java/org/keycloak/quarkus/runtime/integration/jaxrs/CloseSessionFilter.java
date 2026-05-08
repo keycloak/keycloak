@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Red Hat, Inc. and/or its affiliates
+ * Copyright 2026 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -22,6 +22,7 @@ import java.io.OutputStream;
 import java.util.stream.Stream;
 
 import jakarta.annotation.Priority;
+import jakarta.inject.Inject;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerResponseContext;
@@ -30,12 +31,21 @@ import jakarta.ws.rs.container.PreMatching;
 import jakarta.ws.rs.core.StreamingOutput;
 import jakarta.ws.rs.ext.Provider;
 
-import org.keycloak.utils.KeycloakSessionUtil;
+import org.keycloak.models.KeycloakSession;
 
+/**
+ * Closing the session at the end of the request.
+ * <p>
+ * This ensures the tranaction is committed and data is written to the database and the caches before the response is closed.
+ * Without this filter a request that runs shortly after the first request completed might return still stale data.
+ */
 @Provider
 @PreMatching
 @Priority(1)
 public class CloseSessionFilter implements ContainerResponseFilter, org.keycloak.quarkus.runtime.transaction.TransactionalSessionHandler {
+
+    @Inject
+    KeycloakSession session;
 
     @Override
     public void filter(ContainerRequestContext requestContext, ContainerResponseContext responseContext)
@@ -66,6 +76,6 @@ public class CloseSessionFilter implements ContainerResponseFilter, org.keycloak
     }
 
     private void closeSession() {
-        close(KeycloakSessionUtil.getKeycloakSession());
+        close(session);
     }
 }

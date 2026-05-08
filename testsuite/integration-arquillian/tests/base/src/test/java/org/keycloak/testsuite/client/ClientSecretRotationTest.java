@@ -21,6 +21,7 @@ import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthen
 import org.keycloak.common.Profile.Feature;
 import org.keycloak.common.util.Time;
 import org.keycloak.events.Details;
+import org.keycloak.events.EventType;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.ClientSecretConstants;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -882,7 +883,8 @@ public class ClientSecretRotationTest extends AbstractRestServiceTest {
     private void successfulLoginAndLogout(String clientId, String clientSecret) {
         AccessTokenResponse res = successfulLogin(clientId, clientSecret);
         oauth.doLogout(res.getRefreshToken());
-        events.expectLogout(res.getSessionState()).client(clientId).clearDetails().assertEvent();
+        EventAssertion.assertSuccess(events.poll()).type(EventType.LOGOUT)
+                .sessionId(res.getSessionState()).clientId(clientId).withoutDetails(Details.REDIRECT_URI);
     }
 
     private AccessTokenResponse successfulLogin(String clientId, String clientSecret) {

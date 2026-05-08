@@ -548,6 +548,12 @@ public class GroupTest extends AbstractGroupTest {
         assertThat(group.getAttributes().keySet(), containsInAnyOrder("attr2", "attr3"));
         assertThat(group.getAttributes(), hasEntry(is("attr2"), containsInAnyOrder("attrval2", "attrval2-2")));
         assertThat(group.getAttributes(), hasEntry(is("attr3"), contains("attrval2")));
+
+        group.setName(null);
+        GroupRepresentation finalGroup = group;
+        Assertions.assertThrows(BadRequestException.class, () -> realm.groups().group(finalGroup.getId()).update(finalGroup));
+        group.setName(" ");
+        Assertions.assertThrows(BadRequestException.class, () -> realm.groups().group(finalGroup.getId()).update(finalGroup));
     }
 
     @Test

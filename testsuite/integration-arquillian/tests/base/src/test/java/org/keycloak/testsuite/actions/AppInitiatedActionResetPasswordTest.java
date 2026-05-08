@@ -183,7 +183,7 @@ public class AppInitiatedActionResetPasswordTest extends AbstractAppInitiatedAct
             AccessTokenResponse tokenResponse = sendTokenRequestAndGetResponse(loginEvent);
             oauth.logoutForm().idTokenHint(tokenResponse.getIdToken()).withRedirect().open();
 
-            events.expectLogout(loginEvent.getSessionId()).assertEvent();
+            EventAssertion.expectLogoutSuccess(events.poll()).sessionId(loginEvent.getSessionId());
 
             oauth.openLoginForm();
             loginPage.login("test-user@localhost", "new-password");
@@ -432,7 +432,8 @@ public class AppInitiatedActionResetPasswordTest extends AbstractAppInitiatedAct
         changePasswordPage.assertCurrent();
         changePasswordPage.checkLogoutSessions();
         changePasswordPage.changePassword("All Right Then, Keep Your Secrets", "All Right Then, Keep Your Secrets");
-        events.expectLogout(event2.getSessionId()).detail(Details.LOGOUT_TRIGGERED_BY_REQUIRED_ACTION, UserModel.RequiredAction.UPDATE_PASSWORD.name()).assertEvent();
+        EventAssertion.expectLogoutSuccess(events.poll()).sessionId(event2.getSessionId())
+                .details(Details.LOGOUT_TRIGGERED_BY_REQUIRED_ACTION, UserModel.RequiredAction.UPDATE_PASSWORD.name());
         events.expectRequiredAction(EventType.UPDATE_PASSWORD).assertEvent();
         events.expectRequiredAction(EventType.UPDATE_CREDENTIAL).detail(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE).assertEvent();
         assertKcActionStatus(SUCCESS);

@@ -172,10 +172,10 @@ public class RequiredActionUpdateEmailTestWithVerificationTest extends AbstractR
 		changeEmailUsingRequiredAction("new@localhost", logoutOtherSessions, false);
 
 		if (logoutOtherSessions) {
-			events.expectLogout(event1.getSessionId())
-					.detail(Details.REDIRECT_URI,  getAuthServerContextRoot() + "/auth/realms/test/account/")
-					.detail(Details.LOGOUT_TRIGGERED_BY_ACTION_TOKEN, UpdateEmailActionToken.TOKEN_TYPE)
-					.assertEvent();
+			EventAssertion.expectLogoutSuccess(events.poll())
+                    .sessionId(event1.getSessionId())
+					.details(Details.REDIRECT_URI,  getAuthServerContextRoot() + "/auth/realms/test/account/")
+					.details(Details.LOGOUT_TRIGGERED_BY_ACTION_TOKEN, UpdateEmailActionToken.TOKEN_TYPE);
 		}
 
 		events.expect(EventType.UPDATE_EMAIL)

@@ -148,6 +148,8 @@ public class QuarkusJpaConnectionProviderFactory extends AbstractJpaConnectionPr
         } catch (Exception e) {
             logErrorSettingMigrationTransactionTimeout(e);
         }
+
+        checkMissingIndexes(factory);
     }
 
     @Override
@@ -433,5 +435,11 @@ public class QuarkusJpaConnectionProviderFactory extends AbstractJpaConnectionPr
 
     private static void logInvalidEncoding(Database.Vendor vendor, String encoding, String recommendedEncoding) {
         logger.warnf("Invalid %s charset encoding '%s'. It is recommended to use %s", vendor, encoding, recommendedEncoding);
+    }
+
+    private void checkMissingIndexes(KeycloakSessionFactory factory) {
+        var thread = new Thread(new DatabaseIndexChecker(this::getConnection, factory, getSchema()), "db-index-checker");
+        thread.setDaemon(true);
+        thread.start();
     }
 }

@@ -192,9 +192,7 @@ public class BackchannelLogoutTest extends AbstractNestedBrokerTest {
         BackchannelLogoutResponse response = oauth.doBackchannelLogout(null);
         assertEquals(400, response.getStatusCode());
         assertEquals("No logout token", response.getErrorDescription());
-        events.expectLogoutError(Errors.INVALID_TOKEN)
-                .realm(realmIdConsumerRealm)
-                .assertEvent();
+        EventAssertion.expectLogoutError(events.poll()).error(Errors.INVALID_TOKEN);
     }
 
     @Test
@@ -206,9 +204,7 @@ public class BackchannelLogoutTest extends AbstractNestedBrokerTest {
         BackchannelLogoutResponse response = oauth.doBackchannelLogout(logoutTokenMissingContent);
         assertEquals(400, response.getStatusCode());
         assertEquals(LogoutTokenValidationCode.DECODE_TOKEN_FAILED.getErrorMessage(), response.getErrorDescription());
-        events.expectLogoutError(Errors.INVALID_TOKEN)
-                .realm(realmIdConsumerRealm)
-                .assertEvent();
+        EventAssertion.expectLogoutError(events.poll()).error(Errors.INVALID_TOKEN);
     }
 
     @Test
@@ -676,12 +672,12 @@ public class BackchannelLogoutTest extends AbstractNestedBrokerTest {
 
         if (logoutEventOptional.isPresent()) {
             EventRepresentation logoutEvent = logoutEventOptional.get();
-            this.events.expectLogout(sessionId)
-                    .realm(realmId)
-                    .user(userId)
-                    .client((String) null)
-                    .removeDetail(Details.REDIRECT_URI)
-                    .assertEvent(logoutEvent);
+            EventAssertion.assertSuccess(logoutEvent)
+                    .type(EventType.LOGOUT)
+                    .sessionId(sessionId)
+                    .userId(userId)
+                    .clientId(null)
+                    .withoutDetails(Details.REDIRECT_URI);
         } else {
             fail("No Logout event found for session " + sessionId);
         }
@@ -699,9 +695,7 @@ public class BackchannelLogoutTest extends AbstractNestedBrokerTest {
 
         if (logoutErrorEventOptional.isPresent()) {
             EventRepresentation logoutEvent = logoutErrorEventOptional.get();
-            this.events.expectLogoutError(Errors.LOGOUT_FAILED)
-                    .realm(realmId)
-                    .assertEvent(logoutEvent);
+            EventAssertion.expectLogoutError(logoutEvent).error(Errors.LOGOUT_FAILED);
         } else {
             fail("No Logout error event found in realm " + realmName);
         }
@@ -718,12 +712,12 @@ public class BackchannelLogoutTest extends AbstractNestedBrokerTest {
 
             if (logoutEventOptional.isPresent()) {
                 EventRepresentation logoutEvent = logoutEventOptional.get();
-                this.events.expectLogout(sessionId)
-                        .realm(realmIdConsumerRealm)
-                        .user(userIdConsumerRealm)
-                        .client((String) null)
-                        .removeDetail(Details.REDIRECT_URI)
-                        .assertEvent(logoutEvent);
+                EventAssertion.assertSuccess(logoutEvent)
+                        .type(EventType.LOGOUT)
+                        .sessionId(sessionId)
+                        .userId(userIdConsumerRealm)
+                        .clientId(null)
+                        .withoutDetails(Details.REDIRECT_URI);
             } else {
                 fail("No Logout event found for session " + sessionId);
             }

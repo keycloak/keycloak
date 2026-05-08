@@ -460,7 +460,7 @@ public class OID4VCIssuerEndpoint {
                 .detail(Details.CREDENTIAL_TYPE, credentialConfigurationId)
                 .detail(Details.USERNAME, targetUser);
 
-        cors.allowedOrigins(session, clientModel);
+        cors.checkAllowedOrigins(session, clientModel);
         checkIsOid4vciEnabled(eventBuilder);
         checkClientEnabled(eventBuilder);
 

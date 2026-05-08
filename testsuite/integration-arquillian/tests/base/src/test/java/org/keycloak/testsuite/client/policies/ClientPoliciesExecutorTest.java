@@ -330,7 +330,8 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
         events.expectCodeToToken(codeId, sessionId).client(clientId).assertEvent();
 
         oauth.doLogout(res.getRefreshToken());
-        events.expectLogout(sessionId).client(clientId).clearDetails().assertEvent();
+        EventAssertion.assertSuccess(events.poll()).type(EventType.LOGOUT)
+                .sessionId(sessionId).clientId(clientId).withoutDetails(Details.REDIRECT_URI);
 
         // update profiles
         json = (new ClientProfilesBuilder()).addProfile(
@@ -352,7 +353,8 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
         events.expectCodeToToken(codeId, sessionId).client(clientId).assertEvent();
 
         oauth.doLogout(res.getRefreshToken());
-        events.expectLogout(sessionId).client(clientId).clearDetails().assertEvent();
+        EventAssertion.assertSuccess(events.poll()).type(EventType.LOGOUT)
+                .sessionId(sessionId).clientId(clientId).withoutDetails(Details.REDIRECT_URI);
 
         // shall allow code using response_mode jwt
         oauth.responseType(OIDCResponseType.CODE);
@@ -475,7 +477,8 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
         events.expectCodeToToken(codeId, sessionId).client(clientId).assertEvent();
 
         oauth.doLogout(res.getRefreshToken());
-        events.expectLogout(sessionId).client(clientId).clearDetails().assertEvent();
+        EventAssertion.assertSuccess(events.poll()).type(EventType.LOGOUT)
+                .sessionId(sessionId).clientId(clientId).withoutDetails(Details.REDIRECT_URI);
     }
 
     @Test

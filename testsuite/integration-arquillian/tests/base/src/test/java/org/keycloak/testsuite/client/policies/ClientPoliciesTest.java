@@ -1276,7 +1276,8 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
 
         // logout
         oauth.doLogout(response.getRefreshToken());
-        events.expectLogout(response.getSessionState()).client(clientId).clearDetails().assertEvent();
+        EventAssertion.assertSuccess(events.poll()).type(EventType.LOGOUT)
+                .sessionId(response.getSessionState()).clientId(clientId).withoutDetails(Details.REDIRECT_URI);
 
         // create a request object with invalid claims
         claimsRep = new ClaimsRepresentation();

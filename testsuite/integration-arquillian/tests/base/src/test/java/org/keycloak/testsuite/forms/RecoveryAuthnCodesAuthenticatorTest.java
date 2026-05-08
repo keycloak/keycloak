@@ -181,9 +181,9 @@ public class RecoveryAuthnCodesAuthenticatorTest extends AbstractChangeImportedU
         assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
         if (logoutOtherSessions) {
-            events.expectLogout(event1.getSessionId())
-                    .detail(Details.LOGOUT_TRIGGERED_BY_REQUIRED_ACTION, UserModel.RequiredAction.CONFIGURE_RECOVERY_AUTHN_CODES.name())
-                    .assertEvent();
+            EventAssertion.expectLogoutSuccess(events.poll())
+                    .sessionId(event1.getSessionId())
+                    .details(Details.LOGOUT_TRIGGERED_BY_REQUIRED_ACTION, UserModel.RequiredAction.CONFIGURE_RECOVERY_AUTHN_CODES.name());
         }
 
         EventRepresentation event2 = events.expectRequiredAction(EventType.UPDATE_CREDENTIAL)

@@ -29,6 +29,7 @@ import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.common.Profile;
 import org.keycloak.events.Details;
+import org.keycloak.events.EventType;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.AccessToken;
@@ -359,7 +360,8 @@ public class OAuthGrantTest extends AbstractKeycloakTest {
 
         oauth.logoutForm().idTokenHint(res.getIdToken()).open();
 
-        events.expectLogout(loginEvent.getSessionId()).client(THIRD_PARTY_APP).removeDetail(Details.REDIRECT_URI).assertEvent();
+        EventAssertion.assertSuccess(events.poll()).type(EventType.LOGOUT)
+                .sessionId(loginEvent.getSessionId()).clientId(THIRD_PARTY_APP).withoutDetails(Details.REDIRECT_URI);
 
         // login again to check whether the Dynamic scope and only the dynamic scope is requested again
         oauth.scope("foo-dynamic-scope:withparam");

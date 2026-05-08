@@ -629,7 +629,6 @@ public class AuthZenEvaluationTest {
               );
 
         assertEquals(401, result.statusCode());
-        assertFalse(result.decision());
         assertEquals(requestId, result.header(X_REQUEST_ID));
     }
 

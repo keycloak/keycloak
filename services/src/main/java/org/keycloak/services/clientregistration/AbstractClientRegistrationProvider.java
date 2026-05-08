@@ -315,11 +315,13 @@ public abstract class AbstractClientRegistrationProvider implements ClientRegist
     }
 
     protected List<String> getAllowedOrigins() {
+        auth.init();
         List<String> allowedOrigins = new LinkedList<>();
         AccessToken jwt = auth.getJwt();
         if (jwt != null && jwt.getAllowedOrigins() != null) {
             allowedOrigins.addAll(jwt.getAllowedOrigins());
         }
+        allowedOrigins.addAll(ClientRegistrationPolicyManager.getAllowedOrigins(session, auth.resolveRegistrationAuth()));
         return allowedOrigins;
     }
 }
