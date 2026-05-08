@@ -260,8 +260,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
           rules={{
             required: t("required"),
             onChange: (e) => {
-              if (isDynamicScopesEnabled)
-                setDynamicRegex(e.target.validated, true);
+              if (isDynamicScopesEnabled) setDynamicRegex(e.target.value, true);
             },
           }}
         />

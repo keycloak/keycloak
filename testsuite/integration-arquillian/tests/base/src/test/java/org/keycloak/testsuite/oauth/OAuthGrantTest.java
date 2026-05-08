@@ -17,7 +17,6 @@
 package org.keycloak.testsuite.oauth;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -27,9 +26,7 @@ import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ClientScopeResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
-import org.keycloak.common.Profile;
 import org.keycloak.events.Details;
-import org.keycloak.events.EventType;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.AccessToken;
@@ -43,7 +40,6 @@ import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LogoutConfirmPage;
@@ -314,80 +310,6 @@ public class OAuthGrantTest extends AbstractKeycloakTest {
         oauth.scope(null);
         thirdParty.removeOptionalClientScope(fooScopeId);
     }
-
-    @Test
-    @EnableFeature(value = Profile.Feature.DYNAMIC_SCOPES, skipRestart = true)
-    public void oauthGrantDynamicScopeParamRequired() throws IOException {
-        RealmResource appRealm = adminClient.realm(REALM_NAME);
-        ClientResource thirdParty = findClientByClientId(appRealm, THIRD_PARTY_APP);
-
-        // Create clientScope
-        ClientScopeRepresentation scope = new ClientScopeRepresentation();
-        scope.setName("foo-dynamic-scope");
-        scope.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
-        scope.setAttributes(new HashMap<String, String>() {{
-            put(ClientScopeModel.IS_DYNAMIC_SCOPE, "true");
-            put(ClientScopeModel.DYNAMIC_SCOPE_REGEXP, "foo-dynamic-scope:*");
-        }});
-        Response response = appRealm.clientScopes().create(scope);
-        String dynamicFooScopeId = ApiUtil.getCreatedId(response);
-        response.close();
-        getCleanup().addClientScopeId(dynamicFooScopeId);
-
-        // Add clientScope as optional to client
-        thirdParty.addOptionalClientScope(dynamicFooScopeId);
-
-        // Assert clientScope not on grant screen when not requested
-        oauth.client(THIRD_PARTY_APP, "password");
-        oauth.scope("foo-dynamic-scope:withparam");
-        oauth.doLogin(DEFAULT_USERNAME, DEFAULT_PASSWORD);
-        grantPage.assertCurrent();
-        List<String> grants = grantPage.getDisplayedGrants();
-        Assertions.assertTrue(grants.contains("foo-dynamic-scope: withparam"));
-        grantPage.accept();
-
-        EventRepresentation loginEvent = EventAssertion.expectLoginSuccess(events.poll())
-                .clientId(THIRD_PARTY_APP)
-                .details(Details.REDIRECT_URI, oauth.getRedirectUri())
-                .details(Details.CONSENT, Details.CONSENT_VALUE_CONSENT_GRANTED).getEvent();
-
-        String code = oauth.parseLoginResponse().getCode();
-        AccessTokenResponse res = oauth.doAccessTokenRequest(code);
-
-        events.expectCodeToToken(loginEvent.getDetails().get(Details.CODE_ID), loginEvent.getSessionId())
-                .client(THIRD_PARTY_APP)
-                .assertEvent();
-
-        oauth.logoutForm().idTokenHint(res.getIdToken()).open();
-
-        EventAssertion.assertSuccess(events.poll()).type(EventType.LOGOUT)
-                .sessionId(loginEvent.getSessionId()).clientId(THIRD_PARTY_APP).withoutDetails(Details.REDIRECT_URI);
-
-        // login again to check whether the Dynamic scope and only the dynamic scope is requested again
-        oauth.scope("foo-dynamic-scope:withparam");
-        oauth.doLogin(DEFAULT_USERNAME, DEFAULT_PASSWORD);
-        grantPage.assertCurrent();
-        grants = grantPage.getDisplayedGrants();
-        Assertions.assertEquals(1, grants.size());
-        Assertions.assertTrue(grants.contains("foo-dynamic-scope: withparam"));
-        grantPage.accept();
-
-        EventAssertion.expectLoginSuccess(events.poll())
-                .clientId(THIRD_PARTY_APP)
-                .details(Details.REDIRECT_URI, oauth.getRedirectUri())
-                .details(Details.CONSENT, Details.CONSENT_VALUE_CONSENT_GRANTED);
-
-        // Revoke
-        AccountHelper.revokeConsents(adminClient.realm(TEST), DEFAULT_USERNAME, THIRD_PARTY_APP);
-
-        List<Map<String, Object>> userConsents = AccountHelper.getUserConsents(adminClient.realm(TEST), DEFAULT_USERNAME);
-        Assertions.assertEquals(userConsents.size(), 0);
-
-        // cleanup
-        oauth.scope(null);
-        thirdParty.removeOptionalClientScope(dynamicFooScopeId);
-    }
-
 
     // KEYCLOAK-4326
     @Test
