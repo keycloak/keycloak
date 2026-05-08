@@ -102,6 +102,7 @@
         <class>org.keycloak.models.jpa.entities.OrganizationEntity</class>
         <class>org.keycloak.models.jpa.entities.OrganizationDomainEntity</class>
         <class>org.keycloak.models.jpa.entities.OrganizationInvitationEntity</class>
+        <class>org.keycloak.models.jpa.entities.OrganizationInvitationAttributeEntity</class>
 
         <!-- Server Configuration -->
         <class>org.keycloak.storage.configuration.jpa.entity.ServerConfigEntity</class>

@@ -1,5 +1,8 @@
 package org.keycloak.representations.idm;
 
+import java.util.List;
+import java.util.Map;
+
 /**
  * Representation of an organization invitation.
  */
@@ -19,6 +22,7 @@ public class OrganizationInvitationRepresentation {
     private int expiresAt;
     private Status status;
     private String inviteLink;
+    private Map<String, List<String>> attributes;
 
     public OrganizationInvitationRepresentation() {
     }
@@ -93,6 +97,14 @@ public class OrganizationInvitationRepresentation {
 
     public void setInviteLink(String inviteLink) {
         this.inviteLink = inviteLink;
+    }
+
+    public Map<String, List<String>> getAttributes() {
+        return attributes;
+    }
+
+    public void setAttributes(Map<String, List<String>> attributes) {
+        this.attributes = attributes;
     }
 
     @Override

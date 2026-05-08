@@ -50,6 +50,8 @@ import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.MemberRepresentation;
 import org.keycloak.representations.idm.MembershipType;
+import org.keycloak.representations.idm.OrganizationInvitationExistingUserRequest;
+import org.keycloak.representations.idm.OrganizationInvitationUserRequest;
 import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.resources.KeycloakOpenAPI;
@@ -128,17 +130,31 @@ public class OrganizationMemberResource {
 
     @Path("invite-user")
     @POST
-    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    @Consumes(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.ORGANIZATIONS)
     @Operation(summary = "Invites an existing user or sends a registration link to a new user, based on the provided e-mail address.",
-            description = "If the user with the given e-mail address exists, it sends an invitation link, otherwise it sends a registration link.")
+            description = "If the user with the given e-mail address exists, it sends an invitation link, otherwise it sends a registration link. " +
+                    "Also accepts `application/x-www-form-urlencoded` with form parameters: **email**, **firstName**, **lastName** for backward compatibility.")
     @APIResponses(value = {
-        @APIResponse(responseCode = "204", description = "No Content"),
-        @APIResponse(responseCode = "400", description = "Bad Request"),
-        @APIResponse(responseCode = "403", description = "Forbidden"),
-        @APIResponse(responseCode = "409", description = "Conflict"),
-        @APIResponse(responseCode = "500", description = "Internal Server Error")
+            @APIResponse(responseCode = "204", description = "No Content"),
+            @APIResponse(responseCode = "400", description = "Bad Request"),
+            @APIResponse(responseCode = "403", description = "Forbidden"),
+            @APIResponse(responseCode = "409", description = "Conflict"),
+            @APIResponse(responseCode = "500", description = "Internal Server Error")
     })
+    public Response inviteUserJson(OrganizationInvitationUserRequest req) {
+        if (req == null) {
+            throw ErrorResponse.error("Invitation request cannot be null", Status.BAD_REQUEST);
+        }
+
+        return new OrganizationInvitationResource(session, organization, adminEvent, auth)
+                .inviteUser(req.getEmail(), req.getFirstName(), req.getLastName(), req.getAttributes());
+    }
+
+    @Path("invite-user")
+    @POST
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.ORGANIZATIONS)
     public Response inviteUser(@FormParam("email") String email,
                                @FormParam("firstName") String firstName,
                                @FormParam("lastName") String lastName) {
@@ -147,15 +163,29 @@ public class OrganizationMemberResource {
 
     @POST
     @Path("invite-existing-user")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.ORGANIZATIONS)
+    @Operation(summary = "Invites an existing user to the organization, using the specified user id. " +
+            "Also accepts `application/x-www-form-urlencoded` with form parameter: **id** for backward compatibility.")
+    @APIResponses(value = {
+            @APIResponse(responseCode = "204", description = "No Content"),
+            @APIResponse(responseCode = "400", description = "Bad Request"),
+            @APIResponse(responseCode = "403", description = "Forbidden"),
+            @APIResponse(responseCode = "500", description = "Internal Server Error")
+    })
+    public Response inviteExistingUserJson(OrganizationInvitationExistingUserRequest req) {
+        if (req == null) {
+            throw ErrorResponse.error("Invitation request cannot be null", Status.BAD_REQUEST);
+        }
+
+        return new OrganizationInvitationResource(session, organization, adminEvent, auth)
+                .inviteExistingUser(req.getId(), req.getAttributes());
+    }
+
+    @POST
+    @Path("invite-existing-user")
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.ORGANIZATIONS)
-    @Operation(summary = "Invites an existing user to the organization, using the specified user id")
-    @APIResponses(value = {
-        @APIResponse(responseCode = "204", description = "No Content"),
-        @APIResponse(responseCode = "400", description = "Bad Request"),
-        @APIResponse(responseCode = "403", description = "Forbidden"),
-        @APIResponse(responseCode = "500", description = "Internal Server Error")
-    })
     public Response inviteExistingUser(@FormParam("id") String id) {
         return new OrganizationInvitationResource(session, organization, adminEvent, auth).inviteExistingUser(id);
     }
