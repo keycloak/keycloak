@@ -395,4 +395,24 @@ public class OrganizationGroupMembershipOIDCMapperTest extends AbstractOrganizat
         assertThat(groups, hasSize(1));
         assertThat(groups, hasItem("/engineering"));
     }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void testNoNpeWhenOrganizationScopeNotRequested() throws Exception {
+        OrganizationRepresentation orgRep = createOrganization("acme");
+        OrganizationResource org = managedRealm.admin().organizations().get(orgRep.getId());
+        addMember(org);
+
+        // Authenticate WITHOUT organization scope - should not throw NPE
+        oauth.client("direct-grant", "password");
+        oauth.scope("openid email profile");
+        AccessTokenResponse response = oauth.doPasswordGrantRequest(memberEmail, memberPassword);
+
+        // Token exchange must succeed (no HTTP 500 / NPE)
+        assertThat(response.getAccessToken(), notNullValue());
+
+        // Organization claims should not be present since org scope was not requested
+        AccessToken token = TokenVerifier.create(response.getAccessToken(), AccessToken.class).getToken();
+        assertThat(token.getOtherClaims(), not(hasKey(OAuth2Constants.ORGANIZATION)));
+    }
 }
