@@ -21,7 +21,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-import org.keycloak.policy.BlacklistPasswordPolicyProviderFactory;
+import org.keycloak.policy.DenylistPasswordPolicyProviderFactory;
 
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
@@ -33,7 +33,7 @@ import picocli.CommandLine.Parameters;
         header = BuildPasswordDenylist.HEADER,
         sortOptions = false,
         description = "%n" + BuildPasswordDenylist.HEADER
-                + "%n%nKeycloak's password-blacklist policy rejects passwords found in a plaintext denylist file."
+                + "%n%nKeycloak's password-denylist policy rejects passwords found in a plaintext denylist file."
                 + " For large lists, loading from plaintext on every startup or reload can take seconds."
                 + " Run this command once after creating or updating DENYLIST_FILE to generate a pre-computed"
                 + " .bloom file. To use it, configure the password policy with the .bloom filename instead of"
@@ -99,7 +99,7 @@ public class BuildPasswordDenylist extends AbstractCommand {
 
         try {
             long startMs = System.currentTimeMillis();
-            BlacklistPasswordPolicyProviderFactory.buildBloomFile(inputFile, outputFile, fpp);
+            DenylistPasswordPolicyProviderFactory.buildBloomFile(inputFile, outputFile, fpp);
             long elapsedMs = System.currentTimeMillis() - startMs;
             long outputSizeBytes = Files.size(outputFile);
             String sizeStr;

@@ -169,7 +169,7 @@ public class DenylistPasswordPolicyProviderFactory implements PasswordPolicyProv
     }
 
     /**
-     * Resolves and potentially registers a {@link PasswordDenylist} for the given {@code blacklistName}.
+     * Resolves and potentially registers a {@link PasswordDenylist} for the given {@code denylistName}.
      *
      * @param denylistName
      * @return
@@ -299,7 +299,7 @@ public class DenylistPasswordPolicyProviderFactory implements PasswordPolicyProv
     }
 
     /**
-     * A {@link FileBasedPasswordDenylist} uses password-blacklist files as
+     * A {@link FileBasedPasswordDenylist} uses password-denylist files
      * to construct a {@link PasswordDenylist}.
      * <p>
      * This implementation uses a dynamically sized {@link BloomFilter}
@@ -312,12 +312,12 @@ public class DenylistPasswordPolicyProviderFactory implements PasswordPolicyProv
         private static final int BUFFER_SIZE_IN_BYTES = 512 * 1024;
 
         /**
-         * The name of the blacklist filename.
+         * The name of the denylist filename.
          */
         private final String name;
 
         /**
-         * The concrete path to the password-blacklist file.
+         * The concrete path to the password-denylist file.
          */
         private final Path path;
 
@@ -483,16 +483,16 @@ public class DenylistPasswordPolicyProviderFactory implements PasswordPolicyProv
         }
 
         /**
-         * Determines password blacklist size to correctly size the {@link BloomFilter} backing this blacklist.
+         * Determines password denylist size to correctly size the {@link BloomFilter} backing this denylist.
          *
-         * @return number of passwords found in the blacklist file
+         * @return number of passwords found in the denylist file
          * @throws IOException
          */
         private long countPasswordsInDenylistFile() throws IOException {
 
             /*
              * TODO find a more efficient way to determine the password count,
-             * e.g. require a header-line in the password-blacklist file
+             * e.g. require a header-line in the password-denylist file
              */
             try (BufferedReader br = newReader(path)) {
                 return br.lines().count();
@@ -504,7 +504,7 @@ public class DenylistPasswordPolicyProviderFactory implements PasswordPolicyProv
         }
 
         /**
-         * Discovers password blacklists location.
+         * Discovers password denylists location.
          * <p>
          * The following discovery options are currently implemented:
          * <p>
@@ -516,8 +516,8 @@ public class DenylistPasswordPolicyProviderFactory implements PasswordPolicyProv
          *
          * @param config spi config
          * @param defaultPathSupplier default path to use if not specified in a system prop or configuration
-         * @return the detected blacklist path
-         * @throws IllegalStateException if no blacklist folder could be detected
+         * @return the detected denylist path
+         * @throws IllegalStateException if no denylist folder could be detected
          */
         private static Path detectDenylistsBasePath(Config.Scope config, Supplier<String> defaultPathSupplier) {
 
