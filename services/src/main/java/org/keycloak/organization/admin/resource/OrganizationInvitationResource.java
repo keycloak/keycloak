@@ -17,6 +17,7 @@
 package org.keycloak.organization.admin.resource;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
@@ -98,6 +99,11 @@ public class OrganizationInvitationResource {
     }
 
     public Response inviteUser(String email, String firstName, String lastName) {
+        return inviteUser(email, firstName, lastName, null);
+    }
+
+    public Response inviteUser(String email, String firstName, String lastName,
+                               Map<String, List<String>> attributes) {
         auth.orgs().requireManage(organization);
 
         if (!organization.isEnabled()) {
@@ -132,7 +138,7 @@ public class OrganizationInvitationResource {
                 throw ErrorResponse.error("User already a member of the organization", Status.CONFLICT);
             }
 
-            return sendInvitation(user);
+            return sendInvitation(user, attributes);
         }
 
         // Create temporary user for new registrations
@@ -144,10 +150,14 @@ public class OrganizationInvitationResource {
             user.setLastName(lastName);
         }
 
-        return sendInvitation(user);
+        return sendInvitation(user, attributes);
     }
 
     public Response inviteExistingUser(String id) {
+        return inviteExistingUser(id, null);
+    }
+
+    public Response inviteExistingUser(String id, Map<String, List<String>> attributes) {
         auth.orgs().requireManage(organization);
 
         if (!organization.isEnabled()) {
@@ -170,10 +180,10 @@ public class OrganizationInvitationResource {
             throw ErrorResponse.error("User does not have an email address", Status.BAD_REQUEST);
         }
 
-        return sendInvitation(user);
+        return sendInvitation(user, attributes);
     }
 
-    private Response sendInvitation(UserModel user) {
+    private Response sendInvitation(UserModel user, Map<String, List<String>> attributes) {
         OrganizationProvider provider = session.getProvider(OrganizationProvider.class);
         InvitationManager invitationManager = provider.getInvitationManager();
         // Create persistent invitation record
@@ -181,7 +191,8 @@ public class OrganizationInvitationResource {
             organization,
             user.getEmail(),
             user.getFirstName(),
-            user.getLastName()
+            user.getLastName(),
+            attributes
         );
 
         String link = user.getId() == null ?
@@ -352,8 +363,9 @@ public class OrganizationInvitationResource {
         InvitationManager invitationManager = provider.getInvitationManager();
 
         OrganizationInvitationModel invitation = verifyInvitationById(invitationManager, id);
+        Map<String, List<String>> attributes = invitation.getAttributes();
         invitationManager.remove(id);
-        return inviteUser(invitation.getEmail(), invitation.getFirstName(), invitation.getLastName());
+        return inviteUser(invitation.getEmail(), invitation.getFirstName(), invitation.getLastName(), attributes);
     }
 
     private OrganizationInvitationModel verifyInvitationById(InvitationManager invitationManager, String id) {
@@ -379,6 +391,11 @@ public class OrganizationInvitationResource {
         rep.setSentDate(model.getCreatedAt());
         rep.setExpiresAt(model.getExpiresAt());
         rep.setInviteLink(model.getInviteLink());
+
+        Map<String, List<String>> attributes = model.getAttributes();
+        if (attributes != null && !attributes.isEmpty()) {
+            rep.setAttributes(attributes);
+        }
 
         OrganizationInvitationRepresentation.Status dynamicStatus = model.isExpired() ?
                 EXPIRED :

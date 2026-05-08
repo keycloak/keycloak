@@ -13,4 +13,5 @@ export default interface OrganizationInvitationRepresentation {
   expiresAt?: number;
   status?: OrganizationInvitationStatus;
   inviteLink?: string;
+  attributes?: Record<string, string[]>;
 }

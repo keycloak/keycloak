@@ -1,5 +1,6 @@
 package org.keycloak.models.cache.infinispan.organization;
 
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
@@ -11,8 +12,9 @@ import org.keycloak.organization.InvitationManager;
 record InfinispanInvitationManager(InvitationManager delegate) implements InvitationManager {
 
     @Override
-    public OrganizationInvitationModel create(OrganizationModel organization, String email, String firstName, String lastName) {
-        return delegate().create(organization, email, firstName, lastName);
+    public OrganizationInvitationModel create(OrganizationModel organization, String email, String firstName, String lastName,
+                                              Map<String, List<String>> attributes) {
+        return delegate().create(organization, email, firstName, lastName, attributes);
     }
 
     @Override
