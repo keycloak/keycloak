@@ -74,10 +74,6 @@ public class RequiredActionResetPasswordTest extends AbstractTestRealmKeycloakTe
         testRealm.setResetPasswordAllowed(Boolean.TRUE);
     }
 
-    @Drone
-    @SecondBrowser
-    private WebDriver driver2;
-
     @Rule
     public AssertEvents events = new AssertEvents(this);
 

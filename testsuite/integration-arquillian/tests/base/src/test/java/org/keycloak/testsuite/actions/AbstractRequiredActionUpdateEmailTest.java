@@ -69,10 +69,6 @@ public abstract class AbstractRequiredActionUpdateEmailTest extends AbstractTest
     @Page
     protected ErrorPage errorPage;
 
-    @Drone
-    @SecondBrowser
-    protected WebDriver driver2;
-
 	@Before
 	public void beforeTest() {
         AdminApiUtil.enableRequiredAction(managedRealm.admin(), RequiredAction.UPDATE_EMAIL, true);

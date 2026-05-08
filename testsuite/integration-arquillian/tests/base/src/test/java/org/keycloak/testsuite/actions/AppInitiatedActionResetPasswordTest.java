@@ -97,10 +97,6 @@ public class AppInitiatedActionResetPasswordTest extends AbstractAppInitiatedAct
     @Page
     protected LoginConfigTotpPage totpPage;
 
-    @Drone
-    @SecondBrowser
-    private WebDriver driver2;
-
     @After
     public void after() {
         AdminApiUtil.resetUserPassword(managedRealm.admin().users().get(findUser("test-user@localhost").getId()), "password", false);

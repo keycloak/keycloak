@@ -89,10 +89,6 @@ public class AppInitiatedActionWebAuthnTest extends AbstractAppInitiatedActionTe
     @Page
     WebAuthnRegisterPage webAuthnRegisterPage;
 
-    @Drone
-    @SecondBrowser
-    private WebDriver driver2;
-
     @Before
     @Override
     public void setUpVirtualAuthenticator() {

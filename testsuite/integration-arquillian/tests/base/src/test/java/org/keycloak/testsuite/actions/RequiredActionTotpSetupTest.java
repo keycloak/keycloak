@@ -162,10 +162,6 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
     @Page
     protected SetupRecoveryAuthnCodesPage setupRecoveryAuthnCodesPage;
 
-    @Drone
-    @SecondBrowser
-    private WebDriver driver2;
-
     protected TimeBasedOTP totp = new TimeBasedOTP();
 
     @Test
