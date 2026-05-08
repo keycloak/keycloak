@@ -29,6 +29,7 @@ public class IdpVerifyAccountLinkActionToken extends DefaultActionToken {
     public static final String TOKEN_TYPE = "idp-verify-account-via-email";
 
     private static final String JSON_FIELD_IDENTITY_PROVIDER_USERNAME = "idpu";
+    private static final String JSON_FIELD_IDENTITY_PROVIDER_EXTERNAL_ID = "idpuid";
     private static final String JSON_FIELD_IDENTITY_PROVIDER_ALIAS = "idpa";
     private static final String JSON_FIELD_ORIGINAL_AUTHENTICATION_SESSION_ID = "oasid";
 
@@ -41,11 +42,14 @@ public class IdpVerifyAccountLinkActionToken extends DefaultActionToken {
     @JsonProperty(value = JSON_FIELD_ORIGINAL_AUTHENTICATION_SESSION_ID)
     private String originalAuthenticationSessionId;
 
+    @JsonProperty(value = JSON_FIELD_IDENTITY_PROVIDER_EXTERNAL_ID)
+    private String externalId;
 
     public IdpVerifyAccountLinkActionToken(String userId, String email, int absoluteExpirationInSecs, String compoundAuthenticationSessionId,
-      String identityProviderUsername, String identityProviderAlias, String clientId) {
+      String identityProviderUsername, String externalId, String identityProviderAlias, String clientId) {
         super(userId, TOKEN_TYPE, absoluteExpirationInSecs, null, compoundAuthenticationSessionId);
         this.identityProviderUsername = identityProviderUsername;
+        this.externalId = externalId;
         this.identityProviderAlias = identityProviderAlias;
         this.issuedFor = clientId;
         setEmail(email);
@@ -60,6 +64,14 @@ public class IdpVerifyAccountLinkActionToken extends DefaultActionToken {
 
     public void setIdentityProviderUsername(String identityProviderUsername) {
         this.identityProviderUsername = identityProviderUsername;
+    }
+
+    public String getExternalId() {
+        return externalId;
+    }
+
+    public void setExternalId(String externalId) {
+        this.externalId = externalId;
     }
 
     public String getIdentityProviderAlias() {
