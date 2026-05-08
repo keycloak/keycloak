@@ -9,14 +9,61 @@ import {
   TextVariants,
 } from "@patternfly/react-core";
 import { CheckCircleIcon } from "@patternfly/react-icons";
+import { Fragment, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { Link } from "react-router-dom";
 import { useAdminClient } from "../../admin-client";
 import { fetchUsedBy } from "../../components/role-mapping/resource";
 import { useRealm } from "../../context/realm-context/RealmContext";
+import { toClient } from "../../clients/routes/Client";
 import useToggle from "../../utils/useToggle";
 import { AuthenticationType, REALM_FLOWS } from "../constants";
 
 import style from "./used-by.module.css";
+
+/** Resolves admin UI client route id from the flow-binding clientId string returned by authentication-management flows. */
+const ClientUsedByLink = ({ clientIdLabel }: { clientIdLabel: string }) => {
+  const { adminClient } = useAdminClient();
+  const { realm } = useRealm();
+  const [internalId, setInternalId] = useState<string | undefined>();
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const clients = await adminClient.clients.find({
+          clientId: clientIdLabel,
+        });
+        const match = clients.find((c) => c.clientId === clientIdLabel);
+        if (!cancelled && match?.id) {
+          setInternalId(match.id);
+        }
+      } catch {
+        /* keep plain label */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [adminClient, clientIdLabel]);
+
+  const label = <strong>{clientIdLabel}</strong>;
+  if (!internalId) {
+    return label;
+  }
+
+  return (
+    <Link
+      to={toClient({
+        realm,
+        clientId: internalId,
+        tab: "settings",
+      })}
+    >
+      {label}
+    </Link>
+  );
+};
 
 type UsedByProps = {
   authType: AuthenticationType;
@@ -86,9 +133,17 @@ const UsedByModal = ({ id, isSpecificClient, onClose }: UsedByModalProps) => {
         ariaLabelKey="usedBy"
         searchPlaceholderKey="search"
         columns={[
-          {
-            name: "name",
-          },
+          isSpecificClient
+            ? {
+                name: "name",
+                displayKey: "name",
+                cellRenderer: (row: { name: string }) => (
+                  <ClientUsedByLink clientIdLabel={row.name} />
+                ),
+              }
+            : {
+                name: "name",
+              },
         ]}
       />
     </Modal>
@@ -128,10 +183,14 @@ export const UsedBy = ({ authType: { id, usedBy } }: UsedByProps) => {
                       : "Providers"),
                 )}{" "}
                 {usedBy.values.map((used, index) => (
-                  <>
-                    <strong>{used}</strong>
+                  <Fragment key={`${id}-used-${used}-${index}`}>
+                    {usedBy.type === "SPECIFIC_CLIENTS" ? (
+                      <ClientUsedByLink clientIdLabel={used} />
+                    ) : (
+                      <strong>{used}</strong>
+                    )}
                     {index < usedBy.values.length - 1 ? ", " : ""}
-                  </>
+                  </Fragment>
                 ))}
               </div>
             }
