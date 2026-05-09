@@ -157,6 +157,32 @@ public interface UserProvider extends Provider,
      */
     boolean revokeConsentForClient(RealmModel realm, String userId, String clientInternalId);
 
+    /**
+     * Create verifiable credential of specified credential scope for this user
+     *
+     * @param userId id of the user
+     * @param credentialModel credential model with "credentialScopeName" set. The other fields will be generated if not set
+     * @return credentialModel with all the fields set
+     */
+    UserVerifiableCredentialModel addVerifiableCredential(String userId, UserVerifiableCredentialModel credentialModel);
+
+    /**
+     * Remove verifiable credential of specified client scope from this user
+     *
+     * @param userId id if the user
+     * @param credentialScopeName credential scope name to delete
+     * @return true if credential was successfully removed. False otherwise
+     */
+    boolean removeVerifiableCredential(String userId, String credentialScopeName);
+
+    /**
+     * Return all verifiable credentials of specified user
+     *
+     * @param userId id if the user
+     * @return all verifiable credentials of specified user
+     */
+    Stream<UserVerifiableCredentialModel> getVerifiableCredentialsByUser(String userId);
+
     /* FEDERATED IDENTITIES methods */
 
     /**
