@@ -59,6 +59,14 @@ import org.jboss.logging.Logger;
  */
 public class IpatuuraUserStorageProvider implements UserStorageProvider, UserLookupProvider, CredentialInputValidator,
         CredentialAuthentication, UserRegistrationProvider, UserQueryProvider, ImportedUserValidation {
+    private static final Set<String> SUPPORTED_USER_QUERY_PARAMETERS = Set.of(
+            UserModel.SEARCH,
+            UserModel.INCLUDE_SERVICE_ACCOUNT,
+            UserModel.ENABLED,
+            UserModel.EMAIL_VERIFIED,
+            UserModel.CREATED_AFTER,
+            UserModel.CREATED_BEFORE);
+
     protected KeycloakSession session;
     protected ComponentModel model;
     protected Ipatuura ipatuura;
@@ -287,9 +295,40 @@ public class IpatuuraUserStorageProvider implements UserStorageProvider, UserLoo
             Integer maxResults) {
         String search = params.get(UserModel.SEARCH);
         /* only supports searching by username */
-        if (search == null)
+        if (search == null || !supportsSearchParameters(params))
             return Stream.empty();
-        return performSearch(realm, search);
+        return performSearch(realm, search)
+                .filter(user -> matchesStandardFilters(params, user.isEnabled(), user.isEmailVerified(),
+                        user.getCreatedTimestamp()));
+    }
+
+    static boolean supportsSearchParameters(Map<String, String> params) {
+        return SUPPORTED_USER_QUERY_PARAMETERS.containsAll(params.keySet());
+    }
+
+    static boolean matchesStandardFilters(Map<String, String> params, boolean enabled, boolean emailVerified,
+            Long createdTimestamp) {
+        String enabledFilter = params.get(UserModel.ENABLED);
+        if (enabledFilter != null && enabled != Boolean.parseBoolean(enabledFilter)) {
+            return false;
+        }
+
+        String emailVerifiedFilter = params.get(UserModel.EMAIL_VERIFIED);
+        if (emailVerifiedFilter != null && emailVerified != Boolean.parseBoolean(emailVerifiedFilter)) {
+            return false;
+        }
+
+        String createdAfter = params.get(UserModel.CREATED_AFTER);
+        if (createdAfter != null && (createdTimestamp == null || createdTimestamp < Long.parseLong(createdAfter))) {
+            return false;
+        }
+
+        String createdBefore = params.get(UserModel.CREATED_BEFORE);
+        if (createdBefore != null && (createdTimestamp == null || createdTimestamp > Long.parseLong(createdBefore))) {
+            return false;
+        }
+
+        return true;
     }
 
     @Override
