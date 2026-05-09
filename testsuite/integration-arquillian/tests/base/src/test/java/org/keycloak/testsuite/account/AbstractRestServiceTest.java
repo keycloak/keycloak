@@ -19,6 +19,7 @@ package org.keycloak.testsuite.account;
 import java.io.IOException;
 import java.util.List;
 
+import org.keycloak.common.enums.AccountRestApiVersion;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.account.SessionRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -41,8 +42,10 @@ import org.junit.Test;
 import static org.keycloak.common.Profile.Feature.ACCOUNT_API;
 import static org.keycloak.testsuite.util.oauth.OAuthClient.APP_ROOT;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -136,6 +139,14 @@ public abstract class AbstractRestServiceTest extends AbstractTestRealmKeycloakT
     @Test
     @DisableFeature(value = ACCOUNT_API, skipRestart = true)
     public void testFeatureDoesntWorkWhenDisabled() {
+        checkIfFeatureWorks(false);
+    }
+
+    @Test
+    @DisableFeature(value = ACCOUNT_API, skipRestart = true)
+    public void testVersionedApiDoesntWorkWhenDisabled() {
+        apiVersion = AccountRestApiVersion.DEFAULT.getStrVersion();
+        assertThat(getAccountUrl(""), containsString(apiVersion));
         checkIfFeatureWorks(false);
     }
 
