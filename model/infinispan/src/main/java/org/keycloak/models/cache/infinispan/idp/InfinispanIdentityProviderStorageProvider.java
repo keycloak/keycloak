@@ -412,7 +412,7 @@ public class InfinispanIdentityProviderStorageProvider implements IdentityProvid
 
     private void registerIDPLoginInvalidation(IdentityProviderModel idp) {
         // only invalidate login caches if the IDP qualifies as a login IDP.
-        if (getLoginPredicate().test(idp)) {
+        if (getLoginPredicate().test(idp, null)) {
             for (FetchMode mode : FetchMode.values()) {
                 realmCache.registerInvalidation(cacheKeyForLogin(getRealm(), mode));
             }
@@ -433,11 +433,11 @@ public class InfinispanIdentityProviderStorageProvider implements IdentityProvid
      */
     private void registerIDPLoginInvalidationOnUpdate(IdentityProviderModel original, IdentityProviderModel updated) {
         // IDP isn't currently available for login and update preserves that - no need to invalidate.
-        if (!getLoginPredicate().test(original) && !getLoginPredicate().test(updated)) {
+        if (!getLoginPredicate().test(original, null) && !getLoginPredicate().test(updated, null)) {
             return;
         }
         // IDP is currently available for login and update preserves that, including organization link - no need to invalidate.
-        if (getLoginPredicate().test(original) && getLoginPredicate().test(updated)
+        if (getLoginPredicate().test(original, null) && getLoginPredicate().test(updated, null)
                 && Objects.equals(original.getOrganizationId(), updated.getOrganizationId())) {
             return;
         }

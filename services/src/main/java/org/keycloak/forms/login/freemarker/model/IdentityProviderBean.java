@@ -42,6 +42,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.services.Urls;
+import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.resources.LoginActionsService;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.theme.Theme;
@@ -73,6 +74,9 @@ public class IdentityProviderBean {
         if (this.providers == null) {
             String existingIDP = this.getExistingIDP(session, context);
             Set<String> federatedIdentities = this.getLinkedBrokerAliases(session, realm, context);
+            if (isForcedReauthentication() && federatedIdentities == null) {
+                federatedIdentities = Set.of();
+            }
             if (federatedIdentities != null) {
                 this.providers = getFederatedIdentityProviders(federatedIdentities, existingIDP);
             } else {
@@ -80,6 +84,13 @@ public class IdentityProviderBean {
             }
         }
         return this.providers;
+    }
+
+    private boolean isForcedReauthentication() {
+        if (context == null) {
+            return false;
+        }
+        return "true".equals(context.getAuthenticationSession().getAuthNote(AuthenticationManager.FORCED_REAUTHENTICATION));
     }
 
     public KeycloakSession getSession() {
@@ -231,7 +242,7 @@ public class IdentityProviderBean {
      * @return the custom {@link Predicate} used as a last filter before conversion into {@link IdentityProvider}
      */
     protected Predicate<IdentityProviderModel> federatedProviderPredicate() {
-        return IdentityProviderStorageProvider.LoginFilter.getLoginPredicate();
+        return m -> IdentityProviderStorageProvider.LoginFilter.getLoginPredicate().test(m, context.getAuthenticationSession());
     }
 
     /**
