@@ -114,9 +114,11 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
         MultivaluedMap<String, String> parameters = request.getDecodedFormParameters();
         String username = parameters.getFirst(UserModel.USERNAME);
 
-        // preserve the rememberMe selection from the identity-first login form
-        // so it is not lost when the flow continues to the password authenticator
-        AuthenticatorUtils.processRememberMe(context, parameters);
+        // Skip when re-entered from a form without the rememberMe field (e.g. select-organization.ftl):
+        // an unconditional call would clear the authNote saved on the first action() call.
+        if (parameters.containsKey("rememberMe")) {
+            AuthenticatorUtils.processRememberMe(context, parameters);
+        }
 
         // check if it's a webauthn submission and perform the webauth login
         if (webauthnAuth.isPasskeysEnabled() && (parameters.containsKey(WebAuthnConstants.AUTHENTICATOR_DATA)
@@ -446,14 +448,12 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
         } else {
             context.getAuthenticationSession().removeAuthNote(USER_SET_BEFORE_USERNAME_PASSWORD_AUTH);
             String rememberMeUsername = AuthenticationManager.getRememberMeUsername(context.getSession());
-            MultivaluedHashMap<String, String> formData = new MultivaluedHashMap<>();
-
             if (rememberMeUsername != null) {
+                MultivaluedHashMap<String, String> formData = new MultivaluedHashMap<>();
                 formData.add(AuthenticationManager.FORM_USERNAME, rememberMeUsername);
                 formData.add("rememberMe", "on");
-                context.form().setFormData(formData);
+                form.setFormData(formData);
             }
-
         }
 
         return formCreator == null ? form.createLoginUsername() : formCreator.apply(form);
