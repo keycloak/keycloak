@@ -30,7 +30,9 @@ public enum OperationType implements EnumWithStableIndex {
     CREATE(0),
     UPDATE(1),
     DELETE(2),
-    ACTION(3);
+    ACTION(3),
+    DISABLE(4),
+    ENABLE(5);
 
     private final int stableIndex;
     private static final Map<Integer, OperationType> BY_ID = EnumWithStableIndex.getReverseIndex(values());

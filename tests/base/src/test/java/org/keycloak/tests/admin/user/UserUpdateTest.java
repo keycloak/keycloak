@@ -335,6 +335,80 @@ public class UserUpdateTest extends AbstractUserTest {
         }
     }
 
+    @Test
+    public void updateUserDisableEmitsDisableEvent() {
+        String id = createUser();
+
+        UserResource user = managedRealm.admin().users().get(id);
+        UserRepresentation rep = new UserRepresentation();
+        rep.setEnabled(false);
+
+        user.update(rep);
+
+        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.UPDATE,
+                AdminEventPaths.userResourcePath(id), rep, ResourceType.USER);
+        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.DISABLE,
+                AdminEventPaths.userResourcePath(id), rep, ResourceType.USER);
+        Assertions.assertNull(adminEvents.poll());
+
+        assertFalse(managedRealm.admin().users().get(id).toRepresentation().isEnabled());
+    }
+
+    @Test
+    public void updateUserEnableEmitsEnableEvent() {
+        String id = createUser();
+        UserResource user = managedRealm.admin().users().get(id);
+
+        UserRepresentation disable = new UserRepresentation();
+        disable.setEnabled(false);
+        user.update(disable);
+        // drain UPDATE + DISABLE from the prior call
+        adminEvents.poll();
+        adminEvents.poll();
+
+        UserRepresentation enable = new UserRepresentation();
+        enable.setEnabled(true);
+        user.update(enable);
+
+        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.UPDATE,
+                AdminEventPaths.userResourcePath(id), enable, ResourceType.USER);
+        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.ENABLE,
+                AdminEventPaths.userResourcePath(id), enable, ResourceType.USER);
+        Assertions.assertNull(adminEvents.poll());
+
+        assertTrue(managedRealm.admin().users().get(id).toRepresentation().isEnabled());
+    }
+
+    @Test
+    public void updateUserNonEnabledChangeEmitsNoTransitionEvent() {
+        String id = createUser();
+        UserResource user = managedRealm.admin().users().get(id);
+
+        UserRepresentation rep = new UserRepresentation();
+        rep.setFirstName("Updated");
+
+        user.update(rep);
+
+        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.UPDATE,
+                AdminEventPaths.userResourcePath(id), rep, ResourceType.USER);
+        Assertions.assertNull(adminEvents.poll());
+    }
+
+    @Test
+    public void updateUserSameEnabledStateEmitsNoTransitionEvent() {
+        String id = createUser();
+        UserResource user = managedRealm.admin().users().get(id);
+
+        UserRepresentation rep = new UserRepresentation();
+        rep.setEnabled(true); // user is already enabled
+
+        user.update(rep);
+
+        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.UPDATE,
+                AdminEventPaths.userResourcePath(id), rep, ResourceType.USER);
+        Assertions.assertNull(adminEvents.poll());
+    }
+
     private void enableBruteForce(boolean enable) {
         RealmRepresentation rep = managedRealm.admin().toRepresentation();
         managedRealm.cleanup().add(r -> r.update(rep));

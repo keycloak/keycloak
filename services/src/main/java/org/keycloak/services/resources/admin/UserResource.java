@@ -198,6 +198,8 @@ public class UserResource {
         auth.users().requireManage(user);
         try {
 
+            boolean previousEnabled = user.isEnabled();
+
             boolean wasPermanentlyLockedOut = false;
             if (rep.isEnabled() != null && rep.isEnabled()) {
                 if (!user.isEnabled() || session.getProvider(BruteForceProtector.class).isTemporarilyDisabled(session, realm, user)) {
@@ -239,6 +241,15 @@ public class UserResource {
             }
 
             adminEvent.operation(OperationType.UPDATE).resourcePath(session.getContext().getUri()).representation(rep).success();
+
+            if (rep.isEnabled() != null && rep.isEnabled() != previousEnabled) {
+                OperationType transition = user.isEnabled() ? OperationType.ENABLE : OperationType.DISABLE;
+                adminEvent.clone(session)
+                        .operation(transition)
+                        .resourcePath(session.getContext().getUri())
+                        .representation(rep)
+                        .success();
+            }
 
             if (session.getTransactionManager().isActive()) {
                 session.getTransactionManager().commit();
