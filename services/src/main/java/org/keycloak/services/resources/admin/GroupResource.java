@@ -39,7 +39,6 @@ import jakarta.ws.rs.core.Response;
 
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.common.Profile;
-import org.keycloak.common.util.ObjectUtil;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.Constants;
@@ -70,6 +69,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.resteasy.reactive.NoCache;
 
 import static org.keycloak.utils.StreamsUtil.paginatedStream;
+import static org.keycloak.utils.StringUtil.isBlank;
 
 /**
  * @resource Groups
@@ -131,7 +131,7 @@ public class GroupResource {
 
         String groupName = rep.getName();
 
-        if (ObjectUtil.isBlank(groupName)) {
+        if (isBlank(groupName)) {
             throw ErrorResponse.error("Group name is missing", Response.Status.BAD_REQUEST);
         }
 
@@ -230,7 +230,7 @@ public class GroupResource {
         this.auth.groups().requireManage(group);
 
         String groupName = rep.getName();
-        if (ObjectUtil.isBlank(groupName)) {
+        if (isBlank(groupName)) {
             throw ErrorResponse.error("Group name is missing", Response.Status.BAD_REQUEST);
         }
 

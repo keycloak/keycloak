@@ -28,13 +28,13 @@ public class JpaUpdate26_7_0_RealmDisplayName extends CustomKeycloakTask {
 
         statements.add(new RawParameterizedSqlStatement("""
                 UPDATE %s
-                SET display_name = (
-                    SELECT value FROM %s
-                    WHERE realm_id = %s.id AND name = 'displayName'
+                SET DISPLAY_NAME = (
+                    SELECT VALUE FROM %s
+                    WHERE REALM_ID = %s.ID AND NAME = 'displayName'
                 )
                 WHERE EXISTS (
                     SELECT 1 FROM %s
-                    WHERE realm_id = %s.id AND name = 'displayName'
+                    WHERE REALM_ID = %s.ID AND NAME = 'displayName'
                 )"""
                 .formatted(realmTable, realmAttributeTable, realmTable, realmAttributeTable, realmTable)));
     }

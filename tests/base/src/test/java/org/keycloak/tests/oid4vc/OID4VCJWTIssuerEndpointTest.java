@@ -287,7 +287,7 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
     public void testGetCredentialOffer() {
         String token = getBearerToken(oauth);
 
-        runOnServer.run(session -> {
+        String nonce = runOnServer.fetchString(session -> {
             BearerTokenAuthenticator authenticator = new BearerTokenAuthenticator(session);
             authenticator.setTokenString(token);
 
@@ -299,20 +299,27 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
             CredentialOfferStorage offerStorage = session.getProvider(CredentialOfferStorage.class);
             CredentialOfferState offerState = new CredentialOfferState(credOffer, null, null, Time.currentTime() + 60, null);
             offerStorage.putOfferState(offerState);
+            return offerState.getNonce();
+            // The cache transactions need to be committed
+        });
 
-            // The cache transactions need to be committed explicitly in the test.
-            // Without that, the OAuth2Code will only be committed to the cache after .run((session)-> ...)
-            session.getTransactionManager().commit();
-
+        runOnServer.run(session -> {
+            BearerTokenAuthenticator authenticator = new BearerTokenAuthenticator(session);
+            authenticator.setTokenString(token);
             OID4VCIssuerEndpoint issuerEndpoint = prepareIssuerEndpoint(session, authenticator);
-            Response credentialOfferResponse = issuerEndpoint.getCredentialOffer(offerState.getNonce());
+            Response credentialOfferResponse = issuerEndpoint.getCredentialOffer(nonce);
+
+            CredentialOfferStorage offerStorage = session.getProvider(CredentialOfferStorage.class);
+            offerStorage.getOfferStateByNonce(nonce);
 
             assertEquals(HttpStatus.SC_OK, credentialOfferResponse.getStatus(), "The offer should have been returned.");
             Object credentialOfferEntity = credentialOfferResponse.getEntity();
             assertNotNull(credentialOfferEntity, "An actual offer should be in the response.");
 
             CredentialsOffer retrievedCredentialsOffer = JsonSerialization.mapper.convertValue(credentialOfferEntity, CredentialsOffer.class);
-            assertEquals(credOffer, retrievedCredentialsOffer, "The offer should be the one prepared with for the session.");
+            assertEquals("the-issuer", retrievedCredentialsOffer.getCredentialIssuer());
+            assertEquals(new PreAuthorizedCodeGrant().setPreAuthorizedCode("the-code"), retrievedCredentialsOffer.getPreAuthorizedGrant());
+            assertEquals(List.of("credential-configuration-id"), retrievedCredentialsOffer.getCredentialConfigurationIds());
         });
     }
 

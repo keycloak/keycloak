@@ -40,7 +40,7 @@ export const SamlConnectSettings = () => {
 
   const setupForm = (result: IdentityProviderRepresentation) => {
     Object.entries(result).map(([key, value]) =>
-      setValue(`config.${key}`, value),
+      setValue(`config.${key}`, value, { shouldDirty: true }),
     );
   };
 

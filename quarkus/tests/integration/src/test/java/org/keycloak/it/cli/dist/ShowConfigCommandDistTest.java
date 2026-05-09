@@ -78,7 +78,10 @@ public class ShowConfigCommandDistTest {
     @RawDistOnly(reason = "Containers are immutable")
     void testSmallRyeKeyStoreConfigSource(KeycloakDistribution distribution) {
         // keystore is shared with QuarkusPropertiesDistTest#testSmallRyeKeyStoreConfigSource
-        CLIResult result = distribution.run(String.format("%s=%s", CONFIG_FILE_LONG_NAME, Paths.get("src/test/resources/ShowConfigCommandTest/keycloak-keystore.conf").toAbsolutePath().normalize()), ShowConfig.NAME, "all");
+        CLIResult result = distribution.run(
+                String.format("%s=%s", CONFIG_FILE_LONG_NAME, Paths.get("src/test/resources/ShowConfigCommandTest/keycloak-keystore.conf").toAbsolutePath().normalize()),
+                "--config-keystore=" + Paths.get("src/test/resources/keystore").toAbsolutePath().normalize(),
+                ShowConfig.NAME, "all");
         String output = result.getOutput();
         assertThat(output, containsString("kc.config-keystore-password =  " + PropertyMappers.VALUE_MASK));
         assertThat(output, containsString("kc.log-level =  " + PropertyMappers.VALUE_MASK));
@@ -108,7 +111,10 @@ public class ShowConfigCommandDistTest {
         distribution.setEnvVar("KC_LOG", "file");
         distribution.copyOrReplaceFile(Paths.get("src/test/resources/ShowConfigCommandTest/quarkus.properties"), Path.of("conf", "quarkus.properties"));
 
-        result = distribution.run(String.format("%s=%s", CONFIG_FILE_LONG_NAME, Paths.get("src/test/resources/ShowConfigCommandTest/keycloak-keystore.conf").toAbsolutePath().normalize()), ShowConfig.NAME, "all", "--db=dev-file");
+        result = distribution.run(
+                String.format("%s=%s", CONFIG_FILE_LONG_NAME, Paths.get("src/test/resources/ShowConfigCommandTest/keycloak-keystore.conf").toAbsolutePath().normalize()),
+                "--config-keystore=" + Paths.get("src/test/resources/keystore").toAbsolutePath().normalize(),
+                ShowConfig.NAME, "all", "--db=dev-file");
 
         result.assertMessage("(CLI)");
         result.assertMessage("(ENV)");
