@@ -19,11 +19,12 @@ package org.keycloak.models;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
-import java.util.function.Predicate;
+import java.util.function.BiPredicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.keycloak.provider.Provider;
+import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.util.Booleans;
 
 /**
@@ -235,17 +236,22 @@ public interface IdentityProviderStorageProvider extends Provider {
      */
     enum LoginFilter {
 
-        ENABLED(IdentityProviderModel.ENABLED, Boolean.TRUE.toString(), IdentityProviderModel::isEnabled),
+        ENABLED(IdentityProviderModel.ENABLED, Boolean.TRUE.toString(), (m, as) -> m.isEnabled()),
 
-        LINK_ONLY(IdentityProviderModel.LINK_ONLY, Boolean.FALSE.toString(), m -> Booleans.isFalse(m.isLinkOnly())),
+        LINK_ONLY(IdentityProviderModel.LINK_ONLY, Boolean.FALSE.toString(), (m, as) -> Booleans.isFalse(m.isLinkOnly())),
 
-        HIDE_ON_LOGIN(IdentityProviderModel.HIDE_ON_LOGIN, Boolean.FALSE.toString(), m -> Booleans.isFalse(m.isHideOnLogin()));
+        HIDE_ON_LOGIN(IdentityProviderModel.HIDE_ON_LOGIN, Boolean.FALSE.toString(), (m, as) -> {
+          if (as != null && Objects.equals(as.getAuthNote("FORCED_REAUTHENTICATION"), "true")) {
+            return true;
+          }
+          return Booleans.isFalse(m.isHideOnLogin());
+        });
 
         private final String key;
         private final String value;
-        private final Predicate<IdentityProviderModel> filter;
+        private final BiPredicate<IdentityProviderModel, AuthenticationSessionModel> filter;
 
-        LoginFilter(String key, String value, java.util.function.Predicate<IdentityProviderModel> filter) {
+        LoginFilter(String key, String value, BiPredicate<IdentityProviderModel, AuthenticationSessionModel> filter) {
             this.key = key;
             this.value = value;
             this.filter = filter;
@@ -259,7 +265,7 @@ public interface IdentityProviderStorageProvider extends Provider {
             return value;
         }
 
-        public Predicate<IdentityProviderModel> getFilter() {
+        public BiPredicate<IdentityProviderModel, AuthenticationSessionModel> getFilter() {
             return filter;
         }
 
@@ -267,9 +273,9 @@ public interface IdentityProviderStorageProvider extends Provider {
             return Stream.of(values()).collect(Collectors.toMap(LoginFilter::getKey, LoginFilter::getValue, (v1, v2) -> v1, LinkedHashMap::new));
         }
 
-        public static Predicate<IdentityProviderModel> getLoginPredicate() {
-            return ((Predicate<IdentityProviderModel>) Objects::nonNull)
-                    .and(Stream.of(values()).map(LoginFilter::getFilter).reduce(Predicate::and).get());
+        public static BiPredicate<IdentityProviderModel, AuthenticationSessionModel> getLoginPredicate() {
+            return ((BiPredicate<IdentityProviderModel, AuthenticationSessionModel>) (m, as) -> Objects.nonNull(m))
+                    .and(Stream.of(values()).map(LoginFilter::getFilter).reduce(BiPredicate::and).get());
         }
     }
 

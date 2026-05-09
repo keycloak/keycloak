@@ -34,6 +34,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.organization.utils.Organizations;
+import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.util.Booleans;
 
 import static org.keycloak.models.IdentityProviderStorageProvider.FetchMode.ALL;
@@ -126,6 +127,8 @@ public class OrganizationAwareIdentityProviderBean extends IdentityProviderBean 
                 return idp.getOrganizationId() == null;
             } else if (onlyOrganizationBrokers) {
                 return isPublicOrganizationBroker(idp);
+            } else if (Objects.equals("true", context.getAuthenticationSession().getAuthNote(AuthenticationManager.FORCED_REAUTHENTICATION))) {
+                return true;
             } else {
                 return idp.getOrganizationId() == null || isPublicOrganizationBroker(idp);
             }
