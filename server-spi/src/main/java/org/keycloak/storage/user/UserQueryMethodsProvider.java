@@ -82,7 +82,7 @@ public interface UserQueryMethodsProvider {
      * <p/>
      * Valid parameters are:
      * <ul>
-     *     <li>{@link UserModel#SEARCH} - search for users whose username, email, first name or last name contain any of the strings in {@code search} separated by whitespace, when {@code SEARCH} is set all other params are ignored</li>
+     *     <li>{@link UserModel#SEARCH} - search for users whose username, email, first name or last name contain any of the strings in {@code search} separated by whitespace; custom user attributes are combined with {@code SEARCH} using a logical AND</li>
      *     <li>{@link UserModel#FIRST_NAME} - first name (case insensitive string)</li>
      *     <li>{@link UserModel#LAST_NAME} - last name (case insensitive string)</li>
      *     <li>{@link UserModel#EMAIL} - email (case insensitive string)</li>
@@ -116,7 +116,7 @@ public interface UserQueryMethodsProvider {
      * <p/>
      * Valid parameters are:
      * <ul>
-     *     <li>{@link UserModel#SEARCH} - search for users whose username, email, first name or last name contain any of the strings in {@code search} separated by whitespace, when {@code SEARCH} is set all other params are ignored</li>
+     *     <li>{@link UserModel#SEARCH} - search for users whose username, email, first name or last name contain any of the strings in {@code search} separated by whitespace; custom user attributes are combined with {@code SEARCH} using a logical AND</li>
      *     <li>{@link UserModel#FIRST_NAME} - first name (case insensitive string)</li>
      *     <li>{@link UserModel#LAST_NAME} - last name (case insensitive string)</li>
      *     <li>{@link UserModel#EMAIL} - email (case insensitive string)</li>

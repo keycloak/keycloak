@@ -304,22 +304,19 @@ public class UsersResource {
         if (search != null) {
             SearchQueryUtils.UserSearchPrefix prefix = SearchQueryUtils.UserSearchPrefix.matching(search);
             if (prefix != null) {
-                userModels = Arrays.stream(prefix.splitTerms(search))
-                        .map(term -> prefix.lookup(session.users(), realm, term))
-                        .filter(Objects::nonNull);
+                userModels = searchForUsersByPrefix(search, prefix, realm, searchAttributes);
                 if (AdminPermissionsSchema.SCHEMA.isAdminPermissionsEnabled(realm)) {
                     userModels = userModels.filter(userPermissionEvaluator::canView);
                 }
+                if (firstResult > 0) {
+                    userModels = userModels.skip(firstResult);
+                }
+                if (maxResults >= 0) {
+                    userModels = userModels.limit(maxResults);
+                }
             } else {
-                Map<String, String> attributes = new HashMap<>();
+                Map<String, String> attributes = new HashMap<>(searchAttributes);
                 attributes.put(UserModel.SEARCH, search.trim());
-                if (enabled != null) {
-                    attributes.put(UserModel.ENABLED, enabled.toString());
-                }
-                if (emailVerified != null) {
-                    attributes.put(UserModel.EMAIL_VERIFIED, emailVerified.toString());
-                }
-                addCreatedTimestampConditions(attributes, createdAfter, createdBefore);
 
                 return searchForUser(attributes, realm, userPermissionEvaluator, briefRepresentation, firstResult,
                         maxResults, false);
@@ -375,10 +372,10 @@ public class UsersResource {
      * 1. Don't specify any criteria and pass {@code null}. The number of all
      * users within that realm will be returned.
      * <p>
-     * 2. If {@code search} is specified other criteria such as {@code last} will
-     * be ignored even though you set them. The {@code search} string will be
-     * matched against the first and last name, the username and the email of a
-     * user.
+     * 2. If {@code search} is specified, it is combined with {@code q} using a
+     * logical AND. Other criteria such as {@code last} will be ignored even
+     * though you set them. The {@code search} string will be matched against the
+     * first and last name, the username and the email of a user.
      * <p>
      * 3. If {@code search} is unspecified but any of {@code last}, {@code first},
      * {@code email} or {@code username} those criteria are matched against their
@@ -410,7 +407,7 @@ public class UsersResource {
             summary = "Returns the number of users that match the given criteria.",
             description = "It can be called in three different ways. " +
                     "1. Don’t specify any criteria and pass {@code null}. The number of all users within that realm will be returned. <p> " +
-                    "2. If {@code search} is specified other criteria such as {@code last} will be ignored even though you set them. The {@code search} string will be matched against the first and last name, the username and the email of a user. <p> " +
+                    "2. If {@code search} is specified, it is combined with {@code q} using a logical AND. Other criteria such as {@code last} will be ignored even though you set them. The {@code search} string will be matched against the first and last name, the username and the email of a user. <p> " +
                     "3. If {@code search} is unspecified but any of {@code last}, {@code first}, {@code email} or {@code username} those criteria are matched against their respective fields on a user entity. Combined with a logical and.")
     public Integer getUsersCount(
             @Parameter(description = "A String contained in username, first or last name, or email. Default search behavior is prefix-based (e.g., foo or foo*). Use *foo* for infix search and \"foo\" for exact search.") @QueryParam("search") String search,
@@ -435,23 +432,13 @@ public class UsersResource {
         if (search != null) {
             SearchQueryUtils.UserSearchPrefix prefix = SearchQueryUtils.UserSearchPrefix.matching(search);
             if (prefix != null) {
-                return (int) Arrays.stream(prefix.splitTerms(search))
-                        .map(term -> prefix.lookup(session.users(), realm, term))
-                        .filter(Objects::nonNull)
+                return (int) searchForUsersByPrefix(search, prefix, realm, searchAttributes)
                         .filter(userPermissionEvaluator::canView)
                         .count();
             }
 
-            Map<String, String> parameters = new HashMap<>();
+            Map<String, String> parameters = new HashMap<>(searchAttributes);
             parameters.put(UserModel.SEARCH, search.trim());
-
-            if (enabled != null) {
-                parameters.put(UserModel.ENABLED, enabled.toString());
-            }
-            if (emailVerified != null) {
-                parameters.put(UserModel.EMAIL_VERIFIED, emailVerified.toString());
-            }
-            addCreatedTimestampConditions(parameters, createdAfter, createdBefore);
             // search /users equivalent to this doesn't include service-accounts so counting shouldn't as well
             parameters.put(UserModel.INCLUDE_SERVICE_ACCOUNT, "false");
             if (userPermissionEvaluator.canView()) {
@@ -532,6 +519,24 @@ public class UsersResource {
     @Path("profile")
     public UserProfileResource userProfile() {
         return new UserProfileResource(session, auth, adminEvent);
+    }
+
+    private Stream<UserModel> searchForUsersByPrefix(String search, SearchQueryUtils.UserSearchPrefix prefix,
+            RealmModel realm, Map<String, String> searchAttributes) {
+        List<UserModel> candidates = Arrays.stream(prefix.splitTerms(search))
+                .map(term -> prefix.lookup(session.users(), realm, term))
+                .filter(Objects::nonNull)
+                .toList();
+        if (candidates.isEmpty() || searchAttributes.isEmpty()) {
+            return candidates.stream();
+        }
+
+        Set<String> candidateIds = candidates.stream().map(UserModel::getId).collect(Collectors.toSet());
+        Set<String> matchingIds = session.users().searchForUserStream(realm, searchAttributes)
+                .map(UserModel::getId)
+                .filter(candidateIds::contains)
+                .collect(Collectors.toSet());
+        return candidates.stream().filter(user -> matchingIds.contains(user.getId()));
     }
 
     private static void addCreatedTimestampConditions(Map<String, String> attributes, String createdAfter, String createdBefore) {
