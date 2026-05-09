@@ -22,12 +22,12 @@ import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginUpdateProfileEditUsernameAllowedPage;
 
-import org.hamcrest.Matchers;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
 import org.junit.Test;
@@ -94,7 +94,7 @@ public class AppInitiatedActionUpdateProfileTest extends AbstractAppInitiatedAct
                 .detail(Details.PREVIOUS_LAST_NAME, "Brady").detail(Details.UPDATED_LAST_NAME, "New last")
                 .detail(Details.PREVIOUS_EMAIL, "test-user@localhost").detail(Details.UPDATED_EMAIL, "new@email.com")
                 .assertEvent();
-        events.expectLogin().assertEvent();
+        EventAssertion.expectLoginSuccess(events.poll());
 
         assertKcActionStatus(SUCCESS);
 
@@ -120,12 +120,12 @@ public class AppInitiatedActionUpdateProfileTest extends AbstractAppInitiatedAct
 
         updateProfilePage.prepareUpdate().username("test-user@localhost").firstName("New first").lastName("New last").email("new@email.com").submit();
 
-        events.expectLogin().assertEvent();
+        EventAssertion.expectLoginSuccess(events.poll());
         events.expectRequiredAction(EventType.UPDATE_PROFILE).detail(Details.PREVIOUS_FIRST_NAME, "Tom").detail(Details.UPDATED_FIRST_NAME, "New first")
                 .detail(Details.PREVIOUS_LAST_NAME, "Brady").detail(Details.UPDATED_LAST_NAME, "New last")
                 .detail(Details.PREVIOUS_EMAIL, "test-user@localhost").detail(Details.UPDATED_EMAIL, "new@email.com")
                 .assertEvent();
-        events.expectLogin().assertEvent();
+        EventAssertion.expectLoginSuccess(events.poll());
 
         assertKcActionStatus(SUCCESS);
 
@@ -170,20 +170,20 @@ public class AppInitiatedActionUpdateProfileTest extends AbstractAppInitiatedAct
 
         updateProfilePage.prepareUpdate().username("new").firstName("New first").lastName("New last").email("john-doh@localhost").submit();
 
-        events.expectLogin()
-                .event(EventType.UPDATE_PROFILE)
-                .detail(Details.PREVIOUS_FIRST_NAME, "John")
-                .detail(Details.UPDATED_FIRST_NAME, "New first")
-                .detail(Details.PREVIOUS_LAST_NAME, "Doh")
-                .detail(Details.UPDATED_LAST_NAME, "New last")
-                .detail(Details.USERNAME, "john-doh@localhost")
-                .user(userId).session(Matchers.nullValue(String.class))
-                .removeDetail(Details.CONSENT)
-                .assertEvent();
+        EventAssertion.assertSuccess(events.poll())
+                .type(EventType.UPDATE_PROFILE)
+                .details(Details.PREVIOUS_FIRST_NAME, "John")
+                .details(Details.UPDATED_FIRST_NAME, "New first")
+                .details(Details.PREVIOUS_LAST_NAME, "Doh")
+                .details(Details.UPDATED_LAST_NAME, "New last")
+                .details(Details.USERNAME, "john-doh@localhost")
+                .details(Details.REDIRECT_URI, oauth.getRedirectUri())
+                .userId(userId).sessionId(null)
+                .withoutDetails(Details.CONSENT);
 
         assertKcActionStatus(SUCCESS);
 
-        events.expectLogin().detail(Details.USERNAME, "john-doh@localhost").user(userId).assertEvent();
+        EventAssertion.expectLoginSuccess(events.poll()).details(Details.USERNAME, "john-doh@localhost").userId(userId);
 
         // assert user is really updated in persistent store
         UserRepresentation user = ActionUtil.findUserWithAdminClient(adminClient, "new");

@@ -22,6 +22,7 @@ import org.keycloak.models.UserModel.RequiredAction;
 import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.pages.AppPage;
@@ -83,7 +84,7 @@ public class RequiredActionMultipleActionsTest extends AbstractTestRealmKeycloak
 
         Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-        events.expectLogin().session(codeId).assertEvent();
+        EventAssertion.expectLoginSuccess(events.poll()).sessionId(codeId);
     }
 
     public String updatePassword(String codeId) {

@@ -44,6 +44,7 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AbstractKeycloakTest;
@@ -285,7 +286,7 @@ public class LogoutTest extends AbstractKeycloakTest {
     public void logoutUserByAdmin() {
         oauth.openLoginForm();
         loginPage.login("test-user@localhost", "password");
-        String sessionId = events.expectLogin().assertEvent().getSessionId();
+        EventAssertion.expectLoginSuccess(events.poll());
 
         UserRepresentation user = AdminApiUtil.findUserByUsername(adminClient.realm("test"), "test-user@localhost");
         Assertions.assertEquals((Object) 0, user.getNotBefore());
@@ -358,7 +359,7 @@ public class LogoutTest extends AbstractKeycloakTest {
         clients.get(rep.getId()).update(rep);
 
         oauth.doLogin("test-user@localhost", "password");
-        String sessionId = events.expectLogin().assertEvent().getSessionId();
+        String sessionId = EventAssertion.expectLoginSuccess(events.poll()).getEvent().getSessionId();
 
         String code = oauth.parseLoginResponse().getCode();
 
@@ -377,10 +378,10 @@ public class LogoutTest extends AbstractKeycloakTest {
         }
 
         // Assert logout event triggered for backchannel logout
-        events.expectLogout(sessionId)
-                .client(AssertEvents.DEFAULT_CLIENT_ID)
-                .detail(Details.REDIRECT_URI, oauth.APP_AUTH_ROOT)
-                .assertEvent();
+        EventAssertion.expectLogoutSuccess(events.poll())
+                .sessionId(sessionId)
+                .clientId(oauth.getClientId())
+                .details(Details.REDIRECT_URI, oauth.APP_AUTH_ROOT);
 
         assertNotNull(testingClient.testApp().getAdminLogoutAction());
     }

@@ -27,6 +27,7 @@ import org.keycloak.models.ModelValidationException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.mapper.ClientModelMapper;
+import org.keycloak.models.mapper.ClientModelMappers;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.admin.v2.BaseClientRepresentation;
@@ -75,6 +76,7 @@ import static org.keycloak.utils.StringUtil.isBlank;
  */
 public class DefaultClientService implements ClientService {
     private static final ObjectMapper MAPPER = new ObjectMapperResolver().getContext(null);
+    private static final ClientModelMappers MAPPERS = new ClientModelMappers();
 
     private final KeycloakSession session;
     private final AdminPermissionEvaluator permissions;
@@ -95,19 +97,13 @@ public class DefaultClientService implements ClientService {
         this.rolesService = new RolesService(session, realm, permissions, adminEventBuilder);
     }
 
-    protected Optional<ClientModel> avoidClientIdPhishing(ClientModel client) throws ServiceException {
-        if (client == null && !permissions.clients().canList()) {
-            // we do this to make sure somebody can't phish client IDs
-            throw new ServiceException(Response.Status.FORBIDDEN);
-        }
-        return Optional.ofNullable(client);
-    }
-
     @Override
     public Optional<BaseClientRepresentation> getClient(@Nonnull RealmModel realm,
-                                                        @Nonnull String clientId,
-                                                        ClientProjectionOptions projectionOptions) throws ServiceException {
-        ClientModel client = avoidClientIdPhishing(realm.getClientByClientId(clientId)).orElseThrow(() -> new ServiceException("Could not find client", Response.Status.NOT_FOUND));
+                                                        @Nonnull String clientId) throws ServiceException {
+        ClientModel client = realm.getClientByClientId(clientId);
+        if (client == null) {
+            return Optional.empty();
+        }
         permissions.clients().requireView(client);
         
         try {
@@ -124,6 +120,17 @@ public class DefaultClientService implements ClientService {
                                                        ClientSearchOptions searchOptions,
                                                        ClientSortAndSliceOptions sortAndSliceOptions) {
         permissions.clients().requireList();
+        
+        // TODO: this check is weak
+        //  a stronger check is whether the remaining fields have repSetters
+        //  however this highlights an issue we may hit with polymorphism a field may
+        //  be projectable in one subtype, but fixed in another
+        
+        projectionOptions.getFields().forEach(s -> {
+            if (!MAPPERS.isKnownField(s)) {
+                throw new ServiceException("%s is an unknown field".formatted(s), Response.Status.BAD_REQUEST);
+            }
+        });
 
         // When FGAP is enabled, authorization filtering is applied at the JPA layer (via PartialEvaluator predicates), so we trust the DB results.
         // When disabled, we fall back to in-memory filtering by VIEW_CLIENTS role.
@@ -132,7 +139,7 @@ public class DefaultClientService implements ClientService {
             return realm.getClientsStream()
                     .filter(client -> canView || permissions.clients().canView(client))
                     .filter(client -> client.getProtocol() != null)
-                    .map(client -> getMapper(client.getProtocol()).fromModel(client))
+                    .map(client -> getMapper(client.getProtocol()).fromModel(client, projectionOptions.getFields()))
                     .filter(java.util.Objects::nonNull);
         } catch (ModelException e) {
             throw new ServiceException(e.getMessage(), Response.Status.BAD_REQUEST);
@@ -151,8 +158,10 @@ public class DefaultClientService implements ClientService {
 
     @Override
     public void deleteClient(RealmModel realm, String clientId) throws ServiceException {
-        ClientModel client = avoidClientIdPhishing(realm.getClientByClientId(clientId))
-                .orElseThrow(() -> new ServiceException("Could not find client", Response.Status.NOT_FOUND));
+        ClientModel client = realm.getClientByClientId(clientId);
+        if (client == null) {
+            throw new ServiceException("Could not find client", Response.Status.NOT_FOUND);
+        }
 
         permissions.clients().requireManage(client);
         try {
@@ -234,7 +243,7 @@ public class DefaultClientService implements ClientService {
         ClientModel model = null;
         if (!strategy.equals(CreateOrUpdateStrategy.ONLY_CREATE)) {
             assertSameClientIds(clientId, client.getClientId());
-            model = avoidClientIdPhishing(realm.getClientByClientId(clientId)).orElse(null);
+            model = realm.getClientByClientId(clientId);
         }
         boolean alreadyExists = model != null;
         ClientModelMapper mapper = getMapper(client.getProtocol());
@@ -254,7 +263,7 @@ public class DefaultClientService implements ClientService {
                         generateClientSecretIfNeeded(client, model);
 
                         // Update model
-                        model = mapper.toModel(client, model);
+                        mapper.toModel(client, model);
 
                         // Validate the fully populated model
                         ValidationUtil.validateClient(session, model, false, r -> {
@@ -329,10 +338,12 @@ public class DefaultClientService implements ClientService {
      */
     private ClientRepresentation getProposedOldRepresentation(RealmModel realm, BaseClientRepresentation client, ClientModelMapper mapper) {
         String tempId = "__temp__" + client.getClientId() + "__" + System.nanoTime();
-        ClientModel tempModel = mapper.toModel(client, realm.addClient(tempId));
+        ClientModel tempModel = realm.addClient(tempId);
+        String clientId = client.getClientId();
+        mapper.toModel(client, tempModel);
         try {
             var proposedRepresentation = ModelToRepresentation.toRepresentation(tempModel, session);
-            proposedRepresentation.setClientId(client.getClientId());
+            proposedRepresentation.setClientId(clientId);
             return proposedRepresentation;
         } finally {
             realm.removeClient(tempModel.getId());
@@ -453,8 +464,8 @@ public class DefaultClientService implements ClientService {
         }
     }
 
-    protected ClientModelMapper getMapper(String protocol) {
-        return Optional.ofNullable(session.getProvider(ClientModelMapper.class, protocol))
-                .orElseThrow(() -> new ServiceException("Mapper not found, unsupported client protocol: " + protocol, Response.Status.BAD_REQUEST));
+    public ClientModelMapper getMapper(String protocol) {
+        return MAPPERS.getMapper(protocol).orElseThrow(() -> new ServiceException("Mapper not found, unsupported client protocol: " + protocol,
+                Response.Status.BAD_REQUEST));
     }
 }

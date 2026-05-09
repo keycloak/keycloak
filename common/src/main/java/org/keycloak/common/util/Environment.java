@@ -66,6 +66,10 @@ public class Environment {
         return false;
     }
 
+    /**
+     * Check if dev mode - note that non server commands may switch to non-server mode
+     * at runtime. See {@link #isNonServerMode()}
+     */
     public static boolean isDevMode() {
         return DEV_PROFILE_VALUE.equalsIgnoreCase(getProfile());
     }
@@ -80,6 +84,10 @@ public class Environment {
         return System.getenv(ENV_PROFILE);
     }
 
+    /**
+     * Check if running in non-server mode - valid only as a runtime check.
+     * <br>At build time, we build as prod or dev.
+     */
     public static boolean isNonServerMode() {
         return NON_SERVER_MODE.equalsIgnoreCase(Environment.getProfile());
     }

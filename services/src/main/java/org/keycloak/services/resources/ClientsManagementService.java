@@ -18,7 +18,6 @@ package org.keycloak.services.resources;
 
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.ForbiddenException;
-import jakarta.ws.rs.HeaderParam;
 import jakarta.ws.rs.NotAuthorizedException;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
@@ -91,14 +90,12 @@ public class ClientsManagementService {
     /**
      * URL invoked by adapter to register new client cluster node. Each application cluster node will invoke this URL once it joins cluster
      *
-     * @param authorizationHeader
-     * @param formData
      * @return
      */
     @Path("register-node")
     @POST
     @Produces(MediaType.APPLICATION_JSON)
-    public Response registerNode(@HeaderParam(HttpHeaders.AUTHORIZATION) String authorizationHeader, final MultivaluedMap<String, String> formData) {
+    public Response registerNode() {
         if (!checkSsl()) {
             throw new ForbiddenException("HTTPS required");
         }
@@ -110,6 +107,7 @@ public class ClientsManagementService {
             throw new NotAuthorizedException("Realm not enabled");
         }
 
+        MultivaluedMap<String, String> formData = request.getDecodedFormParameters();
         ClientModel client = authorizeClient();
         String nodeHost = getClientClusterHost(formData);
 
@@ -132,14 +130,12 @@ public class ClientsManagementService {
     /**
      * URL invoked by adapter to register new client cluster node. Each application cluster node will invoke this URL once it joins cluster
      *
-     * @param authorizationHeader
-     * @param formData
      * @return
      */
     @Path("unregister-node")
     @POST
     @Produces(MediaType.APPLICATION_JSON)
-    public Response unregisterNode(@HeaderParam(HttpHeaders.AUTHORIZATION) String authorizationHeader, final MultivaluedMap<String, String> formData) {
+    public Response unregisterNode() {
         if (!checkSsl()) {
             throw new ForbiddenException("HTTPS required");
         }
@@ -151,6 +147,7 @@ public class ClientsManagementService {
             throw new NotAuthorizedException("Realm not enabled");
         }
 
+        MultivaluedMap<String, String> formData = request.getDecodedFormParameters();
         ClientModel client = authorizeClient();
         String nodeHost = getClientClusterHost(formData);
 

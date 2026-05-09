@@ -165,14 +165,12 @@ For debugging the build steps right after start, you can suspend the JVM by runn
 
 **Expected behavior:** The server will start on **http://localhost:8080**.
 
-When running using `quarkus:dev` you are able to do live coding whenever you change / add code in the `server` module, for example when creating a new custom provider.
-
 There are currently limitations when running in development mode that block us to use all capabilities the Quarkus development mode has to offer.
 The main limitations you'll find at the moment are:
 
-* Changes are only automatically reflected at runtime if you are changing resources from the `deployment`, `runtime`, and `server` modules. Other modules, such as `keycloak-services` still rely on Hot Swap in Java debuggers to reload classes.
+* Changes are only automatically reflected at runtime if you are changing resources from the quarkus `deployment`, `runtime`, and `server` modules. Non-quarkus modules, such as `keycloak-services`, still rely on Hot Swap in Java debuggers to reload classes.
 * There is nothing in the Dev UI related to the server itself, although you can still change some configuration from there.
-* There are some limitations when passing some options when running in dev mode. You should expect more improvements in this area.
+* quarkus.args does not honor build time options. Those instead must also be set via -D arguments, or environment variables, and thus require rerunning the quarkus:dev command to change.
 
 ### Debugging the server distribution
 

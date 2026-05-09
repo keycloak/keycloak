@@ -41,6 +41,7 @@
   file:
     path: "{{ kc_home }}"
     state: directory
+    owner: "{{ ansible_ssh_user }}"
 
 - name: Install Keycloak src on the remote hosts
   unarchive:

@@ -36,6 +36,7 @@ public class UserInfoEndpointCorsTest extends AbstractKeycloakTest {
         testRealms.add(realm);
     }
 
+
     @Test
     public void userInfoCorsValidRequestWithValidUrl() throws Exception {
 
@@ -108,7 +109,7 @@ public class UserInfoEndpointCorsTest extends AbstractKeycloakTest {
                     .header("Origin", INVALID_CORS_URL) // manually trigger CORS handling
                     .get();
 
-            UserInfoClientUtil.testSuccessfulUserInfoResponse(userInfoResponse, "test-user@localhost", "test-user@localhost");
+            assertEquals(Response.Status.FORBIDDEN.getStatusCode(), userInfoResponse.getStatus());
 
             assertNotCors(userInfoResponse);
         } finally {

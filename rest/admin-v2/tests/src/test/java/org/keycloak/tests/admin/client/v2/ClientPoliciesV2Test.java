@@ -17,17 +17,15 @@
 
 package org.keycloak.tests.admin.client.v2;
 
+import java.io.ByteArrayInputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Consumer;
 
-import jakarta.ws.rs.core.HttpHeaders;
-import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.BadRequestException;
 
-import org.keycloak.admin.api.PatchTypeNames;
-import org.keycloak.admin.client.Keycloak;
 import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthenticator;
 import org.keycloak.authentication.authenticators.client.JWTClientAuthenticator;
 import org.keycloak.authentication.authenticators.client.JWTClientSecretAuthenticator;
@@ -47,9 +45,9 @@ import org.keycloak.services.clientpolicy.condition.ClientUpdaterContextConditio
 import org.keycloak.services.clientpolicy.executor.ClientPolicyExecutorProvider;
 import org.keycloak.services.clientpolicy.executor.SecureClientAuthenticatorExecutor;
 import org.keycloak.services.clientpolicy.executor.SecureClientAuthenticatorExecutorFactory;
-import org.keycloak.testframework.annotations.InjectAdminClient;
-import org.keycloak.testframework.annotations.InjectHttpClient;
+import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testframework.server.KeycloakServerConfig;
@@ -58,14 +56,6 @@ import org.keycloak.tests.providers.client.policies.TrackEventsClientPolicyExecu
 import org.keycloak.util.JsonSerialization;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import org.apache.http.client.methods.HttpDelete;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpPatch;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.client.methods.HttpPut;
-import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.util.EntityUtils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
@@ -77,6 +67,9 @@ import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.hasSize;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Tests that client policies are properly executed when creating/updating clients via the Admin API v2.
@@ -98,15 +91,17 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 public class ClientPoliciesV2Test extends AbstractClientApiV2Test {
     private static final String PROFILE_NAME = "TestProfile";
     private static final String POLICY_NAME = "TestPolicy";
-    
-    @InjectHttpClient
-    CloseableHttpClient client;
 
-    @InjectAdminClient
-    Keycloak adminClient;
-
-    @InjectRunOnServer
+    @InjectRunOnServer(realmRef = "testRealm")
     RunOnServerClient runOnServer;
+
+    @InjectRealm(ref = "testRealm")
+    ManagedRealm testRealm;
+
+    @Override
+    public String getRealmName() {
+        return testRealm.getName();
+    }
 
     @AfterEach
     public void cleanup() {
@@ -133,10 +128,6 @@ public class ClientPoliciesV2Test extends AbstractClientApiV2Test {
         setupPolicyClientIdAndSecretNotAcceptable();
 
         // Try to create a client with client-secret authenticator (which should be rejected)
-        HttpPost request = new HttpPost(getClientsApiUrl());
-        setAuthHeader(request);
-        request.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
-
         OIDCClientRepresentation rep = new OIDCClientRepresentation();
         rep.setClientId("test-policy-client");
         rep.setEnabled(true);
@@ -145,12 +136,11 @@ public class ClientPoliciesV2Test extends AbstractClientApiV2Test {
         auth.setSecret("secret");
         rep.setAuth(auth);
 
-        request.setEntity(new StringEntity(mapper.writeValueAsString(rep)));
-
-        try (var response = client.execute(request)) {
+        try (var response = getClientsApi().createClient(rep)) {
             // Should fail with 400 Bad Request due to policy violation
-            assertEquals(400, response.getStatusLine().getStatusCode());
-            String body = EntityUtils.toString(response.getEntity());
+            assertEquals(400, response.getStatus());
+            String body = response.readEntity(String.class);
+            // TODO might be more consistent in error messages
             assertThat(body, containsString("Invalid client metadata: token_endpoint_auth_method"));
         }
     }
@@ -168,10 +158,6 @@ public class ClientPoliciesV2Test extends AbstractClientApiV2Test {
         setupPolicyWithAutoConfiguration();
 
         // Create a confidential client with an auth method - policy should allow it
-        HttpPost request = new HttpPost(getClientsApiUrl());
-        setAuthHeader(request);
-        request.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
-
         OIDCClientRepresentation rep = new OIDCClientRepresentation();
         rep.setClientId("test-policy-client");
         rep.setEnabled(true);
@@ -183,11 +169,9 @@ public class ClientPoliciesV2Test extends AbstractClientApiV2Test {
         // Add a login flow to ensure it's treated as a confidential client
         rep.setLoginFlows(Set.of(OIDCClientRepresentation.Flow.STANDARD));
 
-        request.setEntity(new StringEntity(mapper.writeValueAsString(rep)));
-
-        try (var response = client.execute(request)) {
-            int statusCode = response.getStatusLine().getStatusCode();
-            String body = EntityUtils.toString(response.getEntity());
+        try (var response = getClientsApi().createClient(rep)) {
+            int statusCode = response.getStatus();
+            String body = response.readEntity(String.class);
             assertEquals(201, statusCode, "Expected 201 but got " + statusCode + ": " + body);
             OIDCClientRepresentation created = mapper.readValue(body, OIDCClientRepresentation.class);
             assertEquals("test-policy-client", created.getClientId());
@@ -205,25 +189,20 @@ public class ClientPoliciesV2Test extends AbstractClientApiV2Test {
     @Test
     public void publicClientWithoutAuth() throws Exception {
         // Create a client without specifying auth - should be created as public client
-        HttpPost request = new HttpPost(getClientsApiUrl());
-        setAuthHeader(request);
-        request.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
-
         OIDCClientRepresentation rep = new OIDCClientRepresentation();
         rep.setClientId("test-auto-config-client");
         rep.setEnabled(true);
         rep.setLoginFlows(Set.of(OIDCClientRepresentation.Flow.STANDARD));
 
-        request.setEntity(new StringEntity(mapper.writeValueAsString(rep)));
-
-        try (var response = client.execute(request)) {
-            int statusCode = response.getStatusLine().getStatusCode();
-            String body = EntityUtils.toString(response.getEntity());
+        try (var response = getClientsApi().createClient(rep)) {
+            int statusCode = response.getStatus();
+            String body = response.readEntity(String.class);
             assertEquals(201, statusCode, "Expected 201 but got " + statusCode + ": " + body);
             OIDCClientRepresentation created = mapper.readValue(body, OIDCClientRepresentation.class);
             assertEquals("test-auto-config-client", created.getClientId());
             // Public clients don't have auth configuration
             // The auth field is null for public clients in the v2 API
+            assertNull(created.getAuth());
         }
     }
 
@@ -244,52 +223,34 @@ public class ClientPoliciesV2Test extends AbstractClientApiV2Test {
     @Test
     public void updateClientViaPutWithUnacceptableAuthType() throws Exception {
         // First create a client with acceptable auth type before policy is set
-        HttpPut createRequest = new HttpPut(getClientsApiUrl() + "/test-put-update-client");
-        setAuthHeader(createRequest);
-        createRequest.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
-
         OIDCClientRepresentation rep = getPutUpdateClientRep();
-        createRequest.setEntity(new StringEntity(mapper.writeValueAsString(rep)));
-
-        try (var response = client.execute(createRequest)) {
-            assertEquals(201, response.getStatusLine().getStatusCode());
-            EntityUtils.consumeQuietly(response.getEntity());
+        try (var response = getClientsApi().createClient(rep)) {
+            assertEquals(201, response.getStatus());
         }
 
         // Now setup policy
         setupPolicyClientIdAndSecretNotAcceptable();
 
         // Try to update the client to use an unacceptable auth type
-        HttpPut updateRequest = new HttpPut(getClientsApiUrl() + "/test-put-update-client");
-        setAuthHeader(updateRequest);
-        updateRequest.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
-
         rep.setAuth(new OIDCClientRepresentation.Auth());
         rep.getAuth().setMethod(ClientIdAndSecretAuthenticator.PROVIDER_ID);
         rep.getAuth().setSecret("newsecret");
 
-        updateRequest.setEntity(new StringEntity(mapper.writeValueAsString(rep)));
-
-        try (var response = client.execute(updateRequest)) {
+        try (var response = getClientsApi().client(rep.getClientId()).createOrUpdateClient(rep)) {
             // Should fail with 400 Bad Request due to policy violation
-            assertEquals(400, response.getStatusLine().getStatusCode());
-            String body = EntityUtils.toString(response.getEntity());
+            assertEquals(400, response.getStatus());
+            String body = response.readEntity(String.class);
+            // TODO might be more consistent in error messages
             assertThat(body, containsString("Invalid client metadata: token_endpoint_auth_method"));
-        }
 
-        // Verify the client was NOT updated (transaction rollback worked)
-        HttpGet getRequest = new HttpGet(getClientsApiUrl() + "/test-put-update-client");
-        setAuthHeader(getRequest);
-        try (var response = client.execute(getRequest)) {
-            assertEquals(200, response.getStatusLine().getStatusCode());
-            String body = EntityUtils.toString(response.getEntity());
-            OIDCClientRepresentation current = mapper.readValue(body, OIDCClientRepresentation.class);
+            // Verify the client was NOT updated (transaction rollback worked)
+            OIDCClientRepresentation current = (OIDCClientRepresentation) getClientsApi().client("test-put-update-client").getClient();
 
             // Should still have the original auth method, not the rejected one
             assertEquals(JWTClientSecretAuthenticator.PROVIDER_ID, current.getAuth().getMethod(),
-                    "Client auth method should remain unchanged after policy rejection");
+                "Client auth method should remain unchanged after policy rejection");
             assertEquals("secret", current.getAuth().getSecret(),
-                    "Client secret should remain unchanged after policy rejection");
+                "Client secret should remain unchanged after policy rejection");
         }
     }
 
@@ -300,33 +261,21 @@ public class ClientPoliciesV2Test extends AbstractClientApiV2Test {
     @Test
     public void updateClientViaPutWithAcceptableAuthType() throws Exception {
         // First create a client BEFORE the policy is set
-        HttpPut createRequest = new HttpPut(getClientsApiUrl() + "/test-put-update-client");
-        setAuthHeader(createRequest);
-        createRequest.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
-
         OIDCClientRepresentation rep = getPutUpdateClientRep();
-
-        createRequest.setEntity(new StringEntity(mapper.writeValueAsString(rep)));
-
-        try (var response = client.execute(createRequest)) {
-            assertEquals(201, response.getStatusLine().getStatusCode());
-            EntityUtils.consumeQuietly(response.getEntity());
+        try (var response = getClientsApi().createClient(rep)) {
+            assertEquals(201, response.getStatus());
         }
 
         // Now setup policy
         setupPolicyClientIdAndSecretNotAcceptable();
 
         // Update the client to use another acceptable auth type
-        HttpPut updateRequest = new HttpPut(getClientsApiUrl() + "/test-put-update-client");
-        setAuthHeader(updateRequest);
-        updateRequest.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
 
         rep.getAuth().setMethod(JWTClientAuthenticator.PROVIDER_ID);
-        updateRequest.setEntity(new StringEntity(mapper.writeValueAsString(rep)));
 
-        try (var response = client.execute(updateRequest)) {
-            int statusCode = response.getStatusLine().getStatusCode();
-            String body = EntityUtils.toString(response.getEntity());
+        try (var response = getClientsApi().client(rep.getClientId()).createOrUpdateClient(rep)) {
+            int statusCode = response.getStatus();
+            String body = response.readEntity(String.class);
             assertEquals(200, statusCode, "Expected 200 but got " + statusCode + ": " + body);
             OIDCClientRepresentation updated = mapper.readValue(body, OIDCClientRepresentation.class);
             assertThat(updated.getAuth().getMethod(), is(JWTClientAuthenticator.PROVIDER_ID));
@@ -339,9 +288,6 @@ public class ClientPoliciesV2Test extends AbstractClientApiV2Test {
     @Test
     public void updateClientViaPatchWithUnacceptableAuthType() throws Exception {
         // First create a client with acceptable auth type
-        HttpPut createRequest = new HttpPut(getClientsApiUrl() + "/test-patch-update-client");
-        setAuthHeader(createRequest);
-        createRequest.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
 
         OIDCClientRepresentation rep = new OIDCClientRepresentation();
         rep.setClientId("test-patch-update-client");
@@ -351,49 +297,34 @@ public class ClientPoliciesV2Test extends AbstractClientApiV2Test {
         auth.setSecret("secret");
         rep.setAuth(auth);
 
-        createRequest.setEntity(new StringEntity(mapper.writeValueAsString(rep)));
-
-        try (var response = client.execute(createRequest)) {
-            assertEquals(201, response.getStatusLine().getStatusCode());
-            EntityUtils.consumeQuietly(response.getEntity());
+        try (var response = getClientsApi().createClient(rep)) {
+            assertEquals(201, response.getStatus());
         }
 
         // Now setup policy
         setupPolicyClientIdAndSecretNotAcceptable();
 
         // Try to patch the client to use an unacceptable auth type
-        HttpPatch patchRequest = new HttpPatch(getClientsApiUrl() + "/test-patch-update-client");
-        setAuthHeader(patchRequest);
-        patchRequest.setHeader(HttpHeaders.CONTENT_TYPE, PatchTypeNames.JSON_MERGE);
 
         OIDCClientRepresentation patch = new OIDCClientRepresentation();
         var patchAuth = new OIDCClientRepresentation.Auth();
         patchAuth.setMethod(ClientIdAndSecretAuthenticator.PROVIDER_ID);
         patch.setAuth(patchAuth);
 
-        patchRequest.setEntity(new StringEntity(mapper.writeValueAsString(patch)));
-
-        try (var response = client.execute(patchRequest)) {
-            // Should fail with 400 Bad Request due to policy violation
-            assertEquals(400, response.getStatusLine().getStatusCode());
-            String body = EntityUtils.toString(response.getEntity());
-            assertThat(body, containsString("Invalid client metadata: token_endpoint_auth_method"));
-        }
+        BadRequestException ex = assertThrows(
+            BadRequestException.class,
+            () -> getClientsApi().client(rep.getClientId()).patchClient(new ByteArrayInputStream(mapper.writeValueAsBytes(patch)))
+        );
+        assertTrue(ex.getMessage().contains("HTTP 400 Bad Request"));
 
         // Verify the client was NOT updated (transaction rollback worked)
-        HttpGet getRequest = new HttpGet(getClientsApiUrl() + "/test-patch-update-client");
-        setAuthHeader(getRequest);
-        try (var response = client.execute(getRequest)) {
-            assertEquals(200, response.getStatusLine().getStatusCode());
-            String body = EntityUtils.toString(response.getEntity());
-            OIDCClientRepresentation current = mapper.readValue(body, OIDCClientRepresentation.class);
+        OIDCClientRepresentation current = (OIDCClientRepresentation) getClientsApi().client("test-patch-update-client").getClient();
 
-            // Should still have the original auth method, not the rejected one
-            assertEquals(JWTClientSecretAuthenticator.PROVIDER_ID, current.getAuth().getMethod(),
-                    "Client auth method should remain unchanged after policy rejection");
-            assertEquals("secret", current.getAuth().getSecret(),
-                    "Client secret should remain unchanged after policy rejection");
-        }
+        // Should still have the original auth method, not the rejected one
+        assertEquals(JWTClientSecretAuthenticator.PROVIDER_ID, current.getAuth().getMethod(),
+            "Client auth method should remain unchanged after policy rejection");
+        assertEquals("secret", current.getAuth().getSecret(),
+            "Client secret should remain unchanged after policy rejection");
     }
 
 
@@ -404,34 +335,21 @@ public class ClientPoliciesV2Test extends AbstractClientApiV2Test {
     @Test
     public void policyAppliedOnUpdateWithoutAuthTypeChange() throws Exception {
         // Create a client BEFORE the policy is set
-        HttpPut createRequest = new HttpPut(getClientsApiUrl() + "/test-put-update-client");
-        setAuthHeader(createRequest);
-        createRequest.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
-
         OIDCClientRepresentation rep = getPutUpdateClientRep();
 
-        createRequest.setEntity(new StringEntity(mapper.writeValueAsString(rep)));
-
-        try (var response = client.execute(createRequest)) {
-            assertEquals(201, response.getStatusLine().getStatusCode());
-            EntityUtils.consumeQuietly(response.getEntity());
+        try (var response = getClientsApi().createClient(rep)) {
+            assertEquals(201, response.getStatus());
         }
 
         // Now setup policy
         setupPolicyClientIdAndSecretNotAcceptable();
 
         // Update client without changing auth type (just change description)
-        HttpPut updateRequest = new HttpPut(getClientsApiUrl() + "/test-put-update-client");
-        setAuthHeader(updateRequest);
-        updateRequest.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
-
         rep.setDescription("Updated description");
-        updateRequest.setEntity(new StringEntity(mapper.writeValueAsString(rep)));
-
-        try (var response = client.execute(updateRequest)) {
+        try (var response = getClientsApi().client(rep.getClientId()).createOrUpdateClient(rep)) {
             // Should succeed since auth type is still acceptable
-            int statusCode = response.getStatusLine().getStatusCode();
-            String body = EntityUtils.toString(response.getEntity());
+            int statusCode = response.getStatus();
+            String body = response.readEntity(String.class);
             assertEquals(200, statusCode, "Expected 200 but got " + statusCode + ": " + body);
             OIDCClientRepresentation updated = mapper.readValue(body, OIDCClientRepresentation.class);
             assertThat(updated.getDescription(), is("Updated description"));
@@ -447,11 +365,7 @@ public class ClientPoliciesV2Test extends AbstractClientApiV2Test {
     public void getClientViewEvent() throws Exception {
         setupAlwaysAppliedTestPolicy();
 
-        HttpGet getClient = new HttpGet(getClientsApiUrl() + "/account");
-        setAuthHeader(getClient);
-        try (var response = client.execute(getClient)) {
-            assertThat(response.getStatusLine().getStatusCode(), is(200));
-        }
+        assertNotNull(getClientApi("account").getClient());
 
         assertClientPolicyEventIsEmitted(ClientPolicyEvent.VIEW);
     }
@@ -464,17 +378,11 @@ public class ClientPoliciesV2Test extends AbstractClientApiV2Test {
     public void createClientRegisterEvent() throws Exception {
         setupAlwaysAppliedTestPolicy();
 
-        HttpPost request = new HttpPost(getClientsApiUrl());
-        setAuthHeader(request);
-        request.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
-
         OIDCClientRepresentation rep = new OIDCClientRepresentation();
         rep.setClientId("client-123");
-        request.setEntity(new StringEntity(mapper.writeValueAsString(rep)));
 
-        try (var response = client.execute(request)) {
-            assertThat(response.getStatusLine().getStatusCode(), is(201));
-            EntityUtils.consumeQuietly(response.getEntity());
+        try (var response = getClientsApi().createClient(rep)) {
+            assertThat(response.getStatus(), is(201));
         }
 
         assertClientPolicyEventIsEmitted(ClientPolicyEvent.REGISTER, ClientPolicyEvent.REGISTERED);
@@ -490,31 +398,19 @@ public class ClientPoliciesV2Test extends AbstractClientApiV2Test {
     public void updateClientUpdateEvent() throws Exception {
         setupAlwaysAppliedTestPolicy();
 
-        HttpPut createRequest = new HttpPut(getClientsApiUrl() + "/test-put-update-client");
-        setAuthHeader(createRequest);
-        createRequest.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
-
         OIDCClientRepresentation rep = getPutUpdateClientRep();
-        createRequest.setEntity(new StringEntity(mapper.writeValueAsString(rep)));
 
-        try (var response = client.execute(createRequest)) {
-            assertEquals(201, response.getStatusLine().getStatusCode());
-            EntityUtils.consumeQuietly(response.getEntity());
+        try (var response = getClientsApi().client(rep.getClientId()).createOrUpdateClient(rep)) {
+            assertEquals(201, response.getStatus());
         }
 
         assertClientPolicyEventIsEmitted(ClientPolicyEvent.REGISTER, ClientPolicyEvent.REGISTERED);
 
-        HttpPut updateRequest = new HttpPut(getClientsApiUrl() + "/test-put-update-client");
-        setAuthHeader(updateRequest);
-        updateRequest.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
-
         rep = getPutUpdateClientRep();
         rep.setDescription("Updated");
-        updateRequest.setEntity(new StringEntity(mapper.writeValueAsString(rep)));
 
-        try (var response = client.execute(updateRequest)) {
-            assertEquals(200, response.getStatusLine().getStatusCode());
-            EntityUtils.consumeQuietly(response.getEntity());
+        try (var response = getClientsApi().client(rep.getClientId()).createOrUpdateClient(rep)) {
+            assertEquals(200, response.getStatus());
         }
 
         assertClientPolicyEventIsEmitted(ClientPolicyEvent.UPDATE, ClientPolicyEvent.UPDATED);
@@ -526,17 +422,11 @@ public class ClientPoliciesV2Test extends AbstractClientApiV2Test {
      */
     @Test
     public void deleteClientUnregisterEvent() throws Exception {
-        HttpPut createRequest = new HttpPut(getClientsApiUrl() + "/test-put-update-client");
-        setAuthHeader(createRequest);
-        createRequest.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
 
         OIDCClientRepresentation rep = getPutUpdateClientRep();
 
-        createRequest.setEntity(new StringEntity(mapper.writeValueAsString(rep)));
-
-        try (var response = client.execute(createRequest)) {
-            assertEquals(201, response.getStatusLine().getStatusCode());
-            EntityUtils.consumeQuietly(response.getEntity());
+        try (var response = getClientsApi().client(rep.getClientId()).createOrUpdateClient(rep)) {
+            assertEquals(201, response.getStatus());
         }
 
         setupAlwaysAppliedTestPolicy();
@@ -657,7 +547,7 @@ public class ClientPoliciesV2Test extends AbstractClientApiV2Test {
         ClientProfilesRepresentation profilesRep = new ClientProfilesRepresentation();
         profilesRep.setProfiles(List.of(profileRep));
 
-        adminClient.realm("master").clientPoliciesProfilesResource().updateProfiles(profilesRep);
+        adminClient.realm(getRealmName()).clientPoliciesProfilesResource().updateProfiles(profilesRep);
 
         // Create policy
         ClientPolicyRepresentation policyRep = new ClientPolicyRepresentation();
@@ -672,14 +562,14 @@ public class ClientPoliciesV2Test extends AbstractClientApiV2Test {
         ClientPoliciesRepresentation policiesRep = new ClientPoliciesRepresentation();
         policiesRep.setPolicies(List.of(policyRep));
 
-        adminClient.realm("master").clientPoliciesPoliciesResource().updatePolicies(policiesRep);
+        adminClient.realm(getRealmName()).clientPoliciesPoliciesResource().updatePolicies(policiesRep);
     }
 
     private void revertToBuiltinProfiles() {
         try {
             ClientProfilesRepresentation emptyProfiles = new ClientProfilesRepresentation();
             emptyProfiles.setProfiles(List.of());
-            adminClient.realm("master").clientPoliciesProfilesResource().updateProfiles(emptyProfiles);
+            adminClient.realm(getRealmName()).clientPoliciesProfilesResource().updateProfiles(emptyProfiles);
         } catch (Exception e) {
             // Ignore cleanup errors
         }
@@ -689,7 +579,7 @@ public class ClientPoliciesV2Test extends AbstractClientApiV2Test {
         try {
             ClientPoliciesRepresentation emptyPolicies = new ClientPoliciesRepresentation();
             emptyPolicies.setPolicies(List.of());
-            adminClient.realm("master").clientPoliciesPoliciesResource().updatePolicies(emptyPolicies);
+            adminClient.realm(getRealmName()).clientPoliciesPoliciesResource().updatePolicies(emptyPolicies);
         } catch (Exception e) {
             // Ignore cleanup errors
         }
@@ -697,10 +587,8 @@ public class ClientPoliciesV2Test extends AbstractClientApiV2Test {
 
     private void cleanupClient(String clientId) {
         try {
-            HttpDelete deleteRequest = new HttpDelete(getClientsApiUrl() + "/" + clientId);
-            setAuthHeader(deleteRequest);
-            try (var response = client.execute(deleteRequest)) {
-                EntityUtils.consumeQuietly(response.getEntity());
+            try (var response = getClientsApi().client(clientId).deleteClient()) {
+                // Nothing needed here.
             }
         } catch (Exception e) {
             // Ignore cleanup errors

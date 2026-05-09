@@ -394,15 +394,9 @@ public class UserTest extends AbstractScimTest {
     @Test
     public void testPatchAdd() {
         User expected = client.users().create(createUser());
-        UPConfig configuration = realm.admin().users().userProfile().getConfiguration();
-        configuration.addOrReplaceAttribute(new UPAttribute("middleName", Map.of(
-                ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, "name.middleName")));
-        configuration.addOrReplaceAttribute(new UPAttribute("honorificPrefix", Map.of(
-                ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, "name.honorificPrefix")));
-        configuration.addOrReplaceAttribute(new UPAttribute("honorificSuffix", Map.of(
-                ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, "name.honorificSuffix")));
-        realm.admin().users().userProfile().update(configuration);
-        adminEvents.clear();
+        addOrReplaceUPAttribute("name.middleName");
+        addOrReplaceUPAttribute("name.honorificPrefix");
+        addOrReplaceUPAttribute("name.honorificSuffix");
 
         // patch multiple attributes in a single request
         client.users().patch(expected.getId(), PatchRequest.create()
@@ -499,9 +493,7 @@ public class UserTest extends AbstractScimTest {
         assertRootAttributes(actual, expected);
 
         // patch an attribute from an extension schema
-        configuration.addOrReplaceAttribute(new UPAttribute("employeeNumber", Map.of(
-                ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, ENTERPRISE_USER_SCHEMA + ".employeeNumber")));
-        realm.admin().users().userProfile().update(configuration);
+        addOrReplaceUPAttribute(ENTERPRISE_USER_SCHEMA, "employeeNumber");
         assertNull(actual.getEnterpriseUser());
         client.users().patch(expected.getId(), PatchRequest.create()
                 .add(ENTERPRISE_USER_SCHEMA + ":" + "employeeNumber", "1234")
@@ -537,9 +529,7 @@ public class UserTest extends AbstractScimTest {
         assertEquals("321", actual.getEnterpriseUser().getEmployeeNumber());
         assertEquals("Amanda", actual.getFirstName());
 
-        configuration.addOrReplaceAttribute(new UPAttribute("managerId", Map.of(
-                ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, ENTERPRISE_USER_SCHEMA + ".manager.value")));
-        realm.admin().users().userProfile().update(configuration);
+        addOrReplaceUPAttribute(ENTERPRISE_USER_SCHEMA, "manager.value");
         // patch a sub attribute of a complex attribute using a direct path
         client.users().patch(expected.getId(), PatchRequest.create()
                 .add("{\"name.givenName\": \"Alice\", \"" + ENTERPRISE_USER_SCHEMA + ":manager\": \"321\"}}")
@@ -563,14 +553,9 @@ public class UserTest extends AbstractScimTest {
     @Test
     public void testPatchReplace() {
         User expected = client.users().create(createUser());
-        UPConfig configuration = realm.admin().users().userProfile().getConfiguration();
-        configuration.addOrReplaceAttribute(new UPAttribute("middleName", Map.of(
-                ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, "name.middleName")));
-        configuration.addOrReplaceAttribute(new UPAttribute("honorificPrefix", Map.of(
-                ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, "name.honorificPrefix")));
-        configuration.addOrReplaceAttribute(new UPAttribute("honorificSuffix", Map.of(
-                ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, "name.honorificSuffix")));
-        realm.admin().users().userProfile().update(configuration);
+        addOrReplaceUPAttribute("name.middleName");
+        addOrReplaceUPAttribute("name.honorificPrefix");
+        addOrReplaceUPAttribute("name.honorificSuffix");
 
         // patch multiple attributes in a single request
         client.users().patch(expected.getId(), PatchRequest.create()
@@ -654,9 +639,7 @@ public class UserTest extends AbstractScimTest {
         assertRootAttributes(actual, expected);
 
         // patch an attribute from an extension schema
-        configuration.addOrReplaceAttribute(new UPAttribute("employeeNumber", Map.of(
-                ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, ENTERPRISE_USER_SCHEMA + ".employeeNumber")));
-        realm.admin().users().userProfile().update(configuration);
+        addOrReplaceUPAttribute(ENTERPRISE_USER_SCHEMA,  "employeeNumber");
         assertNull(actual.getEnterpriseUser());
         client.users().patch(expected.getId(), PatchRequest.create()
                 .replace(ENTERPRISE_USER_SCHEMA + ":" + "employeeNumber", "1234")
@@ -689,14 +672,9 @@ public class UserTest extends AbstractScimTest {
     @Test
     public void testPatchRemove() {
         User expected = client.users().create(createUser());
-        UPConfig configuration = realm.admin().users().userProfile().getConfiguration();
-        configuration.addOrReplaceAttribute(new UPAttribute("middleName", Map.of(
-                ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, "name.middleName")));
-        configuration.addOrReplaceAttribute(new UPAttribute("honorificPrefix", Map.of(
-                ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, "name.honorificPrefix")));
-        configuration.addOrReplaceAttribute(new UPAttribute("honorificSuffix", Map.of(
-                ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, "name.honorificSuffix")));
-        realm.admin().users().userProfile().update(configuration);
+        addOrReplaceUPAttribute("name.middleName");
+        addOrReplaceUPAttribute("name.honorificPrefix");
+        addOrReplaceUPAttribute("name.honorificSuffix");
 
         // patch multiple attributes in a single request
         client.users().patch(expected.getId(), PatchRequest.create()
@@ -723,11 +701,8 @@ public class UserTest extends AbstractScimTest {
         assertRootAttributes(actual, expected);
 
         assertNull(actual.getEnterpriseUser());
-        configuration.addOrReplaceAttribute(new UPAttribute("employeeNumber", Map.of(
-                ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, ENTERPRISE_USER_SCHEMA + ".employeeNumber")));
-        configuration.addOrReplaceAttribute(new UPAttribute("costCenter", Map.of(
-                ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, ENTERPRISE_USER_SCHEMA + ".costCenter")));
-        realm.admin().users().userProfile().update(configuration);
+        addOrReplaceUPAttribute(ENTERPRISE_USER_SCHEMA, "employeeNumber");
+        addOrReplaceUPAttribute(ENTERPRISE_USER_SCHEMA, "costCenter");
         client.users().patch(expected.getId(), PatchRequest.create()
                 .add(ENTERPRISE_USER_SCHEMA + ":" + "employeeNumber", "1234")
                 .add(ENTERPRISE_USER_SCHEMA + ":" + "costCenter", "5678")
@@ -1089,18 +1064,11 @@ public class UserTest extends AbstractScimTest {
 
     @Test
     public void testCreateCustomAttribute() {
-        UPConfig upConfig = realm.admin().users().userProfile().getConfiguration();
         String fooSchema = "urn:my:params:scim:schemas:extension:foo:1.0:User";
-        UPAttribute upAttribute = new UPAttribute("keycloak.team", Map.of(ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, fooSchema + ".memberOf"));
-        upAttribute.setPermissions(new UPAttributePermissions(Set.of(UPConfigUtils.ROLE_ADMIN), Set.of(UPConfigUtils.ROLE_ADMIN)));
-        upConfig.addOrReplaceAttribute(upAttribute);
-        realm.admin().users().userProfile().update(upConfig);
+        addOrReplaceUPAttribute(fooSchema, "memberOf");
 
         String barSchema = "urn:my:params:scim:schemas:extension:bar:1.0:User";
-        upAttribute = new UPAttribute("keycloak.area", Map.of(ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, barSchema + ".myattribute"));
-        upAttribute.setPermissions(new UPAttributePermissions(Set.of(UPConfigUtils.ROLE_ADMIN), Set.of(UPConfigUtils.ROLE_ADMIN)));
-        upConfig.addOrReplaceAttribute(upAttribute);
-        realm.admin().users().userProfile().update(upConfig);
+        addOrReplaceUPAttribute(barSchema, "myattribute");
 
         User user = new User();
 
@@ -1146,20 +1114,13 @@ public class UserTest extends AbstractScimTest {
         }
 
         // adds a user profile attribute
-        UPConfig upConfig = realm.admin().users().userProfile().getConfiguration();
-        UPAttribute upAttribute = new UPAttribute("keycloak.team", Map.of(ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, KEYCLOAK_USER_SCHEMA + ".memberOf"));
-        upAttribute.setPermissions(new UPAttributePermissions(Set.of(UPConfigUtils.ROLE_ADMIN), Set.of(UPConfigUtils.ROLE_ADMIN)));
-        upConfig.addOrReplaceAttribute(upAttribute);
-        realm.admin().users().userProfile().update(upConfig);
+        UPAttribute upAttribute = addOrReplaceUPAttribute(KEYCLOAK_USER_SCHEMA, "memberOf");
         existing = realm.admin().users().get(existing.getId()).toRepresentation();
         existing.singleAttribute(upAttribute.getName(), "core-iam");
         realm.admin().users().get(existing.getId()).update(existing);
 
         String customSchema = "urn:my:params:scim:schemas:extension:custom:1.0:User";
-        upAttribute = new UPAttribute("keycloak.area", Map.of(ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, customSchema + ".myattribute"));
-        upAttribute.setPermissions(new UPAttributePermissions(Set.of(UPConfigUtils.ROLE_ADMIN), Set.of(UPConfigUtils.ROLE_ADMIN)));
-        upConfig.addOrReplaceAttribute(upAttribute);
-        realm.admin().users().userProfile().update(upConfig);
+        upAttribute = addOrReplaceUPAttribute(customSchema, "myattribute");
         existing = realm.admin().users().get(existing.getId()).toRepresentation();
         existing.singleAttribute(upAttribute.getName(), "myvalue");
         realm.admin().users().get(existing.getId()).update(existing);
@@ -1222,17 +1183,10 @@ public class UserTest extends AbstractScimTest {
 
     @Test
     public void testPatchCustomAttribute() {
-        UPConfig upConfig = realm.admin().users().userProfile().getConfiguration();
-        UPAttribute upAttribute = new UPAttribute("keycloak.team", Map.of(ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, KEYCLOAK_USER_SCHEMA + ".memberOf"));
-        upAttribute.setPermissions(new UPAttributePermissions(Set.of(UPConfigUtils.ROLE_ADMIN), Set.of(UPConfigUtils.ROLE_ADMIN)));
-        upConfig.addOrReplaceAttribute(upAttribute);
-        realm.admin().users().userProfile().update(upConfig);
+        addOrReplaceUPAttribute(KEYCLOAK_USER_SCHEMA, "memberOf");
 
         String customSchema = "urn:my:params:scim:schemas:extension:custom:1.0:User";
-        upAttribute = new UPAttribute("keycloak.area", Map.of(ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, customSchema + ".myattribute"));
-        upAttribute.setPermissions(new UPAttributePermissions(Set.of(UPConfigUtils.ROLE_ADMIN), Set.of(UPConfigUtils.ROLE_ADMIN)));
-        upConfig.addOrReplaceAttribute(upAttribute);
-        realm.admin().users().userProfile().update(upConfig);
+        addOrReplaceUPAttribute(customSchema, "myattribute");
 
         User user = new User();
 

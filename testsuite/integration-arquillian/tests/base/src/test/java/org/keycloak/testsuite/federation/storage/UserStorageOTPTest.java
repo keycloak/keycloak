@@ -37,6 +37,7 @@ import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.storage.UserStorageProvider;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.Assert;
@@ -181,10 +182,10 @@ public class UserStorageOTPTest extends AbstractTestRealmKeycloakTest {
             events.expect(EventType.UPDATE_CREDENTIAL)
                     .detail(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE)
                     .user(userRep.getId()).assertEvent();
-            EventRepresentation loginEvent = events.expectLogin().user(userRep.getId()).assertEvent();
+            EventRepresentation loginEvent = EventAssertion.expectLoginSuccess(events.poll()).userId(userRep.getId()).getEvent();
             String idTokenHint = sendTokenRequestAndGetResponse(loginEvent).getIdToken();
             appPage.logout(idTokenHint);
-            events.expectLogout(loginEvent.getSessionId()).user(userRep.getId()).assertEvent();
+            EventAssertion.expectLogoutSuccess(events.poll()).sessionId(loginEvent.getSessionId()).userId(userRep.getId());
 
             // Authenticate as the user again with the dummy OTP should still work
             oauth.openLoginForm();
@@ -193,10 +194,10 @@ public class UserStorageOTPTest extends AbstractTestRealmKeycloakTest {
             loginTotpPage.login(DummyUserFederationProvider.HARDCODED_OTP);
 
             appPage.assertCurrent();
-            loginEvent = events.expectLogin().user(userRep.getId()).assertEvent();
+            loginEvent = EventAssertion.expectLoginSuccess(events.poll()).userId(userRep.getId()).getEvent();
             idTokenHint = sendTokenRequestAndGetResponse(loginEvent).getIdToken();
             appPage.logout(idTokenHint);
-            events.expectLogout(loginEvent.getSessionId()).user(userRep.getId()).assertEvent();
+            EventAssertion.expectLogoutSuccess(events.poll()).sessionId(loginEvent.getSessionId()).userId(userRep.getId());
 
             // Authenticate with the new OTP code should work as well
             oauth.openLoginForm();
@@ -205,10 +206,10 @@ public class UserStorageOTPTest extends AbstractTestRealmKeycloakTest {
             loginTotpPage.login(totp.generateTOTP(totpSecret));
 
             appPage.assertCurrent();
-            loginEvent = events.expectLogin().user(userRep.getId()).assertEvent();
+            loginEvent = EventAssertion.expectLoginSuccess(events.poll()).userId(userRep.getId()).getEvent();
             idTokenHint = sendTokenRequestAndGetResponse(loginEvent).getIdToken();
             appPage.logout(idTokenHint);
-            events.expectLogout(loginEvent.getSessionId()).user(userRep.getId()).assertEvent();
+            EventAssertion.expectLogoutSuccess(events.poll()).sessionId(loginEvent.getSessionId()).userId(userRep.getId());
         }
     }
 

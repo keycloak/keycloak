@@ -91,6 +91,9 @@ public final class Environment {
         }
     }
 
+    /**
+     * Check if the we're currently in or built as dev mode.
+     */
     public static boolean isDevMode() {
         if (org.keycloak.common.util.Environment.isDevMode()) {
             return true;
@@ -100,7 +103,7 @@ public final class Environment {
     }
 
     public static boolean isDevProfile(){
-        return Optional.ofNullable(org.keycloak.common.util.Environment.getProfile()).orElse("").equalsIgnoreCase(org.keycloak.common.util.Environment.DEV_PROFILE_VALUE);
+        return org.keycloak.common.util.Environment.isDevMode();
     }
 
     public static boolean isWindows() {

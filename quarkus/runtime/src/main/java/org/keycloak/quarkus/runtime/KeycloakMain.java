@@ -66,11 +66,11 @@ public class KeycloakMain implements QuarkusApplication {
         ensureForkJoinPoolThreadFactoryHasBeenSetToQuarkus();
         InfinispanUtils.ensureVirtualThreadsParallelism();
 
-        System.setProperty("kc.version", Version.VERSION);
-
         Picocli picocli;
+        Properties clonedProps = null;
         if (!(Thread.currentThread().getContextClassLoader() instanceof RunnerClassLoader)) {
-            picocli = new Picocli() { // embedded launch case, avoid System.exit
+            clonedProps = (Properties) System.getProperties().clone();
+            picocli = new Picocli() { // non-script launch case, avoid System.exit
                 @Override
                 public void exit(int exitCode) {
                     Quarkus.asyncExit(exitCode);
@@ -79,7 +79,16 @@ public class KeycloakMain implements QuarkusApplication {
         } else {
             picocli = new Picocli();
         }
-        main(args, picocli);
+
+        System.setProperty("kc.version", Version.VERSION);
+
+        try {
+            main(args, picocli);
+        } finally {
+            if (clonedProps != null) {
+                reset(clonedProps);
+            }
+        }
     }
 
     public static void reset(Properties systemProperties) {

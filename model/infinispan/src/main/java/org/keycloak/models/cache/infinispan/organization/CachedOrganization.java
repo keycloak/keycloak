@@ -16,7 +16,11 @@
  */
 package org.keycloak.models.cache.infinispan.organization;
 
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -34,6 +38,8 @@ import org.keycloak.models.cache.infinispan.entities.InRealm;
 
 public class CachedOrganization extends AbstractRevisioned implements InRealm {
 
+    public static final int DOMAIN_NAMES_CACHE_MAX_SIZE = 100;
+
     private final String realm;
     private final String name;
     private final String alias;
@@ -42,9 +48,10 @@ public class CachedOrganization extends AbstractRevisioned implements InRealm {
     private final boolean enabled;
     private final LazyLoader<OrganizationModel, MultivaluedHashMap<String, String>> attributes;
     private final Set<OrganizationDomainModel> domains;
+    private final Map<String, String> domainNames;
     private final Set<IdentityProviderModel> idps;
 
-    public CachedOrganization(long revision, RealmModel realm, OrganizationModel organization) {
+    public CachedOrganization(long revision, RealmModel realm, OrganizationModel organization, Consumer<String> invalidateDomain) {
         super(revision, organization.getId());
         this.realm = realm.getId();
         this.name = organization.getName();
@@ -54,6 +61,20 @@ public class CachedOrganization extends AbstractRevisioned implements InRealm {
         this.enabled = organization.isEnabled();
         this.attributes = new DefaultLazyLoader<>(orgModel -> new MultivaluedHashMap<>(orgModel.getAttributes()), MultivaluedHashMap::new);
         this.domains = organization.getDomains().collect(Collectors.toSet());
+        this.domainNames = Collections.synchronizedMap(new LinkedHashMap<>(16, 0.75f, true) {
+            @Override
+            protected boolean removeEldestEntry(Map.Entry eldest) {
+                boolean remove = domainNames.size() > DOMAIN_NAMES_CACHE_MAX_SIZE;
+
+                if (remove) {
+                    String domain = eldest.getKey().toString();
+                    invalidateDomain.accept(domain);
+                }
+
+                return remove;
+            }
+        });
+        organization.getDomains().forEach(domain -> domainNames.put(domain.getName(), domain.getName()));
         this.idps = organization.getIdentityProviders().collect(Collectors.toSet());
     }
 
@@ -88,6 +109,14 @@ public class CachedOrganization extends AbstractRevisioned implements InRealm {
 
     public Stream<OrganizationDomainModel> getDomains() {
         return domains.stream();
+    }
+
+    public Set<String> getDomainNames() {
+        return domainNames.keySet();
+    }
+
+    public void addDomainName(String domainName) {
+        domainNames.put(domainName, domainName);
     }
 
     public Stream<IdentityProviderModel> getIdentityProviders() {

@@ -27,8 +27,10 @@ import jakarta.ws.rs.core.Response.Status;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.constants.ServiceUrlConstants;
+import org.keycloak.events.EventType;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
@@ -104,7 +106,7 @@ public class ClientRedirectTest extends AbstractTestRealmKeycloakTest {
         try {
             log.debug("log in");
             oauth.doLogin("test-user@localhost", "password");
-            events.expectLogin().assertEvent();
+            EventAssertion.expectLoginSuccess(events.poll());
 
             String code = oauth.parseLoginResponse().getCode();
             String idTokenHint = oauth.doAccessTokenRequest(code).getIdToken();
@@ -121,7 +123,8 @@ public class ClientRedirectTest extends AbstractTestRealmKeycloakTest {
             log.debug("Current URL: " + driver.getCurrentUrl());
 
             log.debug("check logout_error");
-            events.expectLogoutError(OAuthErrorException.INVALID_REDIRECT_URI).client(AssertEvents.DEFAULT_CLIENT_ID).assertEvent();
+            EventAssertion.assertError(events.poll()).type(EventType.LOGOUT_ERROR)
+                    .error(OAuthErrorException.INVALID_REDIRECT_URI).clientId(oauth.getClientId());
             assertThat(driver.getCurrentUrl(), is(not(equalTo("http://example.org/redirected"))));
         } finally {
             log.debug("removing disabled-client");

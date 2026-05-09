@@ -30,6 +30,7 @@ import org.keycloak.authentication.authenticators.browser.UsernamePasswordFormFa
 import org.keycloak.authentication.authenticators.conditional.ConditionalLoaAuthenticator;
 import org.keycloak.authentication.authenticators.conditional.ConditionalLoaAuthenticatorFactory;
 import org.keycloak.events.Details;
+import org.keycloak.events.EventType;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.Constants;
@@ -43,6 +44,7 @@ import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.forms.LevelOfAssuranceFlowTest;
 import org.keycloak.testsuite.pages.LoginPage;
@@ -482,10 +484,12 @@ public class AuthenticationMethodReferenceTest extends AbstractOIDCScopeTest{
     private void logout(String userId, Tokens tokens){
         // Logout
         oauth.doLogout(tokens.refreshToken);
-        events.expectLogout(tokens.idToken.getSessionState())
-                .client(CLIENT_ID)
-                .user(userId)
-                .removeDetail(Details.REDIRECT_URI).assertEvent();
+        EventAssertion.assertSuccess(events.poll())
+                .type(EventType.LOGOUT)
+                .sessionId(tokens.idToken.getSessionState())
+                .clientId(CLIENT_ID)
+                .userId(userId)
+                .withoutDetails(Details.REDIRECT_URI);
     }
 
     /**
@@ -515,9 +519,8 @@ public class AuthenticationMethodReferenceTest extends AbstractOIDCScopeTest{
      * @return The tokens from a successful login
      */
     private Tokens assertLogin(String userId){
-        EventRepresentation loginEvent = events.expectLogin()
-                .user(userId)
-                .assertEvent();
+        EventRepresentation loginEvent = EventAssertion.expectLoginSuccess(events.poll())
+                .userId(userId).getEvent();
 
         return sendTokenRequest(loginEvent, userId, "openid", CLIENT_ID);
     }

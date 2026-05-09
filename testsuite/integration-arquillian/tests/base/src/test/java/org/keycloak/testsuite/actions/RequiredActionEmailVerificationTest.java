@@ -43,6 +43,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testframework.realm.RealmAttributesBuilder;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
@@ -226,7 +227,7 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
         appPage.assertCurrent();
         Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-        events.expectLogin().user(testUserId).session(mailCodeId).detail(Details.USERNAME, "test-user@localhost").assertEvent();
+        EventAssertion.expectLoginSuccess(events.poll()).userId(testUserId).sessionId(mailCodeId).details(Details.USERNAME, "test-user@localhost");
     }
 
     @Test
@@ -261,7 +262,7 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
 
         Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-        events.expectLogin().user(userId).session(mailCodeId).detail(Details.USERNAME, "verifyemail").assertEvent();
+        EventAssertion.expectLoginSuccess(events.poll()).userId(userId).sessionId(mailCodeId).details(Details.USERNAME, "verifyemail");
     }
 
     private void updatePasswordOnChangePasswordPage(LoginPasswordUpdatePage updatePasswordPage, String userId) {
@@ -439,7 +440,7 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
           .detail(Details.CODE_ID, mailCodeId)
           .assertEvent();
 
-        events.expectLogin().user(testUserId).session(mailCodeId).detail(Details.USERNAME, "test-user@localhost").assertEvent();
+        EventAssertion.expectLoginSuccess(events.poll()).userId(testUserId).sessionId(mailCodeId).details(Details.USERNAME, "test-user@localhost");
     }
 
     @Test
@@ -506,7 +507,7 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
           .detail(Details.CODE_ID, mailCodeId)
           .assertEvent();
 
-        events.expectLogin().user(testUserId).session(mailCodeId).detail(Details.USERNAME, "test-user@localhost").assertEvent();
+        EventAssertion.expectLoginSuccess(events.poll()).userId(testUserId).sessionId(mailCodeId).details(Details.USERNAME, "test-user@localhost");
     }
 
     @Test

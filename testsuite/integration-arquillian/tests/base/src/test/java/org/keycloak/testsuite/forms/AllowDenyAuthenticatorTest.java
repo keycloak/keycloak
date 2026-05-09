@@ -14,6 +14,7 @@ import org.keycloak.authentication.authenticators.directgrant.ValidateUsername;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.models.AuthenticationExecutionModel;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testsuite.AbstractChangeImportedUserPasswordsTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.pages.ErrorPage;
@@ -97,13 +98,13 @@ public class AllowDenyAuthenticatorTest extends AbstractChangeImportedUserPasswo
             errorPage.assertCurrent();
             assertThat(errorPage.getError(), is(expectedMessage));
 
-            events.expectLogin()
-                    .user((String) null)
-                    .session((String) null)
+            EventAssertion.expectLoginError(events.poll())
+                    .userId(null)
+                    .sessionId(null)
                     .error(Errors.ACCESS_DENIED)
-                    .detail(Details.USERNAME, userWithoutAttribute)
-                    .removeDetail(Details.CONSENT)
-                    .assertEvent();
+                    .details(Details.USERNAME, userWithoutAttribute)
+                    .details(Details.REDIRECT_URI, oauth.getRedirectUri())
+                    .withoutDetails(Details.CONSENT);
         } finally {
             revertFlows(managedRealm.admin(), flowAlias);
         }
@@ -136,13 +137,13 @@ public class AllowDenyAuthenticatorTest extends AbstractChangeImportedUserPasswo
             errorPage.assertCurrent();
             assertThat(errorPage.getError(), is(errorMessage));
 
-            events.expectLogin()
-                    .user((String) null)
-                    .session((String) null)
+            EventAssertion.expectLoginError(events.poll())
+                    .userId(null)
+                    .sessionId(null)
                     .error(Errors.ACCESS_DENIED)
-                    .detail(Details.USERNAME, userWithoutAttribute)
-                    .removeDetail(Details.CONSENT)
-                    .assertEvent();
+                    .details(Details.USERNAME, userWithoutAttribute)
+                    .details(Details.REDIRECT_URI, oauth.getRedirectUri())
+                    .withoutDetails(Details.CONSENT);
         } finally {
             revertFlows(managedRealm.admin(), flowAlias);
         }
@@ -172,13 +173,13 @@ public class AllowDenyAuthenticatorTest extends AbstractChangeImportedUserPasswo
             errorPage.assertCurrent();
             assertThat(errorPage.getError(), is(errorMessage));
 
-            events.expectLogin()
-                    .user((String) null)
-                    .session((String) null)
+            EventAssertion.expectLoginError(events.poll())
+                    .userId(null)
+                    .sessionId(null)
                     .error(Errors.ACCESS_DENIED)
-                    .detail(Details.USERNAME, userWithoutAttribute)
-                    .removeDetail(Details.CONSENT)
-                    .assertEvent();
+                    .details(Details.USERNAME, userWithoutAttribute)
+                    .details(Details.REDIRECT_URI, oauth.getRedirectUri())
+                    .withoutDetails(Details.CONSENT);
         } finally {
             revertFlows(managedRealm.admin(), flowAlias);
         }
@@ -240,13 +241,13 @@ public class AllowDenyAuthenticatorTest extends AbstractChangeImportedUserPasswo
             errorPage.assertCurrent();
             assertThat(errorPage.getError(), is(errorMessage));
 
-            events.expectLogin()
-                    .user((String) null)
-                    .session((String) null)
+            EventAssertion.expectLoginError(events.poll())
+                    .userId(null)
+                    .sessionId(null)
                     .error(Errors.ACCESS_DENIED)
-                    .detail(Details.USERNAME, userCondMatch)
-                    .removeDetail(Details.CONSENT)
-                    .assertEvent();
+                    .details(Details.USERNAME, userCondMatch)
+                    .details(Details.REDIRECT_URI, oauth.getRedirectUri())
+                    .withoutDetails(Details.CONSENT);
 
             final String userCondNotMatchId = managedRealm.admin().users().search(userCondNotMatch).get(0).getId();
 
@@ -257,10 +258,8 @@ public class AllowDenyAuthenticatorTest extends AbstractChangeImportedUserPasswo
             passwordPage.assertCurrent();
             passwordPage.login(getPassword(userCondNotMatch));
 
-            events.expectLogin().user(userCondNotMatchId)
-                    .detail(Details.USERNAME, userCondNotMatch)
-                    .removeDetail(Details.CONSENT)
-                    .assertEvent();
+            EventAssertion.expectLoginSuccess(events.poll()).userId(userCondNotMatchId)
+                    .details(Details.USERNAME, userCondNotMatch);
         } finally {
             revertFlows(managedRealm.admin(), flowAlias);
         }
@@ -290,11 +289,9 @@ public class AllowDenyAuthenticatorTest extends AbstractChangeImportedUserPasswo
             passwordPage.assertCurrent();
             passwordPage.login(getPassword(userWithoutRole));
 
-            events.expectLogin()
-                    .user(testUserWithoutRoleId)
-                    .detail(Details.USERNAME, userWithoutRole)
-                    .removeDetail(Details.CONSENT)
-                    .assertEvent();
+            EventAssertion.expectLoginSuccess(events.poll())
+                    .userId(testUserWithoutRoleId)
+                    .details(Details.USERNAME, userWithoutRole);
         } finally {
             revertFlows(managedRealm.admin(), newFlowAlias);
         }
@@ -321,11 +318,9 @@ public class AllowDenyAuthenticatorTest extends AbstractChangeImportedUserPasswo
 
             final String testUserWithRoleId = managedRealm.admin().users().search(userWithRole).get(0).getId();
 
-            events.expectLogin()
-                    .user(testUserWithRoleId)
-                    .detail(Details.USERNAME, userWithRole)
-                    .removeDetail(Details.CONSENT)
-                    .assertEvent();
+            EventAssertion.expectLoginSuccess(events.poll())
+                    .userId(testUserWithRoleId)
+                    .details(Details.USERNAME, userWithRole);
         } finally {
             revertFlows(managedRealm.admin(), newFlowAlias);
         }

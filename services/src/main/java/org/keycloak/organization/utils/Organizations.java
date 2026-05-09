@@ -18,11 +18,11 @@
 package org.keycloak.organization.utils;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
-import java.util.stream.Stream;
 
 import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.core.MultivaluedMap;
@@ -43,6 +43,7 @@ import org.keycloak.models.GroupModel.Type;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelValidationException;
 import org.keycloak.models.OrganizationDomainModel;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
@@ -53,11 +54,17 @@ import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.Urls;
 import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
 import org.keycloak.sessions.AuthenticationSessionModel;
+import org.keycloak.utils.EmailValidationUtil;
 
-import static java.util.Optional.of;
 import static java.util.Optional.ofNullable;
 
+import static org.keycloak.utils.StringUtil.isBlank;
+
 public class Organizations {
+
+    private static final String WILDCARD_PREFIX = "*.";
+    private static final int MIN_DOMAIN_PARTS = 2;
+    private static final int MAX_DOMAIN_PARTS = 10;
 
     public static boolean isOrganizationGroup(GroupModel group) {
         return Type.ORGANIZATION.equals(group.getType()) && group.getOrganization() != null;
@@ -180,6 +187,102 @@ public class Organizations {
         return verifier.verify().getToken();
     }
 
+    public static int getDomainPartsSize(String domain) {
+        if (isBlank(domain)) {
+            return 0;
+        }
+        return Math.toIntExact(domain.chars().filter(c -> c == '.').count()) + 1;
+    }
+
+    public static void validateDomain(String rawDomain) {
+        if (rawDomain == null) {
+            return;
+        }
+
+        String domain = rawDomain;
+
+        if (rawDomain.contains(WILDCARD_PREFIX)) {
+            if (rawDomain.length() == WILDCARD_PREFIX.length()) {
+                throw new ModelValidationException("Wildcard domain must specify a base domain: " + rawDomain);
+            }
+
+            if (!rawDomain.startsWith(WILDCARD_PREFIX)) {
+                throw new ModelValidationException("Wildcard domain must start with the wildcard");
+            }
+
+            domain = rawDomain.substring(2);
+
+            if (domain.contains("*")) {
+                throw new ModelValidationException("Multiple wildcards are not allowed: " + rawDomain);
+            }
+
+            int parts = getDomainPartsSize(domain);
+
+            if (parts < MIN_DOMAIN_PARTS) {
+                throw new ModelValidationException("Domain must have at least " + MIN_DOMAIN_PARTS + " parts (e.g. 'example.com'): " + domain);
+            }
+
+            if (parts > MAX_DOMAIN_PARTS) {
+                throw new ModelValidationException("Domain has too many parts (max " + MAX_DOMAIN_PARTS + " allowed): " + domain);
+            }
+        }
+
+        if (isBlank(domain) || !EmailValidationUtil.isValidEmail("user@" + domain)) {
+            throw new ModelValidationException("Invalid domain format: " + rawDomain);
+        }
+    }
+
+
+    /**
+     * Returns the most specific matching organization domain for the given {@code domain} and
+     * {@code organization}. When several domains of the organization match (e.g. an exact domain
+     * and a parent wildcard, or nested wildcards), the one with the largest number of parts wins.
+     *
+     * @param domain the domain
+     * @param organization the organization
+     * @return the most specific matching organization domain, or {@code null} if no match is found
+     */
+    public static OrganizationDomainModel getMatchingDomain(String domain, OrganizationModel organization) {
+        if (domain == null || organization == null) {
+            return null;
+        }
+
+        List<OrganizationDomainModel> domains = organization.getDomains().filter(model -> isSameDomain(domain, model))
+                // sorted ascending by number of domain parts so the most specific match is the last element
+                .sorted(Comparator.comparingInt(o -> getDomainPartsSize(o.getName())))
+                .toList();
+
+        if (domains.isEmpty()) {
+            return null;
+        }
+
+        return domains.get(domains.size() - 1);
+    }
+
+    public static boolean isSameDomain(String domain, OrganizationDomainModel model) {
+        return isSameDomain(domain, ofNullable(model).map(OrganizationDomainModel::getName).orElse(null));
+    }
+
+    public static boolean isSameDomain(String domain, String expectedDomain) {
+        if (domain == null || expectedDomain == null) {
+            return false;
+        }
+
+        String canonicalDomain = domain.toLowerCase();
+        String pattern = expectedDomain.toLowerCase();
+
+        if (canonicalDomain.equals(pattern)) {
+            return true;
+        }
+
+        if (pattern.startsWith(WILDCARD_PREFIX)) {
+            String baseDomain = pattern.substring(2);
+            return canonicalDomain.equals(baseDomain) || canonicalDomain.endsWith("." + baseDomain);
+        }
+
+        return false;
+    }
+
     public static String getEmailDomain(String email) {
         if (email == null) {
             return null;
@@ -231,6 +334,7 @@ public class Organizations {
         }
 
         AuthenticationSessionModel authSession = context.getAuthenticationSession();
+        String emailDomain = ofNullable(domain).orElseGet(() -> getEmailDomain(user));
 
         if (authSession != null) {
             OrganizationScope scope = OrganizationScope.valueOfScope(session);
@@ -247,13 +351,13 @@ public class Organizations {
                 }
 
                 // make sure the user still maps to the organization from the authentication session
-                if (organization.isMember(user) || matchesOrganizationDomain(organization, user, domain)) {
+                if (organization.isMember(user)) {
                     return organization;
                 }
 
-                return null;
+                return resolveByDomain(organizations, emailDomain);
             } else if (scope != null && user != null) {
-                return resolveUserOrganization(organizations, user, domain).orElse(null);
+                return resolveByDomain(organizations, emailDomain);
             }
         }
 
@@ -263,11 +367,25 @@ public class Organizations {
                 .toList();
 
         if (organizations.size() == 1) {
+            // single membership found, return the org
             return organizations.get(0);
         }
 
-        return resolveUserOrganization(organizations, user, domain)
-                .orElseGet(() -> resolveOrganizationByDomain(user, domain, provider));
+        if (organizations.isEmpty()) {
+            // no membership, any org that matches the domain
+            return resolveByDomain(ofNullable(emailDomain)
+                    .map(provider::getByDomainName)
+                    .map(List::of)
+                    .orElse(List.of()), emailDomain);
+        }
+
+        for (OrganizationModel organization : organizations) {
+            if (organization.isManaged(user)) {
+                return organization;
+            }
+        }
+
+        return resolveByDomain(organizations, emailDomain);
     }
 
     public static OrganizationProvider getProvider(KeycloakSession session) {
@@ -300,45 +418,30 @@ public class Organizations {
                         (!organizationProvider.isEnabled() && org.isManaged(delegate)));
     }
 
-    private static boolean matchesOrganizationDomain(OrganizationModel organization, UserModel user, String domain) {
-        if (organization == null) {
-            return false;
-        }
+    public static OrganizationModel resolveByDomain(List<OrganizationModel> organizations, String domain) {
+        int bestParts = -1;
+        OrganizationModel organization = null;
 
-        String emailDomain = Optional.ofNullable(domain).orElseGet(() -> getEmailDomain(user));
+        for (OrganizationModel model : organizations) {
+            OrganizationDomainModel bestMatch = getMatchingDomain(domain, model);
 
-        if (emailDomain == null) {
-            return false;
-        }
-
-        Stream<OrganizationDomainModel> domains = organization.getDomains();
-
-        return domains.map(OrganizationDomainModel::getName).anyMatch(emailDomain::equals);
-    }
-
-    private static OrganizationModel resolveOrganizationByDomain(UserModel user, String domain, OrganizationProvider provider) {
-        if (user != null && domain == null) {
-            domain = getEmailDomain(user);
-        }
-
-        return ofNullable(domain)
-                .map(provider::getByDomainName)
-                .orElse(null);
-    }
-
-    private static Optional<OrganizationModel> resolveUserOrganization(List<OrganizationModel> organizations, UserModel user, String domain) {
-        OrganizationModel orgByDomain = null;
-
-        for (OrganizationModel o : organizations) {
-            if (o.isManaged(user)) {
-                return of(o);
+            if (bestMatch == null) {
+                continue;
             }
 
-            if (matchesOrganizationDomain(o, user, domain)) {
-                orgByDomain = o;
+            if (organizations.size() == 1) {
+                // only one organization, any domain match is enough
+                return model;
+            }
+
+            int mostSpecificParts = getDomainPartsSize(bestMatch.getName());
+
+            if (mostSpecificParts > bestParts) {
+                bestParts = mostSpecificParts;
+                organization = model;
             }
         }
 
-        return ofNullable(orgByDomain);
+        return organization;
     }
 }

@@ -43,6 +43,7 @@ import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.managers.BruteForceProtector;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AbstractChangeImportedUserPasswordsTest;
 import org.keycloak.testsuite.AssertEvents;
@@ -1171,15 +1172,15 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
 
         loginPage.assertCurrent();
         Assertions.assertEquals("Invalid username or password.", loginPage.getInputError());
-        ExpectedEvent event = events.expectLogin()
-                .session((String) null)
+        EventRepresentation event = EventAssertion.expectLoginError(events.poll())
+                .sessionId(null)
                 .error(Errors.USER_TEMPORARILY_DISABLED)
-                .detail(Details.USERNAME, username)
-                .removeDetail(Details.CONSENT);
+                .details(Details.USERNAME, username)
+                .details(Details.REDIRECT_URI, oauth.getRedirectUri())
+                .withoutDetails(Details.CONSENT).getEvent();
         if (userId != null) {
-            event.user(userId);
+            Assertions.assertEquals(userId, event.getUserId());
         }
-        event.assertEvent();
     }
 
     public void expectPermanentlyDisabled() {
@@ -1192,12 +1193,12 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
 
         loginPage.assertCurrent();
         Assertions.assertEquals("Invalid username or password.", loginPage.getInputError());
-        ExpectedEvent event = events.expectLogin()
-            .session((String) null)
+        EventAssertion.expectLoginError(events.poll())
+            .sessionId(null)
             .error(Errors.USER_DISABLED)
-            .detail(Details.USERNAME, username)
-            .removeDetail(Details.CONSENT);
-        event.assertEvent();
+            .details(Details.USERNAME, username)
+            .details(Details.REDIRECT_URI, oauth.getRedirectUri())
+            .withoutDetails(Details.CONSENT);
         UserRepresentation user = managedRealm.admin().users().search(username, true).get(0);
         user = managedRealm.admin().users().get(user.getId()).toRepresentation();
         List<String> disabledReason = user.getAttributes().get(UserModel.DISABLED_REASON);
@@ -1221,7 +1222,7 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
 
         Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-        events.expectLogin().assertEvent();
+        EventAssertion.expectLoginSuccess(events.poll());
 
         String code = oauth.parseLoginResponse().getCode();
         String idTokenHint = oauth.doAccessTokenRequest(code ).getIdToken();
@@ -1249,7 +1250,7 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
 
         Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-        events.expectLogin().assertEvent();
+        EventAssertion.expectLoginSuccess(events.poll());
         String code = oauth.parseLoginResponse().getCode();
         String idTokenHint = oauth.doAccessTokenRequest(code).getIdToken();
         appPage.logout(idTokenHint);

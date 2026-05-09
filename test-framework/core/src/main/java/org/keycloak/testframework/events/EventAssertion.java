@@ -1,5 +1,7 @@
 package org.keycloak.testframework.events;
 
+import java.util.Set;
+
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
 import org.keycloak.representations.idm.EventRepresentation;
@@ -50,6 +52,64 @@ public class EventAssertion {
     }
 
     /**
+     * Assert an expected LOGIN event
+     *
+     * @param event the event to assert
+     * @return
+     */
+    public static EventAssertion expectLoginSuccess(EventRepresentation event) {
+        return assertSuccess(event)
+                .type(EventType.LOGIN)
+                .isCodeId()
+                .hasSessionId()
+                .hasIpAddress()
+                .loginSuccessEventHasAllRequiredDetails();
+    }
+
+    /**
+     * Assert an expected LOGIN_ERROR event
+     *
+     * @param event the event to assert
+     * @return
+     */
+    public static EventAssertion expectLoginError(EventRepresentation event) {
+        return assertError(event)
+                .type(EventType.LOGIN_ERROR)
+                .isCodeId()
+                .hasIpAddress();
+    }
+
+    /**
+     * Assert an expected LOGOUT event
+     *
+     * @param event the event to assert
+     * @return
+     */
+    public static EventAssertion expectLogoutSuccess(EventRepresentation event) {
+        return assertSuccess(event)
+                .type(EventType.LOGOUT)
+                .hasIpAddress()
+                .hasSessionId()
+                .hasRedirectUri();
+    }
+
+    /**
+     * Assert an expected LOGOUT_ERROR event
+     *
+     * @param event the event to assert
+     * @return
+     */
+    public static EventAssertion expectLogoutError(EventRepresentation event) {
+        return assertError(event)
+                .type(EventType.LOGOUT_ERROR)
+                .hasIpAddress()
+                .sessionId(null)
+                .clientId(null)
+                .userId(null)
+                .withoutDetails(Details.CODE_ID);
+    }
+
+    /**
      * Assert the error message
      *
      * @param error the expected error message
@@ -78,6 +138,16 @@ public class EventAssertion {
      */
     public EventAssertion hasSessionId() {
         MatcherAssert.assertThat(event.getSessionId(), EventMatchers.isSessionId());
+        return this;
+    }
+
+    /**
+     * Assert the event has a userId set
+     *
+     * @return
+     */
+    public EventAssertion hasUserId() {
+        MatcherAssert.assertThat(event.getUserId(), EventMatchers.isUUID());
         return this;
     }
 
@@ -160,6 +230,29 @@ public class EventAssertion {
         for (String key : keys) {
             MatcherAssert.assertThat(event.getDetails(), Matchers.not(Matchers.hasKey(key)));
         }
+        return this;
+    }
+
+    /**
+     * Assert the LOGIN event details with required key set
+     *
+     * @return
+     */
+    private EventAssertion loginSuccessEventHasAllRequiredDetails() {
+        Set<String> keyDetails = Set.of("auth_method", "response_type", "redirect_uri", "consent", "code_id", "response_mode");
+        for (String key : keyDetails) {
+            MatcherAssert.assertThat(event.getDetails(), Matchers.hasKey(key));
+        }
+        return this;
+    }
+
+    /**
+     * Assert the event details has redirect_uri
+     *
+     * @return
+     */
+    private EventAssertion hasRedirectUri() {
+        MatcherAssert.assertThat(event.getDetails(), Matchers.hasKey("redirect_uri"));
         return this;
     }
 

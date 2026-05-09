@@ -56,6 +56,7 @@ import org.keycloak.services.resources.LoginActionsService;
 import org.keycloak.storage.StorageId;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageProviderModel;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.RealmAttributesBuilder;
 import org.keycloak.testframework.realm.RealmBuilder;
@@ -204,7 +205,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
         oauth.openLoginForm();
         loginPage.login(username, password);
 
-        events.expectLogin().user(userId).detail(Details.USERNAME, username).assertEvent();
+        EventAssertion.expectLoginSuccess(events.poll()).userId(userId).details(Details.USERNAME, username);
 
         String resetUri = oauth.AUTH_SERVER_ROOT + "/realms/test/login-actions/reset-credentials";
 
@@ -493,7 +494,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
 
         loginPage.login("login@test.com", password);
 
-        EventRepresentation loginEvent = events.expectLogin().user(userId).detail(Details.USERNAME, "login@test.com").assertEvent();
+        EventRepresentation loginEvent = EventAssertion.expectLoginSuccess(events.poll()).userId(userId).details(Details.USERNAME, "login@test.com").getEvent();
 
         String code = oauth.parseLoginResponse().getCode();
         AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
@@ -580,19 +581,19 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
             // continue to app because it is the same browser and auth session exists
             assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-            EventRepresentation loginEvent = events.expectLogin().user(userId).detail(Details.USERNAME, username.trim()).assertEvent();
+            EventRepresentation loginEvent = EventAssertion.expectLoginSuccess(events.poll()).userId(userId).details(Details.USERNAME, username.trim()).getEvent();
             String sessionId = loginEvent.getSessionId();
 
             AccessTokenResponse tokenResponse = sendTokenRequestAndGetResponse(loginEvent);
             oauth.logoutForm().idTokenHint(tokenResponse.getIdToken()).withRedirect().open();
 
-            events.expectLogout(sessionId).user(userId).session(sessionId).assertEvent();
+            EventAssertion.expectLogoutSuccess(events.poll()).sessionId(sessionId).userId(userId);
 
             oauth.openLoginForm();
 
             loginPage.login("login-test", password);
 
-            loginEvent = events.expectLogin().user(userId).detail(Details.USERNAME, "login-test").assertEvent();
+            loginEvent = EventAssertion.expectLoginSuccess(events.poll()).userId(userId).details(Details.USERNAME, "login-test").getEvent();
             sessionId = loginEvent.getSessionId();
 
             assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
@@ -600,7 +601,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
             tokenResponse = sendTokenRequestAndGetResponse(loginEvent);
             oauth.logoutForm().idTokenHint(tokenResponse.getIdToken()).withRedirect().open();
 
-            events.expectLogout(sessionId).user(userId).session(sessionId).assertEvent();
+            EventAssertion.expectLogoutSuccess(events.poll()).sessionId(sessionId).userId(userId);
         }
 
         return changePasswordUrl;
@@ -1215,13 +1216,13 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
         assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
 
-        EventRepresentation loginEvent = events.expectLogin().user(userId).detail(Details.USERNAME, "login-test").assertEvent();
+        EventRepresentation loginEvent = EventAssertion.expectLoginSuccess(events.poll()).userId(userId).details(Details.USERNAME, "login-test").getEvent();
         String sessionId = loginEvent.getSessionId();
 
         AccessTokenResponse tokenResponse = sendTokenRequestAndGetResponse(loginEvent);
         oauth.logoutForm().idTokenHint(tokenResponse.getIdToken()).withRedirect().open();
 
-        events.expectLogout(sessionId).user(userId).session(sessionId).assertEvent();
+        EventAssertion.expectLogoutSuccess(events.poll()).sessionId(sessionId).userId(userId);
 
         oauth.openLoginForm();
 
@@ -1229,7 +1230,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
 
         assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-        events.expectLogin().user(userId).detail(Details.USERNAME, "login-test").assertEvent();
+        EventAssertion.expectLoginSuccess(events.poll()).userId(userId).details(Details.USERNAME, "login-test");
     }
 
     @Test

@@ -1,7 +1,10 @@
 package org.keycloak.services.client;
 
 import java.io.InputStream;
+import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Stream;
 
 import org.keycloak.models.RealmModel;
@@ -17,7 +20,17 @@ public interface ClientService extends Service {
     }
 
     class ClientProjectionOptions {
-        // TODO
+        private final LinkedHashSet<String> fields = new LinkedHashSet<>();
+
+        public ClientProjectionOptions(Set<String> fields) {
+            if (fields != null) {
+                this.fields.addAll(fields);
+            }
+        }
+        
+        public Set<String> getFields() {
+            return Collections.unmodifiableSet(fields);
+        }
     }
 
     class ClientSortAndSliceOptions {
@@ -29,15 +42,7 @@ public interface ClientService extends Service {
 
     record CreateOrUpdateResult(BaseClientRepresentation representation, boolean created) {}
 
-    default Optional<BaseClientRepresentation> getClient(RealmModel realm, String clientId) throws ServiceException {
-        return getClient(realm, clientId, null);
-    }
-
-    Optional<BaseClientRepresentation> getClient(RealmModel realm, String clientId, ClientProjectionOptions projectionOptions) throws ServiceException;
-
-    default Stream<BaseClientRepresentation> getClients(RealmModel realm) {
-        return getClients(realm, null, null, null);
-    }
+    Optional<BaseClientRepresentation> getClient(RealmModel realm, String clientId) throws ServiceException;
 
     Stream<BaseClientRepresentation> getClients(RealmModel realm, ClientProjectionOptions projectionOptions, ClientSearchOptions searchOptions, ClientSortAndSliceOptions sortAndSliceOptions);
 
