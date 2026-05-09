@@ -138,6 +138,19 @@ public class UserSearchTest extends AbstractUserTest {
 
     @Test
     @DatabaseTest
+    public void searchUserWithQueryParameter() {
+        createUsers();
+
+        String query = mapToSearchQuery(Map.of("test", "test1"));
+        assertThat(managedRealm.admin().users().searchByAttributes(query), hasSize(1));
+        List<UserRepresentation> users = managedRealm.admin().users().search("username", null, null, null, null, null, null, query);
+        assertThat(users, hasSize(1));
+        assertThat(users.get(0).getUsername(), is("username1"));
+        assertThat(managedRealm.admin().users().count("username", null, null, null, null, null, null, query), is(1));
+    }
+
+    @Test
+    @DatabaseTest
     public void searchByMultipleAttributes() {
         createUsers();
 
