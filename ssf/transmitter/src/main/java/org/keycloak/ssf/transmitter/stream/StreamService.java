@@ -35,6 +35,7 @@ import org.keycloak.ssf.stream.DeliveryMethodFamily;
 import org.keycloak.ssf.stream.StreamStatus;
 import org.keycloak.ssf.stream.StreamStatusValue;
 import org.keycloak.ssf.transmitter.SsfTransmitterProvider;
+import org.keycloak.ssf.transmitter.admin.SsfAdminStreamUpdateRequest;
 import org.keycloak.ssf.transmitter.event.SsfSignatureAlgorithms;
 import org.keycloak.ssf.transmitter.event.SsfUserSubjectFormats;
 import org.keycloak.ssf.transmitter.metadata.TransmitterMetadataService;
@@ -926,6 +927,82 @@ public class StreamService {
         RealmModel realm = session.getContext().getRealm();
         log.debugf("Stream updated. realm=%s client=%s streamId=%s",
                 realm.getName(), client.getClientId(), streamUpdate.getStreamId());
+
+        return resolveStreamForResponse(draft);
+    }
+
+    /**
+     * Admin-side partial update for the receiver client's stream.
+     * Applies the admin-editable subset of the configuration —
+     * description, events_requested, events_delivered — and leaves
+     * everything else untouched. Skips the receiver-vs-transmitter
+     * profile validation that {@link #updateStream} runs because the
+     * admin path is trusted to override receiver-supplied state on
+     * either profile. Driven by
+     * {@code PATCH /admin/realms/{realm}/ssf/clients/{clientId}/stream}.
+     *
+     * <p>{@code events_delivered} semantics: when the admin supplies it
+     * verbatim, it is honoured as-is (overriding the spec's
+     * {@code events_requested ∩ events_supported} computation). When
+     * omitted but {@code events_requested} is supplied, the intersection
+     * is recomputed from the new {@code events_requested}. When neither
+     * is supplied, both are left as stored.
+     *
+     * <p>Returns {@code null} when the receiver has no stream registered.
+     */
+    public StreamConfig updateStreamAsAdmin(ClientModel receiverClient, SsfAdminStreamUpdateRequest update) {
+
+        if (update == null) {
+            throw new SsfException("Invalid stream update: request body is required");
+        }
+
+        StreamConfig existingStream = streamStore.getStreamForClient(receiverClient);
+        if (existingStream == null) {
+            return null;
+        }
+
+        StreamConfig draft = new StreamConfig(existingStream);
+
+        if (update.getDescription() != null) {
+            draft.setDescription(update.getDescription());
+        }
+        boolean eventsRequestedChanged = update.getEventsRequested() != null;
+        if (eventsRequestedChanged) {
+            draft.setEventsRequested(update.getEventsRequested());
+        }
+        if (update.getEventsDelivered() != null) {
+            // Admin-supplied verbatim — overrides the standard
+            // events_requested ∩ events_supported intersection. Operators
+            // who want the intersection back should omit the field; an
+            // explicit value (including the empty set) is honoured.
+            draft.setEventsDelivered(update.getEventsDelivered());
+        } else if (eventsRequestedChanged) {
+            SsfEventsConfig eventsConfig = streamStore.getEventsConfig(receiverClient, draft.getEventsRequested());
+            draft.setEventsDelivered(eventsConfig.eventsDelivered());
+        }
+
+        // Length-validate the merged state. Reuses the same per-field
+        // limits as the receiver-facing update path so a misconfigured
+        // admin request gets a clean 400 instead of a downstream JPA
+        // column-overflow error.
+        validateFieldConstraints(draft);
+
+        // Already-queued non-terminal outbox rows whose event type is
+        // no longer in events_delivered would otherwise be shipped by
+        // the drainer / poll endpoint. Drop them so a narrowing admin
+        // PATCH actually takes effect on the wire — matches the
+        // behaviour of the receiver-facing PATCH.
+        if (eventsRequestedChanged || update.getEventsDelivered() != null) {
+            evictPendingEventsOutsideDeliveredSet(receiverClient, draft.getEventsDelivered(), draft.getStreamId());
+        }
+
+        draft.setUpdatedAt(Time.currentTime());
+
+        streamStore.saveStream(draft);
+
+        RealmModel realm = session.getContext().getRealm();
+        log.debugf("Stream updated by admin. realm=%s client=%s streamId=%s",
+                realm.getName(), receiverClient.getClientId(), draft.getStreamId());
 
         return resolveStreamForResponse(draft);
     }

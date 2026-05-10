@@ -13,6 +13,7 @@ import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.PATCH;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
@@ -43,6 +44,7 @@ import org.keycloak.ssf.subject.SubjectResolution;
 import org.keycloak.ssf.subject.SubjectResolver;
 import org.keycloak.ssf.transmitter.SsfTransmitterConfig;
 import org.keycloak.ssf.transmitter.SsfTransmitterProvider;
+import org.keycloak.ssf.transmitter.admin.SsfAdminStreamUpdateRequest;
 import org.keycloak.ssf.transmitter.admin.SsfAdminSubjectRequest;
 import org.keycloak.ssf.transmitter.admin.SsfAdminSubjectResponse;
 import org.keycloak.ssf.transmitter.admin.SsfClientStreamRepresentation;
@@ -531,12 +533,70 @@ public class SsfAdminResource {
     }
 
     /**
-     * Deletes the currently registered SSF stream for a receiver client so the
-     * receiver can re-register with a fresh configuration. Returns 204 on
-     * success, 404 if the client does not exist or has no registered stream.
+     * Admin-side partial update for the receiver client's stream.
+     * Applies the admin-editable subset of the configuration —
+     * {@code description}, {@code events_requested},
+     * {@code events_delivered} — and leaves everything else untouched.
+     * Different from the receiver-facing {@code PUT/PATCH /streams}
+     * endpoints because it skips receiver-vs-transmitter profile
+     * validation and only touches the admin-editable fields.
      *
-     * The endpoint is available via
-     * {@code $KC_ADMIN_URL/admin/realms/{realm}/ssf/clients/{clientId}/stream}
+     * <p>Both {@code RECEIVER}- and {@code KEYCLOAK}-managed streams
+     * accept this PATCH; the {@code managedBy} marker is informational.
+     * An admin save on a {@code RECEIVER}-managed stream overwrites
+     * receiver-supplied state — the admin UI surfaces this via the
+     * "Managed by" badge and tooltip.
+     *
+     * <p>The endpoint is available via
+     * {@code $KC_ADMIN_URL/admin/realms/{realm}/ssf/clients/{clientId}/stream}.
+     */
+    @PATCH
+    @Path("clients/{clientId}/stream")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.SSF)
+    @Operation(
+            summary = "Update SSF stream for client",
+            description = "Admin-side partial update of the receiver client's SSF stream — accepts any subset of {description, events_requested, events_delivered}. Skips receiver-vs-transmitter profile validation and only touches admin-editable fields."
+    )
+    @APIResponses(value = {
+            @APIResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = SsfClientStreamRepresentation.class))),
+            @APIResponse(responseCode = "400", description = "Bad Request"),
+            @APIResponse(responseCode = "404", description = "Client not found or no SSF stream registered")
+    })
+    public Response updateClientStream(
+            @Parameter(description = "OAuth client_id of the receiver")
+            @PathParam("clientId") String clientId,
+            SsfAdminStreamUpdateRequest update) {
+
+        ClientModel client = realm.getClientByClientId(clientId);
+        if (client == null) {
+            throw new NotFoundException("Client not found");
+        }
+        auth.clients().requireManage(client);
+
+        try {
+            StreamConfig updated = transmitter.streamService().updateStreamAsAdmin(client, update);
+            if (updated == null) {
+                throw new NotFoundException("No SSF stream registered for client");
+            }
+            return Response.ok(toClientStreamRepresentation(updated, client)).build();
+        } catch (SsfException e) {
+            log.debugf(e, "Admin stream update rejected for client %s: %s", clientId, e.getMessage());
+            throw new WebApplicationException(Response.status(Response.Status.BAD_REQUEST)
+                    .entity(new SsfErrorRepresentation("stream_error", e.getMessage()))
+                    .build());
+        }
+    }
+
+    /**
+     * Deletes the currently registered SSF stream for a receiver client
+     * so the receiver can re-register with a fresh configuration.
+     * Returns 204 on success, 404 if the client does not exist or has
+     * no registered stream.
+     *
+     * <p>The endpoint is available via
+     * {@code $KC_ADMIN_URL/admin/realms/{realm}/ssf/clients/{clientId}/stream}.
      */
     @DELETE
     @Path("clients/{clientId}/stream")

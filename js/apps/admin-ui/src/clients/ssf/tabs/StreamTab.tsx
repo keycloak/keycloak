@@ -35,7 +35,7 @@ import {
   SyncAltIcon,
   TimesCircleIcon,
 } from "@patternfly/react-icons";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
@@ -56,8 +56,21 @@ const isPollDeliveryMethod = (method: string | undefined): boolean =>
   method === DELIVERY_METHOD_POLL_URI ||
   method === "https://schemas.openid.net/secevent/risc/delivery-method/poll";
 
-const noop = () => {
-  // no-op handler for the read-only Events Delivered KeycloakSelect
+/**
+ * Order-insensitive equality for the events_requested /
+ * events_delivered string lists. Used to drive the "dirty" indicator
+ * on the admin-side stream edit form so toggling a multi-select item
+ * back to its original state doesn't keep the Save button enabled.
+ */
+const arraysEqualUnordered = (a: string[], b: string[]): boolean => {
+  if (a === b) return true;
+  if (a.length !== b.length) return false;
+  const aSorted = [...a].sort();
+  const bSorted = [...b].sort();
+  for (let i = 0; i < aSorted.length; i++) {
+    if (aSorted[i] !== bSorted[i]) return false;
+  }
+  return true;
 };
 
 /**
@@ -86,6 +99,8 @@ type SsfClientStreamDelivery = {
   authorization_header?: string;
 };
 
+export type SsfStreamManagedBy = "RECEIVER" | "KEYCLOAK";
+
 export type SsfClientStream = {
   streamId?: string;
   description?: string;
@@ -99,6 +114,7 @@ export type SsfClientStream = {
   createdAt?: number;
   updatedAt?: number;
   lastVerifiedAt?: number;
+  managedBy?: SsfStreamManagedBy;
 };
 
 export type StreamTabProps = {
@@ -170,6 +186,116 @@ export const StreamTab = ({
   const [createStreamFormOpen, setCreateStreamFormOpen] = useState(false);
 
   const [statusActionLoading, setStatusActionLoading] = useState(false);
+
+  // ---- admin-side stream edit state ---------------------------------
+  // Tracks pending edits on the registered stream's admin-editable
+  // fields. Initialised from the loaded stream and reset when the
+  // stream refreshes so a refresh-without-save discards local edits.
+  const [editStreamDescription, setEditStreamDescription] = useState("");
+  const [editStreamEventsRequested, setEditStreamEventsRequested] = useState<
+    string[]
+  >([]);
+  const [editStreamEventsDelivered, setEditStreamEventsDelivered] = useState<
+    string[]
+  >([]);
+  const [editEventsRequestedOpen, setEditEventsRequestedOpen] = useState(false);
+  const [editEventsDeliveredOpen, setEditEventsDeliveredOpen] = useState(false);
+  const [streamEditSubmitting, setStreamEditSubmitting] = useState(false);
+
+  // Re-seed edit state whenever the loaded stream changes.
+  useEffect(() => {
+    setEditStreamDescription(clientStream?.description ?? "");
+    setEditStreamEventsRequested(clientStream?.eventsRequested ?? []);
+    setEditStreamEventsDelivered(clientStream?.eventsDelivered ?? []);
+  }, [
+    clientStream?.streamId,
+    clientStream?.description,
+    clientStream?.eventsRequested,
+    clientStream?.eventsDelivered,
+  ]);
+
+  // Description / events_requested / events_delivered are receiver-
+  // owned for streams the receiver registered itself (via the
+  // standard SSF /streams endpoint). We surface them as read-only on
+  // the admin Stream tab in that mode so an admin save can't silently
+  // overwrite the receiver's contract; the server PATCH endpoint
+  // stays open for operators who need to override out-of-band, but
+  // the UI keeps that out of the happy path.
+  const canEditStream = clientStream?.managedBy === "KEYCLOAK";
+
+  const streamEditDirty =
+    canEditStream &&
+    ((clientStream.description ?? "") !== editStreamDescription ||
+      !arraysEqualUnordered(
+        clientStream.eventsRequested ?? [],
+        editStreamEventsRequested,
+      ) ||
+      !arraysEqualUnordered(
+        clientStream.eventsDelivered ?? [],
+        editStreamEventsDelivered,
+      ));
+
+  const submitStreamEdit = async () => {
+    if (!client.clientId || !clientStream || !streamEditDirty) {
+      return;
+    }
+    setStreamEditSubmitting(true);
+    try {
+      const body: Record<string, unknown> = {};
+      if ((clientStream.description ?? "") !== editStreamDescription) {
+        body.description = editStreamDescription;
+      }
+      if (
+        !arraysEqualUnordered(
+          clientStream.eventsRequested ?? [],
+          editStreamEventsRequested,
+        )
+      ) {
+        body.events_requested = editStreamEventsRequested;
+      }
+      if (
+        !arraysEqualUnordered(
+          clientStream.eventsDelivered ?? [],
+          editStreamEventsDelivered,
+        )
+      ) {
+        body.events_delivered = editStreamEventsDelivered;
+      }
+
+      const response = await fetch(
+        `${addTrailingSlash(
+          adminClient.baseUrl,
+        )}admin/realms/${realm}/ssf/clients/${client.clientId}/stream`,
+        {
+          method: "PATCH",
+          headers: {
+            ...getAuthorizationHeaders(await adminClient.getAccessToken()),
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(body),
+        },
+      );
+      if (!response.ok) {
+        const text = await response.text();
+        throw new Error(
+          text ||
+            `${response.status} ${response.statusText || "Request failed"}`,
+        );
+      }
+      addAlert(t("ssfStreamUpdateSuccess"), AlertVariant.success);
+      refresh();
+    } catch (error) {
+      addError("ssfStreamUpdateError", error);
+    } finally {
+      setStreamEditSubmitting(false);
+    }
+  };
+
+  const discardStreamEdit = () => {
+    setEditStreamDescription(clientStream?.description ?? "");
+    setEditStreamEventsRequested(clientStream?.eventsRequested ?? []);
+    setEditStreamEventsDelivered(clientStream?.eventsDelivered ?? []);
+  };
 
   /**
    * Drives the admin stream-status endpoint
@@ -714,25 +840,50 @@ export const StreamTab = ({
                   </InputGroupItem>
                 </InputGroup>
               </FormGroup>
-              {clientStream.description && (
-                <FormGroup
-                  label={t("ssfStreamDescription")}
-                  fieldId="ssfStreamDescription"
-                  labelIcon={
-                    <HelpItem
-                      helpText={t("ssfStreamDescriptionHelp")}
-                      fieldLabelId="ssfStreamDescription"
-                    />
+              <FormGroup
+                label={t("ssfStreamManagedBy")}
+                fieldId="ssfStreamManagedBy"
+                labelIcon={
+                  <HelpItem
+                    helpText={t("ssfStreamManagedByHelp")}
+                    fieldLabelId="ssfStreamManagedBy"
+                  />
+                }
+              >
+                <Label
+                  data-testid="ssfStreamManagedBy"
+                  color={
+                    clientStream.managedBy === "KEYCLOAK" ? "blue" : "grey"
                   }
                 >
-                  <TextInput
-                    id="ssfStreamDescription"
-                    data-testid="ssfStreamDescription"
-                    readOnlyVariant="default"
-                    value={clientStream.description}
+                  {clientStream.managedBy === "KEYCLOAK"
+                    ? t("ssfStreamManagedByKeycloak")
+                    : t("ssfStreamManagedByReceiver")}
+                </Label>
+              </FormGroup>
+              <FormGroup
+                label={t("ssfStreamDescription")}
+                fieldId="ssfStreamDescription"
+                labelIcon={
+                  <HelpItem
+                    helpText={t("ssfStreamDescriptionHelp")}
+                    fieldLabelId="ssfStreamDescription"
                   />
-                </FormGroup>
-              )}
+                }
+              >
+                <TextInput
+                  id="ssfStreamDescription"
+                  data-testid="ssfStreamDescription"
+                  readOnlyVariant={canEditStream ? undefined : "default"}
+                  value={editStreamDescription}
+                  onChange={
+                    canEditStream
+                      ? (_event, value) => setEditStreamDescription(value)
+                      : undefined
+                  }
+                />
+              </FormGroup>
+
               {clientStream.createdAt && (
                 <FormGroup
                   label={t("ssfStreamCreatedAt")}
@@ -1023,38 +1174,41 @@ export const StreamTab = ({
                   />
                 }
               >
-                {clientStream.eventsRequested &&
-                clientStream.eventsRequested.length > 0 ? (
-                  <KeycloakSelect
-                    toggleId="ssfEventsRequested"
-                    data-testid="ssfEventsRequested"
-                    variant={SelectVariant.typeaheadMulti}
-                    isDisabled
-                    chipGroupProps={{
-                      numChips: 5,
-                      expandedText: t("hide"),
-                      collapsedText: t("showRemaining"),
-                    }}
-                    typeAheadAriaLabel={t("ssfEventsRequested")}
-                    onToggle={noop}
-                    isOpen={false}
-                    selections={clientStream.eventsRequested}
-                    onSelect={noop}
-                  >
-                    {clientStream.eventsRequested.map((event) => (
-                      <SelectOption key={event} value={event}>
-                        {event}
-                      </SelectOption>
-                    ))}
-                  </KeycloakSelect>
-                ) : (
-                  <TextInput
-                    id="ssfEventsRequested"
-                    data-testid="ssfEventsRequested"
-                    readOnlyVariant="default"
-                    value={t("ssfEventsRequestedEmpty")}
-                  />
-                )}
+                <KeycloakSelect
+                  toggleId="ssfEventsRequested"
+                  data-testid="ssfEventsRequested"
+                  variant={SelectVariant.typeaheadMulti}
+                  isDisabled={!canEditStream}
+                  chipGroupProps={{
+                    numChips: 5,
+                    expandedText: t("hide"),
+                    collapsedText: t("showRemaining"),
+                  }}
+                  typeAheadAriaLabel={t("ssfEventsRequested")}
+                  onToggle={(open) => setEditEventsRequestedOpen(open)}
+                  isOpen={editEventsRequestedOpen}
+                  selections={editStreamEventsRequested}
+                  onSelect={(value) => {
+                    if (!canEditStream) return;
+                    const event = value as string;
+                    setEditStreamEventsRequested((prev) =>
+                      prev.includes(event)
+                        ? prev.filter((e) => e !== event)
+                        : [...prev, event],
+                    );
+                  }}
+                  onClear={
+                    canEditStream
+                      ? () => setEditStreamEventsRequested([])
+                      : undefined
+                  }
+                >
+                  {receiverSupportedEvents.map((event) => (
+                    <SelectOption key={event} value={event}>
+                      {event}
+                    </SelectOption>
+                  ))}
+                </KeycloakSelect>
               </FormGroup>
               <FormGroup
                 label={t("ssfEventsDelivered")}
@@ -1066,39 +1220,65 @@ export const StreamTab = ({
                   />
                 }
               >
-                {clientStream.eventsDelivered &&
-                clientStream.eventsDelivered.length > 0 ? (
-                  <KeycloakSelect
-                    toggleId="ssfEventsDelivered"
-                    data-testid="ssfEventsDelivered"
-                    variant={SelectVariant.typeaheadMulti}
-                    isDisabled
-                    chipGroupProps={{
-                      numChips: 5,
-                      expandedText: t("hide"),
-                      collapsedText: t("showRemaining"),
-                    }}
-                    typeAheadAriaLabel={t("ssfEventsDelivered")}
-                    onToggle={noop}
-                    isOpen={false}
-                    selections={clientStream.eventsDelivered}
-                    onSelect={noop}
-                  >
-                    {clientStream.eventsDelivered.map((event) => (
-                      <SelectOption key={event} value={event}>
-                        {event}
-                      </SelectOption>
-                    ))}
-                  </KeycloakSelect>
-                ) : (
-                  <TextInput
-                    id="ssfEventsDelivered"
-                    data-testid="ssfEventsDelivered"
-                    readOnlyVariant="default"
-                    value={t("ssfEventsDeliveredEmpty")}
-                  />
-                )}
+                <KeycloakSelect
+                  toggleId="ssfEventsDelivered"
+                  data-testid="ssfEventsDelivered"
+                  variant={SelectVariant.typeaheadMulti}
+                  isDisabled={!canEditStream}
+                  chipGroupProps={{
+                    numChips: 5,
+                    expandedText: t("hide"),
+                    collapsedText: t("showRemaining"),
+                  }}
+                  typeAheadAriaLabel={t("ssfEventsDelivered")}
+                  onToggle={(open) => setEditEventsDeliveredOpen(open)}
+                  isOpen={editEventsDeliveredOpen}
+                  selections={editStreamEventsDelivered}
+                  onSelect={(value) => {
+                    if (!canEditStream) return;
+                    const event = value as string;
+                    setEditStreamEventsDelivered((prev) =>
+                      prev.includes(event)
+                        ? prev.filter((e) => e !== event)
+                        : [...prev, event],
+                    );
+                  }}
+                  onClear={
+                    canEditStream
+                      ? () => setEditStreamEventsDelivered([])
+                      : undefined
+                  }
+                >
+                  {receiverSupportedEvents.map((event) => (
+                    <SelectOption key={event} value={event}>
+                      {event}
+                    </SelectOption>
+                  ))}
+                </KeycloakSelect>
               </FormGroup>
+              {canEditStream && (
+                <ActionGroup>
+                  <Button
+                    type="button"
+                    variant="primary"
+                    onClick={() => submitStreamEdit()}
+                    isDisabled={!streamEditDirty || streamEditSubmitting}
+                    isLoading={streamEditSubmitting}
+                    data-testid="ssfStreamSaveChanges"
+                  >
+                    {t("ssfStreamSaveChanges")}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="link"
+                    onClick={() => discardStreamEdit()}
+                    isDisabled={!streamEditDirty || streamEditSubmitting}
+                    data-testid="ssfStreamDiscardChanges"
+                  >
+                    {t("ssfStreamDiscardChanges")}
+                  </Button>
+                </ActionGroup>
+              )}
               <ActionGroup>
                 <Button
                   variant="secondary"
