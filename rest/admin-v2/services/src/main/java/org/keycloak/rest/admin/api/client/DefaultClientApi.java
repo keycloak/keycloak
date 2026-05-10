@@ -28,6 +28,7 @@ public class DefaultClientApi implements ClientApi {
     private final KeycloakSession session;
     private final String clientId;
     private final RealmModel realm;
+    private final AdminPermissionEvaluator permissions;
     private final ClientService clientService;
 
     public DefaultClientApi(@Nonnull KeycloakSession session,
@@ -39,6 +40,7 @@ public class DefaultClientApi implements ClientApi {
         this.session = session;
         this.clientId = clientId;
         this.realm = realm;
+        this.permissions = permissions;
         this.clientService = new DefaultClientService(session, realm, permissions, realmAdminResource);
     }
 

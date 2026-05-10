@@ -30,6 +30,7 @@ team/core-iam:
   - area/ldap
   - area/organizations
   - area/scim
+  - area/ssf
   - area/user-profile
   - area/workflows
 

@@ -35,6 +35,7 @@ import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
+import org.keycloak.events.EventType;
 import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.keys.Attributes;
 import org.keycloak.keys.GeneratedHmacKeyProviderFactory;
@@ -48,6 +49,7 @@ import org.keycloak.protocol.RestartLoginCookie;
 import org.keycloak.protocol.oidc.endpoints.AuthorizationEndpoint;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
@@ -263,9 +265,8 @@ public class RestartCookieTest extends AbstractTestRealmKeycloakTest {
         loginPage.assertCurrent();
         Assertions.assertEquals("Your login attempt timed out. Login will start from the beginning.", loginPage.getError());
 
-        events.expectLogin().user((String) null).session((String) null).error(Errors.EXPIRED_CODE).clearDetails()
-                .detail(Details.RESTART_AFTER_TIMEOUT, "true")
-                .assertEvent();
+        EventAssertion.assertError(events.poll()).type(EventType.LOGIN_ERROR).userId(null).sessionId(null).error(Errors.EXPIRED_CODE)
+                .details(Details.RESTART_AFTER_TIMEOUT, "true");
     }
 
 
@@ -296,8 +297,7 @@ public class RestartCookieTest extends AbstractTestRealmKeycloakTest {
         loginPage.assertCurrent();
         Assertions.assertEquals("Your login attempt timed out. Login will start from the beginning.", loginPage.getError());
 
-        events.expectLogin().user((String) null).session((String) null).error(Errors.EXPIRED_CODE).clearDetails()
-                .detail(Details.RESTART_AFTER_TIMEOUT, "true")
-                .assertEvent();
+        EventAssertion.assertError(events.poll()).type(EventType.LOGIN_ERROR).userId(null).sessionId(null).error(Errors.EXPIRED_CODE)
+                .details(Details.RESTART_AFTER_TIMEOUT, "true");
     }
 }

@@ -240,6 +240,14 @@
                                     <overWrite>false</overWrite>
                                     <outputDirectory>${auth.server.home}/providers</outputDirectory>
                                 </artifactItem>
+                                <artifactItem>
+                                    <groupId>org.keycloak.testframework</groupId>
+                                    <artifactId>keycloak-test-framework-remote-providers</artifactId>
+                                    <version>${project.version}</version>
+                                    <type>jar</type>
+                                    <overWrite>false</overWrite>
+                                    <outputDirectory>${auth.server.home}/providers</outputDirectory>
+                                </artifactItem>
                             </artifactItems>
                         </configuration>
                     </execution>

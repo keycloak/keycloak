@@ -47,6 +47,7 @@ import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.UserBuilder;
@@ -231,11 +232,12 @@ public class ServiceAccountTest extends AbstractKeycloakTest {
 
         LogoutResponse logoutResponse = oauth.doLogout(response.getRefreshToken());
         assertTrue(logoutResponse.isSuccess());
-        events.expectLogout(accessToken.getSessionState())
-                .client("service-account-cl-refresh-on")
-                .user(userIdClRefreshOn)
-                .removeDetail(Details.REDIRECT_URI)
-                .assertEvent();
+        EventAssertion.assertSuccess(events.poll())
+                .type(EventType.LOGOUT)
+                .sessionId(accessToken.getSessionState())
+                .clientId("service-account-cl-refresh-on")
+                .userId(userIdClRefreshOn)
+                .withoutDetails(Details.REDIRECT_URI);
 
         response = oauth.doRefreshTokenRequest(response.getRefreshToken());
         assertEquals(400, response.getStatusCode());

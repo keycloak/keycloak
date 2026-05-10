@@ -21,13 +21,14 @@ import java.net.URI;
 
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
-import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
+import org.keycloak.events.EventType;
 import org.keycloak.protocol.oidc.utils.OIDCResponseMode;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AuthorizationResponseToken;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.util.ClientManager;
@@ -64,7 +65,7 @@ public class AuthorizationTokenResponseModeTest extends AbstractTestRealmKeycloa
         assertEquals("OpenIdConnect.AuthenticationProperties=2302984sdlk", responseToken.getOtherClaims().get("state"));
         Assertions.assertNull(responseToken.getOtherClaims().get("error"));
 
-        String codeId = events.expectLogin().assertEvent().getDetails().get(Details.CODE_ID);
+        EventAssertion.expectLoginSuccess(events.poll());
     }
 
     @Test
@@ -88,7 +89,7 @@ public class AuthorizationTokenResponseModeTest extends AbstractTestRealmKeycloa
         Assertions.assertNotNull(currentUri.getRawQuery());
         Assertions.assertNull(currentUri.getRawFragment());
 
-        String codeId = events.expectLogin().assertEvent().getDetails().get(Details.CODE_ID);
+        EventAssertion.expectLoginSuccess(events.poll());
     }
 
     @Test
@@ -109,7 +110,7 @@ public class AuthorizationTokenResponseModeTest extends AbstractTestRealmKeycloa
         Assertions.assertNull(currentUri.getRawQuery());
         Assertions.assertNotNull(currentUri.getRawFragment());
 
-        String codeId = events.expectLogin().assertEvent().getDetails().get(Details.CODE_ID);
+        EventAssertion.expectLoginSuccess(events.poll());
     }
 
     @Test
@@ -129,7 +130,7 @@ public class AuthorizationTokenResponseModeTest extends AbstractTestRealmKeycloa
         assertEquals("OpenIdConnect.AuthenticationProperties=2302984sdlk", responseToken.getOtherClaims().get("state"));
         Assertions.assertNull(responseToken.getOtherClaims().get("error"));
 
-        String codeId = events.expectLogin().assertEvent().getDetails().get(Details.CODE_ID);
+        EventAssertion.expectLoginSuccess(events.poll());
     }
 
     @Test
@@ -158,7 +159,7 @@ public class AuthorizationTokenResponseModeTest extends AbstractTestRealmKeycloa
         Assertions.assertNull(currentUri.getRawQuery());
         Assertions.assertNotNull(currentUri.getRawFragment());
 
-        String codeId = events.expectLogin().assertEvent().getDetails().get(Details.CODE_ID);
+        EventAssertion.expectLoginSuccess(events.poll());
     }
 
     @Test
@@ -205,7 +206,7 @@ public class AuthorizationTokenResponseModeTest extends AbstractTestRealmKeycloa
         Assertions.assertEquals(OAuthErrorException.INVALID_REQUEST, responseToken.getOtherClaims().get("error"));
         Assertions.assertEquals("Response_mode 'query.jwt' is allowed only when the authorization response token is encrypted", responseToken.getOtherClaims().get("error_description"));
 
-        events.expectLogin().error(Errors.INVALID_REQUEST).user((String) null).session((String) null).clearDetails().assertEvent();
+        EventAssertion.assertError(events.poll()).type(EventType.LOGIN_ERROR).error(Errors.INVALID_REQUEST).userId(null).sessionId(null);
     }
 
     @Test

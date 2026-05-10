@@ -24,6 +24,7 @@ import org.keycloak.events.EventType;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.AdminApiUtil;
@@ -138,13 +139,11 @@ public class TrustStoreEmailTest extends AbstractTestRealmKeycloakTest {
                 .removeDetail(Details.REDIRECT_URI)
                 .assertEvent();
 
-        events.expectLogin()
-                .client("test-app")
-                .user(user.getId())
-                .session(mailCodeId)
-                .detail(Details.USERNAME, "test-user@localhost")
-                .removeDetail(Details.REDIRECT_URI)
-                .assertEvent();
+        EventAssertion.expectLoginSuccess(events.poll())
+                .clientId("test-app")
+                .userId(user.getId())
+                .sessionId(mailCodeId)
+                .details(Details.USERNAME, "test-user@localhost");
 
         assertCurrentUrlStartsWith(OAuthClient.APP_AUTH_ROOT);
         AccountHelper.logout(managedRealm.admin(), user.getUsername());

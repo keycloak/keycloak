@@ -85,6 +85,7 @@ public class OIDCClientRegistrationProvider extends AbstractClientRegistrationPr
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public Response createOIDC(OIDCClientRepresentation clientOIDC) {
+        Cors cors = cors();
         if (clientOIDC.getClientId() != null) {
             throw new ErrorResponseException(ErrorCodes.INVALID_CLIENT_METADATA, "Client Identifier included", Response.Status.BAD_REQUEST);
         }
@@ -104,7 +105,7 @@ public class OIDCClientRegistrationProvider extends AbstractClientRegistrationPr
             URI uri = getRegistrationClientUri(clientModel);
             clientOIDC = DescriptionConverter.toExternalResponse(session, client, uri);
             clientOIDC.setClientIdIssuedAt(Time.currentTime());
-            return cors().add(Response.created(uri).entity(clientOIDC));
+            return cors.add(Response.created(uri).entity(clientOIDC));
         } catch (ClientRegistrationException cre) {
             ServicesLogger.LOGGER.clientRegistrationException(cre.getMessage());
             throw new ErrorResponseException(ErrorCodes.INVALID_CLIENT_METADATA, "Client metadata invalid", Response.Status.BAD_REQUEST);
@@ -115,12 +116,13 @@ public class OIDCClientRegistrationProvider extends AbstractClientRegistrationPr
     @Path("{clientId}")
     @Produces(MediaType.APPLICATION_JSON)
     public Response getOIDC(@PathParam("clientId") String clientId) {
+        Cors cors = cors();
         ClientModel client = session.getContext().getRealm().getClientByClientId(clientId);
 
         ClientRepresentation clientRepresentation = get(client);
 
         OIDCClientRepresentation clientOIDC = DescriptionConverter.toExternalResponse(session, clientRepresentation, getRegistrationClientUri(client));
-        return cors().add(Response.ok(clientOIDC));
+        return cors.add(Response.ok(clientOIDC));
     }
 
     @PUT
@@ -128,6 +130,7 @@ public class OIDCClientRegistrationProvider extends AbstractClientRegistrationPr
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public Response updateOIDC(@PathParam("clientId") String clientId, OIDCClientRepresentation clientOIDC) {
+        Cors cors = cors();
         try {
             ClientRepresentation client = DescriptionConverter.toInternal(session, clientOIDC);
 
@@ -152,7 +155,7 @@ public class OIDCClientRegistrationProvider extends AbstractClientRegistrationPr
 
             URI uri = getRegistrationClientUri(clientModel);
             clientOIDC = DescriptionConverter.toExternalResponse(session, client, uri);
-            return cors().add(Response.ok(clientOIDC));
+            return cors.add(Response.ok(clientOIDC));
         } catch (ClientRegistrationException cre) {
             ServicesLogger.LOGGER.clientRegistrationException(cre.getMessage());
             throw new ErrorResponseException(ErrorCodes.INVALID_CLIENT_METADATA, "Client metadata invalid", Response.Status.BAD_REQUEST);
@@ -162,12 +165,13 @@ public class OIDCClientRegistrationProvider extends AbstractClientRegistrationPr
     @DELETE
     @Path("{clientId}")
     public Response deleteOIDC(@PathParam("clientId") String clientId) {
+        Cors cors = cors();
         delete(clientId);
-        return cors().add(Response.noContent());
+        return cors.add(Response.noContent());
     }
 
     private Cors cors() {
-        return Cors.builder().failOnInvalidOrigin().auth().addAllowedOrigins(getAllowedOrigins());
+        return Cors.builder().auth().checkAllowedOrigins(getAllowedOrigins());
     }
 
     private void updatePairwiseSubMappers(ClientModel clientModel, SubjectType subjectType, String sectorIdentifierUri) {

@@ -19,12 +19,18 @@ package org.keycloak.tests.organization.cache;
 
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 
 import jakarta.ws.rs.NotFoundException;
 
 import org.keycloak.models.IdentityProviderStorageProvider;
 import org.keycloak.models.IdentityProviderStorageProvider.FetchMode;
+import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.OrganizationDomainModel;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
@@ -33,6 +39,10 @@ import org.keycloak.models.cache.CacheRealmProvider;
 import org.keycloak.models.cache.infinispan.CachedCount;
 import org.keycloak.models.cache.infinispan.RealmCacheSession;
 import org.keycloak.models.cache.infinispan.idp.IdentityProviderListQuery;
+import org.keycloak.models.cache.infinispan.organization.CachedOrganization;
+import org.keycloak.models.cache.infinispan.organization.CachedOrganizationIds;
+import org.keycloak.models.cache.infinispan.organization.InfinispanOrganizationProvider;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.OrganizationDomainRepresentation;
@@ -49,11 +59,13 @@ import org.junit.jupiter.api.Test;
 
 import static org.keycloak.models.cache.infinispan.idp.InfinispanIdentityProviderStorageProvider.cacheKeyForLogin;
 import static org.keycloak.models.cache.infinispan.idp.InfinispanIdentityProviderStorageProvider.cacheKeyOrgId;
+import static org.keycloak.models.cache.infinispan.organization.CachedOrganization.DOMAIN_NAMES_CACHE_MAX_SIZE;
 import static org.keycloak.models.cache.infinispan.organization.InfinispanOrganizationProvider.cacheKeyOrgMemberCount;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @KeycloakIntegrationTest
 public class OrganizationCacheTest extends AbstractOrganizationTest {
@@ -595,6 +607,298 @@ public class OrganizationCacheTest extends AbstractOrganizationTest {
             OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
             OrganizationModel org = orgProvider.getByDomainName(domainMixed);
             assertNotNull(org, "Mixed-case domain lookup should find the recreated organization");
+        });
+    }
+
+    @Test
+    public void testGetByWildcardDomain() {
+        final String wildcardOrgAlias = "wildcard-org";
+        final String wildcard = "*.wildcard.org";
+        final String childA = "a.wildcard.org";
+        final String childB = "deep.a.wildcard.org";
+
+        // 1. Create an organization owning "*.wildcard.org".
+        runOnServer.run(session -> {
+            OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
+            OrganizationModel org = orgProvider.create(null, wildcardOrgAlias, wildcardOrgAlias);
+            org.setDomains(Set.of(new OrganizationDomainModel(wildcard)));
+        });
+
+        // 2. Resolve two distinct literal subdomains to populate the domain-lookup cache entries
+        //    under the wildcard org (both should resolve via the wildcard).
+        runOnServer.run(session -> {
+            OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
+            OrganizationModel org = orgProvider.getByDomainName(childA);
+            assertNotNull(org);
+            assertEquals(wildcardOrgAlias, org.getAlias());
+            org = orgProvider.getByDomainName(childB);
+            assertNotNull(org);
+            assertEquals(wildcardOrgAlias, org.getAlias());
+            // Also the bare base domain must match the wildcard.
+            org = orgProvider.getByDomainName("wildcard.org");
+            assertNotNull(org);
+            assertEquals(wildcardOrgAlias, org.getAlias());
+        });
+
+        // 3. Replace the wildcard with an unrelated domain. The previously cached literal
+        //    lookups (childA, childB, "wildcard.org") must be invalidated so they stop
+        //    resolving to the wildcard org.
+        runOnServer.run(session -> {
+            OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
+            OrganizationModel org = orgProvider.getByDomainName(wildcard);
+            assertNotNull(org);
+            org.setDomains(Set.of(new OrganizationDomainModel("unrelated.org")));
+        });
+
+        runOnServer.run(session -> {
+            OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
+            assertNull(orgProvider.getByDomainName(childA), "Cached child lookup must be invalidated after the wildcard is replaced");
+            assertNull(orgProvider.getByDomainName(childB), "Cached nested-child lookup must be invalidated after the wildcard is replaced");
+            assertNull(orgProvider.getByDomainName("wildcard.org"), "Cached base-domain lookup must be invalidated after the wildcard is replaced");
+            // the new domain still resolves correctly
+            OrganizationModel org = orgProvider.getByDomainName("unrelated.org");
+            assertNotNull(org);
+            assertEquals(wildcardOrgAlias, org.getAlias());
+        });
+
+        // 4. Remove the org entirely and check that the last cached lookup ("unrelated.org")
+        //    is invalidated as well.
+        runOnServer.run(session -> {
+            OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
+            OrganizationModel org = orgProvider.getByDomainName("unrelated.org");
+            assertNotNull(org);
+            orgProvider.remove(org);
+        });
+
+        runOnServer.run(session -> {
+            OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
+            assertNull(orgProvider.getByDomainName("unrelated.org"));
+        });
+    }
+
+    @Test
+    public void testExactDomainOverridesCachedWildcardMatch() {
+        final String wildcardOrgAlias = "wildcard-org";
+        final String exactOrgAlias = "exact-org";
+        final String exactDomain = "team.precedence.org";
+
+        // Create a wildcard-owning org and resolve a literal subdomain through it so it lands in the cache.
+        runOnServer.run(session -> {
+            OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
+            OrganizationModel org = orgProvider.create(null, wildcardOrgAlias, wildcardOrgAlias);
+            org.setDomains(Set.of(new OrganizationDomainModel("*.precedence.org")));
+        });
+
+        runOnServer.run(session -> {
+            OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
+            OrganizationModel org = orgProvider.getByDomainName(exactDomain);
+            assertNotNull(org);
+            assertEquals(wildcardOrgAlias, org.getAlias());
+        });
+
+        // Create another org taking the exact domain. This must invalidate the previously cached
+        // "team.precedence.org" -> wildcard-org entry so the lookup now returns the exact-domain org.
+        runOnServer.run(session -> {
+            OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
+            OrganizationModel org = orgProvider.create(null, exactOrgAlias, exactOrgAlias);
+            org.setDomains(Set.of(new OrganizationDomainModel(exactDomain)));
+        });
+
+        runOnServer.run(session -> {
+            OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
+            OrganizationModel org = orgProvider.getByDomainName(exactDomain);
+            assertNotNull(org);
+            assertEquals(exactOrgAlias, org.getAlias(), "Exact domain must win over the previously cached wildcard resolution");
+
+            // sibling subdomain still resolves to the wildcard org
+            OrganizationModel sibling = orgProvider.getByDomainName("sibling.precedence.org");
+            assertNotNull(sibling);
+            assertEquals(wildcardOrgAlias, sibling.getAlias());
+        });
+
+        // Removing the exact-domain org must invalidate its cached lookup so the wildcard takes over again.
+        runOnServer.run(session -> {
+            OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
+            OrganizationModel org = orgProvider.getByDomainName(exactDomain);
+            assertNotNull(org);
+            orgProvider.remove(org);
+        });
+
+        runOnServer.run(session -> {
+            OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
+            OrganizationModel org = orgProvider.getByDomainName(exactDomain);
+            assertNotNull(org);
+            assertEquals(wildcardOrgAlias, org.getAlias(), "After removing the exact-domain org, resolution must fall back to the wildcard org");
+        });
+    }
+
+    @Test
+    public void testBoundedDomainNamesInCache() {
+        String wildcardDomain = "*.bounded.test.org";
+
+        // 1. Create an organization whose only configured domain is a wildcard so that all
+        //    sub*.bounded.test.org look-ups resolve to it without needing per-domain DB entries.
+        runOnServer.run(session -> {
+            OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
+            OrganizationModel org = orgProvider.create(null, "bounded-org", "bounded-org");
+            org.setDomains(Set.of(new OrganizationDomainModel(wildcardDomain)));
+        });
+
+        // 2. Within ONE session, resolve MAX_DOMAIN_NAMES + 1 distinct sub-domains.
+        //    Each resolution causes addDomainName() to be called on the shared CachedOrganization,
+        //    which eventually triggers the LRU eviction and the cache-key invalidation.
+        runOnServer.run(session -> {
+            OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
+            for (int i = 0; i <= DOMAIN_NAMES_CACHE_MAX_SIZE; i++) {
+                OrganizationModel org = orgProvider.getByDomainName("sub" + i + ".bounded.test.org");
+                assertNotNull(org);
+            }
+        });
+
+        // 3. In a fresh session verify the bounded-list invariants.
+        runOnServer.run(session -> {
+            RealmModel realm = session.getContext().getRealm();
+            RealmCacheSession realmCache = (RealmCacheSession) session.getProvider(CacheRealmProvider.class);
+
+            // sub0 was the second domain evicted (after *.bounded.test.org).
+            // Its CachedOrganizationIds entry must have been invalidated and therefore absent.
+            String evictedDomainCacheKey = InfinispanOrganizationProvider.cacheKeyByDomain(realm, "sub0.bounded.test.org");
+            CachedOrganizationIds evictedCachedIds = realmCache.getCache().get(evictedDomainCacheKey, CachedOrganizationIds.class);
+            assertNull(evictedCachedIds,
+                    "sub0.bounded.test.org was evicted from the bounded domainNames list; its cache entry must be gone");
+
+            // sub100 was the last domain added and must still be present in the cache.
+            String lastDomainCacheKey = InfinispanOrganizationProvider.cacheKeyByDomain(realm, "sub100.bounded.test.org");
+            CachedOrganizationIds lastCachedIds = realmCache.getCache().get(lastDomainCacheKey, CachedOrganizationIds.class);
+            assertNotNull(lastCachedIds,
+                    "sub100.bounded.test.org was never evicted; its cache entry must still be present");
+
+            // The CachedOrganization's domainNames map must be bounded to exactly MAX_DOMAIN_NAMES entries
+            // (sub1 … sub100) after the two evictions.
+            OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
+            OrganizationModel org = orgProvider.getByDomainName("sub100.bounded.test.org");
+            assertNotNull(org);
+            CachedOrganization cachedOrg = realmCache.getCache().get(org.getId(), CachedOrganization.class);
+            assertNotNull(cachedOrg);
+            assertEquals(DOMAIN_NAMES_CACHE_MAX_SIZE, cachedOrg.getDomainNames().size(),
+                    "The domainNames list in CachedOrganization must be bounded to " + DOMAIN_NAMES_CACHE_MAX_SIZE + " entries");
+        });
+    }
+
+    /**
+     * Concurrent variant of {@link #testBoundedDomainNamesInCache()}.
+     *
+     * <p>The {@code CachedOrganization.domainNames} map is a {@code Collections.synchronizedMap}-
+     * wrapped {@code LinkedHashMap} with an LRU eviction policy that fires whenever the map
+     * exceeds {@link CachedOrganization#DOMAIN_NAMES_CACHE_MAX_SIZE} entries.  This test launches
+     * {@code 2 × MAX_SIZE + 1} threads simultaneously, each running its own Keycloak transaction
+     * and calling {@link OrganizationProvider#getByDomainName} with a unique sub-domain.  All
+     * threads are held behind a start-gate latch so they hit the shared {@code CachedOrganization}
+     * at the same time, maximising contention on the synchronized map, the eviction callback and
+     * the Infinispan cache operations.
+     *
+     * <p>The test verifies:
+     * <ol>
+     *   <li>No exception (e.g. {@code ConcurrentModificationException}, deadlock timeout) is
+     *       thrown from any thread.</li>
+     *   <li>Every {@code getByDomainName} call returns a non-null result.</li>
+     *   <li>After all threads finish, {@code CachedOrganization.domainNames.size()} does not
+     *       exceed {@link CachedOrganization#DOMAIN_NAMES_CACHE_MAX_SIZE}.</li>
+     * </ol>
+     */
+    @Test
+    public void testBoundedDomainNamesInCacheConcurrent() {
+        final String wildcardDomain = "*.concurrent.bounded.test.org";
+        // Use 2×MAX+1 threads so that far more domains are submitted than the map can hold,
+        // guaranteeing that evictions actually occur under concurrency.
+        final int threadCount = DOMAIN_NAMES_CACHE_MAX_SIZE * 2 + 1;
+
+        // 1. Create an org with a wildcard domain so every sub*.concurrent.bounded.test.org
+        //    lookup resolves to it.
+        runOnServer.run(session -> {
+            OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
+            OrganizationModel org = orgProvider.create(null, "concurrent-bounded-org", "concurrent-bounded-org");
+            org.setDomains(Set.of(new OrganizationDomainModel(wildcardDomain)));
+        });
+
+        // 2. Warm-up: resolve one domain so the CachedOrganization is already stored in the
+        //    Infinispan cache before the concurrent calls start.  All threads will then find and
+        //    share the same CachedOrganization object and call addDomainName() on it – the
+        //    scenario that exercises the synchronized LRU map under real concurrency.
+        runOnServer.run(session -> {
+            OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
+            assertNotNull(orgProvider.getByDomainName("warmup.concurrent.bounded.test.org"));
+        });
+
+        // 3. Fire all threads at the same instant via a start-gate latch.  Each thread runs its
+        //    own independent transaction through KeycloakModelUtils.runJobInTransaction so that
+        //    sessions do not share any per-session state (managedOrganizations map, invalidation
+        //    sets, etc.) while still operating on the same shared Infinispan CachedOrganization.
+        runOnServer.run(session -> {
+            KeycloakSessionFactory factory = session.getKeycloakSessionFactory();
+            String realmId = session.getContext().getRealm().getId();
+
+            ExecutorService executor = Executors.newFixedThreadPool(threadCount);
+            CountDownLatch startGate = new CountDownLatch(1);
+            CountDownLatch doneGate  = new CountDownLatch(threadCount);
+            AtomicReference<Throwable> firstError = new AtomicReference<>();
+
+            for (int i = 0; i < threadCount; i++) {
+                final String domain = "sub" + i + ".concurrent.bounded.test.org";
+                executor.submit(() -> {
+                    try {
+                        startGate.await(); // hold until all threads are ready
+                        KeycloakModelUtils.runJobInTransaction(factory, s -> {
+                            s.getContext().setRealm(s.realms().getRealm(realmId));
+                            OrganizationProvider op = s.getProvider(OrganizationProvider.class);
+                            assertNotNull(op.getByDomainName(domain),
+                                    "getByDomainName must resolve the org for domain: " + domain);
+                        });
+                    } catch (Throwable t) {
+                        firstError.compareAndSet(null, t);
+                    } finally {
+                        doneGate.countDown();
+                    }
+                });
+            }
+
+            startGate.countDown(); // release all threads simultaneously
+
+            try {
+                if (!doneGate.await(60, TimeUnit.SECONDS)) {
+                    throw new RuntimeException("Timed out waiting for concurrent domain lookups to finish");
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new RuntimeException("Interrupted while waiting for concurrent domain lookups", e);
+            } finally {
+                executor.shutdownNow();
+            }
+
+            Throwable error = firstError.get();
+
+            if (error != null) {
+                throw new RuntimeException("A concurrent domain lookup thread failed", error);
+            }
+        });
+
+        // 4. In a fresh session verify the bounded-map invariant.
+        //    We obtain the org via getAllStream() – which calls getById() on a cache hit but does
+        //    NOT call addDomainName() – then inspect the CachedOrganization directly from the
+        //    Infinispan cache to avoid disturbing the domainNames map further.
+        runOnServer.run(session -> {
+            OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
+            RealmCacheSession realmCache = (RealmCacheSession) session.getProvider(CacheRealmProvider.class);
+            OrganizationModel org = orgProvider.getAllStream("concurrent-bounded-org", true, null, null)
+                    .findFirst()
+                    .orElseThrow(() -> new AssertionError("concurrent-bounded-org not found"));
+            CachedOrganization cachedOrg = realmCache.getCache().get(org.getId(), CachedOrganization.class);
+            assertNotNull(cachedOrg, "CachedOrganization must still be present after concurrent lookups");
+
+            int size = cachedOrg.getDomainNames().size();
+            assertTrue(size <= DOMAIN_NAMES_CACHE_MAX_SIZE,
+                    "domainNames size " + size + " exceeded the bound of " + DOMAIN_NAMES_CACHE_MAX_SIZE
+                            + " under concurrent access – the LRU eviction is not thread-safe");
         });
     }
 }

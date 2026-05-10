@@ -30,6 +30,7 @@ import org.keycloak.common.Profile;
 import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.OrganizationDomainModel;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
@@ -37,6 +38,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
+import org.keycloak.organization.utils.Organizations;
 import org.keycloak.protocol.ProtocolMapperUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.mappers.AbstractOIDCProtocolMapper;
@@ -57,6 +59,7 @@ public class OrganizationMembershipMapper extends AbstractOIDCProtocolMapper imp
     public static final String PROVIDER_ID = "oidc-organization-membership-mapper";
     public static final String ADD_ORGANIZATION_ATTRIBUTES = "addOrganizationAttributes";
     public static final String ADD_ORGANIZATION_ID = "addOrganizationId";
+    public static final String ADD_ORGANIZATION_DOMAIN = "addOrganizationDomain";
 
     @Override
     public List<ProviderConfigProperty> getConfigProperties() {
@@ -84,6 +87,13 @@ public class OrganizationMembershipMapper extends AbstractOIDCProtocolMapper imp
         property.setType(ProviderConfigProperty.BOOLEAN_TYPE);
         property.setDefaultValue(Boolean.FALSE.toString());
         property.setHelpText(ADD_ORGANIZATION_ID + ".help");
+        properties.add(property);
+        property = new ProviderConfigProperty();
+        property.setName(ADD_ORGANIZATION_DOMAIN);
+        property.setLabel(ADD_ORGANIZATION_DOMAIN + ".label");
+        property.setType(ProviderConfigProperty.BOOLEAN_TYPE);
+        property.setDefaultValue(Boolean.FALSE.toString());
+        property.setHelpText(ADD_ORGANIZATION_DOMAIN + ".help");
         properties.add(property);
         return properties;
     }
@@ -175,6 +185,12 @@ public class OrganizationMembershipMapper extends AbstractOIDCProtocolMapper imp
                 claims.put(OAuth2Constants.ORGANIZATION_ID, o.getId());
             }
 
+            if (isAddOrganizationDomain(model)) {
+                OrganizationDomainModel domain = Organizations.getMatchingDomain(Organizations.getEmailDomain(user.getEmail()), o);
+
+                claims.put("domain", domain == null ? null : domain.getName());
+            }
+
             value.put(o.getAlias(), claims);
         }
 
@@ -233,6 +249,10 @@ public class OrganizationMembershipMapper extends AbstractOIDCProtocolMapper imp
 
     private boolean isAddOrganizationId(ProtocolMapperModel model) {
         return Boolean.parseBoolean(model.getConfig().getOrDefault(ADD_ORGANIZATION_ID, Boolean.FALSE.toString()));
+    }
+
+    private boolean isAddOrganizationDomain(ProtocolMapperModel model) {
+        return Boolean.parseBoolean(model.getConfig().getOrDefault(ADD_ORGANIZATION_DOMAIN, Boolean.FALSE.toString()));
     }
 
     public static ProtocolMapperModel create(String name, boolean accessToken, boolean idToken, boolean introspectionEndpoint) {

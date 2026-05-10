@@ -26,6 +26,7 @@ import org.keycloak.models.Constants;
 import org.keycloak.models.credential.WebAuthnCredentialModel;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testsuite.arquillian.annotation.IgnoreBrowserDriver;
 import org.keycloak.testsuite.util.WaitUtils;
 import org.keycloak.testsuite.webauthn.utils.WebAuthnRealmData;
@@ -76,10 +77,9 @@ public class WebAuthnPropertyTest extends AbstractWebAuthnVirtualTest {
             authenticateDefaultUser();
 
             // confirm that authentication is successfully completed
-            events.expectLogin()
-                    .user(user.getId())
-                    .detail(WebAuthnConstants.USER_VERIFICATION_CHECKED, "true")
-                    .assertEvent();
+            EventAssertion.expectLoginSuccess(events.poll())
+                    .userId(user.getId())
+                    .details(WebAuthnConstants.USER_VERIFICATION_CHECKED, "true");
         }
     }
 

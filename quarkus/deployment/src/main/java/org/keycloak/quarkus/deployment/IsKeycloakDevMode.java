@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2026 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,19 +15,17 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.runonserver;
+package org.keycloak.quarkus.deployment;
 
-import java.io.IOException;
-import java.io.Serializable;
+import java.util.function.BooleanSupplier;
 
-import org.keycloak.common.VerificationException;
-import org.keycloak.models.KeycloakSession;
+import org.keycloak.quarkus.runtime.Environment;
 
-/**
- * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
- */
-public interface RunOnServer extends Serializable {
+public class IsKeycloakDevMode implements BooleanSupplier {
 
-    void run(KeycloakSession session) throws IOException, VerificationException;
+    @Override
+    public boolean getAsBoolean() {
+        return Environment.isDevMode();
+    }
 
 }

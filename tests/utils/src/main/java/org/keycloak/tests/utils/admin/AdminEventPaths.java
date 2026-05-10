@@ -41,6 +41,7 @@ import org.keycloak.admin.client.resource.RoleMappingResource;
 import org.keycloak.admin.client.resource.RoleResource;
 import org.keycloak.admin.client.resource.RolesResource;
 import org.keycloak.admin.client.resource.UserResource;
+import org.keycloak.admin.client.resource.UserVerifiableCredentialResource;
 import org.keycloak.admin.client.resource.UsersResource;
 
 /**
@@ -280,6 +281,22 @@ public class AdminEventPaths {
         URI uri = UriBuilder.fromUri(userResourcePath(userId))
                 .path(UserResource.class, "joinGroup")
                 .build(groupId);
+        return uri.toString();
+    }
+
+    public static String userVerifiableCredentialsPath(String userId) {
+        URI uri = UriBuilder.fromUri(userResourcePath(userId))
+                .path(UserResource.class, "verifiableCredentials")
+                .path(UserVerifiableCredentialResource.class, "getCredentials")
+                .build();
+        return uri.toString();
+    }
+
+    public static String userVerifiableCredentialPath(String userId, String credentialScopeName) {
+        URI uri = UriBuilder.fromUri(userResourcePath(userId))
+                .path(UserResource.class, "verifiableCredentials")
+                .path(UserVerifiableCredentialResource.class, "revokeCredential")
+                .build(credentialScopeName);
         return uri.toString();
     }
 

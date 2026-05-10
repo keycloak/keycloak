@@ -30,6 +30,8 @@ Commands:
     windows-service       Manage Keycloak as a Windows service.
       install             Install Keycloak as a Windows service.
       uninstall           Uninstall Keycloak Windows service.
+    build-password-denylist
+                          Pre-compute a Bloom filter for a password denylist.
   bootstrap-admin         Commands for bootstrapping admin access
     user                  Add an admin user with a password
     service               Add an admin service account

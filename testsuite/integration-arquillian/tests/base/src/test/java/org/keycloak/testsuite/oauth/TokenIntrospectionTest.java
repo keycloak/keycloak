@@ -42,6 +42,7 @@ import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.oidc.TokenMetadataRepresentation;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
@@ -214,7 +215,7 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
     public void testIntrospectRefreshToken() throws Exception {
         oauth.doLogin("test-user@localhost", "password");
         String code = oauth.parseLoginResponse().getCode();
-        EventRepresentation loginEvent = events.expectLogin().assertEvent();
+        EventRepresentation loginEvent = EventAssertion.expectLoginSuccess(events.poll()).getEvent();
         String sessionId = loginEvent.getSessionId();
         AccessTokenResponse accessTokenResponse = oauth.doAccessTokenRequest(code);
         oauth.client("confidential-cli", "secret1");
@@ -251,7 +252,7 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
 
         driver.navigate().refresh();
         oauth.fillLoginForm("test-user@localhost", "password");
-        events.expectLogin().assertEvent();
+        EventAssertion.expectLoginSuccess(events.poll());
 
         Assertions.assertFalse(loginPage.isCurrent());
 
@@ -310,7 +311,7 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
     public void testIntrospectAccessToken() throws Exception {
         oauth.doLogin("test-user@localhost", "password");
         String code = oauth.parseLoginResponse().getCode();
-        EventRepresentation loginEvent = events.expectLogin().assertEvent();
+        EventRepresentation loginEvent = EventAssertion.expectLoginSuccess(events.poll()).getEvent();
         AccessTokenResponse accessTokenResponse = oauth.doAccessTokenRequest(code);
         oauth.client("confidential-cli", "secret1");
         TokenMetadataRepresentation rep = oauth.doIntrospectionAccessTokenRequest(accessTokenResponse.getAccessToken()).asTokenMetadata();
@@ -333,7 +334,7 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
         testRealm.setClientScopes(List.of());
         adminClient.realm("test").update(testRealm);
         try {
-            EventRepresentation loginEvent = events.expectLogin().client("no-scope").assertEvent();
+            EventRepresentation loginEvent = EventAssertion.expectLoginSuccess(events.poll()).clientId("no-scope").getEvent();
             AccessTokenResponse accessTokenResponse = oauth.doAccessTokenRequest(code);
             oauth.client("no-scope", "password");
             TokenMetadataRepresentation rep = oauth.doIntrospectionAccessTokenRequest(accessTokenResponse.getAccessToken()).asTokenMetadata();
@@ -352,7 +353,7 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
     public void testIntrospectAccessTokenReturnedAsJwt() throws Exception {
         oauth.doLogin("test-user@localhost", "password");
         String code = oauth.parseLoginResponse().getCode();
-        EventRepresentation loginEvent = events.expectLogin().assertEvent();
+        EventRepresentation loginEvent = EventAssertion.expectLoginSuccess(events.poll()).getEvent();
         AccessTokenResponse accessTokenResponse = oauth.doAccessTokenRequest(code);
 
         TokenMetadataRepresentation rep = oauth.introspectionRequest(accessTokenResponse.getAccessToken())
@@ -387,7 +388,7 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
 
             oauth.doLogin("test-user@localhost", "password");
             String code = oauth.parseLoginResponse().getCode();
-            EventRepresentation loginEvent = events.expectLogin().assertEvent();
+            EventRepresentation loginEvent = EventAssertion.expectLoginSuccess(events.poll()).getEvent();
             AccessTokenResponse accessTokenResponse = oauth.doAccessTokenRequest(code);
 
             assertEquals(jwaAlgorithm, new JWSInput(accessTokenResponse.getAccessToken()).getHeader().getAlgorithm().name());
@@ -495,7 +496,7 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
         String code = oauth.parseLoginResponse().getCode();
         AccessTokenResponse accessTokenResponse = oauth.doAccessTokenRequest(code);
 
-        EventRepresentation loginEvent = events.expectLogin().assertEvent();
+        EventRepresentation loginEvent = EventAssertion.expectLoginSuccess(events.poll()).getEvent();
 
         UserRepresentation userRep = new UserRepresentation();
         try {
@@ -539,7 +540,7 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
     public void testIntrospectWithSamlClient() {
         oauth.doLogin("test-user@localhost", "password");
         String code = oauth.parseLoginResponse().getCode();
-        events.expectLogin().assertEvent();
+        EventAssertion.expectLoginSuccess(events.poll());
         AccessTokenResponse accessTokenResponse = oauth.doAccessTokenRequest(code);
         oauth.client("saml-client", "secret2");
         IntrospectionResponse introspectionResponse = oauth.doIntrospectionAccessTokenRequest(accessTokenResponse.getAccessToken());

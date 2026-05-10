@@ -46,6 +46,7 @@ import org.keycloak.models.jpa.entities.AuthenticationFlowEntity;
 import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
@@ -216,7 +217,7 @@ public class FlowOverrideTest extends AbstractFlowTest {
         oauth.fillLoginForm("test-user@localhost", getPassword("test-user@localhost"));
         appPage.assertCurrent();
 
-        events.expectLogin().client("test-app-flow").detail(Details.USERNAME, "test-user@localhost").assertEvent();
+        EventAssertion.expectLoginSuccess(events.poll()).clientId("test-app-flow").details(Details.USERNAME, "test-user@localhost");
     }
 
     @Test
@@ -248,7 +249,7 @@ public class FlowOverrideTest extends AbstractFlowTest {
         oauth.fillLoginForm("test-user@localhost", getPassword("test-user@localhost"));
         appPage.assertCurrent();
 
-        events.expectLogin().client(clientId).detail(Details.USERNAME, "test-user@localhost").assertEvent();
+        EventAssertion.expectLoginSuccess(events.poll()).clientId(clientId).details(Details.USERNAME, "test-user@localhost");
     }
 
     @Test

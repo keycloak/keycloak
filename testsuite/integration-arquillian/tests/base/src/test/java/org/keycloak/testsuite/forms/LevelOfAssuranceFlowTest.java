@@ -61,6 +61,7 @@ import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AbstractAuthenticationTest;
 import org.keycloak.testsuite.AbstractChangeImportedUserPasswordsTest;
@@ -1173,7 +1174,8 @@ public class LevelOfAssuranceFlowTest extends AbstractChangeImportedUserPassword
     }
 
     private TokenCtx assertLoggedInWithAcr(String acr) {
-        EventRepresentation loginEvent = events.expectLogin().detail(Details.USERNAME, "test-user@localhost").assertEvent();
+        EventRepresentation loginEvent = events.poll();
+        EventAssertion.expectLoginSuccess(loginEvent).details(Details.USERNAME, "test-user@localhost");
         AccessTokenResponse tokenResponse = sendTokenRequestAndGetResponse(loginEvent);
         IDToken idToken = oauth.verifyIDToken(tokenResponse.getIdToken());
         Assertions.assertEquals(acr, idToken.getAcr());

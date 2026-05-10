@@ -76,6 +76,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.Urls;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RoleBuilder;
@@ -96,6 +97,7 @@ import org.keycloak.testsuite.util.KeycloakModelUtils;
 import org.keycloak.testsuite.util.TokenSignatureUtil;
 import org.keycloak.testsuite.util.UserInfoClientUtil;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
+import org.keycloak.testsuite.util.runonserver.RunHelpers;
 import org.keycloak.util.BasicAuthHelper;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.util.TokenUtil;
@@ -550,7 +552,7 @@ public class UserInfoTest extends AbstractKeycloakTest {
             AccessTokenResponse accessTokenResponse = executeGrantAccessTokenRequest(client);
 
             String realmName = "test";
-            testingClient.testing().removeUserSessions(realmName);
+            runOnServer.run(RunHelpers.removeUserSessions(realmName));
 
             Response response = UserInfoClientUtil.executeUserInfoRequest_getMethod(client, accessTokenResponse.getToken());
 
@@ -620,7 +622,7 @@ public class UserInfoTest extends AbstractKeycloakTest {
 
         driver.navigate().refresh();
         oauth.fillLoginForm("test-user@localhost", "password");
-        events.expectLogin().assertEvent();
+        EventAssertion.expectLoginSuccess(events.poll());
 
         Assertions.assertFalse(loginPage.isCurrent());
 

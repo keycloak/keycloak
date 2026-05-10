@@ -45,6 +45,8 @@ import org.keycloak.storage.UserStoragePrivateUtil;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageProviderModel;
 import org.keycloak.storage.UserStorageUtil;
+import org.keycloak.testframework.events.EventAssertion;
+import org.keycloak.testframework.events.EventMatchers;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.auth.page.AuthRealm;
@@ -55,6 +57,7 @@ import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
 
+import org.hamcrest.MatcherAssert;
 import org.jboss.arquillian.container.test.api.ContainerController;
 import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.arquillian.test.api.ArquillianResource;
@@ -164,11 +167,11 @@ public class UserStorageFailureTest extends AbstractTestRealmKeycloakTest {
         oauth.redirectUri(OAuthClient.AUTH_SERVER_ROOT + "/offline-client");
         oauth.doLogin(FailableHardcodedStorageProvider.username, "password");
 
-        EventRepresentation loginEvent = events.expectLogin()
-                .user(AssertEvents.isUUID())
-                .client("offline-client")
-                .detail(Details.REDIRECT_URI, OAuthClient.AUTH_SERVER_ROOT + "/offline-client")
-                .assertEvent();
+        EventRepresentation loginEvent = EventAssertion.expectLoginSuccess(events.poll())
+                .clientId("offline-client")
+                .details(Details.CONSENT, Details.CONSENT_VALUE_NO_CONSENT_REQUIRED)
+                .details(Details.REDIRECT_URI, OAuthClient.AUTH_SERVER_ROOT + "/offline-client").getEvent();
+        MatcherAssert.assertThat(loginEvent.getUserId(), EventMatchers.isUUID());
 
         String code = oauth.parseLoginResponse().getCode();
         AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
