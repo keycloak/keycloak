@@ -374,6 +374,7 @@ public class SsfAdminResource {
         rep.setEventsDelivered(toEventAliases(transmitter, streamConfig.getEventsDelivered()));
         rep.setCreatedAt(streamConfig.getCreatedAt());
         rep.setUpdatedAt(streamConfig.getUpdatedAt());
+        rep.setManagedBy(streamConfig.getManagedBy());
         String lastVerifiedAtRaw = client.getAttribute(ClientStreamStore.SSF_LAST_VERIFIED_AT_KEY);
         if (lastVerifiedAtRaw != null && !lastVerifiedAtRaw.isBlank()) {
             try {

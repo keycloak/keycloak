@@ -204,6 +204,12 @@ public class StreamService {
         streamConfig.setCreatedAt(now);
         streamConfig.setUpdatedAt(now);
 
+        // Stamp the management-mode marker — set at creation time and
+        // immutable thereafter. Drives the admin UI's "managed by"
+        // badge and the warning when an admin overrides a
+        // receiver-managed stream's configuration.
+        streamConfig.setManagedBy(adminInitiated ? ManagedBy.KEYCLOAK : ManagedBy.RECEIVER);
+
         streamConfig.setMinVerificationInterval(transmitterProvider.getConfig().getMinVerificationIntervalSeconds());
 
         applySignatureAlgorithmFromClient(streamConfig, receiverClient);

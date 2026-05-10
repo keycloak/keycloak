@@ -21,6 +21,7 @@ import org.keycloak.ssf.stream.DeliveryMethodFamily;
 import org.keycloak.ssf.stream.StreamStatus;
 import org.keycloak.ssf.stream.StreamStatusValue;
 import org.keycloak.ssf.transmitter.SsfTransmitterProvider;
+import org.keycloak.ssf.transmitter.stream.ManagedBy;
 import org.keycloak.ssf.transmitter.stream.SsfEventsConfig;
 import org.keycloak.ssf.transmitter.stream.StreamConfig;
 import org.keycloak.ssf.transmitter.stream.StreamDeliveryConfig;
@@ -191,6 +192,13 @@ public class ClientStreamStore implements SsfStreamStore {
     public static final String SSF_STREAM_DEFAULT_SUBJECTS_KEY = "ssf.stream.defaultSubjects";
     public static final String SSF_STREAM_CREATED_AT_KEY = "ssf.stream.createdAt";
     public static final String SSF_STREAM_UPDATED_AT_KEY = "ssf.stream.updatedAt";
+    /**
+     * Persisted {@link org.keycloak.ssf.transmitter.stream.ManagedBy}
+     * marker — set at creation time, immutable. Absent / unparseable
+     * values resolve to {@code RECEIVER} so streams persisted before
+     * the marker was introduced keep their original ownership semantic.
+     */
+    public static final String SSF_STREAM_MANAGED_BY_KEY = "ssf.stream.managedBy";
 
     private static final String EVENT_SET_DELIMITER = ",";
 
@@ -222,7 +230,8 @@ public class ClientStreamStore implements SsfStreamStore {
             SSF_STREAM_FORMAT_KEY,
             SSF_STREAM_DEFAULT_SUBJECTS_KEY,
             SSF_STREAM_CREATED_AT_KEY,
-            SSF_STREAM_UPDATED_AT_KEY);
+            SSF_STREAM_UPDATED_AT_KEY,
+            SSF_STREAM_MANAGED_BY_KEY);
 
     protected final KeycloakSession session;
 
@@ -481,6 +490,9 @@ public class ClientStreamStore implements SsfStreamStore {
                 client.getAttribute(SSF_STREAM_DEFAULT_SUBJECTS_KEY), null));
         streamConfig.setCreatedAt(parseIntAttribute(client, SSF_STREAM_CREATED_AT_KEY));
         streamConfig.setUpdatedAt(parseIntAttribute(client, SSF_STREAM_UPDATED_AT_KEY));
+        // Absent / unparseable attribute → RECEIVER (legacy default).
+        streamConfig.setManagedBy(ManagedBy.parseOrDefault(
+                client.getAttribute(SSF_STREAM_MANAGED_BY_KEY), ManagedBy.RECEIVER));
 
         String deliveryMethod = client.getAttribute(SSF_STREAM_DELIVERY_METHOD_KEY);
         if (deliveryMethod != null) {
@@ -636,6 +648,8 @@ public class ClientStreamStore implements SsfStreamStore {
                 streamConfig.getDefaultSubjects() != null ? streamConfig.getDefaultSubjects().name() : null);
         setIntOrRemove(client, SSF_STREAM_CREATED_AT_KEY, streamConfig.getCreatedAt());
         setIntOrRemove(client, SSF_STREAM_UPDATED_AT_KEY, streamConfig.getUpdatedAt());
+        setOrRemove(client, SSF_STREAM_MANAGED_BY_KEY,
+                streamConfig.getManagedBy() == null ? null : streamConfig.getManagedBy().name());
 
         StreamDeliveryConfig delivery = streamConfig.getDelivery();
         if (delivery != null) {
