@@ -29,6 +29,7 @@ oc create route reencrypt keycloak-public \
   --hostname=keycloak.example.com
 ----
 
+
 You can also use YAML to define the Route with more advanced filtering:
 
 [source,yaml]
