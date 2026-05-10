@@ -36,6 +36,7 @@ import org.keycloak.common.Profile;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.IdentityProviderStorageProvider;
+import org.keycloak.models.IdentityProviderStorageProvider.LoginFilter;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OrderedModel;
 import org.keycloak.models.RealmModel;
@@ -235,14 +236,18 @@ public class IdentityProviderBean {
     }
 
     /**
-     * Returns a predicate that can filter out IDPs associated with the current user's federated identities before those
-     * are converted into {@link IdentityProvider}s. Subclasses may use this as a way to further refine the IDPs that are
-     * to be returned.
+     * Returns a predicate that applies the standard login filters (enabled, not link-only, not hidden on login page)
+     * to IDPs associated with the current user's federated identities before those are converted into
+     * {@link IdentityProvider}s. The {@code HIDE_ON_LOGIN} check is bypassed when a forced re-authentication is in
+     * progress, so that a user whose only IdP is hidden can still be redirected to it for re-auth.
+     * Subclasses may use this as a way to further refine the IDPs that are to be returned.
      *
-     * @return the custom {@link Predicate} used as a last filter before conversion into {@link IdentityProvider}
+     * @return the {@link Predicate} used as a last filter before conversion into {@link IdentityProvider}
      */
     protected Predicate<IdentityProviderModel> federatedProviderPredicate() {
-        return m -> IdentityProviderStorageProvider.LoginFilter.getLoginPredicate().test(m, context.getAuthenticationSession());
+        final var isReAuth = isForcedReauthentication();
+        final var ctx = isReAuth ? LoginFilter.Context.reauth() : LoginFilter.Context.standard();
+        return LoginFilter.getLoginPredicate(ctx);
     }
 
     /**
