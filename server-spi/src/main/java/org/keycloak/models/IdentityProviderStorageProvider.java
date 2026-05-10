@@ -20,11 +20,11 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.BiPredicate;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.keycloak.provider.Provider;
-import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.util.Booleans;
 
 /**
@@ -236,22 +236,18 @@ public interface IdentityProviderStorageProvider extends Provider {
      */
     enum LoginFilter {
 
-        ENABLED(IdentityProviderModel.ENABLED, Boolean.TRUE.toString(), (m, as) -> m.isEnabled()),
+        ENABLED(IdentityProviderModel.ENABLED, Boolean.TRUE.toString(), (m, ctx) -> m.isEnabled()),
 
-        LINK_ONLY(IdentityProviderModel.LINK_ONLY, Boolean.FALSE.toString(), (m, as) -> Booleans.isFalse(m.isLinkOnly())),
+        LINK_ONLY(IdentityProviderModel.LINK_ONLY, Boolean.FALSE.toString(), (m, ctx) -> Booleans.isFalse(m.isLinkOnly())),
 
-        HIDE_ON_LOGIN(IdentityProviderModel.HIDE_ON_LOGIN, Boolean.FALSE.toString(), (m, as) -> {
-          if (as != null && Objects.equals(as.getAuthNote("FORCED_REAUTHENTICATION"), "true")) {
-            return true;
-          }
-          return Booleans.isFalse(m.isHideOnLogin());
-        });
+        HIDE_ON_LOGIN(IdentityProviderModel.HIDE_ON_LOGIN, Boolean.FALSE.toString(), (m, ctx) ->
+                ctx.forcedReauth() || Booleans.isFalse(m.isHideOnLogin()));
 
         private final String key;
         private final String value;
-        private final BiPredicate<IdentityProviderModel, AuthenticationSessionModel> filter;
+        private final BiPredicate<IdentityProviderModel, Context> filter;
 
-        LoginFilter(String key, String value, BiPredicate<IdentityProviderModel, AuthenticationSessionModel> filter) {
+        LoginFilter(String key, String value, BiPredicate<IdentityProviderModel, Context> filter) {
             this.key = key;
             this.value = value;
             this.filter = filter;
@@ -265,7 +261,7 @@ public interface IdentityProviderStorageProvider extends Provider {
             return value;
         }
 
-        public BiPredicate<IdentityProviderModel, AuthenticationSessionModel> getFilter() {
+        public BiPredicate<IdentityProviderModel, Context> getFilter() {
             return filter;
         }
 
@@ -273,9 +269,40 @@ public interface IdentityProviderStorageProvider extends Provider {
             return Stream.of(values()).collect(Collectors.toMap(LoginFilter::getKey, LoginFilter::getValue, (v1, v2) -> v1, LinkedHashMap::new));
         }
 
-        public static BiPredicate<IdentityProviderModel, AuthenticationSessionModel> getLoginPredicate() {
-            return ((BiPredicate<IdentityProviderModel, AuthenticationSessionModel>) (m, as) -> Objects.nonNull(m))
-                    .and(Stream.of(values()).map(LoginFilter::getFilter).reduce(BiPredicate::and).get());
+        /**
+         * Returns a {@link Predicate} that accepts an {@link IdentityProviderModel} only when it passes all login
+         * filters using the standard (non-re-auth) context. Equivalent to calling
+         * {@link #getLoginPredicate(Context) getLoginPredicate(Context.standard())}.
+         *
+         * @return a {@link Predicate} applying all login filters with the standard context.
+         */
+        public static Predicate<IdentityProviderModel> getLoginPredicate() {
+            return getLoginPredicate(Context.standard());
+        }
+
+        /**
+         * Returns a {@link Predicate} that accepts an {@link IdentityProviderModel} only when it passes all login
+         * filters evaluated against the provided {@link Context}. The context controls filter behaviour that depends
+         * on the current authentication state — for example, the {@link #HIDE_ON_LOGIN} filter is bypassed when
+         * {@link Context#forcedReauth()} is {@code true}.
+         *
+         * @param ctx the {@link Context} describing the current authentication state; must not be {@code null}.
+         * @return a {@link Predicate} applying all login filters with the given context.
+         */
+        public static Predicate<IdentityProviderModel> getLoginPredicate(Context ctx) {
+            return m -> Objects.nonNull(m) && Stream.of(values()).allMatch(f -> f.getFilter().test(m, ctx));
+        }
+
+        /**
+         * Captures the authentication-state information that login filters may need to evaluate an
+         * {@link IdentityProviderModel}. Use {@link #standard()} for ordinary login flows and {@link #reauth()} when
+         * a forced re-authentication is in progress (e.g. an App-Initiated Action).
+         *
+         * @param forcedReauth {@code true} when the current flow is a forced re-authentication; {@code false} otherwise.
+         */
+        public record Context(boolean forcedReauth) {
+            public static Context standard() { return new Context(false); }
+            public static Context reauth()   { return new Context(true); }
         }
     }
 
