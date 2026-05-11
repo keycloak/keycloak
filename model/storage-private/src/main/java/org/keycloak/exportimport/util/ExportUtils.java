@@ -62,6 +62,7 @@ import org.keycloak.representations.idm.RolesRepresentation;
 import org.keycloak.representations.idm.ScopeMappingRepresentation;
 import org.keycloak.representations.idm.UserConsentRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.representations.idm.oid4vc.UserVerifiableCredentialRepresentation;
 import org.keycloak.storage.UserStoragePrivateUtil;
 import org.keycloak.storage.federated.UserFederatedStorageProvider;
 
@@ -441,6 +442,14 @@ public class ExportUtils {
         // Not Before
         int notBefore = session.users().getNotBeforeOfUser(realm, user);
         userRep.setNotBefore(notBefore);
+
+        // Verifiable credentials
+        List<UserVerifiableCredentialRepresentation> verifiableCredentialReps = session.users().getVerifiableCredentialsByUser(user.getId())
+                .map(ModelToRepresentation::toRepresentation)
+                .toList();
+        if (!verifiableCredentialReps.isEmpty()) {
+            userRep.setVerifiableCredentials(verifiableCredentialReps);
+        }
 
         // Service account
         if (user.getServiceAccountClientLink() != null) {

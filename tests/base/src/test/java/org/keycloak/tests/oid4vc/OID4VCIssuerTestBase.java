@@ -589,7 +589,12 @@ public abstract class OID4VCIssuerTestBase {
                     .password(TEST_PASSWORD)
                     .attribute("address_street_address", "221B Baker Street")
                     .attribute("address_locality", "London")
-                    .realmRoles("account", "manage-account", "view-profile");
+                    .realmRoles("account", "manage-account", "view-profile")
+                    .verifiableCredential(jwtTypeCredentialScopeName)
+                    .verifiableCredential(sdJwtTypeCredentialScopeName)
+                    .verifiableCredential(minimalJwtTypeCredentialScopeName)
+                    .verifiableCredential(jwtTypeNaturalPersonScopeName)
+                    .verifiableCredential(sdJwtTypeNaturalPersonScopeName);
 
             attributes.forEach(userBuilder::attribute);
 

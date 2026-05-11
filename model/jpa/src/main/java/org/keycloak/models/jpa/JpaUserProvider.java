@@ -404,7 +404,9 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
 
     @Override
     public Stream<UserVerifiableCredentialModel> getVerifiableCredentialsByUser(String userId) {
-        return getVerifiableCredentialsEntitiesByUser(userId).map(this::toVerifiableCredentialModel);
+        return getVerifiableCredentialsEntitiesByUser(userId)
+                .map(this::toVerifiableCredentialModel)
+                .sorted(Comparator.comparing(UserVerifiableCredentialModel::getCredentialScopeName));
     }
 
     private Stream<UserVerifiableCredentialEntity> getVerifiableCredentialsEntitiesByUser(String userId) {
