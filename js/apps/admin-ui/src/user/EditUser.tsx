@@ -49,6 +49,7 @@ import { UserIdentityProviderLinks } from "./UserIdentityProviderLinks";
 import { UserRoleMapping } from "./UserRoleMapping";
 import { UserSessions } from "./UserSessions";
 import { UserEvents } from "../events/UserEvents";
+import { UserVerifiableCredentials } from "./UserVerifiableCredentials";
 import { UserWorkflows } from "./UserWorkflows";
 import {
   UIUserRepresentation,
@@ -98,6 +99,8 @@ export default function EditUser() {
   const isFeatureEnabled = useIsFeatureEnabled();
   const showOrganizations =
     isFeatureEnabled(Feature.Organizations) && realm.organizationsEnabled;
+  const showVerifiableCredentials =
+    isFeatureEnabled(Feature.OpenId4VCI) && realm.verifiableCredentialsEnabled;
 
   const toTab = (tab: UserTab) =>
     toUser({
@@ -107,6 +110,7 @@ export default function EditUser() {
     });
 
   const [activeEventsTab, setActiveEventsTab] = useState("userEvents");
+  const [activeVcTab, setActiveVcTab] = useState("vcCredentials");
 
   const settingsTab = useRoutableTab(toTab("settings"));
   const attributesTab = useRoutableTab(toTab("attributes"));
@@ -121,6 +125,9 @@ export default function EditUser() {
   const sessionsTab = useRoutableTab(toTab("sessions"));
   const eventsTab = useRoutableTab(toTab("events"));
   const workflowsTab = useRoutableTab(toTab("workflows"));
+  const verifiableCredentialsTab = useRoutableTab(
+    toTab("verifiable-credentials"),
+  );
 
   useFetch(
     async () =>
@@ -462,6 +469,27 @@ export default function EditUser() {
                       title={<TabTitleText>{t("adminEvents")}</TabTitleText>}
                     >
                       <AdminEvents resourcePath={`users/${user.id}*`} />
+                    </Tab>
+                  </Tabs>
+                </Tab>
+              )}
+              {showVerifiableCredentials && (
+                <Tab
+                  data-testid="verifiable-credentials-tab"
+                  title={
+                    <TabTitleText>{t("verifiableCredentials")}</TabTitleText>
+                  }
+                  {...verifiableCredentialsTab}
+                >
+                  <Tabs
+                    activeKey={activeVcTab}
+                    onSelect={(_, key) => setActiveVcTab(key as string)}
+                  >
+                    <Tab
+                      eventKey="vcCredentials"
+                      title={<TabTitleText>{t("credentials")}</TabTitleText>}
+                    >
+                      <UserVerifiableCredentials userId={user.id!} />
                     </Tab>
                   </Tabs>
                 </Tab>
