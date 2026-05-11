@@ -246,7 +246,7 @@ public class OIDCClientModelMapperTest {
 
             serviceAccount.grantRole(clientRole);
 
-            OIDCClientModelMapper mapper = (OIDCClientModelMapper) session.getProvider(ClientModelMapper.class, OIDCClientRepresentation.PROTOCOL);
+            OIDCClientModelMapper mapper = getModelMapper(session);
             OIDCClientRepresentation rep = (OIDCClientRepresentation) mapper.fromModel(clientModel);
 
             assertThat(rep.getServiceAccountRoles(), hasItems("mapper-client-sa-role"));
