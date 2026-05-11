@@ -63,6 +63,7 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
 import org.apache.http.HttpEntity;
@@ -145,12 +146,12 @@ public class DefaultClientService implements ClientService {
 
     @Override
     public BaseClientRepresentation createClient(RealmModel realm, BaseClientRepresentation client) throws ServiceException {
-        return createOrUpdate(realm, null, client, CreateOrUpdateStrategy.ONLY_CREATE).representation();
+        return createOrUpdate(realm, null, client, CreateOrUpdateStrategy.ONLY_CREATE, false).representation();
     }
 
     @Override
     public CreateOrUpdateResult createOrUpdateClient(RealmModel realm, String clientId, BaseClientRepresentation client) throws ServiceException {
-        return createOrUpdate(realm, clientId, client, CreateOrUpdateStrategy.PUT);
+        return createOrUpdate(realm, clientId, client, CreateOrUpdateStrategy.PUT, false);
     }
 
     @Override
@@ -186,9 +187,25 @@ public class DefaultClientService implements ClientService {
                 .orElseThrow(() -> new ServiceException("Cannot find the specified client", Response.Status.NOT_FOUND));
 
         BaseClientRepresentation updated;
+        boolean patchExplicitNullSecret = false;
         switch (patchType) {
             case JSON_MERGE -> {
-                try (JsonParser parser = MAPPER.getFactory().createParser(patch)) {
+                final byte[] patchData;
+                try {
+                    patchData = patch.readAllBytes();
+                } catch (IOException e) {
+                    throw new ServiceException("Unknown Error Occurred", Response.Status.INTERNAL_SERVER_ERROR);
+                }
+                try {
+                    JsonNode root = MAPPER.readTree(patchData);
+                    JsonNode authNode = root.get("auth");
+                    if (authNode != null && authNode.has("secret") && authNode.get("secret").isNull()) {
+                        patchExplicitNullSecret = true;
+                    }
+                } catch (IOException e) {
+                    throw new ServiceException(e.getMessage(), Response.Status.BAD_REQUEST);
+                }
+                try (JsonParser parser = MAPPER.getFactory().createParser(patchData)) {
                     final ObjectReader objectReader = MAPPER.readerForUpdating(getOriginalClient.get());
                     JsonToken nextToken = parser.nextToken();
                     if (nextToken != JsonToken.START_OBJECT) {
@@ -210,7 +227,7 @@ public class DefaultClientService implements ClientService {
             default -> throw new ServiceException("Invalid patch type", Response.Status.UNSUPPORTED_MEDIA_TYPE);
         }
 
-        return createOrUpdate(realm, clientId, updated, CreateOrUpdateStrategy.PATCH).representation();
+        return createOrUpdate(realm, clientId, updated, CreateOrUpdateStrategy.PATCH, patchExplicitNullSecret).representation();
     }
 
     @Override
@@ -235,7 +252,7 @@ public class DefaultClientService implements ClientService {
         }
     }
 
-    private CreateOrUpdateResult createOrUpdate(RealmModel realm, String clientId, BaseClientRepresentation client, CreateOrUpdateStrategy strategy) throws ServiceException {
+    private CreateOrUpdateResult createOrUpdate(RealmModel realm, String clientId, BaseClientRepresentation client, CreateOrUpdateStrategy strategy, boolean patchExplicitNullSecret) throws ServiceException {
         validateUnknownFields(client);
         ClientModel model = null;
         if (!strategy.equals(CreateOrUpdateStrategy.ONLY_CREATE)) {
@@ -253,7 +270,7 @@ public class DefaultClientService implements ClientService {
                         // Check permissions, execute validations and trigger client policies
                         permissions.clients().requireConfigure(model);
                         // Must run before bean validation: PutClient requires a non-blank secret for client-secret methods
-                        generateClientSecretIfNeeded(client, model);
+                        generateClientSecretIfNeeded(client, model, strategy, patchExplicitNullSecret);
                         validator.validate(client, strategy.getValidationGroup(), Default.class);
                         var proposedRepresentation = getProposedOldRepresentation(realm, client, mapper);
                         session.clientPolicy().triggerOnEvent(new AdminClientUpdateContext(proposedRepresentation, model, permissions.adminAuth()));
@@ -282,7 +299,7 @@ public class DefaultClientService implements ClientService {
                 model.setProtocol(client.getProtocol());
 
                 // Generate random secret if applicable
-                generateClientSecretIfNeeded(client, model);
+                generateClientSecretIfNeeded(client, model, strategy, patchExplicitNullSecret);
                 mapper.toModel(client, model);
 
                 // Validate the fully populated model
@@ -347,15 +364,20 @@ public class DefaultClientService implements ClientService {
     }
 
     // TODO we should find a way on how to evoke it on the mapper level?
-    private void generateClientSecretIfNeeded(BaseClientRepresentation client, ClientModel model) {
+    private void generateClientSecretIfNeeded(BaseClientRepresentation client, ClientModel model, CreateOrUpdateStrategy strategy, boolean patchExplicitNullSecret) {
         if (client.getProtocol().equals(OIDCClientRepresentation.PROTOCOL)) {
             var auth = ((OIDCClientRepresentation) client).getAuth();
             if (auth != null && isClientSecret(auth.getMethod()) && isBlank(auth.getSecret())) {
-                // On PUT the client often omits the secret; reuse the persisted secret before bean validation (PutClient).
-                if (!isBlank(model.getSecret())) {
-                    auth.setSecret(model.getSecret());
-                } else {
+                if (strategy == CreateOrUpdateStrategy.PATCH && patchExplicitNullSecret) {
                     auth.setSecret(KeycloakModelUtils.generateSecret(model));
+                } else {
+                    // On PUT the client often omits the secret; reuse the persisted secret before bean validation (PutClient).
+                    // On PATCH without explicit JSON null for secret, keep the same semantics (do not rotate).
+                    if (!isBlank(model.getSecret())) {
+                        auth.setSecret(model.getSecret());
+                    } else {
+                        auth.setSecret(KeycloakModelUtils.generateSecret(model));
+                    }
                 }
             }
         }

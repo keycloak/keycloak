@@ -19,7 +19,9 @@ package org.keycloak.tests.admin.client.v2;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 import java.util.stream.Stream;
 
@@ -533,7 +535,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
 
     @Test
     public void declarativeServiceAccountClientRoleManagement() {
-        String defaultRealmRoles = "default-roles-%s".formatted(testRealm.getName());
+        String defaultRealmRoles = "default-roles-%s".formatted(testRealm.getName().toLowerCase());
         OIDCClientRepresentation rep = new OIDCClientRepresentation();
         rep.setClientId("sa-client-role-test");
         rep.setEnabled(true);
@@ -800,8 +802,9 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
 
         OIDCClientRepresentation.Auth authWithoutSecret = new OIDCClientRepresentation.Auth();
         authWithoutSecret.setMethod(authenticationMethod);
-        authWithoutSecret.setAdditionalField("secret", null);
-        OIDCClientRepresentation.Auth patchedAuth = getResultingAuthConfigPatch(authWithoutSecret, clientId);
+        authWithoutSecret.setSecret(null);
+        OIDCClientRepresentation.Auth patchedAuth = getResultingAuthConfigPatchRawAuth(clientId,
+                "{\"method\":\"" + authenticationMethod + "\",\"secret\":null}");
         assertThat(patchedAuth, notNullValue());
         String newlyGeneratedSecret = patchedAuth.getSecret();
         assertThat(newlyGeneratedSecret, not(is(createdAuth.getSecret())));
@@ -823,9 +826,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
         assertThat(createdAuth, notNullValue());
         assertThat(createdAuth.getSecret(), is(auth.getSecret()));
 
-        OIDCClientRepresentation.Auth authWithoutSecret = new OIDCClientRepresentation.Auth();
-        authWithoutSecret.setAdditionalField("secret", null);
-        OIDCClientRepresentation.Auth patchedAuth = getResultingAuthConfigPatch(authWithoutSecret, clientId);
+        OIDCClientRepresentation.Auth patchedAuth = getResultingAuthConfigPatchRawAuth(clientId, "{\"secret\":null}");
         assertThat(patchedAuth, notNullValue());
         String newlyGeneratedSecret = patchedAuth.getSecret();
         assertThat(newlyGeneratedSecret, not(is(createdAuth.getSecret())));
@@ -895,7 +896,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
 
     @ParameterizedTest
     @ValueSource(strings = { ClientIdAndSecretAuthenticator.PROVIDER_ID, JWTClientSecretAuthenticator.PROVIDER_ID })
-    void expectValidationFailureForUpdatePutWithoutSecret(String authenticationMethod) throws IOException {
+    void putUpdateWithNullSecretReusesPersistedSecret(String authenticationMethod) throws IOException {
         String clientId = authenticationMethod + "-validation-update-put";
         OIDCClientRepresentation.Auth auth = new OIDCClientRepresentation.Auth();
         auth.setMethod(authenticationMethod);
@@ -906,8 +907,9 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
         assertThat(createdAuth.getSecret(), is(auth.getSecret()));
 
         auth.setSecret(null);
-        var assertionError = assertThrows(AssertionError.class, () -> getResultingAuthConfigPut(auth, clientId));
-        assertThat(assertionError.getMessage(), Matchers.containsString("was <400>"));
+        OIDCClientRepresentation.Auth putAuth = getResultingAuthConfigPut(auth, clientId);
+        assertThat(putAuth, notNullValue());
+        assertThat(putAuth.getSecret(), is(createdAuth.getSecret()));
     }
 
     @ParameterizedTest
@@ -960,6 +962,23 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
     private OIDCClientRepresentation.Auth getResultingAuthConfigPatch(OIDCClientRepresentation.Auth auth, String clientId, String... additionalFields) throws IllegalArgumentException, JsonProcessingException {
         var rep = getResultingClientRep(auth, clientId, additionalFields);
         OIDCClientRepresentation createdClient = (OIDCClientRepresentation) getClientsApi().client(clientId).patchClient(new ByteArrayInputStream(mapper.writeValueAsBytes(rep)));
+        return assertClientEnabledIdDescriptionAndAuth(rep, createdClient);
+    }
+
+    /**
+     * Applies a JSON merge patch with a raw {@code auth} object fragment (must include {@code "secret":null} when rotating secrets).
+     */
+    private OIDCClientRepresentation.Auth getResultingAuthConfigPatchRawAuth(String clientId, String authObjectJson) throws JsonProcessingException {
+        OIDCClientRepresentation rep = new OIDCClientRepresentation();
+        rep.setEnabled(true);
+        rep.setClientId(clientId);
+        rep.setDescription("I'm OIDC Client");
+        rep.setAuth(mapper.readValue(authObjectJson, OIDCClientRepresentation.Auth.class));
+        String body = String.format(Locale.ROOT,
+                "{\"enabled\":true,\"clientId\":\"%s\",\"description\":\"I'm OIDC Client\",\"auth\":%s}",
+                clientId, authObjectJson);
+        OIDCClientRepresentation createdClient = (OIDCClientRepresentation) getClientsApi().client(clientId).patchClient(
+                new ByteArrayInputStream(body.getBytes(StandardCharsets.UTF_8)));
         return assertClientEnabledIdDescriptionAndAuth(rep, createdClient);
     }
 
