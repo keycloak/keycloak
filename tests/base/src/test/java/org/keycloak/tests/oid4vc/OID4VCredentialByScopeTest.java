@@ -19,7 +19,6 @@ import org.keycloak.representations.idm.ClientPolicyRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.annotations.TestSetup;
 import org.keycloak.tests.oid4vc.OID4VCBasicWallet.AuthorizationEndpointRequest;
-import org.keycloak.tests.oid4vc.OID4VCIssuerTestBase.VCTestServerConfig;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.keycloak.util.JsonSerialization;
@@ -35,12 +34,11 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@KeycloakIntegrationTest(config = VCTestServerConfig.class)
+@KeycloakIntegrationTest(config = OID4VCIssuerTestBase.VCTestServerConfigRestCredentialOffer.class)
 public class OID4VCredentialByScopeTest extends OID4VCIssuerTestBase {
 
     @TestSetup
     public void configure() {
-
         RealmResource realmResource = testRealm.admin();
         realmResource.clientPoliciesPoliciesResource().getPolicies().getPolicies().stream()
                 .filter(cpr -> "oid4vci-offer-required".equals(cpr.getName()))
@@ -191,7 +189,7 @@ public class OID4VCredentialByScopeTest extends OID4VCIssuerTestBase {
             }
         };
 
-        // Verification matrix (policyEnabled, scopeEnabled) - We use an OR condition
+        // Verification matrix (createOffer, policyEnabled, scopeEnabled)
         //
         assertTrue(runner.apply(List.of(false, false, false)), "Offer not required");
         assertFalse(runner.apply(List.of(false, false, true)), "Offer required");

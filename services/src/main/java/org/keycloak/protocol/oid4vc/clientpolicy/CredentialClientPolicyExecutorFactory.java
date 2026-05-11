@@ -48,8 +48,7 @@ public class CredentialClientPolicyExecutorFactory implements ClientPolicyExecut
 
     @Override
     public boolean isSupported(Config.Scope config) {
-        // [TODO >>>] Adding this fails in GitHub CD/CI
-        // Profile.isFeatureEnabled(Profile.Feature.OID4VC_VCI)
-        return Profile.isFeatureEnabled(Profile.Feature.CLIENT_POLICIES);
+        return Profile.isFeatureEnabled(Profile.Feature.CLIENT_POLICIES)
+                && Profile.isFeatureEnabled(Profile.Feature.OID4VC_VCI);
     }
 }

@@ -46,6 +46,7 @@ import org.keycloak.models.KeyManager;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.protocol.oid4vc.clientpolicy.CredentialClientPolicyExecutorFactory;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCAuthorizationDetailsParser;
 import org.keycloak.protocol.oid4vc.issuance.TimeProvider;
 import org.keycloak.protocol.oid4vc.issuance.mappers.OID4VCGeneratedIdMapper;
@@ -56,7 +57,9 @@ import org.keycloak.protocol.oid4vc.model.DisplayObject;
 import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.representations.idm.ClientPolicyConditionRepresentation;
+import org.keycloak.representations.idm.ClientPolicyExecutorRepresentation;
 import org.keycloak.representations.idm.ClientPolicyRepresentation;
+import org.keycloak.representations.idm.ClientProfileRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.ComponentRepresentation;
@@ -493,7 +496,7 @@ public abstract class OID4VCIssuerTestBase {
     public static class VCTestServerWithPreAuthCodeEnabled implements KeycloakServerConfig {
         @Override
         public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
-            return config.features(Profile.Feature.OID4VC_VCI, Profile.Feature.OID4VC_VCI_PREAUTH_CODE, Profile.Feature.OID4VC_VCI_REST_CREDENTIAL_OFFER);
+            return config.features(Profile.Feature.OID4VC_VCI, Profile.Feature.OID4VC_VCI_REST_CREDENTIAL_OFFER, Profile.Feature.OID4VC_VCI_PREAUTH_CODE);
         }
     }
 
@@ -573,12 +576,27 @@ public abstract class OID4VCIssuerTestBase {
 
             // Add Client Policies
             //
-            realm.clientPolicy(createClientPolicyOfferRequired());
+            ClientProfileRepresentation profile = createClientPolicyProfile();
+            realm.clientPolicy(createClientPolicyOfferRequired(profile));
+            realm.clientProfile(profile);
 
             return realm;
         }
 
-        private ClientPolicyRepresentation createClientPolicyOfferRequired() {
+        private ClientProfileRepresentation createClientPolicyProfile() {
+
+            ClientProfileRepresentation profile = new ClientProfileRepresentation();
+            profile.setName("oid4vci-client-profile");
+
+            ClientPolicyExecutorRepresentation executor = new ClientPolicyExecutorRepresentation();
+            executor.setExecutorProviderId(CredentialClientPolicyExecutorFactory.PROVIDER_ID);
+            executor.setConfiguration(JsonNodeFactory.instance.objectNode());
+            profile.setExecutors(List.of(executor));
+
+            return profile;
+        }
+
+        private ClientPolicyRepresentation createClientPolicyOfferRequired(ClientProfileRepresentation profile) {
 
             ClientPolicyRepresentation policy = new ClientPolicyRepresentation();
             policy.setName(VC_POLICY_CREDENTIAL_OFFER_REQUIRED.getName());
@@ -595,7 +613,7 @@ public abstract class OID4VCIssuerTestBase {
             condition.setConfiguration(config);
 
             policy.setConditions(List.of(condition));
-            policy.setProfiles(List.of("oid4vci-client-profile"));
+            policy.setProfiles(List.of(profile.getName()));
 
             return policy;
         }

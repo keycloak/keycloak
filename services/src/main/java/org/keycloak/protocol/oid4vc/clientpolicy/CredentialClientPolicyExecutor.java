@@ -24,6 +24,21 @@ import static org.keycloak.OAuth2Constants.ISSUER_STATE;
 import static org.keycloak.protocol.oid4vc.clientpolicy.CredentialClientPolicies.VC_POLICY_CREDENTIAL_OFFER_REQUIRED;
 import static org.keycloak.services.clientpolicy.ClientPolicyEvent.AUTHORIZATION_REQUEST;
 
+/**
+ * This client policy executor can be reference in a client profile definition like this,
+ * which we currently don't add to the defaults client profile definitions.
+ *
+ *     {
+ *       "name": "oid4vci-client-profile",
+ *       "description": "Client profile, which enforces various policies on oid4vci clients.",
+ *       "executors": [
+ *         {
+ *           "executor": "oid4vci-policy-executor",
+ *           "configuration": {}
+ *         }
+ *       ]
+ *     }
+ */
 public class CredentialClientPolicyExecutor implements ClientPolicyExecutorProvider<ClientPolicyExecutorConfigurationRepresentation> {
 
     protected final KeycloakSession session;
