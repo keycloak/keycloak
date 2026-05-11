@@ -302,8 +302,8 @@ jobs:
         run: |
           declare -A PARAMS
           PARAMS["win"]="-Dkc.quarkus.tests.groups=win"
-          PARAMS["zip-slow"]="-Dkc.quarkus.tests.groups=slow"
-          PARAMS["zip-fast"]='-Dkc.quarkus.tests.groups=!slow'
+          PARAMS["zip-slow"]="-Dkc.quarkus.tests.groups=slow -Dkc.quarkus.tests.aot=true"
+          PARAMS["zip-fast"]='-Dkc.quarkus.tests.groups=!slow -Dkc.quarkus.tests.aot=true'
           PARAMS["storage"]="-Ptest-database"
           PARAMS["smoke"]="-Dkc.quarkus.tests.groups=smoke"
 
