@@ -97,7 +97,7 @@ languages:
     name: Ukrainian
     maintainers:
       - bilkoua
-      - m.malashenko
+      - tafiy
   vi:
     name: Vietnamese
     maintainers:
