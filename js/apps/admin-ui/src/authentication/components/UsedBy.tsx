@@ -9,11 +9,14 @@ import {
   TextVariants,
 } from "@patternfly/react-core";
 import { CheckCircleIcon } from "@patternfly/react-icons";
-import { Fragment, useEffect, useState } from "react";
+import { Fragment, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { useAdminClient } from "../../admin-client";
-import { fetchUsedBy } from "../../components/role-mapping/resource";
+import {
+  fetchUsedBy,
+  type UsedByClientRef as FlowUsedByRow,
+} from "../../components/role-mapping/resource";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { toClient } from "../../clients/routes/Client";
 import useToggle from "../../utils/useToggle";
@@ -21,42 +24,23 @@ import { AuthenticationType, REALM_FLOWS } from "../constants";
 
 import style from "./used-by.module.css";
 
-/** Resolves admin UI client route id from the flow-binding clientId string returned by authentication-management flows. */
-const ClientUsedByLink = ({ clientIdLabel }: { clientIdLabel: string }) => {
-  const { adminClient } = useAdminClient();
+const ClientUsedByLink = ({
+  id,
+  clientId,
+}: {
+  id?: string;
+  clientId: string;
+}) => {
   const { realm } = useRealm();
-  const [internalId, setInternalId] = useState<string | undefined>();
-
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const clients = await adminClient.clients.find({
-          clientId: clientIdLabel,
-        });
-        const match = clients.find((c) => c.clientId === clientIdLabel);
-        if (!cancelled && match?.id) {
-          setInternalId(match.id);
-        }
-      } catch {
-        /* keep plain label */
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [adminClient, clientIdLabel]);
-
-  const label = <strong>{clientIdLabel}</strong>;
-  if (!internalId) {
+  const label = <strong>{clientId}</strong>;
+  if (!id) {
     return label;
   }
-
   return (
     <Link
       to={toClient({
         realm,
-        clientId: internalId,
+        clientId: id,
         tab: "settings",
       })}
     >
@@ -90,15 +74,14 @@ const UsedByModal = ({ id, isSpecificClient, onClose }: UsedByModalProps) => {
     first?: number,
     max?: number,
     search?: string,
-  ): Promise<{ name: string }[]> => {
-    const result = await fetchUsedBy(adminClient, {
+  ): Promise<FlowUsedByRow[]> => {
+    return fetchUsedBy(adminClient, {
       id,
       type: isSpecificClient ? "clients" : "idp",
       first: first || 0,
       max: max || 10,
       search,
     });
-    return result.map((p) => ({ name: p }));
   };
 
   return (
@@ -137,12 +120,15 @@ const UsedByModal = ({ id, isSpecificClient, onClose }: UsedByModalProps) => {
             ? {
                 name: "name",
                 displayKey: "name",
-                cellRenderer: (row: { name: string }) => (
-                  <ClientUsedByLink clientIdLabel={row.name} />
+                cellRenderer: (row: FlowUsedByRow) => (
+                  <ClientUsedByLink id={row.id ?? undefined} clientId={row.clientId} />
                 ),
               }
             : {
                 name: "name",
+                cellRenderer: (row: FlowUsedByRow) => (
+                  <strong>{row.clientId}</strong>
+                ),
               },
         ]}
       />
@@ -154,6 +140,17 @@ export const UsedBy = ({ authType: { id, usedBy } }: UsedByProps) => {
   const { t } = useTranslation();
   const { realmRepresentation: realm } = useRealm();
   const [open, toggle] = useToggle();
+
+  const clientRefs = usedBy?.clientRefs;
+  const clientsOrFallback: FlowUsedByRow[] = useMemo(() => {
+    if (!usedBy || usedBy.type !== "SPECIFIC_CLIENTS") {
+      return [];
+    }
+    if (clientRefs && clientRefs.length > 0) {
+      return clientRefs;
+    }
+    return usedBy.values.map((clientId) => ({ clientId }));
+  }, [usedBy, clientRefs]);
 
   const key = Object.entries(realm!).find(
     (e) => e[1] === usedBy?.values[0],
@@ -182,16 +179,19 @@ export const UsedBy = ({ authType: { id, usedBy } }: UsedByProps) => {
                       ? "Clients"
                       : "Providers"),
                 )}{" "}
-                {usedBy.values.map((used, index) => (
-                  <Fragment key={`${id}-used-${used}-${index}`}>
-                    {usedBy.type === "SPECIFIC_CLIENTS" ? (
-                      <ClientUsedByLink clientIdLabel={used} />
-                    ) : (
-                      <strong>{used}</strong>
-                    )}
-                    {index < usedBy.values.length - 1 ? ", " : ""}
-                  </Fragment>
-                ))}
+                {usedBy.type === "SPECIFIC_CLIENTS"
+                  ? clientsOrFallback.map((ref, index) => (
+                      <Fragment key={`${id}-used-${ref.clientId}-${index}`}>
+                        <ClientUsedByLink id={ref.id ?? undefined} clientId={ref.clientId} />
+                        {index < clientsOrFallback.length - 1 ? ", " : ""}
+                      </Fragment>
+                    ))
+                  : usedBy.values.map((used, index) => (
+                      <Fragment key={`${id}-used-${used}-${index}`}>
+                        <strong>{used}</strong>
+                        {index < usedBy.values.length - 1 ? ", " : ""}
+                      </Fragment>
+                    ))}
               </div>
             }
           >
