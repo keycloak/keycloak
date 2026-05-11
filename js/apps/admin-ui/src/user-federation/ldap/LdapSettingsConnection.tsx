@@ -230,6 +230,7 @@ export const LdapSettingsConnection = ({
               >
                 <SelectOption value="simple">simple</SelectOption>
                 <SelectOption value="none">none</SelectOption>
+                <SelectOption value="EXTERNAL">EXTERNAL</SelectOption>
               </KeycloakSelect>
             )}
           />
