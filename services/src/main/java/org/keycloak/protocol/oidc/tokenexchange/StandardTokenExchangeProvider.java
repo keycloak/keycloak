@@ -47,6 +47,7 @@ import org.keycloak.protocol.oidc.encode.TokenContextEncoderProvider;
 import org.keycloak.rar.AuthorizationRequestContext;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
+import org.keycloak.representations.RefreshToken;
 import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.AuthenticationSessionManager;
@@ -55,6 +56,7 @@ import org.keycloak.services.util.UserSessionUtil;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
 import org.keycloak.util.TokenUtil;
+
 
 /**
  * Provider for internal-internal token exchange, which is compliant with the token exchange specification https://datatracker.ietf.org/doc/html/rfc8693
@@ -91,7 +93,8 @@ public class StandardTokenExchangeProvider extends AbstractTokenExchangeProvider
             return false;
         }
 
-        if(!OIDCAdvancedConfigWrapper.fromClientModel(context.getClient()).isStandardTokenExchangeEnabled()) {
+        OIDCAdvancedConfigWrapper oidcConfig = OIDCAdvancedConfigWrapper.fromClientModel(context.getClient());
+        if(!oidcConfig.isStandardTokenExchangeEnabled()) {
             context.setUnsupportedReason("Standard token exchange is not enabled for the requested client");
             return false;
         }
@@ -108,8 +111,15 @@ public class StandardTokenExchangeProvider extends AbstractTokenExchangeProvider
             return false;
         }
 
-        if (!subjectTokenType.equals(OAuth2Constants.ACCESS_TOKEN_TYPE)) {
-            context.setUnsupportedReason("Parameter 'subject_token' supports access tokens only");
+        boolean refreshTokenAllowed = oidcConfig.getStandardTokenExchangeRefreshTokenAsSubjectEnabled();
+        boolean isValidTokenType = true;
+        if (!OAuth2Constants.ACCESS_TOKEN_TYPE.equals(subjectTokenType)) {
+            isValidTokenType = refreshTokenAllowed && OAuth2Constants.REFRESH_TOKEN_TYPE.equals(subjectTokenType);
+        }
+
+        if (!isValidTokenType) {
+            String supportedTypes = refreshTokenAllowed ? "access or refresh tokens" : "access tokens only";
+            context.setUnsupportedReason("Parameter 'subject_token' supports " + supportedTypes);
             return false;
         }
 
@@ -122,9 +132,10 @@ public class StandardTokenExchangeProvider extends AbstractTokenExchangeProvider
         String subjectToken = context.getParams().getSubjectToken();
 
         event.detail(Details.REQUESTED_TOKEN_TYPE, context.getParams().getRequestedTokenType());
+        event.detail(Details.SUBJECT_TOKEN_TYPE, context.getParams().getSubjectTokenType());
 
         AuthenticationManager.AuthResult authResult = AuthenticationManager.verifyIdentityToken(session, realm, session.getContext().getUri(), clientConnection, true, true, null,
-                false, subjectToken, context.getHeaders(), verifier -> {});
+                false, subjectToken, OAuth2Constants.REFRESH_TOKEN_TYPE.equals(context.getParams().getSubjectTokenType()), context.getHeaders(), verifier -> {});
         if (authResult == null) {
             event.detail(Details.REASON, "subject_token validation failure");
             event.error(Errors.INVALID_TOKEN);
@@ -156,7 +167,6 @@ public class StandardTokenExchangeProvider extends AbstractTokenExchangeProvider
 
     @Override
     protected void validateAudience(AccessToken token, boolean disallowOnHolderOfTokenMismatch, List<ClientModel> targetAudienceClients) {
-        ClientModel tokenHolder = token == null ? null : realm.getClientByClientId(token.getIssuedFor());
 
         if (client.isPublicClient()) {
             String errorMessage = "Public client is not allowed to exchange token";
@@ -173,10 +183,23 @@ public class StandardTokenExchangeProvider extends AbstractTokenExchangeProvider
                 throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_CLIENT, "Client disabled", Response.Status.BAD_REQUEST);
             }
         }
+        ClientModel tokenHolder = token == null ? null : realm.getClientByClientId(token.getIssuedFor());
 
-        //reject if the requester-client is not in the audience of the subject token
-        if (!client.equals(tokenHolder)) {
-            forbiddenIfClientIsNotWithinTokenAudience(token);
+        if (token instanceof RefreshToken refreshToken) {
+            if (Arrays.stream(refreshToken.getOriginalAudience())
+                                .noneMatch(reqAudClient -> client.getClientId().equals(reqAudClient))) {
+                event.detail(Details.REASON, "client is not within the session audience");
+                event.error(Errors.NOT_ALLOWED);
+                throw new CorsErrorResponseException(cors, OAuthErrorException.ACCESS_DENIED,
+                        "Client is not within the session audience", Response.Status.FORBIDDEN);
+            }
+
+        } else {
+
+            //reject if the requester-client is not in the audience of the subject token
+            if (!client.equals(tokenHolder)) {
+                forbiddenIfClientIsNotWithinTokenAudience(token);
+            }
         }
     }
 

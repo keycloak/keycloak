@@ -818,6 +818,56 @@ public class StandardTokenExchangeV2Test extends AbstractClientPoliciesTest {
     }
 
     @Test
+    public void testExchangeWithRefreshTokenAsSubject() throws Exception {
+        final UserRepresentation john = ApiUtil.findUserByUsername(adminClient.realm(TEST), "john");
+        oauth.realm(TEST);
+        final AccessTokenResponse loginResponse = resourceOwnerLogin("john", "password", "subject-client", "secret");
+        final String subjectRefreshToken = loginResponse.getRefreshToken();
+        assertNotNull(subjectRefreshToken);
+
+        AccessTokenResponse response = oauth.tokenExchangeRequest(subjectRefreshToken, OAuth2Constants.REFRESH_TOKEN_TYPE)
+                .client("requester-client", "secret")
+                .send();
+        assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatusCode());
+        assertEquals(OAuthErrorException.INVALID_REQUEST, response.getError());
+        assertEquals("Parameter 'subject_token' supports access tokens only", response.getErrorDescription());
+        events.clear();
+
+        try (ClientAttributeUpdater ignored = ClientAttributeUpdater.forClient(adminClient, TEST, "requester-client")
+                .setAttribute(OIDCConfigAttributes.STANDARD_TOKEN_EXCHANGE_REFRESH_AS_SUBJECT_ENABLED, Boolean.TRUE.toString())
+                .update()) {
+
+            response = oauth.tokenExchangeRequest(loginResponse.getAccessToken(), OAuth2Constants.REFRESH_TOKEN_TYPE)
+                    .client("requester-client", "secret")
+                    .send();
+            assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatusCode());
+            assertEquals(OAuthErrorException.INVALID_REQUEST, response.getError());
+            assertEquals("Invalid token", response.getErrorDescription());
+            events.clear();
+
+            response = oauth.tokenExchangeRequest(subjectRefreshToken, OAuth2Constants.REFRESH_TOKEN_TYPE)
+                    .client("requester-client", "secret")
+                    .audience(List.of("target-client3"))
+                    .send();
+            assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatusCode());
+            assertEquals(OAuthErrorException.INVALID_REQUEST, response.getError());
+            assertEquals("Requested audience not available: target-client3", response.getErrorDescription());
+            events.clear();
+
+            response = oauth.tokenExchangeRequest(subjectRefreshToken, OAuth2Constants.REFRESH_TOKEN_TYPE)
+                    .client("requester-client", "secret")
+                    .send();
+            assertAudiencesAndScopes(response, john, List.of("target-client1"), List.of("default-scope1"));
+            assertEquals(OAuth2Constants.ACCESS_TOKEN_TYPE, response.getIssuedTokenType());
+            assertNotNull(response.getAccessToken());
+
+            final AccessToken exchangedToken = TokenVerifier.create(response.getAccessToken(), AccessToken.class).parse().getToken();
+            assertEquals(getSessionIdFromToken(loginResponse.getAccessToken()), exchangedToken.getSessionId());
+            assertEquals("requester-client", exchangedToken.getIssuedFor());
+        }
+    }
+
+    @Test
     @UncaughtServerErrorExpected
     public void testExchangeWithDynamicScopesEnabled() throws Exception {
         testingClient.enableFeature(Profile.Feature.DYNAMIC_SCOPES);

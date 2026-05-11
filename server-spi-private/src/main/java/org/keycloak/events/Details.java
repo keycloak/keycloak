@@ -75,6 +75,7 @@ public interface Details {
     String REQUESTED_ISSUER = "requested_issuer";
     String REQUESTED_SUBJECT = "requested_subject";
     String REQUESTED_TOKEN_TYPE = "requested_token_type";
+    String SUBJECT_TOKEN_TYPE = "subject_token_type";
     String SUBJECT_TOKEN_CLIENT_ID = "subject_token_client_id";
     String RESTART_AFTER_TIMEOUT = "restart_after_timeout";
     String REDIRECTED_TO_CLIENT = "redirected_to_client";

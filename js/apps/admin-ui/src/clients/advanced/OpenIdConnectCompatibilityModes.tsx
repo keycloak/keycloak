@@ -216,6 +216,41 @@ export const OpenIdConnectCompatibilityModes = ({
           ]}
         />
       )}
+      {isFeatureEnabled(Feature.StandardTokenExchangeV2) && (
+        <FormGroup
+          label={t("enableRefreshSubjectTokenType")}
+          fieldId="enableRefreshSubjectTokenType"
+          hasNoPaddingTop
+          labelIcon={
+            <HelpItem
+              helpText={t("enableRefreshSubjectTokenTypeHelp")}
+              fieldLabelId="enableRefreshSubjectTokenType"
+            />
+          }
+        >
+          <Controller
+            name={convertAttributeNameToForm<FormFields>(
+              "attributes.standard.token.exchange.enableRefreshSubjectTokenType",
+            )}
+            defaultValue="false"
+            control={control}
+            render={({ field }) => (
+              <Switch
+                id="enableRefreshSubjectTokenType"
+                label={t("on")}
+                labelOff={t("off")}
+                isChecked={field.value === "true"}
+                onChange={(_event, value) => field.onChange(value.toString())}
+                aria-label={t("enableRefreshSubjectTokenType")}
+                isDisabled={
+                  tokenExchangeEnabled?.toString() !== "true" ||
+                  useRefreshTokens?.toString() !== "true"
+                }
+              />
+            )}
+          />
+        </FormGroup>
+      )}
       {isFeatureEnabled(Feature.JWTAuthorizationGrant) &&
         jwtAuthorizationGrantEnabled.toString() === "true" &&
         jwtAuthorizationGrantIdP && (

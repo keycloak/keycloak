@@ -115,8 +115,9 @@ subject_token::
     _REQUIRED._ A security token that represents the identity of the party on behalf of whom the request is being made.
 
 subject_token_type::
-    _REQUIRED._ This parameter is the type of the token passed in the `subject_token` parameter. This must be `urn:ietf:params:oauth:token-type:access_token` when the standard token exchange is being used
-    because {project_name} does not support other types for the standard token exchange.
+    _REQUIRED._ This parameter is the type of the token passed in the `subject_token` parameter. This must be `urn:ietf:params:oauth:token-type:access_token` when the standard token exchange is being used.
+    The value could also be  `urn:ietf:params:oauth:token-type:refresh_token` only if the `Allow refresh token as subject in Standard Token Exchange` client configuration option is enabled as specified in the <<_standard-token-exchange-details,standard token exchange>> section.
+    {project_name} does not support other types for the standard token exchange.
 
 requested_token_type::
     _OPTIONAL._ This parameter represents the type of token that the client wants to exchange for. In this version,  only oauth and OpenID Connect token types are supported. The default value for this
@@ -283,6 +284,11 @@ link:{adminguide_link}#_offline-access[Offline session], the requesting refresh 
 
 .Enabling refresh token in Token Exchange
 image::token-exchange-switch-refresh.png[Enabling refresh token in Token Exchange]
+
+* Using a refresh token as subject token is allowed only if the client has the switch *Allow refresh token as subject in Standard Token Exchange* set to On.
+
+.Enabling refresh token as subject in Token Exchange
+image::token-exchange-switch-subject-refresh.png[Enabling refresh token as subject in Token Exchange]
 
 * Token exchange never creates a new link:{adminguide_link}#managing-user-sessions[user session]. In case that `requested_token_type` is a refresh token, it may eventually create a new client session in the user session
 for the requester client (if the client session was not yet created).
