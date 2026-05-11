@@ -58,8 +58,8 @@
         <dist.archive.dir>${dist.archive.dir.prefix}-${dist.archive.dir.version}</dist.archive.dir>
 
         <!-- Upstream WildFly Versions -->
-        <upstream.wildfly.version>35.0.1.Final</upstream.wildfly.version>
-        <upstream.wildfly.core.version>27.0.1.Final</upstream.wildfly.core.version>
+        <upstream.wildfly.version>39.0.1.Final</upstream.wildfly.version>
+        <upstream.wildfly.core.version>31.0.3.Final</upstream.wildfly.core.version>
 
         <!-- Downstream Builds WildFly Versions Override -->
         <eap8.version>8.1.0.GA-redhat-00015</eap8.version>  <!-- G:A = org.jboss.eap:jboss-eap-parent -->
