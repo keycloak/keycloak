@@ -33,6 +33,7 @@ import org.keycloak.models.Constants;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.utils.OIDCResponseMode;
 import org.keycloak.representations.idm.EventRepresentation;
+import org.keycloak.testframework.annotations.InjectClient;
 import org.keycloak.testframework.annotations.InjectEvents;
 import org.keycloak.testframework.annotations.InjectHttpClient;
 import org.keycloak.testframework.annotations.InjectRealm;
@@ -101,6 +102,9 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
 
     @InjectHttpClient
     HttpClient client;
+
+    @InjectClient(ref = "admin-cli", attachTo = "admin-cli")
+    ManagedClient adminlient;
 
     static class AuthorizationCodeRealmConfig implements RealmConfig {
         @Override
@@ -194,9 +198,7 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
     @DatabaseTest
     public void authorizationValidRedirectUri() {
         managedRealm.dirty();
-        ClientResource clientResource = AdminApiUtil.findClientByClientId(managedRealm.admin(), "test-app");
-        ManagedClient client = new ManagedClient(clientResource.toRepresentation(), clientResource);
-        client.updateWithCleanup(c-> c.redirectUris(oauth.getRedirectUri()));
+        adminlient.updateWithCleanup(c-> c.redirectUris(oauth.getRedirectUri()));
 
         AuthorizationEndpointResponse response = oauth.doLogin("test-user@localhost", "password");
 
@@ -211,9 +213,7 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
     @DatabaseTest
     public void testInvalidRedirectUri() {
         managedRealm.dirty();
-        ClientResource clientResource = AdminApiUtil.findClientByClientId(managedRealm.admin(), "test-app");
-        ManagedClient client = new ManagedClient(clientResource.toRepresentation(), clientResource);
-        client.updateWithCleanup(c-> c.redirectUris(oauth.getRedirectUri()));
+        adminlient.updateWithCleanup(c-> c.redirectUris(oauth.getRedirectUri()));
 
         oauth.redirectUri(oauth.getRedirectUri() + "%20test");
         oauth.openLoginForm();
@@ -232,9 +232,7 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
     @DatabaseTest
     public void testInvalidESCCharacterClientId() {
         managedRealm.dirty();
-        ClientResource clientResource = AdminApiUtil.findClientByClientId(managedRealm.admin(), "test-app");
-        ManagedClient client = new ManagedClient(clientResource.toRepresentation(), clientResource);
-        client.updateWithCleanup(c-> c.redirectUris(oauth.getRedirectUri()));
+        adminlient.updateWithCleanup(c-> c.redirectUris(oauth.getRedirectUri()));
 
         oauth.client("%1B");
         oauth.openLoginForm();
@@ -247,9 +245,7 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
     @DatabaseTest
     public void testInvalidNULCharacterClientId() {
         managedRealm.dirty();
-        ClientResource clientResource = AdminApiUtil.findClientByClientId(managedRealm.admin(), "test-app");
-        ManagedClient client = new ManagedClient(clientResource.toRepresentation(), clientResource);
-        client.updateWithCleanup(c-> c.redirectUris(oauth.getRedirectUri()));
+        adminlient.updateWithCleanup(c-> c.redirectUris(oauth.getRedirectUri()));
 
         oauth.client("%00");
         oauth.openLoginForm();
@@ -262,10 +258,8 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
     public void authorizationRequestNoState() {
         managedRealm.dirty();
         AuthorizationEndpointResponse response = oauth.doLogin("test-user@localhost", "password");
-
-        assertTrue(response.isRedirected());ClientResource clientResource = AdminApiUtil.findClientByClientId(managedRealm.admin(), "test-app");
-        ManagedClient client = new ManagedClient(clientResource.toRepresentation(), clientResource);
-        client.updateWithCleanup(c-> c.redirectUris(oauth.getRedirectUri()));
+        assertTrue(response.isRedirected());
+        adminlient.updateWithCleanup(c-> c.redirectUris(oauth.getRedirectUri()));
         assertNotNull(response.getCode());
         assertNull(response.getState());
         assertNull(response.getError());
@@ -379,9 +373,7 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
     @Test
     @DatabaseTest
     public void authorizationRequestFormPostResponseModeInvalidRedirectUri() {
-        ClientResource clientResource = AdminApiUtil.findClientByClientId(managedRealm.admin(), "test-app");
-        ManagedClient client = new ManagedClient(clientResource.toRepresentation(), clientResource);
-        client.updateWithCleanup(c-> c.redirectUris("*"));
+        adminlient.updateWithCleanup(c-> c.redirectUris("*"));
 
         oauth.responseMode(OIDCResponseMode.FORM_POST.value());
         oauth.responseType(OAuth2Constants.CODE);
