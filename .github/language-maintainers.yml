@@ -93,6 +93,11 @@ languages:
     maintainers:
       - spctr
       - ariferol
+  uk:
+    name: Ukrainian
+    maintainers:
+      - bilkoua
+      - m.malashenko
   vi:
     name: Vietnamese
     maintainers:
