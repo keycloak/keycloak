@@ -18,12 +18,16 @@ package org.keycloak.broker.oidc;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.security.Key;
+import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
@@ -47,10 +51,13 @@ import org.keycloak.broker.provider.ClientAssertionIdentityProvider;
 import org.keycloak.broker.provider.ExchangeExternalToken;
 import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.broker.provider.JWTAuthorizationGrantProvider;
+import org.keycloak.broker.provider.TrustMaterialIdentityProvider;
+import org.keycloak.broker.provider.TrustMaterialRequest;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.common.util.Time;
+import org.keycloak.crypto.KeyType;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.crypto.SignatureProvider;
@@ -65,6 +72,8 @@ import org.keycloak.jose.JOSE;
 import org.keycloak.jose.JOSEParser;
 import org.keycloak.jose.jwe.JWE;
 import org.keycloak.jose.jwe.JWEException;
+import org.keycloak.jose.jwk.JWK;
+import org.keycloak.jose.jwk.JWKBuilder;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.keys.PublicKeyStorageProvider;
 import org.keycloak.keys.PublicKeyStorageUtils;
@@ -92,6 +101,7 @@ import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.util.Booleans;
 import org.keycloak.util.JsonSerialization;
+import org.keycloak.util.Strings;
 import org.keycloak.util.TokenUtil;
 import org.keycloak.vault.VaultStringSecret;
 
@@ -101,7 +111,7 @@ import org.jboss.logging.Logger;
 /**
  * @author Pedro Igor
  */
-public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIdentityProviderConfig> implements ExchangeExternalToken, ClientAssertionIdentityProvider<OIDCIdentityProviderConfig>, JWTAuthorizationGrantProvider<OIDCIdentityProviderConfig> {
+public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIdentityProviderConfig> implements ExchangeExternalToken, ClientAssertionIdentityProvider<OIDCIdentityProviderConfig>, JWTAuthorizationGrantProvider<OIDCIdentityProviderConfig>, TrustMaterialIdentityProvider<OIDCIdentityProviderConfig> {
     protected static final Logger logger = Logger.getLogger(OIDCIdentityProvider.class);
 
     public static final String SCOPE_OPENID = "openid";
@@ -1087,6 +1097,18 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
     }
 
     @Override
+    public Stream<JWK> resolveKeys(TrustMaterialRequest request) {
+        if (!matchesTrustMaterialIssuer(request)) {
+            return Stream.empty();
+        }
+
+        Stream<KeyWrapper> keys = Stream.ofNullable(PublicKeyStorageManager.getIdentityProviderKeyWrapper(session,
+                session.getContext().getRealm(), getConfig(), request.getKid(), request.getAlgorithm()));
+
+        return filterTrustMaterialKeys(keys.map(this::toJwk), request);
+    }
+
+    @Override
     protected void setEmailVerified(UserModel user, BrokeredIdentityContext context) {
         OIDCIdentityProviderConfig config = getConfig();
         Map<String, Object> contextData = context.getContextData();
@@ -1101,6 +1123,49 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
         }
 
         user.setEmailVerified(emailVerified);
+    }
+
+    private boolean matchesTrustMaterialIssuer(TrustMaterialRequest request) {
+        if (Strings.isEmpty(request.getIssuer()) || Strings.isEmpty(getConfig().getIssuer())) {
+            return true;
+        }
+
+        return Objects.equals(request.getIssuer(), getConfig().getIssuer());
+    }
+
+    private Stream<JWK> filterTrustMaterialKeys(Stream<JWK> keys, TrustMaterialRequest request) {
+        return keys
+                .filter(Objects::nonNull)
+                .filter(key -> Strings.isEmpty(request.getKid()) || Objects.equals(request.getKid(), key.getKeyId()))
+                .filter(key -> Strings.isEmpty(request.getAlgorithm()) || Strings.isEmpty(key.getAlgorithm())
+                        || Objects.equals(request.getAlgorithm(), key.getAlgorithm()))
+                .filter(key -> Strings.isEmpty(key.getPublicKeyUse()) || Objects.equals(JWK.Use.SIG.asString(), key.getPublicKeyUse()));
+    }
+
+    private JWK toJwk(KeyWrapper key) {
+        if (key == null || key.getPublicKey() == null) {
+            return null;
+        }
+
+        JWKBuilder builder = JWKBuilder.create()
+                .kid(key.getKid())
+                .algorithm(key.getAlgorithmOrDefault());
+        List<X509Certificate> certificates = Optional.ofNullable(key.getCertificateChain())
+                .filter(certs -> !certs.isEmpty())
+                .orElseGet(() -> Optional.ofNullable(key.getCertificate())
+                        .map(Collections::singletonList)
+                        .orElseGet(Collections::emptyList));
+        Key publicKey = key.getPublicKey();
+
+        if (Objects.equals(key.getType(), KeyType.RSA)) {
+            return builder.rsa(publicKey, certificates, key.getUse());
+        } else if (Objects.equals(key.getType(), KeyType.EC)) {
+            return builder.ec(publicKey, certificates, key.getUse());
+        } else if (Objects.equals(key.getType(), KeyType.OKP)) {
+            return builder.okp(publicKey, key.getUse());
+        }
+
+        return null;
     }
 
     private Boolean getEmailVerifiedClaim(JsonWebToken token) {
