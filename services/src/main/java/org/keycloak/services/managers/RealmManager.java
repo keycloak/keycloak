@@ -507,6 +507,14 @@ public class RealmManager {
             RoleModel viewGroups = accountClient.addRole(AccountRoles.VIEW_GROUPS);
             viewGroups.setDescription("${role_" + AccountRoles.VIEW_GROUPS + "}");
 
+            if (Profile.isFeatureEnabled(Profile.Feature.OID4VC_VCI)) {
+                RoleModel viewVerifiableCredentials = accountClient.addRole(AccountRoles.VIEW_VERIFIABLE_CREDENTIALS);
+                viewVerifiableCredentials.setDescription("${role_" + AccountRoles.VIEW_VERIFIABLE_CREDENTIALS + "}");
+                RoleModel manageVerifiableCredentials = accountClient.addRole(AccountRoles.MANAGE_VERIFIABLE_CREDENTIALS);
+                manageVerifiableCredentials.setDescription("${role_" + AccountRoles.MANAGE_VERIFIABLE_CREDENTIALS + "}");
+                manageVerifiableCredentials.addCompositeRole(viewVerifiableCredentials);
+            }
+
             KeycloakModelUtils.setupDeleteAccount(accountClient);
 
             ClientModel accountConsoleClient = realm.getClientByClientId(Constants.ACCOUNT_CONSOLE_CLIENT_ID);
