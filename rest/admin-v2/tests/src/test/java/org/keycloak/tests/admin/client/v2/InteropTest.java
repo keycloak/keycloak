@@ -273,14 +273,14 @@ public class InteropTest extends AbstractClientApiV2Test {
         v2Client.setAppUrl("http://localhost:9000/saml");
         v2Client.setRedirectUris(Set.of("http://localhost:9000/saml/*"));
         v2Client.setFrontChannelLogout(true);
-        v2Client.setNameIdFormat("email");
+        v2Client.setNameIdFormat(SAMLClientRepresentation.NameIdFormat.EMAIL);
         v2Client.setForceNameIdFormat(true);
         v2Client.setIncludeAuthnStatement(true);
         v2Client.setSignDocuments(true);
         v2Client.setSignAssertions(true);
         v2Client.setClientSignatureRequired(false);
         v2Client.setForcePostBinding(true);
-        v2Client.setSignatureAlgorithm("RSA_SHA256");
+        v2Client.setSignatureAlgorithm(SAMLClientRepresentation.SignatureAlgorithm.RSA_SHA256);
 
         try (var response = getClientsApi().createClient(v2Client)) {
             assertThat(response.getStatus(), is(201));
@@ -338,7 +338,7 @@ public class InteropTest extends AbstractClientApiV2Test {
         v2Update.setSignDocuments(true);
         v2Update.setSignAssertions(true);
         v2Update.setForcePostBinding(true);
-        v2Update.setSignatureAlgorithm("RSA_SHA512");
+        v2Update.setSignatureAlgorithm(SAMLClientRepresentation.SignatureAlgorithm.RSA_SHA512);
 
         try (var httpResponse = getClientsApi().client("update-saml-client").createOrUpdateClient(v2Update)) {
             assertThat(httpResponse.getStatus(), is(200));
