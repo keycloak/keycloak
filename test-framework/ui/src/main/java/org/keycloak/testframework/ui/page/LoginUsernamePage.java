@@ -2,6 +2,7 @@ package org.keycloak.testframework.ui.page;
 
 import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 
+import org.openqa.selenium.By;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
@@ -63,5 +64,20 @@ public class LoginUsernamePage extends AbstractLoginPage {
 
     public boolean isRememberMe() {
         return rememberMe.isSelected();
+    }
+
+    public boolean isSocialButtonPresent(String alias) {
+        String id = "social-" + alias;
+        return !driver.driver().findElements(By.id(id)).isEmpty();
+    }
+
+    public void clickSocial(String alias) {
+        WebElement socialButton = findSocialButton(alias);
+        socialButton.click();
+    }
+
+    public WebElement findSocialButton(String alias) {
+        String id = "social-" + alias;
+        return driver.findElement(By.id(id));
     }
 }
