@@ -181,6 +181,12 @@ public class ResourceAdminManager {
         // KEYCLOAK-748)
         if (backchannelLogoutUrl.contains(CLIENT_SESSION_HOST_PROPERTY)) {
             String host = clientSession.getNote(AdapterConstants.CLIENT_SESSION_HOST);
+            if (host != null) {
+                String currentHostMgmtUrl = backchannelLogoutUrl.replace(CLIENT_SESSION_HOST_PROPERTY, host);
+                return sendBackChannelLogoutRequestToClientUri(resource, clientSession, currentHostMgmtUrl);
+            }
+        }
+        return sendBackChannelLogoutRequestToClientUri(resource, clientSession, backchannelLogoutUrl);
             if (StringUtil.isNullOrEmpty(host)) {
                 // Host placeholder in backchannel logout URL cannot be resolved. Usually the client did not send
                 // both 'client_session_host' and 'client_session_state' on its token request.

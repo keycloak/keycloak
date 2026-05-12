@@ -472,6 +472,43 @@ public class LogoutTest extends AbstractKeycloakTest {
     }
 
     /**
+     * Test for CVE-2026-4874: Verify that malicious client_session_host values
+     * are rejected during token refresh and don't cause SSRF during admin logout.
+     */
+    @Test
+    public void adminLogoutDoesNotUseMaliciousClientSessionHost() throws Exception {
+        ClientsResource clients = adminClient.realm(oauth.getRealm()).clients();
+        ClientRepresentation rep = clients.findByClientId(oauth.getClientId()).get(0);
+        ClientResource clientResource = clients.get(rep.getId());
+        rep.getAttributes().put(
+                OIDCConfigAttributes.BACKCHANNEL_LOGOUT_URL,
+                "https://${application.session.host}/testing/test-app/admin/backchannelLogout");
+               //oauth.APP_ROOT + "/admin/backchannelLogout");
+        clientResource.update(rep);
+
+        try {
+            oauth.doLogin("test-user@localhost", "password");
+            String code = oauth.parseLoginResponse().getCode();
+
+            AccessTokenResponse tokenResponse = oauth.accessTokenRequest(code)
+                    .param(AdapterConstants.CLIENT_SESSION_STATE, "client_session")
+                    .param(AdapterConstants.CLIENT_SESSION_HOST, "evil.com:8180")
+                    .send();
+
+            List<UserRepresentation> users = adminClient.realm("test")
+                    .users()
+                    .search("test-user@localhost");
+            adminClient.realm("test").users().get(users.get(0).getId()).logout();
+
+            assertNull(testingClient.testApp().getBackChannelRawLogoutToken(),
+                    "There should be no Backchannel logout token for an untrusted client session host");
+        } finally {
+            rep.getAttributes().put(OIDCConfigAttributes.BACKCHANNEL_LOGOUT_URL, "");
+            clientResource.update(rep);
+        }
+    }
+
+    /**
      * Validate the token matches the spec at <a href="https://openid.net/specs/openid-connect-backchannel-1_0.html#LogoutToken">OpenID Connect Back-Channel Logout 1.0 incorporating errata set 1</a>
      */
     private void validateLogoutToken(LogoutToken backChannelLogoutToken) {
