@@ -589,7 +589,7 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
                 }
                 File aotFile = getAotFile(dPath);
                 // TODO: we know for certain that the test java is 25+, so we'll set it here 
-                envVars.put("JAVA", ProcessHandle.current().info().command().orElseThrow());
+                envVars.put("JAVA", command);
                 envVars.put("JAVA_OPTS_APPEND", "-Xlog:aot -XX:AOTCacheOutput=\"%s\"".formatted(aotFile.getAbsolutePath()));
             }
             
