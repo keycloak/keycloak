@@ -107,6 +107,7 @@ import org.keycloak.protocol.oidc.encode.AccessTokenContext;
 import org.keycloak.protocol.oidc.encode.TokenContextEncoderProvider;
 import org.keycloak.rar.AuthorizationDetails;
 import org.keycloak.representations.AccessToken;
+import org.keycloak.representations.AuthorizationDetailsJSONRepresentation;
 import org.keycloak.services.ErrorPage;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.ServicesLogger;
@@ -1247,7 +1248,9 @@ public class AuthenticationManager {
             }
 
             // we need to add dynamic scopes with params to the scopes to consent every time for now
-            if (grantedConsent == null || !grantedConsent.isClientScopeGranted(clientScope) || isDynamicScopeWithParam(authDetails)) {
+            AuthorizationDetailsJSONRepresentation rep = authDetails.getAuthorizationDetails();
+            String paramater = rep != null ? rep.getDynamicScopeParamFromCustomData() : null;
+            if (grantedConsent == null || !grantedConsent.isClientScopeGranted(clientScope, paramater)) {
                 clientScopesToDisplay.add(authDetails);
             }
         }
@@ -1271,7 +1274,7 @@ public class AuthenticationManager {
     }
 
 
-    private static Stream<AuthorizationDetails> getClientScopeModelStream(KeycloakSession session, ClientModel client) {
+    public static Stream<AuthorizationDetails> getClientScopeModelStream(KeycloakSession session, ClientModel client) {
         AuthenticationSessionModel authSession = session.getContext().getAuthenticationSession();
         //if Dynamic Scopes are enabled, get the scopes from the AuthorizationRequestContext, passing the session and scopes as parameters
         // then concat a Stream with the ClientModel, as it's discarded in the getAuthorizationRequestContext method

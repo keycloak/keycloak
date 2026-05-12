@@ -24,7 +24,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Properties;
 import java.util.Set;
 import java.util.function.Function;
@@ -50,7 +49,6 @@ import org.keycloak.common.ClientConnection;
 import org.keycloak.common.Profile;
 import org.keycloak.common.Profile.Feature;
 import org.keycloak.common.enums.AccountRestApiVersion;
-import org.keycloak.common.util.StringPropertyReplacer;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
@@ -78,6 +76,7 @@ import org.keycloak.services.resources.account.resources.ResourcesService;
 import org.keycloak.services.util.ResolveRelative;
 import org.keycloak.storage.ReadOnlyException;
 import org.keycloak.theme.Theme;
+import org.keycloak.theme.beans.AdvancedMessageFormatterMethod;
 import org.keycloak.userprofile.AttributeMetadata;
 import org.keycloak.userprofile.Attributes;
 import org.keycloak.userprofile.EventAuditingAttributeChangeListener;
@@ -87,6 +86,7 @@ import org.keycloak.userprofile.UserProfileProvider;
 import org.keycloak.userprofile.ValidationException;
 import org.keycloak.userprofile.ValidationException.Error;
 
+import freemarker.template.TemplateModelException;
 import org.jboss.resteasy.reactive.NoCache;
 
 /**
@@ -266,7 +266,7 @@ public class AccountRestService {
         representation.setEffectiveUrl(ResolveRelative.resolveRelativeUri(session, model.getRootUrl(), model.getBaseUrl()));
         UserConsentModel consentModel = consents.get(model.getClientId());
         if(consentModel != null) {
-            representation.setConsent(modelToBriefRepresentation(consentModel));
+            representation.setConsent(modelToRepresentation(consentModel, true));
             representation.setLogoUri(model.getAttribute(ClientModel.LOGO_URI));
             representation.setPolicyUri(model.getAttribute(ClientModel.POLICY_URI));
             representation.setTosUri(model.getAttribute(ClientModel.TOS_URI));
@@ -274,25 +274,27 @@ public class AccountRestService {
         return representation;
     }
 
-    private ConsentRepresentation modelToRepresentation(final UserConsentModel model) {
-        final List<ConsentScopeRepresentation> grantedScopes = model.getGrantedClientScopes().stream()
-                .map(clientScopeModel -> new ConsentScopeRepresentation(
-                        clientScopeModel.getId(),
+    private ConsentScopeRepresentation createContentScopeRepresentation(ClientScopeModel clientScopeModel, String parameter, boolean briefRepresentation) {
+        return briefRepresentation
+                ? new ConsentScopeRepresentation(clientScopeModel.getId(),
+                        getClientScopeName(clientScopeModel),
+                        getClientScopeDisplayText(clientScopeModel, parameter))
+                : new ConsentScopeRepresentation(clientScopeModel.getId(),
                         getClientScopeName(clientScopeModel),
                         clientScopeModel.getDescription(),
                         clientScopeModel.getProtocol(),
-                        getClientScopeDisplayText(clientScopeModel))
-                ).toList();
-        return new ConsentRepresentation(grantedScopes, model.getCreatedDate(), model.getLastUpdatedDate());
+                        getClientScopeDisplayText(clientScopeModel, parameter));
     }
 
-    private ConsentRepresentation modelToBriefRepresentation(final UserConsentModel model) {
-        final List<ConsentScopeRepresentation> grantedScopes = model.getGrantedClientScopes().stream()
-                .map(clientScopeModel -> new ConsentScopeRepresentation(
-                        clientScopeModel.getId(),
-                        getClientScopeName(clientScopeModel),
-                        getClientScopeDisplayText(clientScopeModel))
-                ).toList();
+    private ConsentRepresentation modelToRepresentation(UserConsentModel model, boolean briefRepresentation) {
+        List<ConsentScopeRepresentation> grantedScopes = new ArrayList<>();
+        model.getGrantedClientScopes().stream().forEach(m -> {
+            if (ClientScopeModel.isDynamicScope(m)) {
+                model.getParameters(m).forEach(p -> grantedScopes.add(createContentScopeRepresentation(m, p, briefRepresentation)));
+            } else {
+                grantedScopes.add(createContentScopeRepresentation(m, null, briefRepresentation));
+            }
+        });
         return new ConsentRepresentation(grantedScopes, model.getCreatedDate(), model.getLastUpdatedDate());
     }
 
@@ -303,12 +305,21 @@ public class AccountRestService {
         return clientScopeModel.getConsentScreenText();
     }
 
-    private String getClientScopeDisplayText(final ClientScopeModel clientScopeModel) {
-        final var consentScreenText = clientScopeModel.getConsentScreenText();
-        return StringPropertyReplacer.replaceProperties(
-                consentScreenText,
-                Objects.requireNonNull(getProperties())::getProperty
-        );
+    private String getClientScopeDisplayText(final ClientScopeModel clientScopeModel, final String parameter) {
+        if (clientScopeModel.getConsentScreenText() == null) {
+            return null;
+        }
+        AdvancedMessageFormatterMethod method = new AdvancedMessageFormatterMethod(locale, getProperties());
+        List<String> inputs = new ArrayList<>();
+        inputs.add(clientScopeModel.getConsentScreenText());
+        if (parameter != null) {
+            inputs.add(parameter);
+        }
+        try {
+            return (String) method.exec(inputs);
+        } catch (TemplateModelException e) {
+            return clientScopeModel.getConsentScreenText();
+        }
     }
 
     private Properties getProperties() {
@@ -343,11 +354,7 @@ public class AccountRestService {
             return Response.noContent().build();
         }
 
-        if (briefRepresentation) {
-            return Response.ok(modelToBriefRepresentation(consent)).build();
-        }
-
-        return Response.ok(modelToRepresentation(consent)).build();
+        return Response.ok(modelToRepresentation(consent, briefRepresentation)).build();
     }
 
     /**
@@ -442,7 +449,7 @@ public class AccountRestService {
             String scopeString = grantedConsent.getGrantedClientScopes().stream().map(cs->cs.getName()).collect(Collectors.joining(" "));
             event.detail(Details.SCOPE, scopeString).success();
             grantedConsent = UserConsentManager.getConsentByClient(session, realm, user, client.getId());
-            return Response.ok(modelToBriefRepresentation(grantedConsent)).build();
+            return Response.ok(modelToRepresentation(grantedConsent, true)).build();
         } catch (IllegalArgumentException e) {
             throw ErrorResponse.error(e.getMessage(), Response.Status.BAD_REQUEST);
         }
@@ -472,9 +479,13 @@ public class AccountRestService {
                 String msg = String.format("Scope id %s does not exist for client %s.", scopeRepresentation, consent.getClient().getName());
                 event.error(msg);
                 throw new IllegalArgumentException(msg);
-            } else {
-                consent.addGrantedClientScope(scopeModel);
             }
+            if (ClientScopeModel.isDynamicScope(scopeModel)) {
+                String msg = String.format("Cannot create Scope id %s for client %s because is dynamic.", scopeRepresentation, consent.getClient().getName());
+                event.error(msg);
+                throw new IllegalArgumentException(msg);
+            }
+            consent.addGrantedClientScope(scopeModel, null);
         }
         return consent;
     }

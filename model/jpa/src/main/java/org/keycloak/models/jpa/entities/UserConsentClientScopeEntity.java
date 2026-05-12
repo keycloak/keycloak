@@ -47,6 +47,8 @@ import jakarta.persistence.Table;
 @IdClass(UserConsentClientScopeEntity.Key.class)
 public class UserConsentClientScopeEntity {
 
+    public static String NOT_AVAILABLE_PARAM = "#N A#";
+
     @Id
     @ManyToOne(fetch= FetchType.LAZY)
     @JoinColumn(name = "USER_CONSENT_ID")
@@ -55,6 +57,10 @@ public class UserConsentClientScopeEntity {
     @Id
     @Column(name="SCOPE_ID")
     protected String scopeId;
+
+    @Id
+    @Column(name="PARAMETER")
+    protected String parameter;
 
     public UserConsentEntity getUserConsent() {
         return userConsent;
@@ -72,6 +78,18 @@ public class UserConsentClientScopeEntity {
         this.scopeId = scopeId;
     }
 
+    public String getParameter() {
+        return parameter.equals(NOT_AVAILABLE_PARAM)
+                ? null
+                : parameter;
+    }
+
+    public void setParameter(String parameter) {
+        this.parameter = parameter == null
+                ? NOT_AVAILABLE_PARAM
+                : parameter;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -79,14 +97,14 @@ public class UserConsentClientScopeEntity {
         if (!(o instanceof UserConsentClientScopeEntity)) return false;
 
         UserConsentClientScopeEntity that = (UserConsentClientScopeEntity)o;
-        UserConsentClientScopeEntity.Key myKey = new UserConsentClientScopeEntity.Key(this.userConsent, this.scopeId);
-        UserConsentClientScopeEntity.Key hisKey = new UserConsentClientScopeEntity.Key(that.userConsent, that.scopeId);
+        UserConsentClientScopeEntity.Key myKey = new UserConsentClientScopeEntity.Key(this.userConsent, this.scopeId, this.parameter);
+        UserConsentClientScopeEntity.Key hisKey = new UserConsentClientScopeEntity.Key(that.userConsent, that.scopeId, that.parameter);
         return myKey.equals(hisKey);
     }
 
     @Override
     public int hashCode() {
-        UserConsentClientScopeEntity.Key myKey = new UserConsentClientScopeEntity.Key(this.userConsent, this.scopeId);
+        UserConsentClientScopeEntity.Key myKey = new UserConsentClientScopeEntity.Key(this.userConsent, this.scopeId, this.parameter);
         return myKey.hashCode();
     }
 
@@ -96,12 +114,15 @@ public class UserConsentClientScopeEntity {
 
         protected String scopeId;
 
+        protected String parameter;
+
         public Key() {
         }
 
-        public Key(UserConsentEntity userConsent, String scopeId) {
+        public Key(UserConsentEntity userConsent, String scopeId, String parameter) {
             this.userConsent = userConsent;
             this.scopeId = scopeId;
+            this.parameter = parameter;
         }
 
         public UserConsentEntity getUserConsent() {
@@ -110,6 +131,10 @@ public class UserConsentClientScopeEntity {
 
         public String getScopeId() {
             return scopeId;
+        }
+
+        public String getParameter() {
+            return parameter;
         }
 
         @Override
@@ -121,6 +146,7 @@ public class UserConsentClientScopeEntity {
 
             if (userConsent != null ? !userConsent.getId().equals(key.userConsent != null ? key.userConsent.getId() : null) : key.userConsent != null) return false;
             if (scopeId != null ? !scopeId.equals(key.scopeId) : key.scopeId != null) return false;
+            if (parameter != null ? !parameter.equals(key.parameter) : key.parameter != null) return false;
 
             return true;
         }
@@ -129,6 +155,7 @@ public class UserConsentClientScopeEntity {
         public int hashCode() {
             int result = userConsent != null ? userConsent.getId().hashCode() : 0;
             result = 31 * result + (scopeId != null ? scopeId.hashCode() : 0);
+            result = 31 * result + (parameter != null ? parameter.hashCode() : 0);
             return result;
         }
     }

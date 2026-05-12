@@ -1795,7 +1795,29 @@
       "account" : [ "manage-account", "view-profile" ]
     },
     "groups" : [ ]
-  }  ],
+  }, {
+    "id" : "08420acf-d86f-4eba-8a69-73e7da43c668",
+    "username" : "consent-user",
+    "emailVerified" : false,
+    "createdTimestamp" : 1779110441255,
+    "enabled" : true,
+    "totp" : false,
+    "credentials" : [ ],
+    "disableableCredentialTypes" : [ ],
+    "requiredActions" : [ ],
+    "realmRoles" : [ "offline_access" ],
+    "clientRoles" : {
+      "account" : [ "manage-account", "view-profile" ]
+    },
+    "clientConsents" : [ {
+      "clientId" : "migration-consent-client",
+      "grantedClientScopes" : [ "roles", "email", "profile" ],
+      "createdDate" : 1779175201074,
+      "lastUpdatedDate" : 1779175201101
+    } ],
+    "notBefore" : 0,
+    "groups" : [ ]
+  } ],
   "clientScopeMappings" : {
     "realm-management" : [ {
       "client" : "admin-cli",
@@ -2481,6 +2503,35 @@
     "useTemplateConfig" : false,
     "useTemplateScope" : false,
     "useTemplateMappers" : false
+  }, {
+    "id" : "e908e55c-7cfe-46de-8c86-9ed6c65c11d9",
+    "clientId" : "migration-consent-client",
+    "surrogateAuthRequired" : false,
+    "enabled" : true,
+    "alwaysDisplayInConsole" : false,
+    "clientAuthenticatorType" : "client-secret",
+    "redirectUris" : [ ],
+    "webOrigins" : [ ],
+    "notBefore" : 0,
+    "bearerOnly" : false,
+    "consentRequired" : true,
+    "standardFlowEnabled" : true,
+    "implicitFlowEnabled" : false,
+    "directAccessGrantsEnabled" : true,
+    "serviceAccountsEnabled" : false,
+    "publicClient" : true,
+    "frontchannelLogout" : false,
+    "protocol" : "openid-connect",
+    "attributes" : {
+      "post.logout.redirect.uris" : "+",
+      "backchannel.logout.session.required" : "true",
+      "backchannel.logout.revoke.offline.tokens" : "false"
+    },
+    "authenticationFlowBindingOverrides" : { },
+    "fullScopeAllowed" : true,
+    "nodeReRegistrationTimeout" : -1,
+    "defaultClientScopes" : [ "acr", "web-origins", "roles", "profile", "email" ],
+    "optionalClientScopes" : [ "address", "phone", "offline_access", "microprofile-jwt" ]
   } ],
   "clientTemplates" : [ ],
   "browserSecurityHeaders" : {

@@ -1009,7 +1009,7 @@ public class DefaultExportImportManager implements ExportImportManager {
         createRoleMappings(userRep, user, newRealm);
         if (userRep.getClientConsents() != null) {
             for (UserConsentRepresentation consentRep : userRep.getClientConsents()) {
-                UserConsentModel consentModel = RepresentationToModel.toModel(newRealm, consentRep);
+                UserConsentModel consentModel = RepresentationToModel.toModel(newRealm, consentRep, session);
                 session.users().addConsent(newRealm, user.getId(), consentModel);
             }
         }
@@ -1675,7 +1675,7 @@ public class DefaultExportImportManager implements ExportImportManager {
         }
         if (userRep.getClientConsents() != null) {
             for (UserConsentRepresentation consentRep : userRep.getClientConsents()) {
-                UserConsentModel consentModel = RepresentationToModel.toModel(newRealm, consentRep);
+                UserConsentModel consentModel = RepresentationToModel.toModel(newRealm, consentRep, session);
                 federatedStorage.addConsent(newRealm, userRep.getId(), consentModel);
             }
         }

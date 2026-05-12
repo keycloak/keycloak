@@ -90,6 +90,7 @@ import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.broker.util.SimpleHttpDefault;
 import org.keycloak.testsuite.exportimport.ExportImportUtil;
+import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.runonserver.RunHelpers;
 import org.keycloak.theme.DefaultThemeSelectorProvider;
@@ -155,7 +156,7 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
     protected void testMigratedMigrationData(boolean supportsAuthzService) {
         assertNames(migrationRealm.roles().list(), "offline_access", "uma_authorization", "default-roles-migration", "migration-test-realm-role");
         List<String> expectedClientIds = new ArrayList<>(Arrays.asList("account", "account-console", "admin-cli", "broker", "migration-test-client", "migration-saml-client",
-                "realm-management", "security-admin-console", "http://localhost:8280/sales-post-enc/"));
+                "realm-management", "security-admin-console", "http://localhost:8280/sales-post-enc/", "migration-consent-client"));
 
         if (supportsAuthzService) {
             expectedClientIds.add("authz-servlet");
@@ -165,8 +166,16 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
         assertNames(migrationRealm.clients().findAll(), expectedClientIds.toArray(new String[expectedClientIds.size()]));
         String id2 = migrationRealm.clients().findByClientId("migration-test-client").get(0).getId();
         assertNames(migrationRealm.clients().get(id2).roles().list(), "migration-test-client-role");
-        assertNames(migrationRealm.users().search("", 0, 5), "migration-test-user", "offline-test-user");
+        assertNames(migrationRealm.users().search("", 0, 5), "migration-test-user", "offline-test-user", "consent-user");
         assertNames(migrationRealm.groups().groups(), "migration-test-group");
+
+        // check consents have migrated OK after dynamic scopes
+        List<Map<String, Object>> userConsents = AccountHelper.getUserConsents(migrationRealm, "consent-user");
+        Assertions.assertNotNull(userConsents);
+        Assertions.assertEquals(1, userConsents.size());
+        Assertions.assertEquals("migration-consent-client", userConsents.get(0).get("clientId"));
+        assertThat((List<String>) userConsents.get(0).get("grantedClientScopes"),
+                Matchers.containsInAnyOrder("roles", "email", "profile"));
     }
 
     protected void testMigratedMasterData() {

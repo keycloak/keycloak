@@ -17,9 +17,11 @@
 package org.keycloak.models.light;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
+import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
@@ -37,6 +39,7 @@ class LightweightConsentEntity {
     private String clientId;
     private Long createdDate;
     private Set<String> grantedClientScopesIds;
+    private final MultivaluedHashMap<String, String> parameters = new MultivaluedHashMap<>();
     private Long lastUpdatedDate;
 
     public static LightweightConsentEntity fromModel(UserConsentModel model) {
@@ -49,8 +52,8 @@ class LightweightConsentEntity {
 
         model.getGrantedClientScopes()
           .stream()
-          .map(ClientScopeModel::getId)
-          .forEach(consentEntity::addGrantedClientScopesId);
+          .forEach(m -> consentEntity.addGrantedClientScopesId(m.getId(),
+                ClientScopeModel.isDynamicScope(m) ? model.getParameters(m) : null));
 
         return consentEntity;
     }
@@ -72,9 +75,16 @@ class LightweightConsentEntity {
 
         if (grantedClientScopesIds != null && !grantedClientScopesIds.isEmpty()) {
             grantedClientScopesIds.stream()
-              .map(scopeId -> KeycloakModelUtils.findClientScopeById(realm, client, scopeId))
-              .filter(Objects::nonNull)
-              .forEach(model::addGrantedClientScope);
+                    .map(scopeId -> KeycloakModelUtils.findClientScopeById(realm, client, scopeId))
+                    .filter(Objects::nonNull)
+                    .forEach(m -> {
+                        List<String> parameters = entity.parameters.getList(m.getId());
+                        if (parameters.isEmpty()) {
+                            model.addGrantedClientScope(m);
+                        } else {
+                            parameters.stream().forEach(p -> model.addGrantedClientScope(m, p));
+                        }
+                    });
         }
 
         return model;
@@ -127,24 +137,17 @@ class LightweightConsentEntity {
         return grantedClientScopesIds;
     }
 
-    public void removeGrantedClientScopesId(String clientScopeId) {
-        if (grantedClientScopesIds == null) {
+    public void addGrantedClientScopesId(String clientScopeId, List<String> parameters) {
+        if (clientScopeId == null) {
             return;
         }
-        if (grantedClientScopesIds.remove(clientScopeId)) {
-            this.lastUpdatedDate = Time.currentTimeMillis();
+        if (grantedClientScopesIds == null) {
+            grantedClientScopesIds = new HashSet<>();
         }
-    }
-
-    public void setGrantedClientScopesIds(Set<String> clientScopeIds) {
-        clientScopeIds = clientScopeIds == null ? null : new HashSet<>(clientScopeIds);
-        if (clientScopeIds != null) {
-            clientScopeIds.removeIf(Objects::isNull);
-            if (clientScopeIds.isEmpty()) {
-                clientScopeIds = null;
-            }
+        grantedClientScopesIds.add(clientScopeId);
+        if (parameters != null && !parameters.isEmpty()) {
+            this.parameters.addAll(clientScopeId, parameters);
         }
-        grantedClientScopesIds = clientScopeIds;
         this.lastUpdatedDate = Time.currentTimeMillis();
     }
 

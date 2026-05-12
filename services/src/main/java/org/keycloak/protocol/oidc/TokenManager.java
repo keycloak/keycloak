@@ -258,7 +258,7 @@ public class TokenManager {
         ClientSessionContext clientSessionCtx = DefaultClientSessionContext.fromClientSessionAndScopeParameter(clientSession, oldTokenScope, session);
 
         // Check user didn't revoke granted consent
-        if (!verifyConsentStillAvailable(session, user, client, clientSessionCtx.getClientScopesStream())) {
+        if (!verifyConsentStillAvailable(session, user, client, oldTokenScope)) {
             throw new OAuthErrorException(OAuthErrorException.INVALID_SCOPE, "Client no longer has requested consent from user");
         }
 
@@ -861,24 +861,36 @@ public class TokenManager {
     }
 
     // Check if user still has granted consents to all requested client scopes
-    public static boolean verifyConsentStillAvailable(KeycloakSession session, UserModel user, ClientModel client,
-                                                      Stream<ClientScopeModel> requestedClientScopes) {
+    public static boolean verifyConsentStillAvailable(KeycloakSession session, UserModel user, ClientModel client, String scopeParam) {
         if (!client.isConsentRequired()) {
             return true;
         }
 
         UserConsentModel grantedConsent = UserConsentManager.getConsentByClient(session, client.getRealm(), user, client.getId());
 
-        return requestedClientScopes
-                .filter(ClientScopeModel::isDisplayOnConsentScreen)
-                .noneMatch(requestedScope -> {
-                    if (grantedConsent == null || !grantedConsent.getGrantedClientScopes().contains(requestedScope)) {
-                        logger.debugf("Client '%s' no longer has requested consent from user '%s' for client scope '%s'",
-                                client.getClientId(), user.getUsername(), requestedScope.getName());
-                        return true;
-                    }
+        if (Profile.isFeatureEnabled(Profile.Feature.DYNAMIC_SCOPES)) {
+            AuthorizationRequestContext ctx = AuthorizationContextUtil.getAuthorizationRequestContextFromScopesWithClient(
+                    session, client, scopeParam);
+            for (AuthorizationDetails authDetails : ctx.getAuthorizationDetailEntries()) {
+                ClientScopeModel requestedScope = authDetails.getClientScope();
+                String paramater = authDetails.getDynamicScopeParam();
+                if (requestedScope.isDisplayOnConsentScreen() && (grantedConsent == null || !grantedConsent.isClientScopeGranted(requestedScope, paramater))) {
                     return false;
-                });
+                }
+            }
+            return true;
+        } else {
+            return getRequestedClientScopes(session, scopeParam, client, user)
+                    .filter(ClientScopeModel::isDisplayOnConsentScreen)
+                    .noneMatch(requestedScope -> {
+                        if (grantedConsent == null || !grantedConsent.isClientScopeGranted(requestedScope)) {
+                            logger.debugf("Client '%s' no longer has requested consent from user '%s' for client scope '%s'",
+                                    client.getClientId(), user.getUsername(), requestedScope.getName());
+                            return true;
+                        }
+                        return false;
+                    });
+        }
     }
 
     public AccessToken transformAccessToken(KeycloakSession session, AccessToken token,
