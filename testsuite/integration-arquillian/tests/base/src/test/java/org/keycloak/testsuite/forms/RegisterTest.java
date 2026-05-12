@@ -823,25 +823,6 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
                 .withoutDetails(Details.USERNAME, Details.EMAIL);
     }
 
-    @Test
-    public void testLoginPageClearsUserFromContextIfUserNavigatesBackFromResetPassword() {
-        oauth.openLoginForm();
-        loginPage.clickRegister();
-        registerPage.clickBackToLogin();
-        loginPage.assertCurrent(managedRealm.admin().toRepresentation().getRealm());
-
-        loginPage.resetPassword();
-        resetPasswordPage.assertCurrent();
-        resetPasswordPage.changePassword("test-user@localhost");
-
-        driver.navigate().back();
-        driver.navigate().back();
-        events.clear();
-        driver.navigate().back();
-
-        registerPage.assertCurrent();
-    }
-
     protected RealmAttributeUpdater configureRealmRegistrationEmailAsUsername(final boolean value) {
         return getRealmAttributeUpdater().setRegistrationEmailAsUsername(value);
     }

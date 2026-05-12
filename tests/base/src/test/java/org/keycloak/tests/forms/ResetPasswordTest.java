@@ -89,9 +89,6 @@ public class ResetPasswordTest {
     @InjectEvents(realmRef = CONSUMER_REALM_NAME)
     protected Events events;
 
-//    @InjectPage
-//    protected ResetPasswordPage updatePasswordPage;
-
     @Test
     public void shouldOfferAllOidcOptionOnLoginPageUserTriesToResetTheirPasswordAndGoesBack() {
         IdentityProviderRepresentation idp = IdentityProviderBuilder.create()
@@ -131,7 +128,6 @@ public class ResetPasswordTest {
         loginPage.assertCurrent();
         assertDoesNotThrow(() -> loginPage.findSocialButton(IDP_ALIAS));
     }
-
 
     @Test
     public void testLoginPageClearsUserFromContextIfUserNavigatesBackFromResetPassword() {
