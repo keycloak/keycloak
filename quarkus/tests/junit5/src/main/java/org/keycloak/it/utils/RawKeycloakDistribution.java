@@ -477,7 +477,7 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
         return socketFactory;
     }
 
-    private boolean isRunning() {
+    public boolean isRunning() {
         return keycloak != null && keycloak.isAlive();
     }
 
