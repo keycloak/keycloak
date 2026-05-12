@@ -306,9 +306,18 @@ public class OID4VCIssuerEndpoint {
         ClientModel client = clientSession.getClient();
 
         boolean oid4vciEnabled = Boolean.parseBoolean(client.getAttributes().get(OID4VCI_ENABLED_ATTRIBUTE_KEY));
+        boolean clientEnabled = client.isEnabled();
+        String errorDescription = null;
 
         if (!oid4vciEnabled) {
             LOGGER.debugf("Client '%s' is not enabled for OID4VCI features.", client.getClientId());
+            errorDescription = "Client not enabled for OID4VCI";
+        }
+        if (!clientEnabled) {
+            LOGGER.debugf("Client '%s' disabled.", client.getClientId());
+            errorDescription = "Client not enabled for OID4VCI";
+        }
+        if (!oid4vciEnabled || !clientEnabled) {
             if (eventBuilder != null) {
                 eventBuilder.client(client).error(ErrorType.INVALID_CLIENT.getValue());
             }
@@ -318,7 +327,7 @@ public class OID4VCIssuerEndpoint {
             throw new CorsErrorResponseException(
                     cors,
                     ErrorType.INVALID_CLIENT.getValue(),
-                    "Client not enabled for OID4VCI",
+                    errorDescription,
                     Response.Status.FORBIDDEN
             );
         }

@@ -22,6 +22,7 @@ import java.util.Optional;
 
 import org.keycloak.common.Profile;
 import org.keycloak.events.Errors;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
@@ -39,6 +40,7 @@ import org.keycloak.protocol.oid4vc.model.PreAuthorizedCodeGrant;
 import org.keycloak.protocol.oid4vc.utils.CredentialScopeModelUtils;
 import org.keycloak.util.Strings;
 
+import static org.keycloak.OID4VCConstants.OID4VCI_ENABLED_ATTRIBUTE_KEY;
 import static org.keycloak.constants.OID4VCIConstants.CREDENTIAL_OFFER_CREATE;
 import static org.keycloak.protocol.oid4vc.model.PreAuthorizedCodeGrant.PRE_AUTH_GRANT_TYPE;
 
@@ -85,6 +87,11 @@ class DefaultCredentialOfferProvider implements CredentialOfferProvider {
         String targetUserId = Optional.ofNullable(targetUsername)
                 .map(tu -> validateTargetUser(session, realmModel, user, tu))
                 .map(UserModel::getId).orElse(null);
+
+        // Validate the target client
+        if (targetClientId != null) {
+            validateTargetClient(realmModel, targetClientId);
+        }
 
         // Create the CredentialsOffer
         //
@@ -148,6 +155,20 @@ class DefaultCredentialOfferProvider implements CredentialOfferProvider {
         }
 
         return targetUserModel;
+    }
+
+    private void validateTargetClient(RealmModel realm, String clientId) {
+        ClientModel client = session.clients().getClientByClientId(realm, clientId);
+        if (client == null) {
+            throw new CredentialOfferException(Errors.CLIENT_NOT_FOUND, "Client '" + clientId + "' not found");
+        }
+        if (!client.isEnabled()) {
+            throw new CredentialOfferException(Errors.CLIENT_DISABLED, "Client '" + clientId + "' disabled");
+        }
+        boolean oid4vciEnabled = Boolean.parseBoolean(client.getAttributes().get(OID4VCI_ENABLED_ATTRIBUTE_KEY));
+        if (!oid4vciEnabled) {
+            throw new CredentialOfferException(Errors.INVALID_CLIENT, "Client '" + clientId + "' is not enabled for OID4VCI features.");
+        }
     }
 
     /**

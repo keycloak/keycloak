@@ -33,6 +33,8 @@ import static org.keycloak.events.Details.CREDENTIAL_TYPE;
 import static org.keycloak.events.Details.CUSTOM_REQUIRED_ACTION;
 import static org.keycloak.events.Details.GRANT_TYPE;
 import static org.keycloak.events.Details.REASON;
+import static org.keycloak.events.Errors.CLIENT_NOT_FOUND;
+import static org.keycloak.events.Errors.INVALID_CLIENT;
 import static org.keycloak.events.Errors.REJECTED_BY_USER;
 import static org.keycloak.protocol.oid4vc.model.ErrorType.INVALID_CREDENTIAL_OFFER_REQUEST;
 import static org.keycloak.protocol.oid4vc.model.ErrorType.MISSING_CREDENTIAL_CONFIG;
@@ -111,6 +113,11 @@ public class OID4VCActionTest extends OID4VCIssuerTestBase {
         credentialOfferPage.assertCurrent();
         assertEquals(credentialOfferUri, credentialOfferPage.getCredentialOfferUri());
 
+        loginSuccessForAuthorizationCodeCredentialOffer(credentialOfferUri);
+    }
+
+
+    private void loginSuccessForAuthorizationCodeCredentialOffer(String credentialOfferUri) {
         String credentialOfferNonce = getNonceFromCredentialOfferUri(credentialOfferUri);
 
         // Obtain credential offer
@@ -172,6 +179,79 @@ public class OID4VCActionTest extends OID4VCIssuerTestBase {
                 .type(EventType.VERIFIABLE_CREDENTIAL_REQUEST);
 
         verifyVCActionCredentialResponse(credResponse);
+    }
+
+
+    // Test successful scenario with wallet using "authorization code" grant. Credential offer is not target to any specific client
+    @Test
+    public void testCredentialOfferAIASuccess_authorizationCodeFlow_noSpecificClient() throws Exception {
+        // Login as user. Check required-action displayed
+        oauth.client(client.getClientId(), "test-secret");
+        oauth.loginForm()
+                .kcAction(getKcActionParameter(null, minimalJwtTypeCredentialConfigurationIdName, false))
+                .open();
+        oauth.fillLoginForm(user.getUsername(), TEST_PASSWORD);
+
+        credentialOfferPage.assertCurrent();
+        String credentialOfferUri = credentialOfferPage.getCredentialOfferUri();
+
+        EventAssertion.assertSuccess(events.poll())
+                .userId(user.getId())
+                .details(Details.CREDENTIAL_TYPE, minimalJwtTypeCredentialConfigurationIdName)
+                .details(Details.VERIFIABLE_CREDENTIAL_PRE_AUTHORIZED, String.valueOf(false))
+                .details(Details.VERIFIABLE_CREDENTIAL_TARGET_USER_ID, user.getId())
+                .withoutDetails(Details.VERIFIABLE_CREDENTIAL_TARGET_CLIENT_ID)
+                .type(EventType.VERIFIABLE_CREDENTIAL_CREATE_OFFER);
+
+        loginSuccessForAuthorizationCodeCredentialOffer(credentialOfferUri);
+    }
+
+
+    // Test that credential-offer created for different client than actual client used later at login request with issuer_state from credential-offer
+    @Test
+    public void testCredentialOfferAIASuccess_authorizationCodeFlow_differentClient() throws Exception {
+        // Create credential offer for 'oid4vci-test-pub' client
+        oauth.client(client.getClientId(), "test-secret");
+        oauth.loginForm()
+                .kcAction(getKcActionParameter(OID4VCI_PUBLIC_CLIENT_ID, minimalJwtTypeCredentialConfigurationIdName, false))
+                .open();
+        oauth.fillLoginForm(user.getUsername(), TEST_PASSWORD);
+
+        credentialOfferPage.assertCurrent();
+        String credentialOfferUri = credentialOfferPage.getCredentialOfferUri();
+
+        EventAssertion.assertSuccess(events.poll())
+                .userId(user.getId())
+                .details(Details.CREDENTIAL_TYPE, minimalJwtTypeCredentialConfigurationIdName)
+                .details(Details.VERIFIABLE_CREDENTIAL_PRE_AUTHORIZED, String.valueOf(false))
+                .details(Details.VERIFIABLE_CREDENTIAL_TARGET_USER_ID, user.getId())
+                .details(Details.VERIFIABLE_CREDENTIAL_TARGET_CLIENT_ID, OID4VCI_PUBLIC_CLIENT_ID)
+                .type(EventType.VERIFIABLE_CREDENTIAL_CREATE_OFFER);
+
+        // Obtain credential offer
+        String credentialOfferNonce = getNonceFromCredentialOfferUri(credentialOfferUri);
+        CredentialOfferResponse credentialOfferResponse = oauth.oid4vc().credentialOfferRequest(credentialOfferNonce)
+                .send();
+        assertEquals(HttpStatus.SC_OK, credentialOfferResponse.getStatusCode());
+        CredentialsOffer credOffer = credentialOfferResponse.getCredentialsOffer();
+        String issuerState = credOffer.getIssuerState();
+        assertNotNull(issuerState);
+
+        // Send AuthorizationRequest with 'oid4vci-test' client
+        //
+        AuthorizationEndpointResponse authResponse = wallet
+                .authorizationRequest()
+                .scope(ctx.getScope())
+                .issuerState(issuerState)
+                .send(user.getUsername(), TEST_PASSWORD);
+        String authCode = authResponse.getCode();
+        assertNotNull(authCode, "No authCode");
+
+        // Build and send AccessTokenRequest. Fails due the different client used for credential-offer than for the login
+        //
+        AccessTokenResponse tokenResponse = wallet.accessTokenRequest(ctx, authCode).send();
+        assertNull(tokenResponse.getAccessToken());
+        assertEquals("Credential offer target client 'oid4vci-test-pub' different from login client 'oid4vci-test'", tokenResponse.getErrorDescription());
     }
 
 
@@ -246,6 +326,45 @@ public class OID4VCActionTest extends OID4VCIssuerTestBase {
                 .details(CREDENTIAL_TYPE, "unknown-config-id")
                 .details(REASON, "Client scope was not found for credential configuration ID: unknown-config-id")
                 .type(EventType.VERIFIABLE_CREDENTIAL_CREATE_OFFER_ERROR);
+        events.clear();
+    }
+
+    @Test
+    public void testCredentialOfferClientErrors() {
+        // Test kc_action_parameter referencing non-existing client
+        oauth.client(client.getClientId(), client.getSecret());
+
+        oauth.loginForm()
+                .kcAction(getKcActionParameter("non-existing", minimalJwtTypeCredentialConfigurationIdName, false))
+                .open();
+        oauth.fillLoginForm(user.getUsername(), TEST_PASSWORD);
+
+        AuthorizationEndpointResponse authzCodeResponse = new AuthorizationEndpointResponse(oauth);
+        assertNotNull(authzCodeResponse.getCode());
+        assertEquals(RequiredActionContext.KcActionStatus.ERROR.name().toLowerCase(), authzCodeResponse.getKcActionStatus());
+
+        EventAssertion.assertError(events.poll())
+                .userId(user.getId())
+                .clientId(client.getClientId())
+                .error(CLIENT_NOT_FOUND)
+                .details(REASON, "Client 'non-existing' not found")
+                .type(EventType.VERIFIABLE_CREDENTIAL_CREATE_OFFER_ERROR);
+        events.poll();
+
+        // Test disabled OID4VCI client
+        oauth.loginForm()
+                .kcAction(getKcActionParameter("account", minimalJwtTypeCredentialConfigurationIdName, false))
+                .open();
+        authzCodeResponse = new AuthorizationEndpointResponse(oauth);
+        assertNotNull(authzCodeResponse.getCode());
+        assertEquals(RequiredActionContext.KcActionStatus.ERROR.name().toLowerCase(), authzCodeResponse.getKcActionStatus());
+        EventAssertion.assertError(events.poll())
+                .userId(user.getId())
+                .clientId(client.getClientId())
+                .error(INVALID_CLIENT)
+                .details(REASON, "Client 'account' is not enabled for OID4VCI features.")
+                .type(EventType.VERIFIABLE_CREDENTIAL_CREATE_OFFER_ERROR);
+
         events.clear();
     }
 
