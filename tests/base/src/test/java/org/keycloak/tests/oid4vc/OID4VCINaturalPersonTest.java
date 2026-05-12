@@ -143,10 +143,9 @@ public class OID4VCINaturalPersonTest extends OID4VCIssuerTestBase {
                 assertEquals(issuer, vcJwt.getIssuer());
                 Object vc = vcJwt.getOtherClaims().get("vc");
                 VerifiableCredential credential = JsonSerialization.mapper.convertValue(vc, VerifiableCredential.class);
-                List<String> expectedCredentialTypes = new ArrayList<>(credScope.getSupportedCredentialTypes());
-                if (!expectedCredentialTypes.contains(CredentialDefinition.VERIFIABLE_CREDENTIAL_TYPE)) {
-                    expectedCredentialTypes.add(0, CredentialDefinition.VERIFIABLE_CREDENTIAL_TYPE);
-                }
+                List<String> expectedCredentialTypes = new ArrayList<>();
+                expectedCredentialTypes.add(CredentialDefinition.VERIFIABLE_CREDENTIAL_TYPE);
+                expectedCredentialTypes.addAll(credScope.getSupportedCredentialTypes());
                 assertEquals(expectedCredentialTypes, credential.getType());
                 assertEquals(URI.create(issuer), credential.getIssuer());
                 assertEquals(expUser + "@email.cz", credential.getCredentialSubject().getClaims().get("email"));
