@@ -285,7 +285,8 @@ public class DefaultClientService implements ClientService {
             model = realm.getClientByClientId(clientId);
         }
         boolean alreadyExists = model != null;
-        if (alreadyExists && client.getProtocol() == null) {
+        if (alreadyExists && (client.getProtocol() == null
+                || (strategy == CreateOrUpdateStrategy.PATCH && isBlank(client.getProtocol())))) {
             client.setProtocol(model.getProtocol());
         }
         client = materializeProtocolSubtypeIfNeeded(client);

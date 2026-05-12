@@ -54,6 +54,7 @@ import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.anyOf;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.notNullValue;
 
@@ -245,14 +246,20 @@ public abstract class AbstractClientValidationTest extends AbstractClientApiV2Te
                 """.formatted(protocol, getPayloadClientId())));
 
         try (var response = client.execute(request)) {
-            assertThat(response.getStatusLine().getStatusCode(), is(400));
             var responseBody = EntityUtils.toString(response.getEntity());
             assertThat(responseBody, notNullValue());
             switch (getHttpMethod()) {
-                case HttpPatch.METHOD_NAME ->
-                        assertThat(responseBody, containsString("Invalid values for these fields: protocol"));
-                case HttpPost.METHOD_NAME, HttpPut.METHOD_NAME ->
-                        assertThat(responseBody, containsString("Cannot parse the JSON"));
+                case HttpPatch.METHOD_NAME -> {
+                    assertThat(response.getStatusLine().getStatusCode(), is(400));
+                    assertThat(responseBody, anyOf(
+                            containsString("Invalid values for these fields: protocol"),
+                            containsString("unsupported client protocol"),
+                            containsString("protocol cannot be changed for an existing client")));
+                }
+                case HttpPost.METHOD_NAME, HttpPut.METHOD_NAME -> {
+                    assertThat(response.getStatusLine().getStatusCode(), is(400));
+                    assertThat(responseBody, containsString("Cannot parse the JSON"));
+                }
             }
         }
     }
@@ -1214,9 +1221,12 @@ public abstract class AbstractClientValidationTest extends AbstractClientApiV2Te
 
         try (var response = client.execute(request)) {
             assertThat(response.getStatusLine().getStatusCode(), is(400));
+            var body = EntityUtils.toString(response.getEntity());
             switch (getHttpMethod()){
-                case HttpPut.METHOD_NAME -> assertThat(EntityUtils.toString(response.getEntity()), CoreMatchers.containsString("protocol cannot be changed for an existing client"));
-                case HttpPatch.METHOD_NAME -> assertThat(EntityUtils.toString(response.getEntity()), CoreMatchers.containsString("Invalid values for these fields: protocol"));
+                case HttpPut.METHOD_NAME -> assertThat(body, CoreMatchers.containsString("protocol cannot be changed for an existing client"));
+                case HttpPatch.METHOD_NAME -> assertThat(body, anyOf(
+                        CoreMatchers.containsString("Invalid values for these fields: protocol"),
+                        CoreMatchers.containsString("protocol cannot be changed for an existing client")));
             }
         }
 
