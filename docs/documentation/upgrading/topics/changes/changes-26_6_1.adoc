@@ -14,6 +14,12 @@ Once you upgraded to 26.6.1, you should see in the built-in browser flow the `Or
 Breaking changes are identified as those that might require changes for existing users to their configurations or applications.
 In minor or patch releases, {project_name} will only introduce breaking changes to fix bugs.
 
+=== Authorization requests with empty resource parameter
+
+Starting with Keycloak 26.6.1, authorization requests containing an empty `resource` parameter (`resource=`) are rejected as invalid requests.
+
+Previously, empty values may have been treated as absent or ignored. Clients should either omit the parameter entirely or provide a valid resource identifier.
+
 === Outgoing HTTP connections do not follow redirects
 
 Since this release, the HTTP connections originated from the {project_name} server do not follow redirects by default. The HTTP result will be the redirect status (`3xx`) code, and the `Location` header will not be automatically fetched. With this change, the server avoids retrieving unwanted redirects that can bypass allowed URLs defined by client policies or other future configurations.
