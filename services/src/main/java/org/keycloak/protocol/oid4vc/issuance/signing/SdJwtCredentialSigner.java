@@ -22,7 +22,7 @@ import java.security.cert.X509Certificate;
 import java.util.Base64;
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
+import javax.security.auth.x500.X500Principal;
 
 import org.keycloak.crypto.SignatureSignerContext;
 import org.keycloak.models.KeycloakSession;
@@ -80,10 +80,10 @@ public class SdJwtCredentialSigner extends AbstractCredentialSigner<String> {
      */
     private void addX5cHeader(SdJwtCredentialBody sdJwtCredentialBody, SignatureSignerContext signer) {
         List<X509Certificate> certificateChain = signer.getCertificateChain();
-
         if (certificateChain != null && !certificateChain.isEmpty()) {
             List<String> x5cList = certificateChain.stream()
                     .filter(Objects::nonNull)
+                    .filter(cert -> !isTrustAnchor(cert))
                     .map(cert -> {
                         try {
                             return Base64.getEncoder().encodeToString(cert.getEncoded());
@@ -91,7 +91,7 @@ public class SdJwtCredentialSigner extends AbstractCredentialSigner<String> {
                             throw new RuntimeException(e);
                         }
                     })
-                    .collect(Collectors.toList());
+                    .toList();
 
             if (!x5cList.isEmpty()) {
                 sdJwtCredentialBody.getIssuerSignedJWT().getJwsHeader().setX5c(x5cList);
@@ -101,5 +101,18 @@ public class SdJwtCredentialSigner extends AbstractCredentialSigner<String> {
         } else {
             LOGGER.debugf("No certificate or certificate chain available for x5c header in SD-JWT credential.");
         }
+    }
+
+    private boolean isTrustAnchor(X509Certificate cert) {
+        boolean isTrustAnchor = false;
+        try {
+            int basicConstraints = cert.getBasicConstraints();
+            X500Principal issuerPrincipal = cert.getIssuerX500Principal();
+            X500Principal subjectPrincipal = cert.getSubjectX500Principal();
+            isTrustAnchor = subjectPrincipal.equals(issuerPrincipal) && basicConstraints >= 0;
+        } catch (Exception e) {
+            // ignore
+        }
+        return isTrustAnchor;
     }
 }

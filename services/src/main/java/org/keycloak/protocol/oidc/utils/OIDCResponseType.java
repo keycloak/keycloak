@@ -105,7 +105,6 @@ public class OIDCResponseType {
         return responseTypes.contains(responseType);
     }
 
-
     public boolean isImplicitOrHybridFlow() {
         return hasResponseType(TOKEN) || hasResponseType(ID_TOKEN);
     }

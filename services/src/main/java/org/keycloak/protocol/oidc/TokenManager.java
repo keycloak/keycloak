@@ -49,6 +49,7 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.TokenCategory;
 import org.keycloak.TokenVerifier;
+import org.keycloak.authentication.authenticators.client.AttestationBasedClientAuthenticator.ABCAResult;
 import org.keycloak.authentication.authenticators.util.AcrStore;
 import org.keycloak.broker.oidc.OIDCIdentityProvider;
 import org.keycloak.broker.oidc.OIDCIdentityProviderConfig;
@@ -1291,7 +1292,7 @@ public class TokenManager {
 
         private void generateRefreshToken(boolean offlineTokenRequested) {
             AuthenticatedClientSessionModel clientSession = clientSessionCtx.getClientSession();
-            AccessToken.Confirmation confirmation = getConfirmation(clientSession, accessToken);
+            AccessToken.Confirmation confirmation = getRefreshTokenConfirmation(accessToken);
             refreshToken = new RefreshToken(accessToken, confirmation);
             refreshToken.id(SecretGenerator.getInstance().generateSecureID());
             refreshToken.issuedNow();
@@ -1341,10 +1342,12 @@ public class TokenManager {
         * <br/>
         * Based on the definition above the confirmation is only returned for public-clients.
         */
-        private AccessToken.Confirmation getConfirmation(AuthenticatedClientSessionModel clientSession,
-                                                         AccessToken accessToken) {
-            final boolean isPublicClient = clientSession.getClient().isPublicClient();
-            return isPublicClient ? accessToken.getConfirmation() : null;
+        private AccessToken.Confirmation getRefreshTokenConfirmation(AccessToken accessToken) {
+            ABCAResult abcaResult = session.getAttribute(ABCAResult.ABCA_RESULT, ABCAResult.class);
+            AuthenticatedClientSessionModel clientSession = clientSessionCtx.getClientSession();
+            boolean isPublicClient = clientSession.getClient().isPublicClient();
+            boolean abcaAttested = abcaResult != null && abcaResult.hasAttestedClient();
+            return isPublicClient && !abcaAttested ? accessToken.getConfirmation() : null;
         }
 
         private Long getExpiration(boolean offline) {

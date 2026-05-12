@@ -70,6 +70,7 @@ import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
 import org.openqa.selenium.WebDriver;
 
+import static org.keycloak.services.util.MtlsHoKTokenUtil.CERT_VERIFY_ERROR_DESC;
 import static org.keycloak.testsuite.admin.AdminApiUtil.findUserByUsername;
 import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_SSL_REQUIRED;
 
@@ -321,7 +322,7 @@ public class HoKTest extends AbstractTestRealmKeycloakTest {
         // Error Pattern
         assertEquals(401, response.getStatusCode());
         assertEquals(OAuthErrorException.UNAUTHORIZED_CLIENT, response.getError());
-        assertEquals("Client certificate missing, or its thumbprint and one in the token did NOT match", response.getErrorDescription());
+        assertEquals(CERT_VERIFY_ERROR_DESC, response.getErrorDescription());
     }
 
     @Test
@@ -413,7 +414,7 @@ public class HoKTest extends AbstractTestRealmKeycloakTest {
         // Error Pattern
         assertEquals(401, response.getStatusCode());
         assertEquals(OAuthErrorException.UNAUTHORIZED_CLIENT, response.getError());
-        assertEquals("Client certificate missing, or its thumbprint and one in the token did NOT match", response.getErrorDescription());
+        assertEquals(CERT_VERIFY_ERROR_DESC, response.getErrorDescription());
     }
 
     private void expectSuccessfulResponseFromTokenEndpoint(AccessTokenResponse response, String sessionId, AccessToken token, RefreshToken refreshToken, EventRepresentation tokenEvent) {
