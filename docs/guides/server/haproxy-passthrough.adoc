@@ -5,7 +5,7 @@
 
 <@tmpl.guide title="HAProxy with TLS passthrough"
 summary="Configure HAProxy as a TLS passthrough load balancer for {project_name}."
-includedOptions="proxy-protocol-enabled metrics-enabled health-enabled"
+includedOptions="proxy-protocol-enabled metrics-enabled health-enabled shutdown-delay"
 tileVisible="false">
 
 This {section} describes how to configure link:https://www.haproxy.com/[HAProxy] as a TLS passthrough load balancer in front of {project_name}.

@@ -5,7 +5,7 @@
 
 <@tmpl.guide title="HAProxy with TLS re-encrypt"
 summary="Configure HAProxy as a TLS re-encrypt load balancer for {project_name}."
-includedOptions="proxy-headers health-enabled metrics-enabled https-certificate-file https-certificate-key-file https-client-auth https-trust-store-file https-management-client-auth"
+includedOptions="proxy-headers health-enabled metrics-enabled https-certificate-file https-certificate-key-file https-client-auth https-trust-store-file https-management-client-auth shutdown-delay"
 tileVisible="false">
 
 This {section} describes how to configure link:https://www.haproxy.com/[HAProxy] as a TLS re-encrypt load balancer in front of {project_name}.
