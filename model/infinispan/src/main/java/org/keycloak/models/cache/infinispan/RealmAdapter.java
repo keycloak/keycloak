@@ -171,6 +171,18 @@ public class RealmAdapter implements CachedRealmModel {
     }
 
     @Override
+    public String getDisplayNameShort() {
+        if (isUpdated()) return updated.getDisplayNameShort();
+        return cached.getDisplayNameShort();
+    }
+
+    @Override
+    public void setDisplayNameShort(String displayNameShort) {
+        getDelegateForUpdate();
+        updated.setDisplayNameShort(displayNameShort);
+    }
+
+    @Override
     public boolean isEnabled() {
         if (isUpdated()) return updated.isEnabled();
         return cached.isEnabled();
