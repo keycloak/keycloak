@@ -76,7 +76,7 @@ The parameters on this line control mTLS settings, health checks, and failure de
 
 The `server` directive parameters are explained below:
 
-`ssl verify required`:: Enables a secured connection to Keycloak.
+`ssl verify required`:: Enables a secure connection to Keycloak and verifies the certificate.
 
 `crt /path/to/haproxy-internal-certificate`:: Configures the certificate used to authenticate HAProxy to Keycloak.
 
