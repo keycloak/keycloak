@@ -185,6 +185,7 @@ public class OID4VPEndpoint {
             return callback.error(provider.getConfig(), "Missing subject claim in verified credential: " + subjectClaimName);
         }
 
+        // TODO: Use claims from mappers, fix user linking
         BrokeredIdentityContext identity = new BrokeredIdentityContext(subject, provider.getConfig());
         identity.setIdp(provider);
         identity.setAuthenticationSession(authSession);

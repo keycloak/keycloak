@@ -105,6 +105,7 @@ public class OID4VPIdentityProviderFactory extends AbstractIdentityProviderFacto
         ProviderConfigProperty dcqlQuery = new ProviderConfigProperty();
         dcqlQuery.setName(OID4VPIdentityProviderConfig.DCQL_QUERY);
         dcqlQuery.setLabel("DCQL Query");
+        dcqlQuery.setRequired(true);
         dcqlQuery.setHelpText("DCQL query JSON used in generated OID4VP authorization requests.");
         dcqlQuery.setType(ProviderConfigProperty.TEXT_TYPE);
 
