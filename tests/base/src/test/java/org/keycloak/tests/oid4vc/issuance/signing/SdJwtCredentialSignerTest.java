@@ -220,7 +220,7 @@ public class SdJwtCredentialSignerTest extends OID4VCIssuerTestBase {
         runOnServer.run(session -> {
             String signingKeyId = getKeyIdFromSession(session);
             CredentialBuildConfig credentialBuildConfig = new CredentialBuildConfig()
-                    .setCredentialIssuer(TEST_DID.toString())
+                    .setCredentialIssuer(TEST_ISSUER_DID)
                     .setCredentialType("https://credentials.example.com/test-credential")
                     .setTokenJwsType("example+sd-jwt")
                     .setHashAlgorithm(OID4VCConstants.SD_HASH_DEFAULT_ALGORITHM)
@@ -278,7 +278,7 @@ public class SdJwtCredentialSignerTest extends OID4VCIssuerTestBase {
     public static void testSignSDJwtCredential(KeycloakSession session, String signingKeyId, String overrideKeyId, String
             algorithm, Map<String, Object> claims, int decoys, List<String> visibleClaims) {
         CredentialBuildConfig credentialBuildConfig = new CredentialBuildConfig()
-                .setCredentialIssuer(TEST_DID.toString())
+                .setCredentialIssuer(TEST_ISSUER_DID)
                 .setCredentialType("https://credentials.example.com/test-credential")
                 .setTokenJwsType("example+sd-jwt")
                 .setHashAlgorithm(OID4VCConstants.SD_HASH_DEFAULT_ALGORITHM)
@@ -337,7 +337,7 @@ public class SdJwtCredentialSignerTest extends OID4VCIssuerTestBase {
         try {
             JsonWebToken theToken = verifier.getToken();
 
-            assertEquals(TEST_DID.toString(), theToken.getIssuer(), "The issuer should be set in the token.");
+            assertEquals(TEST_ISSUER_DID, theToken.getIssuer(), "The issuer should be set in the token.");
             assertEquals("https://credentials.example.com/test-credential", theToken.getOtherClaims().get("vct"), "The type should be included");
             List<String> sds = (List<String>) theToken.getOtherClaims().get(CLAIM_NAME_SD);
             if (sds != null && !sds.isEmpty()) {
