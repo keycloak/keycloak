@@ -437,7 +437,7 @@ public class OIDCLoginProtocol implements LoginProtocol {
             checker.checkResponseType();
             checker.checkRedirectUri();
         } catch (AuthorizationEndpointChecker.AuthorizationCheckException ex) {
-            ex.throwAsErrorPageException(null);
+            checker.throwAsErrorPageException(null, ex);
         }
 
         setupResponseTypeAndMode(clientData.getResponseType(), clientData.getResponseMode());

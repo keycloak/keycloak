@@ -162,7 +162,7 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
             checker.checkRedirectUri();
             this.redirectUri = checker.getRedirectUri();
         } catch (AuthorizationEndpointChecker.AuthorizationCheckException ex) {
-            ex.throwAsErrorPageException(authenticationSession);
+            checker.throwAsErrorPageException(authenticationSession, ex);
         }
 
         try {
@@ -191,7 +191,7 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
             checker.checkValidResource();
             checker.checkOIDCParams();
             checker.checkPKCEParams();
-            checker.checkCredentialScope();
+            checker.checkProviderAddOns();
         } catch (AuthorizationEndpointChecker.AuthorizationCheckException ex) {
             return redirectErrorToClient(parsedResponseMode, ex.getError(), ex.getErrorDescription());
         }

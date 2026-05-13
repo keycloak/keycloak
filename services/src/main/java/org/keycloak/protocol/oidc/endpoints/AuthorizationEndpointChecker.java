@@ -20,6 +20,7 @@ package org.keycloak.protocol.oidc.endpoints;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -125,6 +126,26 @@ public class AuthorizationEndpointChecker {
     public AuthorizationEndpointChecker params(MultivaluedMap<String, String> params) {
         this.params = params;
         return this;
+    }
+
+    public AuthorizationEndpointRequest getAuthorizationEndpointRequest() {
+        return request;
+    }
+
+    public ClientModel getClient() {
+        return client;
+    }
+
+    public EventBuilder getEventBuilder() {
+        return event;
+    }
+
+    public RealmModel getRealm() {
+        return realm;
+    }
+
+    public MultivaluedMap<String, String> getQueryParams() {
+        return params;
     }
 
     public String getRedirectUri() {
@@ -360,6 +381,13 @@ public class AuthorizationEndpointChecker {
         }
     }
 
+    public void checkProviderAddOns() throws AuthorizationCheckException {
+        Set<AuthorizationEndpointCheckProvider> additionalChecks = session.getAllProviders(AuthorizationEndpointCheckProvider.class);
+        for (AuthorizationEndpointCheckProvider check : additionalChecks) {
+            check.check(this);
+        }
+    }
+
     public void checkCredentialScope() throws AuthorizationCheckException {
 
         // Get the list of requested credential scopes that are associated with this client
@@ -490,9 +518,18 @@ public class AuthorizationEndpointChecker {
         }
     }
 
+    public void throwAsErrorPageException(AuthenticationSessionModel authenticationSession, AuthorizationCheckException ex) {
+        throw new ErrorPageException(session, authenticationSession, ex.status, ex.error, ex.errorDescription);
+    }
+
+    public void throwAsCorsErrorResponseException(Cors cors, AuthorizationCheckException ex) {
+        event.detail("detail", ex.errorDescription).error(ex.error);
+        throw new CorsErrorResponseException(cors, ex.error, ex.errorDescription, ex.status);
+    }
+
 
     // Exception propagated to the caller, which will allow caller to send proper error response based on the context (Browser OIDC Authorization Endpoint, PAR etc)
-    public class AuthorizationCheckException extends Exception {
+    public static class AuthorizationCheckException extends Exception {
 
         private final Response.Status status;
         private final String error;
@@ -502,15 +539,6 @@ public class AuthorizationEndpointChecker {
             this.status = status;
             this.error = error;
             this.errorDescription = errorDescription;
-        }
-
-        public void throwAsErrorPageException(AuthenticationSessionModel authenticationSession) {
-            throw new ErrorPageException(session, authenticationSession, status, error, errorDescription);
-        }
-
-        public void throwAsCorsErrorResponseException(Cors cors) {
-            AuthorizationEndpointChecker.this.event.detail("detail", errorDescription).error(error);
-            throw new CorsErrorResponseException(cors, error, errorDescription, status);
         }
 
         public String getError() {
