@@ -85,6 +85,10 @@ public interface RealmModel extends RoleContainerModel {
 
     void setDisplayNameHtml(String displayNameHtml);
 
+    String getDisplayNameShort();
+
+    void setDisplayNameShort(String displayNameShort);
+
     boolean isEnabled();
 
     void setEnabled(boolean enabled);
