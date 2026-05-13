@@ -578,8 +578,7 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
             Runtime.Version runtimeVersion = Runtime.version();
             boolean useAot = false;
             if (Boolean.getBoolean("kc.quarkus.tests.aot")) {
-                String version = String.valueOf(runtimeVersion.version().get(0));
-                if (Integer.parseInt(version) < 25) {
+                if (Runtime.version().feature() < 25) {
                     throw new AssertionError("AOT requested, but the java version is less than 25");
                 }
                 useAot = true;
