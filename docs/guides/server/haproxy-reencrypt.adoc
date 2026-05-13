@@ -5,7 +5,7 @@
 
 <@tmpl.guide title="HAProxy with TLS re-encrypt"
 summary="Configure HAProxy as a TLS re-encrypt load balancer for {project_name}."
-includedOptions="proxy-headers health-enabled metrics-enabled https-certificate-file https-certificate-key-file https-client-auth https-trust-store-file"
+includedOptions="proxy-headers health-enabled metrics-enabled https-certificate-file https-certificate-key-file https-client-auth https-trust-store-file https-management-client-auth"
 tileVisible="false">
 
 This {section} describes how to configure link:https://www.haproxy.com/[HAProxy] as a TLS re-encrypt load balancer in front of {project_name}.
@@ -98,7 +98,7 @@ These values affect how quickly HAProxy detects that a {project_name} instance i
 
 With TLS re-encrypt, {project_name} requires the following configuration:
 
-<@kc.start parameters="--proxy-headers forwarded --health-enabled true --metrics-enabled true --https-certificate-file=/path/to/certificate --https-certificate-key-file=/path/to/key --https-client-auth=required --https-trust-store-file=/path/to/https-truststore"/>
+<@kc.start parameters="--proxy-headers forwarded --health-enabled true --metrics-enabled true --https-certificate-file=/path/to/certificate --https-certificate-key-file=/path/to/key --https-client-auth=required --https-trust-store-file=/path/to/https-truststore --https-management-client-auth=none"/>
 
 `--proxy-headers forwarded`::
 Restricts the forwarding headers that {project_name} will parse to the standard `Forwarded` header as per https://www.rfc-editor.org/rfc/rfc7239.html[RFC 7239].
@@ -125,6 +125,9 @@ Configures a truststore for client authentication.
 In this case the truststore should contain the public certificate of the HAProxy.
 See the https://www.keycloak.org/server/mutual-tls[Configuring trusted certificates for mTLS] guide for additional details.
 
+`--https-management-client-auth=none`::
+Disables the client authentication requirement for the management endpoint.
+
 [[graceful-shutdown-considerations-for-reencrypt]]
 == Graceful shutdown considerations
 
@@ -134,7 +137,7 @@ With the health check settings from the configuration above (`inter 5s fall 3`),
 During this period, {project_name} must remain running to serve in-flight requests.
 Therefore, configure the `--shutdown-delay` to be at least as long as the detection time:
 
-<@kc.start parameters="--proxy-headers forwarded --health-enabled true --metrics-enabled true --https-certificate-file=/path/to/certificate --https-certificate-key-file=/path/to/key --https-client-auth=required --https-trust-store-file=/path/to/https-truststore --shutdown-delay=16s"/>
+<@kc.start parameters="--proxy-headers forwarded --health-enabled true --metrics-enabled true --https-certificate-file=/path/to/certificate --https-certificate-key-file=/path/to/key --https-client-auth=required --https-trust-store-file=/path/to/https-truststore --https-management-client-auth=none --shutdown-delay=16s"/>
 
 For a detailed explanation of shutdown phases and how to tune the delay and timeout values, see the Graceful HTTP shutdown section in the <@links.server id="reverseproxy"/> {section}.
 
