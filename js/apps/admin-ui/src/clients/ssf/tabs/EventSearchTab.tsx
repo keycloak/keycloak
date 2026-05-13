@@ -176,7 +176,7 @@ export const EventSearchTab = ({ client }: EventSearchTabProps) => {
               type="button"
               variant="primary"
               onClick={() => handlePendingLookup()}
-              isDisabled={pendingActionLoading || !pendingLookupJti?.trim()}
+              isDisabled={pendingActionLoading || !pendingLookupJti.trim()}
               data-testid="ssfPendingLookup"
             >
               {t("ssfPendingLookup")}

@@ -246,7 +246,7 @@ export default function ClientDetails() {
   // crash on the first API call (the original bug from the review).
   const isSsfFeatureEnabled = isFeatureEnabled(Feature.Ssf);
   const isSsfRealmEnabled =
-    realmRepresentation?.attributes?.["ssf.transmitterEnabled"] === "true";
+    realmRepresentation.attributes?.["ssf.transmitterEnabled"] === "true";
   const showSsfTab =
     isSsfFeatureEnabled &&
     isSsfRealmEnabled &&

@@ -59,7 +59,7 @@ export const CapabilityConfig = ({
   // that crashes on its first API call.
   const showSsfReceiverToggle =
     isFeatureEnabled(Feature.Ssf) &&
-    realmRepresentation?.attributes?.["ssf.transmitterEnabled"] === "true";
+    realmRepresentation.attributes?.["ssf.transmitterEnabled"] === "true";
   return (
     <FormAccess
       isHorizontal
