@@ -256,8 +256,8 @@ public class ClientScopeResource {
     }
 
     /**
-     * Makes sure that an update that makes a Client Scope Dynamic is rejected if the Client Scope is assigned to a client
-     * as a default scope.
+     * Makes sure that an update that makes a Client Scope Dynamic is rejected if the Client Scope is assigned
+     * as a default scope — either to a client or as a realm-level default.
      * @param rep the {@link ClientScopeRepresentation} with the changes from the frontend.
      */
     public void validateDynamicScopeUpdate(ClientScopeRepresentation rep) {
@@ -275,6 +275,16 @@ public class ClientScopeResource {
             // if it's present, it means that a client has this scope assigned as a default scope, so this scope can't be made dynamic
             if (scopeModelOpt.isPresent()) {
                 throw ErrorResponse.error("This Client Scope can't be made dynamic as it's assigned to a Client as a Default Scope",
+                        Response.Status.BAD_REQUEST);
+            }
+
+            // Also check realm-level default scopes — a scope that is a realm default would be automatically
+            // assigned to new clients as a default scope, which is incompatible with dynamic scopes.
+            boolean isRealmDefault = realm.getDefaultClientScopesStream(true)
+                    .map(ClientScopeModel::getId)
+                    .anyMatch(scopeId -> scopeId.equalsIgnoreCase(this.clientScope.getId()));
+            if (isRealmDefault) {
+                throw ErrorResponse.error("This Client Scope can't be made dynamic as it's assigned as a Realm Default Scope",
                         Response.Status.BAD_REQUEST);
             }
         }

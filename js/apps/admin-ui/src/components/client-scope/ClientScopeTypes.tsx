@@ -31,11 +31,23 @@ export const allClientScopeTypes = Object.keys({
   ...ClientScope,
 }) as AllClientScopeType[];
 
+export const isDynamicScope = (scope: ClientScopeRepresentation) =>
+  scope.attributes?.["is.dynamic.scope"] === "true";
+
+const filterDefaultForDynamic = (
+  types: string[],
+  scopes: ClientScopeRepresentation[],
+) =>
+  scopes.some(isDynamicScope)
+    ? types.filter((t) => t !== ClientScope.default)
+    : types;
+
 export const clientScopeTypesSelectOptions = (
   t: TFunction,
   scopeTypes: string[] | undefined = clientScopeTypes,
+  scopes: ClientScopeRepresentation[] = [],
 ) =>
-  scopeTypes.map((type) => (
+  filterDefaultForDynamic(scopeTypes, scopes).map((type) => (
     <SelectOption key={type} value={type}>
       {t(`clientScopeType.${type}`)}
     </SelectOption>
@@ -44,8 +56,9 @@ export const clientScopeTypesSelectOptions = (
 export const clientScopeTypesDropdown = (
   t: TFunction,
   onClick: (scope: ClientScopeType) => void,
+  scopes: ClientScopeRepresentation[] = [],
 ) =>
-  clientScopeTypes.map((type) => (
+  filterDefaultForDynamic(clientScopeTypes, scopes).map((type) => (
     <DropdownItem key={type} onClick={() => onClick(type as ClientScopeType)}>
       {t(`clientScopeType.${type}`)}
     </DropdownItem>
@@ -69,6 +82,9 @@ export const CellDropdown = ({
 }: CellDropdownProps) => {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
+
+  const types = all ? allClientScopeTypes : clientScopeTypes;
+  const filteredTypes = filterDefaultForDynamic(types, [clientScope]);
 
   return (
     <Select
@@ -96,10 +112,7 @@ export const CellDropdown = ({
       }}
       {...props}
     >
-      {clientScopeTypesSelectOptions(
-        t,
-        all ? allClientScopeTypes : clientScopeTypes,
-      )}
+      {clientScopeTypesSelectOptions(t, filteredTypes)}
     </Select>
   );
 };

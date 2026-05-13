@@ -23,6 +23,7 @@ import { useAdminClient } from "../../admin-client";
 import { getProtocolName } from "../../clients/utils";
 import { DefaultSwitchControl } from "../../components/SwitchControl";
 import {
+  ClientScope,
   allClientScopeTypes,
   ClientScopeDefaultOptionalType,
 } from "../../components/client-scope/ClientScopeTypes";
@@ -153,6 +154,11 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
     defaultValue: "false",
   });
 
+  const isDynamic = isDynamicScopesEnabled && dynamicScope === "true";
+  const scopeTypeOptions = isDynamic
+    ? allClientScopeTypes.filter((key) => key !== "default")
+    : allClientScopeTypes;
+
   const selectedProtocol = useWatch({
     control,
     name: "protocol",
@@ -278,6 +284,9 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
                   value ? form.getValues("name") || "" : "",
                   value,
                 );
+                if (value && form.getValues("type") === ClientScope.default) {
+                  setValue("type", ClientScope.optional, { shouldDirty: true });
+                }
               }}
               stringify
             />
@@ -310,7 +319,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
           label={t("type")}
           labelIcon={t("scopeTypeHelp")}
           controller={{ defaultValue: allClientScopeTypes[0] }}
-          options={allClientScopeTypes.map((key) => ({
+          options={scopeTypeOptions.map((key) => ({
             key,
             value: t(`clientScopeType.${key}`),
           }))}

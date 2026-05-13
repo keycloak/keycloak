@@ -7,6 +7,7 @@ import {
   Dropdown,
   DropdownItem,
   DropdownList,
+  Label,
   MenuToggle,
   ToolbarItem,
 } from "@patternfly/react-core";
@@ -30,6 +31,7 @@ import {
   ClientScope,
   addClientScope,
   changeClientScope,
+  isDynamicScope,
   removeClientScope,
 } from "../../components/client-scope/ClientScopeTypes";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
@@ -158,6 +160,7 @@ export const ClientScopes = ({
         ...c,
         type: ClientScope.optional,
         description: scope?.description,
+        attributes: scope?.attributes,
       };
       return row;
     });
@@ -168,6 +171,7 @@ export const ClientScopes = ({
         ...c,
         type: ClientScope.default,
         description: scope?.description,
+        attributes: scope?.attributes,
       };
       return row;
     });
@@ -372,7 +376,16 @@ export const ClientScopes = ({
                   </Link>
                 );
               }
-              return row.name!;
+              return (
+                <>
+                  {row.name}{" "}
+                  {isDynamicScope(row) && (
+                    <Label color="gold" isCompact>
+                      dynamic
+                    </Label>
+                  )}
+                </>
+              );
             },
           },
           {
