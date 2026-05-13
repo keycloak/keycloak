@@ -5,7 +5,7 @@
 
 <@tmpl.guide title="HAProxy with TLS re-encrypt"
 summary="Configure HAProxy as a TLS re-encrypt load balancer for {project_name}."
-includedOptions="proxy-protocol-enabled metrics-enabled health-enabled"
+includedOptions="proxy-headers health-enabled metrics-enabled https-certificate-file https-certificate-key-file https-client-auth https-trust-store-file"
 tileVisible="false">
 
 This {section} describes how to configure link:https://www.haproxy.com/[HAProxy] as a TLS re-encrypt load balancer in front of {project_name}.
@@ -18,6 +18,7 @@ For a general overview of TLS re-encrypt and how it compares to passthrough, see
 
 A ready-to-run example with Docker Compose is available in the link:https://github.com/keycloak/keycloak-quickstarts/tree/main/proxy/haproxy/reencrypt[quickstart repository].
 
+[[haproxy-configuration-for-reencrypt]]
 == HAProxy configuration
 
 The following `haproxy.cfg` shows a configuration for TLS re-encrypt with two {project_name} backend servers.
@@ -92,7 +93,7 @@ Configures the link:https://docs.haproxy.org/3.2/configuration.html#5.2-inter[he
 poll every 5 seconds, mark a server as down after 3 consecutive failures, and mark it as up again after 2 consecutive successes.
 These values affect how quickly HAProxy detects that a {project_name} instance is shutting down (see <<graceful-shutdown-considerations>>).
 
-[[keycloak-configuration]]
+[[keycloak-configuration-for-reencrypt]]
 == {project_name} configuration
 
 With TLS re-encrypt, {project_name} requires the following configuration:
@@ -124,7 +125,7 @@ Configures a truststore for client authentication.
 In this case the truststore should contain the public certificate of the HAProxy.
 See the https://www.keycloak.org/server/mutual-tls[Configuring trusted certificates for mTLS] guide for additional details.
 
-[[graceful-shutdown-considerations]]
+[[graceful-shutdown-considerations-for-reencrypt]]
 == Graceful shutdown considerations
 
 The health check timing directly determines how long it takes HAProxy to detect that a {project_name} instance is shutting down and stop routing new connections to it.
@@ -133,7 +134,7 @@ With the health check settings from the configuration above (`inter 5s fall 3`),
 During this period, {project_name} must remain running to serve in-flight requests.
 Therefore, configure the `--shutdown-delay` to be at least as long as the detection time:
 
-<@kc.start parameters="--proxy-protocol-enabled true --health-enabled true --metrics-enabled true --shutdown-delay=16s"/>
+<@kc.start parameters="--proxy-headers forwarded --health-enabled true --metrics-enabled true --https-certificate-file=/path/to/certificate --https-certificate-key-file=/path/to/key --https-client-auth=required --https-trust-store-file=/path/to/https-truststore --shutdown-delay=16s"/>
 
 For a detailed explanation of shutdown phases and how to tune the delay and timeout values, see the Graceful HTTP shutdown section in the <@links.server id="reverseproxy"/> {section}.
 
