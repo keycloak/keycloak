@@ -54,7 +54,7 @@ public class OID4VCSdJwtPreInstalledNaturalPersonTest extends OID4VCIssuerEndpoi
     @Test
     public void testGetSdJwtConfigFromMetadata() {
         String scopeName = sdJwtTypeNaturalPersonScopeName;
-        CredentialScopeRepresentation clientScope = requireExistingCredentialScope(scopeName);
+        CredentialScopeRepresentation clientScope = requireCredentialScope(scopeName);
         String credentialConfigurationId = clientScope.getAttributes().get(VC_CONFIGURATION_ID);
         String expectedIssuer = testRealm.getBaseUrl();
         runOnServer

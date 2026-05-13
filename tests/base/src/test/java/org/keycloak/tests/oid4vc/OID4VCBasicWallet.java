@@ -8,18 +8,26 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import java.util.function.Consumer;
+
+import jakarta.ws.rs.HttpMethod;
 
 import org.keycloak.OID4VCConstants;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.authentication.authenticators.client.AttestationBasedClientAuthenticator.ClientAttestationPoPJwt;
+import org.keycloak.common.util.Time;
 import org.keycloak.crypto.AsymmetricSignatureSignerContext;
 import org.keycloak.crypto.KeyWrapper;
+import org.keycloak.jose.jwk.ECPublicJWK;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jwk.JWKBuilder;
+import org.keycloak.jose.jwk.RSAPublicJWK;
+import org.keycloak.jose.jws.Algorithm;
 import org.keycloak.jose.jws.JWSBuilder;
+import org.keycloak.jose.jws.JWSHeader;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.protocol.oid4vc.model.CredentialIssuer;
@@ -49,10 +57,14 @@ import org.keycloak.testsuite.util.oauth.oid4vc.CredentialOfferUriRequest;
 import org.keycloak.testsuite.util.oauth.oid4vc.CredentialOfferUriResponse;
 import org.keycloak.testsuite.util.oauth.oid4vc.Oid4vcCredentialRequest;
 import org.keycloak.testsuite.util.oauth.oid4vc.Oid4vcCredentialResponse;
+import org.keycloak.testsuite.util.oauth.oid4vc.Oid4vcNonceRequest;
 import org.keycloak.testsuite.util.oauth.oid4vc.PreAuthorizedCodeGrantRequest;
+import org.keycloak.util.DPoPGenerator;
 import org.keycloak.util.JsonSerialization;
+import org.keycloak.util.TokenUtil;
 
 import static org.keycloak.OAuth2Constants.AUTHORIZATION_DETAILS;
+import static org.keycloak.OAuth2Constants.DPOP_JWT_HEADER_TYPE;
 import static org.keycloak.authentication.authenticators.client.AttestationBasedClientAuthenticator.OAUTH_CLIENT_ATTESTATION_POP_JWT_TYPE;
 import static org.keycloak.constants.OID4VCIConstants.CREDENTIAL_OFFER_CREATE;
 import static org.keycloak.tests.oid4vc.OID4VCIssuerTestBase.TEST_PASSWORD;
@@ -72,6 +84,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
+
 
 /**
  * A specialized Wallet facade for OID4VCI integration tests.
@@ -231,10 +244,14 @@ public class OID4VCBasicWallet {
     }
 
     public Proofs generateJwtProof(OID4VCTestContext ctx) {
+        String nonce = nonceRequest().send().getNonce();
+        KeyWrapper ecKey = getECKeyPair(ctx, null);
+        return generateJwtProof(ctx, ecKey, nonce);
+    }
+
+    public Proofs generateJwtProof(OID4VCTestContext ctx, KeyWrapper ecKey, String nonce) {
         String aud = getIssuerMetadata(ctx).getCredentialIssuer();
-        String nonce = oauth.oid4vc().doNonceRequest().getNonce();
-        KeyWrapper kw = getECKeyPair(ctx, null);
-        return Proofs.create(ProofType.JWT, OID4VCProofTestUtils.generateJwtProof(aud, kw, nonce));
+        return Proofs.create(ProofType.JWT, OID4VCProofTestUtils.generateJwtProof(aud, ecKey, nonce));
     }
 
     public KeyWrapper getECKeyPair(OID4VCTestContext ctx) {
@@ -252,6 +269,14 @@ public class OID4VCBasicWallet {
         return kw;
     }
 
+    public JWK getECJwk(KeyWrapper ecKey) {
+        JWK jwkEc = DPoPGenerator.createEcJwk(ecKey.getPublicKey());
+        jwkEc.getOtherClaims().put(ECPublicJWK.CRV, ((ECPublicJWK) jwkEc).getCrv());
+        jwkEc.getOtherClaims().put(ECPublicJWK.X, ((ECPublicJWK) jwkEc).getX());
+        jwkEc.getOtherClaims().put(ECPublicJWK.Y, ((ECPublicJWK) jwkEc).getY());
+        return jwkEc;
+    }
+
     public KeyWrapper getRSAKeyPair(OID4VCTestContext ctx) {
         return getRSAKeyPair(ctx, null);
     }
@@ -265,6 +290,24 @@ public class OID4VCBasicWallet {
             ctx.putAttachment(attachmentKey, kw);
         }
         return kw;
+    }
+
+    public JWK getRSAJwk(KeyWrapper rsaKey) {
+        JWK jwkRsa = DPoPGenerator.createRsaJwk(rsaKey.getPublicKey());
+        jwkRsa.getOtherClaims().put(RSAPublicJWK.MODULUS, ((RSAPublicJWK) jwkRsa).getModulus());
+        jwkRsa.getOtherClaims().put(RSAPublicJWK.PUBLIC_EXPONENT, ((RSAPublicJWK) jwkRsa).getPublicExponent());
+        return jwkRsa;
+    }
+
+    public String generateSignedDPoPProof(String htu, KeyWrapper ecKey, String accessToken) {
+        JWK jwkEc = getECJwk(ecKey);
+        JWSHeader jwsEcHeader = new JWSHeader(Algorithm.ES256, DPOP_JWT_HEADER_TYPE, jwkEc.getKeyId(), jwkEc);
+        return DPoPGenerator.generateSignedDPoPProof(
+                UUID.randomUUID().toString(),
+                HttpMethod.POST,
+                htu,
+                (long) Time.currentTime(),
+                jwsEcHeader, ecKey, accessToken);
     }
 
     public AuthorizationEndpointRequest authorizationRequest() {
@@ -321,16 +364,22 @@ public class OID4VCBasicWallet {
         return request;
     }
 
-    public Oid4vcCredentialRequest credentialRequest(OID4VCTestContext ctx, String accessToken) {
+    public Oid4vcCredentialRequest credentialRequest(OID4VCTestContext ctx, String tokenType, String accessToken) {
         Oid4vcCredentialRequest request = new Oid4vcCredentialRequest(oauth, new CredentialRequest()) {
             public Oid4vcCredentialResponse send() {
+                if (bearerToken == null) {
+                    header("Authorization", tokenType + " " + accessToken);
+                }
                 Oid4vcCredentialResponse response = super.send();
                 ctx.putAttachment(CREDENTIALS_RESPONSE_ATTACHMENT_KEY, response);
                 return response;
             }
         };
-        request.bearerToken(accessToken);
         return request;
+    }
+
+    public Oid4vcCredentialRequest credentialRequest(OID4VCTestContext ctx, String accessToken) {
+        return credentialRequest(ctx, TokenUtil.TOKEN_TYPE_BEARER, accessToken);
     }
 
     public Oid4vcCredentialResponse fetchCredentialByOffer(OID4VCTestContext ctx, CredentialsOffer offer) {
@@ -398,6 +447,11 @@ public class OID4VCBasicWallet {
         UserResource userResource = realm.users().get(userRep.getId());
         userResource.logout();
     }
+
+    public Oid4vcNonceRequest nonceRequest() {
+        return new Oid4vcNonceRequest(oauth);
+    }
+
 
     // State Validation ------------------------------------------------------------------------------------------------
 
@@ -533,6 +587,11 @@ public class OID4VCBasicWallet {
             return this;
         }
 
+        public AuthorizationEndpointRequest dpopJkt(String dpopJkt) {
+            loginForm.dpopJkt(dpopJkt);
+            return this;
+        }
+
         public AuthorizationEndpointRequest issuerState(String issuerState) {
             loginForm.issuerState(issuerState);
             return this;
@@ -540,6 +599,11 @@ public class OID4VCBasicWallet {
 
         public AuthorizationEndpointRequest request(String request) {
             loginForm.request(request);
+            return this;
+        }
+
+        public AuthorizationEndpointRequest requestUri(String requestUri) {
+            loginForm.requestUri(requestUri);
             return this;
         }
 

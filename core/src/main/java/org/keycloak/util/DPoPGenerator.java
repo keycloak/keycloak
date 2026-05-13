@@ -20,13 +20,17 @@ package org.keycloak.util;
 import java.security.Key;
 import java.security.KeyPair;
 import java.security.PrivateKey;
+import java.security.interfaces.ECPublicKey;
 
 import org.keycloak.OAuth2Constants;
+import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.common.util.Time;
+import org.keycloak.crypto.KeyType;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.crypto.SignatureSignerContext;
+import org.keycloak.jose.jwk.ECPublicJWK;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jwk.JWKBuilder;
 import org.keycloak.jose.jws.JWSBuilder;
@@ -36,6 +40,7 @@ import org.keycloak.representations.dpop.DPoP;
 
 import static org.keycloak.OAuth2Constants.DPOP_DEFAULT_ALGORITHM;
 import static org.keycloak.OAuth2Constants.DPOP_JWT_HEADER_TYPE;
+import static org.keycloak.jose.jwk.JWKUtil.toIntegerBytes;
 
 /**
  * Utility for generating signed DPoP proofs
@@ -55,19 +60,33 @@ public class DPoPGenerator {
     }
 
 
-    private static JWK createRsaJwk(Key publicKey) {
+    public static JWK createRsaJwk(Key publicKey) {
         return JWKBuilder.create()
                 .rsa(publicKey, KeyUse.SIG);
     }
 
+    public static JWK createEcJwk(Key publicKey) {
+        ECPublicKey ecKey = (ECPublicKey) publicKey;
+        int fieldSize = ecKey.getParams().getCurve().getField().getFieldSize();
+        ECPublicJWK k = new ECPublicJWK();
+        k.setKeyType(KeyType.EC);
+        k.setCrv("P-" + fieldSize);
+        k.setX(Base64Url.encode(toIntegerBytes(ecKey.getW().getAffineX(), fieldSize)));
+        k.setY(Base64Url.encode(toIntegerBytes(ecKey.getW().getAffineY(), fieldSize)));
+        return k;
+    }
 
-    public String generateSignedDPoPProof(String jti, String htm, String htu, Long iat, JWSHeader jwsHeader, PrivateKey privateKey, String accessToken) {
+    public static String generateSignedDPoPProof(String jti, String htm, String htu, Long iat, JWSHeader jwsHeader, KeyWrapper keyWrapper, String accessToken) {
         DPoP dpop = generateDPoP(jti, htm, htu, iat, accessToken);
-        KeyWrapper keyWrapper = getKeyWrapper(jwsHeader, privateKey);
         return sign(jwsHeader, dpop, keyWrapper);
     }
 
-    private DPoP generateDPoP(String jti, String htm, String htu, Long iat, String accessToken) {
+    public String generateSignedDPoPProof(String jti, String htm, String htu, Long iat, JWSHeader jwsHeader, PrivateKey privateKey, String accessToken) {
+        KeyWrapper keyWrapper = getKeyWrapper(jwsHeader, privateKey);
+        return generateSignedDPoPProof(jti, htm, htu, iat, jwsHeader, keyWrapper, accessToken);
+    }
+
+    private static DPoP generateDPoP(String jti, String htm, String htu, Long iat, String accessToken) {
         DPoP dpop = new DPoP();
         dpop.id(jti);
         dpop.setHttpMethod(htm);
@@ -89,9 +108,8 @@ public class DPoPGenerator {
         return keyWrapper;
     }
 
-    private String sign(JWSHeader jwsHeader, DPoP dpop, KeyWrapper keyWrapper) {
+    private static String sign(JWSHeader jwsHeader, DPoP dpop, KeyWrapper keyWrapper) {
         SignatureSignerContext sigCtx = KeyWrapperUtil.createSignatureSignerContext(keyWrapper);
-
         return new JWSBuilder()
                 .header(jwsHeader)
                 .jsonContent(dpop)
