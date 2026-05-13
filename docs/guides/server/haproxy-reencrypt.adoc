@@ -70,7 +70,7 @@ HAProxy has access to the plaintext HTTP traffic in this mode.
 The example shows removing of the `Forwarded` and `x-forwarded-` headers in order to prevent the client from providing misleading information to the backend service.
 <4> The backend must also use HTTP mode to match the frontend.
 <5> Distributes connections across backend servers using link:https://docs.haproxy.org/3.2/configuration.html#4-balance[round-robin] load balancing.
-<6> This option adds a `Forwarded` HTTP header with the correct information about the client.
+<6> This option adds a `Forwarded` header containing the correct client information.
 <7> Defines a backend {project_name} server.
 The parameters on this line control mTLS settings, health checks, and failure detection:
 
