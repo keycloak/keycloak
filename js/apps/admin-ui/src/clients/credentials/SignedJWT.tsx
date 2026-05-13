@@ -21,6 +21,7 @@ export const SignedJWT = ({ clientAuthenticatorType }: SignedJWTProps) => {
 
   const { t } = useTranslation();
   const { control } = useFormContext<FormFields>();
+  const isClientSecretJwt = clientAuthenticatorType === "client-secret-jwt";
 
   return (
     <>
@@ -28,8 +29,10 @@ export const SignedJWT = ({ clientAuthenticatorType }: SignedJWTProps) => {
         name={convertAttributeNameToForm<FormFields>(
           "attributes.token.endpoint.auth.signing.alg",
         )}
-        label={t("signatureAlgorithm")}
-        labelIcon={t("signatureAlgorithmHelp")}
+        label={t(isClientSecretJwt ? "macAlgorithm" : "signatureAlgorithm")}
+        labelIcon={t(
+          isClientSecretJwt ? "macAlgorithmHelp" : "signatureAlgorithmHelp",
+        )}
         controller={{
           defaultValue: "",
         }}
