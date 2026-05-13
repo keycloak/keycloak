@@ -80,7 +80,7 @@ The `server` directive parameters are explained below:
 
 `crt /path/to/haproxy-internal-certificate`:: Configures the certificate used to authenticate HAProxy to Keycloak.
 
-`ca-file /path/to/keycloak-N-certificate`:: Configures the certificate used to authenticate the particular Keycloak server to HAProxy.
+`ca-file /path/to/keycloak-N-certificate`:: Configures the backend server certificate (or issuing CA certificate) used to authenticate the particular Keycloak server to HAProxy.
 
 `check port 9000 check-ssl verify none`::
 Directs health checks to the link:https://docs.haproxy.org/3.2/configuration.html#5.2-check[management port] (`9000`) over HTTPS.
