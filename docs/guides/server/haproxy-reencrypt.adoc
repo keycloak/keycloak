@@ -12,7 +12,7 @@ This {section} describes how to configure link:https://www.haproxy.com/[HAProxy]
 
 In TLS re-encrypt mode, HAProxy terminates the incoming TLS connection and establishes a new encrypted connection to {project_name}.
 HAProxy operates at Layer 7 (HTTP) and has direct visibility into the HTTP content.
-End-to-end TLS encryption between client and and {project_name} is not preserved.
+End-to-end TLS encryption between client and {project_name} is not preserved.
 
 For a general overview of TLS re-encrypt and how it compares to passthrough, see the <@links.server id="reverseproxy"/> {section}.
 
