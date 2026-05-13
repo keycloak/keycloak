@@ -214,7 +214,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
     }
 
     @Test
-    public void putUpdateWithoutProtocolFailsJsonParsingThenSucceedsWithProtocol() throws Exception {
+    public void putUpdateInfersProtocolWhenOmitted() throws Exception {
         var clientId = "without-protocol-update";
         OIDCClientRepresentation createRep = new OIDCClientRepresentation();
         createRep.setEnabled(true);
@@ -236,8 +236,11 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
                 """.formatted(clientId)));
 
         try (var response = client.execute(request)) {
-            assertEquals(400, response.getStatusLine().getStatusCode());
-            assertThat(EntityUtils.toString(response.getEntity()), containsString("Cannot parse the JSON"));
+            assertEquals(200, response.getStatusLine().getStatusCode());
+            BaseClientRepresentation updated = mapper.readValue(response.getEntity().getContent(), BaseClientRepresentation.class);
+            assertEquals("Updated without protocol", updated.getDescription());
+            assertEquals(OIDCClientRepresentation.PROTOCOL, updated.getProtocol());
+            assertClientUuid(updated);
         }
 
         request.setEntity(new StringEntity("""
