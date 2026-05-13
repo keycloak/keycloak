@@ -49,6 +49,11 @@ public interface CertificateUtilsProvider {
     public X509Certificate generateV3Certificate(KeyPair keyPair, PrivateKey caPrivateKey, X509Certificate caCert,
             String subject) throws Exception;
 
+    default X509Certificate generateV3Certificate(KeyPair keyPair, PrivateKey caPrivateKey, X509Certificate caCert,
+            String subject, List<String> subjectAlternativeDnsNames) throws Exception {
+        throw new UnsupportedOperationException("Subject alternative DNS names are not supported by this certificate provider");
+    }
+
     /**
      * Generate version 1 self signed {@link java.security.cert.X509Certificate}..
      *

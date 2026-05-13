@@ -26,12 +26,14 @@ import org.keycloak.rule.CryptoInitRule;
 import org.keycloak.sdjwt.IssuerSignedJwtVerificationOpts;
 import org.keycloak.sdjwt.TestSettings;
 import org.keycloak.sdjwt.TestUtils;
+import org.keycloak.sdjwt.VerifiedSdJwt;
 import org.keycloak.sdjwt.vp.KeyBindingJwtVerificationOpts;
 import org.keycloak.sdjwt.vp.SdJwtVP;
 
 import org.junit.ClassRule;
 import org.junit.Test;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
@@ -55,6 +57,20 @@ public abstract class SdJwtPresentationConsumerTest {
                 defaultIssuerSignedJwtVerificationOpts(),
                 defaultKeyBindingJwtVerificationOpts()
         );
+    }
+
+    @Test
+    public void shouldReturnDisclosedSdJwtPayload() throws VerificationException {
+        VerifiedSdJwt verifiedSdJwt = sdJwtPresentationConsumer.verifySdJwtPresentation(
+                exampleSdJwtVP(),
+                examplePresentationRequirements(),
+                exampleTrustedSdJwtIssuers(),
+                defaultIssuerSignedJwtVerificationOpts(),
+                defaultKeyBindingJwtVerificationOpts()
+        );
+
+        assertEquals("user_42", verifiedSdJwt.getStringClaim("sub").orElse(null));
+        assertEquals("John", verifiedSdJwt.getStringClaim("given_name").orElse(null));
     }
 
     @Test

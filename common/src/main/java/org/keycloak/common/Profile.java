@@ -135,6 +135,8 @@ public class Profile {
         OID4VC_VCI_PREAUTH_CODE("Support for credential offers with `pre-authorized_code` grant.", Type.EXPERIMENTAL, OID4VC_VCI),
         OID4VC_VCI_REST_CREDENTIAL_OFFER("Support for the REST endpoint to create credential offers.", Type.EXPERIMENTAL, OID4VC_VCI),
 
+        OID4VC_VP("Support for the OID4VP verifier identity provider as part of OID4VC.", Type.EXPERIMENTAL),
+
         OPENTELEMETRY("OpenTelemetry support", Type.DEFAULT),
         OPENTELEMETRY_LOGS("OpenTelemetry Logs support", Type.PREVIEW, OPENTELEMETRY),
         OPENTELEMETRY_METRICS("Micrometer to OpenTelemetry bridge support for metrics", Type.EXPERIMENTAL, 1, false, true,

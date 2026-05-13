@@ -49,6 +49,7 @@ import org.wildfly.security.x500.cert.CertificatePoliciesExtension.PolicyInforma
 import org.wildfly.security.x500.cert.ExtendedKeyUsageExtension;
 import org.wildfly.security.x500.cert.KeyUsage;
 import org.wildfly.security.x500.cert.KeyUsageExtension;
+import org.wildfly.security.x500.cert.SubjectAlternativeNamesExtension;
 import org.wildfly.security.x500.cert.SubjectKeyIdentifierExtension;
 import org.wildfly.security.x500.cert.X509CertificateBuilder;
 import org.wildfly.security.x500.cert.X509CertificateExtension;
@@ -80,6 +81,14 @@ public class ElytronCertificateUtilsProvider implements CertificateUtilsProvider
     public X509Certificate generateV3Certificate(KeyPair keyPair, PrivateKey caPrivateKey,
             X509Certificate caCert,
             String subject) throws Exception {
+        return generateV3Certificate(keyPair, caPrivateKey, caCert, subject, List.of());
+    }
+
+    @Override
+    public X509Certificate generateV3Certificate(KeyPair keyPair, PrivateKey caPrivateKey,
+            X509Certificate caCert,
+            String subject,
+            List<String> subjectAlternativeDnsNames) throws Exception {
         try {
 
             X500Principal subjectdn = subjectToX500Principle(subject);
@@ -132,6 +141,12 @@ public class ElytronCertificateUtilsProvider implements CertificateUtilsProvider
 
                     // Basic Constraints
                     .addExtension(new BasicConstraintsExtension(true, true, 0));
+
+            if (subjectAlternativeDnsNames != null && !subjectAlternativeDnsNames.isEmpty()) {
+                cbuilder.addExtension(new SubjectAlternativeNamesExtension(false, subjectAlternativeDnsNames.stream()
+                        .map(dnsName -> (GeneralName) new GeneralName.DNSName(dnsName))
+                        .toList()));
+            }
 
             switch (caPrivateKey.getAlgorithm()){
                 case "EC":

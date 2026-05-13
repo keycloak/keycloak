@@ -13,7 +13,6 @@ import org.keycloak.protocol.oid4vc.model.CredentialScopeRepresentation;
 import org.keycloak.protocol.oid4vc.model.Proofs;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.representations.JsonWebToken;
-import org.keycloak.sdjwt.IssuerSignedJWT;
 import org.keycloak.sdjwt.vp.SdJwtVP;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
@@ -147,10 +146,9 @@ public class OID4VCINaturalPersonTest extends OID4VCIssuerTestBase {
             }
             case SD_JWT_VC -> {
                 SdJwtVP sdJwtVP = SdJwtVP.of(credentialObj.getCredential().toString());
-                IssuerSignedJWT issuerSignedJWT = sdJwtVP.getIssuerSignedJWT();
-                JsonWebToken vcSdJwt = TokenVerifier.create(issuerSignedJWT.getJws(), JsonWebToken.class).getToken();
-                Map<String, Object> otherClaims = vcSdJwt.getOtherClaims();
-                assertEquals(issuer, vcSdJwt.getIssuer());
+                JsonWebToken sdJwt = TokenVerifier.create(sdJwtVP.getIssuerSignedJWT().getJws(), JsonWebToken.class).getToken();
+                assertEquals(issuer, sdJwt.getIssuer());
+                Map<String, Object> otherClaims = sdJwt.getOtherClaims();
                 assertEquals(credScope.getVct(), otherClaims.get(CLAIM_NAME_VCT));
 
                 Map<String, String> claims = sdJwtVP.getClaims().values().stream().collect(Collectors.toMap(

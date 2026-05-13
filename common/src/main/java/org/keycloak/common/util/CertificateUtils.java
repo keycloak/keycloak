@@ -22,6 +22,7 @@ import java.security.KeyPair;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.util.Date;
+import java.util.List;
 
 import org.keycloak.common.crypto.CryptoIntegration;
 
@@ -48,6 +49,12 @@ public class CertificateUtils {
             X509Certificate caCert, String subject) throws Exception {
         return CryptoIntegration.getProvider().getCertificateUtils().generateV3Certificate(keyPair, caPrivateKey,
                 caCert, subject);
+    }
+
+    public static X509Certificate generateV3Certificate(KeyPair keyPair, PrivateKey caPrivateKey,
+            X509Certificate caCert, String subject, List<String> subjectAlternativeDnsNames) throws Exception {
+        return CryptoIntegration.getProvider().getCertificateUtils().generateV3Certificate(keyPair, caPrivateKey,
+                caCert, subject, subjectAlternativeDnsNames);
     }
 
     /**

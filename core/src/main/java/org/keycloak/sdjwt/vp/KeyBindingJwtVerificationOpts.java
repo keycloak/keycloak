@@ -74,10 +74,18 @@ public class KeyBindingJwtVerificationOpts extends IssuerSignedJwtVerificationOp
 
         public Builder() {
             super();
+            withOptionalExpCheck();
         }
 
         public Builder(Integer clockSkew) {
             super(clockSkew);
+            withOptionalExpCheck();
+        }
+
+        private void withOptionalExpCheck() {
+            // OID4VP 1.0 Appendix B.3.6 and SD-JWT Section 4.3 require KB-JWT
+            // iat, aud, nonce, and sd_hash. exp is an optional JWT extension claim.
+            withExpCheck(true);
         }
 
         public Builder withKeyBindingRequired(boolean keyBindingRequired) {

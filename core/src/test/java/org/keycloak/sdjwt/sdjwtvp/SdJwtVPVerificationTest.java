@@ -331,6 +331,43 @@ public abstract class SdJwtVPVerificationTest {
     }
 
     @Test
+    public void testShouldVerifyIfKbExpMissing() throws VerificationException {
+        ObjectNode kbPayload = exampleKbPayload();
+        SdJwtVP sdJwtVP = exampleSdJwtWithCustomKbPayload(kbPayload);
+
+        sdJwtVP.verify(
+                defaultIssuerVerifyingKeys(),
+                defaultIssuerSignedJwtVerificationOpts().build(),
+                KeyBindingJwtVerificationOpts.builder()
+                        .withKeyBindingRequired(true)
+                        .withNonceCheck("1234567890")
+                        .withAudCheck("https://verifier.example.org")
+                        .withIatCheck(Integer.MAX_VALUE, false)
+                        .withNbfCheck(true)
+                        .build()
+        );
+    }
+
+    @Test
+    public void testShouldFailIfKbExpMissingAndExpRequired() {
+        ObjectNode kbPayload = exampleKbPayload();
+
+        testShouldFailGenericMatchText(
+                kbPayload,
+                KeyBindingJwtVerificationOpts.builder()
+                        .withKeyBindingRequired(true)
+                        .withNonceCheck("1234567890")
+                        .withAudCheck("https://verifier.example.org")
+                        .withIatCheck(Integer.MAX_VALUE, false)
+                        .withExpCheck()
+                        .withNbfCheck(true)
+                        .build(),
+                "Missing required claim 'exp'",
+                null
+        );
+    }
+
+    @Test
     public void testShouldTolerateExpiredKbWithinClockSkew() throws VerificationException {
         long now = Time.currentTime();
 

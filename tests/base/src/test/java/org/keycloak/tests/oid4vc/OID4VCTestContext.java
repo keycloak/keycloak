@@ -1,21 +1,30 @@
 package org.keycloak.tests.oid4vc;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Predicate;
 
 import org.keycloak.protocol.oid4vc.model.CredentialIssuer;
 import org.keycloak.protocol.oid4vc.model.CredentialOfferURI;
 import org.keycloak.protocol.oid4vc.model.CredentialResponse;
+import org.keycloak.protocol.oid4vc.model.CredentialResponse.Credential;
 import org.keycloak.protocol.oid4vc.model.CredentialScopeRepresentation;
 import org.keycloak.protocol.oid4vc.model.CredentialsOffer;
 import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
+import org.keycloak.protocol.oid4vc.model.presentation.AuthorizationRequest;
+import org.keycloak.protocol.oid4vc.model.presentation.DirectPostResponse;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.sdjwt.SdJwt;
 import org.keycloak.tests.oid4vc.abca.OIDCClientAttester;
+import org.keycloak.tests.oid4vc.presentation.OID4VPBasicWallet;
+import org.keycloak.tests.oid4vc.presentation.TestCredentialBuilder;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.oid4vc.CredentialOfferResponse;
 import org.keycloak.testsuite.util.oauth.oid4vc.CredentialOfferUriResponse;
@@ -28,7 +37,7 @@ import org.keycloak.testsuite.util.oauth.oid4vc.Oid4vcCredentialResponse;
  * It uses a typed in-memory value store based on attachment keys.
  * Values can be accessed by type and when there are multiple values - by name+type.
  *
- * @author <a href="mailto:tdiesler@ibm.com">Thomas Diesler</a>
+ * @author <a href="mailto:tdiesler@proton.me">Thomas Diesler</a>
  */
 public class OID4VCTestContext {
 
@@ -39,6 +48,19 @@ public class OID4VCTestContext {
     public static final AttachmentKey<CredentialOfferResponse> CREDENTIALS_OFFER_RESPONSE_ATTACHMENT_KEY = new AttachmentKey<>(CredentialOfferResponse.class);
     public static final AttachmentKey<AccessTokenResponse> ACCESS_TOKEN_RESPONSE_ATTACHMENT_KEY = new AttachmentKey<>(AccessTokenResponse.class);
     public static final AttachmentKey<Oid4vcCredentialResponse> CREDENTIALS_RESPONSE_ATTACHMENT_KEY = new AttachmentKey<>(Oid4vcCredentialResponse.class);
+    public static final AttachmentKey<Credential[]> CREDENTIALS_ATTACHMENT_KEY = new AttachmentKey<>(Credential[].class);
+    public static final AttachmentKey<OID4VPBasicWallet.WalletAuthorizationRequest> WALLET_AUTHORIZATION_REQUEST_ATTACHMENT_KEY =
+            new AttachmentKey<>(OID4VPBasicWallet.WalletAuthorizationRequest.class);
+    public static final AttachmentKey<AuthorizationRequest> AUTHORIZATION_REQUEST_ATTACHMENT_KEY =
+            new AttachmentKey<>(AuthorizationRequest.class);
+    public static final AttachmentKey<TestCredentialBuilder> TRUSTED_ISSUER_ATTACHMENT_KEY =
+            new AttachmentKey<>("trustedIssuer", TestCredentialBuilder.class);
+    public static final AttachmentKey<TestCredentialBuilder> CREDENTIAL_BUILDER_ATTACHMENT_KEY =
+            new AttachmentKey<>("credentialBuilder", TestCredentialBuilder.class);
+    public static final AttachmentKey<SdJwt> CREDENTIAL_ATTACHMENT_KEY =
+            new AttachmentKey<>(SdJwt.class);
+    public static final AttachmentKey<DirectPostResponse> DIRECT_POST_RESPONSE_ATTACHMENT_KEY =
+            new AttachmentKey<>(DirectPostResponse.class);
 
     private String issuer;      // Issuing username (i.e. agent who creates credential offers)
     private String holder;      // Holder who requests the credential
@@ -48,43 +70,79 @@ public class OID4VCTestContext {
 
     private final Map<AttachmentKey<?>, Object> attachments = new HashMap<>();
 
+    public OID4VCTestContext() {
+        this(null);
+    }
+
     public OID4VCTestContext(ClientRepresentation client, CredentialScopeRepresentation credentialScope) {
+        this(client);
+        this.withCredentialScope(credentialScope);
+    }
+
+    public OID4VCTestContext(ClientRepresentation client) {
         this.client = client;
         this.issuer = "john";
         this.holder = "alice";
-        this.credentialScope = credentialScope;
     }
 
     public ClientRepresentation getClient() {
         return client;
     }
 
-    public void setClient(ClientRepresentation client) {
+    public OID4VCTestContext withClient(ClientRepresentation client) {
         this.client = client;
+        return this;
     }
 
     public String getIssuer() {
         return issuer;
     }
 
-    public void setIssuer(String issuer) {
+    public OID4VCTestContext withIssuer(String issuer) {
         this.issuer = issuer;
+        return this;
     }
 
     public String getHolder() {
         return holder;
     }
 
-    public void setHolder(String holder) {
+    public OID4VCTestContext withHolder(String holder) {
         this.holder = holder;
+        return this;
     }
 
     public CredentialScopeRepresentation getCredentialScope() {
         return credentialScope;
     }
 
-    public void setCredentialScope(CredentialScopeRepresentation credentialScope) {
+    /**
+     * Set the current credential scope
+     */
+    public OID4VCTestContext withCredentialScope(CredentialScopeRepresentation credentialScope) {
         this.credentialScope = credentialScope;
+        return this;
+    }
+
+    public String getCredentialConfigurationId() {
+        return credentialScope.getCredentialConfigurationId();
+    }
+
+    public String getCredentialIdentifier() {
+        return credentialScope.getCredentialIdentifier();
+    }
+
+    public List<String> getCredentialTypes() {
+        return Optional.ofNullable(credentialScope.getSupportedCredentialTypes()).orElse(List.of());
+    }
+
+    public String getCredentialType() {
+        List<String> credTypes = getCredentialTypes();
+        return !credTypes.isEmpty() ? credTypes.get(0) : null;
+    }
+
+    public String getScope() {
+        return credentialScope.getName();
     }
 
     public List<OID4VCAuthorizationDetail> getAuthorizationDetails() {
@@ -151,22 +209,57 @@ public class OID4VCTestContext {
     }
 
     public CredentialResponse getCredentialResponse() {
-        var credResponse = getOid4vcCredentialResponse();
-        return Optional.ofNullable(credResponse)
+        return Optional.ofNullable(getOid4vcCredentialResponse())
                 .map(Oid4vcCredentialResponse::getCredentialResponse)
                 .orElse(null);
     }
 
-    public String getCredentialConfigurationId() {
-        return credentialScope.getCredentialConfigurationId();
+    public List<Credential> getCredentials() {
+        return Optional.ofNullable(getAttachment(CREDENTIALS_ATTACHMENT_KEY))
+                .map(it -> new ArrayList<>(Arrays.asList(it)))
+                .orElse(new ArrayList<>());
     }
 
-    public String getCredentialIdentifier() {
-        return credentialScope.getCredentialIdentifier();
+    public void addCredentials(List<Credential> credentials) {
+        List<Credential> storedCreds = getCredentials();
+        storedCreds.addAll(credentials);
+        putAttachment(CREDENTIALS_ATTACHMENT_KEY, storedCreds.toArray(new Credential[0]));
     }
 
-    public String getScope() {
-        return credentialScope.getName();
+    public List<Credential> findCredentials(Predicate<Credential> predicate) {
+        return getCredentials().stream().filter(predicate).toList();
+
+    }
+
+    public OID4VCTestContext withTrustedIssuer(TestCredentialBuilder trustedIssuer) {
+        putAttachment(TRUSTED_ISSUER_ATTACHMENT_KEY, trustedIssuer);
+        return this;
+    }
+
+    public TestCredentialBuilder getTrustedIssuer() {
+        return assertAttachment(TRUSTED_ISSUER_ATTACHMENT_KEY);
+    }
+
+    public OID4VCTestContext withCredentialBuilder(TestCredentialBuilder credentialBuilder) {
+        putAttachment(CREDENTIAL_BUILDER_ATTACHMENT_KEY, credentialBuilder);
+        return this;
+    }
+
+    public TestCredentialBuilder getCredentialBuilder() {
+        return assertAttachment(CREDENTIAL_BUILDER_ATTACHMENT_KEY);
+    }
+
+    public OID4VCTestContext withCredential(SdJwt credential) {
+        putAttachment(CREDENTIAL_ATTACHMENT_KEY, credential);
+        return this;
+    }
+
+    public SdJwt getCredential() {
+        return assertAttachment(CREDENTIAL_ATTACHMENT_KEY);
+    }
+
+    public AuthorizationRequest getAuthorizationRequest() {
+        return assertAttachment(AUTHORIZATION_REQUEST_ATTACHMENT_KEY);
     }
 
     // Attachment Support ----------------------------------------------------------------------------------------------

@@ -193,6 +193,7 @@ public abstract class OID4VCIssuerTestBase {
     protected ClientRepresentation client;
     protected ClientRepresentation pubClient;
     protected OID4VCBasicWallet wallet;
+    protected OID4VCBasicVerifier verifier;
 
     @TestSetup
     public void configureTestRealm() {
@@ -207,7 +208,7 @@ public abstract class OID4VCIssuerTestBase {
         boolean isRestCredentialEnabled = runOnServer.fetch(session -> Profile.isFeatureEnabled(Profile.Feature.OID4VC_VCI_REST_CREDENTIAL_OFFER), Boolean.class);
 
         if (isRestCredentialEnabled) {
-            UserRepresentation testUser = getExistingUser(TEST_USER);
+            UserRepresentation testUser = getUserRepresentation(TEST_USER);
             RoleRepresentation credentialOfferRole = realmResource.roles().get(CREDENTIAL_OFFER_CREATE.getName()).toRepresentation();
             testUser.setRealmRoles(List.of(CREDENTIAL_OFFER_CREATE.getName()));
             realmResource.users().get(testUser.getId()).roles().realmLevel().add(List.of(credentialOfferRole));
@@ -230,7 +231,8 @@ public abstract class OID4VCIssuerTestBase {
         oauth.client(client.getClientId(), client.getSecret());
         enableVerifiableCredentialEvents(testRealm);
 
-        wallet = new OID4VCBasicWallet(keycloak, oauth);
+        wallet = new OID4VCBasicWallet(testRealm, oauth);
+        verifier = new OID4VCBasicVerifier(testRealm, oauth);
     }
 
     @AfterEach
@@ -293,7 +295,7 @@ public abstract class OID4VCIssuerTestBase {
                 .orElseThrow(() -> new IllegalStateException("No such credential scope: " + scopeName));
     }
 
-    protected UserRepresentation getExistingUser(String username) {
+    protected UserRepresentation getUserRepresentation(String username) {
         return testRealm.admin().users().search(username).stream()
                 .findFirst()
                 .orElseThrow(() -> new IllegalStateException("No such user: " + username));

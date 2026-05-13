@@ -89,6 +89,12 @@ public class BCFIPSCertificateUtilsProvider implements CertificateUtilsProvider{
      */
     public X509Certificate generateV3Certificate(KeyPair keyPair, PrivateKey caPrivateKey, X509Certificate caCert,
             String subject) {
+        return generateV3Certificate(keyPair, caPrivateKey, caCert, subject, List.of());
+    }
+
+    @Override
+    public X509Certificate generateV3Certificate(KeyPair keyPair, PrivateKey caPrivateKey, X509Certificate caCert,
+            String subject, List<String> subjectAlternativeDnsNames) {
         try {
             X500Name subjectDN = new X500Name("CN=" + subject);
 
@@ -129,6 +135,13 @@ public class BCFIPSCertificateUtilsProvider implements CertificateUtilsProvider{
 
             // Basic Constraints
             certGen.addExtension(Extension.basicConstraints, true, new BasicConstraints(0));
+
+            if (subjectAlternativeDnsNames != null && !subjectAlternativeDnsNames.isEmpty()) {
+                GeneralName[] dnsNames = subjectAlternativeDnsNames.stream()
+                        .map(dnsName -> new GeneralName(GeneralName.dNSName, dnsName))
+                        .toArray(GeneralName[]::new);
+                certGen.addExtension(Extension.subjectAlternativeName, false, new GeneralNames(dnsNames));
+            }
 
             // Content Signer
             ContentSigner sigGen;
