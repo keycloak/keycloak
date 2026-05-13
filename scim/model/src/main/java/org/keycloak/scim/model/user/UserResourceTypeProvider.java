@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.BiFunction;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import jakarta.persistence.EntityManager;
@@ -14,21 +15,27 @@ import jakarta.persistence.criteria.Expression;
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
+import jakarta.persistence.criteria.Subquery;
 
+import org.keycloak.Config;
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.authorization.fgap.evaluation.partial.PartialEvaluationStorageProvider;
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
+import org.keycloak.models.AdminRoles;
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelValidationException;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
 import org.keycloak.models.jpa.UserAdapter;
 import org.keycloak.models.jpa.entities.UserEntity;
 import org.keycloak.models.jpa.entities.UserGroupMembershipEntity;
+import org.keycloak.models.jpa.entities.UserRoleMappingEntity;
 import org.keycloak.scim.filter.FilterUtils;
-import org.keycloak.scim.filter.ScimFilterParser;
 import org.keycloak.scim.filter.ScimFilterParser.FilterContext;
 import org.keycloak.scim.model.filter.ScimAttributeJpaExpressionResolver;
 import org.keycloak.scim.model.filter.ScimJPAPredicateEvaluator;
@@ -104,7 +111,13 @@ public class UserResourceTypeProvider extends AbstractScimResourceTypeProvider<U
     @Override
     protected UserModel getModel(String id) {
         RealmModel realm = session.getContext().getRealm();
-        return session.users().getUserById(realm, id);
+        UserModel user = session.users().getUserById(realm, id);
+
+        if (user != null && AdminUserUtils.isAdminUser(session, realm, user)) {
+            return null;
+        }
+
+        return user;
     }
 
     @Override
@@ -119,48 +132,37 @@ public class UserResourceTypeProvider extends AbstractScimResourceTypeProvider<U
         Integer maxResults = searchRequest.getCount();
         maxResults = maxResults != null ? Math.min(maxResults, DEFAULT_MAX_RESULTS) : DEFAULT_MAX_RESULTS;
 
-        if (StringUtil.isNotBlank(searchRequest.getFilter())) {
-            // parse filter into AST
-            ScimFilterParser.FilterContext filterContext = FilterUtils.parseFilter(searchRequest.getFilter());
+        EntityManager em = session.getProvider(JpaConnectionProvider.class).getEntityManager();
+        CriteriaBuilder cb = em.getCriteriaBuilder();
+        CriteriaQuery<UserEntity> query = cb.createQuery(UserEntity.class);
+        Root<UserEntity> root = query.from(UserEntity.class);
 
-            // execute JPA query with filter
-            EntityManager em = session.getProvider(JpaConnectionProvider.class).getEntityManager();
-            CriteriaBuilder cb = em.getCriteriaBuilder();
-            CriteriaQuery<UserEntity> query = cb.createQuery(UserEntity.class);
-            Root<UserEntity> root = query.from(UserEntity.class);
+        FilterContext filterContext = StringUtil.isNotBlank(searchRequest.getFilter())
+                ? FilterUtils.parseFilter(searchRequest.getFilter())
+                : null;
 
-            List<Predicate> predicates = getUserPredicates(filterContext, cb, query, root);
+        List<Predicate> predicates = getUserPredicates(filterContext, cb, query, root);
 
-            // apply distinct and order by username to ensure consistency with no-filter case
-            query.where(predicates).distinct(true).orderBy(cb.asc(root.get("username")));
+        query.where(predicates).distinct(true).orderBy(cb.asc(root.get("username")));
 
-            // execute query and convert to UserModel stream
-            return closing(paginateQuery(em.createQuery(query), firstResult, maxResults).getResultStream()
-                    .map(entity -> new UserAdapter(session, realm, em, entity)));
-        } else {
-            return session.users().searchForUserStream(realm, Map.of(UserModel.INCLUDE_SERVICE_ACCOUNT, "false"), firstResult, maxResults);
-        }
+        return closing(paginateQuery(em.createQuery(query), firstResult, maxResults).getResultStream()
+                .map(entity -> new UserAdapter(session, realm, em, entity)));
     }
 
     @Override
     public Long count(SearchRequest searchRequest) {
-        RealmModel realm = session.getContext().getRealm();
-        if (StringUtil.isNotBlank(searchRequest.getFilter())) {
-            // parse filter into AST
-            ScimFilterParser.FilterContext filterContext = FilterUtils.parseFilter(searchRequest.getFilter());
+        EntityManager em = session.getProvider(JpaConnectionProvider.class).getEntityManager();
+        CriteriaBuilder cb = em.getCriteriaBuilder();
+        CriteriaQuery<Long> query = cb.createQuery(Long.class);
+        Root<UserEntity> root = query.from(UserEntity.class);
 
-            // execute JPA count query with filter
-            EntityManager em = session.getProvider(JpaConnectionProvider.class).getEntityManager();
-            CriteriaBuilder cb = em.getCriteriaBuilder();
-            CriteriaQuery<Long> query = cb.createQuery(Long.class);
-            Root<UserEntity> root = query.from(UserEntity.class);
+        FilterContext filterContext = StringUtil.isNotBlank(searchRequest.getFilter())
+                ? FilterUtils.parseFilter(searchRequest.getFilter())
+                : null;
 
-            List<Predicate> predicates = this.getUserPredicates(filterContext, cb, query, root);
-            query.select(cb.countDistinct(root)).where(predicates);
-            return em.createQuery(query).getSingleResult();
-        } else {
-            return (long) session.users().getUsersCount(realm, false);
-        }
+        List<Predicate> predicates = getUserPredicates(filterContext, cb, query, root);
+        query.select(cb.countDistinct(root)).where(predicates);
+        return em.createQuery(query).getSingleResult();
     }
 
     @Override
@@ -197,21 +199,63 @@ public class UserResourceTypeProvider extends AbstractScimResourceTypeProvider<U
     private List<Predicate> getUserPredicates(FilterContext filterContext, CriteriaBuilder cb, CriteriaQuery<?> query, Root<UserEntity> root) {
         List<Predicate> predicates = new ArrayList<>();
 
-        // create filter predicate using the same query and root that will be used for execution
-        ScimJPAPredicateEvaluator evaluator = new ScimJPAPredicateEvaluator(this, getSchemas(), cb, root);
-        predicates.add(evaluator.visit(filterContext).predicate());
+        if (filterContext != null) {
+            ScimJPAPredicateEvaluator evaluator = new ScimJPAPredicateEvaluator(this, getSchemas(), cb, root);
+            predicates.add(evaluator.visit(filterContext).predicate());
+        }
 
-        // apply service account restriction
         predicates.add(root.get("serviceAccountClientLink").isNull());
 
-        // apply realm restriction
         RealmModel realm = session.getContext().getRealm();
         predicates.add(cb.equal(root.get("realmId"), realm.getId()));
+
+        predicates.add(excludeAdminUsers(cb, query, root, realm));
 
         UserProvider userProvider = session.getProvider(UserProvider.class, "jpa");
         predicates.addAll(AdminPermissionsSchema.SCHEMA.applyAuthorizationFilters(session, AdminPermissionsSchema.USERS, (PartialEvaluationStorageProvider) userProvider, realm, cb, query, root));
 
         return predicates;
+    }
+
+    private Predicate excludeAdminUsers(CriteriaBuilder cb, CriteriaQuery<?> query, Root<UserEntity> root, RealmModel realm) {
+        ClientModel adminClient;
+
+        if (realm.getName().equals(Config.getAdminRealm())) {
+            adminClient = realm.getMasterAdminClient();
+        } else {
+            adminClient = realm.getClientByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID);
+        }
+
+        if (adminClient == null) {
+            return cb.conjunction();
+        }
+
+        List<String> adminRoleIds = adminClient.getRolesStream()
+                .map(RoleModel::getId)
+                .collect(Collectors.toList());
+
+        if (realm.getName().equals(Config.getAdminRealm())) {
+            RoleModel adminRole = realm.getRole(AdminRoles.ADMIN);
+            if (adminRole != null) {
+                adminRoleIds.add(adminRole.getId());
+            }
+        }
+
+        if (adminRoleIds.isEmpty()) {
+            return cb.conjunction();
+        }
+
+        Subquery<Integer> subquery = query.subquery(Integer.class);
+        Root<UserRoleMappingEntity> urm = subquery.from(UserRoleMappingEntity.class);
+        subquery.select(cb.literal(1));
+        subquery.where(
+                cb.and(
+                        cb.equal(urm.get("user").get("id"), root.get("id")),
+                        urm.get("roleId").in(adminRoleIds)
+                )
+        );
+
+        return cb.not(cb.exists(subquery));
     }
 
     @Override
