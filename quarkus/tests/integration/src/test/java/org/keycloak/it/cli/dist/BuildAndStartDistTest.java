@@ -19,8 +19,9 @@ package org.keycloak.it.cli.dist;
 
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
-import org.keycloak.it.junit5.extension.DryRun;
 import org.keycloak.it.junit5.extension.RawDistOnly;
+import org.keycloak.it.junit5.extension.StopServer;
+import org.keycloak.it.junit5.extension.StopServer.Mode;
 import org.keycloak.it.junit5.extension.WithEnvVars;
 import org.keycloak.it.utils.KeycloakDistribution;
 import org.keycloak.it.utils.RawKeycloakDistribution;
@@ -36,14 +37,13 @@ import static org.keycloak.quarkus.runtime.cli.command.AbstractAutoBuildCommand.
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@WithEnvVars({"KC_CACHE", "local"}) // avoid flakey port conflicts
 @DistributionTest
 @RawDistOnly(reason = "Containers are immutable")
 @TestMethodOrder(OrderAnnotation.class)
 @Tag(DistributionTest.WIN)
 public class BuildAndStartDistTest {
 
-    @DryRun
+    @StopServer(Mode.BEFORE_QUARKUS)
     @Test
     void testBuildAndStart(KeycloakDistribution dist) {
         RawKeycloakDistribution rawDist = dist.unwrap(RawKeycloakDistribution.class);

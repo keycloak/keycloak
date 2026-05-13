@@ -21,6 +21,7 @@ import java.io.IOException;
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
 import org.keycloak.it.junit5.extension.DistributionType;
+import org.keycloak.it.junit5.extension.StopServer.Mode;
 import org.keycloak.it.utils.KeycloakDistribution;
 
 import io.quarkus.test.junit.main.Launch;
@@ -37,7 +38,7 @@ import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-@DistributionTest(keepAlive = true,
+@DistributionTest(stopServer = Mode.MANUAL,
         defaultOptions = {"--db=dev-file", "--health-enabled=true", "--metrics-enabled=true"},
         requestPort = 9000,
         containerExposedPorts = {9000, 8080, 9005})

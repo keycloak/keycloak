@@ -20,6 +20,7 @@ package org.keycloak.it.cli.dist;
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
 import org.keycloak.it.junit5.extension.RawDistOnly;
+import org.keycloak.it.junit5.extension.StopServer.Mode;
 import org.keycloak.it.junit5.extension.WithEnvVars;
 import org.keycloak.it.utils.KeycloakDistribution;
 import org.keycloak.it.utils.RawKeycloakDistribution;
@@ -93,7 +94,7 @@ public class BootstrapAdminDistTest {
 
         assertTrue(result.getErrorOutput().isEmpty(), result.getErrorOutput());
 
-        rawDist.setManualStop(true);
+        rawDist.setStopServer(Mode.MANUAL);
         rawDist.run("start-dev");
 
         CLIResult adminResult = rawDist.kcadm("get", "clients", "--server", "http://localhost:8080", "--realm", "master", "--client", "admin", "--secret", "admin123");

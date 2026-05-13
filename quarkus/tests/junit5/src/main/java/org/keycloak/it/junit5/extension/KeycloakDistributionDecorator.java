@@ -21,19 +21,16 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.keycloak.it.junit5.extension.StopServer.Mode;
 import org.keycloak.it.utils.KeycloakDistribution;
 
 public class KeycloakDistributionDecorator implements KeycloakDistribution {
 
-    private Storage storageConfig;
-    private WithDatabase databaseConfig;
     private DistributionTest config;
     private KeycloakDistribution delegate;
 
-    public KeycloakDistributionDecorator(Storage storageConfig, WithDatabase databaseConfig, DistributionTest config,
+    public KeycloakDistributionDecorator(DistributionTest config,
                                          KeycloakDistribution delegate) {
-        this.storageConfig = storageConfig;
-        this.databaseConfig = databaseConfig;
         this.config = config;
         this.delegate = delegate;
     }
@@ -43,7 +40,10 @@ public class KeycloakDistributionDecorator implements KeycloakDistribution {
         List<String> args = new ArrayList<>(rawArgs);
         args.addAll(List.of(config.defaultOptions()));
         setEnvVar("KC_SHUTDOWN_DELAY", "0s");
-        return delegate.run(new ServerOptions(storageConfig, databaseConfig, args));
+        if (config.localCache()) {
+            setEnvVar("KC_CACHE", "local");    
+        }
+        return delegate.run(args);
     }
 
     @Override
@@ -72,18 +72,13 @@ public class KeycloakDistributionDecorator implements KeycloakDistribution {
     }
 
     @Override
-    public boolean isManualStop() {
-        return delegate.isManualStop();
-    }
-
-    @Override
     public String[] getCliArgs(List<String> arguments) {
         return delegate.getCliArgs(arguments);
     }
 
     @Override
-    public void setManualStop(boolean manualStop) {
-        delegate.setManualStop(manualStop);
+    public void setStopServer(Mode mode) {
+        delegate.setStopServer(mode);
     }
 
     @Override

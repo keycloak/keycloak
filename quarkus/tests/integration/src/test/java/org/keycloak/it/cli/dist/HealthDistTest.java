@@ -23,6 +23,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
 import org.keycloak.it.junit5.extension.DistributionTest;
+import org.keycloak.it.junit5.extension.StopServer.Mode;
 import org.keycloak.it.utils.KeycloakDistribution;
 
 import io.quarkus.test.junit.main.Launch;
@@ -36,7 +37,7 @@ import static org.hamcrest.CoreMatchers.equalTo;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@DistributionTest(keepAlive = true,
+@DistributionTest(stopServer = Mode.MANUAL,
         requestPort = 9000,
         containerExposedPorts = {8080, 9000})
 @Tag(DistributionTest.SLOW)
@@ -95,7 +96,7 @@ public class HealthDistTest {
     private static final String BOOTSTRAP_COMPLETED = "Bootstrap completed";
 
     @Test
-    @Launch({ "start", "--health-enabled=true", "--http-enabled=true", "--hostname-strict=false" })
+    @Launch({ "start", "--cache=ispn", "--health-enabled=true", "--http-enabled=true", "--hostname-strict=false" })
     void testAsyncStartupEnabled(LaunchResult result) {
         when().get("/health/live").then()
                 .statusCode(200);

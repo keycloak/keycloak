@@ -24,6 +24,7 @@ import java.io.IOException;
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
 import org.keycloak.it.junit5.extension.RawDistOnly;
+import org.keycloak.it.junit5.extension.StopServer.Mode;
 import org.keycloak.it.utils.KeycloakDistribution;
 import org.keycloak.it.utils.RawKeycloakDistribution;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -86,7 +87,7 @@ public class ImportDistTest {
 
         assertTrue(result.getErrorOutput().isEmpty(), result.getErrorOutput());
 
-        rawDist.setManualStop(true);
+        rawDist.setStopServer(Mode.MANUAL);
         result = rawDist.run("start-dev", "--db-url-properties=;AUTO_SERVER=TRUE;DB_CLOSE_ON_EXIT=TRUE");
 
         File file = new File("target/realm.json");

@@ -5,8 +5,9 @@ import java.nio.file.Paths;
 
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
-import org.keycloak.it.junit5.extension.DryRun;
 import org.keycloak.it.junit5.extension.RawDistOnly;
+import org.keycloak.it.junit5.extension.StopServer;
+import org.keycloak.it.junit5.extension.StopServer.Mode;
 import org.keycloak.it.junit5.extension.WithEnvVars;
 import org.keycloak.it.utils.KeycloakDistribution;
 import org.keycloak.quarkus.runtime.cli.command.ShowConfig;
@@ -26,7 +27,7 @@ import static org.hamcrest.Matchers.not;
 @DistributionTest
 public class ShowConfigCommandDistTest {
 
-    @DryRun
+    @StopServer(Mode.BEFORE_QUARKUS)
     @Test
     @RawDistOnly(reason = "Containers are immutable")
     void testShowConfigPicksUpRightConfigDependingOnCurrentMode(KeycloakDistribution distribution) {

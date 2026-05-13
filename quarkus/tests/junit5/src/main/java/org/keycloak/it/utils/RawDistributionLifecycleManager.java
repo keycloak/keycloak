@@ -16,7 +16,6 @@ public class RawDistributionLifecycleManager implements QuarkusTestResourceLifec
         dist = new RawKeycloakDistribution(
                 false,
                 false,
-                false,
                 true,
                 false,
                 8080);

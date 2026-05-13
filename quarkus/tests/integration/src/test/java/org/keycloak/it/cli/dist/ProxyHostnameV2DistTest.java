@@ -20,6 +20,7 @@ package org.keycloak.it.cli.dist;
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
 import org.keycloak.it.junit5.extension.RawDistOnly;
+import org.keycloak.it.junit5.extension.StopServer.Mode;
 import org.keycloak.it.junit5.extension.TestProvider;
 import org.keycloak.it.junit5.extension.WithEnvVars;
 import org.keycloak.it.resource.realm.TestRealmResourceTestProvider;
@@ -40,7 +41,7 @@ import static io.restassured.RestAssured.given;
 import static io.restassured.RestAssured.when;
 import static org.hamcrest.Matchers.containsString;
 
-@DistributionTest(keepAlive = true, enableTls = true)
+@DistributionTest(stopServer = Mode.MANUAL, enableTls = true)
 @WithEnvVars({"KC_BOOTSTRAP_ADMIN_USERNAME", "admin123", "KC_BOOTSTRAP_ADMIN_PASSWORD", "admin123"})
 @RawDistOnly(reason = "Containers are immutable")
 public class ProxyHostnameV2DistTest {

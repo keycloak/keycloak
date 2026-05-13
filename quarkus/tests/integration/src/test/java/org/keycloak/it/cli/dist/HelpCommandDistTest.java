@@ -54,7 +54,7 @@ import org.junit.jupiter.api.Test;
 import static org.keycloak.quarkus.runtime.cli.command.AbstractAutoBuildCommand.OPTIMIZED_BUILD_OPTION_LONG;
 
 @WithEnvVars({"KEYCLOAK_COMMAND_MODE", "ALL", "KEYCLOAK_HELP_WIDTH", "80"})
-@DistributionTest
+@DistributionTest(localCache = false)
 @RawDistOnly(reason = "Verifying the help message output doesn't need long spin-up of docker dist tests.")
 @Tag(DistributionTest.WIN)
 public class HelpCommandDistTest {

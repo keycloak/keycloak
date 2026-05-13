@@ -24,18 +24,17 @@ import java.util.Arrays;
 import org.keycloak.config.CachingOptions;
 import org.keycloak.config.Option;
 import org.keycloak.it.junit5.extension.DistributionTest;
-import org.keycloak.it.junit5.extension.DryRun;
 import org.keycloak.it.junit5.extension.RawDistOnly;
-import org.keycloak.it.junit5.extension.SkipRealmBootstrap;
+import org.keycloak.it.junit5.extension.StopServer;
+import org.keycloak.it.junit5.extension.StopServer.Mode;
 import org.keycloak.it.utils.KeycloakDistribution;
 
 import org.junit.jupiter.api.Test;
 
-@DistributionTest
-@SkipRealmBootstrap
+@DistributionTest(stopServer = Mode.BEFORE_BOOTSTRAP)
 public class CacheEmbeddedMtlsDistTest {
 
-    @DryRun
+    @StopServer(Mode.BEFORE_QUARKUS)
     @Test
     @RawDistOnly(reason = "Containers are immutable")
     public void testCacheEmbeddedMtlsDisabled(KeycloakDistribution dist) {
@@ -51,7 +50,7 @@ public class CacheEmbeddedMtlsDistTest {
         }
     }
 
-    @DryRun
+    @StopServer(Mode.BEFORE_QUARKUS)
     @Test
     @RawDistOnly(reason = "Containers are immutable")
     public void testCacheEmbeddedMtlsFileValidation(KeycloakDistribution dist) {
@@ -59,7 +58,7 @@ public class CacheEmbeddedMtlsDistTest {
         doFileAndPasswordValidation(dist, CachingOptions.CACHE_EMBEDDED_MTLS_TRUSTSTORE, CachingOptions.CACHE_EMBEDDED_MTLS_TRUSTSTORE_PASSWORD);
     }
 
-    @DryRun
+    @StopServer(Mode.BEFORE_QUARKUS)
     @Test
     @RawDistOnly(reason = "Containers are immutable")
     public void testCacheEmbeddedMtlsFileExistsValidation(KeycloakDistribution dist) throws IOException {
@@ -87,7 +86,7 @@ public class CacheEmbeddedMtlsDistTest {
         result.assertError("The 'cache-embedded-mtls-trust-store-file' file 'truststore.p12' does not exist");
     }
 
-    @DryRun
+    @StopServer(Mode.BEFORE_QUARKUS)
     @Test
     @RawDistOnly(reason = "Containers are immutable")
     public void testCacheEmbeddedMtlsValidation(KeycloakDistribution dist) {

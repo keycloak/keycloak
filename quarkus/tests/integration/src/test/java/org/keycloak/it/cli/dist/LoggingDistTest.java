@@ -32,8 +32,9 @@ import org.keycloak.connections.httpclient.HttpClientBuilder;
 import org.keycloak.cookie.CookieType;
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
-import org.keycloak.it.junit5.extension.DryRun;
 import org.keycloak.it.junit5.extension.RawDistOnly;
+import org.keycloak.it.junit5.extension.StopServer;
+import org.keycloak.it.junit5.extension.StopServer.Mode;
 import org.keycloak.it.utils.KeycloakDistribution;
 import org.keycloak.it.utils.RawDistRootPath;
 import org.keycloak.it.utils.RawKeycloakDistribution;
@@ -61,7 +62,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@DistributionTest(keepAlive = true)
+@DistributionTest(stopServer = Mode.MANUAL)
 @RawDistOnly(reason = "Too verbose for docker and enough to check raw dist")
 @Tag(DistributionTest.SLOW)
 public class LoggingDistTest {
@@ -182,14 +183,14 @@ public class LoggingDistTest {
 
     @Test
     @Launch({"start-dev", "--log-console-level=wrong"})
-    @DryRun
+    @StopServer(Mode.BEFORE_QUARKUS)
     void wrongLevelForHandlers(CLIResult cliResult) {
         cliResult.assertError("Invalid value for option '--log-console-level': wrong. Expected values are (case insensitive): off, fatal, error, warn, info, debug, trace, all");
     }
 
     @Test
     @Launch({"start-dev", "--log-level-org.keycloak=wrong"})
-    @DryRun
+    @StopServer(Mode.BEFORE_QUARKUS)
     void wrongLevelForCategory(CLIResult cliResult) {
         cliResult.assertError("Invalid log level: wrong. Possible values are: warn, trace, debug, error, fatal, info.");
     }

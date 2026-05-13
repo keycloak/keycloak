@@ -22,8 +22,9 @@ import java.nio.file.Paths;
 
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
-import org.keycloak.it.junit5.extension.DryRun;
 import org.keycloak.it.junit5.extension.RawDistOnly;
+import org.keycloak.it.junit5.extension.StopServer;
+import org.keycloak.it.junit5.extension.StopServer.Mode;
 import org.keycloak.it.utils.KeycloakDistribution;
 import org.keycloak.it.utils.RawKeycloakDistribution;
 
@@ -42,7 +43,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @Tag(DistributionTest.WIN)
 public class StartDevCommandDistTest {
 
-    @DryRun
+    @StopServer(Mode.BEFORE_QUARKUS)
     @Test
     @Launch({ "start-dev" })
     void testDevModeWarning(CLIResult cliResult) {
@@ -53,7 +54,7 @@ public class StartDevCommandDistTest {
         assertFalse(out.contains("0.0.0.0") || out.contains("all addresses"));
     }
 
-    @DryRun
+    @StopServer(Mode.BEFORE_QUARKUS)
     @Test
     @Launch({ "start-dev", "--db=dev-mem" })
     void testBuildPropertyAvailable(CLIResult cliResult) {
@@ -70,7 +71,7 @@ public class StartDevCommandDistTest {
         cliResult.assertNoMessage("Build time property cannot");
     }
 
-    @DryRun
+    @StopServer(Mode.BEFORE_QUARKUS)
     @Test
     @Launch({ "build", "--debug", "--db=dev-file" })
     void testBuildMustNotRunTwoJVMs(CLIResult cliResult) {
@@ -78,7 +79,7 @@ public class StartDevCommandDistTest {
         cliResult.assertBuild();
     }
 
-    @DryRun
+    @StopServer(Mode.BEFORE_QUARKUS)
     @Test
     @Launch({ "start-dev", "--verbose" })
     void testVerboseAfterCommand(CLIResult cliResult) {
@@ -99,7 +100,7 @@ public class StartDevCommandDistTest {
         cliResult.assertStartedDevMode();
     }
 
-    @DryRun
+    @StopServer(Mode.BEFORE_QUARKUS)
     @Test
     void testStartDevThenImportRebuild(KeycloakDistribution dist) throws Exception {
         RawKeycloakDistribution rawDist = dist.unwrap(RawKeycloakDistribution.class);

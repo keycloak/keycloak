@@ -23,6 +23,7 @@ import java.util.stream.Stream;
 
 import org.keycloak.it.junit5.extension.DistributionTest;
 import org.keycloak.it.junit5.extension.RawDistOnly;
+import org.keycloak.it.junit5.extension.StopServer.Mode;
 import org.keycloak.it.utils.KeycloakDistribution;
 import org.keycloak.it.utils.RawKeycloakDistribution;
 import org.keycloak.truststore.TruststoreBuilder;
@@ -35,7 +36,7 @@ import org.junit.jupiter.api.Test;
 
 import static io.restassured.RestAssured.given;
 
-@DistributionTest(keepAlive = true)
+@DistributionTest(stopServer = Mode.MANUAL)
 @RawDistOnly(reason = "Containers are immutable")
 @Tag(DistributionTest.SMOKE)
 public class TruststoreDistTest {

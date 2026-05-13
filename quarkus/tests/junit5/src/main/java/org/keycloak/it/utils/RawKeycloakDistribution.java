@@ -62,8 +62,11 @@ import javax.net.ssl.X509TrustManager;
 import org.keycloak.common.Version;
 import org.keycloak.it.TestProvider;
 import org.keycloak.it.junit5.extension.CLIResult;
+import org.keycloak.it.junit5.extension.StopServer;
+import org.keycloak.it.junit5.extension.StopServer.Mode;
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.cli.command.Build;
+import org.keycloak.quarkus.runtime.cli.command.DryRunMixin;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
 
@@ -80,6 +83,7 @@ import org.jboss.shrinkwrap.api.spec.JavaArchive;
 
 import static org.keycloak.quarkus.runtime.Environment.KC_CONFIG_BUILT;
 import static org.keycloak.quarkus.runtime.Environment.LAUNCH_MODE;
+import static org.keycloak.quarkus.runtime.Environment.LAUNCH_MODE_EXIT_AFTER_START;
 import static org.keycloak.quarkus.runtime.Environment.LAUNCH_MODE_EXIT_BEFORE_BOOTSTRAP;
 import static org.keycloak.quarkus.runtime.Environment.isWindows;
 
@@ -91,7 +95,7 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
     private Process keycloak;
     private int exitCode = -1;
     private Path distPath;
-    private boolean manualStop;
+    private StopServer.Mode stopMode;
     private String relativePath;
     private int httpPort;
     private int httpsPort;
@@ -106,11 +110,9 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
     private long startTimeout = TimeUnit.SECONDS.toMillis(Long.getLong("keycloak.distribution.start.timeout", 120L));
     private boolean throwErrorIfFailedToStart = false;
     private boolean threadDump = true;
-    private String launchMode = Environment.LAUNCH_MODE_EXIT_AFTER_START;
 
-    public RawKeycloakDistribution(boolean debug, boolean manualStop, boolean enableTls, boolean reCreate, boolean removeBuildOptionsAfterBuild, int requestPort) {
+    public RawKeycloakDistribution(boolean debug, boolean enableTls, boolean reCreate, boolean removeBuildOptionsAfterBuild, int requestPort) {
         this.debug = debug;
-        this.manualStop = manualStop;
         this.enableTls = enableTls;
         this.reCreate = reCreate;
         this.removeBuildOptionsAfterBuild = removeBuildOptionsAfterBuild;
@@ -201,14 +203,11 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
     @Override
     public CLIResult run(List<String> arguments) {
         stop();
-        if (manualStop && isRunning()) {
-            throw new IllegalStateException("Server already running. You should manually stop the server before starting it again.");
-        }
-        reset();
+        resetForNextRun();
         try {
             configureServer();
             startServer(arguments);
-            if (manualStop) {
+            if (stopMode == Mode.MANUAL) {
                 asyncReadOutput();
                 waitForReadiness();
             } else {
@@ -229,7 +228,7 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
                     }
                 }
             }
-            if (!manualStop) {
+            if (stopMode != Mode.MANUAL) {
                 stop();
             }
         }
@@ -329,9 +328,6 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
     public boolean isDebug() { return this.debug; }
 
     @Override
-    public boolean isManualStop() { return this.manualStop; }
-
-    @Override
     public String[] getCliArgs(List<String> arguments) {
         List<String> allArgs = new ArrayList<>();
 
@@ -340,9 +336,12 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
         if (this.isDebug()) {
             allArgs.add("--debug");
         }
-
-        if (!this.isManualStop()) {
-            allArgs.add("-D" + LAUNCH_MODE + "=" + launchMode);
+        
+        if (stopMode == Mode.BEFORE_QUARKUS) {
+            setEnvVar(DryRunMixin.KC_DRY_RUN_ENV, "true");
+            setEnvVar(DryRunMixin.KC_DRY_RUN_BUILD_ENV, "true");
+        } else if (stopMode != Mode.MANUAL) {
+            allArgs.add("-D" + LAUNCH_MODE + "=" + (stopMode == Mode.BEFORE_BOOTSTRAP ? LAUNCH_MODE_EXIT_BEFORE_BOOTSTRAP : LAUNCH_MODE_EXIT_AFTER_START));            
         }
 
         allArgs.add("-Djgroups.join_timeout=50");
@@ -511,7 +510,7 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
         }
     }
 
-    private void reset() {
+    private void resetForNextRun() {
         outputConsumer.reset();
         exitCode = -1;
         shutdownOutputExecutor();
@@ -682,8 +681,8 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
     }
 
     @Override
-    public void setManualStop(boolean manualStop) {
-        this.manualStop = manualStop;
+    public void setStopServer(Mode mode) {
+        this.stopMode = mode;
     }
 
     @Override
@@ -694,10 +693,6 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
     @Override
     public void setEnvVar(String name, String value) {
         this.envVars.put(name, value);
-    }
-
-    public void setLaunchMode(String launchMode) {
-        this.launchMode = launchMode;
     }
 
     @Override
@@ -896,6 +891,7 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
      */
     public void reset(boolean resetAugmentation) throws IOException {
         LOG.infof("Resetting the distribution for the next test%s %s", resetAugmentation ? " including augmentation" : "", distPath);
+        stopMode = Mode.AFTER_START;
         FileUtil.deleteDirectory(getDistPath().resolve("conf"));
         FileUtils.copyDirectory(getDistPath().resolve("conf-bak").toFile(), getDistPath().resolve("conf").toFile());
         FileUtil.deleteDirectory(getDistPath().resolve("providers"));

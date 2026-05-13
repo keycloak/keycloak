@@ -187,7 +187,6 @@ public class QuarkusPropertiesAutoBuildDistTest {
     public static class SetDatabaseKind implements Consumer<KeycloakDistribution> {
         @Override
         public void accept(KeycloakDistribution distribution) {
-            distribution.setManualStop(true);
             distribution.setQuarkusProperty("quarkus.datasource.db-kind", "postgres");
         }
     }

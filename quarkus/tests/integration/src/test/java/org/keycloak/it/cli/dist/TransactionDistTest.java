@@ -22,6 +22,7 @@ import java.util.Map;
 
 import org.keycloak.it.junit5.extension.DistributionTest;
 import org.keycloak.it.junit5.extension.RawDistOnly;
+import org.keycloak.it.junit5.extension.StopServer.Mode;
 import org.keycloak.it.junit5.extension.TestProvider;
 import org.keycloak.it.resource.realm.TestRealmResourceTestProvider;
 import org.keycloak.it.utils.KeycloakDistribution;
@@ -34,7 +35,7 @@ import org.junit.jupiter.api.Test;
 import static io.restassured.RestAssured.when;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-@DistributionTest(keepAlive = true)
+@DistributionTest(stopServer = Mode.MANUAL)
 @RawDistOnly(reason = "Containers are immutable")
 public class TransactionDistTest {
 

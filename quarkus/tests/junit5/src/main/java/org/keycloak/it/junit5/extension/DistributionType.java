@@ -20,6 +20,7 @@ package org.keycloak.it.junit5.extension;
 import java.util.Optional;
 import java.util.function.Function;
 
+import org.keycloak.it.junit5.extension.StopServer.Mode;
 import org.keycloak.it.utils.DockerKeycloakDistribution;
 import org.keycloak.it.utils.KeycloakDistribution;
 import org.keycloak.it.utils.RawKeycloakDistribution;
@@ -33,7 +34,7 @@ public enum DistributionType {
     private static KeycloakDistribution createDockerDistribution(DistributionTest config) {
         return new DockerKeycloakDistribution(
                 config.debug(),
-                config.keepAlive(),
+                config.stopServer() == Mode.MANUAL,
                 config.requestPort(),
                 config.containerExposedPorts());
     }
@@ -41,7 +42,6 @@ public enum DistributionType {
     private static KeycloakDistribution createRawDistribution(DistributionTest config) {
         return new RawKeycloakDistribution(
                 config.debug(),
-                config.keepAlive(),
                 config.enableTls(),
                 false,
                 config.removeBuildOptionsAfterBuild(),

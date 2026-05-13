@@ -28,6 +28,7 @@ import java.util.stream.Stream;
 import org.keycloak.config.CachingOptions;
 import org.keycloak.it.junit5.extension.DistributionTest;
 import org.keycloak.it.junit5.extension.RawDistOnly;
+import org.keycloak.it.junit5.extension.StopServer.Mode;
 import org.keycloak.it.junit5.extension.TestProvider;
 import org.keycloak.it.resource.realm.TestRealmResourceTestProvider;
 import org.keycloak.it.utils.KeycloakDistribution;
@@ -51,7 +52,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 /**
  * @author Ryan Emerson <remerson@redhat.com>
  */
-@DistributionTest(keepAlive = true, enableTls = true)
+@DistributionTest(stopServer = Mode.MANUAL, enableTls = true)
 @RawDistOnly(reason = "Containers are immutable")
 public class ClusterConfigKeepAliveDistTest {
     @Test

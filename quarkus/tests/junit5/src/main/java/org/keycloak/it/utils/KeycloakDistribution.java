@@ -4,6 +4,7 @@ import java.nio.file.Path;
 import java.util.List;
 
 import org.keycloak.it.junit5.extension.CLIResult;
+import org.keycloak.it.junit5.extension.StopServer;
 import org.keycloak.quarkus.runtime.Environment;
 
 public interface KeycloakDistribution {
@@ -27,8 +28,6 @@ public interface KeycloakDistribution {
 
     boolean isDebug();
 
-    boolean isManualStop();
-
     void setRequestPort();
 
     void setRequestPort(int port);
@@ -37,7 +36,7 @@ public interface KeycloakDistribution {
         throw new RuntimeException("Not implemented");
     }
 
-    default void setManualStop(boolean manualStop) {
+    default void setStopServer(StopServer.Mode mode) {
         throw new RuntimeException("Not implemented");
     }
 

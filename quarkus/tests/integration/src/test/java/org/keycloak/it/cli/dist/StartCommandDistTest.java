@@ -21,8 +21,9 @@ import java.util.concurrent.TimeUnit;
 
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
-import org.keycloak.it.junit5.extension.DryRun;
 import org.keycloak.it.junit5.extension.RawDistOnly;
+import org.keycloak.it.junit5.extension.StopServer;
+import org.keycloak.it.junit5.extension.StopServer.Mode;
 import org.keycloak.it.junit5.extension.TestProvider;
 import org.keycloak.it.junit5.extension.WithEnvVars;
 import org.keycloak.it.resource.realm.TestRealmResourceTestProvider;
@@ -47,14 +48,13 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@WithEnvVars({"KC_CACHE", "local"}) // avoid flakey port conflicts
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DistributionTest
 @Tag(DistributionTest.WIN)
 @QuarkusTestResource(RawDistributionLifecycleManager.class)
 public class StartCommandDistTest {
 
-    @DryRun
+    @StopServer(Mode.BEFORE_QUARKUS)
     @Test
     @Launch({ "start", "--db=dev-file", "--hostname-strict=false" })
     void failNoTls(CLIResult cliResult) {
@@ -62,7 +62,7 @@ public class StartCommandDistTest {
                 () -> "The Output:\n" + cliResult.getErrorOutput() + "doesn't contains the expected string.");
     }
 
-    @DryRun
+    @StopServer(Mode.BEFORE_QUARKUS)
     @Test
     @Launch({ "start", "--db=dev-file", "--spi-events-listener-jboss-logging-success-level" })
     void failSpiArgMissingValue(CLIResult cliResult) {
@@ -70,7 +70,7 @@ public class StartCommandDistTest {
                 () -> "The Output:\n" + cliResult.getErrorOutput() + "doesn't contains the expected string.");
     }
 
-    @DryRun
+    @StopServer(Mode.BEFORE_QUARKUS)
     @Test
     @Launch({ "build", "--db=dev-file", "--spi-events-listener-jboss-logging-success-level=debug" })
     void warnSpiRuntimeAtBuildtime(CLIResult cliResult) {
@@ -78,7 +78,7 @@ public class StartCommandDistTest {
                 () -> "The Output:\n" + cliResult.getOutput() + "doesn't contains the expected string.");
     }
 
-    @DryRun
+    @StopServer(Mode.BEFORE_QUARKUS)
     @Test
     @RawDistOnly(reason = "Containers are immutable")
     void errorSpiBuildtimeAtRuntime(KeycloakDistribution dist) {
@@ -89,7 +89,7 @@ public class StartCommandDistTest {
         cliResult.assertError("The following build time options have values that differ from what is persisted - the new values will NOT be used until another build is run: kc.spi-events-listener--jboss-logging--enabled");
     }
 
-    @DryRun
+    @StopServer(Mode.BEFORE_QUARKUS)
     @WithEnvVars({"KC_SPI_EVENTS_LISTENER__JBOSS_LOGGING__ENABLED", "false"})
     @Test
     @RawDistOnly(reason = "Containers are immutable")
@@ -107,7 +107,7 @@ public class StartCommandDistTest {
         CLIResult cliResult = dist.run("build", "--db=dev-file");
         cliResult.assertBuild();
 
-        dist.setManualStop(true);
+        dist.setStopServer(Mode.MANUAL);
         cliResult = dist.run("start", "--optimized", "--http-enabled=true", "--hostname-strict=false");
         cliResult.assertStarted();
 
@@ -118,7 +118,7 @@ public class StartCommandDistTest {
         cliResult.assertStarted();
     }
 
-    @DryRun
+    @StopServer(Mode.BEFORE_QUARKUS)
     @Test
     @Launch({ "--profile=dev", "start",  "--db=dev-file" })
     void failUsingDevProfile(CLIResult cliResult) {
@@ -132,7 +132,7 @@ public class StartCommandDistTest {
         cliResult.assertStarted();
     }
 
-    @DryRun
+    @StopServer(Mode.BEFORE_QUARKUS)
     @Test
     @Launch({ "--profile=dev", "start", "--http-enabled=true", "--hostname-strict=false" })
     void failIfAutoBuildUsingDevProfile(CLIResult cliResult) {
@@ -140,7 +140,7 @@ public class StartCommandDistTest {
         assertEquals(4, cliResult.getErrorStream().size());
     }
 
-    @DryRun
+    @StopServer(Mode.BEFORE_QUARKUS)
     @WithEnvVars({"KC_HTTP_ENABLED", "true", "KC_HOSTNAME_STRICT", "false"})
     @Test
     @Launch({ "start", "--optimized" })
@@ -149,7 +149,7 @@ public class StartCommandDistTest {
         cliResult.assertError("The '--optimized' flag was used for first ever server start.");
     }
 
-    @DryRun
+    @StopServer(Mode.BEFORE_QUARKUS)
     @Test
     @Launch({ "start", "--optimized", "--http-enabled=true", "--hostname-strict=false" })
     @Order(2)
@@ -164,7 +164,7 @@ public class StartCommandDistTest {
                 () -> "The Output:\n" + cliResult.getOutput() + "doesn't contains the expected string.");
     }
 
-    @DryRun
+    @StopServer(Mode.BEFORE_QUARKUS)
     @Test
     @Launch({ "start", "--db=dev-file", "--http-enabled=true", "--hostname-strict=false", "--metrics-enabled=true" })
     void testStartUsingAutoBuild(CLIResult cliResult) {
@@ -178,14 +178,14 @@ public class StartCommandDistTest {
         assertTrue(cliResult.getErrorOutput().isBlank(), cliResult.getErrorOutput());
     }
 
-    @DryRun
+    @StopServer(Mode.BEFORE_QUARKUS)
     @Test
     @Launch({ "start", "--db=dev-file", "--http-enabled=true", "--cache-remote-host=localhost", "--hostname-strict=false", "--cache-remote-tls-enabled=false", "--transaction-xa-enabled=true" })
     void testStartNoWarningOnDisabledRuntimeOption(CLIResult cliResult) {
         cliResult.assertNoMessage("cache-remote-tls-enabled: Available only when remote host is set");
     }
 
-    @DryRun
+    @StopServer(Mode.BEFORE_QUARKUS)
     @Test
     @WithEnvVars({"KC_LOG", "invalid"})
     @Launch({ "start", "--db=dev-file", "--http-enabled=false", "--hostname-strict=false" })
@@ -193,7 +193,7 @@ public class StartCommandDistTest {
         cliResult.assertError("Invalid value for option 'KC_LOG': invalid. Expected values are: console, file, syslog");
     }
 
-    @DryRun
+    @StopServer(Mode.BEFORE_QUARKUS)
     @Test
     @RawDistOnly(reason = "Containers are immutable")
     void testWarningWhenOverridingBuildOptionsDuringStart(KeycloakDistribution dist) {
@@ -228,7 +228,7 @@ public class StartCommandDistTest {
         cliResult.assertNoMessage("The previous optimized build will be overridden with the following build options:"); // no message, same values provided during auto-build
     }
 
-    @DryRun
+    @StopServer(Mode.BEFORE_QUARKUS)
     @Test
     @RawDistOnly(reason = "Containers are immutable")
     void testStartAfterStartDev(KeycloakDistribution dist) {
@@ -240,7 +240,7 @@ public class StartCommandDistTest {
         assertTrue(cliResult.getErrorOutput().isBlank());
     }
 
-    @DryRun
+    @StopServer(Mode.BEFORE_QUARKUS)
     @Test
     @RawDistOnly(reason = "Containers are immutable")
     void testErrorWhenOverridingNonCliBuildOptionsDuringStart(KeycloakDistribution dist) {
@@ -251,7 +251,7 @@ public class StartCommandDistTest {
         cliResult.assertError("The following build time options have values that differ from what is persisted - the new values will NOT be used until another build is run: kc.db");
     }
 
-    @DryRun
+    @StopServer(Mode.BEFORE_QUARKUS)
     @Test
     @Launch({CONFIG_FILE_LONG_NAME + "=src/test/resources/non-existing.conf", "start", "--db=dev-file"})
     void testInvalidConfigFileOption(CLIResult cliResult) {
@@ -259,7 +259,7 @@ public class StartCommandDistTest {
         cliResult.assertError(String.format("Try '%s --help' for more information on the available options.", KeycloakDistribution.SCRIPT_CMD));
     }
 
-    @DryRun
+    @StopServer(Mode.BEFORE_QUARKUS)
     @Test
     @Launch({CONFIG_FILE_LONG_NAME + "=src/test/resources/keycloak.properties", "start", "--db=dev-file"})
     void testConfigFileWithWrongExtension(CLIResult cliResult) {
@@ -291,7 +291,7 @@ public class StartCommandDistTest {
     @TestProvider(TestRealmResourceTestProvider.class)
     void testAsyncBootstrapFails(KeycloakDistribution dist) {
         RawKeycloakDistribution rawDist = dist.unwrap(RawKeycloakDistribution.class);
-        dist.setManualStop(true);
+        dist.setStopServer(Mode.MANUAL);
         CLIResult result = dist.run("start", "--server-async-bootstrap=true", "--hostname-strict=false", "--db=dev-file", "--http-enabled=true", "--spi-realm-restapi-extension--test-resources--fail=true");
         Awaitility.await().atMost(2, TimeUnit.MINUTES).until(() -> !rawDist.isRunning());
         dist.stop();

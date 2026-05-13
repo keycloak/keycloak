@@ -24,10 +24,9 @@ import java.util.function.Consumer;
 import org.keycloak.it.junit5.extension.BeforeStartDistribution;
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
-import org.keycloak.it.junit5.extension.DryRun;
-import org.keycloak.it.junit5.extension.KeepServerAlive;
 import org.keycloak.it.junit5.extension.RawDistOnly;
-import org.keycloak.it.junit5.extension.WithEnvVars;
+import org.keycloak.it.junit5.extension.StopServer;
+import org.keycloak.it.junit5.extension.StopServer.Mode;
 import org.keycloak.it.utils.KeycloakDistribution;
 
 import io.quarkus.test.junit.main.Launch;
@@ -47,7 +46,6 @@ import static org.hamcrest.Matchers.containsString;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @DistributionTest(defaultOptions = "--db=dev-file")
-@WithEnvVars({"KC_CACHE", "local"}) // avoid flakey port conflicts
 @RawDistOnly(reason = "Containers are immutable")
 @Tag(DistributionTest.WIN)
 @TestMethodOrder(OrderAnnotation.class)
@@ -64,7 +62,7 @@ public class QuarkusPropertiesDistTest {
         cliResult.assertMessage("Keycloak is the best");
     }
 
-    @DryRun
+    @StopServer(Mode.BEFORE_QUARKUS)
     @Test
     @BeforeStartDistribution(UpdateConsoleHandlerFromKeycloakConf.class)
     @Launch({"build"})
@@ -74,7 +72,7 @@ public class QuarkusPropertiesDistTest {
         cliResult.assertBuild();
     }
 
-    @DryRun
+    @StopServer(Mode.BEFORE_QUARKUS)
     @Test
     @BeforeStartDistribution(UpdateConsoleHandlerFromQuarkusProps.class)
     @Launch({"start", "--http-enabled=true", "--hostname-strict=false"})
@@ -95,7 +93,7 @@ public class QuarkusPropertiesDistTest {
 
     @Test
     @BeforeStartDistribution(UpdateHibernateMetricsFromQuarkusProps.class)
-    @KeepServerAlive
+    @StopServer(Mode.MANUAL)
     @Launch({ "start", "--http-enabled=true", "--hostname-strict=false", "--metrics-enabled=true"})
     @Order(8)
     void testUnknownQuarkusBuildTimePropertyApplied(CLIResult cliResult) {
