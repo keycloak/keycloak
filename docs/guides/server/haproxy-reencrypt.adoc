@@ -115,7 +115,7 @@ Enabling metrics also enables an additional status check for the database, so it
 
 `--https-certificate-file=/path/to/certificate` and `--https-certificate-key-file=/path/to/key`::
 Configure the certificate and the private key {project_name} will use for HTTPS.
-See the https://www.keycloak.org/server/enabletls[Configuring TLS] guide for additional details.
+See the <@links.server id="enabletls"/> guide for additional details.
 
 `--https-client-auth=required`::
 Configures {project_name} to require client authentication, for mutual TLS.
@@ -123,7 +123,7 @@ Configures {project_name} to require client authentication, for mutual TLS.
 `--https-trust-store-file=/path/to/https-truststore`::
 Configures a truststore for client authentication.
 In this case the truststore should contain the public certificate of the HAProxy.
-See the https://www.keycloak.org/server/mutual-tls[Configuring trusted certificates for mTLS] guide for additional details.
+See the <@links.server id="mutual-tls"/> guide for additional details.
 
 `--https-management-client-auth=none`::
 Disables the client authentication requirement for the management endpoint.
