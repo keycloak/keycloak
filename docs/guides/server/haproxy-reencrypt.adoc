@@ -10,9 +10,9 @@ tileVisible="false">
 
 This {section} describes how to configure link:https://www.haproxy.com/[HAProxy] as a TLS re-encrypt load balancer in front of {project_name}.
 
-In TLS re-encrypt mode, HAProxy forwards the raw TLS connection directly to {project_name} without terminating it.
-HAProxy operates at the TCP layer (Layer 4) and has no visibility into the HTTP content.
-The TLS handshake occurs between the client and {project_name}, preserving end-to-end encryption.
+In TLS re-encrypt mode, HAProxy terminates the incoming TLS connection and establishes a new encrypted connection to {project_name}.
+HAProxy operates at the Layer 7 (HTTP) and has direct visibility into the HTTP content.
+End-to-end TLS encryption between client and and {project_name} is not preserved.
 
 For a general overview of TLS re-encrypt and how it compares to passthrough, see the <@links.server id="reverseproxy"/> {section}.
 
