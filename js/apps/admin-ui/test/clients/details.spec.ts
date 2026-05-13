@@ -9,7 +9,12 @@ import { clickTableRowItem, searchItem } from "../utils/table.ts";
 import { continueNext, createClient, save } from "./utils.ts";
 import {
   assertDedicatedScopeMapper,
+  assertJwtAlgorithmOptions,
   assertKeyForCodeExchangeInput,
+  assertMacAlgorithmLabel,
+  assertSignatureAlgorithmLabel,
+  goToCredentialsTab,
+  selectClientAuthenticator,
   enableJwtAuthorizationGrant,
   getJwtAuthorizationGrantIdpOptions,
   goToDedicatedScope,
@@ -146,6 +151,26 @@ test.describe.serial("Clients details test", () => {
     const client2 = await adminClient.getClient(clientId, realmName);
     expect(client2?.attributes?.["post.logout.redirect.uris"]).toBeUndefined();
   });
+
+  test("Should use MAC terminology for client secret JWT algorithms", async ({
+    page,
+  }) => {
+    await clickTableRowItem(page, clientId);
+    await goToCredentialsTab(page);
+
+    await selectClientAuthenticator(page, "Signed JWT with Client Secret");
+    await assertMacAlgorithmLabel(page);
+    await assertJwtAlgorithmOptions(
+      page,
+      ["HS256", "HS384", "HS512"],
+      ["RS256", "ES256"],
+    );
+
+    await selectClientAuthenticator(page, "Signed JWT");
+    await assertSignatureAlgorithmLabel(page);
+    await assertJwtAlgorithmOptions(page, ["RS256", "ES256"], ["HS256"]);
+  });
+
 });
 
 test.describe.serial("Client admin without manage-realm", () => {
