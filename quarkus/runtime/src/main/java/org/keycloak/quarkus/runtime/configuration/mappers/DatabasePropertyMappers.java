@@ -113,9 +113,14 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
                         .to(MSSQL_CONNECT_TIMEOUT)
                         .mapFrom(DatabaseOptions.DB_CONNECT_TIMEOUT, getConnectTimeout(EnumSet.of(Database.Vendor.MSSQL), "loginTimeout"))
                         .build(),
+                /* For MySQL based databases, setting the login timeout is not sufficient as there are some additional SQL statements running
+                   directly after the login. Once the connection is later acquired for a transaction, the UpdateSocketTimeoutOnConnectionAcquireInterceptor
+                   will then later overwrite the socket timeout.
+                   See https://github.com/keycloak/keycloak/issues/47174 for the discussion.
+                 */
                 fromOption(DatabaseOptions.DB_CONNECT_TIMEOUT)
                         .to(SOCKET_TIMEOUT)
-                        .mapFrom(DatabaseOptions.DB_CONNECT_TIMEOUT, getConnectTimeout(EnumSet.of(Database.Vendor.MYSQL, Database.Vendor.MARIADB, Database.Vendor.TIDB), "socketTimeout"))
+                        .mapFrom(DatabaseOptions.DB_CONNECT_TIMEOUT, getSocketTimeout(EnumSet.of(Database.Vendor.MYSQL, Database.Vendor.MARIADB, Database.Vendor.TIDB), "socketTimeout"))
                         .build(),
                 fromOption(DatabaseOptions.DB_URL_HOST)
                         .paramLabel("hostname")
@@ -332,31 +337,61 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
             String db = getDatasourceOptionValue(DB, datasource).orElse(null);
             Database.Vendor vendor = Database.getVendor(db).orElse(null);
 
-            if (!validForVendors.contains(vendor)) {
-                // this jdbc property is not for this vendor
-                return null;
-            }
-
-            String dbDriver = getDatasourceOptionValue(DatabaseOptions.DB_DRIVER, datasource).orElse(null);
-            if (!Objects.equals(Database.getDriver(db, true).orElse(null), dbDriver) &&
-                    !Objects.equals(Database.getDriver(db, false).orElse(null), dbDriver)) {
-                // Custom JDBC driver (e.g. AWS JDBC Wrapper) — do not inject defaults
-                return null;
-            }
-
-            String dbUrl = findDatabaseUrl(datasource).orElse("");
-            String dbUrlProperties = getDatasourceOptionValue(DatabaseOptions.DB_URL_PROPERTIES, datasource).orElse("");
-
-            // Property already set explicitly by the user — do not override
-            if  (dbUrl.contains(timeoutProperty) || dbUrlProperties.contains(timeoutProperty)) {
+            if (checkSettingsAndVendor(validForVendors, timeoutProperty, datasource, vendor, db)) {
                 return null;
             }
 
             if (vendor == Vendor.MSSQL || vendor == Vendor.POSTGRES) {
                 return durationToSeconds(value);
             }
-            return durationToMillis(value);
+            if (vendor == Vendor.MYSQL || vendor == Vendor.MARIADB || vendor == Vendor.ORACLE || vendor == Vendor.TIDB) {
+                return durationToMillis(value);
+            }
+
+            // We don't know if it is seconds or milliseconds for other databases.
+            throw new IllegalArgumentException("Vendor " + vendor + " not supported for socket timeout calculation");
         };
+    }
+
+    private static ValueMapper getSocketTimeout(Collection<Database.Vendor> validForVendors, String timeoutProperty) {
+        return (String datasource, String value, ConfigSourceInterceptorContext context) -> {
+            String db = getDatasourceOptionValue(DB, datasource).orElse(null);
+            Database.Vendor vendor = Database.getVendor(db).orElse(null);
+
+            if (checkSettingsAndVendor(validForVendors, timeoutProperty, datasource, vendor, db)) {
+                return null;
+            }
+
+            if (vendor == Vendor.MYSQL || vendor == Vendor.MARIADB || vendor == Vendor.TIDB) {
+                return durationToMillis(value);
+            }
+
+            // We don't know if it is seconds or milliseconds for other database.
+            throw new IllegalArgumentException("Vendor " + vendor + " not supported for socket timeout calculation");
+        };
+    }
+
+    private static boolean checkSettingsAndVendor(Collection<Vendor> validForVendors, String timeoutProperty, String datasource, Vendor vendor, String db) {
+        if (!validForVendors.contains(vendor)) {
+            // this jdbc property is not for this vendor
+            return true;
+        }
+
+        String dbDriver = getDatasourceOptionValue(DatabaseOptions.DB_DRIVER, datasource).orElse(null);
+        if (!Objects.equals(Database.getDriver(db, true).orElse(null), dbDriver) &&
+                !Objects.equals(Database.getDriver(db, false).orElse(null), dbDriver)) {
+            // Custom JDBC driver (e.g. AWS JDBC Wrapper) — do not inject defaults
+            return true;
+        }
+
+        String dbUrl = findDatabaseUrl(datasource).orElse("");
+        String dbUrlProperties = getDatasourceOptionValue(DatabaseOptions.DB_URL_PROPERTIES, datasource).orElse("");
+
+        // Property already set explicitly by the user — do not override
+        if  (dbUrl.contains(timeoutProperty) || dbUrlProperties.contains(timeoutProperty)) {
+            return true;
+        }
+        return false;
     }
 
     private static String durationToMillis(String value) {
