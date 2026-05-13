@@ -25,6 +25,7 @@ public class MigrateTest {
             UpdateAssertsRewrite.class,
             AddManagedResourcesRewrite.class,
             AdminEventAssertRewrite.class,
+            AssertEventsRewrite.class,
             BeforeRewrite.class,
             AfterRewrite.class,
             OAuthClientRewrite.class,
