@@ -33,7 +33,10 @@ export const CredentialRow = ({ credential, refresh }: CredentialRowProps) => {
   const hasManageRole = () => {
     const token = context.keycloak.tokenParsed;
     const accountRoles = token?.resource_access?.["account"]?.roles || [];
-    return accountRoles.includes("manage-verifiable-credentials");
+    return (
+      accountRoles.includes("manage-account") ||
+      accountRoles.includes("manage-verifiable-credentials")
+    );
   };
 
   const handleDelete = async () => {
@@ -54,7 +57,6 @@ export const CredentialRow = ({ credential, refresh }: CredentialRowProps) => {
       // Construct the AIA action parameter
       const config = {
         credential_configuration_id: credential.credentialScopeName,
-        client_id: "account-console",
         pre_authorized: false,
       };
 

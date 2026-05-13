@@ -192,9 +192,7 @@ public class AccountConsole implements AccountResourceProvider {
             isViewGroupsEnabled = roleChecker.hasOneOfRole(AccountRoles.MANAGE_ACCOUNT, AccountRoles.VIEW_GROUPS)
                     && user.getGroupsCount() > 0;
             isViewApplicationsEnabled = roleChecker.hasOneOfRole(AccountRoles.MANAGE_ACCOUNT, AccountRoles.VIEW_APPLICATIONS);
-            isOid4VciEnabled = roleChecker.hasOneOfRole(AccountRoles.VIEW_VERIFIABLE_CREDENTIALS)
-                    && Profile.isFeatureEnabled(Profile.Feature.OID4VC_VCI)
-                    && realm.isVerifiableCredentialsEnabled();
+            isOid4VciEnabled = Profile.isFeatureEnabled(Profile.Feature.OID4VC_VCI) && realm.isVerifiableCredentialsEnabled()  && roleChecker.hasOneOfRole(AccountRoles.MANAGE_ACCOUNT, AccountRoles.VIEW_VERIFIABLE_CREDENTIALS);
         }
 
         map.put("deleteAccountAllowed", deleteAccountAllowed);

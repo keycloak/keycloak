@@ -81,6 +81,7 @@ public class AccountRestServiceRolesTest {
 
     @Test
     public void verifiableCredentialsEndpointAccess() throws IOException {
+        assertEndpointStatus("manage-account-user", "verifiable-credentials", 200);
         addAccountConsoleScopeMapping(AccountRoles.MANAGE_VERIFIABLE_CREDENTIALS);
         assertEndpointStatus("view-verifiable-credentials-user", "verifiable-credentials", 200);
         assertEndpointStatus("manage-verifiable-credentials-user", "verifiable-credentials", 200);
@@ -90,6 +91,8 @@ public class AccountRestServiceRolesTest {
     @Test
     public void accountConsoleFeaturesForManageAccountUser() throws IOException {
         assertAccountConsoleFeatures("manage-account-user", true, true);
+        JsonNode features = getAccountConsoleFeatures("manage-account-user");
+        assertTrue(features.get("isOid4VciEnabled").asBoolean(), "isOid4VciEnabled should be true for manage-account-user");
     }
 
     @Test

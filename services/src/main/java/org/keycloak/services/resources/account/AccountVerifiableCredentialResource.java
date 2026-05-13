@@ -67,7 +67,7 @@ public class AccountVerifiableCredentialResource {
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
     public Response getCredentials() {
-        auth.requireOneOf(AccountRoles.VIEW_VERIFIABLE_CREDENTIALS, AccountRoles.MANAGE_VERIFIABLE_CREDENTIALS);
+        auth.requireOneOf(AccountRoles.MANAGE_ACCOUNT, AccountRoles.VIEW_VERIFIABLE_CREDENTIALS, AccountRoles.MANAGE_VERIFIABLE_CREDENTIALS);
         checkOid4VCIEnabled();
 
         List<UserVerifiableCredentialRepresentation> credentials = session.users()
@@ -90,7 +90,7 @@ public class AccountVerifiableCredentialResource {
     @DELETE
     @Path("/{credentialScopeName}")
     public Response revokeCredential(@PathParam("credentialScopeName") String credentialScopeName) {
-        auth.require(AccountRoles.MANAGE_VERIFIABLE_CREDENTIALS);
+        auth.requireOneOf(AccountRoles.MANAGE_ACCOUNT, AccountRoles.MANAGE_VERIFIABLE_CREDENTIALS);
         checkOid4VCIEnabled();
 
         boolean removed = session.users().removeVerifiableCredential(user.getId(), credentialScopeName);
