@@ -15,7 +15,7 @@ implementing the feature quicker and increases the quality as better test covera
 
 ### Experimental
 
-* Is not recommended for production use-cases, only for evaluation purposes
+* Is not supported for production use-cases, only for evaluation purposes
 * Does not have to be feature complete
 * Good test coverage is required
 * Documentation is required, and should be updated as the feature evolves
@@ -29,7 +29,7 @@ implementing the feature quicker and increases the quality as better test covera
 * A security review is required prior to graduating a feature to preview
 * Review of any feedback or open issues must be resolved prior to graduating a feature to preview
 * Should aim to provide backwards compatible APIs, and migration. However, this can be omitted if needed
-* When a feature is graduated to supported it is expected the feature will graduate to supported in the next major or minor release
+* When a feature is graduated to preview it is expected the feature will graduate to supported in the next major or minor release
 
 ### Supported
 
@@ -37,14 +37,18 @@ implementing the feature quicker and increases the quality as better test covera
 * Must provide backwards compatible APIs and migration support if needed
 * Review of any feedback or open issues must be resolved prior to graduating a feature to supported
 
-# Breaking changes to supported features
+# Breaking changes and removal of features
 
 Breaking changes to supported features must be introduced through a new version of the feature. During a major release
 life-cycle the default version can not be changed. However, there may be multiple supported versions. Previous versions
-may be deprecated, but should remain the default.
+may be deprecated, but should remain the default. Migration to a newer version should be as simple as possible, where the ideal is a fully automated migration provided.
 
 New major releases can remove features completely or older feature versions. In general this should only be done after
-the feature or feature version having been deprecated for a minimum of one major or minor release of Keycloak.
+the feature or feature version having been deprecated for a minimum of one release (not including patch releases).
+
+In the majority of cases preview features should follow the process for supported features. However, if breaking changes are required to preview features that can be made in the same version. Preview features can also be removed without deprecation, but ideally should be deprecated first.
+
+Experimental features have no contract in terms of breaking changes. That means breaking changes can be introduced at any point, without new versions, deprecations, or any other warning. Additionally, no migration support is required.
 
 # Documentation
 
@@ -60,11 +64,11 @@ relevant to the feature.
 ## Preview
 
 Relevant documentation and guides for the feature should be clearly marked as preview, with a notice that the feature
-can be used in migration, but seamless upgrades are not guaranteed.
+can be used in production, but seamless upgrades are not guaranteed.
 
 The link to the GitHub Discussion should remain for preview features.
 
 ## Supported
 
-As a feature is graduated to supported any experimental/preview notices should be removed, including link to GitHub
+As a feature is graduated to supported, any experimental/preview notices should be removed, including the link to the GitHub
 Discussions marked for feedback. The GitHub Discussion should be marked as closed.
