@@ -17,6 +17,8 @@
 
 package org.keycloak.quarkus.runtime.integration.jaxrs;
 
+import java.util.concurrent.CompletableFuture;
+
 import jakarta.enterprise.event.Observes;
 import jakarta.ws.rs.ApplicationPath;
 
@@ -25,6 +27,7 @@ import org.keycloak.config.ServerOptions;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.quarkus.runtime.Environment;
+import org.keycloak.quarkus.runtime.KeycloakMain;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
 import org.keycloak.quarkus.runtime.configuration.PropertyMappingInterceptor;
@@ -35,14 +38,16 @@ import org.keycloak.services.managers.ApplianceBootstrap;
 import org.keycloak.services.resources.KeycloakApplication;
 import org.keycloak.utils.StringUtil;
 
-import io.quarkus.runtime.Quarkus;
+import io.quarkus.arc.Arc;
 import io.quarkus.runtime.ShutdownEvent;
 import io.quarkus.runtime.StartupEvent;
 import io.smallrye.common.annotation.Blocking;
+import org.eclipse.microprofile.context.ManagedExecutor;
 import org.jboss.logging.Logger;
 
 import static org.keycloak.common.util.Environment.isDevMode;
 import static org.keycloak.common.util.Environment.isNonServerMode;
+import static org.keycloak.quarkus.runtime.Environment.isTestLaunchMode;
 
 @ApplicationPath("/")
 @Blocking
@@ -61,13 +66,20 @@ public class QuarkusKeycloakApplication extends KeycloakApplication<QuarkusKeycl
         });
     }
 
-    @Override
-    protected void exit(Throwable cause) {
-        Quarkus.asyncExit(1);
-    }
-
     void onStartupEvent(@Observes StartupEvent event) {
-        startup();
+        var asyncBootstrap = Configuration.getOptionalKcValue(ServerOptions.SERVER_ASYNC_BOOTSTRAP)
+                .map(Boolean::parseBoolean)
+                .orElse(Boolean.TRUE);
+        // skip async bootstrap in dev and non-server mode
+        if (isDevMode() || isNonServerMode() || isTestLaunchMode() || !asyncBootstrap) {
+            startup();      
+        } else {
+            ManagedExecutor executor = Arc.container().instance(ManagedExecutor.class).get();
+            CompletableFuture.runAsync(this::startup, executor).exceptionally(cause -> {
+                KeycloakMain.asyncExit(1, cause);
+                return null;
+            });        
+        }
     }
 
     void onShutdownEvent(@Observes ShutdownEvent event) {
@@ -82,11 +94,6 @@ public class QuarkusKeycloakApplication extends KeycloakApplication<QuarkusKeycl
     @Override
     protected void initKeycloakSessionFactory(QuarkusKeycloakSessionFactory quarkusKeycloakSessionFactory) {
         quarkusKeycloakSessionFactory.init();
-    }
-
-    @Override
-    protected void initAndStart() {
-        // no need - is handled by Quarkus logic and onStartupEvent
     }
 
     @Override
@@ -108,15 +115,6 @@ public class QuarkusKeycloakApplication extends KeycloakApplication<QuarkusKeycl
         } catch (NumberFormatException e) {
             throw new RuntimeException("Invalid admin expiration value provided. An integer is expected.", e);
         }
-    }
-
-    @Override
-    protected boolean supportsAsyncInitialization() {
-        var asyncBootstrap = Configuration.getOptionalKcValue(ServerOptions.SERVER_ASYNC_BOOTSTRAP)
-                .map(Boolean::parseBoolean)
-                .orElse(Boolean.TRUE);
-        // skip async bootstrap in dev and non-server mode
-        return !isDevMode() && !isNonServerMode() && asyncBootstrap;
     }
 
     @Override
