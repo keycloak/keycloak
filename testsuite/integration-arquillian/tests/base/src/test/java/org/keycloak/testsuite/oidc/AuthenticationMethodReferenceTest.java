@@ -300,7 +300,7 @@ public class AuthenticationMethodReferenceTest extends AbstractOIDCScopeTest{
         authenticatePassword("test-user", PASSWORD);
 
         // server time forward by 20 seconds to ensure max age is exceeded
-        setTimeOffset(20);
+        timeOffSet.set(20);
 
         Tokens tokens = assertLogin(passwordUserId);
 

@@ -262,7 +262,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest]
-        suite: [zip-slow, zip-fast, container, storage, smoke]
+        suite: [zip-slow, zip-fast, storage, smoke]
         full-testsuite:
           - ${{ needs.conditional.outputs.ci-quarkus == 'true' }}
         # Win runs always as includes are evaluated after excludes
@@ -275,8 +275,6 @@ jobs:
             suite: zip-slow
           - full-testsuite: false
             suite: zip-fast
-          - full-testsuite: false
-            suite: container
           - full-testsuite: false
             suite: storage
           - full-testsuite: true
@@ -306,13 +304,9 @@ jobs:
           PARAMS["win"]="-Dkc.quarkus.tests.groups=win"
           PARAMS["zip-slow"]="-Dkc.quarkus.tests.groups=slow"
           PARAMS["zip-fast"]='-Dkc.quarkus.tests.groups=!slow'
-          PARAMS["container"]="-Dkc.quarkus.tests.dist=docker"
           PARAMS["storage"]="-Ptest-database"
           PARAMS["smoke"]="-Dkc.quarkus.tests.groups=smoke"
 
-          if [ "${{ matrix.suite }}" == "container" ]; then
-            ./mvnw install -pl quarkus/tests/integration -am -DskipTests
-          fi
           ./mvnw test -pl quarkus/tests/integration ${PARAMS["${{ matrix.suite }}"]} 2>&1 | misc/log/trimmer.sh
 
   jdk-integration-tests:
@@ -1159,6 +1153,47 @@ jobs:
         with:
           job-name: Migration Tests
 
+  # Migration test with case-sensitive charset
+  migration-tests-cs:
+    name: Migration Tests (Case Sensitive DB)
+    runs-on: ubuntu-latest
+    needs: build
+    timeout-minutes: 45
+    strategy:
+      matrix:
+        old-version: [ 24.0.4 ]
+        database: [ mssql ]
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+
+      - id: integration-test-setup
+        name: Integration test setup
+        uses: ./.github/actions/integration-test-setup
+        with:
+          jdk-version: 21 # Keycloak 24 is not compatible with Java 25+
+
+      - name: Run Migration Tests (Case Sensitive DB)
+        run: |
+          ./mvnw clean install ${{ env.SUREFIRE_RETRY }} \
+          -Pauth-server-quarkus -Pdb-${{ matrix.database }} -Pauth-server-migration \
+          -Dtest=MigrationTest \
+          -Dmigration.mode=auto \
+          -Dmigrated.auth.server.version=${{ matrix.old-version }} \
+          -Dmigration.import.file.name=migration-realm-${{ matrix.old-version }}.json \
+          -Dauth.server.ssl.required=false \
+          -Dauth.server.db.host=localhost \
+          -Dmssql.collation=Latin1_General_100_CS_AS_SC_UTF8 \
+          "-Dwebdriver.chrome.driver=$CHROMEWEBDRIVER/chromedriver" \
+          -f testsuite/integration-arquillian/pom.xml 2>&1 | misc/log/trimmer.sh
+
+      - uses: ./.github/actions/upload-flaky-tests
+        name: Upload flaky tests
+        env:
+          GH_TOKEN: ${{ github.token }}
+        with:
+          job-name: Migration Tests (Case Sensitive DB)
+
   test-framework:
     name: Test Framework
     runs-on: ubuntu-latest
@@ -1221,6 +1256,27 @@ jobs:
 
       - name: Run tests
         run: ./mvnw package -f scim/tests/pom.xml
+
+  ssf-integration-tests:
+    name: SSF IT
+    runs-on: ubuntu-latest
+    needs:
+      - build
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+
+      - id: integration-test-setup
+        name: Integration test setup
+        uses: ./.github/actions/integration-test-setup
+
+        # This step is necessary because test/clustering requires building a new Keycloak image built from tar.gz
+        # file that is not part of m2-keycloak.tzts archive
+      - name: Build tar keycloak-quarkus-dist
+        run: ./mvnw package -pl quarkus/server/,quarkus/dist/
+
+      - name: Run tests
+        run: ./mvnw package -f ssf/tests/pom.xml
 
   authzen-integration-tests:
     name: AuthZen IT
@@ -1312,6 +1368,7 @@ jobs:
       - webauthn-integration-tests
       - sssd-unit-tests
       - migration-tests
+      - migration-tests-cs
       - external-infinispan-tests
       - test-framework
       - base-new-integration-tests

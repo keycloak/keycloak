@@ -217,7 +217,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         Assertions.assertTrue(authTime <= currentTime && authTime + 3 >= currentTime);
 
         // Set time offset
-        setTimeOffset(10);
+        timeOffSet.set(10);
 
         // Assert I need to login again through the login form. But username field is not present
         oauth.loginForm().maxAge(1).open();
@@ -249,7 +249,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         Assertions.assertTrue(authTime <= currentTime && authTime + 3 >= currentTime);
 
         // Set time offset
-        setTimeOffset(10);
+        timeOffSet.set(10);
 
         // Now open login form with maxAge=10000
         oauth.loginForm().maxAge(10000).open();
@@ -303,7 +303,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         long authTime = idToken.getAuth_time();
 
         // Set time offset
-        setTimeOffset(10);
+        timeOffSet.set(10);
 
         // Assert user still logged with previous authTime
         oauth.loginForm().prompt("none").open();
@@ -383,7 +383,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         IDToken oldIdToken = sendTokenRequestAndGetIDToken(loginEvent);
 
         // Set time offset
-        setTimeOffset(10);
+        timeOffSet.set(10);
 
         // SSO login first WITHOUT prompt=login ( Tests KEYCLOAK-5248 )
         oauth.openLoginForm();
@@ -396,7 +396,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         Assertions.assertEquals(oldIdToken.getAuth_time(), newIdToken.getAuth_time());
 
         // Set time offset
-        setTimeOffset(20);
+        timeOffSet.set(20);
 
         // Assert need to re-authenticate with prompt=login
         oauth.loginForm().prompt("login").open();
@@ -992,7 +992,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         clientResource.update(clientRep);
 
         // set time offset, so that new keys are downloaded
-        setTimeOffset(20);
+        timeOffSet.set(20);
 
         // Check signed request_uri will pass
         AuthorizationEndpointResponse response = oauth.loginForm().requestUri(requestUri).doLogin("test-user@localhost", "password");
@@ -1037,7 +1037,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
             clientResource.update(clientRep);
 
             // set time offset, so that new keys are downloaded
-            setTimeOffset(20);
+            timeOffSet.set(20);
 
             oauth.realm("test");
             oauth.client("test-app", "password");

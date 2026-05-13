@@ -217,7 +217,7 @@ public class ClientAdapter implements ClientModel, CachedObject {
     }
 
     public boolean isFrontchannelLogout() {
-        if (isUpdated()) return updated.isPublicClient();
+        if (isUpdated()) return updated.isFrontchannelLogout();
         return cached.isFrontchannelLogout();
     }
 

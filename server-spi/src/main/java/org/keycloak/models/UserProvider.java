@@ -179,7 +179,7 @@ public interface UserProvider extends Provider,
      * Return all verifiable credentials of specified user
      *
      * @param userId id if the user
-     * @return all verifiable credentials of specified user
+     * @return a non-null {@link Stream} of all verifiable credentials of specified user
      */
     Stream<UserVerifiableCredentialModel> getVerifiableCredentialsByUser(String userId);
 

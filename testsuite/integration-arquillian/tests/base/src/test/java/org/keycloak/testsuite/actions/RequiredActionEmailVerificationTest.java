@@ -63,8 +63,8 @@ import org.keycloak.testsuite.pages.VerifyEmailPage;
 import org.keycloak.testsuite.pages.VerifyProfilePage;
 import org.keycloak.testsuite.updaters.UserAttributeUpdater;
 import org.keycloak.testsuite.util.AccountHelper;
-import org.keycloak.testsuite.util.GreenMailRule;
 import org.keycloak.testsuite.util.InfinispanTestTimeServiceRule;
+import org.keycloak.testsuite.util.MailServer;
 import org.keycloak.testsuite.util.MailUtils;
 import org.keycloak.testsuite.util.SecondBrowser;
 import org.keycloak.testsuite.util.TestAppHelper;
@@ -100,7 +100,7 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
     public AssertEvents events = new AssertEvents(this);
 
     @Rule
-    public GreenMailRule greenMail = new GreenMailRule();
+    public MailServer mail = new MailServer();
 
     @Rule
     public InfinispanTestTimeServiceRule ispnTestTimeService = new InfinispanTestTimeServiceRule(this);
@@ -187,9 +187,9 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
 
         verifyEmailPage.assertCurrent();
 
-        Assertions.assertEquals(1, greenMail.getReceivedMessages().length);
+        Assertions.assertEquals(1, mail.getReceivedMessages().length);
 
-        MimeMessage message = greenMail.getLastReceivedMessage();
+        MimeMessage message = mail.getLastReceivedMessage();
 
         // see testsuite/integration-arquillian/tests/base/src/test/resources/testrealm.json
         Assertions.assertEquals("<auto+bounces@keycloak.org>", message.getHeader("Return-Path")[0]);
@@ -205,9 +205,9 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
 
         verifyEmailPage.assertCurrent();
 
-        Assertions.assertEquals(1, greenMail.getReceivedMessages().length);
+        Assertions.assertEquals(1, mail.getReceivedMessages().length);
 
-        MimeMessage message = greenMail.getReceivedMessages()[0];
+        MimeMessage message = mail.getReceivedMessages()[0];
 
         String verificationUrl = getEmailLink(message);
 
@@ -240,9 +240,9 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
 
         verifyEmailPage.assertCurrent();
 
-        Assertions.assertEquals(1, greenMail.getReceivedMessages().length);
+        Assertions.assertEquals(1, mail.getReceivedMessages().length);
 
-        MimeMessage message = greenMail.getReceivedMessages()[0];
+        MimeMessage message = mail.getReceivedMessages()[0];
 
         EventRepresentation sendEvent = events.expectRequiredAction(EventType.SEND_VERIFY_EMAIL).user(userId).detail(Details.USERNAME, "verifyemail").detail("email", "email@mail.com").assertEvent();
         String mailCodeId = sendEvent.getDetails().get(Details.CODE_ID);
@@ -289,8 +289,8 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
         String userId = events.expectRegister("verifyemail-br2", "email-br2@mail.com").assertEvent().getUserId();
         verifyEmailPage.assertCurrent();
 
-        Assertions.assertEquals(1, greenMail.getReceivedMessages().length);
-        MimeMessage message = greenMail.getReceivedMessages()[0];
+        Assertions.assertEquals(1, mail.getReceivedMessages().length);
+        MimeMessage message = mail.getReceivedMessages()[0];
         events.expectRequiredAction(EventType.SEND_VERIFY_EMAIL).user(userId).detail(Details.USERNAME, "verifyemail-br2").detail("email", "email-br2@mail.com").assertEvent();
 
         // open link in the second browser without the session and follow the link
@@ -332,8 +332,8 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
         loginPage.openLanguage("Português");
         registerPage.registerWithoutPassword("firstName", "lastName", "locale@mail.com", "locale");
 
-        Assertions.assertEquals(1, greenMail.getReceivedMessages().length);
-        MimeMessage message = greenMail.getReceivedMessages()[0];
+        Assertions.assertEquals(1, mail.getReceivedMessages().length);
+        MimeMessage message = mail.getReceivedMessages()[0];
         String verificationUrl = getEmailLink(message);
 
         driver.manage().deleteAllCookies();
@@ -348,8 +348,8 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
         String username1 = KeycloakModelUtils.generateId();
         registerPage.registerWithoutPassword("firstName", "lastName", username1 + "@mail.com", username1);
         verifyEmailPage.assertCurrent();
-        Assertions.assertEquals(1, greenMail.getReceivedMessages().length);
-        MimeMessage message = greenMail.getReceivedMessages()[0];
+        Assertions.assertEquals(1, mail.getReceivedMessages().length);
+        MimeMessage message = mail.getReceivedMessages()[0];
         String verificationLink1 = getEmailLink(message);
 
         oauth.openLoginForm();
@@ -357,8 +357,8 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
         String username2 = KeycloakModelUtils.generateId();
         registerPage.registerWithoutPassword("firstName", "lastName", username2 + "@mail.com", username2);
         verifyEmailPage.assertCurrent();
-        Assertions.assertEquals(2, greenMail.getReceivedMessages().length);
-        message = greenMail.getReceivedMessages()[1];
+        Assertions.assertEquals(2, mail.getReceivedMessages().length);
+        message = mail.getReceivedMessages()[1];
         String verificationLink2 = getEmailLink(message);
         driver.navigate().to(verificationLink2.trim());
         updatePasswordPage.assertCurrent();
@@ -379,8 +379,8 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
         String username1 = KeycloakModelUtils.generateId();
         registerPage.registerWithoutPassword("firstName", "lastName", username1 + "@mail.com", username1);
         verifyEmailPage.assertCurrent();
-        Assertions.assertEquals(1, greenMail.getReceivedMessages().length);
-        MimeMessage message = greenMail.getReceivedMessages()[0];
+        Assertions.assertEquals(1, mail.getReceivedMessages().length);
+        MimeMessage message = mail.getReceivedMessages()[0];
         String verificationLink1 = getEmailLink(message);
 
         oauth.openLoginForm();
@@ -388,8 +388,8 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
         String username2 = KeycloakModelUtils.generateId();
         registerPage.registerWithoutPassword("firstName", "lastName", username2 + "@mail.com", username2);
         verifyEmailPage.assertCurrent();
-        Assertions.assertEquals(2, greenMail.getReceivedMessages().length);
-        message = greenMail.getReceivedMessages()[1];
+        Assertions.assertEquals(2, mail.getReceivedMessages().length);
+        message = mail.getReceivedMessages()[1];
         String verificationLink2 = getEmailLink(message);
 
         driver.navigate().to(verificationLink1.trim());
@@ -407,7 +407,7 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
 
         verifyEmailPage.assertCurrent();
 
-        Assertions.assertEquals(1, greenMail.getReceivedMessages().length);
+        Assertions.assertEquals(1, mail.getReceivedMessages().length);
 
         EventRepresentation sendEvent = events.expectRequiredAction(EventType.SEND_VERIFY_EMAIL)
           .detail("email", "test-user@localhost")
@@ -423,9 +423,9 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
           .detail("email", "test-user@localhost")
           .assertEvent();
 
-        Assertions.assertEquals(2, greenMail.getReceivedMessages().length);
+        Assertions.assertEquals(2, mail.getReceivedMessages().length);
 
-        MimeMessage message = greenMail.getLastReceivedMessage();
+        MimeMessage message = mail.getLastReceivedMessage();
         String verificationUrl = getEmailLink(message);
 
         driver.navigate().to(verificationUrl.trim());
@@ -449,18 +449,18 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
         loginPage.login("test-user@localhost", "password");
 
         verifyEmailPage.assertCurrent();
-        Assertions.assertEquals(1, greenMail.getReceivedMessages().length);
+        Assertions.assertEquals(1, mail.getReceivedMessages().length);
 
         verifyEmailPage.clickResendEmail();
         assertThat(verifyEmailPage.getFeedbackText(), Matchers.containsString("You must wait"));
-        Assertions.assertEquals(1, greenMail.getReceivedMessages().length);
+        Assertions.assertEquals(1, mail.getReceivedMessages().length);
 
         try {
-            setTimeOffset(40);
+            timeOffSet.set(40);
             verifyEmailPage.clickResendEmail();
-            Assertions.assertEquals(2, greenMail.getReceivedMessages().length);
+            Assertions.assertEquals(2, mail.getReceivedMessages().length);
         } finally {
-            setTimeOffset(0);
+            timeOffSet.set(0);
         }
 
     }
@@ -473,7 +473,7 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
         verifyEmailPage.assertCurrent();
         driver.navigate().refresh();
 
-        Assertions.assertEquals(1, greenMail.getReceivedMessages().length);
+        Assertions.assertEquals(1, mail.getReceivedMessages().length);
 
         EventRepresentation sendEvent = events.expectRequiredAction(EventType.SEND_VERIFY_EMAIL)
           .detail("email", "test-user@localhost")
@@ -490,9 +490,9 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
           .detail("email", "test-user@localhost")
           .assertEvent();
 
-        Assertions.assertEquals(2, greenMail.getReceivedMessages().length);
+        Assertions.assertEquals(2, mail.getReceivedMessages().length);
 
-        MimeMessage message = greenMail.getLastReceivedMessage();
+        MimeMessage message = mail.getLastReceivedMessage();
         String verificationUrl = getEmailLink(message);
 
         driver.navigate().to(verificationUrl.trim());
@@ -520,9 +520,9 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
         verifyEmailPage.clickResendEmail();
         verifyEmailPage.assertCurrent();
 
-        Assertions.assertEquals(2, greenMail.getReceivedMessages().length);
+        Assertions.assertEquals(2, mail.getReceivedMessages().length);
 
-        MimeMessage message1 = greenMail.getReceivedMessages()[0];
+        MimeMessage message1 = mail.getReceivedMessages()[0];
 
         String verificationUrl1 = getEmailLink(message1);
 
@@ -531,7 +531,7 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
         appPage.assertCurrent();
         Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-        MimeMessage message2 = greenMail.getReceivedMessages()[1];
+        MimeMessage message2 = mail.getReceivedMessages()[1];
 
         String verificationUrl2 = getEmailLink(message2);
 
@@ -555,9 +555,9 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
         verifyEmailPage.clickResendEmail();
         verifyEmailPage.assertCurrent();
 
-        Assertions.assertEquals(2, greenMail.getReceivedMessages().length);
+        Assertions.assertEquals(2, mail.getReceivedMessages().length);
 
-        MimeMessage message1 = greenMail.getReceivedMessages()[0];
+        MimeMessage message1 = mail.getReceivedMessages()[0];
 
         String verificationUrl1 = getEmailLink(message1);
 
@@ -565,7 +565,7 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
 
         AccountHelper.logout(managedRealm.admin(), "test-user@localhost");
 
-        MimeMessage message2 = greenMail.getReceivedMessages()[1];
+        MimeMessage message2 = mail.getReceivedMessages()[1];
 
         String verificationUrl2 = getEmailLink(message2);
 
@@ -582,11 +582,11 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
         clearCooldownForUser();
         verifyEmailPage.clickResendEmail();
         verifyEmailPage.assertCurrent();
-        Assertions.assertEquals(2, greenMail.getReceivedMessages().length);
-        MimeMessage message1 = greenMail.getReceivedMessages()[0];
+        Assertions.assertEquals(2, mail.getReceivedMessages().length);
+        MimeMessage message1 = mail.getReceivedMessages()[0];
         String verificationUrl1 = getEmailLink(message1);
 
-        MimeMessage message2 = greenMail.getReceivedMessages()[1];
+        MimeMessage message2 = mail.getReceivedMessages()[1];
         String verificationUrl2 = getEmailLink(message2);
         driver.navigate().to(verificationUrl2.trim());
         appPage.assertCurrent();
@@ -602,9 +602,9 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
 
         verifyEmailPage.assertCurrent();
 
-        Assertions.assertEquals(1, greenMail.getReceivedMessages().length);
+        Assertions.assertEquals(1, mail.getReceivedMessages().length);
 
-        MimeMessage message = greenMail.getLastReceivedMessage();
+        MimeMessage message = mail.getLastReceivedMessage();
 
         String verificationUrl = getEmailLink(message);
 
@@ -641,9 +641,9 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
 
         verifyEmailPage.assertCurrent();
 
-        Assertions.assertEquals(1, greenMail.getReceivedMessages().length);
+        Assertions.assertEquals(1, mail.getReceivedMessages().length);
 
-        MimeMessage message = greenMail.getLastReceivedMessage();
+        MimeMessage message = mail.getLastReceivedMessage();
 
         String verificationUrl = getEmailLink(message);
 
@@ -672,16 +672,16 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
 
         verifyEmailPage.assertCurrent();
 
-        Assertions.assertEquals(1, greenMail.getReceivedMessages().length);
+        Assertions.assertEquals(1, mail.getReceivedMessages().length);
 
-        MimeMessage message = greenMail.getLastReceivedMessage();
+        MimeMessage message = mail.getLastReceivedMessage();
 
         String verificationUrl = getEmailLink(message);
 
         events.poll();
 
         try {
-            setTimeOffset(360);
+            timeOffSet.set(360);
 
             driver.navigate().to(verificationUrl.trim());
 
@@ -697,7 +697,7 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
                     .detail(Details.ACTION, VerifyEmailActionToken.TOKEN_TYPE)
                     .assertEvent();
         } finally {
-            setTimeOffset(0);
+            timeOffSet.set(0);
         }
     }
 
@@ -714,16 +714,16 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
 
         verifyEmailPage.assertCurrent();
 
-        Assertions.assertEquals(1, greenMail.getReceivedMessages().length);
+        Assertions.assertEquals(1, mail.getReceivedMessages().length);
 
-        MimeMessage message = greenMail.getLastReceivedMessage();
+        MimeMessage message = mail.getLastReceivedMessage();
 
         String verificationUrl = getEmailLink(message);
 
         events.poll();
 
         try {
-            setTimeOffset(70);
+            timeOffSet.set(70);
 
             driver.navigate().to(verificationUrl.trim());
 
@@ -739,7 +739,7 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
                     .detail(Details.ACTION, VerifyEmailActionToken.TOKEN_TYPE)
                     .assertEvent();
         } finally {
-            setTimeOffset(0);
+            timeOffSet.set(0);
             realmRep.setAttributes(originalAttributes);
             managedRealm.admin().update(realmRep);
         }
@@ -759,16 +759,16 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
 
         verifyEmailPage.assertCurrent();
 
-        Assertions.assertEquals(1, greenMail.getReceivedMessages().length);
+        Assertions.assertEquals(1, mail.getReceivedMessages().length);
 
-        MimeMessage message = greenMail.getLastReceivedMessage();
+        MimeMessage message = mail.getLastReceivedMessage();
 
         String verificationUrl = getEmailLink(message);
 
         events.poll();
 
         try {
-            setTimeOffset(70);
+            timeOffSet.set(70);
 
             driver.navigate().to(verificationUrl.trim());
 
@@ -784,7 +784,7 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
                     .detail(Details.ACTION, VerifyEmailActionToken.TOKEN_TYPE)
                     .assertEvent();
         } finally {
-            setTimeOffset(0);
+            timeOffSet.set(0);
             realmRep.setAttributes(originalAttributes);
             managedRealm.admin().update(realmRep);
         }
@@ -797,16 +797,16 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
 
         verifyEmailPage.assertCurrent();
 
-        Assertions.assertEquals(1, greenMail.getReceivedMessages().length);
+        Assertions.assertEquals(1, mail.getReceivedMessages().length);
 
-        MimeMessage message = greenMail.getLastReceivedMessage();
+        MimeMessage message = mail.getLastReceivedMessage();
 
         String verificationUrl = getEmailLink(message);
 
         events.poll();
 
         try {
-            setTimeOffset(3600);
+            timeOffSet.set(3600);
 
             driver.manage().deleteAllCookies();
 
@@ -824,7 +824,7 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
                     .detail(Details.ACTION, VerifyEmailActionToken.TOKEN_TYPE)
                     .assertEvent();
         } finally {
-            setTimeOffset(0);
+            timeOffSet.set(0);
         }
     }
 
@@ -841,8 +841,8 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
           .update()) {
             managedRealm.admin().users().get(testUserId).executeActionsEmail(List.of(RequiredAction.VERIFY_EMAIL.name()));
 
-            Assertions.assertEquals(1, greenMail.getReceivedMessages().length);
-            MimeMessage message = greenMail.getLastReceivedMessage();
+            Assertions.assertEquals(1, mail.getReceivedMessages().length);
+            MimeMessage message = mail.getLastReceivedMessage();
 
             String verificationUrl = getEmailLink(message);
 
@@ -869,9 +869,9 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
 
         verifyEmailPage.assertCurrent();
 
-        Assertions.assertEquals(1, greenMail.getReceivedMessages().length);
+        Assertions.assertEquals(1, mail.getReceivedMessages().length);
 
-        MimeMessage message = greenMail.getLastReceivedMessage();
+        MimeMessage message = mail.getLastReceivedMessage();
 
         String verificationUrl = getEmailLink(message);
 
@@ -908,8 +908,8 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
 
             verifyEmailPage.assertCurrent();
 
-            Assertions.assertEquals(1, greenMail.getReceivedMessages().length);
-            MimeMessage message = greenMail.getLastReceivedMessage();
+            Assertions.assertEquals(1, mail.getReceivedMessages().length);
+            MimeMessage message = mail.getLastReceivedMessage();
 
             String verificationUrl = getEmailLink(message);
 
@@ -927,8 +927,8 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
                 .update()) {
             managedRealm.admin().users().get(testUserId).executeActionsEmail(List.of(RequiredAction.VERIFY_EMAIL.name()));
 
-            Assertions.assertEquals(1, greenMail.getReceivedMessages().length);
-            MimeMessage message = greenMail.getLastReceivedMessage();
+            Assertions.assertEquals(1, mail.getReceivedMessages().length);
+            MimeMessage message = mail.getLastReceivedMessage();
 
             String verificationUrl = getEmailLink(message);
 
@@ -952,8 +952,8 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
                 .update()) {
             managedRealm.admin().users().get(testUserId).executeActionsEmail(List.of(RequiredAction.VERIFY_EMAIL.name()));
 
-            Assertions.assertEquals(1, greenMail.getReceivedMessages().length);
-            MimeMessage message = greenMail.getLastReceivedMessage();
+            Assertions.assertEquals(1, mail.getReceivedMessages().length);
+            MimeMessage message = mail.getLastReceivedMessage();
 
             String verificationUrl = getEmailLink(message);
 
@@ -1028,8 +1028,8 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
                 verifyEmailPage.assertCurrent();
 
                 // Browser 2 [still logged in]: Click the email verification link
-                Assertions.assertEquals(1, greenMail.getReceivedMessages().length);
-                MimeMessage message = greenMail.getLastReceivedMessage();
+                Assertions.assertEquals(1, mail.getReceivedMessages().length);
+                MimeMessage message = mail.getLastReceivedMessage();
 
                 String verificationUrl = getEmailLink(message);
 
@@ -1067,8 +1067,8 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
         oauth.openLoginForm();
         verifyEmailPage.assertCurrent();
 
-        Assertions.assertEquals(1, greenMail.getReceivedMessages().length);
-        MimeMessage message = greenMail.getLastReceivedMessage();
+        Assertions.assertEquals(1, mail.getReceivedMessages().length);
+        MimeMessage message = mail.getLastReceivedMessage();
 
         String verificationUrl = getEmailLink(message);
 
@@ -1108,8 +1108,8 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
 
         verifyEmailPage.assertCurrent();
 
-        Assertions.assertEquals(1, greenMail.getReceivedMessages().length);
-        MimeMessage message = greenMail.getLastReceivedMessage();
+        Assertions.assertEquals(1, mail.getReceivedMessages().length);
+        MimeMessage message = mail.getLastReceivedMessage();
 
         String verificationUrl = getEmailLink(message);
 
@@ -1140,8 +1140,8 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
         oauth.openLoginForm();
         verifyEmailPage.assertCurrent();
 
-        Assertions.assertEquals(1, greenMail.getReceivedMessages().length);
-        MimeMessage message = greenMail.getLastReceivedMessage();
+        Assertions.assertEquals(1, mail.getReceivedMessages().length);
+        MimeMessage message = mail.getLastReceivedMessage();
 
         String verificationUrl = getEmailLink(message);
 
@@ -1184,21 +1184,21 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
 
         verifyEmailPage.assertCurrent();
 
-        Assertions.assertEquals(1, greenMail.getReceivedMessages().length);
+        Assertions.assertEquals(1, mail.getReceivedMessages().length);
 
-        MimeMessage message = greenMail.getLastReceivedMessage();
+        MimeMessage message = mail.getLastReceivedMessage();
 
         String verificationUrl = getEmailLink(message);
 
         try {
-            setTimeOffset(360);
+            timeOffSet.set(360);
 
             driver.navigate().to(verificationUrl.trim());
 
             loginPage.assertCurrent();
             assertEquals("Action expired. Please start again.", loginPage.getError());
         } finally {
-            setTimeOffset(0);
+            timeOffSet.set(0);
         }
     }
 
@@ -1210,9 +1210,9 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
 
         verifyEmailPage.assertCurrent();
 
-        assertEquals(1, greenMail.getReceivedMessages().length);
+        assertEquals(1, mail.getReceivedMessages().length);
 
-        MimeMessage message = greenMail.getReceivedMessages()[0];
+        MimeMessage message = mail.getReceivedMessages()[0];
         String verificationUrl = getEmailLink(message);
 
         UserResource user = managedRealm.admin().users().get(testUserId);
@@ -1230,8 +1230,8 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
         // Send email with required action
         managedRealm.admin().users().get(testUserId).executeActionsEmail(List.of(RequiredAction.UPDATE_EMAIL.name()));
 
-        Assertions.assertEquals(1, greenMail.getReceivedMessages().length);
-        MimeMessage message = greenMail.getLastReceivedMessage();
+        Assertions.assertEquals(1, mail.getReceivedMessages().length);
+        MimeMessage message = mail.getLastReceivedMessage();
 
         MailUtils.EmailBody body = MailUtils.getBody(message);
         assertThat(body, notNullValue());
@@ -1277,9 +1277,9 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
                 .assertEvent();
 
         // verify email is presented now
-        Assertions.assertEquals(1, greenMail.getReceivedMessages().length);
+        Assertions.assertEquals(1, mail.getReceivedMessages().length);
 
-        final MimeMessage message = greenMail.getLastReceivedMessage();
+        final MimeMessage message = mail.getLastReceivedMessage();
 
         final String verificationUrl = getEmailLink(message);
 

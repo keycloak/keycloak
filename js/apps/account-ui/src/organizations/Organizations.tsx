@@ -17,7 +17,7 @@ export const Organizations = () => {
   const { t } = useTranslation();
   const context = useEnvironment<AccountEnvironment>();
 
-  const [userOrgs, setUserOrgs] = useState<OrganizationRepresentation[]>([]);
+  const [userOrgs, setUserOrgs] = useState<OrganizationRepresentation[]>();
 
   usePromise(
     (signal) => getUserOrganizations({ signal, context }),

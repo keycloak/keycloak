@@ -36,7 +36,7 @@ import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginPasswordResetPage;
 import org.keycloak.testsuite.pages.LoginUsernameOnlyPage;
 import org.keycloak.testsuite.util.FlowUtil;
-import org.keycloak.testsuite.util.GreenMailRule;
+import org.keycloak.testsuite.util.MailServer;
 
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
@@ -61,7 +61,7 @@ public class AltSubflowForCredentialResetTest extends AbstractTestRealmKeycloakT
     public AssertEvents events = new AssertEvents(this);
 
     @Rule
-    public GreenMailRule greenMailRule = new GreenMailRule();
+    public MailServer mailRule = new MailServer();
 
     @Page
     LoginPage loginPage;

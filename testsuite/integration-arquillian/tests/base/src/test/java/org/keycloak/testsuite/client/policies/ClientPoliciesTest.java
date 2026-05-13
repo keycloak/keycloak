@@ -1105,7 +1105,7 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         assertThat(updated.getClientSecretExpiresAt(), equalTo(firstSecretExpiration));
 
         //force secret expiration
-        setTimeOffset(61);
+        timeOffSet.set(61);
 
         updateClientDynamically(clientId, (OIDCClientRepresentation clientRep) -> clientRep.setClientName(generateSuffixedName(CLIENT_NAME)));
 
@@ -1123,7 +1123,7 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         assertLoginAndLogoutStatus(clientId, firstSecret, Response.Status.OK);
 
         //force rotated secret expiration
-        setTimeOffset(100);
+        timeOffSet.set(100);
 
         //login with updated secret (remains valid)
         assertLoginAndLogoutStatus(clientId, updatedSecret, Response.Status.OK);
@@ -1156,7 +1156,7 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         assertThat(firstSecretExpiration, is(greaterThan(Time.currentTime())));
 
         //Enter in Remaining expiration window
-        setTimeOffset(41);
+        timeOffSet.set(41);
 
         //update client to force rotation (due to remaining expiration)
         updateClientDynamically(clientId, (OIDCClientRepresentation clientRep) -> clientRep.setContacts(Collections.singletonList("keycloak@keycloak.org")));

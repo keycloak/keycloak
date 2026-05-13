@@ -63,8 +63,8 @@ import org.keycloak.testsuite.pages.RegisterPage;
 import org.keycloak.testsuite.pages.VerifyEmailPage;
 import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.util.BrowserTabUtil;
-import org.keycloak.testsuite.util.GreenMailRule;
 import org.keycloak.testsuite.util.InfinispanTestTimeServiceRule;
+import org.keycloak.testsuite.util.MailServer;
 import org.keycloak.testsuite.util.WaitUtils;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
@@ -125,7 +125,7 @@ public class MultipleTabsLoginTest extends AbstractChangeImportedUserPasswordsTe
     }
 
     @Rule
-    public GreenMailRule greenMail = new GreenMailRule();
+    public MailServer mail = new MailServer();
 
     @Rule
     public InfinispanTestTimeServiceRule ispnTestTimeService = new InfinispanTestTimeServiceRule(this);
@@ -223,7 +223,7 @@ public class MultipleTabsLoginTest extends AbstractChangeImportedUserPasswordsTe
         loginPage.assertCurrent();
 
         // Wait until authentication session expires
-        setTimeOffset(7200000);
+        timeOffSet.set(7200000);
 
         loginPage.login("login-test", getPassword("login-test"));
         loginPage.assertCurrent();
@@ -268,7 +268,7 @@ public class MultipleTabsLoginTest extends AbstractChangeImportedUserPasswordsTe
         loginPage.assertCurrent();
         getLogger().info("URL in tab2: " + driver.getCurrentUrl());
         // Wait until authentication session expires
-        setTimeOffset(7200000);
+        timeOffSet.set(7200000);
 
         //triggers the postponed function in authChecker.js to check if the auth session cookie has changed
         WaitUtils.pause(2000);
@@ -360,7 +360,7 @@ public class MultipleTabsLoginTest extends AbstractChangeImportedUserPasswordsTe
             getLogger().info("URL in tab2: " + driver.getCurrentUrl());
 
             // Wait until authentication session expires
-            setTimeOffset(7200000);
+            timeOffSet.set(7200000);
 
             //triggers the postponed function in authChecker.js to check if the auth session cookie has changed
             WaitUtils.pause(2000);
@@ -399,7 +399,7 @@ public class MultipleTabsLoginTest extends AbstractChangeImportedUserPasswordsTe
             getLogger().info("URL in tab2: " + driver.getCurrentUrl());
 
             // Wait until authentication session expires
-            setTimeOffset(7200000);
+            timeOffSet.set(7200000);
 
             //triggers the postponed function in authChecker.js to check if the auth session cookie has changed
             WaitUtils.pause(2000);
@@ -775,7 +775,7 @@ public class MultipleTabsLoginTest extends AbstractChangeImportedUserPasswordsTe
             getLogger().info("URL in tab2: " + driver.getCurrentUrl());
 
             // Wait until authentication session expires
-            setTimeOffset(7200000);
+            timeOffSet.set(7200000);
 
             //triggers the postponed function in authChecker.js to check if the auth session cookie has changed
             WaitUtils.pause(2000);
@@ -823,7 +823,7 @@ public class MultipleTabsLoginTest extends AbstractChangeImportedUserPasswordsTe
             loginPage.assertCurrent();
             getLogger().info("URL in tab2: " + driver.getCurrentUrl());
             // Wait until authentication session expires
-            setTimeOffset(7200000);
+            timeOffSet.set(7200000);
 
             //triggers the postponed function in authChecker.js to check if the auth session cookie has changed
             WaitUtils.pause(2000);
@@ -875,7 +875,7 @@ public class MultipleTabsLoginTest extends AbstractChangeImportedUserPasswordsTe
             getLogger().info("URL in tab2: " + driver.getCurrentUrl());
 
             // Wait until authentication session expires
-            setTimeOffset(7200000);
+            timeOffSet.set(7200000);
 
             //triggers the postponed function in authChecker.js to check if the auth session cookie has changed
             WaitUtils.pause(2000);

@@ -123,6 +123,7 @@ import static org.keycloak.testsuite.oid4vc.issuance.signing.OID4VCSdJwtIssuingE
  */
 @EnableFeature(value = Profile.Feature.OID4VC_VCI, skipRestart = true)
 @EnableFeature(value = Profile.Feature.OID4VC_VCI_PREAUTH_CODE, skipRestart = true)
+@EnableFeature(value = Profile.Feature.OID4VC_VCI_REST_CREDENTIAL_OFFER, skipRestart = true)
 public abstract class OID4VCTest extends AbstractTestRealmKeycloakTest {
 
 	private static final Logger LOGGER = Logger.getLogger(OID4VCTest.class);
@@ -294,15 +295,6 @@ public abstract class OID4VCTest extends AbstractTestRealmKeycloakTest {
 				)
 		));
 		return componentExportRepresentation;
-	}
-
-
-	protected ClientRepresentation getTestClient(String clientId) {
-		ClientRepresentation clientRepresentation = new ClientRepresentation();
-		clientRepresentation.setClientId(clientId);
-		clientRepresentation.setProtocol(OID4VCLoginProtocolFactory.PROTOCOL_ID);
-		clientRepresentation.setEnabled(true);
-		return clientRepresentation;
 	}
 
 	protected ComponentExportRepresentation getEdDSAKeyProvider() {

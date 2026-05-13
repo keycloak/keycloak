@@ -19,6 +19,14 @@ The `manage-realm` role continues to implicitly grant full organization manageme
 
 For per-organization granularity, organizations are now a first-class resource type in Fine-Grained Admin Permissions. Administrators can create permissions to control which specific organizations a delegated administrator can view or manage — for example, granting access to manage one organization without giving access to all organizations in the realm. When Fine-Grained Admin Permissions is enabled, organization member queries also respect user-level permissions, returning only members the administrator is permitted to view.
 
+== Passkey authenticator icons in login and account console
+
+The login page and account console now display vendor-specific icons for registered passkeys and security keys.
+When a user wants to authenticate with Passkeys, {project_name} shows the authenticator's icon alongside its label, making it easier to identify the correct device.
+
+As part of this change, the passkey authentication page in the login theme and the signing-in page in the account console were updated.
+If you use a custom theme that overrides these pages, verify that your customizations work as expected with this release.
+
 == Realm search now matches by display name
 
 When searching for realms in the admin console, the search now also matches against the realm's display name in addition to the realm name.
@@ -27,3 +35,14 @@ As part of this change, the `displayName` attribute has been promoted from a rea
 
 Before migrating, check the current value of the `displayName` attribute for your realms. If the current value of `displayName` attribute
 exceeds 255 characters, it will be truncated during migration.
+
+= Configuring and Running
+
+== Deprecation of SHA1 hashing functions in {project_name} 27
+
+NIST is going to fully https://www.nist.gov/news-events/news/2022/12/nist-retires-sha-1-cryptographic-algorithm[retire] SHA1 hashing function in 2030. {project_name} will remove all uses of SHA1 in version 27.
+
+[NOTE]
+====
+Consider SHA1 hashing retired in all uses within {project_name}. Users should configure other secure hashing functions as soon as possible (for example SHA2, SHA3).
+====

@@ -539,7 +539,7 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
         try {
             // Setting offset to more than one day to force password update
             // elapsedTime > timeToExpire
-            setTimeOffset(86405);
+            timeOffSet.set(86405);
 
             oauth.openLoginForm();
 
@@ -550,7 +550,7 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
             final String newPwd = generatePassword("login-test");
             updatePasswordPage.changePassword(newPwd, newPwd);
 
-            setTimeOffset(0);
+            timeOffSet.set(0);
 
             events.expectRequiredAction(EventType.UPDATE_PASSWORD).detail(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE).user(userId).detail(Details.USERNAME, "login-test").assertEvent();
             events.expectRequiredAction(EventType.UPDATE_CREDENTIAL).detail(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE).user(userId).detail(Details.USERNAME, "login-test").assertEvent();
@@ -573,7 +573,7 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
         try {
             // Setting offset to less than one day to avoid forced password update
             // elapsedTime < timeToExpire
-            setTimeOffset(86205);
+            timeOffSet.set(86205);
 
             oauth.openLoginForm();
 
@@ -582,7 +582,7 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
             Assertions.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
             Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
 
-            setTimeOffset(0);
+            timeOffSet.set(0);
 
             EventAssertion.expectLoginSuccess(events.poll()).userId(userId).details(Details.USERNAME, "login-test");
         } finally {
@@ -594,11 +594,11 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
     public void loginNoTimeoutWithLongWait() {
         oauth.openLoginForm();
 
-        setTimeOffset(1700);
+        timeOffSet.set(1700);
 
         loginPage.login("login-test", getPassword("login-test"));
 
-        setTimeOffset(0);
+        timeOffSet.set(0);
 
         EventAssertion.expectLoginSuccess(events.poll()).userId(userId).details(Details.USERNAME, "login-test");
     }
@@ -817,13 +817,13 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
     public void loginExpiredCode() {
         oauth.openLoginForm();
         // authSession expired and removed from the storage
-        setTimeOffset(5000);
+        timeOffSet.set(5000);
 
         loginPage.login("login@test.com", getPassword("login-test"));
         loginPage.assertCurrent();
 
         Assertions.assertEquals("Your login attempt timed out. Login will start from the beginning.", loginPage.getError());
-        setTimeOffset(0);
+        timeOffSet.set(0);
 
         EventAssertion.assertError(events.poll()).type(EventType.LOGIN_ERROR).userId(null).sessionId(null).error(Errors.EXPIRED_CODE);
     }
@@ -832,7 +832,7 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
     @Test
     public void loginExpiredCodeWithExplicitRemoveExpired() {
         oauth.openLoginForm();
-        setTimeOffset(5000);
+        timeOffSet.set(5000);
 
         loginPage.login("login@test.com", getPassword("login-test"));
 
@@ -840,7 +840,7 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
 
         Assertions.assertEquals("Your login attempt timed out. Login will start from the beginning.", loginPage.getError());
 
-        setTimeOffset(0);
+        timeOffSet.set(0);
 
         EventAssertion.assertError(events.poll()).type(EventType.LOGIN_ERROR).userId(null).sessionId(null).error(Errors.EXPIRED_CODE)
                 .details(Details.RESTART_AFTER_TIMEOUT, "true");
@@ -860,7 +860,7 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
             EventAssertion.expectLoginSuccess(events.poll()).userId(userId);
 
             // wait for a timeout
-            setTimeOffset(6);
+            timeOffSet.set(6);
 
             oauth.openLoginForm();
             loginPage.login("login@test.com", getPassword("login-test"));
@@ -957,7 +957,7 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
     public void openLoginFormAfterExpiredCode() throws Exception {
         oauth.openLoginForm();
 
-        setTimeOffset(5000);
+        timeOffSet.set(5000);
 
         oauth.openLoginForm();
 
@@ -987,7 +987,7 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
         Assertions.assertEquals((Integer) 1, getTestingClient().testing().getAuthenticationSessionTabsCount("test", authSessionId));
 
         // authentication session should be expired after 1 minute
-        setTimeOffset(300);
+        timeOffSet.set(300);
         Assertions.assertEquals((Integer) 0, getTestingClient().testing().getAuthenticationSessionTabsCount("test", authSessionId));
     }
 
@@ -1013,7 +1013,7 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
             appPage.assertCurrent();
 
             // expire idle timeout using the timeout window.
-            setTimeOffset(2 + (ProfileAssume.isFeatureEnabled(Profile.Feature.PERSISTENT_USER_SESSIONS) ? 0 : SessionTimeoutHelper.IDLE_TIMEOUT_WINDOW_SECONDS));
+            timeOffSet.set(2 + (ProfileAssume.isFeatureEnabled(Profile.Feature.PERSISTENT_USER_SESSIONS) ? 0 : SessionTimeoutHelper.IDLE_TIMEOUT_WINDOW_SECONDS));
 
             // trying to open the account page with an expired idle timeout should redirect back to the login page.
             oauth.openLoginForm();
@@ -1041,7 +1041,7 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
             appPage.assertCurrent();
 
             // expire the max lifespan.
-            setTimeOffset(2);
+            timeOffSet.set(2);
 
             // trying to open the account page with an expired lifespan should redirect back to the login page.
             oauth.openLoginForm();

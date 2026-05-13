@@ -234,7 +234,7 @@ export default function NewClientPolicyCondition() {
                     <SelectOption
                       data-testid={condition.id}
                       selected={condition.id === field.value}
-                      description={condition?.helpText}
+                      description={condition.helpText}
                       key={condition.id}
                       value={condition}
                     >

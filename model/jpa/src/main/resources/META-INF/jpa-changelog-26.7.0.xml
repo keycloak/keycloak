@@ -19,8 +19,8 @@
 
     <changeSet author="keycloak" id="26.7.0-jdbcping-timestamp">
         <addColumn tableName="JGROUPS_PING">
-            <column name="LAST_UPDATE" type="BIGINT" />
-            <column name="COORDINATED_BY" type="VARCHAR(200)" />
+            <column name="last_update" type="BIGINT" />
+            <column name="coordinated_by" type="VARCHAR(200)" />
         </addColumn>
     </changeSet>
 
@@ -64,6 +64,140 @@
         <addPrimaryKey columnNames="ID" constraintName="CONSTRAINT_VCRED_PM" tableName="USER_VER_CREDENTIAL"/>
         <addForeignKeyConstraint baseColumnNames="USER_ID" baseTableName="USER_VER_CREDENTIAL" constraintName="FK_VCRED_USER" referencedColumnNames="ID" referencedTableName="USER_ENTITY"/>
         <addUniqueConstraint columnNames="CREDENTIAL_SCOPE_NAME, USER_ID" constraintName="UK_KKUWUVD67ONTGSUGOGM8UEWRE" tableName="USER_VER_CREDENTIAL"/>
+    </changeSet>
+
+    <changeSet author="keycloak" id="26.7.0-outbox">
+
+    <!--
+        Generic outbox / event-queue infrastructure.
+
+        Backs org.keycloak.events.outbox.OutboxStore and the OutboxDrainerTask
+        / OutboxCleanupTask machinery. The ENTRY_KIND column is a plain
+        string discriminator scoping the row to a subsystem ("ssf",
+        "webhook", "audit", ...) so a single shared table serves
+        multiple consumers without cross-talk. Every drainer query
+        filters on ENTRY_KIND first; the indexes below are ordered to
+        keep that lookup index-only.
+
+        Two-axis classification on every row:
+          - ENTRY_KIND : which subsystem owns this row (broad domain).
+          - ENTRY_TYPE : the concrete type within that domain (for SSF
+                         the SET event_type; for webhooks the hook
+                         event name; etc.).
+
+        Columns intentionally generic:
+          - PAYLOAD      : opaque text body (signed JWS, JSON envelope,
+                           binary as base64). Consumers pick their own
+                           wire shape; the store treats it as bytes.
+          - METADATA     : optional JSON for kind-specific extensions
+                           that don't justify a column (e.g. webhook
+                           signing key id).
+          - OWNER_ID     : the kind's primary scoping key (clientId for
+                           SSF receivers, hookId for webhooks). Used by
+                           per-owner stats / delete / cleanup endpoints.
+          - CONTAINER_ID : optional sub-grouping within (kind, owner).
+                           For SSF this is the receiver's streamId so
+                           stream-scoped operations (events_requested
+                           filter, stream-disable purge) stay
+                           SQL-filterable rather than hidden in JSON.
+                           Nullable — kinds that don't need a
+                           sub-grouping (single channel per owner)
+                           leave it unset.
+
+        See:
+          - org.keycloak.models.jpa.entities.OutboxEntryEntity
+          - org.keycloak.events.outbox.OutboxStore
+          - org.keycloak.events.outbox.OutboxDrainerTask
+    -->
+
+        <createTable tableName="OUTBOX_ENTRY">
+            <column name="ID" type="VARCHAR(36)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="PK_OUTBOX_ENTRY"/>
+            </column>
+            <column name="ENTRY_KIND" type="VARCHAR(64)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="REALM_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="OWNER_ID" type="VARCHAR(64)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="CONTAINER_ID" type="VARCHAR(64)"/>
+            <column name="CORRELATION_ID" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ENTRY_TYPE" type="VARCHAR(256)">
+                <constraints nullable="false"/>
+            </column>
+            <!--
+               NCLOB rather than VARCHAR: payloads can be arbitrarily
+               large (signed JWS, JSON envelopes with embedded data).
+            -->
+            <column name="PAYLOAD" type="NCLOB">
+                <constraints nullable="false"/>
+            </column>
+            <column name="METADATA" type="NCLOB"/>
+            <column name="STATUS" type="VARCHAR(16)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ATTEMPTS" type="INT" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="NEXT_ATTEMPT_AT" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="LAST_ERROR" type="VARCHAR(2048)"/>
+            <column name="CREATED_AT" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="DELIVERED_AT" type="TIMESTAMP"/>
+        </createTable>
+
+        <!--
+            Dedup: one outstanding row per (kind, owner, correlation).
+            Two consumers using the same correlation id (e.g. jti
+            reused across a webhook and an SSF stream) don't collide
+            because the (kind) prefix scopes them apart.
+        -->
+        <addUniqueConstraint
+                tableName="OUTBOX_ENTRY"
+                columnNames="ENTRY_KIND, OWNER_ID, CORRELATION_ID"
+                constraintName="UC_OUTBOX_KIND_OWNER_CORRELATION"/>
+
+        <!-- Drainer hot path: WHERE entry_kind=? AND status=? AND next_attempt_at<=? -->
+        <createIndex tableName="OUTBOX_ENTRY" indexName="IDX_OUTBOX_DRAIN">
+            <column name="ENTRY_KIND"/>
+            <column name="STATUS"/>
+            <column name="NEXT_ATTEMPT_AT"/>
+        </createIndex>
+
+        <!-- Realm-scoped reads / cascade deletes on RealmRemovedEvent. -->
+        <createIndex tableName="OUTBOX_ENTRY" indexName="IDX_OUTBOX_REALM">
+            <column name="ENTRY_KIND"/>
+            <column name="REALM_ID"/>
+            <column name="STATUS"/>
+        </createIndex>
+
+        <!-- Per-owner reads (admin stats / delete / cascade on owner removal). -->
+        <createIndex tableName="OUTBOX_ENTRY" indexName="IDX_OUTBOX_OWNER">
+            <column name="ENTRY_KIND"/>
+            <column name="OWNER_ID"/>
+            <column name="STATUS"/>
+        </createIndex>
+
+        <!--
+            Container-scoped reads. Used when a row's container has a
+            lifecycle event of its own (e.g. SSF stream disabled,
+            stream events_requested narrowed) and we need to bulk-act
+            on its rows without scanning the whole owner.
+        -->
+        <createIndex tableName="OUTBOX_ENTRY" indexName="IDX_OUTBOX_CONTAINER">
+            <column name="ENTRY_KIND"/>
+            <column name="OWNER_ID"/>
+            <column name="CONTAINER_ID"/>
+        </createIndex>
+
     </changeSet>
 
 </databaseChangeLog>

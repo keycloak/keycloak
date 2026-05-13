@@ -38,6 +38,7 @@ import org.keycloak.models.utils.PostMigrationEvent;
 import org.keycloak.services.DefaultKeycloakSessionFactory;
 import org.keycloak.services.managers.ApplianceBootstrap;
 
+import io.quarkus.runtime.Quarkus;
 import org.jboss.logging.Logger;
 
 /**
@@ -110,6 +111,12 @@ public abstract class KeycloakApplication extends Application {
         var startTime = System.nanoTime();
 
         keycloakSessionFactory.init();
+
+        if ("exit_before_bootstrap".equals(System.getProperty("kc.launch.mode"))) {
+            Quarkus.asyncExit(0);
+            return;
+        }
+
         setTransactionTimeout(keycloakSessionFactory);
         var exportImportManager = KeycloakModelUtils.runJobInTransactionWithResult(keycloakSessionFactory, session -> {
             DBLockManager dbLockManager = new DBLockManager(session);

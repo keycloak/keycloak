@@ -17,7 +17,6 @@
 
 package org.keycloak.it.junit5.extension;
 
-import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.util.Arrays;
@@ -34,8 +33,8 @@ import org.keycloak.quarkus.runtime.cli.command.DryRunMixin;
 import org.keycloak.quarkus.runtime.cli.command.Start;
 import org.keycloak.quarkus.runtime.cli.command.StartDev;
 
-import io.quarkus.deployment.util.FileUtil;
 import io.quarkus.runtime.configuration.QuarkusConfigFactory;
+import io.quarkus.test.common.TestResourceManager;
 import io.quarkus.test.junit.QuarkusMainTestExtension;
 import io.quarkus.test.junit.main.Launch;
 import io.quarkus.test.junit.main.LaunchResult;
@@ -46,9 +45,8 @@ import org.junit.jupiter.api.extension.ReflectiveInvocationContext;
 
 import static java.lang.System.setProperty;
 
-import static org.keycloak.it.junit5.extension.DistributionTest.ReInstall.BEFORE_ALL;
 import static org.keycloak.it.junit5.extension.DistributionType.RAW;
-import static org.keycloak.quarkus.runtime.Environment.forceTestLaunchMode;
+import static org.keycloak.quarkus.runtime.Environment.forceExitAfterStartLaunchMode;
 
 public class CLITestExtension extends QuarkusMainTestExtension {
 
@@ -56,7 +54,8 @@ public class CLITestExtension extends QuarkusMainTestExtension {
     private DatabaseContainer databaseContainer;
     private InfinispanContainer infinispanContainer;
     private CLIResult result;
-
+    private boolean beforeAll;
+    
     @Override
     public void beforeEach(ExtensionContext context) throws Exception {
         DistributionTest distConfig = getDistributionConfig(context);
@@ -73,6 +72,15 @@ public class CLITestExtension extends QuarkusMainTestExtension {
                     }
                 }
             });
+        }
+        
+        if (isRaw() && distConfig != null && dist != null) {
+            try {
+                dist.unwrap(RawKeycloakDistribution.class).reset(beforeAll);
+                beforeAll = false;
+            } catch (Exception cause) {
+                throw new RuntimeException("Failed to partially reset", cause);
+            }
         }
 
         configureDatabase(context);
@@ -97,6 +105,10 @@ public class CLITestExtension extends QuarkusMainTestExtension {
             if (dryRun && isRaw()) {
                 dist.setEnvVar(DryRunMixin.KC_DRY_RUN_ENV, "true");
                 dist.setEnvVar(DryRunMixin.KC_DRY_RUN_BUILD_ENV, "true");
+            }
+            if (isRaw() && (context.getRequiredTestClass().getAnnotation(SkipRealmBootstrap.class) != null
+                    || context.getRequiredTestMethod().getAnnotation(SkipRealmBootstrap.class) != null)) {
+                dist.unwrap(RawKeycloakDistribution.class).setLaunchMode(Environment.LAUNCH_MODE_EXIT_BEFORE_BOOTSTRAP);
             }
 
             if (launch != null) {
@@ -171,9 +183,8 @@ public class CLITestExtension extends QuarkusMainTestExtension {
             onKeepServerAlive(context.getRequiredTestMethod().getAnnotation(KeepServerAlive.class), false);
             dist.stop();
             dist.clearEnv();
-
-            if (distConfig != null && DistributionTest.ReInstall.BEFORE_TEST.equals(distConfig.reInstall())) {
-                dist = null;
+            if (isRaw()) {
+                dist.unwrap(RawKeycloakDistribution.class).setLaunchMode(Environment.LAUNCH_MODE_EXIT_AFTER_START);
             }
         }
 
@@ -191,32 +202,36 @@ public class CLITestExtension extends QuarkusMainTestExtension {
             infinispanContainer.stop();
         }
         result = null;
-        if (isRaw()) {
-            if (distConfig != null && !DistributionTest.ReInstall.NEVER.equals(distConfig.reInstall()) && dist != null) {
-                try {
-                    FileUtil.deleteDirectory(getDistPath().getDistRootPath().resolve("conf"));
-                    getDistPath().getDistRootPath().resolve("conf").toFile().mkdirs();
-                    FileUtil.deleteDirectory(getDistPath().getDistRootPath().resolve("providers"));
-                    getDistPath().getDistRootPath().resolve("providers").toFile().mkdirs();
-                    FileUtil.deleteDirectory(getDistPath().getDistRootPath().resolve("data"));
-                    getDistPath().getDistRootPath().resolve("data").toFile().mkdirs();
-                } catch (IOException e) {
-                    throw new RuntimeException("Failed to delete conf directory");
-                }
-            }
-        }
     }
 
     @Override
     public void beforeAll(ExtensionContext context) throws Exception {
+        // taken from QuarkusUnitTest - QuarkusMainTestExtension does not do resource management
+        ExtensionContext.Store store = context.getRoot().getStore(ExtensionContext.Namespace.GLOBAL);
+        TestResourceManager testResourceManager = (TestResourceManager) store.get(TestResourceManager.class.getName());
+        if (testResourceManager == null) {
+            testResourceManager = new TestResourceManager(context.getRequiredTestClass());
+            testResourceManager.init(null);
+            testResourceManager.start();
+            TestResourceManager tm = testResourceManager;
+            store.put(TestResourceManager.class.getName(), testResourceManager);
+            store.put(TestResourceManager.CLOSEABLE_NAME, new AutoCloseable() {
+
+                @Override
+                public void close() throws Exception {
+                    tm.close();
+                }
+            });
+        }
+        
+        beforeAll = true;
+        
         DistributionTest distConfig = getDistributionConfig(context);
 
         if (distConfig != null) {
-            if (BEFORE_ALL.equals(distConfig.reInstall())) {
-                dist = createDistribution(distConfig, getStoreConfig(context), getDatabaseConfig(context));
-            }
+            dist = createDistribution(distConfig, getStoreConfig(context), getDatabaseConfig(context));
         } else {
-            forceTestLaunchMode();
+            forceExitAfterStartLaunchMode();
         }
 
         super.beforeAll(context);

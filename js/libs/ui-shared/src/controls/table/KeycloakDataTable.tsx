@@ -141,6 +141,7 @@ function DataTable<T>({
   useEffect(() => {
     if (canSelectAll) {
       const selectAllCheckbox = document.getElementsByName("check-all").item(0);
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- DOM query can return null at runtime
       if (selectAllCheckbox) {
         const checkbox = selectAllCheckbox as HTMLInputElement;
         checkbox.indeterminate =
@@ -441,6 +442,7 @@ export function KeycloakDataTable<T>({
             data: value,
             disableSelection: disabledRow,
             disableActions: disabledRow,
+            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- lodash get performs dynamic property access at runtime
             selected: !!selected.find((v) => get(v, "id") === get(value, "id")),
             isOpen: isDetailColumnsEnabled(value) ? false : undefined,
             cells: renderCell(columns, value),

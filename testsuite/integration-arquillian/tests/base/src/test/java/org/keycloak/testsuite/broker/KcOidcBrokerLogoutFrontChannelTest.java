@@ -65,7 +65,7 @@ public class KcOidcBrokerLogoutFrontChannelTest extends AbstractKcOidcBrokerLogo
         int expiresInMs = (int) (idToken.getExp() - idToken.getIat());
 
         // simulate token expiration
-        setTimeOffset(expiresInMs * 2);
+        timeOffSet.set(expiresInMs * 2);
 
         logoutFromRealm(
             getConsumerRoot(),

@@ -33,7 +33,7 @@ import org.keycloak.authentication.actiontoken.inviteorg.InviteOrgActionToken;
 import org.keycloak.common.Profile;
 import org.keycloak.common.Profile.Feature;
 import org.keycloak.common.VerificationException;
-import org.keycloak.crypto.SignatureProvider;
+import org.keycloak.crypto.CryptoUtils;
 import org.keycloak.crypto.SignatureVerifierContext;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.models.Constants;
@@ -181,7 +181,7 @@ public class Organizations {
                 .withChecks(TokenVerifier.IS_ACTIVE,
                         new TokenVerifier.RealmUrlCheck(Urls.realmIssuer(context.getUri().getBaseUri(), realm.getName())));
 
-        SignatureVerifierContext verifierContext = session.getProvider(SignatureProvider.class, verifier.getHeader().getAlgorithm().name()).verifier(verifier.getHeader().getKeyId());
+        SignatureVerifierContext verifierContext = CryptoUtils.getSignatureProvider(session, verifier.getHeader().getAlgorithm().name()).verifier(verifier.getHeader().getKeyId());
         verifier.verifierContext(verifierContext);
 
         return verifier.verify().getToken();

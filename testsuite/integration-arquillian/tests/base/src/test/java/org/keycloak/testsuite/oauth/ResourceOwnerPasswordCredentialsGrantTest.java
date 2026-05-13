@@ -596,7 +596,7 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
         RealmManager.realm(realmResource).passwordPolicy("forceExpiredPasswordChange(1)");
 
         try {
-            setTimeOffset(60 * 60 * 48);
+            timeOffSet.set(60 * 60 * 48);
 
             oauth.client("resource-owner", "secret");
 
@@ -607,7 +607,7 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
             assertEquals("invalid_grant", response.getError());
             assertEquals("Account is not fully set up", response.getErrorDescription());
 
-            setTimeOffset(0);
+            timeOffSet.set(0);
 
             EventAssertion.assertError(events.poll())
                     .type(EventType.LOGIN_ERROR)
@@ -629,7 +629,7 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
         RealmManager.realm(realmResource).passwordPolicy("forceExpiredPasswordChange(1)");
 
         try {
-            setTimeOffset(60 * 60 * 48);
+            timeOffSet.set(60 * 60 * 48);
 
             oauth.client("resource-owner", "secret");
 

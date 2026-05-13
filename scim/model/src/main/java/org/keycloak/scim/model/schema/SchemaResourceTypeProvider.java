@@ -155,7 +155,9 @@ public class SchemaResourceTypeProvider implements ScimResourceTypeProvider<Sche
 
         rep.setAttributes(List.copyOf(topLevelAttributes.values()));
 
-        if (!modelSchema.isInternal()) {
+        List<Attribute> attributes = rep.getAttributes();
+
+        if (!modelSchema.isInternal() && !attributes.isEmpty()) {
             schemas.put(modelSchema.getId(), rep);
         }
     }

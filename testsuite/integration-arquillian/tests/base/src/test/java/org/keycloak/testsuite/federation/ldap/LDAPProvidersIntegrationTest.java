@@ -1406,7 +1406,7 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
                 LDAPTestUtils.removeLDAPUserByUsername(ldapProvider, appRealm, ldapProvider.getLdapIdentityStore().getConfig(), "johndirect");
             });
 
-            setTimeOffset(60 * 5); // 5 minutes in future, user should be cached still
+            timeOffSet.set(60 * 5); // 5 minutes in future, user should be cached still
 
             testingClient.server().run(session -> {
                 RealmModel appRealm = new RealmManager(session).getRealmByName("test");
@@ -1418,7 +1418,7 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
                 Assertions.assertEquals("johndirect@email.org", email);
             });
 
-            setTimeOffset(60 * 20); // 20 minutes into future, cache will be invalidated
+            timeOffSet.set(60 * 20); // 20 minutes into future, cache will be invalidated
 
             testingClient.server().run(session -> {
                 RealmModel appRealm = new RealmManager(session).getRealmByName("test");
@@ -1427,7 +1427,7 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
                 Assertions.assertNull(user);
             });
         } finally {
-            resetTimeOffset();
+            timeOffSet.set(0);
             testingClient.testing().revertTestingInfinispanTimeService();
         }
     }
@@ -1474,21 +1474,21 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
             Assertions.assertTrue(testedUser instanceof CachedUserModel);
         });
 
-        setTimeOffset(60 * 5); // 5 minutes in future, should be cached still
+        timeOffSet.set(60 * 5); // 5 minutes in future, should be cached still
         testingClient.server().run(session -> {
             RealmModel appRealm = session.realms().getRealmByName(TEST_REALM_NAME);
             UserModel testedUser = session.users().getUserById(appRealm, userId);
             Assertions.assertTrue(testedUser instanceof CachedUserModel);
         });
 
-        setTimeOffset(60 * 10); // 10 minutes into future, cache will be invalidated
+        timeOffSet.set(60 * 10); // 10 minutes into future, cache will be invalidated
         testingClient.server().run(session -> {
             RealmModel appRealm = session.realms().getRealmByName(TEST_REALM_NAME);
             UserModel testedUser = session.users().getUserByUsername(appRealm, "thor");
             Assertions.assertFalse(testedUser instanceof CachedUserModel);
         });
 
-        setTimeOffset(0);
+        timeOffSet.set(0);
     }
 
     @Test
@@ -1520,7 +1520,7 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
             Assertions.assertEquals("Doe", john.getLastName());
 
             // expire the cache which is 10 minutes
-            setTimeOffset(610);
+            timeOffSet.set(610);
 
             // new sn should be present
             users = managedRealm.admin().users().search("johnkeycloak", true);
@@ -1537,7 +1537,7 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
                 johnLdapObject.setSingleAttribute(LDAPConstants.SN, "Doe");
                 ctx.getLdapProvider().getLdapIdentityStore().update(johnLdapObject);
             });
-            resetTimeOffset();
+            timeOffSet.set(0);
             testingClient.testing().revertTestingInfinispanTimeService();
         }
     }

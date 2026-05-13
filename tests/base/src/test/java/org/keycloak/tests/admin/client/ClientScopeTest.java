@@ -17,6 +17,7 @@
 
 package org.keycloak.tests.admin.client;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -31,7 +32,9 @@ import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 
+import org.keycloak.OAuthErrorException;
 import org.keycloak.admin.client.resource.ClientResource;
+import org.keycloak.admin.client.resource.ClientScopeResource;
 import org.keycloak.admin.client.resource.ProtocolMappersResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.RoleMappingResource;
@@ -43,21 +46,32 @@ import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.Constants;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.saml.SamlProtocol;
+import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.representations.idm.MappingsRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
+import org.keycloak.testframework.annotations.InjectUser;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.events.AdminEventAssertion;
+import org.keycloak.testframework.oauth.OAuthClient;
+import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
 import org.keycloak.testframework.realm.ClientBuilder;
+import org.keycloak.testframework.realm.ManagedUser;
 import org.keycloak.testframework.realm.RoleBuilder;
 import org.keycloak.testframework.util.ApiUtil;
+import org.keycloak.tests.common.BasicUserConfig;
 import org.keycloak.tests.suites.DatabaseTest;
+import org.keycloak.tests.utils.admin.AdminApiUtil;
 import org.keycloak.tests.utils.admin.AdminEventPaths;
 import org.keycloak.tests.utils.matchers.Matchers;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
+import org.keycloak.testsuite.util.oauth.LogoutResponse;
 
+import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -73,6 +87,12 @@ import static org.hamcrest.MatcherAssert.assertThat;
  */
 @KeycloakIntegrationTest
 public class ClientScopeTest extends AbstractClientScopeTest {
+
+    @InjectOAuthClient
+    OAuthClient oauth;
+
+    @InjectUser(config = BasicUserConfig.class)
+    ManagedUser user;
 
     @Test
     public void testAddFailureWithInvalidScopeName() {
@@ -702,13 +722,44 @@ public class ClientScopeTest extends AbstractClientScopeTest {
     @Test
     public void testCreateDynamicScopeWithFeatureDisabledAndIsDynamicScopeTrue() {
         ClientScopeRepresentation scopeRep = new ClientScopeRepresentation();
-        scopeRep.setName("non-dynamic-scope-def2");
+        scopeRep.setName("dynamic-scope-def");
         scopeRep.setProtocol("openid-connect");
         scopeRep.setAttributes(new HashMap<>() {{
             put(ClientScopeModel.IS_DYNAMIC_SCOPE, "true");
-            put(ClientScopeModel.DYNAMIC_SCOPE_REGEXP, "");
+            put(ClientScopeModel.DYNAMIC_SCOPE_REGEXP, "dynamic-scope-def:*");
         }});
-        handleExpectedCreateFailure(scopeRep, 400, "Unexpected value \"true\" for attribute is.dynamic.scope in ClientScope");
+        String scopeDefId = createClientScope(scopeRep);
+
+        // Assert updated attributes
+        ClientScopeResource scopeRes = clientScopes().get(scopeDefId);
+        scopeRep = clientScopes().get(scopeDefId).toRepresentation();
+        Assertions.assertEquals("dynamic-scope-def", scopeRep.getName());
+        Assertions.assertEquals("true", scopeRep.getAttributes().get(ClientScopeModel.IS_DYNAMIC_SCOPE));
+        Assertions.assertEquals("dynamic-scope-def:*", scopeRep.getAttributes().get(ClientScopeModel.DYNAMIC_SCOPE_REGEXP));
+
+        // update should work
+        scopeRes.update(scopeRep);
+
+         // assign the scope to the client as optional
+        ClientResource clientRes = AdminApiUtil.findClientByClientId(managedRealm.admin(), oauth.getClientId());
+        clientRes.addOptionalClientScope(scopeDefId);
+
+        // check it works as a normal non-dynamic scope
+        oauth.scope("dynamic-scope-def");
+        AuthorizationEndpointResponse authResponse = oauth.doLogin(user.getUsername(), user.getPassword());
+        Assertions.assertNotNull(authResponse.getCode());
+        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(authResponse.getCode());
+        AccessToken token = oauth.parseToken(tokenResponse.getAccessToken(), AccessToken.class);
+        MatcherAssert.assertThat(Arrays.stream(token.getScope().split(" ")).toList(), org.hamcrest.Matchers.hasItem("dynamic-scope-def"));
+        LogoutResponse logoutResponse = oauth.doLogout(tokenResponse.getRefreshToken());
+        Assertions.assertTrue(logoutResponse.isSuccess());
+
+        // dynamic scope request does not work
+        oauth.scope("dynamic-scope-def:something");
+        oauth.openLoginForm();
+        authResponse = oauth.parseLoginResponse();
+        Assertions.assertEquals(OAuthErrorException.INVALID_SCOPE, authResponse.getError());
+        MatcherAssert.assertThat(authResponse.getErrorDescription(), org.hamcrest.Matchers.startsWith("Invalid scopes:"));
     }
 
     @Test
@@ -720,7 +771,7 @@ public class ClientScopeTest extends AbstractClientScopeTest {
             put(ClientScopeModel.IS_DYNAMIC_SCOPE, "false");
             put(ClientScopeModel.DYNAMIC_SCOPE_REGEXP, "not-empty");
         }});
-        handleExpectedCreateFailure(scopeRep, 400, "Unexpected value \"not-empty\" for attribute dynamic.scope.regexp in ClientScope");
+        handleExpectedCreateFailure(scopeRep, 400, "Invalid format for the Dynamic Scope regexp not-empty");
     }
 
     @Test

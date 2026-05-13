@@ -610,7 +610,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
             String codeId = loginEvent.getDetails().get(Details.CODE_ID);
             String userId = loginEvent.getUserId();
 
-            setTimeOffset(3);
+            timeOffSet.set(3);
 
             tokenRes = doBackchannelAuthenticationTokenRequest(username, response.getAuthReqId());
 
@@ -673,7 +673,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
             String codeId = loginEvent.getDetails().get(Details.CODE_ID);
             String userId = loginEvent.getUserId();
 
-            setTimeOffset(5);
+            timeOffSet.set(5);
 
             // user Token Request again
             tokenRes = doBackchannelAuthenticationTokenRequest(username, response.getAuthReqId());
@@ -1196,7 +1196,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
             // user Authentication Channel completed
             doAuthenticationChannelCallback(authenticationChannelReq);
 
-            setTimeOffset(6);
+            timeOffSet.set(6);
 
             // user Token Request after Authentication Channel completion
             tokenRes = oauth.ciba().doBackchannelAuthenticationTokenRequest(response.getAuthReqId());
@@ -1242,7 +1242,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
             // user Authentication Channel completed
             doAuthenticationChannelCallback(authenticationChannelReq);
 
-            setTimeOffset(70);
+            timeOffSet.set(70);
 
             // user Token Request before Authentication Channel completion
             AccessTokenResponse tokenRes = oauth.ciba().doBackchannelAuthenticationTokenRequest(response.getAuthReqId());
@@ -1281,7 +1281,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
             // user Authentication Channel Request
             TestAuthenticationChannelRequest authenticationChannelReq = doAuthenticationChannelRequest("3FIekcs9");
 
-            setTimeOffset(70);
+            timeOffSet.set(70);
 
             int statusCode = oauth.ciba().doAuthenticationChannelCallback(authenticationChannelReq.getBearerToken(), SUCCEED);
             assertThat(statusCode, is(equalTo(Status.FORBIDDEN.getStatusCode())));

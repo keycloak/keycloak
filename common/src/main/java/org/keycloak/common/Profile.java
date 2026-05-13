@@ -133,6 +133,7 @@ public class Profile {
 
         OID4VC_VCI("Support for the OID4VCI protocol as part of OID4VC.", Type.EXPERIMENTAL),
         OID4VC_VCI_PREAUTH_CODE("Support for credential offers with `pre-authorized_code` grant.", Type.EXPERIMENTAL, OID4VC_VCI),
+        OID4VC_VCI_REST_CREDENTIAL_OFFER("Support for the REST endpoint to create credential offers.", Type.EXPERIMENTAL, OID4VC_VCI),
 
         OPENTELEMETRY("OpenTelemetry support", Type.DEFAULT),
         OPENTELEMETRY_LOGS("OpenTelemetry Logs support", Type.PREVIEW, OPENTELEMETRY),
@@ -159,6 +160,8 @@ public class Profile {
         LOG_MDC("Mapped Diagnostic Context (MDC) information in logs", Type.DEFAULT),
 
         DB_TIDB("TiDB database type", Type.EXPERIMENTAL),
+
+        SSF("Shared Signals Framework", Type.EXPERIMENTAL),
 
         HTTP_OPTIMIZED_SERIALIZERS("Optimized JSON serializers for better performance of the HTTP layer", Type.PREVIEW),
 

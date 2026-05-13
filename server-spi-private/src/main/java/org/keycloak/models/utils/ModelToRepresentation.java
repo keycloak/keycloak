@@ -801,6 +801,8 @@ public class ModelToRepresentation {
                 .toList());
         rep.setWarningMessageDescription(toLocalizedMessage(credentialMetadata.getWarningMessageDescription()));
         rep.setWarningMessageTitle(toLocalizedMessage(credentialMetadata.getWarningMessageTitle()));
+        rep.setIconLight(credentialMetadata.getIconLight());
+        rep.setIconDark(credentialMetadata.getIconDark());
         return rep;
     }
 
@@ -1209,11 +1211,23 @@ public class ModelToRepresentation {
         representation.setLogic(policy.getLogic());
 
         if (allFields) {
-            representation.setResourcesData(policy.getResources().stream()
-                    .map(resource -> toRepresentation(resource, policy.getResourceServer(), authorization, true))
-                    .collect(Collectors.toSet()));
-            representation.setScopesData(policy.getScopes().stream().map(
-                    resource -> toRepresentation(resource)).collect(Collectors.toSet()));
+            Set<String> resourceIds = new HashSet<>();
+            Set<ResourceRepresentation> resourceReps = new HashSet<>();
+            for (Resource resource : policy.getResources()) {
+                resourceIds.add(resource.getId());
+                resourceReps.add(toRepresentation(resource, policy.getResourceServer(), authorization, true));
+            }
+            representation.setResources(resourceIds);
+            representation.setResourcesData(resourceReps);
+
+            Set<String> scopeIds = new HashSet<>();
+            Set<ScopeRepresentation> scopeReps = new HashSet<>();
+            for (Scope scope : policy.getScopes()) {
+                scopeIds.add(scope.getId());
+                scopeReps.add(toRepresentation(scope));
+            }
+            representation.setScopes(scopeIds);
+            representation.setScopesData(scopeReps);
         }
 
         return representation;

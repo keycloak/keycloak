@@ -42,14 +42,16 @@ public class ClusteredKeycloakServer implements KeycloakServer {
 
     private final DockerKeycloakDistribution[] containers;
     private final String images;
+    private final long startTimeout;
 
     private static LazyFuture<String> defaultImage() {
         return DockerKeycloakDistribution.createImage(true);
     }
 
-    public ClusteredKeycloakServer(int mumServers, String images) {
+    public ClusteredKeycloakServer(int mumServers, String images, long startTimeout) {
         containers = new DockerKeycloakDistribution[mumServers];
         this.images = images;
+        this.startTimeout = startTimeout;
     }
 
     @Override
@@ -75,7 +77,7 @@ public class ClusteredKeycloakServer implements KeycloakServer {
         } catch (TimeoutException e) {
             throw new RuntimeException("Expected %d cluster members".formatted(numServers), e);
         }
-        ReadinessProbe.waitUntilReady(this::getBaseUrl, numServers);
+        ReadinessProbe.waitUntilReady(this::getBaseUrl, numServers, startTimeout);
     }
 
     private void startContainersWithMixedImage(KeycloakServerConfigBuilder configBuilder, String[] imagePeServer, CountdownLatchLoggingConsumer clusterLatch) {

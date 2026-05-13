@@ -276,6 +276,7 @@ export default function NewAttributeSettings() {
         realm: realmName,
       });
 
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- translation is undefined when user hasn't interacted with translation dialogs
       if (formFields.translation) {
         try {
           await saveTranslations({

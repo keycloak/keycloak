@@ -23,7 +23,9 @@ import org.keycloak.it.junit5.extension.DryRun;
 import org.keycloak.it.junit5.extension.RawDistOnly;
 import org.keycloak.it.junit5.extension.WithEnvVars;
 import org.keycloak.it.utils.KeycloakDistribution;
+import org.keycloak.it.utils.RawDistributionLifecycleManager;
 
+import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.main.Launch;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
@@ -43,6 +45,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DistributionTest
 @Tag(DistributionTest.WIN)
+@QuarkusTestResource(RawDistributionLifecycleManager.class)
 public class StartCommandDistTest {
 
     @DryRun

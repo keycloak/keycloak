@@ -35,7 +35,7 @@ export const FileNameDialog = ({ onSave, onClose }: FileNameDialogProps) => {
 
   // Auto-update fileName when themeName changes
   useEffect(() => {
-    setValue("fileName", `${themeName?.trim()}.jar`);
+    setValue("fileName", `${themeName.trim()}.jar`);
   }, [themeName, setValue]);
 
   const save = ({ themeName, fileName, themeDescription }: FormValues) =>

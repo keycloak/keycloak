@@ -46,7 +46,7 @@ import static io.restassured.RestAssured.when;
 import static org.hamcrest.Matchers.containsString;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@DistributionTest(reInstall = DistributionTest.ReInstall.NEVER, defaultOptions = "--db=dev-file")
+@DistributionTest(defaultOptions = "--db=dev-file")
 @WithEnvVars({"KC_CACHE", "local"}) // avoid flakey port conflicts
 @RawDistOnly(reason = "Containers are immutable")
 @Tag(DistributionTest.WIN)
@@ -55,14 +55,6 @@ public class QuarkusPropertiesDistTest {
 
     private static final String QUARKUS_BUILDTIME_HIBERNATE_METRICS_KEY = "quarkus.datasource.metrics.enabled";
     private static final String QUARKUS_RUNTIME_CONSOLE_HANDLER_ENABLED_KEY = "quarkus.log.handler.console.\"console-2\".enable";
-
-    @DryRun
-    @Test
-    @Launch({"build"})
-    @Order(1)
-    void testBuildWithPropertyFromQuarkusProperties(CLIResult cliResult) {
-        cliResult.assertBuild();
-    }
 
     @Test
     @BeforeStartDistribution(QuarkusPropertiesDistTest.AddConsoleHandlerFromQuarkusProps.class)
@@ -102,6 +94,7 @@ public class QuarkusPropertiesDistTest {
     }
 
     @Test
+    @BeforeStartDistribution(UpdateHibernateMetricsFromQuarkusProps.class)
     @KeepServerAlive
     @Launch({ "start", "--http-enabled=true", "--hostname-strict=false", "--metrics-enabled=true"})
     @Order(8)
@@ -123,15 +116,6 @@ public class QuarkusPropertiesDistTest {
                                 || s.contains("is required but it could not be found in any config source"))
                         .isPresent(),
                 () -> "The Error Output:\n " + cliResult.getErrorOutput() + " doesn't warn about the missing password");
-    }
-
-    @Disabled("Ensuring config-keystore is used only at runtime removes proactive validation of the path when only the keystore is used")
-    @Test
-    @Launch({ "start", "--http-enabled=true", "--hostname-strict=false", "--config-keystore-password=secret" })
-    @Order(10)
-    void testMissingSmallRyeKeyStorePathProperty(CLIResult cliResult) {
-        cliResult.assertBuild();
-        cliResult.assertError("config-keystore must be specified");
     }
 
     @Test

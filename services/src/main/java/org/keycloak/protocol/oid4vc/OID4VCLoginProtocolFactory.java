@@ -248,5 +248,10 @@ public class OID4VCLoginProtocolFactory implements LoginProtocolFactory, OID4VCE
         }
     }
 
+    @Override
+    public boolean allowAsClientProtocol() {
+        return false;
+    }
+
     // Private ---------------------------------------------------------------------------------------------------------
 }

@@ -13,7 +13,6 @@ import org.keycloak.representations.JsonWebToken;
 import org.keycloak.sdjwt.IssuerSignedJWT;
 import org.keycloak.sdjwt.vp.SdJwtVP;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
-import org.keycloak.tests.oid4vc.OID4VCIssuerTestBase.VCTestServerConfig;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.keycloak.testsuite.util.oauth.oid4vc.CredentialOfferResponse;
@@ -46,7 +45,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * | yes      | yes      | yes     | Pre-auth for a specific target user.                 |
  * +----------+----------+---------+------------------------------------------------------+
  */
-@KeycloakIntegrationTest(config = VCTestServerConfig.class)
+@KeycloakIntegrationTest(config = OID4VCIssuerTestBase.VCTestServerConfigRestCredentialOffer.class)
 public class OID4VCredentialOfferAuthCodeTest extends OID4VCIssuerTestBase {
 
     @Test

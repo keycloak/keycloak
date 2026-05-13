@@ -67,8 +67,10 @@ import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
 
 import io.quarkus.deployment.util.FileUtil;
+import io.quarkus.deployment.util.IoUtil;
 import io.quarkus.fs.util.ZipUtils;
 import io.restassured.RestAssured;
+import org.apache.commons.io.FileUtils;
 import org.awaitility.Awaitility;
 import org.jboss.logging.Logger;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
@@ -86,7 +88,7 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
     private static final Logger LOG = Logger.getLogger(RawKeycloakDistribution.class);
     private Process keycloak;
     private int exitCode = -1;
-    private final Path distPath;
+    private Path distPath;
     private boolean manualStop;
     private String relativePath;
     private int httpPort;
@@ -97,18 +99,14 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
     private final boolean removeBuildOptionsAfterBuild;
     private final int requestPort;
     private ExecutorService outputExecutor;
-    private boolean inited = false;
     private final Map<String, String> envVars = new HashMap<>();
     private final OutputConsumer outputConsumer;
     private long startTimeout = TimeUnit.SECONDS.toMillis(Long.getLong("keycloak.distribution.start.timeout", 120L));
     private boolean throwErrorIfFailedToStart = false;
     private boolean threadDump = true;
+    private String launchMode = Environment.LAUNCH_MODE_EXIT_AFTER_START;
 
     public RawKeycloakDistribution(boolean debug, boolean manualStop, boolean enableTls, boolean reCreate, boolean removeBuildOptionsAfterBuild, int requestPort) {
-        this(debug, manualStop, enableTls, reCreate, removeBuildOptionsAfterBuild, requestPort, new DefaultOutputConsumer());
-    }
-
-    public RawKeycloakDistribution(boolean debug, boolean manualStop, boolean enableTls, boolean reCreate, boolean removeBuildOptionsAfterBuild, int requestPort, OutputConsumer outputConsumer) {
         this.debug = debug;
         this.manualStop = manualStop;
         this.enableTls = enableTls;
@@ -116,7 +114,7 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
         this.removeBuildOptionsAfterBuild = removeBuildOptionsAfterBuild;
         this.requestPort = requestPort;
         this.distPath = prepareDistribution();
-        this.outputConsumer = outputConsumer;
+        this.outputConsumer = new DefaultOutputConsumer();
     }
 
     public RawKeycloakDistribution withThrowErrorIfFailedToStart(boolean throwErrorIfFailedToStart) {
@@ -333,7 +331,7 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
         }
 
         if (!this.isManualStop()) {
-            allArgs.add("-D" + LAUNCH_MODE + "=test");
+            allArgs.add("-D" + LAUNCH_MODE + "=" + launchMode);
         }
 
         allArgs.add("-Djgroups.join_timeout=50");
@@ -542,14 +540,13 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
 
             Path dPath = distRootPath.resolve(inDistZipDirectory(distFile));
 
-            if (!inited || (reCreate || !dPath.toFile().exists())) {
+            if (reCreate || !dPath.toFile().exists()) {
                 FileUtil.deleteDirectory(dPath);
                 ZipUtils.unzip(distFile.toPath(), distRootPath);
-
-                if (System.getProperty("product") != null) {
-                    // JDBC drivers might be excluded if running as a product build
-                    copyProvider(dPath, "com.microsoft.sqlserver", "mssql-jdbc");
-                }
+                FileUtils.copyDirectory(dPath.resolve("conf").toFile(), dPath.resolve("conf-bak").toFile());
+                FileUtils.copyDirectory(dPath.resolve("lib").resolve("quarkus").toFile(), dPath.resolve("quarkus-bak").toFile());
+                preInitH2(dPath);
+                postInit(dPath);
             }
 
             // make sure script is executable
@@ -560,11 +557,40 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
                 throw new RuntimeException("Cannot set " + SCRIPT_KCADM_CMD + " executable");
             }
 
-            inited = true;
-
             return dPath;
         } catch (Exception cause) {
             throw new RuntimeException("Failed to prepare distribution", cause);
+        }
+    }
+
+    private void preInitH2(Path dPath) throws IOException {
+        LOG.info("Creating pre-initialized database for reuse");
+        ProcessHandle.current().info().command().ifPresent(command -> {
+            ProcessBuilder pb = new ProcessBuilder(List.of(command, "-D" + LAUNCH_MODE + "=" + Environment.LAUNCH_MODE_EXIT_BEFORE_BOOTSTRAP,
+                    "-Dkc.home.dir=" + dPath.toFile().getAbsolutePath(), "-Dkc.config.built=true",
+                    "-Dkc.db=dev-file", "-jar", dPath.resolve("lib").resolve("quarkus-run.jar").toFile().getAbsolutePath(), "start-dev"));
+            try {
+                Process dbInit = pb.start();
+                if (!dbInit.waitFor(30, TimeUnit.SECONDS)) {
+                    throw new RuntimeException("Pre-initialized db process did not exit");
+                }
+                if (dbInit.exitValue() != 0) {
+                    throw new RuntimeException("Could not create pre-initialized db, exit code %s: %s".formatted(dbInit.exitValue(), new String(IoUtil.readBytes(dbInit.getErrorStream()))));
+                }
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new RuntimeException(e); 
+            }
+        });
+        FileUtils.copyDirectory(dPath.resolve("data").resolve("h2").toFile(), dPath.resolve("h2-bak").toFile());
+    }
+
+    private void postInit(Path dPath) {
+        if (System.getProperty("product") != null) {
+            // JDBC drivers might be excluded if running as a product build
+            copyProvider(dPath, "com.microsoft.sqlserver", "mssql-jdbc");
         }
     }
 
@@ -636,6 +662,10 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
         this.envVars.put(name, value);
     }
 
+    public void setLaunchMode(String launchMode) {
+        this.launchMode = launchMode;
+    }
+
     @Override
     public void removeProperty(String name) {
         updateProperties(properties -> properties.remove(name), distPath.resolve("conf").resolve("keycloak.conf").toFile());
@@ -657,12 +687,12 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
 
     @Override
     public void copyOrReplaceFileFromClasspath(String file, Path targetFile) {
-        File targetDir = distPath.resolve(targetFile).toFile();
+        Path path = distPath.resolve(targetFile);
 
-        targetDir.mkdirs();
+        path.getParent().toFile().mkdirs();
 
         try {
-            Files.copy(getClass().getResourceAsStream(file), targetDir.toPath(), StandardCopyOption.REPLACE_EXISTING);
+            Files.copy(getClass().getResourceAsStream(file), path, StandardCopyOption.REPLACE_EXISTING);
         } catch (IOException cause) {
             throw new RuntimeException("Failed to copy file", cause);
         }
@@ -674,12 +704,12 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
             return;
         }
 
-        File targetDir = distPath.resolve(targetFile).toFile();
+        Path path = distPath.resolve(targetFile);
 
-        targetDir.mkdirs();
+        path.getParent().toFile().mkdirs();
 
         try {
-            Files.copy(file, targetDir.toPath(), StandardCopyOption.REPLACE_EXISTING);
+            Files.copy(file, path, StandardCopyOption.REPLACE_EXISTING);
         } catch (IOException cause) {
             throw new RuntimeException("Failed to copy file", cause);
         }
@@ -819,5 +849,35 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
         public List<String> getStdOut() {
             return stdOut;
         }
+    }
+    
+    public void resetH2Dir() throws IOException {
+        FileUtil.deleteDirectory(getDistPath().resolve("data").resolve("h2"));
+        FileUtils.copyDirectory(getDistPath().resolve("h2-bak").toFile(), getDistPath().resolve("data").resolve("h2").toFile());
+    }
+    
+    /**
+     * Reset the distribution back to its install state.
+     * @param resetAugmentation if true the lib/quarkus directory will be reset
+     */
+    public void reset(boolean resetAugmentation) throws IOException {
+        LOG.infof("Resetting the distribution for the next test%s %s", resetAugmentation ? " including augmentation" : "", distPath);
+        FileUtil.deleteDirectory(getDistPath().resolve("conf"));
+        FileUtils.copyDirectory(getDistPath().resolve("conf-bak").toFile(), getDistPath().resolve("conf").toFile());
+        FileUtil.deleteDirectory(getDistPath().resolve("providers"));
+        getDistPath().resolve("providers").toFile().mkdirs();
+        FileUtil.deleteDirectory(getDistPath().resolve("data"));
+        getDistPath().resolve("data").toFile().mkdirs();
+        resetH2Dir();
+        if (resetAugmentation) {
+            FileUtil.deleteDirectory(getDistPath().resolve("lib").resolve("quarkus"));
+            FileUtils.copyDirectory(getDistPath().resolve("quarkus-bak").toFile(), getDistPath().resolve("lib").resolve("quarkus").toFile());
+        }
+        postInit(getDistPath());
+    }
+
+    public void setDistPath(Path newPath) throws IOException {
+        FileUtils.moveDirectory(distPath.toFile(), newPath.toFile());
+        this.distPath = newPath;
     }
 }

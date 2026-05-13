@@ -24,7 +24,7 @@ import jakarta.ws.rs.core.Response;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.TokenVerifier;
 import org.keycloak.common.VerificationException;
-import org.keycloak.crypto.SignatureProvider;
+import org.keycloak.crypto.CryptoUtils;
 import org.keycloak.crypto.SignatureVerifierContext;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
@@ -226,7 +226,7 @@ public class AccessTokenIntrospectionProvider<T extends AccessToken> implements 
             TokenVerifier<T> verifier = TokenVerifier.create(tokenStr, getTokenClass())
                     .realmUrl(Urls.realmIssuer(session.getContext().getUri().getBaseUri(), realm.getName()));
 
-            SignatureVerifierContext verifierContext = session.getProvider(SignatureProvider.class, verifier.getHeader().getAlgorithm().name()).verifier(verifier.getHeader().getKeyId());
+            SignatureVerifierContext verifierContext = CryptoUtils.getSignatureProvider(session, verifier.getHeader().getAlgorithm().name()).verifier(verifier.getHeader().getKeyId());
             verifier.verifierContext(verifierContext);
 
             this.token = verifier.verify().getToken();

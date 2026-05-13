@@ -58,8 +58,8 @@
         <dist.archive.dir>${dist.archive.dir.prefix}-${dist.archive.dir.version}</dist.archive.dir>
 
         <!-- Upstream WildFly Versions -->
-        <upstream.wildfly.version>35.0.1.Final</upstream.wildfly.version>
-        <upstream.wildfly.core.version>27.0.1.Final</upstream.wildfly.core.version>
+        <upstream.wildfly.version>39.0.1.Final</upstream.wildfly.version>
+        <upstream.wildfly.core.version>31.0.3.Final</upstream.wildfly.core.version>
 
         <!-- Downstream Builds WildFly Versions Override -->
         <eap8.version>8.1.0.GA-redhat-00015</eap8.version>  <!-- G:A = org.jboss.eap:jboss-eap-parent -->
@@ -131,6 +131,7 @@
         <freemarker.version>2.3.32</freemarker.version>
         <sundrio.version>0.200.0</sundrio.version>
         <antlr4.version>4.13.2</antlr4.version>
+        <dbus-java.version>5.2.0</dbus-java.version>
 
         <!-- json-ld processing for oid4vci ld-proofs -->
         <com.apicatalog.titanium-json-ld.version>1.3.3</com.apicatalog.titanium-json-ld.version>
@@ -159,6 +160,7 @@
         <mariadb-jdbc.version>3.5.7</mariadb-jdbc.version>
         <mssql.version>2022</mssql.version>
         <mssql.container>mcr.microsoft.com/mssql/server:${mssql.version}-latest</mssql.container>
+        <mssql.collation>Latin1_General_100_CI_AS_SC_UTF8</mssql.collation>
         <!-- this is the mssql driver version also used in the Quarkus BOM -->
         <mssql-jdbc.version>13.2.1.jre11</mssql-jdbc.version>
         <oracledb.version>23.5</oracledb.version>
@@ -235,7 +237,7 @@
         <webauthn4j.version>0.30.3.RELEASE</webauthn4j.version>
 
         <!-- Used to test SAML Galleon feature-pack layers discovery -->
-        <version.org.wildfly.glow>1.0.0.Alpha8</version.org.wildfly.glow>
+        <version.org.wildfly.glow>1.5.2.Final</version.org.wildfly.glow>
 
         <!-- Galleon -->
         <galleon.fork.embedded>true</galleon.fork.embedded>
@@ -318,6 +320,7 @@
         <module>tests</module>
         <module>quarkus</module>
         <module>scim</module>
+        <module>ssf</module>
         <module>authzen</module>
     </modules>
 
@@ -643,6 +646,13 @@
                         <artifactId>annotations</artifactId>
                     </exclusion>
                 </exclusions>
+            </dependency>
+
+            <!-- dbus-java for SSSD -->
+            <dependency>
+                <groupId>com.github.hypfvieh</groupId>
+                <artifactId>dbus-java-transport-native-unixsocket</artifactId>
+                <version>${dbus-java.version}</version>
             </dependency>
 
             <!-- QR Code Generator -->
@@ -1351,6 +1361,23 @@
                 <artifactId>keycloak-scim-model</artifactId>
                 <version>${project.version}</version>
             </dependency>
+
+            <!-- SSF -->
+            <dependency>
+                <groupId>org.keycloak</groupId>
+                <artifactId>keycloak-ssf-core</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.keycloak</groupId>
+                <artifactId>keycloak-ssf-transmitter</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.keycloak</groupId>
+                <artifactId>keycloak-ssf-services</artifactId>
+                <version>${project.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -1661,8 +1688,8 @@
                 <!-- relative directory for galleon pack with layer spec files -->
                 <saml.adapter.galleon.pack.metadata.dir>metadata</saml.adapter.galleon.pack.metadata.dir>
                 <!-- WildFly Galleon Build related properties -->
-                <org.wildfly.galleon-plugins.version>7.3.1.Final</org.wildfly.galleon-plugins.version>
-                <org.jboss.galleon.version>6.0.4.Final</org.jboss.galleon.version>
+                <org.wildfly.galleon-plugins.version>8.1.2.Final</org.wildfly.galleon-plugins.version>
+                <org.jboss.galleon.version>7.0.5.Final</org.jboss.galleon.version>
                 <org.wildfly.maven.plugins.licenses-plugin.version>2.3.1.Final</org.wildfly.maven.plugins.licenses-plugin.version>
             </properties>
 

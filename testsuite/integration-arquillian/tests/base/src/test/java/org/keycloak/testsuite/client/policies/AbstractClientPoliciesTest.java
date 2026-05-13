@@ -449,7 +449,7 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
         clientResource.update(clientRepresentation);
 
         // set time offset, so that new keys are downloaded
-        setTimeOffset(20);
+        timeOffSet.set(20);
 
         return keyPair;
     }

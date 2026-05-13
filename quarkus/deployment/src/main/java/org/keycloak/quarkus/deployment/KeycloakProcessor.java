@@ -52,6 +52,7 @@ import jakarta.persistence.PersistenceUnitTransactionType;
 import org.keycloak.Config;
 import org.keycloak.authentication.AuthenticatorSpi;
 import org.keycloak.authentication.authenticators.browser.DeployedScriptAuthenticatorFactory;
+import org.keycloak.authentication.authenticators.browser.WebAuthnMetadataService;
 import org.keycloak.authorization.policy.provider.PolicySpi;
 import org.keycloak.authorization.policy.provider.js.DeployedScriptPolicyFactory;
 import org.keycloak.common.Profile;
@@ -74,7 +75,7 @@ import org.keycloak.connections.jpa.JpaConnectionSpi;
 import org.keycloak.connections.jpa.updater.liquibase.LiquibaseJpaUpdaterProviderFactory;
 import org.keycloak.connections.jpa.updater.liquibase.conn.DefaultLiquibaseConnectionProvider;
 import org.keycloak.infinispan.util.InfinispanUtils;
-import org.keycloak.policy.BlacklistPasswordPolicyProviderFactory;
+import org.keycloak.policy.DenylistPasswordPolicyProviderFactory;
 import org.keycloak.protocol.ProtocolMapperSpi;
 import org.keycloak.protocol.oidc.mappers.DeployedScriptOIDCProtocolMapper;
 import org.keycloak.protocol.saml.mappers.DeployedScriptSAMLProtocolMapper;
@@ -211,7 +212,7 @@ class KeycloakProcessor {
             LiquibaseJpaUpdaterProviderFactory.class,
             FilesKeystoreVaultProviderFactory.class,
             FilesPlainTextVaultProviderFactory.class,
-            BlacklistPasswordPolicyProviderFactory.class,
+            DenylistPasswordPolicyProviderFactory.class,
             ClasspathThemeResourceProviderFactory.class,
             JarThemeProviderFactory.class);
 
@@ -771,6 +772,24 @@ class KeycloakProcessor {
             resources.produce(new GeneratedResourceBuildItem(PersistedConfigSource.PERSISTED_PROPERTIES, outputStream.toByteArray()));
         } catch (Exception cause) {
             throw new RuntimeException("Failed to persist configuration", cause);
+        }
+    }
+
+    @BuildStep
+    @Consume(ProfileBuildItem.class)
+    void parseWebAuthnMetadata(BuildProducer<WebAuthnMetadataBuildItem> producer) {
+        if (Profile.isFeatureEnabled(Profile.Feature.WEB_AUTHN)) {
+            producer.produce(new WebAuthnMetadataBuildItem(WebAuthnMetadataService.parseMetadata()));
+        }
+    }
+
+    @Record(ExecutionTime.STATIC_INIT)
+    @Consume(ProfileBuildItem.class)
+    @Consume(WebAuthnMetadataBuildItem.class)
+    @BuildStep
+    void configureWebAuthnMetadata(KeycloakRecorder recorder, WebAuthnMetadataBuildItem metadataBuildItem) {
+        if (Profile.isFeatureEnabled(Profile.Feature.WEB_AUTHN)) {
+            recorder.setDefaultWebAuthnMetadata(metadataBuildItem.getMetadata());
         }
     }
 

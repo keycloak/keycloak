@@ -29,7 +29,7 @@ export const LdapSettingsGeneral = ({
   const { t } = useTranslation();
   const { realm, realmRepresentation } = useRealm();
 
-  useEffect(() => form.setValue("parentId", realmRepresentation?.id), []);
+  useEffect(() => form.setValue("parentId", realmRepresentation.id), []);
   const [isVendorDropdownOpen, setIsVendorDropdownOpen] = useState(false);
 
   const setVendorDefaultValues = () => {

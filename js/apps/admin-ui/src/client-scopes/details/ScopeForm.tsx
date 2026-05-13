@@ -83,7 +83,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
   const isDynamicScopesEnabled = isFeatureEnabled(Feature.DynamicScopes);
 
   // Get available hash algorithms from server info
-  const hashAlgorithms = serverInfo?.providers?.hash?.providers
+  const hashAlgorithms = serverInfo.providers?.hash.providers
     ? Object.keys(serverInfo.providers.hash.providers).map((alg) =>
         alg.toLowerCase(),
       )
@@ -91,7 +91,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
 
   // Get available asymmetric signature algorithms from server info
   const asymmetricAlgorithms = useMemo(
-    () => serverInfo?.cryptoInfo?.clientSignatureAsymmetricAlgorithms ?? [],
+    () => serverInfo.cryptoInfo?.clientSignatureAsymmetricAlgorithms ?? [],
     [serverInfo],
   );
 
@@ -120,7 +120,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
   // Filter only active keys suitable for signing credentials AND using asymmetric algorithms
   const keyOptions = useMemo(() => {
     const options = [{ key: "", value: t("useDefaultKey") }];
-    if (realmKeys && realmKeys.length > 0) {
+    if (realmKeys.length > 0) {
       const keyOptions = realmKeys
         .filter(
           (key) =>
@@ -178,7 +178,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
   const isOid4vcProtocol = selectedProtocol === OID4VC_PROTOCOL;
   const isOid4vcEnabled =
     isFeatureEnabled(Feature.OpenId4VCI) &&
-    realmRepresentation?.verifiableCredentialsEnabled;
+    realmRepresentation.verifiableCredentialsEnabled;
   const isNotSaml = selectedProtocol != "saml";
   const recommendedTokenJwsType =
     selectedFormat === VC_FORMAT_SD_JWT
@@ -456,7 +456,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
                 </HelperText>
               </FormHelperText>
             )}
-            {realmKeys && realmKeys.length > 0 && (
+            {realmKeys.length > 0 && (
               <SelectControl
                 id="kc-signing-key-id"
                 name={convertAttributeNameToForm<ClientScopeDefaultOptionalType>(

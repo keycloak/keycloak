@@ -329,11 +329,11 @@ public class ExportImportTest extends AbstractKeycloakTest {
     }
 
     @Test
-    @EnableFeature(value = Profile.Feature.OID4VC_VCI, skipRestart = true)
+    @EnableFeature(value = Profile.Feature.OID4VC_VCI_REST_CREDENTIAL_OFFER, skipRestart = true)
     public void testRealmImportWithOID4VCICredentialOfferCreateRole() throws Throwable {
         String testRealmName = "oid4vci-import-test";
-        
-        // Create a realm with OID4VCI enabled - credential-offer-create role will be created automatically
+
+        // Create a realm with OID4VCI REST credential offer enabled - credential-offer-create role will be created automatically
         RealmRepresentation realmRep = new RealmRepresentation();
         realmRep.setRealm(testRealmName);
         realmRep.setEnabled(true);

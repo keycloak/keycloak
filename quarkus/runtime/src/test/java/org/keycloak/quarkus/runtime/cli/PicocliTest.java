@@ -18,13 +18,10 @@
 package org.keycloak.quarkus.runtime.cli;
 
 import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Map;
-import java.util.Properties;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Stream;
@@ -35,12 +32,9 @@ import org.keycloak.cookie.CookieType;
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.KeycloakMain;
 import org.keycloak.quarkus.runtime.cli.command.AbstractAutoBuildCommand;
-import org.keycloak.quarkus.runtime.cli.command.AbstractCommand;
 import org.keycloak.quarkus.runtime.configuration.AbstractConfigurationTest;
-import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.quarkus.runtime.configuration.PersistedConfigSource;
 
-import io.smallrye.config.SmallRyeConfig;
 import org.apache.commons.io.FileUtils;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -61,73 +55,8 @@ import static org.junit.Assert.assertTrue;
 
 public class PicocliTest extends AbstractConfigurationTest {
 
-    // TODO: could utilize CLIResult
-    private class NonRunningPicocli extends Picocli {
-
-        final StringWriter err = new StringWriter();
-        final StringWriter out = new StringWriter();
-        SmallRyeConfig config;
-        int exitCode = Integer.MAX_VALUE;
-        boolean reaug;
-        private Properties buildProps;
-
-        String getErrString() {
-            return normalize(err);
-        }
-
-        // normalize line endings - TODO: could also normalize non-printable chars
-        // but for now those are part of the expected output
-        String normalize(StringWriter writer) {
-            return System.lineSeparator().equals("\n") ? writer.toString()
-                    : writer.toString().replace(System.lineSeparator(), "\n");
-        }
-
-        String getOutString() {
-            return normalize(out);
-        }
-
-        @Override
-        public PrintWriter getErrWriter() {
-            return new PrintWriter(err, true);
-        }
-
-        @Override
-        public PrintWriter getOutWriter() {
-            return new PrintWriter(out, true);
-        }
-
-        @Override
-        public void exit(int exitCode) {
-            this.exitCode = exitCode;
-        }
-
-        @Override
-        public void start() {
-            // skip
-        }
-
-        @Override
-        public void initConfig(AbstractCommand command) {
-            boolean checkBuild = Environment.isRebuildCheck();
-            super.initConfig(command);
-            if (!checkBuild && PersistedConfigSource.getInstance().getConfigValueProperties().isEmpty()) {
-                System.getProperties().remove(Environment.KC_CONFIG_REBUILD_CHECK);
-            }
-            config = Configuration.getConfig();
-        }
-
-        @Override
-        public void build() throws Throwable {
-            reaug = true;
-            this.buildProps = getNonPersistedBuildTimeOptions();
-        }
-
-    };
-
     NonRunningPicocli pseudoLaunch(String... args) {
-        NonRunningPicocli nonRunningPicocli = new NonRunningPicocli();
-        KeycloakMain.main(args, nonRunningPicocli);
-        return nonRunningPicocli;
+        return new NonRunningPicocli().launch(args);
     }
 
     private void assertError(NonRunningPicocli picocli, String message) {
@@ -401,7 +330,7 @@ public class PicocliTest extends AbstractConfigurationTest {
         NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev", "--hostname=name", "--http-enabled=true");
         assertEquals(AbstractAutoBuildCommand.REBUILT_EXIT_CODE, nonRunningPicocli.exitCode);
         assertTrue(nonRunningPicocli.reaug);
-        assertEquals("dev", nonRunningPicocli.buildProps.getProperty(org.keycloak.common.util.Environment.PROFILE));
+        assertEquals("dev", nonRunningPicocli.getBuildProps().getProperty(org.keycloak.common.util.Environment.PROFILE));
     }
 
     /**
@@ -426,7 +355,7 @@ public class PicocliTest extends AbstractConfigurationTest {
         assertEquals(nonRunningPicocli.getErrString(), code, nonRunningPicocli.exitCode);
         outChecker.accept(nonRunningPicocli.getOutString());
         onAfter();
-        addPersistedConfigValues((Map)nonRunningPicocli.buildProps);
+        addPersistedConfigValues((Map)nonRunningPicocli.getBuildProps());
         return nonRunningPicocli;
     }
 
@@ -482,7 +411,7 @@ public class PicocliTest extends AbstractConfigurationTest {
         NonRunningPicocli nonRunningPicocli = pseudoLaunch("export", "--db=dev-file", "--file=file");
         assertEquals(AbstractAutoBuildCommand.REBUILT_EXIT_CODE, nonRunningPicocli.exitCode);
         assertTrue(nonRunningPicocli.reaug);
-        assertEquals("prod", nonRunningPicocli.buildProps.getProperty(org.keycloak.common.util.Environment.PROFILE));
+        assertEquals("prod", nonRunningPicocli.getBuildProps().getProperty(org.keycloak.common.util.Environment.PROFILE));
     }
 
     @Test
@@ -946,24 +875,11 @@ public class PicocliTest extends AbstractConfigurationTest {
     }
 
     @Test
-    public void updateCommandValidation(){
-        NonRunningPicocli nonRunningPicocli = pseudoLaunch("update-compatibility","check");
-        assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
-        assertThat(nonRunningPicocli.getErrString(), containsString("Missing required argument: --file"));
-    }
-
-    @Test
     public void testNoKcDirWarning() {
         putEnvVar("KC_DIR", "dir");
         putEnvVar("KC_LOG_LEVEL", "debug");
         var picocli = build("build", "--db=dev-file");
         assertFalse(picocli.getOutString(), picocli.getOutString().contains("kc.dir"));
-    }
-
-    @Test
-    public void testUpdatesFileValidation() {
-        NonRunningPicocli picocli = pseudoLaunch("update-compatibility","check", "--file=not-found");
-        assertTrue(picocli.getErrString().contains("Incorrect argument --file."));
     }
 
     @Test

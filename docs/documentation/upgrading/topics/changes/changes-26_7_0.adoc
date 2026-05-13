@@ -63,6 +63,18 @@ As before, for any rolling update or scaling up or down, we require to do this o
 
 Use the `shutdown-timeout` option to adjust the timeout to your environment. Restore the original behavior by setting it to `1s`.
 
+=== Extensions must not restart a Keycloak transaction
+
+This change might affect custom {project_name} extensions.
+
+The implicit transaction handling in {project_name} previously assumed that a transaction is started once per session, which is usually request-scoped. If it was started a second time, this might have led to an inconsistent state.
+
+Starting with this version, this is now enforced and a session's transaction can only be started once. This prevents difficult-to-track errors and lost commits. It also ensures that at the start of the transaction, all nested transactions are started if they have not been started earlier.
+
+A transaction is started automatically before the REST endpoint code is invoked, even if the session was created earlier in a filter.
+
+As before, transactions can be nested, which will pause the outer transaction once the nested transaction starts, and will resume the outer transaction once the nested transaction ends.
+
 === Realm search now matches by display name
 
 When searching for realms in the admin console, the search now also matches against the realm's display name in addition to the realm name.
@@ -77,3 +89,11 @@ exceeds 255 characters, it will be truncated during migration.
 DPoP (Demonstrating Proof of Possession) is no longer supported for implicit and hybrid flows. If a client has the *Require DPoP bound tokens* option enabled, authorization requests using implicit or hybrid response types will be rejected with an error.
 
 This change improves security by preventing the use of DPoP with flows that issue access tokens in the front channel, where the sender-constrained token model cannot be properly enforced.
+
+=== Token Exchange with Sender-constrained tokens allowed for scope changes
+
+Standard Token Exchange now accepts sender-constrained tokens when a client is requesting an exchange of their own token.
+This change allows token audience changes and up/down scoping and is applicable to both DPoP-bound tokens and X.509 certificate-bound tokens (mTLS).
+
+If you attempt to exchange a sender-constrained token using a different client, the request will be rejected with an `invalid_request` error.
+For more details, see the link:{securing_apps_token_exchange_link}[Token Exchange] guide.

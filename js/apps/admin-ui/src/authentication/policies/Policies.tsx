@@ -1,7 +1,6 @@
 import { Tab, Tabs, TabTitleText } from "@patternfly/react-core";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { KeycloakSpinner } from "@keycloak/keycloak-ui-shared";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { CibaPolicy } from "./CibaPolicy";
 import { OtpPolicy } from "./OtpPolicy";
@@ -12,10 +11,6 @@ export const Policies = () => {
   const { t } = useTranslation();
   const [subTab, setSubTab] = useState(1);
   const { realmRepresentation: realm, refresh } = useRealm();
-
-  if (!realm) {
-    return <KeycloakSpinner />;
-  }
 
   return (
     <Tabs

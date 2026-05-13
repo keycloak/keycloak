@@ -47,8 +47,8 @@ import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.broker.util.SimpleHttpDefault;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.InfoPage;
-import org.keycloak.testsuite.util.GreenMailRule;
 import org.keycloak.testsuite.util.InfinispanTestTimeServiceRule;
+import org.keycloak.testsuite.util.MailServer;
 import org.keycloak.testsuite.util.MailUtils;
 import org.keycloak.testsuite.util.WaitUtils;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
@@ -77,7 +77,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 public class RequiredActionUpdateEmailTestWithVerificationTest extends AbstractRequiredActionUpdateEmailTest {
 
 	@Rule
-	public GreenMailRule greenMail = new GreenMailRule();
+	public MailServer mail = new MailServer();
 
     @Rule
     public InfinispanTestTimeServiceRule ispnTestTimeService = new InfinispanTestTimeServiceRule(this);
@@ -365,7 +365,7 @@ public class RequiredActionUpdateEmailTestWithVerificationTest extends AbstractR
             // The pending verification message takes precedence and is more informative
             assertThat(updateEmailPage.getInfo(), containsString("A verification email was sent to new-email@localhost"));
             updateEmailPage.clickSubmitAction();
-            confirmationLink = fetchEmailConfirmationLink("new-email@localhost", greenMail.getLastReceivedMessage());
+            confirmationLink = fetchEmailConfirmationLink("new-email@localhost", mail.getLastReceivedMessage());
             driver.navigate().to(confirmationLink);
             infoPage.assertCurrent();
 
@@ -472,7 +472,7 @@ public class RequiredActionUpdateEmailTestWithVerificationTest extends AbstractR
     }
 
 	private String fetchEmailConfirmationLink(String emailRecipient) throws MessagingException, IOException {
-		MimeMessage[] receivedMessages = greenMail.getReceivedMessages();
+		MimeMessage[] receivedMessages = mail.getReceivedMessages();
 		assertEquals(1, receivedMessages.length);
 		MimeMessage message = receivedMessages[0];
         return fetchEmailConfirmationLink(emailRecipient, message);
@@ -542,7 +542,7 @@ public class RequiredActionUpdateEmailTestWithVerificationTest extends AbstractR
             updateEmailPage.changeEmail("pending@localhost"); // Same email to resend
             
             // Should send verification email
-            String confirmationLink = fetchEmailConfirmationLink("pending@localhost", greenMail.getLastReceivedMessage());
+            String confirmationLink = fetchEmailConfirmationLink("pending@localhost", mail.getLastReceivedMessage());
             assertNotNull(confirmationLink, "Should have received verification email");
 
         } finally {
@@ -682,7 +682,7 @@ public class RequiredActionUpdateEmailTestWithVerificationTest extends AbstractR
         updateEmailPage.changeEmail("newemail@localhost");
         
         // First email should be sent
-        assertEquals(1, greenMail.getReceivedMessages().length);
+        assertEquals(1, mail.getReceivedMessages().length);
         assertThat("Should show pending verification message",
                 driver.getPageSource(), containsString("A confirmation email has been sent to newemail@localhost."));
 
@@ -696,14 +696,14 @@ public class RequiredActionUpdateEmailTestWithVerificationTest extends AbstractR
         updateEmailPage.changeEmail("newemail@localhost");
         assertThat("Should show cooldown error message", 
                 driver.getPageSource(), containsString("You must wait"));
-        assertEquals(1, greenMail.getReceivedMessages().length, "Email should not be sent again due to cooldown");
+        assertEquals(1, mail.getReceivedMessages().length, "Email should not be sent again due to cooldown");
         
         // Check that email field is pre-filled with the pending email after cooldown error
         assertEquals("newemail@localhost", updateEmailPage.getEmail(), "Email field should be pre-filled with pending email during cooldown");
 
         try {
             // Move time forward beyond cooldown period (default 30 seconds)
-            setTimeOffset(40);
+            timeOffSet.set(40);
             
             // Logout and login again to retry after cooldown
             managedRealm.admin().users().get(testUser.getId()).logout();
@@ -713,9 +713,9 @@ public class RequiredActionUpdateEmailTestWithVerificationTest extends AbstractR
             
             // Now resend should work
             updateEmailPage.changeEmail("newemail@localhost");
-            assertEquals(2, greenMail.getReceivedMessages().length, "Second email should be sent after cooldown expires");
+            assertEquals(2, mail.getReceivedMessages().length, "Second email should be sent after cooldown expires");
         } finally {
-            setTimeOffset(0);
+            timeOffSet.set(0);
         }
     }
 }

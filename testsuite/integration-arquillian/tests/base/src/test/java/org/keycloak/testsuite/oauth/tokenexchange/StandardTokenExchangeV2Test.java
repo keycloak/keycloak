@@ -370,7 +370,7 @@ public class StandardTokenExchangeV2Test extends AbstractClientPoliciesTest {
         assertUserInfoSuccess(exchangedTokenString, "requester-client", "secret", john.getId());
 
         // assert introspection and user-info works in 10s
-        setTimeOffset(10);
+        timeOffSet.set(10);
         assertIntrospectSuccess(exchangedTokenString, "requester-client", "secret", john.getId());
         assertUserInfoSuccess(exchangedTokenString, "requester-client", "secret", john.getId());
 
@@ -413,12 +413,12 @@ public class StandardTokenExchangeV2Test extends AbstractClientPoliciesTest {
             assertUserInfoSuccess(exchangedTokenString, "requester-client", "secret", john.getId());
 
             // assert introspection and user-info works in 10s
-            setTimeOffset(10);
+            timeOffSet.set(10);
             assertIntrospectSuccess(exchangedTokenString, "requester-client", "secret", john.getId());
             assertUserInfoSuccess(exchangedTokenString, "requester-client", "secret", john.getId());
 
             // move time to be more than the normal expired session value, refresh and request another exchange
-            setTimeOffset(610);
+            timeOffSet.set(610);
             final AccessTokenResponse refreshResponse = oauth.client("subject-client", "secret").scope(null)
                     .refreshRequest(initialResponse.getRefreshToken()).send();
             assertNull(refreshResponse.getError(), "Error refreshing the initial token: " + refreshResponse.getErrorDescription());
@@ -477,7 +477,7 @@ public class StandardTokenExchangeV2Test extends AbstractClientPoliciesTest {
             try (Keycloak keycloak = Keycloak.getInstance(ServerURLs.getAuthServerContextRoot() + "/auth",
                     TEST, Constants.ADMIN_CLI_CLIENT_ID, response.getAccessToken(), TLSUtils.initializeTLS())) {
                 assertEquals(TEST, keycloak.realm(TEST).toRepresentation().getRealm());
-                setTimeOffset(10);
+                timeOffSet.set(10);
                 assertEquals(TEST, keycloak.realm(TEST).toRepresentation().getRealm());
                 realm.deleteSession(exchangedToken.getSessionId(), false);
                 assertThrows(NotAuthorizedException.class, () -> keycloak.realm(TEST).toRepresentation().getRealm());
@@ -512,7 +512,7 @@ public class StandardTokenExchangeV2Test extends AbstractClientPoliciesTest {
             final String accountUrl = ServerURLs.getAuthServerContextRoot() + "/auth/realms/test/account";
             assertEquals("john", SimpleHttpDefault.doGet(accountUrl, oauth.httpClient().get())
                     .auth(response.getAccessToken()).asJson(UserRepresentation.class).getUsername());
-            setTimeOffset(10);
+            timeOffSet.set(10);
             assertEquals("john", SimpleHttpDefault.doGet(accountUrl, oauth.httpClient().get())
                     .auth(response.getAccessToken()).asJson(UserRepresentation.class).getUsername());
             realm.deleteSession(exchangedToken.getSessionId(), false);
@@ -1006,7 +1006,7 @@ public class StandardTokenExchangeV2Test extends AbstractClientPoliciesTest {
             Assertions.assertNotNull(exchangedToken);
 
             // Set time offset
-            setTimeOffset(10);
+            timeOffSet.set(10);
 
             // SSO login to "requester-client". Will create client session for "requester-client"
             oauth.client("requester-client", "secret").openLoginForm();

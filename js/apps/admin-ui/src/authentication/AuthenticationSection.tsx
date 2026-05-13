@@ -1,7 +1,6 @@
 import { fetchWithError } from "@keycloak/keycloak-admin-client";
 import {
   KeycloakDataTable,
-  KeycloakSpinner,
   ListEmptyState,
   useAlerts,
 } from "@keycloak/keycloak-ui-shared";
@@ -67,7 +66,7 @@ const AliasRenderer = ({ id, alias, usedBy, builtIn }: AuthenticationType) => {
 export default function AuthenticationSection() {
   const { adminClient } = useAdminClient();
   const { t } = useTranslation();
-  const { realm: realmName, realmRepresentation: realm } = useRealm();
+  const { realm: realmName } = useRealm();
   const [key, setKey] = useState(0);
   const refresh = () => setKey(key + 1);
   const { addAlert, addError } = useAlerts();
@@ -127,8 +126,6 @@ export default function AuthenticationSection() {
       }
     },
   });
-
-  if (!realm) return <KeycloakSpinner />;
 
   return (
     <>

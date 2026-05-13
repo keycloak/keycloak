@@ -138,3 +138,7 @@ hr {
         grid-template-columns: 70% 30%;
     }
 }
+
+#kc-form-webauthn {
+    gap: 0.875rem;
+}

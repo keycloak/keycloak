@@ -44,7 +44,11 @@ export default function NewOrganization() {
           <FormProvider {...form}>
             <OrganizationForm />
             <ActionGroup>
-              <FormSubmitButton formState={formState} data-testid="save">
+              <FormSubmitButton
+                formState={formState}
+                allowNonDirty
+                data-testid="save"
+              >
                 {t("save")}
               </FormSubmitButton>
               <Button

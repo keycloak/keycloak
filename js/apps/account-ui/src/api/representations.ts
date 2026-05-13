@@ -40,11 +40,13 @@ export interface CredentialMetadataRepresentationMessage {
 }
 
 export interface CredentialMetadataRepresentation {
-  infoMessage: CredentialMetadataRepresentationMessage;
-  infoProperties: CredentialMetadataRepresentationMessage[];
-  warningMessageTitle: CredentialMetadataRepresentationMessage;
-  warningMessageDescription: CredentialMetadataRepresentationMessage;
+  infoMessage?: CredentialMetadataRepresentationMessage;
+  infoProperties?: CredentialMetadataRepresentationMessage[];
+  warningMessageTitle?: CredentialMetadataRepresentationMessage;
+  warningMessageDescription?: CredentialMetadataRepresentationMessage;
   credential: CredentialRepresentation;
+  iconLight?: string;
+  iconDark?: string;
 }
 
 export interface DeviceRepresentation {

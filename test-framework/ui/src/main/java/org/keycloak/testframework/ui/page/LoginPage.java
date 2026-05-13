@@ -68,6 +68,11 @@ public class LoginPage extends AbstractLoginPage {
         return driver.findElement(By.id(id));
     }
 
+    public boolean isSocialButtonPresent(String alias) {
+        String id = "social-" + alias;
+        return !driver.driver().findElements(By.id(id)).isEmpty();
+    }
+
     public void rememberMe(boolean value) {
         boolean selected = isRememberMe();
         if ((value && !selected) || !value && selected) {

@@ -114,6 +114,10 @@ public abstract class AbstractPermissionTest {
             policies.forEach(policy -> permission.addPolicy(policy));
             return this;
         }
+        PermissionBuilder decisionStrategy(DecisionStrategy decisionStrategy) {
+            permission.setDecisionStrategy(decisionStrategy);
+            return this;
+        }
     }
 
     protected UserPolicyRepresentation createUserPolicy(ManagedRealm realm, ManagedClient client, String name, String... userIds) {

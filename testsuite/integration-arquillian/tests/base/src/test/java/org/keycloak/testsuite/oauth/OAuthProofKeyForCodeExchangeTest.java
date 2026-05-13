@@ -443,7 +443,7 @@ public class OAuthProofKeyForCodeExchangeTest extends AbstractKeycloakTest {
         assertThat(actual, allOf(greaterThanOrEqualTo(1799L - ALLOWED_CLOCK_SKEW), lessThanOrEqualTo(1800L + ALLOWED_CLOCK_SKEW)));
         assertEquals(sessionId, refreshToken.getSessionState());
 
-        setTimeOffset(2);
+        timeOffSet.set(2);
 
         AccessTokenResponse refreshResponse = oauth.doRefreshTokenRequest(refreshTokenString);
         
@@ -479,7 +479,7 @@ public class OAuthProofKeyForCodeExchangeTest extends AbstractKeycloakTest {
         Assertions.assertNotEquals(event.getDetails().get(Details.TOKEN_ID), refreshEvent.getDetails().get(Details.TOKEN_ID));
         Assertions.assertNotEquals(event.getDetails().get(Details.REFRESH_TOKEN_ID), refreshEvent.getDetails().get(Details.UPDATED_REFRESH_TOKEN_ID));
 
-        setTimeOffset(0);
+        timeOffSet.set(0);
     }
 
     // KEYCLOAK-10747 Explicit Proof Key for Code Exchange Activation Settings

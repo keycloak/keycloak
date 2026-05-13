@@ -3,7 +3,7 @@ export interface DecodedToken {
 }
 
 export function decodeToken(token: string): DecodedToken {
-  const [, payload] = token?.split(".") || [];
+  const [, payload] = token.split(".");
 
   if (typeof payload !== "string") {
     return {};

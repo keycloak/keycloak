@@ -70,7 +70,7 @@ public class KcOidcBrokerPassMaxAgeTest extends AbstractBrokerTest {
 
         loginPage.login(bc.getUserLogin(), bc.getUserPassword());
 
-        setTimeOffset(2);
+        timeOffSet.set(2);
 
         // trigger re-auth with max_age while we are still authenticated
         String loginUrlWithMaxAge = getLoginUrl(getConsumerRoot(), bc.consumerRealmName(), "account") + "&max_age=1";
@@ -120,7 +120,7 @@ public class KcOidcBrokerPassMaxAgeTest extends AbstractBrokerTest {
 
         idpResource.update(idpRep);
 
-        setTimeOffset(2);
+        timeOffSet.set(2);
 
         // trigger re-auth with max_age while we are still authenticated
         String loginUrlWithMaxAge = getLoginUrl(getConsumerRoot(), bc.consumerRealmName(), "account") + "&max_age=1";

@@ -34,6 +34,7 @@ export const ResourceType = ({
   const normalizedResourceType = resourceType.toLowerCase();
 
   const [isSpecificResources, setIsSpecificResources] = useState(
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- resourceIds is undefined when form field "resources" has no default value
     resourceIds?.some((id) => id !== resourceType) || !withEnforceAccessTo,
   );
 

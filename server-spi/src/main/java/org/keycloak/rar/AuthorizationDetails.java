@@ -88,8 +88,8 @@ public class AuthorizationDetails implements Serializable {
      * @return see description
      */
     public String getDynamicScopeParam() {
-        if(isDynamicScope()) {
-            return this.authorizationDetails.getDynamicScopeParamFromCustomData();
+        if (authorizationDetails != null && isDynamicScope()) {
+            return authorizationDetails.getDynamicScopeParamFromCustomData();
         }
         return null;
     }

@@ -92,6 +92,8 @@ public class PolicyResourceService {
 
         representation.setId(policy.getId());
 
+        AdminPermissionsSchema.SCHEMA.throwExceptionIfResourceTypeOrScopesNotProvided(
+                authorization.getKeycloakSession(), resourceServer, representation);
         RepresentationToModel.toModel(representation, authorization, policy);
 
 

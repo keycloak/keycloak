@@ -51,6 +51,7 @@ import jakarta.ws.rs.core.Response;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OID4VCConstants;
 import org.keycloak.VCFormat;
+import org.keycloak.common.Profile;
 import org.keycloak.common.VerificationException;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
@@ -269,6 +270,29 @@ public class OID4VCIssuerEndpoint {
     }
 
     /**
+     * Validates if the REST credential offer feature is enabled.
+     * If disabled, logs the status and throws
+     * a {@link CorsErrorResponseException}.
+     */
+    private void checkRestCredentialOfferEnabled(EventBuilder eventBuilder) {
+        if (!Profile.isFeatureEnabled(org.keycloak.common.Profile.Feature.OID4VC_VCI_REST_CREDENTIAL_OFFER)) {
+            LOGGER.debugf("REST credential offer endpoint is disabled. Feature oid4vci-rest-credential-offer is not enabled.");
+            if (eventBuilder != null) {
+                eventBuilder.error(ErrorType.INVALID_CLIENT.getValue());
+            }
+            if (cors == null) {
+                configureCors(false);
+            }
+            throw new CorsErrorResponseException(
+                    cors,
+                    ErrorType.INVALID_CLIENT.getValue(),
+                    "REST credential offer functionality is not enabled",
+                    Response.Status.FORBIDDEN
+            );
+        }
+    }
+
+    /**
      * Validates whether the authenticated client is enabled for OID4VCI features.
      * <p>
      * If the client is not enabled, this method logs the status and throws a
@@ -462,6 +486,7 @@ public class OID4VCIssuerEndpoint {
 
         cors.checkAllowedOrigins(session, clientModel);
         checkIsOid4vciEnabled(eventBuilder);
+        checkRestCredentialOfferEnabled(eventBuilder);
         checkClientEnabled(eventBuilder);
 
         // Verify required credConfigId

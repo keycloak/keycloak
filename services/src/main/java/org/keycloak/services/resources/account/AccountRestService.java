@@ -496,7 +496,7 @@ public class AccountRestService {
 
     // TODO Logs
 
-    private static void checkAccountApiEnabled() {
+    public static void checkAccountApiEnabled() {
         if (!Profile.isFeatureEnabled(Profile.Feature.ACCOUNT_API)) {
             throw new NotFoundException();
         }

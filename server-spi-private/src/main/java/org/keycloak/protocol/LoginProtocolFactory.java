@@ -101,4 +101,13 @@ public interface LoginProtocolFactory extends ProviderFactory<LoginProtocol> {
         // Default implementation: no validation (allows all assignments)
         // Protocol-specific implementations can override to enforce restrictions
     }
+
+    /**
+     * Returns whether this protocol can be used as a client protocol.
+     *
+     * @return true if the protocol can be used for clients, false otherwise
+     */
+    default boolean allowAsClientProtocol() {
+        return true;
+    }
 }

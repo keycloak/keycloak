@@ -127,7 +127,7 @@ To deploy {project_name}, you create a Custom Resource (CR) based on the Keycloa
 
 [NOTE]
 ====
-If you are on OpenShift, you cannot use wildcard certificates on passthrough Routes with HTTP/2 enabled. The following Keycloak CR on OpenShift if you are using a wildcard certificate with the default IngressClass, creates such a Route. In this situation, modify the yaml based on "Accessing the {project_name} deployment" later in this topic to use TLS Termination or an OpenShift re-encrypt Route.
+If you are on OpenShift, you cannot use wildcard certificates on passthrough Routes with HTTP/2 enabled. The following Keycloak CR on OpenShift if you are using a wildcard certificate with the default IngressClass, creates such a Route. In this situation, modify the YAML based on "Accessing the {project_name} deployment" later in this topic to use TLS Termination or an OpenShift re-encrypt Route.
 ====
 
 Consider storing the Database credentials in a separate Secret. Enter the following commands:
@@ -141,6 +141,9 @@ kubectl create secret generic keycloak-db-secret \
 You can customize several fields using the Keycloak CRD. For a basic deployment, you can stick to the following approach:
 
 Create YAML file `example-kc.yaml`:
+
+:check-lb-forwarded-header: pass:quotes[Check your load balancer or reverse proxy configuration to determine whether it utilizes the `Forwarded` (RFC 7239) or `X-Forwarded-*` (e.g., `X-Forwarded-For`) mechanism for header propagation.]
+
 [source,yaml]
 ----
 apiVersion: k8s.keycloak.org/v2beta1
@@ -163,8 +166,9 @@ spec:
   hostname:
     hostname: test.keycloak.org
   proxy:
-    headers: xforwarded # double check your reverse proxy sets and overwrites the X-Forwarded-* headers
+    headers: xforwarded # <1>
 ----
+<1> {check-lb-forwarded-header}
 
 Apply the changes:
 
@@ -216,20 +220,75 @@ spec:
       className: openshift-default
 ----
 
-NOTE: The operator annotates the Ingress to match expectations for TLS passthrough or TLS termination on OpenShift with the default IngressClass. 
-See below for more on TLS termination. 
+NOTE: The operator annotates the Ingress to match expectations for TLS passthrough or TLS termination on OpenShift with the default IngressClass.
+See below for more on TLS termination.
 
-==== Proxy modes with the basic Ingress
+==== TLS Termination with default Ingress
 
-The operator annotates the Ingress to match expectations for TLS termination or passthrough on OpenShift with the default IngressClass. 
-For this reason TLS reencryption is not yet considered supported by basic Ingress, but you may be able to specify the `tlsSecret` on both the `http` and `ingress` specs as a starting point.
-You should double check the requirements of your IngressClass and platform to see if additional Ingress or Service annotations are needed in your desired scenario.
+When using the operator-provided ingress (`spec.ingress.enabled: true`) there are a lot of Keycloak CR options (like service and ingress labels and annotations) which allow you to customize your ingress behavior. This section shows how to achieve the following TLS Termination when using OpenShift:
 
-TLS passthrough is shown in the preceding `example-kc` example. It is enabled when you associate a `tlsSecret` with the `http` configuration and leave Ingress enabled without specifying a `tlsSecret` on it. 
+- <<passthrough, Passthrough>>
+- <<edge_cluster_domain, Edge using cluster domain and certificate>>
+- <<edge_custom_domain, Edge using custom domain and certificate>>
+- <<reencrypt_cluster_domain, Reencrypt using cluster domain and certificate>>
+- <<reencrypt_custom_domain, Reencrypt using custom domain and certificate>>
 
-TLS termination, or edge mode, is enabled by associating a `tlsSecret` with the `ingress` spec and by enabling HTTP access.
- 
-Example TLS Termination YAML:
+For other platforms or IngressControllers, you can use the provided examples as a starting point.
+
+[[passthrough]]
+===== Passthrough
+
+It is enabled when you associate a `tlsSecret` with the `http` configuration and leave Ingress enabled without specifying a `tlsSecret` on it.
+
+[source,yaml]
+----
+apiVersion: k8s.keycloak.org/v2alpha1
+kind: Keycloak
+metadata:
+  name: example-kc
+spec:
+  http:
+    tlsSecret: example-tls-secret
+  ingress:
+    enabled: true
+  hostname:
+    hostname: test.keycloak.org
+----
+
+NOTE: On OpenShift you are not allowed to use wildcard certificates on passthrough Routes with HTTP/2 enabled. For wildcard certificates use edge or reencrypt termination.
+
+===== Edge
+
+There are two ways to achieve TLS Edge. In both it is needed to enable HTTP access.
+
+[[edge_cluster_domain]]
+*Using cluster domain and certificate*
+
+To use cluster domain do not provide a tls secret for the `ingress` and ensure to use cluster domain as `hostname`. Since no certificate is provided to the `ingress` the cluster certificate is used.
+
+[source,yaml]
+----
+apiVersion: k8s.keycloak.org/v2alpha1
+kind: Keycloak
+metadata:
+  name: example-kc
+spec:
+  http:
+    httpEnabled: true
+  ingress:
+    enabled: true
+  hostname:
+    hostname: keycloak.<cluster-domain> <1>
+  proxy:
+    headers: xforwarded <2>
+----
+<1> Must use the cluster domain.
+<2> {check-lb-forwarded-header}
+
+[[edge_custom_domain]]
+*Using custom domain and certificate*
+
+To use custom domain provide a tls secrets for the `ingress` and ensure that `hostname` matches the `ingress` certificate.
 
 [source,yaml]
 ----
@@ -238,16 +297,6 @@ kind: Keycloak
 metadata:
   name: example-kc
 spec:
-  instances: 1
-  db:
-    vendor: postgres
-    host: postgres-db
-    usernameSecret:
-      name: keycloak-db-secret
-      key: username
-    passwordSecret:
-      name: keycloak-db-secret
-      key: password
   http:
     httpEnabled: true
   ingress:
@@ -255,8 +304,77 @@ spec:
   hostname:
     hostname: test.keycloak.org
   proxy:
-    headers: xforwarded # double check your reverse proxy sets and overwrites the X-Forwarded-* headers
+    headers: xforwarded # <1>
 ----
+<1> {check-lb-forwarded-header}
+
+===== Reencrypt
+
+There are two ways to achieve TLS Reencryption. In both it is needed to annotate the `ingress` to specify the desired termination type since operator still lacks logic to set itself the reencrypt termination.
+
+[[reencrypt_cluster_domain]]
+*Using cluster domain and certificate*
+
+To use cluster domain do not provide a tls secret for the `ingress` and ensure to use cluster domain as `hostname`. Since no certificate is provided to the `ingress` the cluster certificate is used.
+
+[source,yaml]
+----
+apiVersion: k8s.keycloak.org/v2alpha1
+kind: Keycloak
+metadata:
+  name: example-kc
+spec:
+  http:
+    annotations:
+      service.alpha.openshift.io/serving-cert-secret-name: svc-tls-secret <1>
+      tlsSecret: svc-tls-secret <2>
+  ingress:
+    annotations:
+      route.openshift.io/termination: reencrypt <3>
+    enabled: true
+  hostname:
+    hostname: keycloak.<cluster-domain> <4>
+  proxy:
+    headers: xforwarded # <5>
+----
+<1> This will add the annotation to the service generated by the operator, so cluster will create a tls secret named svc-tls-secret
+<2> name of the tls secret created by the cluster, as defined in <1>
+<3> required because the operator only has built-in OpenShift logic for passthrough and edge.
+<4> Must use the cluster domain
+<5> {check-lb-forwarded-header}
+
+[[reencrypt_custom_domain]]
+*Using custom domain and certificate*
+
+To use custom domain provide distinct tls secrets for the `ingress` and `http` and ensure that `hostname` matches the `ingress` certificate.
+
+[source,yaml]
+----
+apiVersion: k8s.keycloak.org/v2alpha1
+kind: Keycloak
+metadata:
+  name: example-kc
+spec:
+  http:
+    annotations:
+      service.alpha.openshift.io/serving-cert-secret-name: svc-tls-secret <1>
+      tlsSecret: svc-tls-secret <2>
+  ingress:
+    annotations:
+      route.openshift.io/termination: reencrypt <3>
+    tlsSecret: ingress-tls-secret <4>
+    enabled: true
+  hostname:
+    hostname: test.keycloak.org <5>
+  proxy:
+    headers: xforwarded # <6>
+----
+<1> This will add the annotation to the service generated by the operator, so cluster will create a tls secret named `svc-tls-secret`.
+<2> Name of the tls secret created by the cluster, as defined in callout 1.
+<3> Required because the operator only has built-in OpenShift logic for passthrough and edge.
+<4> Certificate to be used at the ingress/route.
+<5> Domain must match the provided certificate.
+<6> {check-lb-forwarded-header}
 
 ==== Custom Access
 
@@ -282,12 +400,7 @@ Apply the changes:
 ----
 kubectl apply -f example-kc.yaml
 ----
-You can then provide an alternative ingress resource pointing to the service `<keycloak-cr-name>-service`. For example, on OpenShift you are not allowed to use wildcard certificates on passthrough Routes with HTTP/2 enabled. A Keycloak CR on OpenShift with TLS enabled using a wildcard certificate with the default IngressClass creates such a Route. In this case, you must disable the built-in ingress with `.spec.ingress.enabled: false`. Access may then be provided by creating a reencrypt Route instead:
-
-[source,yaml]
-----
-$ oc create route reencrypt --service=<keycloak-cr-name>-service --cert=<configured-certificate> --key=<certificate-key> --dest-ca-cert=<ca-certificate> --ca-cert=<ca-certificate> --hostname=<hostname>
-----
+You can then provide an alternative ingress resource pointing to the service named `<keycloak-cr-name>-service` by default.
 
 For debugging and development purposes, consider directly connecting to the {project_name} service using a port forward. For example, enter this command:
 
@@ -314,7 +427,7 @@ spec:
   proxy:
     headers: forwarded|xforwarded
 ----
-NOTE: If the `proxy.headers` field is not specified, the Operator falls back to legacy behaviour by implicitly setting
+NOTE: If the `proxy.headers` field is not specified, the Operator falls back to legacy behavior by implicitly setting
 `proxy=passthrough` by default. This results in deprecation warnings in the server log. This fallback will be removed
 in a future release.
 

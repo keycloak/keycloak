@@ -47,7 +47,7 @@ import org.keycloak.testsuite.pages.LoginConfigTotpPage;
 import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.updaters.UserAttributeUpdater;
-import org.keycloak.testsuite.util.GreenMailRule;
+import org.keycloak.testsuite.util.MailServer;
 import org.keycloak.testsuite.util.MailUtils;
 import org.keycloak.testsuite.util.SecondBrowser;
 import org.keycloak.testsuite.util.URLUtils;
@@ -89,7 +89,7 @@ public class AppInitiatedActionResetPasswordTest extends AbstractAppInitiatedAct
     }
 
     @Rule
-    public GreenMailRule greenMail = new GreenMailRule();
+    public MailServer mail = new MailServer();
 
     @Page
     protected LoginPasswordUpdatePage changePasswordPage;
@@ -165,7 +165,7 @@ public class AppInitiatedActionResetPasswordTest extends AbstractAppInitiatedAct
             events.expectRequiredAction(EventType.UPDATE_PASSWORD).assertEvent();
             events.expectRequiredAction(EventType.UPDATE_CREDENTIAL).detail(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE).assertEvent();
 
-            MimeMessage[] receivedMessages = greenMail.getReceivedMessages();
+            MimeMessage[] receivedMessages = mail.getReceivedMessages();
             Assertions.assertEquals(2, receivedMessages.length);
 
             Assertions.assertEquals("Update password", receivedMessages[0].getSubject());
@@ -199,7 +199,7 @@ public class AppInitiatedActionResetPasswordTest extends AbstractAppInitiatedAct
 
         EventAssertion.expectLoginSuccess(events.poll());
 
-        setTimeOffset(350);
+        timeOffSet.set(350);
 
         // Should prompt for re-authentication
         doAIA();
@@ -236,7 +236,7 @@ public class AppInitiatedActionResetPasswordTest extends AbstractAppInitiatedAct
 
         EventAssertion.expectLoginSuccess(events.poll());
 
-        setTimeOffset(550);
+        timeOffSet.set(550);
 
         // Should prompt for re-authentication
         doAIA();
@@ -275,7 +275,7 @@ public class AppInitiatedActionResetPasswordTest extends AbstractAppInitiatedAct
 
         EventAssertion.expectLoginSuccess(events.poll());
 
-        setTimeOffset(350);
+        timeOffSet.set(350);
 
         // Should not prompt for re-authentication
         doAIA();
@@ -313,7 +313,7 @@ public class AppInitiatedActionResetPasswordTest extends AbstractAppInitiatedAct
             EventAssertion.expectLoginSuccess(events.poll());
 
             // we need to add some slack to avoid timing issues
-            setTimeOffset(1);
+            timeOffSet.set(1);
 
             // Should prompt for re-authentication due to maxAuthAge password policy
             doAIA();

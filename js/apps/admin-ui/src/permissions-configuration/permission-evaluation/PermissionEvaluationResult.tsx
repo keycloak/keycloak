@@ -12,23 +12,23 @@ export const PermissionEvaluationResult = ({
   evaluateResult,
 }: PermissionEvaluationResultProps) => {
   const { t } = useTranslation();
-  const evaluatedResults = evaluateResult?.results || [];
+  const evaluatedResults = evaluateResult.results || [];
   const evaluatedResult = evaluatedResults[0] || {};
   const alertTitle =
-    evaluatedResult?.resource?.name ?? t("permissionEvaluationAlertTitle");
+    evaluatedResult.resource?.name ?? t("permissionEvaluationAlertTitle");
   const alertVariant =
-    evaluateResult?.status === "PERMIT" ? "success" : "warning";
+    evaluateResult.status === "PERMIT" ? "success" : "warning";
 
   const evaluatedAllowedScopes = useMemo(
-    () => sortBy(evaluatedResult?.allowedScopes || [], "name"),
+    () => sortBy(evaluatedResult.allowedScopes || [], "name"),
     [evaluatedResult],
   );
   const evaluatedDeniedScopes = useMemo(
-    () => sortBy(evaluatedResult?.deniedScopes || [], "name"),
+    () => sortBy(evaluatedResult.deniedScopes || [], "name"),
     [evaluatedResult],
   );
   const evaluatedPolicies = useMemo(
-    () => sortBy(evaluatedResult?.policies || [], "name"),
+    () => sortBy(evaluatedResult.policies || [], "name"),
     [evaluatedResult],
   );
 

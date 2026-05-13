@@ -61,7 +61,7 @@ import org.keycloak.testsuite.pages.RegisterPage;
 import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.updaters.OrganizationAttributeUpdater;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
-import org.keycloak.testsuite.util.GreenMailRule;
+import org.keycloak.testsuite.util.MailServer;
 import org.keycloak.testsuite.util.MailUtils;
 import org.keycloak.testsuite.util.MailUtils.EmailBody;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
@@ -94,7 +94,7 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
     public AssertEvents events = new AssertEvents(this);
 
     @Rule
-    public GreenMailRule greenMail = new GreenMailRule();
+    public MailServer mail = new MailServer();
 
     @Page
     protected InfoPage infoPage;
@@ -495,7 +495,7 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
     }
 
     private String getInvitationLinkFromEmail(String ...parameters) throws MessagingException, IOException {
-        MimeMessage message = greenMail.getLastReceivedMessage();
+        MimeMessage message = mail.getLastReceivedMessage();
         Assertions.assertNotNull(message);
         Assertions.assertEquals("Invitation to join the " + organizationName + " organization", message.getSubject());
 
@@ -527,7 +527,7 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
         organization.members().inviteUser(email, "Homer", "Simpson").close();
 
         try {
-            setTimeOffset((int) TimeUnit.DAYS.toSeconds(1));
+            timeOffSet.set((int) TimeUnit.DAYS.toSeconds(1));
 
             List<OrganizationInvitationRepresentation> list = organization.invitations().list();
             assertThat(list, Matchers.hasSize(1));
@@ -540,7 +540,7 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
             assertThat(driver.getPageSource(), Matchers.containsString("Action expired."));
             assertThat(managedRealm.admin().users().searchByEmail(email, true), Matchers.empty());
         } finally {
-            resetTimeOffset();
+            timeOffSet.set(0);
         }
     }
 

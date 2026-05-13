@@ -65,7 +65,7 @@ import org.keycloak.testsuite.pages.RegisterPage;
 import org.keycloak.testsuite.pages.VerifyEmailPage;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.AccountHelper;
-import org.keycloak.testsuite.util.GreenMailRule;
+import org.keycloak.testsuite.util.MailServer;
 import org.keycloak.testsuite.util.TestCleanup;
 import org.keycloak.testsuite.util.userprofile.UserProfileUtil;
 import org.keycloak.userprofile.DefaultAttributes;
@@ -120,7 +120,7 @@ public class UserStorageTest extends AbstractAuthTest {
     private String propProviderRWId;
 
     @Rule
-    public GreenMailRule greenMail = new GreenMailRule();
+    public MailServer mail = new MailServer();
 
     @Page
     protected LoginPage loginPage;
@@ -198,7 +198,7 @@ public class UserStorageTest extends AbstractAuthTest {
             Assertions.assertNotNull(userMapStorageFactory);
             userMapStorageFactory.clear();
         });
-        resetTimeOffset();
+        timeOffSet.set(0);
         testingClient.testing().revertTestingInfinispanTimeService();
     }
 
@@ -405,9 +405,9 @@ public class UserStorageTest extends AbstractAuthTest {
 
             verifyEmailPage.assertCurrent();
 
-            Assertions.assertEquals(1, greenMail.getReceivedMessages().length);
+            Assertions.assertEquals(1, mail.getReceivedMessages().length);
 
-            MimeMessage message = greenMail.getReceivedMessages()[0];
+            MimeMessage message = mail.getReceivedMessages()[0];
 
             String verificationUrl = getEmailLink(message);
 
@@ -689,11 +689,11 @@ public class UserStorageTest extends AbstractAuthTest {
 
         setFirstname("thor", "Thor1");
 
-        setTimeOffset(2 * 24 * 60 * 60); // 2 days in future
+        timeOffSet.set(2 * 24 * 60 * 60); // 2 days in future
 
         validateFirstname("thor", "Thor0"); // should still be cached
 
-        setTimeOffset(5 * 24 * 60 * 60); // 5 days in future
+        timeOffSet.set(5 * 24 * 60 * 60); // 5 days in future
 
         validateFirstname("thor", "Thor1"); // should be evicted
 
@@ -719,11 +719,11 @@ public class UserStorageTest extends AbstractAuthTest {
 
         validateFirstname("thor", "Thor0"); // should still be cached
 
-        setTimeOffset(30 * 60); // 1/2 hour in future
+        timeOffSet.set(30 * 60); // 1/2 hour in future
 
         validateFirstname("thor", "Thor0"); // should still be cached
 
-        setTimeOffset(2 * 60 * 60); // 2 hours in future
+        timeOffSet.set(2 * 60 * 60); // 2 hours in future
 
         validateFirstname("thor", "Thor1"); // should be evicted
 

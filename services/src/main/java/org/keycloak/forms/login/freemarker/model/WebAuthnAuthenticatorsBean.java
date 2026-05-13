@@ -22,6 +22,8 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.keycloak.authentication.authenticators.browser.WebAuthnAuthenticatorMetadata;
+import org.keycloak.authentication.authenticators.browser.WebAuthnMetadataService;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.CollectionUtil;
 import org.keycloak.models.KeycloakSession;
@@ -37,7 +39,8 @@ public class WebAuthnAuthenticatorsBean {
 
     private final List<WebAuthnAuthenticatorBean> authenticators;
 
-    public WebAuthnAuthenticatorsBean(KeycloakSession session, RealmModel realm, UserModel user, String credentialType) {
+    public WebAuthnAuthenticatorsBean(KeycloakSession session, RealmModel realm, UserModel user, String credentialType,
+                                      WebAuthnMetadataService metadataService) {
         // should consider multiple credentials in the future, but only single credential supported now.
         this.authenticators = user.credentialManager().getStoredCredentialsByTypeStream(credentialType)
                 .map(WebAuthnCredentialModel::createFromCredentialModel)
@@ -47,7 +50,13 @@ public class WebAuthnAuthenticatorsBean {
                     String createdAt = DateTimeFormatterUtil.getDateTimeFromMillis(webAuthnCredential.getCreatedDate(), session.getContext().resolveLocale(user));
                     final Set<String> transports = webAuthnCredential.getWebAuthnCredentialData().getTransports();
 
-                    return new WebAuthnAuthenticatorBean(credentialId, label, createdAt, transports);
+                    String aaguid = webAuthnCredential.getWebAuthnCredentialData().getAaguid();
+                    WebAuthnAuthenticatorMetadata metadata = metadataService.getAuthenticatorMetadata(aaguid);
+                    String authenticatorProvider = metadata != null ? metadata.name() : null;
+                    String iconLight = metadata != null ? metadata.iconLight() : null;
+                    String iconDark = metadata != null ? metadata.iconDark() : null;
+
+                    return new WebAuthnAuthenticatorBean(credentialId, label, createdAt, transports, authenticatorProvider, iconLight, iconDark);
                 }).collect(Collectors.toList());
     }
 
@@ -63,12 +72,19 @@ public class WebAuthnAuthenticatorsBean {
         private final String label;
         private final String createdAt;
         private final TransportsBean transports;
+        private final String authenticatorProvider;
+        private final String iconLight;
+        private final String iconDark;
 
-        public WebAuthnAuthenticatorBean(String credentialId, String label, String createdAt, Set<String> transports) {
+        public WebAuthnAuthenticatorBean(String credentialId, String label, String createdAt, Set<String> transports,
+                                         String authenticatorProvider, String iconLight, String iconDark) {
             this.credentialId = credentialId;
             this.label = label;
             this.createdAt = createdAt;
             this.transports = TransportsBean.convertFromSet(transports);
+            this.authenticatorProvider = authenticatorProvider;
+            this.iconLight = iconLight;
+            this.iconDark = iconDark;
         }
 
         public String getCredentialId() {
@@ -85,6 +101,18 @@ public class WebAuthnAuthenticatorsBean {
 
         public TransportsBean getTransports() {
             return transports;
+        }
+
+        public String getAuthenticatorProvider() {
+            return authenticatorProvider;
+        }
+
+        public String getIconLight() {
+            return iconLight;
+        }
+
+        public String getIconDark() {
+            return iconDark;
         }
 
         public static class TransportsBean {

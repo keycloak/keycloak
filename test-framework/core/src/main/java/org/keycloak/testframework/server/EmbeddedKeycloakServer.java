@@ -8,8 +8,13 @@ import org.keycloak.testframework.util.MavenProjectUtil;
 
 public class EmbeddedKeycloakServer implements KeycloakServer {
 
+    private final long startTimeout;
     private Keycloak keycloak;
     private boolean tlsEnabled = false;
+
+    public EmbeddedKeycloakServer(long startTimeout) {
+        this.startTimeout = startTimeout;
+    }
 
     @Override
     public void start(KeycloakServerConfigBuilder keycloakServerConfigBuilder, boolean tlsEnabled) {
@@ -22,7 +27,11 @@ public class EmbeddedKeycloakServer implements KeycloakServer {
         }
 
         keycloak = builder.start(keycloakServerConfigBuilder.toArgs());
-        ReadinessProbe.waitUntilReady(this);
+        if (!isRunning()) {
+            throw new RuntimeException("Keycloak failed to start");
+        }
+
+        ReadinessProbe.waitUntilReady(this, startTimeout);
     }
 
     @Override
@@ -51,4 +60,16 @@ public class EmbeddedKeycloakServer implements KeycloakServer {
             return "http://localhost:9001";
         }
     }
+
+    private boolean isRunning() {
+        Thread[] threads = new Thread[Thread.activeCount()];
+        Thread.enumerate(threads);
+        for (Thread t : threads) {
+            if (t.getName().equals("Quarkus Main Thread")) {
+                return true;
+            }
+        }
+        return false;
+    }
+
 }

@@ -208,27 +208,14 @@ public class ClientScopeResource {
         }
         boolean isDynamic = Boolean.parseBoolean(clientScope.getAttributes().get(ClientScopeModel.IS_DYNAMIC_SCOPE));
         String regexp = clientScope.getAttributes().get(ClientScopeModel.DYNAMIC_SCOPE_REGEXP);
+        // Always validate the dynamic scope regexp to avoid inserting a wrong value even when the feature is disabled
+        if (!StringUtil.isNullOrEmpty(regexp) && !dynamicScreenPattern.matcher(regexp).matches()) {
+            throw ErrorResponse.error(String.format("Invalid format for the Dynamic Scope regexp %1s", regexp), Response.Status.BAD_REQUEST);
+        }
         if (Profile.isFeatureEnabled(Profile.Feature.DYNAMIC_SCOPES)) {
             // if the scope is dynamic but the regexp is empty, it's not considered valid
             if (isDynamic && StringUtil.isNullOrEmpty(regexp)) {
                 throw ErrorResponse.error("Dynamic scope regexp must not be null or empty", Response.Status.BAD_REQUEST);
-            }
-            // Always validate the dynamic scope regexp to avoid inserting a wrong value even when the feature is disabled
-            if (!StringUtil.isNullOrEmpty(regexp) && !dynamicScreenPattern.matcher(regexp).matches()) {
-                throw ErrorResponse.error(String.format("Invalid format for the Dynamic Scope regexp %1s", regexp), Response.Status.BAD_REQUEST);
-            }
-        } else {
-            // if the value is not null or empty we won't accept the request as the feature is disabled
-            Optional.ofNullable(regexp).ifPresent(s -> {
-                if (!s.isEmpty()) {
-                    throw ErrorResponse.error(String.format("Unexpected value \"%1s\" for attribute %2s in ClientScope",
-                            regexp, ClientScopeModel.DYNAMIC_SCOPE_REGEXP), Response.Status.BAD_REQUEST);
-                }
-            });
-            // If isDynamic is true, we won't accept the request as the feature is disabled
-            if (isDynamic) {
-                throw ErrorResponse.error(String.format("Unexpected value \"%1s\" for attribute %2s in ClientScope",
-                        isDynamic, ClientScopeModel.IS_DYNAMIC_SCOPE), Response.Status.BAD_REQUEST);
             }
         }
     }

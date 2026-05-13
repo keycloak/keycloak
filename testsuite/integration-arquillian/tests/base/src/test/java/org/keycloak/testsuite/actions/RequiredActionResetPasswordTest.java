@@ -43,7 +43,7 @@ import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
 import org.keycloak.testsuite.pages.LoginUsernameOnlyPage;
 import org.keycloak.testsuite.util.FlowUtil;
-import org.keycloak.testsuite.util.GreenMailRule;
+import org.keycloak.testsuite.util.MailServer;
 import org.keycloak.testsuite.util.RealmManager;
 import org.keycloak.testsuite.util.SecondBrowser;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
@@ -82,7 +82,7 @@ public class RequiredActionResetPasswordTest extends AbstractTestRealmKeycloakTe
     public AssertEvents events = new AssertEvents(this);
 
     @Rule
-    public GreenMailRule greenMail = new GreenMailRule();
+    public MailServer mail = new MailServer();
 
     @Page
     protected AppPage appPage;
@@ -212,7 +212,7 @@ public class RequiredActionResetPasswordTest extends AbstractTestRealmKeycloakTe
 
         try {
             RealmManager.realm(managedRealm.admin()).passwordPolicy("forceExpiredPasswordChange(1)");
-            setTimeOffset(60 * 60 * 48);
+            timeOffSet.set(60 * 60 * 48);
 
             //create username only flow
             testingClient.server("test").run(session -> FlowUtil.inCurrentRealm(session).copyBrowserFlow(newFlowAlias));
@@ -239,7 +239,7 @@ public class RequiredActionResetPasswordTest extends AbstractTestRealmKeycloakTe
                     .ifPresent(authenticationFlowRepresentation ->
                             managedRealm.admin().flows().deleteFlow(authenticationFlowRepresentation.getId()));
 
-            setTimeOffset(0);
+            timeOffSet.set(0);
             RealmManager.realm(managedRealm.admin()).passwordPolicy(null);
         }
     }

@@ -50,12 +50,12 @@ export const TypeaheadSelect = ({
   ) as React.ReactElement<SelectOptionProps>[];
 
   const toggle = () => {
-    onToggle?.(!rest.isOpen);
+    onToggle(!rest.isOpen);
   };
 
   const onInputKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
     const focusedItem = childArray[focusedItemIndex];
-    onToggle?.(true);
+    onToggle(true);
 
     switch (event.key) {
       case "Enter": {
@@ -67,13 +67,13 @@ export const TypeaheadSelect = ({
           setFilterValue("");
         }
         onSelect?.(focusedItem.props.value);
-        onToggle?.(false);
+        onToggle(false);
         setFocusedItemIndex(0);
 
         break;
       }
       case "Escape": {
-        onToggle?.(false);
+        onToggle(false);
         break;
       }
       case "Backspace": {
@@ -114,7 +114,7 @@ export const TypeaheadSelect = ({
     <Select
       {...rest}
       onClick={toggle}
-      onOpenChange={(isOpen) => onToggle?.(isOpen)}
+      onOpenChange={(isOpen) => onToggle(isOpen)}
       onSelect={(_, value) => {
         onSelect?.(value || "");
         onFilter?.("");
@@ -127,7 +127,7 @@ export const TypeaheadSelect = ({
           ref={ref}
           id={toggleId}
           variant="typeahead"
-          onClick={() => onToggle?.(true)}
+          onClick={() => onToggle(true)}
           icon={toggleIcon}
           isDisabled={isDisabled}
           isExpanded={rest.isOpen}
@@ -183,7 +183,7 @@ export const TypeaheadSelect = ({
                     onSelect?.("");
                     setFilterValue("");
                     onFilter?.("");
-                    textInputRef?.current?.focus();
+                    textInputRef.current?.focus();
                   }}
                   aria-label="Clear input value"
                 >

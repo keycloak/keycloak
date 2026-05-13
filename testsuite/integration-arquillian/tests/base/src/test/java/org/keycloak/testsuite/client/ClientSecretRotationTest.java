@@ -117,7 +117,7 @@ public class ClientSecretRotationTest extends AbstractRestServiceTest {
         } catch (ClientPolicyException e) {
             throw new RuntimeException(e);
         }
-        resetTimeOffset();
+        timeOffSet.set(0);
     }
 
     @Override
@@ -260,7 +260,7 @@ public class ClientSecretRotationTest extends AbstractRestServiceTest {
         configureDefaultProfileAndPolicy();
 
         //advance 1 hour
-        setTimeOffset(3600);
+        timeOffSet.set(3600);
 
         String newSecret = clientResource.generateNewSecret().getValue();
         assertThat(newSecret, not(equalTo(secondSecret)));
@@ -299,7 +299,7 @@ public class ClientSecretRotationTest extends AbstractRestServiceTest {
 
         logger.debug("Current time " + Time.toDate(Time.currentTime()));
         //advance 1 hour
-        setTimeOffset(3601);
+        timeOffSet.set(3601);
         logger.debug("Time after offset " + Time.toDate(Time.currentTime()));
 
         clientRepresentation = clientResource.toRepresentation();
@@ -366,7 +366,7 @@ public class ClientSecretRotationTest extends AbstractRestServiceTest {
         oauth.doLogout(res.getRefreshToken());
 
         //advance 1 hour
-        setTimeOffset(3601);
+        timeOffSet.set(3601);
 
         oauth.client(clientId, DEFAULT_SECRET);
 
@@ -399,7 +399,7 @@ public class ClientSecretRotationTest extends AbstractRestServiceTest {
         clientResource.update(clientRepresentation);
 
         //advance 1 hour
-        setTimeOffset(3601);
+        timeOffSet.set(3601);
 
         // force client update (rotate the secret according to the policy)
         clientRepresentation = clientResource.toRepresentation();
@@ -453,7 +453,7 @@ public class ClientSecretRotationTest extends AbstractRestServiceTest {
 
         logger.debug(">>> secret creation time " + Time.toDate(Time.currentTime()));
 
-        setTimeOffset(3601);
+        timeOffSet.set(3601);
         clientResource.update(clientResource.toRepresentation());
 
         logger.debug(">>> secret expiration time after first update " + Time.toDate(
@@ -475,7 +475,7 @@ public class ClientSecretRotationTest extends AbstractRestServiceTest {
 
         oauth.client(clientId);
 
-        setTimeOffset(7201);
+        timeOffSet.set(7201);
 
         logger.debug("client secret:" + updatedSecret + "\nsecret expiration: " + Time.toDate(
                 wrapper.getClientSecretExpirationTime()) + "\nrotated secret: "
@@ -512,7 +512,7 @@ public class ClientSecretRotationTest extends AbstractRestServiceTest {
         clientResource.update(clientResource.toRepresentation());
 
         //advance 1 hour
-        setTimeOffset(3601);
+        timeOffSet.set(3601);
 
         // force client update (rotate the secret according to the policy)
         String firstSecret = clientResource.getSecret().getValue();

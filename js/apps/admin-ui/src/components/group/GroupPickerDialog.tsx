@@ -236,15 +236,14 @@ export const GroupPickerDialog = ({
                     setFirst(0);
                   }}
                   type={type}
-                  isSearching={filter !== ""}
-                  setIsSearching={(boolean) => setFilter(boolean ? "" : filter)}
+                  isSearching={false}
                   selectedRows={selectedRows}
                   setSelectedRows={setSelectedRows}
                   canBrowse={canBrowse}
                 />
               ))
             : groups
-                ?.map((g) => deepGroup([g]))
+                .map((g) => deepGroup([g]))
                 .flat()
                 .map((g) => (
                   <GroupRow

@@ -920,7 +920,7 @@ public abstract class AbstractClientAuthSignedJWTTest extends AbstractKeycloakTe
         clientResource.update(clientRepresentation);
 
         // set time offset, so that new keys are downloaded
-        setTimeOffset(20);
+        timeOffSet.set(20);
 
         return keyPair;
     }
@@ -941,7 +941,7 @@ public abstract class AbstractClientAuthSignedJWTTest extends AbstractKeycloakTe
         clientResource.update(clientRepresentation);
 
         // set time offset, so that new keys are downloaded
-        setTimeOffset(20);
+        timeOffSet.set(20);
 
         return keyPair;
     }

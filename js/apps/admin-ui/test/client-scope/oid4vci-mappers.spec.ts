@@ -91,9 +91,7 @@ test.describe("OID4VCI Protocol Mapper Configuration", () => {
   });
 
   test.afterEach(async () => {
-    if (testBed) {
-      await testBed[Symbol.asyncDispose]();
-    }
+    await testBed[Symbol.asyncDispose]();
   });
 
   test("should display mandatory claim toggle and claim display fields", async ({

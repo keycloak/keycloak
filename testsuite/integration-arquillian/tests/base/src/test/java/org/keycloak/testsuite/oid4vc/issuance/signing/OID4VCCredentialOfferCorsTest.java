@@ -25,7 +25,6 @@ import java.util.stream.Collectors;
 
 import jakarta.ws.rs.core.HttpHeaders;
 
-import org.keycloak.common.Profile;
 import org.keycloak.common.util.Time;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
@@ -39,7 +38,6 @@ import org.keycloak.protocol.oid4vc.model.PreAuthorizedCodeGrant;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.cors.Cors;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.util.TokenUtil;
 import org.keycloak.testsuite.util.oauth.AbstractHttpResponse;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
@@ -67,7 +65,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *
  * @author <a href="https://github.com/forkimenjeckayang">Forkim Akwichek</a>
  */
-@EnableFeature(value = Profile.Feature.OID4VC_VCI, skipRestart = true)
 public class OID4VCCredentialOfferCorsTest extends OID4VCIssuerEndpointTest {
 
     private static final String VALID_CORS_URL = "http://localtest.me:8180";

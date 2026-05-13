@@ -40,6 +40,7 @@ They can only access the resources and operations they have been granted access 
 Be aware that both server and realm administrators are not affected by the permissions you define when managing access to realm resources through this feature.
 Always make sure to review the users granted with the `admin` or `realm-admin` roles to avoid any potential privilege escalation.
 
+[[_understanding_realm_resource_types]]
 ==== Understanding the Realm Resource Types
 
 In a realm, you can manage different types of resources such as users, groups, clients, client scopes, roles, and so on.
@@ -478,6 +479,237 @@ Let's exlude the members of the group itself, so that `test-admins` cannot manag
 
 - Create a "Group Permission" with the *impersonate-members* for specific group `mygroup`.
 - Assign a "Group Policy" targeting `mygroup-helpdesk` to it.
+
+[[_managing-permissions-rest-api]]
+==== Managing permissions using the Admin REST API
+
+In addition to the Admin Console, you can manage fine-grained admin permissions programmatically using the Admin REST API.
+
+All permission and policy management is performed through the authorization endpoints of the `admin-permissions` client that is automatically created when you enable admin permissions for a realm.
+
+===== Enabling admin permissions for a realm
+
+To enable admin permissions via the Admin REST API, update the realm representation:
+
+[source,bash]
+----
+PUT /admin/realms/{realm}
+Content-Type: application/json
+
+{
+  "adminPermissionsEnabled": true
+}
+----
+
+===== Discovering the admin-permissions client
+
+Once admin permissions are enabled, a special `admin-permissions` client is created in the realm.
+You need this client's internal UUID to manage permissions and policies via the REST API.
+
+[source,bash]
+----
+GET /admin/realms/{realm}/clients?clientId=admin-permissions
+----
+
+The response contains the client representation with the `id` field you will use in subsequent requests.
+All permission and policy endpoints are under:
+
+----
+/admin/realms/{realm}/clients/{admin-permissions-client-uuid}/authz/resource-server
+----
+
+===== Creating policies
+
+Before creating permissions, you must create one or more policies that define _who_ should be granted or denied access.
+Policies are created under the `policy` sub-resource, with the policy type as a path segment.
+
+====== User policy
+
+A user policy grants or denies access based on specific users.
+
+[source,bash]
+----
+POST /admin/realms/{realm}/clients/{client-uuid}/authz/resource-server/policy/user
+Content-Type: application/json
+
+{
+  "name": "my-user-policy",
+  "logic": "POSITIVE",
+  "users": ["{user-uuid}"]
+}
+----
+
+====== Group policy
+
+A group policy grants or denies access based on group membership.
+
+[source,bash]
+----
+POST /admin/realms/{realm}/clients/{client-uuid}/authz/resource-server/policy/group
+Content-Type: application/json
+
+{
+  "name": "my-group-policy",
+  "logic": "POSITIVE",
+  "groups": [{"id": "{group-uuid}"}]
+}
+----
+
+====== Role policy
+
+A role policy grants or denies access based on role assignment.
+
+[source,bash]
+----
+POST /admin/realms/{realm}/clients/{client-uuid}/authz/resource-server/policy/role
+Content-Type: application/json
+
+{
+  "name": "my-role-policy",
+  "logic": "POSITIVE",
+  "roles": [{"id": "{role-uuid}"}]
+}
+----
+
+For all policy types, set `logic` to `NEGATIVE` to invert the condition (deny when the condition is met).
+
+===== Creating permissions
+
+Permissions are scope-based and are created under the `permission/scope` sub-resource.
+A permission ties together a resource type, one or more scopes (operations), and one or more policies.
+
+====== Permission for all resources of a type
+
+To grant access to all resources of a given type (for example, all groups):
+
+[source,bash]
+----
+POST /admin/realms/{realm}/clients/{client-uuid}/authz/resource-server/permission/scope
+Content-Type: application/json
+
+{
+  "name": "manage-all-groups",
+  "resourceType": "Groups",
+  "scopes": ["manage", "view"],
+  "policies": ["my-group-policy"]
+}
+----
+
+====== Permission for specific resources
+
+To grant access to specific resources, provide the resource identifiers in the `resources` field.
+For users, groups, and clients, use the entity's UUID. For roles, use the role UUID.
+
+[source,bash]
+----
+POST /admin/realms/{realm}/clients/{client-uuid}/authz/resource-server/permission/scope
+Content-Type: application/json
+
+{
+  "name": "manage-engineering-group",
+  "resourceType": "Groups",
+  "scopes": ["manage", "view", "manage-members", "view-members"],
+  "resources": ["{group-uuid}"],
+  "policies": ["my-group-policy"]
+}
+----
+
+The `resourceType` field must be one of: `Users`, `Groups`, `Clients`, `Roles`, or `Organizations`.
+The `scopes` must be valid for the chosen resource type — see <<_understanding_realm_resource_types, Understanding the Realm Resource Types>> for the available scopes.
+
+===== Listing, updating, and deleting permissions
+
+To list all scope permissions:
+
+[source,bash]
+----
+GET /admin/realms/{realm}/clients/{client-uuid}/authz/resource-server/permission/scope
+----
+
+To search for a permission by name:
+
+[source,bash]
+----
+GET /admin/realms/{realm}/clients/{client-uuid}/authz/resource-server/permission/scope/search?name={name}
+----
+
+To update a permission:
+
+[source,bash]
+----
+PUT /admin/realms/{realm}/clients/{client-uuid}/authz/resource-server/permission/scope/{permission-id}
+Content-Type: application/json
+
+{
+  "id": "{permission-id}",
+  "name": "updated-name",
+  "resourceType": "Groups",
+  "scopes": ["view"],
+  "policies": ["my-group-policy"]
+}
+----
+
+To delete a permission:
+
+[source,bash]
+----
+DELETE /admin/realms/{realm}/clients/{client-uuid}/authz/resource-server/permission/scope/{permission-id}
+----
+
+The same CRUD operations are available for policies under the corresponding policy type path
+(for example, `/authz/resource-server/policy/user/{policy-id}`).
+
+===== Example: Allowing a group of administrators to manage specific groups
+
+The following example creates a policy and permission that allows members of an `admins` group to view and manage
+a specific group and its members.
+
+. Enable admin permissions for the realm:
++
+[source,bash]
+----
+PUT /admin/realms/myrealm
+Content-Type: application/json
+
+{"adminPermissionsEnabled": true}
+----
+
+. Discover the `admin-permissions` client UUID:
++
+[source,bash]
+----
+GET /admin/realms/myrealm/clients?clientId=admin-permissions
+----
+
+. Create a group policy referencing the `admins` group:
++
+[source,bash]
+----
+POST /admin/realms/myrealm/clients/{client-uuid}/authz/resource-server/policy/group
+Content-Type: application/json
+
+{
+  "name": "admins-policy",
+  "logic": "POSITIVE",
+  "groups": [{"id": "{admins-group-uuid}"}]
+}
+----
+
+. Create a permission granting view and manage access to a target group:
++
+[source,bash]
+----
+POST /admin/realms/myrealm/clients/{client-uuid}/authz/resource-server/permission/scope
+Content-Type: application/json
+
+{
+  "name": "manage-target-group",
+  "resourceType": "Groups",
+  "scopes": ["view", "manage", "view-members", "manage-members", "manage-membership"],
+  "resources": ["{target-group-uuid}"],
+  "policies": ["admins-policy"]
+}
+----
 
 ==== Performance considerations
 

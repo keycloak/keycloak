@@ -8,6 +8,7 @@ import org.keycloak.common.Profile;
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
 import org.keycloak.it.junit5.extension.RawDistOnly;
+import org.keycloak.it.junit5.extension.SkipRealmBootstrap;
 import org.keycloak.it.utils.KeycloakDistribution;
 import org.keycloak.quarkus.runtime.cli.command.Build;
 import org.keycloak.quarkus.runtime.cli.command.Start;
@@ -30,6 +31,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 @RawDistOnly(reason = "Containers are immutable")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @Tag(DistributionTest.SMOKE)
+@SkipRealmBootstrap
 public class FeaturesDistTest {
 
     private static final String PREVIEW_FEATURES_EXPECTED_LOG = "Preview features enabled: " + Arrays.stream(Profile.Feature.values())
