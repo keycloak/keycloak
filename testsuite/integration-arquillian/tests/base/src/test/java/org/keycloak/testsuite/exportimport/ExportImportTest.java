@@ -56,8 +56,8 @@ import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
-import org.keycloak.testsuite.client.resources.TestingExportImportResource;
 import org.keycloak.testsuite.util.JsonTestUtils;
+import org.keycloak.testsuite.util.runonserver.ExportImportHelper;
 import org.keycloak.testsuite.util.runonserver.RunHelpers;
 import org.keycloak.testsuite.util.userprofile.UserProfileUtil;
 import org.keycloak.userprofile.DeclarativeUserProfileProvider;
@@ -177,11 +177,11 @@ public class ExportImportTest extends AbstractKeycloakTest {
 
     @Test
     public void testDirFullExportImport() throws Throwable {
-        testingClient.testing().exportImport().setProvider(DirExportProviderFactory.PROVIDER_ID);
-        String targetDirPath = testingClient.testing().exportImport().getExportImportTestDirectory()+ File.separator + "dirExport";
+        runOnServerMaster.run(ExportImportHelper.setProvider(DirExportProviderFactory.PROVIDER_ID));
+        String targetDirPath = runOnServerMaster.fetchString(ExportImportHelper.getExportImportTestDirectory()).replace("\"","")+ File.separator + "dirExport";
         DirExportProvider.recursiveDeleteDir(new File(targetDirPath));
-        testingClient.testing().exportImport().setDir(targetDirPath);
-        testingClient.testing().exportImport().setUsersPerFile(ExportImportConfig.DEFAULT_USERS_PER_FILE);
+        runOnServerMaster.run(ExportImportHelper.setDir(targetDirPath));
+        runOnServerMaster.run(ExportImportHelper.setUsersPerFile(ExportImportConfig.DEFAULT_USERS_PER_FILE));
 
         testFullExportImport();
 
@@ -194,13 +194,11 @@ public class ExportImportTest extends AbstractKeycloakTest {
 
     @Test
     public void testDirRealmExportImport() throws Throwable {
-        testingClient.testing()
-                .exportImport()
-                .setProvider(DirExportProviderFactory.PROVIDER_ID);
-        String targetDirPath = testingClient.testing().exportImport().getExportImportTestDirectory() + File.separator + "dirRealmExport";
+        runOnServerMaster.run(ExportImportHelper.setProvider(DirExportProviderFactory.PROVIDER_ID));
+        String targetDirPath = runOnServerMaster.fetchString(ExportImportHelper.getExportImportTestDirectory()).replace("\"","") + File.separator + "dirRealmExport";
         DirExportProvider.recursiveDeleteDir(new File(targetDirPath));
-        testingClient.testing().exportImport().setDir(targetDirPath);
-        testingClient.testing().exportImport().setUsersPerFile(5);
+        runOnServerMaster.run(ExportImportHelper.setDir(targetDirPath));
+        runOnServerMaster.run(ExportImportHelper.setUsersPerFile(5));
 
         testRealmExportImport();
 
@@ -215,9 +213,9 @@ public class ExportImportTest extends AbstractKeycloakTest {
 
     @Test
     public void testSingleFileFullExportImport() throws Throwable {
-        testingClient.testing().exportImport().setProvider(SingleFileExportProviderFactory.PROVIDER_ID);
-        String targetFilePath = testingClient.testing().exportImport().getExportImportTestDirectory() + File.separator + "singleFile-full.json";
-        testingClient.testing().exportImport().setFile(targetFilePath);
+        runOnServerMaster.run(ExportImportHelper.setProvider(SingleFileExportProviderFactory.PROVIDER_ID));
+        String targetFilePath = runOnServerMaster.fetchString(ExportImportHelper.getExportImportTestDirectory()).replace("\"","") + File.separator + "singleFile-full.json";
+        runOnServerMaster.run(ExportImportHelper.setFile(targetFilePath));
 
         testFullExportImport();
         assertExportContainsGoogleClientSecret(targetFilePath);
@@ -238,9 +236,9 @@ public class ExportImportTest extends AbstractKeycloakTest {
 
     @Test
     public void testSingleFileRealmExportImport() throws Throwable {
-        testingClient.testing().exportImport().setProvider(SingleFileExportProviderFactory.PROVIDER_ID);
-        String targetFilePath = testingClient.testing().exportImport().getExportImportTestDirectory() + File.separator + "singleFile-realm.json";
-        testingClient.testing().exportImport().setFile(targetFilePath);
+        runOnServerMaster.run(ExportImportHelper.setProvider(SingleFileExportProviderFactory.PROVIDER_ID));
+        String targetFilePath = runOnServerMaster.fetchString(ExportImportHelper.getExportImportTestDirectory()).replace("\"","") + File.separator + "singleFile-realm.json";
+        runOnServerMaster.run(ExportImportHelper.setFile(targetFilePath));
 
         testRealmExportImport();
     }
@@ -251,14 +249,14 @@ public class ExportImportTest extends AbstractKeycloakTest {
         removeRealm(TEST_REALM);
 
         // Set the realm, which doesn't have builtin clients/roles inside JSON
-        testingClient.testing().exportImport().setProvider(SingleFileExportProviderFactory.PROVIDER_ID);
+        runOnServerMaster.run(ExportImportHelper.setProvider(SingleFileExportProviderFactory.PROVIDER_ID));
         URL url = ExportImportTest.class.getResource("/model/testrealm.json");
         String targetFilePath = new File(url.getFile()).getAbsolutePath();
-        testingClient.testing().exportImport().setFile(targetFilePath);
+        runOnServerMaster.run(ExportImportHelper.setFile(targetFilePath));
 
-        testingClient.testing().exportImport().setAction(ExportImportConfig.ACTION_IMPORT);
+        runOnServerMaster.run(ExportImportHelper.setAction(ExportImportConfig.ACTION_IMPORT));
 
-        testingClient.testing().exportImport().runImport();
+        runOnServerMaster.run(ExportImportHelper.runImport());
 
         RealmResource testRealmRealm = adminClient.realm(TEST_REALM);
 
@@ -304,20 +302,19 @@ public class ExportImportTest extends AbstractKeycloakTest {
         UPConfig persistedConfig = UserProfileUtil.setUserProfileConfiguration(realmRes, UserProfileUtil.CONFIGURATION_FOR_USER_EDIT);
 
         //export
-        TestingExportImportResource exportImport = testingClient.testing().exportImport();
-        exportImport.setProvider(SingleFileExportProviderFactory.PROVIDER_ID);
-        exportImport.setAction(ExportImportConfig.ACTION_EXPORT);
-        exportImport.setRealmName(TEST_REALM);
-        String targetFilePath = exportImport.getExportImportTestDirectory() + File.separator + "singleFile-userProfile.json";
-        exportImport.setFile(targetFilePath);
-        exportImport.runExport();
+        runOnServerMaster.run(ExportImportHelper.setProvider(SingleFileExportProviderFactory.PROVIDER_ID));
+        runOnServerMaster.run(ExportImportHelper.setAction(ExportImportConfig.ACTION_EXPORT));
+        runOnServerMaster.run(ExportImportHelper.setRealmName(TEST_REALM));
+        String targetFilePath = runOnServerMaster.fetchString(ExportImportHelper.getExportImportTestDirectory()).replace("\"","") + File.separator + "singleFile-userProfile.json";
+        runOnServerMaster.run(ExportImportHelper.setFile(targetFilePath));
+        runOnServerMaster.run(ExportImportHelper.runExport());
 
         //remove realm
         removeRealm(TEST_REALM);
 
         //import
-        exportImport.setAction(ExportImportConfig.ACTION_IMPORT);
-        exportImport.runImport();
+        runOnServerMaster.run(ExportImportHelper.setAction(ExportImportConfig.ACTION_IMPORT));
+        runOnServerMaster.run(ExportImportHelper.runImport());
 
         List<ComponentRepresentation> userProfileComponents = realmRes.components().query(TEST_REALM, "org.keycloak.userprofile.UserProfileProvider");
         assertThat(userProfileComponents,   notNullValue());
@@ -346,13 +343,12 @@ public class ExportImportTest extends AbstractKeycloakTest {
         assertEquals(OID4VCIConstants.CREDENTIAL_OFFER_CREATE.getName(), credentialOfferCreateRole.getName(), "Role name should match");
         
         // Export the realm
-        TestingExportImportResource exportImport = testingClient.testing().exportImport();
-        exportImport.setProvider(SingleFileExportProviderFactory.PROVIDER_ID);
-        exportImport.setAction(ExportImportConfig.ACTION_EXPORT);
-        exportImport.setRealmName(testRealmName);
-        String targetFilePath = exportImport.getExportImportTestDirectory() + File.separator + "oid4vci-realm-export.json";
-        exportImport.setFile(targetFilePath);
-        exportImport.runExport();
+        runOnServerMaster.run(ExportImportHelper.setProvider(SingleFileExportProviderFactory.PROVIDER_ID));
+        runOnServerMaster.run(ExportImportHelper.setAction(ExportImportConfig.ACTION_EXPORT));
+        runOnServerMaster.run(ExportImportHelper.setRealmName(testRealmName));
+        String targetFilePath = runOnServerMaster.fetchString(ExportImportHelper.getExportImportTestDirectory()).replace("\"","") + File.separator + "oid4vci-realm-export.json";
+        runOnServerMaster.run(ExportImportHelper.setFile(targetFilePath));
+        runOnServerMaster.run(ExportImportHelper.runExport());
         
         // Verify the exported file contains the role
         Map<String, RealmRepresentation> exportedRealms;
@@ -371,8 +367,8 @@ public class ExportImportTest extends AbstractKeycloakTest {
         removeRealm(testRealmName);
         
         // Import the realm back - this should succeed without ModelDuplicateException
-        exportImport.setAction(ExportImportConfig.ACTION_IMPORT);
-        exportImport.runImport();
+        runOnServerMaster.run(ExportImportHelper.setAction(ExportImportConfig.ACTION_IMPORT));
+        runOnServerMaster.run(ExportImportHelper.runImport());
         
         // Verify the realm was imported successfully
         RealmResource importedRealmResource = adminClient.realm(testRealmName);
@@ -389,18 +385,16 @@ public class ExportImportTest extends AbstractKeycloakTest {
 
     @Test
     public void testImportIgnoreExistingMissingClientId() {
-        TestingExportImportResource resource = testingClient.testing().exportImport();
+        runOnServerMaster.run(ExportImportHelper.setStrategy(Strategy.IGNORE_EXISTING));
+        runOnServerMaster.run(ExportImportHelper.setProvider(DirExportProviderFactory.PROVIDER_ID));
 
-        resource.setStrategy(Strategy.IGNORE_EXISTING);
-        resource.setProvider(DirExportProviderFactory.PROVIDER_ID);
-
-        String targetDirPath = resource.getExportImportTestDirectory() + File.separator + "dirRealmExport";
+        String targetDirPath = runOnServerMaster.fetchString(ExportImportHelper.getExportImportTestDirectory()).replace("\"","") + File.separator + "dirRealmExport";
         File dest = new File(targetDirPath);
         try {
             DirExportProvider.recursiveDeleteDir(dest);
-            resource.setDir(targetDirPath);
+            runOnServerMaster.run(ExportImportHelper.setDir(targetDirPath));
 
-            resource.setAction(ExportImportConfig.ACTION_EXPORT);
+            runOnServerMaster.run(ExportImportHelper.setAction(ExportImportConfig.ACTION_EXPORT));
 
             URL url = ExportImportTest.class.getResource("/model/testrealm.json");
             File testRealm = new File(url.getFile());
@@ -418,12 +412,12 @@ public class ExportImportTest extends AbstractKeycloakTest {
             File existingFile = FileUtils.getFile(dest, newFile.getName());
             assertThat(existingFile, Matchers.notNullValue());
 
-            resource.runExport();
-            resource.setAction(ExportImportConfig.ACTION_IMPORT);
+            runOnServerMaster.run(ExportImportHelper.runExport());
+            runOnServerMaster.run(ExportImportHelper.setAction(ExportImportConfig.ACTION_IMPORT));
 
             try {
-                resource.runImport();
-                resource.runImport();
+                runOnServerMaster.run(ExportImportHelper.runImport());
+                runOnServerMaster.run(ExportImportHelper.runImport());
             } catch (Exception e) {
                 Assertions.fail("Error with realm importing twice. Details: " + e.getMessage());
             }
@@ -434,18 +428,16 @@ public class ExportImportTest extends AbstractKeycloakTest {
 
     @UncaughtServerErrorExpected
     public void testImportNameMismatch() {
-        TestingExportImportResource resource = testingClient.testing().exportImport();
+        runOnServerMaster.run(ExportImportHelper.setStrategy(Strategy.IGNORE_EXISTING));
+        runOnServerMaster.run(ExportImportHelper.setProvider(DirExportProviderFactory.PROVIDER_ID));
 
-        resource.setStrategy(Strategy.IGNORE_EXISTING);
-        resource.setProvider(DirExportProviderFactory.PROVIDER_ID);
-
-        String targetDirPath = resource.getExportImportTestDirectory() + File.separator + "dirRealmExport";
+        String targetDirPath = runOnServerMaster.fetchString(ExportImportHelper.getExportImportTestDirectory()).replace("\"","") + File.separator + "dirRealmExport";
         File dest = new File(targetDirPath);
         try {
             DirExportProvider.recursiveDeleteDir(dest);
-            resource.setDir(targetDirPath);
+            runOnServerMaster.run(ExportImportHelper.setDir(targetDirPath));
 
-            resource.setAction(ExportImportConfig.ACTION_EXPORT);
+            runOnServerMaster.run(ExportImportHelper.setAction(ExportImportConfig.ACTION_EXPORT));
 
             URL url = ExportImportTest.class.getResource("/model/testrealm.json");
             File testRealm = new File(url.getFile());
@@ -463,9 +455,9 @@ public class ExportImportTest extends AbstractKeycloakTest {
             File existingFile = FileUtils.getFile(dest, newFile.getName());
             assertThat(existingFile, Matchers.notNullValue());
 
-            resource.setAction(ExportImportConfig.ACTION_IMPORT);
+            runOnServerMaster.run(ExportImportHelper.setAction(ExportImportConfig.ACTION_IMPORT));
 
-            resource.runImport();
+            runOnServerMaster.run(ExportImportHelper.runImport());
         } finally {
             DirExportProvider.recursiveDeleteDir(dest);
         }
@@ -488,10 +480,10 @@ public class ExportImportTest extends AbstractKeycloakTest {
     }
 
     private void testFullExportImport() throws LifecycleException {
-        testingClient.testing().exportImport().setAction(ExportImportConfig.ACTION_EXPORT);
-        testingClient.testing().exportImport().setRealmName("");
+        runOnServerMaster.run(ExportImportHelper.setAction(ExportImportConfig.ACTION_EXPORT));
+        runOnServerMaster.run(ExportImportHelper.setRealmName(""));
 
-        testingClient.testing().exportImport().runExport();
+        runOnServerMaster.run(ExportImportHelper.runExport());
 
         removeRealm("test");
         removeRealm(TEST_REALM);
@@ -512,9 +504,9 @@ public class ExportImportTest extends AbstractKeycloakTest {
 
 
         // Configure import
-        testingClient.testing().exportImport().setAction(ExportImportConfig.ACTION_IMPORT);
+        runOnServerMaster.run(ExportImportHelper.setAction(ExportImportConfig.ACTION_IMPORT));
 
-        testingClient.testing().exportImport().runImport();
+        runOnServerMaster.run(ExportImportHelper.runImport());
 
         // Ensure data are imported back
         Assert.assertNames(adminClient.realms().findAll(), "master", "test", TEST_REALM);
@@ -548,12 +540,12 @@ public class ExportImportTest extends AbstractKeycloakTest {
     }
 
     private void testRealmExportImport() throws LifecycleException {
-        testingClient.testing().exportImport().setAction(ExportImportConfig.ACTION_EXPORT);
-        testingClient.testing().exportImport().setRealmName("test");
+        runOnServerMaster.run(ExportImportHelper.setAction(ExportImportConfig.ACTION_EXPORT));
+        runOnServerMaster.run(ExportImportHelper.setRealmName("test"));
 
         String[] authFlowObjectIdsBeforeImport = getSomeAuthenticationFlowsObjectIds();
 
-        testingClient.testing().exportImport().runExport();
+        runOnServerMaster.run(ExportImportHelper.runExport());
 
         List<ComponentRepresentation> components = adminClient.realm("test").components().query();
         KeysMetadataRepresentation keyMetadata = adminClient.realm("test").keys().getKeyMetadata();
@@ -576,9 +568,9 @@ public class ExportImportTest extends AbstractKeycloakTest {
         assertNotAuthenticated("test", "user-requiredWebAuthn", "password");
 
         // Configure import
-        testingClient.testing().exportImport().setAction(ExportImportConfig.ACTION_IMPORT);
+        runOnServerMaster.run(ExportImportHelper.setAction(ExportImportConfig.ACTION_IMPORT));
 
-        testingClient.testing().exportImport().runImport();
+        runOnServerMaster.run(ExportImportHelper.runImport());
 
         // Ensure data are imported back, but just for "test" realm
         Assert.assertNames(adminClient.realms().findAll(), "master", "test", TEST_REALM);
@@ -695,13 +687,13 @@ public class ExportImportTest extends AbstractKeycloakTest {
     }
 
     private void importRealmFromFile(String path) {
-        testingClient.testing().exportImport().setProvider(SingleFileExportProviderFactory.PROVIDER_ID);
+        runOnServerMaster.run(ExportImportHelper.setProvider(SingleFileExportProviderFactory.PROVIDER_ID));
         URL url = ExportImportTest.class.getResource(path);
         String targetFilePath = new File(url.getFile()).getAbsolutePath();
-        testingClient.testing().exportImport().setFile(targetFilePath);
+        runOnServerMaster.run(ExportImportHelper.setFile(targetFilePath));
 
-        testingClient.testing().exportImport().setAction(ExportImportConfig.ACTION_IMPORT);
+        runOnServerMaster.run(ExportImportHelper.setAction(ExportImportConfig.ACTION_IMPORT));
 
-        testingClient.testing().exportImport().runImport();
+        runOnServerMaster.run(ExportImportHelper.runImport());
     }
 }

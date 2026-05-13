@@ -82,7 +82,6 @@ import org.keycloak.testsuite.model.infinispan.InfinispanTestUtil;
 import org.keycloak.testsuite.rest.representation.AuthenticatorState;
 import org.keycloak.testsuite.rest.resource.TestCacheResource;
 import org.keycloak.testsuite.rest.resource.TestLDAPResource;
-import org.keycloak.testsuite.rest.resource.TestingExportImportResource;
 import org.keycloak.testsuite.util.FeatureDeployerUtil;
 import org.keycloak.timer.TimerProvider;
 import org.keycloak.truststore.FileTruststoreProvider;
@@ -275,11 +274,6 @@ public class TestingResourceProvider implements RealmResourceProvider {
         UserModel user = session.users().getServiceAccount(client);
         if (user == null) return null;
         return ModelToRepresentation.toRepresentation(session, realm, user);
-    }
-
-    @Path("/export-import")
-    public TestingExportImportResource getExportImportResource() {
-        return new TestingExportImportResource(session);
     }
 
     @GET
