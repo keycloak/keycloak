@@ -364,18 +364,20 @@ public class Keycloak {
         String buildDir = System.getProperty("project.build.directory");
         if (buildDir == null) {
             try {
-                return Files.createTempDirectory(name).toAbsolutePath();
+                Path tempDirectory = Files.createTempDirectory(name);
+                tempDirectory.toFile().deleteOnExit();
+                return tempDirectory.toAbsolutePath();
             } catch (IOException e) {
                 throw new RuntimeException("Could not create temporary directory", e);
             }
         } else {
-            Path homeDir = Path.of(buildDir, name);
+            Path tempDirectory = Path.of(buildDir, name);
             try {
-                FileUtils.deleteDirectory(homeDir.toFile());
+                FileUtils.deleteDirectory(tempDirectory.toFile());
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            return homeDir;
+            return tempDirectory;
         }
     }
 

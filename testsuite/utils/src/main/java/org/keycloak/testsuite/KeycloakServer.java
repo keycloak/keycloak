@@ -22,7 +22,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.KeyStore;
 import java.text.SimpleDateFormat;
@@ -33,7 +32,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.function.Function;
-import java.util.stream.Stream;
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
@@ -43,6 +41,7 @@ import javax.net.ssl.TrustManagerFactory;
 import jakarta.servlet.DispatcherType;
 import jakarta.servlet.Filter;
 
+import org.keycloak.Keycloak;
 import org.keycloak.authentication.AuthenticatorSpi;
 import org.keycloak.authentication.authenticators.browser.DeployedScriptAuthenticatorFactory;
 import org.keycloak.authorization.policy.provider.PolicySpi;
@@ -321,24 +320,7 @@ public class KeycloakServer {
         }
 
         // we generate a dynamic jboss.server.data.dir and remove it at the end.
-        try {
-          String tempKeycloakFolder = KeycloakApplication.getTmpDirectory();
-          File tmpDataDir = new File(tempKeycloakFolder, "/data");
-
-          if (tmpDataDir.mkdirs()) {
-            tmpDataDir.deleteOnExit();
-          } else try (Stream<Path> dir = Files.list(tmpDataDir.toPath())) {
-            if (dir.findAny().isPresent()) {    // Works well if directory is empty
-              throw new IOException("Could not create directory " + tmpDataDir);
-            }
-          }
-
-          dataPath = tmpDataDir.getAbsolutePath();
-        } catch (IOException ioe){
-          throw new RuntimeException("Could not create temporary " + JBOSS_SERVER_DATA_DIR, ioe);
-        }
-
-        return dataPath;
+        return Keycloak.initTempDirectory("keycloak-data").toFile().getAbsolutePath();
     }
 
     private KeycloakServerConfig config;
