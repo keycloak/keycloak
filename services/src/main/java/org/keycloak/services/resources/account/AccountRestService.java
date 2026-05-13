@@ -243,6 +243,12 @@ public class AccountRestService {
         return new OrganizationsResource(session, auth, user);
     }
 
+    @Path("/verifiable-credentials")
+    public AccountVerifiableCredentialResource verifiableCredentials() {
+        checkAccountApiEnabled();
+        return new AccountVerifiableCredentialResource(session, auth, user);
+    }
+
     private ClientRepresentation modelToRepresentation(ClientModel model, List<String> inUseClients, List<String> offlineClients, Map<String, UserConsentModel> consents) {
         ClientRepresentation representation = new ClientRepresentation();
         representation.setClientId(model.getClientId());

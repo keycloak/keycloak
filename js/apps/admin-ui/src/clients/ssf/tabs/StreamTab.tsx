@@ -178,9 +178,7 @@ export const StreamTab = ({
   const [createStreamEventsFilter, setCreateStreamEventsFilter] = useState("");
   const [createStreamProfile, setCreateStreamProfile] = useState<
     "SSF_1_0" | "SSE_CAEP"
-  >(
-    (client.attributes?.["ssf.profile"] as "SSF_1_0" | "SSE_CAEP") || "SSF_1_0",
-  );
+  >(client.attributes?.["ssf.profile"] as "SSF_1_0" | "SSE_CAEP");
   const [createStreamDescription, setCreateStreamDescription] = useState("");
   const [createStreamEventsOpen, setCreateStreamEventsOpen] = useState(false);
   const [createStreamSubmitting, setCreateStreamSubmitting] = useState(false);

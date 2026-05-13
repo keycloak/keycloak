@@ -348,6 +348,13 @@ public class OID4VCAuthorizationDetailsProcessor implements AuthorizationDetails
             CredentialOfferStorage offerStorage = session.getProvider(CredentialOfferStorage.class);
             offerState = Optional.ofNullable(offerStorage.getOfferStateById(credOfferId))
                     .orElseThrow(() -> new IllegalStateException("No credential offer state for: " + auxCredOfferId));
+
+            // Check same login client as the client for which the credential offer is target (in case of credential offer target for specific client only)
+            String offerClientId = offerState.getTargetClientId();
+            String loginClientId = clientSessionCtx.getClientSession().getClient().getClientId();
+            if (offerClientId != null && !offerClientId.equals(loginClientId)) {
+                throw new IllegalStateException("Credential offer target client '" + offerClientId + "' different from login client '" + loginClientId + "'");
+            }
         }
 
         return offerState;

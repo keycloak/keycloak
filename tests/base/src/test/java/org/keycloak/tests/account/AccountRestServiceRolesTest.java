@@ -12,6 +12,7 @@ import java.util.stream.Collectors;
 
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.ClientResource;
+import org.keycloak.common.Profile;
 import org.keycloak.models.AccountRoles;
 import org.keycloak.models.Constants;
 import org.keycloak.representations.idm.RoleRepresentation;
@@ -24,6 +25,8 @@ import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
 import org.keycloak.testframework.realm.UserBuilder;
+import org.keycloak.testframework.server.KeycloakServerConfig;
+import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 import org.keycloak.tests.utils.admin.AdminApiUtil;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.PkceGenerator;
@@ -48,7 +51,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@KeycloakIntegrationTest
+@KeycloakIntegrationTest(config = AccountRestServiceRolesTest.AccountRolesServerConfig.class)
 public class AccountRestServiceRolesTest {
 
     private static final String PASSWORD = "password";
@@ -77,8 +80,19 @@ public class AccountRestServiceRolesTest {
     }
 
     @Test
+    public void verifiableCredentialsEndpointAccess() throws IOException {
+        assertEndpointStatus("manage-account-user", "verifiable-credentials", 200);
+        addAccountConsoleScopeMapping(AccountRoles.MANAGE_VERIFIABLE_CREDENTIALS);
+        assertEndpointStatus("view-verifiable-credentials-user", "verifiable-credentials", 200);
+        assertEndpointStatus("manage-verifiable-credentials-user", "verifiable-credentials", 200);
+        assertEndpointStatus("no-access-user", "verifiable-credentials", 403);
+    }
+
+    @Test
     public void accountConsoleFeaturesForManageAccountUser() throws IOException {
         assertAccountConsoleFeatures("manage-account-user", true, true);
+        JsonNode features = getAccountConsoleFeatures("manage-account-user");
+        assertTrue(features.get("isOid4VciEnabled").asBoolean(), "isOid4VciEnabled should be true for manage-account-user");
     }
 
     @Test
@@ -101,6 +115,24 @@ public class AccountRestServiceRolesTest {
     @Test
     public void accountConsoleFeaturesForNoAccessUser() throws IOException {
         assertAccountConsoleFeatures("no-access-user", false, false);
+    }
+
+    @Test
+    public void accountConsoleFeaturesForViewVerifiableCredentialsUser() throws IOException {
+        // view-verifiable-credentials is not in the account-console default scope
+        addAccountConsoleScopeMapping(AccountRoles.VIEW_VERIFIABLE_CREDENTIALS);
+        JsonNode features = getAccountConsoleFeatures("view-verifiable-credentials-user");
+        assertEquals(true, features.get("isOid4VciEnabled").asBoolean(),
+                "isOid4VciEnabled should be true for view-verifiable-credentials-user");
+    }
+
+    @Test
+    public void accountConsoleFeaturesForManageVerifiableCredentialsUser() throws IOException {
+        // manage-verifiable-credentials is not in the account-console default scope
+        addAccountConsoleScopeMapping(AccountRoles.MANAGE_VERIFIABLE_CREDENTIALS);
+        JsonNode features = getAccountConsoleFeatures("manage-verifiable-credentials-user");
+        assertEquals(true, features.get("isOid4VciEnabled").asBoolean(),
+                "isOid4VciEnabled should be true for manage-verifiable-credentials-user");
     }
 
     private void addAccountConsoleScopeMapping(String roleName) {
@@ -218,7 +250,10 @@ public class AccountRestServiceRolesTest {
     public static class AccountRolesRealmConfig implements RealmConfig {
         @Override
         public RealmBuilder configure(RealmBuilder realm) {
-            return realm.groups("test-group").users(
+            return realm
+                .attribute("verifiableCredentialsEnabled", "true")
+                .groups("test-group")
+                .users(
                     UserBuilder.create("manage-account-user")
                         .name("Manage", "Account")
                         .email("manage-account@localhost")
@@ -245,7 +280,24 @@ public class AccountRestServiceRolesTest {
                         .name("No", "Access")
                         .email("no-access@localhost")
                         .password(PASSWORD)
-                        .clientRoles(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID, AccountRoles.VIEW_PROFILE));
+                        .clientRoles(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID, AccountRoles.VIEW_PROFILE),
+                    UserBuilder.create("view-verifiable-credentials-user")
+                        .name("View", "VerifiableCredentials")
+                        .email("view-verifiable-credentials@localhost")
+                        .password(PASSWORD)
+                        .clientRoles(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID, AccountRoles.VIEW_VERIFIABLE_CREDENTIALS, AccountRoles.VIEW_PROFILE),
+                    UserBuilder.create("manage-verifiable-credentials-user")
+                        .name("Manage", "VerifiableCredentials")
+                        .email("manage-verifiable-credentials@localhost")
+                        .password(PASSWORD)
+                        .clientRoles(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID, AccountRoles.MANAGE_VERIFIABLE_CREDENTIALS, AccountRoles.VIEW_PROFILE));
+        }
+    }
+
+    public static class AccountRolesServerConfig implements KeycloakServerConfig {
+        @Override
+        public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
+            return config.features(Profile.Feature.OID4VC_VCI);
         }
     }
 }
