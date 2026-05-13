@@ -6,9 +6,9 @@ public class MailServerRewrite extends TestRewrite {
     public void rewrite() {
         int mailServerLine = findLine(".*MailServer mail = new MailServer().*");
         if (mailServerLine != -1) {
-            addImport("org.keycloak.testframework.mail.annotations.InjectMailServer");
-            replaceLine(mailServerLine - 1, "\n    @InjectMailServer");
+            replaceLine(mailServerLine - 1, "    @InjectMailServer");
             replaceLine(mailServerLine, "    MailServer mail;");
+            addImport("org.keycloak.testframework.mail.annotations.InjectMailServer");
         }
     }
 
