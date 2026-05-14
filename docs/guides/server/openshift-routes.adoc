@@ -2,35 +2,65 @@
 <#import "/templates/links.adoc" as links>
 
 <@tmpl.guide
-title="Configuring OpenShift Routes for production deployments"
-summary="Configure OpenShift Routes with access control to expose {project_name} securely in production environments.">
+title="Configuring OpenShift Routes to protect the Admin API"
+summary="Configure HAProxy Routes on OpenShift to block external access to the {project_name} Admin API using TLS reencrypt."
+>
 
 == Overview
 
-When deploying {project_name} on OpenShift, Routes provide external access to your {project_name} instance. This {section} describes how to configure OpenShift Routes to control access based on URL paths and IP addresses, with a focus on preventing unauthorized access to the {project_name} Admin UI and other sensitive endpoints.
+When running {project_name} on OpenShift, the Admin API and Admin Console should
+not be accessible from external callers. This guide explains how to configure
+OpenShift Routes with HAProxy to allow or block connections based on URL path
+and IP address.
 
-== Path-based access control
+NOTE: URL-based filtering only works with *TLS reencrypt* routes. TLS passthrough
+routes cannot inspect or filter by URL path because the traffic is not terminated
+at the router.
 
-OpenShift Routes support path-based routing and filtering, which allows you to enforce fine-grained access control based on URL paths. However, the capability to filter by URL path depends on the TLS mode used.
+== Exposed path recommendations
 
-=== TLS reencrypt
+The following paths should be exposed to the public internet:
 
-TLS reencrypt mode is recommended for production deployments when you need to enforce path-based access control. In this mode, the OpenShift router terminates the client TLS connection and establishes a new TLS connection to your {project_name} service. Because the router can inspect the HTTP traffic, it can filter requests based on URL paths and apply other HTTP-level policies.
+* `/realms/` — required for authentication flows
+* `/resources/` — required for serving static assets
+* `/robots.txt` — search engine guidance
 
-.Creating a TLS reencrypt Route with path-based filtering:
+The following paths should be blocked from external access:
 
-[source,bash]
+* `/admin/` — Admin Console and Admin REST API
+* `/metrics` — internal metrics endpoint
+* `/health` — internal health endpoint
+* `/management` — management interface
+
+== Configuring a TLS reencrypt Route
+
+A TLS reencrypt Route decrypts traffic at the HAProxy router, applies filtering
+rules, and re-encrypts it before forwarding to {project_name}.
+
+=== Block the Admin API by URL path
+
+[source,yaml]
 ----
-oc create route reencrypt keycloak-public \
-  --service=keycloak-service \
-  --cert=certificate.pem \
-  --key=key.pem \
-  --dest-ca-cert=ca-certificate.pem \
-  --hostname=keycloak.example.com
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: keycloak-admin-internal
+  annotations:
+    haproxy.router.openshift.io/ip_whitelist: "10.0.0.0/8 192.168.0.0/16" <1>
+spec:
+  host: keycloak.example.com
+  path: /admin <2>
+  to:
+    kind: Service
+    name: keycloak
+  tls:
+    termination: reencrypt
+    insecureEdgeTerminationPolicy: Redirect
 ----
+<1> Replace with your internal IP ranges. Only these IPs may access `/admin`.
+<2> This route matches only the `/admin` path.
 
-
-You can also use YAML to define the Route with more advanced filtering:
+=== Allow public access to authentication paths
 
 [source,yaml]
 ----
@@ -40,330 +70,49 @@ metadata:
   name: keycloak-public
 spec:
   host: keycloak.example.com
-  to:
-    kind: Service
-    name: keycloak-service
-  tls:
-    termination: reencrypt
-    certificate: |
-      -----BEGIN CERTIFICATE-----
-      ...certificate content...
-      -----END CERTIFICATE-----
-    key: |
-      -----BEGIN RSA PRIVATE KEY-----
-      ...key content...
-      -----END RSA PRIVATE KEY-----
-    destinationCACertificate: |
-      -----BEGIN CERTIFICATE-----
-      ...ca-certificate content...
-      -----END CERTIFICATE-----
-----
-
-=== TLS passthrough
-
-TLS passthrough mode provides end-to-end encryption, but it has a significant limitation: the OpenShift router cannot inspect the encrypted HTTP traffic and therefore cannot filter requests based on URL paths.
-
-WARNING: When using TLS passthrough mode, URL-based path filtering is not possible because the router cannot inspect the encrypted traffic. If you require path-based access control, you must use TLS reencrypt mode instead.
-
-In TLS passthrough, the router simply forwards the encrypted connection directly to your {project_name} service without terminating the TLS connection. This means all filtering and access control must be enforced at the {project_name} application level or on the {project_name} service itself through network policies.
-
-== Exposed paths
-
-When deploying {project_name} behind a reverse proxy or OpenShift Route, it is critical to expose only the paths that are necessary for your use case. This minimizes the attack surface by preventing unauthorized access to sensitive endpoints.
-
-The following table shows the recommended paths to expose to external callers:
-
-[%autowidth]
-|===
-|{project_name} Path|Route Path|Exposed|Reason
-
-|/
-|-
-|No
-|Exposing all paths exposes admin paths unnecessarily and creates a large attack surface.
-
-|/admin/
-| -
-|No
-|The /admin/ path provides access to the {project_name} Admin UI and Admin REST API. Exposing this path to external callers is a serious security risk and should be avoided.
-
-|/realms/
-|/realms/
-|Yes
-|This path is required for OIDC and SAML endpoints. It must be exposed to allow your applications to authenticate with {project_name}.
-
-|/resources/
-|/resources/
-|Yes
-|This path serves static assets such as stylesheets, scripts, and images. It may be served from a CDN instead of directly from {project_name}.
-
-|/.well-known/
-|/.well-known/
-|Yes
-|This path is required to serve Authorization Server Metadata and other discovery endpoints as specified in RFC 8414. Applications need this to auto-discover {project_name} endpoints.
-
-|/metrics
-|-
-|No
-|The /metrics path exposes Prometheus metrics that may contain sensitive information about your deployment. Exposing this to external callers is a security risk and should be avoided.
-
-|/health
-|-
-|No
-|Health check endpoints should not be exposed to external callers. They are intended for internal monitoring and orchestration.
-
-|===
-
-== Preventing external access to the Admin UI
-
-The {project_name} Admin UI is accessible at `/admin/`. This path must not be exposed to external callers. There are several strategies to prevent unauthorized access:
-
-=== Strategy 1: Create separate Routes for public and admin access
-
-Create a public Route that exposes only the paths needed by your applications, and a separate admin Route with restricted access.
-
-.Public Route (exposed externally):
-
-[source,yaml]
-----
-apiVersion: route.openshift.io/v1
-kind: Route
-metadata:
-  name: keycloak-public
-spec:
-  host: keycloak.example.com
-  to:
-    kind: Service
-    name: keycloak-service
-  tls:
-    termination: reencrypt
-    certificate: |
-      -----BEGIN CERTIFICATE-----
-      ...
-      -----END CERTIFICATE-----
-    key: |
-      -----BEGIN RSA PRIVATE KEY-----
-      ...
-      -----END RSA PRIVATE KEY-----
-    destinationCACertificate: |
-      -----BEGIN CERTIFICATE-----
-      ...
-      -----END CERTIFICATE-----
   path: /realms <1>
-  wildcardPolicy: Subdomain
-----
-<1> Restricting the Route to only serve requests to /realms/ and its subpaths.
-
-.Admin Route (restricted internal access):
-
-[source,yaml]
-----
-apiVersion: route.openshift.io/v1
-kind: Route
-metadata:
-  name: keycloak-admin
-spec:
-  host: keycloak-admin.internal.example.com <1>
   to:
     kind: Service
-    name: keycloak-service
-  tls:
-    termination: reencrypt
-    certificate: |
-      -----BEGIN CERTIFICATE-----
-      ...
-      -----END CERTIFICATE-----
-    key: |
-      -----BEGIN RSA PRIVATE KEY-----
-      ...
-      -----END RSA PRIVATE KEY-----
-    destinationCACertificate: |
-      -----BEGIN CERTIFICATE-----
-      ...
-      -----END CERTIFICATE-----
-  path: /admin <1>
-----
-<1> The admin Route uses a different hostname and is not exposed to external callers, making it accessible only from internal networks.
-
-=== Strategy 2: Configure network policies to restrict access by IP address
-
-Use OpenShift NetworkPolicy resources to restrict which IP addresses can access the {project_name} service. This approach ensures that only approved clients can reach sensitive endpoints, even if they somehow discover the admin URL.
-
-.Example NetworkPolicy allowing only specific IP ranges:
-
-[source,yaml]
-----
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata:
-  name: keycloak-ingress-policy
-spec:
-  podSelector:
-    matchLabels:
-      app: keycloak
-  policyTypes:
-  - Ingress
-  ingress:
-  - from:
-    - podSelector:
-        matchLabels:
-          app: app-pod <1>
-    - ipBlock:
-        cidr: 10.0.0.0/8 <2>
-        except:
-        - 10.0.0.5/32 <3>
-  - from:
-    - namespaceSelector:
-        matchLabels:
-          name: allowed-namespace <4>
-----
-<1> Allow traffic from pods labeled with app: app-pod in the same namespace
-<2> Allow traffic from the IP range 10.0.0.0/8
-<3> Except for the specific IP 10.0.0.5, which is explicitly denied
-<4> Allow traffic from all pods in a namespace labeled with name: allowed-namespace
-
-=== Strategy 3: Use ingress controller rules (if your ingress controller supports them)
-
-Some OpenShift ingress controllers support additional matching rules and filters. If your controller supports regular expressions or other advanced filters, you can use these to block requests to sensitive paths.
-
-NOTE: This approach is controller-specific and may not be available with the default OpenShift router.
-
-== TLS mode considerations
-
-=== URL-based filtering capability
-
-The following table summarizes the URL-based filtering capabilities of different TLS modes:
-
-[%autowidth]
-|===
-|TLS Mode |URL-based Filtering |Description
-
-|TLS Reencrypt
-|Yes
-|The router terminates the TLS connection and can inspect the HTTP request, allowing it to filter based on URL paths and apply HTTP-level policies.
-
-|TLS Passthrough
-|No
-|The router forwards the encrypted connection without terminating it. The router cannot inspect the HTTP traffic and therefore cannot filter based on URL paths.
-
-|===
-
-== Recommended configuration for production
-
-For a production-ready {project_name} deployment on OpenShift, follow these best practices:
-
-1. **Use TLS reencrypt mode**: This allows you to enforce path-based filtering and restricts access to sensitive endpoints.
-
-2. **Create separate Routes for public and admin access**: Isolate the Admin UI on a separate Route that is not exposed to external callers.
-
-3. **Expose only required paths**: Limit the public Route to expose only `/realms/`, `/.well-known/`, and `/resources/` paths. Do not expose `/admin/`, `/metrics`, or `/health`.
-
-4. **Use network policies**: Implement OpenShift NetworkPolicy resources to add an additional layer of security by restricting access based on IP addresses and namespaces.
-
-5. **Monitor access logs**: Regularly monitor OpenShift router logs and {project_name} application logs to detect unauthorized access attempts.
-
-6. **Use separate hostnames**: Assign different hostnames to public and admin Routes. The admin hostname should not be registered in public DNS and should be accessible only from internal networks.
-
-== Example: Production-ready configuration
-
-The following example demonstrates a complete production-ready configuration with a public Route for applications and a separate admin Route with restricted access:
-
-[source,yaml]
-----
-# Public Route for application access
-apiVersion: route.openshift.io/v1
-kind: Route
-metadata:
-  name: keycloak-public
-  namespace: keycloak
-spec:
-  host: keycloak.example.com
-  to:
-    kind: Service
-    name: keycloak-service
-    weight: 100
+    name: keycloak
   tls:
     termination: reencrypt
     insecureEdgeTerminationPolicy: Redirect
-    certificate: |
-      -----BEGIN CERTIFICATE-----
-      ...public certificate...
-      -----END CERTIFICATE-----
-    key: |
-      -----BEGIN RSA PRIVATE KEY-----
-      ...private key...
-      -----END RSA PRIVATE KEY-----
-    destinationCACertificate: |
-      -----BEGIN CERTIFICATE-----
-      ...backend CA certificate...
-      -----END CERTIFICATE-----
-  path: /realms
-  wildcardPolicy: Subdomain
----
-# Admin Route with restricted access
-apiVersion: route.openshift.io/v1
-kind: Route
+----
+<1> Repeat for `/resources/` and `/robots.txt` as needed.
+
+== IP allowlisting with HAProxy annotations
+
+OpenShift HAProxy supports the `haproxy.router.openshift.io/ip_whitelist`
+annotation to restrict access by source IP address or CIDR range.
+
+[source,yaml]
+----
 metadata:
-  name: keycloak-admin
-  namespace: keycloak
-  labels:
-    access: admin
-spec:
-  host: keycloak-admin.internal.example.com
-  to:
-    kind: Service
-    name: keycloak-service
-    weight: 100
-  tls:
-    termination: reencrypt
-    insecureEdgeTerminationPolicy: Redirect
-    certificate: |
-      -----BEGIN CERTIFICATE-----
-      ...admin certificate...
-      -----END CERTIFICATE-----
-    key: |
-      -----BEGIN RSA PRIVATE KEY-----
-      ...private key...
-      -----END RSA PRIVATE KEY-----
-    destinationCACertificate: |
-      -----BEGIN CERTIFICATE-----
-      ...backend CA certificate...
-      -----END CERTIFICATE-----
-  path: /admin
----
-# NetworkPolicy to restrict access to Keycloak pods
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata:
-  name: keycloak-admin-policy
-  namespace: keycloak
-spec:
-  podSelector:
-    matchLabels:
-      app: keycloak
-  policyTypes:
-  - Ingress
-  ingress:
-  # Allow admin access only from specific namespace
-  - from:
-    - namespaceSelector:
-        matchLabels:
-          name: admin
-    ports:
-    - protocol: TCP
-      port: 8443
-  # Allow public access from any namespace
-  - from:
-    - podSelector: {}
-    ports:
-    - protocol: TCP
-      port: 8443
+  annotations:
+    haproxy.router.openshift.io/ip_whitelist: "10.0.0.0/8"
 ----
 
-== See also
+Multiple ranges are space-separated. Traffic from IPs not in the list is
+dropped with a 403 response.
 
-* <@links.server id="reverseproxy"/> for general reverse proxy configuration guidance
-* <@links.server id="configuration-production"/> for additional production deployment considerations
-* <@links.server id="hostname"/> for configuring {project_name} hostnames and URLs
+== Limitations
+
+* IP allowlisting and URL filtering are only available for *TLS reencrypt*
+  and *edge* termination. They are *not* available for *TLS passthrough*.
+* Passthrough routes forward raw TLS traffic directly to the pod — HAProxy
+  cannot inspect the request URL or apply ACLs.
+
+|===
+| TLS Mode       | IP filtering | URL filtering
+
+| Edge           | ✓            | ✓
+| Reencrypt      | ✓            | ✓
+| Passthrough    | ✓            | ✗
+|===
+
+== Additional resources
+
+* <@links.server id="reverseproxy"/>
+* https://docs.openshift.com/container-platform/latest/networking/routes/route-configuration.html[OpenShift Route configuration]
 
 </@tmpl.guide>

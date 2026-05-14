@@ -9,6 +9,7 @@ hostname
 reverseproxy
 haproxy-passthrough
 traefik-passthrough
+openshift-routes
 db
 caching
 outgoinghttp
