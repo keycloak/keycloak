@@ -98,8 +98,7 @@ public class DefaultClientSessionContext implements ClientSessionContext {
     public static DefaultClientSessionContext fromClientSessionAndScopeParameter(AuthenticatedClientSessionModel clientSession, String scopeParam, KeycloakSession session) {
         Stream<ClientScopeModel> requestedScopes;
         if (Profile.isFeatureEnabled(Profile.Feature.DYNAMIC_SCOPES)) {
-            session.getContext().setClient(clientSession.getClient());
-            requestedScopes = AuthorizationContextUtil.getClientScopesStreamFromAuthorizationRequestContextWithClient(session, scopeParam);
+            requestedScopes = AuthorizationContextUtil.getClientScopesStreamFromAuthorizationRequestContextWithClient(session, clientSession.getClient(), scopeParam);
         } else {
             requestedScopes = TokenManager.getRequestedClientScopes(session, scopeParam, clientSession.getClient(), clientSession.getUserSession().getUser());
         }
@@ -223,7 +222,7 @@ public class DefaultClientSessionContext implements ClientSessionContext {
      * @return see description
      */
     private String buildScopesStringFromAuthorizationRequest(boolean ignoreIncludeInTokenScope) {
-        return AuthorizationContextUtil.getAuthorizationRequestContextFromScopes(session, requestedScopeString).getAuthorizationDetailEntries().stream()
+        return AuthorizationContextUtil.getAuthorizationRequestContextFromScopes(session, clientSession.getClient(), requestedScopeString).getAuthorizationDetailEntries().stream()
                 .filter(authorizationDetails -> authorizationDetails.getSource().equals(AuthorizationRequestSource.SCOPE))
                 .filter(authorizationDetails -> authorizationDetails.getClientScope().isIncludeInTokenScope() || ignoreIncludeInTokenScope)
                 .filter(authorizationDetails -> isClientScopePermittedForUser(authorizationDetails.getClientScope()))
@@ -246,7 +245,7 @@ public class DefaultClientSessionContext implements ClientSessionContext {
 
     @Override
     public AuthorizationRequestContext getAuthorizationRequestContext() {
-        return AuthorizationContextUtil.getAuthorizationRequestContextFromScopes(session, requestedScopeString);
+        return AuthorizationContextUtil.getAuthorizationRequestContextFromScopes(session, clientSession.getClient(), requestedScopeString);
     }
 
     // Loading data

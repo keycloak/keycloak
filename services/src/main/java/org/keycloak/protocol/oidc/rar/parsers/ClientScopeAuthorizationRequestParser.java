@@ -49,16 +49,6 @@ public class ClientScopeAuthorizationRequestParser implements AuthorizationReque
     protected static final Logger logger = Logger.getLogger(ClientScopeAuthorizationRequestParser.class);
 
     /**
-     * This parser will be created on a per-request basis. When the adapter is created, the request's client is passed
-     * as a parameter
-     */
-    private final ClientModel client;
-
-    public ClientScopeAuthorizationRequestParser(ClientModel client) {
-        this.client = client;
-    }
-
-    /**
      * Creates a {@link AuthorizationRequestContext} with a list of {@link AuthorizationDetails} that will be parsed from
      * the provided OAuth scopes that have been requested in a given Auth request, together with default client scopes.
      * <p>
@@ -68,9 +58,9 @@ public class ClientScopeAuthorizationRequestParser implements AuthorizationReque
      * @return see description
      */
     @Override
-    public AuthorizationRequestContext parseScopes(String scopeParam) {
+    public AuthorizationRequestContext parseScopes(ClientModel client, String scopeParam) {
         // Process all the default ClientScopeModels for the current client, and maps them to the DynamicScopeRepresentation to make use of a HashSet
-        Set<IntermediaryScopeRepresentation> clientScopeModelSet = this.client.getClientScopes(true).values().stream()
+        Set<IntermediaryScopeRepresentation> clientScopeModelSet = client.getClientScopes(true).values().stream()
                 .filter(clientScopeModel -> !clientScopeModel.isDynamicScope()) // not strictly needed as Dynamic Scopes are going to be Optional scopes for now
                 .map(IntermediaryScopeRepresentation::new)
                 .collect(Collectors.toSet());
@@ -79,7 +69,7 @@ public class ClientScopeAuthorizationRequestParser implements AuthorizationReque
         if (scopeParam != null) {
             // Go through the parsed requested scopes and attempt to match them against the optional scopes list
             intermediaryScopeRepresentations = TokenManager.parseScopeParameter(scopeParam).collect(Collectors.toSet()).stream()
-                    .map((String requestScope) -> getMatchingClientScope(requestScope, this.client.getClientScopes(false).values()))
+                    .map((String requestScope) -> getMatchingClientScope(requestScope, client.getClientScopes(false).values()))
                     .filter(Optional::isPresent)
                     .map(Optional::get)
                     .collect(Collectors.toSet());
