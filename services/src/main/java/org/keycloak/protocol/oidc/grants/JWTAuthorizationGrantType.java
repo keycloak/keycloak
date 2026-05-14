@@ -18,6 +18,7 @@
 package org.keycloak.protocol.oidc.grants;
 
 import java.util.List;
+import java.util.Set;
 
 import jakarta.ws.rs.core.Response;
 
@@ -214,5 +215,10 @@ public class JWTAuthorizationGrantType extends OAuth2GrantTypeBase {
     @Override
     public EventType getEventType() {
         return EventType.JWT_AUTHORIZATION_GRANT;
+    }
+
+    @Override
+    public Set<String> getTokenParameterNames() {
+        return Set.of(OAuth2Constants.ASSERTION);
     }
 }

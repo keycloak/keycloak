@@ -17,7 +17,9 @@
 
 package org.keycloak.protocol.oidc.grants;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 import jakarta.ws.rs.core.Response;
 
@@ -291,5 +293,10 @@ public class AuthorizationCodeGrantType extends OAuth2GrantTypeBase {
             logger.debugf(e, "Failed to parse authorization_details for comparison");
             return false;
         }
+    }
+
+    @Override
+    public Set<String> getTokenParameterNames() {
+        return Collections.emptySet();
     }
 }

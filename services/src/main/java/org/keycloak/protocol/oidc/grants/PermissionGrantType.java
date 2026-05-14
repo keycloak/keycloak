@@ -18,6 +18,7 @@
 package org.keycloak.protocol.oidc.grants;
 
 import java.util.List;
+import java.util.Set;
 
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Response;
@@ -193,6 +194,11 @@ public class PermissionGrantType extends OAuth2GrantTypeBase {
     @Override
     public EventType getEventType() {
         return EventType.PERMISSION_TOKEN;
+    }
+
+    @Override
+    public Set<String> getTokenParameterNames() {
+        return Set.of("claim_token", "subject_token");
     }
 
 }
