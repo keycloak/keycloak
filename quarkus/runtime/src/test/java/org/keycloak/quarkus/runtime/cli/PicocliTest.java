@@ -214,6 +214,7 @@ public class PicocliTest extends AbstractConfigurationTest {
         assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
         assertThat(nonRunningPicocli.getErrString(),
                 containsString("'tokn-exchang' is an unrecognized feature. Did you mean:"));
+        assertThat(nonRunningPicocli.getErrString(), containsString("token-exchange"));
     }
 
     @Test
@@ -1322,6 +1323,7 @@ public class PicocliTest extends AbstractConfigurationTest {
         nonRunningPicocli = pseudoLaunch("start-dev", "--feature-impersonaton=enabled");
         assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
         assertThat(nonRunningPicocli.getErrString(), containsString("'impersonaton' is an unrecognized feature. Did you mean:"));
+        assertThat(nonRunningPicocli.getErrString(), containsString("impersonation"));
         onAfter();
 
         // wrong value

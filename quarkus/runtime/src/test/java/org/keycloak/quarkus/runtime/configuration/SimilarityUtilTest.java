@@ -41,7 +41,7 @@ public class SimilarityUtilTest {
         List<String> candidates = List.of("token-exchange", "admin-api", "account-api",
                 "docker", "impersonation", "token-introspection", "passkeys");
 
-        List<String> suggestions = SimilarityUtil.findSimilar("tokn-exchang", candidates, 3, 0.3);
+        List<String> suggestions = SimilarityUtil.findSimilar("tokn-exchang", candidates, 3, SimilarityUtil.DEFAULT_MIN_SIMILARITY);
 
         assertTrue("Should suggest token-exchange", suggestions.contains("token-exchange"));
         assertTrue("Should return at most 3 suggestions", suggestions.size() <= 3);
@@ -52,7 +52,7 @@ public class SimilarityUtilTest {
     public void findSimilarFiltersLowSimilarity() {
         List<String> candidates = List.of("token-exchange", "admin-api", "docker");
 
-        List<String> suggestions = SimilarityUtil.findSimilar("zzzzzzzzz", candidates, 5, 0.3);
+        List<String> suggestions = SimilarityUtil.findSimilar("zzzzzzzzz", candidates, 5, SimilarityUtil.DEFAULT_MIN_SIMILARITY);
 
         assertTrue("Should return no suggestions for unrelated input", suggestions.isEmpty());
     }
@@ -61,7 +61,7 @@ public class SimilarityUtilTest {
     public void findSimilarCaseInsensitive() {
         List<String> candidates = List.of("Token-Exchange", "admin-api");
 
-        List<String> suggestions = SimilarityUtil.findSimilar("TOKEN-EXCHANGE", candidates, 3, 0.3);
+        List<String> suggestions = SimilarityUtil.findSimilar("TOKEN-EXCHANGE", candidates, 3, SimilarityUtil.DEFAULT_MIN_SIMILARITY);
 
         assertTrue("Should match case-insensitively", suggestions.contains("Token-Exchange"));
     }

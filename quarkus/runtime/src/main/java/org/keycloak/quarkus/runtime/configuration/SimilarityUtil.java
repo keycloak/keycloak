@@ -8,8 +8,8 @@ import java.util.stream.Collectors;
 
 /**
  * Bigram-based cosine similarity for suggesting corrections to misspelled CLI values.
- * Used by both option-name matching ({@link KcUnmatchedArgumentException}) and
- * option-value validation ({@link org.keycloak.quarkus.runtime.cli.ShortErrorMessageHandler}).
+ * Used by option-name matching ({@link KcUnmatchedArgumentException}) and
+ * feature-name validation ({@link org.keycloak.quarkus.runtime.configuration.mappers.FeaturePropertyMappers}).
  */
 public final class SimilarityUtil {
 
@@ -41,7 +41,7 @@ public final class SimilarityUtil {
                 .sorted(Comparator.<Map.Entry<Double, String>, Double>comparing(Map.Entry::getKey).reversed())
                 .limit(maxSuggestions)
                 .map(Map.Entry::getValue)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     private static Map<String, Integer> bigramFrequency(String s) {
