@@ -18,7 +18,7 @@ For a general overview of TLS re-encrypt and how it compares to passthrough, see
 
 A ready-to-run example with Docker Compose is available in the link:https://github.com/keycloak/keycloak-quickstarts/tree/main/proxy/haproxy/reencrypt[quickstart repository].
 
-[[haproxy-configuration-for-reencrypt]]
+[[haproxy-configuration-reencrypt]]
 == HAProxy configuration
 
 The following `haproxy.cfg` shows a configuration for TLS re-encrypt with two {project_name} backend servers.
@@ -91,9 +91,9 @@ The management port is separate from the main application port (`8443`), as desc
 `inter 5s fall 3 rise 2`::
 Configures the link:https://docs.haproxy.org/3.2/configuration.html#5.2-inter[health check frequency]:
 poll every 5 seconds, mark a server as down after 3 consecutive failures, and mark it as up again after 2 consecutive successes.
-These values affect how quickly HAProxy detects that a {project_name} instance is shutting down (see <<graceful-shutdown-considerations>>).
+These values affect how quickly HAProxy detects that a {project_name} instance is shutting down (see <<graceful-shutdown-considerations-haproxy-reencrypt>>).
 
-[[keycloak-configuration-for-reencrypt]]
+[[keycloak-configuration-haproxy-reencrypt]]
 == {project_name} configuration
 
 With TLS re-encrypt, {project_name} requires the following configuration:
@@ -128,7 +128,7 @@ See the <@links.server id="mutual-tls"/> guide for additional details.
 `--https-management-client-auth=none`::
 Disables the client authentication requirement for the management endpoint.
 
-[[graceful-shutdown-considerations-for-reencrypt]]
+[[graceful-shutdown-considerations-haproxy-reencrypt]]
 == Graceful shutdown considerations
 
 The health check timing directly determines how long it takes HAProxy to detect that a {project_name} instance is shutting down and stop routing new connections to it.
