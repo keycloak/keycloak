@@ -152,6 +152,8 @@ As stated for the general configuration of headers, you can configure custom req
 
 <@kc.start parameters="--telemetry-logs-header-Authorization='Bearer logs-token'"/>
 
+<@profile.ifCommunity>
+
 == Metrics
 
 WARNING: The OpenTelemetry Metrics feature is currently experimental, and it is not recommended for use in production.
@@ -177,8 +179,6 @@ For more information on how to set up metrics, see the configuration options bel
 As stated for the general configuration of headers, you can configure custom request headers that will be used when exporting metrics.
 
 <@kc.start parameters="--telemetry-metrics-header-Authorization='Bearer metrics-token'"/>
-
-<@profile.ifCommunity>
 
 == Development setup
 
@@ -206,8 +206,10 @@ Then, you can navigate to Grafana UI by accessing `+localhost:3000+` and then yo
 === Logs
 <@opts.includeOptions includedOptions="telemetry-logs-*"/>
 
+<@profile.ifCommunity>
 === Metrics
 <@opts.includeOptions includedOptions="metrics-enabled telemetry-metrics-*"/>
+</@profile.ifCommunity>
 
 </@opts.printRelevantOptions>
 

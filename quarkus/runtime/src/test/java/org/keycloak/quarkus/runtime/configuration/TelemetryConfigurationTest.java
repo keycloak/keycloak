@@ -2,6 +2,9 @@ package org.keycloak.quarkus.runtime.configuration;
 
 import java.util.Map;
 
+import org.keycloak.common.Profile;
+
+import org.junit.Assume;
 import org.junit.Test;
 
 public class TelemetryConfigurationTest extends AbstractConfigurationTest {
@@ -126,6 +129,7 @@ public class TelemetryConfigurationTest extends AbstractConfigurationTest {
 
     @Test
     public void metricsDefaults() {
+        Assume.assumeTrue(Profile.Feature.OPENTELEMETRY_METRICS.isAvailable());
         initConfig();
 
         assertConfig(Map.of(
@@ -146,6 +150,7 @@ public class TelemetryConfigurationTest extends AbstractConfigurationTest {
 
     @Test
     public void metricsPriorities() {
+        Assume.assumeTrue(Profile.Feature.OPENTELEMETRY_METRICS.isAvailable());
         ConfigArgsConfigSource.setCliArgs("--features=opentelemetry-metrics", "--metrics-enabled=true", "--telemetry-metrics-enabled=true", "--telemetry-metrics-endpoint=localhost:2000", "--telemetry-metrics-protocol=http/protobuf");
         initConfig();
         assertConfig(Map.of(

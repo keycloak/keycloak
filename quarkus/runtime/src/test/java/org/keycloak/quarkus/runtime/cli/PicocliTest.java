@@ -36,6 +36,7 @@ import org.keycloak.quarkus.runtime.configuration.AbstractConfigurationTest;
 import org.keycloak.quarkus.runtime.configuration.PersistedConfigSource;
 
 import org.apache.commons.io.FileUtils;
+import org.junit.Assume;
 import org.junit.Ignore;
 import org.junit.Test;
 import picocli.CommandLine;
@@ -1064,6 +1065,7 @@ public class PicocliTest extends AbstractConfigurationTest {
 
     @Test
     public void telemetryParentHeaders() {
+        Assume.assumeTrue(Profile.Feature.OPENTELEMETRY_METRICS.isAvailable());
         // tracing enabled
         var nonRunningPicocli = pseudoLaunch("start-dev", "--tracing-enabled=true", "--telemetry-header-Authorization=Bearer asdlkfjadsflkj");
         assertNoError(nonRunningPicocli);
@@ -1152,6 +1154,7 @@ public class PicocliTest extends AbstractConfigurationTest {
 
     @Test
     public void otelMetricsHeaders() {
+        Assume.assumeTrue(Profile.Feature.OPENTELEMETRY_METRICS.isAvailable());
         // Otel Metrics is disabled
         var nonRunningPicocli = pseudoLaunch("start-dev", "--features=opentelemetry-metrics", "--metrics-enabled=true", "--telemetry-metrics-enabled=false", "--telemetry-metrics-header-Authorization=Bearer");
         assertError(nonRunningPicocli, "Unknown option:"); //for some reason, the wildcard options does not respect the isEnabled() when disabled
@@ -1630,6 +1633,7 @@ public class PicocliTest extends AbstractConfigurationTest {
 
     @Test
     public void otelMetrics() {
+        Assume.assumeTrue(Profile.Feature.OPENTELEMETRY_METRICS.isAvailable());
         // parent feature disabled
         NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev", "--feature-opentelemetry=disabled", "--feature-opentelemetry-metrics=enabled");
         assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
@@ -1783,6 +1787,7 @@ public class PicocliTest extends AbstractConfigurationTest {
 
     @Test
     public void otelAll() {
+        Assume.assumeTrue(Profile.Feature.OPENTELEMETRY_METRICS.isAvailable());
         // tracing
         pseudoLaunch("start-dev", "--tracing-enabled=true");
         assertConfig("tracing-enabled", "true");
