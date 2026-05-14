@@ -68,16 +68,18 @@ public class ResteasyKeycloakApplication extends KeycloakApplication {
             // an endpoint for the load balancer to gather information whether this site should receive requests or not.
             classes.add(LoadBalancerResource.class);
         }
+        Config.init(new JsonConfigProviderFactory().create()
+                .orElseThrow(() -> new RuntimeException("Failed to load Keycloak configuration")));
+        Profile.configure(
+                new PropertiesProfileConfigResolver(System.getProperties()),
+                new PropertiesFileProfileConfigResolver()
+        );
+        startup();
     }
 
     @Override
     protected String getDataDir() {
         return System.getProperty("project.build.directory");
-    }
-
-    @Override
-    protected void exit(Throwable cause) {
-        throw new RuntimeException(cause);
     }
 
     @Override
@@ -98,17 +100,6 @@ public class ResteasyKeycloakApplication extends KeycloakApplication {
     @Override
     protected void createTemporaryAdmin(KeycloakSession session) {
         // do nothing
-    }
-
-    @Override
-    protected void initAndStart() {
-        Config.init(new JsonConfigProviderFactory().create()
-                .orElseThrow(() -> new RuntimeException("Failed to load Keycloak configuration")));
-        Profile.configure(
-                new PropertiesProfileConfigResolver(System.getProperties()),
-                new PropertiesFileProfileConfigResolver()
-        );
-        startup();
     }
 
     @Override

@@ -18,8 +18,10 @@
 package org.keycloak.quarkus.runtime;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.Properties;
 import java.util.concurrent.ForkJoinPool;
+import java.util.function.Consumer;
 
 import jakarta.enterprise.context.ApplicationScoped;
 
@@ -57,6 +59,7 @@ import static org.keycloak.quarkus.runtime.Environment.hasEarlyExitLaunchMode;
 public class KeycloakMain implements QuarkusApplication {
 
     private static AbstractNonServerCommand COMMAND;
+    private static Consumer<Throwable> ERROR_HANDLER;
 
     static {
         InfinispanUtils.configureVirtualThreads();
@@ -132,6 +135,9 @@ public class KeycloakMain implements QuarkusApplication {
 
     public static void start(Picocli picocli, AbstractNonServerCommand command, ExecutionExceptionHandler errorHandler) {
         COMMAND = command; // it would be nice to not do this statically - start quarkus with an instance of KeycloakMain, rather than a class for example
+        ERROR_HANDLER = cause -> errorHandler.error(picocli.getErrWriter(),
+                String.format("Failed to start server in (%s) mode", getKeycloakModeFromProfile(org.keycloak.common.util.Environment.getProfile())),
+                cause.getCause());
         try {
             Quarkus.run(KeycloakMain.class, (exitCode, cause) -> {
                 if (cause != null) {
@@ -145,6 +151,9 @@ public class KeycloakMain implements QuarkusApplication {
             errorHandler.error(picocli.getErrWriter(),
                     String.format("Unexpected error when starting the server in (%s) mode", getKeycloakModeFromProfile(org.keycloak.common.util.Environment.getProfile())),
                     cause.getCause());
+        } finally {
+            ERROR_HANDLER = null;
+            COMMAND = null;
         }
         picocli.exit(CommandLine.ExitCode.SOFTWARE);
     }
@@ -169,5 +178,10 @@ public class KeycloakMain implements QuarkusApplication {
 
         return ApplicationLifecycleManager.getExitCode();
     }
-
+    
+    public static void asyncExit(int exitCode, Throwable t) {
+        Optional.ofNullable(ERROR_HANDLER).ifPresent(h -> h.accept(t));
+        Quarkus.asyncExit(exitCode);
+    }
+    
 }

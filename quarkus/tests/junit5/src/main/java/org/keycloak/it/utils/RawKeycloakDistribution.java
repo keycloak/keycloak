@@ -23,6 +23,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.UncheckedIOException;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
@@ -67,7 +68,6 @@ import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
 
 import io.quarkus.deployment.util.FileUtil;
-import io.quarkus.deployment.util.IoUtil;
 import io.quarkus.fs.util.ZipUtils;
 import io.restassured.RestAssured;
 import org.apache.commons.io.FileUtils;
@@ -78,7 +78,9 @@ import org.jboss.shrinkwrap.api.asset.EmptyAsset;
 import org.jboss.shrinkwrap.api.exporter.ZipExporter;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
 
+import static org.keycloak.quarkus.runtime.Environment.KC_CONFIG_BUILT;
 import static org.keycloak.quarkus.runtime.Environment.LAUNCH_MODE;
+import static org.keycloak.quarkus.runtime.Environment.LAUNCH_MODE_EXIT_BEFORE_BOOTSTRAP;
 import static org.keycloak.quarkus.runtime.Environment.isWindows;
 
 public final class RawKeycloakDistribution implements KeycloakDistribution {
@@ -114,6 +116,13 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
         this.removeBuildOptionsAfterBuild = removeBuildOptionsAfterBuild;
         this.requestPort = requestPort;
         this.distPath = prepareDistribution();
+        if (reCreate) {
+            try {
+                preInitH2(distPath);
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        }
         this.outputConsumer = new DefaultOutputConsumer();
     }
 
@@ -167,6 +176,8 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
             builder.environment().put("DEBUG_SUSPEND", "y");
         }*/
 
+        addAOTEnvVars();
+        
         builder.environment().putAll(envVars);
 
         Process proc = builder.start();
@@ -477,7 +488,7 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
         return socketFactory;
     }
 
-    private boolean isRunning() {
+    public boolean isRunning() {
         return keycloak != null && keycloak.isAlive();
     }
 
@@ -545,7 +556,6 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
                 ZipUtils.unzip(distFile.toPath(), distRootPath);
                 FileUtils.copyDirectory(dPath.resolve("conf").toFile(), dPath.resolve("conf-bak").toFile());
                 FileUtils.copyDirectory(dPath.resolve("lib").resolve("quarkus").toFile(), dPath.resolve("quarkus-bak").toFile());
-                preInitH2(dPath);
                 postInit(dPath);
             }
 
@@ -564,27 +574,40 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
     }
 
     private void preInitH2(Path dPath) throws IOException {
-        LOG.info("Creating pre-initialized database for reuse");
         ProcessHandle.current().info().command().ifPresent(command -> {
-            ProcessBuilder pb = new ProcessBuilder(List.of(command, "-D" + LAUNCH_MODE + "=" + Environment.LAUNCH_MODE_EXIT_BEFORE_BOOTSTRAP,
-                    "-Dkc.home.dir=" + dPath.toFile().getAbsolutePath(), "-Dkc.config.built=true",
-                    "-Dkc.db=dev-file", "-jar", dPath.resolve("lib").resolve("quarkus-run.jar").toFile().getAbsolutePath(), "start-dev"));
-            try {
-                Process dbInit = pb.start();
-                if (!dbInit.waitFor(30, TimeUnit.SECONDS)) {
-                    throw new RuntimeException("Pre-initialized db process did not exit");
+            Runtime.Version runtimeVersion = Runtime.version();
+            boolean useAot = false;
+            if (Boolean.getBoolean("kc.quarkus.tests.aot")) {
+                if (Runtime.version().feature() < 25) {
+                    throw new AssertionError("AOT requested, but the java version is less than 25");
                 }
-                if (dbInit.exitValue() != 0) {
-                    throw new RuntimeException("Could not create pre-initialized db, exit code %s: %s".formatted(dbInit.exitValue(), new String(IoUtil.readBytes(dbInit.getErrorStream()))));
+                useAot = true;
+            
+                if (envVars.containsKey("JAVA_OPTS_APPEND")) {
+                    throw new AssertionError("the raw dist marked as recreate should not have JAVA_OPTS_APPEND set");
+                }
+                File aotFile = getAotFile(dPath);
+                // TODO: we know for certain that the test java is 25+, so we'll set it here 
+                envVars.put("JAVA", command);
+                envVars.put("JAVA_OPTS_APPEND", "-Xlog:aot -XX:AOTCacheOutput=\"%s\"".formatted(aotFile.getAbsolutePath()));
+            }
+            
+            LOG.infof("Creating pre-initialized database %sfor reuse", useAot ? "and aot cache ":"");
+            
+            try {
+                CLIResult result = invoke(SCRIPT_CMD, List.of("start-dev", "-D%s=%s".formatted(LAUNCH_MODE, LAUNCH_MODE_EXIT_BEFORE_BOOTSTRAP), "-D%s=true".formatted(KC_CONFIG_BUILT)));
+                if (result.exitCode() != 0) {
+                    throw new RuntimeException("Could not create pre-initialized db, exit code %s: %s".formatted(result.exitCode(), new String(result.getErrorOutput())));
                 }
             } catch (IOException e) {
-                throw new RuntimeException(e);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw new RuntimeException(e); 
+                throw new UncheckedIOException(e);
             }
         });
         FileUtils.copyDirectory(dPath.resolve("data").resolve("h2").toFile(), dPath.resolve("h2-bak").toFile());
+    }
+
+    private File getAotFile(Path dPath) {
+        return dPath.resolve("app.aot").toFile();
     }
 
     private void postInit(Path dPath) {
@@ -641,10 +664,21 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
         if (debug) {
             builder.environment().put("DEBUG_SUSPEND", "y");
         }
+        
+        addAOTEnvVars();
 
         builder.environment().putAll(envVars);
 
         keycloak = builder.start();
+    }
+
+    private void addAOTEnvVars() {
+        File aotFile = getAotFile(getDistPath());
+        if (aotFile.exists() && !envVars.containsKey("JAVA_OPTS_APPEND")) {
+            // TODO: we know for certain that the test java is 25+, so we'll set it here 
+            envVars.put("JAVA", ProcessHandle.current().info().command().orElseThrow());
+            envVars.put("JAVA_OPTS_APPEND", "-XX:AOTCache=\"%s\"".formatted(aotFile.getAbsolutePath()));
+        }
     }
 
     @Override
