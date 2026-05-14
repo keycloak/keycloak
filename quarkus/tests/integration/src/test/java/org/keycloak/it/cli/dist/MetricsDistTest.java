@@ -24,8 +24,8 @@ import java.util.concurrent.TimeUnit;
 
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
+import org.keycloak.it.junit5.extension.KeycloakDistributionDecorator;
 import org.keycloak.it.junit5.extension.StopServer.Mode;
-import org.keycloak.it.utils.KeycloakDistribution;
 
 import io.quarkus.test.junit.main.Launch;
 import org.junit.jupiter.api.Tag;
@@ -46,7 +46,7 @@ public class MetricsDistTest {
 
     @Test
     @Launch({ "start-dev" })
-    void testMetricsEndpointNotEnabled(KeycloakDistribution distribution) {
+    void testMetricsEndpointNotEnabled(KeycloakDistributionDecorator distribution) {
         assertThrows(IOException.class, () -> when().get("/metrics"), "Connection refused must be thrown");
         assertThrows(IOException.class, () -> when().get("/q/metrics"), "Connection refused must be thrown");
 
@@ -139,7 +139,7 @@ public class MetricsDistTest {
 
     @Test
     @Launch({ "start-dev", "--metrics-enabled=true", "--tracing-enabled=true" })
-    void testMetricsEndpointWithCacheMetricsHistogramsAndExemplars(KeycloakDistribution distribution) {
+    void testMetricsEndpointWithCacheMetricsHistogramsAndExemplars(KeycloakDistributionDecorator distribution) {
         runClientCredentialGrantWithUnknownClientId(distribution);
 
         distribution.setRequestPort(9000);
@@ -154,7 +154,7 @@ public class MetricsDistTest {
 
     @Test
     @Launch({ "start-dev", "--metrics-enabled=true", "--features=user-event-metrics", "--event-metrics-user-enabled=true" })
-    void testMetricsEndpointWithUserEventMetrics(KeycloakDistribution distribution) {
+    void testMetricsEndpointWithUserEventMetrics(KeycloakDistributionDecorator distribution) {
         runClientCredentialGrantWithUnknownClientId(distribution);
 
         distribution.setRequestPort(9000);
@@ -166,7 +166,7 @@ public class MetricsDistTest {
 
     @Test
     @Launch({ "start-dev", "--metrics-enabled=true", "--features=user-event-metrics", "--event-metrics-user-enabled=false" })
-    void testMetricsEndpointWithoutUserEventMetrics(KeycloakDistribution distribution) {
+    void testMetricsEndpointWithoutUserEventMetrics(KeycloakDistributionDecorator distribution) {
         runClientCredentialGrantWithUnknownClientId(distribution);
 
         distribution.setRequestPort(9000);
@@ -176,7 +176,7 @@ public class MetricsDistTest {
 
     }
 
-    private static void runClientCredentialGrantWithUnknownClientId(KeycloakDistribution distribution) {
+    private static void runClientCredentialGrantWithUnknownClientId(KeycloakDistributionDecorator distribution) {
         distribution.setRequestPort(8080);
         given().formParam("grant_type", "client_credentials")
                 .formParam("client_id", "unknown")
@@ -187,7 +187,7 @@ public class MetricsDistTest {
     }
 
     @Test
-    void testUsingRelativePath(KeycloakDistribution distribution) {
+    void testUsingRelativePath(KeycloakDistributionDecorator distribution) {
         for (String relativePath : List.of("/auth", "/auth/", "auth")) {
             distribution.run("start-dev", "--metrics-enabled=true", "--http-management-relative-path=" + relativePath);
             if (!relativePath.endsWith("/")) {
@@ -199,7 +199,7 @@ public class MetricsDistTest {
     }
 
     @Test
-    void testMultipleRequests(KeycloakDistribution distribution) throws Exception {
+    void testMultipleRequests(KeycloakDistributionDecorator distribution) throws Exception {
         for (String relativePath : List.of("/", "/auth/", "auth")) {
             distribution.run("start-dev", "--metrics-enabled=true", "--http-management-relative-path=" + relativePath);
             CompletableFuture<Void> future = CompletableFuture.completedFuture(null);

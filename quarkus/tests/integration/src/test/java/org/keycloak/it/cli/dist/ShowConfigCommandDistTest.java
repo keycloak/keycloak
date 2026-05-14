@@ -5,11 +5,11 @@ import java.nio.file.Paths;
 
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
+import org.keycloak.it.junit5.extension.KeycloakDistributionDecorator;
 import org.keycloak.it.junit5.extension.RawDistOnly;
 import org.keycloak.it.junit5.extension.StopServer;
 import org.keycloak.it.junit5.extension.StopServer.Mode;
 import org.keycloak.it.junit5.extension.WithEnvVars;
-import org.keycloak.it.utils.KeycloakDistribution;
 import org.keycloak.quarkus.runtime.cli.command.ShowConfig;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
 
@@ -30,7 +30,7 @@ public class ShowConfigCommandDistTest {
     @StopServer(Mode.BEFORE_QUARKUS)
     @Test
     @RawDistOnly(reason = "Containers are immutable")
-    void testShowConfigPicksUpRightConfigDependingOnCurrentMode(KeycloakDistribution distribution) {
+    void testShowConfigPicksUpRightConfigDependingOnCurrentMode(KeycloakDistributionDecorator distribution) {
         CLIResult initialResult = distribution.run("show-config");
         initialResult.assertMessage("Current Mode: production");
         initialResult.assertNoMessage("kc.db =  dev-file");
@@ -66,7 +66,7 @@ public class ShowConfigCommandDistTest {
 
     @Test
     @RawDistOnly(reason = "Containers are immutable")
-    void testShowConfigCommandHidesCredentialsInProfiles(KeycloakDistribution distribution) {
+    void testShowConfigCommandHidesCredentialsInProfiles(KeycloakDistributionDecorator distribution) {
         CLIResult result = distribution.run(String.format("%s=%s", CONFIG_FILE_LONG_NAME, Paths.get("src/test/resources/ShowConfigCommandTest/keycloak.conf").toAbsolutePath().normalize()), ShowConfig.NAME, "all");
         String output = result.getOutput();
         Assertions.assertFalse(output.contains("testpw1"));
@@ -77,7 +77,7 @@ public class ShowConfigCommandDistTest {
 
     @Test
     @RawDistOnly(reason = "Containers are immutable")
-    void testSmallRyeKeyStoreConfigSource(KeycloakDistribution distribution) {
+    void testSmallRyeKeyStoreConfigSource(KeycloakDistributionDecorator distribution) {
         // keystore is shared with QuarkusPropertiesDistTest#testSmallRyeKeyStoreConfigSource
         CLIResult result = distribution.run(
                 String.format("%s=%s", CONFIG_FILE_LONG_NAME, Paths.get("src/test/resources/ShowConfigCommandTest/keycloak-keystore.conf").toAbsolutePath().normalize()),
@@ -105,7 +105,7 @@ public class ShowConfigCommandDistTest {
 
     @Test
     @RawDistOnly(reason = "Containers are immutable")
-    void testConfigSourceNames(KeycloakDistribution distribution) {
+    void testConfigSourceNames(KeycloakDistributionDecorator distribution) {
         CLIResult result = distribution.run("build");
         result.assertBuild();
 

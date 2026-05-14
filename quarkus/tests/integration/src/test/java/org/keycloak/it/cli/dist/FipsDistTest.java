@@ -22,9 +22,9 @@ import java.nio.file.Path;
 import org.keycloak.crypto.fips.FIPS1402Provider;
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
+import org.keycloak.it.junit5.extension.KeycloakDistributionDecorator;
 import org.keycloak.it.junit5.extension.RawDistOnly;
 import org.keycloak.it.junit5.extension.StopServer.Mode;
-import org.keycloak.it.utils.KeycloakDistribution;
 import org.keycloak.it.utils.RawKeycloakDistribution;
 
 import io.quarkus.test.junit.main.Launch;
@@ -39,7 +39,7 @@ public class FipsDistTest {
     private static final String BCFIPS_VERSION = "BCFIPS version 2.0102";
 
     @Test
-    void testFipsNonApprovedMode(KeycloakDistribution dist) {
+    void testFipsNonApprovedMode(KeycloakDistributionDecorator dist) {
         runOnFipsEnabledDistribution(dist, () -> {
             CLIResult cliResult = dist.run("start");
             cliResult.assertStarted();
@@ -50,7 +50,7 @@ public class FipsDistTest {
     }
 
     @Test
-    void testFipsApprovedMode(KeycloakDistribution dist) {
+    void testFipsApprovedMode(KeycloakDistributionDecorator dist) {
         runOnFipsEnabledDistribution(dist, () -> {
             dist.setEnvVar("KC_BOOTSTRAP_ADMIN_USERNAME", "admin");
             dist.setEnvVar("KC_BOOTSTRAP_ADMIN_PASSWORD", "admin");
@@ -73,7 +73,7 @@ public class FipsDistTest {
     }
 
     @Test
-    void testUnsupportedHttpsJksKeyStoreInStrictMode(KeycloakDistribution dist) {
+    void testUnsupportedHttpsJksKeyStoreInStrictMode(KeycloakDistributionDecorator dist) {
         runOnFipsEnabledDistribution(dist, () -> {
             dist.copyOrReplaceFileFromClasspath("/server.keystore", Path.of("conf", "server.keystore"));
             CLIResult cliResult = dist.run("start", "--fips-mode=strict");
@@ -82,7 +82,7 @@ public class FipsDistTest {
     }
 
     @Test
-    void testHttpsBcfksKeyStoreInStrictMode(KeycloakDistribution dist) {
+    void testHttpsBcfksKeyStoreInStrictMode(KeycloakDistributionDecorator dist) {
         runOnFipsEnabledDistribution(dist, () -> {
             dist.copyOrReplaceFileFromClasspath("/server.keystore.bcfks", Path.of("conf", "server.keystore"));
             CLIResult cliResult = dist.run("start", "--fips-mode=strict", "--https-key-store-password=passwordpassword");
@@ -91,7 +91,7 @@ public class FipsDistTest {
     }
 
     @Test
-    void testHttpsBcfksTrustStoreInStrictMode(KeycloakDistribution dist) {
+    void testHttpsBcfksTrustStoreInStrictMode(KeycloakDistributionDecorator dist) {
         runOnFipsEnabledDistribution(dist, () -> {
             dist.copyOrReplaceFileFromClasspath("/server.keystore.bcfks", Path.of("conf", "server.keystore"));
 
@@ -106,7 +106,7 @@ public class FipsDistTest {
     }
 
     @Test
-    void testUnencryptedPkcs12TrustStoreInStrictMode(KeycloakDistribution dist) {
+    void testUnencryptedPkcs12TrustStoreInStrictMode(KeycloakDistributionDecorator dist) {
         runOnFipsEnabledDistribution(dist, () -> {
             String truststoreName = "keycloak-truststore.p12";
             dist.copyOrReplaceFileFromClasspath("/" + truststoreName, Path.of("conf", truststoreName));
@@ -120,7 +120,7 @@ public class FipsDistTest {
     }
 
     @Test
-    void testUnsupportedHttpsPkcs12KeyStoreInStrictMode(KeycloakDistribution dist) {
+    void testUnsupportedHttpsPkcs12KeyStoreInStrictMode(KeycloakDistributionDecorator dist) {
         runOnFipsEnabledDistribution(dist, () -> {
             dist.copyOrReplaceFileFromClasspath("/server.keystore.pkcs12", Path.of("conf", "server.keystore"));
             CLIResult cliResult = dist.run("start", "--fips-mode=strict", "--https-key-store-password=passwordpassword");
@@ -129,7 +129,7 @@ public class FipsDistTest {
     }
 
     @Test
-    void testHttpsPkcs12KeyStoreInNonApprovedMode(KeycloakDistribution dist) {
+    void testHttpsPkcs12KeyStoreInNonApprovedMode(KeycloakDistributionDecorator dist) {
         runOnFipsEnabledDistribution(dist, () -> {
             dist.copyOrReplaceFileFromClasspath("/server.keystore.pkcs12", Path.of("conf", "server.keystore"));
             CLIResult cliResult = dist.run("start", "--fips-mode=non-strict", "--https-key-store-password=passwordpassword");
@@ -138,7 +138,7 @@ public class FipsDistTest {
     }
 
     @Test
-    void testHttpsPkcs12TrustStoreInNonApprovedMode(KeycloakDistribution dist) {
+    void testHttpsPkcs12TrustStoreInNonApprovedMode(KeycloakDistributionDecorator dist) {
         runOnFipsEnabledDistribution(dist, () -> {
             dist.copyOrReplaceFileFromClasspath("/server.keystore.pkcs12", Path.of("conf", "server.keystore"));
 
@@ -161,12 +161,12 @@ public class FipsDistTest {
         });
     }
 
-    private void runOnFipsEnabledDistribution(KeycloakDistribution dist, Runnable runnable) {
+    private void runOnFipsEnabledDistribution(KeycloakDistributionDecorator dist, Runnable runnable) {
         installBcFips(dist);
         runnable.run();
     }
 
-    private void installBcFips(KeycloakDistribution dist) {
+    private void installBcFips(KeycloakDistributionDecorator dist) {
         RawKeycloakDistribution rawDist = dist.unwrap(RawKeycloakDistribution.class);
         rawDist.copyProvider("org.bouncycastle", "bc-fips");
         rawDist.copyProvider("org.bouncycastle", "bctls-fips");

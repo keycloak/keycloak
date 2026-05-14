@@ -19,9 +19,9 @@ package org.keycloak.it.cli.dist;
 
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
+import org.keycloak.it.junit5.extension.KeycloakDistributionDecorator;
 import org.keycloak.it.junit5.extension.RawDistOnly;
 import org.keycloak.it.junit5.extension.TestProvider;
-import org.keycloak.it.utils.KeycloakDistribution;
 
 import com.acme.provider.legacy.jpa.entity.CustomJpaEntityProvider;
 import io.quarkus.test.junit.main.Launch;
@@ -37,7 +37,7 @@ public class CustomJpaEntityProviderDistTest {
     private static final String MULTIPLE_DATASOURCES_MSG = "Multiple datasources are specified: <default>, client-store, new-user-store, pu-without-dialect-store";
 
     @Test
-    void dbKindSpecifiedInBuildTime(KeycloakDistribution dist) {
+    void dbKindSpecifiedInBuildTime(KeycloakDistributionDecorator dist) {
         var result = dist.run("build", "--db=dev-file", "--db-kind-new-user-store=dev-mem", "--db-kind-pu-without-dialect-store=dev-mem");
         result.assertMessage(MULTIPLE_DATASOURCES_MSG);
         result.assertMessage("You have set DB kind for 'client-store' datasource via a Quarkus property. This approach is deprecated and you should use the Keycloak 'db-kind-client-store' property.");

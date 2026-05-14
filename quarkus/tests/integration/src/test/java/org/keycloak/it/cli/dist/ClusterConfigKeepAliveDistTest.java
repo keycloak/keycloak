@@ -27,11 +27,11 @@ import java.util.stream.Stream;
 
 import org.keycloak.config.CachingOptions;
 import org.keycloak.it.junit5.extension.DistributionTest;
+import org.keycloak.it.junit5.extension.KeycloakDistributionDecorator;
 import org.keycloak.it.junit5.extension.RawDistOnly;
 import org.keycloak.it.junit5.extension.StopServer.Mode;
 import org.keycloak.it.junit5.extension.TestProvider;
 import org.keycloak.it.resource.realm.TestRealmResourceTestProvider;
-import org.keycloak.it.utils.KeycloakDistribution;
 
 import com.google.common.base.CaseFormat;
 import org.infinispan.commons.dataconversion.MediaType;
@@ -57,7 +57,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 public class ClusterConfigKeepAliveDistTest {
     @Test
     @TestProvider(TestRealmResourceTestProvider.class)
-    void testMaxCountApplied(KeycloakDistribution dist) {
+    void testMaxCountApplied(KeycloakDistributionDecorator dist) {
         int maxCount = 100;
         Set<String> maxCountCaches = Stream.of(CachingOptions.LOCAL_MAX_COUNT_CACHES, CachingOptions.CLUSTERED_MAX_COUNT_CACHES)
               .flatMap(Arrays::stream)
@@ -78,19 +78,19 @@ public class ClusterConfigKeepAliveDistTest {
 
     @Test
     @TestProvider(TestRealmResourceTestProvider.class)
-    void testNumOwnersWithPersistentSessions(KeycloakDistribution dist) {
+    void testNumOwnersWithPersistentSessions(KeycloakDistributionDecorator dist) {
         doNumOwnerTest(dist, false);
     }
 
     @Test
     @TestProvider(TestRealmResourceTestProvider.class)
-    void testNumOwnersWithVolatileSessions(KeycloakDistribution dist) {
+    void testNumOwnersWithVolatileSessions(KeycloakDistributionDecorator dist) {
         doNumOwnerTest(dist, true);
     }
 
     @Test
     @TestProvider(TestRealmResourceTestProvider.class)
-    void testCheckMinimumNumOwners(KeycloakDistribution dist) {
+    void testCheckMinimumNumOwners(KeycloakDistributionDecorator dist) {
         List<String> args = new ArrayList<>();
         args.add("start-dev");
         args.add("--cache=ispn");
@@ -106,7 +106,7 @@ public class ClusterConfigKeepAliveDistTest {
         assertNumOwner(Arrays.stream(CLUSTERED_CACHE_NUM_OWNERS), 2);
     }
 
-    private void doNumOwnerTest(KeycloakDistribution dist, boolean volatileSessions) {
+    private void doNumOwnerTest(KeycloakDistributionDecorator dist, boolean volatileSessions) {
         final int owners = 5;
         List<String> args = new ArrayList<>();
         args.add("start-dev");

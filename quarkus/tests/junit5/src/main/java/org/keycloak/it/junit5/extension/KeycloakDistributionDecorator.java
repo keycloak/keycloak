@@ -20,30 +20,92 @@ package org.keycloak.it.junit5.extension;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import org.keycloak.it.junit5.extension.StopServer.Mode;
 import org.keycloak.it.utils.KeycloakDistribution;
+import org.keycloak.quarkus.runtime.cli.command.DryRunMixin;
+
+import io.restassured.RestAssured;
+
+import static org.keycloak.quarkus.runtime.Environment.LAUNCH_MODE;
+import static org.keycloak.quarkus.runtime.Environment.LAUNCH_MODE_EXIT_AFTER_START;
+import static org.keycloak.quarkus.runtime.Environment.LAUNCH_MODE_EXIT_BEFORE_BOOTSTRAP;
 
 public class KeycloakDistributionDecorator implements KeycloakDistribution {
 
     private DistributionTest config;
     private KeycloakDistribution delegate;
+    private StopServer.Mode stopServer;
+    private long startTimeout = TimeUnit.SECONDS.toMillis(Long.getLong("keycloak.distribution.start.timeout", 120L));
 
     public KeycloakDistributionDecorator(DistributionTest config,
                                          KeycloakDistribution delegate) {
         this.config = config;
         this.delegate = delegate;
     }
+    
+    public CLIResult run(String ... rawArgs) {
+        return run(List.of(rawArgs));
+    }
 
-    @Override
     public CLIResult run(List<String> rawArgs) {
+        delegate.stop();
+
         List<String> args = new ArrayList<>(rawArgs);
         args.addAll(List.of(config.defaultOptions()));
+        if (config.debug() && delegate.supportsDebug()) {
+            setEnvVar("KC_DEBUG", "true");
+            setEnvVar("KC_DEBUG_SUSPEND", "y");
+        }
         setEnvVar("KC_SHUTDOWN_DELAY", "0s");
         if (config.localCache()) {
             setEnvVar("KC_CACHE", "local");    
+        } else {
+            args.add("-Djgroups.join_timeout=50");
         }
-        return delegate.run(args);
+        if (stopServer == Mode.BEFORE_QUARKUS) {
+            setEnvVar(DryRunMixin.KC_DRY_RUN_ENV, "true");
+            setEnvVar(DryRunMixin.KC_DRY_RUN_BUILD_ENV, "true");
+        } else if (stopServer != Mode.MANUAL) {
+            args.add("-D" + LAUNCH_MODE + "=" + (stopServer == Mode.BEFORE_BOOTSTRAP ? LAUNCH_MODE_EXIT_BEFORE_BOOTSTRAP : LAUNCH_MODE_EXIT_AFTER_START));            
+        }
+
+        if (config.enableTls()) {
+            copyOrReplaceFileFromClasspath("/server.keystore", Path.of("conf", "server.keystore"));
+        }
+        try {
+            delegate.runKc(args);
+            delegate.waitFor(stopServer == Mode.MANUAL, startTimeout);
+        } finally {
+            if (stopServer != Mode.MANUAL) {
+                delegate.stop();
+            }
+        }            
+            
+        setRequestPort(config.requestPort());
+
+        return CLIResult.create(getOutputStream(), getErrorStream(), getExitCode());
+    }
+    
+    @Override
+    public void runKc(List<String> arguments) {
+        delegate.runKc(arguments);
+    }
+    
+    @Override
+    public int getMappedPort(int port) {
+        return delegate.getMappedPort(port);
+    }
+    
+    @Override
+    public void waitFor(boolean ready, long timeoutMillis) {
+        delegate.waitFor(ready, timeoutMillis);
+    }
+    
+    @Override
+    public boolean supportsDebug() {
+        return delegate.supportsDebug();
     }
 
     @Override
@@ -66,19 +128,8 @@ public class KeycloakDistributionDecorator implements KeycloakDistribution {
         return delegate.getExitCode();
     }
 
-    @Override
-    public boolean isDebug() {
-        return delegate.isDebug();
-    }
-
-    @Override
-    public String[] getCliArgs(List<String> arguments) {
-        return delegate.getCliArgs(arguments);
-    }
-
-    @Override
     public void setStopServer(Mode mode) {
-        delegate.setStopServer(mode);
+        this.stopServer = mode;
     }
 
     @Override
@@ -116,17 +167,15 @@ public class KeycloakDistributionDecorator implements KeycloakDistribution {
         delegate.copyOrReplaceFile(file, targetFile);
     }
 
-    @Override
-    public void setRequestPort() {
-        delegate.setRequestPort();
-    }
-
-    @Override
     public void setRequestPort(int port) {
-        delegate.setRequestPort(port);
+        RestAssured.port = delegate.getMappedPort(port);
     }
 
-    @Override
+    /**
+     * Get the underlying distribution - NOTE directly calling {@link KeycloakDistribution#runKc(List)} 
+     * on the unwrapped distribution is not recommended. The {@link #run(List)} methods on class should be used
+     * instead as they ensure the arguments and env match the expectations of the test and method annotations
+     */
     public  <D extends KeycloakDistribution> D unwrap(Class<D> type) {
         if (!KeycloakDistribution.class.isAssignableFrom(type)) {
             throw new IllegalArgumentException("Not a " + KeycloakDistribution.class + " type");
@@ -144,4 +193,5 @@ public class KeycloakDistributionDecorator implements KeycloakDistribution {
     public void clearEnv() {
         delegate.clearEnv();
     }
+
 }

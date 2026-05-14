@@ -3,8 +3,6 @@ package org.keycloak.it.utils;
 import java.nio.file.Path;
 import java.util.List;
 
-import org.keycloak.it.junit5.extension.CLIResult;
-import org.keycloak.it.junit5.extension.StopServer;
 import org.keycloak.quarkus.runtime.Environment;
 
 public interface KeycloakDistribution {
@@ -13,32 +11,30 @@ public interface KeycloakDistribution {
 
     String SCRIPT_KCADM_CMD = Environment.isWindows() ? "kcadm.bat" : "kcadm.sh";
 
-    CLIResult run(List<String> arguments);
-    default CLIResult run(String... arguments) {
-        return run(List.of(arguments));
+    /**
+     * Run the kc command and immediately return without waiting for the process
+     */
+    void runKc(List<String> arguments);
+    /**
+     * Run the kc command and immediately return without waiting for the process
+     */
+    default void runKc(String... arguments) {
+        runKc(List.of(arguments));
     }
-
+    
+    void waitFor(boolean ready, long timeoutMillis);
+    
     void stop();
+    
+    int getMappedPort(int port);
 
     List<String> getOutputStream();
 
     List<String> getErrorStream();
 
     int getExitCode();
-
-    boolean isDebug();
-
-    void setRequestPort();
-
-    void setRequestPort(int port);
-
-    default String[] getCliArgs(List<String> arguments) {
-        throw new RuntimeException("Not implemented");
-    }
-
-    default void setStopServer(StopServer.Mode mode) {
-        throw new RuntimeException("Not implemented");
-    }
+    
+    boolean supportsDebug();
 
     default void setQuarkusProperty(String key, String value) {
         throw new RuntimeException("Not implemented");
@@ -67,8 +63,6 @@ public interface KeycloakDistribution {
     default void copyOrReplaceFile(Path file, Path targetFile) {
         throw new RuntimeException("Not implemented");
     }
-
-    <D extends KeycloakDistribution> D unwrap(Class<D> type);
 
     void clearEnv();
 }

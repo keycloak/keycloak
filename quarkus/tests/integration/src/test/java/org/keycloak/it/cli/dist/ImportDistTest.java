@@ -23,9 +23,10 @@ import java.io.IOException;
 
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
+import org.keycloak.it.junit5.extension.KeycloakDistributionDecorator;
 import org.keycloak.it.junit5.extension.RawDistOnly;
+import org.keycloak.it.junit5.extension.StopServer;
 import org.keycloak.it.junit5.extension.StopServer.Mode;
-import org.keycloak.it.utils.KeycloakDistribution;
 import org.keycloak.it.utils.RawKeycloakDistribution;
 import org.keycloak.representations.idm.RealmRepresentation;
 
@@ -47,7 +48,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class ImportDistTest {
 
     @Test
-    void testImport(KeycloakDistribution dist) throws IOException {
+    void testImport(KeycloakDistributionDecorator dist) throws IOException {
         CLIResult cliResult = dist.run("build");
 
         File dir = new File("target");
@@ -78,17 +79,17 @@ public class ImportDistTest {
         cliResult.assertError("Must specify either --dir or --file options.");
     }
 
+    @StopServer(Mode.MANUAL)
     @Test
-    void testImportNewRealm(KeycloakDistribution dist) throws IOException {
+    void testImportNewRealm(KeycloakDistributionDecorator dist) throws IOException {
         dist.setEnvVar("MY_SECRET", "admin123");
 
         RawKeycloakDistribution rawDist = dist.unwrap(RawKeycloakDistribution.class);
-        CLIResult result = rawDist.run("bootstrap-admin", "service", "--db=dev-file", "--client-id=admin", "--client-secret:env=MY_SECRET");
+        CLIResult result = rawDist.kc("bootstrap-admin", "service", "--db=dev-file", "--client-id=admin", "--client-secret:env=MY_SECRET");
 
         assertTrue(result.getErrorOutput().isEmpty(), result.getErrorOutput());
 
-        rawDist.setStopServer(Mode.MANUAL);
-        result = rawDist.run("start-dev", "--db-url-properties=;AUTO_SERVER=TRUE;DB_CLOSE_ON_EXIT=TRUE");
+        result = dist.run("start-dev", "--db-url-properties=;AUTO_SERVER=TRUE;DB_CLOSE_ON_EXIT=TRUE");
 
         File file = new File("target/realm.json");
 

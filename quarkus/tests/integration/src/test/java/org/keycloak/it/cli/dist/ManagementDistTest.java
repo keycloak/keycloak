@@ -21,8 +21,8 @@ import java.io.IOException;
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
 import org.keycloak.it.junit5.extension.DistributionType;
+import org.keycloak.it.junit5.extension.KeycloakDistributionDecorator;
 import org.keycloak.it.junit5.extension.StopServer.Mode;
-import org.keycloak.it.utils.KeycloakDistribution;
 
 import io.quarkus.test.junit.main.Launch;
 import io.quarkus.test.junit.main.LaunchResult;
@@ -58,7 +58,7 @@ public class ManagementDistTest {
     @Test
     @Order(2)
     @Launch({"start-dev", "--legacy-observability-interface=true"})
-    void testManagementDisabled(LaunchResult result, KeycloakDistribution distribution) {
+    void testManagementDisabled(LaunchResult result, KeycloakDistributionDecorator distribution) {
         CLIResult cliResult = (CLIResult) result;
         cliResult.assertNoMessage("Management interface listening on");
 
@@ -125,7 +125,7 @@ public class ManagementDistTest {
 
     @Test
     @Launch({"start-dev", "--http-management-port=9005"})
-    void testManagementDifferentPort(LaunchResult result, KeycloakDistribution distribution) {
+    void testManagementDifferentPort(LaunchResult result, KeycloakDistributionDecorator distribution) {
         CLIResult cliResult = (CLIResult) result;
         cliResult.assertMessage("Management interface listening on http://0.0.0.0:9005");
 
@@ -159,7 +159,7 @@ public class ManagementDistTest {
 
     @Test
     @Launch({"start-dev", "--http-relative-path=/auth", "--http-management-relative-path=/management"})
-    void testManagementRootRedirects(LaunchResult result, KeycloakDistribution distribution) {
+    void testManagementRootRedirects(LaunchResult result, KeycloakDistributionDecorator distribution) {
         assertRelativePath(result, "/management");
 
         distribution.setRequestPort(8080);

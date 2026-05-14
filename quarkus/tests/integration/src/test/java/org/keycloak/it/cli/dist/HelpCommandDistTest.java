@@ -24,9 +24,9 @@ import java.util.stream.Stream;
 
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
+import org.keycloak.it.junit5.extension.KeycloakDistributionDecorator;
 import org.keycloak.it.junit5.extension.RawDistOnly;
 import org.keycloak.it.junit5.extension.WithEnvVars;
-import org.keycloak.it.utils.KeycloakDistribution;
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.cli.command.BootstrapAdmin;
 import org.keycloak.quarkus.runtime.cli.command.BootstrapAdminService;
@@ -194,7 +194,7 @@ public class HelpCommandDistTest {
     }
 
     @Test
-    public void testHelpDoesNotStartReAugJvm(KeycloakDistribution dist) {
+    public void testHelpDoesNotStartReAugJvm(KeycloakDistributionDecorator dist) {
         for (String helpCmd : List.of("-h", "--help", "--help-all")) {
             for (String cmd : List.of("", "start", "start-dev", "build")) {
                 String debugOption = "--debug";

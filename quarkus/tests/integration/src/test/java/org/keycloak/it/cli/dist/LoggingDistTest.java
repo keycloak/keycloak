@@ -32,10 +32,10 @@ import org.keycloak.connections.httpclient.HttpClientBuilder;
 import org.keycloak.cookie.CookieType;
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
+import org.keycloak.it.junit5.extension.KeycloakDistributionDecorator;
 import org.keycloak.it.junit5.extension.RawDistOnly;
 import org.keycloak.it.junit5.extension.StopServer;
 import org.keycloak.it.junit5.extension.StopServer.Mode;
-import org.keycloak.it.utils.KeycloakDistribution;
 import org.keycloak.it.utils.RawDistRootPath;
 import org.keycloak.it.utils.RawKeycloakDistribution;
 
@@ -108,7 +108,7 @@ public class LoggingDistTest {
     }
 
     @Test
-    void testJsonFormatApplied(KeycloakDistribution dist) throws IOException {
+    void testJsonFormatApplied(KeycloakDistributionDecorator dist) throws IOException {
         dist.unwrap(RawKeycloakDistribution.class).resetH2Dir();
         CLIResult cliResult = dist.run("start-dev", "--log-console-output=json");
         cliResult.assertJsonLogDefaultsApplied();
@@ -117,7 +117,7 @@ public class LoggingDistTest {
     }
 
     @Test
-    void testLogLevelSettingsAppliedWhenJsonEnabled(KeycloakDistribution dist) throws IOException {
+    void testLogLevelSettingsAppliedWhenJsonEnabled(KeycloakDistributionDecorator dist) throws IOException {
         dist.unwrap(RawKeycloakDistribution.class).resetH2Dir();
         CLIResult cliResult = dist.run("start-dev", "--log-level=off,org.keycloak:debug,liquibase:debug", "--log-console-output=json");
         assertFalse(cliResult.getOutput().contains("\"loggerName\":\"io.quarkus\",\"level\":\"INFO\")"));
@@ -148,14 +148,14 @@ public class LoggingDistTest {
     }
 
     @Test
-    void failUnknownHandlersInConfFile(KeycloakDistribution dist) {
+    void failUnknownHandlersInConfFile(KeycloakDistributionDecorator dist) {
         dist.copyOrReplaceFileFromClasspath("/logging/keycloak.conf", Paths.get("conf", "keycloak.conf"));
         CLIResult cliResult = dist.run("start-dev");
         cliResult.assertError("Invalid value for option 'kc.log' in keycloak.conf: foo. Expected values are: console, file, syslog");
     }
 
     @Test
-    void failEmptyLogErrorFromConfFileError(KeycloakDistribution dist) {
+    void failEmptyLogErrorFromConfFileError(KeycloakDistributionDecorator dist) {
         dist.copyOrReplaceFileFromClasspath("/logging/emptylog.conf", Paths.get("conf", "emptylog.conf"));
         CLIResult cliResult = dist.run(CONFIG_FILE_LONG_NAME+"=../conf/emptylog.conf", "start-dev");
         cliResult.assertError("Invalid value for option 'kc.log' in emptylog.conf: . Expected values are: console, file, syslog");
@@ -325,7 +325,7 @@ public class LoggingDistTest {
     // HTTP Access log
     @Test
     @Launch({"start-dev", "--http-access-log-enabled=true", "--http-access-log-pattern='%A %{METHOD} %{REQUEST_URL} %{i,User-Agent}'", "--http-access-log-exclude=/realms/master/clients/.*"})
-    void httpAccessLogNotNamedPattern(CLIResult cliResult, KeycloakDistribution dist, RawDistRootPath path) {
+    void httpAccessLogNotNamedPattern(CLIResult cliResult, KeycloakDistributionDecorator dist, RawDistRootPath path) {
         when().get("http://127.0.0.1:8080/realms/master/.well-known/openid-configuration").then()
                 .statusCode(200);
         Awaitility.await().atMost(5, TimeUnit.SECONDS).untilAsserted(

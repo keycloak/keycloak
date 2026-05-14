@@ -25,9 +25,9 @@ import java.util.function.Consumer;
 import org.keycloak.it.junit5.extension.BeforeStartDistribution;
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
+import org.keycloak.it.junit5.extension.KeycloakDistributionDecorator;
 import org.keycloak.it.junit5.extension.RawDistOnly;
 import org.keycloak.it.junit5.extension.StopServer.Mode;
-import org.keycloak.it.utils.KeycloakDistribution;
 
 import io.quarkus.test.junit.main.Launch;
 import io.quarkus.test.junit.main.LaunchResult;
@@ -207,7 +207,7 @@ public class ClusterConfigDistTest {
     }
 
     @Test
-    void testAbsoluteCacheFile(KeycloakDistribution dist, @TempDir Path tempDir) throws Exception {
+    void testAbsoluteCacheFile(KeycloakDistributionDecorator dist, @TempDir Path tempDir) throws Exception {
         File customCacheFile = tempDir.resolve("my-custom-cache.xml").toFile();
         File missingCacheFile = tempDir.resolve("my-missing-cache.xml").toFile();
         try (InputStream is = ClusterConfigDistTest.class.getResourceAsStream("/cache-ispn-custom-cache.xml")) {
@@ -261,18 +261,18 @@ public class ClusterConfigDistTest {
         result.assertNoMessage("Ignoring unbounded max-count for cache 'sessions'");
     }
 
-    public static class ConfigureCacheUsingAsyncEncryption implements Consumer<KeycloakDistribution> {
+    public static class ConfigureCacheUsingAsyncEncryption implements Consumer<KeycloakDistributionDecorator> {
 
         @Override
-        public void accept(KeycloakDistribution distribution) {
+        public void accept(KeycloakDistributionDecorator distribution) {
             distribution.copyOrReplaceFileFromClasspath("/cache-ispn-asym-enc.xml", Path.of("conf", "cache-ispn-asym-enc.xml"));
         }
     }
 
-    public static class ConfigureCustomCache implements Consumer<KeycloakDistribution> {
+    public static class ConfigureCustomCache implements Consumer<KeycloakDistributionDecorator> {
 
         @Override
-        public void accept(KeycloakDistribution distribution) {
+        public void accept(KeycloakDistributionDecorator distribution) {
             distribution.copyOrReplaceFileFromClasspath("/cache-ispn-custom-cache.xml", Path.of("conf", "cache-ispn-custom-cache.xml"));
         }
     }

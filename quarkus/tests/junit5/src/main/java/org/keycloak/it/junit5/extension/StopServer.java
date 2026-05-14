@@ -34,14 +34,12 @@ public @interface StopServer {
 
     public enum Mode {
         /**
-         * Stops the server process before quarkus augmentation or startup. Currently
-         * only applies to raw distributions
+         * Stops the server process before quarkus augmentation or startup.
          */
         BEFORE_QUARKUS,
         /**
          * Stops the server process after database initialization, but before
-         * bootstrapping (creating the master realm, boostrap admin, etc.). Currently
-         * only applies to raw distributions
+         * bootstrapping (creating the master realm, boostrap admin, etc.).
          */
         BEFORE_BOOTSTRAP, 
         /**

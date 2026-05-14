@@ -8,8 +8,8 @@ import java.util.function.Consumer;
 import org.keycloak.it.TestProvider;
 import org.keycloak.it.junit5.extension.BeforeStartDistribution;
 import org.keycloak.it.junit5.extension.CLIResult;
+import org.keycloak.it.junit5.extension.KeycloakDistributionDecorator;
 import org.keycloak.it.junit5.extension.RawDistOnly;
-import org.keycloak.it.utils.KeycloakDistribution;
 import org.keycloak.it.utils.RawKeycloakDistribution;
 import org.keycloak.quarkus.runtime.cli.command.StartDev;
 
@@ -32,7 +32,7 @@ abstract class AbstractPathDistTest {
     @BeforeStartDistribution(AddCustomScriptsProvider.class)
     @RawDistOnly(reason = "Testing installation path handling")
     @Test
-    void testApplicationBuildAndStart(KeycloakDistribution dist) throws IOException {
+    void testApplicationBuildAndStart(KeycloakDistributionDecorator dist) throws IOException {
         RawKeycloakDistribution rawDist = dist.unwrap(RawKeycloakDistribution.class);
         Path distPath = rawDist.getDistPath();
         Path newPath = distPath.getParent().resolve(getSubPath()).resolve(distPath.getFileName());
@@ -46,9 +46,9 @@ abstract class AbstractPathDistTest {
         }
     }
 
-    public static final class AddCustomScriptsProvider implements Consumer<KeycloakDistribution> {
+    public static final class AddCustomScriptsProvider implements Consumer<KeycloakDistributionDecorator> {
         @Override
-        public void accept(KeycloakDistribution distribution) {
+        public void accept(KeycloakDistributionDecorator distribution) {
             RawKeycloakDistribution rawDist = distribution.unwrap(RawKeycloakDistribution.class);
             rawDist.copyProvider(new ScriptProviderForTest());
         }

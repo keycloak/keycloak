@@ -25,8 +25,8 @@ import java.util.function.Consumer;
 import org.keycloak.it.junit5.extension.BeforeStartDistribution;
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
+import org.keycloak.it.junit5.extension.KeycloakDistributionDecorator;
 import org.keycloak.it.junit5.extension.RawDistOnly;
-import org.keycloak.it.utils.KeycloakDistribution;
 import org.keycloak.it.utils.RawKeycloakDistribution;
 
 import io.quarkus.deployment.util.FileUtil;
@@ -50,7 +50,7 @@ public class ImportAtStartupDistTest {
 
     @Test
     @BeforeStartDistribution(CreateRealmConfigurationFile.class)
-    void testMultipleImport(KeycloakDistribution dist) throws IOException {
+    void testMultipleImport(KeycloakDistributionDecorator dist) throws IOException {
         RawKeycloakDistribution rawDist = dist.unwrap(RawKeycloakDistribution.class);
         Path dir = rawDist.getDistPath().resolve("data").resolve("import");
 
@@ -80,7 +80,7 @@ public class ImportAtStartupDistTest {
 
     @Test
     @BeforeStartDistribution(CreateRealmConfigurationFile.class)
-    void testImportFromFileCreatedByExportAllRealms(KeycloakDistribution dist) throws IOException {
+    void testImportFromFileCreatedByExportAllRealms(KeycloakDistributionDecorator dist) throws IOException {
         dist.run("start-dev", "--import-realm");
         dist.run("--profile=dev", "export", "--file=../data/import/realm.json", "--verbose");
 
@@ -94,7 +94,7 @@ public class ImportAtStartupDistTest {
 
     @Test
     @BeforeStartDistribution(CreateRealmConfigurationFile.class)
-    void testImportFromFileCreatedByExportSingleRealm(KeycloakDistribution dist) throws IOException {
+    void testImportFromFileCreatedByExportSingleRealm(KeycloakDistributionDecorator dist) throws IOException {
         dist.run("start-dev", "--import-realm");
         dist.run("--profile=dev", "export", "--realm=quickstart-realm", "--file=../data/import/realm.json");
 
@@ -107,7 +107,7 @@ public class ImportAtStartupDistTest {
 
     @Test
     @BeforeStartDistribution(CreateRealmConfigurationFile.class)
-    void testImportFromDirCreatedByExport(KeycloakDistribution dist) throws IOException {
+    void testImportFromDirCreatedByExport(KeycloakDistributionDecorator dist) throws IOException {
         dist.run("start-dev", "--import-realm");
         RawKeycloakDistribution rawDist = dist.unwrap(RawKeycloakDistribution.class);
         FileUtil.deleteDirectory(rawDist.getDistPath().resolve("data").resolve("import").toAbsolutePath());
@@ -120,18 +120,17 @@ public class ImportAtStartupDistTest {
         result.assertNoMessage("Not importing realm master from file");
     }
 
-    public static class CreateRealmConfigurationFile implements Consumer<KeycloakDistribution> {
+    public static class CreateRealmConfigurationFile implements Consumer<KeycloakDistributionDecorator> {
 
         @Override
-        public void accept(KeycloakDistribution distribution) {
+        public void accept(KeycloakDistributionDecorator distribution) {
             distribution.copyOrReplaceFileFromClasspath("/quickstart-realm.json", Path.of("data", "import", "realm.json"));
         }
     }
 
-    public static class CreateRealmConfigurationFileAndDir implements Consumer<KeycloakDistribution> {
-
+    public static class CreateRealmConfigurationFileAndDir implements Consumer<KeycloakDistributionDecorator> {
         @Override
-        public void accept(KeycloakDistribution distribution) {
+        public void accept(KeycloakDistributionDecorator distribution) {
             distribution.copyOrReplaceFileFromClasspath("/quickstart-realm.json", Path.of("data", "import", "realm.json"));
 
             RawKeycloakDistribution rawDist = distribution.unwrap(RawKeycloakDistribution.class);
@@ -140,10 +139,10 @@ public class ImportAtStartupDistTest {
         }
     }
 
-    public static class CreateRealmConfigurationFileWithUnsupportedExtension implements Consumer<KeycloakDistribution> {
+    public static class CreateRealmConfigurationFileWithUnsupportedExtension implements Consumer<KeycloakDistributionDecorator> {
 
         @Override
-        public void accept(KeycloakDistribution distribution) {
+        public void accept(KeycloakDistributionDecorator distribution) {
             distribution.copyOrReplaceFileFromClasspath("/quickstart-realm.json", Path.of("data", "import", "realm"));
         }
     }

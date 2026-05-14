@@ -24,10 +24,10 @@ import java.util.function.Consumer;
 import org.keycloak.it.junit5.extension.BeforeStartDistribution;
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
+import org.keycloak.it.junit5.extension.KeycloakDistributionDecorator;
 import org.keycloak.it.junit5.extension.RawDistOnly;
 import org.keycloak.it.junit5.extension.StopServer;
 import org.keycloak.it.junit5.extension.StopServer.Mode;
-import org.keycloak.it.utils.KeycloakDistribution;
 
 import io.quarkus.test.junit.main.Launch;
 import io.restassured.RestAssured;
@@ -168,45 +168,45 @@ public class QuarkusPropertiesDistTest {
         cliResult.assertMessage("ERROR: Failed to load 'https-*' material: NoSuchFileException C:");
     }
 
-    public static class AddConsoleHandlerFromQuarkusProps implements Consumer<KeycloakDistribution> {
+    public static class AddConsoleHandlerFromQuarkusProps implements Consumer<KeycloakDistributionDecorator> {
         @Override
-        public void accept(KeycloakDistribution distribution) {
+        public void accept(KeycloakDistributionDecorator distribution) {
             distribution.setQuarkusProperty(QUARKUS_RUNTIME_CONSOLE_HANDLER_ENABLED_KEY, "true");
             distribution.setQuarkusProperty("quarkus.log.handler.console.\"console-2\".format", "Keycloak is the best");
             distribution.setQuarkusProperty("quarkus.log.handlers", "console-2");
         }
     }
 
-    public static class UpdateConsoleHandlerFromKeycloakConf implements Consumer<KeycloakDistribution> {
+    public static class UpdateConsoleHandlerFromKeycloakConf implements Consumer<KeycloakDistributionDecorator> {
 
         @Override
-        public void accept(KeycloakDistribution distribution) {
+        public void accept(KeycloakDistributionDecorator distribution) {
             distribution.deleteQuarkusProperties();
             distribution.setProperty(QUARKUS_RUNTIME_CONSOLE_HANDLER_ENABLED_KEY, "false");
         }
     }
 
-    public static class UpdateConsoleHandlerFromQuarkusProps implements Consumer<KeycloakDistribution> {
+    public static class UpdateConsoleHandlerFromQuarkusProps implements Consumer<KeycloakDistributionDecorator> {
 
         @Override
-        public void accept(KeycloakDistribution distribution) {
+        public void accept(KeycloakDistributionDecorator distribution) {
             distribution.deleteQuarkusProperties();
             distribution.setQuarkusProperty(QUARKUS_RUNTIME_CONSOLE_HANDLER_ENABLED_KEY, "true");
         }
     }
 
-    public static class UpdateHibernateMetricsFromQuarkusProps implements Consumer<KeycloakDistribution> {
+    public static class UpdateHibernateMetricsFromQuarkusProps implements Consumer<KeycloakDistributionDecorator> {
 
         @Override
-        public void accept(KeycloakDistribution distribution) {
+        public void accept(KeycloakDistributionDecorator distribution) {
             distribution.deleteQuarkusProperties();
             distribution.setQuarkusProperty(QUARKUS_BUILDTIME_HIBERNATE_METRICS_KEY, "true");
         }
     }
 
-    public static class CopyKeystoreToConf implements Consumer<KeycloakDistribution> {
+    public static class CopyKeystoreToConf implements Consumer<KeycloakDistributionDecorator> {
         @Override
-        public void accept(KeycloakDistribution distribution) {
+        public void accept(KeycloakDistributionDecorator distribution) {
             distribution.copyOrReplaceFileFromClasspath("/keystore", Path.of("conf", "keystore"));
         }
     }

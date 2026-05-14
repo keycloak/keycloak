@@ -50,7 +50,7 @@ import static org.keycloak.quarkus.runtime.Environment.forceExitAfterStartLaunch
 
 public class CLITestExtension extends QuarkusMainTestExtension {
 
-    private KeycloakDistribution dist;
+    private KeycloakDistributionDecorator dist;
     private DatabaseContainer databaseContainer;
     private InfinispanContainer infinispanContainer;
     private CLIResult result;
@@ -220,7 +220,7 @@ public class CLITestExtension extends QuarkusMainTestExtension {
         super.afterAll(context);
     }
 
-    private KeycloakDistribution createDistribution(DistributionTest config) {
+    private KeycloakDistributionDecorator createDistribution(DistributionTest config) {
         return new KeycloakDistributionDecorator(config, DistributionType.getCurrent().orElse(RAW).newInstance(config));
     }
 
@@ -249,11 +249,14 @@ public class CLITestExtension extends QuarkusMainTestExtension {
             return getDistPath();
         }
 
-        if (type.equals(KeycloakDistribution.class)) {
+        if (KeycloakDistribution.class.isAssignableFrom(type)) {
             if (context.getTestClass().orElse(Object.class).getDeclaredAnnotation(DistributionTest.class) == null) {
                 throw new RuntimeException("Only tests annotated with " + DistributionTest.class + " can inject a distribution instance");
             }
-            return dist;
+            if (type.isInstance(dist)) {
+                return dist;
+            }
+            throw new RuntimeException("Dist is not a " + type);
         }
 
         // for now, no support for manual launching using QuarkusMainLauncher
@@ -264,7 +267,7 @@ public class CLITestExtension extends QuarkusMainTestExtension {
     public boolean supportsParameter(ParameterContext parameterContext, ExtensionContext extensionContext)
             throws ParameterResolutionException {
         Class<?> type = parameterContext.getParameter().getType();
-        return type == LaunchResult.class || type == CLIResult.class || type == RawDistRootPath.class || type == KeycloakDistribution.class;
+        return type == LaunchResult.class || type == CLIResult.class || type == RawDistRootPath.class || type == KeycloakDistribution.class || type == KeycloakDistributionDecorator.class;
     }
 
     private void configureProfile(ExtensionContext context) {

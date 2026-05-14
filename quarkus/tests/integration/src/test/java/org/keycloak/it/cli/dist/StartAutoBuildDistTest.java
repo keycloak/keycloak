@@ -19,6 +19,7 @@ package org.keycloak.it.cli.dist;
 
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
+import org.keycloak.it.junit5.extension.KeycloakDistributionDecorator;
 import org.keycloak.it.junit5.extension.RawDistOnly;
 import org.keycloak.it.junit5.extension.StopServer;
 import org.keycloak.it.junit5.extension.StopServer.Mode;
@@ -138,7 +139,7 @@ public class StartAutoBuildDistTest {
     @Test
     @TestProvider(CustomUserProvider.class)
     @Order(10)
-    void testSpiAutoBuild(KeycloakDistribution dist) {
+    void testSpiAutoBuild(KeycloakDistributionDecorator dist) {
         CLIResult cliResult = dist.run("start-dev", "--spi-user-provider=custom_jpa", "--spi-user-jpa-enabled=false");
         cliResult.assertMessage("Updating the configuration");
         cliResult.assertStartedDevMode();
@@ -152,7 +153,7 @@ public class StartAutoBuildDistTest {
 
     @Test
     @Order(11)
-    void testLogLevelNotPeristed(KeycloakDistribution dist) {
+    void testLogLevelNotPeristed(KeycloakDistributionDecorator dist) {
         CLIResult cliResult = dist.run("start", "--db=dev-file", "--log-level=org.hibernate.SQL:debug", "--http-enabled=true", "--hostname-strict=false");
         cliResult.assertMessage("DEBUG [org.hibernate.SQL]");
         cliResult.assertStarted();
@@ -166,7 +167,7 @@ public class StartAutoBuildDistTest {
 
     @Test
     @Order(12)
-    void testLogLevelWildcardNotPeristed(KeycloakDistribution dist) {
+    void testLogLevelWildcardNotPeristed(KeycloakDistributionDecorator dist) {
         CLIResult cliResult = dist.run("start-dev", "--log-level-org.hibernate.SQL=debug");
         cliResult.assertMessage("DEBUG [org.hibernate.SQL]");
         cliResult.assertStartedDevMode();

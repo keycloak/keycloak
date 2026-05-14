@@ -22,10 +22,10 @@ import java.util.concurrent.TimeUnit;
 import org.keycloak.it.jaxrs.filter.TestFilterTestProvider;
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
+import org.keycloak.it.junit5.extension.KeycloakDistributionDecorator;
 import org.keycloak.it.junit5.extension.RawDistOnly;
 import org.keycloak.it.junit5.extension.StopServer.Mode;
 import org.keycloak.it.junit5.extension.TestProvider;
-import org.keycloak.it.utils.KeycloakDistribution;
 
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Tag;
@@ -41,7 +41,7 @@ public class JaxRsDistTest {
 
     @Test
     @TestProvider(TestFilterTestProvider.class)
-    public void requestFilterTest(KeycloakDistribution dist) {
+    public void requestFilterTest(KeycloakDistributionDecorator dist) {
         CLIResult cliResult = dist.run("start-dev");
 
         cliResult.assertStartedDevMode();

@@ -22,11 +22,10 @@ import java.nio.file.Paths;
 
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
+import org.keycloak.it.junit5.extension.KeycloakDistributionDecorator;
 import org.keycloak.it.junit5.extension.RawDistOnly;
 import org.keycloak.it.junit5.extension.StopServer;
 import org.keycloak.it.junit5.extension.StopServer.Mode;
-import org.keycloak.it.utils.KeycloakDistribution;
-import org.keycloak.it.utils.RawKeycloakDistribution;
 
 import io.quarkus.test.junit.main.Launch;
 import org.junit.jupiter.api.MethodOrderer;
@@ -87,7 +86,7 @@ public class StartDevCommandDistTest {
     }
 
     @Test
-    void testConfigKeystoreAbsolutePath(KeycloakDistribution dist) {
+    void testConfigKeystoreAbsolutePath(KeycloakDistributionDecorator dist) {
         CLIResult cliResult = dist.run("start-dev", "--config-keystore=" + Paths.get("src/test/resources/keystore").toAbsolutePath().normalize(),
                 "--config-keystore-password=secret");
 
@@ -102,15 +101,14 @@ public class StartDevCommandDistTest {
 
     @StopServer(Mode.BEFORE_QUARKUS)
     @Test
-    void testStartDevThenImportRebuild(KeycloakDistribution dist) throws Exception {
-        RawKeycloakDistribution rawDist = dist.unwrap(RawKeycloakDistribution.class);
-        CLIResult result = rawDist.run("start-dev");
+    void testStartDevThenImportRebuild(KeycloakDistributionDecorator dist) throws Exception {
+        CLIResult result = dist.run("start-dev");
         assertTrue(result.getErrorOutput().isEmpty(), result.getErrorOutput());
 
         File target = new File("./target");
 
         // feature change should trigger a build
-        result = rawDist.run("--profile=dev", "export", "--features=docker", "--dir=" + target.getAbsolutePath());
+        result = dist.run("--profile=dev", "export", "--features=docker", "--dir=" + target.getAbsolutePath());
         result.assertMessage("Updating the configuration and installing your custom providers, if any. Please wait.");
     }
 

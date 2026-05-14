@@ -3,8 +3,8 @@ package org.keycloak.it.cli.dist;
 import java.io.IOException;
 
 import org.keycloak.it.junit5.extension.DistributionTest;
+import org.keycloak.it.junit5.extension.KeycloakDistributionDecorator;
 import org.keycloak.it.junit5.extension.RawDistOnly;
-import org.keycloak.it.utils.KeycloakDistribution;
 import org.keycloak.it.utils.RawKeycloakDistribution;
 
 import io.quarkus.deployment.util.FileUtil;
@@ -17,7 +17,7 @@ import org.junit.jupiter.api.Test;
 public class LiquibaseDistTest {
 
     @Test
-    public void dbLockMultipleExecution(KeycloakDistribution distribution) throws IOException {
+    public void dbLockMultipleExecution(KeycloakDistributionDecorator distribution) throws IOException {
         // force a full db initialization
         RawKeycloakDistribution rawDist = distribution.unwrap(RawKeycloakDistribution.class);
         FileUtil.deleteDirectory(rawDist.getDistPath().resolve("data").resolve("h2").toAbsolutePath());

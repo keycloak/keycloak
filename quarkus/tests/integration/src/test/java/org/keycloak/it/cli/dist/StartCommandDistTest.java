@@ -21,6 +21,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
+import org.keycloak.it.junit5.extension.KeycloakDistributionDecorator;
 import org.keycloak.it.junit5.extension.RawDistOnly;
 import org.keycloak.it.junit5.extension.StopServer;
 import org.keycloak.it.junit5.extension.StopServer.Mode;
@@ -81,7 +82,7 @@ public class StartCommandDistTest {
     @StopServer(Mode.BEFORE_QUARKUS)
     @Test
     @RawDistOnly(reason = "Containers are immutable")
-    void errorSpiBuildtimeAtRuntime(KeycloakDistribution dist) {
+    void errorSpiBuildtimeAtRuntime(KeycloakDistributionDecorator dist) {
         CLIResult cliResult = dist.run("build",  "--db=dev-file");
         cliResult.assertBuild();
 
@@ -93,7 +94,7 @@ public class StartCommandDistTest {
     @WithEnvVars({"KC_SPI_EVENTS_LISTENER__JBOSS_LOGGING__ENABLED", "false"})
     @Test
     @RawDistOnly(reason = "Containers are immutable")
-    void noErrorSpiBuildtimeNotChanged(KeycloakDistribution dist) {
+    void noErrorSpiBuildtimeNotChanged(KeycloakDistributionDecorator dist) {
         CLIResult cliResult = dist.run("build", "--db=dev-file");
         cliResult.assertBuild();
 
@@ -103,7 +104,7 @@ public class StartCommandDistTest {
 
     @Test
     @RawDistOnly(reason = "Containers are immutable")
-    void terminateStartOptimized(KeycloakDistribution dist) {
+    void terminateStartOptimized(KeycloakDistributionDecorator dist) {
         CLIResult cliResult = dist.run("build", "--db=dev-file");
         cliResult.assertBuild();
 
@@ -196,7 +197,7 @@ public class StartCommandDistTest {
     @StopServer(Mode.BEFORE_QUARKUS)
     @Test
     @RawDistOnly(reason = "Containers are immutable")
-    void testWarningWhenOverridingBuildOptionsDuringStart(KeycloakDistribution dist) {
+    void testWarningWhenOverridingBuildOptionsDuringStart(KeycloakDistributionDecorator dist) {
         CLIResult cliResult = dist.run("build", "--db=postgres", "--features=preview");
         cliResult.assertBuild();
         cliResult = dist.run("start", "--db=dev-file", "--hostname=localhost", "--http-enabled=true");
@@ -231,7 +232,7 @@ public class StartCommandDistTest {
     @StopServer(Mode.BEFORE_QUARKUS)
     @Test
     @RawDistOnly(reason = "Containers are immutable")
-    void testStartAfterStartDev(KeycloakDistribution dist) {
+    void testStartAfterStartDev(KeycloakDistributionDecorator dist) {
         CLIResult cliResult = dist.run("start-dev");
         cliResult.assertStartedDevMode();
 
@@ -243,7 +244,7 @@ public class StartCommandDistTest {
     @StopServer(Mode.BEFORE_QUARKUS)
     @Test
     @RawDistOnly(reason = "Containers are immutable")
-    void testErrorWhenOverridingNonCliBuildOptionsDuringStart(KeycloakDistribution dist) {
+    void testErrorWhenOverridingNonCliBuildOptionsDuringStart(KeycloakDistributionDecorator dist) {
         CLIResult cliResult = dist.run("build", "--db=dev-file", "--features=preview");
         cliResult.assertBuild();
         dist.setEnvVar("KC_DB", "postgres");
@@ -268,7 +269,7 @@ public class StartCommandDistTest {
 
     @RawDistOnly(reason = "Containers are immutable")
     @Test
-    void testRuntimeValuesAreNotCaptured(KeycloakDistribution dist) {
+    void testRuntimeValuesAreNotCaptured(KeycloakDistributionDecorator dist) {
         // confirm that the invalid value prevents startup - if this passes, then we need to use a different
         // spi provider
         CLIResult cliResult = dist.run("start", "--db=dev-file", "--spi-events-listener-jboss-logging-success-level=invalid", "--http-enabled", "true", "--hostname-strict", "false");
@@ -289,7 +290,7 @@ public class StartCommandDistTest {
     @RawDistOnly(reason = "Containers are immutable")
     @Test
     @TestProvider(TestRealmResourceTestProvider.class)
-    void testAsyncBootstrapFails(KeycloakDistribution dist) {
+    void testAsyncBootstrapFails(KeycloakDistributionDecorator dist) {
         RawKeycloakDistribution rawDist = dist.unwrap(RawKeycloakDistribution.class);
         dist.setStopServer(Mode.MANUAL);
         CLIResult result = dist.run("start", "--server-async-bootstrap=true", "--hostname-strict=false", "--db=dev-file", "--http-enabled=true", "--spi-realm-restapi-extension--test-resources--fail=true");

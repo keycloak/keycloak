@@ -21,11 +21,11 @@ import java.nio.file.Paths;
 
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
+import org.keycloak.it.junit5.extension.KeycloakDistributionDecorator;
 import org.keycloak.it.junit5.extension.RawDistOnly;
 import org.keycloak.it.junit5.extension.StopServer;
 import org.keycloak.it.junit5.extension.StopServer.Mode;
 import org.keycloak.it.junit5.extension.WithEnvVars;
-import org.keycloak.it.utils.KeycloakDistribution;
 
 import io.quarkus.test.junit.main.Launch;
 import org.junit.jupiter.api.MethodOrderer;
@@ -87,7 +87,7 @@ public class OptionsDistTest {
     @Test
     @Order(6)
     @RawDistOnly(reason = "Raw is enough and we avoid issues with including custom conf file in the container")
-    public void testExpressionsInConfigFile(KeycloakDistribution distribution) {
+    public void testExpressionsInConfigFile(KeycloakDistributionDecorator distribution) {
         distribution.setEnvVar("MY_LOG_LEVEL", "warn");
         CLIResult result = distribution.run(CONFIG_FILE_LONG_NAME + "=" + Paths.get("src/test/resources/OptionsDistTest/keycloak.conf").toAbsolutePath().normalize(), "start", "--db=dev-file", "--http-enabled=true", "--hostname-strict=false");
         result.assertNoMessage("INFO [io.quarkus]");

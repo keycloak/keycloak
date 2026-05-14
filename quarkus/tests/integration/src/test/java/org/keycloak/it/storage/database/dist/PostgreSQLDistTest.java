@@ -17,8 +17,12 @@
 
 package org.keycloak.it.storage.database.dist;
 
+import java.util.function.Consumer;
+
+import org.keycloak.it.junit5.extension.BeforeStartDistribution;
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
+import org.keycloak.it.junit5.extension.KeycloakDistributionDecorator;
 import org.keycloak.it.junit5.extension.WithDatabase;
 import org.keycloak.it.storage.database.PostgreSQLTest;
 import org.keycloak.it.utils.RawDistRootPath;
@@ -31,15 +35,23 @@ import org.junit.jupiter.api.Test;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-@DistributionTest(removeBuildOptionsAfterBuild = true)
+@DistributionTest
 @WithDatabase(alias = "postgres")
 @Tag(DistributionTest.STORAGE)
 public class PostgreSQLDistTest extends PostgreSQLTest {
 
+    @BeforeStartDistribution(RemoveDB.class)
     @Test
     @Launch("show-config")
     public void testDbOptionFromPersistedConfigSource(CLIResult cliResult) {
         assertThat(cliResult.getOutput(),containsString("postgres (Persisted)"));
+    }
+    
+    public static final class RemoveDB implements Consumer<KeycloakDistributionDecorator> {
+        @Override
+        public void accept(KeycloakDistributionDecorator distribution) {
+            distribution.removeProperty("db");
+        }
     }
 
     @Tag(DistributionTest.STORAGE)

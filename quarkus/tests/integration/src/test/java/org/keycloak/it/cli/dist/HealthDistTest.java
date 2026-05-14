@@ -23,8 +23,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
 import org.keycloak.it.junit5.extension.DistributionTest;
+import org.keycloak.it.junit5.extension.KeycloakDistributionDecorator;
 import org.keycloak.it.junit5.extension.StopServer.Mode;
-import org.keycloak.it.utils.KeycloakDistribution;
 
 import io.quarkus.test.junit.main.Launch;
 import io.quarkus.test.junit.main.LaunchResult;
@@ -45,7 +45,7 @@ public class HealthDistTest {
 
     @Test
     @Launch({ "start-dev" })
-    void testHealthEndpointNotEnabled(KeycloakDistribution distribution) {
+    void testHealthEndpointNotEnabled(KeycloakDistributionDecorator distribution) {
         assertThrows(IOException.class, () -> when().get("/health"), "Connection refused must be thrown");
         distribution.setRequestPort(8080);
         when().get("/health").then()
@@ -54,7 +54,7 @@ public class HealthDistTest {
 
     @Test
     @Launch({ "start-dev", "--health-enabled=true" })
-    void testHealthEndpoint(KeycloakDistribution distribution) {
+    void testHealthEndpoint(KeycloakDistributionDecorator distribution) {
         when().get("/health").then()
                 .statusCode(200);
         when().get("/health/live").then()
@@ -75,7 +75,7 @@ public class HealthDistTest {
 
     @Test
     @Launch({ "start-dev", "--health-enabled=true", "--http-management-health-enabled=false" })
-    void testHealthEndpointOnMain(KeycloakDistribution distribution) {
+    void testHealthEndpointOnMain(KeycloakDistributionDecorator distribution) {
         distribution.setRequestPort(8080);
         when().get("/health/ready").then().statusCode(200);
     }
@@ -141,7 +141,7 @@ public class HealthDistTest {
     }
 
     @Test
-    void testUsingRelativePath(KeycloakDistribution distribution) {
+    void testUsingRelativePath(KeycloakDistributionDecorator distribution) {
         for (String relativePath : List.of("/auth", "/auth/", "auth")) {
             distribution.run("start-dev", "--health-enabled=true", "--http-management-relative-path=" + relativePath);
             if (!relativePath.endsWith("/")) {
@@ -153,7 +153,7 @@ public class HealthDistTest {
     }
 
     @Test
-    void testMultipleRequests(KeycloakDistribution distribution) throws Exception {
+    void testMultipleRequests(KeycloakDistributionDecorator distribution) throws Exception {
         for (String relativePath : List.of("/", "/auth/", "auth")) {
             distribution.run("start-dev", "--health-enabled=true", "--http-management-relative-path=" + relativePath);
             CompletableFuture<?> future = CompletableFuture.completedFuture(null);

@@ -26,11 +26,11 @@ import java.util.concurrent.Executors;
 
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
+import org.keycloak.it.junit5.extension.KeycloakDistributionDecorator;
 import org.keycloak.it.junit5.extension.RawDistOnly;
 import org.keycloak.it.junit5.extension.StopServer.Mode;
 import org.keycloak.it.junit5.extension.TestProvider;
 import org.keycloak.it.resource.realm.TestRealmResourceTestProvider;
-import org.keycloak.it.utils.KeycloakDistribution;
 import org.keycloak.it.utils.RawKeycloakDistribution;
 
 import io.quarkus.test.junit.main.Launch;
@@ -50,7 +50,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 public class HttpDistTest {
     @Test
     @TestProvider(TestRealmResourceTestProvider.class)
-    public void maxQueuedRequestsTest(KeycloakDistribution dist) {
+    public void maxQueuedRequestsTest(KeycloakDistributionDecorator dist) {
         dist.run("start-dev", "--http-max-queued-requests=1", "--http-pool-max-threads=1");
 
         ExecutorService executor = Executors.newFixedThreadPool(5);
@@ -94,7 +94,7 @@ public class HttpDistTest {
     }
 
     @Test
-    public void httpStoreTypeValidation(KeycloakDistribution dist) {
+    public void httpStoreTypeValidation(KeycloakDistributionDecorator dist) {
         CLIResult result = dist.run("start", "--https-key-store-file=not-there.ks", "--hostname-strict=false");
         result.assertExitCode(-1);
         result.assertMessage("ERROR: Unable to determine 'https-key-store-type' automatically. Adjust the file extension or specify the property");
@@ -124,7 +124,7 @@ public class HttpDistTest {
     }
 
     @Test
-    public void testShutdownParametersNegativeValue(KeycloakDistribution dist) {
+    public void testShutdownParametersNegativeValue(KeycloakDistributionDecorator dist) {
         // Test that negative values are rejected
         CLIResult result = dist.run("start-dev", "--shutdown-delay=-1s");
         result.assertError("Invalid duration '-1s'. Duration must be zero or positive");
