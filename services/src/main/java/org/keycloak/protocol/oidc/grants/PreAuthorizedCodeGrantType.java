@@ -17,6 +17,10 @@
 
 package org.keycloak.protocol.oidc.grants;
 
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
+
 import jakarta.ws.rs.core.Response;
 import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;
@@ -39,7 +43,6 @@ import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.services.util.DefaultClientSessionContext;
 import org.keycloak.utils.MediaType;
 
-import java.util.List;
 import java.util.UUID;
 
 import static org.keycloak.OAuth2Constants.AUTHORIZATION_DETAILS_PARAM;
@@ -135,6 +138,11 @@ public class PreAuthorizedCodeGrantType extends OAuth2GrantTypeBase {
     @Override
     public EventType getEventType() {
         return EventType.CODE_TO_TOKEN;
+    }
+
+    @Override
+    public Set<String> getTokenParameterNames() {
+        return Collections.emptySet();
     }
 
     /**

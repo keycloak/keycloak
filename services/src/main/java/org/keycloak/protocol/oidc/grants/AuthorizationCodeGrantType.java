@@ -17,9 +17,12 @@
 
 package org.keycloak.protocol.oidc.grants;
 
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
+
 import jakarta.ws.rs.core.Response;
 
-import java.util.List;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
@@ -249,4 +252,8 @@ public class AuthorizationCodeGrantType extends OAuth2GrantTypeBase {
         return EventType.CODE_TO_TOKEN;
     }
 
+    @Override
+    public Set<String> getTokenParameterNames() {
+        return Collections.emptySet();
+    }
 }
