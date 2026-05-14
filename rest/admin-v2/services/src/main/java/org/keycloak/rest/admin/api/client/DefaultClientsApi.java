@@ -19,7 +19,6 @@ import org.keycloak.representations.admin.v2.BaseClientRepresentation;
 import org.keycloak.services.client.ClientService;
 import org.keycloak.services.client.ClientService.ClientProjectionOptions;
 import org.keycloak.services.client.DefaultClientService;
-import org.keycloak.services.resources.admin.RealmAdminResource;
 import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
 
 public class DefaultClientsApi implements ClientsApi {
@@ -29,18 +28,12 @@ public class DefaultClientsApi implements ClientsApi {
     private final RealmModel realm;
     private final ClientService clientService;
 
-    // v1 resources
-    private final RealmAdminResource realmAdminResource;
-
     public DefaultClientsApi(@Nonnull KeycloakSession session,
                              @Nonnull RealmModel realm,
-                             @Nonnull AdminPermissionEvaluator permissions,
-                             // remove v1 resource once we are not attached to API v1
-                             @Nonnull RealmAdminResource realmAdminResource) {
+                             @Nonnull AdminPermissionEvaluator permissions) {
         this.session = session;
         this.realm = realm;
         this.permissions = permissions;
-        this.realmAdminResource = realmAdminResource;
         this.clientService = new DefaultClientService(session, realm, permissions);
     }
     
