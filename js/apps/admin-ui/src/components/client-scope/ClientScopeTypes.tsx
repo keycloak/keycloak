@@ -7,6 +7,7 @@ import { useTranslation } from "react-i18next";
 import { toUpperCase } from "../../util";
 import {
   DropdownItem,
+  Label,
   MenuToggle,
   Select,
   SelectOption,
@@ -33,6 +34,12 @@ export const allClientScopeTypes = Object.keys({
 
 export const isDynamicScope = (scope: ClientScopeRepresentation) =>
   scope.attributes?.["is.dynamic.scope"] === "true";
+
+export const DynamicScopeLabel = () => (
+  <Label color="gold" isCompact>
+    dynamic
+  </Label>
+);
 
 const filterDefaultForDynamic = (
   types: string[],

@@ -6,7 +6,6 @@ import {
   Dropdown,
   DropdownItem,
   DropdownList,
-  Label,
   MenuToggle,
   Modal,
   ModalVariant,
@@ -22,6 +21,7 @@ import { useTranslation } from "react-i18next";
 import {
   ClientScopeType,
   clientScopeTypesDropdown,
+  DynamicScopeLabel,
   isDynamicScope,
 } from "../../components/client-scope/ClientScopeTypes";
 import { ListEmptyState } from "@keycloak/keycloak-ui-shared";
@@ -321,12 +321,7 @@ export const AddScopeDialog = ({
             name: "name",
             cellRenderer: (row) => (
               <>
-                {row.name}{" "}
-                {isDynamicScope(row) && (
-                  <Label color="gold" isCompact>
-                    dynamic
-                  </Label>
-                )}
+                {row.name} {isDynamicScope(row) && <DynamicScopeLabel />}
               </>
             ),
           },

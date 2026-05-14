@@ -7,7 +7,6 @@ import {
   Dropdown,
   DropdownItem,
   DropdownList,
-  Label,
   MenuToggle,
   ToolbarItem,
 } from "@patternfly/react-core";
@@ -31,6 +30,7 @@ import {
   ClientScope,
   addClientScope,
   changeClientScope,
+  DynamicScopeLabel,
   isDynamicScope,
   removeClientScope,
 } from "../../components/client-scope/ClientScopeTypes";
@@ -378,12 +378,7 @@ export const ClientScopes = ({
               }
               return (
                 <>
-                  {row.name}{" "}
-                  {isDynamicScope(row) && (
-                    <Label color="gold" isCompact>
-                      dynamic
-                    </Label>
-                  )}
+                  {row.name} {isDynamicScope(row) && <DynamicScopeLabel />}
                 </>
               );
             },

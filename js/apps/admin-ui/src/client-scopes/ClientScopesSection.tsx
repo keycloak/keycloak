@@ -5,7 +5,6 @@ import {
   Dropdown,
   DropdownItem,
   DropdownList,
-  Label,
   MenuToggle,
   PageSection,
   ToolbarItem,
@@ -26,6 +25,7 @@ import {
   ClientScope,
   ClientScopeDefaultOptionalType,
   changeScope,
+  DynamicScopeLabel,
   isDynamicScope,
   removeScope,
 } from "../components/client-scope/ClientScopeTypes";
@@ -87,11 +87,7 @@ const ClientScopeDetailLink = (scope: ClientScopeDefaultOptionalType) => {
       >
         {scope.name}
       </Link>{" "}
-      {isDynamicScope(scope) && (
-        <Label color="gold" isCompact>
-          dynamic
-        </Label>
-      )}
+      {isDynamicScope(scope) && <DynamicScopeLabel />}
     </>
   );
 };
