@@ -22,6 +22,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.PublicKey;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -31,6 +32,8 @@ import java.util.Set;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.Time;
 import org.keycloak.crypto.CryptoUtils;
+import org.keycloak.crypto.SignatureProvider;
+import org.keycloak.crypto.SignatureProviderFactory;
 import org.keycloak.crypto.SignatureVerifierContext;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jwk.JWKParser;
@@ -68,8 +71,7 @@ public class JwtProofValidator extends AbstractProofValidator {
     public static final String PROOF_JWT_TYP = "openid4vci-proof+jwt";
     private static final String CRYPTOGRAPHIC_BINDING_METHOD_JWK = "jwk";
     private static final String KEY_ATTESTATION_CLAIM = "key_attestation";
-    // JOSE private JWK parameters across RSA/EC/OKP/oct key types. TODO: This is not very reliable and should be either removed or improved to cover the cases when other algorithms are introduced in the future
-    private static final Set<String> JWK_PRIVATE_KEY_CLAIMS = Set.of("d", "p", "q", "dp", "dq", "qi", "oth", "k");
+    
     private static final int PROOF_MAX_AGE_SECONDS = 30;
     private static final int PROOF_FUTURE_SKEW_SECONDS = 10;
     private final AttestationKeyResolver keyResolver;
@@ -148,7 +150,8 @@ public class JwtProofValidator extends AbstractProofValidator {
         Map<String, Object> headerClaims = JsonSerialization.mapper.convertValue(jwsHeader,
                 new TypeReference<>() {
                 });
-        validateNoPrivateKeyInHeaderClaims(headerClaims);
+        String algorithm = jwsHeader.getAlgorithm().name();
+        validateNoPrivateKeyInHeaderClaims(algorithm, headerClaims);
         KeyAttestationInfo attestationInfo = resolveHeaderAttestation(vcIssuanceContext, headerClaims);
 
         // Handle both JWK and kid cases for the proof key
@@ -230,7 +233,7 @@ public class JwtProofValidator extends AbstractProofValidator {
         Proofs proofs = credentialRequest != null ? credentialRequest.getProofs() : null;
 
         // If no proof types are configured for this credential configuration, cryptographic binding is
-        // not required and we must not enforce presence of proofs. However, if a JWT proof is supplied,
+        // not required, and we must not enforce presence of proofs. However, if a JWT proof is supplied,
         // reject it explicitly rather than silently ignoring an unconfigured proof input.
         // Note: do not use Optional.map(getProofTypesSupported): a null ProofTypesSupported must still run this logic.
         if (proofTypesSupported == null
@@ -271,7 +274,7 @@ public class JwtProofValidator extends AbstractProofValidator {
      */
     private void validateJwsHeader(VCIssuanceContext vcIssuanceContext, JWSHeader jwsHeader) throws VCIssuerException {
         String alg = Optional.ofNullable(jwsHeader.getAlgorithm())
-                .map(algorithm -> algorithm.name())
+                .map(Enum::name)
                 .orElseThrow(() -> new VCIssuerException(ErrorType.INVALID_PROOF, "Missing jwsHeader claim alg"));
         if (!CryptoUtils.getSupportedAsymmetricSignatureAlgorithms(keycloakSession).contains(alg)) {
             throw new VCIssuerException(ErrorType.INVALID_PROOF, "Proof signature algorithm not supported: " + alg);
@@ -366,12 +369,32 @@ public class JwtProofValidator extends AbstractProofValidator {
         }
     }
 
-    private void validateNoPrivateKeyInHeaderClaims(Map<String, Object> headerClaims) {
+    /**
+     * Rejects proofs containing private key material in their JWK header claim.
+     */
+    void validateNoPrivateKeyInHeaderClaims(String algorithm, Map<String, Object> headerClaims) {
         Object jwkClaim = headerClaims.get("jwk");
         if (!(jwkClaim instanceof Map<?, ?> jwkMap)) {
             return;
         }
-        for (String privateClaim : JWK_PRIVATE_KEY_CLAIMS) {
+
+        Object factory = keycloakSession.getKeycloakSessionFactory()
+                .getProviderFactory(SignatureProvider.class, algorithm);
+
+        Set<String> privateClaimNames;
+        if (factory instanceof SignatureProviderFactory signatureProviderFactory) {
+            privateClaimNames = signatureProviderFactory.getJwkPrivateKeyClaims();
+        } else {
+            privateClaimNames = Collections.emptySet();
+        }
+
+        if (privateClaimNames.isEmpty()) {
+            // Fallback to the global set of claims if no provider is found, or it doesn't define any.
+            // This ensures we keep the same level of security for unknown or legacy providers.
+            privateClaimNames = SignatureProviderFactory.getDefaultJwkPrivateKeyClaims();
+        }
+
+        for (String privateClaim : privateClaimNames) {
             if (jwkMap.containsKey(privateClaim)) {
                 throw new VCIssuerException(ErrorType.INVALID_PROOF,
                         "JWK header must not contain private key material claim: " + privateClaim);
