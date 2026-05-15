@@ -115,7 +115,7 @@ With the health check settings from the configuration above (`inter 5s fall 3`),
 During this period, {project_name} must remain running to serve in-flight requests.
 Therefore, you need to configure the `--shutdown-delay` to be at least as long as the detection time:
 
-<@kc.start parameters="--proxy-protocol-enabled true --health-enabled true --metrics-enabled true --shutdown-delay=16s"/>
+<@kc.start parameters="--proxy-protocol-enabled true --health-enabled true --metrics-enabled true --shutdown-delay=30s"/>
 
 For a detailed explanation of shutdown phases and how to tune the delay and timeout values, see the Graceful HTTP shutdown section in the <@links.server id="reverseproxy"/> {section}.
 

@@ -153,13 +153,13 @@ This is safe because the management port is only reachable on the internal backe
 == Graceful shutdown considerations
 
 With TLS passthrough, Traefik cannot signal a connection close at the HTTP level.
-The HAProxy health check settings determine how long it takes for the proxy to detect that a {project_name} instance is shutting down and that connections should no longer be routed to it.
+The Traefik health check settings determine how long it takes for the proxy to detect that a {project_name} instance is shutting down and that connections should no longer be routed to it.
 
 With the health check settings from the configuration above (`interval: 5s`, `timeout: 3s`), it takes up to 8 seconds (`interval + timeout`) for Traefik to mark a {project_name} instance as down.
 During this period, {project_name} must remain running to serve in-flight requests.
 Therefore, you need to configure the `--shutdown-delay` to be at least as long as the detection time:
 
-<@kc.start parameters="--proxy-protocol-enabled true --health-enabled true --metrics-enabled true --http-management-scheme=http --shutdown-delay=16s"/>
+<@kc.start parameters="--proxy-protocol-enabled true --health-enabled true --metrics-enabled true --http-management-scheme=http --shutdown-delay=30s"/>
 
 NOTE: The 30-second delay accounts for both the detection time (~8 seconds) and draining existing open TCP connections, which Traefik cannot close at the HTTP level in passthrough mode.
 A `--shutdown-delay=16s` (2x the maximum detection time) is sufficient if TCP connection draining is not a concern.
