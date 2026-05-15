@@ -161,9 +161,9 @@ public class RealmCacheSession implements CacheRealmProvider {
     protected boolean setRollbackOnly;
 
     protected Map<String, RealmAdapter> managedRealms = new HashMap<>();
-    protected Map<String, ClientModel> managedApplications = new HashMap<>();
+    protected Managed<ClientModel> managedApplications = new Managed<>();
     protected Map<String, ClientScopeAdapter> managedClientScopes = new HashMap<>();
-    protected Map<String, RoleAdapter> managedRoles = new HashMap<>();
+    protected Managed<RoleAdapter> managedRoles = new Managed<>();
     protected Map<String, GroupAdapter> managedGroups = new HashMap<>();
     protected Set<String> listInvalidations = new HashSet<>();
     protected Set<String> invalidations = new HashSet<>();

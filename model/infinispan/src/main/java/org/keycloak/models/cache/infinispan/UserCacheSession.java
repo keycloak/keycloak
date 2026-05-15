@@ -18,7 +18,6 @@
 package org.keycloak.models.cache.infinispan;
 
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -31,7 +30,6 @@ import java.util.stream.Stream;
 import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.common.constants.ServiceAccountConstants;
 import org.keycloak.component.ComponentModel;
-import org.keycloak.connections.jpa.support.EntityManagers;
 import org.keycloak.credential.CredentialInput;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
@@ -106,7 +104,7 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
     protected Set<String> invalidations = new HashSet<>();
     protected Set<String> realmInvalidations = new HashSet<>();
     protected Set<InvalidationEvent> invalidationEvents = new HashSet<>(); // Events to be sent across cluster
-    protected Map<String, UserModel> managedUsers = new HashMap<>();
+    protected Managed<UserModel> managedUsers = new Managed<>();
     private StoreManagers datastoreProvider;
 
     public UserCacheSession(UserCacheManager cache, KeycloakSession session) {
@@ -928,9 +926,6 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
     }
 
     private void addManagedUser(String id, UserModel user) {
-        if (EntityManagers.isBatchMode()) {
-            return;
-        }
         managedUsers.put(id, user);
     }
 
