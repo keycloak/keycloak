@@ -27,10 +27,10 @@ bin/kc.[sh|bat] start --features=authzen
 
 AuthZEN exposes {project_name}'s existing authorization services. Before using AuthZEN, you must configure the following in your realm:
 
-. *A client with authorization enabled* -- The client whose access token is used to authenticate AuthZEN requests must have *Authorization Enabled* in its settings.
-. *Resources* -- Define resources in the client's *Authorization* -> *Resources* section. The resource name maps to the `resource.id` in AuthZEN requests, and the resource type maps to `resource.type`.
-. *Scopes* -- Define scopes in the client's *Authorization* -> *Scopes* section. Scope names map to the `action.name` in AuthZEN requests.
-. *Policies and Permissions* -- Create policies and permissions that associate resources and scopes with authorization decisions.
+. link:{authorizationguide_link}#_resource_server_enable_authorization[A client with authorization enabled]-- The client whose access token is used to authenticate AuthZEN requests must have *Authorization Enabled* in its settings.
+. link:{authorizationguide_link}#_resource_create[Resources] -- Define resources in the client's *Authorization* -> *Resources* section. The resource name maps to the `resource.id` in AuthZEN requests, and the resource type maps to `resource.type`.
+. link:{authorizationguide_link}#_resource_create[Scopes] -- Define scopes in the client's *Authorization* -> *Scopes* section. Scope names map to the `action.name` in AuthZEN requests.
+. link:{authorizationguide_link}#_policy_overview[Policies] and link:{authorizationguide_link}#_permissions_overview[Permissions] -- Create policies and permissions that associate resources and scopes with authorization decisions.
 
 == PDP discovery metadata
 
