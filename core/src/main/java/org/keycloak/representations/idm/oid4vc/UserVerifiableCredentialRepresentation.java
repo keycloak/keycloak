@@ -1,12 +1,18 @@
 package org.keycloak.representations.idm.oid4vc;
 
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class UserVerifiableCredentialRepresentation {
 
     private String credentialScopeName;
     private String revision;
     private Long createdDate;
+    private Map<String, List<String>> userAttributes;
 
     public String getCredentialScopeName() {
         return credentialScopeName;
@@ -31,6 +37,10 @@ public class UserVerifiableCredentialRepresentation {
     public void setCreatedDate(Long createdDate) {
         this.createdDate = createdDate;
     }
+
+    public Map<String, List<String>> getUserAttributes() { return userAttributes; }
+
+    public void setUserAttributes(Map<String, List<String>> userAttributes) { this.userAttributes = userAttributes; }
 
     @Override
     public boolean equals(Object o) {

@@ -7,6 +7,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.Lob;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
@@ -39,6 +40,10 @@ public class UserVerifiableCredentialEntity {
 
     @Column(name="REVISION")
     protected String revision;
+
+    @Lob
+    @Column(name = "USER_ATTRIBUTES", columnDefinition = "TEXT")
+    protected String userAttributes;
 
     @Column(name = "CREATED_DATE")
     private Long createdDate;
@@ -82,6 +87,10 @@ public class UserVerifiableCredentialEntity {
     public void setCreatedDate(Long createdDate) {
         this.createdDate = createdDate;
     }
+
+    public String getUserAttributes() { return userAttributes; }
+
+    public void setUserAttributes(String userAttributes) { this.userAttributes = userAttributes; }
 
     @Override
     public boolean equals(Object o) {

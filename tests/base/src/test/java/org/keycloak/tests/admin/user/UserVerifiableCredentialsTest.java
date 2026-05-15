@@ -38,7 +38,10 @@ import org.junit.jupiter.api.Test;
 import static org.keycloak.tests.oid4vc.OID4VCIssuerTestBase.jwtTypeNaturalPersonScopeName;
 import static org.keycloak.tests.oid4vc.OID4VCIssuerTestBase.sdJwtTypeNaturalPersonScopeName;
 
+import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @KeycloakIntegrationTest(config = OID4VCIssuerTestBase.VCTestServerConfig.class)
@@ -212,7 +215,60 @@ public class UserVerifiableCredentialsTest extends AbstractUserTest {
         }
     }
 
-    private void createVerifiableCedential(UserVerifiableCredentialResource user, String userId, String clientScopeName) {
+    @Test
+    @DatabaseTest
+    public void verifyUpdateCredentialRefreshesAttributes() {
+        String userId = createUser();
+        UserResource userResource = managedRealm.admin().users().get(userId);
+        UserVerifiableCredentialResource credResource = userResource.verifiableCredentials();
+
+        UserRepresentation user = userResource.toRepresentation();
+        user.setFirstName("John");
+        user.setLastName("Doe");
+        user.setEmail("john.doe@example.com");
+        userResource.update(user);
+        adminEvents.clear();
+
+        UserVerifiableCredentialRepresentation created = createVerifiableCedential(credResource, userId, SCOPE_1_NAME);
+
+        String originalRevision = created.getRevision();
+        assertNotNull(created.getUserAttributes(), "Initial snapshot should have attributes");
+        assertEquals("John", created.getUserAttributes().get("firstName").get(0), "Initial firstName");
+        assertEquals("Doe", created.getUserAttributes().get("lastName").get(0), "Initial lastName");
+        assertEquals("john.doe@example.com", created.getUserAttributes().get("email").get(0), "Initial email");
+
+
+        user = userResource.toRepresentation();
+        user.setFirstName("Jane");
+        user.setEmail("jane.doe@example.com");
+        userResource.update(user);
+
+        UserVerifiableCredentialRepresentation updated = credResource.updateCredential(SCOPE_1_NAME);
+
+        assertNotNull(updated.getUserAttributes(), "Credential should have user attributes snapshot");
+
+        assertAll("Credential snapshot should reflect current user attributes",
+                () -> assertEquals("Jane", updated.getUserAttributes().get("firstName").get(0),
+                                  "firstName should be updated to Jane in snapshot"),
+                () -> assertEquals("Doe", updated.getUserAttributes().get("lastName").get(0),
+                                  "lastName should remain Doe in snapshot"),
+                () -> assertEquals("jane.doe@example.com", updated.getUserAttributes().get("email").get(0),
+                                  "email should be updated in snapshot"),
+                () -> assertNotEquals(originalRevision, updated.getRevision(), "Revision should be updated")
+        );
+
+        List<UserVerifiableCredentialRepresentation> all = credResource.getCredentials();
+        UserVerifiableCredentialRepresentation retrieved = all.stream()
+                .filter(c -> SCOPE_1_NAME.equals(c.getCredentialScopeName()))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("Credential not found"));
+
+        assertEquals(updated.getRevision(), retrieved.getRevision(), "Retrieved revision should match");
+        assertEquals("Jane", retrieved.getUserAttributes().get("firstName").get(0), "Retrieved snapshot should have updated firstName");
+        assertEquals("jane.doe@example.com", retrieved.getUserAttributes().get("email").get(0), "Retrieved snapshot should have updated email");
+    }
+
+    private UserVerifiableCredentialRepresentation createVerifiableCedential(UserVerifiableCredentialResource user, String userId, String clientScopeName) {
         UserVerifiableCredentialRepresentation verifCred = new UserVerifiableCredentialRepresentation();
         verifCred.setCredentialScopeName(clientScopeName);
         UserVerifiableCredentialRepresentation createdRep = user.createCredential(verifCred);
@@ -221,6 +277,7 @@ public class UserVerifiableCredentialsTest extends AbstractUserTest {
         Assert.assertNotNull(createdRep.getCreatedDate());
         Assert.assertNotNull(createdRep.getRevision());
         AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.CREATE, AdminEventPaths.userVerifiableCredentialsPath(userId), createdRep, ResourceType.USER);
+        return createdRep;
     }
 
     private void assertVerifiableCredentials(List<UserVerifiableCredentialRepresentation> creds, String... expectedCredentialNames) {
