@@ -104,7 +104,7 @@ public class TokenRevocationEndpoint {
         checkParameterDuplicated(formParams);
 
         try {
-            session.clientPolicy().triggerOnEvent(new TokenRevokeContext(formParams));
+            session.clientPolicy().triggerOnEvent(new TokenRevokeContext(client, formParams));
         } catch (ClientPolicyException cpe) {
             event.detail(Details.REASON, Details.CLIENT_POLICY_ERROR);
             event.detail(Details.CLIENT_POLICY_ERROR, cpe.getError());
@@ -131,7 +131,7 @@ public class TokenRevocationEndpoint {
         event.success();
 
         try {
-            session.clientPolicy().triggerOnEvent(new TokenRevokeResponseContext(formParams));
+            session.clientPolicy().triggerOnEvent(new TokenRevokeResponseContext(client, formParams));
         } catch (ClientPolicyException cpe) {
             event.detail(Details.REASON, Details.CLIENT_POLICY_ERROR);
             event.detail(Details.CLIENT_POLICY_ERROR, cpe.getError());

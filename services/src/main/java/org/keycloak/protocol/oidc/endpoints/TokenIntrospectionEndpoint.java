@@ -105,7 +105,7 @@ public class TokenIntrospectionEndpoint {
         }
 
         try {
-            session.clientPolicy().triggerOnEvent(new TokenIntrospectContext(formParams));
+            session.clientPolicy().triggerOnEvent(new TokenIntrospectContext(session.getContext().getClient(), formParams));
             token = formParams.getFirst(PARAM_TOKEN);
         } catch (ClientPolicyException cpe) {
             event.detail(Details.REASON, Details.CLIENT_POLICY_ERROR);
