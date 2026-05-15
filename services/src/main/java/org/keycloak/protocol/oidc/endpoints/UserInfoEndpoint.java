@@ -216,7 +216,7 @@ public class UserInfoEndpoint {
             cors.allowedOrigins(session, clientModel);
 
             TokenVerifier.createWithoutSignature(token)
-                    .withChecks(NotBeforeCheck.forModel(clientModel), new TokenManager.TokenRevocationCheck(session))
+                    .withChecks(NotBeforeCheck.forModel(realm), NotBeforeCheck.forModel(clientModel), new TokenManager.TokenRevocationCheck(session))
                     .verify();
         } catch (VerificationException e) {
             if (clientModel == null) {
@@ -264,6 +264,11 @@ public class UserInfoEndpoint {
         if (!userModel.isEnabled()) {
             event.error(Errors.USER_DISABLED);
             throw error.invalidToken("User disabled");
+        }
+
+        if (!TokenManager.validateUserNotBefore(session, realm, token, userModel)) {
+            event.error(Errors.INVALID_USER);
+            throw error.invalidToken("User not valid");
         }
 
         // KEYCLOAK-6771 Certificate Bound Token

@@ -33,6 +33,7 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
+import org.keycloak.OAuthErrorException;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ClientScopeResource;
 import org.keycloak.admin.client.resource.ClientsResource;
@@ -79,6 +80,7 @@ import org.keycloak.testsuite.ActionURIUtils;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.ClientManager;
@@ -1525,4 +1527,49 @@ public class AccessTokenTest extends AbstractKeycloakTest {
         }
     }
 
+    //to be moved to RefreshTokenTest class in the new testsuite
+    @Test
+    public void refreshTokenWithRealmNotBeforeAndClientNotBefore() throws Exception {
+        //Test that refresh token respects realm notBefore even when client notBefore is set
+        oauth.doLogin("test-user@localhost", "password");
+
+        EventRepresentation loginEvent = events.expectLogin().assertEvent();
+
+        String sessionId = loginEvent.getSessionId();
+        String codeId = loginEvent.getDetails().get(Details.CODE_ID);
+
+        String code = oauth.parseLoginResponse().getCode();
+
+        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
+        String refreshToken = tokenResponse.getRefreshToken();
+
+        events.expectCodeToToken(codeId, sessionId).assertEvent();
+
+        int currentTime = (int) (System.currentTimeMillis() / 1000);
+
+        ClientResource clientResource = findClientByClientId(adminClient.realm("test"), "test-app");
+        ClientRepresentation clientRep = clientResource.toRepresentation();
+        int originalClientNotBefore = clientRep.getNotBefore() != null ? clientRep.getNotBefore() : 0;
+
+        try {
+            //Test realm notBefore with client notBefore both set
+            // Set client notBefore to past
+            clientRep.setNotBefore(currentTime - 100);
+            clientResource.update(clientRep);
+
+            tokenResponse = oauth.doRefreshTokenRequest(refreshToken);
+            assertEquals(200, tokenResponse.getStatusCode());
+
+            // Set realm notBefore to future
+            try (RealmAttributeUpdater rau = new RealmAttributeUpdater(adminClient.realm("test")).setNotBefore(currentTime + 100).update()) {
+                tokenResponse = oauth.doRefreshTokenRequest(refreshToken);
+                assertEquals(400, tokenResponse.getStatusCode());
+                assertEquals(OAuthErrorException.INVALID_GRANT, tokenResponse.getError());
+            }
+
+        } finally {
+            clientRep.setNotBefore(originalClientNotBefore);
+            clientResource.update(clientRep);
+        }
+    }
 }
