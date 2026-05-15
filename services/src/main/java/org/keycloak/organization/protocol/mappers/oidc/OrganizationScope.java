@@ -39,9 +39,11 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.protocol.ProtocolMapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
 import org.keycloak.protocol.oidc.TokenManager;
+import org.keycloak.protocol.oidc.mappers.OrganizationAwareMapper;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.utils.StringUtil;
 
@@ -415,9 +417,11 @@ public enum OrganizationScope {
         ClientScopeModel clientScope = getClientScope(client, scope);
 
         if (clientScope != null) {
-            Stream<String> mappers = clientScope.getProtocolMappersStream().map(ProtocolMapperModel::getProtocolMapper);
-
-            if (mappers.noneMatch(OrganizationMembershipMapper.PROVIDER_ID::equals)) {
+            if (clientScope.getProtocolMappersStream()
+                    .map(ProtocolMapperModel::getProtocolMapper)
+                    .map(id -> session.getKeycloakSessionFactory().getProviderFactory(ProtocolMapper.class, id))
+                    .filter(Objects::nonNull)
+                    .noneMatch(OrganizationAwareMapper.class::isInstance)) {
                 Set<String> nonOrganizationScopes = session.getAttributeOrDefault(UNSUPPORTED_ORGANIZATION_SCOPES_ATTRIBUTE, Set.of());
 
                 if (nonOrganizationScopes.isEmpty()) {
