@@ -109,13 +109,13 @@ Enabling metrics also enables an additional status check for the database, so it
 == Graceful shutdown considerations
 
 With TLS passthrough, HAProxy cannot signal a connection close at the HTTP level.
-The health check timing directly determines how long it takes HAProxy to detect that a {project_name} instance is shutting down and stop routing new connections to it.
+The HAProxy health check settings determine how long it takes for the proxy to detect that a {project_name} instance is shutting down and that connections should no longer be routed to it.
 
 With the health check settings from the configuration above (`inter 5s fall 3`), it takes up to 15 seconds (3 failures x 5-second interval) for HAProxy to mark a {project_name} instance as down.
 During this period, {project_name} must remain running to serve in-flight requests.
-Therefore, configure the `--shutdown-delay` to be at least as long as the detection time:
+Therefore, you need to configure the `--shutdown-delay` to be at least as long as the detection time:
 
-<@kc.start parameters="--proxy-protocol-enabled true --health-enabled true --metrics-enabled true --shutdown-delay=30s"/>
+<@kc.start parameters="--proxy-protocol-enabled true --health-enabled true --metrics-enabled true --shutdown-delay=16s"/>
 
 For a detailed explanation of shutdown phases and how to tune the delay and timeout values, see the Graceful HTTP shutdown section in the <@links.server id="reverseproxy"/> {section}.
 

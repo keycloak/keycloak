@@ -11,8 +11,7 @@ tileVisible="false">
 This {section} describes how to configure link:https://www.haproxy.com/[HAProxy] as a TLS re-encrypt load balancer in front of {project_name}.
 
 In TLS re-encrypt mode, HAProxy terminates the incoming TLS connection and establishes a new encrypted connection to {project_name}.
-HAProxy operates at Layer 7 (HTTP) and has direct visibility into the HTTP content.
-End-to-end TLS encryption between client and {project_name} is not preserved.
+HAProxy operates at Layer 7 (HTTP). Unlike passthrough, end-to-end TLS encryption between client and {project_name} is not preserved, but the proxy gains the ability to inspect and modify HTTP traffic.
 
 For a general overview of TLS re-encrypt and how it compares to passthrough, see the <@links.server id="reverseproxy"/> {section}.
 
@@ -53,10 +52,10 @@ backend keycloak_back
     mode http # <4>
     balance roundrobin # <5>
     option forwarded host by by_port for # <6>
-    option httpchk GET /health/ready
+    option httpchk GET /health/ready # <7>
     http-check expect status 200
 
-    server keycloak1 keycloak1:8443 ssl verify required crt /path/to/haproxy-internal-certificate ca-file /path/to/keycloak-1-certificate check port 9000 check-ssl verify none inter 5s fall 3 rise 2 # <7>
+    server keycloak1 keycloak1:8443 ssl verify required crt /path/to/haproxy-internal-certificate ca-file /path/to/keycloak-1-certificate check port 9000 check-ssl verify none inter 5s fall 3 rise 2 # <8>
 
     server keycloak2 keycloak2:8443 ssl verify required crt /path/to/haproxy-internal-certificate ca-file /path/to/keycloak-2-certificate check port 9000 check-ssl verify none inter 5s fall 3 rise 2
 
@@ -68,11 +67,12 @@ The `ssl crt /path/to/haproxy-external-certificate` directive sets the certifica
 This tells HAProxy to operate at Layer 7, decrypting and re-encrypting HTTP traffic.
 HAProxy has access to the plaintext HTTP traffic in this mode.
 <3> The `http-request del-header <HEADER>` entries remove particular HTTP headers from the incoming requests before passing them on.
-The example shows removing of the `Forwarded` and `x-forwarded-` headers in order to prevent the client from providing misleading information to the backend service.
+The example shows removing of the `Forwarded` and `x-forwarded-` headers in order to prevent a security vulnerability to IP spoofing attacks, where the client is able to impersonate the proxy or other services.
 <4> The backend must also use HTTP mode to match the frontend.
 <5> Distributes connections across backend servers using link:https://docs.haproxy.org/3.2/configuration.html#4-balance[round-robin] load balancing.
 <6> This option adds a `Forwarded` header containing the correct client information.
-<7> Defines a backend {project_name} server.
+<7> Configures link:https://docs.haproxy.org/3.2/configuration.html#4.2-option%20httpchk[HTTP health checks] against {project_name}'s readiness endpoint.
+<8> Defines a backend {project_name} server.
 The parameters on this line control mTLS settings, health checks, and failure detection:
 
 The `server` directive parameters are explained below:
@@ -131,11 +131,11 @@ Disables the client authentication requirement for the management endpoint.
 [[graceful-shutdown-considerations-haproxy-reencrypt]]
 == Graceful shutdown considerations
 
-The health check timing directly determines how long it takes HAProxy to detect that a {project_name} instance is shutting down and stop routing new connections to it.
+The HAProxy health check settings determine how long it takes for the proxy to detect that a {project_name} instance is shutting down and that connections should no longer be routed to it.
 
 With the health check settings from the configuration above (`inter 5s fall 3`), it takes up to 15 seconds (3 failures x 5-second interval) for HAProxy to mark a {project_name} instance as down.
 During this period, {project_name} must remain running to serve in-flight requests.
-Therefore, configure the `--shutdown-delay` to be at least as long as the detection time:
+Therefore, you need to configure the `--shutdown-delay` to be at least as long as the detection time:
 
 <@kc.start parameters="--proxy-headers forwarded --health-enabled true --metrics-enabled true --https-certificate-file=/path/to/certificate --https-certificate-key-file=/path/to/key --https-client-auth=required --https-trust-store-file=/path/to/https-truststore --https-management-client-auth=none --shutdown-delay=16s"/>
 
