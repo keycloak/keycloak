@@ -496,7 +496,7 @@ public class LogoutEndpoint {
         }
 
         try {
-            session.clientPolicy().triggerOnEvent(new LogoutRequestContext(form));
+            session.clientPolicy().triggerOnEvent(new LogoutRequestContext(client, form));
             refreshToken = form.getFirst(OAuth2Constants.REFRESH_TOKEN);
         } catch (ClientPolicyException cpe) {
             event.detail(Details.REASON, Details.CLIENT_POLICY_ERROR);
