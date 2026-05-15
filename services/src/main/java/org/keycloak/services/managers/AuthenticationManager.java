@@ -601,7 +601,7 @@ public class AuthenticationManager {
         }
 
         try {
-            session.clientPolicy().triggerOnEvent(new LogoutRequestContext());
+            session.clientPolicy().triggerOnEvent(new LogoutRequestContext(client));
         } catch (ClientPolicyException cpe) {
             event.event(EventType.LOGOUT);
             event.detail(Details.REASON, Details.CLIENT_POLICY_ERROR);

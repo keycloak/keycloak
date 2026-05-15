@@ -19,17 +19,22 @@ package org.keycloak.protocol.oidc.par.clientpolicy.context;
 
 import jakarta.ws.rs.core.MultivaluedMap;
 
+import org.keycloak.models.ClientModel;
 import org.keycloak.protocol.oidc.endpoints.request.AuthorizationEndpointRequest;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyEvent;
+import org.keycloak.services.clientpolicy.context.ClientModelContext;
+import org.keycloak.services.clientpolicy.context.ScopeParameterContext;
 
-public class PushedAuthorizationRequestContext implements ClientPolicyContext {
+public class PushedAuthorizationRequestContext implements ClientPolicyContext, ClientModelContext, ScopeParameterContext {
 
+    private final ClientModel client;
     private final MultivaluedMap<String, String> requestParameters;
     private AuthorizationEndpointRequest request;
 
-    public PushedAuthorizationRequestContext(AuthorizationEndpointRequest request,
+    public PushedAuthorizationRequestContext(ClientModel client, AuthorizationEndpointRequest request,
             MultivaluedMap<String, String> requestParameters) {
+        this.client = client;
         this.request = request;
         this.requestParameters = requestParameters;
     }
@@ -45,5 +50,15 @@ public class PushedAuthorizationRequestContext implements ClientPolicyContext {
 
     public MultivaluedMap<String, String> getRequestParameters() {
         return requestParameters;
+    }
+
+    @Override
+    public ClientModel getClient() {
+        return client;
+    }
+
+    @Override
+    public String getScopeParameter() {
+        return request.getScope();
     }
 }
