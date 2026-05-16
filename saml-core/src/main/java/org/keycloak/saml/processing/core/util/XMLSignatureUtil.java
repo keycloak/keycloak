@@ -792,14 +792,12 @@ public class XMLSignatureUtil {
 
         List<XMLStructure> items = new LinkedList<>();
 
-        if (keyName != null) {
-            items.add(keyInfoFactory.newKeyName(keyName));
-        }
-
         if (x509Certificate != null) {
             items.add(keyInfoFactory.newX509Data(Collections.singletonList(x509Certificate)));
         } else if (publicKey != null) {
             items.add(keyInfoFactory.newKeyValue(publicKey));
+        } else if (keyName != null) {
+            items.add(keyInfoFactory.newKeyName(keyName));
         }
 
         return keyInfoFactory.newKeyInfo(items);
