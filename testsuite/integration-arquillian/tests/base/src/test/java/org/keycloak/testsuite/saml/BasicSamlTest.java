@@ -343,7 +343,7 @@ public class BasicSamlTest extends AbstractSamlTest {
             .getSamlResponse(Binding.POST);
 
             final String signature = documentHolder.getSamlDocument()
-              .getElementsByTagName("dsig:SignatureValue")
+              .getElementsByTagName("ds:SignatureValue")
               .item(0).getTextContent();
 
             // Corresponds to https://www.w3.org/TR/xmlschema-2/#base64Binary
