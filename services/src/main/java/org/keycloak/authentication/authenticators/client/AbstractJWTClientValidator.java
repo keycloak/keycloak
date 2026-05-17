@@ -72,7 +72,7 @@ public abstract class AbstractJWTClientValidator extends AbstractBaseJWTValidato
                 validateTokenActive(getAllowedClockSkew(), getMaximumExpirationTime(), isReusePermitted());
     }
 
-    private boolean validateClientAssertionParameters() {
+    protected boolean validateClientAssertionParameters() {
         String clientAssertionType = clientAssertionState.getClientAssertionType();
         String clientAssertion = clientAssertionState.getClientAssertion();
 
@@ -92,7 +92,7 @@ public abstract class AbstractJWTClientValidator extends AbstractBaseJWTValidato
         return true;
     }
 
-    private boolean validateClient() {
+    protected boolean validateClient() {
         JsonWebToken token = clientAssertionState.getToken();
 
         String clientId = token.getSubject();
@@ -133,7 +133,7 @@ public abstract class AbstractJWTClientValidator extends AbstractBaseJWTValidato
         return true;
     }
 
-    private boolean validateSignature() {
+    protected boolean validateSignature() {
         return signatureValidator.verifySignature(this);
     }
 
@@ -150,11 +150,11 @@ public abstract class AbstractJWTClientValidator extends AbstractBaseJWTValidato
         return failure(AuthenticationFlowError.INVALID_CLIENT_CREDENTIALS, challengeResponse);
     }
 
-    private boolean failure(AuthenticationFlowError error) {
+    protected boolean failure(AuthenticationFlowError error) {
         return failure(error, null);
     }
 
-    private boolean failure(AuthenticationFlowError error, Response response) {
+    protected boolean failure(AuthenticationFlowError error, Response response) {
         context.failure(error, response);
         return false;
     }
