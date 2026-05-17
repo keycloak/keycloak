@@ -317,6 +317,14 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
         <DefaultSwitchControl
           name="config.loginHint"
           label={t("passSubject")}
+          labelIcon={t("passSubjectHelp")}
+          isDisabled={readOnly}
+          stringify
+        />
+        <DefaultSwitchControl
+          name="config.loginQueryHint"
+          label={t("useSAMLLoginHint")}
+          labelIcon={t("useSAMLLoginHintHelp")}
           isDisabled={readOnly}
           stringify
         />

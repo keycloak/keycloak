@@ -84,7 +84,7 @@ public class KcSamlXPathAttributeMapperTest extends AbstractInitializedBaseBroke
 
     @Override
     protected BrokerConfiguration getBrokerConfiguration() {
-        return new KcSamlBrokerConfiguration(false) {
+        return new KcSamlBrokerConfiguration(false, false) {
         };
     }
 
