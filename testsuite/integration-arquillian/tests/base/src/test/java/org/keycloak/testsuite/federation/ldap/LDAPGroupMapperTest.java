@@ -49,6 +49,7 @@ import org.keycloak.testsuite.util.LDAPTestUtils;
 
 import org.junit.ClassRule;
 import org.junit.FixMethodOrder;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
 import org.junit.runners.MethodSorters;
@@ -1128,6 +1129,53 @@ public class LDAPGroupMapperTest extends AbstractLDAPTest {
             ComponentModel mapperModel = LDAPTestUtils.getLdapProviderModel(appRealm);
             LDAPTestUtils.updateConfigOptions(mapperModel, LDAPConstants.BATCH_SIZE_FOR_SYNC, configuredBatchSize);
             appRealm.updateComponent(mapperModel);
+        });
+    }
+
+    @Test
+    @Ignore("LOAD_GROUPS_BY_MEMBER_ATTRIBUTE_RECURSIVELY relies on the AD-specific " +
+            "LDAP_MATCHING_RULE_IN_CHAIN (OID 1.2.840.113556.1.4.1941), which the embedded " +
+            "ApacheDS test server does not register. Verify manually against real Active Directory.")
+    public void test12_recursiveGroupMemberRetrieval() {
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            RealmModel appRealm = ctx.getRealm();
+
+            ComponentModel mapperModel = LDAPTestUtils.getSubcomponentByName(appRealm, ctx.getLdapModel(), "groupsMapper");
+            GroupLDAPStorageMapper groupMapper = LDAPTestUtils.getGroupMapper(mapperModel, ctx.getLdapProvider(), appRealm);
+
+            LDAPObject group1 = groupMapper.loadLDAPGroupByName("group1");
+            LDAPObject group11 = groupMapper.loadLDAPGroupByName("group11");
+            LDAPObject group12 = groupMapper.loadLDAPGroupByName("group12");
+
+            LDAPObject user1 = LDAPTestUtils.addLDAPUser(ctx.getLdapProvider(), appRealm, "recuser1", "Rec", "One", "recuser1@email.org", null, "1");
+            LDAPObject user2 = LDAPTestUtils.addLDAPUser(ctx.getLdapProvider(), appRealm, "recuser2", "Rec", "Two", "recuser2@email.org", null, "2");
+            LDAPObject user3 = LDAPTestUtils.addLDAPUser(ctx.getLdapProvider(), appRealm, "recuser3", "Rec", "Three", "recuser3@email.org", null, "3");
+
+            LDAPUtils.addMember(ctx.getLdapProvider(), MembershipType.DN, LDAPConstants.MEMBER, "not-used", group1, user1);
+            LDAPUtils.addMember(ctx.getLdapProvider(), MembershipType.DN, LDAPConstants.MEMBER, "not-used", group11, user2);
+            LDAPUtils.addMember(ctx.getLdapProvider(), MembershipType.DN, LDAPConstants.MEMBER, "not-used", group12, user3);
+
+            LDAPTestUtils.updateConfigOptions(mapperModel,
+                    GroupMapperConfig.MODE, LDAPGroupMapperMode.LDAP_ONLY.toString(),
+                    GroupMapperConfig.USER_ROLES_RETRIEVE_STRATEGY, GroupMapperConfig.LOAD_GROUPS_BY_MEMBER_ATTRIBUTE_RECURSIVELY);
+            appRealm.updateComponent(mapperModel);
+        });
+
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            RealmModel appRealm = ctx.getRealm();
+
+            GroupModel group1 = KeycloakModelUtils.findGroupByPath(session, appRealm, "/group1");
+            GroupModel group11 = KeycloakModelUtils.findGroupByPath(session, appRealm, "/group1/group11");
+
+            List<String> group11Members = session.users().getGroupMembersStream(appRealm, group11, 0, 10)
+                    .map(UserModel::getUsername).collect(Collectors.toList());
+            assertThat(group11Members, containsInAnyOrder("recuser2"));
+
+            List<String> group1Members = session.users().getGroupMembersStream(appRealm, group1, 0, 10)
+                    .map(UserModel::getUsername).collect(Collectors.toList());
+            assertThat(group1Members, containsInAnyOrder("recuser1", "recuser2", "recuser3"));
         });
     }
 }
