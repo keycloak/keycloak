@@ -181,7 +181,7 @@ public class JwtCredentialSignerTest extends OID4VCIssuerTestBase {
     public static void testSignJwtCredential(
             KeycloakSession session, String signingKeyId, String algorithm, Map<String, Object> claims) {
         CredentialBuildConfig credentialBuildConfig = new CredentialBuildConfig()
-                .setCredentialIssuer(TEST_DID.toString())
+                .setCredentialIssuer(TEST_ISSUER_DID)
                 .setTokenJwsType("JWT")
                 .setSigningKeyId(signingKeyId)
                 .setSigningAlgorithm(algorithm);
@@ -237,14 +237,14 @@ public class JwtCredentialSignerTest extends OID4VCIssuerTestBase {
                 // if not specific date is set, check against "currentTime"
                 assertEquals(TEST_ISSUANCE_DATE.getEpochSecond(), theToken.getNbf().longValue(), "VC Data Model v1.1 specifies that “issuanceDate” property MUST be represented as an nbf JWT claim, and not iat JWT claim.");
             }
-            assertEquals(TEST_DID.toString(), theToken.getIssuer(), "The issuer should be set in the token.");
+            assertEquals(TEST_ISSUER_DID, theToken.getIssuer(), "The issuer should be set in the token.");
             assertEquals(testCredential.getId().toString(), theToken.getId(), "The credential ID should be set as the token ID.");
             Optional.ofNullable(testCredential.getCredentialSubject().getClaims().get("id")).ifPresent(id -> assertEquals(id.toString(), theToken.getSubject(), "If the credentials subject id is set, it should be set as the token subject."));
 
             assertNotNull(theToken.getOtherClaims().get("vc"), "The credentials should be included at the vc-claim.");
             VerifiableCredential credential = JsonSerialization.mapper.convertValue(theToken.getOtherClaims().get("vc"), VerifiableCredential.class);
             assertEquals(TEST_TYPES, credential.getType(), "The types should be included");
-            assertEquals(TEST_DID, credential.getIssuer(), "The issuer should be included");
+            assertEquals(TEST_ISSUER_DID, String.valueOf(credential.getIssuer()), "The issuer should be included");
             assertEquals(TEST_EXPIRATION_DATE, credential.getExpirationDate(), "The expiration date should be included");
             if (claims.containsKey("issuanceDate")) {
                 assertEquals(claims.get("issuanceDate"), credential.getIssuanceDate(), "The issuance date should be included");

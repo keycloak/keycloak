@@ -8,6 +8,7 @@ enabletls
 hostname
 reverseproxy
 haproxy-passthrough
+haproxy-reencrypt
 traefik-passthrough
 db
 caching

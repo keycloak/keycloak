@@ -50,6 +50,7 @@ import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.in;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assume.assumeTrue;
 
 public class IgnoredArtifactsTest extends AbstractConfigurationTest {
 
@@ -159,6 +160,7 @@ public class IgnoredArtifactsTest extends AbstractConfigurationTest {
 
     @Test
     public void otelMetrics(){
+        assumeTrue(Profile.Feature.OPENTELEMETRY_METRICS.isAvailable());
         assertIgnoredArtifacts(IgnoredArtifacts.OTEL_METRICS, TelemetryOptions.TELEMETRY_METRICS_ENABLED);
     }
 

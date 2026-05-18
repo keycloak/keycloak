@@ -89,6 +89,9 @@ public interface ClientScopeModel extends ProtocolMapperContainerModel, ScopeCon
         String consentScreenText = getAttribute(CONSENT_SCREEN_TEXT);
         if (ObjectUtil.isBlank(consentScreenText)) {
             consentScreenText = getName();
+            if (isDynamicScope()) {
+                consentScreenText += ": {0}";
+            }
         }
         return consentScreenText;
     }

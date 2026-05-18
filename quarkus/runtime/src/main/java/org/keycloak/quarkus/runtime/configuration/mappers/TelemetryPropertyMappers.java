@@ -58,6 +58,7 @@ public class TelemetryPropertyMappers implements PropertyMapperGrouping{
     @Override
     public List<? extends PropertyMapper<?>> getPropertyMappers() {
         TELEMETRY_HEADERS_CACHE = null;
+        boolean metricsAvailable = Profile.Feature.OPENTELEMETRY_METRICS.isAvailable();
         return List.of(
                 fromFeature(Profile.Feature.OPENTELEMETRY)
                         .transformer(TelemetryPropertyMappers::checkIfDependantsAreEnabled)
@@ -127,41 +128,45 @@ public class TelemetryPropertyMappers implements PropertyMapperGrouping{
                         .isMasked(true) // it may contain sensitive information
                         .build(),
                 // Telemetry Metrics
-                fromOption(TELEMETRY_METRICS_ENABLED)
+                fromOption(metricsAvailable ? TELEMETRY_METRICS_ENABLED : toHidden(TELEMETRY_METRICS_ENABLED))
                         .isEnabled(TelemetryPropertyMappers::isOtelMetricsFeatureEnabled, OTEL_METRICS_FEATURE_ENABLED_MSG)
                         .to("quarkus.otel.metrics.enabled")
                         .build(),
-                fromOption(TELEMETRY_METRICS_ENDPOINT)
+                fromOption(metricsAvailable ? TELEMETRY_METRICS_ENDPOINT : toHidden(TELEMETRY_METRICS_ENDPOINT))
                         .isEnabled(TelemetryPropertyMappers::isTelemetryMetricsEnabled, OTEL_METRICS_ENABLED_MSG)
                         .mapFrom(TelemetryOptions.TELEMETRY_ENDPOINT)
                         .to("quarkus.otel.exporter.otlp.metrics.endpoint")
                         .paramLabel("url")
                         .validator(TelemetryPropertyMappers::validateEndpoint)
                         .build(),
-                fromOption(TELEMETRY_METRICS_PROTOCOL)
+                fromOption(metricsAvailable ? TELEMETRY_METRICS_PROTOCOL : toHidden(TELEMETRY_METRICS_PROTOCOL))
                         .isEnabled(TelemetryPropertyMappers::isTelemetryMetricsEnabled, OTEL_METRICS_ENABLED_MSG)
                         .mapFrom(TelemetryOptions.TELEMETRY_PROTOCOL)
                         .to("quarkus.otel.exporter.otlp.metrics.protocol")
                         .paramLabel("protocol")
                         .build(),
-                fromOption(TELEMETRY_METRICS_INTERVAL)
+                fromOption(metricsAvailable ? TELEMETRY_METRICS_INTERVAL : toHidden(TELEMETRY_METRICS_INTERVAL))
                         .isEnabled(TelemetryPropertyMappers::isTelemetryMetricsEnabled, OTEL_METRICS_ENABLED_MSG)
                         .to("quarkus.otel.metric.export.interval")
                         .paramLabel("duration")
                         .validator(TelemetryPropertyMappers::validateDuration)
                         .build(),
-                fromOption(TELEMETRY_METRICS_HEADERS)
+                fromOption(metricsAvailable ? TELEMETRY_METRICS_HEADERS : toHidden(TELEMETRY_METRICS_HEADERS))
                         .isEnabled(TelemetryPropertyMappers::isTelemetryMetricsEnabled, OTEL_METRICS_ENABLED_MSG)
                         .to("quarkus.otel.exporter.otlp.metrics.headers")
                         .transformer((value, context) -> transformTelemetryHeaders(TELEMETRY_METRICS_HEADER, value))
                         .isMasked(true)
                         .build(),
-                fromOption(TELEMETRY_METRICS_HEADER)
+                fromOption(metricsAvailable ? TELEMETRY_METRICS_HEADER : toHidden(TELEMETRY_METRICS_HEADER))
                         .isEnabled(TelemetryPropertyMappers::isTelemetryMetricsEnabled, OTEL_METRICS_ENABLED_MSG)
                         .paramLabel("<value>")
                         .isMasked(true) // it may contain sensitive information
                         .build()
         );
+    }
+
+    private static <T> Option<T> toHidden(Option<T> option) {
+        return option.toBuilder().hidden().build();
     }
 
     private static String checkIfDependantsAreEnabled(String value, ConfigSourceInterceptorContext context) {

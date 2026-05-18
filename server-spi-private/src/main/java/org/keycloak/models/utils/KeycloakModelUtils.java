@@ -121,6 +121,8 @@ public final class KeycloakModelUtils {
     public static final int DEFAULT_RSA_KEY_SIZE = 4096;
     public static final int DEFAULT_CERTIFICATE_VALIDITY_YEARS = 3;
 
+    private static final ThreadLocal<Integer> timeouts = new ThreadLocal<Integer>();
+
     private KeycloakModelUtils() {
     }
 
@@ -501,12 +503,22 @@ public final class KeycloakModelUtils {
                 try {
                     // If timeout is set to 0, reset to default transaction timeout
                     lookup.getTransactionManager().setTransactionTimeout(timeoutInSeconds);
+
+                    if (timeoutInSeconds == 0) {
+                        timeouts.remove();
+                    } else {
+                        timeouts.set(timeoutInSeconds);
+                    }
                 } catch (SystemException e) {
                     // Shouldn't happen for Wildfly transaction manager
                     throw new RuntimeException(e);
                 }
             }
         }
+    }
+
+    public static Optional<Integer> getTransactionLimit() {
+        return Optional.ofNullable(timeouts.get());
     }
 
     public static Function<KeycloakSessionFactory, ComponentModel> componentModelGetter(String realmId, String componentId) {

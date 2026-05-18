@@ -200,15 +200,27 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
-    public void testInvalidClientCredentials() throws Exception {
-        oauth.doLogin("test-user@localhost", "password");
-        String code = oauth.parseLoginResponse().getCode();
-        AccessTokenResponse accessTokenResponse = oauth.doAccessTokenRequest(code);
+    public void testInvalidClientCredentials() {
         oauth.client("confidential-cli", "bad_credential");
-        IntrospectionResponse tokenResponse = oauth.doIntrospectionAccessTokenRequest(accessTokenResponse.getAccessToken());
+        IntrospectionResponse tokenResponse = oauth.doIntrospectionAccessTokenRequest("any-token");
 
-        Assertions.assertEquals("Authentication failed.", tokenResponse.getErrorDescription());
-        Assertions.assertEquals(OAuthErrorException.INVALID_REQUEST, tokenResponse.getError());
+        Assertions.assertEquals(401, tokenResponse.getStatusCode());
+        Assertions.assertEquals(OAuthErrorException.INVALID_CLIENT, tokenResponse.getError());
+        Assertions.assertEquals("Client authentication failed.", tokenResponse.getErrorDescription());
+    }
+
+    @Test
+    public void testInvalidClientCredentialsPostAuthentication() throws Exception {
+        try (CloseableHttpResponse response = introspectAccessTokenWithClientSecretPost("confidential-cli", "bad_credential", "any-token")) {
+            Assertions.assertEquals(401, response.getStatusLine().getStatusCode());
+
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            response.getEntity().writeTo(out);
+            OAuth2ErrorRepresentation errorRep = JsonSerialization.readValue(
+                    new String(out.toByteArray(), StandardCharsets.UTF_8), OAuth2ErrorRepresentation.class);
+            Assertions.assertEquals(OAuthErrorException.INVALID_CLIENT, errorRep.getError());
+            Assertions.assertEquals("Client authentication failed.", errorRep.getErrorDescription());
+        }
     }
 
     @Test
@@ -706,6 +718,26 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
             return new String(out.toByteArray());
         } catch (Exception e) {
             throw new RuntimeException("Failed to retrieve access token", e);
+        }
+    }
+
+    private CloseableHttpResponse introspectAccessTokenWithClientSecretPost(String clientId, String clientSecret, String tokenToIntrospect) {
+        HttpPost post = new HttpPost(oauth.getEndpoints().getIntrospection());
+
+        List<NameValuePair> parameters = new LinkedList<>();
+
+        parameters.add(new BasicNameValuePair("client_id", clientId));
+        parameters.add(new BasicNameValuePair("client_secret", clientSecret));
+        parameters.add(new BasicNameValuePair("token", tokenToIntrospect));
+        parameters.add(new BasicNameValuePair("token_type_hint", "access_token"));
+
+        UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, StandardCharsets.UTF_8);
+        post.setEntity(formEntity);
+
+        try {
+            return HttpClientBuilder.create().build().execute(post);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to introspect access token", e);
         }
     }
 

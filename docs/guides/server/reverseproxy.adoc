@@ -418,6 +418,10 @@ Other than possibly changing the `certificate-chain-length`, you do not need to 
 The Envoy provider automatically retrieves the client certificate and optional certificate chain from the `x-forwarded-client-cert` header.
 You do not need to configure additional options for the `envoy` provider.
 
+=== Blueprints
+
+* <@links.server id="haproxy-reencrypt"/>
+
 [[graceful-http-shutdown]]
 == Graceful HTTP shutdown
 
