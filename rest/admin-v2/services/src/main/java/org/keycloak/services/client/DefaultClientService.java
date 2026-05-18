@@ -411,44 +411,18 @@ public class DefaultClientService implements ClientService {
         if (client instanceof OIDCClientRepresentation || client instanceof SAMLClientRepresentation) {
             return client;
         }
+        BaseClientRepresentation target;
         if (OIDCClientRepresentation.PROTOCOL.equals(protocol)) {
-            OIDCClientRepresentation target = new OIDCClientRepresentation();
-            shallowCopyCommonClientFields(client, target);
-            return target;
+            target = new OIDCClientRepresentation();
+        } else if (SAMLClientRepresentation.PROTOCOL.equals(protocol)) {
+            target = new SAMLClientRepresentation();
+        } else {
+            return client;
         }
-        if (SAMLClientRepresentation.PROTOCOL.equals(protocol)) {
-            SAMLClientRepresentation target = new SAMLClientRepresentation();
-            shallowCopyCommonClientFields(client, target);
-            return target;
-        }
-        return client;
-    }
-
-    private void shallowCopyCommonClientFields(BaseClientRepresentation from, BaseClientRepresentation to) {
-        to.setUuid(from.getUuid());
-        to.setClientId(from.getClientId());
-        to.setDisplayName(from.getDisplayName());
-        to.setDescription(from.getDescription());
-        to.setEnabled(from.getEnabled());
-        to.setAppUrl(from.getAppUrl());
-        if (from.getRedirectUris() != null) {
-            to.setRedirectUris(new LinkedHashSet<>(from.getRedirectUris()));
-        }
-        if (from.getRoles() != null) {
-            to.setRoles(new LinkedHashSet<>(from.getRoles()));
-        }
-        to.setProtocol(from.getProtocol());
-        to.setAdditionalFields(from.getAdditionalFields().isEmpty()
-                ? new LinkedHashMap<>()
-                : new LinkedHashMap<>(from.getAdditionalFields()));
-        if (to instanceof OIDCClientRepresentation toOidc) {
-            Object rawAuth = toOidc.getAdditionalFields().get("auth");
-            if (toOidc.getAuth() == null && rawAuth instanceof Map<?, ?>) {
-                toOidc.setAuth(MAPPER.convertValue(rawAuth, OIDCClientRepresentation.Auth.class));
-                LinkedHashMap<String, Object> remaining = new LinkedHashMap<>(toOidc.getAdditionalFields());
-                remaining.remove("auth");
-                toOidc.setAdditionalFields(remaining);
-            }
+        try {
+            return MAPPER.updateValue(target, client);
+        } catch (JsonMappingException e) {
+            throw new ServiceException("Failed to materialize protocol subtype: " + e.getMessage(), Response.Status.BAD_REQUEST);
         }
     }
 
