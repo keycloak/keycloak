@@ -622,8 +622,20 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
         }
 
         identity.setUsername(preferredUsername);
-        if (tokenResponse != null && tokenResponse.getSessionState() != null) {
-            identity.setBrokerSessionId(getConfig().getAlias() + "." + tokenResponse.getSessionState());
+        // Prefer the sid claim from the ID token over session_state from the token response.
+        // Per the OpenID Connect Back-Channel Logout spec, the logout token sid must match
+        // the sid in the ID token, so sid takes precedence when present.
+        // See: https://openid.net/specs/openid-connect-backchannel-1_0.html#Validation
+        String sidClaim = (String) idToken.getOtherClaims().get(IDToken.SESSION_ID);
+        String sessionState = tokenResponse != null ? tokenResponse.getSessionState() : null;
+        if (sidClaim != null) {
+            if (sessionState != null && !sidClaim.equals(sessionState)) {
+                logger.warnf("IdP '%s': sid claim '%s' differs from session_state '%s'; using sid for backchannel logout.",
+                        getConfig().getAlias(), sidClaim, sessionState);
+            }
+            identity.setBrokerSessionId(getConfig().getAlias() + "." + sidClaim);
+        } else if (sessionState != null) {
+            identity.setBrokerSessionId(getConfig().getAlias() + "." + sessionState);
         }
         if (tokenResponse != null) identity.getContextData().put(FEDERATED_ACCESS_TOKEN_RESPONSE, tokenResponse);
         if (tokenResponse != null) processAccessTokenResponse(identity, tokenResponse);
