@@ -64,6 +64,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
+import static org.keycloak.admin.api.ListOptions.newListOptionsBuilder;
 import static org.keycloak.services.cors.Cors.ACCESS_CONTROL_ALLOW_METHODS;
 import static org.keycloak.services.cors.Cors.ORIGIN_HEADER;
 
@@ -345,7 +346,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
         assertThat(samlClient.getFrontChannelLogout(), is(false));
         
         // test projecting only id and protocol
-        try (Stream<BaseClientRepresentation> baseClientRepresentationStream = getClientsApi().getClients(Set.of("clientId", "protocol"))) {
+        try (Stream<BaseClientRepresentation> baseClientRepresentationStream = getClientsApi().getClients(newListOptionsBuilder().withFields(Set.of("clientId", "protocol")).build())) {
             List<BaseClientRepresentation> clients = baseClientRepresentationStream.toList();
             for (BaseClientRepresentation client : clients) {
                 BaseClientRepresentation toCompare = null;
@@ -362,7 +363,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
     
     @Test
     public void invalidFieldProjection() {
-        BadRequestException e = assertThrows(BadRequestException.class, () -> getClientsApi().getClients(Set.of("unknown!")));
+        BadRequestException e = assertThrows(BadRequestException.class, () -> getClientsApi().getClients(newListOptionsBuilder().withFields(Set.of("unknown!")).build()));
         assertEquals("{\"error\":\"unknown! is an unknown field\"}", e.getResponse().readEntity(String.class));
     }
 
