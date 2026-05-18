@@ -145,7 +145,7 @@ class UserPermissionsV2 extends UserPermissions {
             return true;
         }
 
-        return eval.hasPermission(new UserModelRecord(user), null, AdminPermissionsSchema.MANAGE_GROUP_MEMBERSHIP);
+        return eval.hasPermission(new UserModelRecord(user), null, AdminPermissionsSchema.MANAGE_GROUP_MEMBERSHIP, () -> true);
     }
 
     @Override
