@@ -50,3 +50,13 @@ export function getTextArea(page: Page) {
 export async function assertTextAreaContains(page: Page, content: string) {
   await expect(getTextArea(page)).toContainText(content);
 }
+
+export function assertRealmsSorted(realms: string[], length: number) {
+  expect(realms.length).toBeGreaterThanOrEqual(length);
+  expect(
+    realms.every((value, index, realms) => {
+      if (index === 0) return true;
+      return realms[index - 1] <= value;
+    }),
+  ).toBeTruthy();
+}

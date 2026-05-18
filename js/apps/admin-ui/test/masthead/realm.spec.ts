@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test } from "@playwright/test";
 import { v4 as uuid } from "uuid";
 import adminClient from "../utils/AdminClient.ts";
 import { DEFAULT_REALM } from "../utils/constants.ts";
@@ -21,6 +21,7 @@ import {
   goToRealmSection,
   getTextArea,
   assertTextAreaContains,
+  assertRealmsSorted,
 } from "./realm.ts";
 
 const testRealmName = `Test-realm-${uuid()}`;
@@ -123,12 +124,7 @@ test.describe.serial("Realm tests", () => {
     const realms = await page
       .locator(".pf-v5-c-table tr td:nth-child(2)")
       .allInnerTexts();
-    expect(
-      realms.every((value, index, realms) => {
-        if (index === 0) return true;
-        return realms[index - 1] <= value;
-      }),
-    ).toBeTruthy();
+    assertRealmsSorted(realms, 3);
   });
 
   test("should disable preview if json very long", async ({ page }) => {
