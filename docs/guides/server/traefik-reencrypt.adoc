@@ -1,6 +1,12 @@
-<#import "/templates/guide.adoc" as tmpl> <#import "/templates/kc.adoc" as kc> <#import "/templates/options.adoc" as opts> <#import "/templates/links.adoc" as links>
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/kc.adoc" as kc>
+<#import "/templates/options.adoc" as opts>
+<#import "/templates/links.adoc" as links>
 
-<@tmpl.guide title="Traefik with TLS re-encrypt" summary="Configure Traefik as a TLS re-encrypt load balancer for {project_name}." includedOptions="proxy-headers health-enabled metrics-enabled https-certificate-file https-certificate-key-file https-client-auth https-trust-store-file https-management-client-auth shutdown-delay" tileVisible="false">
+<@tmpl.guide title="Traefik with TLS re-encrypt"
+summary="Configure Traefik as a TLS re-encrypt load balancer for {project_name}."
+includedOptions="proxy-headers health-enabled metrics-enabled https-certificate-file https-certificate-key-file https-client-auth https-trust-store-file https-management-client-auth shutdown-delay"
+tileVisible="false">
 
 This {section} describes how to configure link:https://traefik.io/[Traefik] as a TLS re-encrypt load balancer in front of {project_name}.
 
