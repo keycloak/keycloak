@@ -374,7 +374,7 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
         if (verifCredentialModel.getCredentialScopeName() == null) {
             throw new BadRequestException("Credential scope not specified");
         }
-        em.clear();
+
         UserModel user = getUserById(session.getContext().getRealm(), userId);
         if (user == null) {
             throw new ModelException("User not found: " + userId);
@@ -428,10 +428,12 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
 
     @Override
     public UserVerifiableCredentialModel updateVerifiableCredential(String userId, String credentialScopeName) {
-        UserModel user = getUserById(session.getContext().getRealm(), userId);
-        if (user == null) {
+        UserEntity userEntity = em.find(UserEntity.class, userId);
+        if (userEntity == null || !session.getContext().getRealm().getId().equals(userEntity.getRealmId())) {
             throw new ModelException("User not found: " + userId);
         }
+        em.refresh(userEntity);
+        UserModel user = new UserAdapter(session, session.getContext().getRealm(), em, userEntity);
 
         TypedQuery<UserVerifiableCredentialEntity> query = em.createNamedQuery("verifiableCredentialsByUser", UserVerifiableCredentialEntity.class);
         query.setParameter("userId", userId);
@@ -454,10 +456,10 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
         String newRevision = SecretGenerator.getInstance().generateSecureID();
         System.out.println("New Revision" + newRevision);
         entity.setRevision(newRevision);
-        em.merge(entity);
+        UserVerifiableCredentialEntity mergedEntity = em.merge(entity);
         em.flush();
 
-        return toVerifiableCredentialModel(entity);
+        return toVerifiableCredentialModel(mergedEntity);
     }
 
     private Stream<UserVerifiableCredentialEntity> getVerifiableCredentialsEntitiesByUser(String userId) {

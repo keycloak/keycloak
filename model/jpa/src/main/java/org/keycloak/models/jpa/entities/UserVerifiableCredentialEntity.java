@@ -7,7 +7,6 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
-import jakarta.persistence.Lob;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
@@ -41,8 +40,7 @@ public class UserVerifiableCredentialEntity {
     @Column(name="REVISION")
     protected String revision;
 
-    @Lob
-    @Column(name = "USER_ATTRIBUTES", columnDefinition = "TEXT")
+    @Column(name = "USER_ATTRIBUTES")
     protected String userAttributes;
 
     @Column(name = "CREATED_DATE")
