@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.KeyStore;
 import java.text.SimpleDateFormat;
@@ -41,7 +42,6 @@ import javax.net.ssl.TrustManagerFactory;
 import jakarta.servlet.DispatcherType;
 import jakarta.servlet.Filter;
 
-import org.keycloak.Keycloak;
 import org.keycloak.authentication.AuthenticatorSpi;
 import org.keycloak.authentication.authenticators.browser.DeployedScriptAuthenticatorFactory;
 import org.keycloak.authorization.policy.provider.PolicySpi;
@@ -77,6 +77,7 @@ import io.undertow.servlet.api.DefaultServletConfig;
 import io.undertow.servlet.api.DeploymentInfo;
 import io.undertow.servlet.api.FilterInfo;
 import io.undertow.servlet.api.InstanceHandle;
+import org.apache.commons.io.FileUtils;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.core.ResteasyDeploymentImpl;
 import org.jboss.resteasy.plugins.server.servlet.ResteasyContextParameters;
@@ -320,7 +321,28 @@ public class KeycloakServer {
         }
 
         // we generate a dynamic jboss.server.data.dir and remove it at the end.
-        return Keycloak.initTempDirectory("keycloak-data").toFile().getAbsolutePath();
+        return initTempDirectory("keycloak-data").toFile().getAbsolutePath();
+    }
+  
+    public static Path initTempDirectory(String name) {
+        String buildDir = System.getProperty("project.build.directory");
+        if (buildDir == null) {
+            try {
+                Path tempDirectory = Files.createTempDirectory(name);
+                tempDirectory.toFile().deleteOnExit();
+                return tempDirectory.toAbsolutePath();
+            } catch (IOException e) {
+                throw new RuntimeException("Could not create temporary directory", e);
+            }
+        } else {
+            Path tempDirectory = Path.of(buildDir, name);
+            try {
+                FileUtils.deleteDirectory(tempDirectory.toFile());
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            return tempDirectory;
+        }
     }
 
     private KeycloakServerConfig config;
