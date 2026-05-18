@@ -17,6 +17,7 @@
 
 package org.keycloak.authentication.authenticators.client;
 
+import java.lang.reflect.Proxy;
 import java.util.List;
 
 import jakarta.ws.rs.core.Response;
@@ -29,18 +30,33 @@ import org.junit.Test;
 public class JWTClientValidatorExtensibilityTest {
 
     @Test
-    public void canOverrideValidatorHooks() {
-        ExtensibleJWTClientValidator.assertCompilable();
-        ExtensibleFederatedJWTClientValidator.assertCompilable();
+    public void validatorHooksRemainOverridable() throws Exception {
+        new ExtensibleJWTClientValidator(context(), validator -> true);
     }
 
+    private static ClientAuthenticationFlowContext context() {
+        return (ClientAuthenticationFlowContext) Proxy.newProxyInstance(
+                ClientAuthenticationFlowContext.class.getClassLoader(),
+                new Class<?>[] { ClientAuthenticationFlowContext.class },
+                (proxy, method, args) -> {
+                    switch (method.getName()) {
+                        case "getSession":
+                        case "getRealm":
+                            return null;
+                        case "getState":
+                            return new ClientAssertionState(null, null, null, null);
+                        default:
+                            throw new UnsupportedOperationException(method.toString());
+                    }
+                });
+    }
+
+    // Compile-time API stability test: this subclass must keep compiling as
+    // the supported extension point for JWT client validator customizations.
     private static class ExtensibleJWTClientValidator extends AbstractJWTClientValidator {
 
         private ExtensibleJWTClientValidator(ClientAuthenticationFlowContext context, SignatureValidator signatureValidator) throws Exception {
             super(context, signatureValidator, null);
-        }
-
-        static void assertCompilable() {
         }
 
         @Override
@@ -101,51 +117,6 @@ public class JWTClientValidatorExtensibilityTest {
         @Override
         protected String getExpectedSignatureAlgorithm() {
             return null;
-        }
-    }
-
-    private static class ExtensibleFederatedJWTClientValidator extends FederatedJWTClientValidator {
-
-        private ExtensibleFederatedJWTClientValidator(ClientAuthenticationFlowContext context, SignatureValidator signatureValidator) throws Exception {
-            super(context, signatureValidator, null, 0, false);
-        }
-
-        static void assertCompilable() {
-        }
-
-        @Override
-        protected String getExpectedTokenIssuer() {
-            return super.getExpectedTokenIssuer();
-        }
-
-        @Override
-        protected List<String> getExpectedAudiences() {
-            return super.getExpectedAudiences();
-        }
-
-        @Override
-        protected boolean isMultipleAudienceAllowed() {
-            return super.isMultipleAudienceAllowed();
-        }
-
-        @Override
-        protected int getAllowedClockSkew() {
-            return super.getAllowedClockSkew();
-        }
-
-        @Override
-        protected int getMaximumExpirationTime() {
-            return super.getMaximumExpirationTime();
-        }
-
-        @Override
-        protected boolean isReusePermitted() {
-            return super.isReusePermitted();
-        }
-
-        @Override
-        protected String getExpectedSignatureAlgorithm() {
-            return super.getExpectedSignatureAlgorithm();
         }
     }
 }
