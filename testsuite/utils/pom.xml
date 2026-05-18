@@ -267,7 +267,12 @@
             <artifactId>mssql-jdbc</artifactId>
             <version>${mssql-jdbc.version}</version>
         </dependency>
-
+        
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-junit5</artifactId>
+        </dependency>
+        
         <dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-micrometer</artifactId>
