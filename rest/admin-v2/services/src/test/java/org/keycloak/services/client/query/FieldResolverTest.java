@@ -8,7 +8,6 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class FieldResolverTest {
@@ -64,9 +63,4 @@ class FieldResolverTest {
         assertEquals(Set.of("uma_protection"), result);
     }
 
-    @Test
-    void unknownFieldThrows() {
-        var client = new OIDCClientRepresentation("test");
-        assertThrows(ClientQueryException.class, () -> FieldResolver.resolve("unknownField", client));
-    }
 }

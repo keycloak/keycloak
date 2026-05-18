@@ -8,7 +8,6 @@ import org.keycloak.representations.admin.v2.SAMLClientRepresentation;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ClientQueryEvaluatorTest {
@@ -117,14 +116,6 @@ class ClientQueryEvaluatorTest {
         assertTrue(matches("loginFlows eq \"STANDARD\"", client));
         assertTrue(matches("loginFlows eq \"STANDARD\" and loginFlows eq \"DIRECT_GRANT\"", client));
         assertFalse(matches("loginFlows eq \"SERVICE_ACCOUNT\"", client));
-    }
-
-    @Test
-    void unknownFieldThrows() {
-        var client = createClient("test", true);
-        var filterCtx = QueryParseUtils.parse("unknownField eq \"value\"");
-        assertThrows(ClientQueryException.class, () ->
-                ClientQueryEvaluator.matches(filterCtx, client));
     }
 
     @Test

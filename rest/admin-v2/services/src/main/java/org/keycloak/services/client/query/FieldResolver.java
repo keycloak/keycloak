@@ -22,10 +22,6 @@ public class FieldResolver {
             }
             return null;
         }
-        Object value = MAPPERS.resolveFieldValue(fieldPath, client);
-        if (value == null && !MAPPERS.isKnownField(fieldPath)) {
-            throw new ClientQueryException("Unknown query field: " + fieldPath);
-        }
-        return value;
+        return MAPPERS.resolveFieldValue(fieldPath, client);
     }
 }

@@ -28,19 +28,15 @@ public class QueryParseUtils {
     private static void validateExpression(ScimFilterParser.ExpressionContext ctx) {
         if (ctx.OR() != null) {
             validateExpression(ctx.expression());
-            validateAndExpression(ctx.andExpression());
-        } else {
-            validateAndExpression(ctx.andExpression());
         }
+        validateAndExpression(ctx.andExpression());
     }
 
     private static void validateAndExpression(ScimFilterParser.AndExpressionContext ctx) {
         if (ctx.AND() != null) {
             validateAndExpression(ctx.andExpression());
-            validateNotExpression(ctx.notExpression());
-        } else {
-            validateNotExpression(ctx.notExpression());
         }
+        validateNotExpression(ctx.notExpression());
     }
 
     private static void validateNotExpression(ScimFilterParser.NotExpressionContext ctx) {
