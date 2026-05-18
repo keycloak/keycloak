@@ -7,11 +7,15 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
 
+import jakarta.ws.rs.core.Response;
+
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.admin.v2.BaseClientRepresentation;
 import org.keycloak.services.PatchType;
 import org.keycloak.services.Service;
 import org.keycloak.services.ServiceException;
+
+import static org.keycloak.utils.StringUtil.isBlank;
 
 public interface ClientService extends Service {
 
@@ -32,10 +36,51 @@ public interface ClientService extends Service {
     }
 
     class ClientSortAndSliceOptions {
-        // order by
-        // offset
-        // limit
-        // NOTE: this is not always the most desirable way to do pagination
+        private final ClientSortField sortField;
+        private final boolean ascending;
+
+        private ClientSortAndSliceOptions(ClientSortField sortField, boolean ascending) {
+            this.sortField = sortField;
+            this.ascending = ascending;
+        }
+
+        public static ClientSortAndSliceOptions fromQuery(String sortBy, String sortOrder) {
+            ClientSortField field = isBlank(sortBy)
+                    ? ClientSortField.defaultField()
+                    : parseSortBy(sortBy);
+            return new ClientSortAndSliceOptions(field, parseSortOrder(sortOrder));
+        }
+
+        private static ClientSortField parseSortBy(String sortBy) {
+            if (sortBy.contains(",")) {
+                throw new ServiceException("Only a single sort field is supported", Response.Status.BAD_REQUEST);
+            }
+            String field = sortBy.trim();
+            ClientSortField.validateApiName(field).ifPresent(msg -> {
+                throw new ServiceException(msg, Response.Status.BAD_REQUEST);
+            });
+            return ClientSortField.fromApiName(field).orElseThrow();
+        }
+
+        private static boolean parseSortOrder(String sortOrder) {
+            if (isBlank(sortOrder) || "asc".equalsIgnoreCase(sortOrder)) {
+                return true;
+            }
+            if ("desc".equalsIgnoreCase(sortOrder)) {
+                return false;
+            }
+            throw new ServiceException("sortOrder must be asc or desc", Response.Status.BAD_REQUEST);
+        }
+
+        public ClientSortField getSortField() {
+            return sortField;
+        }
+
+        public boolean isAscending() {
+            return ascending;
+        }
+
+        // offset / limit — #48289
     }
 
     record CreateOrUpdateResult(BaseClientRepresentation representation, boolean created) {}

@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -135,13 +136,18 @@ public class DefaultClientService implements ClientService {
         // When FGAP is enabled, authorization filtering is applied at the JPA layer (via PartialEvaluator predicates), so we trust the DB results.
         // When disabled, we fall back to in-memory filtering by VIEW_CLIENTS role.
         boolean canView = AdminPermissionsSchema.SCHEMA.isAdminPermissionsEnabled(realm) || permissions.clients().canView();
+        ClientSortAndSliceOptions sortOptions = sortAndSliceOptions != null
+                ? sortAndSliceOptions
+                : ClientSortAndSliceOptions.fromQuery(null, null);
+        Comparator<BaseClientRepresentation> sortComparator =
+                sortOptions.getSortField().comparator(sortOptions.isAscending());
         try {
             Stream<BaseClientRepresentation> stream = realm.getClientsStream()
                     .filter(client -> canView || permissions.clients().canView(client))
                     .filter(client -> client.getProtocol() != null)
                     .map(client -> getMapper(client.getProtocol()).fromModel(client))
-                    .filter(java.util.Objects::nonNull);
-
+                    .filter(Objects::nonNull)
+                    .sorted(sortComparator);
             stream = applySearchFilter(stream, searchOptions);
             return applyProjection(stream, projectionOptions);
         } catch (ModelException e) {

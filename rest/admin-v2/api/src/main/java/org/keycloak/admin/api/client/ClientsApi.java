@@ -35,12 +35,17 @@ public interface ClientsApi {
     @Consumes(MediaType.APPLICATION_JSON)
     @Operation(summary = "Get all clients", description = "Returns a list of clients in the realm, optionally filtered by a query expression")
     @APIResponses(value = {
-        @APIResponse(responseCode = "200", content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = BaseClientRepresentation.class)))
+        @APIResponse(responseCode = "200", content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = BaseClientRepresentation.class))),
+        @APIResponse(responseCode = "400", description = "Invalid sort parameter")
     })
     Stream<BaseClientRepresentation> getClients(@BeanParam ListOptions params);
 
     default Stream<BaseClientRepresentation> getClients() {
         return getClients(new ListOptions());
+    }
+
+    default Stream<BaseClientRepresentation> getClients(Set<String> fields) {
+        return getClients(fields, null, null);
     }
 
     @POST
