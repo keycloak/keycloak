@@ -73,7 +73,7 @@ public class KeycloakSamlAdapterLayerMetaDataTestCase {
     public void testKeycloakDetected() throws Exception {
         Path p = createWebArchive("test.war", "web.xml", WEB_XML);
         Arguments arguments = Arguments.scanBuilder().setBinaries(Collections.singletonList(p)).build();
-        ScanResults scanResults = GlowSession.scan(MavenResolver.newMavenResolver(), arguments, GlowMessageWriter.DEFAULT);
+        ScanResults scanResults = GlowSession.scan(MavenResolver.newOfflineMavenResolver(), arguments, GlowMessageWriter.DEFAULT);
         Set<String> foundLayers = scanResults.getDiscoveredLayers().stream().map(l -> l.getName()).collect(Collectors.toSet());
         Assert.assertTrue(foundLayers.toString(), foundLayers.contains("keycloak-saml") && 
                 foundLayers.contains("keycloak-client-saml") && 
@@ -84,7 +84,7 @@ public class KeycloakSamlAdapterLayerMetaDataTestCase {
     public void testKeycloakEJBDetected() throws Exception {
         Path p = createWebArchive("test-ejb.war", "web.xml", WEB_XML, EjbLiteAnnotationUsage.class);
         Arguments arguments = Arguments.scanBuilder().setBinaries(Collections.singletonList(p)).build();
-        ScanResults scanResults = GlowSession.scan(MavenResolver.newMavenResolver(), arguments, GlowMessageWriter.DEFAULT);
+        ScanResults scanResults = GlowSession.scan(MavenResolver.newOfflineMavenResolver(), arguments, GlowMessageWriter.DEFAULT);
         Set<String> foundLayers = scanResults.getDiscoveredLayers().stream().map(l -> l.getName()).collect(Collectors.toSet());
         Assert.assertTrue(foundLayers.toString(), foundLayers.contains("keycloak-saml") && 
                 foundLayers.contains("keycloak-client-saml") && 
