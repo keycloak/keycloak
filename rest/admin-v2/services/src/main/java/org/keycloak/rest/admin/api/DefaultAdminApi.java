@@ -17,8 +17,10 @@ public class DefaultAdminApi implements AdminApi {
     public DefaultAdminApi(KeycloakSession session, String realmName) {
         this.session = session;
         var authInfo = AdminRoot.authenticateRealmAdminRequest(session);
-        this.permissions = AdminPermissions.evaluator(session, authInfo.getRealm(), authInfo);
-        this.realm = session.realms().getRealmByName(realmName);
+        RealmModel realm = session.realms().getRealmByName(realmName);
+        session.getContext().setRealm(realm);
+        this.realm = realm;
+        this.permissions = AdminPermissions.evaluator(session, realm, authInfo);
     }
 
     @Override
