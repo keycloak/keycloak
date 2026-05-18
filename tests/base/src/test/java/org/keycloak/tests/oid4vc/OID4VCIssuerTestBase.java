@@ -46,6 +46,7 @@ import org.keycloak.models.KeyManager;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.protocol.oid4vc.clientpolicy.CredentialClientPolicyExecutorFactory;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCAuthorizationDetailsParser;
 import org.keycloak.protocol.oid4vc.issuance.TimeProvider;
 import org.keycloak.protocol.oid4vc.issuance.mappers.OID4VCGeneratedIdMapper;
@@ -55,6 +56,10 @@ import org.keycloak.protocol.oid4vc.model.CredentialSubject;
 import org.keycloak.protocol.oid4vc.model.DisplayObject;
 import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
+import org.keycloak.representations.idm.ClientPolicyConditionRepresentation;
+import org.keycloak.representations.idm.ClientPolicyExecutorRepresentation;
+import org.keycloak.representations.idm.ClientPolicyRepresentation;
+import org.keycloak.representations.idm.ClientProfileRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.ComponentRepresentation;
@@ -95,6 +100,8 @@ import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.keycloak.util.AuthorizationDetailsParser;
 import org.keycloak.util.JsonSerialization;
 
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.jboss.logging.Logger;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -109,6 +116,7 @@ import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_BINDING_REQUIR
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_BINDING_REQUIRED_PROOF_TYPES;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_CRYPTOGRAPHIC_BINDING_METHODS;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_FORMAT_DEFAULT;
+import static org.keycloak.protocol.oid4vc.clientpolicy.CredentialClientPolicies.VC_POLICY_CREDENTIAL_OFFER_REQUIRED;
 
 /**
  * Abstract base class for OID4VCI Testing
@@ -119,9 +127,10 @@ public abstract class OID4VCIssuerTestBase {
 
     protected final Logger log = Logger.getLogger(getClass());
 
-    public static final String OID4VCI_CLIENT_ID = "oid4vci-test";
-    public static final String OID4VCI_PUBLIC_CLIENT_ID = "oid4vci-test-pub";
-    public static final URI ISSUER_DID = URI.create("did:web:test.org");
+    public static final String OID4VCI_CLIENT_ID = "oid4vci-client";
+    public static final String OID4VCI_PUBLIC_CLIENT_ID = "oid4vci-client-pub";
+
+    public static final String TEST_ISSUER_DID = "did:web:test.org";
     public static final String TEST_CREDENTIAL_MAPPERS_FILE = "/oid4vc/test-credential-mappers.json";
     public static final String TEST_USER = "john";
     public static final String TEST_PASSWORD = "password";
@@ -139,7 +148,6 @@ public abstract class OID4VCIssuerTestBase {
     public static final String minimalJwtTypeCredentialConfigurationIdName = "vc-with-minimal-config-id";
 
     public static final String CONTEXT_URL = "https://www.w3.org/2018/credentials/v1";
-    protected static final URI TEST_DID = ISSUER_DID;
     protected static final List<String> TEST_TYPES = List.of("VerifiableCredential");
     protected static final Instant TEST_EXPIRATION_DATE = Instant.ofEpochMilli(Time.currentTimeMillis())
             .plus(365, ChronoUnit.DAYS)
@@ -149,7 +157,7 @@ public abstract class OID4VCIssuerTestBase {
     @InjectRealm(config = VCTestRealmConfig.class)
     protected ManagedRealm testRealm;
 
-    @InjectClient(ref = "oid4vci-client", config = PrivateOID4VCIClient.class)
+    @InjectClient(ref = OID4VCI_CLIENT_ID, config = ConfidentialOID4VCIClient.class)
     protected ManagedClient managedClient;
 
     @InjectClient(ref = OID4VCI_PUBLIC_CLIENT_ID, config = PublicOID4VCIClient.class)
@@ -188,6 +196,7 @@ public abstract class OID4VCIssuerTestBase {
 
     @TestSetup
     public void configureTestRealm() {
+
         RealmResource realmResource = testRealm.admin();
         UPConfig upConfig = realmResource.users().userProfile().getConfiguration();
         upConfig.setUnmanagedAttributePolicy(UPConfig.UnmanagedAttributePolicy.ADMIN_EDIT);
@@ -261,7 +270,7 @@ public abstract class OID4VCIssuerTestBase {
         testCredential.setId(URI.create(String.format("uri:uuid:%s", UUID.randomUUID())));
         testCredential.setContext(List.of(CONTEXT_URL));
         testCredential.setType(TEST_TYPES);
-        testCredential.setIssuer(TEST_DID);
+        testCredential.setIssuer(TEST_ISSUER_DID);
         testCredential.setExpirationDate(TEST_EXPIRATION_DATE);
         if (claims.containsKey("issuanceDate")) {
             testCredential.setIssuanceDate((Instant) claims.get("issuanceDate"));
@@ -487,7 +496,7 @@ public abstract class OID4VCIssuerTestBase {
     public static class VCTestServerWithPreAuthCodeEnabled implements KeycloakServerConfig {
         @Override
         public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
-            return config.features(Profile.Feature.OID4VC_VCI, Profile.Feature.OID4VC_VCI_PREAUTH_CODE, Profile.Feature.OID4VC_VCI_REST_CREDENTIAL_OFFER);
+            return config.features(Profile.Feature.OID4VC_VCI, Profile.Feature.OID4VC_VCI_REST_CREDENTIAL_OFFER, Profile.Feature.OID4VC_VCI_PREAUTH_CODE);
         }
     }
 
@@ -536,7 +545,7 @@ public abstract class OID4VCIssuerTestBase {
 
             CredentialScopeRepresentation jwtVcScope = createCredentialScope(
                     jwtTypeCredentialScopeName,
-                    ISSUER_DID.toString(),
+                    TEST_ISSUER_DID,
                     jwtTypeCredentialConfigurationIdName,
                     jwtTypeCredentialScopeName,
                     null,
@@ -565,7 +574,48 @@ public abstract class OID4VCIssuerTestBase {
             realm.users(getUserRepresentation("John Doe", Map.of("did", "did:key:1234"), List.of(), Collections.emptyMap()));
             realm.users(getUserRepresentation("Alice Wonderland", Map.of("did", "did:key:5678"), List.of(), Map.of()));
 
+            // Add Client Policies
+            //
+            ClientProfileRepresentation profile = createClientPolicyProfile();
+            realm.clientPolicy(createClientPolicyOfferRequired(profile));
+            realm.clientProfile(profile);
+
             return realm;
+        }
+
+        private ClientProfileRepresentation createClientPolicyProfile() {
+
+            ClientProfileRepresentation profile = new ClientProfileRepresentation();
+            profile.setName("oid4vci-client-profile");
+
+            ClientPolicyExecutorRepresentation executor = new ClientPolicyExecutorRepresentation();
+            executor.setExecutorProviderId(CredentialClientPolicyExecutorFactory.PROVIDER_ID);
+            executor.setConfiguration(JsonNodeFactory.instance.objectNode());
+            profile.setExecutors(List.of(executor));
+
+            return profile;
+        }
+
+        private ClientPolicyRepresentation createClientPolicyOfferRequired(ClientProfileRepresentation profile) {
+
+            ClientPolicyRepresentation policy = new ClientPolicyRepresentation();
+            policy.setName(VC_POLICY_CREDENTIAL_OFFER_REQUIRED.getName());
+            policy.setDescription("Client policy to determine whether a credential offers is required");
+            policy.setEnabled(false);
+
+            ClientPolicyConditionRepresentation condition = new ClientPolicyConditionRepresentation();
+            condition.setConditionProviderId("client-attributes");
+            ObjectNode config = JsonNodeFactory.instance.objectNode();
+            config.put("attributes", JsonSerialization.valueAsString(List.of(Map.of(
+                    "key", OID4VCI_ENABLED_ATTRIBUTE_KEY,
+                    "value", String.valueOf(true)
+            ))));
+            condition.setConfiguration(config);
+
+            policy.setConditions(List.of(condition));
+            policy.setProfiles(List.of(profile.getName()));
+
+            return policy;
         }
 
         private CredentialScopeRepresentation createCredentialScope(
@@ -666,7 +716,7 @@ public abstract class OID4VCIssuerTestBase {
         }
     }
 
-    public static class PrivateOID4VCIClient implements ClientConfig {
+    public static class ConfidentialOID4VCIClient implements ClientConfig {
 
         @Override
         public ClientBuilder configure(ClientBuilder client) {

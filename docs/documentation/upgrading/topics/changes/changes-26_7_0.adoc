@@ -47,6 +47,10 @@ that this option is deprecated and exists mostly for the backwards compatibility
 
 For the details, see the link:{adminguide_link}[{adminguide_name}].
 
+=== Socket timeouts and query timeouts for database connections
+
+For all database connections, {project_name} now sets a socket read timeout matching the respective transaction timeout to prevent long hanging threads. For PostgreSQL databases, it additionally sets a query timeout.
+
 === Configure TOTP and Update password required actions moved after Verify Email
 
 In relation to the previous point, the required actions *Configure OTP* and *Update password* are moved in the order of required actions after *Verify Email*

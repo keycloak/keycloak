@@ -137,6 +137,10 @@ public class OrganizationGroupMembershipMapper extends AbstractOIDCProtocolMappe
         String rawScopes = context.getScopeString(true);
         OrganizationScope scope = OrganizationScope.valueOfScope(session, rawScopes);
 
+        if (scope == null) {
+            return Stream.empty();
+        }
+
         return scope.resolveOrganizations(userSession.getUser(), rawScopes, session);
     }
 

@@ -25,6 +25,7 @@ public class MigrateTest {
             UpdateAssertsRewrite.class,
             AddManagedResourcesRewrite.class,
             AdminEventAssertRewrite.class,
+            AssertEventsRewrite.class,
             BeforeRewrite.class,
             AfterRewrite.class,
             OAuthClientRewrite.class,
@@ -33,7 +34,8 @@ public class MigrateTest {
             RunOnServerRewrite.class,
             CommonStatementsRewrite.class,
             TestRealmRewrite.class,
-            MailServerRewrite.class
+            MailServerRewrite.class,
+            TimeOffSetRewrite.class
     );
 
     Path rootPath = getRootPath();

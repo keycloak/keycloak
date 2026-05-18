@@ -1815,7 +1815,7 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
         // Send a token introspection request with invalid 'aud' . Should fail
         signedJwt = createSignedRequestToken(clientId, privateKey, publicKey, Algorithm.RS256, getRealmInfoUrl() + "/protocol/openid-connect/introspect");
         HttpResponse tokenIntrospectionResponse = doTokenIntrospectionWithSignedJWT("access_token", refreshedResponse.getAccessToken(), signedJwt);
-        assertEquals(401, tokenIntrospectionResponse.getStatusLine().getStatusCode());
+        assertEquals(400, tokenIntrospectionResponse.getStatusLine().getStatusCode());
 
         // Send a token introspection request with valid 'aud' . Should succeed
         signedJwt = createSignedRequestToken(clientId, privateKey, publicKey, Algorithm.RS256, getRealmInfoUrl());

@@ -9,6 +9,7 @@ import org.keycloak.representations.idm.ClientPoliciesRepresentation;
 import org.keycloak.representations.idm.ClientPolicyRepresentation;
 import org.keycloak.representations.idm.ClientProfileRepresentation;
 import org.keycloak.representations.idm.ClientProfilesRepresentation;
+import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -163,6 +164,16 @@ public class ManagedRealm extends ManagedTestResource {
         cleanup().add(r -> r.identityProviders().get(alias).update(original));
     }
 
+    public void updateClientScope(String id, ClientScopeUpdate update) {
+        ClientScopeRepresentation original = realmResource.clientScopes().get(id).toRepresentation();
+
+        ClientScopeBuilder updatedRep = ClientScopeBuilder.update(RepresentationUtils.clone(original));
+        ClientScopeRepresentation updated = update.update(updatedRep).build();
+        realmResource.clientScopes().get(id).update(updated);
+
+        cleanup().add(r -> r.clientScopes().get(id).update(original));
+    }
+
     public void updateClientProfile(List<ClientProfileRepresentation> profiles) {
         ClientProfilesRepresentation oldProfiles = realmResource.clientPoliciesProfilesResource().getProfiles(true);
         ClientProfilesRepresentation profilesToUpdate = realmResource.clientPoliciesProfilesResource().getProfiles(true);
@@ -214,6 +225,12 @@ public class ManagedRealm extends ManagedTestResource {
     public interface RealmUpdate {
 
         RealmBuilder update(RealmBuilder realm);
+
+    }
+
+    public interface ClientScopeUpdate {
+
+        ClientScopeBuilder update(ClientScopeBuilder scope);
 
     }
 
