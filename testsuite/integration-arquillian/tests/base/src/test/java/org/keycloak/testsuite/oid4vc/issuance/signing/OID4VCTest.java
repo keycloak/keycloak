@@ -442,7 +442,12 @@ public abstract class OID4VCTest extends AbstractTestRealmKeycloakTest {
                 .attribute("address_street_address", "221B Baker Street")
                 .attribute("address_locality", "London")
                 .clientRoles("account", "manage-account")
-                .clientRoles("account", "view-profile");
+                .clientRoles("account", "view-profile")
+                .verifiableCredential(jwtTypeCredentialScopeName)
+                .verifiableCredential(sdJwtTypeCredentialScopeName)
+                .verifiableCredential(minimalJwtTypeCredentialScopeName)
+                .verifiableCredential(jwtTypeNaturalPersonScopeName)
+                .verifiableCredential(sdJwtTypeNaturalPersonScopeName);
 
         attributes.forEach(userBuilder::attribute);
 

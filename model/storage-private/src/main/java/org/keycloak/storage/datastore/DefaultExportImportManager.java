@@ -76,7 +76,6 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.ScopeContainerModel;
 import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.models.UserVerifiableCredentialModel;
 import org.keycloak.models.WebAuthnPolicy;
 import org.keycloak.models.WebAuthnPolicyPasswordlessDefaults;
 import org.keycloak.models.WebAuthnPolicyTwoFactorDefaults;
@@ -120,7 +119,6 @@ import org.keycloak.representations.idm.UserConsentRepresentation;
 import org.keycloak.representations.idm.UserFederationMapperRepresentation;
 import org.keycloak.representations.idm.UserFederationProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.representations.idm.oid4vc.UserVerifiableCredentialRepresentation;
 import org.keycloak.storage.ExportImportManager;
 import org.keycloak.storage.ImportRealmFromRepresentationEvent;
 import org.keycloak.storage.PartialImportRealmFromRepresentationEvent;
@@ -142,6 +140,7 @@ import static org.keycloak.models.utils.RepresentationToModel.createCredentials;
 import static org.keycloak.models.utils.RepresentationToModel.createFederatedIdentities;
 import static org.keycloak.models.utils.RepresentationToModel.createGroups;
 import static org.keycloak.models.utils.RepresentationToModel.createRoleMappings;
+import static org.keycloak.models.utils.RepresentationToModel.createVerifiableCredentials;
 import static org.keycloak.models.utils.RepresentationToModel.importGroup;
 import static org.keycloak.models.utils.RepresentationToModel.importRoles;
 import static org.keycloak.models.utils.StripSecretsUtils.stripSecrets;
@@ -1019,12 +1018,7 @@ public class DefaultExportImportManager implements ExportImportManager {
             session.users().setNotBeforeForUser(newRealm, user, userRep.getNotBefore());
         }
 
-        if (userRep.getVerifiableCredentials() != null) {
-            for (UserVerifiableCredentialRepresentation credentialRep : userRep.getVerifiableCredentials()) {
-                UserVerifiableCredentialModel credentialModel = RepresentationToModel.toModel(credentialRep);
-                session.users().addVerifiableCredential(user.getId(), credentialModel);
-            }
-        }
+        createVerifiableCredentials(userRep, session, user);
 
         if (userRep.getServiceAccountClientId() != null) {
             String clientId = userRep.getServiceAccountClientId();
