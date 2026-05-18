@@ -1,6 +1,9 @@
 package org.keycloak.tests.oid4vc.haip;
 
 
+import java.util.Map;
+import java.util.stream.Collectors;
+
 import org.keycloak.TokenVerifier;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.protocol.oid4vc.model.CredentialResponse;
@@ -16,15 +19,11 @@ import org.keycloak.testsuite.util.oauth.PkceGenerator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.util.Map;
-import java.util.stream.Collectors;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-
 import static org.keycloak.OID4VCConstants.CLAIM_NAME_VCT;
 import static org.keycloak.authentication.authenticators.client.AttestationBasedClientAuthenticator.OAUTH_CLIENT_ATTESTATION_HEADER;
 import static org.keycloak.authentication.authenticators.client.AttestationBasedClientAuthenticator.OAUTH_CLIENT_ATTESTATION_POP_HEADER;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
