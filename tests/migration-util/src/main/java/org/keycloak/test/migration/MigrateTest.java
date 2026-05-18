@@ -34,7 +34,8 @@ public class MigrateTest {
             RunOnServerRewrite.class,
             CommonStatementsRewrite.class,
             TestRealmRewrite.class,
-            MailServerRewrite.class
+            MailServerRewrite.class,
+            TimeOffSetRewrite.class
     );
 
     Path rootPath = getRootPath();
