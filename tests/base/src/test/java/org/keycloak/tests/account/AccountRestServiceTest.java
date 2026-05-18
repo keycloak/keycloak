@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.testsuite.account;
+package org.keycloak.tests.account;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -82,14 +82,12 @@ import org.keycloak.services.cors.Cors;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.account.AccountCredentialResource;
 import org.keycloak.services.util.ResolveRelative;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testframework.realm.UserBuilder;
-import org.keycloak.testsuite.AbstractAuthenticationTest;
-import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.admin.AdminApiUtil;
+import org.keycloak.tests.suites.DatabaseTest;
+import org.keycloak.tests.utils.admin.AdminApiUtil;
 import org.keycloak.testsuite.broker.util.SimpleHttpDefault;
-import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
-import org.keycloak.testsuite.util.TokenUtil;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.userprofile.UserProfileUtil;
 import org.keycloak.userprofile.UserProfileContext;
@@ -98,10 +96,10 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import org.apache.http.Header;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.hamcrest.Matchers;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 import static org.keycloak.testsuite.util.userprofile.UserProfileUtil.PERMISSIONS_ALL;
 
@@ -119,15 +117,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
+@KeycloakIntegrationTest
+@DatabaseTest
 public class AccountRestServiceTest extends AbstractRestServiceTest {
 
-    @Rule
-    public AssertEvents events = new AssertEvents(this);
-
-    @Override
-    @Before
+    @BeforeEach
     public void before() {
-        super.before();
         setUserProfileConfiguration(null);
     }
 
@@ -136,7 +131,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         UserRepresentation user = getUser();
         String originalUsername = user.getUsername();
         String originalEmail = user.getEmail();
-        RealmResource realm = adminClient.realm("test");
+        RealmResource realm = managedRealm.admin();
         RealmRepresentation realmRep = realm.toRepresentation();
         Boolean registrationEmailAsUsername = realmRep.isRegistrationEmailAsUsername();
         Boolean editUsernameAllowed = realmRep.isEditUsernameAllowed();
@@ -292,10 +287,10 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         user.setAttributes(Optional.ofNullable(user.getAttributes()).orElse(new HashMap<>()));
 
         try {
-            RealmRepresentation realmRep = adminClient.realm("test").toRepresentation();
+            RealmRepresentation realmRep = managedRealm.admin().toRepresentation();
 
             realmRep.setRegistrationEmailAsUsername(false);
-            adminClient.realm("test").update(realmRep);
+            managedRealm.admin().update(realmRep);
 
             user.setFirstName(null);
             user.setLastName("Bob");
@@ -309,9 +304,9 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
             assertNull(user.getEmail());
 
         } finally {
-            RealmRepresentation realmRep = adminClient.realm("test").toRepresentation();
+            RealmRepresentation realmRep = managedRealm.admin().toRepresentation();
             realmRep.setEditUsernameAllowed(true);
-            adminClient.realm("test").update(realmRep);
+            managedRealm.admin().update(realmRep);
 
             user.setUsername(originalUsername);
             user.setFirstName(originalFirstName);
@@ -332,13 +327,13 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         UserRepresentation user = getUser();
         String originalEmail = user.getEmail();
         try {
-            RealmRepresentation realmRep = adminClient.realm("test").toRepresentation();
+            RealmRepresentation realmRep = managedRealm.admin().toRepresentation();
 
             realmRep.setRegistrationEmailAsUsername(false);
-            adminClient.realm("test").update(realmRep);
+            managedRealm.admin().update(realmRep);
 
             //set flag over adminClient to initial value
-            UserResource userResource = adminClient.realm("test").users().get(user.getId());
+            UserResource userResource = managedRealm.admin().users().get(user.getId());
             org.keycloak.representations.idm.UserRepresentation ur = userResource.toRepresentation();
             ur.setEmailVerified(true);
             userResource.update(ur);
@@ -360,9 +355,9 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
             assertEquals(false, user.isEmailVerified());
 
         } finally {
-            RealmRepresentation realmRep = adminClient.realm("test").toRepresentation();
+            RealmRepresentation realmRep = managedRealm.admin().toRepresentation();
             realmRep.setEditUsernameAllowed(true);
-            adminClient.realm("test").update(realmRep);
+            managedRealm.admin().update(realmRep);
 
             user.setEmail(originalEmail);
             SimpleHttpResponse response = SimpleHttpDefault.doPost(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).json(user).asResponse();
@@ -390,10 +385,10 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         user.setAttributes(new HashMap<>());
 
         try {
-            RealmRepresentation realmRep = adminClient.realm("test").toRepresentation();
+            RealmRepresentation realmRep = managedRealm.admin().toRepresentation();
 
             realmRep.setRegistrationEmailAsUsername(false);
-            adminClient.realm("test").update(realmRep);
+            managedRealm.admin().update(realmRep);
 
             user.setEmail("bobby@localhost");
             user.setFirstName("Homer");
@@ -405,7 +400,8 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
 
             //skip login to the REST API event
             events.poll();
-            EventAssertion.assertSuccess(events.poll()).type(EventType.UPDATE_PROFILE)
+            EventAssertion.assertSuccess(events.poll())
+                .type(EventType.UPDATE_PROFILE)
                 .userId(user.getId())
                 .clientId("account")
                 .details(Details.CONTEXT, UserProfileContext.ACCOUNT.name())
@@ -415,12 +411,12 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
                 .details(Details.PREVIOUS_LAST_NAME, originalLastName)
                 .details(Details.UPDATED_FIRST_NAME, "Homer")
                 .details(Details.UPDATED_LAST_NAME, "Simpsons");
-            Assertions.assertNull(events.poll());
+            assertNull(events.poll());
 
         } finally {
-            RealmRepresentation realmRep = adminClient.realm("test").toRepresentation();
+            RealmRepresentation realmRep = managedRealm.admin().toRepresentation();
             realmRep.setEditUsernameAllowed(true);
-            adminClient.realm("test").update(realmRep);
+            managedRealm.admin().update(realmRep);
 
             user.setUsername(originalUsername);
             user.setFirstName(originalFirstName);
@@ -450,10 +446,10 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         user.setAttributes(Optional.ofNullable(user.getAttributes()).orElse(new HashMap<>()));
 
         try {
-            RealmRepresentation realmRep = adminClient.realm("test").toRepresentation();
+            RealmRepresentation realmRep = managedRealm.admin().toRepresentation();
 
             realmRep.setRegistrationEmailAsUsername(false);
-            adminClient.realm("test").update(realmRep);
+            managedRealm.admin().update(realmRep);
 
             user.setFirstName("Homer");
             user.setLastName("Simpsons");
@@ -500,7 +496,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
             assertEquals("test-user@localhost", user.getUsername());
 
             realmRep.setRegistrationEmailAsUsername(true);
-            adminClient.realm("test").update(realmRep);
+            managedRealm.admin().update(realmRep);
 
             user.setUsername("updatedUsername");
             user = updateAndGet(user);
@@ -511,7 +507,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
             assertEquals("new@localhost", user.getUsername());
 
             realmRep.setRegistrationEmailAsUsername(false);
-            adminClient.realm("test").update(realmRep);
+            managedRealm.admin().update(realmRep);
 
             user.setUsername("updatedUsername");
             user = updateAndGet(user);
@@ -520,14 +516,14 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
 
             realmRep.setEditUsernameAllowed(false);
             realmRep.setRegistrationEmailAsUsername(false);
-            adminClient.realm("test").update(realmRep);
+            managedRealm.admin().update(realmRep);
 
             user.setUsername("updatedUsername2");
             updateError(user, 400, Messages.READ_ONLY_USERNAME);
         } finally {
-            RealmRepresentation realmRep = adminClient.realm("test").toRepresentation();
+            RealmRepresentation realmRep = managedRealm.admin().toRepresentation();
             realmRep.setEditUsernameAllowed(true);
-            adminClient.realm("test").update(realmRep);
+            managedRealm.admin().update(realmRep);
 
             user.setUsername(originalUsername);
             user.setFirstName(originalFirstName);
@@ -577,9 +573,9 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
 
             assertEquals(user.getUsername(), originalUsername);
         } finally {
-            RealmRepresentation realmRep = adminClient.realm("test").toRepresentation();
+            RealmRepresentation realmRep = managedRealm.admin().toRepresentation();
             realmRep.setEditUsernameAllowed(true);
-            adminClient.realm("test").update(realmRep);
+            managedRealm.admin().update(realmRep);
 
             user.setUsername(originalUsername);
             user.setAttributes(originalAttributes);
@@ -592,9 +588,9 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
     // KEYCLOAK-7572
     @Test
     public void testUpdateProfileWithRegistrationEmailAsUsername() throws IOException {
-        RealmRepresentation realmRep = adminClient.realm("test").toRepresentation();
+        RealmRepresentation realmRep = managedRealm.admin().toRepresentation();
         realmRep.setRegistrationEmailAsUsername(true);
-        adminClient.realm("test").update(realmRep);
+        managedRealm.admin().update(realmRep);
 
         UserRepresentation user = getUser();
         String originalFirstname = user.getFirstName();
@@ -721,7 +717,8 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
             assertThat(e.getResponse().getStatus(), is(409));
         }
 
-        getCleanup().addRequiredAction(requiredAction.getProviderId());
+        String webAuthnRegisterAlias = requiredAction.getProviderId();
+        managedRealm.cleanup().add(r -> r.flows().removeRequiredAction(webAuthnRegisterAlias));
 
         requiredAction = new RequiredActionProviderSimpleRepresentation();
         requiredAction.setId("6789");
@@ -735,7 +732,8 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
             assertThat(e.getResponse().getStatus(), is(409));
         }
 
-        getCleanup().addRequiredAction(requiredAction.getProviderId());
+        String webAuthnPasswordlessRegisterAlias = requiredAction.getProviderId();
+        managedRealm.cleanup().add(r -> r.flows().removeRequiredAction(webAuthnPasswordlessRegisterAlias));
 
         List<AccountCredentialResource.CredentialContainer> credentials = getCredentials();
 
@@ -862,7 +860,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         user.removeCredential(credential.getId());
 
         events.poll();
-        Assertions.assertNull(events.poll());
+        assertNull(events.poll());
     }
 
     @Test
@@ -898,19 +896,21 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         }
 
         events.poll();
-        EventAssertion.assertSuccess(events.poll()).type(EventType.REMOVE_TOTP)
+        EventAssertion.assertSuccess(events.poll())
+                .type(EventType.REMOVE_TOTP)
                 .clientId("account")
                 .userId(user.toRepresentation().getId())
                 .details(Details.SELECTED_CREDENTIAL_ID, otpCredential.getId())
                 .details(Details.CREDENTIAL_USER_LABEL, "totpCredentialUserLabel")
                 .details(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE);
-        EventAssertion.assertSuccess(events.poll()).type(EventType.REMOVE_CREDENTIAL)
+        EventAssertion.assertSuccess(events.poll())
+                .type(EventType.REMOVE_CREDENTIAL)
                 .clientId("account")
                 .userId(user.toRepresentation().getId())
                 .details(Details.SELECTED_CREDENTIAL_ID, otpCredential.getId())
                 .details(Details.CREDENTIAL_USER_LABEL, "totpCredentialUserLabel")
                 .details(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE);
-        Assertions.assertNull(events.poll());
+        assertNull(events.poll());
     }
 
     // Send REST request to get all credential containers and credentials of current user
@@ -1104,7 +1104,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         params.put("newName", newFlowAlias);
         Response response = managedRealm.admin().flows().copy("browser", params);
         response.close();
-        String flowId = AbstractAuthenticationTest.findFlowByAlias(newFlowAlias, managedRealm.admin().flows().getFlows()).getId();
+        String flowId = findFlowByAlias(newFlowAlias, managedRealm.admin().flows().getFlows()).getId();
 
         AuthenticationExecutionRepresentation execution = new AuthenticationExecutionRepresentation();
         execution.setParentFlow(flowId);
@@ -1123,7 +1123,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
 
     private void removeWebAuthnFlow(String flowToDeleteAlias) {
         List<AuthenticationFlowRepresentation> flows = managedRealm.admin().flows().getFlows();
-        AuthenticationFlowRepresentation flowRepresentation = AbstractAuthenticationTest.findFlowByAlias(flowToDeleteAlias, flows);
+        AuthenticationFlowRepresentation flowRepresentation = findFlowByAlias(flowToDeleteAlias, flows);
         managedRealm.admin().flows().deleteFlow(flowRepresentation.getId());
     }
 
@@ -1170,14 +1170,13 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         assertEquals(204, status);
         assertEquals(0, user.getUserSessions().size());
 
-        userSessions.forEach(session -> {
-            EventAssertion.assertSuccess(events.poll()).type(EventType.LOGOUT)
-                .userId(user.toRepresentation().getId())
+        userSessions.forEach(session -> EventAssertion.assertSuccess(events.poll())
+                .type(EventType.LOGOUT)
                 .clientId("account")
-                .sessionId(session.getId());
-        });
+                .userId(user.toRepresentation().getId())
+                .sessionId(session.getId()));
 
-        Assertions.assertNull(events.poll());
+        assertNull(events.poll());
     }
 
     @Test
@@ -1205,14 +1204,13 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
 
         userSessions = userSessions.stream().filter(session -> !session.getId().equals(token.getSessionId())).toList();
 
-        userSessions.forEach(session -> {
-            EventAssertion.assertSuccess(events.poll()).type(EventType.LOGOUT)
-                .userId(user.toRepresentation().getId())
+        userSessions.forEach(session -> EventAssertion.assertSuccess(events.poll())
+                .type(EventType.LOGOUT)
                 .clientId("account")
-                .sessionId(session.getId());
-        });
+                .userId(user.toRepresentation().getId())
+                .sessionId(session.getId()));
 
-        Assertions.assertNull(events.poll());
+        assertNull(events.poll());
     }
 
 
@@ -1238,12 +1236,13 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         assertEquals(204, status);
         assertEquals(1, user.getUserSessions().size());
 
-        EventAssertion.assertSuccess(events.poll()).type(EventType.LOGOUT)
-            .userId(user.toRepresentation().getId())
+        EventAssertion.assertSuccess(events.poll())
+            .type(EventType.LOGOUT)
             .clientId("account")
+            .userId(user.toRepresentation().getId())
             .sessionId(token.getSessionId());
 
-        Assertions.assertNull(events.poll());
+        assertNull(events.poll());
     }
 
     @Test
@@ -1253,26 +1252,29 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         UserResource user = AdminApiUtil.findUserByUsernameId(managedRealm.admin(), username);
         // first direct access grant login
         String firstToken = new TokenUtil(username, password).getToken();
-        EventAssertion.assertSuccess(events.poll()).type(EventType.LOGIN)
+        EventAssertion.assertSuccess(events.poll())
+            .type(EventType.LOGIN)
             .clientId("direct-grant")
             .userId(user.toRepresentation().getId())
             .sessionId(new JWSInput(firstToken).readJsonContent(AccessToken.class).getSessionId())
-            .hasScope("openid profile email");
+            .hasScope("openid email profile");
 
         // second direct access grant login
         String secondToken = new TokenUtil(username, password).getToken();
-        EventAssertion.assertSuccess(events.poll()).type(EventType.LOGIN)
+        EventAssertion.assertSuccess(events.poll())
+            .type(EventType.LOGIN)
             .clientId("direct-grant")
             .userId(user.toRepresentation().getId())
             .sessionId(new JWSInput(secondToken).readJsonContent(AccessToken.class).getSessionId())
-            .hasScope("openid profile email");
+            .hasScope("openid email profile");
 
         // Login with scope 'offline_access'
         oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
         oauth.client("offline-client", "secret1");
         AccessTokenResponse offlineTokenResponse = oauth.doPasswordGrantRequest(username, password);
         assertNull(offlineTokenResponse.getErrorDescription());
-        EventAssertion.assertSuccess(events.poll()).type(EventType.LOGIN)
+        EventAssertion.assertSuccess(events.poll())
+            .type(EventType.LOGIN)
             .clientId("offline-client")
             .userId(user.toRepresentation().getId())
             .sessionId(offlineTokenResponse.getSessionState())
@@ -1294,12 +1296,11 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
             .acceptJson().auth(firstToken).asStatus();
         assertEquals(204, status);
 
-        allSessions.forEach(session -> {
-            EventAssertion.assertSuccess(events.poll()).type(EventType.LOGOUT)
-                .userId(user.toRepresentation().getId())
+        allSessions.forEach(session -> EventAssertion.assertSuccess(events.poll())
+                .type(EventType.LOGOUT)
                 .clientId("account")
-                .sessionId(session.getId());
-        });
+                .userId(user.toRepresentation().getId())
+                .sessionId(session.getId()));
     }
 
     @Test
@@ -1330,12 +1331,13 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
             .acceptJson().auth(firstToken).asStatus();
         assertEquals(204, status);
 
-        EventAssertion.assertSuccess(events.poll()).type(EventType.LOGOUT)
-            .userId(user.toRepresentation().getId())
+        EventAssertion.assertSuccess(events.poll())
+            .type(EventType.LOGOUT)
             .clientId("account")
+            .userId(user.toRepresentation().getId())
             .sessionId(offlineTokenResponse.getSessionState());
 
-        Assertions.assertNull(events.poll());
+        assertNull(events.poll());
     }
 
 
@@ -1559,12 +1561,13 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
 
         events.poll();
         String expectedScopeDetails = requestedScopes.stream().map(cs->cs.getName()).collect(Collectors.joining(" "));
-        EventAssertion.assertSuccess(events.poll()).type(EventType.GRANT_CONSENT)
-                .userId(getUser().getId())
+        EventAssertion.assertSuccess(events.poll())
+                .type(EventType.GRANT_CONSENT)
                 .clientId("account")
-                .details(Details.GRANTED_CLIENT,appId)
-                .hasScope(expectedScopeDetails);
-        Assertions.assertNull(events.poll());
+                .userId(getUser().getId())
+                .details(Details.GRANTED_CLIENT, appId)
+                .details(Details.SCOPE, expectedScopeDetails);
+        assertNull(events.poll());
 
         //cleanup
         SimpleHttpDefault.doDelete(getAccountUrl("applications/" + appId + "/consent"), httpClient)
@@ -1609,12 +1612,13 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
 
         events.poll();
         events.poll();
-        EventAssertion.assertSuccess(events.poll()).type(EventType.UPDATE_CONSENT)
-                .userId(getUser().getId())
+        EventAssertion.assertSuccess(events.poll())
+                .type(EventType.UPDATE_CONSENT)
                 .clientId("account")
-                .details(Details.GRANTED_CLIENT,appId)
-                .hasScope(requestedScopes.get(0).getName());
-        Assertions.assertNull(events.poll());
+                .userId(getUser().getId())
+                .details(Details.GRANTED_CLIENT, appId)
+                .details(Details.SCOPE, requestedScopes.get(0).getName());
+        assertNull(events.poll());
 
         //Cleanup
         SimpleHttpDefault.doDelete(getAccountUrl("applications/" + appId + "/consent"), httpClient)
@@ -1679,12 +1683,13 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         assertEquals(requestedScopes.get(0).getId(), consentRepresentation.getGrantedScopes().get(0).getId());
 
         events.poll();
-        EventAssertion.assertSuccess(events.poll()).type(EventType.GRANT_CONSENT)
-                .userId(getUser().getId())
+        EventAssertion.assertSuccess(events.poll())
+                .type(EventType.GRANT_CONSENT)
                 .clientId("account")
-                .details(Details.GRANTED_CLIENT,appId)
-                .hasScope(requestedScopes.get(0).getName());
-        Assertions.assertNull(events.poll());
+                .userId(getUser().getId())
+                .details(Details.GRANTED_CLIENT, appId)
+                .details(Details.SCOPE, requestedScopes.get(0).getName());
+        assertNull(events.poll());
 
         //Cleanup
         SimpleHttpDefault.doDelete(getAccountUrl("applications/" + appId + "/consent"), httpClient)
@@ -1730,12 +1735,13 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
 
         events.poll();
         events.poll();
-        EventAssertion.assertSuccess(events.poll()).type(EventType.UPDATE_CONSENT)
-                .userId(getUser().getId())
+        EventAssertion.assertSuccess(events.poll())
+                .type(EventType.UPDATE_CONSENT)
                 .clientId("account")
-                .details(Details.GRANTED_CLIENT,appId)
-                .hasScope(requestedScopes.get(0).getName());
-        Assertions.assertNull(events.poll());
+                .userId(getUser().getId())
+                .details(Details.GRANTED_CLIENT, appId)
+                .details(Details.SCOPE, requestedScopes.get(0).getName());
+        assertNull(events.poll());
 
         //Cleanup
         SimpleHttpDefault.doDelete(getAccountUrl("applications/" + appId + "/consent"), httpClient)
@@ -1877,11 +1883,12 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
 
         events.poll();
         events.poll();
-        EventAssertion.assertSuccess(events.poll()).type(EventType.REVOKE_GRANT)
-                .userId(getUser().getId())
+        EventAssertion.assertSuccess(events.poll())
+                .type(EventType.REVOKE_GRANT)
                 .clientId("account")
-                .details(Details.REVOKED_CLIENT,appId);
-        Assertions.assertNull(events.poll());
+                .userId(getUser().getId())
+                .details(Details.REVOKED_CLIENT, appId);
+        assertNull(events.poll());
 
         try (SimpleHttpResponse response = SimpleHttpDefault
                 .doDelete(getAccountUrl("applications/" + appId + "/consent"), httpClient)
@@ -2016,13 +2023,14 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
     }
 
     @Test
+    @Disabled("Requires custom-account-provider theme + CustomAccountResourceProviderFactory; not yet ported to the new test framework")
     public void testCustomAccountResourceTheme() throws Exception {
         String accountTheme = "";
         try {
-            RealmRepresentation realmRep = adminClient.realm("test").toRepresentation();
+            RealmRepresentation realmRep = managedRealm.admin().toRepresentation();
             accountTheme = realmRep.getAccountTheme();
             realmRep.setAccountTheme("custom-account-provider");
-            adminClient.realm("test").update(realmRep);
+            managedRealm.admin().update(realmRep);
 
             try (SimpleHttpResponse response = SimpleHttpDefault.doGet(getAccountUrl(null), httpClient)
                        .header("Accept", "text/html")
@@ -2055,11 +2063,10 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
 
     @Test
     public void testEmailWhenUpdateEmailEnabled() throws Exception {
-        reconnectAdminClient();
         RealmRepresentation realm = managedRealm.admin().toRepresentation();
         Boolean registrationEmailAsUsername = realm.isRegistrationEmailAsUsername();
         Boolean editUsernameAllowed = realm.isEditUsernameAllowed();
-        AdminApiUtil.enableRequiredAction(managedRealm.admin(), RequiredAction.UPDATE_EMAIL, true);
+        setRequiredActionEnabled(managedRealm.admin(), RequiredAction.UPDATE_EMAIL, true);
 
         try {
             realm.setRegistrationEmailAsUsername(true);
@@ -2076,13 +2083,17 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
             assertNotNull(user.getEmail());
             assertUserProfileAttributeMetadata(user, "email", "${email}", true, true);
         } finally {
-            AdminApiUtil.enableRequiredAction(managedRealm.admin(), RequiredAction.UPDATE_EMAIL, false);
+            setRequiredActionEnabled(managedRealm.admin(), RequiredAction.UPDATE_EMAIL, false);
             realm.setRegistrationEmailAsUsername(registrationEmailAsUsername);
             realm.setEditUsernameAllowed(editUsernameAllowed);
             managedRealm.admin().update(realm);
         }
     }
 
+    /**
+     * Verifies the account REST endpoint honors both client and realm <code>notBefore</code> when validating
+     * an access token. Ported from the upstream legacy testsuite fix for issue #49118.
+     */
     @Test
     public void testAccountAccessWithRealmNotBeforeAndClientNotBefore() throws IOException {
         String accessToken = tokenUtil.getToken();
@@ -2095,8 +2106,11 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
 
         int currentTime = (int) (System.currentTimeMillis() / 1000);
 
-        org.keycloak.representations.idm.ClientRepresentation clientRep = AdminApiUtil.findClientByClientId(adminClient.realm("test"), "direct-grant").toRepresentation();
+        org.keycloak.representations.idm.ClientRepresentation clientRep = AdminApiUtil.findClientByClientId(managedRealm.admin(), "direct-grant").toRepresentation();
         int originalClientNotBefore = clientRep.getNotBefore() != null ? clientRep.getNotBefore() : 0;
+
+        RealmRepresentation realmRep = managedRealm.admin().toRepresentation();
+        Integer originalRealmNotBefore = realmRep.getNotBefore();
 
         try {
             clientRep.setNotBefore(currentTime + 100);
@@ -2118,13 +2132,18 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
             assertEquals(200, status);
 
             // Set realm notBefore to future
-            try (RealmAttributeUpdater rau = new RealmAttributeUpdater(managedRealm.admin()).setNotBefore(currentTime + 100).update()) {
+            try {
+                realmRep.setNotBefore(currentTime + 100);
+                managedRealm.admin().update(realmRep);
 
                 status = SimpleHttpDefault.doGet(getAccountUrl(null), httpClient)
                         .auth(accessToken)
                         .acceptJson()
                         .asStatus();
                 assertEquals(401, status);
+            } finally {
+                realmRep.setNotBefore(originalRealmNotBefore);
+                managedRealm.admin().update(realmRep);
             }
 
             status = SimpleHttpDefault.doGet(getAccountUrl(null), httpClient)
@@ -2141,5 +2160,9 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
 
     protected void setUserProfileConfiguration(String configuration) {
         UserProfileUtil.setUserProfileConfiguration(managedRealm.admin(), configuration);
+    }
+
+    private static AuthenticationFlowRepresentation findFlowByAlias(String alias, List<AuthenticationFlowRepresentation> flows) {
+        return flows.stream().filter(f -> alias.equals(f.getAlias())).findAny().orElse(null);
     }
 }

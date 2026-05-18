@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.testsuite.account;
+package org.keycloak.tests.account;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -38,18 +38,17 @@ import org.keycloak.representations.idm.UserProfileMetadata;
 import org.keycloak.representations.userprofile.config.UPAttribute;
 import org.keycloak.representations.userprofile.config.UPAttributePermissions;
 import org.keycloak.representations.userprofile.config.UPConfig;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.events.EventAssertion;
-import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.broker.util.SimpleHttpDefault;
 import org.keycloak.testsuite.util.userprofile.UserProfileUtil;
 import org.keycloak.userprofile.UserProfileContext;
 
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-import static org.keycloak.testsuite.account.AccountRestServiceTest.assertUserProfileAttributeMetadata;
-import static org.keycloak.testsuite.account.AccountRestServiceTest.getUserProfileAttributeMetadata;
+import static org.keycloak.tests.account.AccountRestServiceTest.assertUserProfileAttributeMetadata;
+import static org.keycloak.tests.account.AccountRestServiceTest.getUserProfileAttributeMetadata;
 import static org.keycloak.testsuite.util.userprofile.UserProfileUtil.PERMISSIONS_ADMIN_EDITABLE;
 import static org.keycloak.testsuite.util.userprofile.UserProfileUtil.PERMISSIONS_ADMIN_ONLY;
 import static org.keycloak.testsuite.util.userprofile.UserProfileUtil.PERMISSIONS_ALL;
@@ -68,14 +67,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * Test account rest service with custom user profile configurations
  *
  * @author Vlastimil Elias <velias@redhat.com>
- *
  */
+@KeycloakIntegrationTest
 public class AccountRestServiceWithUserProfileTest extends AbstractRestServiceTest {
-    
-    @Override
-    @Before
+
+    @BeforeEach
     public void before() {
-        super.before();
         setUserProfileConfiguration(null);
     }
 
@@ -115,34 +112,34 @@ public class AccountRestServiceWithUserProfileTest extends AbstractRestServiceTe
     @Test
     public void testEditUsernameAllowed() throws IOException {
         setUserProfileConfiguration(UP_CONFIG_FOR_METADATA);
-        
+
         UserRepresentation user = getUser();
         assertNotNull(user.getUserProfileMetadata());
-        
+
         assertUserProfileAttributeMetadata(user, "username", "${username}", true, false);
         assertUserProfileAttributeMetadata(user, "email", "${email}", true, false);
-        
+
         UserProfileAttributeMetadata uam = assertUserProfileAttributeMetadata(user, "firstName", "${profile.firstName}", true, false);
         assertNull(uam.getAnnotations());
         Map<String, Object> vc = assertValidatorExists(uam, "length");
         assertEquals(255, vc.get("max"));
-        
+
         uam = assertUserProfileAttributeMetadata(user, "lastName", "Last name", true, false);
         assertNotNull(uam.getAnnotations());
         assertEquals(3, uam.getAnnotations().size());
         assertAnnotationValue(uam, "formHintKey", "userEmailFormFieldHint");
         assertAnnotationValue(uam, "anotherKey", 10);
-        
+
         assertUserProfileAttributeMetadata(user, "attr_with_scope_selector", "attr_with_scope_selector", false, false);
-        
+
         assertUserProfileAttributeMetadata(user, "attr_required", "attr_required", true, false);
         assertUserProfileAttributeMetadata(user, "attr_required_by_role", "attr_required_by_role", true, false);
-        
+
         assertUserProfileAttributeMetadata(user, "attr_required_by_scope", "attr_required_by_scope", true, false);
-        
+
         assertUserProfileAttributeMetadata(user, "attr_not_required_due_to_role", "attr_not_required_due_to_role", false, false);
         assertUserProfileAttributeMetadata(user, "attr_readonly", "attr_readonly", false, true);
-        
+
         assertNull(getUserProfileAttributeMetadata(user, "attr_no_permission"));
     }
 
@@ -150,9 +147,9 @@ public class AccountRestServiceWithUserProfileTest extends AbstractRestServiceTe
     public void testGetUserProfileMetadata_NoAccessToNameFields() throws IOException {
 
         try {
-            RealmRepresentation realmRep = adminClient.realm("test").toRepresentation();
+            RealmRepresentation realmRep = managedRealm.admin().toRepresentation();
             realmRep.setEditUsernameAllowed(false);
-            adminClient.realm("test").update(realmRep);
+            managedRealm.admin().update(realmRep);
 
             setUserProfileConfiguration(UP_CONFIG_NO_ACCESS_TO_NAME_FIELDS);
 
@@ -177,9 +174,9 @@ public class AccountRestServiceWithUserProfileTest extends AbstractRestServiceTe
 
     @Test
     public void testUpdateEmailLink() throws Exception {
-        RealmResource realm = adminClient.realm("test");
+        RealmResource realm = managedRealm.admin();
         RealmRepresentation realmRep = realm.toRepresentation();
-        AdminApiUtil.enableRequiredAction(realm, RequiredAction.UPDATE_EMAIL, true);
+        setRequiredActionEnabled(realm, RequiredAction.UPDATE_EMAIL, true);
 
         try {
             realmRep.setEditUsernameAllowed(false);
@@ -197,7 +194,7 @@ public class AccountRestServiceWithUserProfileTest extends AbstractRestServiceTe
             assertNotNull(user.getUserProfileMetadata());
             assertThat(user.getUserProfileMetadata().getAttributeMetadata(UserModel.EMAIL).getAnnotations().get("kc.required.action.supported"), is(nullValue()));
         } finally {
-            AdminApiUtil.enableRequiredAction(realm, RequiredAction.UPDATE_EMAIL, false);
+            setRequiredActionEnabled(realm, RequiredAction.UPDATE_EMAIL, false);
             realmRep.setEditUsernameAllowed(true);
             realm.update(realmRep);
         }
@@ -207,9 +204,9 @@ public class AccountRestServiceWithUserProfileTest extends AbstractRestServiceTe
     public void testGetUserProfileMetadata_RoAccessToNameFields() throws IOException {
 
         try {
-            RealmRepresentation realmRep = adminClient.realm("test").toRepresentation();
+            RealmRepresentation realmRep = managedRealm.admin().toRepresentation();
             realmRep.setEditUsernameAllowed(false);
-            adminClient.realm("test").update(realmRep);
+            managedRealm.admin().update(realmRep);
 
             setUserProfileConfiguration(UP_CONFIG_RO_ACCESS_TO_NAME_FIELDS);
 
@@ -236,9 +233,9 @@ public class AccountRestServiceWithUserProfileTest extends AbstractRestServiceTe
     public void testGetUserProfileMetadata_RoAccessToUsernameAndEmail() throws IOException {
 
         try {
-            RealmRepresentation realmRep = adminClient.realm("test").toRepresentation();
+            RealmRepresentation realmRep = managedRealm.admin().toRepresentation();
             realmRep.setEditUsernameAllowed(false);
-            adminClient.realm("test").update(realmRep);
+            managedRealm.admin().update(realmRep);
 
             setUserProfileConfiguration(UP_CONFIG_RO_USERNAME_AND_EMAIL);
 
@@ -260,41 +257,41 @@ public class AccountRestServiceWithUserProfileTest extends AbstractRestServiceTe
 
     @Test
     public void testEditUsernameDisallowed() throws IOException {
-        
+
         try {
-            RealmRepresentation realmRep = adminClient.realm("test").toRepresentation();
+            RealmRepresentation realmRep = managedRealm.admin().toRepresentation();
             realmRep.setEditUsernameAllowed(false);
-            adminClient.realm("test").update(realmRep);
+            managedRealm.admin().update(realmRep);
 
             setUserProfileConfiguration(UP_CONFIG_FOR_METADATA);
-            
+
             UserRepresentation user = getUser();
             assertNotNull(user.getUserProfileMetadata());
-            
+
             assertUserProfileAttributeMetadata(user, "username", "${username}", true, true);
             assertUserProfileAttributeMetadata(user, "email", "${email}", true, false);
-            
+
             UserProfileAttributeMetadata uam = assertUserProfileAttributeMetadata(user, "firstName", "${profile.firstName}", true, false);
             assertNull(uam.getAnnotations());
             Map<String, Object> vc = assertValidatorExists(uam, "length");
             assertEquals(255, vc.get("max"));
-            
+
             uam = assertUserProfileAttributeMetadata(user, "lastName", "Last name", true, false);
             assertNotNull(uam.getAnnotations());
             assertEquals(3, uam.getAnnotations().size());
             assertAnnotationValue(uam, "formHintKey", "userEmailFormFieldHint");
             assertAnnotationValue(uam, "anotherKey", 10);
-            
+
             assertUserProfileAttributeMetadata(user, "attr_with_scope_selector", "attr_with_scope_selector", false, false);
-            
+
             assertUserProfileAttributeMetadata(user, "attr_required", "attr_required", true, false);
             assertUserProfileAttributeMetadata(user, "attr_required_by_role", "attr_required_by_role", true, false);
-            
+
             assertUserProfileAttributeMetadata(user, "attr_required_by_scope", "attr_required_by_scope", true, false);
-            
+
             assertUserProfileAttributeMetadata(user, "attr_not_required_due_to_role", "attr_not_required_due_to_role", false, false);
             assertUserProfileAttributeMetadata(user, "attr_readonly", "attr_readonly", false, true);
-            
+
             assertNull(getUserProfileAttributeMetadata(user, "attr_no_permission"));
         } finally {
             RealmRepresentation realmRep = managedRealm.admin().toRepresentation();
@@ -303,28 +300,28 @@ public class AccountRestServiceWithUserProfileTest extends AbstractRestServiceTe
             managedRealm.admin().update(realmRep);
         }
     }
-    
+
     protected void assertAnnotationValue(UserProfileAttributeMetadata uam, String key, Object value) {
         assertNotNull(uam.getAnnotations(), "Missing annotations for attribute " + uam.getName());
-        assertEquals(value, uam.getAnnotations().get(key), "Unexpexted value of the "+key+" annotation for attribute " + uam.getName());
+        assertEquals(value, uam.getAnnotations().get(key), "Unexpexted value of the " + key + " annotation for attribute " + uam.getName());
     }
 
     protected Map<String, Object> assertValidatorExists(UserProfileAttributeMetadata uam, String validatorId) {
         assertNotNull(uam.getValidators(), "Missing validators for attribute " + uam.getName());
-        assertTrue(uam.getValidators().containsKey(validatorId), "Missing validtor "+validatorId+" for attribute " + uam.getName());
+        assertTrue(uam.getValidators().containsKey(validatorId), "Missing validtor " + validatorId + " for attribute " + uam.getName());
         return uam.getValidators().get(validatorId);
     }
-    
+
     @Test
     public void testUpdateProfileEventWithAdditionalAttributesAuditing() throws IOException {
-        
+
         setUserProfileConfiguration("{\"attributes\": ["
                 + "{\"name\": \"firstName\"," + PERMISSIONS_ALL + ", \"required\": {}},"
                 + "{\"name\": \"lastName\"," + PERMISSIONS_ALL + ", \"required\": {}},"
                 + "{\"name\": \"attr1\"," + PERMISSIONS_ALL + "},"
                 + "{\"name\": \"attr2\"," + PERMISSIONS_ALL + "}"
                 + "]}");
-        
+
         UserRepresentation user = getUser();
         String originalUsername = user.getUsername();
         String originalFirstName = user.getFirstName();
@@ -334,10 +331,10 @@ public class AccountRestServiceWithUserProfileTest extends AbstractRestServiceTe
         Map<String, List<String>> originalAttributes = new HashMap<>(user.getAttributes());
 
         try {
-            RealmRepresentation realmRep = adminClient.realm("test").toRepresentation();
+            RealmRepresentation realmRep = managedRealm.admin().toRepresentation();
 
             realmRep.setRegistrationEmailAsUsername(false);
-            adminClient.realm("test").update(realmRep);
+            managedRealm.admin().update(realmRep);
 
             user.setEmail("bobby@localhost");
             user.setFirstName("Homer");
@@ -348,8 +345,8 @@ public class AccountRestServiceWithUserProfileTest extends AbstractRestServiceTe
             events.clear();
             user = updateAndGet(user);
 
-            //skip login to the REST API event
-            EventAssertion.assertSuccess(events.poll()).type(EventType.UPDATE_PROFILE)
+            EventAssertion.assertSuccess(events.poll())
+                .type(EventType.UPDATE_PROFILE)
                 .userId(user.getId())
                 .clientId("account")
                 .details(Details.CONTEXT, UserProfileContext.ACCOUNT.name())
@@ -359,13 +356,13 @@ public class AccountRestServiceWithUserProfileTest extends AbstractRestServiceTe
                 .details(Details.PREVIOUS_LAST_NAME, originalLastName)
                 .details(Details.UPDATED_FIRST_NAME, "Homer")
                 .details(Details.UPDATED_LAST_NAME, "Simpsons")
-                .details(Details.PREF_UPDATED+"attr2", "val22");
-            Assertions.assertNull(events.poll());
-            
+                .details(Details.PREF_UPDATED + "attr2", "val22");
+            assertNull(events.poll());
+
         } finally {
-            RealmRepresentation realmRep = adminClient.realm("test").toRepresentation();
+            RealmRepresentation realmRep = managedRealm.admin().toRepresentation();
             realmRep.setEditUsernameAllowed(true);
-            adminClient.realm("test").update(realmRep);
+            managedRealm.admin().update(realmRep);
 
             user.setUsername(originalUsername);
             user.setFirstName(originalFirstName);
@@ -373,7 +370,6 @@ public class AccountRestServiceWithUserProfileTest extends AbstractRestServiceTe
             user.setEmail(originalEmail);
             user.setAttributes(originalAttributes);
             SimpleHttpResponse response = SimpleHttpDefault.doPost(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).json(user).asResponse();
-            System.out.println(response.asString());
             assertEquals(204, response.getStatus());
         }
     }
@@ -440,5 +436,4 @@ public class AccountRestServiceWithUserProfileTest extends AbstractRestServiceTe
         }
         return getUser();
     }
-
 }

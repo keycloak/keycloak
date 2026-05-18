@@ -40,8 +40,8 @@ import org.keycloak.services.clientpolicy.executor.ClientSecretRotationExecutor;
 import org.keycloak.services.clientpolicy.executor.ClientSecretRotationExecutorFactory;
 import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testframework.realm.UserBuilder;
+import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.account.AbstractRestServiceTest;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientPoliciesBuilder;
@@ -80,7 +80,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  * @author <a href="mailto:masales@redhat.com">Marcelo Sales</a>
  */
 @EnableFeature(value = Feature.CLIENT_SECRET_ROTATION)
-public class ClientSecretRotationTest extends AbstractRestServiceTest {
+public class ClientSecretRotationTest extends AbstractKeycloakTest {
 
     private static final String OIDC = "openid-connect";
     private static final String DEFAULT_CLIENT_ID = KeycloakModelUtils.generateId();

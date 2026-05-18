@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.testsuite.account;
+package org.keycloak.tests.account;
 
 import java.io.IOException;
 import java.util.List;
@@ -23,77 +23,89 @@ import java.util.stream.Collectors;
 import org.keycloak.representations.account.ClientRepresentation;
 import org.keycloak.representations.account.DeviceRepresentation;
 import org.keycloak.representations.account.SessionRepresentation;
-import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.ClientBuilder;
+import org.keycloak.testframework.ui.annotations.InjectWebDriver;
+import org.keycloak.testframework.ui.webdriver.BrowserType;
+import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 import org.keycloak.testsuite.broker.util.SimpleHttpDefault;
-import org.keycloak.testsuite.util.ContainerAssume;
-import org.keycloak.testsuite.util.SecondBrowser;
-import org.keycloak.testsuite.util.ThirdBrowser;
-import org.keycloak.testsuite.util.TokenUtil;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
-import org.keycloak.testsuite.util.oauth.OAuthClient;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.hamcrest.Matchers;
-import org.jboss.arquillian.drone.api.annotation.Drone;
-import org.jboss.arquillian.drone.webdriver.htmlunit.DroneHtmlUnitDriver;
-import org.junit.Test;
+import org.htmlunit.WebClient;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.htmlunit.HtmlUnitDriver;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.anyOf;
 import static org.hamcrest.Matchers.equalTo;
-import static org.junit.Assume.assumeTrue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
+@KeycloakIntegrationTest
 public class SessionRestServiceTest extends AbstractRestServiceTest {
 
-    @Drone
-    @SecondBrowser
-    protected WebDriver secondBrowser;
+    private static final String APP_REDIRECT_URI = "http://localhost:8500/app/auth";
 
-    @Drone
-    @ThirdBrowser
-    protected WebDriver thirdBrowser;
+    @InjectWebDriver
+    protected ManagedWebDriver driver;
 
-    @Override
-    public void configureTestRealm(RealmRepresentation testRealm) {
-        super.configureTestRealm(testRealm);
+    @InjectWebDriver(ref = "secondBrowser")
+    protected ManagedWebDriver secondBrowser;
 
-        testRealm.getClients().add(ClientBuilder.create()
-                .clientId("public-client-0")
-                .name("Public Client 0")
-                .baseUrl("http://client0.example.com")
-                .redirectUris(OAuthClient.APP_ROOT + "/auth")
-                .publicClient().build());
+    @InjectWebDriver(ref = "thirdBrowser")
+    protected ManagedWebDriver thirdBrowser;
 
-        testRealm.getClients().add(ClientBuilder.create()
-                .clientId("public-client-1")
-                .name("Public Client 1")
-                .baseUrl("http://client1.example.com")
-                .redirectUris(OAuthClient.APP_ROOT + "/auth")
-                .publicClient().build());
+    @BeforeEach
+    public void setupExtraClients() {
+        createPublicClientIfMissing("public-client-0", "Public Client 0", "http://client0.example.com");
+        createPublicClientIfMissing("public-client-1", "Public Client 1", "http://client1.example.com");
+        createConfidentialClientIfMissing("confidential-client-0", "Confidential Client 0");
+        createConfidentialClientIfMissing("confidential-client-1", "Confidential Client 1");
 
-        testRealm.getClients().add(ClientBuilder.create()
-                .clientId("confidential-client-0")
-                .name("Confidential Client 0")
+        // OAuthClient is shared per-test; default to the primary driver so individual tests can swap.
+        oauth.driver(driver.driver());
+    }
+
+    private void createPublicClientIfMissing(String clientId, String name, String baseUrl) {
+        if (!managedRealm.admin().clients().findByClientId(clientId).isEmpty()) {
+            return;
+        }
+        org.keycloak.representations.idm.ClientRepresentation rep = ClientBuilder.create()
+                .clientId(clientId)
+                .name(name)
+                .baseUrl(baseUrl)
+                .redirectUris(APP_REDIRECT_URI)
+                .publicClient().build();
+        try (jakarta.ws.rs.core.Response r = managedRealm.admin().clients().create(rep)) {
+            String createdId = org.keycloak.testframework.util.ApiUtil.getCreatedId(r);
+            managedRealm.cleanup().add(realm -> realm.clients().get(createdId).remove());
+        }
+    }
+
+    private void createConfidentialClientIfMissing(String clientId, String name) {
+        if (!managedRealm.admin().clients().findByClientId(clientId).isEmpty()) {
+            return;
+        }
+        org.keycloak.representations.idm.ClientRepresentation rep = ClientBuilder.create()
+                .clientId(clientId)
+                .name(name)
                 .secret("secret")
                 .serviceAccountsEnabled()
                 .directAccessGrantsEnabled()
-                .redirectUris(OAuthClient.APP_ROOT + "/auth").build());
-
-        testRealm.getClients().add(ClientBuilder.create()
-                .clientId("confidential-client-1")
-                .name("Confidential Client 1")
-                .secret("secret")
-                .serviceAccountsEnabled()
-                .directAccessGrantsEnabled()
-                .redirectUris(OAuthClient.APP_ROOT + "/auth").build());
+                .redirectUris(APP_REDIRECT_URI).build();
+        try (jakarta.ws.rs.core.Response r = managedRealm.admin().clients().create(rep)) {
+            String createdId = org.keycloak.testframework.util.ApiUtil.getCreatedId(r);
+            managedRealm.cleanup().add(realm -> realm.clients().get(createdId).remove());
+        }
     }
 
     @Test
@@ -126,7 +138,7 @@ public class SessionRestServiceTest extends AbstractRestServiceTest {
 
     @Test
     public void testGetSessions() throws Exception {
-        oauth.setDriver(secondBrowser);
+        oauth.driver(secondBrowser.driver());
         codeGrant("public-client-0");
 
         List<SessionRepresentation> sessions = getSessions();
@@ -145,8 +157,7 @@ public class SessionRestServiceTest extends AbstractRestServiceTest {
 
     @Test
     public void testGetDevicesResponse() throws Exception {
-        assumeTrue("Browser must be htmlunit. Otherwise we are not able to set desired BrowserHeaders",
-                System.getProperty("browser").equals("htmlUnit"));
+        assumeHtmlUnit();
         setBrowserHeader("User-Agent", "Mozilla/5.0 (Windows NT 10.0) Gecko/20100101 Firefox/15.0.1");
         AccessTokenResponse tokenResponse = codeGrant("public-client-0");
         joinSsoSession("public-client-1");
@@ -178,9 +189,7 @@ public class SessionRestServiceTest extends AbstractRestServiceTest {
 
     @Test
     public void testGetDevicesSessions() throws Exception {
-        ContainerAssume.assumeAuthServerUndertow();
-        assumeTrue("Browser must be htmlunit. Otherwise we are not able to set desired BrowserHeaders",
-                System.getProperty("browser").equals("htmlUnit"));
+        assumeHtmlUnit();
 
         WebDriver firstBrowser = oauth.getDriver();
 
@@ -192,19 +201,18 @@ public class SessionRestServiceTest extends AbstractRestServiceTest {
         List<DeviceRepresentation> fedoraDevices = devices.stream()
                 .filter(deviceRepresentation -> "Fedora".equals(deviceRepresentation.getOs())).collect(Collectors.toList());
         assertEquals(1, fedoraDevices.size(), "Should have a single Fedora device");
-        fedoraDevices.stream().forEach(device -> {
-            List<SessionRepresentation> sessions = device.getSessions();
+        fedoraDevices.stream().forEach(d -> {
+            List<SessionRepresentation> sessions = d.getSessions();
             assertEquals(1, sessions.size());
             assertThat(sessions, Matchers.hasItem(Matchers.hasProperty("browser", Matchers.is("Firefox/15.0.1"))));
         });
 
         // second browser authenticates from Windows
-        oauth.setDriver(secondBrowser);
+        oauth.driver(secondBrowser.driver());
         setBrowserHeader("User-Agent",
                 "Mozilla/5.0 (Windows NT 10.0) AppleWebKit/537.36 (KHTML, like Gecko) Gecko/20100101 Firefox/15.0.1");
         AccessTokenResponse tokenResponse2 = codeGrant("public-client-0");
         devices = getDevicesOtherThanOther();
-        // should have two devices
         assertEquals(2, devices.size(), "Should have two devices");
         fedoraDevices = devices.stream()
                 .filter(deviceRepresentation -> "Fedora".equals(deviceRepresentation.getOs())).collect(Collectors.toList());
@@ -212,28 +220,28 @@ public class SessionRestServiceTest extends AbstractRestServiceTest {
         List<DeviceRepresentation> windowsDevices = devices.stream()
                 .filter(deviceRepresentation -> "Windows".equals(deviceRepresentation.getOs())).collect(Collectors.toList());
         assertEquals(1, windowsDevices.size());
-        windowsDevices.stream().forEach(device -> {
-            List<SessionRepresentation> sessions = device.getSessions();
+        windowsDevices.stream().forEach(d -> {
+            List<SessionRepresentation> sessions = d.getSessions();
             assertEquals(1, sessions.size());
             assertThat(sessions, Matchers.hasItem(Matchers.hasProperty("browser", Matchers.is("Firefox/15.0.1"))));
         });
 
         // first browser authenticates from Windows using Edge
-        oauth.setDriver(firstBrowser);
+        oauth.driver(firstBrowser);
         oauth.logoutForm().idTokenHint(tokenResponse1.getIdToken()).open();
         setBrowserHeader("User-Agent",
                 "Mozilla/5.0 (Windows Windows NT 10.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.71 Safari/537.36 Edge/12.0");
         tokenResponse1 = codeGrant("public-client-0");
 
         // second browser authenticates from Windows using Firefox
-        oauth.setDriver(secondBrowser);
+        oauth.driver(secondBrowser.driver());
         oauth.logoutForm().idTokenHint(tokenResponse2.getIdToken()).open();
         setBrowserHeader("User-Agent",
                 "Mozilla/5.0 (Windows NT 10.0) AppleWebKit/537.36 (KHTML, like Gecko) Gecko/20100101 Firefox/15.0.1");
         tokenResponse2 = codeGrant("public-client-0");
 
         // third browser authenticates from Windows using Safari
-        oauth.setDriver(thirdBrowser);
+        oauth.driver(thirdBrowser.driver());
         setBrowserHeader("User-Agent",
                 "Mozilla/5.0 (Windows NT 10.0) AppleWebKit/537.36 (KHTML, like Gecko) Version/11.0 Safari/603.1.30");
         setBrowserHeader("X-Forwarded-For", "192.168.10.3");
@@ -242,10 +250,10 @@ public class SessionRestServiceTest extends AbstractRestServiceTest {
         assertEquals(
                 1, devices.size(), "Should have a single device because all browsers (and sessions) are from the same platform (OS + OS version)");
         windowsDevices = devices.stream()
-                .filter(device -> "Windows".equals(device.getOs())).collect(Collectors.toList());
+                .filter(d -> "Windows".equals(d.getOs())).collect(Collectors.toList());
         assertEquals(1, windowsDevices.size());
-        windowsDevices.stream().forEach(device -> {
-            List<SessionRepresentation> sessions = device.getSessions();
+        windowsDevices.stream().forEach(d -> {
+            List<SessionRepresentation> sessions = d.getSessions();
             assertEquals(3, sessions.size());
             assertEquals(1, sessions.stream().filter(
                     rep -> rep.getIpAddress().equals("127.0.0.1") && rep.getBrowser().equals("Firefox/15.0.1")
@@ -259,7 +267,7 @@ public class SessionRestServiceTest extends AbstractRestServiceTest {
         });
 
         // third browser authenticates from Windows using a different Windows version
-        oauth.setDriver(thirdBrowser);
+        oauth.driver(thirdBrowser.driver());
         oauth.logoutForm().idTokenHint(tokenResponse3.getIdToken()).open();
         setBrowserHeader("User-Agent",
                 "Mozilla/5.0 (Windows 7) AppleWebKit/537.36 (KHTML, like Gecko) Version/11.0 Safari/603.1.30");
@@ -267,17 +275,17 @@ public class SessionRestServiceTest extends AbstractRestServiceTest {
         tokenResponse3 = codeGrant("public-client-0");
         devices = getDevicesOtherThanOther();
         windowsDevices = devices.stream()
-                .filter(device -> "Windows".equals(device.getOs())).collect(Collectors.toList());
+                .filter(d -> "Windows".equals(d.getOs())).collect(Collectors.toList());
         assertEquals(2, devices.size(), "Should have two devices for two distinct Windows versions");
         assertEquals(2, windowsDevices.size());
 
-        oauth.setDriver(firstBrowser);
+        oauth.driver(firstBrowser);
         oauth.logoutForm().idTokenHint(tokenResponse1.getIdToken()).open();
         setBrowserHeader("User-Agent",
                 "Mozilla/5.0 (iPhone; CPU iPhone OS 5_1_1 like Mac OS X) AppleWebKit/534.46 (KHTML, like Gecko) Version/5.1 Mobile/9B206 Safari/7534.48.3");
         tokenResponse1 = codeGrant("public-client-0");
 
-        oauth.setDriver(secondBrowser);
+        oauth.driver(secondBrowser.driver());
         oauth.logoutForm().idTokenHint(tokenResponse2.getIdToken()).open();
         setBrowserHeader("User-Agent",
                 "Mozilla/5.0 (X11; Fedora; Linux x86_64; rv:15.0) Gecko/20100101 Firefox/15.0.1");
@@ -285,18 +293,18 @@ public class SessionRestServiceTest extends AbstractRestServiceTest {
         devices = getDevicesOtherThanOther();
         assertEquals(3, devices.size(), "Should have 3 devices");
         windowsDevices = devices.stream()
-                .filter(device -> "Windows".equals(device.getOs())).collect(Collectors.toList());
+                .filter(d -> "Windows".equals(d.getOs())).collect(Collectors.toList());
         assertEquals(1, windowsDevices.size());
         fedoraDevices = devices.stream()
                 .filter(deviceRepresentation -> "Fedora".equals(deviceRepresentation.getOs())).collect(Collectors.toList());
         assertEquals(1, fedoraDevices.size());
         List<DeviceRepresentation> iphoneDevices = devices.stream()
-                .filter(device -> "iOS".equals(device.getOs()) && "iPhone".equals(device.getDevice()))
+                .filter(d -> "iOS".equals(d.getOs()) && "iPhone".equals(d.getDevice()))
                 .collect(Collectors.toList());
         assertEquals(1, iphoneDevices.size());
-        iphoneDevices.stream().forEach(device -> {
-            assertTrue(device.isMobile());
-            List<SessionRepresentation> sessions = device.getSessions();
+        iphoneDevices.stream().forEach(d -> {
+            assertTrue(d.isMobile());
+            List<SessionRepresentation> sessions = d.getSessions();
             assertEquals(1, sessions.size());
             assertEquals(1, sessions.stream().filter(
                     rep -> rep.getBrowser().equals("Mobile Safari/5.1")).count());
@@ -328,7 +336,7 @@ public class SessionRestServiceTest extends AbstractRestServiceTest {
     @Test
     public void testLogoutAll() throws IOException {
         codeGrant("public-client-0");
-        oauth.setDriver(secondBrowser);
+        oauth.driver(secondBrowser.driver());
         AccessTokenResponse tokenResponse = codeGrant("public-client-0");
 
         assertEquals(3, getSessions().size());
@@ -353,8 +361,7 @@ public class SessionRestServiceTest extends AbstractRestServiceTest {
 
     @Test
     public void testNullOrEmptyUserAgent() throws Exception {
-        assumeTrue("Browser must be htmlunit. Otherwise we are not able to set desired BrowserHeaders",
-                System.getProperty("browser").equals("htmlUnit"));
+        assumeHtmlUnit();
 
         setBrowserHeader("User-Agent", null);
         AccessTokenResponse tokenResponse = codeGrant("public-client-0");
@@ -380,8 +387,7 @@ public class SessionRestServiceTest extends AbstractRestServiceTest {
 
     @Test
     public void testNonBrowserSession() throws Exception {
-        assumeTrue("Browser must be htmlunit. Otherwise we are not able to set desired BrowserHeaders",
-                System.getProperty("browser").equals("htmlUnit"));
+        assumeHtmlUnit();
 
         // one device
         setBrowserHeader("User-Agent", "Mozilla/5.0 (X11; Fedora; Linux x86_64; rv:15.0) Gecko/20100101 Firefox/15.0.1");
@@ -434,7 +440,7 @@ public class SessionRestServiceTest extends AbstractRestServiceTest {
 
     private AccessTokenResponse codeGrant(String clientId) {
         oauth.client(clientId);
-        oauth.redirectUri(OAuthClient.APP_ROOT + "/auth");
+        oauth.redirectUri(APP_REDIRECT_URI);
         oauth.doLogin("test-user@localhost", "password");
         String code = oauth.parseLoginResponse().getCode();
         return oauth.doAccessTokenRequest(code);
@@ -442,7 +448,7 @@ public class SessionRestServiceTest extends AbstractRestServiceTest {
 
     private void joinSsoSession(String clientId) {
         oauth.client(clientId);
-        oauth.redirectUri(OAuthClient.APP_ROOT + "/auth");
+        oauth.redirectUri(APP_REDIRECT_URI);
         oauth.openLoginForm();
     }
 
@@ -453,13 +459,24 @@ public class SessionRestServiceTest extends AbstractRestServiceTest {
                 });
     }
 
-
-    private void setBrowserHeader(String name, String value) {
-        if (driver instanceof DroneHtmlUnitDriver) {
-            DroneHtmlUnitDriver droneDriver = (DroneHtmlUnitDriver) oauth.getDriver();
-            droneDriver.getWebClient().removeRequestHeader(name);
-            droneDriver.getWebClient().addRequestHeader(name, value);
-        }
+    private void assumeHtmlUnit() {
+        assumeTrue(driver.getBrowserType().equals(BrowserType.HTML_UNIT),
+                "Browser must be htmlunit. Otherwise we are not able to set desired BrowserHeaders");
     }
 
+    /**
+     * HTMLUnit-only header override on the underlying {@link WebClient}, since the new test
+     * framework's {@link ManagedWebDriver} doesn't expose this directly. The framework uses plain
+     * {@link HtmlUnitDriver}, whose {@code getWebClient()} is public, so the cast is safe.
+     */
+    private void setBrowserHeader(String name, String value) {
+        WebDriver wd = oauth.getDriver();
+        if (wd instanceof HtmlUnitDriver) {
+            WebClient webClient = ((HtmlUnitDriver) wd).getWebClient();
+            webClient.removeRequestHeader(name);
+            if (value != null) {
+                webClient.addRequestHeader(name, value);
+            }
+        }
+    }
 }

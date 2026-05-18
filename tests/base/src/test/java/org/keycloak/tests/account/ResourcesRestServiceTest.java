@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.testsuite.account;
+package org.keycloak.tests.account;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
@@ -39,7 +40,6 @@ import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.authorization.client.AuthzClient;
 import org.keycloak.authorization.client.Configuration;
 import org.keycloak.authorization.client.resource.PermissionResource;
-import org.keycloak.common.Profile;
 import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.http.simple.SimpleHttpRequest;
 import org.keycloak.http.simple.SimpleHttpResponse;
@@ -48,6 +48,7 @@ import org.keycloak.models.AccountRoles;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
+import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.authorization.PermissionTicketRepresentation;
@@ -56,24 +57,24 @@ import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 import org.keycloak.services.resources.account.resources.AbstractResourceService;
 import org.keycloak.services.resources.account.resources.AbstractResourceService.Permission;
 import org.keycloak.services.resources.account.resources.AbstractResourceService.Resource;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.UserBuilder;
-import org.keycloak.testsuite.ProfileAssume;
+import org.keycloak.testframework.util.ApiUtil;
+import org.keycloak.tests.utils.admin.AdminApiUtil;
 import org.keycloak.testsuite.broker.util.SimpleHttpDefault;
-import org.keycloak.testsuite.util.TokenUtil;
 import org.keycloak.util.JsonSerialization;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import org.junit.BeforeClass;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static org.keycloak.common.util.Encode.encodePathAsIs;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.empty;
-import static org.junit.Assert.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -82,56 +83,26 @@ import static org.junit.jupiter.api.Assertions.fail;
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
+@KeycloakIntegrationTest
 public class ResourcesRestServiceTest extends AbstractRestServiceTest {
 
-    @Rule
-    public TokenUtil tokenUtil = new TokenUtil("test-authz-user@localhost", "password");
+    private static final String RESOURCE_SERVER_CLIENT = "my-resource-server";
+    private static final String RESOURCE_SERVER_SECRET = "secret";
 
     private AuthzClient authzClient;
-    private List<String> userNames = new ArrayList<>(Arrays.asList("alice", "jdoe", "bob"));
+    private final List<String> userNames = new ArrayList<>(Arrays.asList("alice", "jdoe", "bob"));
 
-    @BeforeClass
-    public static void enabled() {
-        ProfileAssume.assumeFeatureEnabled(Profile.Feature.AUTHORIZATION);
-    }
+    @BeforeEach
+    public void setupResources() {
+        tokenUtil = new TokenUtil("test-authz-user@localhost", "password");
+        configureRealmExtras();
 
-    @Override
-    public void configureTestRealm(RealmRepresentation testRealm) {
-        super.configureTestRealm(testRealm);
-
-        testRealm.setUserManagedAccessAllowed(true);
-
-        testRealm.getUsers().add(createUser("alice", "password", "Alice", "A", "alice@localhost"));
-        testRealm.getUsers().add(createUser("jdoe", "password", "John", "Doe", "jdoe@localhost"));
-        testRealm.getUsers().add(createUser("bob", "password", "Bob", "B", "bob@localhost"));
-        testRealm.getUsers().add(UserBuilder.create().username("test-authz-user@localhost").password("password")
-                .realmRoles("uma_authorization", "uma_protection")
-                .clientRoles("my-resource-server", "uma_protection")
-                .clientRoles("account", AccountRoles.MANAGE_ACCOUNT)
-                .build());
-
-        ClientRepresentation client = ClientBuilder.create()
-                .clientId("my-resource-server")
-                .authorizationServicesEnabled(true)
-                .serviceAccountsEnabled(true)
-                .secret("secret")
-                .name("My Resource Server")
-                .baseUrl("http://resourceserver.com")
-                .directAccessGrantsEnabled().build();
-
-        testRealm.getClients().add(client);
-    }
-
-    @Override
-    public void before() {
-        super.before();
         ClientResource resourceServer = getResourceServer();
         authzClient = createAuthzClient(resourceServer.toRepresentation());
         AuthorizationResource authorization = resourceServer.authorization();
 
         for (int i = 0; i < 30; i++) {
             ResourceRepresentation resource = new ResourceRepresentation();
-
             resource.setOwnerManagedAccess(true);
 
             try {
@@ -155,32 +126,98 @@ public class ResourcesRestServiceTest extends AbstractRestServiceTest {
 
             for (String scope : Arrays.asList("Scope A", "Scope B")) {
                 PermissionTicketRepresentation ticket = new PermissionTicketRepresentation();
-
                 ticket.setGranted(true);
                 ticket.setOwner(resource.getOwner().getId());
                 ticket.setRequesterName(userNames.get(i % userNames.size()));
                 ticket.setResource(resource.getId());
                 ticket.setScopeName(scope);
-
                 authzClient.protection("test-authz-user@localhost", "password").permission().create(ticket);
+            }
+        }
+    }
+
+    /**
+     * Add the realm-level state that the legacy {@code configureTestRealm} override applied on top of
+     * {@link AbstractRestServiceTest.AccountRestRealmConfig}: enable user-managed access, four authz
+     * users, and the {@code my-resource-server} client. Done in {@code @BeforeEach} because the new
+     * framework binds the {@link org.keycloak.testframework.annotations.InjectRealm} config statically
+     * to the parent field; each test gets a fresh realm-extras setup with auto-cleanup.
+     */
+    private void configureRealmExtras() {
+        RealmRepresentation realmRep = managedRealm.admin().toRepresentation();
+        Boolean originalUmaFlag = realmRep.isUserManagedAccessAllowed();
+        realmRep.setUserManagedAccessAllowed(true);
+        managedRealm.admin().update(realmRep);
+        managedRealm.cleanup().add(r -> {
+            RealmRepresentation rep = r.toRepresentation();
+            rep.setUserManagedAccessAllowed(originalUmaFlag);
+            r.update(rep);
+        });
+
+        ClientRepresentation client = ClientBuilder.create()
+                .clientId(RESOURCE_SERVER_CLIENT)
+                .authorizationServicesEnabled(true)
+                .serviceAccountsEnabled()
+                .secret(RESOURCE_SERVER_SECRET)
+                .name("My Resource Server")
+                .baseUrl("http://resourceserver.com")
+                .directAccessGrantsEnabled().build();
+        try (Response response = managedRealm.admin().clients().create(client)) {
+            String clientUuid = ApiUtil.getCreatedId(response);
+            managedRealm.cleanup().add(r -> r.clients().get(clientUuid).remove());
+        }
+
+        createRealmUser(buildUser("alice", "password", "Alice", "A", "alice@localhost"));
+        createRealmUser(buildUser("jdoe", "password", "John", "Doe", "jdoe@localhost"));
+        createRealmUser(buildUser("bob", "password", "Bob", "B", "bob@localhost"));
+        createRealmUser(UserBuilder.create().username("test-authz-user@localhost").password("password")
+                .email("test-authz-user@localhost")
+                .name("Test", "AuthzUser")
+                .emailVerified(true)
+                .realmRoles("uma_authorization")
+                .clientRoles(RESOURCE_SERVER_CLIENT, "uma_protection")
+                .clientRoles("account", AccountRoles.MANAGE_ACCOUNT)
+                .build());
+    }
+
+    private UserRepresentation buildUser(String userName, String password, String firstName, String lastName, String email) {
+        return UserBuilder.create()
+                .username(userName)
+                .enabled(true)
+                .password(password)
+                .firstName(firstName)
+                .lastName(lastName)
+                .email(email)
+                .emailVerified(true)
+                .attribute("secret-attr", "secret-value")
+                .clientRoles("account", AccountRoles.MANAGE_ACCOUNT)
+                .build();
+    }
+
+    private void createRealmUser(UserRepresentation user) {
+        Map<String, List<String>> clientRoles = user.getClientRoles();
+        try (Response response = managedRealm.admin().users().create(user)) {
+            String userId = ApiUtil.getCreatedId(response);
+            managedRealm.cleanup().add(r -> r.users().get(userId).remove());
+
+            // The admin REST users().create() ignores clientRoles in the payload; assign them
+            // explicitly via the role-mappings endpoint.
+            if (clientRoles != null) {
+                ClientsResource clients = managedRealm.admin().clients();
+                for (Map.Entry<String, List<String>> entry : clientRoles.entrySet()) {
+                    String clientUuid = clients.findByClientId(entry.getKey()).get(0).getId();
+                    List<RoleRepresentation> roles = entry.getValue().stream()
+                            .map(roleName -> clients.get(clientUuid).roles().get(roleName).toRepresentation())
+                            .collect(Collectors.toList());
+                    managedRealm.admin().users().get(userId).roles().clientLevel(clientUuid).add(roles);
+                }
             }
         }
     }
 
     private ClientResource getResourceServer() {
         ClientsResource clients = managedRealm.admin().clients();
-        return clients.get(clients.findByClientId("my-resource-server").get(0).getId());
-    }
-
-    @Override
-    public void after() {
-        super.after();
-        ClientResource resourceServer = getResourceServer();
-        ClientRepresentation representation = resourceServer.toRepresentation();
-        representation.setAuthorizationServicesEnabled(false);
-        resourceServer.update(representation);
-        representation.setAuthorizationServicesEnabled(true);
-        resourceServer.update(representation);
+        return clients.get(clients.findByClientId(RESOURCE_SERVER_CLIENT).get(0).getId());
     }
 
     @Test
@@ -330,7 +367,7 @@ public class ResourcesRestServiceTest extends AbstractRestServiceTest {
         assertEquals("Resource " + id, resource.getName());
         assertEquals("Display Name " + id, resource.getDisplayName());
         assertEquals("Icon Uri " + id, resource.getIconUri());
-        assertEquals("my-resource-server", resource.getClient().getClientId());
+        assertEquals(RESOURCE_SERVER_CLIENT, resource.getClient().getClientId());
         assertEquals("My Resource Server", resource.getClient().getName());
         assertEquals("http://resourceserver.com", resource.getClient().getBaseUrl());
         assertEquals(4, resource.getScopes().size());
@@ -494,7 +531,7 @@ public class ResourcesRestServiceTest extends AbstractRestServiceTest {
         String resourceId;
         ResourceRepresentation resource = new ResourceRepresentation();
         resource.setOwnerManagedAccess(true);
-        resource.setOwner(findUser("view-account-access").getId());
+        resource.setOwner(AdminApiUtil.findUserByUsername(managedRealm.admin(), "view-account-access").getId());
         resource.setName("Resource view-account-access");
         resource.setDisplayName("Display Name view-account-access");
         resource.setIconUri("Icon Uri view-account-access");
@@ -792,7 +829,7 @@ public class ResourcesRestServiceTest extends AbstractRestServiceTest {
 
     @Test
     public void testGetUserInfoUnauthorized() throws IOException {
-        Resource resource = getMyResources().get(0);
+        Resource resource = getMyResources("Resource 0").get(0);
 
         try (SimpleHttpResponse response = SimpleHttpDefault
                 .doGet(getAccountUrl("resources/" + encodePathAsIs(resource.getId()) + "/user?value=bob"), httpClient)
@@ -809,7 +846,7 @@ public class ResourcesRestServiceTest extends AbstractRestServiceTest {
         Resource resource = getMyResources().get(0);
         List<Permission> permissions = doGet("/" + encodePathAsIs(resource.getId()) + "/permissions",
                 new TypeReference<>() {});
-        assertFalse("Should have at least one granted permission", permissions.isEmpty());
+        assertFalse(permissions.isEmpty(), "Should have at least one granted permission");
         String grantedUser = permissions.get(0).getUsername();
         UserRepresentation userRep = doGet("/" + encodePathAsIs(resource.getId()) + "/user?value=" + grantedUser,
                 UserRepresentation.class);
@@ -902,9 +939,7 @@ public class ResourcesRestServiceTest extends AbstractRestServiceTest {
                 responseHandler.accept(response);
             }
 
-            R result = JsonSerialization.readValue(response.asString(), typeReference);
-
-            return result;
+            return JsonSerialization.readValue(response.asString(), typeReference);
         } catch (IOException cause) {
             throw new RuntimeException("Failed to fetch resource", cause);
         }
@@ -924,26 +959,20 @@ public class ResourcesRestServiceTest extends AbstractRestServiceTest {
 
     private AuthzClient createAuthzClient(ClientRepresentation client) {
         Map<String, Object> credentials = new HashMap<>();
+        credentials.put("secret", RESOURCE_SERVER_SECRET);
 
-        credentials.put("secret", "secret");
-
-        return AuthzClient
-                .create(new Configuration(suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth",
-                        managedRealm.admin().toRepresentation().getRealm(), client.getClientId(),
-                        credentials, httpClient));
+        return AuthzClient.create(new Configuration(
+                authServerRoot(),
+                managedRealm.admin().toRepresentation().getRealm(),
+                client.getClientId(),
+                credentials,
+                httpClient));
     }
 
-    private UserRepresentation createUser(String userName, String password, String firstName, String lastName, String email) {
-        return UserBuilder.create()
-                .username(userName)
-                .enabled(true)
-                .password(password)
-                .firstName(firstName)
-                .lastName(lastName)
-                .email(email)
-                .attribute("secret-attr", "secret-value")
-                .clientRoles("account", AccountRoles.MANAGE_ACCOUNT)
-                .build();
+    private String authServerRoot() {
+        String base = managedRealm.getBaseUrl();
+        int idx = base.indexOf("/realms/");
+        return idx > 0 ? base.substring(0, idx) : base;
     }
 
     private List<Resource> getMyResources() {
@@ -989,7 +1018,7 @@ public class ResourcesRestServiceTest extends AbstractRestServiceTest {
             assertEquals("Resource " + id, resource.getName());
             assertEquals("Display Name " + id, resource.getDisplayName());
             assertEquals("Icon Uri " + id, resource.getIconUri());
-            assertEquals("my-resource-server", resource.getClient().getClientId());
+            assertEquals(RESOURCE_SERVER_CLIENT, resource.getClient().getClientId());
             assertEquals("My Resource Server", resource.getClient().getName());
             assertEquals("http://resourceserver.com", resource.getClient().getBaseUrl());
             assertEquals(1, resource.getPermissions().size());
@@ -1010,7 +1039,7 @@ public class ResourcesRestServiceTest extends AbstractRestServiceTest {
             assertEquals("Resource " + id, resource.getName());
             assertEquals("Display Name " + id, resource.getDisplayName());
             assertEquals("Icon Uri " + id, resource.getIconUri());
-            assertEquals("my-resource-server", resource.getClient().getClientId());
+            assertEquals(RESOURCE_SERVER_CLIENT, resource.getClient().getClientId());
             assertEquals("My Resource Server", resource.getClient().getName());
             assertEquals("http://resourceserver.com", resource.getClient().getBaseUrl());
         }
@@ -1024,7 +1053,7 @@ public class ResourcesRestServiceTest extends AbstractRestServiceTest {
             assertEquals("Resource " + id, resource.getName());
             assertEquals("Display Name " + id, resource.getDisplayName());
             assertEquals("Icon Uri " + id, resource.getIconUri());
-            assertEquals("my-resource-server", resource.getClient().getClientId());
+            assertEquals(RESOURCE_SERVER_CLIENT, resource.getClient().getClientId());
             assertEquals("My Resource Server", resource.getClient().getName());
             assertEquals("http://resourceserver.com", resource.getClient().getBaseUrl());
             assertEquals(2, resource.getScopes().size());

@@ -16,7 +16,7 @@
  *
  */
 
-package org.keycloak.testsuite.account;
+package org.keycloak.tests.account;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -36,14 +36,17 @@ import org.keycloak.representations.userprofile.config.UPAttributePermissions;
 import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.representations.userprofile.config.UPConfig.UnmanagedAttributePolicy;
 import org.keycloak.services.messages.Messages;
-import org.keycloak.testsuite.admin.AdminApiUtil;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.server.KeycloakServerConfig;
+import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
+import org.keycloak.tests.utils.admin.AdminApiUtil;
 import org.keycloak.testsuite.broker.util.SimpleHttpDefault;
 import org.keycloak.userprofile.UserProfileConstants;
 
 import org.jboss.logging.Logger;
-import org.junit.Before;
-import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
@@ -55,15 +58,26 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
+@KeycloakIntegrationTest(config = AccountRestServiceReadOnlyAttributesTest.ReadOnlyAttributesServerConfig.class)
 public class AccountRestServiceReadOnlyAttributesTest extends AbstractRestServiceTest {
+
+    public static class ReadOnlyAttributesServerConfig implements KeycloakServerConfig {
+        @Override
+        public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
+            return config
+                    .option("spi-user-profile-declarative-user-profile-read-only-attributes",
+                            "deniedFoo,deniedBar*,deniedSome/thing,deniedsome*thing")
+                    .option("spi-user-profile-declarative-user-profile-admin-read-only-attributes",
+                            "deniedSomeAdmin");
+        }
+    }
 
     private static final Logger logger = Logger.getLogger(AccountRestServiceReadOnlyAttributesTest.class);
 
-    @Before
+    @BeforeEach
     public void configureUserProfile() {
         UserProfileResource userProfileRes = managedRealm.admin().users().userProfile();
         UPConfig cfg = userProfileRes.getConfiguration();
-        //cfg.setUnmanagedAttributePolicy(UPConfig.UnmanagedAttributePolicy.ENABLED);
         cfg.addOrReplaceAttribute(createUpAttribute("someOtherAttr"));
         cfg.addOrReplaceAttribute(createUpAttribute("usercertificate"));
         cfg.addOrReplaceAttribute(createUpAttribute("uSErCertificate"));
@@ -152,9 +166,9 @@ public class AccountRestServiceReadOnlyAttributesTest extends AbstractRestServic
         UPConfig configuration = managedRealm.admin().users().userProfile().getConfiguration();
         UnmanagedAttributePolicy unmanagedAttributePolicy = configuration.getUnmanagedAttributePolicy();
         configuration.setUnmanagedAttributePolicy(UnmanagedAttributePolicy.ENABLED);
-        getCleanup().addCleanup(() -> {
+        managedRealm.cleanup().add(r -> {
             configuration.setUnmanagedAttributePolicy(unmanagedAttributePolicy);
-            managedRealm.admin().users().userProfile().update(configuration);
+            r.users().userProfile().update(configuration);
         });
         managedRealm.admin().users().userProfile().update(configuration);
         UserRepresentation user = SimpleHttpDefault.doGet(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).asJson(UserRepresentation.class);
@@ -264,11 +278,9 @@ public class AccountRestServiceReadOnlyAttributesTest extends AbstractRestServic
         return SimpleHttpDefault.doGet(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).asJson(UserRepresentation.class);
     }
 
-
     private void updateError(UserRepresentation user, int expectedStatus, String expectedMessage) throws IOException {
         SimpleHttpResponse response = SimpleHttpDefault.doPost(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).json(user).asResponse();
         assertEquals(expectedStatus, response.getStatus());
         assertEquals(expectedMessage, response.asJson(ErrorRepresentation.class).getErrorMessage());
     }
-
 }
