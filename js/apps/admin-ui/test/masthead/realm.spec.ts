@@ -123,7 +123,12 @@ test.describe.serial("Realm tests", () => {
     const realms = await page
       .locator(".pf-v5-c-table tr td:nth-child(2)")
       .allInnerTexts();
-    expect(realms.every((v, i, a) => !i || a[i - 1] <= v)).toBeTruthy();
+    expect(
+      realms.every((value, index, realms) => {
+        if (index === 0) return true;
+        return realms[index - 1] <= value;
+      }),
+    ).toBeTruthy();
   });
 
   test("should disable preview if json very long", async ({ page }) => {
