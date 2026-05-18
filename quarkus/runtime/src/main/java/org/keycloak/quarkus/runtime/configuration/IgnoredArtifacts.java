@@ -28,7 +28,6 @@ import org.keycloak.config.MetricsOptions;
 import org.keycloak.config.OpenApiOptions;
 import org.keycloak.config.TelemetryOptions;
 import org.keycloak.config.database.Database;
-import org.keycloak.quarkus.runtime.cli.PropertyException;
 
 import static java.util.Collections.emptySet;
 
@@ -188,9 +187,6 @@ public class IgnoredArtifacts {
 
     private static Set<String> otelMetrics() {
         boolean isOtelMetricsEnabled = Configuration.isTrue(TelemetryOptions.TELEMETRY_METRICS_ENABLED);
-        if (isOtelMetricsEnabled && !Profile.Feature.OPENTELEMETRY_METRICS.isAvailable()) {
-            throw new PropertyException("The OpenTelemetry Metrics feature is not available in this distribution.");
-        }
         return !isOtelMetricsEnabled ? OTEL_METRICS : emptySet();
     }
 
