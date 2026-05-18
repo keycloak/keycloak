@@ -17,11 +17,10 @@ import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.oauth.DefaultOAuthClientConfiguration;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
-import org.keycloak.testframework.realm.ClientBuilder;
+import org.keycloak.testframework.realm.ClientConfigBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
-import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
-import org.keycloak.testframework.realm.UserBuilder;
+import org.keycloak.testframework.realm.RealmConfigBuilder;
 import org.keycloak.testframework.server.KeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 import org.keycloak.testframework.ui.annotations.InjectWebDriver;
@@ -163,15 +162,16 @@ public class DynamicScopesIsolationTest {
 
     static class TestRealmConfig implements RealmConfig {
         @Override
-        public RealmBuilder configure(RealmBuilder realm) {
-            return realm.users(UserBuilder.create(USERNAME).password(PASSWORD)
-                    .email("test@localhost").firstName("Test").lastName("User"));
+        public RealmConfigBuilder configure(RealmConfigBuilder realm) {
+            realm.addUser(USERNAME).password(PASSWORD).email("test@localhost")
+                    .firstName("Test").lastName("User");
+            return realm;
         }
     }
 
     static class TestOAuthClientConfig extends DefaultOAuthClientConfiguration {
         @Override
-        public ClientBuilder configure(ClientBuilder client) {
+        public ClientConfigBuilder configure(ClientConfigBuilder client) {
             return super.configure(client).consentRequired(false);
         }
     }
