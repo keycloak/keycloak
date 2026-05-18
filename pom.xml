@@ -62,9 +62,9 @@
         <upstream.wildfly.core.version>31.0.3.Final</upstream.wildfly.core.version>
 
         <!-- Downstream Builds WildFly Versions Override -->
-        <eap8.version>8.1.0.GA-redhat-00015</eap8.version>  <!-- G:A = org.jboss.eap:jboss-eap-parent -->
+        <eap8.version>8.2.0.Beta-redhat-00009</eap8.version>  <!-- G:A = org.jboss.eap:jboss-eap-parent -->
         <eap8.wildfly.version>${eap8.version}</eap8.wildfly.version>
-        <eap8.wildfly.core.version>27.1.0.Final-redhat-00010</eap8.wildfly.core.version>
+        <eap8.wildfly.core.version>33.0.0.Final-redhat-00008</eap8.wildfly.core.version>
 
         <wildfly.jakarta.adapters>true</wildfly.jakarta.adapters>
 
@@ -249,7 +249,7 @@
         <webauthn4j.version>0.30.3.RELEASE</webauthn4j.version>
 
         <!-- Used to test SAML Galleon feature-pack layers discovery -->
-        <version.org.wildfly.glow>1.5.2.Final</version.org.wildfly.glow>
+        <version.org.wildfly.glow>2.1.0.Final</version.org.wildfly.glow>
 
         <!-- Galleon -->
         <galleon.fork.embedded>true</galleon.fork.embedded>
@@ -1682,11 +1682,9 @@
                 <ee.maven.version>${eap8.version}</ee.maven.version>
                 <wildfly.version>${eap8.version}</wildfly.version>
                 <wildfly.core.version>${eap8.wildfly.core.version}</wildfly.core.version>
-                <!-- relative directory for galleon pack with layer spec files -->
-                <saml.adapter.galleon.pack.metadata.dir>non-metadata</saml.adapter.galleon.pack.metadata.dir>
                 <!-- WildFly Galleon Build related properties -->
-                <org.wildfly.galleon-plugins.version>7.3.1.Final</org.wildfly.galleon-plugins.version>
-                <org.jboss.galleon.version>6.0.4.Final</org.jboss.galleon.version>
+                <org.wildfly.galleon-plugins.version>8.1.2.Final</org.wildfly.galleon-plugins.version>
+                <org.jboss.galleon.version>7.0.5.Final</org.jboss.galleon.version>
                 <org.wildfly.maven.plugins.licenses-plugin.version>2.3.1.Final</org.wildfly.maven.plugins.licenses-plugin.version>
             </properties>
         </profile>
@@ -1702,8 +1700,6 @@
                 <ee.maven.version>${upstream.wildfly.version}</ee.maven.version>
                 <wildfly.version>${upstream.wildfly.version}</wildfly.version>
                 <wildfly.core.version>${upstream.wildfly.core.version}</wildfly.core.version>
-                <!-- relative directory for galleon pack with layer spec files -->
-                <saml.adapter.galleon.pack.metadata.dir>metadata</saml.adapter.galleon.pack.metadata.dir>
                 <!-- WildFly Galleon Build related properties -->
                 <org.wildfly.galleon-plugins.version>8.1.2.Final</org.wildfly.galleon-plugins.version>
                 <org.jboss.galleon.version>7.0.5.Final</org.jboss.galleon.version>
