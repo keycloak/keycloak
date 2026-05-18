@@ -2,6 +2,7 @@ import type ClientScopeRepresentation from "@keycloak/keycloak-admin-client/lib/
 import type { KeyMetadataRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/keyMetadataRepresentation";
 import {
   ActionGroup,
+  Alert,
   Button,
   FormHelperText,
   HelperText,
@@ -23,6 +24,7 @@ import { useAdminClient } from "../../admin-client";
 import { getProtocolName } from "../../clients/utils";
 import { DefaultSwitchControl } from "../../components/SwitchControl";
 import {
+  ClientScope,
   allClientScopeTypes,
   ClientScopeDefaultOptionalType,
 } from "../../components/client-scope/ClientScopeTypes";
@@ -153,6 +155,14 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
     defaultValue: "false",
   });
 
+  const isDynamic = isDynamicScopesEnabled && dynamicScope === "true";
+  const isDynamicScopeWithFeatureDisabled =
+    !isDynamicScopesEnabled &&
+    clientScope?.attributes?.["is.dynamic.scope"] === "true";
+  const scopeTypeOptions = isDynamic
+    ? allClientScopeTypes.filter((key) => key !== "default")
+    : allClientScopeTypes;
+
   const selectedProtocol = useWatch({
     control,
     name: "protocol",
@@ -221,6 +231,18 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
   }, [clientScope, setValue]);
 
   useEffect(() => {
+    if (isDynamicScopeWithFeatureDisabled) {
+      setValue(
+        convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
+          "attributes.is.dynamic.scope",
+        ),
+        "false",
+        { shouldDirty: true, shouldValidate: true },
+      );
+    }
+  }, [setValue, isDynamicScopeWithFeatureDisabled]);
+
+  useEffect(() => {
     if (isSigningKeySelected) {
       const selectedKeyInfo = realmKeys.find(
         (k) => k.kid === isSigningKeySelected,
@@ -264,6 +286,14 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
             },
           }}
         />
+        {isDynamicScopeWithFeatureDisabled && (
+          <Alert
+            variant="warning"
+            isInline
+            isPlain
+            title={t("dynamicScopeDisabledInfo")}
+          />
+        )}
         {isDynamicScopesEnabled && (
           <>
             <DefaultSwitchControl
@@ -277,6 +307,9 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
                   value ? form.getValues("name") || "" : "",
                   value,
                 );
+                if (value && form.getValues("type") === ClientScope.default) {
+                  setValue("type", ClientScope.optional, { shouldDirty: true });
+                }
               }}
               stringify
             />
@@ -309,7 +342,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
           label={t("type")}
           labelIcon={t("scopeTypeHelp")}
           controller={{ defaultValue: allClientScopeTypes[0] }}
-          options={allClientScopeTypes.map((key) => ({
+          options={scopeTypeOptions.map((key) => ({
             key,
             value: t(`clientScopeType.${key}`),
           }))}
@@ -670,7 +703,10 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
           <FormSubmitButton
             data-testid="save"
             formState={formState}
-            disabled={!isDirty || !isValid}
+            allowNonDirty={isDynamicScopeWithFeatureDisabled}
+            isDisabled={
+              !(isDirty || isDynamicScopeWithFeatureDisabled) || !isValid
+            }
           >
             {t("save")}
           </FormSubmitButton>

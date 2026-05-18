@@ -292,7 +292,13 @@ public class RealmAdminResource {
         if (clientScope == null) {
             throw new NotFoundException("Client scope not found");
         }
-        
+
+        // Dynamic scopes currently require the caller to explicitly provide the scope parameter (e.g. "scope_name:value"),
+        // so they cannot be included automatically as default scopes. This restriction may be lifted in the future.
+        if (defaultScope && clientScope.isDynamicScope()) {
+            throw ErrorResponse.error("Can't assign a Dynamic Scope as a Default Scope", Status.BAD_REQUEST);
+        }
+
         ClientResource.validateClientScopeAssignment(session, clientScope, defaultScope, realm);
         
         realm.addDefaultClientScope(clientScope, defaultScope);
