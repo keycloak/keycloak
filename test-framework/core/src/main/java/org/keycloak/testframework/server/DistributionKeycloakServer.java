@@ -35,7 +35,6 @@ import org.keycloak.testframework.util.TmpDir;
 
 import io.quarkus.fs.util.ZipUtils;
 import org.jboss.logging.Logger;
-import org.jetbrains.annotations.NotNull;
 
 public class DistributionKeycloakServer implements KeycloakServer {
 
@@ -136,7 +135,7 @@ public class DistributionKeycloakServer implements KeycloakServer {
         }
     }
 
-    private @NotNull DistributionKeycloakServer.OutputHandler startKeycloak(List<String> args) {
+    private DistributionKeycloakServer.OutputHandler startKeycloak(List<String> args) {
         log.trace("Starting Keycloak");
         List<String> cmd = new LinkedList<>();
         if (Environment.isWindows()) {
