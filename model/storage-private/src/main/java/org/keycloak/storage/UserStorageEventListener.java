@@ -35,24 +35,20 @@ public final class UserStorageEventListener implements ClusterListener, Provider
         UserStorageProviderClusterEvent fedEvent = (UserStorageProviderClusterEvent) event;
         String realmId = fedEvent.getRealmId();
 
-        // Attempt to load the realm from the database.
-            // IMPORTANT: This CAN return null if the realm was already deleted.
-            // This is expected and normal when a realm deletion triggers the
-            // removal of its associated User Storage providers.
-       runJobInTransaction(sessionFactory, session -> {
-    RealmModel realm = session.realms().getRealm(realmId);
+        runJobInTransaction(sessionFactory, session -> {
+            RealmModel realm = session.realms().getRealm(realmId);
 
-    if (realm == null) {
-        if (fedEvent.isRemoved()) {
-            logger.debugf("Realm with id %s not found when handling user storage removal event, it may have been deleted already", realmId);
-            return;
-        }
-        throw new RuntimeException("Failed to execute session task. Realm with id " + realmId + " not found.");
-    }
+            if (realm == null) {
+                if (fedEvent.isRemoved()) {
+                    logger.debugf("Realm with id %s not found when handling user storage removal event, it may have been deleted already", realmId);
+                    return;
+                }
+                throw new RuntimeException("Failed to execute session task. Realm with id " + realmId + " not found.");
+            }
 
-    session.getContext().setRealm(realm);
-    refreshScheduledTasks(session, fedEvent.getStorageProvider(), fedEvent.isRemoved());
-});
+            session.getContext().setRealm(realm);
+            refreshScheduledTasks(session, fedEvent.getStorageProvider(), fedEvent.isRemoved());
+        });
     }
 
     @Override
