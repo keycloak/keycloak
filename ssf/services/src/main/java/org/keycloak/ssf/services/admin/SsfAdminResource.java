@@ -40,6 +40,7 @@ import org.keycloak.ssf.stream.StreamStatus;
 import org.keycloak.ssf.subject.ComplexSubjectId;
 import org.keycloak.ssf.subject.SubjectId;
 import org.keycloak.ssf.subject.SubjectIds;
+import org.keycloak.ssf.subject.SubjectNotFoundException;
 import org.keycloak.ssf.subject.SubjectResolution;
 import org.keycloak.ssf.subject.SubjectResolver;
 import org.keycloak.ssf.transmitter.SsfTransmitterConfig;
@@ -153,9 +154,22 @@ public class SsfAdminResource {
      * any service-supplied detail message.
      */
     protected Response invalidRequest(String errorCode, String message, String fallback) {
+        return invalidRequest(errorCode, message, fallback, null);
+    }
+
+    /**
+     * Variant of {@link #invalidRequest(String, String, String)} that
+     * attaches a structured {@code params} map to the response so the
+     * admin UI can parameterize a translated message (e.g. inject the
+     * offending {@code subjectType}/{@code subjectValue}) without
+     * re-parsing the free-form {@code error_description}.
+     */
+    protected Response invalidRequest(String errorCode, String message, String fallback,
+                                      Map<String, String> params) {
         return Response.status(Response.Status.BAD_REQUEST)
                 .entity(new SsfErrorRepresentation(errorCode,
-                        message != null ? message : fallback))
+                        message != null ? message : fallback,
+                        params))
                 .build();
     }
 
@@ -1030,11 +1044,27 @@ public class SsfAdminResource {
             }
             try {
                 subjectId = subjectManagementService().resolveSubjectForEmit(stream, request.getSubjectType(), request.getSubjectValue());
+            } catch (SubjectNotFoundException e) {
+                // Wire code aligns with the sub_id path's
+                // EmitEventStatus.SUBJECT_NOT_FOUND so both routes report
+                // the same category to the caller. Only reachable on the
+                // adminCaller path (the shorthand branch above is gated on
+                // adminCaller), so the existence signal is bounded to
+                // admins who already have list-users access in the realm.
+                // params carries the offending (subjectType, subjectValue)
+                // as structured fields so the admin UI can parameterize a
+                // translated message without re-parsing error_description.
+                log.debugf(e, "Admin emit subject resolution: subject not found");
+                return invalidRequest(EmitEventStatus.SUBJECT_NOT_FOUND.wireValue(),
+                        e.getMessage(),
+                        "Subject referenced by the request does not exist",
+                        Map.of("subjectType", e.getSubjectType(),
+                                "subjectValue", e.getSubjectValue()));
             } catch (SsfException e) {
                 log.debugf(e, "Admin emit subject resolution failed");
-                return Response.status(Response.Status.BAD_REQUEST)
-                        .entity(new SsfErrorRepresentation("invalid_request", e.getMessage()))
-                        .build();
+                return invalidRequest(EmitEventStatus.INVALID_REQUEST.wireValue(),
+                        e.getMessage(),
+                        "Invalid request");
             }
         }
 

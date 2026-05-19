@@ -508,6 +508,35 @@ public class SsfTransmitterEventEmitterTests {
         }
     }
 
+    @Test
+    public void emit_adminShorthandSubjectNotFound_returnsSubjectNotFound() throws Exception {
+        String unknown = "nobody@nowhere.test";
+        String adminToken = adminClient.tokenManager().getAccessTokenString();
+        try (SimpleHttpResponse res = http.doPost(emitEndpointUrl())
+                .auth(adminToken)
+                .json(Map.of(
+                        "eventType", "CaepCredentialChange",
+                        "subjectType", "user-email",
+                        "subjectValue", unknown,
+                        "event", Map.of("credential_type", "password")))
+                .asResponse()) {
+            Assertions.assertEquals(400, res.getStatus(),
+                    "admin shorthand with an unknown user should fail validation");
+            JsonNode body = res.asJson();
+            Assertions.assertEquals("subject_not_found", body.get("error").asText(),
+                    "admin-shorthand resolution failure must use the same wire code as the sub_id path");
+            JsonNode params = body.path("params");
+            Assertions.assertTrue(params.isObject(),
+                    () -> "subject_not_found response should carry a structured params object; body=" + body);
+            Assertions.assertEquals("user-email", params.path("subjectType").asText(),
+                    "params.subjectType should echo the rejected request input so the UI can parameterize the message");
+            Assertions.assertEquals(unknown, params.path("subjectValue").asText(),
+                    "params.subjectValue should echo the rejected request input so the UI can parameterize the message");
+        }
+        Assertions.assertNull(pushes.poll(1, TimeUnit.SECONDS),
+                "rejected admin emit must not produce a push");
+    }
+
     // --- helpers ---------------------------------------------------------
 
     protected String emitEndpointUrl() {
