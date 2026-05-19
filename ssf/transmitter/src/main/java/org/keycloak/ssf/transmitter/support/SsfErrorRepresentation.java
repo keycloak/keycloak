@@ -2,9 +2,9 @@ package org.keycloak.ssf.transmitter.support;
 
 import java.util.Map;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-
 import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
+
+import com.fasterxml.jackson.annotation.JsonInclude;
 
 /**
  * OAuth2-style error body extended with an optional {@code params}
