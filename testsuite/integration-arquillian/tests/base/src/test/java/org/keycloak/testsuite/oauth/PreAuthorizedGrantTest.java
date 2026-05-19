@@ -75,7 +75,7 @@ public class PreAuthorizedGrantTest extends AbstractTestRealmKeycloakTest {
     @Test
     public void testPreAuthorizedGrant() throws Exception {
         String userSessionId = getUserSession();
-        String preAuthorizedCode = runOnServerTest.fetchString(getPreAuthorizedCode(TEST_REALM_NAME, userSessionId, "test-app", Time.currentTime() + 30)).replace("\"","");
+        String preAuthorizedCode = runOnServer.fetchString(getPreAuthorizedCode(TEST_REALM_NAME, userSessionId, "test-app", Time.currentTime() + 30)).replace("\"","");
         AccessTokenResponse accessTokenResponse = postCode(preAuthorizedCode);
 
         assertEquals(HttpStatus.SC_OK, accessTokenResponse.getStatusCode(), "An access token should have successfully been returned.");
@@ -84,7 +84,7 @@ public class PreAuthorizedGrantTest extends AbstractTestRealmKeycloakTest {
     @Test
     public void testPreAuthorizedGrantExpired() throws Exception {
         String userSessionId = getUserSession();
-        String preAuthorizedCode = runOnServerTest.fetchString(getPreAuthorizedCode(TEST_REALM_NAME, userSessionId, "test-app", Time.currentTime() - 30));
+        String preAuthorizedCode = runOnServer.fetchString(getPreAuthorizedCode(TEST_REALM_NAME, userSessionId, "test-app", Time.currentTime() - 30));
         AccessTokenResponse accessTokenResponse = postCode(preAuthorizedCode);
         assertEquals(HttpStatus.SC_BAD_REQUEST, accessTokenResponse.getStatusCode(), "An expired code should not get an access token.");
     }

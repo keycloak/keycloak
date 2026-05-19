@@ -425,7 +425,7 @@ public class ServiceAccountTest extends AbstractKeycloakTest {
         Assertions.assertNull(accessToken.getSessionState());
         Assertions.assertNull(response.getRefreshToken(), "Refresh-Token should not be present");
 
-        AccessTokenContext ctx = runOnServerTest.fetch(RunHelpers.getTokenContext(accessToken.getId()));
+        AccessTokenContext ctx = runOnServer.fetch(RunHelpers.getTokenContext(accessToken.getId()));
         Assertions.assertEquals(ctx.getSessionType(), AccessTokenContext.SessionType.TRANSIENT);
         Assertions.assertEquals(ctx.getTokenType(), AccessTokenContext.TokenType.REGULAR);
         Assertions.assertEquals(ctx.getGrantType(), OAuth2Constants.CLIENT_CREDENTIALS);

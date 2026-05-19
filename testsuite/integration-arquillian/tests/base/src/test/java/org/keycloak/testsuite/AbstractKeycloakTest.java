@@ -140,7 +140,7 @@ public abstract class AbstractKeycloakTest {
     protected KeycloakTestingClient testingClient;
 
     protected KeycloakTestingClient.Server runOnServerMaster;
-    protected KeycloakTestingClient.Server runOnServerTest;
+    protected KeycloakTestingClient.Server runOnServer;
 
     protected TimeOffSet timeOffSet = new TimeOffSet(this);
 
@@ -190,7 +190,7 @@ public abstract class AbstractKeycloakTest {
 
         getTestingClient();
         runOnServerMaster = testingClient.server();
-        runOnServerTest = testingClient.server(TEST);
+        runOnServer = testingClient.server(TEST);
 
         setDefaultPageUriParameters();
 
