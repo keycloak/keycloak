@@ -54,6 +54,7 @@ public class LogoutCorsTest extends AbstractKeycloakTest {
     @Before
     public void clientConfiguration() {
         ClientManager.realm(adminClient.realm("test")).clientId("test-app").addWebOrigins(VALID_CORS_URL);
+        oauth.origin(null);
     }
 
     @Override
@@ -82,7 +83,7 @@ public class LogoutCorsTest extends AbstractKeycloakTest {
         oauth.origin(INVALID_CORS_URL);
 
         LogoutResponse response = oauth.doLogout(refreshTokenString);
-        assertTrue(response.isSuccess());
+        assertEquals(Response.Status.FORBIDDEN.getStatusCode(), response.getStatusCode());
         assertNotCors(response);
     }
 
