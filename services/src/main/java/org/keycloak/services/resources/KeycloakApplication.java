@@ -18,8 +18,6 @@ package org.keycloak.services.resources;
 
 import java.io.File;
 import java.time.Duration;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import jakarta.ws.rs.core.Application;
@@ -53,16 +51,6 @@ public abstract class KeycloakApplication<KSF extends KeycloakSessionFactory> ex
     // Set to true when bootstrap is completed. It never changes back to false.
     private static volatile boolean bootstrapCompleted = false;
 
-    public KeycloakApplication() {
-        try {
-            initTmpDirectory();
-            logger.debugv("Application: {0}", this.getClass().getName());
-            initAndStart();
-        } catch (Throwable t) {
-            exit(t);
-        }
-    }
-
     public static String getTmpDirectory() {
         return System.getProperty(KC_TMPDIR, System.getProperty("java.io.tmpdir"));
     }
@@ -79,36 +67,20 @@ public abstract class KeycloakApplication<KSF extends KeycloakSessionFactory> ex
         System.setProperty(KC_TMPDIR, tmpDir.getAbsolutePath());
     }
 
-    protected abstract void exit(Throwable t);
-
     protected abstract String getDataDir();
 
-    protected void startup() {
+    // synchronized to prevent shutdown while running bootstrapping
+    protected synchronized void startup() {
+        logger.debugv("Application: {0}", this.getClass().getName());
+        initTmpDirectory();
         Profile.getInstance().logUnsupportedFeatures();
         CryptoIntegration.init(KeycloakApplication.class.getClassLoader());
         var ksf = createSessionFactory();
         sessionFactory = ksf;
-
-        if (supportsAsyncInitialization()) {
-            final var executor = Executors.newSingleThreadExecutor();
-            CompletableFuture.runAsync(() -> runBootstrap(ksf), executor)
-                    .exceptionally(throwable -> {
-                        exit(throwable);
-                        return null;
-                    })
-                    .thenRun(executor::shutdown);
-            return;
-        }
-
         runBootstrap(ksf);
     }
 
-    protected boolean supportsAsyncInitialization() {
-        return false;
-    }
-
-    // synchronized to prevent shutdown while running bootstrapping
-    private synchronized void runBootstrap(KSF keycloakSessionFactory) {
+    private void runBootstrap(KSF keycloakSessionFactory) {
         var startTime = System.nanoTime();
 
         initKeycloakSessionFactory(keycloakSessionFactory);
@@ -175,8 +147,6 @@ public abstract class KeycloakApplication<KSF extends KeycloakSessionFactory> ex
     }
 
     protected abstract void createTemporaryAdmin(KeycloakSession session);
-
-    protected abstract void initAndStart();
 
     protected abstract KSF createSessionFactory();
 
