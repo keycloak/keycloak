@@ -71,6 +71,17 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.userprofile.config.UPConfig;
+import org.keycloak.services.clientpolicy.executor.ConfidentialClientAcceptExecutorFactory;
+import org.keycloak.services.clientpolicy.executor.DPoPBindEnforcerExecutorFactory;
+import org.keycloak.services.clientpolicy.executor.FullScopeDisabledExecutorFactory;
+import org.keycloak.services.clientpolicy.executor.PKCEEnforcerExecutorFactory;
+import org.keycloak.services.clientpolicy.executor.RejectImplicitGrantExecutorFactory;
+import org.keycloak.services.clientpolicy.executor.SecureClientAuthenticationAssertionExecutorFactory;
+import org.keycloak.services.clientpolicy.executor.SecureClientAuthenticatorExecutorFactory;
+import org.keycloak.services.clientpolicy.executor.SecureClientUrisExecutorFactory;
+import org.keycloak.services.clientpolicy.executor.SecureParContentsExecutorFactory;
+import org.keycloak.services.clientpolicy.executor.SecureSigningAlgorithmExecutorFactory;
+import org.keycloak.services.clientpolicy.executor.SecureSigningAlgorithmForSignedJwtExecutorFactory;
 import org.keycloak.testframework.annotations.InjectAdminClient;
 import org.keycloak.testframework.annotations.InjectClient;
 import org.keycloak.testframework.annotations.InjectEvents;
@@ -156,6 +167,7 @@ public abstract class OID4VCIssuerTestBase {
             .truncatedTo(ChronoUnit.SECONDS);
     public static final Instant TEST_ISSUANCE_DATE = Instant.ofEpochSecond(1000);
 
+    public static final String VCI_CLIENT_POLICY_HAIP = "oid4vc-haip-policy";
     public static final String VCI_CLIENT_POLICY_OFFER_REQUIRED = "oid4vci-offer-required";
 
     @InjectRealm(config = VCTestRealmConfig.class)
@@ -605,10 +617,14 @@ public abstract class OID4VCIssuerTestBase {
             // Add Client Policies
             //
             ClientProfileRepresentation credentialIssuanceProfile = createClientProfileCredentialIssuance();
+            ClientProfileRepresentation haipConformanceProfile = createClientProfileHaipConformance();
             realm.clientProfile(credentialIssuanceProfile);
+            realm.clientProfile(haipConformanceProfile);
 
             ClientPolicyRepresentation offerRequiredPolicy = createClientPolicyOfferRequired(credentialIssuanceProfile);
+            ClientPolicyRepresentation haipConformancePolicy = createClientPolicyHaipConformance(haipConformanceProfile);
             realm.clientPolicy(offerRequiredPolicy);
+            realm.clientPolicy(haipConformancePolicy);
 
             return realm;
         }
@@ -624,6 +640,133 @@ public abstract class OID4VCIssuerTestBase {
             profile.setExecutors(List.of(executor));
 
             return profile;
+        }
+
+        private ClientProfileRepresentation createClientProfileHaipConformance() {
+
+            ClientProfileRepresentation profile = new ClientProfileRepresentation();
+            profile.setName("oid4vc-haip-profile"); // Modelled on fapi-2-dpop-security-profile
+            profile.setDescription("Client profile, which enforces clients to conform to the OpenID4VC High Assurance Interoperability Profile 1.0");
+
+            // confidential-client
+            //
+            ClientPolicyExecutorRepresentation confidentialClientEnforcer = new ClientPolicyExecutorRepresentation();
+            confidentialClientEnforcer.setExecutorProviderId(ConfidentialClientAcceptExecutorFactory.PROVIDER_ID);
+            confidentialClientEnforcer.setConfiguration(JsonNodeFactory.instance.objectNode());
+
+            // secure-client-authenticator
+            //
+            ClientPolicyExecutorRepresentation secureClientAuthenticator = new ClientPolicyExecutorRepresentation();
+            secureClientAuthenticator.setExecutorProviderId(SecureClientAuthenticatorExecutorFactory.PROVIDER_ID);
+            ObjectNode secureClientAuthenticatorConfig = JsonNodeFactory.instance.objectNode();
+            secureClientAuthenticatorConfig.putArray("allowed-client-authenticators")
+                    .add("client-jwt")
+                    .add("client-x509")
+                    .add("attestation-based"); // added for Attestation-Based Client Authentication (ABCA)
+            secureClientAuthenticatorConfig.put("default-client-authenticator", "attestation-based");
+            secureClientAuthenticator.setConfiguration(secureClientAuthenticatorConfig);
+
+            // secure-client-uris
+            //
+            ClientPolicyExecutorRepresentation secureClientUris = new ClientPolicyExecutorRepresentation();
+            secureClientUris.setExecutorProviderId(SecureClientUrisExecutorFactory.PROVIDER_ID);
+            secureClientUris.setConfiguration(JsonNodeFactory.instance.objectNode()
+                    .put("allow-http-on-localhost", true));
+
+            // secure-signature-algorithm
+            //
+            ClientPolicyExecutorRepresentation secureSigningAlgorithm = new ClientPolicyExecutorRepresentation();
+            secureSigningAlgorithm.setExecutorProviderId(SecureSigningAlgorithmExecutorFactory.PROVIDER_ID);
+            secureSigningAlgorithm.setConfiguration(JsonNodeFactory.instance.objectNode()
+                    .put("default-algorithm", "PS256"));
+
+            // consent-required (not used)
+            //
+
+            // secure-signature-algorithm-signed-jwt
+            //
+            ClientPolicyExecutorRepresentation secureSigningAlgorithmForSignedJwt = new ClientPolicyExecutorRepresentation();
+            secureSigningAlgorithmForSignedJwt.setExecutorProviderId(SecureSigningAlgorithmForSignedJwtExecutorFactory.PROVIDER_ID);
+            secureSigningAlgorithmForSignedJwt.setConfiguration(JsonNodeFactory.instance.objectNode()
+                    .put("require-client-assertion", false));
+
+            // full-scope-disabled
+            //
+            ClientPolicyExecutorRepresentation fullScopeDisabled = new ClientPolicyExecutorRepresentation();
+            fullScopeDisabled.setExecutorProviderId(FullScopeDisabledExecutorFactory.PROVIDER_ID);
+            fullScopeDisabled.setConfiguration(JsonNodeFactory.instance.objectNode()
+                    .put("auto-configure", false));
+
+            // reject-implicit-grant
+            //
+            ClientPolicyExecutorRepresentation rejectImplicitGrant = new ClientPolicyExecutorRepresentation();
+            rejectImplicitGrant.setExecutorProviderId(RejectImplicitGrantExecutorFactory.PROVIDER_ID);
+            rejectImplicitGrant.setConfiguration(JsonNodeFactory.instance.objectNode()
+                    .put("auto-configure", false));
+
+            // pkce-enforcer
+            //
+            ClientPolicyExecutorRepresentation pkceEnforcer = new ClientPolicyExecutorRepresentation();
+            pkceEnforcer.setExecutorProviderId(PKCEEnforcerExecutorFactory.PROVIDER_ID);
+            pkceEnforcer.setConfiguration(JsonNodeFactory.instance.objectNode()
+                    .put("auto-configure", false));
+
+            // secure-client-authentication-assertion
+            //
+            ClientPolicyExecutorRepresentation secureClientAuthenticationAssertion = new ClientPolicyExecutorRepresentation();
+            secureClientAuthenticationAssertion.setExecutorProviderId(SecureClientAuthenticationAssertionExecutorFactory.PROVIDER_ID);
+            secureClientAuthenticationAssertion.setConfiguration(JsonNodeFactory.instance.objectNode());
+
+            // secure-par-content
+            //
+            ClientPolicyExecutorRepresentation secureParContents = new ClientPolicyExecutorRepresentation();
+            secureParContents.setExecutorProviderId(SecureParContentsExecutorFactory.PROVIDER_ID);
+            secureParContents.setConfiguration(JsonNodeFactory.instance.objectNode());
+
+            ClientPolicyExecutorRepresentation dpopBindEnforcerExecutor = new ClientPolicyExecutorRepresentation();
+            dpopBindEnforcerExecutor.setExecutorProviderId(DPoPBindEnforcerExecutorFactory.PROVIDER_ID);
+            dpopBindEnforcerExecutor.setConfiguration(JsonNodeFactory.instance.objectNode()
+                    .put("auto-configure", false)
+                    .put("enforce-authorization-code-binding-to-dpop", false)
+                    .put("allow-only-refresh-token-binding", false));
+
+            profile.setExecutors(List.of(
+                    confidentialClientEnforcer,
+                    secureClientAuthenticator,
+                    secureClientUris,
+                    secureSigningAlgorithm,
+                    secureSigningAlgorithmForSignedJwt,
+                    fullScopeDisabled,
+                    rejectImplicitGrant,
+                    pkceEnforcer,
+                    secureClientAuthenticationAssertion,
+                    secureParContents,
+                    dpopBindEnforcerExecutor
+            ));
+
+            return profile;
+        }
+
+        private ClientPolicyRepresentation createClientPolicyHaipConformance(ClientProfileRepresentation profile) {
+
+            ClientPolicyRepresentation policy = new ClientPolicyRepresentation();
+            policy.setName(VCI_CLIENT_POLICY_HAIP);
+            policy.setDescription("Client policy that enables the oid4vc-haip-profile");
+            policy.setEnabled(false);
+
+            ClientPolicyConditionRepresentation condition = new ClientPolicyConditionRepresentation();
+            condition.setConditionProviderId("client-attributes");
+            ObjectNode config = JsonNodeFactory.instance.objectNode();
+            config.put("attributes", JsonSerialization.valueAsString(List.of(Map.of(
+                    "key", OID4VCI_ENABLED_ATTRIBUTE_KEY,
+                    "value", String.valueOf(true)
+            ))));
+            condition.setConfiguration(config);
+
+            policy.setConditions(List.of(condition));
+            policy.setProfiles(List.of(profile.getName()));
+
+            return policy;
         }
 
         private ClientPolicyRepresentation createClientPolicyOfferRequired(ClientProfileRepresentation profile) {

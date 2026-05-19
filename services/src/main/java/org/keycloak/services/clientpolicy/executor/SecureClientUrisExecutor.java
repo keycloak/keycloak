@@ -41,19 +41,32 @@ import org.keycloak.services.clientpolicy.context.ClientCRUDContext;
 import org.keycloak.services.clientpolicy.context.DynamicClientRegisterContext;
 import org.keycloak.services.clientpolicy.context.DynamicClientUpdateContext;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
  */
-public class SecureClientUrisExecutor implements ClientPolicyExecutorProvider<ClientPolicyExecutorConfigurationRepresentation> {
+public class SecureClientUrisExecutor implements ClientPolicyExecutorProvider<SecureClientUrisExecutor.Configuration> {
 
     private static final Logger logger = Logger.getLogger(SecureClientUrisExecutor.class);
 
     private final KeycloakSession session;
+    private Configuration configuration;
+
 
     public SecureClientUrisExecutor(KeycloakSession session) {
         this.session = session;
+    }
+
+    @Override
+    public void setupConfiguration(Configuration config) {
+        this.configuration = config;
+    }
+
+    @Override
+    public Class<Configuration> getExecutorConfigurationClass() {
+        return Configuration.class;
     }
 
     @Override
@@ -180,8 +193,14 @@ public class SecureClientUrisExecutor implements ClientPolicyExecutorProvider<Cl
         }
 
         logger.tracev("Redirect URI = {0}", redirectUri);
-        if (!redirectUri.startsWith("https://") || redirectUri.contains("*")) {
+        if (redirectUri.contains("*")) {
             throw new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, "Invalid redirect_uri");
+        }
+        if (!redirectUri.startsWith("https://")) {
+            boolean isRedirectToLocalhost = redirectUri.startsWith("http://localhost") || redirectUri.startsWith("http://127.0.0.1");
+            if (!configuration.allowHttpOnLocalhost || !isRedirectToLocalhost) {
+                throw new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, "Invalid redirect_uri");
+            }
         }
     }
 
@@ -192,5 +211,19 @@ public class SecureClientUrisExecutor implements ClientPolicyExecutorProvider<Cl
         }
         Set<String> resolvedUrls = RedirectUtils.resolveUrlsWithRedirects(session, originalUrls, rootUrl, redirectUris, returnAsOrigins);
         return new ArrayList<>(resolvedUrls);
+    }
+
+    public static class Configuration extends ClientPolicyExecutorConfigurationRepresentation {
+
+        @JsonProperty("allow-http-on-localhost")
+        protected boolean allowHttpOnLocalhost;
+
+        public boolean getAllowHttpOnLocalhost() {
+            return allowHttpOnLocalhost;
+        }
+
+        public void setAllowHttpOnLocalhost(boolean allowHttpOnLocalhost) {
+            this.allowHttpOnLocalhost = allowHttpOnLocalhost;
+        }
     }
 }

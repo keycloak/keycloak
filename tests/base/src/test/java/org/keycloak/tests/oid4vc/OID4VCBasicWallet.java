@@ -61,6 +61,7 @@ import org.keycloak.testsuite.util.oauth.oid4vc.Oid4vcNonceRequest;
 import org.keycloak.testsuite.util.oauth.oid4vc.PreAuthorizedCodeGrantRequest;
 import org.keycloak.util.DPoPGenerator;
 import org.keycloak.util.JsonSerialization;
+import org.keycloak.util.TokenUtil;
 
 import static org.keycloak.OAuth2Constants.AUTHORIZATION_DETAILS;
 import static org.keycloak.OAuth2Constants.DPOP_JWT_HEADER_TYPE;
@@ -363,7 +364,7 @@ public class OID4VCBasicWallet {
         return request;
     }
 
-    public Oid4vcCredentialRequest credentialRequest(OID4VCTestContext ctx, String accessToken) {
+    public Oid4vcCredentialRequest credentialRequest(OID4VCTestContext ctx, String tokenType, String accessToken) {
         Oid4vcCredentialRequest request = new Oid4vcCredentialRequest(oauth, new CredentialRequest()) {
             public Oid4vcCredentialResponse send() {
                 Oid4vcCredentialResponse response = super.send();
@@ -371,8 +372,12 @@ public class OID4VCBasicWallet {
                 return response;
             }
         };
-        request.bearerToken(accessToken);
+        request.authToken(tokenType, accessToken);
         return request;
+    }
+
+    public Oid4vcCredentialRequest credentialRequest(OID4VCTestContext ctx, String accessToken) {
+        return credentialRequest(ctx, TokenUtil.TOKEN_TYPE_BEARER, accessToken);
     }
 
     public Oid4vcCredentialResponse fetchCredentialByOffer(OID4VCTestContext ctx, CredentialsOffer offer) {
