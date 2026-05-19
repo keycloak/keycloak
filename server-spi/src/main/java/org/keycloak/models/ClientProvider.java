@@ -82,6 +82,26 @@ public interface ClientProvider extends ClientLookupProvider, Provider {
     long getClientsCount(RealmModel realm);
 
     /**
+     * Returns number of clients whose clientId contains the given string (case-insensitive).
+     * @param realm Realm.
+     * @param clientId clientId search string (substring match).
+     * @return Number of matching clients.
+     */
+    default long searchClientsByClientIdCount(RealmModel realm, String clientId) {
+        return searchClientsByClientIdStream(realm, clientId, null, null).count();
+    }
+
+    /**
+     * Returns number of clients matching all the given attributes.
+     * @param realm Realm.
+     * @param attributes map of attribute name to value (exact match per entry).
+     * @return Number of matching clients.
+     */
+    default long searchClientsByAttributesCount(RealmModel realm, Map<String, String> attributes) {
+        return searchClientsByAttributes(realm, attributes, null, null).count();
+    }
+
+    /**
      * Returns a stream of clients that are expected to always show up in account console.
      * @param realm Realm owning the clients.
      * @return Stream of the clients. Never returns {@code null}.
