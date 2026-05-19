@@ -33,6 +33,7 @@ import jakarta.ws.rs.core.Response;
 import org.keycloak.admin.client.resource.AuthorizationResource;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ClientsResource;
+import org.keycloak.authorization.client.AuthorizationDeniedException;
 import org.keycloak.authorization.client.AuthzClient;
 import org.keycloak.authorization.client.Configuration;
 import org.keycloak.common.Profile;
@@ -46,6 +47,9 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.representations.idm.authorization.AuthorizationRequest;
+import org.keycloak.representations.idm.authorization.AuthorizationResponse;
+import org.keycloak.representations.idm.authorization.PermissionRequest;
 import org.keycloak.representations.idm.authorization.PermissionTicketRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
@@ -500,6 +504,43 @@ public class ResourcesRestServiceTest extends AbstractRestServiceTest {
     }
 
     @Test
+    public void testResourcesApiBlockedWhenUserManagedAccessDisabled() throws Exception {
+        Resource resource = getMyResources().get(0);
+        final String resourcesUrl = getAccountUrl("resources");
+        final String resourceUrl = resourcesUrl + "/" + encodePathAsIs(resource.getId());
+        final String permissionsUrl = resourceUrl + "/permissions";
+
+        assertCanAuthorizeWithUmaGrant("alice", resource.getId(), "Scope A");
+        String permissionTicket = createPermissionTicket(resource.getId(), "Scope A");
+
+        setUserManagedAccessAllowed(false);
+        try {
+            for (String url : Arrays.asList(
+                    resourcesUrl,
+                    resourcesUrl + "/shared-with-me",
+                    resourcesUrl + "/shared-with-others",
+                    resourcesUrl + "/pending-requests",
+                    resourceUrl,
+                    permissionsUrl,
+                    permissionsUrl + "/requests",
+                    resourceUrl + "/user?value=alice")) {
+                assertEquals(Response.Status.FORBIDDEN.getStatusCode(),
+                        SimpleHttpDefault.doGet(url, httpClient).acceptJson().auth(tokenUtil.getToken()).asStatus(),
+                        "GET " + url);
+            }
+
+            assertEquals(Response.Status.FORBIDDEN.getStatusCode(),
+                    SimpleHttpDefault.doPut(permissionsUrl, httpClient).acceptJson().auth(tokenUtil.getToken())
+                            .json(Arrays.asList(new Permission("jdoe", "Scope A"))).asStatus(),
+                    "PUT " + permissionsUrl);
+
+            assertCannotAuthorizeWithUmaGrant("alice", permissionTicket);
+        } finally {
+            setUserManagedAccessAllowed(true);
+        }
+    }
+
+    @Test
     public void testRevokePermission() throws Exception {
         List<String> users = Arrays.asList("jdoe", "alice");
         List<Permission> permissions = new ArrayList<>();
@@ -759,6 +800,34 @@ public class ResourcesRestServiceTest extends AbstractRestServiceTest {
                 .create(new Configuration(suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth",
                         managedRealm.admin().toRepresentation().getRealm(), client.getClientId(),
                         credentials, httpClient));
+    }
+
+    private void setUserManagedAccessAllowed(boolean allowed) {
+        RealmRepresentation realm = managedRealm.admin().toRepresentation();
+        realm.setUserManagedAccessAllowed(allowed);
+        managedRealm.admin().update(realm);
+    }
+
+    private void assertCanAuthorizeWithUmaGrant(String userName, String resourceId, String scope) {
+        AuthorizationResponse response = authzClient.authorization(userName, "password")
+                .authorize(new AuthorizationRequest(createPermissionTicket(resourceId, scope)));
+
+        assertNotNull(response.getToken());
+    }
+
+    private void assertCannotAuthorizeWithUmaGrant(String userName, String permissionTicket) {
+        try {
+            authzClient.authorization(userName, "password")
+                    .authorize(new AuthorizationRequest(permissionTicket));
+            fail("User-managed access grant should not authorize the requester when UMA is disabled");
+        } catch (AuthorizationDeniedException expected) {
+            // expected
+        }
+    }
+
+    private String createPermissionTicket(String resourceId, String scope) {
+        return authzClient.protection("test-authz-user@localhost", "password").permission()
+                .create(new PermissionRequest(resourceId, scope)).getTicket();
     }
 
     private UserRepresentation createUser(String userName, String password, String firstName, String lastName, String email) {

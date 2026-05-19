@@ -32,7 +32,6 @@ public class UMAPolicyProvider extends AbstractPermissionProvider {
 
     @Override
     public void evaluate(Evaluation evaluation) {
-        logger.debugf("UMA policy %s evaluating using parent class", evaluation.getPolicy().getName());
         ResourcePermission permission = evaluation.getPermission();
         Resource resource = permission.getResource();
 
@@ -46,6 +45,13 @@ public class UMAPolicyProvider extends AbstractPermissionProvider {
                 return;
             }
         }
+
+        if (!evaluation.getAuthorizationProvider().getRealm().isUserManagedAccessAllowed()) {
+            logger.debugf("UMA policy %s skipped because user-managed access is disabled for the realm", evaluation.getPolicy().getName());
+            return;
+        }
+
+        logger.debugf("UMA policy %s evaluating using parent class", evaluation.getPolicy().getName());
 
         super.evaluate(evaluation);
     }

@@ -33,6 +33,7 @@ import java.util.stream.Stream;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.DefaultValue;
+import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.POST;
@@ -222,6 +223,9 @@ public class AccountRestService {
     @Path("/resources")
     public ResourcesService resources() {
         checkAccountApiEnabled();
+        if (!realm.isUserManagedAccessAllowed()) {
+            throw new ForbiddenException();
+        }
         auth.requireOneOf(AccountRoles.MANAGE_ACCOUNT, AccountRoles.VIEW_PROFILE);
         return new ResourcesService(session, user, auth, request);
     }
