@@ -55,12 +55,8 @@ public class DefaultClientApi implements ClientApi {
     @PUT
     @Override
     public Response createOrUpdateClient(BaseClientRepresentation client) {
-        try {
-            var result = clientService.createOrUpdateClient(realm, clientId, client);
-            return Response.status(result.created() ? Response.Status.CREATED : Response.Status.OK).entity(result.representation()).build();
-        } catch (ServiceException e) {
-            throw e.toWebApplicationException();
-        }
+        var result = clientService.createOrUpdateClient(realm, clientId, client);
+        return Response.status(result.created() ? Response.Status.CREATED : Response.Status.OK).entity(result.representation()).build();
     }
 
     @PATCH
@@ -70,21 +66,13 @@ public class DefaultClientApi implements ClientApi {
         PatchType patchType = PatchType.getByMediaType(contentType)
                 .orElseThrow(() -> new WebApplicationException("Unsupported media type", Response.Status.UNSUPPORTED_MEDIA_TYPE));
 
-        try {
-            return clientService.patchClient(realm, clientId, patchType, patch);
-        } catch (ServiceException e) {
-            throw e.toWebApplicationException();
-        }
+        return clientService.patchClient(realm, clientId, patchType, patch);
     }
 
     @DELETE
     @Override
     public Response deleteClient() {
-        try {
-            clientService.deleteClient(realm, clientId);
-            return Response.noContent().build();
-        } catch (ServiceException e) {
-            throw e.toWebApplicationException();
-        }
+        clientService.deleteClient(realm, clientId);
+        return Response.noContent().build();
     }
 }
