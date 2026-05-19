@@ -61,6 +61,8 @@ import org.keycloak.jose.jwe.enc.JWEEncryptionProvider;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.jose.jws.crypto.RSAProvider;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
@@ -736,6 +738,51 @@ public class UserInfoTest extends AbstractKeycloakTest {
 
             clientRep.setNotBefore(0);
             clientResource.update(clientRep);
+
+            //Test realm notBefore with client notBefore both set
+            // Set client notBefore to past
+            clientRep.setNotBefore(time - 200);
+            clientResource.update(clientRep);
+
+            // Set realm notBefore to future
+            rep.setNotBefore(time);
+            realm.update(rep);
+
+            response = UserInfoClientUtil.executeUserInfoRequest_getMethod(client, accessTokenResponse.getToken());
+
+            assertEquals(Status.UNAUTHORIZED.getStatusCode(), response.getStatus());
+
+            events.expect(EventType.USER_INFO_REQUEST_ERROR)
+                    .error(Errors.INVALID_TOKEN)
+                    .user(Matchers.nullValue(String.class))
+                    .session(Matchers.nullValue(String.class))
+                    .detail(Details.AUTH_METHOD, Details.VALIDATE_ACCESS_TOKEN)
+                    .client((String) null)
+                    .assertEvent();
+
+            rep.setNotBefore(0);
+            realm.update(rep);
+            clientRep.setNotBefore(0);
+            clientResource.update(clientRep);
+
+            testingClient.server("test").run(session -> {
+                RealmModel realmModel = session.getContext().getRealm();
+                UserModel userModel = session.users().getUserByUsername(realmModel, "test-user@localhost");
+                session.users().setNotBeforeForUser(realmModel, userModel, time);
+            });
+
+            response = UserInfoClientUtil.executeUserInfoRequest_getMethod(client, accessTokenResponse.getToken());
+            assertEquals(Status.UNAUTHORIZED.getStatusCode(), response.getStatus());
+
+            testingClient.server("test").run(session -> {
+                RealmModel realmModel = session.getContext().getRealm();
+                UserModel userModel = session.users().getUserByUsername(realmModel, "test-user@localhost");
+                session.users().setNotBeforeForUser(realmModel, userModel, 0);
+            });
+
+            response = UserInfoClientUtil.executeUserInfoRequest_getMethod(client, accessTokenResponse.getToken());
+            assertEquals(Status.OK.getStatusCode(), response.getStatus());
+
         } finally {
             client.close();
         }

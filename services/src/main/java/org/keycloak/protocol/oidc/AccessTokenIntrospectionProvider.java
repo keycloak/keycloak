@@ -273,7 +273,7 @@ public class AccessTokenIntrospectionProvider<T extends AccessToken> implements 
 
                 try {
                     TokenVerifier.createWithoutSignature(token)
-                            .withChecks(TokenManager.NotBeforeCheck.forModel(client), TokenVerifier.IS_ACTIVE, new TokenManager.TokenRevocationCheck(session))
+                            .withChecks(TokenManager.NotBeforeCheck.forModel(realm), TokenManager.NotBeforeCheck.forModel(client), TokenVerifier.IS_ACTIVE, new TokenManager.TokenRevocationCheck(session))
                             .verify();
                     this.client = client;
                     return true;
