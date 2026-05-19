@@ -21,7 +21,7 @@ import java.io.IOException;
 
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
-import org.keycloak.it.junit5.extension.KeycloakDistributionDecorator;
+import org.keycloak.it.junit5.extension.KeycloakRunner;
 import org.keycloak.it.junit5.extension.StopServer;
 import org.keycloak.it.junit5.extension.StopServer.Mode;
 import org.keycloak.it.utils.KeycloakDistribution;
@@ -50,11 +50,11 @@ public class OpenApiDistTest {
 
   @Test
   @Launch({"start-dev", FEATURES_OPTION})
-  void testOpenApiEndpointNotEnabled(KeycloakDistributionDecorator distribution) {
+  void testOpenApiEndpointNotEnabled(KeycloakRunner runner) {
     assertThrows(IOException.class, () -> when().get(OPENAPI_ENDPOINT), "Connection refused must be thrown");
     assertThrows(IOException.class, () -> when().get(OPENAPI_UI_ENDPOINT), "Connection refused must be thrown");
 
-    distribution.setRequestPort(8080);
+    runner.setRequestPort(8080);
 
     when().get(OPENAPI_ENDPOINT).then()
         .statusCode(404);
@@ -87,11 +87,11 @@ public class OpenApiDistTest {
 
   @StopServer(Mode.BEFORE_QUARKUS)
   @Test
-  void testOpenApiRequiresFeatures(KeycloakDistributionDecorator dist) {
-    CLIResult cliResult = dist.run("start-dev", "--openapi-enabled=true", "--features=openapi");
+  void testOpenApiRequiresFeatures(KeycloakRunner runner) {
+    CLIResult cliResult = runner.run("start-dev", "--openapi-enabled=true", "--features=openapi");
     cliResult.assertError("ERROR: Feature openapi depends on disabled feature client-admin-api-v2");
 
-    cliResult = dist.run("start-dev", "--openapi-enabled=true", "--features=client-admin-api:v2");
+    cliResult = runner.run("start-dev", "--openapi-enabled=true", "--features=client-admin-api:v2");
     cliResult.assertError("Disabled option: '--openapi-enabled'. Available only when OpenAPI feature is enabled");
   }
 

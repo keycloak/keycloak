@@ -21,7 +21,7 @@ import java.nio.file.Paths;
 
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
-import org.keycloak.it.junit5.extension.KeycloakDistributionDecorator;
+import org.keycloak.it.junit5.extension.KeycloakRunner;
 import org.keycloak.it.junit5.extension.RawDistOnly;
 import org.keycloak.it.junit5.extension.StopServer;
 import org.keycloak.it.junit5.extension.StopServer.Mode;
@@ -87,9 +87,9 @@ public class OptionsDistTest {
     @Test
     @Order(6)
     @RawDistOnly(reason = "Raw is enough and we avoid issues with including custom conf file in the container")
-    public void testExpressionsInConfigFile(KeycloakDistributionDecorator distribution) {
-        distribution.setEnvVar("MY_LOG_LEVEL", "warn");
-        CLIResult result = distribution.run(CONFIG_FILE_LONG_NAME + "=" + Paths.get("src/test/resources/OptionsDistTest/keycloak.conf").toAbsolutePath().normalize(), "start", "--db=dev-file", "--http-enabled=true", "--hostname-strict=false");
+    public void testExpressionsInConfigFile(KeycloakRunner runner) {
+        runner.setEnvVar("MY_LOG_LEVEL", "warn");
+        CLIResult result = runner.run(CONFIG_FILE_LONG_NAME + "=" + Paths.get("src/test/resources/OptionsDistTest/keycloak.conf").toAbsolutePath().normalize(), "start", "--db=dev-file", "--http-enabled=true", "--hostname-strict=false");
         result.assertNoMessage("INFO [io.quarkus]");
         result.assertNoMessage("Listening on:");
 

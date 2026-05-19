@@ -24,6 +24,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.keycloak.it.junit5.extension.StopServer.Mode;
 import org.keycloak.it.utils.KeycloakDistribution;
+import org.keycloak.it.utils.RawKeycloakDistribution;
 import org.keycloak.quarkus.runtime.cli.command.DryRunMixin;
 
 import io.restassured.RestAssured;
@@ -32,14 +33,18 @@ import static org.keycloak.quarkus.runtime.Environment.LAUNCH_MODE;
 import static org.keycloak.quarkus.runtime.Environment.LAUNCH_MODE_EXIT_AFTER_START;
 import static org.keycloak.quarkus.runtime.Environment.LAUNCH_MODE_EXIT_BEFORE_BOOTSTRAP;
 
-public class KeycloakDistributionDecorator implements KeycloakDistribution {
+/**
+ * Wraps the distribution to provide a run methods that configure the distribution
+ * to match the expectations of the test related annotations.
+ */
+public class KeycloakRunner {
 
     private DistributionTest config;
     private KeycloakDistribution delegate;
     private StopServer.Mode stopServer;
     private long startTimeout = TimeUnit.SECONDS.toMillis(Long.getLong("keycloak.distribution.start.timeout", 120L));
 
-    public KeycloakDistributionDecorator(DistributionTest config,
+    public KeycloakRunner(DistributionTest config,
                                          KeycloakDistribution delegate) {
         this.config = config;
         this.delegate = delegate;
@@ -55,24 +60,24 @@ public class KeycloakDistributionDecorator implements KeycloakDistribution {
         List<String> args = new ArrayList<>(rawArgs);
         args.addAll(List.of(config.defaultOptions()));
         if (config.debug() && delegate.supportsDebug()) {
-            setEnvVar("KC_DEBUG", "true");
-            setEnvVar("KC_DEBUG_SUSPEND", "y");
+            delegate.setEnvVar("KC_DEBUG", "true");
+            delegate.setEnvVar("KC_DEBUG_SUSPEND", "y");
         }
-        setEnvVar("KC_SHUTDOWN_DELAY", "0s");
+        delegate.setEnvVar("KC_SHUTDOWN_DELAY", "0s");
         if (config.localCache()) {
-            setEnvVar("KC_CACHE", "local");    
+            delegate.setEnvVar("KC_CACHE", "local");    
         } else {
             args.add("-Djgroups.join_timeout=50");
         }
         if (stopServer == Mode.BEFORE_QUARKUS) {
-            setEnvVar(DryRunMixin.KC_DRY_RUN_ENV, "true");
-            setEnvVar(DryRunMixin.KC_DRY_RUN_BUILD_ENV, "true");
+            delegate.setEnvVar(DryRunMixin.KC_DRY_RUN_ENV, "true");
+            delegate.setEnvVar(DryRunMixin.KC_DRY_RUN_BUILD_ENV, "true");
         } else if (stopServer != Mode.MANUAL) {
             args.add("-D" + LAUNCH_MODE + "=" + (stopServer == Mode.BEFORE_BOOTSTRAP ? LAUNCH_MODE_EXIT_BEFORE_BOOTSTRAP : LAUNCH_MODE_EXIT_AFTER_START));            
         }
 
         if (config.enableTls()) {
-            copyOrReplaceFileFromClasspath("/server.keystore", Path.of("conf", "server.keystore"));
+            getDistribution(RawKeycloakDistribution.class).copyOrReplaceFileFromClasspath("/server.keystore", Path.of("conf", "server.keystore"));
         }
         try {
             delegate.runKc(args);
@@ -85,86 +90,15 @@ public class KeycloakDistributionDecorator implements KeycloakDistribution {
             
         setRequestPort(config.requestPort());
 
-        return CLIResult.create(getOutputStream(), getErrorStream(), getExitCode());
+        return CLIResult.create(delegate.getOutputStream(), delegate.getErrorStream(), delegate.getExitCode());
     }
     
-    @Override
-    public void runKc(List<String> arguments) {
-        delegate.runKc(arguments);
-    }
-    
-    @Override
-    public int getMappedPort(int port) {
-        return delegate.getMappedPort(port);
-    }
-    
-    @Override
-    public void waitFor(boolean ready, long timeoutMillis) {
-        delegate.waitFor(ready, timeoutMillis);
-    }
-    
-    @Override
-    public boolean supportsDebug() {
-        return delegate.supportsDebug();
-    }
-
-    @Override
     public void stop() {
         delegate.stop();
     }
 
-    @Override
-    public List<String> getOutputStream() {
-        return delegate.getOutputStream();
-    }
-
-    @Override
-    public List<String> getErrorStream() {
-        return delegate.getErrorStream();
-    }
-
-    @Override
-    public int getExitCode() {
-        return delegate.getExitCode();
-    }
-
     public void setStopServer(Mode mode) {
         this.stopServer = mode;
-    }
-
-    @Override
-    public void setQuarkusProperty(String key, String value) {
-        delegate.setQuarkusProperty(key, value);
-    }
-
-    @Override
-    public void setProperty(String key, String value) {
-        delegate.setProperty(key, value);
-    }
-
-    @Override
-    public void deleteQuarkusProperties() {
-        delegate.deleteQuarkusProperties();
-    }
-
-    @Override
-    public void copyOrReplaceFileFromClasspath(String file, Path distDir) {
-        delegate.copyOrReplaceFileFromClasspath(file, distDir);
-    }
-
-    @Override
-    public void removeProperty(String name) {
-        delegate.removeProperty(name);
-    }
-
-    @Override
-    public void setEnvVar(String name, String value) {
-        delegate.setEnvVar(name, value);
-    }
-
-    @Override
-    public void copyOrReplaceFile(Path file, Path targetFile) {
-        delegate.copyOrReplaceFile(file, targetFile);
     }
 
     public void setRequestPort(int port) {
@@ -176,7 +110,7 @@ public class KeycloakDistributionDecorator implements KeycloakDistribution {
      * on the unwrapped distribution is not recommended. The {@link #run(List)} methods on class should be used
      * instead as they ensure the arguments and env match the expectations of the test and method annotations
      */
-    public  <D extends KeycloakDistribution> D unwrap(Class<D> type) {
+    public <D extends KeycloakDistribution> D getDistribution(Class<D> type) {
         if (!KeycloakDistribution.class.isAssignableFrom(type)) {
             throw new IllegalArgumentException("Not a " + KeycloakDistribution.class + " type");
         }
@@ -188,10 +122,13 @@ public class KeycloakDistributionDecorator implements KeycloakDistribution {
 
         throw new IllegalArgumentException("Not a " + type + " type");
     }
+    
+    public KeycloakDistribution getDistribution() {
+        return this.delegate;
+    }
 
-    @Override
-    public void clearEnv() {
-        delegate.clearEnv();
+    public void setEnvVar(String key, String value) {
+        this.delegate.setEnvVar(key, value);
     }
 
 }

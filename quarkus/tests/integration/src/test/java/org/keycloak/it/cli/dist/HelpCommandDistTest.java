@@ -24,7 +24,7 @@ import java.util.stream.Stream;
 
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
-import org.keycloak.it.junit5.extension.KeycloakDistributionDecorator;
+import org.keycloak.it.junit5.extension.KeycloakRunner;
 import org.keycloak.it.junit5.extension.RawDistOnly;
 import org.keycloak.it.junit5.extension.WithEnvVars;
 import org.keycloak.quarkus.runtime.Environment;
@@ -194,7 +194,7 @@ public class HelpCommandDistTest {
     }
 
     @Test
-    public void testHelpDoesNotStartReAugJvm(KeycloakDistributionDecorator dist) {
+    public void testHelpDoesNotStartReAugJvm(KeycloakRunner runner) {
         for (String helpCmd : List.of("-h", "--help", "--help-all")) {
             for (String cmd : List.of("", "start", "start-dev", "build")) {
                 String debugOption = "--debug";
@@ -203,7 +203,7 @@ public class HelpCommandDistTest {
                     debugOption = "--debug=8787";
                 }
 
-                CLIResult run = dist.run(debugOption, cmd, helpCmd);
+                CLIResult run = runner.run(debugOption, cmd, helpCmd);
                 assertSingleJvmStarted(run);
             }
         }

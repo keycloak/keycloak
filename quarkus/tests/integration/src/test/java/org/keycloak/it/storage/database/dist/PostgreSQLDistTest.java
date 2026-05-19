@@ -22,10 +22,10 @@ import java.util.function.Consumer;
 import org.keycloak.it.junit5.extension.BeforeStartDistribution;
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
-import org.keycloak.it.junit5.extension.KeycloakDistributionDecorator;
 import org.keycloak.it.junit5.extension.WithDatabase;
 import org.keycloak.it.storage.database.PostgreSQLTest;
 import org.keycloak.it.utils.RawDistRootPath;
+import org.keycloak.it.utils.RawKeycloakDistribution;
 import org.keycloak.quarkus.runtime.cli.command.AbstractAutoBuildCommand;
 
 import io.quarkus.test.junit.main.Launch;
@@ -47,9 +47,9 @@ public class PostgreSQLDistTest extends PostgreSQLTest {
         assertThat(cliResult.getOutput(),containsString("postgres (Persisted)"));
     }
     
-    public static final class RemoveDB implements Consumer<KeycloakDistributionDecorator> {
+    public static final class RemoveDB implements Consumer<RawKeycloakDistribution> {
         @Override
-        public void accept(KeycloakDistributionDecorator distribution) {
+        public void accept(RawKeycloakDistribution distribution) {
             distribution.removeProperty("db");
         }
     }

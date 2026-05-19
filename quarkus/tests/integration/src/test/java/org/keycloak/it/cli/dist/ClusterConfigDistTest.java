@@ -25,9 +25,10 @@ import java.util.function.Consumer;
 import org.keycloak.it.junit5.extension.BeforeStartDistribution;
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
-import org.keycloak.it.junit5.extension.KeycloakDistributionDecorator;
+import org.keycloak.it.junit5.extension.KeycloakRunner;
 import org.keycloak.it.junit5.extension.RawDistOnly;
 import org.keycloak.it.junit5.extension.StopServer.Mode;
+import org.keycloak.it.utils.RawKeycloakDistribution;
 
 import io.quarkus.test.junit.main.Launch;
 import io.quarkus.test.junit.main.LaunchResult;
@@ -207,19 +208,19 @@ public class ClusterConfigDistTest {
     }
 
     @Test
-    void testAbsoluteCacheFile(KeycloakDistributionDecorator dist, @TempDir Path tempDir) throws Exception {
+    void testAbsoluteCacheFile(KeycloakRunner runner, @TempDir Path tempDir) throws Exception {
         File customCacheFile = tempDir.resolve("my-custom-cache.xml").toFile();
         File missingCacheFile = tempDir.resolve("my-missing-cache.xml").toFile();
         try (InputStream is = ClusterConfigDistTest.class.getResourceAsStream("/cache-ispn-custom-cache.xml")) {
             Files.write(is.readAllBytes(), customCacheFile);
         }
 
-        LaunchResult result = dist.run("start", "--cache-config-file=" + customCacheFile.getAbsolutePath());
+        LaunchResult result = runner.run("start", "--cache-config-file=" + customCacheFile.getAbsolutePath());
         Assertions.assertEquals(0, result.exitCode());
         MatcherAssert.assertThat(result.getOutput(), Matchers.containsString(WARN_DEFAULT_CACHE_MUTATIONS));
 
         String absolutePath = missingCacheFile.getAbsolutePath();
-        result = dist.run("start", "--cache-config-file=" + absolutePath);
+        result = runner.run("start", "--cache-config-file=" + absolutePath);
         Assertions.assertEquals(2, result.exitCode());
         MatcherAssert.assertThat(result.getErrorOutput(), Matchers.matchesRegex("Cache config file '" + absolutePath + "' does not exist"));
     }
@@ -261,18 +262,18 @@ public class ClusterConfigDistTest {
         result.assertNoMessage("Ignoring unbounded max-count for cache 'sessions'");
     }
 
-    public static class ConfigureCacheUsingAsyncEncryption implements Consumer<KeycloakDistributionDecorator> {
+    public static class ConfigureCacheUsingAsyncEncryption implements Consumer<RawKeycloakDistribution> {
 
         @Override
-        public void accept(KeycloakDistributionDecorator distribution) {
+        public void accept(RawKeycloakDistribution distribution) {
             distribution.copyOrReplaceFileFromClasspath("/cache-ispn-asym-enc.xml", Path.of("conf", "cache-ispn-asym-enc.xml"));
         }
     }
 
-    public static class ConfigureCustomCache implements Consumer<KeycloakDistributionDecorator> {
+    public static class ConfigureCustomCache implements Consumer<RawKeycloakDistribution> {
 
         @Override
-        public void accept(KeycloakDistributionDecorator distribution) {
+        public void accept(RawKeycloakDistribution distribution) {
             distribution.copyOrReplaceFileFromClasspath("/cache-ispn-custom-cache.xml", Path.of("conf", "cache-ispn-custom-cache.xml"));
         }
     }

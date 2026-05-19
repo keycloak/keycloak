@@ -21,7 +21,7 @@ import java.io.IOException;
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
 import org.keycloak.it.junit5.extension.DistributionType;
-import org.keycloak.it.junit5.extension.KeycloakDistributionDecorator;
+import org.keycloak.it.junit5.extension.KeycloakRunner;
 import org.keycloak.it.junit5.extension.StopServer.Mode;
 
 import io.quarkus.test.junit.main.Launch;
@@ -58,14 +58,14 @@ public class ManagementDistTest {
     @Test
     @Order(2)
     @Launch({"start-dev", "--legacy-observability-interface=true"})
-    void testManagementDisabled(LaunchResult result, KeycloakDistributionDecorator distribution) {
+    void testManagementDisabled(LaunchResult result, KeycloakRunner runner) {
         CLIResult cliResult = (CLIResult) result;
         cliResult.assertNoMessage("Management interface listening on");
 
         assertThrows(IOException.class, () -> when().get("/"), "Connection refused must be thrown");
         assertThrows(IOException.class, () -> when().get("/health"), "Connection refused must be thrown");
 
-        distribution.setRequestPort(8080);
+        runner.setRequestPort(8080);
 
         when().get("/health").then()
                 .statusCode(200);
@@ -125,11 +125,11 @@ public class ManagementDistTest {
 
     @Test
     @Launch({"start-dev", "--http-management-port=9005"})
-    void testManagementDifferentPort(LaunchResult result, KeycloakDistributionDecorator distribution) {
+    void testManagementDifferentPort(LaunchResult result, KeycloakRunner runner) {
         CLIResult cliResult = (CLIResult) result;
         cliResult.assertMessage("Management interface listening on http://0.0.0.0:9005");
 
-        distribution.setRequestPort(9005);
+        runner.setRequestPort(9005);
 
         when().get("/").then()
                 .statusCode(200)
@@ -159,10 +159,10 @@ public class ManagementDistTest {
 
     @Test
     @Launch({"start-dev", "--http-relative-path=/auth", "--http-management-relative-path=/management"})
-    void testManagementRootRedirects(LaunchResult result, KeycloakDistributionDecorator distribution) {
+    void testManagementRootRedirects(LaunchResult result, KeycloakRunner runner) {
         assertRelativePath(result, "/management");
 
-        distribution.setRequestPort(8080);
+        runner.setRequestPort(8080);
 
         given().redirects().follow(false).when().get("/").then().statusCode(302).header("Location", is("/auth"));
         when().get("/").then().statusCode(200).body(containsString("Welcome to Keycloak"));

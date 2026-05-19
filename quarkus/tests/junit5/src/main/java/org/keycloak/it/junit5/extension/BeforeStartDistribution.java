@@ -23,6 +23,8 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.util.function.Consumer;
 
+import org.keycloak.it.utils.RawKeycloakDistribution;
+
 /**
  * {@link BeforeStartDistribution} is used to perform additional steps prior to starting the distribution.
  */
@@ -30,6 +32,6 @@ import java.util.function.Consumer;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface BeforeStartDistribution {
 
-    Class<? extends Consumer<KeycloakDistributionDecorator>> value();
+    Class<? extends Consumer<RawKeycloakDistribution>> value();
 
 }

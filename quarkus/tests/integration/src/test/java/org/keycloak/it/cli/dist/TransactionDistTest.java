@@ -21,7 +21,7 @@ import java.io.IOException;
 import java.util.Map;
 
 import org.keycloak.it.junit5.extension.DistributionTest;
-import org.keycloak.it.junit5.extension.KeycloakDistributionDecorator;
+import org.keycloak.it.junit5.extension.KeycloakRunner;
 import org.keycloak.it.junit5.extension.RawDistOnly;
 import org.keycloak.it.junit5.extension.StopServer.Mode;
 import org.keycloak.it.junit5.extension.TestProvider;
@@ -40,33 +40,33 @@ import static org.hamcrest.MatcherAssert.assertThat;
 public class TransactionDistTest {
 
     @Test
-    void testZeroTransactionTimeout(KeycloakDistributionDecorator dist) {
-        var result = dist.run("start-dev", "--transaction-default-timeout=0s");
+    void testZeroTransactionTimeout(KeycloakRunner runner) {
+        var result = runner.run("start-dev", "--transaction-default-timeout=0s");
         result.assertError("Invalid duration '0s' for option 'transaction-default-timeout. Duration must be positive.");
-        result = dist.run("start-dev", "--transaction-setup-timeout=0s");
+        result = runner.run("start-dev", "--transaction-setup-timeout=0s");
         result.assertError("Invalid duration '0s' for option 'transaction-setup-timeout. Duration must be positive.");
     }
 
     @Test
-    void testNegativeTransactionTimeout(KeycloakDistributionDecorator dist) {
-        var result = dist.run("start-dev", "--transaction-default-timeout=-1s");
+    void testNegativeTransactionTimeout(KeycloakRunner runner) {
+        var result = runner.run("start-dev", "--transaction-default-timeout=-1s");
         result.assertError("Invalid duration '-1s' for option 'transaction-default-timeout. Duration must be positive.");
-        result = dist.run("start-dev", "--transaction-setup-timeout=-2s");
+        result = runner.run("start-dev", "--transaction-setup-timeout=-2s");
         result.assertError("Invalid duration '-2s' for option 'transaction-setup-timeout. Duration must be positive.");
     }
 
     @Test
-    void testNonNumberTransactionTimeout(KeycloakDistributionDecorator dist) {
-        var result = dist.run("start-dev", "--transaction-default-timeout=abc");
+    void testNonNumberTransactionTimeout(KeycloakRunner runner) {
+        var result = runner.run("start-dev", "--transaction-default-timeout=abc");
         result.assertError("Invalid duration format 'abc' for option 'transaction-default-timeout'. May be an ISO 8601 duration value, an integer number of seconds, or an integer followed by one of [ms, h, m, s, d].");
-        result = dist.run("start-dev", "--transaction-setup-timeout=def");
+        result = runner.run("start-dev", "--transaction-setup-timeout=def");
         result.assertError("Invalid duration format 'def' for option 'transaction-setup-timeout'. May be an ISO 8601 duration value, an integer number of seconds, or an integer followed by one of [ms, h, m, s, d].");
     }
 
     @Test
     @TestProvider(TestRealmResourceTestProvider.class)
-    void testValidTransactionTimeout(KeycloakDistributionDecorator dist) throws IOException {
-        var result = dist.run("start-dev", "--transaction-default-timeout=123s", "--transaction-setup-timeout=456s");
+    void testValidTransactionTimeout(KeycloakRunner runner) throws IOException {
+        var result = runner.run("start-dev", "--transaction-default-timeout=123s", "--transaction-setup-timeout=456s");
         result.assertStartedDevMode();
         assertTimeouts();
     }

@@ -19,7 +19,7 @@ package org.keycloak.it.cli.dist;
 
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
-import org.keycloak.it.junit5.extension.KeycloakDistributionDecorator;
+import org.keycloak.it.junit5.extension.KeycloakRunner;
 import org.keycloak.it.junit5.extension.RawDistOnly;
 import org.keycloak.it.junit5.extension.StopServer;
 import org.keycloak.it.junit5.extension.StopServer.Mode;
@@ -139,42 +139,42 @@ public class StartAutoBuildDistTest {
     @Test
     @TestProvider(CustomUserProvider.class)
     @Order(10)
-    void testSpiAutoBuild(KeycloakDistributionDecorator dist) {
-        CLIResult cliResult = dist.run("start-dev", "--spi-user-provider=custom_jpa", "--spi-user-jpa-enabled=false");
+    void testSpiAutoBuild(KeycloakRunner runner) {
+        CLIResult cliResult = runner.run("start-dev", "--spi-user-provider=custom_jpa", "--spi-user-jpa-enabled=false");
         cliResult.assertMessage("Updating the configuration");
         cliResult.assertStartedDevMode();
-        dist.stop();
+        runner.stop();
 
         // we should persist the spi provider and know not to rebuild
-        cliResult = dist.run("start-dev", "--spi-user-provider=custom_jpa", "--spi-user-jpa-enabled=false");
+        cliResult = runner.run("start-dev", "--spi-user-provider=custom_jpa", "--spi-user-jpa-enabled=false");
         cliResult.assertNoMessage("Updating the configuration");
         cliResult.assertStartedDevMode();
     }
 
     @Test
     @Order(11)
-    void testLogLevelNotPeristed(KeycloakDistributionDecorator dist) {
-        CLIResult cliResult = dist.run("start", "--db=dev-file", "--log-level=org.hibernate.SQL:debug", "--http-enabled=true", "--hostname-strict=false");
+    void testLogLevelNotPeristed(KeycloakRunner runner) {
+        CLIResult cliResult = runner.run("start", "--db=dev-file", "--log-level=org.hibernate.SQL:debug", "--http-enabled=true", "--hostname-strict=false");
         cliResult.assertMessage("DEBUG [org.hibernate.SQL]");
         cliResult.assertStarted();
-        dist.stop();
+        runner.stop();
 
         // logging runtime defaults should not be used
-        cliResult = dist.run("start", "--db=dev-file", "--http-enabled=true", "--hostname-strict=false");
+        cliResult = runner.run("start", "--db=dev-file", "--http-enabled=true", "--hostname-strict=false");
         cliResult.assertNoMessage("DEBUG [org.hibernate.SQL]");
         cliResult.assertStarted();
     }
 
     @Test
     @Order(12)
-    void testLogLevelWildcardNotPeristed(KeycloakDistributionDecorator dist) {
-        CLIResult cliResult = dist.run("start-dev", "--log-level-org.hibernate.SQL=debug");
+    void testLogLevelWildcardNotPeristed(KeycloakRunner runner) {
+        CLIResult cliResult = runner.run("start-dev", "--log-level-org.hibernate.SQL=debug");
         cliResult.assertMessage("DEBUG [org.hibernate.SQL]");
         cliResult.assertStartedDevMode();
-        dist.stop();
+        runner.stop();
 
         // logging runtime defaults should not be used
-        cliResult = dist.run("start-dev");
+        cliResult = runner.run("start-dev");
         cliResult.assertNoMessage("DEBUG [org.hibernate.SQL]");
         cliResult.assertStartedDevMode();
     }

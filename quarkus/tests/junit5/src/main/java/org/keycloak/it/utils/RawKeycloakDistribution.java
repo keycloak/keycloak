@@ -485,7 +485,6 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
         }
     }
 
-    @Override
     public void setProperty(String key, String value) {
         updateProperties(properties -> properties.put(key, value), distPath.resolve("conf").resolve("keycloak.conf").toFile());
     }
@@ -495,17 +494,14 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
         this.envVars.put(name, value);
     }
 
-    @Override
     public void removeProperty(String name) {
         updateProperties(properties -> properties.remove(name), distPath.resolve("conf").resolve("keycloak.conf").toFile());
     }
 
-    @Override
     public void setQuarkusProperty(String key, String value) {
         updateProperties(properties -> properties.put(key, value), getQuarkusPropertiesFile());
     }
 
-    @Override
     public void deleteQuarkusProperties() {
         File file = getQuarkusPropertiesFile();
 
@@ -514,7 +510,6 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
         }
     }
 
-    @Override
     public void copyOrReplaceFileFromClasspath(String file, Path targetFile) {
         Path path = distPath.resolve(targetFile);
 
@@ -527,7 +522,6 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
         }
     }
 
-    @Override
     public void copyOrReplaceFile(Path file, Path targetFile) {
         if (!file.toFile().exists()) {
             return;
@@ -544,6 +538,7 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
         }
     }
 
+    @Override
     public void copyProvider(String groupId, String artifactId) {
         copyProvider(getDistPath(), groupId, artifactId);
     }
@@ -561,6 +556,7 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
         }
     }
 
+    @Override
     public void copyConfigFile(Path configFilePath) {
         try {
             Files.copy(configFilePath, distPath.resolve("conf").resolve(configFilePath.getFileName()));

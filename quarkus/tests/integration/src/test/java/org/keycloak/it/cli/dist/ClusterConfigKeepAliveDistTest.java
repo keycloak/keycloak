@@ -27,7 +27,7 @@ import java.util.stream.Stream;
 
 import org.keycloak.config.CachingOptions;
 import org.keycloak.it.junit5.extension.DistributionTest;
-import org.keycloak.it.junit5.extension.KeycloakDistributionDecorator;
+import org.keycloak.it.junit5.extension.KeycloakRunner;
 import org.keycloak.it.junit5.extension.RawDistOnly;
 import org.keycloak.it.junit5.extension.StopServer.Mode;
 import org.keycloak.it.junit5.extension.TestProvider;
@@ -57,7 +57,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 public class ClusterConfigKeepAliveDistTest {
     @Test
     @TestProvider(TestRealmResourceTestProvider.class)
-    void testMaxCountApplied(KeycloakDistributionDecorator dist) {
+    void testMaxCountApplied(KeycloakRunner runner) {
         int maxCount = 100;
         Set<String> maxCountCaches = Stream.of(CachingOptions.LOCAL_MAX_COUNT_CACHES, CachingOptions.CLUSTERED_MAX_COUNT_CACHES)
               .flatMap(Arrays::stream)
@@ -68,7 +68,7 @@ public class ClusterConfigKeepAliveDistTest {
             sb.append(" --").append(CachingOptions.cacheMaxCountProperty(cache)).append("=").append(maxCount);
 
         String args = sb.toString();
-        dist.run(args.split(" "));
+        runner.run(args.split(" "));
 
         for (String cache : maxCountCaches) {
             Configuration config = getCacheConfiguration(cache);
@@ -78,19 +78,19 @@ public class ClusterConfigKeepAliveDistTest {
 
     @Test
     @TestProvider(TestRealmResourceTestProvider.class)
-    void testNumOwnersWithPersistentSessions(KeycloakDistributionDecorator dist) {
-        doNumOwnerTest(dist, false);
+    void testNumOwnersWithPersistentSessions(KeycloakRunner runner) {
+        doNumOwnerTest(runner, false);
     }
 
     @Test
     @TestProvider(TestRealmResourceTestProvider.class)
-    void testNumOwnersWithVolatileSessions(KeycloakDistributionDecorator dist) {
-        doNumOwnerTest(dist, true);
+    void testNumOwnersWithVolatileSessions(KeycloakRunner runner) {
+        doNumOwnerTest(runner, true);
     }
 
     @Test
     @TestProvider(TestRealmResourceTestProvider.class)
-    void testCheckMinimumNumOwners(KeycloakDistributionDecorator dist) {
+    void testCheckMinimumNumOwners(KeycloakRunner runner) {
         List<String> args = new ArrayList<>();
         args.add("start-dev");
         args.add("--cache=ispn");
@@ -100,13 +100,13 @@ public class ClusterConfigKeepAliveDistTest {
                 .map(cache -> CaseFormat.LOWER_CAMEL.to(CaseFormat.LOWER_HYPHEN, cache))
                 .map("--spi-cache-embedded--default--%s-owners=1"::formatted)
                 .forEach(args::add);
-        dist.run(args);
+        runner.run(args);
 
         // forces the numOwner to 2 to prevent data loss.
         assertNumOwner(Arrays.stream(CLUSTERED_CACHE_NUM_OWNERS), 2);
     }
 
-    private void doNumOwnerTest(KeycloakDistributionDecorator dist, boolean volatileSessions) {
+    private void doNumOwnerTest(KeycloakRunner runner, boolean volatileSessions) {
         final int owners = 5;
         List<String> args = new ArrayList<>();
         args.add("start-dev");
@@ -119,7 +119,7 @@ public class ClusterConfigKeepAliveDistTest {
                 .map(cache -> CaseFormat.LOWER_CAMEL.to(CaseFormat.LOWER_HYPHEN, cache))
                 .map(cache -> "--spi-cache-embedded--default--%s-owners=%s".formatted(cache, owners))
                 .forEach(args::add);
-        dist.run(args);
+        runner.run(args);
 
         Stream<String> caches = Arrays.stream(CLUSTERED_CACHE_NUM_OWNERS);
         if (!volatileSessions) {

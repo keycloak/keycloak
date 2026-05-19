@@ -7,7 +7,7 @@ import java.util.stream.Collectors;
 import org.keycloak.common.Profile;
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
-import org.keycloak.it.junit5.extension.KeycloakDistributionDecorator;
+import org.keycloak.it.junit5.extension.KeycloakRunner;
 import org.keycloak.it.junit5.extension.RawDistOnly;
 import org.keycloak.it.junit5.extension.StopServer.Mode;
 import org.keycloak.quarkus.runtime.cli.command.Build;
@@ -47,12 +47,12 @@ public class FeaturesDistTest {
             .collect(Collectors.joining(", "));
 
     @Test
-    public void testEnableOnBuild(KeycloakDistributionDecorator dist) {
-        CLIResult cliResult = dist.run(Build.NAME, "--db=dev-file", "--features=preview");
+    public void testEnableOnBuild(KeycloakRunner runner) {
+        CLIResult cliResult = runner.run(Build.NAME, "--db=dev-file", "--features=preview");
         cliResult.assertBuild();
         assertPreviewFeaturesEnabled(cliResult);
 
-        cliResult = dist.run(Start.NAME, "--http-enabled=true", "--hostname-strict=false", OPTIMIZED_BUILD_OPTION_LONG);
+        cliResult = runner.run(Start.NAME, "--http-enabled=true", "--hostname-strict=false", OPTIMIZED_BUILD_OPTION_LONG);
         assertPreviewFeaturesEnabled(cliResult);
     }
 

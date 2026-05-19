@@ -32,37 +32,19 @@ public interface KeycloakDistribution {
 
     List<String> getErrorStream();
 
+    /**
+     * Available after the main process exits, which may require {@link #stop()} to be called
+     */
     int getExitCode();
     
     boolean supportsDebug();
 
-    default void setQuarkusProperty(String key, String value) {
-        throw new RuntimeException("Not implemented");
-    }
-
-    default void setProperty(String key, String value) {
-        throw new RuntimeException("Not implemented");
-    }
-
-    default void deleteQuarkusProperties() {
-        throw new RuntimeException("Not implemented");
-    }
-
-    default void copyOrReplaceFileFromClasspath(String file, Path distDir) {
-        throw new RuntimeException("Not implemented");
-    }
-
-    default void removeProperty(String name) {
-        throw new RuntimeException("Not implemented");
-    }
-
-    default void setEnvVar(String name, String value) {
-        throw new RuntimeException("Not implemented");
-    }
-
-    default void copyOrReplaceFile(Path file, Path targetFile) {
-        throw new RuntimeException("Not implemented");
-    }
+    void setEnvVar(String name, String value);
 
     void clearEnv();
+    
+    void copyProvider(String groupId, String artifactId);
+
+    void copyConfigFile(Path configFilePath);
+
 }

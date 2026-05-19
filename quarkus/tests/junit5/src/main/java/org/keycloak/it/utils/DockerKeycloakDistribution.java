@@ -193,7 +193,7 @@ public final class DockerKeycloakDistribution implements KeycloakDistribution {
     public void copyConfigFile(Path configFilePath) {
         copyToContainer.put(MountableFile.forHostPath(configFilePath), "/opt/keycloak/conf/" + configFilePath.getFileName());
     }
-
+    
     // After the web server is responding we are still producing some logs that got checked in the tests
     @Override
     public void waitFor(boolean ready, long timeoutMillis) {

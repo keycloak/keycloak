@@ -21,7 +21,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
-import org.keycloak.it.junit5.extension.KeycloakDistributionDecorator;
+import org.keycloak.it.junit5.extension.KeycloakRunner;
 import org.keycloak.it.junit5.extension.RawDistOnly;
 import org.keycloak.it.junit5.extension.StopServer;
 import org.keycloak.it.junit5.extension.StopServer.Mode;
@@ -34,7 +34,6 @@ import org.keycloak.it.utils.RawKeycloakDistribution;
 
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.main.Launch;
-import org.awaitility.Awaitility;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Tag;
@@ -82,11 +81,11 @@ public class StartCommandDistTest {
     @StopServer(Mode.BEFORE_QUARKUS)
     @Test
     @RawDistOnly(reason = "Containers are immutable")
-    void errorSpiBuildtimeAtRuntime(KeycloakDistributionDecorator dist) {
-        CLIResult cliResult = dist.run("build",  "--db=dev-file");
+    void errorSpiBuildtimeAtRuntime(KeycloakRunner runner) {
+        CLIResult cliResult = runner.run("build",  "--db=dev-file");
         cliResult.assertBuild();
 
-        cliResult = dist.run("start", "--optimized", "--http-enabled=true", "--hostname-strict=false", "--spi-events-listener--jboss-logging--enabled=false");
+        cliResult = runner.run("start", "--optimized", "--http-enabled=true", "--hostname-strict=false", "--spi-events-listener--jboss-logging--enabled=false");
         cliResult.assertError("The following build time options have values that differ from what is persisted - the new values will NOT be used until another build is run: kc.spi-events-listener--jboss-logging--enabled");
     }
 
@@ -94,28 +93,28 @@ public class StartCommandDistTest {
     @WithEnvVars({"KC_SPI_EVENTS_LISTENER__JBOSS_LOGGING__ENABLED", "false"})
     @Test
     @RawDistOnly(reason = "Containers are immutable")
-    void noErrorSpiBuildtimeNotChanged(KeycloakDistributionDecorator dist) {
-        CLIResult cliResult = dist.run("build", "--db=dev-file");
+    void noErrorSpiBuildtimeNotChanged(KeycloakRunner runner) {
+        CLIResult cliResult = runner.run("build", "--db=dev-file");
         cliResult.assertBuild();
 
-        cliResult = dist.run("start", "--optimized", "--http-enabled=true", "--hostname-strict=false");
+        cliResult = runner.run("start", "--optimized", "--http-enabled=true", "--hostname-strict=false");
         cliResult.assertNoError("The following build time options");
     }
 
     @Test
     @RawDistOnly(reason = "Containers are immutable")
-    void terminateStartOptimized(KeycloakDistributionDecorator dist) {
-        CLIResult cliResult = dist.run("build", "--db=dev-file");
+    void terminateStartOptimized(KeycloakRunner runner) {
+        CLIResult cliResult = runner.run("build", "--db=dev-file");
         cliResult.assertBuild();
 
-        dist.setStopServer(Mode.MANUAL);
-        cliResult = dist.run("start", "--optimized", "--http-enabled=true", "--hostname-strict=false");
+        runner.setStopServer(Mode.MANUAL);
+        cliResult = runner.run("start", "--optimized", "--http-enabled=true", "--hostname-strict=false");
         cliResult.assertStarted();
 
         // if the child java process does not clean up, then subsequent start will fail
-        dist.stop();
+        runner.stop();
 
-        cliResult = dist.run("start", "--optimized", "--http-enabled=true", "--hostname-strict=false");
+        cliResult = runner.run("start", "--optimized", "--http-enabled=true", "--hostname-strict=false");
         cliResult.assertStarted();
     }
 
@@ -197,10 +196,10 @@ public class StartCommandDistTest {
     @StopServer(Mode.BEFORE_QUARKUS)
     @Test
     @RawDistOnly(reason = "Containers are immutable")
-    void testWarningWhenOverridingBuildOptionsDuringStart(KeycloakDistributionDecorator dist) {
-        CLIResult cliResult = dist.run("build", "--db=postgres", "--features=preview");
+    void testWarningWhenOverridingBuildOptionsDuringStart(KeycloakRunner runner) {
+        CLIResult cliResult = runner.run("build", "--db=postgres", "--features=preview");
         cliResult.assertBuild();
-        cliResult = dist.run("start", "--db=dev-file", "--hostname=localhost", "--http-enabled=true");
+        cliResult = runner.run("start", "--db=dev-file", "--hostname=localhost", "--http-enabled=true");
         cliResult.assertMessage("The previous optimized build will be overridden with the following build options:");
         cliResult.assertMessage("- db=postgres > db=dev-file"); // back to the default value
         cliResult.assertMessage("- features=preview > features=<unset>"); // no default value, the <unset> is shown
@@ -208,35 +207,35 @@ public class StartCommandDistTest {
         assertTrue(cliResult.getErrorOutput().isBlank());
         // should not show warning if the re-augmentation did not happen through the build command
         // an optimized server image should ideally be created by running a build
-        cliResult = dist.run("start", "--db=dev-mem", "--hostname=localhost", "--http-enabled=true");
+        cliResult = runner.run("start", "--db=dev-mem", "--hostname=localhost", "--http-enabled=true");
         cliResult.assertNoMessage("The previous optimized build will be overridden with the following build options:");
         assertTrue(cliResult.getErrorOutput().isBlank());
-        dist.run("build", "--db=postgres");
-        cliResult = dist.run("start", "--db=dev-file", "--hostname=localhost", "--http-enabled=true");
+        runner.run("build", "--db=postgres");
+        cliResult = runner.run("start", "--db=dev-file", "--hostname=localhost", "--http-enabled=true");
         cliResult.assertMessage("- db=postgres > db=dev-file");
         cliResult.assertNoMessage("- features=preview > features=<unset>");
         assertTrue(cliResult.getErrorOutput().isBlank());
-        dist.run("build", "--db=postgres");
-        cliResult = dist.run("start", "--db=dev-mem", "--hostname=localhost", "--http-enabled=true");
+        runner.run("build", "--db=postgres");
+        cliResult = runner.run("start", "--db=dev-mem", "--hostname=localhost", "--http-enabled=true");
         cliResult.assertMessage("- db=postgres > db=dev-mem"); // option overridden during the start
         assertTrue(cliResult.getErrorOutput().isBlank());
-        dist.run("build", "--db=dev-mem");
-        cliResult = dist.run("start", "--db=dev-mem", "--hostname=localhost", "--http-enabled=true");
+        runner.run("build", "--db=dev-mem");
+        cliResult = runner.run("start", "--db=dev-mem", "--hostname=localhost", "--http-enabled=true");
         cliResult.assertNoMessage("- db=postgres > db=postgres"); // option did not change not need to show
         assertTrue(cliResult.getErrorOutput().isBlank());
-        dist.run("build", "--db=dev-mem");
-        cliResult = dist.run("start", "--db=dev-mem", "--cache=local", "--hostname=localhost", "--http-enabled=true");
+        runner.run("build", "--db=dev-mem");
+        cliResult = runner.run("start", "--db=dev-mem", "--cache=local", "--hostname=localhost", "--http-enabled=true");
         cliResult.assertNoMessage("The previous optimized build will be overridden with the following build options:"); // no message, same values provided during auto-build
     }
 
     @StopServer(Mode.BEFORE_QUARKUS)
     @Test
     @RawDistOnly(reason = "Containers are immutable")
-    void testStartAfterStartDev(KeycloakDistributionDecorator dist) {
-        CLIResult cliResult = dist.run("start-dev");
+    void testStartAfterStartDev(KeycloakRunner runner) {
+        CLIResult cliResult = runner.run("start-dev");
         cliResult.assertStartedDevMode();
 
-        cliResult = dist.run("start", "--db=dev-file", "--http-enabled", "true", "--hostname-strict", "false");
+        cliResult = runner.run("start", "--db=dev-file", "--http-enabled", "true", "--hostname-strict", "false");
         cliResult.assertNotDevMode();
         assertTrue(cliResult.getErrorOutput().isBlank());
     }
@@ -244,11 +243,11 @@ public class StartCommandDistTest {
     @StopServer(Mode.BEFORE_QUARKUS)
     @Test
     @RawDistOnly(reason = "Containers are immutable")
-    void testErrorWhenOverridingNonCliBuildOptionsDuringStart(KeycloakDistributionDecorator dist) {
-        CLIResult cliResult = dist.run("build", "--db=dev-file", "--features=preview");
+    void testErrorWhenOverridingNonCliBuildOptionsDuringStart(KeycloakRunner runner) {
+        CLIResult cliResult = runner.run("build", "--db=dev-file", "--features=preview");
         cliResult.assertBuild();
-        dist.setEnvVar("KC_DB", "postgres");
-        cliResult = dist.run("start", "--optimized", "--hostname=localhost", "--http-enabled=true");
+        runner.setEnvVar("KC_DB", "postgres");
+        cliResult = runner.run("start", "--optimized", "--hostname=localhost", "--http-enabled=true");
         cliResult.assertError("The following build time options have values that differ from what is persisted - the new values will NOT be used until another build is run: kc.db");
     }
 
@@ -269,20 +268,20 @@ public class StartCommandDistTest {
 
     @RawDistOnly(reason = "Containers are immutable")
     @Test
-    void testRuntimeValuesAreNotCaptured(KeycloakDistributionDecorator dist) {
+    void testRuntimeValuesAreNotCaptured(KeycloakRunner runner) {
         // confirm that the invalid value prevents startup - if this passes, then we need to use a different
         // spi provider
-        CLIResult cliResult = dist.run("start", "--db=dev-file", "--spi-events-listener-jboss-logging-success-level=invalid", "--http-enabled", "true", "--hostname-strict", "false");
+        CLIResult cliResult = runner.run("start", "--db=dev-file", "--spi-events-listener-jboss-logging-success-level=invalid", "--http-enabled", "true", "--hostname-strict", "false");
         cliResult.assertError("Failed to start quarkus");
 
         // if there was no auto-build use an explicit build to potentially capture the runtime default
         if (!cliResult.getOutput().contains("Server configuration updated and persisted")) {
-            cliResult = dist.run("build", "--db=dev-file", "--spi-events-listener-jboss-logging-success-level=invalid");
+            cliResult = runner.run("build", "--db=dev-file", "--spi-events-listener-jboss-logging-success-level=invalid");
             cliResult.assertBuild();
         }
 
         // the invalid value should not be the default
-        cliResult = dist.run("start", "--db=dev-file", "--http-enabled", "true", "--hostname-strict", "false");
+        cliResult = runner.run("start", "--db=dev-file", "--http-enabled", "true", "--hostname-strict", "false");
         cliResult.assertNoBuild();
         cliResult.assertStarted();
     }
@@ -290,15 +289,15 @@ public class StartCommandDistTest {
     @RawDistOnly(reason = "Containers are immutable")
     @Test
     @TestProvider(TestRealmResourceTestProvider.class)
-    void testAsyncBootstrapFails(KeycloakDistributionDecorator dist) {
-        RawKeycloakDistribution rawDist = dist.unwrap(RawKeycloakDistribution.class);
-        dist.setStopServer(Mode.MANUAL);
-        CLIResult result = dist.run("start", "--server-async-bootstrap=true", "--hostname-strict=false", "--db=dev-file", "--http-enabled=true", "--spi-realm-restapi-extension--test-resources--fail=true");
-        Awaitility.await().atMost(2, TimeUnit.MINUTES).until(() -> !rawDist.isRunning());
-        dist.stop();
+    void testAsyncBootstrapFails(KeycloakRunner runner) {
+        RawKeycloakDistribution rawDist = runner.getDistribution(RawKeycloakDistribution.class);
+        runner.setStopServer(Mode.MANUAL);
+        CLIResult result = runner.run("start", "--server-async-bootstrap=true", "--hostname-strict=false", "--db=dev-file", "--http-enabled=true", "--spi-realm-restapi-extension--test-resources--fail=true");
+        rawDist.waitFor(false, TimeUnit.MINUTES.toMillis(2));
+        runner.stop();
         result.assertMessage("Failed to start server");
         result.assertMessage("I've failed");
-        assertEquals(1, dist.getExitCode());
+        assertEquals(1, rawDist.getExitCode());
     }
 
 }

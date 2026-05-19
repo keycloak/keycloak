@@ -22,7 +22,7 @@ import java.nio.file.Paths;
 
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
-import org.keycloak.it.junit5.extension.KeycloakDistributionDecorator;
+import org.keycloak.it.junit5.extension.KeycloakRunner;
 import org.keycloak.it.junit5.extension.RawDistOnly;
 import org.keycloak.it.junit5.extension.StopServer;
 import org.keycloak.it.junit5.extension.StopServer.Mode;
@@ -86,8 +86,8 @@ public class StartDevCommandDistTest {
     }
 
     @Test
-    void testConfigKeystoreAbsolutePath(KeycloakDistributionDecorator dist) {
-        CLIResult cliResult = dist.run("start-dev", "--config-keystore=" + Paths.get("src/test/resources/keystore").toAbsolutePath().normalize(),
+    void testConfigKeystoreAbsolutePath(KeycloakRunner runner) {
+        CLIResult cliResult = runner.run("start-dev", "--config-keystore=" + Paths.get("src/test/resources/keystore").toAbsolutePath().normalize(),
                 "--config-keystore-password=secret");
 
         // keytool -importpass -alias kc.log-level -keystore keystore -storepass secret -storetype PKCS12 -v (with "org.keycloak.timer:debug" as the stored password)
@@ -101,14 +101,14 @@ public class StartDevCommandDistTest {
 
     @StopServer(Mode.BEFORE_QUARKUS)
     @Test
-    void testStartDevThenImportRebuild(KeycloakDistributionDecorator dist) throws Exception {
-        CLIResult result = dist.run("start-dev");
+    void testStartDevThenImportRebuild(KeycloakRunner runner) throws Exception {
+        CLIResult result = runner.run("start-dev");
         assertTrue(result.getErrorOutput().isEmpty(), result.getErrorOutput());
 
         File target = new File("./target");
 
         // feature change should trigger a build
-        result = dist.run("--profile=dev", "export", "--features=docker", "--dir=" + target.getAbsolutePath());
+        result = runner.run("--profile=dev", "export", "--features=docker", "--dir=" + target.getAbsolutePath());
         result.assertMessage("Updating the configuration and installing your custom providers, if any. Please wait.");
     }
 

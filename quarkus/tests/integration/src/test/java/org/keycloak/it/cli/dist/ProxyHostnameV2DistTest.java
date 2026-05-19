@@ -19,7 +19,7 @@ package org.keycloak.it.cli.dist;
 
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
-import org.keycloak.it.junit5.extension.KeycloakDistributionDecorator;
+import org.keycloak.it.junit5.extension.KeycloakRunner;
 import org.keycloak.it.junit5.extension.RawDistOnly;
 import org.keycloak.it.junit5.extension.StopServer.Mode;
 import org.keycloak.it.junit5.extension.TestProvider;
@@ -67,14 +67,14 @@ public class ProxyHostnameV2DistTest {
     }
 
     @Test
-    void testTrustedProxiesWithoutProxyHeaders(KeycloakDistributionDecorator distribution) {
-        CLIResult result = distribution.run("start-dev", "--proxy-trusted-addresses=1.0.0.0");
+    void testTrustedProxiesWithoutProxyHeaders(KeycloakRunner runner) {
+        CLIResult result = runner.run("start-dev", "--proxy-trusted-addresses=1.0.0.0");
         result.assertError("proxy-trusted-addresses available only when proxy-headers is set");
     }
 
     @Test
-    void testTrustedProxiesWithInvalidAddress(KeycloakDistributionDecorator distribution) {
-        CLIResult result = distribution.run("start-dev", "--proxy-headers=xforwarded", "--proxy-trusted-addresses=1.0.0.0:8080");
+    void testTrustedProxiesWithInvalidAddress(KeycloakRunner runner) {
+        CLIResult result = runner.run("start-dev", "--proxy-headers=xforwarded", "--proxy-trusted-addresses=1.0.0.0:8080");
         result.assertError("1.0.0.0:8080 is not a valid IP address (IPv4 or IPv6) nor valid CIDR notation.");
     }
 
