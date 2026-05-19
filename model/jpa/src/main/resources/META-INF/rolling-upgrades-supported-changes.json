@@ -751,6 +751,10 @@
     "id" : "25.0.0-28265-tables",
     "author" : "keycloak",
     "filename" : "META-INF/jpa-changelog-25.0.0.xml"
+  }, {
+    "id" : "26.6.0-48716-create-mssql-idp-index",
+    "author" : "keycloak",
+    "filename" : "META-INF/jpa-changelog-26.6.0.xml"
   } ],
   "migrations" : [ ]
 }
