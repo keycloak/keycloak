@@ -233,6 +233,14 @@ public abstract class AbstractOAuthClient<T> {
         return pushedAuthorizationRequest().send();
     }
 
+    public RegisterNodeRequest registerNodeRequest() {
+        return new RegisterNodeRequest(this);
+    }
+
+    public UnregisterNodeRequest unregisterNodeRequest() {
+        return new UnregisterNodeRequest(this);
+    }
+
     public <J extends JsonWebToken> J parseToken(String token, Class<J> clazz) {
         return tokensManager.parseToken(token, clazz);
     }
@@ -281,6 +289,10 @@ public abstract class AbstractOAuthClient<T> {
 
     public Endpoints getEndpoints() {
         return new Endpoints(baseUrl, config.getRealm());
+    }
+
+    public String getBaseUrl() {
+        return baseUrl;
     }
 
     public String getRealm() {
