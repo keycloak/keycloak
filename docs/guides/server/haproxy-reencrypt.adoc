@@ -79,7 +79,7 @@ The `ssl crt /path/to/haproxy-external-certificate` directive sets the certifica
 This tells HAProxy to operate at Layer 7, decrypting and re-encrypting HTTP traffic.
 HAProxy has access to the plaintext HTTP traffic in this mode.
 <3> The `http-request del-header` directives remove HTTP headers from incoming requests before forwarding them to {project_name}.
-This prevents external clients from spoofing proxy identity headers (such as `Forwarded`, `X-Forwarded-*`, and `X-Real-IP`), injecting authentication-related headers (such as `X-Forwarded-Access-Token`), or injecting distributed tracing context (such as W3C Trace Context, Zipkin B3, or Jaeger headers).
+This prevents external clients from spoofing proxy identity headers (such as `Forwarded`, `+X-Forwarded-*+`, and `X-Real-IP`), injecting authentication-related headers (such as `X-Forwarded-Access-Token`), or injecting distributed tracing context (such as W3C Trace Context, Zipkin B3, or Jaeger headers).
 For the full list of recommended headers to filter, see the <@links.server id="reverseproxy" anchor="header-filtering-recommendations"/> {section}.
 <4> The backend must also use HTTP mode to match the frontend.
 <5> Distributes connections across backend servers using link:https://docs.haproxy.org/3.2/configuration.html#4-balance[round-robin] load balancing.

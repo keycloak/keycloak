@@ -182,9 +182,11 @@ For example:
 When using TLS re-encrypt, the proxy can inspect and modify HTTP traffic.
 Use this capability to prevent external clients from injecting headers that affect identity resolution, access control, or observability.
 
+NOTE: The following assumes that there is only a single proxy layer in front of {project_name}, and that it is not receiving traffic from another trusted proxy layer with trusted headers.
+
 Configure the proxy to apply the following rules to incoming requests before forwarding them to {project_name}:
 
-* *Overwrite* `Forwarded` and `X-Forwarded-*` headers with the proxy's own values rather than removing them, because {project_name} relies on these headers when `--proxy-headers` is configured.
+* *Overwrite* `Forwarded` and `+X-Forwarded-*+` headers with the proxy's own values rather than removing them, because {project_name} relies on these headers when `--proxy-headers` is configured.
 * *Strip* all other headers listed below entirely.
 
 [%autowidth]
