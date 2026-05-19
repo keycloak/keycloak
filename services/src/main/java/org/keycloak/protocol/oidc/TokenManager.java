@@ -49,6 +49,7 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.TokenCategory;
 import org.keycloak.TokenVerifier;
+import org.keycloak.authentication.authenticators.client.AttestationBasedClientAuthenticator.ABCAResult;
 import org.keycloak.authentication.authenticators.util.AcrStore;
 import org.keycloak.broker.oidc.OIDCIdentityProvider;
 import org.keycloak.broker.oidc.OIDCIdentityProviderConfig;
@@ -65,7 +66,9 @@ import org.keycloak.crypto.SignatureProvider;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
+import org.keycloak.exceptions.TokenVerificationException;
 import org.keycloak.http.HttpRequest;
+import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.jose.jws.crypto.HashUtils;
@@ -136,6 +139,7 @@ import org.keycloak.services.util.UserSessionUtil;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.tracing.TracingAttributes;
 import org.keycloak.tracing.TracingProvider;
+import org.keycloak.util.JWKSUtils;
 import org.keycloak.util.TokenUtil;
 
 import org.jboss.logging.Logger;
@@ -535,6 +539,18 @@ public class TokenManager {
             if (OIDCAdvancedConfigWrapper.fromClientModel(client).isUseMtlsHokToken()) {
                 if (!MtlsHoKTokenUtil.verifyTokenBindingWithClientCertificate(refreshToken, request, session)) {
                     throw new OAuthErrorException(OAuthErrorException.UNAUTHORIZED_CLIENT, MtlsHoKTokenUtil.CERT_VERIFY_ERROR_DESC);
+                }
+            }
+
+            if (Profile.isFeatureEnabled(Feature.CLIENT_AUTH_ABCA)) {
+                AccessToken.Confirmation cnf = refreshToken.getConfirmation();
+                ABCAResult abcaResult = session.getAttribute(ABCAResult.ABCA_RESULT, ABCAResult.class);
+                if (cnf != null && abcaResult != null) {
+                    JWK jwk = abcaResult.getAttestationJwt().getConfirmation().getJwk();
+                    String thumbprint = JWKSUtils.computeThumbprint(jwk);
+                    if (!client.isPublicClient() && !cnf.getKeyThumbprint().equals(thumbprint)) {
+                        throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Attestation-Based Key missmatch");
+                    }
                 }
             }
 
@@ -1294,7 +1310,7 @@ public class TokenManager {
 
         private void generateRefreshToken(boolean offlineTokenRequested) {
             AuthenticatedClientSessionModel clientSession = clientSessionCtx.getClientSession();
-            AccessToken.Confirmation confirmation = getConfirmation(clientSession, accessToken);
+            AccessToken.Confirmation confirmation = getRefreshTokenConfirmation(accessToken);
             refreshToken = new RefreshToken(accessToken, confirmation);
             refreshToken.id(SecretGenerator.getInstance().generateSecureID());
             refreshToken.issuedNow();
@@ -1344,10 +1360,22 @@ public class TokenManager {
         * <br/>
         * Based on the definition above the confirmation is only returned for public-clients.
         */
-        private AccessToken.Confirmation getConfirmation(AuthenticatedClientSessionModel clientSession,
-                                                         AccessToken accessToken) {
-            final boolean isPublicClient = clientSession.getClient().isPublicClient();
-            return isPublicClient ? accessToken.getConfirmation() : null;
+        private AccessToken.Confirmation getRefreshTokenConfirmation(AccessToken accessToken) {
+            AuthenticatedClientSessionModel clientSession = clientSessionCtx.getClientSession();
+            if (clientSession.getClient().isPublicClient()) {
+                return accessToken.getConfirmation();
+            }
+            // Authorization servers issuing a refresh token in response to a token request using the client attestation
+            // mechanism MUST bind the refresh token to the Client Instance and its associated public key
+            // https://datatracker.ietf.org/doc/html/draft-ietf-oauth-attestation-based-client-auth-07#section-10.3
+            ABCAResult abcaResult = session.getAttribute(ABCAResult.ABCA_RESULT, ABCAResult.class);
+            if (abcaResult != null) {
+                JWK jwk = abcaResult.getAttestationJwt().getConfirmation().getJwk();
+                AccessToken.Confirmation cnf = new AccessToken.Confirmation();
+                cnf.setKeyThumbprint(JWKSUtils.computeThumbprint(jwk));
+                return cnf;
+            }
+            return null;
         }
 
         private Long getExpiration(boolean offline) {

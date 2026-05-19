@@ -279,10 +279,9 @@ public class UserInfoEndpoint {
         // https://tools.ietf.org/html/draft-ietf-oauth-mtls-08#section-3
         if (OIDCAdvancedConfigWrapper.fromClientModel(clientModel).isUseMtlsHokToken()) {
             if (!MtlsHoKTokenUtil.verifyTokenBindingWithClientCertificate(token, request, session)) {
-                String errorMessage = "Client certificate missing, or its thumbprint and one in the refresh token did NOT match";
-                event.detail(Details.REASON, errorMessage);
                 event.error(Errors.NOT_ALLOWED);
-                throw error.invalidToken(errorMessage);
+                event.detail(Details.REASON, MtlsHoKTokenUtil.CERT_VERIFY_ERROR_DESC);
+                throw error.invalidToken(MtlsHoKTokenUtil.CERT_VERIFY_ERROR_DESC);
             }
         }
 

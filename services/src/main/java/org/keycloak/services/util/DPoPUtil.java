@@ -105,7 +105,8 @@ public class DPoPUtil {
     }
 
     private static URI normalize(URI uri) {
-        return UriBuilder.fromUri(uri).replaceQuery("").build();
+        URI normalized = UriBuilder.fromUri(uri).fragment(null).replaceQuery("").build();
+        return normalized;
     }
 
     /**
@@ -184,8 +185,11 @@ public class DPoPUtil {
             throw new VerificationException("Invalid or missing type in DPoP header: " + header.getType());
         }
 
-        String algorithm = header.getAlgorithm().name();
+        if (header.getAlgorithm() == null) {
+            throw new VerificationException("Invalid or missing alg in DPoP header: " + header.getAlgorithm());
+        }
 
+        String algorithm = header.getAlgorithm().name();
         if (!getDPoPSupportedAlgorithms(session).contains(algorithm)) {
             throw new VerificationException("Unsupported DPoP algorithm: " + header.getAlgorithm());
         }
@@ -203,8 +207,9 @@ public class DPoPUtil {
             if (key.getPublicKey() == null) {
                 throw new VerificationException("No public key in DPoP header");
             }
-            if (key.getPrivateKey() != null) {
-                throw new VerificationException("Private key is present in DPoP header");
+            // [TODO >>>] JWKSUtils.getKeyWrapper never seems to extract the private key. Should that be changed?
+            if (key.getPrivateKey() != null || jwk.getOtherClaims().containsKey("d")) {
+                throw new VerificationException("Private key parameter 'd' must not be present in DPoP JWK");
             }
         }
 

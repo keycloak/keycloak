@@ -24,6 +24,7 @@ import org.keycloak.tests.oid4vc.OID4VCIssuerTestBase;
 import static org.keycloak.OID4VCConstants.SDJWT_DELIMITER;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -53,7 +54,7 @@ public class OID4VCSdJwtAuthorizationDetailsFlowPreAuthTest extends OID4VCAuthor
         assertNotNull(credentialObj, "Credential object should not be null");
 
         // For SD-JWT VC, the credential should be a string
-        assertTrue(credentialObj instanceof String, "SD-JWT credential should be a string");
+        assertInstanceOf(String.class, credentialObj, "SD-JWT credential should be a string");
         String sdJwtString = (String) credentialObj;
         assertFalse(sdJwtString.isEmpty(), "SD-JWT credential should not be empty");
 

@@ -533,6 +533,13 @@ public abstract class OID4VCIssuerTestBase {
         }
     }
 
+    public static class VCTestServerWithHAIPEnabled implements KeycloakServerConfig {
+        @Override
+        public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
+            return config.features(Profile.Feature.OID4VC_VCI, Profile.Feature.OID4VC_HAIP);
+        }
+    }
+
     public static class VCTestServerWithPreAuthCodeEnabled implements KeycloakServerConfig {
         @Override
         public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {

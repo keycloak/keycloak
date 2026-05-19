@@ -16,9 +16,9 @@ import org.keycloak.protocol.oid4vc.model.CredentialScopeRepresentation;
 import org.keycloak.protocol.oid4vc.model.CredentialsOffer;
 import org.keycloak.protocol.oid4vc.model.IssuerState;
 import org.keycloak.protocol.oid4vc.utils.CredentialScopeUtils;
+import org.keycloak.protocol.oidc.endpoints.AuthorizationCheckException;
 import org.keycloak.protocol.oidc.endpoints.AuthorizationEndpointCheckProvider;
 import org.keycloak.protocol.oidc.endpoints.AuthorizationEndpointChecker;
-import org.keycloak.protocol.oidc.endpoints.AuthorizationEndpointChecker.AuthorizationCheckException;
 import org.keycloak.protocol.oidc.endpoints.request.AuthorizationEndpointRequest;
 
 import static org.keycloak.OAuth2Constants.ISSUER_STATE;
