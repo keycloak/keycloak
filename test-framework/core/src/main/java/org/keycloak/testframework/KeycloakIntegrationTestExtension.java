@@ -4,6 +4,7 @@ import java.lang.reflect.Method;
 import java.util.Optional;
 
 import org.keycloak.testframework.injection.Registry;
+import org.keycloak.testframework.log.LogHandler;
 
 import org.junit.jupiter.api.extension.AfterAllCallback;
 import org.junit.jupiter.api.extension.AfterEachCallback;

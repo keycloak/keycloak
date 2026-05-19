@@ -483,6 +483,7 @@ Complete list of resources that can be injected into tests:
 | `@InjectHttpServer`         | `com.sun.net.httpserver.HttpServer`                      | Mock HTTP server                                  |
 | `@InjectInfinispanServer`   | `org.keycloak.testframework.infinispan.InfinispanServer` | Infinispan server                                 |
 | `@InjectKeycloakUrls`       | `org.keycloak.testframework.server.KeycloakUrls`         | Keycloak server URLs                              |
+| `@InjectLogs`               | `org.keycloak.testframework.log.Logs`                    | Keycloak server logs                              |
 | `@InjectRealm`              | `org.keycloak.testframework.realm.ManagedRealm`          | Managed realm                                     |
 | `@InjectSimpleHttp`         | `org.keycloak.http.simple.SimpleHttp`                    | Simple HTTP client                                |
 | `@InjectSysLogServer`       | `org.keycloak.testframework.events.SysLogServer`         | Add/remove listener for logs from Keycloak server |

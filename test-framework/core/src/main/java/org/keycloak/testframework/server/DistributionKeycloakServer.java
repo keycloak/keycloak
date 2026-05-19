@@ -29,6 +29,7 @@ import org.keycloak.common.Version;
 import org.keycloak.it.utils.Maven;
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.representations.info.ServerInfoRepresentation;
+import org.keycloak.testframework.log.LogCategories;
 import org.keycloak.testframework.util.FileUtils;
 import org.keycloak.testframework.util.ProcessUtils;
 import org.keycloak.testframework.util.TmpDir;
@@ -332,7 +333,7 @@ public class DistributionKeycloakServer implements KeycloakServer {
     private class OutputHandler implements Runnable {
 
         private static final Pattern LOG_PATTERN = Pattern.compile("([^ ]*) ([^ ]*) ([A-Z]*)([ ]*)(.*)");
-        private static final Logger LOGGER = Logger.getLogger("managed.keycloak");
+        private static final Logger LOGGER = Logger.getLogger(LogCategories.MANAGED_KEYCLOAK);
 
         private boolean startedInPrinted = false;
         private final Process process;
@@ -357,16 +358,15 @@ public class DistributionKeycloakServer implements KeycloakServer {
                     if (matcher.matches()) {
                         String levelString = matcher.group(3);
                         String message = matcher.group(5);
-                        if (levelString != null && message != null) {
-                            for (Logger.Level l : Logger.Level.values()) {
-                                if (l.name().equals(levelString)) {
-                                    LOGGER.log(l, message);
-                                    break;
-                                }
-                            }
+                        if (levelString != null && !levelString.isBlank() && message != null) {
+                            Logger.Level level = Logger.Level.valueOf(levelString);
+                            LOGGER.log(level, message);
+                        } else {
+                            LOGGER.info(line);
                         }
+                    } else {
+                        LOGGER.info(line);
                     }
-                    LOGGER.info(line);
                 }
             } catch (IOException e) {
                 // Ignored

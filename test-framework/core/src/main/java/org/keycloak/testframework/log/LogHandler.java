@@ -1,7 +1,4 @@
-package org.keycloak.testframework;
-
-import java.util.logging.Filter;
-import java.util.logging.Handler;
+package org.keycloak.testframework.log;
 
 import org.keycloak.testframework.config.Config;
 import org.keycloak.testframework.github.GitHubActionReport;
@@ -10,23 +7,25 @@ import io.quarkus.runtime.logging.LoggingSetupRecorder;
 import io.smallrye.config.SmallRyeConfigProviderResolver;
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 import org.jboss.logging.Logger;
-import org.jboss.logmanager.LogManager;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
 public class LogHandler implements AutoCloseable {
 
-    private static final Logger LOGGER = Logger.getLogger("testinfo");
-    private final boolean logFilterEnabled;
+    private static final Logger LOGGER = Logger.getLogger(LogCategories.TESTINFO);
+
+    private final boolean filterLogs = Config.get("kc.test.log.filter", false, Boolean.class);
+
     private final GitHubActionReport gitHubActionReport = new GitHubActionReport();
 
-    public LogHandler() {
-        logFilterEnabled = Config.get("kc.test.log.filter", false, Boolean.class);
+    private final LogQueue logQueue = LogQueue.getInstance();
 
+    public LogHandler() {
         System.setProperty("java.util.logging.manager", "org.jboss.logmanager.LogManager");
         System.setProperty("junit.quarkus.enable-basic-logging", "false");
         System.setProperty("log4j2.disable.jmx", "true");
 
         initializeQuarkusLogging();
+        logQueue.enableLogFiltering(filterLogs);
     }
 
     private static void initializeQuarkusLogging() {
@@ -49,11 +48,12 @@ public class LogHandler implements AutoCloseable {
 
     public void beforeEachStarting(ExtensionContext context) {
         logTestMethodStatus(context, Status.INIT, Logger.Level.DEBUG);
+        logQueue.testInit();
     }
 
     public void beforeEachCompleted(ExtensionContext context) {
         logTestMethodStatus(context, Status.RUNNING, Logger.Level.DEBUG);
-        initLogFilter();
+        logQueue.testStarting();
         gitHubActionReport.onMethodStart();
     }
 
@@ -76,23 +76,23 @@ public class LogHandler implements AutoCloseable {
 
     public void testSuccessful(ExtensionContext context) {
         gitHubActionReport.onMethodSuccess(context);
-        clearLogFilter(false);
+        logQueue.testSuccess();
         logTestMethodStatus(context, Status.SUCCESS, Logger.Level.DEBUG);
     }
 
     public void testFailed(ExtensionContext context) {
         gitHubActionReport.onMethodFailed(context);
-        clearLogFilter(true);
+        logQueue.testFailure();
         logTestMethodStatus(context, Status.FAILED, Logger.Level.ERROR);
     }
 
     public void testAborted(ExtensionContext context) {
-        clearLogFilter(true);
+        logQueue.testFailure();
         logTestMethodStatus(context, Status.ABORTED, Logger.Level.ERROR);
     }
 
     public void testDisabled(ExtensionContext context) {
-        clearLogFilter(false);
+        logQueue.testSuccess();
         logTestMethodStatus(context, Status.DISABLED, Logger.Level.DEBUG);
     }
 
@@ -110,30 +110,6 @@ public class LogHandler implements AutoCloseable {
 
     private void logTestMethodStatus(ExtensionContext context, Status status, Logger.Level level) {
         LOGGER.logv(level, "{0} - {1} / {2}", status.getLogString(), context.getRequiredTestClass().getName(), context.getRequiredTestMethod().getName());
-    }
-
-    private void initLogFilter() {
-        if (!logFilterEnabled) {
-            return;
-        }
-
-        for (Handler handler : LogManager.getLogManager().getLogger("").getHandlers()) {
-            handler.setFilter(new LogFilter());
-        }
-    }
-
-    private void clearLogFilter(boolean forwardLogs) {
-        if (!logFilterEnabled) {
-            return;
-        }
-
-        for (Handler handler : LogManager.getLogManager().getLogger("").getHandlers()) {
-            Filter filter = handler.getFilter();
-            handler.setFilter(null);
-            if (filter instanceof LogFilter) {
-                ((LogFilter) filter).clear(forwardLogs);
-            }
-        }
     }
 
     private enum Status {
