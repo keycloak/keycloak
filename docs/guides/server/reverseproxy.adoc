@@ -422,6 +422,7 @@ You do not need to configure additional options for the `envoy` provider.
 
 * <@links.server id="haproxy-reencrypt"/>
 * <@links.server id="traefik-reencrypt"/>
+
 [[graceful-http-shutdown]]
 == Graceful HTTP shutdown
 
