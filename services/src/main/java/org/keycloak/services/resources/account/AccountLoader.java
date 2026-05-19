@@ -113,6 +113,8 @@ public class AccountLoader {
     }
 
     private AccountRestService getAccountRestService(ClientModel client, String versionStr) {
+        AccountRestService.checkAccountApiEnabled();
+
         AuthenticationManager.AuthResult authResult = new AppAuthManager.BearerTokenAuthenticator(session)
                 .authenticate();
         if (authResult == null) {
