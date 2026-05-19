@@ -376,10 +376,14 @@ public class OID4VCBasicWallet {
     }
 
     public Oid4vcCredentialResponse fetchCredentialByOffer(OID4VCTestContext ctx, CredentialsOffer offer) {
+
         AccessTokenResponse tokenResponse;
         if (offer.hasPreAuthorizedGrant()) {
+
             tokenResponse = accessTokenRequestPreAuth(ctx, offer.getPreAuthorizedCode()).send();
+
         } else {
+
             String scope = ctx.getScope();
             String issuerState = offer.getIssuerState();
             String credConfigId = offer.getCredentialConfigurationIds().get(0);
@@ -387,18 +391,33 @@ public class OID4VCBasicWallet {
                 SupportedCredentialConfiguration credConfig = getIssuerMetadata(ctx).getCredentialsSupported().get(credConfigId);
                 scope = credConfig.getScope();
             }
-            String authCode = authorizationRequest()
+
+            AuthorizationEndpointResponse authResponse = authorizationRequest()
                     .scope(scope)
                     .issuerState(issuerState)
-                    .send(ctx.getHolder(), TEST_PASSWORD)
-                    .getCode();
+                    .send(ctx.getHolder(), TEST_PASSWORD);
+
+            String errorDescription = authResponse.getErrorDescription();
+            assertNull(errorDescription, "Authorization error: " + errorDescription);
+            String authCode = authResponse.getCode();
+            assertNotNull(authCode, "No Authorization Code");
+
             tokenResponse = accessTokenRequest(ctx, authCode).send();
         }
+
+        String errorDescription = tokenResponse.getErrorDescription();
+        assertNull(errorDescription, "Access Token error: " + errorDescription);
         String credentialIdentifier = ctx.getAuthorizedCredentialIdentifier();
+        assertNotNull(credentialIdentifier, "No Credential Identifier");
+
         Oid4vcCredentialResponse credResponse = credentialRequest(ctx, tokenResponse.getAccessToken())
                 .credentialIdentifier(credentialIdentifier)
                 .proofs(generateJwtProof(ctx))
                 .send();
+
+        errorDescription = credResponse.getErrorDescription();
+        assertNull(errorDescription, "Credential request error: " + errorDescription);
+
         return credResponse;
     }
 
