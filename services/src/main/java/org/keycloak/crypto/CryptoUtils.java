@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import org.keycloak.common.VerificationException;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.provider.ProviderFactory;
 
@@ -34,6 +35,20 @@ import org.keycloak.provider.ProviderFactory;
  * @author <a href="https://github.com/forkimenjeckayang">Forkim Akwichek</a>
  */
 public class CryptoUtils {
+
+    /**
+     * Looks up a {@link SignatureProvider} for the given algorithm, throwing if none is registered.
+     */
+    public static SignatureProvider getSignatureProvider(KeycloakSession session, String algorithm) throws VerificationException {
+        if (algorithm == null) {
+            throw new VerificationException("Missing token algorithm");
+        }
+        SignatureProvider signatureProvider = session.getProvider(SignatureProvider.class, algorithm);
+        if (signatureProvider == null) {
+            throw new VerificationException("Unsupported token algorithm: " + algorithm);
+        }
+        return signatureProvider;
+    }
 
     /**
      * Returns the supported asymmetric signature algorithms.
