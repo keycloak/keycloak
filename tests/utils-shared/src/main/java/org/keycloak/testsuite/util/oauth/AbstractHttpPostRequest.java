@@ -9,6 +9,7 @@ import java.util.Map;
 
 import org.keycloak.OAuth2Constants;
 import org.keycloak.util.BasicAuthHelper;
+import org.keycloak.util.TokenUtil;
 import org.keycloak.utils.MediaType;
 
 import org.apache.http.HttpEntity;
@@ -28,7 +29,8 @@ public abstract class AbstractHttpPostRequest<T, R> {
     protected String clientAssertion;
     protected String clientAssertionType;
 
-    protected String bearerToken;
+    protected String tokenType;
+    protected String tokenValue;
 
     protected HttpPost post;
 
@@ -89,7 +91,16 @@ public abstract class AbstractHttpPostRequest<T, R> {
     }
 
     public T bearerToken(String token) {
-        this.bearerToken = token;
+        return authToken(TokenUtil.TOKEN_TYPE_BEARER, token);
+    }
+
+    public T dpopToken(String token) {
+        return authToken(TokenUtil.TOKEN_TYPE_DPOP, token);
+    }
+
+    public T authToken(String type, String token) {
+        this.tokenType = type;
+        this.tokenValue = token;
         return request();
     }
 
@@ -137,8 +148,8 @@ public abstract class AbstractHttpPostRequest<T, R> {
         if (clientAssertion != null && clientAssertionType != null) {
             parameter("client_assertion_type", clientAssertionType);
             parameter("client_assertion", clientAssertion);
-        } else if (bearerToken != null) {
-            header("Authorization", "Bearer " + bearerToken);
+        } else if (tokenType != null && tokenValue != null) {
+            header("Authorization", tokenType + " " + tokenValue);
         } else if (clientSecret != null) {
             String authorization = BasicAuthHelper.RFC6749.createHeader(clientId, clientSecret);
             header("Authorization", authorization);
