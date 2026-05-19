@@ -40,12 +40,24 @@ defaults
 frontend https_front
     bind *:8443 ssl crt /path/to/haproxy-external-certificate # <1>
     mode http # <2>
-    http-request del-header Forwarded # <3>
-    http-request del-header x-forwarded-for
-    http-request del-header x-forwarded-proto
-    http-request del-header x-forwarded-host
-    http-request del-header x-forwarded-port
-    http-request del-header x-forwarded-server
+
+    # Prevent external spoofing
+    http-request del-header Forwarded <3>
+    http-request del-header x-forwarded-.* -m reg
+    http-request del-header x-original-.* -m reg
+    http-request del-header x-real-ip
+
+    # Prevent external tracing context injection (W3C Trace Context / Baggage)
+    http-request del-header traceparent
+    http-request del-header tracestate
+    http-request del-header baggage
+
+    # Prevent external tracing context injection (Zipkin, Jaeger, OpenTracing)
+    http-request del-header b3
+    http-request del-header x-b3-.* -m reg
+    http-request del-header uber-trace-id
+    http-request del-header x-ot-span-context
+
     default_backend keycloak_back
 
 backend keycloak_back
@@ -66,8 +78,9 @@ The `ssl crt /path/to/haproxy-external-certificate` directive sets the certifica
 <2> Enables link:https://docs.haproxy.org/3.2/configuration.html#4-mode[HTTP mode] on the frontend.
 This tells HAProxy to operate at Layer 7, decrypting and re-encrypting HTTP traffic.
 HAProxy has access to the plaintext HTTP traffic in this mode.
-<3> The `http-request del-header <HEADER>` entries remove particular HTTP headers from the incoming requests before passing them on.
-The example shows removing of the `Forwarded` and `x-forwarded-` headers in order to prevent a security vulnerability to IP spoofing attacks, where the client is able to impersonate the proxy or other services.
+<3> The `http-request del-header` directives remove HTTP headers from incoming requests before forwarding them to {project_name}.
+This prevents external clients from spoofing proxy identity headers (such as `Forwarded`, `+X-Forwarded-*+`, and `X-Real-IP`), injecting authentication-related headers (such as `X-Forwarded-Access-Token`), or injecting distributed tracing context (such as W3C Trace Context, Zipkin B3, or Jaeger headers).
+For the full list of recommended headers to filter, see the <@links.server id="reverseproxy" anchor="header-filtering-recommendations"/> {section}.
 <4> The backend must also use HTTP mode to match the frontend.
 <5> Distributes connections across backend servers using link:https://docs.haproxy.org/3.2/configuration.html#4-balance[round-robin] load balancing.
 <6> This option adds a `Forwarded` header containing the correct client information.
