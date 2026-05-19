@@ -84,7 +84,9 @@ public class ResourceTypeProvider implements ScimResourceTypeProvider<ResourceTy
             throw new RuntimeException("Could not instantiate resource type representation for provider " + factory.getId(), e);
         }
 
+        representation.setId(provider.getName());
         representation.setName(provider.getName());
+        representation.setDescription(provider.getDescription());
         representation.setEndpoint("/" + factory.getId());
         representation.setSchema(provider.getSchema());
 
