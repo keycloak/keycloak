@@ -1,5 +1,7 @@
 package org.keycloak.rest.admin.api;
 
+import jakarta.ws.rs.NotFoundException;
+
 import org.keycloak.admin.api.AdminApi;
 import org.keycloak.admin.api.client.ClientsApi;
 import org.keycloak.models.KeycloakSession;
