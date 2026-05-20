@@ -38,6 +38,7 @@ import org.keycloak.saml.common.exceptions.ConfigurationException;
 import org.keycloak.saml.common.exceptions.ParsingException;
 import org.keycloak.saml.common.exceptions.ProcessingException;
 import org.keycloak.saml.processing.api.saml.v2.request.SAML2Request;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.saml.AbstractSamlTest;
 import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
@@ -240,11 +241,9 @@ public class KcSamlMetadataSignedAndEncryptedBrokerTest extends AbstractKcSamlMe
                     Assertions.assertEquals(Status.BAD_REQUEST.getStatusCode(), currentResponse.getStatusLine().getStatusCode());
                 });
 
-        events.expect(EventType.LOGIN_ERROR)
-                .realm(realmsResouce().realm(bc.providerRealmName()).toRepresentation().getId())
-                .client((String) null)
-                .user((String) null)
-                .error(Errors.INVALID_SIGNATURE)
-                .assertEvent();
+        EventAssertion.assertError(events.poll()).type(EventType.LOGIN_ERROR)
+                .clientId(null)
+                .userId(null)
+                .error(Errors.INVALID_SIGNATURE);
     }
 }

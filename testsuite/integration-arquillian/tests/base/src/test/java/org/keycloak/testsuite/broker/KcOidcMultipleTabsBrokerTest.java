@@ -28,10 +28,8 @@ import org.keycloak.events.EventType;
 import org.keycloak.models.Constants;
 import org.keycloak.protocol.oidc.utils.OIDCResponseMode;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
-import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.testframework.events.EventAssertion;
-import org.keycloak.testframework.events.EventMatchers;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.BrowserTabUtil;
@@ -39,14 +37,12 @@ import org.keycloak.testsuite.util.InfinispanTestTimeServiceRule;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
 
-import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
 import org.openqa.selenium.htmlunit.HtmlUnitDriver;
 
-import static org.keycloak.testsuite.AssertEvents.DEFAULT_REDIRECT_URI;
 import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_OIDC_ALIAS;
 import static org.keycloak.testsuite.broker.BrokerTestConstants.REALM_CONS_NAME;
 import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
@@ -163,16 +159,15 @@ public class KcOidcMultipleTabsBrokerTest  extends AbstractInitializedBaseBroker
                     .details(Details.RESPONSE_MODE, OIDCResponseMode.QUERY.value());
 
             // Event for "already logged-in" in the consumer realm
-            events.expect(EventType.IDENTITY_PROVIDER_LOGIN).error(Errors.ALREADY_LOGGED_IN)
-                    .realm(getConsumerRealmId())
-                    .client("broker-app")
-                    .user((String) null)
-                    .session((String) null)
-                    .detail(Details.REDIRECT_URI, Matchers.equalTo(DEFAULT_REDIRECT_URI))
-                    .detail(Details.REDIRECTED_TO_CLIENT, "true")
-                    .detail(Details.RESPONSE_TYPE, OIDCResponseType.CODE)
-                    .detail(Details.RESPONSE_MODE, OIDCResponseMode.QUERY.value())
-                    .assertEvent();
+            EventAssertion.assertError(events.poll()).type(EventType.IDENTITY_PROVIDER_LOGIN_ERROR)
+                    .error(Errors.ALREADY_LOGGED_IN)
+                    .clientId("broker-app")
+                    .userId(null)
+                    .sessionId(null)
+                    .details(Details.REDIRECT_URI, oauth.getRedirectUri())
+                    .details(Details.REDIRECTED_TO_CLIENT, "true")
+                    .details(Details.RESPONSE_TYPE, OIDCResponseType.CODE)
+                    .details(Details.RESPONSE_MODE, OIDCResponseMode.QUERY.value());
 
             assertOnAppPageWithAlreadyLoggedInError();
 
@@ -240,14 +235,13 @@ public class KcOidcMultipleTabsBrokerTest  extends AbstractInitializedBaseBroker
                     .details(Details.RESPONSE_MODE, OIDCResponseMode.QUERY.value());
 
             // Event for "already logged-in" in the consumer realm
-            events.expect(EventType.IDENTITY_PROVIDER_LOGIN).error(Errors.ALREADY_LOGGED_IN)
-                    .realm(getConsumerRealmId())
-                    .client("broker-app")
-                    .user((String) null)
-                    .session((String) null)
-                    .removeDetail(Details.REDIRECT_URI)
-                    .detail(Details.REDIRECTED_TO_CLIENT, "false")
-                    .assertEvent();
+            EventAssertion.assertError(events.poll()).type(EventType.IDENTITY_PROVIDER_LOGIN_ERROR)
+                    .error(Errors.ALREADY_LOGGED_IN)
+                    .clientId("broker-app")
+                    .userId(null)
+                    .sessionId(null)
+                    .withoutDetails(Details.REDIRECT_URI)
+                    .details(Details.REDIRECTED_TO_CLIENT, "false");
 
             // Being on "You are already logged-in" now. No way to redirect to client due "clientData" are null in "state" of OIDC IDP as OIDC IDP requires short state parameter
             loginPage.assertCurrent("consumer");
@@ -312,13 +306,11 @@ public class KcOidcMultipleTabsBrokerTest  extends AbstractInitializedBaseBroker
                     .details(Details.RESPONSE_MODE, OIDCResponseMode.QUERY.value());
 
             // OIDC IDP on "consumer" will retry IDP login on the "provider"
-            events.expect(EventType.IDENTITY_PROVIDER_LOGIN)
-                    .realm(getConsumerRealmId())
-                    .client("broker-app")
-                    .user((String) null)
-                    .detail(Details.IDENTITY_PROVIDER, bc.getIDPAlias())
-                    .detail(Details.LOGIN_RETRY, "true")
-                    .assertEvent();
+            EventAssertion.assertSuccess(events.poll()).type(EventType.IDENTITY_PROVIDER_LOGIN)
+                    .clientId("broker-app")
+                    .userId(null)
+                    .details(Details.IDENTITY_PROVIDER, bc.getIDPAlias())
+                    .details(Details.LOGIN_RETRY, "true");
 
             // We were redirected back to IDP where user is asked to re-authenticate (due prompt=login being sent to OIDC IDP in authz request)
             Assertions.assertEquals("Please re-authenticate to continue", loginPage.getInfoMessage());
@@ -326,24 +318,24 @@ public class KcOidcMultipleTabsBrokerTest  extends AbstractInitializedBaseBroker
             loginPage.login(bc.getUserPassword());
 
             // Login finished on IDP (provider) as well as on "consumer" realm after being redirected there from "provider"
-            EventRepresentation eventRep1 = EventAssertion.assertSuccess(events.poll())
+            EventAssertion.assertSuccess(events.poll())
                     .type(EventType.LOGIN)
-                    .isCodeId()
+                    .hasCodeId()
+                    .hasUserId()
                     .hasSessionId()
                     .clientId("brokerapp")
-                    .details(Details.REDIRECT_URI, OAuthClient.AUTH_SERVER_ROOT + "/realms/" + bc.consumerRealmName() + "/broker/" + bc.getIDPAlias() + "/endpoint").getEvent();
-            MatcherAssert.assertThat(eventRep1.getUserId(), EventMatchers.isUUID());
+                    .details(Details.REDIRECT_URI, OAuthClient.AUTH_SERVER_ROOT + "/realms/" + bc.consumerRealmName() + "/broker/" + bc.getIDPAlias() + "/endpoint");
 
             Assertions.assertEquals(EventType.CODE_TO_TOKEN.name(), events.poll().getType());
             Assertions.assertEquals(EventType.USER_INFO_REQUEST.name(), events.poll().getType());
 
-            EventRepresentation eventRep2 = EventAssertion.assertSuccess(events.poll())
+            EventAssertion.assertSuccess(events.poll())
                     .type(EventType.LOGIN)
-                    .isCodeId()
+                    .hasCodeId()
+                    .hasUserId()
                     .hasSessionId()
                     .clientId("broker-app")
                     .details(Details.IDENTITY_PROVIDER, bc.getIDPAlias()).getEvent();
-            MatcherAssert.assertThat(eventRep2.getUserId(), EventMatchers.isUUID());
 
             // Being redirected back to consumer and then back to client right away. Authentication session on "consumer" realm is still valid, so no error here.
             appPage.assertCurrent();

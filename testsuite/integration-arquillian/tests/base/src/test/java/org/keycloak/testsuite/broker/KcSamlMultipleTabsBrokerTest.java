@@ -22,9 +22,7 @@ package org.keycloak.testsuite.broker;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
-import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.testframework.events.EventAssertion;
-import org.keycloak.testframework.events.EventMatchers;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.BrowserTabUtil;
@@ -32,7 +30,6 @@ import org.keycloak.testsuite.util.InfinispanTestTimeServiceRule;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
 
-import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.Rule;
 import org.junit.Test;
@@ -111,14 +108,13 @@ public class KcSamlMultipleTabsBrokerTest extends AbstractInitializedBaseBrokerT
                     .details(Details.REDIRECTED_TO_CLIENT, "true");
 
             // Event for "already logged-in" in the consumer realm
-            events.expect(EventType.IDENTITY_PROVIDER_LOGIN).error(Errors.ALREADY_LOGGED_IN)
-                    .realm(getConsumerRealmId())
-                    .client("broker-app")
-                    .user((String) null)
-                    .session((String) null)
-                    .removeDetail(Details.REDIRECT_URI)
-                    .detail(Details.REDIRECTED_TO_CLIENT, "false")
-                    .assertEvent();
+            EventAssertion.assertError(events.poll()).type(EventType.IDENTITY_PROVIDER_LOGIN_ERROR)
+                    .error(Errors.ALREADY_LOGGED_IN)
+                    .clientId("broker-app")
+                    .userId(null)
+                    .sessionId(null)
+                    .withoutDetails(Details.REDIRECT_URI)
+                    .details(Details.REDIRECTED_TO_CLIENT, "false");
 
             // Being on "You are already logged-in" now. No way to redirect to client due "clientData" are null in RelayState of SAML IDP
             loginPage.assertCurrent("consumer");
@@ -177,31 +173,29 @@ public class KcSamlMultipleTabsBrokerTest extends AbstractInitializedBaseBrokerT
                     .details(Details.REDIRECTED_TO_CLIENT, "true");
 
             // Event 2: Consumer redirecting to "provider" IDP for retry login
-            events.expect(EventType.IDENTITY_PROVIDER_LOGIN)
-                    .realm(getConsumerRealmId())
-                    .client("broker-app")
-                    .user((String) null)
-                    .detail(Details.IDENTITY_PROVIDER, bc.getIDPAlias())
-                    .detail(Details.LOGIN_RETRY, "true")
-                    .assertEvent();
+            EventAssertion.assertSuccess(events.poll()).type(EventType.IDENTITY_PROVIDER_LOGIN)
+                    .clientId("broker-app")
+                    .userId(null)
+                    .details(Details.IDENTITY_PROVIDER, bc.getIDPAlias())
+                    .details(Details.LOGIN_RETRY, "true");
 
             // Event 3: Successful SSO login on "provider", which then redirects back to "consumer"
-            EventRepresentation eventRep1 = EventAssertion.assertSuccess(events.poll())
+            EventAssertion.assertSuccess(events.poll())
                     .type(EventType.LOGIN)
-                    .isCodeId()
+                    .hasCodeId()
                     .hasSessionId()
+                    .hasUserId()
                     .clientId(OAuthClient.AUTH_SERVER_ROOT + "/realms/" + bc.consumerRealmName())
-                    .details(Details.REDIRECT_URI, OAuthClient.AUTH_SERVER_ROOT + "/realms/" + bc.consumerRealmName() + "/broker/" + bc.getIDPAlias() + "/endpoint").getEvent();
-            MatcherAssert.assertThat(eventRep1.getUserId(), EventMatchers.isUUID());
+                    .details(Details.REDIRECT_URI, OAuthClient.AUTH_SERVER_ROOT + "/realms/" + bc.consumerRealmName() + "/broker/" + bc.getIDPAlias() + "/endpoint");
 
             // Event 4: Successful login on "consumer"
-            EventRepresentation eventRep2 = EventAssertion.assertSuccess(events.poll())
+            EventAssertion.assertSuccess(events.poll())
                     .type(EventType.LOGIN)
-                    .isCodeId()
+                    .hasCodeId()
+                    .hasUserId()
                     .hasSessionId()
                     .clientId("broker-app")
-                    .details(Details.IDENTITY_PROVIDER, bc.getIDPAlias()).getEvent();
-            MatcherAssert.assertThat(eventRep2.getUserId(), EventMatchers.isUUID());
+                    .details(Details.IDENTITY_PROVIDER, bc.getIDPAlias());
 
             // Authentication session on "consumer" realm is still valid, so no error here.
             appPage.assertCurrent();

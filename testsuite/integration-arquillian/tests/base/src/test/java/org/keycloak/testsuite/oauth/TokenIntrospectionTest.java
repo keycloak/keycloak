@@ -68,7 +68,6 @@ import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.message.BasicNameValuePair;
-import org.hamcrest.Matchers;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Rule;
 import org.junit.Test;
@@ -160,11 +159,10 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
         events.clear();
 
         IntrospectionResponse introspectionResponse = oauth.doIntrospectionAccessTokenRequest(accessTokenResponse.getAccessToken());
-        events.expect(EventType.INTROSPECT_TOKEN)
-                .client("confidential-cli")
-                .session(accessTokenResponse.getSessionState())
-                .assertEvent();
-        events.assertEmpty();
+        EventAssertion.assertSuccess(events.poll()).type(EventType.INTROSPECT_TOKEN)
+                .clientId("confidential-cli")
+                .sessionId(accessTokenResponse.getSessionState());
+        Assertions.assertNull(events.poll());
 
         JsonNode jsonNode = introspectionResponse.asJsonNode();
 
@@ -235,11 +233,10 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
         events.clear();
 
         JsonNode jsonNode = oauth.doIntrospectionRefreshTokenRequest(accessTokenResponse.getRefreshToken()).asJsonNode();
-        events.expect(EventType.INTROSPECT_TOKEN)
-                .client("confidential-cli")
-                .session(sessionId)
-                .assertEvent();
-        events.assertEmpty();
+        EventAssertion.assertSuccess(events.poll()).type(EventType.INTROSPECT_TOKEN)
+                .clientId("confidential-cli")
+                .sessionId(sessionId);
+        Assertions.assertNull(events.poll());
 
         assertEquals(sessionId, jsonNode.get("sid").asText());
         assertEquals("test-app", jsonNode.get("client_id").asText());
@@ -432,13 +429,12 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
 
         oauth.client("confidential-cli", "secret1");
         TokenMetadataRepresentation rep = oauth.doIntrospectionAccessTokenRequest(accessTokenResponse.getAccessToken()).asTokenMetadata();
-        events.expect(EventType.INTROSPECT_TOKEN_ERROR)
-                .client("confidential-cli")
-                .user(Matchers.nullValue(String.class))
-                .session(accessTokenResponse.getSessionState())
-                .error(Errors.USER_SESSION_NOT_FOUND)
-                .assertEvent();
-        events.assertEmpty();
+        EventAssertion.assertError(events.poll()).type(EventType.INTROSPECT_TOKEN_ERROR)
+                .clientId("confidential-cli")
+                .userId(null)
+                .sessionId(accessTokenResponse.getSessionState())
+                .error(Errors.USER_SESSION_NOT_FOUND);
+        Assertions.assertNull(events.poll());
 
         assertFalse(rep.isActive());
         assertNull(rep.getUserName());
@@ -603,12 +599,11 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
         OAuth2ErrorRepresentation errorRep = JsonSerialization.readValue(tokenResponse, OAuth2ErrorRepresentation.class);
         assertEquals("Unsupported token type.", errorRep.getErrorDescription());
         assertEquals(OAuthErrorException.INVALID_REQUEST, errorRep.getError());
-        events.expect(EventType.INTROSPECT_TOKEN)
-                .client("confidential-cli")
-                .user((String) null)
-                .detail(Details.TOKEN_TYPE, "unknown")
-                .error(Errors.INVALID_REQUEST)
-                .assertEvent();
+        EventAssertion.assertError(events.poll()).type(EventType.INTROSPECT_TOKEN_ERROR)
+                .clientId("confidential-cli")
+                .userId(null)
+                .details(Details.TOKEN_TYPE, "unknown")
+                .error(Errors.INVALID_REQUEST);
     }
 
     @Test

@@ -111,7 +111,7 @@ public class PasskeysUsernameFormTest extends AbstractWebAuthnVirtualTest {
                     .type(EventType.LOGIN)
                     .hasSessionId()
                     .userId(user.getId())
-                    .isCodeId()
+                    .hasCodeId()
                     .details(Details.USERNAME, user.getUsername())
                     .details(Details.CREDENTIAL_TYPE, WebAuthnCredentialModel.TYPE_PASSWORDLESS)
                     .details(WebAuthnConstants.USER_VERIFICATION_CHECKED, "true");
@@ -154,7 +154,7 @@ public class PasskeysUsernameFormTest extends AbstractWebAuthnVirtualTest {
             MatcherAssert.assertThat(loginPage.getUsernameInputError(), Matchers.is("Invalid username or email."));
             EventAssertion.assertError(events.poll())
                     .type(EventType.LOGIN_ERROR)
-                    .isCodeId()
+                    .hasCodeId()
                     .error(Errors.USER_NOT_FOUND)
                     .details(Details.USERNAME, "invalid-user");
 
@@ -174,7 +174,7 @@ public class PasskeysUsernameFormTest extends AbstractWebAuthnVirtualTest {
                     .type(EventType.LOGIN)
                     .hasSessionId()
                     .userId(user.getId())
-                    .isCodeId()
+                    .hasCodeId()
                     .details(Details.USERNAME, USERNAME)
                     .withoutDetails(Details.CREDENTIAL_TYPE);
         }
@@ -217,7 +217,7 @@ public class PasskeysUsernameFormTest extends AbstractWebAuthnVirtualTest {
                     .type(EventType.LOGIN)
                     .hasSessionId()
                     .userId(user.getId())
-                    .isCodeId()
+                    .hasCodeId()
                     .details(Details.USERNAME, user.getUsername())
                     .details(Details.CREDENTIAL_TYPE, WebAuthnCredentialModel.TYPE_PASSWORDLESS)
                     .details(WebAuthnConstants.USER_VERIFICATION_CHECKED, "true");
@@ -244,7 +244,7 @@ public class PasskeysUsernameFormTest extends AbstractWebAuthnVirtualTest {
                     .type(EventType.LOGIN)
                     .hasSessionId()
                     .userId(user.getId())
-                    .isCodeId()
+                    .hasCodeId()
                     .details(Details.USERNAME, user.getUsername())
                     .details(Details.CREDENTIAL_TYPE, WebAuthnCredentialModel.TYPE_PASSWORDLESS)
                     .details(WebAuthnConstants.USER_VERIFICATION_CHECKED, "true");
@@ -293,7 +293,7 @@ public class PasskeysUsernameFormTest extends AbstractWebAuthnVirtualTest {
                     .type(EventType.LOGIN)
                     .hasSessionId()
                     .userId(user.getId())
-                    .isCodeId()
+                    .hasCodeId()
                     .details(Details.USERNAME, user.getUsername())
                     .details(Details.CREDENTIAL_TYPE, WebAuthnCredentialModel.TYPE_PASSWORDLESS)
                     .details(WebAuthnConstants.USER_VERIFICATION_CHECKED, "true");
@@ -313,7 +313,7 @@ public class PasskeysUsernameFormTest extends AbstractWebAuthnVirtualTest {
                     .type(EventType.LOGIN)
                     .hasSessionId()
                     .userId(user.getId())
-                    .isCodeId()
+                    .hasCodeId()
                     .details(Details.USERNAME, user.getUsername())
                     .details(Details.CREDENTIAL_TYPE, WebAuthnCredentialModel.TYPE_PASSWORDLESS)
                     .details(WebAuthnConstants.USER_VERIFICATION_CHECKED, "true");
@@ -379,7 +379,7 @@ public class PasskeysUsernameFormTest extends AbstractWebAuthnVirtualTest {
                     .type(EventType.LOGIN)
                     .hasSessionId()
                     .userId(testUser.getId())
-                    .isCodeId()
+                    .hasCodeId()
                     .details(Details.USERNAME, testUser.getUsername())
                     .withoutDetails(Details.CREDENTIAL_TYPE, WebAuthnConstants.USER_VERIFICATION_CHECKED);
 
@@ -423,7 +423,7 @@ public class PasskeysUsernameFormTest extends AbstractWebAuthnVirtualTest {
                     .type(EventType.LOGIN)
                     .hasSessionId()
                     .userId(user.getId())
-                    .isCodeId()
+                    .hasCodeId()
                     .details(Details.USERNAME, user.getUsername())
                     .details(Details.REMEMBER_ME, "true")
                     .details(Details.CREDENTIAL_TYPE, WebAuthnCredentialModel.TYPE_PASSWORDLESS)
@@ -445,7 +445,7 @@ public class PasskeysUsernameFormTest extends AbstractWebAuthnVirtualTest {
                     .type(EventType.LOGIN)
                     .hasSessionId()
                     .userId(user.getId())
-                    .isCodeId()
+                    .hasCodeId()
                     .details(Details.USERNAME, user.getUsername())
                     .details(Details.CREDENTIAL_TYPE, WebAuthnCredentialModel.TYPE_PASSWORDLESS)
                     .details(WebAuthnConstants.USER_VERIFICATION_CHECKED, "true")
@@ -494,7 +494,7 @@ public class PasskeysUsernameFormTest extends AbstractWebAuthnVirtualTest {
                     .type(EventType.LOGIN)
                     .hasSessionId()
                     .userId(user.getId())
-                    .isCodeId()
+                    .hasCodeId()
                     .details(Details.USERNAME, USERNAME)
                     .details(Details.REMEMBER_ME, "true")
                     .details(Details.CREDENTIAL_TYPE, WebAuthnCredentialModel.TYPE_PASSWORDLESS)
@@ -519,7 +519,7 @@ public class PasskeysUsernameFormTest extends AbstractWebAuthnVirtualTest {
                     .type(EventType.LOGIN)
                     .hasSessionId()
                     .userId(user.getId())
-                    .isCodeId()
+                    .hasCodeId()
                     .details(Details.USERNAME, USERNAME)
                     .details(Details.CREDENTIAL_TYPE, WebAuthnCredentialModel.TYPE_PASSWORDLESS)
                     .details(WebAuthnConstants.USER_VERIFICATION_CHECKED, "true")

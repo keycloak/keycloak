@@ -320,11 +320,10 @@ public class UserManagedAccessTest extends AbstractResourceServerTest {
                 .userId(koloId);
         EventAssertion.assertSuccess(events.poll()).clientId(clientId)
                 .userId(koloId);
-        events.expect(EventType.PERMISSION_TOKEN_ERROR).realm(realmId).client(clientId).user(koloId)
-                .session((String) null)
+        EventAssertion.assertError(events.poll()).type(EventType.PERMISSION_TOKEN_ERROR).clientId(clientId).userId(koloId)
+                .sessionId(null)
                 .error("access_denied")
-                .detail("reason", "request_submitted")
-                .assertEvent();
+                .details("reason", "request_submitted");
 
         PermissionResource permissionResource = getAuthzClient().protection().permission();
         List<PermissionTicketRepresentation> permissionTickets = permissionResource.findByResource(resource.getId());
@@ -372,10 +371,8 @@ public class UserManagedAccessTest extends AbstractResourceServerTest {
                 .userId(koloId);
         EventAssertion.assertSuccess(events.poll()).type(EventType.LOGIN).hasSessionId().clientId(clientId)
                 .userId(koloId);
-        events.expect(EventType.PERMISSION_TOKEN).realm(realmId).client(clientId).user(koloId)
-                .session((String) null)
-                .clearDetails()
-                .assertEvent();
+        EventAssertion.assertSuccess(events.poll()).type(EventType.PERMISSION_TOKEN).clientId(clientId).userId(koloId)
+                .sessionId(null);
     }
 
     @Test

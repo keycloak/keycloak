@@ -123,7 +123,7 @@ public class RequiredActionUpdateEmailTestWithVerificationTest extends AbstractR
         Assertions.assertEquals(logoutOtherSessions, updateEmailPage.isLogoutSessionsChecked());
         updateEmailPage.changeEmail(newEmail);
 
-		events.expect(EventType.SEND_VERIFY_EMAIL).detail(Details.EMAIL, newEmail).assertEvent();
+		EventAssertion.assertSuccess(events.poll()).type(EventType.SEND_VERIFY_EMAIL).details(Details.EMAIL, newEmail);
 		UserRepresentation user = ActionUtil.findUserWithAdminClient(adminClient, "test-user@localhost");
 		assertEquals("test-user@localhost", user.getEmail());
 		assertTrue(user.getRequiredActions().contains(UserModel.RequiredAction.UPDATE_EMAIL.name()));
@@ -178,10 +178,9 @@ public class RequiredActionUpdateEmailTestWithVerificationTest extends AbstractR
 					.details(Details.LOGOUT_TRIGGERED_BY_ACTION_TOKEN, UpdateEmailActionToken.TOKEN_TYPE);
 		}
 
-		events.expect(EventType.UPDATE_EMAIL)
-				.detail(Details.PREVIOUS_EMAIL, "test-user@localhost")
-				.detail(Details.UPDATED_EMAIL, "new@localhost")
-				.assertEvent();
+		EventAssertion.assertSuccess(events.poll()).type(EventType.UPDATE_EMAIL)
+				.details(Details.PREVIOUS_EMAIL, "test-user@localhost")
+				.details(Details.UPDATED_EMAIL, "new@localhost");
 
 		List<UserSessionRepresentation> sessions = testUser.getUserSessions();
 		if (logoutOtherSessions) {
@@ -580,7 +579,7 @@ public class RequiredActionUpdateEmailTestWithVerificationTest extends AbstractR
             updateEmailPage.changeEmail("realmverify@localhost");
 
             // Should send verification email and show confirmation
-            events.expect(EventType.SEND_VERIFY_EMAIL).detail(Details.EMAIL, "realmverify@localhost").user(findUser("realmverifyuser").getId()).assertEvent();
+            EventAssertion.assertSuccess(events.poll()).type(EventType.SEND_VERIFY_EMAIL).details(Details.EMAIL, "realmverify@localhost").userId(findUser("realmverifyuser").getId());
             String confirmationLink = fetchEmailConfirmationLink("realmverify@localhost");
             assertNotNull(confirmationLink, "Should have received verification email");
 
@@ -650,7 +649,7 @@ public class RequiredActionUpdateEmailTestWithVerificationTest extends AbstractR
         updateEmailPage.assertCurrent();
         updateEmailPage.changeEmail("new@localhost");
 
-        events.expect(EventType.SEND_VERIFY_EMAIL).detail(Details.EMAIL, "new@localhost").assertEvent();
+        EventAssertion.assertSuccess(events.poll()).type(EventType.SEND_VERIFY_EMAIL).details(Details.EMAIL, "new@localhost");
         
         // Verify EMAIL_PENDING attribute is set
         UserRepresentation user = ActionUtil.findUserWithAdminClient(adminClient, "test-user@localhost");

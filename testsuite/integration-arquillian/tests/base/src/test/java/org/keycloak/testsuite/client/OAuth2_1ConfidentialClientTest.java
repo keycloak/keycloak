@@ -37,7 +37,6 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.oidc.OIDCClientRepresentation;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.condition.AnyClientConditionFactory;
-import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.client.resources.TestApplicationResourceUrls;
 import org.keycloak.testsuite.util.ClientPoliciesUtil;
 import org.keycloak.testsuite.util.MutualTLSUtils;
@@ -67,7 +66,7 @@ public class OAuth2_1ConfidentialClientTest extends AbstractFAPITest {
 
     @Before
     public void setupValidateRedirectUri() {
-        validRedirectUri = AssertEvents.DEFAULT_REDIRECT_URI.replace("localhost", "127.0.0.1");
+        validRedirectUri = oauth.getRedirectUri().replace("localhost", "127.0.0.1");
     }
 
     @After
