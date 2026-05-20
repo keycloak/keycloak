@@ -10,9 +10,7 @@ import org.keycloak.credential.CredentialModel;
 import org.keycloak.events.EventListenerProvider;
 import org.keycloak.events.EventType;
 import org.keycloak.events.email.EmailEventListenerProviderFactory;
-import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.RealmProvider;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.session.UserSessionPersisterProvider;
@@ -86,9 +84,9 @@ public class RunHelpers {
         };
     }
 
-    public static RunOnServer removeUserSession(String realmName, String sessionId) {
+    public static RunOnServer removeUserSession(String sessionId) {
         return session -> {
-            RealmModel realm = getRealmByName(session, realmName);
+            RealmModel realm = session.getContext().getRealm();
 
             UserSessionModel sessionModel = session.sessions().getUserSession(realm, sessionId);
             if (sessionModel == null) {
@@ -99,20 +97,19 @@ public class RunHelpers {
         };
     }
 
-    public static RunOnServer removeUserSessions(String realmName) {
+    public static RunOnServer removeUserSessions() {
         return session -> {
-            RealmModel realm = getRealmByName(session, realmName);
-
+            RealmModel realm = session.getContext().getRealm();
             session.sessions().removeUserSessions(realm);
         };
     }
 
-    public static FetchOnServerWrapper<Integer> getClientSessionsCountInUserSession(String realmName, String sessionId) {
+    public static FetchOnServerWrapper<Integer> getClientSessionsCountInUserSession(String sessionId) {
         return new FetchOnServerWrapper<>() {
             @Override
             public FetchOnServer getRunOnServer() {
                 return session -> {
-                    RealmModel realm = getRealmByName(session, realmName);
+                    RealmModel realm = session.getContext().getRealm();
 
                     UserSessionModel sessionModel = session.sessions().getUserSession(realm, sessionId);
                     if (sessionModel == null) {
@@ -131,9 +128,9 @@ public class RunHelpers {
         };
     }
 
-    public static RunOnServer removeExpired(String realmName) {
+    public static RunOnServer removeExpired() {
         return session -> {
-            RealmModel realm = getRealmByName(session, realmName);
+            RealmModel realm = session.getContext().getRealm();
 
             session.getProvider(UserSessionPersisterProvider.class).removeExpired(realm);
             session.realms().removeExpiredClientInitialAccess();
@@ -211,15 +208,6 @@ public class RunHelpers {
             ProviderFactory<?> factory = session.getKeycloakSessionFactory().getProviderFactory(providerClass, providerId);
             factory.init(new Config.SystemPropertiesScope(systemPropertiesPrefix));
         };
-    }
-
-    public static RealmModel getRealmByName(KeycloakSession session, String realmName) {
-        RealmProvider realmProvider = session.getProvider(RealmProvider.class);
-        RealmModel realm = realmProvider.getRealmByName(realmName);
-        if (realm == null) {
-            throw new NotFoundException("Realm not found");
-        }
-        return realm;
     }
 
 }

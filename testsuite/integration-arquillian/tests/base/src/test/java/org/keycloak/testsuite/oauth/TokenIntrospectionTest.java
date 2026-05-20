@@ -463,7 +463,7 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
         assertEquals("test-app", rep.getClientId());
 
         // "Online" session doesn't even exists
-        runOnServerMaster.run(RunHelpers.removeExpired("test"));
+        runOnServer.run(RunHelpers.removeExpired());
 
         oauth.client("test-app", "password");
         accessTokenResponse = oauth.doRefreshTokenRequest(accessTokenResponse.getRefreshToken());

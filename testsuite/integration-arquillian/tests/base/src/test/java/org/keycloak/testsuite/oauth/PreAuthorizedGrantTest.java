@@ -57,7 +57,6 @@ import org.junit.Before;
 import org.junit.Test;
 
 import static org.keycloak.OID4VCConstants.OPENID_CREDENTIAL;
-import static org.keycloak.testsuite.util.runonserver.RunHelpers.getRealmByName;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -75,7 +74,7 @@ public class PreAuthorizedGrantTest extends AbstractTestRealmKeycloakTest {
     @Test
     public void testPreAuthorizedGrant() throws Exception {
         String userSessionId = getUserSession();
-        String preAuthorizedCode = runOnServer.fetchString(getPreAuthorizedCode(TEST_REALM_NAME, userSessionId, "test-app", Time.currentTime() + 30)).replace("\"","");
+        String preAuthorizedCode = runOnServer.fetchString(getPreAuthorizedCode(userSessionId, "test-app", Time.currentTime() + 30)).replace("\"","");
         AccessTokenResponse accessTokenResponse = postCode(preAuthorizedCode);
 
         assertEquals(HttpStatus.SC_OK, accessTokenResponse.getStatusCode(), "An access token should have successfully been returned.");
@@ -84,7 +83,7 @@ public class PreAuthorizedGrantTest extends AbstractTestRealmKeycloakTest {
     @Test
     public void testPreAuthorizedGrantExpired() throws Exception {
         String userSessionId = getUserSession();
-        String preAuthorizedCode = runOnServer.fetchString(getPreAuthorizedCode(TEST_REALM_NAME, userSessionId, "test-app", Time.currentTime() - 30));
+        String preAuthorizedCode = runOnServer.fetchString(getPreAuthorizedCode(userSessionId, "test-app", Time.currentTime() - 30));
         AccessTokenResponse accessTokenResponse = postCode(preAuthorizedCode);
         assertEquals(HttpStatus.SC_BAD_REQUEST, accessTokenResponse.getStatusCode(), "An expired code should not get an access token.");
     }
@@ -124,8 +123,7 @@ public class PreAuthorizedGrantTest extends AbstractTestRealmKeycloakTest {
 
         try {
             String userSessionId = getUserSession();
-            String preAuthorizedCode = runOnServerMaster.fetchString(
-                    getPreAuthorizedCode(TEST_REALM_NAME, userSessionId, "test-app", Time.currentTime() + 30));
+            String preAuthorizedCode = runOnServer.fetchString(getPreAuthorizedCode(userSessionId, "test-app", Time.currentTime() + 30));
 
             AccessTokenResponse accessTokenResponse = postCode(preAuthorizedCode);
             assertEquals(HttpStatus.SC_FORBIDDEN, accessTokenResponse.getStatusCode(), "Pre-authorized grant should be forbidden when verifiable credentials are disabled.");
@@ -182,15 +180,14 @@ public class PreAuthorizedGrantTest extends AbstractTestRealmKeycloakTest {
     /**
      * Return a pre-authorized code for the current session.
      *
-     * @param realmName     name of the realm to be used
      * @param userSessionId id of the user session to get a code for
      * @param clientId      id of the client to be used
      * @param expireAt    expiration time of the code
      * @return the code
      */
-    public static FetchOnServer getPreAuthorizedCode(String realmName, String userSessionId, String clientId, int expireAt) {
+    public static FetchOnServer getPreAuthorizedCode(String userSessionId, String clientId, int expireAt) {
         return session -> {
-            RealmModel realm = getRealmByName(session, realmName);
+            RealmModel realm = session.getContext().getRealm();
             UserSessionModel userSession = session.sessions().getUserSession(realm, userSessionId);
 
             String credConfigId = "oid4vc_natural_person_sd";

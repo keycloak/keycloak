@@ -891,7 +891,7 @@ public class StandardTokenExchangeV2Test extends AbstractClientPoliciesTest {
                 .update()) {
             String accessToken = resourceOwnerLogin("mike", "password", "subject-client", "secret").getAccessToken();
             String sessionId = TokenVerifier.create(accessToken, AccessToken.class).parse().getToken().getSessionId();
-            Assertions.assertEquals(runOnServer.fetch(RunHelpers.getClientSessionsCountInUserSession(TEST, sessionId)), Integer.valueOf(1));
+            Assertions.assertEquals(runOnServer.fetch(RunHelpers.getClientSessionsCountInUserSession(sessionId)), Integer.valueOf(1));
 
             oauth.scope("offline_access");
             AccessTokenResponse response = tokenExchange(accessToken, "requester-client", "secret", List.of("target-client1"), OAuth2Constants.REFRESH_TOKEN_TYPE);
@@ -900,7 +900,7 @@ public class StandardTokenExchangeV2Test extends AbstractClientPoliciesTest {
             assertEquals("Scope offline_access not allowed for token exchange", response.getErrorDescription());
 
             // Check that client session was not created
-            Assertions.assertEquals(runOnServer.fetch(RunHelpers.getClientSessionsCountInUserSession(TEST, sessionId)), Integer.valueOf(1));
+            Assertions.assertEquals(runOnServer.fetch(RunHelpers.getClientSessionsCountInUserSession(sessionId)), Integer.valueOf(1));
         }
     }
 

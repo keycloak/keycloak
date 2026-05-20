@@ -419,7 +419,7 @@ public class AccessTokenTest extends AbstractKeycloakTest {
         String sessionId = loginEvent.getSessionId();
 
 
-        runOnServerMaster.run(RunHelpers.removeUserSession("test", sessionId));
+        runOnServer.run(RunHelpers.removeUserSession(sessionId));
         String code = oauth.parseLoginResponse().getCode();
 
         AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);

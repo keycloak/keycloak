@@ -96,7 +96,6 @@ import static org.keycloak.common.Profile.Feature.DYNAMIC_SCOPES;
 import static org.keycloak.testsuite.admin.AdminApiUtil.findClientByClientId;
 import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
 import static org.keycloak.testsuite.util.oauth.OAuthClient.SERVER_ROOT;
-import static org.keycloak.testsuite.util.runonserver.RunHelpers.getRealmByName;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
@@ -664,7 +663,7 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
             String sessionId = loginEvent.getSessionId();
 
             // Expire session
-            runOnServerMaster.run(RunHelpers.removeUserSession("test", sessionId));
+            runOnServer.run(RunHelpers.removeUserSession(sessionId));
 
             // Assert rememberMe checked and username/email prefilled
             oauth.openLoginForm();
@@ -722,7 +721,7 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
             String sessionId = loginEvent.getSessionId();
 
             // Expire session
-            runOnServerMaster.run(RunHelpers.removeUserSession("test", sessionId));
+            runOnServer.run(RunHelpers.removeUserSession(sessionId));
 
             // Assert rememberMe checked and username/email prefilled
             oauth.openLoginForm();
@@ -737,7 +736,7 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
             loginEvent = EventAssertion.expectLoginSuccess(events.poll()).userId(userId)
                                                    .details(Details.USERNAME, "login-test").getEvent();
             sessionId = loginEvent.getSessionId();
-            runOnServerMaster.run(RunHelpers.removeUserSession("test", sessionId));
+            runOnServer.run(RunHelpers.removeUserSession(sessionId));
 
             // Assert rememberMe not checked nor username/email prefilled
             oauth.openLoginForm();
@@ -767,7 +766,7 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
             String sessionId = loginEvent.getSessionId();
 
             // Expire session
-            runOnServerMaster.run(RunHelpers.removeUserSession("test", sessionId));
+            runOnServer.run(RunHelpers.removeUserSession(sessionId));
 
             // Assert rememberMe checked and username/email prefilled
             oauth.openLoginForm();
@@ -982,17 +981,17 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
 
         // Assert authenticationSession in cache with 2 tabs
         String authSessionId = driver.manage().getCookieNamed(CookieType.AUTH_SESSION_ID.getName()).getValue();
-        Assertions.assertEquals((Integer) 2, runOnServerMaster.fetch(getAuthenticationSessionTabsCount("test", authSessionId)));
+        Assertions.assertEquals((Integer) 2, runOnServer.fetch(getAuthenticationSessionTabsCount(authSessionId)));
 
         loginPage.login("test-user@localhost", getPassword("test-user@localhost"));
         appPage.assertCurrent();
 
         // authentication session should still exists with remaining browser tab
-        Assertions.assertEquals((Integer) 1, runOnServerMaster.fetch(getAuthenticationSessionTabsCount("test", authSessionId)));
+        Assertions.assertEquals((Integer) 1, runOnServer.fetch(getAuthenticationSessionTabsCount(authSessionId)));
 
         // authentication session should be expired after 1 minute
         timeOffSet.set(300);
-        Assertions.assertEquals((Integer) 0, runOnServerMaster.fetch(getAuthenticationSessionTabsCount("test", authSessionId)));
+        Assertions.assertEquals((Integer) 0, runOnServer.fetch(getAuthenticationSessionTabsCount(authSessionId)));
     }
 
 
@@ -1145,17 +1144,15 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
    /**
     * Get count of tabs (child authentication sessions) for given "root authentication session"
     *
-    * @param realmName         realm name (not ID)
     * @param authSessionId ID of authentication session
     * @return count of tabs. Return 0 if authentication session of given ID does not exists (or if it exists, but without any authenticationSessions attached, which should not happen with normal usage)
     */
-   private static FetchOnServerWrapper<Integer> getAuthenticationSessionTabsCount(String realmName, String authSessionId) {
+   private static FetchOnServerWrapper<Integer> getAuthenticationSessionTabsCount(String authSessionId) {
         return new FetchOnServerWrapper<>() {
             @Override
             public FetchOnServer getRunOnServer() {
                 return session ->{
-                    RealmModel realm = getRealmByName(session, realmName);
-                    session.getContext().setRealm(realm);
+                    RealmModel realm = session.getContext().getRealm();
                     String decodedAuthSessionId = new AuthenticationSessionManager(session).decodeBase64AndValidateSignature(authSessionId);
                     RootAuthenticationSessionModel rootAuthSession = session.authenticationSessions().getRootAuthenticationSession(realm, decodedAuthSessionId);
                     if (rootAuthSession == null) {

@@ -306,7 +306,7 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
             String sessionId = EventAssertion.expectLoginSuccess(events.poll()).getEvent().getSessionId();
 
             // Expire session
-            runOnServerMaster.run(RunHelpers.removeUserSession("test", sessionId));
+            runOnServer.run(RunHelpers.removeUserSession(sessionId));
 
             // Assert rememberMe checked and username/email prefilled
             oauth.openLoginForm();
@@ -1118,7 +1118,7 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
 
     private boolean isSessionActive(String sessionId) {
         try {
-            runOnServerMaster.fetch(RunHelpers.getClientSessionsCountInUserSession("test", sessionId));
+            runOnServer.fetch(RunHelpers.getClientSessionsCountInUserSession(sessionId));
             return true;
         } catch (RunOnServerException nfe) {
             if (nfe.getCause() instanceof NotFoundException) {

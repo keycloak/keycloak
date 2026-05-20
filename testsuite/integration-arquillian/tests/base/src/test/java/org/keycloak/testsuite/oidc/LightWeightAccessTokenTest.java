@@ -653,9 +653,9 @@ public class LightWeightAccessTokenTest extends AbstractClientPoliciesTest {
     }
 
     private void removeSession(final String sessionId) {
-        runOnServerMaster.run(RunHelpers.removeExpired(REALM_NAME));
+        runOnServer.run(RunHelpers.removeExpired());
         try {
-            runOnServerMaster.run(RunHelpers.removeUserSession(REALM_NAME, sessionId));
+            runOnServer.run(RunHelpers.removeUserSession(sessionId));
         } catch (RunOnServerException nfe) {
             if (!(nfe.getCause() instanceof NotFoundException)) {
                 throw nfe;
