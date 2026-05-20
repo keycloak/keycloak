@@ -685,6 +685,7 @@ public class RefreshTokenTimeoutsTest {
         clientRepresentation2.setClientId("test-app2");
         clientRepresentation2.getAttributes().put(CLIENT_SESSION_IDLE_TIMEOUT, "500");
         clientRepresentation2.setId(null);
+        clientRepresentation2.setProtocolMappers(null);
         String clientUUID;
         try (Response resp = realm.clients().create(clientRepresentation2)) {
             clientUUID = ApiUtil.getCreatedId(resp);

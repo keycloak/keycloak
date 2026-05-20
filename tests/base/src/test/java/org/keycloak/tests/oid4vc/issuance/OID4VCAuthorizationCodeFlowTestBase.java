@@ -24,7 +24,9 @@ import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
 import org.keycloak.protocol.oid4vc.model.Proofs;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.representations.idm.oid4vc.UserVerifiableCredentialRepresentation;
 import org.keycloak.testframework.events.EventAssertion;
+import org.keycloak.tests.oid4vc.OID4VCBasicWallet;
 import org.keycloak.tests.oid4vc.OID4VCIssuerTestBase;
 import org.keycloak.tests.oid4vc.OID4VCProofTestUtils;
 import org.keycloak.tests.oid4vc.OID4VCTestContext;
@@ -465,6 +467,56 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerTe
             protocolMapper.getConfig().put(Oid4vcProtocolMapperModel.MANDATORY,
                     originalMandatoryValue != null ? originalMandatoryValue : "false");
             clientScopeResource.getProtocolMappers().update(protocolMapper.getId(), protocolMapper);
+        }
+    }
+
+    /**
+     * Requesting verifiable-credential, which user does not have should fail
+     */
+    @Test
+    public void testRequestingVerifiableCredentialMissingForUser()
+            throws Exception {
+
+        // User still has credential. Token request should be successful
+        CredentialIssuer issuer = wallet.getIssuerMetadata(ctx);
+        AccessTokenResponse tokenResponse = authzCodeFlow(issuer);
+        String credentialIdentifier = assertTokenResponse(tokenResponse);
+        events.clear();
+
+        // Revoke verifiable credential from user
+        String userId = testRealm.admin().users().search(TEST_USER).get(0).getId();
+        try {
+            testRealm.admin().users().get(userId).verifiableCredentials().revokeCredential(ctx.getScope());
+
+            Oid4vcCredentialResponse credResponse = oauth.oid4vc().credentialRequest()
+                    .credentialIdentifier(credentialIdentifier)
+                    .proofs(newJwtProofs())
+                    .bearerToken(tokenResponse.getAccessToken())
+                    .send();
+
+            assertEquals(400, credResponse.getStatusCode());
+            assertEquals(ErrorType.INVALID_CREDENTIAL_REQUEST.getValue(), credResponse.getError());
+
+            events.poll();
+            EventAssertion.assertError(events.poll())
+                    .type(EventType.VERIFIABLE_CREDENTIAL_REQUEST_ERROR)
+                    .error(ErrorType.INVALID_CREDENTIAL_REQUEST.getValue())
+                    .details(Details.REASON, "User 'john' does not have requested verifiable credential '" + ctx.getCredentialConfigurationId() + "'");
+
+            // Test new token-endpoint request fails as user does not have credential
+            OID4VCBasicWallet.AuthorizationEndpointRequest authRequest = wallet.authorizationRequest()
+                    .scope(ctx.getScope());
+            authRequest.openLoginForm();
+            AuthorizationEndpointResponse authResponse = authRequest.parseLoginResponse();
+            String code = authResponse.getCode();
+            AccessTokenResponse errorResponse = oauth.accessTokenRequest(code).send();
+            assertEquals(400, errorResponse.getStatusCode());
+            assertTrue(errorResponse.getErrorDescription().contains("User 'john' does not have verifiable credential '" + ctx.getCredentialConfigurationId() + "'."));
+        } finally {
+            // Add back verifiable credential to the user
+            UserVerifiableCredentialRepresentation credRep = new UserVerifiableCredentialRepresentation();
+            credRep.setCredentialScopeName(ctx.getScope());
+            testRealm.admin().users().get(userId).verifiableCredentials().createCredential(credRep);
         }
     }
 

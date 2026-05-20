@@ -8,8 +8,8 @@ import java.util.function.Consumer;
 import org.keycloak.it.TestProvider;
 import org.keycloak.it.junit5.extension.BeforeStartDistribution;
 import org.keycloak.it.junit5.extension.CLIResult;
+import org.keycloak.it.junit5.extension.KeycloakRunner;
 import org.keycloak.it.junit5.extension.RawDistOnly;
-import org.keycloak.it.utils.KeycloakDistribution;
 import org.keycloak.it.utils.RawKeycloakDistribution;
 import org.keycloak.quarkus.runtime.cli.command.StartDev;
 
@@ -32,13 +32,13 @@ abstract class AbstractPathDistTest {
     @BeforeStartDistribution(AddCustomScriptsProvider.class)
     @RawDistOnly(reason = "Testing installation path handling")
     @Test
-    void testApplicationBuildAndStart(KeycloakDistribution dist) throws IOException {
-        RawKeycloakDistribution rawDist = dist.unwrap(RawKeycloakDistribution.class);
+    void testApplicationBuildAndStart(KeycloakRunner runner) throws IOException {
+        RawKeycloakDistribution rawDist = runner.getDistribution(RawKeycloakDistribution.class);
         Path distPath = rawDist.getDistPath();
         Path newPath = distPath.getParent().resolve(getSubPath()).resolve(distPath.getFileName());
         rawDist.setDistPath(newPath);
         try {
-            CLIResult result = dist.run(StartDev.NAME);
+            CLIResult result = runner.run(StartDev.NAME);
             result.assertStartedDevMode();
             assertThat(result.getOutput(), containsString("Updating the configuration and installing your custom providers, if any. Please wait."));
         } finally {
@@ -46,11 +46,10 @@ abstract class AbstractPathDistTest {
         }
     }
 
-    public static final class AddCustomScriptsProvider implements Consumer<KeycloakDistribution> {
+    public static final class AddCustomScriptsProvider implements Consumer<RawKeycloakDistribution> {
         @Override
-        public void accept(KeycloakDistribution distribution) {
-            RawKeycloakDistribution rawDist = distribution.unwrap(RawKeycloakDistribution.class);
-            rawDist.copyProvider(new ScriptProviderForTest());
+        public void accept(RawKeycloakDistribution distribution) {
+            distribution.copyProvider(new ScriptProviderForTest());
         }
     }
 

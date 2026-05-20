@@ -45,7 +45,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * | yes      | yes      | yes     | Pre-auth for a specific target user.                 |
  * +----------+----------+---------+------------------------------------------------------+
  */
-@KeycloakIntegrationTest(config = OID4VCIssuerTestBase.VCTestServerConfigRestCredentialOffer.class)
+@KeycloakIntegrationTest(config = OID4VCIssuerTestBase.VCTestServerWithRestCredentialOfferEnabled.class)
 public class OID4VCredentialOfferAuthCodeTest extends OID4VCIssuerTestBase {
 
     @Test
@@ -71,31 +71,10 @@ public class OID4VCredentialOfferAuthCodeTest extends OID4VCIssuerTestBase {
         issuerState = credOffer.getIssuerState();
         assertNotNull(issuerState, "No IssuerState");
 
-        // Send AuthorizationRequest
+        // Fetch Credential by Offer
         //
-        AuthorizationEndpointResponse authResponse = wallet
-                .authorizationRequest()
-                .scope(ctx.getScope())
-                .issuerState(issuerState)
-                .send(ctx.getHolder(), TEST_PASSWORD);
-        String authCode = authResponse.getCode();
-        assertNotNull(authCode, "No authCode");
-
-        // Build and send AccessTokenRequest
-        //
-        AccessTokenResponse tokenResponse = wallet.accessTokenRequest(ctx, authCode).send();
-        String accessToken = wallet.validateHolderAccessToken(ctx, tokenResponse);
-        assertNotNull(accessToken, "No accessToken");
-
-        String authorizedIdentifier = ctx.getAuthorizedCredentialIdentifier();
-        assertNotNull(authorizedIdentifier, "Has authorized credential identifier");
-
-        // Send the CredentialRequest
-        //
-        CredentialResponse credResponse = wallet.credentialRequest(ctx, accessToken)
-                .credentialIdentifier(authorizedIdentifier)
-                .proofs(wallet.generateJwtProof(ctx))
-                .send().getCredentialResponse();
+        CredentialResponse credResponse = wallet.fetchCredentialByOffer(ctx, credOffer)
+                .getCredentialResponse();
 
         verifyCredentialResponse(ctx, ctx.getHolder(), credResponse);
 

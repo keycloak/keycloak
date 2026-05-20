@@ -24,21 +24,20 @@ import java.util.Arrays;
 import org.keycloak.config.CachingOptions;
 import org.keycloak.config.Option;
 import org.keycloak.it.junit5.extension.DistributionTest;
-import org.keycloak.it.junit5.extension.DryRun;
+import org.keycloak.it.junit5.extension.KeycloakRunner;
 import org.keycloak.it.junit5.extension.RawDistOnly;
-import org.keycloak.it.junit5.extension.SkipRealmBootstrap;
-import org.keycloak.it.utils.KeycloakDistribution;
+import org.keycloak.it.junit5.extension.StopServer;
+import org.keycloak.it.junit5.extension.StopServer.Mode;
 
 import org.junit.jupiter.api.Test;
 
-@DistributionTest
-@SkipRealmBootstrap
+@DistributionTest(stopServer = Mode.BEFORE_BOOTSTRAP)
 public class CacheEmbeddedMtlsDistTest {
 
-    @DryRun
+    @StopServer(Mode.BEFORE_QUARKUS)
     @Test
     @RawDistOnly(reason = "Containers are immutable")
-    public void testCacheEmbeddedMtlsDisabled(KeycloakDistribution dist) {
+    public void testCacheEmbeddedMtlsDisabled(KeycloakRunner runner) {
         for (var option : Arrays.asList(
                 CachingOptions.CACHE_EMBEDDED_MTLS_TRUSTSTORE,
                 CachingOptions.CACHE_EMBEDDED_MTLS_KEYSTORE,
@@ -46,24 +45,24 @@ public class CacheEmbeddedMtlsDistTest {
                 CachingOptions.CACHE_EMBEDDED_MTLS_TRUSTSTORE_PASSWORD,
                 CachingOptions.CACHE_EMBEDDED_MTLS_ROTATION
         )) {
-            var result = dist.run("start-dev", "--cache=ispn", "--cache-embedded-mtls-enabled=false", "--%s=1".formatted(option.getKey()));
+            var result = runner.run("start-dev", "--cache=ispn", "--cache-embedded-mtls-enabled=false", "--%s=1".formatted(option.getKey()));
             result.assertError("Disabled option: '--%s'. Available only when property 'cache-embedded-mtls-enabled' is enabled".formatted(option.getKey()));
         }
     }
 
-    @DryRun
+    @StopServer(Mode.BEFORE_QUARKUS)
     @Test
     @RawDistOnly(reason = "Containers are immutable")
-    public void testCacheEmbeddedMtlsFileValidation(KeycloakDistribution dist) {
-        doFileAndPasswordValidation(dist, CachingOptions.CACHE_EMBEDDED_MTLS_KEYSTORE, CachingOptions.CACHE_EMBEDDED_MTLS_KEYSTORE_PASSWORD);
-        doFileAndPasswordValidation(dist, CachingOptions.CACHE_EMBEDDED_MTLS_TRUSTSTORE, CachingOptions.CACHE_EMBEDDED_MTLS_TRUSTSTORE_PASSWORD);
+    public void testCacheEmbeddedMtlsFileValidation(KeycloakRunner runner) {
+        doFileAndPasswordValidation(runner, CachingOptions.CACHE_EMBEDDED_MTLS_KEYSTORE, CachingOptions.CACHE_EMBEDDED_MTLS_KEYSTORE_PASSWORD);
+        doFileAndPasswordValidation(runner, CachingOptions.CACHE_EMBEDDED_MTLS_TRUSTSTORE, CachingOptions.CACHE_EMBEDDED_MTLS_TRUSTSTORE_PASSWORD);
     }
 
-    @DryRun
+    @StopServer(Mode.BEFORE_QUARKUS)
     @Test
     @RawDistOnly(reason = "Containers are immutable")
-    public void testCacheEmbeddedMtlsFileExistsValidation(KeycloakDistribution dist) throws IOException {
-        var result = dist.run(
+    public void testCacheEmbeddedMtlsFileExistsValidation(KeycloakRunner runner) throws IOException {
+        var result = runner.run(
               "start-dev",
               "--cache=ispn",
               "--cache-embedded-mtls-enabled=true",
@@ -75,7 +74,7 @@ public class CacheEmbeddedMtlsDistTest {
         result.assertError("The 'cache-embedded-mtls-key-store-file' file 'keystore.p12' does not exist");
 
         File keystore = Util.createTempFile("key", ".p12");
-        result = dist.run(
+        result = runner.run(
               "start-dev",
               "--cache=ispn",
               "--cache-embedded-mtls-enabled=true",
@@ -87,37 +86,37 @@ public class CacheEmbeddedMtlsDistTest {
         result.assertError("The 'cache-embedded-mtls-trust-store-file' file 'truststore.p12' does not exist");
     }
 
-    @DryRun
+    @StopServer(Mode.BEFORE_QUARKUS)
     @Test
     @RawDistOnly(reason = "Containers are immutable")
-    public void testCacheEmbeddedMtlsValidation(KeycloakDistribution dist) {
+    public void testCacheEmbeddedMtlsValidation(KeycloakRunner runner) {
         var key = CachingOptions.CACHE_EMBEDDED_MTLS_ROTATION.getKey();
         // test zero
-        var result = dist.run("start-dev", "--cache=ispn", "--cache-embedded-mtls-enabled=true", "--%s=0".formatted(key));
+        var result = runner.run("start-dev", "--cache=ispn", "--cache-embedded-mtls-enabled=true", "--%s=0".formatted(key));
         result.assertError("JGroups MTLS certificate rotation in '%s' option must positive.".formatted(key));
 
         // test negative
-        result = dist.run("start-dev", "--cache=ispn", "--cache-embedded-mtls-enabled=true", "--%s=-1".formatted(key));
+        result = runner.run("start-dev", "--cache=ispn", "--cache-embedded-mtls-enabled=true", "--%s=-1".formatted(key));
         result.assertError("JGroups MTLS certificate rotation in '%s' option must positive.".formatted(key));
 
         // test blank
-        result = dist.run("start-dev", "--cache=ispn", "--cache-embedded-mtls-enabled=true", "--%s=".formatted(key));
+        result = runner.run("start-dev", "--cache=ispn", "--cache-embedded-mtls-enabled=true", "--%s=".formatted(key));
         result.assertError("Invalid empty value for option '--%s'".formatted(key));
     }
 
     @Test
     @RawDistOnly(reason = "Containers are immutable")
-    public void testCacheEmbeddedMtlsEnabled(KeycloakDistribution dist) {
-        var result = dist.run("start-dev", "--cache=ispn", "--cache-embedded-mtls-enabled=true");
+    public void testCacheEmbeddedMtlsEnabled(KeycloakRunner runner) {
+        var result = runner.run("start-dev", "--cache=ispn", "--cache-embedded-mtls-enabled=true");
         result.assertMessage("JGroups JDBC_PING discovery enabled.");
         result.assertMessage("JGroups Encryption enabled (mTLS).");
     }
 
-    private void doFileAndPasswordValidation(KeycloakDistribution dist, Option<String> fileOption, Option<String> passwordOption) {
-        var result = dist.run("start-dev", "--cache=ispn", "--cache-embedded-mtls-enabled=true", "--%s=file".formatted(fileOption.getKey()));
+    private void doFileAndPasswordValidation(KeycloakRunner runner, Option<String> fileOption, Option<String> passwordOption) {
+        var result = runner.run("start-dev", "--cache=ispn", "--cache-embedded-mtls-enabled=true", "--%s=file".formatted(fileOption.getKey()));
         result.assertError("The option '%s' requires '%s' to be enabled.".formatted(fileOption.getKey(), passwordOption.getKey()));
 
-        result = dist.run("start-dev", "--cache=ispn", "--cache-embedded-mtls-enabled=true", "--%s=secret".formatted(passwordOption.getKey()));
+        result = runner.run("start-dev", "--cache=ispn", "--cache-embedded-mtls-enabled=true", "--%s=secret".formatted(passwordOption.getKey()));
         result.assertError("The option '%s' requires '%s' to be enabled.".formatted(passwordOption.getKey(), fileOption.getKey()));
     }
 }

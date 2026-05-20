@@ -52,6 +52,7 @@ import org.keycloak.representations.adapters.action.LogoutAction;
 import org.keycloak.representations.adapters.action.TestAvailabilityAction;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.util.ResolveRelative;
+import org.keycloak.utils.StringUtil;
 
 import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
@@ -171,13 +172,33 @@ public class ResourceAdminManager {
     public Response logoutClientSessionWithBackchannelLogoutUrl(ClientModel resource,
             AuthenticatedClientSessionModel clientSession) {
         String backchannelLogoutUrl = getBackchannelLogoutUrl(session, resource);
+
+        if (backchannelLogoutUrl == null) {
+            return null;
+        }
+
         // Send logout separately to each host (needed for single-sign-out in cluster for non-distributable apps -
         // KEYCLOAK-748)
         if (backchannelLogoutUrl.contains(CLIENT_SESSION_HOST_PROPERTY)) {
             String host = clientSession.getNote(AdapterConstants.CLIENT_SESSION_HOST);
+            if (StringUtil.isNullOrEmpty(host)) {
+                // Host placeholder in backchannel logout URL cannot be resolved. Usually the client did not send
+                // both 'client_session_host' and 'client_session_state' on its token request.
+                String adapterSessionId = clientSession.getNote(AdapterConstants.CLIENT_SESSION_STATE);
+                throw new IllegalStateException(String.format(
+                        "Cannot resolve '%s' for backchannel-logout. " +
+                        "clientId='%s' clientSessionId='%s' client_session_host='%s' client_session_state='%s'",
+                        CLIENT_SESSION_HOST_PROPERTY, resource.getClientId(), clientSession.getId(), host, adapterSessionId));
+            }
+            logger.debugf("Attempting backchannel-logout for client with host from client session. " +
+                          "clientId='%s' clientSessionId='%s' host='%s' backchannelLogoutUrl='%s'",
+                    resource.getClientId(), clientSession.getId(), host, backchannelLogoutUrl);
             String currentHostMgmtUrl = backchannelLogoutUrl.replace(CLIENT_SESSION_HOST_PROPERTY, host);
             return sendBackChannelLogoutRequestToClientUri(resource, clientSession, currentHostMgmtUrl);
         } else {
+            logger.debugf("Attempting backchannel-logout for client. " +
+                          "clientId='%s' clientSessionId='%s' backchannelLogoutUrl='%s'",
+                    resource.getClientId(), clientSession.getId(), backchannelLogoutUrl);
             return sendBackChannelLogoutRequestToClientUri(resource, clientSession, backchannelLogoutUrl);
         }
     }
@@ -203,7 +224,9 @@ public class ResourceAdminManager {
             LogoutToken logoutToken = session.tokens().initLogoutToken(resource, user, clientSessionModel);
             String token = session.tokens().encode(logoutToken);
             if (logger.isDebugEnabled()) {
-                logger.debugv("logout resource {0} url: {1} sessionIds: ", resource.getClientId(), managementUrl);
+                logger.debugf("Sending backchannel-logout request to client. " +
+                              "clientId='%s' clientSessionId='%s' backchannelLogoutUrl='%s'",
+                        resource.getClientId(), clientSessionModel.getId(), managementUrl);
             }
 
             post = new HttpPost(managementUrl);
@@ -220,7 +243,9 @@ public class ResourceAdminManager {
                     int status = response.getStatusLine().getStatusCode();
                     EntityUtils.consumeQuietly(response.getEntity());
                     boolean success = status == 204 || status == 200;
-                    logger.debugf("logout success for %s: %s", managementUrl, success);
+                    logger.debugf("Received response for backchannel-logout from client. " +
+                                  "clientId='%s' clientSessionId='%s' backchannelLogoutUrl='%s' status=%s success=%s",
+                            resource.getClientId(), clientSessionModel.getId(), managementUrl, status, success);
                     return Response.status(status).build();
                 } finally {
                     EntityUtils.consumeQuietly(response.getEntity());

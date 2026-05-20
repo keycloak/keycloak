@@ -182,11 +182,6 @@ public class DeleteAccount implements RequiredActionProvider, RequiredActionFact
   }
 
   @Override
-  public boolean isOneTimeAction() {
-    return true;
-  }
-
-  @Override
   public int getMaxAuthAge(KeycloakSession session) {
     return 0;
   }

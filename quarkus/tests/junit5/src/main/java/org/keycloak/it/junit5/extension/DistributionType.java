@@ -32,20 +32,11 @@ public enum DistributionType {
 
     private static KeycloakDistribution createDockerDistribution(DistributionTest config) {
         return new DockerKeycloakDistribution(
-                config.debug(),
-                config.keepAlive(),
-                config.requestPort(),
                 config.containerExposedPorts());
     }
 
     private static KeycloakDistribution createRawDistribution(DistributionTest config) {
-        return new RawKeycloakDistribution(
-                config.debug(),
-                config.keepAlive(),
-                config.enableTls(),
-                false,
-                config.removeBuildOptionsAfterBuild(),
-                config.requestPort());
+        return new RawKeycloakDistribution(false);
     }
 
     private final Function<DistributionTest, KeycloakDistribution> factory;

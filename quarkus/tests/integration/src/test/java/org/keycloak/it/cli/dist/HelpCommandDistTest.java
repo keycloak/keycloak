@@ -20,13 +20,12 @@ package org.keycloak.it.cli.dist;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
-import java.util.stream.Stream;
 
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
+import org.keycloak.it.junit5.extension.KeycloakRunner;
 import org.keycloak.it.junit5.extension.RawDistOnly;
 import org.keycloak.it.junit5.extension.WithEnvVars;
-import org.keycloak.it.utils.KeycloakDistribution;
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.cli.command.BootstrapAdmin;
 import org.keycloak.quarkus.runtime.cli.command.BootstrapAdminService;
@@ -43,18 +42,13 @@ import org.keycloak.quarkus.runtime.cli.command.UpdateCompatibilityMetadata;
 import io.quarkus.test.junit.main.Launch;
 import org.apache.commons.io.FileUtils;
 import org.approvaltests.Approvals;
-import org.approvaltests.core.ApprovalFailureReporter;
-import org.approvaltests.reporters.intellij.IntelliJReporter;
-import org.approvaltests.reporters.linux.LinuxDiffReporter;
-import org.approvaltests.reporters.macosx.MacDiffReporter;
-import org.approvaltests.reporters.windows.WindowsDiffReporter;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import static org.keycloak.quarkus.runtime.cli.command.AbstractAutoBuildCommand.OPTIMIZED_BUILD_OPTION_LONG;
 
 @WithEnvVars({"KEYCLOAK_COMMAND_MODE", "ALL", "KEYCLOAK_HELP_WIDTH", "80"})
-@DistributionTest
+@DistributionTest(localCache = false)
 @RawDistOnly(reason = "Verifying the help message output doesn't need long spin-up of docker dist tests.")
 @Tag(DistributionTest.WIN)
 public class HelpCommandDistTest {
@@ -194,7 +188,7 @@ public class HelpCommandDistTest {
     }
 
     @Test
-    public void testHelpDoesNotStartReAugJvm(KeycloakDistribution dist) {
+    public void testHelpDoesNotStartReAugJvm(KeycloakRunner runner) {
         for (String helpCmd : List.of("-h", "--help", "--help-all")) {
             for (String cmd : List.of("", "start", "start-dev", "build")) {
                 String debugOption = "--debug";
@@ -203,7 +197,7 @@ public class HelpCommandDistTest {
                     debugOption = "--debug=8787";
                 }
 
-                CLIResult run = dist.run(debugOption, cmd, helpCmd);
+                CLIResult run = runner.run(debugOption, cmd, helpCmd);
                 assertSingleJvmStarted(run);
             }
         }
@@ -235,24 +229,6 @@ public class HelpCommandDistTest {
         }
 
         try {
-            // on failure with java 25, the intellijreporter seems to work, but really just throws
-            // an exception later - https://github.com/approvals/ApprovalTests.Java/issues/800
-            if (IntelliJReporter.findJetBrainsIdes().equals("")) { 
-                Stream.of(WindowsDiffReporter.INSTANCE, LinuxDiffReporter.INSTANCE, MacDiffReporter.INSTANCE).forEach(reporter -> {
-                    var reporters = reporter.getReporters();
-                    for (int i = 0; i < reporters.length; i++) {
-                        if (reporters[i] instanceof IntelliJReporter) {
-                            reporters[i] = new ApprovalFailureReporter() {
-                                
-                                @Override
-                                public boolean report(String received, String approved) {
-                                    return false;
-                                }
-                            };
-                        }
-                    }
-                });
-            }
             Approvals.verify(output);
         } catch (Error cause) {
             if ("true".equals(System.getenv(REPLACE_EXPECTED))) {

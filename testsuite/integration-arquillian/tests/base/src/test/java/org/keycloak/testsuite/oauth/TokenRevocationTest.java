@@ -40,6 +40,7 @@ import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserSessionRepresentation;
 import org.keycloak.representations.oidc.TokenMetadataRepresentation;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
@@ -70,7 +71,6 @@ import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
 
 import static org.keycloak.testsuite.AbstractAdminTest.loadJson;
-import static org.keycloak.testsuite.AssertEvents.isTokenId;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -319,12 +319,12 @@ public class TokenRevocationTest extends AbstractKeycloakTest {
 
         assertTrue(oauth.tokenRevocationRequest(tokenResponse.getRefreshToken()).refreshToken().send().isSuccess());
 
-        events.expect(EventType.REVOKE_GRANT)
-                .session(tokenResponse.getSessionState())
-                .detail(Details.REFRESH_TOKEN_ID, isTokenId())
-                .detail(Details.REFRESH_TOKEN_TYPE, expectedTokenType)
-                .client("test-app")
-                .assertEvent(true);
+        events.skip(6);
+        EventAssertion.assertSuccess(events.poll()).type(EventType.REVOKE_GRANT)
+                .sessionId(tokenResponse.getSessionState())
+                .hasTokenId(Details.REFRESH_TOKEN_ID)
+                .details(Details.REFRESH_TOKEN_TYPE, expectedTokenType)
+                .clientId("test-app");
 
         isTokenDisabled(tokenResponse, "test-app");
         isTokenEnabled(tokenResponse2, "test-app");

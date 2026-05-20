@@ -27,6 +27,7 @@ import java.util.stream.Collectors;
 import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.oid4vci.CredentialScopeModel;
 import org.keycloak.protocol.oid4vc.issuance.credentialoffer.CredentialOfferState;
@@ -38,6 +39,7 @@ import org.keycloak.protocol.oid4vc.model.IssuerState;
 import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
 import org.keycloak.protocol.oid4vc.model.SupportedCredentialConfiguration;
 import org.keycloak.protocol.oid4vc.utils.ClaimsPathPointer;
+import org.keycloak.protocol.oid4vc.utils.OID4VCUtil;
 import org.keycloak.protocol.oidc.rar.AuthorizationDetailsProcessor;
 import org.keycloak.protocol.oidc.rar.InvalidAuthorizationDetailsException;
 import org.keycloak.representations.AuthorizationDetailsJSONRepresentation;
@@ -229,6 +231,11 @@ public class OID4VCAuthorizationDetailsProcessor implements AuthorizationDetails
         if (credScope == null)
             throw getInvalidRequestException("Cannot find or access client scope for credential_configuration_id: " + requestedCredentialConfigurationId);
 
+        UserModel user = clientSessionCtx.getClientSession().getUserSession().getUser();
+        if (!OID4VCUtil.hasVerifiableCredential(session, user, credScope)) {
+            throw getInvalidRequestException("User '" + user.getUsername() + "' does not have verifiable credential '" + credScope.getCredentialConfigurationId() + "'.");
+        }
+
         OID4VCAuthorizationDetail responseAuthDetail = generateResponseAuthorizationDetails(credScope, null);
         responseAuthDetail.setClaims(requestAuthDetail.getClaims());
 
@@ -257,6 +264,9 @@ public class OID4VCAuthorizationDetailsProcessor implements AuthorizationDetails
         for (String scope : scopeParam.split(" ")) {
             CredentialScopeModel credScope = findCredentialScopeModelByName(realmModel, clientSessionCtx::getClientScopesStream, scope);
             if (credScope != null) {
+                if (!OID4VCUtil.hasVerifiableCredential(session, userSession.getUser(), credScope)) {
+                    throw getInvalidRequestException("User '" + userSession.getUser().getUsername() + "' does not have verifiable credential '" + credScope.getCredentialConfigurationId() + "'.");
+                }
 
                 // Generate `authorization_details` for the AccessToken Response
                 // This is the same logic as we use when a credential offer is created

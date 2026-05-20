@@ -1,14 +1,14 @@
 package org.keycloak.it.cli.dist;
 
-import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
-import org.keycloak.it.junit5.extension.DryRun;
+import org.keycloak.it.junit5.extension.KeycloakRunner;
 import org.keycloak.it.junit5.extension.RawDistOnly;
+import org.keycloak.it.junit5.extension.StopServer;
+import org.keycloak.it.junit5.extension.StopServer.Mode;
 import org.keycloak.it.junit5.extension.WithEnvVars;
-import org.keycloak.it.utils.KeycloakDistribution;
 import org.keycloak.quarkus.runtime.cli.command.ShowConfig;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
 
@@ -26,23 +26,23 @@ import static org.hamcrest.Matchers.not;
 @DistributionTest
 public class ShowConfigCommandDistTest {
 
-    @DryRun
+    @StopServer(Mode.BEFORE_QUARKUS)
     @Test
     @RawDistOnly(reason = "Containers are immutable")
-    void testShowConfigPicksUpRightConfigDependingOnCurrentMode(KeycloakDistribution distribution) {
-        CLIResult initialResult = distribution.run("show-config");
+    void testShowConfigPicksUpRightConfigDependingOnCurrentMode(KeycloakRunner runner) {
+        CLIResult initialResult = runner.run("show-config");
         initialResult.assertMessage("Current Mode: production");
         initialResult.assertNoMessage("kc.db =  dev-file");
 
-        distribution.run("start-dev");
+        runner.run("start-dev");
 
-        CLIResult devModeResult = distribution.run("show-config");
+        CLIResult devModeResult = runner.run("show-config");
         devModeResult.assertMessage("Current Mode: development");
         devModeResult.assertMessage("kc.db =  dev-file");
 
-        distribution.run("build", "--db=dev-file");
+        runner.run("build", "--db=dev-file");
 
-        CLIResult resetResult = distribution.run("show-config");
+        CLIResult resetResult = runner.run("show-config");
         resetResult.assertMessage("Current Mode: production");
         resetResult.assertMessage("kc.db =  dev-file");
     }
@@ -65,8 +65,8 @@ public class ShowConfigCommandDistTest {
 
     @Test
     @RawDistOnly(reason = "Containers are immutable")
-    void testShowConfigCommandHidesCredentialsInProfiles(KeycloakDistribution distribution) {
-        CLIResult result = distribution.run(String.format("%s=%s", CONFIG_FILE_LONG_NAME, Paths.get("src/test/resources/ShowConfigCommandTest/keycloak.conf").toAbsolutePath().normalize()), ShowConfig.NAME, "all");
+    void testShowConfigCommandHidesCredentialsInProfiles(KeycloakRunner runner) {
+        CLIResult result = runner.run(String.format("%s=%s", CONFIG_FILE_LONG_NAME, Paths.get("src/test/resources/ShowConfigCommandTest/keycloak.conf").toAbsolutePath().normalize()), ShowConfig.NAME, "all");
         String output = result.getOutput();
         Assertions.assertFalse(output.contains("testpw1"));
         Assertions.assertFalse(output.contains("testpw2"));
@@ -76,9 +76,9 @@ public class ShowConfigCommandDistTest {
 
     @Test
     @RawDistOnly(reason = "Containers are immutable")
-    void testSmallRyeKeyStoreConfigSource(KeycloakDistribution distribution) {
+    void testSmallRyeKeyStoreConfigSource(KeycloakRunner runner) {
         // keystore is shared with QuarkusPropertiesDistTest#testSmallRyeKeyStoreConfigSource
-        CLIResult result = distribution.run(
+        CLIResult result = runner.run(
                 String.format("%s=%s", CONFIG_FILE_LONG_NAME, Paths.get("src/test/resources/ShowConfigCommandTest/keycloak-keystore.conf").toAbsolutePath().normalize()),
                 "--config-keystore=" + Paths.get("src/test/resources/keystore").toAbsolutePath().normalize(),
                 ShowConfig.NAME, "all");
@@ -104,14 +104,14 @@ public class ShowConfigCommandDistTest {
 
     @Test
     @RawDistOnly(reason = "Containers are immutable")
-    void testConfigSourceNames(KeycloakDistribution distribution) {
-        CLIResult result = distribution.run("build");
+    void testConfigSourceNames(KeycloakRunner runner) {
+        CLIResult result = runner.run("build");
         result.assertBuild();
 
-        distribution.setEnvVar("KC_LOG", "file");
-        distribution.copyOrReplaceFile(Paths.get("src/test/resources/ShowConfigCommandTest/quarkus.properties"), Path.of("conf", "quarkus.properties"));
+        runner.setEnvVar("KC_LOG", "file");
+        runner.getDistribution().copyConfigFile(Paths.get("src/test/resources/ShowConfigCommandTest/quarkus.properties"));
 
-        result = distribution.run(
+        result = runner.run(
                 String.format("%s=%s", CONFIG_FILE_LONG_NAME, Paths.get("src/test/resources/ShowConfigCommandTest/keycloak-keystore.conf").toAbsolutePath().normalize()),
                 "--config-keystore=" + Paths.get("src/test/resources/keystore").toAbsolutePath().normalize(),
                 ShowConfig.NAME, "all", "--db=dev-file");

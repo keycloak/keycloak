@@ -301,7 +301,7 @@ public class ConsentsTest {
         EventRepresentation loginEvent = userRealmEvents.poll();
         EventAssertion.assertSuccess(loginEvent).type(EventType.LOGIN)
                 .userId(userFromUserRealm.getId())
-                .isCodeId()
+                .hasCodeId()
                 .details(Details.USERNAME, userFromUserRealm.getUsername())
                 .details(Details.CONSENT, Details.CONSENT_VALUE_NO_CONSENT_REQUIRED)
                 .details(Details.REDIRECT_URI, userRealmOAuth.getRedirectUri());

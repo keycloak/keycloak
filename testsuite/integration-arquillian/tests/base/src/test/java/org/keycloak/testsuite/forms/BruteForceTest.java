@@ -17,7 +17,6 @@
 package org.keycloak.testsuite.forms;
 
 import java.net.MalformedURLException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -47,7 +46,6 @@ import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AbstractChangeImportedUserPasswordsTest;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.AssertEvents.ExpectedEvent;
 import org.keycloak.testsuite.model.infinispan.InfinispanTestUtil;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
@@ -833,9 +831,7 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
             // As of now, there are two events: USER_DISABLED_BY_PERMANENT_LOCKOUT and LOGIN_ERROR but Order is not
             // guarantee though since the brute force detector is running separately "in its own thread" named
             // "Brute Force Protector".
-            List<EventRepresentation> actualEvents = Arrays.asList(events.poll(), events.poll(5));
-            assertIsContained(events.expect(EventType.USER_DISABLED_BY_PERMANENT_LOCKOUT).client((String) null).detail(Details.REASON, "brute_force_attack detected"), actualEvents);
-            assertIsContained(events.expect(EventType.LOGIN_ERROR).error(Errors.INVALID_USER_CREDENTIALS), actualEvents);
+            assertIsContained(true);
 
             checkEmailPresent("User disabled by permanent lockout");
 
@@ -877,9 +873,7 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
             // As of now, there are two events: USER_DISABLED_BY_PERMANENT_LOCKOUT and LOGIN_ERROR but Order is not
             // guarantee though since the brute force detector is running separately "in its own thread" named
             // "Brute Force Protector".
-            List<EventRepresentation> actualEvents = Arrays.asList(events.poll(), events.poll(5));
-            assertIsContained(events.expect(EventType.USER_DISABLED_BY_PERMANENT_LOCKOUT).client((String) null).detail(Details.REASON, "brute_force_attack detected"), actualEvents);
-            assertIsContained(events.expect(EventType.LOGIN_ERROR).error(Errors.INVALID_USER_CREDENTIALS), actualEvents);
+            assertIsContained(true);
 
             // assert
             expectPermanentlyDisabled();
@@ -908,9 +902,7 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
             loginInvalidPassword("test-user@localhost");
             loginInvalidPassword("test-user@localhost", false);
 
-            List<EventRepresentation> actualEvents = Arrays.asList(events.poll(), events.poll(5));
-            assertIsContained(events.expect(EventType.USER_DISABLED_BY_TEMPORARY_LOCKOUT).client((String) null).detail(Details.REASON, "brute_force_attack detected"), actualEvents);
-            assertIsContained(events.expect(EventType.LOGIN_ERROR).error(Errors.INVALID_USER_CREDENTIALS), actualEvents);
+            assertIsContained(false);
 
             checkEmailPresent("User disabled by temporary lockout");
         } finally {
@@ -1044,7 +1036,7 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
 
         assertEquals("You should receive an email shortly with further instructions.", loginPage.getSuccessMessage());
 
-        events.expectRequiredAction(EventType.SEND_RESET_PASSWORD).user(userId).assertEvent();
+        EventAssertion.expectRequiredAction(events.poll()).type(EventType.SEND_RESET_PASSWORD).userId(userId);
 
         MimeMessage message = mail.getReceivedMessages()[0];
         String passwordResetEmailLink = MailUtils.getPasswordResetEmailLink(message);
@@ -1060,8 +1052,8 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
 
         updatePasswordPage.updatePasswords(getPassword("user2"), getPassword("user2"));
 
-        events.expectRequiredAction(EventType.UPDATE_PASSWORD).detail(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE).user(userId).assertEvent();
-        events.expectRequiredAction(EventType.UPDATE_CREDENTIAL).detail(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE).user(userId).assertEvent();
+        EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_PASSWORD).details(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE).userId(userId);
+        EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_CREDENTIAL).details(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE).userId(userId);
 
         userRepresentation = managedRealm.admin().users().get(userId).toRepresentation();
         assertTrue(userRepresentation.isEnabled());
@@ -1346,11 +1338,11 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
     }
 
     private void assertUserDisabledEvent(String error) {
-        events.expect(EventType.LOGIN_ERROR).error(error).assertEvent();
+        EventAssertion.assertError(events.poll()).type(EventType.LOGIN_ERROR).error(error);
     }
 
     private void assertUserPermanentlyDisabledEvent() {
-        events.expect(EventType.LOGIN_ERROR).error(Errors.USER_DISABLED).assertEvent();
+        EventAssertion.assertError(events.poll()).type(EventType.LOGIN_ERROR).error(Errors.USER_DISABLED);
     }
 
     private void assertUserDisabledReason(String expected) {
@@ -1388,25 +1380,24 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
     }
 
     /**
-     * Verifies the given {@link ExpectedEvent} is "contained" in the collection of actual events. An
-     * {@link ExpectedEvent expectedEvent} object is considered equal to a
-     * {@link EventRepresentation eventRepresentation} object if {@code
-     * expectedEvent.assertEvent(eventRepresentation)} does not throw any {@link AssertionError}.
+     * Verifies the given {@link EventRepresentation} is "contained" in the collection of actual events.
      *
-     * @param expectedEvent the expected event
-     * @param actualEvents the collection of {@link EventRepresentation}
+     * @param isPermanent considers if temporary or permanent lockout
      */
-    public void assertIsContained(ExpectedEvent expectedEvent, List<? extends EventRepresentation> actualEvents) {
-        List<String> messages = new ArrayList<>();
-        for (EventRepresentation e : actualEvents) {
-            try {
-                expectedEvent.assertEvent(e);
-                return;
-            } catch (AssertionError error) {
-                // silently fail
-                messages.add(error.getMessage());
+    public void assertIsContained(boolean isPermanent) {
+        EventType eventType = isPermanent ? EventType.USER_DISABLED_BY_PERMANENT_LOCKOUT : EventType.USER_DISABLED_BY_TEMPORARY_LOCKOUT;
+        int expectedEvents = 2;
+
+        while (expectedEvents > 0) {
+            EventRepresentation eventRep = events.poll();
+            if (eventRep != null) {
+                if (eventRep.getType().equals(eventType.name())) {
+                    EventAssertion.assertSuccess(eventRep).type(eventType).clientId(null).details(Details.REASON, "brute_force_attack detected");
+                } else {
+                    EventAssertion.assertError(eventRep).type(EventType.LOGIN_ERROR).error(Errors.INVALID_USER_CREDENTIALS);
+                }
+                expectedEvents--;
             }
         }
-        Assertions.fail(String.format("Expected event not found. Possible reasons are: %s", messages));
     }
 }

@@ -37,6 +37,7 @@ import org.keycloak.protocol.oid4vc.model.IssuerState;
 import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
 import org.keycloak.protocol.oid4vc.model.PreAuthCodeCtx;
 import org.keycloak.protocol.oid4vc.model.PreAuthorizedCodeGrant;
+import org.keycloak.protocol.oid4vc.utils.OID4VCUtil;
 import org.keycloak.util.Strings;
 
 import static org.keycloak.OID4VCConstants.OID4VCI_ENABLED_ATTRIBUTE_KEY;
@@ -84,9 +85,10 @@ class DefaultCredentialOfferProvider implements CredentialOfferProvider {
 
         // Validate the target user
         //
-        String targetUserId = Optional.ofNullable(targetUsername)
+        UserModel targetUser = Optional.ofNullable(targetUsername)
                 .map(tu -> validateTargetUser(session, realmModel, user, tu))
-                .map(UserModel::getId).orElse(null);
+                .orElse(null);
+        String targetUserId = targetUser == null ? null : targetUser.getId();
 
         // Validate the target client
         if (targetClientId != null) {
@@ -109,6 +111,10 @@ class DefaultCredentialOfferProvider implements CredentialOfferProvider {
                 if (credScope == null) {
                     throw new CredentialOfferException(Errors.INVALID_REQUEST, "No credential scope model for: " + credConfigId);
                 }
+                if (targetUser != null && !OID4VCUtil.hasVerifiableCredential(session, targetUser, credScope)) {
+                    throw new CredentialOfferException(Errors.INVALID_REQUEST, "User '" + targetUser.getUsername() + "' does not have verifiable credential '" + credConfigId + "'.");
+                }
+
                 OID4VCAuthorizationDetailsProcessor authDetailsProcessor = new OID4VCAuthorizationDetailsProcessor(session);
                 authDetails.add(authDetailsProcessor.generateResponseAuthorizationDetails(credScope, credOffersId));
             }

@@ -17,6 +17,7 @@
 
 package org.keycloak.quarkus.runtime.integration.jaxrs;
 
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 import jakarta.enterprise.event.Observes;
@@ -59,12 +60,14 @@ public class QuarkusKeycloakApplication extends KeycloakApplication {
     private static final String KEYCLOAK_ADMIN_PASSWORD_ENV_VAR = "KEYCLOAK_ADMIN_PASSWORD";
 
     private static final Logger logger = Logger.getLogger(QuarkusKeycloakApplication.class);
+    
+    private CompletableFuture<Void> bootstrapFuture;
 
     @Override
     protected String getDataDir() {
         return Environment.getDataDir().orElseGet(() -> {
-            logger.warnf("%s is not set, the system temporary directory will be used as the Keycloak data directory.", Environment.KC_HOME_DIR);
-            return System.getProperty("java.io.tmpdir");
+            logger.warnf("%s is not set", Environment.KC_HOME_DIR);
+            return null;
         });
     }
 
@@ -77,11 +80,15 @@ public class QuarkusKeycloakApplication extends KeycloakApplication {
             startup();      
         } else {
             ManagedExecutor executor = Arc.container().instance(ManagedExecutor.class).get();
-            CompletableFuture.runAsync(this::startup, executor).exceptionally(cause -> {
+            bootstrapFuture = CompletableFuture.runAsync(this::startup, executor).exceptionally(cause -> {
                 KeycloakMain.asyncExit(1, cause);
                 return null;
             });        
         }
+    }
+    
+    public Optional<CompletableFuture<Void>> getBootstrapFuture() {
+        return Optional.ofNullable(bootstrapFuture);
     }
 
     void onShutdownEvent(@Observes ShutdownEvent event) {

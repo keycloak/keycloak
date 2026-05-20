@@ -22,6 +22,7 @@ import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 import org.keycloak.Keycloak;
@@ -29,7 +30,6 @@ import org.keycloak.it.utils.KeycloakDistribution;
 import org.keycloak.it.utils.RawDistRootPath;
 import org.keycloak.it.utils.RawKeycloakDistribution;
 import org.keycloak.quarkus.runtime.Environment;
-import org.keycloak.quarkus.runtime.cli.command.DryRunMixin;
 import org.keycloak.quarkus.runtime.cli.command.Start;
 import org.keycloak.quarkus.runtime.cli.command.StartDev;
 
@@ -50,7 +50,7 @@ import static org.keycloak.quarkus.runtime.Environment.forceExitAfterStartLaunch
 
 public class CLITestExtension extends QuarkusMainTestExtension {
 
-    private KeycloakDistribution dist;
+    private KeycloakRunner runner;
     private DatabaseContainer databaseContainer;
     private InfinispanContainer infinispanContainer;
     private CLIResult result;
@@ -74,9 +74,9 @@ public class CLITestExtension extends QuarkusMainTestExtension {
             });
         }
         
-        if (isRaw() && distConfig != null && dist != null) {
+        if (isRaw() && distConfig != null && runner != null) {
             try {
-                dist.unwrap(RawKeycloakDistribution.class).reset(beforeAll);
+                runner.getDistribution(RawKeycloakDistribution.class).reset(beforeAll);
                 beforeAll = false;
             } catch (Exception cause) {
                 throw new RuntimeException("Failed to partially reset", cause);
@@ -87,11 +87,9 @@ public class CLITestExtension extends QuarkusMainTestExtension {
         infinispanContainer = configureExternalInfinispan(context);
 
         if (distConfig != null) {
-            if (dist == null) {
-                dist = createDistribution(distConfig, getStoreConfig(context), getDatabaseConfig(context));
+            if (runner == null) {
+                runner = createDistribution(distConfig);
             }
-
-            onKeepServerAlive(context.getRequiredTestMethod().getAnnotation(KeepServerAlive.class), true);
 
             copyTestProvider(context.getRequiredTestClass().getAnnotation(TestProvider.class));
             copyTestProvider(context.getRequiredTestMethod().getAnnotation(TestProvider.class));
@@ -100,19 +98,13 @@ public class CLITestExtension extends QuarkusMainTestExtension {
 
             configureEnvVars(context.getRequiredTestClass().getAnnotation(WithEnvVars.class));
             configureEnvVars(context.getRequiredTestMethod().getAnnotation(WithEnvVars.class));
-            boolean dryRun = context.getRequiredTestClass().getAnnotation(DryRun.class) != null
-                    || context.getRequiredTestMethod().getAnnotation(DryRun.class) != null;
-            if (dryRun && isRaw()) {
-                dist.setEnvVar(DryRunMixin.KC_DRY_RUN_ENV, "true");
-                dist.setEnvVar(DryRunMixin.KC_DRY_RUN_BUILD_ENV, "true");
-            }
-            if (isRaw() && (context.getRequiredTestClass().getAnnotation(SkipRealmBootstrap.class) != null
-                    || context.getRequiredTestMethod().getAnnotation(SkipRealmBootstrap.class) != null)) {
-                dist.unwrap(RawKeycloakDistribution.class).setLaunchMode(Environment.LAUNCH_MODE_EXIT_BEFORE_BOOTSTRAP);
-            }
+            
+            var stopServer = Optional.ofNullable(context.getRequiredTestMethod().getAnnotation(StopServer.class)).map(StopServer::value).orElse(distConfig.stopServer());
+            
+            runner.setStopServer(stopServer);
 
             if (launch != null) {
-                result = dist.run(List.of(launch.value()));
+                result = runner.run(List.of(launch.value()));
             }
         } else {
             if (!Keycloak.initSys(launch == null ? new String[] {} : launch.value())) {
@@ -123,10 +115,6 @@ public class CLITestExtension extends QuarkusMainTestExtension {
         }
     }
 
-    private static Storage getStoreConfig(ExtensionContext context) {
-        return context.getTestClass().get().getDeclaredAnnotation(Storage.class);
-    }
-
     private void copyTestProvider(TestProvider provider) {
         if (provider == null) {
             return;
@@ -134,7 +122,7 @@ public class CLITestExtension extends QuarkusMainTestExtension {
 
         if (isRaw()) {
             try {
-                dist.unwrap(RawKeycloakDistribution.class).copyProvider(provider.value().getDeclaredConstructor().newInstance());
+                runner.getDistribution(RawKeycloakDistribution.class).copyProvider(provider.value().getDeclaredConstructor().newInstance());
             } catch (Exception cause) {
                 throw new RuntimeException("Failed to instantiate test provider: " + provider.getClass(), cause);
             }
@@ -148,7 +136,7 @@ public class CLITestExtension extends QuarkusMainTestExtension {
     @Override
     public void interceptTestMethod(Invocation<Void> invocation,
             ReflectiveInvocationContext<Method> invocationContext, ExtensionContext extensionContext) throws Throwable {
-        if (dist == null) {
+        if (runner == null) {
             super.interceptTestMethod(invocation, invocationContext, extensionContext);
         } else {
             invocation.proceed();
@@ -158,19 +146,9 @@ public class CLITestExtension extends QuarkusMainTestExtension {
     private void onBeforeStartDistribution(BeforeStartDistribution annotation) {
         if (annotation != null) {
             try {
-                annotation.value().getDeclaredConstructor().newInstance().accept(dist);
+                annotation.value().getDeclaredConstructor().newInstance().accept(runner.getDistribution(RawKeycloakDistribution.class));
             } catch (Exception cause) {
                 throw new RuntimeException("Error when invoking " + annotation.value() + " instance before starting distribution", cause);
-            }
-        }
-    }
-
-    private void onKeepServerAlive(KeepServerAlive annotation, boolean setting) {
-        if(annotation != null && dist != null) {
-            try {
-                dist.setManualStop(setting);
-            } catch (Exception cause) {
-                throw new RuntimeException("Error when invoking " + annotation, cause);
             }
         }
     }
@@ -179,13 +157,9 @@ public class CLITestExtension extends QuarkusMainTestExtension {
     public void afterEach(ExtensionContext context) throws Exception {
         DistributionTest distConfig = getDistributionConfig(context);
 
-        if (dist != null) {
-            onKeepServerAlive(context.getRequiredTestMethod().getAnnotation(KeepServerAlive.class), false);
-            dist.stop();
-            dist.clearEnv();
-            if (isRaw()) {
-                dist.unwrap(RawKeycloakDistribution.class).setLaunchMode(Environment.LAUNCH_MODE_EXIT_AFTER_START);
-            }
+        if (runner != null) {
+            runner.stop();
+            runner.getDistribution().clearEnv();
         }
 
         super.afterEach(context);
@@ -229,7 +203,7 @@ public class CLITestExtension extends QuarkusMainTestExtension {
         DistributionTest distConfig = getDistributionConfig(context);
 
         if (distConfig != null) {
-            dist = createDistribution(distConfig, getStoreConfig(context), getDatabaseConfig(context));
+            runner = createDistribution(distConfig);
         } else {
             forceExitAfterStartLaunchMode();
         }
@@ -239,15 +213,15 @@ public class CLITestExtension extends QuarkusMainTestExtension {
 
     @Override
     public void afterAll(ExtensionContext context) throws Exception {
-        if (dist != null) {
+        if (runner != null) {
             // just to make sure the server is stopped after all tests
-            dist.stop();
+            runner.stop();
         }
         super.afterAll(context);
     }
 
-    private KeycloakDistribution createDistribution(DistributionTest config, Storage storeConfig, WithDatabase databaseConfig) {
-        return new KeycloakDistributionDecorator(storeConfig, databaseConfig, config, DistributionType.getCurrent().orElse(RAW).newInstance(config));
+    private KeycloakRunner createDistribution(DistributionTest config) {
+        return new KeycloakRunner(config, DistributionType.getCurrent().orElse(RAW).newInstance(config));
     }
 
     @Override
@@ -274,12 +248,16 @@ public class CLITestExtension extends QuarkusMainTestExtension {
             //assuming the path to the distribution directory
             return getDistPath();
         }
+        
+        if (type.equals(KeycloakRunner.class)) {
+            return this.runner;
+        }
 
-        if (type.equals(KeycloakDistribution.class)) {
+        if (KeycloakDistribution.class.isAssignableFrom(type)) {
             if (context.getTestClass().orElse(Object.class).getDeclaredAnnotation(DistributionTest.class) == null) {
                 throw new RuntimeException("Only tests annotated with " + DistributionTest.class + " can inject a distribution instance");
             }
-            return dist;
+            return runner.getDistribution((Class<? extends KeycloakDistribution>) type);
         }
 
         // for now, no support for manual launching using QuarkusMainLauncher
@@ -290,7 +268,7 @@ public class CLITestExtension extends QuarkusMainTestExtension {
     public boolean supportsParameter(ParameterContext parameterContext, ExtensionContext extensionContext)
             throws ParameterResolutionException {
         Class<?> type = parameterContext.getParameter().getType();
-        return type == LaunchResult.class || type == CLIResult.class || type == RawDistRootPath.class || type == KeycloakDistribution.class;
+        return type == LaunchResult.class || type == CLIResult.class || type == RawDistRootPath.class || type == KeycloakDistribution.class || type == KeycloakRunner.class;
     }
 
     private void configureProfile(ExtensionContext context) {
@@ -310,7 +288,7 @@ public class CLITestExtension extends QuarkusMainTestExtension {
         WithDatabase database = getDatabaseConfig(context);
 
         if (database != null) {
-            if (dist == null) {
+            if (runner == null) {
                 configureDevServices();
                 setProperty("kc.db", database.alias());
                 setProperty("kc.db-password", DatabaseContainer.DEFAULT_PASSWORD);
@@ -319,19 +297,20 @@ public class CLITestExtension extends QuarkusMainTestExtension {
 
                 databaseContainer.start();
 
+                RawKeycloakDistribution rawDist = runner.getDistribution(RawKeycloakDistribution.class);
                 if (database.buildOptions().length == 0) {
-                    dist.setProperty("db", database.alias());
+                    rawDist.setProperty("db", database.alias());
                 } else {
                     for (String option : database.buildOptions()) {
-                        dist.setProperty(option.substring(0, option.indexOf('=')), option.substring(option.indexOf('=') + 1));
+                        rawDist.setProperty(option.substring(0, option.indexOf('=')), option.substring(option.indexOf('=') + 1));
                     }
                 }
 
-                databaseContainer.configureDistribution(dist);
+                databaseContainer.configureDistribution(rawDist);
 
-                dist.run("build");
+                runner.run("build");
             }
-        } else if (dist == null) {
+        } else if (runner == null) {
             // This is for re-creating the H2 database instead of using the default in home
             setProperty("kc.db-url-path", Keycloak.initTempDirectory("h2-home").toFile().getAbsolutePath());
         }
@@ -374,7 +353,7 @@ public class CLITestExtension extends QuarkusMainTestExtension {
         }
 
         for (int i=0; i<envVars.value().length; i=i+2) {
-            dist.setEnvVar(envVars.value()[i], envVars.value()[i+1]);
+            runner.getDistribution().setEnvVar(envVars.value()[i], envVars.value()[i+1]);
         }
     }
 
@@ -393,6 +372,6 @@ public class CLITestExtension extends QuarkusMainTestExtension {
     }
 
     private RawDistRootPath getDistPath(){
-        return new RawDistRootPath(dist.unwrap(RawKeycloakDistribution.class).getDistPath());
+        return new RawDistRootPath(runner.getDistribution(RawKeycloakDistribution.class).getDistPath());
     }
 }

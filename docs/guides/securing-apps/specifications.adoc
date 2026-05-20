@@ -17,7 +17,7 @@ This {section} presents a list of specifications and standards that {project_nam
 ** If this column is empty means that {project_name} does not pass any external conformance tests for the spec. Only common project integration tests are executed. Maybe the authority does not provide a conformance tests suite or {project_name} is not interested in passing them.
 * *Comments*: A generic column that can contain details of the implementation or the status. For example parts that are not covered yet or specific behaviors out of the spec.
 
-== OpenID Connect
+== OpenID
 
 [%autowidth,options="header"]
 |===
@@ -35,6 +35,7 @@ This {section} presents a list of specifications and standards that {project_nam
 |link:https://openid.net/specs/openid-connect-prompt-create-1_0.html[Initiating User Registration via OpenID Connect 1.0]|Supported||
 |link:https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0-16.html[OpenID for Verifiable Credential Issuance] (OID4VCI)|Experimental|| See link:{adminguide_link}#_oid4vci[Configuring {project_name} as a Verifiable Credential Issuer]
 |link:https://datatracker.ietf.org/doc/html/draft-ietf-oauth-client-id-metadata-document-00[OAuth Client ID Metadata Document]|Experimental|| See <@links.securingapps id="mcp-authz-server" />.
+|link:https://openid.net/specs/authorization-api-1_0.html[OpenID AuthZEN Authorization API 1.0]|Experimental|| See <@links.securingapps id="authzen-authorization" />.
 |===
 
 == OAuth

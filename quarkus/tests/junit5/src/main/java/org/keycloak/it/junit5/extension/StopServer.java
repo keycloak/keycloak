@@ -22,13 +22,37 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+import org.keycloak.it.utils.KeycloakDistribution;
+
 /**
- * {@link KeepServerAlive} is used in a distributiontest to keep the server alive on test / method level.
- * Used when when {@link DistributionTest} is invoked on class level not using keepAlive=true param, but
- * for a specific test we need to run e.g. RestAssured verifications.
+ * {@link StopServer} is used to control when a distribution server stops at a
+ * method level.
  */
 @Target({ ElementType.METHOD })
 @Retention(RetentionPolicy.RUNTIME)
-public @interface KeepServerAlive {
+public @interface StopServer {
+
+    public enum Mode {
+        /**
+         * Stops the server process before quarkus augmentation or startup.
+         */
+        BEFORE_QUARKUS,
+        /**
+         * Stops the server process after database initialization, but before
+         * bootstrapping (creating the master realm, boostrap admin, etc.).
+         */
+        BEFORE_BOOTSTRAP, 
+        /**
+         * Stops the server immediately after it successfully starts.
+         */
+        AFTER_START, 
+        /**
+         * Server will stop if {@link KeycloakDistribution#stop()} is called, another run is called. 
+         * If the server is still running at the end of the method, it will be stopped automatically.
+         */
+        MANUAL 
+    }
+
+    Mode value() default Mode.AFTER_START;
 
 }

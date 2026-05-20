@@ -176,6 +176,75 @@ For example:
 
 <@kc.start parameters="--proxy-headers forwarded --proxy-trusted-addresses=192.168.0.32,127.0.0.0/8"/>
 
+[[header-filtering-recommendations]]
+=== Header filtering recommendations
+
+When using TLS re-encrypt, the proxy can inspect and modify HTTP traffic.
+Use this capability to prevent external clients from injecting headers that affect identity resolution, access control, or observability.
+
+NOTE: The following assumes that there is only a single proxy layer in front of {project_name}, and that it is not receiving traffic from another trusted proxy layer with trusted headers.
+
+Configure the proxy to apply the following rules to incoming requests before forwarding them to {project_name}:
+
+* *Overwrite* `Forwarded` and `+X-Forwarded-*+` headers with the proxy's own values rather than removing them, because {project_name} relies on these headers when `--proxy-headers` is configured.
+* *Strip* all other headers listed below entirely.
+
+[%autowidth]
+|===
+|Header(s) |Category |Risk if not filtered
+
+|`Forwarded`, `X-Forwarded-For`, `X-Forwarded-Proto`, `X-Forwarded-Host`, `X-Forwarded-Port`, `X-Forwarded-Prefix`
+|Proxy identity
+|Clients can spoof their IP address, protocol, or host, affecting access control and audit logging.
+*Overwrite* these headers rather than stripping them.
+
+|`X-Original-Forwarded-For`
+|Proxy identity
+|Variant of `X-Forwarded-For` recognized by some proxies.
+Can be spoofed to bypass IP-based access controls.
+
+|`X-Real-IP`
+|Proxy identity
+|Trusted by some applications for rate limiting and audit logging.
+Can be spoofed to bypass IP-based restrictions.
+
+|`X-Original-URL`, `X-Original-Method`
+|Proxy identity
+|Used by authentication sub-request mechanisms in some proxies.
+Can be spoofed to manipulate path-based authorization decisions.
+
+|`X-Forwarded-Access-Token`
+|Proxy identity
+|Injected by some OAuth2 proxies.
+Can be spoofed to inject forged access tokens.
+
+|`traceparent`, `tracestate`
+|Distributed tracing
+|https://www.w3.org/TR/trace-context/[W3C Trace Context] headers.
+External injection allows attackers to correlate requests in the tracing backend and map internal service dependencies.
+
+|`baggage`
+|Distributed tracing
+|https://www.w3.org/TR/baggage/[W3C Baggage] header.
+Can inject arbitrary key-value pairs into the trace context propagated to downstream services.
+
+|`b3`, `x-b3-traceid`, `x-b3-spanid`, `x-b3-parentspanid`, `x-b3-sampled`, `x-b3-flags`
+|Distributed tracing
+|https://github.com/openzipkin/b3-propagation[Zipkin B3] propagation headers.
+External injection inflates observability costs and enables cross-service correlation.
+
+|`uber-trace-id`
+|Distributed tracing
+|https://www.jaegertracing.io/sdk-migration/#propagation-format[Jaeger] propagation header (deprecated in favor of W3C Trace Context).
+Same risks as other tracing headers.
+
+|`x-ot-span-context`
+|Distributed tracing
+|OpenTracing propagation header (deprecated in favor of W3C Trace Context).
+Same risks as other tracing headers.
+
+|===
+
 === Exposed path recommendations
 
 When using a reverse proxy, {project_name} only requires certain paths to be exposed.

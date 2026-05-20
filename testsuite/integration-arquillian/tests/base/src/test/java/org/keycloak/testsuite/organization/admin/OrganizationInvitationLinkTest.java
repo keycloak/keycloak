@@ -51,6 +51,7 @@ import org.keycloak.representations.idm.MembershipType;
 import org.keycloak.representations.idm.OrganizationInvitationRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.AbstractAuthenticationTest;
 import org.keycloak.testsuite.AssertEvents;
@@ -264,28 +265,22 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
         registerUser(organization, email);
 
         // Assert INVITE_ORG event fires when user is added to the organization
-        EventRepresentation inviteEvent = events.expect(EventType.INVITE_ORG)
-                .client("account")
-                .user(Matchers.notNullValue(String.class))
-                .detail(Details.ORG_ID, orgId)
-                .assertEvent();
+        EventRepresentation inviteEvent = EventAssertion.assertSuccess(events.poll()).type(EventType.INVITE_ORG)
+                .clientId("account")
+                .hasUserId()
+                .details(Details.ORG_ID, orgId).getEvent();
 
         // Assert REGISTER event fires during new user registration via organization invite
-        events.expect(EventType.REGISTER)
-                .client("account")
-                .user(inviteEvent.getUserId())
-                .detail(Details.EMAIL, email)
-                .detail(Details.REGISTER_METHOD, "form")
-                .assertEvent();
+        EventAssertion.assertSuccess(events.poll()).type(EventType.REGISTER)
+                .clientId("account")
+                .userId(inviteEvent.getUserId())
+                .details(Details.EMAIL, email)
+                .details(Details.REGISTER_METHOD, "form");
 
         // Assert LOGIN event fires after registration completes
-        events.expectLogin()
-                .client("account")
-                .user(inviteEvent.getUserId())
-                .removeDetail(Details.REDIRECT_URI)
-                .removeDetail(Details.CONSENT)
-                .session(AssertEvents.isSessionId())
-                .assertEvent();
+        EventAssertion.expectLoginSuccess(events.poll())
+                .clientId("account")
+                .userId(inviteEvent.getUserId());
 
         List<UserRepresentation> users = managedRealm.admin().users().searchByEmail(email, true);
         assertThat(users, not(empty()));
