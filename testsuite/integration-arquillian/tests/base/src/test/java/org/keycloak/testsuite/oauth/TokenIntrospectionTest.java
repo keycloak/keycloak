@@ -53,6 +53,7 @@ import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.oidc.AbstractOIDCScopeTest;
 import org.keycloak.testsuite.oidc.OIDCScopeTest;
 import org.keycloak.testsuite.pages.LoginPage;
+import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.KeycloakModelUtils;
 import org.keycloak.testsuite.util.TokenSignatureUtil;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
@@ -830,6 +831,58 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
             allowTokenIntrospectionWithoutAudienceCheck(false);
             noScopeRep.getAttributes().remove(OIDCConfigAttributes.ALLOW_TOKEN_INTROSPECTION_WITHOUT_AUDIENCE_CHECK);
             ApiUtil.findClientByClientId(testRealm(), "no-scope").update(noScopeRep);
+        }
+    }
+
+    @Test
+    public void testIntrospectionRespectsRealmNotBeforeWithClientNotBefore() throws Exception {
+        //Test that introspection respects realm notBefore even when client notBefore is set
+        oauth.doLogin("test-user@localhost", "password");
+        String code = oauth.parseLoginResponse().getCode();
+        AccessTokenResponse accessTokenResponse = oauth.doAccessTokenRequest(code);
+        events.clear();
+
+        int currentTime = (int) (System.currentTimeMillis() / 1000);
+
+        ClientRepresentation clientRep = ApiUtil.findClientByClientId(testRealm(), "test-app").toRepresentation();
+        int originalClientNotBefore = clientRep.getNotBefore() != null ? clientRep.getNotBefore() : 0;
+
+        try {
+            //Test realm notBefore with client notBefore both set
+            // Set client notBefore to past
+            clientRep.setNotBefore(currentTime - 100);
+            ApiUtil.findClientByClientId(testRealm(), "test-app").update(clientRep);
+
+            oauth.client("confidential-cli", "secret1");
+            TokenMetadataRepresentation accessTokenRep = oauth.doIntrospectionAccessTokenRequest(accessTokenResponse.getAccessToken()).asTokenMetadata();
+            assertTrue(accessTokenRep.isActive());
+
+            oauth.client("test-app", "password");
+            JsonNode refreshTokenJson = oauth.doIntrospectionRefreshTokenRequest(accessTokenResponse.getRefreshToken()).asJsonNode();
+            assertTrue(refreshTokenJson.get("active").asBoolean());
+
+            // Set realm notBefore to future
+            try (RealmAttributeUpdater rau = new RealmAttributeUpdater(testRealm()).setNotBefore(currentTime + 100).update()) {
+                oauth.client("confidential-cli", "secret1");
+                accessTokenRep = oauth.doIntrospectionAccessTokenRequest(accessTokenResponse.getAccessToken()).asTokenMetadata();
+                assertFalse(accessTokenRep.isActive());
+
+                oauth.client("test-app", "password");
+                refreshTokenJson = oauth.doIntrospectionRefreshTokenRequest(accessTokenResponse.getRefreshToken()).asJsonNode();
+                assertFalse(refreshTokenJson.get("active").asBoolean());
+            }
+
+            oauth.client("confidential-cli", "secret1");
+            accessTokenRep = oauth.doIntrospectionAccessTokenRequest(accessTokenResponse.getAccessToken()).asTokenMetadata();
+            assertTrue(accessTokenRep.isActive());
+
+            oauth.client("test-app", "password");
+            refreshTokenJson = oauth.doIntrospectionRefreshTokenRequest(accessTokenResponse.getRefreshToken()).asJsonNode();
+            assertTrue(refreshTokenJson.get("active").asBoolean());
+
+        } finally {
+            clientRep.setNotBefore(originalClientNotBefore);
+            ApiUtil.findClientByClientId(testRealm(), "test-app").update(clientRep);
         }
     }
 }
