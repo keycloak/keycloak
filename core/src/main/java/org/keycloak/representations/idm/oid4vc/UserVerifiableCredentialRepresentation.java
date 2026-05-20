@@ -44,11 +44,14 @@ public class UserVerifiableCredentialRepresentation {
     public boolean equals(Object o) {
         if (o == null || getClass() != o.getClass()) return false;
         UserVerifiableCredentialRepresentation that = (UserVerifiableCredentialRepresentation) o;
-        return Objects.equals(credentialScopeName, that.credentialScopeName) && Objects.equals(revision, that.revision) && Objects.equals(createdDate, that.createdDate);
+        return Objects.equals(credentialScopeName, that.credentialScopeName)
+                && Objects.equals(revision, that.revision)
+                && Objects.equals(createdDate, that.createdDate)
+                && Objects.equals(userAttributes, that.userAttributes);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(credentialScopeName, revision, createdDate);
+        return Objects.hash(credentialScopeName, revision, createdDate, userAttributes);
     }
 }
