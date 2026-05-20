@@ -19,6 +19,8 @@ package org.keycloak.services.resteasy;
 
 import java.util.Optional;
 
+import jakarta.servlet.http.HttpServletRequest;
+
 import org.keycloak.common.ClientConnection;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.http.HttpResponse;
@@ -44,8 +46,8 @@ public class ResteasyKeycloakContext extends DefaultKeycloakContext {
     }
 
     @Override
-    public ClientConnection getConnection() {
-        throw new UnsupportedOperationException();
+    protected Optional<ClientConnection> createClientConnection() {
+        return Optional.ofNullable(ResteasyContext.getContextData(HttpServletRequest.class)).map(ClientConnectionImpl::new);
     }
 
 }

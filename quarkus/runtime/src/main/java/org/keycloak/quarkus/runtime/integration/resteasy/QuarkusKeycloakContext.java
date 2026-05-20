@@ -19,6 +19,8 @@ package org.keycloak.quarkus.runtime.integration.resteasy;
 
 import java.util.Optional;
 
+import jakarta.enterprise.context.ContextNotActiveException;
+
 import org.keycloak.common.ClientConnection;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.http.HttpResponse;
@@ -51,6 +53,10 @@ public final class QuarkusKeycloakContext extends DefaultKeycloakContext {
     }
 
     private Optional<ResteasyReactiveRequestContext> getResteasyReactiveRequestContext() {
-        return Optional.ofNullable(CurrentRequestManager.get());
+        try {
+            return Optional.ofNullable(CurrentRequestManager.get());
+        } catch (ContextNotActiveException e) {
+            return Optional.empty();
+        }
     }
 }

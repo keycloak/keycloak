@@ -17,6 +17,7 @@
 
 package org.keycloak.services;
 
+import java.lang.reflect.Proxy;
 import java.net.URI;
 import java.util.HashMap;
 import java.util.Locale;
@@ -25,6 +26,7 @@ import java.util.Optional;
 
 import jakarta.enterprise.context.ContextNotActiveException;
 import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.UriInfo;
 
 import org.keycloak.Token;
 import org.keycloak.common.ClientConnection;
@@ -93,8 +95,15 @@ public abstract class DefaultKeycloakContext implements KeycloakContext {
             if (uriInfo == null) {
                 uriInfo = new HashMap<>();
             }
-
-            uriInfo.put(type, new KeycloakUriInfo(session, type, getHttpRequest().getUri()));
+            UriInfo info = null;
+            try {
+                info = getHttpRequest().getUri();
+            } catch (ContextNotActiveException e) {
+                info = (UriInfo) Proxy.newProxyInstance(UriInfo.class.getClassLoader(), new Class[] { UriInfo.class }, (proxy, method, args) -> {
+                    throw new ContextNotActiveException();
+                });
+            }
+            uriInfo.put(type, new KeycloakUriInfo(session, type, info));
         }
         return uriInfo.get(type);
     }
@@ -104,7 +113,6 @@ public abstract class DefaultKeycloakContext implements KeycloakContext {
         return getUri(UrlType.FRONTEND);
     }
 
-  
     @Override
     public HttpHeaders getRequestHeaders() {
         return getHttpRequest().getHttpHeaders();
@@ -154,7 +162,7 @@ public abstract class DefaultKeycloakContext implements KeycloakContext {
     @Override
     public ClientConnection getConnection() {
         if (clientConnection == null) {
-            clientConnection = createClientConnection().orElseThrow(ContextNotActiveException::new);
+            clientConnection = createClientConnection().orElseGet(() -> new ClientConnection() {});
         }
 
         return clientConnection;
@@ -201,7 +209,7 @@ public abstract class DefaultKeycloakContext implements KeycloakContext {
     }
 
     protected Optional<ClientConnection> createClientConnection() {
-        return null;
+        return Optional.empty();
     }
 
     protected abstract Optional<HttpRequest> createHttpRequest();

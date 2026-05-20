@@ -20,6 +20,7 @@ package org.keycloak.models;
 import java.net.URI;
 import java.util.Locale;
 
+import jakarta.enterprise.context.ContextNotActiveException;
 import jakarta.ws.rs.core.HttpHeaders;
 
 import org.keycloak.Token;
@@ -35,12 +36,19 @@ import org.keycloak.urls.UrlType;
  */
 public interface KeycloakContext {
 
+    /**
+     * @throws {@link ContextNotActiveException} if no request is active and a non-full URL hostname is configured
+     */
     URI getAuthServerUrl();
 
+    /**
+     * @throws {@link ContextNotActiveException} if no request is active and a non-full URL hostname is configured
+     */
     String getContextPath();
     
      /**
      * @deprecated Use {@link #getHttpRequest()} to obtain the request headers.
+     * @throws {@link ContextNotActiveException} when a request is active
      */
     @Deprecated
     HttpHeaders getRequestHeaders();
@@ -48,7 +56,8 @@ public interface KeycloakContext {
 
     /**
      * Returns the URI assuming it is a frontend request. To resolve URI for a backend request use {@link #getUri(UrlType)}
-     * @return
+     *
+     * @throws {@link ContextNotActiveException} if no request is active and a non-full URL hostname is configured
      */
     KeycloakUriInfo getUri();
 
@@ -59,7 +68,8 @@ public interface KeycloakContext {
      * request URL for backend requests. Frontend URI should also be used for realm issuer fields in tokens.
      *
      * @param type the type of the request
-     * @return
+     *
+     * @throws {@link ContextNotActiveException} if no request is active and a non-full URL hostname is configured
      */
     KeycloakUriInfo getUri(UrlType type);
 
@@ -85,6 +95,9 @@ public interface KeycloakContext {
 
     void setOrganization(OrganizationModel organization);
 
+    /**
+     * If there is no active request, a {@link ClientConnection} will still be returned
+     */
     ClientConnection getConnection();
 
     Locale resolveLocale(UserModel user);
@@ -106,8 +119,14 @@ public interface KeycloakContext {
 
     void setAuthenticationSession(AuthenticationSessionModel authenticationSession);
 
+    /**
+     * If there is no active request, a {@link ContextNotActiveException} will be thrown
+     */
     HttpRequest getHttpRequest();
 
+    /**
+     * If there is no active request, a {@link ContextNotActiveException} will be thrown
+     */
     HttpResponse getHttpResponse();
 
     void setConnection(ClientConnection clientConnection);
