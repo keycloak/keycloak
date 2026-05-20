@@ -18,8 +18,8 @@
 package org.keycloak.it.cli.dist;
 
 import org.keycloak.it.junit5.extension.DistributionTest;
-import org.keycloak.it.junit5.extension.DryRun;
 import org.keycloak.it.junit5.extension.RawDistOnly;
+import org.keycloak.it.junit5.extension.StopServer.Mode;
 import org.keycloak.it.junit5.extension.WithEnvVars;
 
 import io.quarkus.test.junit.main.Launch;
@@ -34,8 +34,7 @@ import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.matchesPattern;
 
-@DryRun
-@DistributionTest
+@DistributionTest(stopServer = Mode.BEFORE_QUARKUS)
 @RawDistOnly(reason = "No need to test script again on container")
 @WithEnvVars({"PRINT_ENV", "true"})
 @Tag(DistributionTest.WIN)

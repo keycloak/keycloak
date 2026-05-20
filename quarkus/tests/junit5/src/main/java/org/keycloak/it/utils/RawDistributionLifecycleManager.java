@@ -13,13 +13,7 @@ public class RawDistributionLifecycleManager implements QuarkusTestResourceLifec
     
     @Override
     public Map<String, String> start() {
-        dist = new RawKeycloakDistribution(
-                false,
-                false,
-                false,
-                true,
-                false,
-                8080);
+        dist = new RawKeycloakDistribution(true);
         return null;
     }
 

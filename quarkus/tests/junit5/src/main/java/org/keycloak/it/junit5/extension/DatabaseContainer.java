@@ -20,7 +20,7 @@ package org.keycloak.it.junit5.extension;
 import java.time.Duration;
 import java.util.logging.Logger;
 
-import org.keycloak.it.utils.KeycloakDistribution;
+import org.keycloak.it.utils.RawKeycloakDistribution;
 
 import org.jboss.logmanager.Level;
 import org.jboss.logmanager.LogManager;
@@ -53,7 +53,7 @@ public class DatabaseContainer {
         return container.isRunning();
     }
 
-    void configureDistribution(KeycloakDistribution dist) {
+    void configureDistribution(RawKeycloakDistribution dist) {
         dist.setProperty("db-username", getUsername());
         dist.setProperty("db-password", getPassword());
         dist.setProperty("db-url", getJdbcUrl());

@@ -29,8 +29,9 @@ import java.util.concurrent.TimeUnit;
 
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
+import org.keycloak.it.junit5.extension.KeycloakRunner;
 import org.keycloak.it.junit5.extension.RawDistOnly;
-import org.keycloak.it.utils.KeycloakDistribution;
+import org.keycloak.it.utils.RawDistRootPath;
 import org.keycloak.it.utils.RawKeycloakDistribution;
 
 import org.junit.jupiter.api.AfterEach;
@@ -57,20 +58,16 @@ public class WindowsServiceDistTest {
     private static final int SERVICE_START_TIMEOUT_SECONDS = 120;
     private static final int SERVICE_STOP_TIMEOUT_SECONDS = 60;
 
-    private RawKeycloakDistribution rawDist;
-    private Path distPath;
     private String testServiceName;
     private boolean serviceCreated = false;
     private boolean prunsrvAvailable = false;
 
     @BeforeEach
-    void setUp(KeycloakDistribution dist) {
-        this.rawDist = dist.unwrap(RawKeycloakDistribution.class);
-        this.distPath = rawDist.getDistPath();
+    void setUp(KeycloakRunner runner, RawDistRootPath path) {
         this.testServiceName = TEST_SERVICE_NAME_PREFIX + System.currentTimeMillis();
 
         // Check if prunsrv.exe is available in the distribution
-        Path prunsrvPath = distPath.resolve("bin").resolve("prunsrv.exe");
+        Path prunsrvPath = path.getDistRootPath().resolve("bin").resolve("prunsrv.exe");
         if (!Files.exists(prunsrvPath)) {
             String prunsrvSystemPath = findPrunsrvInSystem();
             if (prunsrvSystemPath != null) {
@@ -87,7 +84,7 @@ public class WindowsServiceDistTest {
     }
 
     @AfterEach
-    void tearDown() {
+    void tearDown(KeycloakRunner runner) {
         if (serviceCreated) {
             try {
                 stopService();
@@ -95,7 +92,7 @@ public class WindowsServiceDistTest {
                 System.err.println("Failed to stop service during cleanup: " + e.getMessage());
             }
             try {
-                deleteService();
+                deleteService(runner);
             } catch (Exception e) {
                 System.err.println("Failed to delete service during cleanup: " + e.getMessage());
             }
@@ -103,20 +100,21 @@ public class WindowsServiceDistTest {
     }
 
     @Test
-    void testServiceLifecycle() throws Exception {
+    void testServiceLifecycle(KeycloakRunner runner) throws Exception {
         assertPrunsrvAvailable();
         assertAdminPrivileges();
 
         String customDisplayName = "Keycloak Test Service " + testServiceName;
         String customDescription = "Keycloak integration test service";
 
+        RawKeycloakDistribution rawDist = runner.getDistribution(RawKeycloakDistribution.class);
         rawDist.setProperty("http-enabled", "true");
         rawDist.setProperty("hostname-strict", "false");
         rawDist.setProperty("log", "console,file");
-        rawDist.setProperty("log-file", distPath.resolve("log").resolve("keycloak.log").toString());
+        rawDist.setProperty("log-file", rawDist.getDistPath().resolve("log").resolve("keycloak.log").toString());
 
         // Install the service with custom name and display name
-        CLIResult installResult = rawDist.run("tools", "windows-service", "install",
+        CLIResult installResult = runner.run("tools", "windows-service", "install",
                 "--name=" + testServiceName,
                 "--display-name=" + customDisplayName,
                 "--description=" + customDescription,
@@ -137,7 +135,7 @@ public class WindowsServiceDistTest {
         assertEquals("RUNNING", getServiceState(testServiceName), "Service should be in RUNNING state");
 
         // Verify log file was created and contains startup message
-        Path logFile = distPath.resolve("log").resolve("keycloak.log");
+        Path logFile = rawDist.getDistPath().resolve("log").resolve("keycloak.log");
         assertTrue(waitForLogFile(logFile), "Log file should be created");
         String logContent = Files.readString(logFile);
         assertThat("Log should contain Keycloak startup message", logContent, containsString("Listening on:"));
@@ -148,7 +146,7 @@ public class WindowsServiceDistTest {
         assertFalse(isKeycloakAccessible(), "Keycloak should not be accessible after service stop");
 
         // Test service uninstall
-        CLIResult uninstallResult = rawDist.run("tools", "windows-service", "uninstall", "--name=" + testServiceName);
+        CLIResult uninstallResult = runner.run("tools", "windows-service", "uninstall", "--name=" + testServiceName);
         assertEquals(0, uninstallResult.exitCode(), "Service uninstallation failed: " + uninstallResult.getOutput());
         assertThat(uninstallResult.getOutput(), containsString("uninstalled successfully"));
         serviceCreated = false;
@@ -237,8 +235,8 @@ public class WindowsServiceDistTest {
         return true;
     }
 
-    private void deleteService() {
-        rawDist.run("tools", "windows-service", "uninstall", "--name=" + testServiceName);
+    private void deleteService(KeycloakRunner runner) {
+        runner.run("tools", "windows-service", "uninstall", "--name=" + testServiceName);
     }
 
     private boolean isServiceCreated(String serviceName) {

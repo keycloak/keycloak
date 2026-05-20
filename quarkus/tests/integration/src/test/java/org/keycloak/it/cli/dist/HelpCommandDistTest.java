@@ -23,9 +23,9 @@ import java.util.List;
 
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
+import org.keycloak.it.junit5.extension.KeycloakRunner;
 import org.keycloak.it.junit5.extension.RawDistOnly;
 import org.keycloak.it.junit5.extension.WithEnvVars;
-import org.keycloak.it.utils.KeycloakDistribution;
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.cli.command.BootstrapAdmin;
 import org.keycloak.quarkus.runtime.cli.command.BootstrapAdminService;
@@ -48,7 +48,7 @@ import org.junit.jupiter.api.Test;
 import static org.keycloak.quarkus.runtime.cli.command.AbstractAutoBuildCommand.OPTIMIZED_BUILD_OPTION_LONG;
 
 @WithEnvVars({"KEYCLOAK_COMMAND_MODE", "ALL", "KEYCLOAK_HELP_WIDTH", "80"})
-@DistributionTest
+@DistributionTest(localCache = false)
 @RawDistOnly(reason = "Verifying the help message output doesn't need long spin-up of docker dist tests.")
 @Tag(DistributionTest.WIN)
 public class HelpCommandDistTest {
@@ -188,7 +188,7 @@ public class HelpCommandDistTest {
     }
 
     @Test
-    public void testHelpDoesNotStartReAugJvm(KeycloakDistribution dist) {
+    public void testHelpDoesNotStartReAugJvm(KeycloakRunner runner) {
         for (String helpCmd : List.of("-h", "--help", "--help-all")) {
             for (String cmd : List.of("", "start", "start-dev", "build")) {
                 String debugOption = "--debug";
@@ -197,7 +197,7 @@ public class HelpCommandDistTest {
                     debugOption = "--debug=8787";
                 }
 
-                CLIResult run = dist.run(debugOption, cmd, helpCmd);
+                CLIResult run = runner.run(debugOption, cmd, helpCmd);
                 assertSingleJvmStarted(run);
             }
         }
