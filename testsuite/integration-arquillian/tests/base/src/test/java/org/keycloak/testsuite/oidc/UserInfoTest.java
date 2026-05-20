@@ -745,13 +745,12 @@ public class UserInfoTest extends AbstractKeycloakTest {
 
             assertEquals(Status.UNAUTHORIZED.getStatusCode(), response.getStatus());
 
-            events.expect(EventType.USER_INFO_REQUEST_ERROR)
+            EventAssertion.assertError(events.poll()).type(EventType.USER_INFO_REQUEST_ERROR)
                     .error(Errors.INVALID_TOKEN)
-                    .user(Matchers.nullValue(String.class))
-                    .session(Matchers.nullValue(String.class))
-                    .detail(Details.AUTH_METHOD, Details.VALIDATE_ACCESS_TOKEN)
-                    .client((String) null)
-                    .assertEvent();
+                    .userId(null)
+                    .sessionId(null)
+                    .details(Details.AUTH_METHOD, Details.VALIDATE_ACCESS_TOKEN)
+                    .clientId(null);
 
             rep.setNotBefore(0);
             realm.update(rep);

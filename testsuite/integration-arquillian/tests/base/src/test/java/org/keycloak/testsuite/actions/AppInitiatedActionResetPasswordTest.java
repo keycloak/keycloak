@@ -45,7 +45,6 @@ import org.keycloak.services.resources.LoginActionsService;
 import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.ActionURIUtils;
-import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginConfigTotpPage;
@@ -515,14 +514,14 @@ public class AppInitiatedActionResetPasswordTest extends AbstractAppInitiatedAct
                         + "auth_session_id=" + authSessionId))) {
                     Assert.assertEquals(302, response2.getStatusLine().getStatusCode());
                 }
-                events.expect(EventType.RESTART_AUTHENTICATION).user((String) null).assertEvent();
+                EventAssertion.assertSuccess(events.poll()).type(EventType.RESTART_AUTHENTICATION).userId(null);
 
                 // authenticate the user in the browser
                 oauth.openLoginForm();
                 loginPage.assertCurrent();
                 loginPage.login("test-user@localhost", "password");
                 appPage.assertCurrent();
-                events.expectLogin().user(AssertEvents.isUUID()).detail(Details.USERNAME, "test-user@localhost").assertEvent();
+                EventAssertion.expectLoginSuccess(events.poll()).hasUserId().details(Details.USERNAME, "test-user@localhost");
 
                 // navigate to the authenticate page with the other auth_session_id, tab_id and client_data
                 driver.navigate().to(oauth.getBaseUrl() + "/realms/" + oauth.getRealm()
@@ -531,8 +530,8 @@ public class AppInitiatedActionResetPasswordTest extends AbstractAppInitiatedAct
                         + "&tab_id=" + attrs.get("tab_id")
                         + "&client_data=" + attrs.get("client_data"));
                 errorPage.assertCurrent();
-                events.expect(EventType.LOGIN_ERROR).error(Errors.INVALID_CODE).user((String) null)
-                        .detail(Details.REASON, "cookie does not match auth_session query parameter").assertEvent();
+                EventAssertion.assertError(events.poll()).type(EventType.LOGIN_ERROR).error(Errors.INVALID_CODE).userId(null)
+                        .details(Details.REASON, "cookie does not match auth_session query parameter");
             }
         }
     }
