@@ -166,6 +166,8 @@ styles=css/styles.css css/theme-styles.css
       `:root {
         ${bgimage ? `--keycloak-bg-logo-url: url('../${bgimageName}');` : ""}
         ${logo ? `--keycloak-logo-url: url('../${logoName}');` : ""}
+        ${styles.borderRadius ? `--pf-v5-global--BorderRadius--sm: ${styles.borderRadius};` : ""}
+        ${styles.borderRadius ? `--pf-v5-global--BorderRadius--lg: ${styles.borderRadius};` : ""}
         --keycloak-logo-height: ${realm.logoHeight};
         --keycloak-logo-width: ${realm.logoWidth};
         ${toCss(styles.light)}
