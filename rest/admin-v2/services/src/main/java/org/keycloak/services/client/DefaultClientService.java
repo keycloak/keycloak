@@ -322,9 +322,8 @@ public class DefaultClientService implements ClientService {
             handleServiceAccount(model, oidcClient);
         }
 
-        var representation = mapper.fromModel(model);
-        fireAdminEvent(alreadyExists ? OperationType.UPDATE : OperationType.CREATE, representation);
-        return new CreateOrUpdateResult(representation, !alreadyExists);
+        fireAdminEvent(alreadyExists ? OperationType.UPDATE : OperationType.CREATE, mapper.fromModel(model));
+        return new CreateOrUpdateResult(mapper.fromModel(model), !alreadyExists);
     }
 
     /**
