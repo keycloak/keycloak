@@ -24,6 +24,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Properties;
 import java.util.Set;
 import java.util.function.Function;
@@ -265,7 +266,7 @@ public class AccountRestService {
         representation.setEffectiveUrl(ResolveRelative.resolveRelativeUri(session, model.getRootUrl(), model.getBaseUrl()));
         UserConsentModel consentModel = consents.get(model.getClientId());
         if(consentModel != null) {
-            representation.setConsent(modelToRepresentation(consentModel));
+            representation.setConsent(modelToBriefRepresentation(consentModel));
             representation.setLogoUri(model.getAttribute(ClientModel.LOGO_URI));
             representation.setPolicyUri(model.getAttribute(ClientModel.POLICY_URI));
             representation.setTosUri(model.getAttribute(ClientModel.TOS_URI));
@@ -273,18 +274,48 @@ public class AccountRestService {
         return representation;
     }
 
-    private ConsentRepresentation modelToRepresentation(UserConsentModel model) {
-        List<ConsentScopeRepresentation> grantedScopes = model.getGrantedClientScopes().stream()
-                .map(m -> new ConsentScopeRepresentation(m.getId(), m.getConsentScreenText()!= null ? m.getConsentScreenText() : m.getName(), StringPropertyReplacer.replaceProperties(m.getConsentScreenText(), getProperties()::getProperty)))
-                .collect(Collectors.toList());
+    private ConsentRepresentation modelToRepresentation(final UserConsentModel model) {
+        final List<ConsentScopeRepresentation> grantedScopes = model.getGrantedClientScopes().stream()
+                .map(clientScopeModel -> new ConsentScopeRepresentation(
+                        clientScopeModel.getId(),
+                        getClientScopeName(clientScopeModel),
+                        clientScopeModel.getDescription(),
+                        clientScopeModel.getProtocol(),
+                        getClientScopeDisplayText(clientScopeModel))
+                ).toList();
         return new ConsentRepresentation(grantedScopes, model.getCreatedDate(), model.getLastUpdatedDate());
+    }
+
+    private ConsentRepresentation modelToBriefRepresentation(final UserConsentModel model) {
+        final List<ConsentScopeRepresentation> grantedScopes = model.getGrantedClientScopes().stream()
+                .map(clientScopeModel -> new ConsentScopeRepresentation(
+                        clientScopeModel.getId(),
+                        getClientScopeName(clientScopeModel),
+                        getClientScopeDisplayText(clientScopeModel))
+                ).toList();
+        return new ConsentRepresentation(grantedScopes, model.getCreatedDate(), model.getLastUpdatedDate());
+    }
+
+    private String getClientScopeName(final ClientScopeModel clientScopeModel) {
+        if (clientScopeModel.getConsentScreenText() == null) {
+            return clientScopeModel.getName();
+        }
+        return clientScopeModel.getConsentScreenText();
+    }
+
+    private String getClientScopeDisplayText(final ClientScopeModel clientScopeModel) {
+        final var consentScreenText = clientScopeModel.getConsentScreenText();
+        return StringPropertyReplacer.replaceProperties(
+                consentScreenText,
+                Objects.requireNonNull(getProperties())::getProperty
+        );
     }
 
     private Properties getProperties() {
         try {
             return session.theme().getTheme(Theme.Type.ACCOUNT).getMessages(locale);
         } catch (IOException e) {
-            return null;
+            return new Properties();
         }
     }
 
@@ -297,7 +328,8 @@ public class AccountRestService {
     @Path("/applications/{clientId}/consent")
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    public Response getConsent(final @PathParam("clientId") String clientId) {
+    public Response getConsent(final @PathParam("clientId") String clientId,
+            @QueryParam("briefRepresentation") @DefaultValue("true") boolean briefRepresentation) {
         checkAccountApiEnabled();
         auth.requireOneOf(AccountRoles.MANAGE_ACCOUNT, AccountRoles.VIEW_CONSENT, AccountRoles.MANAGE_CONSENT);
 
@@ -309,6 +341,10 @@ public class AccountRestService {
         UserConsentModel consent = UserConsentManager.getConsentByClient(session, realm, user, client.getId());
         if (consent == null) {
             return Response.noContent().build();
+        }
+
+        if (briefRepresentation) {
+            return Response.ok(modelToBriefRepresentation(consent)).build();
         }
 
         return Response.ok(modelToRepresentation(consent)).build();
@@ -406,7 +442,7 @@ public class AccountRestService {
             String scopeString = grantedConsent.getGrantedClientScopes().stream().map(cs->cs.getName()).collect(Collectors.joining(" "));
             event.detail(Details.SCOPE, scopeString).success();
             grantedConsent = UserConsentManager.getConsentByClient(session, realm, user, client.getId());
-            return Response.ok(modelToRepresentation(grantedConsent)).build();
+            return Response.ok(modelToBriefRepresentation(grantedConsent)).build();
         } catch (IllegalArgumentException e) {
             throw ErrorResponse.error(e.getMessage(), Response.Status.BAD_REQUEST);
         }
