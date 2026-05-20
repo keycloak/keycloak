@@ -10,7 +10,6 @@ import useIsFeatureEnabled, { Feature } from "../../utils/useIsFeatureEnabled";
 import { ThemesTabType, toThemesTab } from "../routes/ThemesTab";
 import { QuickTheme } from "./QuickTheme";
 import { ThemeSettingsTab } from "./ThemeSettings";
-import { borderRadiusToCss } from "./BorderRadiusControl";
 
 type ThemesTabProps = {
   realm: RealmRepresentation;
@@ -22,7 +21,6 @@ export default function ThemesTab({ realm, save }: ThemesTabProps) {
   const { realm: realmName } = useRealm();
   const isFeatureEnabled = useIsFeatureEnabled();
 
-        ${borderRadiusToCss(styles)}
   const param = (tab: ThemesTabType) => ({
     realm: realmName,
     tab,
