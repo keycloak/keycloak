@@ -34,6 +34,7 @@ import org.keycloak.it.utils.RawKeycloakDistribution;
 
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.main.Launch;
+import org.hamcrest.Matchers;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Tag;
@@ -42,6 +43,7 @@ import org.junit.jupiter.api.TestMethodOrder;
 
 import static org.keycloak.quarkus.runtime.cli.command.Main.CONFIG_FILE_LONG_NAME;
 
+import static io.restassured.RestAssured.when;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -155,6 +157,26 @@ public class StartCommandDistTest {
     @Order(2)
     void failIfOptimizedUsedForFirstStartup(CLIResult cliResult) {
         cliResult.assertError("The '--optimized' flag was used for first ever server start.");
+    }
+    
+    @StopServer(Mode.MANUAL)
+    @Test
+    @Launch({"start", "--db=dev-file", "--hostname-strict=false", "--http-enabled=true"})
+    void testStartNonLocal(CLIResult cliResult) {
+        cliResult.assertStarted();
+        
+        // should not be directed to create an admin user
+        when().get("/").then().statusCode(200).body(containsString("You will need local access"));
+    }
+    
+    @StopServer(Mode.MANUAL)
+    @Test
+    @Launch({"start", "--db=dev-file", "--proxy-headers=forwarded", "--hostname-strict=false", "--http-enabled=true"})
+    void testStartLocal(CLIResult cliResult) {
+        cliResult.assertStarted();
+        
+        // should not be directed to create an admin user
+        when().get("/").then().statusCode(200).body(Matchers.not(containsString("You will need local access")));
     }
 
     @Test
