@@ -18,7 +18,11 @@
 
 package org.keycloak.services.x509;
 
+import org.keycloak.Config;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
+
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:brat000012001@gmail.com">Peter Nalyvayko</a>
@@ -26,17 +30,57 @@ import org.keycloak.models.KeycloakSession;
  * @since 4/4/2017
  */
 
-public class HaProxySslClientCertificateLookupFactory extends AbstractClientCertificateFromHttpHeadersLookupFactory {
+public class HaProxySslClientCertificateLookupFactory implements X509ClientCertificateLookupFactory {
 
+    private final static Logger logger = Logger.getLogger(HaProxySslClientCertificateLookupFactory.class);
     private final static String PROVIDER = "haproxy";
+
+    private final static String HTTP_HEADER_CLIENT_CERT = "sslClientCert";
+    private final static String HTTP_HEADER_CLIENT_CERT_DEFAULT = "Client-Cert";
+    private final static String HTTP_HEADER_CERT_CHAIN = "sslCertChain";
+    private final static String HTTP_HEADER_CERT_CHAIN_DEFAULT = "Client-Cert-Chain";
+    private final static String HTTP_HEADER_CERT_CHAIN_LENGTH = "certificateChainLength";
+    private final static int HTTP_HEADER_CERT_CHAIN_LENGTH_DEFAULT = 1;
+
+    private String sslClientCertHttpHeader;
+    private String sslChainHttpHeader;
+    private int certificateChainLength;
+
+    @Override
+    public void init(Config.Scope config) {
+        certificateChainLength = config.getInt(HTTP_HEADER_CERT_CHAIN_LENGTH, HTTP_HEADER_CERT_CHAIN_LENGTH_DEFAULT);
+        sslClientCertHttpHeader = config.get(HTTP_HEADER_CLIENT_CERT, HTTP_HEADER_CLIENT_CERT_DEFAULT);
+        sslChainHttpHeader = config.get(HTTP_HEADER_CERT_CHAIN, HTTP_HEADER_CERT_CHAIN_DEFAULT);
+
+        logger.tracev("{0}:   ''{1}''", HTTP_HEADER_CLIENT_CERT, sslClientCertHttpHeader);
+        logger.tracev("{0}:   ''{1}''", HTTP_HEADER_CERT_CHAIN, sslChainHttpHeader);
+        logger.tracev("{0}:   ''{1}''", HTTP_HEADER_CERT_CHAIN_LENGTH, certificateChainLength);
+
+        if (sslClientCertHttpHeader == null || sslClientCertHttpHeader.isEmpty()) {
+            throw new IllegalArgumentException("sslClientCertHttpHeader cannot be null or empty");
+        }
+
+        if (certificateChainLength < 0) {
+            throw new IllegalArgumentException("certificateChainLength must be greater or equal to zero");
+        }
+    }
+
+
     @Override
     public X509ClientCertificateLookup create(KeycloakSession session) {
-        return new HaProxySslClientCertificateLookup(sslClientCertHttpHeader,
-                sslChainHttpHeaderPrefix, certificateChainLength);
+        return new HaProxySslClientCertificateLookup(sslClientCertHttpHeader, sslChainHttpHeader, certificateChainLength);
     }
 
     @Override
     public String getId() {
         return PROVIDER;
+    }
+
+    @Override
+    public void postInit(KeycloakSessionFactory factory) {
+    }
+
+    @Override
+    public void close() {
     }
 }
