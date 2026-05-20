@@ -628,10 +628,6 @@ export default function FlowDetails() {
                 onDragStart={handleDragStart}
                 onDragMove={handleDragMove}
                 onDragEnd={handleDragEnd}
-                    if (source.index === dest.index) {
-                      return false;
-                    }
-
               >
                 <Table aria-label={t("flows")} isTreeTable>
                   <FlowHeader />
