@@ -1807,6 +1807,21 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         assertEquals(consentRepresentation1.getLastUpdatedDate(), consentRepresentation2.getLastUpdatedDate());
         assertEquals(consentRepresentation1.getCreatedDate(), consentRepresentation2.getCreatedDate());
         assertEquals(consentRepresentation1.getGrantedScopes().get(0).getId(), consentRepresentation2.getGrantedScopes().get(0).getId());
+
+        ConsentRepresentation consentRepresentationFull = SimpleHttpDefault
+                .doGet(getAccountUrl("applications/" + appId + "/consent"), httpClient)
+                .header("Accept", "application/json")
+                .param("briefRepresentation", "false")
+                .json(requestedConsent)
+                .auth(tokenUtil.getToken())
+                .asJson(ConsentRepresentation.class);
+        final var requestedScopeDescription = requestedScopes.get(0).getDescription();
+        final var requestedScopeProtocol = requestedScopes.get(0).getProtocol();
+
+        assertFalse(requestedScopeDescription.isEmpty());
+        assertFalse(requestedScopeProtocol.isEmpty());
+        assertEquals(requestedScopeDescription, consentRepresentationFull.getGrantedScopes().get(0).getDescription());
+        assertEquals(requestedScopeProtocol, consentRepresentationFull.getGrantedScopes().get(0).getProtocol());
     }
 
     @Test
