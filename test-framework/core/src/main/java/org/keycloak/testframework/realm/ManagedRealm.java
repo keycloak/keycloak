@@ -9,6 +9,7 @@ import org.keycloak.representations.idm.ClientPoliciesRepresentation;
 import org.keycloak.representations.idm.ClientPolicyRepresentation;
 import org.keycloak.representations.idm.ClientProfileRepresentation;
 import org.keycloak.representations.idm.ClientProfilesRepresentation;
+import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -97,7 +98,7 @@ public class ManagedRealm extends ManagedTestResource {
         RealmRepresentation rep = admin().toRepresentation();
         cleanup().resetToOriginalRepresentation(rep);
 
-        RealmConfigBuilder configBuilder = RealmConfigBuilder.update(rep);
+        RealmBuilder configBuilder = RealmBuilder.update(rep);
         for (RealmUpdate update : updates) {
             configBuilder = update.update(configBuilder);
         }
@@ -110,7 +111,7 @@ public class ManagedRealm extends ManagedTestResource {
      *
      * @param user the user to add
      */
-    public void addUser(UserConfigBuilder user) {
+    public void addUser(UserBuilder user) {
         UserRepresentation rep = user.build();
         String id = ApiUtil.getCreatedId(realmResource.users().create(rep));
         cleanup().add(r -> r.users().get(id).remove());
@@ -122,27 +123,28 @@ public class ManagedRealm extends ManagedTestResource {
      * @param username the username of the user to update
      * @param update the update to perform on the user
      */
-    public void updateUserWithCleanup(String username, UserConfigBuilder.UserUpdate update) {
+    public void updateUserWithCleanup(String username, ManagedUser.UserUpdate update) {
         List<UserRepresentation> result = realmResource.users().search(username);
         Assertions.assertEquals(1, result.size());
 
         UserRepresentation original = result.get(0);
-        UserRepresentation updated = RepresentationUtils.clone(original);
-        update.update(updated);
+        UserBuilder updatedUser = UserBuilder.update(RepresentationUtils.clone(original));
+        UserRepresentation updated = update.update(updatedUser).build();
+
         realmResource.users().get(original.getId()).update(updated);
 
         cleanup().add(r -> r.users().get(original.getId()).update(original));
     }
 
-    public void updateUser(String username, UserConfigBuilder.UserUpdate update) {
+    public void updateUser(String username, ManagedUser.UserUpdate update) {
         List<UserRepresentation> result = realmResource.users().search(username);
         Assertions.assertEquals(1, result.size());
 
         UserRepresentation original = result.get(0);
-        UserRepresentation updated = RepresentationUtils.clone(original);
-        update.update(updated);
-        realmResource.users().get(original.getId()).update(updated);
+        UserBuilder updatedUser = UserBuilder.update(RepresentationUtils.clone(original));
+        UserRepresentation updated = update.update(updatedUser).build();
 
+        realmResource.users().get(original.getId()).update(updated);
     }
 
     /**
@@ -160,6 +162,16 @@ public class ManagedRealm extends ManagedTestResource {
         resource.update(updated);
 
         cleanup().add(r -> r.identityProviders().get(alias).update(original));
+    }
+
+    public void updateClientScope(String id, ClientScopeUpdate update) {
+        ClientScopeRepresentation original = realmResource.clientScopes().get(id).toRepresentation();
+
+        ClientScopeBuilder updatedRep = ClientScopeBuilder.update(RepresentationUtils.clone(original));
+        ClientScopeRepresentation updated = update.update(updatedRep).build();
+        realmResource.clientScopes().get(id).update(updated);
+
+        cleanup().add(r -> r.clientScopes().get(id).update(original));
     }
 
     public void updateClientProfile(List<ClientProfileRepresentation> profiles) {
@@ -212,7 +224,13 @@ public class ManagedRealm extends ManagedTestResource {
 
     public interface RealmUpdate {
 
-        RealmConfigBuilder update(RealmConfigBuilder realm);
+        RealmBuilder update(RealmBuilder realm);
+
+    }
+
+    public interface ClientScopeUpdate {
+
+        ClientScopeBuilder update(ClientScopeBuilder scope);
 
     }
 

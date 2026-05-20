@@ -22,7 +22,7 @@
                             <span><#if !clientScope.dynamicScopeParameter??>
                                         ${advancedMsg(clientScope.consentScreenText)}
                                     <#else>
-                                        ${advancedMsg(clientScope.consentScreenText)}: <b>${clientScope.dynamicScopeParameter}</b>
+                                        ${advancedMsg(clientScope.consentScreenText, clientScope.dynamicScopeParameter)}
                                 </#if>
                             </span>
                         </li>

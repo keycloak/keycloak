@@ -51,12 +51,12 @@ import org.keycloak.operator.controllers.KeycloakSAMLClientController;
 import org.keycloak.operator.controllers.KeycloakUpdateJobDependentResource;
 import org.keycloak.operator.crds.v2alpha1.client.KeycloakOIDCClient;
 import org.keycloak.operator.crds.v2alpha1.client.KeycloakSAMLClient;
-import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
-import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakBuilder;
-import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakSpecBuilder;
-import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatus;
-import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImport;
-import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImportStatus;
+import org.keycloak.operator.crds.v2beta1.deployment.Keycloak;
+import org.keycloak.operator.crds.v2beta1.deployment.KeycloakBuilder;
+import org.keycloak.operator.crds.v2beta1.deployment.KeycloakSpecBuilder;
+import org.keycloak.operator.crds.v2beta1.deployment.KeycloakStatus;
+import org.keycloak.operator.crds.v2beta1.realmimport.KeycloakRealmImport;
+import org.keycloak.operator.crds.v2beta1.realmimport.KeycloakRealmImportStatus;
 import org.keycloak.operator.testsuite.apiserver.ApiServerHelper;
 import org.keycloak.operator.testsuite.apiserver.DisabledIfApiServerTest;
 import org.keycloak.operator.testsuite.utils.K8sUtils;
@@ -117,6 +117,7 @@ public class BaseOperatorTest implements QuarkusTestAfterEachCallback {
   public static final String OPERATOR_KUBERNETES_IP = "test.operator.kubernetes.ip";
   public static final String OPERATOR_CUSTOM_IMAGE = "test.operator.custom.image";
   public static final String POSTGRESQL_NAME = "postgresql-db";
+  public static final String KEYCLOAK_OPERATOR = "keycloak-operator";
 
   public static final String TEST_RESULTS_DIR = "target/operator-test-results/";
   public static final String POD_LOGS_DIR = TEST_RESULTS_DIR + "pod-logs/";
@@ -401,7 +402,7 @@ public enum OperatorDeployment {local_apiserver,local,remote}
           logKeycloaks();
           logKeycloakRealmImports();
           if (operatorDeployment == OperatorDeployment.remote) {
-              log(k8sclient.apps().deployments().withName("keycloak-operator"), Deployment::getStatus, false);
+              log(k8sclient.apps().deployments().withName(KEYCLOAK_OPERATOR), Deployment::getStatus, false);
           }
           if (operatorDeployment != OperatorDeployment.local_apiserver) {
               logFailed(k8sclient.apps().statefulSets().withName(POSTGRESQL_NAME), StatefulSet::getStatus);

@@ -37,12 +37,12 @@ import org.keycloak.operator.crds.v2alpha1.client.KeycloakOIDCClientBuilder;
 import org.keycloak.operator.crds.v2alpha1.client.KeycloakOIDCClientRepresentation.AuthWithSecretRef;
 import org.keycloak.operator.crds.v2alpha1.client.KeycloakSAMLClient;
 import org.keycloak.operator.crds.v2alpha1.client.KeycloakSAMLClientBuilder;
-import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
-import org.keycloak.operator.crds.v2alpha1.deployment.ValueOrSecret;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.AdminSpec;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.BootstrapAdminSpec;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.FeatureSpecBuilder;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.TruststoreBuilder;
+import org.keycloak.operator.crds.v2beta1.deployment.Keycloak;
+import org.keycloak.operator.crds.v2beta1.deployment.ValueOrSecret;
+import org.keycloak.operator.crds.v2beta1.deployment.spec.AdminSpec;
+import org.keycloak.operator.crds.v2beta1.deployment.spec.BootstrapAdminSpec;
+import org.keycloak.operator.crds.v2beta1.deployment.spec.FeatureSpecBuilder;
+import org.keycloak.operator.crds.v2beta1.deployment.spec.TruststoreBuilder;
 import org.keycloak.operator.testsuite.apiserver.DisabledIfApiServerTest;
 import org.keycloak.operator.testsuite.utils.K8sUtils;
 
@@ -50,8 +50,10 @@ import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.api.model.SecretKeySelector;
 import io.fabric8.kubernetes.api.model.ServiceBuilder;
+import io.quarkus.test.junit.QuarkusTest;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import static org.keycloak.operator.testsuite.utils.K8sUtils.deployKeycloak;
@@ -60,7 +62,9 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
-public abstract class KeycloakClientTest extends BaseOperatorTest {
+@Tag(BaseOperatorTest.SLOW)
+@QuarkusTest
+public class KeycloakClientTest extends BaseOperatorTest {
 
     private static final String CLIENT_SECRET = "client-secret";
     private static final String CLIENT_TRUSTSTORE_SECRET = "example-mtls-truststore-secret";

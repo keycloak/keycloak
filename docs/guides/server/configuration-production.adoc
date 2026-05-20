@@ -52,7 +52,7 @@ By default, there is no limit set.
 Set the option `http-max-queued-requests` to limit the number of queued requests to a given threshold matching your environment.
 Any request that exceeds this limit would return with an immediate `503 Server not Available` response.
 
-[[server-boostrap-behavior]]
+[[server-bootstrap-behavior]]
 == Server bootstrap behavior
 
 Server initialization, such as database migrations, may take a significant amount of time to complete.

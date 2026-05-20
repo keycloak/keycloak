@@ -11,9 +11,8 @@ import java.util.Map;
 import java.util.Optional;
 
 import org.keycloak.client.admin.cli.v2.KcAdmV2CommandDescriptor.OptionDescriptor;
+import org.keycloak.client.cli.util.OutputUtil;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
 import io.smallrye.openapi.api.SmallRyeOpenAPI;
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.ConfigValue;
@@ -37,15 +36,13 @@ public class KcAdmV2DescriptorBuilder {
 
     static final String ID_PATH_PARAM = "{id}";
 
-    private static final ObjectMapper MAPPER = new ObjectMapper()
-            .enable(SerializationFeature.INDENT_OUTPUT);
 
     private static final Map<PathItem.HttpMethod, String> HTTP_METHOD_TO_COMMAND = Map.of(
             PathItem.HttpMethod.GET, "get",
             PathItem.HttpMethod.POST, "create",
             PathItem.HttpMethod.PATCH, "patch",
             PathItem.HttpMethod.DELETE, "delete",
-            PathItem.HttpMethod.PUT, "update"
+            PathItem.HttpMethod.PUT, "apply"
     );
 
     public static KcAdmV2CommandDescriptor convert(OpenAPI openApi) {
@@ -120,11 +117,11 @@ public class KcAdmV2DescriptorBuilder {
 
     public static void writeDescriptor(KcAdmV2CommandDescriptor descriptor, Path outputFile) throws IOException {
         Files.createDirectories(outputFile.getParent());
-        MAPPER.writeValue(outputFile.toFile(), descriptor);
+        OutputUtil.MAPPER.writeValue(outputFile.toFile(), descriptor);
     }
 
     public static KcAdmV2CommandDescriptor readDescriptor(InputStream is) throws IOException {
-        return MAPPER.readValue(is, KcAdmV2CommandDescriptor.class);
+        return OutputUtil.MAPPER.readValue(is, KcAdmV2CommandDescriptor.class);
     }
 
     private static String extractResourceName(PathItem pathItem) {
@@ -171,7 +168,8 @@ public class KcAdmV2DescriptorBuilder {
     }
 
     private static void populateOptionsAndVariants(
-            KcAdmV2CommandDescriptor.CommandDescriptor cmd, Operation operation, OpenAPI openApi) {
+            KcAdmV2CommandDescriptor.CommandDescriptor cmd, Operation operation,
+            OpenAPI openApi) {
         Schema schema = extractRequestBodySchema(operation, openApi);
 
         if (schema == null && operation.getRequestBody() != null) {
@@ -228,6 +226,10 @@ public class KcAdmV2DescriptorBuilder {
             Schema propSchema = propEntry.getValue();
 
             Schema resolved = propSchema.getRef() != null ? resolveSchema(propSchema, openApi) : propSchema;
+
+            if (Boolean.TRUE.equals(resolved.getReadOnly())) {
+                continue;
+            }
 
             if (isObjectType(resolved)) {
                 flattenNestedObject(fieldName, resolved, openApi, options);

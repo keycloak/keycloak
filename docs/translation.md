@@ -72,7 +72,7 @@ Weblate"
 2. If there are any translation pull requests created by Weblate, assure to merge them first to avoid conflicts in Weblate which are difficult to resolve.
 3. If the changes are ok, approve the PR and merge it. If there is an existing issue, reference that in the squash-message, otherwise reference the issue of the pull request.
 
-## Using Weblate to to update translations
+## Using Weblate to update translations
 
 Keycloak uses [Weblate](https://hosted.weblate.org/projects/keycloak/), a web-based translation platform, to manage translations of user interfaces and error messages.
 
@@ -103,6 +103,11 @@ Translations are reviewed in Weblate by language maintainers for their correctne
 2. Do a spot-check with Google Translate or Claude to avoid malicious community translations.
    Claude prompt:
    > Analyze pull request (URL) and list new or updated translations that significantly deviate from the English message that it translates. Group results by language, and mention the language maintainers. Prepare the result as Markdown. Skip languages that have no findings.
+
+   Common deviation patterns to watch for in the spot-check results:
+   - **Placeholder mismatches** — `{{var}}` or `{0}` missing, duplicated, or altered.
+   - **CJK false positives** — Chinese, Japanese, and Korean translations are naturally much shorter in character count; do not flag based on length alone.
+   - **Multi-line properties** — English `.properties` files use trailing `\` for line continuation; read the full value before comparing.
 3. If the changes are ok, approve the PR and squash-merge it. For pull requests created by Weblate there is no referenced GitHub issue, therefore reference the ID of the pull request in the squash-message.
 4. Once the PR is merged, notify the respective language maintainers via a comment in the pull request that there are changes for their languages.
 
@@ -119,6 +124,37 @@ A language that misses that goal will be removed from Weblate, and translations 
 > We recommend language maintainers to set up notifications in Weblate to receive email notifications of outstanding tasks.
 
 All language maintainers are set up in Weblate as reviewers for their language according to Weblate's "Dedicated Reviewers" process.
+
+## Translation file locations
+
+When reviewing translations, compare against the English source files (ground truth).
+Community translations live in parallel `-community` directories.
+
+**Admin UI** (the React-based admin console):
+- English: `js/apps/admin-ui/maven-resources/theme/keycloak.v2/admin/messages/messages_en.properties`
+- Translations: `js/apps/admin-ui/maven-resources-community/theme/keycloak.v2/admin/messages/messages_<lang>.properties`
+
+**Account UI** (the React-based account console):
+- English: `js/apps/account-ui/maven-resources/theme/keycloak.v3/account/messages/messages_en.properties`
+- Translations: `js/apps/account-ui/maven-resources-community/theme/keycloak.v3/account/messages/messages_<lang>.properties`
+
+**Login** (login, registration, and related pages):
+- English: `themes/src/main/resources/theme/base/login/messages/messages_en.properties`
+- Translations: `themes/src/main/resources-community/theme/base/login/messages/messages_<lang>.properties`
+
+**Account** (base account theme, server-side rendered):
+- English: `themes/src/main/resources/theme/base/account/messages/messages_en.properties`
+- Translations: `themes/src/main/resources-community/theme/base/account/messages/messages_<lang>.properties`
+
+**Admin** (base admin theme, server-side):
+- English: `themes/src/main/resources/theme/base/admin/messages/messages_en.properties`
+- Translations: `themes/src/main/resources-community/theme/base/admin/messages/messages_<lang>.properties`
+
+**Email** (email subject lines and body text):
+- English: `themes/src/main/resources/theme/base/email/messages/messages_en.properties`
+- Translations: `themes/src/main/resources-community/theme/base/email/messages/messages_<lang>.properties`
+
+Language maintainers are listed in [`.github/language-maintainers.yml`](../.github/language-maintainers.yml).
 
 ## Steps to add a new language to Weblate
 

@@ -243,6 +243,12 @@ public class AccountRestService {
         return new OrganizationsResource(session, auth, user);
     }
 
+    @Path("/verifiable-credentials")
+    public AccountVerifiableCredentialResource verifiableCredentials() {
+        checkAccountApiEnabled();
+        return new AccountVerifiableCredentialResource(session, auth, user);
+    }
+
     private ClientRepresentation modelToRepresentation(ClientModel model, List<String> inUseClients, List<String> offlineClients, Map<String, UserConsentModel> consents) {
         ClientRepresentation representation = new ClientRepresentation();
         representation.setClientId(model.getClientId());
@@ -445,7 +451,7 @@ public class AccountRestService {
     @Produces(MediaType.APPLICATION_JSON)
     //TODO GROUPS this isn't paginated
     public Stream<GroupRepresentation> groupMemberships(@QueryParam("briefRepresentation") @DefaultValue("true") boolean briefRepresentation) {
-        auth.require(AccountRoles.VIEW_GROUPS);
+        auth.requireOneOf(AccountRoles.MANAGE_ACCOUNT, AccountRoles.VIEW_GROUPS);
         return user.getGroupsStream().map(g -> ModelToRepresentation.toRepresentation(g, !briefRepresentation));
     }
 
@@ -496,7 +502,7 @@ public class AccountRestService {
 
     // TODO Logs
 
-    private static void checkAccountApiEnabled() {
+    public static void checkAccountApiEnabled() {
         if (!Profile.isFeatureEnabled(Profile.Feature.ACCOUNT_API)) {
             throw new NotFoundException();
         }

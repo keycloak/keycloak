@@ -90,11 +90,6 @@ public class OID4VCAuthorizationDetail extends AuthorizationDetailsJSONRepresent
     }
 
     @Override
-    public String toString() {
-        return JsonSerialization.valueAsString(this);
-    }
-
-    @Override
     public OID4VCAuthorizationDetail clone() {
         String encoded = JsonSerialization.valueAsString(this);
         return JsonSerialization.valueFromString(encoded, OID4VCAuthorizationDetail.class);
@@ -114,5 +109,10 @@ public class OID4VCAuthorizationDetail extends AuthorizationDetailsJSONRepresent
     @Override
     public int hashCode() {
         return Objects.hash(super.hashCode(), credentialConfigurationId, credentialIdentifiers, credentialsOfferId);
+    }
+
+    @Override
+    public String toString() {
+        return JsonSerialization.valueAsString(this);
     }
 }

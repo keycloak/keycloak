@@ -191,7 +191,7 @@ spec:
 ---
 # Source: ispn-helm/templates/infinispan.yaml
 # tag::infinispan-cache-actionTokens[]
-apiVersion: infinispan.org/v2alpha1
+apiVersion: infinispan.org/v2beta1
 kind: Cache
 metadata:
   name: actiontokens
@@ -226,7 +226,7 @@ spec:
 ---
 # Source: ispn-helm/templates/infinispan.yaml
 # tag::infinispan-cache-authenticationSessions[]
-apiVersion: infinispan.org/v2alpha1
+apiVersion: infinispan.org/v2beta1
 kind: Cache
 metadata:
   name: authenticationsessions
@@ -266,7 +266,7 @@ spec:
 ---
 # Source: ispn-helm/templates/infinispan.yaml
 # tag::infinispan-cache-clientSessions[]
-apiVersion: infinispan.org/v2alpha1
+apiVersion: infinispan.org/v2beta1
 kind: Cache
 metadata:
   name: clientsessions
@@ -306,7 +306,7 @@ spec:
 ---
 # Source: ispn-helm/templates/infinispan.yaml
 # tag::infinispan-cache-loginFailures[]
-apiVersion: infinispan.org/v2alpha1
+apiVersion: infinispan.org/v2beta1
 kind: Cache
 metadata:
   name: loginfailures
@@ -346,7 +346,7 @@ spec:
 ---
 # Source: ispn-helm/templates/infinispan.yaml
 # tag::infinispan-cache-offlineClientSessions[]
-apiVersion: infinispan.org/v2alpha1
+apiVersion: infinispan.org/v2beta1
 kind: Cache
 metadata:
   name: offlineclientsessions
@@ -386,7 +386,7 @@ spec:
 ---
 # Source: ispn-helm/templates/infinispan.yaml
 # tag::infinispan-cache-offlineSessions[]
-apiVersion: infinispan.org/v2alpha1
+apiVersion: infinispan.org/v2beta1
 kind: Cache
 metadata:
   name: offlinesessions
@@ -426,7 +426,7 @@ spec:
 ---
 # Source: ispn-helm/templates/infinispan.yaml
 # tag::infinispan-cache-sessions[]
-apiVersion: infinispan.org/v2alpha1
+apiVersion: infinispan.org/v2beta1
 kind: Cache
 metadata:
   name: sessions
@@ -466,7 +466,7 @@ spec:
 ---
 # Source: ispn-helm/templates/infinispan.yaml
 # tag::infinispan-cache-work[]
-apiVersion: infinispan.org/v2alpha1
+apiVersion: infinispan.org/v2beta1
 kind: Cache
 metadata:
   name: work

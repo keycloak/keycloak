@@ -33,10 +33,10 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.keycloak.operator.Constants;
-import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
-import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusCondition;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.HttpManagementSpecBuilder;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.NetworkPolicySpecBuilder;
+import org.keycloak.operator.crds.v2beta1.deployment.Keycloak;
+import org.keycloak.operator.crds.v2beta1.deployment.KeycloakStatusCondition;
+import org.keycloak.operator.crds.v2beta1.deployment.spec.HttpManagementSpecBuilder;
+import org.keycloak.operator.crds.v2beta1.deployment.spec.NetworkPolicySpecBuilder;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.PodBuilder;

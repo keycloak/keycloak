@@ -263,7 +263,7 @@ For `{site-b}`, the `Cache` CR is similar, except for the `backups.<name>` outli
 ----
 include::../examples/generated/ispn-site-b.yaml[tag=infinispan-cache-actionTokens]
 ----
-== Verifying the deployment
+== Verify the deployment
 
 Confirm that the {jdgserver_name} cluster is formed, and the cross-site connection is established between the {ocp} clusters.
 
@@ -279,8 +279,8 @@ kubectl wait --for condition=WellFormed --timeout=300s infinispans.infinispan.or
 kubectl wait --for condition=CrossSiteViewFormed --timeout=300s infinispans.infinispan.org -n {ns} {cluster-name}
 ----
 
-[#connecting-infinispan-to-keycloak]
-== Connecting {jdgserver_name} with {project_name}
+[#connect-infinispan-to-keycloak]
+== Connect {jdgserver_name} with {project_name}
 
 Now that the {jdgserver_name} server is running, here are the relevant {project_name} CR changes necessary to connect it to {project_name}. These changes will be required in the <@links.ha id="multi-cluster-deploy-keycloak-kubernetes" /> {section}.
 

@@ -86,6 +86,7 @@ import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.UserVerifiableCredentialModel;
 import org.keycloak.models.WebAuthnPolicy;
 import org.keycloak.models.credential.OTPCredentialModel;
 import org.keycloak.models.light.LightweightUserAdapter;
@@ -126,6 +127,7 @@ import org.keycloak.representations.idm.authorization.ResourceOwnerRepresentatio
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
+import org.keycloak.representations.idm.oid4vc.UserVerifiableCredentialRepresentation;
 import org.keycloak.storage.StorageId;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.utils.StringUtil;
@@ -187,6 +189,7 @@ public class ModelToRepresentation {
         REALM_EXCLUDED_ATTRIBUTES.add("webAuthnPolicyAvoidSameAuthenticatorRegisterPasswordless");
         REALM_EXCLUDED_ATTRIBUTES.add("webAuthnPolicyAcceptableAaguidsPasswordless");
         REALM_EXCLUDED_ATTRIBUTES.add("webAuthnPolicyPasskeysEnabledPasswordless");
+        REALM_EXCLUDED_ATTRIBUTES.add("webAuthnPolicyMediationPasswordless");
 
         REALM_EXCLUDED_ATTRIBUTES.add(Constants.CLIENT_POLICIES);
         REALM_EXCLUDED_ATTRIBUTES.add(Constants.CLIENT_PROFILES);
@@ -589,6 +592,7 @@ public class ModelToRepresentation {
         rep.setWebAuthnPolicyPasswordlessAcceptableAaguids(webAuthnPolicy.getAcceptableAaguids());
         rep.setWebAuthnPolicyPasswordlessExtraOrigins(webAuthnPolicy.getExtraOrigins());
         rep.setWebAuthnPolicyPasswordlessPasskeysEnabled(webAuthnPolicy.isPasskeysEnabled());
+        rep.setWebAuthnPolicyPasswordlessMediation(webAuthnPolicy.getMediation());
 
         CibaConfig cibaPolicy = realm.getCibaPolicy();
         Map<String, String> attrMap = ofNullable(rep.getAttributes()).orElse(new HashMap<>());
@@ -797,6 +801,8 @@ public class ModelToRepresentation {
                 .toList());
         rep.setWarningMessageDescription(toLocalizedMessage(credentialMetadata.getWarningMessageDescription()));
         rep.setWarningMessageTitle(toLocalizedMessage(credentialMetadata.getWarningMessageTitle()));
+        rep.setIconLight(credentialMetadata.getIconLight());
+        rep.setIconDark(credentialMetadata.getIconDark());
         return rep;
     }
 
@@ -1031,6 +1037,14 @@ public class ModelToRepresentation {
         return consentRep;
     }
 
+    public static UserVerifiableCredentialRepresentation toRepresentation(UserVerifiableCredentialModel model) {
+        UserVerifiableCredentialRepresentation rep = new UserVerifiableCredentialRepresentation();
+        rep.setCredentialScopeName(model.getCredentialScopeName());
+        rep.setRevision(model.getRevision());
+        rep.setCreatedDate(model.getCreatedDate());
+        return rep;
+    }
+
     public static AuthenticationFlowRepresentation toRepresentation(KeycloakSession session, RealmModel realm, AuthenticationFlowModel model) {
         AuthenticationFlowRepresentation rep = new AuthenticationFlowRepresentation();
         rep.setId(model.getId());
@@ -1197,11 +1211,23 @@ public class ModelToRepresentation {
         representation.setLogic(policy.getLogic());
 
         if (allFields) {
-            representation.setResourcesData(policy.getResources().stream()
-                    .map(resource -> toRepresentation(resource, policy.getResourceServer(), authorization, true))
-                    .collect(Collectors.toSet()));
-            representation.setScopesData(policy.getScopes().stream().map(
-                    resource -> toRepresentation(resource)).collect(Collectors.toSet()));
+            Set<String> resourceIds = new HashSet<>();
+            Set<ResourceRepresentation> resourceReps = new HashSet<>();
+            for (Resource resource : policy.getResources()) {
+                resourceIds.add(resource.getId());
+                resourceReps.add(toRepresentation(resource, policy.getResourceServer(), authorization, true));
+            }
+            representation.setResources(resourceIds);
+            representation.setResourcesData(resourceReps);
+
+            Set<String> scopeIds = new HashSet<>();
+            Set<ScopeRepresentation> scopeReps = new HashSet<>();
+            for (Scope scope : policy.getScopes()) {
+                scopeIds.add(scope.getId());
+                scopeReps.add(toRepresentation(scope));
+            }
+            representation.setScopes(scopeIds);
+            representation.setScopesData(scopeReps);
         }
 
         return representation;

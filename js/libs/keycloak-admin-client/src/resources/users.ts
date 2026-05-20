@@ -13,6 +13,7 @@ import type {
 } from "../defs/userProfileMetadata.js";
 import type UserRepresentation from "../defs/userRepresentation.js";
 import type UserSessionRepresentation from "../defs/userSessionRepresentation.js";
+import type UserVerifiableCredentialRepresentation from "../defs/userVerifiableCredentialRepresentation.js";
 import Resource from "./resource.js";
 
 export interface SearchQuery {
@@ -492,6 +493,43 @@ export class Users extends Resource<{ realm?: string }> {
     method: "DELETE",
     path: "/{id}/consents/{clientId}",
     urlParamKeys: ["id", "clientId"],
+  });
+
+  /**
+   * list verifiable credentials for a user
+   */
+  public listVerifiableCredentials = this.makeRequest<
+    { id: string },
+    UserVerifiableCredentialRepresentation[]
+  >({
+    method: "GET",
+    path: "/{id}/vc/credentials",
+    urlParamKeys: ["id"],
+  });
+
+  /**
+   * create a verifiable credential for a user
+   */
+  public createVerifiableCredential = this.makeUpdateRequest<
+    { id: string },
+    UserVerifiableCredentialRepresentation,
+    UserVerifiableCredentialRepresentation
+  >({
+    method: "POST",
+    path: "/{id}/vc/credentials",
+    urlParamKeys: ["id"],
+  });
+
+  /**
+   * revoke a verifiable credential from a user
+   */
+  public revokeVerifiableCredential = this.makeRequest<
+    { id: string; credentialScopeName: string },
+    void
+  >({
+    method: "DELETE",
+    path: "/{id}/vc/credentials/{credentialScopeName}",
+    urlParamKeys: ["id", "credentialScopeName"],
   });
 
   public getUnmanagedAttributes = this.makeRequest<

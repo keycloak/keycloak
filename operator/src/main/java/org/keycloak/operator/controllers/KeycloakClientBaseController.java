@@ -64,11 +64,11 @@ import org.keycloak.operator.crds.v2alpha1.client.KeycloakClientSpec;
 import org.keycloak.operator.crds.v2alpha1.client.KeycloakClientStatus;
 import org.keycloak.operator.crds.v2alpha1.client.KeycloakClientStatusBuilder;
 import org.keycloak.operator.crds.v2alpha1.client.KeycloakClientStatusCondition;
-import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
-import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusAggregator;
-import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusCondition;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.FeatureSpec;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.HttpSpec;
+import org.keycloak.operator.crds.v2beta1.deployment.Keycloak;
+import org.keycloak.operator.crds.v2beta1.deployment.KeycloakStatusAggregator;
+import org.keycloak.operator.crds.v2beta1.deployment.KeycloakStatusCondition;
+import org.keycloak.operator.crds.v2beta1.deployment.spec.FeatureSpec;
+import org.keycloak.operator.crds.v2beta1.deployment.spec.HttpSpec;
 import org.keycloak.representations.admin.v2.BaseClientRepresentation;
 
 import io.fabric8.kubernetes.api.model.Secret;
@@ -85,7 +85,7 @@ import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.quarkus.logging.Log;
 import org.apache.http.conn.ssl.NoopHostnameVerifier;
 
-import static org.keycloak.operator.crds.v2alpha1.CRDUtils.isTlsConfigured;
+import static org.keycloak.operator.crds.v2beta1.CRDUtils.isTlsConfigured;
 
 /**
  * Base class for Client controllers.
@@ -98,7 +98,6 @@ public abstract class KeycloakClientBaseController<R extends CustomResource<? ex
         implements Reconciler<R>, Cleaner<R> {
 
     public static final String CLIENT_ADMIN_API_V2 = "client-admin-api:v2";
-    private static final String CLIENT_API_VERSION = "v2";
     private static final String HTTPS = "https";
 
     static class KeycloakClientStatusAggregator {
@@ -214,7 +213,7 @@ public abstract class KeycloakClientBaseController<R extends CustomResource<? ex
 
         return updateControl;
     }
-    
+
     private boolean isServerReady(Context<R> context, R resource) {
         StatefulSet existingDeployment = context.getClient().resources(StatefulSet.class)
                 .inNamespace(resource.getMetadata().getNamespace()).withName(resource.getSpec().getKeycloakCRName())
@@ -308,7 +307,7 @@ public abstract class KeycloakClientBaseController<R extends CustomResource<? ex
             var target = getWebTarget(kcAdmin);
             AdminRootV2 root = org.keycloak.admin.client.Keycloak.getClientProvider().targetProxy(target,
                     AdminRootV2.class);
-            return action.apply(root.adminApi(resource.getSpec().getRealm()).clients(CLIENT_API_VERSION)
+            return action.apply(root.adminApi(resource.getSpec().getRealm()).clientsV2()
                     .client(resource.getMetadata().getName()));
         }
     }

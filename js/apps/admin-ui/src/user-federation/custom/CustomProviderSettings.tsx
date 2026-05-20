@@ -85,7 +85,7 @@ export default function CustomProviderSettings() {
       ),
       providerId,
       providerType: "org.keycloak.storage.UserStorageProvider",
-      parentId: realm?.id,
+      parentId: realm.id,
     });
 
     try {

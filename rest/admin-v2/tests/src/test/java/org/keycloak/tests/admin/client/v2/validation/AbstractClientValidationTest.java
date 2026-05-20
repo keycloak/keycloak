@@ -27,8 +27,8 @@ import org.keycloak.services.error.ViolationExceptionResponse;
 import org.keycloak.testframework.annotations.InjectClient;
 import org.keycloak.testframework.annotations.InjectHttpClient;
 import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.ClientConfig;
-import org.keycloak.testframework.realm.ClientConfigBuilder;
 import org.keycloak.testframework.realm.ManagedClient;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.server.KeycloakServerConfig;
@@ -119,14 +119,8 @@ public abstract class AbstractClientValidationTest extends AbstractClientApiV2Te
 
         try (var response = client.execute(request)) {
             switch (getHttpMethod()) {
-                case HttpPatch.METHOD_NAME -> {
-                    assertThat(response.getStatusLine().getStatusCode(), is(200));
-                }
-                case HttpPut.METHOD_NAME -> {
-                    assertThat(response.getStatusLine().getStatusCode(), is(400));
-                    var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ViolationExceptionResponse.class);
-                    assertThat(body.error(), is("Field 'clientId' in payload does not match the provided 'clientId'"));
-                }
+                // the clientId is checked on the patched object, so the clientId is present
+                case HttpPatch.METHOD_NAME -> assertThat(response.getStatusLine().getStatusCode(), is(200));
                 default -> {
                     assertThat(response.getStatusLine().getStatusCode(), is(400));
                     var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ViolationExceptionResponse.class);
@@ -166,6 +160,39 @@ public abstract class AbstractClientValidationTest extends AbstractClientApiV2Te
                     assertThat(body.violations(), hasItem("clientId: must not be blank"));
                 }
             }
+        }
+    }
+
+    // Tests that {@code @NotBlank} validation on {@code clientId} fires as first the path and payload clientIds are checked and throw error.
+    @ParameterizedTest
+    @ValueSource(strings = {OIDCClientRepresentation.PROTOCOL, SAMLClientRepresentation.PROTOCOL})
+    public void clientWithBlankClientIdMatchingPathFails(String protocol) throws Exception {
+        boolean isOidc = protocol.equals(OIDCClientRepresentation.PROTOCOL);
+        var request = switch (getHttpMethod()) {
+            case HttpPost.METHOD_NAME -> getRequest(isOidc);
+            case HttpPut.METHOD_NAME -> {
+                var r = new HttpPut(getClientApiUrl("%20"));
+                r.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
+                yield r;
+            }
+            default -> throw new IllegalStateException("Unexpected value: " + getHttpMethod());
+        };
+        setAuthHeader(request);
+
+        request.setEntity(new StringEntity("""
+                {
+                    "protocol": "%s",
+                    "clientId": " ",
+                    "enabled": true
+                }
+                """.formatted(protocol)));
+
+        try (var response = client.execute(request)) {
+            assertThat(response.getStatusLine().getStatusCode(), is(400));
+
+            var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ViolationExceptionResponse.class);
+            assertThat(body.error(), is("Provided data is invalid"));
+            assertThat(body.violations(), hasItem("clientId: must not be blank"));
         }
     }
 
@@ -262,6 +289,7 @@ public abstract class AbstractClientValidationTest extends AbstractClientApiV2Te
         var request = getRequest(isOidc);
         setAuthHeader(request);
 
+        // Without appUrl set, relative paths like "not-a-url" are invalid
         request.setEntity(new StringEntity("""
                 {
                     "protocol": "%s",
@@ -276,9 +304,9 @@ public abstract class AbstractClientValidationTest extends AbstractClientApiV2Te
 
             var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ViolationExceptionResponse.class);
             assertThat(body.error(), is("Provided data is invalid"));
-            // Should have violations for the invalid URLs
+            // Should have violations for the invalid URLs (relative paths without root URL)
             assertThat(body.violations().size(), greaterThanOrEqualTo(1));
-            assertThat(body.violations(), hasItem("redirectUris[].<iterable element>: Each redirect URL must be valid"));
+            assertThat(body.violations(), hasItem(containsString("redirectUris")));
         }
     }
 
@@ -304,7 +332,8 @@ public abstract class AbstractClientValidationTest extends AbstractClientApiV2Te
             var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ViolationExceptionResponse.class);
             assertThat(body.error(), is("Provided data is invalid"));
             assertThat(body.violations().size(), greaterThanOrEqualTo(1));
-            assertThat(body.violations(), hasItem("redirectUris[].<iterable element>: Each redirect URL must be valid"));
+            // Blank strings are caught by @NotBlank on Set elements
+            assertThat(body.violations(), hasItem("redirectUris[].<iterable element>: must not be blank"));
         }
     }
 
@@ -428,12 +457,13 @@ public abstract class AbstractClientValidationTest extends AbstractClientApiV2Te
         var request = getRequest(isOidc);
         setAuthHeader(request);
 
+        // Use wildcard in middle of path which is always invalid, plus invalid appUrl
         request.setEntity(new StringEntity("""
                 {
                     "protocol": "%s",
                     "clientId": "%s",
                     "appUrl": "invalid-url",
-                    "redirectUris": ["also-invalid"]
+                    "redirectUris": ["https://example.com/*/invalid"]
                 }
                 """.formatted(protocol, getPayloadClientId(isOidc))));
 
@@ -444,7 +474,7 @@ public abstract class AbstractClientValidationTest extends AbstractClientApiV2Te
             assertThat(body.error(), is("Provided data is invalid"));
             // Should have violations for both appUrl and redirectUris
             assertThat(body.violations(), hasItem("appUrl: must be a valid URL"));
-            assertThat(body.violations(), hasItem(containsString("Each redirect URL must be valid")));
+            assertThat(body.violations(), hasItem(containsString("redirectUris")));
         }
     }
 
@@ -590,7 +620,7 @@ public abstract class AbstractClientValidationTest extends AbstractClientApiV2Te
 
     public static class TestOidcClient implements ClientConfig {
         @Override
-        public ClientConfigBuilder configure(ClientConfigBuilder client) {
+        public ClientBuilder configure(ClientBuilder client) {
             return client.clientId("test-client-oidc")
                     .enabled(true)
                     .protocol("openid-connect");
@@ -599,7 +629,7 @@ public abstract class AbstractClientValidationTest extends AbstractClientApiV2Te
 
     public static class TestSamlClient implements ClientConfig {
         @Override
-        public ClientConfigBuilder configure(ClientConfigBuilder client) {
+        public ClientBuilder configure(ClientBuilder client) {
             return client.clientId("test-client-saml")
                     .enabled(true)
                     .protocol("saml");

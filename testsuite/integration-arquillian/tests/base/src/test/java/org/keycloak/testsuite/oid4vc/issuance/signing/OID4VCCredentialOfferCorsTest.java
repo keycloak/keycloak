@@ -25,7 +25,6 @@ import java.util.stream.Collectors;
 
 import jakarta.ws.rs.core.HttpHeaders;
 
-import org.keycloak.common.Profile;
 import org.keycloak.common.util.Time;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
@@ -36,10 +35,11 @@ import org.keycloak.protocol.oid4vc.model.CredentialOfferURI;
 import org.keycloak.protocol.oid4vc.model.CredentialsOffer;
 import org.keycloak.protocol.oid4vc.model.ErrorType;
 import org.keycloak.protocol.oid4vc.model.PreAuthorizedCodeGrant;
+import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.cors.Cors;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.util.TokenUtil;
 import org.keycloak.testsuite.util.oauth.AbstractHttpResponse;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
@@ -51,14 +51,14 @@ import org.apache.http.HttpStatus;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpOptions;
-import org.hamcrest.Matchers;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Test class for CORS functionality on OID4VCI credential offer endpoints.
@@ -67,7 +67,6 @@ import static org.junit.Assert.assertTrue;
  *
  * @author <a href="https://github.com/forkimenjeckayang">Forkim Akwichek</a>
  */
-@EnableFeature(value = Profile.Feature.OID4VC_VCI, skipRestart = true)
 public class OID4VCCredentialOfferCorsTest extends OID4VCIssuerEndpointTest {
 
     private static final String VALID_CORS_URL = "http://localtest.me:8180";
@@ -114,15 +113,14 @@ public class OID4VCCredentialOfferCorsTest extends OID4VCIssuerEndpointTest {
 
         // Verify response content
         CredentialOfferURI offerUri = response.getCredentialOfferURI();
-        assertNotNull("Credential offer URI should not be null", offerUri.getIssuer());
-        assertNotNull("Nonce should not be null", offerUri.getNonce());
+        assertNotNull(offerUri.getIssuer(), "Credential offer URI should not be null");
+        assertNotNull(offerUri.getNonce(), "Nonce should not be null");
 
         // Verify VERIFIABLE_CREDENTIAL_CREATE_OFFER event was fired
-        events.expect(EventType.VERIFIABLE_CREDENTIAL_CREATE_OFFER)
-                .client(clientId)
-                .user(AssertEvents.isUUID())
-                .session(AssertEvents.isSessionId())
-                .assertEvent();
+        EventAssertion.assertSuccess(events.poll()).type(EventType.VERIFIABLE_CREDENTIAL_CREATE_OFFER)
+                .clientId(clientId)
+                .hasUserId()
+                .hasSessionId();
     }
 
     @Test
@@ -138,8 +136,7 @@ public class OID4VCCredentialOfferCorsTest extends OID4VCIssuerEndpointTest {
                 .preAuthorized(false)
                 .send();
 
-        // Should still return 200 OK but without CORS headers
-        assertEquals(HttpStatus.SC_OK, response.getStatusCode());
+        assertEquals(HttpStatus.SC_FORBIDDEN, response.getStatusCode());
         assertNoCorsHeaders(response);
     }
 
@@ -186,19 +183,18 @@ public class OID4VCCredentialOfferCorsTest extends OID4VCIssuerEndpointTest {
 
         // Verify response content
         CredentialsOffer offer = response.getCredentialsOffer();
-        assertNotNull("Credential offer should not be null", offer.getCredentialIssuer());
-        assertNotNull("Credential configuration IDs should not be null", offer.getCredentialConfigurationIds());
+        assertNotNull(offer.getCredentialIssuer(), "Credential offer should not be null");
+        assertNotNull(offer.getCredentialConfigurationIds(), "Credential configuration IDs should not be null");
 
         // The credential_type detail contains the credential configuration ID from the offer
         // We already assert that credentialConfigurationIds is not null and not empty above
         String expectedCredentialType = offer.getCredentialConfigurationIds().get(0);
 
-        events.expect(EventType.VERIFIABLE_CREDENTIAL_OFFER_REQUEST)
-                .client(clientId)
-                .user(AssertEvents.isUUID())
-                .session((String) null) // No session for unauthenticated endpoint
-                .detail(Details.CREDENTIAL_TYPE, expectedCredentialType)
-                .assertEvent();
+        EventAssertion.assertSuccess(events.poll()).type(EventType.VERIFIABLE_CREDENTIAL_OFFER_REQUEST)
+                .clientId(clientId)
+                .hasUserId()
+                .sessionId(null) // No session for unauthenticated endpoint
+                .details(Details.CREDENTIAL_TYPE, expectedCredentialType);
     }
 
     @Test
@@ -248,7 +244,7 @@ public class OID4VCCredentialOfferCorsTest extends OID4VCIssuerEndpointTest {
 
             // Verify response is PNG image
             String contentType = response.getFirstHeader("Content-Type").getValue();
-            assertTrue("Response should be PNG image", contentType.contains("image/png"));
+            assertTrue(contentType.contains("image/png"), "Response should be PNG image");
         }
     }
 
@@ -308,12 +304,11 @@ public class OID4VCCredentialOfferCorsTest extends OID4VCIssuerEndpointTest {
         assertEquals(HttpStatus.SC_BAD_REQUEST, response.getStatusCode());
 
         // Verify VERIFIABLE_CREDENTIAL_CREATE_OFFER_ERROR event was fired
-        events.expect(EventType.VERIFIABLE_CREDENTIAL_CREATE_OFFER_ERROR)
-                .client(clientId)
-                .user(AssertEvents.isUUID())
-                .session(AssertEvents.isSessionId())
-                .error(Errors.INVALID_REQUEST)
-                .assertEvent();
+        EventAssertion.assertError(events.poll()).type(EventType.VERIFIABLE_CREDENTIAL_CREATE_OFFER_ERROR)
+                .clientId(clientId)
+                .hasUserId()
+                .hasSessionId()
+                .error(Errors.INVALID_REQUEST);
     }
 
     @Test
@@ -337,7 +332,7 @@ public class OID4VCCredentialOfferCorsTest extends OID4VCIssuerEndpointTest {
             session.getTransactionManager().commit();
             return offerState.getNonce();
         });
-        assertNotNull("CredentialOffer nonce not null", nonce);
+        assertNotNull(nonce, "CredentialOffer nonce not null");
 
         events.clear();
 
@@ -351,17 +346,14 @@ public class OID4VCCredentialOfferCorsTest extends OID4VCIssuerEndpointTest {
         assertEquals(HttpStatus.SC_BAD_REQUEST, response.getStatusCode());
 
         // Verify VERIFIABLE_CREDENTIAL_OFFER_REQUEST_ERROR event was fired
-        events.expect(EventType.VERIFIABLE_CREDENTIAL_OFFER_REQUEST_ERROR)
-                .client((String) null)
-                .user((String) null)
-                .session((String) null)
+        EventRepresentation eventRep = EventAssertion.assertError(events.poll()).type(EventType.VERIFIABLE_CREDENTIAL_OFFER_REQUEST_ERROR)
+                .clientId(null)
+                .userId(null)
+                .sessionId(null)
                 // Storage prunes expired single-use entries before lookup; lookup failure yields INVALID_REQUEST
                 // The error message indicates the offer was not found (pruned due to expiration) or already consumed
-                .error(ErrorType.INVALID_CREDENTIAL_OFFER_REQUEST.getValue())
-                .detail(Details.REASON, Matchers.anyOf(
-                        Matchers.containsString("not found"),
-                        Matchers.containsString("already consumed")))
-                .assertEvent();
+                .error(ErrorType.INVALID_CREDENTIAL_OFFER_REQUEST.getValue()).getEvent();
+        Assertions.assertTrue(eventRep.getDetails().get(Details.REASON).contains("not found") || eventRep.getDetails().get(Details.REASON).contains("already consumed"));
     }
 
     // Helper methods
@@ -426,89 +418,81 @@ public class OID4VCCredentialOfferCorsTest extends OID4VCIssuerEndpointTest {
     }
 
     private void assertCorsHeaders(AbstractHttpResponse response, String expectedOrigin) {
-        assertNotNull("Access-Control-Allow-Origin header should be present",
-                response.getHeader(Cors.ACCESS_CONTROL_ALLOW_ORIGIN));
-        assertEquals("Access-Control-Allow-Origin should match request origin",
-                expectedOrigin, response.getHeader(Cors.ACCESS_CONTROL_ALLOW_ORIGIN));
+        assertNotNull(response.getHeader(Cors.ACCESS_CONTROL_ALLOW_ORIGIN),
+                "Access-Control-Allow-Origin header should be present");
+        assertEquals(expectedOrigin, response.getHeader(Cors.ACCESS_CONTROL_ALLOW_ORIGIN), "Access-Control-Allow-Origin should match request origin");
 
-        assertNotNull("Access-Control-Allow-Credentials header should be present",
-                response.getHeader(Cors.ACCESS_CONTROL_ALLOW_CREDENTIALS));
-        assertEquals("Access-Control-Allow-Credentials should be true",
-                "true", response.getHeader(Cors.ACCESS_CONTROL_ALLOW_CREDENTIALS));
+        assertNotNull(response.getHeader(Cors.ACCESS_CONTROL_ALLOW_CREDENTIALS),
+                "Access-Control-Allow-Credentials header should be present");
+        assertEquals("true", response.getHeader(Cors.ACCESS_CONTROL_ALLOW_CREDENTIALS), "Access-Control-Allow-Credentials should be true");
     }
 
     private void assertCorsHeadersForSessionEndpoint(AbstractHttpResponse response, String expectedOrigin) {
-        assertNotNull("Access-Control-Allow-Origin header should be present",
-                response.getHeader(Cors.ACCESS_CONTROL_ALLOW_ORIGIN));
-        assertEquals("Access-Control-Allow-Origin should match request origin",
-                expectedOrigin, response.getHeader(Cors.ACCESS_CONTROL_ALLOW_ORIGIN));
+        assertNotNull(response.getHeader(Cors.ACCESS_CONTROL_ALLOW_ORIGIN),
+                "Access-Control-Allow-Origin header should be present");
+        assertEquals(expectedOrigin, response.getHeader(Cors.ACCESS_CONTROL_ALLOW_ORIGIN), "Access-Control-Allow-Origin should match request origin");
 
         // Session-based endpoints don't require credentials since they use nonces for security
         // and allow all origins, so credentials header should be false for security reasons
         String credentialsHeader = response.getHeader(Cors.ACCESS_CONTROL_ALLOW_CREDENTIALS);
-        assertNotNull("Access-Control-Allow-Credentials header should be present for session endpoints",
-                credentialsHeader);
-        assertEquals("Access-Control-Allow-Credentials should be false when allowing all origins",
-                "false", credentialsHeader);
+        assertNotNull(credentialsHeader,
+                "Access-Control-Allow-Credentials header should be present for session endpoints");
+        assertEquals("false", credentialsHeader, "Access-Control-Allow-Credentials should be false when allowing all origins");
     }
 
     private void assertCorsPreflightHeaders(CloseableHttpResponse response, String expectedOrigin) {
         assertCorsHeadersFromCloseableResponse(response, expectedOrigin);
 
-        assertNotNull("Access-Control-Allow-Methods header should be present",
-                response.getFirstHeader(Cors.ACCESS_CONTROL_ALLOW_METHODS));
+        assertNotNull(response.getFirstHeader(Cors.ACCESS_CONTROL_ALLOW_METHODS),
+                "Access-Control-Allow-Methods header should be present");
 
         String allowedMethods = response.getFirstHeader(Cors.ACCESS_CONTROL_ALLOW_METHODS).getValue();
         Set<String> methods = Arrays.stream(allowedMethods.split(", "))
                 .collect(Collectors.toSet());
 
-        assertTrue("GET should be allowed", methods.contains("GET"));
-        assertTrue("OPTIONS should be allowed", methods.contains("OPTIONS"));
+        assertTrue(methods.contains("GET"), "GET should be allowed");
+        assertTrue(methods.contains("OPTIONS"), "OPTIONS should be allowed");
     }
 
     private void assertCorsPreflightHeadersForSessionEndpoint(CloseableHttpResponse response, String expectedOrigin) {
         assertCorsHeadersForSessionEndpointFromCloseableResponse(response, expectedOrigin);
 
-        assertNotNull("Access-Control-Allow-Methods header should be present",
-                response.getFirstHeader(Cors.ACCESS_CONTROL_ALLOW_METHODS));
+        assertNotNull(response.getFirstHeader(Cors.ACCESS_CONTROL_ALLOW_METHODS),
+                "Access-Control-Allow-Methods header should be present");
 
         String allowedMethods = response.getFirstHeader(Cors.ACCESS_CONTROL_ALLOW_METHODS).getValue();
         Set<String> methods = Arrays.stream(allowedMethods.split(", "))
                 .collect(Collectors.toSet());
 
-        assertTrue("GET should be allowed", methods.contains("GET"));
-        assertTrue("OPTIONS should be allowed", methods.contains("OPTIONS"));
+        assertTrue(methods.contains("GET"), "GET should be allowed");
+        assertTrue(methods.contains("OPTIONS"), "OPTIONS should be allowed");
     }
 
     private void assertCorsHeadersFromCloseableResponse(CloseableHttpResponse response, String expectedOrigin) {
-        assertNotNull("Access-Control-Allow-Origin header should be present",
-                response.getFirstHeader(Cors.ACCESS_CONTROL_ALLOW_ORIGIN));
-        assertEquals("Access-Control-Allow-Origin should match request origin",
-                expectedOrigin, response.getFirstHeader(Cors.ACCESS_CONTROL_ALLOW_ORIGIN).getValue());
+        assertNotNull(response.getFirstHeader(Cors.ACCESS_CONTROL_ALLOW_ORIGIN),
+                "Access-Control-Allow-Origin header should be present");
+        assertEquals(expectedOrigin, response.getFirstHeader(Cors.ACCESS_CONTROL_ALLOW_ORIGIN).getValue(), "Access-Control-Allow-Origin should match request origin");
 
-        assertNotNull("Access-Control-Allow-Credentials header should be present",
-                response.getFirstHeader(Cors.ACCESS_CONTROL_ALLOW_CREDENTIALS));
-        assertEquals("Access-Control-Allow-Credentials should be true",
-                "true", response.getFirstHeader(Cors.ACCESS_CONTROL_ALLOW_CREDENTIALS).getValue());
+        assertNotNull(response.getFirstHeader(Cors.ACCESS_CONTROL_ALLOW_CREDENTIALS),
+                "Access-Control-Allow-Credentials header should be present");
+        assertEquals("true", response.getFirstHeader(Cors.ACCESS_CONTROL_ALLOW_CREDENTIALS).getValue(), "Access-Control-Allow-Credentials should be true");
     }
 
     private void assertCorsHeadersForSessionEndpointFromCloseableResponse(CloseableHttpResponse response, String expectedOrigin) {
-        assertNotNull("Access-Control-Allow-Origin header should be present",
-                response.getFirstHeader(Cors.ACCESS_CONTROL_ALLOW_ORIGIN));
-        assertEquals("Access-Control-Allow-Origin should match request origin",
-                expectedOrigin, response.getFirstHeader(Cors.ACCESS_CONTROL_ALLOW_ORIGIN).getValue());
+        assertNotNull(response.getFirstHeader(Cors.ACCESS_CONTROL_ALLOW_ORIGIN),
+                "Access-Control-Allow-Origin header should be present");
+        assertEquals(expectedOrigin, response.getFirstHeader(Cors.ACCESS_CONTROL_ALLOW_ORIGIN).getValue(), "Access-Control-Allow-Origin should match request origin");
 
         // Session-based endpoints don't require credentials since they use nonces for security
         // and allow all origins, so credentials header should be false for security reasons
         Header credentialsHeader = response.getFirstHeader(Cors.ACCESS_CONTROL_ALLOW_CREDENTIALS);
-        assertNotNull("Access-Control-Allow-Credentials header should be present for session endpoints",
-                credentialsHeader);
-        assertEquals("Access-Control-Allow-Credentials should be false when allowing all origins",
-                "false", credentialsHeader.getValue());
+        assertNotNull(credentialsHeader,
+                "Access-Control-Allow-Credentials header should be present for session endpoints");
+        assertEquals("false", credentialsHeader.getValue(), "Access-Control-Allow-Credentials should be false when allowing all origins");
     }
 
     private void assertNoCorsHeaders(AbstractHttpResponse response) {
-        assertNull("Access-Control-Allow-Origin header should not be present", response.getHeader(Cors.ACCESS_CONTROL_ALLOW_ORIGIN));
-        assertNull("Access-Control-Allow-Credentials header should not be present", response.getHeader(Cors.ACCESS_CONTROL_ALLOW_CREDENTIALS));
+        assertNull(response.getHeader(Cors.ACCESS_CONTROL_ALLOW_ORIGIN), "Access-Control-Allow-Origin header should not be present");
+        assertNull(response.getHeader(Cors.ACCESS_CONTROL_ALLOW_CREDENTIALS), "Access-Control-Allow-Credentials header should not be present");
     }
 }

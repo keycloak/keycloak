@@ -19,6 +19,6 @@ include::../partials/aurora/aurora-multiaz-create-procedure.adoc[]
 include::../partials/aurora/aurora-create-peering-connections.adoc[]
 
 [#${parent}-aurora-verify]
-== Verifying the connection
+== Verify the connection
 
 include::../partials/aurora/aurora-verify-peering-connections.adoc[]

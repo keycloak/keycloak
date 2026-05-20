@@ -379,7 +379,8 @@ public class AuthenticationManagementResource {
                 () -> {}, // allow deleting even with missing references
                 () -> {
                     throw new BadRequestException("Can't delete built in flow");
-                }
+                },
+                flow.isBuiltIn()
         );
 
         // Use just one event for top-level flow. Using separate events won't work properly for flows of depth 2 or bigger
@@ -409,6 +410,7 @@ public class AuthenticationManagementResource {
         auth.realm().requireManageRealm();
 
         String newName = data.get("newName");
+        ReservedCharValidator.validate(newName);
         if (realm.getFlowByAlias(newName) != null) {
             throw ErrorResponse.exists("New flow alias name already exists");
         }
@@ -1034,7 +1036,8 @@ public class AuthenticationManagementResource {
                 () -> {}, // allow deleting even with missing references
                 () -> {
                     throw new BadRequestException("It is illegal to remove execution from a built in flow");
-                }
+                },
+                parentFlow.isBuiltIn()
         );
 
         adminEvent.operation(OperationType.DELETE).resource(ResourceType.AUTH_EXECUTION).resourcePath(session.getContext().getUri()).success();

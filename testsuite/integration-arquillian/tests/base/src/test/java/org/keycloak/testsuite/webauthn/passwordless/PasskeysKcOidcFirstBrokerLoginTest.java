@@ -26,7 +26,7 @@ import org.keycloak.models.IdentityProviderSyncMode;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
-import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.IgnoreBrowserDriver;
 import org.keycloak.testsuite.broker.AbstractBrokerTest;
 import org.keycloak.testsuite.broker.AbstractInitializedBaseBrokerTest;
@@ -49,9 +49,9 @@ import org.keycloak.testsuite.webauthn.pages.WebAuthnRegisterPage;
 
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.firefox.FirefoxDriver;
 
@@ -143,20 +143,20 @@ public class PasskeysKcOidcFirstBrokerLoginTest extends AbstractInitializedBaseB
         logInWithBroker(bc);
 
         BrokerTestTools.waitForPage(driver, "account already exists", false);
-        Assert.assertTrue(idpConfirmLinkPage.isCurrent());
-        Assert.assertEquals("User with email user@localhost.com already exists. How do you want to continue?", idpConfirmLinkPage.getMessage());
+        Assertions.assertTrue(idpConfirmLinkPage.isCurrent());
+        Assertions.assertEquals("User with email user@localhost.com already exists. How do you want to continue?", idpConfirmLinkPage.getMessage());
         idpConfirmLinkPage.clickLinkAccount();
 
-        Assert.assertEquals("Authenticate to link your account with " + bc.getIDPAlias(), loginPage.getInfoMessage());
+        Assertions.assertEquals("Authenticate to link your account with " + bc.getIDPAlias(), loginPage.getInfoMessage());
 
-        Assert.assertThrows(NoSuchElementException.class, () -> loginPage.findSocialButton(bc.getIDPAlias()));
-        Assert.assertThrows(NoSuchElementException.class, () -> loginPage.clickRegister());
+        Assertions.assertThrows(NoSuchElementException.class, () -> loginPage.findSocialButton(bc.getIDPAlias()));
+        Assertions.assertThrows(NoSuchElementException.class, () -> loginPage.clickRegister());
         webAuthnLoginPage.isCurrent();
 
         loginPage.login(bc.getUserPassword());
-        Assert.assertTrue(appPage.isCurrent());
+        Assertions.assertTrue(appPage.isCurrent());
 
-        assertNumFederatedIdentities(ApiUtil.findUserByUsername(adminClient.realm(bc.consumerRealmName()), "consumer").getId(), 1);
+        assertNumFederatedIdentities(AdminApiUtil.findUserByUsername(adminClient.realm(bc.consumerRealmName()), "consumer").getId(), 1);
     }
 
     @Test
@@ -171,23 +171,23 @@ public class PasskeysKcOidcFirstBrokerLoginTest extends AbstractInitializedBaseB
         logInWithBroker(bc);
 
         BrokerTestTools.waitForPage(driver, "account already exists", false);
-        Assert.assertTrue(idpConfirmLinkPage.isCurrent());
-        Assert.assertEquals("User with email user@localhost.com already exists. How do you want to continue?", idpConfirmLinkPage.getMessage());
+        Assertions.assertTrue(idpConfirmLinkPage.isCurrent());
+        Assertions.assertEquals("User with email user@localhost.com already exists. How do you want to continue?", idpConfirmLinkPage.getMessage());
         idpConfirmLinkPage.clickLinkAccount();
 
-        Assert.assertEquals("Authenticate to link your account with " + bc.getIDPAlias(), loginPage.getInfoMessage());
+        Assertions.assertEquals("Authenticate to link your account with " + bc.getIDPAlias(), loginPage.getInfoMessage());
 
-        Assert.assertThrows(NoSuchElementException.class, () -> loginPage.findSocialButton(bc.getIDPAlias()));
-        Assert.assertThrows(NoSuchElementException.class, () -> loginPage.clickRegister());
+        Assertions.assertThrows(NoSuchElementException.class, () -> loginPage.findSocialButton(bc.getIDPAlias()));
+        Assertions.assertThrows(NoSuchElementException.class, () -> loginPage.clickRegister());
         webAuthnLoginPage.isCurrent();
 
         loginPage.login(generatePassword()); // invalid password
-        Assert.assertEquals("Invalid username or password.", loginPage.getInputError());
+        Assertions.assertEquals("Invalid username or password.", loginPage.getInputError());
 
         webAuthnLoginPage.clickAuthenticate();
-        Assert.assertTrue(appPage.isCurrent());
+        Assertions.assertTrue(appPage.isCurrent());
 
-        assertNumFederatedIdentities(ApiUtil.findUserByUsername(adminClient.realm(bc.consumerRealmName()), "consumer").getId(), 1);
+        assertNumFederatedIdentities(AdminApiUtil.findUserByUsername(adminClient.realm(bc.consumerRealmName()), "consumer").getId(), 1);
     }
 
     @Test
@@ -208,14 +208,14 @@ public class PasskeysKcOidcFirstBrokerLoginTest extends AbstractInitializedBaseB
         }
 
         BrokerTestTools.waitForPage(driver, "account already exists", false);
-        Assert.assertTrue(idpConfirmLinkPage.isCurrent());
-        Assert.assertEquals("User with email user@localhost.com already exists. How do you want to continue?", idpConfirmLinkPage.getMessage());
+        Assertions.assertTrue(idpConfirmLinkPage.isCurrent());
+        Assertions.assertEquals("User with email user@localhost.com already exists. How do you want to continue?", idpConfirmLinkPage.getMessage());
         idpConfirmLinkPage.clickLinkAccount();
 
         // login is automatically now via discoverable passkey
-        Assert.assertTrue(appPage.isCurrent());
+        Assertions.assertTrue(appPage.isCurrent());
 
-        assertNumFederatedIdentities(ApiUtil.findUserByUsername(adminClient.realm(bc.consumerRealmName()), "consumer").getId(), 1);
+        assertNumFederatedIdentities(AdminApiUtil.findUserByUsername(adminClient.realm(bc.consumerRealmName()), "consumer").getId(), 1);
     }
 
     protected void registerUser(String username, String password, String email, String authenticatorLabel) {
@@ -269,7 +269,7 @@ public class PasskeysKcOidcFirstBrokerLoginTest extends AbstractInitializedBaseB
             logoutConfirmPage.assertCurrent();
             logoutConfirmPage.confirmLogout();
             infoPage.assertCurrent();
-            Assert.assertEquals("You are logged out", infoPage.getInfo());
+            Assertions.assertEquals("You are logged out", infoPage.getInfo());
         } catch (Exception e) {
             throw new RuntimeException("Cannot logout user", e);
         }

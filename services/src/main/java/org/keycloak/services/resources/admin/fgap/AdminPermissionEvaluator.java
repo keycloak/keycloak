@@ -35,6 +35,7 @@ public interface AdminPermissionEvaluator {
     UserPermissionEvaluator users();
     ClientPermissionEvaluator clients();
     GroupPermissionEvaluator groups();
+    OrganizationPermissionEvaluator orgs();
 
     boolean isRealmAdmin();
 

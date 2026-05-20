@@ -1,15 +1,12 @@
 package org.keycloak.scim.resource.schema.path;
 
-import java.util.function.Predicate;
-
 import org.keycloak.scim.filter.FilterUtils;
 import org.keycloak.scim.filter.ScimFilterParser;
 import org.keycloak.scim.resource.ResourceTypeRepresentation;
 import org.keycloak.scim.resource.schema.ModelSchema;
+import org.keycloak.scim.resource.schema.attribute.Attribute;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.NullNode;
 
 public final class Path {
@@ -52,31 +49,12 @@ public final class Path {
         return path;
     }
 
-    public JsonNode getValue(JsonNode rawValue) {
+    public JsonNode getValue(Attribute<?, ?> attribute) {
         if (filter == null) {
-            return rawValue;
+            return NullNode.getInstance();
         }
 
         ScimFilterParser.FilterContext filterContext = FilterUtils.parseFilter(filter);
-        Predicate<JsonNode> predicate = new ScimJsonNodeFilterEvaluator().visit(filterContext);
-
-        if (rawValue.isArray()) {
-            ArrayNode matches = JsonNodeFactory.instance.arrayNode();
-            for (JsonNode node : rawValue) {
-                if (node.isObject() && predicate.test(node)) {
-                    matches.add(node);
-                }
-            }
-            if (!matches.isEmpty()) {
-                return matches.size() == 1 ? matches.get(0) : matches;
-            }
-        }
-
-        return NullNode.getInstance();
+        return new ScimFilterToJsonNodeConverter(attribute).visit(filterContext);
     }
-
-    public boolean hasFilter() {
-        return filter != null;
-    }
-
 }

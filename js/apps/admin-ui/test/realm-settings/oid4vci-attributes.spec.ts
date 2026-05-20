@@ -69,9 +69,7 @@ test("should render fields and save values with correct attribute keys", async (
   const nonceField = page.getByTestId(
     "attributes.vc🍺c-nonce-lifetime-seconds",
   );
-  const preAuthField = page.getByTestId(
-    "attributes.preAuthorizedCodeLifespanS",
-  );
+  const preAuthField = page.getByTestId("attributes.credentialOfferLifespanS");
 
   await expect(nonceField).toBeVisible();
   await expect(preAuthField).toBeVisible();
@@ -87,7 +85,7 @@ test("should render fields and save values with correct attribute keys", async (
   expect(realmData).toBeDefined();
   // TimeSelector converts values based on selected unit (60 minutes = 3600 seconds, 120 seconds = 120 seconds)
   expect(realmData?.attributes?.["vc.c-nonce-lifetime-seconds"]).toBe("3600");
-  expect(realmData?.attributes?.["preAuthorizedCodeLifespanS"]).toBe("120");
+  expect(realmData?.attributes?.["credentialOfferLifespanS"]).toBe("120");
 });
 
 test("should persist values after page refresh", async ({ page }) => {
@@ -105,9 +103,7 @@ test("should persist values after page refresh", async ({ page }) => {
   const nonceField = page.getByTestId(
     "attributes.vc🍺c-nonce-lifetime-seconds",
   );
-  const preAuthField = page.getByTestId(
-    "attributes.preAuthorizedCodeLifespanS",
-  );
+  const preAuthField = page.getByTestId("attributes.credentialOfferLifespanS");
 
   await nonceField.fill("60");
   await preAuthField.fill("120");
@@ -130,14 +126,14 @@ test("should persist values after page refresh", async ({ page }) => {
   // The TimeSelector component converts values based on units, so we need to check the actual saved values
   const realmData = await adminClient.getRealm(testBed.realm);
   expect(realmData?.attributes?.["vc.c-nonce-lifetime-seconds"]).toBeDefined();
-  expect(realmData?.attributes?.["preAuthorizedCodeLifespanS"]).toBeDefined();
+  expect(realmData?.attributes?.["credentialOfferLifespanS"]).toBeDefined();
 
   // The values should be numbers representing seconds
   const nonceValue = parseInt(
     realmData?.attributes?.["vc.c-nonce-lifetime-seconds"] || "0",
   );
   const preAuthValue = parseInt(
-    realmData?.attributes?.["preAuthorizedCodeLifespanS"] || "0",
+    realmData?.attributes?.["credentialOfferLifespanS"] || "0",
   );
 
   expect(nonceValue).toBeGreaterThan(0);
@@ -159,9 +155,7 @@ test("should validate form fields and save valid values", async ({ page }) => {
   const nonceField = page.getByTestId(
     "attributes.vc🍺c-nonce-lifetime-seconds",
   );
-  const preAuthField = page.getByTestId(
-    "attributes.preAuthorizedCodeLifespanS",
-  );
+  const preAuthField = page.getByTestId("attributes.credentialOfferLifespanS");
   const saveButton = page.getByTestId("tokens-tab-save");
 
   // Test that fields are visible and can be filled
@@ -188,14 +182,14 @@ test("should validate form fields and save valid values", async ({ page }) => {
   // Verify the values were saved correctly
   const realmData = await adminClient.getRealm(testBed.realm);
   expect(realmData?.attributes?.["vc.c-nonce-lifetime-seconds"]).toBeDefined();
-  expect(realmData?.attributes?.["preAuthorizedCodeLifespanS"]).toBeDefined();
+  expect(realmData?.attributes?.["credentialOfferLifespanS"]).toBeDefined();
 
   // The values should be numbers representing seconds
   const nonceValue = parseInt(
     realmData?.attributes?.["vc.c-nonce-lifetime-seconds"] || "0",
   );
   const preAuthValue = parseInt(
-    realmData?.attributes?.["preAuthorizedCodeLifespanS"] || "0",
+    realmData?.attributes?.["credentialOfferLifespanS"] || "0",
   );
 
   expect(nonceValue).toBeGreaterThan(0);
@@ -219,9 +213,7 @@ test("should show validation error for values below minimum threshold", async ({
   const nonceField = page.getByTestId(
     "attributes.vc🍺c-nonce-lifetime-seconds",
   );
-  const preAuthField = page.getByTestId(
-    "attributes.preAuthorizedCodeLifespanS",
-  );
+  const preAuthField = page.getByTestId("attributes.credentialOfferLifespanS");
   const saveButton = page.getByTestId("tokens-tab-save");
 
   // Fill with values below the minimum threshold (29 seconds)
@@ -267,10 +259,15 @@ test("should save signed metadata, encryption, and batch issuance settings", asy
   await expect(signedMetadataAlgField).toBeVisible();
   await selectItem(page, signedMetadataAlgField, "ES256");
 
-  const requireEncryptionSwitch = page.getByTestId(
-    "attributes.oid4vci.encryption.required",
+  const requireRequestEncryptionSwitch = page.getByTestId(
+    "attributes.oid4vci.request.encryption.required",
   );
-  await requireEncryptionSwitch.click({ force: true });
+  await requireRequestEncryptionSwitch.click({ force: true });
+
+  const requireResponseEncryptionSwitch = page.getByTestId(
+    "attributes.oid4vci.response.encryption.required",
+  );
+  await requireResponseEncryptionSwitch.click({ force: true });
 
   const batchIssuanceField = page.locator(
     '[id="attributes.oid4vci🍺batch_credential_issuance🍺batch_size"]',
@@ -291,7 +288,12 @@ test("should save signed metadata, encryption, and batch issuance settings", asy
     "7200",
   );
   expect(realmData?.attributes?.["oid4vci.signed_metadata.alg"]).toBe("ES256");
-  expect(realmData?.attributes?.["oid4vci.encryption.required"]).toBe("true");
+  expect(realmData?.attributes?.["oid4vci.request.encryption.required"]).toBe(
+    "true",
+  );
+  expect(realmData?.attributes?.["oid4vci.response.encryption.required"]).toBe(
+    "true",
+  );
   expect(
     realmData?.attributes?.["oid4vci.batch_credential_issuance.batch_size"],
   ).toBe("5");
@@ -359,10 +361,10 @@ test("should save Deflate Compression setting", async ({ page }) => {
   const oid4vciJumpLink = page.getByTestId("jump-link-oid4vci-attributes");
   await oid4vciJumpLink.click();
 
-  const encryptionSwitch = page.getByTestId(
-    "attributes.oid4vci.encryption.required",
+  const requestEncryptionSwitch = page.getByTestId(
+    "attributes.oid4vci.request.encryption.required",
   );
-  await encryptionSwitch.click({ force: true });
+  await requestEncryptionSwitch.click({ force: true });
 
   const deflateSwitch = page.getByTestId(
     "attributes.oid4vci.request.zip.algorithms",

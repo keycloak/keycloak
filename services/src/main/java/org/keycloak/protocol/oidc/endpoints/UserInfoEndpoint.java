@@ -37,6 +37,7 @@ import org.keycloak.common.ClientConnection;
 import org.keycloak.common.VerificationException;
 import org.keycloak.crypto.CekManagementProvider;
 import org.keycloak.crypto.ContentEncryptionProvider;
+import org.keycloak.crypto.CryptoUtils;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.crypto.SignatureProvider;
 import org.keycloak.crypto.SignatureSignerContext;
@@ -150,7 +151,7 @@ public class UserInfoEndpoint {
                 MultivaluedMap<String, String> formParams = request.getDecodedFormParameters();
                 checkAccessTokenDuplicated(formParams);
                 String accessToken = formParams.getFirst(OAuth2Constants.ACCESS_TOKEN);
-                authHeader = accessToken == null ? null : new AppAuthManager.AuthHeader(AppAuthManager.BEARER, accessToken);
+                authHeader = accessToken == null ? null : new AppAuthManager.AuthHeader(TokenUtil.TOKEN_TYPE_BEARER, accessToken);
                 authorization(authHeader);
             }
         } catch (IllegalArgumentException e) {
@@ -191,7 +192,7 @@ public class UserInfoEndpoint {
 
             verifier = DPoPUtil.withDPoPVerifier(verifier, realm, new DPoPUtil.Validator(session).request(request).uriInfo(session.getContext().getUri()).accessToken(tokenForUserInfo.getToken()));
 
-            SignatureVerifierContext verifierContext = session.getProvider(SignatureProvider.class, verifier.getHeader().getAlgorithm().name()).verifier(verifier.getHeader().getKeyId());
+            SignatureVerifierContext verifierContext = CryptoUtils.getSignatureProvider(session, verifier.getHeader().getAlgorithm().name()).verifier(verifier.getHeader().getKeyId());
             verifier.verifierContext(verifierContext);
 
             token = verifier.verify().getToken();
@@ -209,10 +210,10 @@ public class UserInfoEndpoint {
                 throw error.invalidToken("Client not found");
             }
 
-            cors.allowedOrigins(session, clientModel);
+            cors.checkAllowedOrigins(session, clientModel);
 
             TokenVerifier.createWithoutSignature(token)
-                    .withChecks(NotBeforeCheck.forModel(clientModel), new TokenManager.TokenRevocationCheck(session))
+                    .withChecks(NotBeforeCheck.forModel(realm), NotBeforeCheck.forModel(clientModel), new TokenManager.TokenRevocationCheck(session))
                     .verify();
         } catch (VerificationException e) {
             if (clientModel == null) {
@@ -262,6 +263,11 @@ public class UserInfoEndpoint {
             throw error.invalidToken("User disabled");
         }
 
+        if (!TokenManager.validateUserNotBefore(session, realm, token, userModel)) {
+            event.error(Errors.INVALID_USER);
+            throw error.invalidToken("User not valid");
+        }
+
         // KEYCLOAK-6771 Certificate Bound Token
         // https://tools.ietf.org/html/draft-ietf-oauth-mtls-08#section-3
         if (OIDCAdvancedConfigWrapper.fromClientModel(clientModel).isUseMtlsHokToken()) {
@@ -281,7 +287,7 @@ public class UserInfoEndpoint {
 
         AccessToken userInfo = new AccessToken();
 
-        userInfo = tokenManager.transformUserInfoAccessToken(session, userInfo, userSession, clientSessionCtx);
+        userInfo = tokenManager.transformUserInfoAccessToken(session, token, userInfo, userSession, clientSessionCtx);
         Map<String, Object> claims = tokenManager.generateUserInfoClaims(userInfo, userModel);
 
         Response.ResponseBuilder responseBuilder;

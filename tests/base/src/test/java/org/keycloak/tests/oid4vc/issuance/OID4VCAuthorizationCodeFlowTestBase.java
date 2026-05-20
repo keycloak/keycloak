@@ -34,7 +34,6 @@ import org.keycloak.testsuite.util.oauth.InvalidTokenRequest;
 import org.keycloak.testsuite.util.oauth.oid4vc.InvalidCredentialRequest;
 import org.keycloak.testsuite.util.oauth.oid4vc.Oid4vcCredentialResponse;
 
-import org.jboss.logging.Logger;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -58,8 +57,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * extend this class and implement the abstract methods to define format-specific expectations.
  */
 public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerTestBase {
-
-    private static final Logger logger = Logger.getLogger(OID4VCAuthorizationCodeFlowTestBase.class);
 
     protected OID4VCTestContext ctx;
 
@@ -95,28 +92,28 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerTe
         try {
             wallet.logout(TEST_USER);
         } catch (Exception e) {
-            logger.warn("Failed to logout user during cleanup", e);
+            log.warn("Failed to logout user during cleanup", e);
         }
 
         // 2. User profile restoration
         try {
             resetTestUser();
         } catch (Exception e) {
-            logger.warn("Failed to reset test user", e);
+            log.warn("Failed to reset test user", e);
         }
 
         // 3. Consent cleanup
         try {
             clearUserConsents();
         } catch (Exception e) {
-            logger.warn("Failed to clear user consents", e);
+            log.warn("Failed to clear user consents", e);
         }
 
         // 4. Event cleanup
         try {
             events.clear();
         } catch (Exception e) {
-            logger.warn("Failed to clear events", e);
+            log.warn("Failed to clear events", e);
         }
 
         // 5. Browser-side cookie cleanup (VERY IMPORTANT to prevent NoSuchElementException: username)
@@ -126,7 +123,7 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerTe
                 driver.driver().navigate().to("about:blank");
             }
         } catch (Exception e) {
-            logger.warn("Failed to cleanup browser state", e);
+            log.warn("Failed to cleanup browser state", e);
         }
     }
 
@@ -563,19 +560,16 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerTe
         CredentialIssuer issuer = wallet.getIssuerMetadata(ctx);
 
         OID4VCAuthorizationDetail authDetail = createAuthorizationDetail(issuer, "unknown-credential-config-id");
-        String code = performAuthorizationCodeLoginWithAuthorizationDetails(authDetail);
+        wallet.authorizationRequest()
+                .scope(ctx.getScope())
+                .authorizationDetails(authDetail)
+                .openLoginForm();
+        AuthorizationEndpointResponse authResponse = oauth.parseLoginResponse();
+        assertEquals("invalid_request", authResponse.getError());
 
-        AccessTokenResponse errorResponse = oauth.accessTokenRequest(code).send();
-
-        assertEquals(400, errorResponse.getStatusCode());
-        assertTrue(
-                ErrorType.INVALID_CREDENTIAL_REQUEST.getValue().equals(errorResponse.getError()) ||
-                ErrorType.UNKNOWN_CREDENTIAL_CONFIGURATION.getValue().equals(errorResponse.getError()) ||
-                Errors.INVALID_AUTHORIZATION_DETAILS.equals(errorResponse.getError()) ||
-                (errorResponse.getErrorDescription() != null &&
-                 errorResponse.getErrorDescription().contains("authorization_details")),
-                "Error response should indicate authorization_details processing error. Actual: "
-                        + errorResponse.getError() + " / " + errorResponse.getErrorDescription());
+        String errorDescription = authResponse.getErrorDescription();
+        assertNotNull(errorDescription, "No error message");
+        assertTrue(errorDescription.contains("Invalid authorization_details: Invalid credential configuration"), errorDescription);
     }
 
     /** Token exchange without redirect_uri must fail. */
@@ -588,8 +582,8 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerTe
         String code = performAuthorizationCodeLoginWithAuthorizationDetails(authDetail);
 
         AccessTokenResponse errorResponse = new InvalidTokenRequest(code, oauth)
-                .withClientId(clientId)
-                .withClientSecret("password")
+                .withClientId(client.getClientId())
+                .withClientSecret(client.getSecret())
                 .send();
 
         // Keycloak may return 400 or 401 depending on validation order
@@ -607,8 +601,8 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerTe
         String code = performAuthorizationCodeLoginWithAuthorizationDetails(authDetail);
 
         AccessTokenResponse errorResponse = new InvalidTokenRequest(code, oauth)
-                .withClientId(clientId)
-                .withClientSecret("password")
+                .withClientId(client.getClientId())
+                .withClientSecret(client.getSecret())
                 .withRedirectUri("http://invalid-redirect-uri")
                 .send();
 
@@ -663,7 +657,7 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerTe
         String code = performAuthorizationCodeLoginWithAuthorizationDetails(authDetail);
 
         AccessTokenResponse errorResponse = oauth.accessTokenRequest(code)
-                .client(clientId, "wrong-secret")
+                .client(client.getClientId(), "wrong-secret")
                 .send();
 
         assertEquals(401, errorResponse.getStatusCode());
@@ -692,26 +686,19 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerTe
                 "Error should be invalid_request or invalid_client. Got error: " + errorResponse.getError());
     }
 
-    /** Malformed authorization_details JSON supplied in the authorization request must fail at the token endpoint. */
     @Test
-    public void testTokenExchangeWithMalformedAuthorizationDetails() throws Exception {
+    public void testTokenExchangeWithMalformedAuthorizationDetails() {
 
-        // Use loginForm directly to inject the malformed JSON as a raw parameter
-        AuthorizationEndpointResponse authResponse = oauth.loginForm()
+        oauth.loginForm()
                 .scope(ctx.getScope())
                 .param(OAuth2Constants.AUTHORIZATION_DETAILS, "invalid-json")
-                .doLogin(TEST_USER, TEST_PASSWORD);
-        String code = authResponse.getCode();
-        assertNotNull(code, "Authorization code should not be null");
+                .open();
+        AuthorizationEndpointResponse authResponse = oauth.parseLoginResponse();
+        assertEquals("invalid_request", authResponse.getError());
 
-        AccessTokenResponse errorResponse = oauth.accessTokenRequest(code).send();
-
-        assertEquals(400, errorResponse.getStatusCode());
-        assertEquals(Errors.INVALID_AUTHORIZATION_DETAILS, errorResponse.getError());
-        assertTrue(
-                errorResponse.getErrorDescription() != null &&
-                errorResponse.getErrorDescription().contains("authorization_details"),
-                "Error description should indicate authorization_details processing error");
+        String errorDescription = authResponse.getErrorDescription();
+        assertNotNull(errorDescription, "No error description");
+        assertTrue(errorDescription.contains("Invalid authorization_details: invalid-json"), errorDescription);
     }
 
     /**
@@ -767,7 +754,7 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerTe
         EventAssertion.assertError(events.poll())
                 .type(EventType.VERIFIABLE_CREDENTIAL_REQUEST_ERROR)
                 .error(ErrorType.UNKNOWN_CREDENTIAL_CONFIGURATION.getValue())
-                .details(Details.REASON, "Credential configuration id 'unknown-credential-config-id' not found in authorization_details. The credential_configuration_id must match the one from the authorization_details in the access token.");
+                .details(Details.REASON, "Credential configuration 'unknown-credential-config-id' not found in authorization_details");
     }
 
     /** A credential request using a credential_identifier from a different flow must fail. */

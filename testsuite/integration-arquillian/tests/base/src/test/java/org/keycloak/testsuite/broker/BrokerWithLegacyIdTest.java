@@ -25,18 +25,18 @@ import org.keycloak.models.IdentityProviderSyncMode;
 import org.keycloak.representations.idm.FederatedIdentityRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.realm.FederatedIdentityBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.broker.oidc.LegacyIdIdentityProviderFactory;
 import org.keycloak.testsuite.util.AccountHelper;
-import org.keycloak.testsuite.util.FederatedIdentityBuilder;
-import org.keycloak.testsuite.util.UserBuilder;
 
 import org.junit.Test;
 
-import static org.keycloak.testsuite.admin.ApiUtil.createUserWithAdminClient;
+import static org.keycloak.testsuite.admin.AdminApiUtil.createUserWithAdminClient;
 import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_OIDC_ALIAS;
 import static org.keycloak.testsuite.broker.oidc.LegacyIdIdentityProvider.LEGACY_ID;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author Vaclav Muzikar <vmuzikar@redhat.com>

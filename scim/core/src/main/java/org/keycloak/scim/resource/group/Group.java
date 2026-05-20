@@ -1,5 +1,6 @@
 package org.keycloak.scim.resource.group;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
@@ -36,5 +37,18 @@ public class Group extends ResourceTypeRepresentation {
 
     public void setMembers(List<Member> members) {
         this.members = members;
+    }
+
+    public void addMember(String userId) {
+        Member member = new Member();
+        member.setValue(userId);
+        addMember(member);
+    }
+
+    public void addMember(Member member) {
+        if (members == null) {
+            members = new ArrayList<>();
+        }
+        members.add(member);
     }
 }

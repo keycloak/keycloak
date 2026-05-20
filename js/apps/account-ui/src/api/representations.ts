@@ -40,11 +40,13 @@ export interface CredentialMetadataRepresentationMessage {
 }
 
 export interface CredentialMetadataRepresentation {
-  infoMessage: CredentialMetadataRepresentationMessage;
-  infoProperties: CredentialMetadataRepresentationMessage[];
-  warningMessageTitle: CredentialMetadataRepresentationMessage;
-  warningMessageDescription: CredentialMetadataRepresentationMessage;
+  infoMessage?: CredentialMetadataRepresentationMessage;
+  infoProperties?: CredentialMetadataRepresentationMessage[];
+  warningMessageTitle?: CredentialMetadataRepresentationMessage;
+  warningMessageDescription?: CredentialMetadataRepresentationMessage;
   credential: CredentialRepresentation;
+  iconLight?: string;
+  iconDark?: string;
 }
 
 export interface DeviceRepresentation {
@@ -210,17 +212,4 @@ export interface Group {
   path: string;
 }
 
-export interface SupportedCredentialConfiguration {
-  id: string;
-  format: string;
-  scope: string;
-}
-export interface CredentialsIssuer {
-  credential_issuer: string;
-  credential_endpoint: string;
-  authorization_servers: string[];
-  credential_configurations_supported: Record<
-    string,
-    SupportedCredentialConfiguration
-  >;
-}
+export type { default as UserVerifiableCredentialRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/userVerifiableCredentialRepresentation";

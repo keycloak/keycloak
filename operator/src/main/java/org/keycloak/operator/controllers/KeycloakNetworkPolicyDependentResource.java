@@ -23,12 +23,12 @@ import java.util.function.Predicate;
 
 import org.keycloak.operator.Constants;
 import org.keycloak.operator.Utils;
-import org.keycloak.operator.crds.v2alpha1.CRDUtils;
-import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
-import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakSpec;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.HttpManagementSpec;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.HttpSpec;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.NetworkPolicySpec;
+import org.keycloak.operator.crds.v2beta1.CRDUtils;
+import org.keycloak.operator.crds.v2beta1.deployment.Keycloak;
+import org.keycloak.operator.crds.v2beta1.deployment.KeycloakSpec;
+import org.keycloak.operator.crds.v2beta1.deployment.spec.HttpManagementSpec;
+import org.keycloak.operator.crds.v2beta1.deployment.spec.HttpSpec;
+import org.keycloak.operator.crds.v2beta1.deployment.spec.NetworkPolicySpec;
 
 import io.fabric8.kubernetes.api.model.IntOrString;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
@@ -38,7 +38,6 @@ import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyPeer;
 import io.javaoperatorsdk.operator.api.config.informer.Informer;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
-import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.Condition;
 import org.jboss.logging.Logger;
@@ -51,7 +50,7 @@ import static org.keycloak.operator.Constants.KEYCLOAK_SERVICE_PROTOCOL;
 @KubernetesDependent(
         informer = @Informer(labelSelector = Constants.DEFAULT_LABELS_AS_STRING)
 )
-public class KeycloakNetworkPolicyDependentResource extends CRUDKubernetesDependentResource<NetworkPolicy, Keycloak> {
+public class KeycloakNetworkPolicyDependentResource extends VersionTolerantCRUDKubernetesDependentResource<NetworkPolicy, Keycloak> {
 
     private static final Logger LOG = Logger.getLogger(KeycloakNetworkPolicyDependentResource.class.getName());
     

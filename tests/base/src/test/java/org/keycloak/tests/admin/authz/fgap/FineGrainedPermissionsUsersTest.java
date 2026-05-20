@@ -15,7 +15,7 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
 import org.keycloak.testframework.annotations.InjectKeycloakUrls;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
-import org.keycloak.testframework.realm.UserConfigBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.server.KeycloakUrls;
 import org.keycloak.testframework.util.ApiUtil;
 
@@ -169,7 +169,7 @@ public class FineGrainedPermissionsUsersTest extends AbstractPermissionTest {
     }
 
     private RealmResource setupTestEnvironmentWithPermissions(boolean grp1ViewPermissions) {
-        UserRepresentation user = UserConfigBuilder.create()
+        UserRepresentation user = UserBuilder.create()
                 .username("test-user")
                 .password("password")
                 .name("a", "b")
@@ -209,7 +209,7 @@ public class FineGrainedPermissionsUsersTest extends AbstractPermissionTest {
         GroupRepresentation grp1 = createGroup("grp1");
         GroupRepresentation grp2 = createGroup("grp2");
         //create test users
-        UserRepresentation user1 = UserConfigBuilder.create()
+        UserRepresentation user1 = UserBuilder.create()
                 .username("user1")
                 .password("password")
                 .name("user1FirstName", "user1LastName")
@@ -219,7 +219,7 @@ public class FineGrainedPermissionsUsersTest extends AbstractPermissionTest {
         String user1Id = ApiUtil.getCreatedId(realm.admin().users().create(user1));
         realm.cleanup().add(r -> r.users().get(user1Id).remove());
 
-        UserRepresentation user2 = UserConfigBuilder.create()
+        UserRepresentation user2 = UserBuilder.create()
                 .username("user2")
                 .password("password")
                 .name("user2FirstName", "user2LastName")
@@ -229,7 +229,7 @@ public class FineGrainedPermissionsUsersTest extends AbstractPermissionTest {
         String user2Id = ApiUtil.getCreatedId(realm.admin().users().create(user2));
         realm.cleanup().add(r -> r.users().get(user2Id).remove());
 
-        UserRepresentation user3 = UserConfigBuilder.create()
+        UserRepresentation user3 = UserBuilder.create()
                 .username("user3")
                 .password("password")
                 .name("user3FirstName", "user3LastName")
@@ -239,7 +239,7 @@ public class FineGrainedPermissionsUsersTest extends AbstractPermissionTest {
         String user3Id = ApiUtil.getCreatedId(realm.admin().users().create(user3));
         realm.cleanup().add(r -> r.users().get(user3Id).remove());
 
-        UserRepresentation user4 = UserConfigBuilder.create()
+        UserRepresentation user4 = UserBuilder.create()
                 .username("user4")
                 .password("password")
                 .name("user4FirstName", "user4LastName")

@@ -51,6 +51,10 @@ public abstract class AbstractScimResourceClient<R extends ResourceTypeRepresent
         return get(id, null, null);
     }
 
+    public R get(String id, List<String> attributes) {
+        return get(id, attributes, null);
+    }
+
     public R get(String id, List<String> attributes, List<String> excludedAttributes) {
         requireNonNull(id, "SCIM resource ID must not be null");
 

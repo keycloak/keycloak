@@ -24,11 +24,12 @@ import java.util.TreeMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.keycloak.operator.crds.v2alpha1.deployment.ValueOrSecret;
+import org.keycloak.operator.crds.v2beta1.deployment.ValueOrSecret;
 
 public final class Constants {
     public static final String CRDS_GROUP = "k8s.keycloak.org";
-    public static final String CRDS_VERSION = "v2alpha1";
+    public static final String CRDS_VERSION = "v2beta1";
+    public static final String CRDS_VERSION_ALPHA = "v2alpha1";
     public static final String SHORT_NAME = "kc";
     public static final String NAME = "keycloak";
     public static final String PLURAL_NAME = "keycloaks";
@@ -36,6 +37,7 @@ public final class Constants {
     public static final String MANAGED_BY_LABEL = "app.kubernetes.io/managed-by";
     public static final String MANAGED_BY_VALUE = "keycloak-operator";
     public static final String COMPONENT_LABEL = "app.kubernetes.io/component";
+    public static final String KEYCLOAK_PAUSE_ANNOTATION = "operator.keycloak.org/pause";
     public static final String KEYCLOAK_MIGRATING_ANNOTATION = "operator.keycloak.org/migrating";
     public static final String KEYCLOAK_RECREATE_UPDATE_ANNOTATION = "operator.keycloak.org/recreate-update";
     public static final String KEYCLOAK_UPDATE_REASON_ANNOTATION = "operator.keycloak.org/update-reason";

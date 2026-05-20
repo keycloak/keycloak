@@ -41,7 +41,6 @@ import org.keycloak.services.clientpolicy.executor.PKCEEnforcerExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.SecureClientAuthenticatorExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.SecureClientUrisExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.SecureSessionEnforceExecutorFactory;
-import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientPoliciesBuilder;
 import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientPolicyBuilder;
 import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientProfileBuilder;
@@ -49,6 +48,7 @@ import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientProfilesBuilder;
 
 import org.hamcrest.Matchers;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 import static org.keycloak.testsuite.AbstractAdminTest.loadJson;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createClientAccessTypeConditionConfig;
@@ -57,8 +57,8 @@ import static org.keycloak.testsuite.util.ClientPoliciesUtil.createPKCEEnforceEx
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createSecureClientAuthenticatorExecutorConfig;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * This test class is for testing loading and updating profiles and policies file of client policies.
@@ -86,7 +86,14 @@ public class ClientPoliciesLoadUpdateTest extends AbstractClientPoliciesTest {
         ClientProfilesRepresentation actualProfilesRep = getProfilesWithGlobals();
 
         // same profiles
-        assertExpectedProfiles(actualProfilesRep, Arrays.asList(FAPI1_BASELINE_PROFILE_NAME, FAPI1_ADVANCED_PROFILE_NAME, FAPI_CIBA_PROFILE_NAME, FAPI2_SECURITY_PROFILE_NAME, FAPI2_MESSAGE_SIGNING_PROFILE_NAME, OAUTH2_1_CONFIDENTIAL_CLIENT_PROFILE_NAME, OAUTH2_1_PUBLIC_CLIENT_PROFILE_NAME, SAML_SECURITY_PROFILE_NAME, FAPI2_DPOP_SECURITY_PROFILE_NAME, FAPI2_DPOP_MESSAGE_SIGNING_PROFILE_NAME), Collections.emptyList());
+        assertExpectedProfiles(actualProfilesRep,
+                Arrays.asList(FAPI1_BASELINE_PROFILE_NAME, FAPI1_ADVANCED_PROFILE_NAME, FAPI_CIBA_PROFILE_NAME,
+                        FAPI2_SECURITY_PROFILE_NAME, FAPI2_MESSAGE_SIGNING_PROFILE_NAME,
+                        OAUTH2_1_CONFIDENTIAL_CLIENT_PROFILE_NAME, OAUTH2_1_PUBLIC_CLIENT_PROFILE_NAME,
+                        SAML_SECURITY_PROFILE_NAME,
+                        FAPI2_DPOP_SECURITY_PROFILE_NAME, FAPI2_DPOP_MESSAGE_SIGNING_PROFILE_NAME),
+
+                Collections.emptyList());
 
         // each profile - fapi-1-baseline
         ClientProfileRepresentation actualProfileRep =  getProfileRepresentation(actualProfilesRep, FAPI1_BASELINE_PROFILE_NAME, true);
@@ -107,7 +114,7 @@ public class ClientPoliciesLoadUpdateTest extends AbstractClientPoliciesTest {
         // No global policies expected
         assertExpectedPolicies(Collections.emptyList(), actualPoliciesRep);
         ClientPolicyRepresentation actualPolicyRep =  getPolicyRepresentation(actualPoliciesRep, "builtin-default-policy");
-        Assert.assertNull(actualPolicyRep);
+        Assertions.assertNull(actualPolicyRep);
     }
 
     @Test
@@ -264,7 +271,7 @@ public class ClientPoliciesLoadUpdateTest extends AbstractClientPoliciesTest {
 
         // Doublecheck global profiles were not changed
         clientProfilesRep = adminClient.realm(REALM_NAME).clientPoliciesProfilesResource().getProfiles(true);
-        Assert.assertEquals(origGlobalProfiles, clientProfilesRep.getGlobalProfiles());
+        Assertions.assertEquals(origGlobalProfiles, clientProfilesRep.getGlobalProfiles());
     }
 
     @Test

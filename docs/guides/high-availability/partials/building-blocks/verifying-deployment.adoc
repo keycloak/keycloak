@@ -1,5 +1,5 @@
 [#${parent}-verify-deployment]
-== Verifying the deployment
+== Verify the deployment
 
 Confirm that the {project_name} deployment is ready.
 

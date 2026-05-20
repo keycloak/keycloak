@@ -32,6 +32,7 @@ import org.keycloak.protocol.oidc.par.endpoints.ParEndpoint;
 
 import org.jboss.logging.Logger;
 
+import static org.keycloak.protocol.oidc.par.endpoints.ParEndpoint.CACHE_KEY_PREFIX;
 import static org.keycloak.protocol.oidc.par.endpoints.ParEndpoint.PAR_CREATED_TIME;
 import static org.keycloak.protocol.oidc.par.endpoints.ParEndpoint.PAR_DPOP_PROOF_JKT;
 
@@ -60,7 +61,7 @@ public class AuthzEndpointParParser extends AuthzEndpointRequestParser {
             logger.warnf(re,"Unable to parse request_uri: %s", requestUri);
             throw new RuntimeException("Unable to parse request_uri");
         }
-        Map<String, String> retrievedRequest = singleUseStore.remove(key);
+        Map<String, String> retrievedRequest = singleUseStore.remove(CACHE_KEY_PREFIX + key);
         if (retrievedRequest == null) {
             throw new RuntimeException("PAR not found. not issued or used multiple times.");
         }

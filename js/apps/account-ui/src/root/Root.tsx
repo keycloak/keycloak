@@ -1,12 +1,15 @@
 import {
   ErrorPage,
+  useAlerts,
   useEnvironment,
   KeycloakContext,
 } from "@keycloak/keycloak-ui-shared";
-import { Page, Spinner } from "@patternfly/react-core";
-import { Suspense, useState } from "react";
+import { AlertVariant, Page, Spinner } from "@patternfly/react-core";
+import { Suspense, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   createBrowserRouter,
+  Navigate,
   Outlet,
   RouteObject,
   RouterProvider,
@@ -45,6 +48,17 @@ function mapRoutes(
     .flat();
 }
 
+function CatchAllRedirect() {
+  const { t } = useTranslation();
+  const { addAlert } = useAlerts();
+
+  useEffect(() => {
+    addAlert(t("pageNotFound"), AlertVariant.warning);
+  }, [addAlert, t]);
+
+  return <Navigate to="." replace />;
+}
+
 export const Root = () => {
   const context = useEnvironment<AccountEnvironment>();
   const [content, setContent] = useState<RouteObject[]>();
@@ -65,7 +79,10 @@ export const Root = () => {
             </Page>
           ),
           errorElement: <ErrorPage />,
-          children: mapRoutes(context, content),
+          children: [
+            ...mapRoutes(context, content),
+            { path: "*", element: <CatchAllRedirect /> },
+          ],
         },
       ]);
     },

@@ -4,7 +4,8 @@ import java.util.List;
 
 import org.keycloak.admin.client.resource.UsersResource;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.testsuite.Assert;
+
+import org.junit.jupiter.api.Assertions;
 
 import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
 
@@ -20,7 +21,7 @@ public class KcOidcBrokerAcrParameterTest extends AbstractBrokerTest {
 
     @Override
     protected void loginUser() {
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
 
         driver.navigate().to(driver.getCurrentUrl() + "&" + ACR_VALUES + "=" + ACR_3);
@@ -30,11 +31,11 @@ public class KcOidcBrokerAcrParameterTest extends AbstractBrokerTest {
 
         waitForPage(driver, "sign in to", true);
 
-        Assert.assertTrue("Driver should be on the provider realm page right now",
-                driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"));
+        Assertions.assertTrue(driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"),
+                "Driver should be on the provider realm page right now");
 
-        Assert.assertTrue(ACR_VALUES + "=" + ACR_3 + " should be part of the url",
-                driver.getCurrentUrl().contains(ACR_VALUES + "=" + ACR_3));
+        Assertions.assertTrue(driver.getCurrentUrl().contains(ACR_VALUES + "=" + ACR_3),
+                ACR_VALUES + "=" + ACR_3 + " should be part of the url");
 
         log.debug("Logging in");
         loginPage.login(bc.getUserLogin(), bc.getUserPassword());
@@ -42,8 +43,8 @@ public class KcOidcBrokerAcrParameterTest extends AbstractBrokerTest {
         waitForPage(driver, "update account information", false);
 
         updateAccountInformationPage.assertCurrent();
-        Assert.assertTrue("We must be on correct realm right now",
-                driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/"));
+        Assertions.assertTrue(driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/"),
+                "We must be on correct realm right now");
 
 
         log.debug("Updating info on updateAccount page");
@@ -52,7 +53,7 @@ public class KcOidcBrokerAcrParameterTest extends AbstractBrokerTest {
         UsersResource consumerUsers = adminClient.realm(bc.consumerRealmName()).users();
 
         int userCount = consumerUsers.count();
-        Assert.assertTrue("There must be at least one user", userCount > 0);
+        Assertions.assertTrue(userCount > 0, "There must be at least one user");
 
         List<UserRepresentation> users = consumerUsers.search("", 0, userCount);
 
@@ -64,7 +65,7 @@ public class KcOidcBrokerAcrParameterTest extends AbstractBrokerTest {
             }
         }
 
-        Assert.assertTrue("There must be user " + bc.getUserLogin() + " in realm " + bc.consumerRealmName(),
-                isUserFound);
+        Assertions.assertTrue(isUserFound,
+                "There must be user " + bc.getUserLogin() + " in realm " + bc.consumerRealmName());
     }
 }

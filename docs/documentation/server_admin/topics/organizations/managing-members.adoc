@@ -199,6 +199,7 @@ that user is managed or unmanaged member, respectively.
 
 For more details, see <<_managed_unmanaged_members_,Managed and unmanaged members>>.
 
+[[viewing-organization-group-memberships]]
 == Viewing organization group memberships
 
 You can view which organization groups a member belongs to directly from the member's context menu.

@@ -154,12 +154,7 @@ public class LDAPUtils {
             ldapQuery.addReturningReadOnlyLdapAttribute(kerberosPrincipalAttr);
         }
 
-        if (config.isActiveDirectory()) {
-            ldapQuery.addReturningLdapAttribute(LDAPConstants.PWD_LAST_SET);
-        } else {
-            // https://datatracker.ietf.org/doc/html/draft-behera-ldap-password-policy
-            ldapQuery.addReturningLdapAttribute(LDAPConstants.PWD_CHANGED_TIME);
-        }
+        ldapQuery.addReturningLdapAttribute(ldapProvider.getLdapIdentityStore().getPasswordModificationTimeAttributeName());
 
         return ldapQuery;
     }

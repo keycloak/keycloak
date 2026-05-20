@@ -76,6 +76,7 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.ScopeContainerModel;
 import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.UserVerifiableCredentialModel;
 import org.keycloak.models.WebAuthnPolicy;
 import org.keycloak.models.WebAuthnPolicyPasswordlessDefaults;
 import org.keycloak.models.WebAuthnPolicyTwoFactorDefaults;
@@ -119,6 +120,7 @@ import org.keycloak.representations.idm.UserConsentRepresentation;
 import org.keycloak.representations.idm.UserFederationMapperRepresentation;
 import org.keycloak.representations.idm.UserFederationProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.representations.idm.oid4vc.UserVerifiableCredentialRepresentation;
 import org.keycloak.storage.ExportImportManager;
 import org.keycloak.storage.ImportRealmFromRepresentationEvent;
 import org.keycloak.storage.PartialImportRealmFromRepresentationEvent;
@@ -1017,6 +1019,13 @@ public class DefaultExportImportManager implements ExportImportManager {
             session.users().setNotBeforeForUser(newRealm, user, userRep.getNotBefore());
         }
 
+        if (userRep.getVerifiableCredentials() != null) {
+            for (UserVerifiableCredentialRepresentation credentialRep : userRep.getVerifiableCredentials()) {
+                UserVerifiableCredentialModel credentialModel = RepresentationToModel.toModel(credentialRep);
+                session.users().addVerifiableCredential(user.getId(), credentialModel);
+            }
+        }
+
         if (userRep.getServiceAccountClientId() != null) {
             String clientId = userRep.getServiceAccountClientId();
             ClientModel client = newRealm.getClientByClientId(clientId);
@@ -1426,6 +1435,12 @@ public class DefaultExportImportManager implements ExportImportManager {
             webAuthnPolicyPasswordlessPasskeysEnabled = defaultConfig.isPasskeysEnabled();
         }
         webAuthnPolicy.setPasskeysEnabled(webAuthnPolicyPasswordlessPasskeysEnabled);
+
+        String webAuthnPolicyPasswordlessMediation = rep.getWebAuthnPolicyPasswordlessMediation();
+        if (webAuthnPolicyPasswordlessMediation == null || webAuthnPolicyPasswordlessMediation.isEmpty()) {
+            webAuthnPolicyPasswordlessMediation = defaultConfig.getMediation();
+        }
+        webAuthnPolicy.setMediation(webAuthnPolicyPasswordlessMediation);
 
         return webAuthnPolicy;
     }

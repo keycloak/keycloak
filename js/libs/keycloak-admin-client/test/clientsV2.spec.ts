@@ -74,15 +74,10 @@ describe("Clients V2 API", () => {
   it("should patch a client", async () => {
     const patchedDisplayName = "Patched Display Name";
 
-    // Note: Kiota's patch expects an ArrayBuffer for merge-patch+json
-    const patchBody = JSON.stringify({ displayName: patchedDisplayName });
-    const encoder = new TextEncoder();
-    const patchBuffer = encoder.encode(patchBody).buffer;
-
     const patchedClient = await kcAdminClient.clients
       .v2()
       .byId(currentClientId)
-      .patch(patchBuffer);
+      .patch({ additionalData: { displayName: patchedDisplayName } });
 
     expect((patchedClient as OIDCClientRepresentation).displayName).to.equal(
       patchedDisplayName,

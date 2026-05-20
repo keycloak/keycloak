@@ -305,7 +305,9 @@ export const AdvancedSettings = ({
                   field.onChange(value.toString());
                   // if field is checked, set sync mode to import
                   if (value) {
-                    setValue("config.syncMode", "IMPORT");
+                    setValue("config.syncMode", "IMPORT", {
+                      shouldDirty: true,
+                    });
                   }
                 }}
               />

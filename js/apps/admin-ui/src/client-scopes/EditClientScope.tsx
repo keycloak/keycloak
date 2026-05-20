@@ -288,7 +288,7 @@ export default function EditClientScope() {
               save={assignRoles}
             />
           </Tab>
-          {realmRepresentation?.adminEventsEnabled &&
+          {realmRepresentation.adminEventsEnabled &&
             hasAccess("view-events") && (
               <Tab
                 data-testid="admin-events-tab"

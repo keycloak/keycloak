@@ -115,6 +115,12 @@ public class OIDCConfigurationRepresentation {
     @JsonProperty("token_endpoint_auth_signing_alg_values_supported")
     private List<String> tokenEndpointAuthSigningAlgValuesSupported;
 
+    @JsonProperty("client_attestation_signing_alg_values_supported")
+    private List<String> clientAttestationSigningAlgValuesSupported;
+
+    @JsonProperty("client_attestation_pop_signing_alg_values_supported")
+    private List<String> clientAttestationPopSigningAlgValuesSupported;
+
     @JsonProperty("introspection_endpoint_auth_methods_supported")
     private List<String> introspectionEndpointAuthMethodsSupported;
 
@@ -408,6 +414,22 @@ public class OIDCConfigurationRepresentation {
 
     public void setTokenEndpointAuthSigningAlgValuesSupported(List<String> tokenEndpointAuthSigningAlgValuesSupported) {
         this.tokenEndpointAuthSigningAlgValuesSupported = tokenEndpointAuthSigningAlgValuesSupported;
+    }
+
+    public List<String> getClientAttestationSigningAlgValuesSupported() {
+        return clientAttestationSigningAlgValuesSupported;
+    }
+
+    public void setClientAttestationSigningAlgValuesSupported(List<String> clientAttestationSigningAlgValuesSupported) {
+        this.clientAttestationSigningAlgValuesSupported = clientAttestationSigningAlgValuesSupported;
+    }
+
+    public List<String> getClientAttestationPopSigningAlgValuesSupported() {
+        return clientAttestationPopSigningAlgValuesSupported;
+    }
+
+    public void setClientAttestationPopSigningAlgValuesSupported(List<String> clientAttestationPopSigningAlgValuesSupported) {
+        this.clientAttestationPopSigningAlgValuesSupported = clientAttestationPopSigningAlgValuesSupported;
     }
 
     public List<String> getIntrospectionEndpointAuthMethodsSupported() {

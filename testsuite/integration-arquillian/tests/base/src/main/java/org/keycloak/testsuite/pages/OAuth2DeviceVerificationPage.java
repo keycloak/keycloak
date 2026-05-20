@@ -16,7 +16,7 @@
  */
 package org.keycloak.testsuite.pages;
 
-import org.junit.Assert;
+import org.junit.jupiter.api.Assertions;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
@@ -27,11 +27,12 @@ import org.openqa.selenium.support.FindBy;
 public class OAuth2DeviceVerificationPage extends LanguageComboboxAwarePage {
 
     private static final String CONSENT_DENIED_MESSAGE = "Consent denied for connecting the device.";
-    
-    @FindBy(id = "device-user-code")
+    public static final String DEVICE_USER_CODE = "device_user_code";
+
+    @FindBy(name = DEVICE_USER_CODE)
     private WebElement userCodeInput;
 
-    @FindBy(css = "input[type=\"submit\"]")
+    @FindBy(css = "button[type=\"submit\"]")
     private WebElement submitButton;
 
     @FindBy(className = "pf-v5-c-alert")
@@ -53,7 +54,7 @@ public class OAuth2DeviceVerificationPage extends LanguageComboboxAwarePage {
     public boolean isCurrent() {
         if (driver.getTitle().startsWith("Sign in to ")) {
             try {
-                driver.findElement(By.id("device-user-code"));
+                driver.findElement(By.id(DEVICE_USER_CODE));
                 return true;
             } catch (Throwable t) {
             }
@@ -62,23 +63,23 @@ public class OAuth2DeviceVerificationPage extends LanguageComboboxAwarePage {
     }
 
     public void assertApprovedPage() {
-        Assert.assertTrue("Expected device approved page but was " + driver.getTitle() + " (" + driver.getCurrentUrl() + ")",
-                isApprovedPage());
+        Assertions.assertTrue(isApprovedPage(),
+                "Expected device approved page but was " + driver.getTitle() + " (" + driver.getCurrentUrl() + ")");
     }
 
     public void assertDeniedPage() {
-        Assert.assertTrue("Expected device denied page but was " + driver.getTitle() + " (" + driver.getCurrentUrl() + ")",
-                isDeniedPage());
+        Assertions.assertTrue(isDeniedPage(),
+                "Expected device denied page but was " + driver.getTitle() + " (" + driver.getCurrentUrl() + ")");
     }
 
     public void assertInvalidUserCodePage() {
-        Assert.assertTrue("Expected invalid user code page but was " + driver.getTitle() + " (" + driver.getCurrentUrl() + ")",
-            isInvalidUserCodePage());
+        Assertions.assertTrue(isInvalidUserCodePage(),
+            "Expected invalid user code page but was " + driver.getTitle() + " (" + driver.getCurrentUrl() + ")");
     }
 
     public void assertExpiredUserCodePage() {
-        Assert.assertTrue("Expected expired user code page but was " + driver.getTitle() + " (" + driver.getCurrentUrl() + ")",
-                isExpiredUserCodePage());
+        Assertions.assertTrue(isExpiredUserCodePage(),
+                "Expected expired user code page but was " + driver.getTitle() + " (" + driver.getCurrentUrl() + ")");
     }
 
     private boolean isApprovedPage() {
@@ -106,7 +107,7 @@ public class OAuth2DeviceVerificationPage extends LanguageComboboxAwarePage {
     private boolean isInvalidUserCodePage() {
         if (driver.getTitle().startsWith("Sign in to ")) {
             try {
-                driver.findElement(By.id("device-user-code"));
+                driver.findElement(By.id(DEVICE_USER_CODE));
                 return driver.findElement(By.id("kc-page-title")).getText().equals("Device Login")
                         && driver.findElement(By.className("pf-m-danger")).getText().equals("Invalid code, please try again.");
             } catch (Throwable t) {
@@ -118,7 +119,7 @@ public class OAuth2DeviceVerificationPage extends LanguageComboboxAwarePage {
     private boolean isExpiredUserCodePage() {
         if (driver.getTitle().startsWith("Sign in to ")) {
             try {
-                driver.findElement(By.id("device-user-code"));
+                driver.findElement(By.id(DEVICE_USER_CODE));
                 return driver.findElement(By.id("kc-page-title")).getText().equals("Device Login")
                         && driver.findElement(By.className("pf-m-danger")).getText().equals("The code has expired. Please go back to your device and try connecting again.");
             } catch (Throwable t) {

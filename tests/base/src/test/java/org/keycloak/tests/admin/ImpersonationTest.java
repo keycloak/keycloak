@@ -61,13 +61,14 @@ import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.TestApp;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectTestApp;
-import org.keycloak.testframework.realm.ClientConfigBuilder;
+import org.keycloak.testframework.realm.ClientBuilder;
+import org.keycloak.testframework.realm.CredentialBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.ManagedUser;
+import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
-import org.keycloak.testframework.realm.RealmConfigBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.realm.UserConfig;
-import org.keycloak.testframework.realm.UserConfigBuilder;
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testframework.server.KeycloakServerConfig;
@@ -79,7 +80,6 @@ import org.keycloak.testframework.ui.page.LoginPage;
 import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.tests.utils.admin.AdminApiUtil;
-import org.keycloak.testsuite.util.CredentialBuilder;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpUriRequest;
@@ -147,12 +147,12 @@ public class ImpersonationTest {
     @Test
     public void testImpersonateByMasterImpersonator() {
         String userId;
-        try (Response response = masterRealm.admin().users().create(UserConfigBuilder.create().username("master-impersonator").build())) {
+        try (Response response = masterRealm.admin().users().create(UserBuilder.create().username("master-impersonator").build())) {
             userId = ApiUtil.getCreatedId(response);
         }
 
         UserResource user = masterRealm.admin().users().get(userId);
-        user.resetPassword(CredentialBuilder.create().password("password").build());
+        user.resetPassword(CredentialBuilder.password("password").build());
 
         ClientResource testRealmClient = AdminApiUtil.findClientByClientId(masterRealm.admin(), managedRealm.getName() + "-realm");
 
@@ -200,7 +200,7 @@ public class ImpersonationTest {
     @Test
     public void testImpersonateByMastertBadImpersonator() {
         String userId;
-        try (Response response = masterRealm.admin().users().create(UserConfigBuilder.create().username("master-bad-impersonator").build())) {
+        try (Response response = masterRealm.admin().users().create(UserBuilder.create().username("master-bad-impersonator").build())) {
             userId = ApiUtil.getCreatedId(response);
         }
         masterRealm.admin().users().get(userId).resetPassword(CredentialBuilder.create().password("password").build());
@@ -234,7 +234,7 @@ public class ImpersonationTest {
     @Test
     public void testImpersonationBySameRealmServiceAccount() throws Exception {
         // Create test client service account
-        ClientRepresentation clientApp = ClientConfigBuilder.create()
+        ClientRepresentation clientApp = ClientBuilder.create()
                 .clientId("service-account-cl")
                 .secret("password")
                 .serviceAccountsEnabled(true)
@@ -261,7 +261,7 @@ public class ImpersonationTest {
     @Test
     public void testImpersonationByMasterRealmServiceAccount() throws Exception {
         // Create test client service account
-        ClientRepresentation clientApp = ClientConfigBuilder.create()
+        ClientRepresentation clientApp = ClientBuilder.create()
                 .clientId("service-account-cl")
                 .secret("password")
                 .serviceAccountsEnabled(true)
@@ -503,23 +503,23 @@ public class ImpersonationTest {
     private static class ImpersonationTestRealmConfig implements RealmConfig {
 
         @Override
-        public RealmConfigBuilder configure(RealmConfigBuilder config) {
-            config.addClient("myclient").clientId("myclient")
-                    .publicClient(true).directAccessGrantsEnabled(true);
+        public RealmBuilder configure(RealmBuilder config) {
+            config.clients(ClientBuilder.create("myclient").clientId("myclient")
+                    .publicClient(true).directAccessGrantsEnabled(true));
 
-            config.addUser("realm-admin")
+            config.users(UserBuilder.create("realm-admin")
                     .password("password").name("My", "Test Admin")
                     .email("my-test-admin@email.org").emailVerified(true)
-                    .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.REALM_ADMIN);
-            config.addUser("impersonator")
+                    .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.REALM_ADMIN));
+            config.users(UserBuilder.create("impersonator")
                     .password("password").name("My", "Test Impersonator")
                     .email("my-test-impersonator@email.org").emailVerified(true)
                     .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.IMPERSONATION)
-                    .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.VIEW_USERS);
-            config.addUser("bad-impersonator")
+                    .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.VIEW_USERS));
+            config.users(UserBuilder.create("bad-impersonator")
                     .password("password").name("My", "Test Bad Impersonator")
                     .email("my-test-bad-impersonator@email.org").emailVerified(true)
-                    .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.MANAGE_USERS);
+                    .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.MANAGE_USERS));
 
             return config;
         }
@@ -528,7 +528,7 @@ public class ImpersonationTest {
     private static class TestUserConfig implements UserConfig {
 
         @Override
-        public UserConfigBuilder configure(UserConfigBuilder user) {
+        public UserBuilder configure(UserBuilder user) {
             user.username("test-user");
             user.password("password");
             user.name("My", "Test");

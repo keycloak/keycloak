@@ -102,6 +102,10 @@ public class CustomCreateIndexChange extends CreateIndexChange {
         return super.generateStatements(database);
     }
 
+    public SqlStatement[] generateOriginalStatement(Database database) {
+        return super.generateStatements(database);
+    }
+
     private Long computeEntriesInTable(Database database) throws DatabaseException {
         if (entriesInTable != null) {
             return entriesInTable;

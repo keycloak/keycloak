@@ -30,17 +30,17 @@ import org.keycloak.storage.ldap.idm.model.LDAPObject;
 import org.keycloak.storage.ldap.mappers.HardcodedLDAPAttributeMapper;
 import org.keycloak.storage.ldap.mappers.HardcodedLDAPAttributeMapperFactory;
 import org.keycloak.storage.ldap.mappers.LDAPStorageMapper;
-import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.LDAPRule;
 import org.keycloak.testsuite.util.LDAPTestConfiguration;
 import org.keycloak.testsuite.util.LDAPTestUtils;
 
-import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 import org.junit.runners.MethodSorters;
 
 /**
@@ -98,42 +98,42 @@ public class LDAPPasswordModifyExtensionTest extends AbstractLDAPTest  {
 
     @Test
     public void ldapPasswordChangeWithAccountConsole() throws Exception {
-        Assert.assertTrue(AccountHelper.updatePassword(testRealm(), "johnkeycloak", "New-password1"));
+        Assertions.assertTrue(AccountHelper.updatePassword(managedRealm.admin(), "johnkeycloak", "New-password1"));
 
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("johnkeycloak", "Bad-password1");
-        Assert.assertEquals("Invalid username or password.", loginPage.getInputError());
+        Assertions.assertEquals("Invalid username or password.", loginPage.getInputError());
 
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("johnkeycloak", "New-password1");
-        Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
         // Change password back to previous value
-        Assert.assertTrue(AccountHelper.updatePassword(testRealm(), "johnkeycloak", "Password1"));
+        Assertions.assertTrue(AccountHelper.updatePassword(managedRealm.admin(), "johnkeycloak", "Password1"));
     }
 
     @Test
     public void registerUserLdapSuccess() {
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.clickRegister();
         registerPage.assertCurrent();
 
         registerPage.register("firstName", "lastName", "email2@check.cz", "registerUserSuccess2", "Password1", "Password1");
-        Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-        UserRepresentation user = ApiUtil.findUserByUsername(testRealm(),"registerUserSuccess2");
-        Assert.assertNotNull(user);
+        UserRepresentation user = AdminApiUtil.findUserByUsername(managedRealm.admin(),"registerUserSuccess2");
+        Assertions.assertNotNull(user);
         assertFederatedUserLink(user);
-        Assert.assertEquals("registerusersuccess2", user.getUsername());
-        Assert.assertEquals("firstName", user.getFirstName());
-        Assert.assertEquals("lastName", user.getLastName());
-        Assert.assertTrue(user.isEnabled());
+        Assertions.assertEquals("registerusersuccess2", user.getUsername());
+        Assertions.assertEquals("firstName", user.getFirstName());
+        Assertions.assertEquals("lastName", user.getLastName());
+        Assertions.assertTrue(user.isEnabled());
     }
 
 
     protected void assertFederatedUserLink(UserRepresentation user) {
-        Assert.assertTrue(StorageId.isLocalStorage(user.getId()));
-        Assert.assertNotNull(user.getFederationLink());
-        Assert.assertEquals(user.getFederationLink(), ldapModelId);
+        Assertions.assertTrue(StorageId.isLocalStorage(user.getId()));
+        Assertions.assertNotNull(user.getFederationLink());
+        Assertions.assertEquals(user.getFederationLink(), ldapModelId);
     }
 }

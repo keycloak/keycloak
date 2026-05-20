@@ -23,22 +23,22 @@ import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.models.IdentityProviderSyncMode;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.testsuite.Assert;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.util.AccountHelper;
-import org.keycloak.testsuite.util.UserBuilder;
 
 import org.junit.Ignore;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
-import static org.keycloak.testsuite.admin.ApiUtil.createUserWithAdminClient;
-import static org.keycloak.testsuite.admin.ApiUtil.resetUserPassword;
+import static org.keycloak.testsuite.admin.AdminApiUtil.createUserWithAdminClient;
+import static org.keycloak.testsuite.admin.AdminApiUtil.resetUserPassword;
 import static org.keycloak.testsuite.broker.BrokerRunOnServerUtil.configurePostBrokerLoginWithOTP;
 import static org.keycloak.testsuite.broker.BrokerTestConstants.CLIENT_ID;
 import static org.keycloak.testsuite.broker.BrokerTestConstants.USER_EMAIL;
 import static org.keycloak.testsuite.broker.BrokerTestTools.getProviderRoot;
 import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * This class tests the propagation of the {@code prompt=none} request parameter to a default IDP (if one has been specified)
@@ -71,7 +71,7 @@ public class KcOidcBrokerPromptNoneRedirectTest extends AbstractInitializedBaseB
         /* now send an auth request to the consumer realm including both the kc_idp_hint (to identify the default provider) and prompt=none.
            The presence of the default provider should cause the request with prompt=none to be propagated to the idp instead of resulting
            in a login required error because the user is not yet authenticated in the consumer realm. */
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
 
         waitForPage(driver, "sign in to", true);
@@ -80,7 +80,7 @@ public class KcOidcBrokerPromptNoneRedirectTest extends AbstractInitializedBaseB
 
         /* no need to log in again, the idp should have been able to identify that the user is already logged in and the authenticated user should
            have been established in the consumer realm. Lastly, user must be redirected to the account app as expected. */
-        Assert.assertTrue(driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/account"));
+        Assertions.assertTrue(driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/account"));
 
         /* let's try logging out from the consumer realm and then send an auth request with only prompt=none. The absence of a default idp
            should result in a login required error because the user is not authenticated in the consumer realm and the request won't be propagated
@@ -88,12 +88,12 @@ public class KcOidcBrokerPromptNoneRedirectTest extends AbstractInitializedBaseB
         AccountHelper.logout(adminClient.realm(bc.consumerRealmName()), bc.getUserLogin());
         AccountHelper.logout(adminClient.realm(bc.providerRealmName()), bc.getUserLogin());
 
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
         waitForPage(driver, "sign in to", true);
         url = driver.getCurrentUrl() + "&prompt=none";
         driver.navigate().to(url);
-        Assert.assertTrue(driver.getCurrentUrl().contains(bc.providerRealmName() + "/account/?error=login_required"));
+        Assertions.assertTrue(driver.getCurrentUrl().contains(bc.providerRealmName() + "/account/?error=login_required"));
     }
 
     /**
@@ -107,12 +107,12 @@ public class KcOidcBrokerPromptNoneRedirectTest extends AbstractInitializedBaseB
         /* try sending an auth request to the consumer realm with prompt=none. As we have no user authenticated in both
            the consumer realm and the IDP, the IDP should return an error=login_required to the broker and the broker must
            in turn return the same error to the client. */
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
         waitForPage(driver, "sign in to", true);
         String url = driver.getCurrentUrl() + "&prompt=none&kc_idp_hint=" + bc.getIDPAlias();
         driver.navigate().to(url);
-        Assert.assertTrue(driver.getCurrentUrl().contains("/app/auth?error=login_required"));
+        Assertions.assertTrue(driver.getCurrentUrl().contains("/app/auth?error=login_required"));
     }
 
     /**
@@ -210,29 +210,29 @@ public class KcOidcBrokerPromptNoneRedirectTest extends AbstractInitializedBaseB
         authenticateDirectlyInIDP();
 
         /* send an auth request to the consumer realm with prompt=none and a default provider. */
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
 
         waitForPage(driver, "sign in to", true);
         String url = driver.getCurrentUrl() + "&kc_idp_hint=" + bc.getIDPAlias() + "&prompt=none";
         driver.navigate().to(url);
-        Assert.assertTrue(driver.getCurrentUrl().contains(bc.providerRealmName() + "/account/?error=interaction_required"));
+        Assertions.assertTrue(driver.getCurrentUrl().contains(bc.providerRealmName() + "/account/?error=interaction_required"));
     }
 
     /**
      * Authenticates the broker user directly in the IDP to establish a valid authenticated session there.
      */
     protected void authenticateDirectlyInIDP() {
-        oauth.clientId("account");
+        oauth.client("account");
         oauth.redirectUri(getAccountUrl(getProviderRoot(), bc.providerRealmName()));
         loginPage.open(bc.providerRealmName());
 
         waitForPage(driver, "sign in to", true);
-        Assert.assertTrue("Driver should be on the provider realm page right now",
-                driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"));
+        Assertions.assertTrue(driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"),
+                "Driver should be on the provider realm page right now");
         loginPage.login(bc.getUserLogin(), bc.getUserPassword());
 
-        Assert.assertTrue(
+        Assertions.assertTrue(
                 driver.getCurrentUrl().contains(
                         "/auth/realms/" + bc.providerRealmName() + "/"));
     }

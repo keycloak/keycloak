@@ -38,6 +38,7 @@ import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelException;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
@@ -55,6 +56,7 @@ import static java.util.Optional.ofNullable;
 import static org.keycloak.common.util.CollectionUtil.collectionEquals;
 import static org.keycloak.models.jpa.PaginationUtils.paginateQuery;
 import static org.keycloak.utils.StreamsUtil.closing;
+import static org.keycloak.utils.StringUtil.isBlank;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -90,6 +92,9 @@ public class GroupAdapter implements GroupModel , JpaModel<GroupEntity> {
 
     @Override
     public void setName(String name) {
+        if (isBlank(name)) {
+            throw new ModelException("Group name cannot be null or empty");
+        }
         group.setName(name);
         fireGroupUpdatedEvent();
     }
@@ -340,6 +345,17 @@ public class GroupAdapter implements GroupModel , JpaModel<GroupEntity> {
         if (RoleUtils.hasRole(getRoleMappingsStream(), role)) return true;
         GroupModel parent = getParent();
         return parent != null && parent.hasRole(role);
+    }
+
+    @Override
+    public boolean hasDirectRole(RoleModel role) {
+        TypedQuery<GroupRoleMappingEntity> query = getGroupRoleMappingEntityTypedQuery(role);
+        GroupRoleMappingEntity membership = query.getSingleResultOrNull();
+        // Avoid keeping it in the persistence context, as the group might be detached for example in a bulk delete
+        if (membership != null) {
+            em.detach(membership);
+        }
+        return membership != null;
     }
 
     protected TypedQuery<GroupRoleMappingEntity> getGroupRoleMappingEntityTypedQuery(RoleModel role) {

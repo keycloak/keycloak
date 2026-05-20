@@ -49,11 +49,10 @@ import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.storage.ldap.idm.model.LDAPObject;
 import org.keycloak.storage.ldap.mappers.UserAttributeLDAPStorageMapper;
 import org.keycloak.storage.ldap.mappers.UserAttributeLDAPStorageMapperFactory;
-import org.keycloak.testsuite.Assert;
+import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testsuite.broker.KcSamlBrokerConfiguration;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.updaters.Creator;
-import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.LDAPRule;
 import org.keycloak.testsuite.util.LDAPTestUtils;
 import org.keycloak.testsuite.util.Matchers;
@@ -65,6 +64,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_SAML_ALIAS;
 
@@ -127,7 +127,7 @@ public class LDAPSamlIdPInitiatedVaryingLetterCaseTest extends AbstractLDAPTest 
             LDAPTestUtils.updateLDAPPassword(ctx.getLdapProvider(), user, USER_PASSWORD);
         });
 
-        ComponentRepresentation ldap = testRealm().components().query(null, "org.keycloak.storage.UserStorageProvider").get(0);
+        ComponentRepresentation ldap = managedRealm.admin().components().query(null, "org.keycloak.storage.UserStorageProvider").get(0);
         ComponentRepresentation ldapMapper = new ComponentRepresentation();
         ldapMapper.setName("uid-to-user-attr-mapper");
         ldapMapper.setProviderId(UserAttributeLDAPStorageMapperFactory.PROVIDER_ID);
@@ -139,7 +139,7 @@ public class LDAPSamlIdPInitiatedVaryingLetterCaseTest extends AbstractLDAPTest 
         config.add(UserAttributeLDAPStorageMapper.READ_ONLY, "true");
         config.add(UserAttributeLDAPStorageMapper.IS_MANDATORY_IN_LDAP, "true");
         ldapMapper.setConfig(config);
-        testRealm().components().add(ldapMapper);
+        managedRealm.admin().components().add(ldapMapper);
     }
 
     @Before
@@ -152,22 +152,22 @@ public class LDAPSamlIdPInitiatedVaryingLetterCaseTest extends AbstractLDAPTest 
         newFlow.setBuiltIn(false);
         newFlow.setTopLevel(true);
 
-        Creator.Flow amr = Creator.create(testRealm(), newFlow);
+        Creator.Flow amr = Creator.create(managedRealm.admin(), newFlow);
 
         AuthenticationExecutionInfoRepresentation exCreateUser = amr.addExecution(IdpCreateUserIfUniqueAuthenticatorFactory.PROVIDER_ID);
         exCreateUser.setRequirement(Requirement.ALTERNATIVE.name());
-        testRealm().flows().updateExecutions(FLOW_AUTO_LINK, exCreateUser);
+        managedRealm.admin().flows().updateExecutions(FLOW_AUTO_LINK, exCreateUser);
 
         AuthenticationExecutionInfoRepresentation exAutoLink = amr.addExecution(IdpAutoLinkAuthenticatorFactory.PROVIDER_ID);
         exAutoLink.setRequirement(Requirement.ALTERNATIVE.name());
-        testRealm().flows().updateExecutions(FLOW_AUTO_LINK, exAutoLink);
+        managedRealm.admin().flows().updateExecutions(FLOW_AUTO_LINK, exAutoLink);
         getCleanup().addCleanup(amr);
 
         // Configure identity provider
         IdentityProviderRepresentation idp = KcSamlBrokerConfiguration.INSTANCE.setUpIdentityProvider();
         idp.getConfig().put(SAMLIdentityProviderConfig.NAME_ID_POLICY_FORMAT, JBossSAMLURIConstants.NAMEID_FORMAT_UNSPECIFIED.get());
         idp.setFirstBrokerLoginFlowAlias(FLOW_AUTO_LINK);
-        final Creator<IdentityProviderResource> idpCreator = Creator.create(testRealm(), idp);
+        final Creator<IdentityProviderResource> idpCreator = Creator.create(managedRealm.admin(), idp);
         
         IdentityProviderMapperRepresentation samlNameIdMapper = new IdentityProviderMapperRepresentation();
         samlNameIdMapper.setName("username-nameid-mapper");
@@ -186,7 +186,7 @@ public class LDAPSamlIdPInitiatedVaryingLetterCaseTest extends AbstractLDAPTest 
 
     @Before
     public void setupClients() {
-        getCleanup().addCleanup(Creator.create(testRealm(), ClientBuilder.create()
+        getCleanup().addCleanup(Creator.create(managedRealm.admin(), ClientBuilder.create()
           .protocol(SamlProtocol.LOGIN_PROTOCOL)
           .clientId(EXT_SSO_URL)
           .baseUrl(EXT_SSO_URL)
@@ -196,7 +196,7 @@ public class LDAPSamlIdPInitiatedVaryingLetterCaseTest extends AbstractLDAPTest 
           .build())
         );
 
-        getCleanup().addCleanup(Creator.create(testRealm(), ClientBuilder.create()
+        getCleanup().addCleanup(Creator.create(managedRealm.admin(), ClientBuilder.create()
           .clientId(MY_APP)
           .protocol(OIDCLoginProtocol.LOGIN_PROTOCOL)
           .baseUrl(oauth.APP_AUTH_ROOT)
@@ -206,16 +206,16 @@ public class LDAPSamlIdPInitiatedVaryingLetterCaseTest extends AbstractLDAPTest 
 
     @After
     public void cleanupUsers() {
-        testRealm().userStorage().removeImportedUsers(ldapModelId);
+        managedRealm.admin().userStorage().removeImportedUsers(ldapModelId);
     }
 
     @Test
     public void loginLDAPTest() {
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login(USER_NAME_LDAP, USER_PASSWORD);
         appPage.assertCurrent();
-        Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assert.assertNotNull(oauth.parseLoginResponse().getCode());
+        Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
         String code = oauth.parseLoginResponse().getCode();
         String idTokenHint = oauth.doAccessTokenRequest(code).getIdToken();
         appPage.logout(idTokenHint);
@@ -284,7 +284,7 @@ public class LDAPSamlIdPInitiatedVaryingLetterCaseTest extends AbstractLDAPTest 
           .assertResponse(Matchers.bodyHC(containsString("AUTH_RESPONSE")))
           .execute();
 
-        assertThat(testRealm().users().search(USER_NAME_LDAP, Boolean.TRUE), hasSize(1));
+        assertThat(managedRealm.admin().users().search(USER_NAME_LDAP, Boolean.TRUE), hasSize(1));
     }
 
     private ResponseType prepareResponseForIdPInitiatedFlow(final URI destination, String userName) throws ConfigurationException, ProcessingException {

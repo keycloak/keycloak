@@ -17,14 +17,12 @@
 
 package org.keycloak.scim.filter;
 
-import org.keycloak.models.ModelValidationException;
-
 /**
  * Exception thrown when an SCIM filter expression is invalid or cannot be processed.
  *
  * @author <a href="mailto:sguilhen@redhat.com">Stefan Guilhen</a>
  */
-public class ScimFilterException extends ModelValidationException {
+public class ScimFilterException extends RuntimeException {
 
     public ScimFilterException(String message) {
         super(message);

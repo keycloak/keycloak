@@ -9,6 +9,7 @@ import java.util.Optional;
 import org.keycloak.constants.OID4VCIConstants;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.utils.ModelToRepresentation;
+import org.keycloak.protocol.oid4vc.clientpolicy.CredentialClientPolicy;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 
 import static org.keycloak.models.ClientScopeModel.INCLUDE_IN_TOKEN_SCOPE;
@@ -18,7 +19,6 @@ import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_BUILD_CONFIG_H
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_BUILD_CONFIG_SD_JWT_VISIBLE_CLAIMS;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_BUILD_CONFIG_SD_JWT_VISIBLE_CLAIMS_DEFAULT;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_BUILD_CONFIG_TOKEN_JWS_TYPE;
-import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_BUILD_CONFIG_TOKEN_JWS_TYPE_DEFAULT;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_CONFIGURATION_ID;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_CONTEXTS;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_CRYPTOGRAPHIC_BINDING_METHODS;
@@ -37,6 +37,7 @@ import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_SD_JWT_NUMBER_
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_SIGNING_ALG;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_SIGNING_KEY_ID;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_SUPPORTED_TYPES;
+import static org.keycloak.models.oid4vci.CredentialScopeModel.getDefaultTokenJwsTypeForFormat;
 
 /**
  * An extension of {@link ClientScopeRepresentation} which and adds additional functionality for OID4VCI
@@ -48,12 +49,12 @@ public class CredentialScopeRepresentation extends ClientScopeRepresentation {
     public CredentialScopeRepresentation(String name) {
         this.name = name;
         this.protocol = OID4VCIConstants.OID4VC_PROTOCOL;
+        setFormat(VC_FORMAT_DEFAULT);
         setBuildConfigHashAlgorithm(VC_BUILD_CONFIG_HASH_ALGORITHM_DEFAULT);
         setBuildConfigSdJwtVisibleClaims(VC_BUILD_CONFIG_SD_JWT_VISIBLE_CLAIMS_DEFAULT);
-        setBuildConfigTokenJwsType(VC_BUILD_CONFIG_TOKEN_JWS_TYPE_DEFAULT);
+        setBuildConfigTokenJwsType(getDefaultTokenJwsTypeForFormat(VC_FORMAT_DEFAULT));
         setSdJwtNumberOfDecoys(VC_SD_JWT_NUMBER_OF_DECOYS_DEFAULT);
         setExpiryInSeconds(VC_EXPIRY_IN_SECONDS_DEFAULT);
-        setFormat(VC_FORMAT_DEFAULT);
     }
 
     public CredentialScopeRepresentation(ClientScopeModel clientScope) {
@@ -277,6 +278,15 @@ public class CredentialScopeRepresentation extends ClientScopeRepresentation {
     public CredentialScopeRepresentation setRequiredKeyAttestationUserAuthentication(List<String> userAuthentication) {
         return setAttribute(VC_KEY_ATTESTATION_REQUIRED_USER_AUTH, Optional.ofNullable(userAuthentication)
                 .map(list -> String.join(",")).orElse(null));
+    }
+
+    public <T> T getCredentialPolicyValue(CredentialClientPolicy<T> policy) {
+        T currentValue = policy.getCurrentValue(this);
+        return currentValue;
+    }
+
+    public <T> CredentialScopeRepresentation setCredentialPolicyValue(CredentialClientPolicy<T> policy, T value) {
+        return setAttribute(policy.getAttrName(), String.valueOf(value));
     }
 
     public String getAttribute(String key) {

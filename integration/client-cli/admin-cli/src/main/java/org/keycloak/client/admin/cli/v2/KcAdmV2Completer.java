@@ -1,6 +1,7 @@
 package org.keycloak.client.admin.cli.v2;
 
 import java.io.PrintWriter;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -16,10 +17,20 @@ public class KcAdmV2Completer {
     private static final String LONG_OPTION_PREFIX = "--";
 
     public static void complete(String[] args, PrintWriter out) {
-        KcAdmV2Cmd rootCmd = new KcAdmV2Cmd();
+        completeWith(buildCli(new KcAdmV2Cmd(args)), args, out);
+    }
+
+    public static void complete(String[] args, PrintWriter out, Path cacheDir) {
+        completeWith(buildCli(new KcAdmV2Cmd(cacheDir, args)), args, out);
+    }
+
+    private static CommandLine buildCli(KcAdmV2Cmd rootCmd) {
         CommandLine cli = new CommandLine(rootCmd);
         rootCmd.configureCommandLine(cli);
+        return cli;
+    }
 
+    private static void completeWith(CommandLine cli, String[] args, PrintWriter out) {
         String partial = args.length > 0 ? args[args.length - 1] : "";
 
         if (LONG_OPTION_PREFIX.equals(partial)) {

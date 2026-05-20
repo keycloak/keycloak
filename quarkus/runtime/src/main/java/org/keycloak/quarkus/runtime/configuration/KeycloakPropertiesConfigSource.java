@@ -99,6 +99,11 @@ public class KeycloakPropertiesConfigSource extends AbstractLocationConfigSource
                 return null;
             }
 
+            if (!filePath.endsWith(".conf")) {
+                throw new RuntimeException(
+                        String.format("Configuration file '%s' must have the '.conf' extension.", filePath));
+            }
+
             return Paths.get(filePath);
         }
     }

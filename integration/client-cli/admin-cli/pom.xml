@@ -54,8 +54,7 @@
         <!-- required during compilation by the exec-maven-plugin as we need the OpenAPI document stored in the resources -->
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-admin-v2-rest</artifactId>
-            <version>${project.version}</version>
+            <artifactId>keycloak-admin-v2-services</artifactId>
             <scope>provided</scope>
             <exclusions>
                 <exclusion>

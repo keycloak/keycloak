@@ -48,6 +48,14 @@ public class PasswordPage extends AbstractLoginPage {
         return passwordInput.getAttribute("value");
     }
 
+    public String getPasswordError() {
+        try {
+            return passwordError.getText();
+        } catch (NoSuchElementException e) {
+            return null;
+        }
+    }
+
     public String getError() {
         try {
             return loginErrorMessage.getText();

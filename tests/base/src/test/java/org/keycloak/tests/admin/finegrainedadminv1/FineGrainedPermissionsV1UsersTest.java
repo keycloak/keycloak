@@ -28,7 +28,7 @@ import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.realm.ManagedRealm;
-import org.keycloak.testframework.realm.UserConfigBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.server.KeycloakUrls;
 import org.keycloak.testframework.util.ApiUtil;
 
@@ -183,7 +183,7 @@ public class FineGrainedPermissionsV1UsersTest extends AbstractFineGrainedAdminT
     }
 
     private RealmResource setupTestEnvironmentWithPermissions(boolean grp1ViewPermissions) throws CertificateException, NoSuchAlgorithmException, KeyStoreException, KeyManagementException, IOException {
-        UserRepresentation user = UserConfigBuilder.create()
+        UserRepresentation user = UserBuilder.create()
                 .username("test-user")
                 .password("password")
                 .name("a", "b")
@@ -236,7 +236,7 @@ public class FineGrainedPermissionsV1UsersTest extends AbstractFineGrainedAdminT
         GroupRepresentation grp1 = createGroupWithPermissions("grp1");
         GroupRepresentation grp2 = createGroupWithPermissions("grp2");
         //create test users
-        UserRepresentation user1 = UserConfigBuilder.create()
+        UserRepresentation user1 = UserBuilder.create()
                 .username("user1")
                 .password("password")
                 .name("user1FirstName", "user1LastName")
@@ -245,7 +245,7 @@ public class FineGrainedPermissionsV1UsersTest extends AbstractFineGrainedAdminT
                 .build();
         String user1Id = ApiUtil.getCreatedId(realm.admin().users().create(user1));
 
-        UserRepresentation user2 = UserConfigBuilder.create()
+        UserRepresentation user2 = UserBuilder.create()
                 .username("user2")
                 .password("password")
                 .name("user2FirstName", "user2LastName")
@@ -254,7 +254,7 @@ public class FineGrainedPermissionsV1UsersTest extends AbstractFineGrainedAdminT
                 .build();
         String user2Id = ApiUtil.getCreatedId(realm.admin().users().create(user2));
 
-        UserRepresentation user3 = UserConfigBuilder.create()
+        UserRepresentation user3 = UserBuilder.create()
                 .username("user3")
                 .password("password")
                 .name("user3FirstName", "user3LastName")
@@ -263,7 +263,7 @@ public class FineGrainedPermissionsV1UsersTest extends AbstractFineGrainedAdminT
                 .build();
         String user3Id = ApiUtil.getCreatedId(realm.admin().users().create(user3));
 
-        UserRepresentation user4 = UserConfigBuilder.create()
+        UserRepresentation user4 = UserBuilder.create()
                 .username("user4")
                 .password("password")
                 .name("user4FirstName", "user4LastName")

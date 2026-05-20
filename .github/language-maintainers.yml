@@ -93,6 +93,16 @@ languages:
     maintainers:
       - spctr
       - ariferol
+  uk:
+    name: Ukrainian
+    maintainers:
+      - bilkoua
+      - tafiy
+  vi:
+    name: Vietnamese
+    maintainers:
+      - thangnm11
+      - it-site44-com
   zh_Hans:
     name: Simplified Chinese
     maintainers:

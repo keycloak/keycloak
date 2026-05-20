@@ -151,7 +151,7 @@ public class LoggingOptions {
 
     public static final Option<Boolean> LOG_CONSOLE_ENABLED = new OptionBuilder<>("log-console-enabled", Boolean.class)
             .category(OptionCategory.LOGGING)
-            .hidden()
+            .synthetic()
             .build();
 
     // Console Async
@@ -170,7 +170,7 @@ public class LoggingOptions {
     // File
     public static final Option<Boolean> LOG_FILE_ENABLED = new OptionBuilder<>("log-file-enabled", Boolean.class)
             .category(OptionCategory.LOGGING)
-            .hidden()
+            .synthetic()
             .build();
 
     public static final Option<File> LOG_FILE = new OptionBuilder<>("log-file", File.class)
@@ -266,7 +266,7 @@ public class LoggingOptions {
     // Syslog
     public static final Option<Boolean> LOG_SYSLOG_ENABLED = new OptionBuilder<>("log-syslog-enabled", Boolean.class)
             .category(OptionCategory.LOGGING)
-            .hidden()
+            .synthetic()
             .build();
 
     public static final Option<String> LOG_SYSLOG_ENDPOINT = new OptionBuilder<>("log-syslog-endpoint", String.class)

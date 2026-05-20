@@ -1,8 +1,8 @@
 package org.keycloak.tests.admin.client.v2.validation;
 
+import org.keycloak.admin.api.PatchTypeNames;
 import org.keycloak.representations.admin.v2.OIDCClientRepresentation;
 import org.keycloak.representations.admin.v2.SAMLClientRepresentation;
-import org.keycloak.services.PatchTypeNames;
 import org.keycloak.services.error.ViolationExceptionResponse;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 
@@ -92,7 +92,7 @@ public class PatchClientValidationTest extends AbstractClientValidationTest {
             assertThat(response.getStatusLine().getStatusCode(), is(400));
 
             String responseBody = EntityUtils.toString(response.getEntity());
-            assertThat(responseBody, containsString("Cannot replace client resource with null"));
+            assertThat(responseBody, containsString("Cannot replace client resource with non-object"));
         }
     }
 
@@ -106,5 +106,11 @@ public class PatchClientValidationTest extends AbstractClientValidationTest {
     @Override
     @Disabled("Only for PUT/POST")
     public void validOIDCClientSucceeds() {
+    }
+
+    @Test
+    @Override
+    @Disabled("Only for PUT/POST - client needs to exist")
+    public void clientWithBlankClientIdMatchingPathFails(String protocol) {
     }
 }

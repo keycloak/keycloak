@@ -47,14 +47,18 @@ export const SelectComponent = (props: UserProfileFieldProps) => {
   const fetchLabel = (option: string) =>
     label(props.t, optionLabel[option], option, prefix);
 
-  const convertOptions = (selected: string) =>
+  const convertOptions = (selected: string | string[]) =>
     options
       .filter((o) =>
         fetchLabel(o)!.toLowerCase().includes(filter.toLowerCase()),
       )
       .map((option) => (
         <SelectOption
-          selected={selected === option}
+          selected={
+            Array.isArray(selected)
+              ? selected.includes(option)
+              : selected === option
+          }
           key={option}
           value={option}
         >

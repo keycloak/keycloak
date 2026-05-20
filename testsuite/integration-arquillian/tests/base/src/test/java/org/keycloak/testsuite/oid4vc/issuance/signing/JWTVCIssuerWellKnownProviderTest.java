@@ -38,9 +38,9 @@ import org.keycloak.util.JsonSerialization;
 
 import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 
 /**
@@ -59,10 +59,10 @@ import static org.junit.Assert.assertTrue;
 
             try (Response jwtIssuerResponse = jwtIssuerTarget.request().get()) {
                 JWTVCIssuerMetadata jwtvcIssuerMetadata = JsonSerialization.readValue(jwtIssuerResponse.readEntity(String.class), JWTVCIssuerMetadata.class);
-                assertEquals("The correct issuer should be included.", expectedIssuer, jwtvcIssuerMetadata.getIssuer());
+                assertEquals(expectedIssuer, jwtvcIssuerMetadata.getIssuer(), "The correct issuer should be included.");
                 JSONWebKeySet jwks = jwtvcIssuerMetadata.getJwks();
-                assertNotNull("The key set shall not be null", jwks.getKeys());
-                assertTrue("The key set shall not be empty", jwks.getKeys().length > 0);
+                assertNotNull(jwks.getKeys(), "The key set shall not be null");
+                assertTrue(jwks.getKeys().length > 0, "The key set shall not be empty");
             }
         }
     }

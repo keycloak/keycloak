@@ -24,9 +24,10 @@ import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 
 import org.junit.Before;
+import org.junit.jupiter.api.Assertions;
 
 /**
  * <p>Abstract class that re-generates all imported user passwords with a random one.
@@ -71,7 +72,7 @@ abstract public class AbstractChangeImportedUserPasswordsTest extends AbstractTe
     }
 
     protected String changePassword(String username) {
-        UserResource userRes = ApiUtil.findUserByUsernameId(testRealm(), username);
+        UserResource userRes = AdminApiUtil.findUserByUsernameId(managedRealm.admin(), username);
         CredentialRepresentation credential = new CredentialRepresentation();
         credential.setType(PasswordCredentialModel.TYPE);
         credential.setTemporary(Boolean.FALSE);
@@ -105,7 +106,7 @@ abstract public class AbstractChangeImportedUserPasswordsTest extends AbstractTe
 
     protected String getPassword(String username) {
         final String password = userPasswords.get(username);
-        Assert.assertNotNull("password not generated for user " + username, password);
+        Assertions.assertNotNull(password, "password not generated for user " + username);
         return password;
     }
 }

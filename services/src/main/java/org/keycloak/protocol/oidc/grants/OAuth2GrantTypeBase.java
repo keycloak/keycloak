@@ -116,7 +116,7 @@ public abstract class OAuth2GrantTypeBase implements OAuth2GrantType {
     protected TokenManager.AccessTokenResponseBuilder createTokenResponseBuilder(UserModel user, UserSessionModel userSession, ClientSessionContext clientSessionCtx,  String scopeParam, Function<TokenManager.AccessTokenResponseBuilder, ClientPolicyContext> clientPolicyContextGenerator) {
         clientSessionCtx.setAttribute(Constants.GRANT_TYPE, context.getGrantType());
         clientSessionCtx.setAttribute(OAuth2Constants.RESOURCE, formParams.getFirst(OAuth2Constants.RESOURCE));
-        AccessToken token = tokenManager.createClientAccessToken(session, realm, client, user, userSession, clientSessionCtx);
+        AccessToken token = tokenManager.createClientAccessToken(session, realm, client, user, userSession, clientSessionCtx, clientSessionCtx.isOfflineTokenRequested());
 
         TokenManager.AccessTokenResponseBuilder responseBuilder = tokenManager
                 .responseBuilder(realm, client, event, session, userSession, clientSessionCtx).accessToken(token);
@@ -227,7 +227,8 @@ public abstract class OAuth2GrantTypeBase implements OAuth2GrantType {
         String adapterSessionId = formParams.getFirst(AdapterConstants.CLIENT_SESSION_STATE);
         if (adapterSessionId != null) {
             String adapterSessionHost = formParams.getFirst(AdapterConstants.CLIENT_SESSION_HOST);
-            logger.debugf("Adapter Session '%s' saved in ClientSession for client '%s'. Host is '%s'", adapterSessionId, client.getClientId(), adapterSessionHost);
+            logger.debugf("Adapter Session '%s' saved in ClientSession '%s' for client '%s'. Host is '%s'",
+                    adapterSessionId, clientSession.getId(), client.getClientId(), adapterSessionHost);
 
             String oldClientSessionState = clientSession.getNote(AdapterConstants.CLIENT_SESSION_STATE);
             if (!adapterSessionId.equals(oldClientSessionState)) {
@@ -252,7 +253,7 @@ public abstract class OAuth2GrantTypeBase implements OAuth2GrantType {
 
         boolean validScopes;
         if (Profile.isFeatureEnabled(Profile.Feature.DYNAMIC_SCOPES)) {
-            AuthorizationRequestContext authorizationRequestContext = AuthorizationContextUtil.getAuthorizationRequestContextFromScopes(session, scope);
+            AuthorizationRequestContext authorizationRequestContext = AuthorizationContextUtil.getAuthorizationRequestContextFromScopes(session, client, scope);
             validScopes = TokenManager.isValidScope(session, scope, authorizationRequestContext, client, null);
         } else {
             validScopes = TokenManager.isValidScope(session, scope, client, null);
@@ -274,7 +275,7 @@ public abstract class OAuth2GrantTypeBase implements OAuth2GrantType {
         clientAuthAttributes = clientAuth.getClientAuthAttributes();
         clientConfig = OIDCAdvancedConfigWrapper.fromClientModel(client);
 
-        cors.allowedOrigins(session, client);
+        cors.checkAllowedOrigins(session, client);
 
         if (client.isBearerOnly()) {
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_CLIENT, "Bearer-only not allowed", Response.Status.BAD_REQUEST);
@@ -317,8 +318,8 @@ public abstract class OAuth2GrantTypeBase implements OAuth2GrantType {
         String authorizationDetailsParam = formParams.getFirst(AUTHORIZATION_DETAILS);
         if (authorizationDetailsParam != null) {
             try {
-                return new AuthorizationDetailsProcessorManager()
-                        .processAuthorizationDetails(session, userSession, clientSessionCtx, authorizationDetailsParam);
+                return new AuthorizationDetailsProcessorManager(session)
+                        .processAuthorizationDetails(userSession, clientSessionCtx, authorizationDetailsParam);
             } catch (InvalidAuthorizationDetailsException e) {
                 logger.warnf(e, "Error when processing authorization_details");
                 event.detail(Details.REASON, e.getMessage());
@@ -339,7 +340,8 @@ public abstract class OAuth2GrantTypeBase implements OAuth2GrantType {
      */
     protected List<AuthorizationDetailsJSONRepresentation> handleMissingAuthorizationDetails(UserSessionModel userSession, ClientSessionContext clientSessionCtx) {
         try {
-            return new AuthorizationDetailsProcessorManager().handleMissingAuthorizationDetails(session, userSession, clientSessionCtx);
+            return new AuthorizationDetailsProcessorManager(session)
+                    .handleMissingAuthorizationDetails(userSession, clientSessionCtx);
         } catch (RuntimeException e) {
             logger.warnf(e, "Error when handling missing authorization_details");
             event.detail(Details.REASON, e.getMessage());
@@ -363,8 +365,8 @@ public abstract class OAuth2GrantTypeBase implements OAuth2GrantType {
         if (storedAuthDetails != null) {
             logger.debugf("Found authorization_details in client session, processing it");
             try {
-                return new AuthorizationDetailsProcessorManager()
-                        .processStoredAuthorizationDetails(session, userSession, clientSessionCtx, storedAuthDetails);
+                return new AuthorizationDetailsProcessorManager(session)
+                        .processStoredAuthorizationDetails(userSession, clientSessionCtx, storedAuthDetails);
             } catch (InvalidAuthorizationDetailsException e) {
                 logger.warnf(e, "Error when processing stored authorization_details");
                 event.detail(Details.REASON, e.getMessage());

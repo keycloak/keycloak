@@ -13,9 +13,9 @@ const AddIdentityProvider = lazy(() => import("../add/AddIdentityProvider"));
 export const IdentityProviderCreateRoute: AppRouteObject = {
   path: "/:realm/identity-providers/:providerId/add",
   element: <AddIdentityProvider />,
-  breadcrumb: (t) => t("addProvider"),
   handle: {
     access: "manage-identity-providers",
+    breadcrumb: (t) => t("addProvider"),
   },
 };
 

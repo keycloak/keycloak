@@ -19,8 +19,8 @@ import org.keycloak.representations.idm.RequiredActionProviderSimpleRepresentati
 import org.keycloak.representations.idm.TestLdapConnectionRepresentation;
 import org.keycloak.services.resources.admin.AdminAuth;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
-import org.keycloak.testframework.realm.RealmConfigBuilder;
 import org.keycloak.tests.utils.Assert;
 
 import org.junit.jupiter.api.AfterEach;
@@ -40,7 +40,7 @@ public class PermissionsWithRemovalTest extends AbstractPermissionsTest {
         recreatePermissionRealm();
 
         RealmConfig realm2Config = new PermissionsTestRealmConfig2();
-        RealmRepresentation realm2 = realm2Config.configure(RealmConfigBuilder.create()).build();
+        RealmRepresentation realm2 = realm2Config.configure(RealmBuilder.create()).build();
         adminClient.realms().create(realm2);
 
         super.beforeEach();
@@ -48,7 +48,7 @@ public class PermissionsWithRemovalTest extends AbstractPermissionsTest {
 
     public void recreatePermissionRealm() {
         RealmConfig realm1Config = new PermissionsTestRealmConfig1();
-        RealmRepresentation realm1 = realm1Config.configure(RealmConfigBuilder.create()).build();
+        RealmRepresentation realm1 = realm1Config.configure(RealmBuilder.create()).build();
         adminClient.realms().create(realm1);
     }
 
@@ -86,11 +86,11 @@ public class PermissionsWithRemovalTest extends AbstractPermissionsTest {
         assertNotNull(realms.get(0).getAccessTokenLifespan());
 
         // Create realm
-        invoke(realm -> clients.get("master-admin").realms().create(RealmConfigBuilder.create().name("master").build()),
+        invoke(realm -> clients.get("master-admin").realms().create(RealmBuilder.create().name("master").build()),
                 adminClient, true);
-        invoke(realm -> clients.get("master-" + AdminRoles.MANAGE_USERS).realms().create(RealmConfigBuilder.create().name("master").build()),
+        invoke(realm -> clients.get("master-" + AdminRoles.MANAGE_USERS).realms().create(RealmBuilder.create().name("master").build()),
                 adminClient, false);
-        invoke(realm -> clients.get(AdminRoles.REALM_ADMIN).realms().create(RealmConfigBuilder.create().name("master").build()),
+        invoke(realm -> clients.get(AdminRoles.REALM_ADMIN).realms().create(RealmBuilder.create().name("master").build()),
                 adminClient, false);
 
         // Get realm

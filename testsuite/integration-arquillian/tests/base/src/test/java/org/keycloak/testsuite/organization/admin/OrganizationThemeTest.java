@@ -32,17 +32,17 @@ import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginUpdateProfilePage;
-import org.keycloak.testsuite.util.UserBuilder;
 
 import org.hamcrest.Matchers;
 import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
 
@@ -69,10 +69,10 @@ public class OrganizationThemeTest extends AbstractOrganizationTest {
 
     @Test
     public void testOrganizationOnRegularLogin() {
-        OrganizationResource organization = testRealm().organizations().get(createOrganization("myorg", "myorg.com").getId());
+        OrganizationResource organization = managedRealm.admin().organizations().get(createOrganization("myorg", "myorg.com").getId());
         IdentityProviderRepresentation broker = organization.identityProviders().getIdentityProviders().get(0);
         broker.getConfig().remove(IdentityProviderRedirectMode.EMAIL_MATCH.getKey());
-        testRealm().identityProviders().get(broker.getAlias()).update(broker);
+        managedRealm.admin().identityProviders().get(broker.getAlias()).update(broker);
         UserRepresentation user = UserBuilder.create().enabled(true)
                 .username("tom")
                 .email("tom@myorg.com")
@@ -87,26 +87,26 @@ public class OrganizationThemeTest extends AbstractOrganizationTest {
 
         // organization available to regular login page
         loginPage.open(bc.consumerRealmName());
-        Assert.assertTrue(driver.getPageSource().contains("Sign-in to the realm"));
+        Assertions.assertTrue(driver.getPageSource().contains("Sign-in to the realm"));
         loginPage.loginUsername("tom@myorg.com");
-        Assert.assertTrue(driver.getPageSource().contains("Sign-in to myorg organization"));
-        Assert.assertTrue(loginPage.isPasswordInputPresent());
+        Assertions.assertTrue(driver.getPageSource().contains("Sign-in to myorg organization"));
+        Assertions.assertTrue(loginPage.isPasswordInputPresent());
     }
 
     @Test
     public void testOrganizationOnIdentityFirstLogin() {
-        OrganizationResource organization = testRealm().organizations().get(createOrganization("myorg", "myorg.com").getId());
+        OrganizationResource organization = managedRealm.admin().organizations().get(createOrganization("myorg", "myorg.com").getId());
         IdentityProviderRepresentation broker = organization.identityProviders().getIdentityProviders().get(0);
         broker.getConfig().remove(IdentityProviderRedirectMode.EMAIL_MATCH.getKey());
-        testRealm().identityProviders().get(broker.getAlias()).update(broker);
+        managedRealm.admin().identityProviders().get(broker.getAlias()).update(broker);
 
         // organization available to identity-first login page
         loginPage.open(bc.consumerRealmName());
-        Assert.assertTrue(driver.getPageSource().contains("Sign-in to the realm"));
-        Assert.assertFalse(loginPage.isPasswordInputPresent());
+        Assertions.assertTrue(driver.getPageSource().contains("Sign-in to the realm"));
+        Assertions.assertFalse(loginPage.isPasswordInputPresent());
         loginPage.loginUsername("non-user@myorg.com");
-        Assert.assertTrue(driver.getPageSource().contains("Sign-in to myorg organization"));
-        Assert.assertFalse(loginPage.isPasswordInputPresent());
+        Assertions.assertTrue(driver.getPageSource().contains("Sign-in to myorg organization"));
+        Assertions.assertFalse(loginPage.isPasswordInputPresent());
     }
 
     @Test
@@ -127,13 +127,13 @@ public class OrganizationThemeTest extends AbstractOrganizationTest {
         loginPage.open(bc.consumerRealmName());
         loginPage.loginUsername("tom@myorg.com");
         waitForPage(driver, "sign in to", true);
-        Assert.assertTrue("Driver should be on the provider realm page right now",
-                driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"));
+        Assertions.assertTrue(driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"),
+                "Driver should be on the provider realm page right now");
         loginPage.login(user.getUsername(), "password");
         waitForPage(driver, "update account information", false);
-        Assert.assertTrue("Driver should be on the consumer realm page right now",
-                driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/"));
-        Assert.assertTrue(driver.getPageSource().contains("Sign-in to myorg organization"));
+        Assertions.assertTrue(driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/"),
+                "Driver should be on the consumer realm page right now");
+        Assertions.assertTrue(driver.getPageSource().contains("Sign-in to myorg organization"));
     }
 
     @Test
@@ -144,42 +144,42 @@ public class OrganizationThemeTest extends AbstractOrganizationTest {
                 .password("password")
                 .firstName("Tom")
                 .lastName("Brady")
-                .requiredAction(UserModel.RequiredAction.UPDATE_PROFILE.name())
+                .requiredActions(UserModel.RequiredAction.UPDATE_PROFILE.name())
                 .build();
-        try (Response resp = testRealm().users().create(user)) {
+        try (Response resp = managedRealm.admin().users().create(user)) {
             String userId = ApiUtil.getCreatedId(resp);
             getCleanup(bc.consumerRealmName()).addUserId(userId);
         }
         createOrganization("myorg", "myorg.com", "myorg.org");
-        oauth.clientId("broker-app");
+        oauth.client("broker-app");
         loginPage.open(bc.consumerRealmName());
         loginPage.loginUsername("tom");
-        Assert.assertTrue(driver.getPageSource().contains("Sign-in to myorg organization"));
+        Assertions.assertTrue(driver.getPageSource().contains("Sign-in to myorg organization"));
         loginPage.login("password");
         waitForPage(driver, "update account information", false);
-        Assert.assertTrue("Driver should be on the consumer realm page right now",
-                driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/"));
-        Assert.assertTrue(driver.getPageSource().contains("Sign-in to myorg organization"));
+        Assertions.assertTrue(driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/"),
+                "Driver should be on the consumer realm page right now");
+        Assertions.assertTrue(driver.getPageSource().contains("Sign-in to myorg organization"));
     }
 
     @Test
     public void testOrganizationAttributes() {
         OrganizationRepresentation orgRep = createOrganization("myorg", "myorg.com");
-        OrganizationResource organization = testRealm().organizations().get(orgRep.getId());
+        OrganizationResource organization = managedRealm.admin().organizations().get(orgRep.getId());
         IdentityProviderRepresentation broker = organization.identityProviders().getIdentityProviders().get(0);
         broker.getConfig().remove(IdentityProviderRedirectMode.EMAIL_MATCH.getKey());
-        testRealm().identityProviders().get(broker.getAlias()).update(broker);
+        managedRealm.admin().identityProviders().get(broker.getAlias()).update(broker);
 
         // organization available to identity-first login page
         loginPage.open(bc.consumerRealmName());
-        Assert.assertTrue(driver.getPageSource().contains("Sign-in to the realm"));
-        Assert.assertFalse(loginPage.isPasswordInputPresent());
+        Assertions.assertTrue(driver.getPageSource().contains("Sign-in to the realm"));
+        Assertions.assertFalse(loginPage.isPasswordInputPresent());
         loginPage.loginUsername("non-user@myorg.com");
-        Assert.assertTrue(driver.getPageSource().contains("Sign-in to myorg organization"));
+        Assertions.assertTrue(driver.getPageSource().contains("Sign-in to myorg organization"));
         for (Entry<String, List<String>> attribute : orgRep.getAttributes().entrySet()) {
             assertThat(driver.getPageSource(), Matchers.containsString("The " + attribute.getKey() + " is " + String.join(", ", attribute.getValue())));
         }
-        Assert.assertFalse(loginPage.isPasswordInputPresent());
+        Assertions.assertFalse(loginPage.isPasswordInputPresent());
     }
 
     @Test
@@ -190,26 +190,26 @@ public class OrganizationThemeTest extends AbstractOrganizationTest {
                 .password("password")
                 .firstName("Tom")
                 .lastName("Brady")
-                .requiredAction(UserModel.RequiredAction.UPDATE_PROFILE.name())
+                .requiredActions(UserModel.RequiredAction.UPDATE_PROFILE.name())
                 .build();
-        try (Response resp = testRealm().users().create(user)) {
+        try (Response resp = managedRealm.admin().users().create(user)) {
             String userId = ApiUtil.getCreatedId(resp);
             user.setId(userId);
             getCleanup(bc.consumerRealmName()).addUserId(userId);
         }
 
         OrganizationRepresentation orgRep = createOrganization("myorg", "myorg.com");
-        OrganizationResource organization = testRealm().organizations().get(orgRep.getId());
+        OrganizationResource organization = managedRealm.admin().organizations().get(orgRep.getId());
         IdentityProviderRepresentation broker = organization.identityProviders().getIdentityProviders().get(0);
         broker.getConfig().remove(IdentityProviderRedirectMode.EMAIL_MATCH.getKey());
-        testRealm().identityProviders().get(broker.getAlias()).update(broker);
+        managedRealm.admin().identityProviders().get(broker.getAlias()).update(broker);
         organization.members().addMember(user.getId()).close();
 
         // organization available to identity-first login page
         loginPage.open(bc.consumerRealmName());
         loginPage.loginUsername(user.getEmail());
-        Assert.assertTrue(driver.getPageSource().contains("Sign-in to myorg organization"));
-        Assert.assertTrue(driver.getPageSource().contains("User is member of " + orgRep.getName()));
-        Assert.assertTrue(loginPage.isPasswordInputPresent());
+        Assertions.assertTrue(driver.getPageSource().contains("Sign-in to myorg organization"));
+        Assertions.assertTrue(driver.getPageSource().contains("User is member of " + orgRep.getName()));
+        Assertions.assertTrue(loginPage.isPasswordInputPresent());
     }
 }

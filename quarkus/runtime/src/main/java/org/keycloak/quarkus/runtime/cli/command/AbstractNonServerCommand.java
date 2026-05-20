@@ -21,6 +21,7 @@ import java.util.EnumSet;
 
 import org.keycloak.common.util.Environment;
 import org.keycloak.config.OptionCategory;
+import org.keycloak.quarkus.runtime.integration.QuarkusKeycloakSessionFactory;
 import org.keycloak.quarkus.runtime.integration.jaxrs.QuarkusKeycloakApplication;
 
 import picocli.CommandLine;
@@ -44,7 +45,7 @@ public abstract class AbstractNonServerCommand extends AbstractAutoBuildCommand 
         return super.isHiddenCategory(category) || hidden.contains(category);
     }
 
-    public void onStart(QuarkusKeycloakApplication application) {
+    public void onStart(QuarkusKeycloakApplication application, QuarkusKeycloakSessionFactory sessionFactory) {
     }
 
     @Override

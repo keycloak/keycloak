@@ -51,7 +51,7 @@ The configuration uses a _unified-per-source_ format, which simplifies translati
 
 Command-line parameter format:: Values for the command-line use the `--_<key-with-dashes>_=_<value>_` format. For some values, an `-_<abbreviation>_=_<value>_` shorthand also exists.
 
-Environment variable format:: Values for environment variables use the uppercased `KC++_++__<key_with_underscores>__=_<value>_` format.
+Environment variable format:: Values for environment variables use the uppercased `KC++_++__<key_with_underscores>__=_<value>_` format. Alternatively, the `KCRAW++_++` prefix can be used instead of `KC++_++` to preserve values containing `$` characters — see <<Preserving literal values with the KCRAW_ prefix>>.
 
 Configuration file format:: Values that go into the configuration file use the `_<key-with-dashes>_=_<value>_` format.
 
@@ -165,6 +165,35 @@ When using PowerShell and your values contain special characters like commas, us
 ----
 
 PowerShell handles quotes differently. It interprets the quoted string before passing it to the `kc.bat` script, removing the outer quote characters. Therefore, an extra layer of quotes is needed to preserve the value structure. Otherwise, the comma would be interpreted as a delimiter. In Windows CMD, you can use double quotes directly.
+
+When manual escaping is not feasible (like when a password is injected by a secrets manager and you cannot control the value), use the `KCRAW_` prefix described in the next section.
+
+[[kcraw-prefix]]
+=== Preserving literal values with the KCRAW_ prefix
+
+When setting configuration values, {project_name} (via SmallRye Config) evaluates expressions such as `$\{some_key}` and collapses `$$` to `$`. This means passwords or secrets containing `$` characters may be silently modified. While the `\` escaping described above works for values you control directly, it is not always practical - for example, when a secrets manager or orchestration tool injects the value and you cannot add escape characters.
+
+In these cases, use the `KCRAW_` prefix instead of `KC_` for any environment variable whose value must be preserved exactly as written. {project_name} automatically escapes `$` characters in `KCRAW_` values so that expression evaluation preserves the original value.
+
+.Example: Setting a database password containing special characters
+[source, bash]
+----
+# Standard prefix — the value will be modified by expression evaluation:
+export KC_DB_PASSWORD='my$$pa$\{vault}word'
+# Result: "$$" is collapsed to "$" and "$\{vault}" is evaluated as an
+# expression, producing "my$paword" or an error
+
+# Raw prefix — the value is preserved exactly as written:
+export KCRAW_DB_PASSWORD='my$$pa$\{vault}word'
+# Result: the password is used as-is: my$$pa$\{vault}word
+----
+
+[NOTE]
+====
+* The `KCRAW_` prefix applies only to environment variables, where shell quoting rules make escaping of `$` unreliable. Other configuration sources are subject to their own format escaping mechanisms and their values are still treated as expressions.
+* You cannot set both `KC_<KEY>` and `KCRAW_<KEY>` for the same configuration key. If both are present, {project_name} will fail to start and report a configuration error.
+* Apart from escaping `$` characters, `KCRAW_` variables behave identically to their `KC_` counterparts: the same key mapping and priority rules apply.
+====
 
 === Formats for environment variable keys with special characters
 

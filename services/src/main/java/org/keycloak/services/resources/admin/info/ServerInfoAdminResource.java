@@ -26,7 +26,9 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -262,7 +264,15 @@ public class ServerInfoAdminResource {
     }
 
     private String getThemeDescription(Theme theme) throws IOException {
-        return theme.getProperties().getProperty("description");
+        Locale locale = session.getContext().resolveLocale(null);
+
+        Properties enhancedMessages = theme.getEnhancedMessages(session.getContext().getRealm(), locale);
+        if (enhancedMessages == null) {
+            return null;
+        }
+
+        String descriptionKey = "theme." + theme.getName() + "." + theme.getType().name().toLowerCase(Locale.ROOT) + ".description";
+        return enhancedMessages.getProperty(descriptionKey);
     }
 
     private LinkedList<String> filterThemes(Theme.Type type, LinkedList<String> themeNames) {

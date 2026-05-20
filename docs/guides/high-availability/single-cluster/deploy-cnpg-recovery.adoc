@@ -17,7 +17,7 @@ include::../partials/blueprint-disclaimer.adoc[]
 * The CloudNativePG Operator, Barman Cloud plugin, and cert-manager are installed as described in <@links.ha id="single-cluster-deploy-cnpg-with-backup" />.
 * The AWS credentials secret and `ObjectStore` resource are configured as described in <@links.ha id="single-cluster-deploy-cnpg-with-backup" />.
 
-== Recovering the CloudNativePG cluster from a backup
+== Recover a CloudNativePG cluster from a backup
 
 The recovery process creates a new CloudNativePG cluster by bootstrapping it from an existing backup in the object store.
 Instead of using `bootstrap.initdb` to create a fresh database, the `bootstrap.recovery` section instructs CloudNativePG to restore from a backup source.
@@ -133,7 +133,7 @@ cnpg-keycloak-2   1/1     Running   0          10m   replica
 cnpg-keycloak-3   1/1     Running   0          10m   replica
 ----
 
-. Enable scheduled backups for the recovered cluster as described in <@links.ha id="single-cluster-deploy-cnpg-with-backup" anchor="single-cluster-cnpg-enabling-scheduled-backups" />.
+. Enable scheduled backups for the recovered cluster as described in <@links.ha id="single-cluster-deploy-cnpg-with-backup" anchor="single-cluster-cnpg-enable-scheduled-backups" />.
 
 == Point-in-Time Recovery (PITR)
 
@@ -280,7 +280,7 @@ Clear the table after recovery to avoid startup delays:
 .SQL:
 [source,sql]
 ----
-DELETE FROM jgroups_ping;
+TRUNCATE jgroups_ping;
 ----
 
 === Session tables
@@ -302,8 +302,8 @@ There are three approaches to handle stale sessions:
 .SQL:
 [source,sql]
 ----
-DELETE FROM offline_client_session;
-DELETE FROM offline_user_session;
+TRUNCATE offline_client_session;
+TRUNCATE offline_user_session;
 ----
 
 . **Clear only regular sessions**: delete sessions where the `offline_flag` column equals `'0'`, preserving offline sessions while removing regular sessions.

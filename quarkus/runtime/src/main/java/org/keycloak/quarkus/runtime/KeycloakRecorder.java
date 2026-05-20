@@ -28,6 +28,8 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.keycloak.Config;
+import org.keycloak.authentication.authenticators.browser.WebAuthnAuthenticatorMetadata;
+import org.keycloak.authentication.authenticators.browser.WebAuthnMetadataService;
 import org.keycloak.common.Profile;
 import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.common.crypto.CryptoProvider;
@@ -58,6 +60,7 @@ import io.quarkus.agroal.DataSource;
 import io.quarkus.arc.Arc;
 import io.quarkus.arc.InstanceHandle;
 import io.quarkus.hibernate.orm.runtime.integration.HibernateOrmIntegrationRuntimeInitListener;
+import io.quarkus.runtime.RuntimeValue;
 import io.quarkus.runtime.annotations.Recorder;
 import io.vertx.core.Handler;
 import io.vertx.ext.web.RoutingContext;
@@ -156,17 +159,22 @@ public class KeycloakRecorder {
         }
     }
 
-    public void configSessionFactory(
+    public RuntimeValue<QuarkusKeycloakSessionFactory> createSessionFactory(
             Map<Spi, Map<Class<? extends Provider>, Map<String, Class<? extends ProviderFactory>>>> factories,
             Map<Class<? extends Provider>, String> defaultProviders,
             Map<String, ProviderFactory> preConfiguredProviders,
             List<ClasspathThemeProviderFactory.ThemesRepresentation> themes) {
-        QuarkusKeycloakSessionFactory.setInstance(new QuarkusKeycloakSessionFactory(factories, defaultProviders, preConfiguredProviders, themes));
+        return new RuntimeValue<QuarkusKeycloakSessionFactory>(new QuarkusKeycloakSessionFactory(factories, defaultProviders, preConfiguredProviders, themes));
     }
 
     public void setDefaultUserProfileConfiguration(UPConfig configuration) {
         DeclarativeUserProfileProviderFactory.setDefaultConfig(configuration);
     }
+
+    public void setDefaultWebAuthnMetadata(Map<String, WebAuthnAuthenticatorMetadata> metadata) {
+        WebAuthnMetadataService.setDefaultMetadata(metadata);
+    }
+
 
     public HibernateOrmIntegrationRuntimeInitListener createUserDefinedUnitListener(String name) {
         return propertyCollector -> {

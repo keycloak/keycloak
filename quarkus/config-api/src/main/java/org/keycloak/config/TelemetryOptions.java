@@ -4,12 +4,6 @@ import java.util.List;
 
 public class TelemetryOptions {
 
-    public static final Option<Boolean> TELEMETRY_ENABLED = new OptionBuilder<>("telemetry-enabled", Boolean.class)
-            .category(OptionCategory.TELEMETRY)
-            .buildTime(true)
-            .hidden()
-            .build();
-
     public static final Option<String> TELEMETRY_ENDPOINT = new OptionBuilder<>("telemetry-endpoint", String.class)
             .category(OptionCategory.TELEMETRY)
             .description("OpenTelemetry endpoint to connect to.")
@@ -72,8 +66,7 @@ public class TelemetryOptions {
 
     public static final Option<List<String>> TELEMETRY_LOGS_HEADERS = OptionBuilder.listOptionBuilder("telemetry-logs-headers", String.class)
             .category(OptionCategory.TELEMETRY)
-            .hidden()
-            .description("Hidden option for OpenTelemetry headers that will be part of the exporter request. Values in format 'key1=val1,key2=val2'. Overrides the 'telemetry-logs-header-<header>' options.")
+            .synthetic()
             .build();
 
     // Telemetry Metrics
@@ -108,7 +101,6 @@ public class TelemetryOptions {
 
     public static final Option<List<String>> TELEMETRY_METRICS_HEADERS = OptionBuilder.listOptionBuilder("telemetry-metrics-headers", String.class)
             .category(OptionCategory.TELEMETRY)
-            .hidden()
-            .description("Hidden option for OpenTelemetry headers that will be part of the exporter request. Values in format 'key1=val1,key2=val2'. Overrides the 'telemetry-metrics-header-<header>' options.")
+            .synthetic()
             .build();
 }

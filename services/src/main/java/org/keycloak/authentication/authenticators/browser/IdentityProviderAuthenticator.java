@@ -25,6 +25,7 @@ import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.authentication.Authenticator;
 import org.keycloak.constants.AdapterConstants;
+import org.keycloak.models.AuthenticatorConfigModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -34,6 +35,8 @@ import org.keycloak.services.Urls;
 import org.keycloak.services.managers.ClientSessionCode;
 
 import org.jboss.logging.Logger;
+
+import static org.keycloak.utils.StringUtil.isBlank;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -46,33 +49,42 @@ public class IdentityProviderAuthenticator implements Authenticator {
 
     @Override
     public void authenticate(AuthenticationFlowContext context) {
+        if (isErrorResponse(context)) {
+            // error, do not redirect but move to the next step
+            context.attempted();
+            return;
+        }
+
+        String providerId = getIdentityProviderAlias(context);
+
+        if (providerId == null) {
+            LOG.tracef("No default provider set or %s query parameter provided", AdapterConstants.KC_IDP_HINT);
+            context.attempted();
+            return;
+        }
+
+        if (isBlank(providerId)) {
+            LOG.tracef("Skipping: %s parameter is empty", AdapterConstants.KC_IDP_HINT);
+            context.attempted();
+        } else {
+            redirect(context, providerId);
+        }
+    }
+
+    private String getIdentityProviderAlias(AuthenticationFlowContext context) {
         String providerId = context.getUriInfo().getQueryParameters().containsKey(AdapterConstants.KC_IDP_HINT)
             ? context.getUriInfo().getQueryParameters().getFirst(AdapterConstants.KC_IDP_HINT)
             : context.getAuthenticationSession().getClientNote(AdapterConstants.KC_IDP_HINT);
 
-        if (providerId != null) {
-            if (providerId.equals("")) {
-                LOG.tracef("Skipping: %s parameter is empty", AdapterConstants.KC_IDP_HINT);
-                context.attempted();
-            } else {
-                LOG.tracef("Redirecting: %s set to %s", AdapterConstants.KC_IDP_HINT, providerId);
-                redirect(context, providerId);
-            }
-        } else if (context.getAuthenticatorConfig() != null && context.getAuthenticatorConfig().getConfig().containsKey(IdentityProviderAuthenticatorFactory.DEFAULT_PROVIDER)) {
-            if (context.getForwardedErrorMessage() != null) {
-                LOG.infof("Should redirect to remote IdP but forwardedError has value '%s', skipping this authenticator...", context.getForwardedErrorMessage());
-                context.attempted();
+        if (providerId == null) {
+            AuthenticatorConfigModel config = context.getAuthenticatorConfig();
 
-                return;
+            if (config != null) {
+                providerId = config.getConfig().get(IdentityProviderAuthenticatorFactory.DEFAULT_PROVIDER);
             }
-
-            String defaultProvider = context.getAuthenticatorConfig().getConfig().get(IdentityProviderAuthenticatorFactory.DEFAULT_PROVIDER);
-            LOG.tracef("Redirecting: default provider set to %s", defaultProvider);
-            redirect(context, defaultProvider);
-        } else {
-            LOG.tracef("No default provider set or %s query parameter provided", AdapterConstants.KC_IDP_HINT);
-            context.attempted();
         }
+
+        return providerId;
     }
 
     protected void redirect(AuthenticationFlowContext context, String providerId) {
@@ -126,4 +138,7 @@ public class IdentityProviderAuthenticator implements Authenticator {
     public void close() {
     }
 
+    private boolean isErrorResponse(AuthenticationFlowContext context) {
+        return context.getForwardedErrorMessage() != null;
+    }
 }

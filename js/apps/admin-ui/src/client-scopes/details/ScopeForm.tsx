@@ -1,6 +1,13 @@
 import type ClientScopeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientScopeRepresentation";
 import type { KeyMetadataRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/keyMetadataRepresentation";
-import { ActionGroup, Button } from "@patternfly/react-core";
+import {
+  ActionGroup,
+  Alert,
+  Button,
+  FormHelperText,
+  HelperText,
+  HelperTextItem,
+} from "@patternfly/react-core";
 import { useEffect, useMemo, useState } from "react";
 import { FormProvider, useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -17,6 +24,7 @@ import { useAdminClient } from "../../admin-client";
 import { getProtocolName } from "../../clients/utils";
 import { DefaultSwitchControl } from "../../components/SwitchControl";
 import {
+  ClientScope,
   allClientScopeTypes,
   ClientScopeDefaultOptionalType,
 } from "../../components/client-scope/ClientScopeTypes";
@@ -34,6 +42,8 @@ import { removeEmptyOid4vcAttributes } from "./oid4vciAttributes";
 const OID4VC_PROTOCOL = "oid4vc";
 const VC_FORMAT_JWT_VC = "jwt_vc_json";
 const VC_FORMAT_SD_JWT = "dc+sd-jwt";
+const VC_FORMAT_JWT_VC_TYP = "vc+jwt";
+const VC_FORMAT_SD_JWT_TYP = "dc+sd-jwt";
 
 // Allowed values for OID4VCI cryptographic binding methods and proof types.
 // Keep these in sync with server-side support in CredentialScopeModel / ProofType.
@@ -75,7 +85,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
   const isDynamicScopesEnabled = isFeatureEnabled(Feature.DynamicScopes);
 
   // Get available hash algorithms from server info
-  const hashAlgorithms = serverInfo?.providers?.hash?.providers
+  const hashAlgorithms = serverInfo.providers?.hash.providers
     ? Object.keys(serverInfo.providers.hash.providers).map((alg) =>
         alg.toLowerCase(),
       )
@@ -83,7 +93,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
 
   // Get available asymmetric signature algorithms from server info
   const asymmetricAlgorithms = useMemo(
-    () => serverInfo?.cryptoInfo?.clientSignatureAsymmetricAlgorithms ?? [],
+    () => serverInfo.cryptoInfo?.clientSignatureAsymmetricAlgorithms ?? [],
     [serverInfo],
   );
 
@@ -112,7 +122,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
   // Filter only active keys suitable for signing credentials AND using asymmetric algorithms
   const keyOptions = useMemo(() => {
     const options = [{ key: "", value: t("useDefaultKey") }];
-    if (realmKeys && realmKeys.length > 0) {
+    if (realmKeys.length > 0) {
       const keyOptions = realmKeys
         .filter(
           (key) =>
@@ -145,6 +155,14 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
     defaultValue: "false",
   });
 
+  const isDynamic = isDynamicScopesEnabled && dynamicScope === "true";
+  const isDynamicScopeWithFeatureDisabled =
+    !isDynamicScopesEnabled &&
+    clientScope?.attributes?.["is.dynamic.scope"] === "true";
+  const scopeTypeOptions = isDynamic
+    ? allClientScopeTypes.filter((key) => key !== "default")
+    : allClientScopeTypes;
+
   const selectedProtocol = useWatch({
     control,
     name: "protocol",
@@ -157,12 +175,31 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
     ),
     defaultValue: clientScope?.attributes?.["vc.format"] ?? VC_FORMAT_SD_JWT,
   });
+  const selectedTokenJwsType = useWatch({
+    control,
+    name: convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
+      "attributes.vc.credential_build_config.token_jws_type",
+    ),
+    defaultValue:
+      clientScope?.attributes?.["vc.credential_build_config.token_jws_type"] ??
+      "",
+  });
 
   const isOid4vcProtocol = selectedProtocol === OID4VC_PROTOCOL;
   const isOid4vcEnabled =
     isFeatureEnabled(Feature.OpenId4VCI) &&
-    realmRepresentation?.verifiableCredentialsEnabled;
+    realmRepresentation.verifiableCredentialsEnabled;
   const isNotSaml = selectedProtocol != "saml";
+  const recommendedTokenJwsType =
+    selectedFormat === VC_FORMAT_SD_JWT
+      ? VC_FORMAT_SD_JWT_TYP
+      : selectedFormat === VC_FORMAT_JWT_VC
+        ? VC_FORMAT_JWT_VC_TYP
+        : undefined;
+  const showTokenJwsTypeWarning =
+    Boolean(selectedTokenJwsType?.trim()) &&
+    Boolean(recommendedTokenJwsType) &&
+    selectedTokenJwsType.trim() !== recommendedTokenJwsType;
 
   const bindingRequired = useWatch({
     control,
@@ -192,6 +229,18 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
   useEffect(() => {
     convertToFormValues(clientScope ?? {}, setValue);
   }, [clientScope, setValue]);
+
+  useEffect(() => {
+    if (isDynamicScopeWithFeatureDisabled) {
+      setValue(
+        convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
+          "attributes.is.dynamic.scope",
+        ),
+        "false",
+        { shouldDirty: true, shouldValidate: true },
+      );
+    }
+  }, [setValue, isDynamicScopeWithFeatureDisabled]);
 
   useEffect(() => {
     if (isSigningKeySelected) {
@@ -233,11 +282,18 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
           rules={{
             required: t("required"),
             onChange: (e) => {
-              if (isDynamicScopesEnabled)
-                setDynamicRegex(e.target.validated, true);
+              if (isDynamicScopesEnabled) setDynamicRegex(e.target.value, true);
             },
           }}
         />
+        {isDynamicScopeWithFeatureDisabled && (
+          <Alert
+            variant="warning"
+            isInline
+            isPlain
+            title={t("dynamicScopeDisabledInfo")}
+          />
+        )}
         {isDynamicScopesEnabled && (
           <>
             <DefaultSwitchControl
@@ -251,6 +307,9 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
                   value ? form.getValues("name") || "" : "",
                   value,
                 );
+                if (value && form.getValues("type") === ClientScope.default) {
+                  setValue("type", ClientScope.optional, { shouldDirty: true });
+                }
               }}
               stringify
             />
@@ -283,7 +342,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
           label={t("type")}
           labelIcon={t("scopeTypeHelp")}
           controller={{ defaultValue: allClientScopeTypes[0] }}
-          options={allClientScopeTypes.map((key) => ({
+          options={scopeTypeOptions.map((key) => ({
             key,
             value: t(`clientScopeType.${key}`),
           }))}
@@ -368,6 +427,17 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
               label={t("credentialIdentifier")}
               labelIcon={t("credentialIdentifierHelp")}
             />
+            <DefaultSwitchControl
+              name={convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
+                "attributes.vc.policy.offer.required",
+              )}
+              defaultValue={
+                clientScope?.attributes?.["vc.policy.offer.required"] ?? "false"
+              }
+              label={t("credentialOfferRequired")}
+              labelIcon={t("credentialOfferRequiredHelp")}
+              stringify
+            />
             <TextControl
               name={convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
                 "attributes.vc.issuer_did",
@@ -415,10 +485,21 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
               defaultValue={
                 clientScope?.attributes?.[
                   "vc.credential_build_config.token_jws_type"
-                ] ?? "JWS"
+                ] ?? ""
               }
             />
-            {realmKeys && realmKeys.length > 0 && (
+            {showTokenJwsTypeWarning && (
+              <FormHelperText>
+                <HelperText>
+                  <HelperTextItem variant="warning">
+                    {t("tokenJwsTypeFormatWarning", {
+                      recommended: recommendedTokenJwsType,
+                    })}
+                  </HelperTextItem>
+                </HelperText>
+              </FormHelperText>
+            )}
+            {realmKeys.length > 0 && (
               <SelectControl
                 id="kc-signing-key-id"
                 name={convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
@@ -622,7 +703,10 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
           <FormSubmitButton
             data-testid="save"
             formState={formState}
-            disabled={!isDirty || !isValid}
+            allowNonDirty={isDynamicScopeWithFeatureDisabled}
+            isDisabled={
+              !(isDirty || isDynamicScopeWithFeatureDisabled) || !isValid
+            }
           >
             {t("save")}
           </FormSubmitButton>

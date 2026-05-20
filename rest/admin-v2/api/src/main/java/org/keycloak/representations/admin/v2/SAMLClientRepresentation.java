@@ -169,8 +169,9 @@ public class SAMLClientRepresentation extends BaseClientRepresentation {
 
     @Override
     public boolean equals(Object o) {
-        if (!(o instanceof SAMLClientRepresentation that)) return false;
+        if (!(o instanceof SAMLClientRepresentation)) return false;
         if (!super.equals(o)) return false;
+        SAMLClientRepresentation that = (SAMLClientRepresentation)o;
         return Objects.equals(nameIdFormat, that.nameIdFormat) 
                 && Objects.equals(forceNameIdFormat, that.forceNameIdFormat) 
                 && Objects.equals(includeAuthnStatement, that.includeAuthnStatement) 

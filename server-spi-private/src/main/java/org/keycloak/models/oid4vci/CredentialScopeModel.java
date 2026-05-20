@@ -30,6 +30,7 @@ import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
+import org.keycloak.utils.StringUtil;
 
 import static org.keycloak.constants.OID4VCIConstants.OID4VC_PROTOCOL;
 
@@ -45,7 +46,8 @@ public class CredentialScopeModel implements ClientScopeModel {
 
     public static final String VC_BUILD_CONFIG_HASH_ALGORITHM_DEFAULT = "SHA-256";
     public static final String VC_BUILD_CONFIG_SD_JWT_VISIBLE_CLAIMS_DEFAULT = "id,iat,nbf,exp,jti";
-    public static final String VC_BUILD_CONFIG_TOKEN_JWS_TYPE_DEFAULT = "JWS";
+    public static final String VC_BUILD_CONFIG_TOKEN_JWS_TYPE_DEFAULT_SD_JWT_VC = "dc+sd-jwt";
+    public static final String VC_BUILD_CONFIG_TOKEN_JWS_TYPE_DEFAULT_JWT_VC = "vc+jwt";
     public static final Integer VC_EXPIRY_IN_SECONDS_DEFAULT = 31536000; // 1 year
     public static final String VC_FORMAT_DEFAULT = VCFormat.SD_JWT_VC;
     public static final Integer VC_SD_JWT_NUMBER_OF_DECOYS_DEFAULT = 10;
@@ -232,11 +234,22 @@ public class CredentialScopeModel implements ClientScopeModel {
 
     public String getBuildConfigTokenJwsType() {
         return Optional.ofNullable(clientScope.getAttribute(VC_BUILD_CONFIG_TOKEN_JWS_TYPE))
-                .orElse(VC_BUILD_CONFIG_TOKEN_JWS_TYPE_DEFAULT);
+                .filter(StringUtil::isNotBlank)
+                .orElse(getDefaultTokenJwsTypeForFormat(getFormat()));
     }
 
     public void setBuildConfigTokenJwsType(String tokenJwsType) {
         clientScope.setAttribute(VC_BUILD_CONFIG_TOKEN_JWS_TYPE, tokenJwsType);
+    }
+
+    public static String getDefaultTokenJwsTypeForFormat(String format) {
+        if (VCFormat.SD_JWT_VC.equals(format)) {
+            return VC_BUILD_CONFIG_TOKEN_JWS_TYPE_DEFAULT_SD_JWT_VC;
+        }
+        if (VCFormat.JWT_VC.equals(format)) {
+            return VC_BUILD_CONFIG_TOKEN_JWS_TYPE_DEFAULT_JWT_VC;
+        }
+        return null;
     }
 
     public String getSigningKeyId() {

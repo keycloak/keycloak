@@ -179,7 +179,7 @@ spec:
 ---
 # Source: ispn-helm/templates/infinispan.yaml
 # tag::infinispan-cache-actionTokens[]
-apiVersion: infinispan.org/v2alpha1
+apiVersion: infinispan.org/v2beta1
 kind: Cache
 metadata:
   name: actiontokens
@@ -214,7 +214,7 @@ spec:
 ---
 # Source: ispn-helm/templates/infinispan.yaml
 # tag::infinispan-cache-authenticationSessions[]
-apiVersion: infinispan.org/v2alpha1
+apiVersion: infinispan.org/v2beta1
 kind: Cache
 metadata:
   name: authenticationsessions
@@ -254,7 +254,7 @@ spec:
 ---
 # Source: ispn-helm/templates/infinispan.yaml
 # tag::infinispan-cache-loginFailures[]
-apiVersion: infinispan.org/v2alpha1
+apiVersion: infinispan.org/v2beta1
 kind: Cache
 metadata:
   name: loginfailures
@@ -294,7 +294,7 @@ spec:
 ---
 # Source: ispn-helm/templates/infinispan.yaml
 # tag::infinispan-cache-work[]
-apiVersion: infinispan.org/v2alpha1
+apiVersion: infinispan.org/v2beta1
 kind: Cache
 metadata:
   name: work

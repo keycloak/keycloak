@@ -1,5 +1,7 @@
 package org.keycloak.testframework.ui.page;
 
+import java.util.Optional;
+
 import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 
 import org.openqa.selenium.By;
@@ -21,6 +23,9 @@ public class LoginPage extends AbstractLoginPage {
     @FindBy(id = "rememberMe")
     private WebElement rememberMe;
 
+    @FindBy(linkText = "Register")
+    private WebElement registerLink;
+
     @FindBy(linkText = "Forgot Password?")
     private WebElement resetPasswordLink;
 
@@ -30,8 +35,8 @@ public class LoginPage extends AbstractLoginPage {
     @FindBy(id = "input-error-username")
     private WebElement userNameInputError;
 
-    @FindBy(className = "pf-m-danger")
-    private WebElement loginErrorMessage;
+    @FindBy(id = "input-error-password")
+    private WebElement passwordInputError;
 
     public LoginPage(ManagedWebDriver driver) {
         super(driver);
@@ -40,6 +45,11 @@ public class LoginPage extends AbstractLoginPage {
     public void fillLogin(String username, String password) {
         usernameInput.clear();
         usernameInput.sendKeys(username);
+        passwordInput.clear();
+        passwordInput.sendKeys(password);
+    }
+
+    public void fillPassword(String password) {
         passwordInput.clear();
         passwordInput.sendKeys(password);
     }
@@ -58,6 +68,11 @@ public class LoginPage extends AbstractLoginPage {
         return driver.findElement(By.id(id));
     }
 
+    public boolean isSocialButtonPresent(String alias) {
+        String id = "social-" + alias;
+        return !driver.driver().findElements(By.id(id)).isEmpty();
+    }
+
     public void rememberMe(boolean value) {
         boolean selected = isRememberMe();
         if ((value && !selected) || !value && selected) {
@@ -67,6 +82,10 @@ public class LoginPage extends AbstractLoginPage {
 
     public boolean isRememberMe() {
         return rememberMe.isSelected();
+    }
+
+    public void clickRegister() {
+        registerLink.click();
     }
 
     public void resetPassword() {
@@ -86,6 +105,10 @@ public class LoginPage extends AbstractLoginPage {
         return usernameInput.getAttribute("value");
     }
 
+    public String getUsernameAutocomplete() {
+        return usernameInput.getDomAttribute("autocomplete");
+    }
+
     public void clearUsernameInput() {
         usernameInput.clear();
     }
@@ -98,12 +121,11 @@ public class LoginPage extends AbstractLoginPage {
         }
     }
 
-    public String getError() {
+    public Optional<String> getPasswordInputError() {
         try {
-            return loginErrorMessage.getText();
+            return Optional.of(passwordInputError.getText());
         } catch (NoSuchElementException e) {
-            return null;
+            return Optional.empty();
         }
     }
-
 }

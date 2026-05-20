@@ -145,7 +145,6 @@ test.describe.serial("Workflow CRUD", () => {
   });
 
   test("should delete workflow from list", async ({ page }) => {
-    console.log("Deleting workflow:", complexWorkflowNameCopy);
     await assertRowExists(page, complexWorkflowNameCopy);
     await clickRowKebabItem(page, complexWorkflowNameCopy, "Delete");
     await confirmModal(page);

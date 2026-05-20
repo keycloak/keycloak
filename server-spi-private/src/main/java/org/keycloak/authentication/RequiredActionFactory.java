@@ -67,7 +67,7 @@ public interface RequiredActionFactory extends ProviderFactory<RequiredActionPro
      * @return
      */
     default boolean isOneTimeAction() {
-        return false;
+        return true;
     }
 
     /**

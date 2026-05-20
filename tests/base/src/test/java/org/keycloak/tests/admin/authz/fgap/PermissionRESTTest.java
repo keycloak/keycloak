@@ -28,6 +28,7 @@ import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.Constants;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.authorization.DecisionStrategy;
@@ -40,7 +41,7 @@ import org.keycloak.testframework.admin.AdminClientFactory;
 import org.keycloak.testframework.annotations.InjectAdminClientFactory;
 import org.keycloak.testframework.annotations.InjectUser;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
-import org.keycloak.testframework.realm.ClientConfigBuilder;
+import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.ManagedUser;
 import org.keycloak.testframework.util.ApiUtil;
 
@@ -234,6 +235,122 @@ public class PermissionRESTTest extends AbstractPermissionTest {
                 .resources(Set.of("non-existent-id"))
                 .scopes(AdminPermissionsSchema.ROLES.getScopes())
                 .build(), Response.Status.BAD_REQUEST);
+
+        createPermission(client, PermissionBuilder.create()
+                .resourceType(AdminPermissionsSchema.USERS.getType())
+                .resources(Set.of(AdminPermissionsSchema.USERS.getType()))
+                .scopes(AdminPermissionsSchema.USERS.getScopes())
+                .build());
+
+        createPermission(client, PermissionBuilder.create()
+                .resourceType(AdminPermissionsSchema.GROUPS.getType())
+                .resources(Set.of(AdminPermissionsSchema.GROUPS.getType()))
+                .scopes(AdminPermissionsSchema.GROUPS.getScopes())
+                .build());
+
+        createPermission(client, PermissionBuilder.create()
+                .resourceType(AdminPermissionsSchema.CLIENTS.getType())
+                .resources(Set.of(AdminPermissionsSchema.CLIENTS.getType()))
+                .scopes(AdminPermissionsSchema.CLIENTS.getScopes())
+                .build());
+
+        createPermission(client, PermissionBuilder.create()
+                .resourceType(AdminPermissionsSchema.ROLES.getType())
+                .resources(Set.of(AdminPermissionsSchema.ROLES.getType()))
+                .scopes(AdminPermissionsSchema.ROLES.getScopes())
+                .build());
+    }
+
+    @Test
+    public void testNonUnanimousDecisionStrategyRejected() {
+        // AFFIRMATIVE should be rejected
+        createPermission(client, PermissionBuilder.create()
+                .resourceType(AdminPermissionsSchema.USERS.getType())
+                .scopes(Set.of(AdminPermissionsSchema.VIEW))
+                .decisionStrategy(DecisionStrategy.AFFIRMATIVE)
+                .build(), Response.Status.BAD_REQUEST);
+
+        // CONSENSUS should be rejected
+        createPermission(client, PermissionBuilder.create()
+                .resourceType(AdminPermissionsSchema.GROUPS.getType())
+                .scopes(Set.of(AdminPermissionsSchema.MANAGE))
+                .decisionStrategy(DecisionStrategy.CONSENSUS)
+                .build(), Response.Status.BAD_REQUEST);
+
+        // UNANIMOUS should be accepted (explicit)
+        createPermission(client, PermissionBuilder.create()
+                .resourceType(AdminPermissionsSchema.USERS.getType())
+                .scopes(Set.of(AdminPermissionsSchema.VIEW))
+                .decisionStrategy(DecisionStrategy.UNANIMOUS)
+                .build());
+
+        // default (null) should be accepted
+        createPermission(client, PermissionBuilder.create()
+                .resourceType(AdminPermissionsSchema.USERS.getType())
+                .scopes(Set.of(AdminPermissionsSchema.MANAGE))
+                .build());
+    }
+
+    @Test
+    public void testNonUnanimousDecisionStrategyRejectedOnUpdate() {
+        ScopePermissionRepresentation permission = PermissionBuilder.create()
+                .resourceType(AdminPermissionsSchema.USERS.getType())
+                .scopes(Set.of(AdminPermissionsSchema.VIEW))
+                .build();
+        createPermission(client, permission);
+
+        // attempt to update with AFFIRMATIVE should fail
+        permission.setDecisionStrategy(DecisionStrategy.AFFIRMATIVE);
+        try {
+            client.admin().authorization().permissions().scope().findById(permission.getId()).update(permission);
+            fail("Expected Exception wasn't thrown.");
+        } catch (Exception ex) {
+            assertThat(ex, instanceOf(BadRequestException.class));
+        }
+
+        // verify permission is unchanged
+        ScopePermissionRepresentation fetched = client.admin().authorization().permissions().scope().findById(permission.getId()).toRepresentation();
+        assertThat(fetched.getDecisionStrategy(), equalTo(DecisionStrategy.UNANIMOUS));
+    }
+
+    @Test
+    public void testResourceTypeMixingNotAllowed() {
+        // Create a Users permission for alice — this creates an authz resource with alice's UUID as its name
+        createPermission(client, PermissionBuilder.create()
+                .resourceType(AdminPermissionsSchema.USERS.getType())
+                .resources(Set.of(userAlice.getUsername()))
+                .scopes(AdminPermissionsSchema.USERS.getScopes())
+                .build());
+
+        ResourceRepresentation aliceResource = client.admin().authorization().resources().searchByName(userAlice.getId());
+        assertThat(aliceResource, notNullValue());
+        String aliceAuthzResourceId = aliceResource.getId();
+
+        // Create a group and a Groups permission — this creates an authz resource with the group's UUID as its name
+        GroupRepresentation group = createGroup("test-resource-type-group");
+        createPermission(client, PermissionBuilder.create()
+                .resourceType(AdminPermissionsSchema.GROUPS.getType())
+                .resources(Set.of(group.getId()))
+                .scopes(AdminPermissionsSchema.GROUPS.getScopes())
+                .build());
+
+        ResourceRepresentation groupResource = client.admin().authorization().resources().searchByName(group.getId());
+        assertThat(groupResource, notNullValue());
+        String groupAuthzResourceId = groupResource.getId();
+
+        // Attempting to create a Groups permission using the alice authz resource ID (a Users resource) must fail
+        createPermission(client, PermissionBuilder.create()
+                .resourceType(AdminPermissionsSchema.GROUPS.getType())
+                .resources(Set.of(aliceAuthzResourceId))
+                .scopes(AdminPermissionsSchema.GROUPS.getScopes())
+                .build(), Response.Status.BAD_REQUEST);
+
+        // Attempting to create a Users permission using the group authz resource ID (a Groups resource) must fail
+        createPermission(client, PermissionBuilder.create()
+                .resourceType(AdminPermissionsSchema.USERS.getType())
+                .resources(Set.of(groupAuthzResourceId))
+                .scopes(AdminPermissionsSchema.USERS.getScopes())
+                .build(), Response.Status.BAD_REQUEST);
     }
 
     @Test
@@ -254,7 +371,7 @@ public class PermissionRESTTest extends AbstractPermissionTest {
                 .add(List.of(manageRealmRole));
 
         // Create a regular test client with authorization enabled
-        ClientRepresentation regularClient = ClientConfigBuilder.create()
+        ClientRepresentation regularClient = ClientBuilder.create()
                 .clientId("regular-authz-client")
                 .secret("secret")
                 .serviceAccountsEnabled(true)

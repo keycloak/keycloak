@@ -30,13 +30,13 @@ import org.keycloak.representations.idm.TestLdapConnectionRepresentation;
 import org.keycloak.services.managers.LDAPServerCapabilitiesManager;
 import org.keycloak.storage.ldap.idm.store.ldap.extended.PasswordModifyRequest;
 import org.keycloak.testsuite.AbstractAdminTest;
-import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.arquillian.annotation.EnableVault;
 import org.keycloak.testsuite.util.LDAPRule;
 
 import org.hamcrest.Matchers;
 import org.junit.ClassRule;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 
@@ -238,14 +238,14 @@ public class UserFederationLdapConnectionTest extends AbstractAdminTest {
                     "false", null, "false", LDAPConstants.AUTH_TYPE_SIMPLE);
             realm.ldapServerCapabilities(config);
 
-            Assert.fail("It wasn't expected to successfully sent the request for query capabilities");
+            Assertions.fail("It wasn't expected to successfully sent the request for query capabilities");
         } catch (BadRequestException bre) {
             // Expected
         }
     }
 
     private void assertStatus(Response response, int status) {
-        Assert.assertEquals(status, response.getStatus());
+        Assertions.assertEquals(status, response.getStatus());
         response.close();
     }
 }

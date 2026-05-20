@@ -29,9 +29,11 @@ import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.events.AdminEventAssertion;
 import org.keycloak.testframework.events.AdminEvents;
+import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
-import org.keycloak.testframework.realm.RealmConfigBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.tests.utils.admin.AdminApiUtil;
 import org.keycloak.tests.utils.admin.AdminEventPaths;
 
@@ -92,11 +94,11 @@ public class AdminEventAuthDetailsTest {
     public static class AdminEventsAuthDetailsRealmConfig implements RealmConfig {
 
         @Override
-        public RealmConfigBuilder configure(RealmConfigBuilder realm) {
-            realm.addClient("client").name("client").publicClient(true).directAccessGrantsEnabled(true);
-            realm.addUser("admin").password("password").name("My", "Admin").email("admin@localhost")
-                    .emailVerified(true).clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.REALM_ADMIN);
-            realm.addUser("app-user").password("password");
+        public RealmBuilder configure(RealmBuilder realm) {
+            realm.clients(ClientBuilder.create("client").name("client").publicClient(true).directAccessGrantsEnabled(true));
+            realm.users(UserBuilder.create("admin").password("password").name("My", "Admin").email("admin@localhost")
+                    .emailVerified(true).clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.REALM_ADMIN));
+            realm.users(UserBuilder.create("app-user").password("password"));
 
             return realm;
         }

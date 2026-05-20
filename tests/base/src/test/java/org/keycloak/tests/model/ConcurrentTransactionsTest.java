@@ -268,6 +268,88 @@ public class ConcurrentTransactionsTest {
         }
     }
 
+
+    @TestOnServer
+    public void setRoleSingleAttribute(KeycloakSession session) throws Exception {
+
+        try {
+            KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession sessionSet) -> {
+
+                RealmModel realm = sessionSet.realms().createRealm("original");
+                sessionSet.getContext().setRealm(realm);
+                realm.setDefaultRole(sessionSet.roles().addRealmRole(realm, Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + realm.getName()));
+                RoleModel roleModel = realm.getDefaultRole();
+                roleModel.setSingleAttribute("foo", String.valueOf(System.currentTimeMillis()));
+
+            });
+
+            KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession session2) -> {
+
+                final KeycloakSessionFactory sessionFactory = session2.getKeycloakSessionFactory();
+
+                AtomicReference<Exception> reference = new AtomicReference<>();
+
+                final CountDownLatch readAttrLatch = new CountDownLatch(2);
+
+                Runnable runnable = () -> {
+                    try {
+                        KeycloakModelUtils.runJobInTransaction(sessionFactory, session1 -> {
+                            try {
+                                // Read user attribute
+                                RealmModel realm = session1.realms().getRealmByName("original");
+                                session1.getContext().setRealm(realm);
+                                RoleModel roleModel = realm.getDefaultRole();
+                                roleModel.getFirstAttribute("foo");
+                                // Wait until it's read in both threads
+                                readAttrLatch.countDown();
+                                readAttrLatch.await();
+                                roleModel.setSingleAttribute("foo", String.valueOf(System.currentTimeMillis()));
+                            } catch (Exception e) {
+                                throw new RuntimeException(e);
+                            }
+                        });
+                    } catch (Exception e) {
+                        reference.set(e);
+                        throw new RuntimeException(e);
+                    } finally {
+                        readAttrLatch.countDown();
+                    }
+                };
+
+                Thread thread1 = new Thread(runnable);
+                Thread thread2 = new Thread(runnable);
+
+                thread1.start();
+                thread2.start();
+
+                try {
+                    thread1.join();
+                    thread2.join();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+
+                logger.info("removeUserAttribute: after thread join");
+                if (reference.get() != null) {
+                    Assertions.fail("Exception happened in some of threads. Details: " + reference.get().getMessage());
+                }
+            });
+
+            KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession sessionSet) -> {
+
+                RealmModel realm = sessionSet.realms().getRealmByName("original");
+                sessionSet.getContext().setRealm(realm);
+                RoleModel roleModel = realm.getDefaultRole();
+                int size = roleModel.getAttributes().get("foo").size();
+                Assertions.assertEquals(1, size);
+
+            });
+
+        } finally {
+            tearDownRealm(session, "original");
+        }
+    }
+
     private void tearDownRealm(KeycloakSession session, String realmName) {
         RealmModel realm = session.realms().getRealmByName(realmName);
         if (realm != null) {

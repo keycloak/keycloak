@@ -17,7 +17,7 @@ import { Link } from "react-router-dom";
 import { useAdminClient } from "../admin-client";
 import type { Row } from "../clients/scopes/ClientScopes";
 import { getProtocolName } from "../clients/utils";
-import { useAlerts } from "@keycloak/keycloak-ui-shared";
+import { getErrorMessage, useAlerts } from "@keycloak/keycloak-ui-shared";
 import {
   AllClientScopeType,
   AllClientScopes,
@@ -25,6 +25,8 @@ import {
   ClientScope,
   ClientScopeDefaultOptionalType,
   changeScope,
+  DynamicScopeLabel,
+  isDynamicScope,
   removeScope,
 } from "../components/client-scope/ClientScopeTypes";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
@@ -75,15 +77,18 @@ const TypeSelector = (scope: TypeSelectorProps) => {
   );
 };
 
-const ClientScopeDetailLink = ({
-  id,
-  name,
-}: ClientScopeDefaultOptionalType) => {
+const ClientScopeDetailLink = (scope: ClientScopeDefaultOptionalType) => {
   const { realm } = useRealm();
   return (
-    <Link key={id} to={toClientScope({ realm, id: id!, tab: "settings" })}>
-      {name}
-    </Link>
+    <>
+      <Link
+        key={scope.id}
+        to={toClientScope({ realm, id: scope.id!, tab: "settings" })}
+      >
+        {scope.name}
+      </Link>{" "}
+      {isDynamicScope(scope) && <DynamicScopeLabel />}
+    </>
   );
 };
 
@@ -166,11 +171,8 @@ export default function ClientScopesSection() {
           for (const scope of selectedScopes) {
             try {
               await removeScope(adminClient, scope);
-            } catch (error: any) {
-              console.warn(
-                "could not remove scope",
-                error.response?.data?.errorMessage || error,
-              );
+            } catch (error) {
+              console.warn("could not remove scope", getErrorMessage(error));
             }
             await adminClient.clientScopes.del({ id: scope.id! });
           }

@@ -40,7 +40,6 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.oidc.OIDCClientRepresentation;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.condition.AnyClientConditionFactory;
-import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.client.resources.TestApplicationResourceUrls;
 import org.keycloak.testsuite.util.ClientPoliciesUtil;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
@@ -57,8 +56,8 @@ import static org.keycloak.testsuite.util.ClientPoliciesUtil.createEcJwk;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.generateEcdsaKey;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.generateSignedDPoPProof;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class OAuth2_1PublicClientTest extends AbstractFAPITest {
 
@@ -76,7 +75,7 @@ public class OAuth2_1PublicClientTest extends AbstractFAPITest {
 
     @Before
     public void setupValidateRedirectUri() {
-        validRedirectUri = AssertEvents.DEFAULT_REDIRECT_URI.replace("localhost", "127.0.0.1");
+        validRedirectUri = oauth.getRedirectUri().replace("localhost", "127.0.0.1");
     }
 
     @Before

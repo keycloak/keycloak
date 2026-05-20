@@ -21,10 +21,10 @@ import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.OAuthIdentityProvider;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthIdentityProvider;
-import org.keycloak.testframework.realm.ClientConfigBuilder;
+import org.keycloak.testframework.realm.ClientBuilder;
+import org.keycloak.testframework.realm.IdentityProviderBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.util.ApiUtil;
-import org.keycloak.testsuite.util.IdentityProviderBuilder;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
 import org.junit.jupiter.api.Assertions;
@@ -133,18 +133,18 @@ public class FederatedClientAuthConflictsTest {
         IdentityProviderRepresentation rep = IdentityProviderBuilder.create()
                 .providerId(OIDCIdentityProviderFactory.PROVIDER_ID)
                 .alias(alias)
-                .setAttribute(IdentityProviderModel.ISSUER, issuer)
-                .setAttribute(OIDCIdentityProviderConfig.SUPPORTS_CLIENT_ASSERTIONS, String.valueOf(supportsClientAssertions))
-                .setAttribute(OIDCIdentityProviderConfig.USE_JWKS_URL, "true")
-                .setAttribute(OIDCIdentityProviderConfig.VALIDATE_SIGNATURE, "true")
-                .setAttribute(OIDCIdentityProviderConfig.JWKS_URL, "http://127.0.0.1:8500/idp/jwks")
+                .attribute(IdentityProviderModel.ISSUER, issuer)
+                .attribute(OIDCIdentityProviderConfig.SUPPORTS_CLIENT_ASSERTIONS, String.valueOf(supportsClientAssertions))
+                .attribute(OIDCIdentityProviderConfig.USE_JWKS_URL, "true")
+                .attribute(OIDCIdentityProviderConfig.VALIDATE_SIGNATURE, "true")
+                .attribute(OIDCIdentityProviderConfig.JWKS_URL, "http://127.0.0.1:8500/idp/jwks")
                 .build();
         rep.setInternalId(ApiUtil.getCreatedId(realm.admin().identityProviders().create(rep)));
         return rep;
     }
 
     private ClientRepresentation createClient(String clientId, String externalClientId, String idpAlias) {
-        ClientRepresentation rep = ClientConfigBuilder.create().clientId(clientId)
+        ClientRepresentation rep = ClientBuilder.create().clientId(clientId)
                 .serviceAccountsEnabled(true)
                 .authenticatorType(FederatedJWTClientAuthenticator.PROVIDER_ID)
                 .attribute(FederatedJWTClientAuthenticator.JWT_CREDENTIAL_ISSUER_KEY, idpAlias)

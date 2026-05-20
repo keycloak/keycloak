@@ -32,7 +32,6 @@ import org.keycloak.admin.client.resource.RealmsResource;
 import org.keycloak.admin.client.resource.ServerInfoResource;
 import org.keycloak.admin.client.spi.ResteasyClientProvider;
 import org.keycloak.admin.client.token.TokenManager;
-import org.keycloak.admin.client.wrapper.Clients;
 
 import static org.keycloak.OAuth2Constants.PASSWORD;
 
@@ -217,6 +216,13 @@ public class Keycloak implements AutoCloseable {
         WebTarget register = client.target(absoluteURI).register(newAuthFilter());
         return CLIENT_PROVIDER.targetProxy(register, proxyClass);
     }
+    
+    /**
+     * Create a secure proxy with endpoints targetting the server
+     */
+    public <T> T proxy(Class<T> proxyClass) {
+        return CLIENT_PROVIDER.targetProxy(target, proxyClass);
+    }
 
     /**
      * Closes the underlying client. After calling this method, this <code>Keycloak</code> instance cannot be reused.
@@ -242,7 +248,4 @@ public class Keycloak implements AutoCloseable {
         return closed;
     }
 
-    public Clients clients(String realmName) {
-        return new Clients(CLIENT_PROVIDER, target, realmName);
-    }
 }

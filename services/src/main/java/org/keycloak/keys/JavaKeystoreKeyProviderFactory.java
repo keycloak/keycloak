@@ -39,12 +39,14 @@ import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.provider.ConfigurationValidationHelper;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 
 import org.jboss.logging.Logger;
 
+import static org.keycloak.keys.Attributes.KID_KEY;
 import static org.keycloak.provider.ProviderConfigProperty.LIST_TYPE;
 import static org.keycloak.provider.ProviderConfigProperty.STRING_TYPE;
 
@@ -108,6 +110,12 @@ public class JavaKeystoreKeyProviderFactory implements KeyProviderFactory {
 
     @Override
     public void validateConfiguration(KeycloakSession session, RealmModel realm, ComponentModel model) throws ComponentValidationException {
+        String kid = model.get(KID_KEY);
+
+        if (kid == null) {
+            kid = KeycloakModelUtils.generateId();
+            model.put(KID_KEY, kid);
+        }
 
         ConfigurationValidationHelper.check(model)
                 .checkLong(Attributes.PRIORITY_PROPERTY, false)

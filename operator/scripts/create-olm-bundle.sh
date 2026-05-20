@@ -69,6 +69,11 @@ yq ea -i '.spec.install.spec.deployments[0].spec.template.metadata.labels.name =
 yq ea -i '.spec.install.spec.deployments[0].spec.template.spec.containers[0].env += [{"name": "POD_NAME", "valueFrom": {"fieldRef": {"fieldPath": "metadata.name"}}}]' "$CSV_PATH"
 yq ea -i '.spec.install.spec.deployments[0].spec.template.spec.containers[0].env += [{"name": "OPERATOR_NAME", "value": "keycloak-operator"}]' "$CSV_PATH"
 
+# Create entries for both alpha1 and beta1 - the indexing is dependent on whether the client crs are present
+yq ea -i '.spec.customresourcedefinitions.owned += [.spec.customresourcedefinitions.owned[] | select(.version == "v2beta1")]' "$CSV_PATH" 
+yq ea -i '.spec.customresourcedefinitions.owned[2].version = "v2alpha1"' "$CSV_PATH"
+yq ea -i '.spec.customresourcedefinitions.owned[3].version = "v2alpha1"' "$CSV_PATH"
+
 { set +x; } 2>/dev/null
 echo ""
 echo "Created OLM bundle ok!"

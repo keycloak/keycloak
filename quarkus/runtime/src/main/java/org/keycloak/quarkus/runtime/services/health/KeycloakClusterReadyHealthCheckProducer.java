@@ -19,10 +19,11 @@ package org.keycloak.quarkus.runtime.services.health;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.context.Dependent;
 import jakarta.enterprise.inject.Produces;
+import jakarta.inject.Inject;
 
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.connections.infinispan.InfinispanConnectionProviderFactory;
-import org.keycloak.services.resources.KeycloakApplication;
+import org.keycloak.quarkus.runtime.integration.QuarkusKeycloakSessionFactory;
 
 import io.smallrye.health.api.AsyncHealthCheck;
 import org.eclipse.microprofile.health.Readiness;
@@ -32,6 +33,8 @@ public class KeycloakClusterReadyHealthCheckProducer {
 
     private AsyncHealthCheck instance;
     private boolean ready;
+    @Inject
+    QuarkusKeycloakSessionFactory sessionFactory;
 
     @Produces
     @Readiness
@@ -41,14 +44,13 @@ public class KeycloakClusterReadyHealthCheckProducer {
             // JVM branch prediction may optimize this code and saves on reading a static volatile field
             return instance;
         }
-        if (!KeycloakApplication.isBootstrapCompleted()) {
+        if (!sessionFactory.isBootstrapCompleted()) {
             return null;
         }
         synchronized (this) {
             if (ready) {
                 return instance;
             }
-            var sessionFactory = KeycloakApplication.getSessionFactory();
             var factory = (InfinispanConnectionProviderFactory) sessionFactory.getProviderFactory(InfinispanConnectionProvider.class);
             if (factory.isClusterHealthSupported()) {
                 instance = new KeycloakClusterReadyHealthCheck(factory);

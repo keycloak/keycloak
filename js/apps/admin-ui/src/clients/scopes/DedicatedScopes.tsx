@@ -132,7 +132,7 @@ export default function DedicatedScopes() {
             data-testid="scopeTab"
             {...scopeTab}
           >
-            <DedicatedScope client={client} />
+            <DedicatedScope client={client} onChange={setClient} />
           </Tab>
         </RoutableTabs>
       </PageSection>

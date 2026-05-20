@@ -21,7 +21,6 @@ import org.keycloak.federation.kerberos.CommonKerberosConfig;
 import org.keycloak.federation.kerberos.KerberosConfig;
 import org.keycloak.federation.kerberos.KerberosFederationProviderFactory;
 import org.keycloak.representations.idm.ComponentRepresentation;
-import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.KerberosEmbeddedServer;
 import org.keycloak.testsuite.util.KerberosRule;
 import org.keycloak.testsuite.util.TestAppHelper;
@@ -30,6 +29,7 @@ import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.junit.ClassRule;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 import org.junit.runners.MethodSorters;
 
 /**
@@ -92,12 +92,12 @@ public class KerberosStandaloneCrossRealmTrustTest extends AbstractKerberosTest 
     public void test03SpnegoLoginWithCorrectKerberosPrincipalRealm() throws Exception {
         // Login in username/password form as "jduke@KEYCLOAK.ORG"
         TestAppHelper testAppHelper = new TestAppHelper(oauth, loginPage, appPage);
-        Assert.assertTrue(testAppHelper.login("jduke", "theduke"));
-        Assert.assertTrue(testAppHelper.logout());
+        Assertions.assertTrue(testAppHelper.login("jduke", "theduke"));
+        Assertions.assertTrue(testAppHelper.logout());
 
         // Login in username/password form as "jduke@KC2.COM"
-        Assert.assertTrue(testAppHelper.login("jduke@kc2.com", "theduke2"));
-        Assert.assertTrue(testAppHelper.logout());
+        Assertions.assertTrue(testAppHelper.login("jduke@kc2.com", "theduke2"));
+        Assertions.assertTrue(testAppHelper.logout());
 
         assertUser("jduke", "jduke@keycloak.org", null, null, "jduke@KEYCLOAK.ORG", false);
         assertUser("jduke@kc2.com", "jduke@kc2.com", null, null, "jduke@KC2.COM", false);

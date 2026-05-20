@@ -27,14 +27,16 @@ import jakarta.ws.rs.core.Response.Status;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.constants.ServiceUrlConstants;
+import org.keycloak.events.EventType;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testframework.events.EventAssertion;
+import org.keycloak.testframework.realm.ClientBuilder;
+import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.util.AdminClientUtil;
-import org.keycloak.testsuite.util.ClientBuilder;
-import org.keycloak.testsuite.util.RealmBuilder;
 
 import org.junit.Rule;
 import org.junit.Test;
@@ -45,7 +47,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author <a href="mailto:thomas.darimont@gmail.com">Thomas Darimont</a>
@@ -57,9 +59,9 @@ public class ClientRedirectTest extends AbstractTestRealmKeycloakTest {
 
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
-        RealmBuilder.edit(testRealm)
-                .client(ClientBuilder.create().clientId("launchpad-test").baseUrl("").rootUrl("http://example.org/launchpad"))
-                .client(ClientBuilder.create().clientId("dummy-test").baseUrl("/base-path").rootUrl("http://example.org/dummy"));
+        RealmBuilder.update(testRealm)
+                .clients(ClientBuilder.create().clientId("launchpad-test").baseUrl("").rootUrl("http://example.org/launchpad"))
+                .clients(ClientBuilder.create().clientId("dummy-test").baseUrl("/base-path").rootUrl("http://example.org/dummy"));
     }
 
     /**
@@ -104,7 +106,7 @@ public class ClientRedirectTest extends AbstractTestRealmKeycloakTest {
         try {
             log.debug("log in");
             oauth.doLogin("test-user@localhost", "password");
-            events.expectLogin().assertEvent();
+            EventAssertion.expectLoginSuccess(events.poll());
 
             String code = oauth.parseLoginResponse().getCode();
             String idTokenHint = oauth.doAccessTokenRequest(code).getIdToken();
@@ -121,7 +123,8 @@ public class ClientRedirectTest extends AbstractTestRealmKeycloakTest {
             log.debug("Current URL: " + driver.getCurrentUrl());
 
             log.debug("check logout_error");
-            events.expectLogoutError(OAuthErrorException.INVALID_REDIRECT_URI).client(AssertEvents.DEFAULT_CLIENT_ID).assertEvent();
+            EventAssertion.assertError(events.poll()).type(EventType.LOGOUT_ERROR)
+                    .error(OAuthErrorException.INVALID_REDIRECT_URI).clientId(oauth.getClientId());
             assertThat(driver.getCurrentUrl(), is(not(equalTo("http://example.org/redirected"))));
         } finally {
             log.debug("removing disabled-client");

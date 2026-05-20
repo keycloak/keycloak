@@ -3,6 +3,7 @@
 * [Alexander Schwartz](https://github.com/ahus1)
 * [Marek Posolda](https://github.com/mposolda)
 * [Pedro Igor](https://github.com/pedroigor)
+* [Ricardo Martin](https://github.com/rmartinc)
 * [Sebastian Schuster](https://github.com/sschu)
 * [Stan Silvert](https://github.com/ssilvert)
 * [Steven Hawkins](https://github.com/shawkins)

@@ -195,6 +195,12 @@ public final class HttpPropertyMappers implements PropertyMapperGrouping {
                         .to("quarkus.shutdown.delay")
                         .paramLabel("delay")
                         .validator(HttpPropertyMappers::validateShutdownDuration)
+                        .build(),
+                fromOption(HttpOptions.SHUTDOWN_TIMEOUT)
+                        .mapFrom(HttpOptions.SHUTDOWN_TIMEOUT)
+                        .to("kc.spi-connections-infinispan--default--shutdown-timeout")
+                        .paramLabel("timeout")
+                        .validator(HttpPropertyMappers::validateShutdownDuration)
                         .build()
         );
 

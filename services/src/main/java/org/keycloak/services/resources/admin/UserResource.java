@@ -91,6 +91,7 @@ import org.keycloak.models.utils.RoleUtils;
 import org.keycloak.models.utils.SystemClientUtil;
 import org.keycloak.organization.utils.Organizations;
 import org.keycloak.policy.PasswordPolicyNotMetException;
+import org.keycloak.protocol.oid4vc.resources.admin.UserVerifiableCredentialResource;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.utils.RedirectUtils;
 import org.keycloak.provider.ProviderFactory;
@@ -660,6 +661,11 @@ public class UserResource {
         adminEvent.operation(OperationType.ACTION).resourcePath(session.getContext().getUri()).success();
     }
 
+    @Path("vc")
+    public UserVerifiableCredentialResource verifiableCredentials() {
+        return new UserVerifiableCredentialResource(session, realm, user, auth, adminEvent);
+    }
+
     /**
      * Remove all user sessions associated with the user
      *
@@ -878,7 +884,11 @@ public class UserResource {
             else throw new ForbiddenException();
         }
         user.credentialManager().removeStoredCredentialById(credentialId);
-        adminEvent.operation(OperationType.ACTION).resourcePath(session.getContext().getUri()).success();
+        adminEvent.operation(OperationType.ACTION).resourcePath(session.getContext().getUri())
+                .detail(Details.CREDENTIAL_ID, credentialId)
+                .detail(Details.CREDENTIAL_TYPE, credential.getType())
+                .detail(Details.CREDENTIAL_USER_LABEL, credential.getUserLabel())
+                .success();
     }
 
     /**

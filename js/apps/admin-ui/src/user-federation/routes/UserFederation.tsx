@@ -10,9 +10,9 @@ const UserFederationSection = lazy(() => import("../UserFederationSection"));
 export const UserFederationRoute: AppRouteObject = {
   path: "/:realm/user-federation",
   element: <UserFederationSection />,
-  breadcrumb: (t) => t("userFederation"),
   handle: {
     access: "view-realm",
+    breadcrumb: (t) => t("userFederation"),
   },
 };
 

@@ -13,6 +13,12 @@ request.secure
 request.body['/a/b/c']
 request.body['/d/1']
 request.body
+user-uuid
+group-uuid
+role-uuid
+target-group-uuid
+admins-group-uuid
+permission-id
 keycloak.access_token['/custom_claim/0']
 keycloak.access_token
 keycloak.access_token['/sub']

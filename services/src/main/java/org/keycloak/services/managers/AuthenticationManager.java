@@ -66,6 +66,7 @@ import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.common.util.Time;
 import org.keycloak.cookie.CookieProvider;
 import org.keycloak.cookie.CookieType;
+import org.keycloak.crypto.CryptoUtils;
 import org.keycloak.crypto.SignatureProvider;
 import org.keycloak.crypto.SignatureVerifierContext;
 import org.keycloak.events.Details;
@@ -169,6 +170,9 @@ public class AuthenticationManager {
     // authSession note with flag that is true if the user's password has been correctly validated
     public static final String PASSWORD_VALIDATED = "PASSWORD_VALIDATED";
 
+    // authSession note with flag that registration of new user happened in this authSession
+    public static final String NEW_USER_REGISTERED = "NEW_USER_REGISTERED";
+
     // state checker identity token claim
     private static final String STATE_CHECKER = "state_checker";
 
@@ -259,7 +263,7 @@ public class AuthenticationManager {
             String kid = verifier.getHeader().getKeyId();
             String algorithm = verifier.getHeader().getAlgorithm().name();
 
-            SignatureVerifierContext signatureVerifier = session.getProvider(SignatureProvider.class, algorithm).verifier(kid);
+            SignatureVerifierContext signatureVerifier = CryptoUtils.getSignatureProvider(session, algorithm).verifier(kid);
             verifier.verifierContext(signatureVerifier);
 
             AccessToken token = verifier.verify().getToken();
@@ -1150,8 +1154,7 @@ public class AuthenticationManager {
             UserConsentModel grantedConsent = getEffectiveGrantedConsent(session, authSession);
 
             // See if any clientScopes need to be approved on consent screen
-            List<AuthorizationDetails> clientScopesToApprove =
-                    getClientScopesToApproveOnConsentScreen(grantedConsent, session, authSession);
+            List<AuthorizationDetails> clientScopesToApprove = getClientScopesToApproveOnConsentScreen(client, grantedConsent, session, authSession);
             if (!clientScopesToApprove.isEmpty()) {
                 return Action.OAUTH_GRANT.name();
             }
@@ -1211,8 +1214,7 @@ public class AuthenticationManager {
 
             UserConsentModel grantedConsent = getEffectiveGrantedConsent(session, authSession);
 
-            List<AuthorizationDetails> clientScopesToApprove =
-                    getClientScopesToApproveOnConsentScreen(grantedConsent, session, authSession);
+            List<AuthorizationDetails> clientScopesToApprove = getClientScopesToApproveOnConsentScreen(client, grantedConsent, session, authSession);
 
             // Skip grant screen if everything was already approved by this user
             if (!clientScopesToApprove.isEmpty()) {
@@ -1241,12 +1243,12 @@ public class AuthenticationManager {
 
     }
 
-    private static List<AuthorizationDetails> getClientScopesToApproveOnConsentScreen(UserConsentModel grantedConsent, KeycloakSession session, AuthenticationSessionModel authSession) {
+    private static List<AuthorizationDetails> getClientScopesToApproveOnConsentScreen(ClientModel client, UserConsentModel grantedConsent, KeycloakSession session, AuthenticationSessionModel authSession) {
         // Client Scopes to be displayed on consent screen
         List<AuthorizationDetails> clientScopesToDisplay = new LinkedList<>();
 
         // AuthorizationDetails are going to be returned regardless of the Dynamic Scope feature state
-        for (AuthorizationDetails authDetails : getClientScopeModelStream(session).toList()) {
+        for (AuthorizationDetails authDetails : getClientScopeModelStream(session, client).toList()) {
             ClientScopeModel clientScope = authDetails.getClientScope();
             if (clientScope == null || !clientScope.isDisplayOnConsentScreen()) {
                 continue;
@@ -1277,12 +1279,12 @@ public class AuthenticationManager {
     }
 
 
-    private static Stream<AuthorizationDetails> getClientScopeModelStream(KeycloakSession session) {
+    private static Stream<AuthorizationDetails> getClientScopeModelStream(KeycloakSession session, ClientModel client) {
         AuthenticationSessionModel authSession = session.getContext().getAuthenticationSession();
         //if Dynamic Scopes are enabled, get the scopes from the AuthorizationRequestContext, passing the session and scopes as parameters
         // then concat a Stream with the ClientModel, as it's discarded in the getAuthorizationRequestContext method
         if (Profile.isFeatureEnabled(Profile.Feature.DYNAMIC_SCOPES)) {
-            return AuthorizationContextUtil.getAuthorizationRequestsStreamFromScopesWithClient(session, authSession.getClientNote(OAuth2Constants.SCOPE));
+            return AuthorizationContextUtil.getAuthorizationRequestsStreamFromScopesWithClient(session, client, authSession.getClientNote(OAuth2Constants.SCOPE));
         }
         // if dynamic scopes are not enabled, we retain the old behaviour, but the ClientScopes will be wrapped in
         // AuthorizationRequest objects to standardize the code handling these.

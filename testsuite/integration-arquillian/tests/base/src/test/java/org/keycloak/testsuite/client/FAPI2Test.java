@@ -36,7 +36,6 @@ import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.oidc.OIDCClientRepresentation;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
-import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.client.resources.TestApplicationResourceUrls;
 import org.keycloak.testsuite.rest.resource.TestingOIDCEndpointsApplicationResource;
 import org.keycloak.testsuite.util.MutualTLSUtils;
@@ -45,11 +44,12 @@ import org.keycloak.testsuite.util.oauth.ParResponse;
 import org.keycloak.testsuite.util.oauth.PkceGenerator;
 
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Test for the FAPI 2 specifications (still implementer's draft):
@@ -447,26 +447,26 @@ public class FAPI2Test extends AbstractFAPI2Test {
         // Try to register client with "client-jwt" - should pass
         String clientUUID = createClientByAdmin("client-jwt", (ClientRepresentation clientRep) -> clientRep.setClientAuthenticatorType(JWTClientAuthenticator.PROVIDER_ID));
         ClientRepresentation client = getClientByAdmin(clientUUID);
-        Assert.assertEquals(JWTClientAuthenticator.PROVIDER_ID, client.getClientAuthenticatorType());
+        Assertions.assertEquals(JWTClientAuthenticator.PROVIDER_ID, client.getClientAuthenticatorType());
 
         // Try to register client with "client-x509" - should pass
         clientUUID = createClientByAdmin("client-x509", (ClientRepresentation clientRep) -> clientRep.setClientAuthenticatorType(X509ClientAuthenticator.PROVIDER_ID));
         client = getClientByAdmin(clientUUID);
-        Assert.assertEquals(X509ClientAuthenticator.PROVIDER_ID, client.getClientAuthenticatorType());
+        Assertions.assertEquals(X509ClientAuthenticator.PROVIDER_ID, client.getClientAuthenticatorType());
 
         // Try to register client with default authenticator - should pass. Client authenticator should be "client-jwt"
         clientUUID = createClientByAdmin("client-jwt-2", (ClientRepresentation clientRep) -> {
         });
         client = getClientByAdmin(clientUUID);
-        Assert.assertEquals(JWTClientAuthenticator.PROVIDER_ID, client.getClientAuthenticatorType());
+        Assertions.assertEquals(JWTClientAuthenticator.PROVIDER_ID, client.getClientAuthenticatorType());
 
         // Check the Consent is enabled, Holder-of-key is enabled, fullScopeAllowed disabled and default signature algorithm.
-        Assert.assertTrue(client.isConsentRequired());
+        Assertions.assertTrue(client.isConsentRequired());
         OIDCAdvancedConfigWrapper clientConfig = OIDCAdvancedConfigWrapper.fromClientRepresentation(client);
-        Assert.assertTrue(clientConfig.isUseMtlsHokToken());
-        Assert.assertEquals(Algorithm.PS256, clientConfig.getIdTokenSignedResponseAlg());
-        Assert.assertEquals(Algorithm.PS256, clientConfig.getRequestObjectSignatureAlg());
-        Assert.assertFalse(client.isFullScopeAllowed());
+        Assertions.assertTrue(clientConfig.isUseMtlsHokToken());
+        Assertions.assertEquals(Algorithm.PS256, clientConfig.getIdTokenSignedResponseAlg());
+        Assertions.assertEquals(Algorithm.PS256, clientConfig.getRequestObjectSignatureAlg());
+        Assertions.assertFalse(client.isFullScopeAllowed());
     }
 
     protected void testFAPI2OIDCClientRegistration(String profile) throws Exception {
@@ -486,8 +486,8 @@ public class FAPI2Test extends AbstractFAPI2Test {
             clientRep.setJwksUri("https://foo");
         });
         ClientRepresentation client = getClientByAdmin(clientUUID);
-        Assert.assertEquals(JWTClientAuthenticator.PROVIDER_ID, client.getClientAuthenticatorType());
-        Assert.assertFalse(client.isFullScopeAllowed());
+        Assertions.assertEquals(JWTClientAuthenticator.PROVIDER_ID, client.getClientAuthenticatorType());
+        Assertions.assertFalse(client.isFullScopeAllowed());
 
         // Set new initialToken for register new clients
         setInitialAccessTokenForDynamicClientRegistration();
@@ -495,11 +495,11 @@ public class FAPI2Test extends AbstractFAPI2Test {
         // Try to register client with "client-x509" - should pass
         clientUUID = createClientDynamically("client-x509", (OIDCClientRepresentation clientRep) -> clientRep.setTokenEndpointAuthMethod(OIDCLoginProtocol.TLS_CLIENT_AUTH));
         client = getClientByAdmin(clientUUID);
-        Assert.assertEquals(X509ClientAuthenticator.PROVIDER_ID, client.getClientAuthenticatorType());
+        Assertions.assertEquals(X509ClientAuthenticator.PROVIDER_ID, client.getClientAuthenticatorType());
 
         // Check the Consent is enabled, PKCS set to S256
-        Assert.assertTrue(client.isConsentRequired());
-        Assert.assertEquals(OAuth2Constants.PKCE_METHOD_S256, OIDCAdvancedConfigWrapper.fromClientRepresentation(client).getPkceCodeChallengeMethod());
+        Assertions.assertTrue(client.isConsentRequired());
+        Assertions.assertEquals(OAuth2Constants.PKCE_METHOD_S256, OIDCAdvancedConfigWrapper.fromClientRepresentation(client).getPkceCodeChallengeMethod());
 
     }
 

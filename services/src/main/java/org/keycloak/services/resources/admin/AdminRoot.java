@@ -248,7 +248,7 @@ public class AdminRoot {
             }
         }
 
-        Cors.builder().allowedOrigins(auth.getToken()).allowedMethods("GET", "PUT", "POST", "DELETE").exposedHeaders("Location").auth().add();
+        Cors.builder().checkAllowedOrigins(auth.getToken()).allowedMethods("GET", "PUT", "POST", "DELETE").exposedHeaders("Location").auth().add();
 
         return new RealmsAdminResource(session, auth, tokenManager);
     }
@@ -292,7 +292,7 @@ public class AdminRoot {
             logger.debugf("authenticated admin access for: %s", auth.getUser().getUsername());
         }
 
-        Cors.builder().allowedOrigins(auth.getToken()).allowedMethods("GET", "PUT", "POST", "DELETE").auth().add();
+        Cors.builder().checkAllowedOrigins(auth.getToken()).allowedMethods("GET", "PUT", "POST", "DELETE").auth().add();
 
         return new ServerInfoAdminResource(session, auth);
     }

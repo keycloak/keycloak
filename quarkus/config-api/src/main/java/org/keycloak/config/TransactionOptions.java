@@ -35,13 +35,6 @@ public class TransactionOptions {
             .defaultValue(MIGRATION_TRANSACTION_TIMEOUT)
             .build();
 
-    public static final Option<String> DB_LOCK_TIMEOUT = new OptionBuilder<>("transaction-db-lock-timeout", String.class)
-            .category(OptionCategory.TRANSACTION)
-            .description("Hidden option to map transaction-setup-timeout to db lock timeout.")
-            .buildTime(false)
-            .hidden()
-            .build();
-
     public static String getNamedTxXADatasource(String namedProperty) {
         if ("<default>".equals(namedProperty)) {
             return TRANSACTION_XA_ENABLED.getKey();

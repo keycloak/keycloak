@@ -21,8 +21,8 @@ import java.util.Optional;
 
 import org.keycloak.operator.controllers.KeycloakDistConfigurator;
 import org.keycloak.operator.controllers.WatchedResources;
-import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
-import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImport;
+import org.keycloak.operator.crds.v2beta1.deployment.Keycloak;
+import org.keycloak.operator.crds.v2beta1.realmimport.KeycloakRealmImport;
 import org.keycloak.operator.update.UpdateType;
 
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;

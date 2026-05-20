@@ -27,17 +27,17 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.federation.ldap.AbstractLDAPTest;
 import org.keycloak.testsuite.federation.ldap.LDAPTestContext;
 import org.keycloak.testsuite.util.LDAPRule;
 import org.keycloak.testsuite.util.LDAPTestUtils;
-import org.keycloak.testsuite.util.UserBuilder;
 
-import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 import org.junit.runners.MethodSorters;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -97,45 +97,45 @@ public class LDAPSearchForUsersPaginationNoImportTest extends AbstractLDAPTest {
     @Test
     public void testPagination() {
         //tests LDAPStorageProvider.searchLDAP(...
-        assertThat(adminClient.realm(TEST_REALM_NAME).users().search("jo*", 0, 15), hasSize(15));
-        assertThat(adminClient.realm(TEST_REALM_NAME).users().search("John Some Doe", 0, 15), hasSize(0));
-        assertThat(adminClient.realm(TEST_REALM_NAME).users().search("*", null, null), hasSize(15));
-        assertThat(adminClient.realm(TEST_REALM_NAME).users().search("*", null, null), hasSize(15));
-        assertThat(adminClient.realm(TEST_REALM_NAME).users().search("*", 10, 8), hasSize(5));
-        assertThat(adminClient.realm(TEST_REALM_NAME).users().search("*", 0, 10), hasSize(10));
-        assertThat(adminClient.realm(TEST_REALM_NAME).users().search("*", 7, 10), hasSize(8));
-        assertThat(adminClient.realm(TEST_REALM_NAME).users().search("*", 15, 100), hasSize(0));
-        assertThat(adminClient.realm(TEST_REALM_NAME).users().search("*", 14, 2), hasSize(1));
+        assertThat(managedRealm.admin().users().search("jo*", 0, 15), hasSize(15));
+        assertThat(managedRealm.admin().users().search("John Some Doe", 0, 15), hasSize(0));
+        assertThat(managedRealm.admin().users().search("*", null, null), hasSize(15));
+        assertThat(managedRealm.admin().users().search("*", null, null), hasSize(15));
+        assertThat(managedRealm.admin().users().search("*", 10, 8), hasSize(5));
+        assertThat(managedRealm.admin().users().search("*", 0, 10), hasSize(10));
+        assertThat(managedRealm.admin().users().search("*", 7, 10), hasSize(8));
+        assertThat(managedRealm.admin().users().search("*", 15, 100), hasSize(0));
+        assertThat(managedRealm.admin().users().search("*", 14, 2), hasSize(1));
 
         //tests LDAPStorageProvider.searchLDAP(...
-        assertThat(adminClient.realm(TEST_REALM_NAME).users().search("John", null, null), hasSize(15));
-        assertThat(adminClient.realm(TEST_REALM_NAME).users().search("John*", null, null), hasSize(15));
-        assertThat(adminClient.realm(TEST_REALM_NAME).users().search("\"John\"", null, null), hasSize(11));
-        assertThat(adminClient.realm(TEST_REALM_NAME).users().search("\"John\"", 10, 8), hasSize(1));
-        assertThat(adminClient.realm(TEST_REALM_NAME).users().search("\"John\"", 0, 10), hasSize(10));
-        assertThat(adminClient.realm(TEST_REALM_NAME).users().search("\"John\"", 0, 5), hasSize(5));
-        assertThat(adminClient.realm(TEST_REALM_NAME).users().search("\"John\"", 2, 10), hasSize(9));
-        assertThat(adminClient.realm(TEST_REALM_NAME).users().search("\"John\"", 0, 8), hasSize(8));
-        assertThat(adminClient.realm(TEST_REALM_NAME).users().search("\"Some\"", 0, 20), hasSize(10));
-        assertThat(adminClient.realm(TEST_REALM_NAME).users().search("\"Some\"", 10, 20), hasSize(0));
+        assertThat(managedRealm.admin().users().search("John", null, null), hasSize(15));
+        assertThat(managedRealm.admin().users().search("John*", null, null), hasSize(15));
+        assertThat(managedRealm.admin().users().search("\"John\"", null, null), hasSize(11));
+        assertThat(managedRealm.admin().users().search("\"John\"", 10, 8), hasSize(1));
+        assertThat(managedRealm.admin().users().search("\"John\"", 0, 10), hasSize(10));
+        assertThat(managedRealm.admin().users().search("\"John\"", 0, 5), hasSize(5));
+        assertThat(managedRealm.admin().users().search("\"John\"", 2, 10), hasSize(9));
+        assertThat(managedRealm.admin().users().search("\"John\"", 0, 8), hasSize(8));
+        assertThat(managedRealm.admin().users().search("\"Some\"", 0, 20), hasSize(10));
+        assertThat(managedRealm.admin().users().search("\"Some\"", 10, 20), hasSize(0));
 
         //tests LDAPStorageProvider.searchLDAPByAttributes(...
-        assertThat(adminClient.realm(TEST_REALM_NAME).users().list(), hasSize(15));
-        assertThat(adminClient.realm(TEST_REALM_NAME).users().list(10, 8), hasSize(5));
-        assertThat(adminClient.realm(TEST_REALM_NAME).users().list(0, 10), hasSize(10));
-        assertThat(adminClient.realm(TEST_REALM_NAME).users().list(7, 10), hasSize(8));
-        assertThat(adminClient.realm(TEST_REALM_NAME).users().list(15, 100), hasSize(0));
-        assertThat(adminClient.realm(TEST_REALM_NAME).users().list(14, 2), hasSize(1));
-        assertThat(adminClient.realm(TEST_REALM_NAME).users().search(null, "John", null, null, 0, 15), hasSize(5));
-        assertThat(adminClient.realm(TEST_REALM_NAME).users().search(null, "Some", "John", null, 0, 15), hasSize(5));        
-        assertThat(adminClient.realm(TEST_REALM_NAME).users().search(null, "Some", "John", null, 2, 15), hasSize(3));        
+        assertThat(managedRealm.admin().users().list(), hasSize(15));
+        assertThat(managedRealm.admin().users().list(10, 8), hasSize(5));
+        assertThat(managedRealm.admin().users().list(0, 10), hasSize(10));
+        assertThat(managedRealm.admin().users().list(7, 10), hasSize(8));
+        assertThat(managedRealm.admin().users().list(15, 100), hasSize(0));
+        assertThat(managedRealm.admin().users().list(14, 2), hasSize(1));
+        assertThat(managedRealm.admin().users().search(null, "John", null, null, 0, 15), hasSize(5));
+        assertThat(managedRealm.admin().users().search(null, "Some", "John", null, 0, 15), hasSize(5));        
+        assertThat(managedRealm.admin().users().search(null, "Some", "John", null, 2, 15), hasSize(3));        
     }
 
     @Test
     public void testReturnedOrder() {
-        List<String> firstFive = adminClient.realm(TEST_REALM_NAME).users().search("*", 0, 5).stream().map(UserRepresentation::getUsername).collect(Collectors.toList());
-        List<String> secondFive = adminClient.realm(TEST_REALM_NAME).users().search("*", 5, 5).stream().map(UserRepresentation::getUsername).collect(Collectors.toList());
-        List<String> thirdFive = adminClient.realm(TEST_REALM_NAME).users().search("*", 10, 5).stream().map(UserRepresentation::getUsername).collect(Collectors.toList());
+        List<String> firstFive = managedRealm.admin().users().search("*", 0, 5).stream().map(UserRepresentation::getUsername).collect(Collectors.toList());
+        List<String> secondFive = managedRealm.admin().users().search("*", 5, 5).stream().map(UserRepresentation::getUsername).collect(Collectors.toList());
+        List<String> thirdFive = managedRealm.admin().users().search("*", 10, 5).stream().map(UserRepresentation::getUsername).collect(Collectors.toList());
 
         firstFive.forEach(username -> assertThat(secondFive, not(hasItem(username))));
         firstFive.forEach(username -> assertThat(thirdFive, not(hasItem(username))));
@@ -149,76 +149,76 @@ public class LDAPSearchForUsersPaginationNoImportTest extends AbstractLDAPTest {
 
     @Test
     public void testSearchLDAPStreet() {
-        Set<String> usernames = testRealm().users().searchByAttributes("street:\"Acacia Avenue\"")
+        Set<String> usernames = managedRealm.admin().users().searchByAttributes("street:\"Acacia Avenue\"")
                 .stream().map(UserRepresentation::getUsername)
                 .collect(Collectors.toSet());
-        Assert.assertEquals(Set.of("john", "john00", "john01"), usernames);
+        Assertions.assertEquals(Set.of("john", "john00", "john01"), usernames);
 
-        usernames = testRealm().users().searchByAttributes(0, 5, true, true, "street:\"Acacia Avenue\"")
+        usernames = managedRealm.admin().users().searchByAttributes(0, 5, true, true, "street:\"Acacia Avenue\"")
                 .stream().map(UserRepresentation::getUsername)
                 .collect(Collectors.toSet());
-        Assert.assertEquals(Set.of("john", "john00", "john01"), usernames);
+        Assertions.assertEquals(Set.of("john", "john00", "john01"), usernames);
     }
 
     @Test
     public void testSearchNonExact() {
-        Set<String> usernames = testRealm().users().searchByEmail("1@email.org", false)
+        Set<String> usernames = managedRealm.admin().users().searchByEmail("1@email.org", false)
                 .stream()
                 .map(UserRepresentation::getUsername)
                 .collect(Collectors.toSet());
-        Assert.assertEquals(Set.of("john01", "john11"), usernames);
+        Assertions.assertEquals(Set.of("john01", "john11"), usernames);
 
-        usernames = testRealm().users().searchByEmail("1@email.org", false)
+        usernames = managedRealm.admin().users().searchByEmail("1@email.org", false)
                 .stream()
                 .map(UserRepresentation::getUsername)
                 .collect(Collectors.toSet());
-        Assert.assertEquals(Set.of("john01", "john11"), usernames);
+        Assertions.assertEquals(Set.of("john01", "john11"), usernames);
     }
 
     @Test
     public void testSearchLDAPLdapId() {
-        UserRepresentation john = testRealm().users().search("john", true).stream().findAny().orElse(null);
-        Assert.assertNotNull(john);
-        Assert.assertNotNull(john.firstAttribute(LDAPConstants.LDAP_ID));
-        Set<String> usernames = testRealm().users()
+        UserRepresentation john = managedRealm.admin().users().search("john", true).stream().findAny().orElse(null);
+        Assertions.assertNotNull(john);
+        Assertions.assertNotNull(john.firstAttribute(LDAPConstants.LDAP_ID));
+        Set<String> usernames = managedRealm.admin().users()
                 .searchByAttributes(LDAPConstants.LDAP_ID + ":" + john.firstAttribute(LDAPConstants.LDAP_ID))
                 .stream().map(UserRepresentation::getUsername)
                 .collect(Collectors.toSet());
-        Assert.assertEquals(Set.of("john"), usernames);
+        Assertions.assertEquals(Set.of("john"), usernames);
     }
 
     @Test
     public void testSearchLDAPLdapEntryDn() {
-        UserRepresentation john = testRealm().users().search("john", true).stream().findAny().orElse(null);
-        Assert.assertNotNull(john);
-        Assert.assertNotNull(john.firstAttribute(LDAPConstants.LDAP_ENTRY_DN));
-        Set<String> usernames = testRealm().users()
+        UserRepresentation john = managedRealm.admin().users().search("john", true).stream().findAny().orElse(null);
+        Assertions.assertNotNull(john);
+        Assertions.assertNotNull(john.firstAttribute(LDAPConstants.LDAP_ENTRY_DN));
+        Set<String> usernames = managedRealm.admin().users()
                 .searchByAttributes(LDAPConstants.LDAP_ENTRY_DN + ":" + john.firstAttribute(LDAPConstants.LDAP_ENTRY_DN))
                 .stream().map(UserRepresentation::getUsername)
                 .collect(Collectors.toSet());
-        Assert.assertEquals(Set.of("john"), usernames);
+        Assertions.assertEquals(Set.of("john"), usernames);
     }
 
     public void testDuplicateEmailInDatabase() {
         setLDAPEnabled(false);
         try {
             // create a local db user with the same email than an a ldap user
-            String userId = ApiUtil.getCreatedId(testRealm().users().create(UserBuilder.create()
+            String userId = ApiUtil.getCreatedId(managedRealm.admin().users().create(UserBuilder.create()
                     .username("jdoe").firstName("John").lastName("Doe")
                     .email("john14@email.org")
                     .build()));
-            Assert.assertNotNull("User not created", userId);
+            Assertions.assertNotNull(userId, "User not created");
             getCleanup().addUserId(userId);
         } finally {
             setLDAPEnabled(true);
         }
 
-        List<UserRepresentation> search = adminClient.realm(TEST_REALM_NAME).users()
+        List<UserRepresentation> search = managedRealm.admin().users()
                 .search("john14@email.org", null, null)
                 .stream().collect(Collectors.toList());
-        Assert.assertEquals("User not found", 1, search.size());
-        Assert.assertEquals("Incorrect User", "jdoe", search.get(0).getUsername());
-        Assert.assertTrue("Duplicated user created", adminClient.realm(TEST_REALM_NAME).users().search("john", true).isEmpty());
+        Assertions.assertEquals(1, search.size(), "User not found");
+        Assertions.assertEquals("jdoe", search.get(0).getUsername(), "Incorrect User");
+        Assertions.assertTrue(managedRealm.admin().users().search("john", true).isEmpty(), "Duplicated user created");
     }
 
     private void setLDAPEnabled(final boolean enabled) {

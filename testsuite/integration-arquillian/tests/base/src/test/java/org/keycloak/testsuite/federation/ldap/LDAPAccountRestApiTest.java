@@ -45,17 +45,17 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.FixMethodOrder;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 import org.junit.runners.MethodSorters;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -128,19 +128,19 @@ public class LDAPAccountRestApiTest extends AbstractLDAPTest {
         UserRepresentation user = getProfile();
 
         // Metadata attributes like LDAP_ID are not present
-        Assert.assertNull(user.getAttributes());
+        Assertions.assertNull(user.getAttributes());
 
-        org.keycloak.representations.idm.UserRepresentation adminRestUserRep = testRealm().users()
+        org.keycloak.representations.idm.UserRepresentation adminRestUserRep = managedRealm.admin().users()
                 .search(user.getUsername()).get(0);
         List<String> origLdapId = adminRestUserRep.getAttributes().get(LDAPConstants.LDAP_ID);
         List<String> origLdapEntryDn = adminRestUserRep.getAttributes().get(LDAPConstants.LDAP_ENTRY_DN);
-        Assert.assertNotNull(origLdapId.get(0));
-        Assert.assertNotNull(origLdapEntryDn.get(0));
-        adminRestUserRep = testRealm().users().get(adminRestUserRep.getId()).toRepresentation();
+        Assertions.assertNotNull(origLdapId.get(0));
+        Assertions.assertNotNull(origLdapEntryDn.get(0));
+        adminRestUserRep = managedRealm.admin().users().get(adminRestUserRep.getId()).toRepresentation();
         origLdapId = adminRestUserRep.getAttributes().get(LDAPConstants.LDAP_ID);
         origLdapEntryDn = adminRestUserRep.getAttributes().get(LDAPConstants.LDAP_ENTRY_DN);
-        Assert.assertNotNull(origLdapId.get(0));
-        Assert.assertNotNull(origLdapEntryDn.get(0));
+        Assertions.assertNotNull(origLdapId.get(0));
+        Assertions.assertNotNull(origLdapEntryDn.get(0));
 
         // Trying to add KERBEROS_PRINCIPAL (Adding attribute, which was not yet present). Request does not fail, but attribute is not updated
         user.setFirstName("JohnUpdated");
@@ -148,9 +148,9 @@ public class LDAPAccountRestApiTest extends AbstractLDAPTest {
         user.singleAttribute(KerberosFederationProvider.KERBEROS_PRINCIPAL, "foo");
         updateProfileExpectSuccess(user);
         user = getProfile();
-        Assert.assertEquals("JohnUpdated", user.getFirstName());
-        Assert.assertEquals("DoeUpdated", user.getLastName());
-        Assert.assertNull(user.getAttributes());
+        Assertions.assertEquals("JohnUpdated", user.getFirstName());
+        Assertions.assertEquals("DoeUpdated", user.getLastName());
+        Assertions.assertNull(user.getAttributes());
 
         // Trying to update LDAP_ID should fail (Updating existing attribute, which is present on the user even if not visible to the user)
         user.singleAttribute(LDAPConstants.LDAP_ID, "123");
@@ -160,7 +160,7 @@ public class LDAPAccountRestApiTest extends AbstractLDAPTest {
         user.getAttributes().remove(LDAPConstants.LDAP_ID);
         updateProfileExpectSuccess(user);
         user = getProfile();
-        Assert.assertNull(user.getAttributes());
+        Assertions.assertNull(user.getAttributes());
 
         // Trying to update LDAP_ENTRY_DN should fail
         user.singleAttribute(LDAPConstants.LDAP_ENTRY_DN, "ou=foo,dc=bar");
@@ -173,7 +173,7 @@ public class LDAPAccountRestApiTest extends AbstractLDAPTest {
         user = getProfile();
         assertEquals("JohnUpdated", user.getFirstName());
         assertEquals("DoeUpdated", user.getLastName());
-        Assert.assertNull(user.getAttributes());
+        Assertions.assertNull(user.getAttributes());
 
         // Revert
         user.setFirstName("John");
@@ -184,21 +184,21 @@ public class LDAPAccountRestApiTest extends AbstractLDAPTest {
     @Test
     public void testUpdateProfileUnmanagedAttributes() throws IOException {
         // User profile unmanaged attributes supported
-        UserProfileResource userProfileRes = testRealm().users().userProfile();
+        UserProfileResource userProfileRes = managedRealm.admin().users().userProfile();
         UPConfig origConfig = UserProfileUtil.enableUnmanagedAttributes(userProfileRes);
 
         try {
             UserRepresentation user = getProfile();
 
             // Metadata attributes like LDAP_ID are not present
-            Assert.assertNull(user.getAttributes());
+            Assertions.assertNull(user.getAttributes());
 
-            org.keycloak.representations.idm.UserRepresentation adminRestUserRep = testRealm().users()
+            org.keycloak.representations.idm.UserRepresentation adminRestUserRep = managedRealm.admin().users()
                     .search(user.getUsername()).get(0);
             List<String> origLdapId = adminRestUserRep.getAttributes().get(LDAPConstants.LDAP_ID);
             List<String> origLdapEntryDn = adminRestUserRep.getAttributes().get(LDAPConstants.LDAP_ENTRY_DN);
-            Assert.assertNotNull(origLdapId.get(0));
-            Assert.assertNotNull(origLdapEntryDn.get(0));
+            Assertions.assertNotNull(origLdapId.get(0));
+            Assertions.assertNotNull(origLdapEntryDn.get(0));
 
             // Trying to add KERBEROS_PRINCIPAL should fail (Adding attribute, which was not yet present)
             user.setFirstName("JohnUpdated");
@@ -226,12 +226,12 @@ public class LDAPAccountRestApiTest extends AbstractLDAPTest {
             user.getAttributes().remove(LDAPConstants.LDAP_ID);
             updateProfileExpectSuccess(user);
             user = getProfile();
-            Assert.assertNull(user.getAttributes());
+            Assertions.assertNull(user.getAttributes());
 
             user = getProfile();
             assertEquals("JohnUpdated", user.getFirstName());
             assertEquals("DoeUpdated", user.getLastName());
-            Assert.assertNull(user.getAttributes());
+            Assertions.assertNull(user.getAttributes());
 
             // Revert
             user.setFirstName("John");
@@ -247,15 +247,15 @@ public class LDAPAccountRestApiTest extends AbstractLDAPTest {
         List<AccountCredentialResource.CredentialContainer> credentials = getCredentials();
 
         AccountCredentialResource.CredentialContainer password = credentials.get(0);
-        Assert.assertEquals(PasswordCredentialModel.TYPE, password.getType());
-        Assert.assertEquals(1, password.getUserCredentialMetadatas().size());
+        Assertions.assertEquals(PasswordCredentialModel.TYPE, password.getType());
+        Assertions.assertEquals(1, password.getUserCredentialMetadatas().size());
         CredentialRepresentation userPassword = password.getUserCredentialMetadatas().get(0).getCredential();
 
         // Password won't have createdDate and any metadata set
-        Assert.assertEquals(PasswordCredentialModel.TYPE, userPassword.getType());
-        Assert.assertTrue(userPassword.getCreatedDate() > -1L);
-        Assert.assertNull(userPassword.getCredentialData());
-        Assert.assertNull(userPassword.getSecretData());
+        Assertions.assertEquals(PasswordCredentialModel.TYPE, userPassword.getType());
+        Assertions.assertTrue(userPassword.getCreatedDate() > -1L);
+        Assertions.assertNull(userPassword.getCredentialData());
+        Assertions.assertNull(userPassword.getSecretData());
     }
 
 
@@ -302,13 +302,13 @@ public class LDAPAccountRestApiTest extends AbstractLDAPTest {
         assertFalse(usernew.isEmailVerified());
 
         // No metadata attributes like LDAP_ID or LDAP_ENTRY_DN present in account REST API
-        Assert.assertNull(usernew.getAttributes());
+        Assertions.assertNull(usernew.getAttributes());
 
         //clean up
         usernew.setEmail("john@email.org");
         final int i = SimpleHttpDefault.doPost(getAccountUrl(null), httpClient).json(usernew).auth(tokenUtil.getToken()).asStatus();
 
-        org.keycloak.representations.idm.UserRepresentation userRep = testRealm().users()
+        org.keycloak.representations.idm.UserRepresentation userRep = managedRealm.admin().users()
                 .search(usernew.getUsername()).get(0);
 
         // Metadata attributes present in admin REST API
@@ -317,14 +317,14 @@ public class LDAPAccountRestApiTest extends AbstractLDAPTest {
 
         userRep.setAttributes(null);
 
-        testRealm().users().get(userRep.getId()).update(userRep);
+        managedRealm.admin().users().get(userRep.getId()).update(userRep);
         usernew = SimpleHttpDefault.doGet(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).asJson(UserRepresentation.class);
 
         // Metadata attributes still not present in account REST
-        Assert.assertNull(usernew.getAttributes());
+        Assertions.assertNull(usernew.getAttributes());
 
         // Metadata attributes still present in admin REST API
-        userRep = testRealm().users().search(usernew.getUsername()).get(0);
+        userRep = managedRealm.admin().users().search(usernew.getUsername()).get(0);
         assertTrue(userRep.getAttributes().containsKey(LDAPConstants.LDAP_ID));
         assertTrue(userRep.getAttributes().containsKey(LDAPConstants.LDAP_ENTRY_DN));
     }

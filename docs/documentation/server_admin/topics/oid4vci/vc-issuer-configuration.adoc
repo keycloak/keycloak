@@ -1,3 +1,4 @@
+
 [[_oid4vci]]
 == Configuring {project_name} as a Verifiable Credential Issuer
 
@@ -138,7 +139,7 @@ Create a JSON file (e.g., `realm-attributes.json`) with the following content:
   "realm": "oid4vc-vci",
   "enabled": true,
   "attributes": {
-    "preAuthorizedCodeLifespanS": 120
+    "credentialOfferLifespanS": 120
   }
 }
 ----
@@ -146,7 +147,7 @@ Create a JSON file (e.g., `realm-attributes.json`) with the following content:
 ==== Attribute Breakdown
 
 The attributes section contains issuer-specific metadata:
-- **preAuthorizedCodeLifespanS** – Defines how long pre-authorized codes remain valid (in seconds).
+- **credentialOfferLifespanS** – Defines the default lifespan of credential offers in seconds. Applies to both the authorization code and pre-authorized code grant flows.
 - **oid4vc.attestation.trusted_keys** – JSON array of trusted JWK (JSON Web Key) objects for attestation proof validation. Each JWK must include a `kid` (key ID) field. These keys take precedence over realm session keys when there are conflicts. Useful for configuring additional trusted keys beyond the realm's default keys. Format: JSON array of JWK objects, e.g., `[{"kid":"key1","kty":"EC",...},{"kid":"key2","kty":"RSA",...}]`.
 - **oid4vc.attestation.trusted_key_ids** – Comma-separated list of key IDs from the realm's key providers to use for attestation proof validation. Keys are looked up by their `kid` regardless of enabled status, allowing the use of disabled keys that are not exposed in well-known endpoints. This attribute takes the highest priority when merging trusted keys. Format: comma-separated list of key IDs, e.g., `key-id-1,key-id-2,key-id-3`.
 
@@ -243,7 +244,7 @@ Create a JSON file (e.g., `client-scopes.json`) with the following content:
     "vc.issuer_did": "did:web:vc.example.com",
     "vc.credential_configuration_id": "my-credential-configuration-id",
     "vc.credential_identifier": "my-credential-identifier",
-    "vc.format": "jwt_vc",
+    "vc.format": "jwt_vc_json",
     "vc.expiry_in_seconds": 31536000,
     "vc.verifiable_credential_type": "my-vct",
     "vc.supported_credential_types": "credential-type-1,credential-type-2",
@@ -255,7 +256,7 @@ Create a JSON file (e.g., `client-scopes.json`) with the following content:
     "vc.sd_jwt.number_of_decoys": "2",
     "vc.credential_build_config.sd_jwt.visible_claims": "iat,jti,nbf,exp,given_name",
     "vc.credential_build_config.hash_algorithm": "SHA-256",
-    "vc.credential_build_config.token_jws_type": "JWS",
+    "vc.credential_build_config.token_jws_type": "vc+jwt",
     "vc.include_in_metadata": "true"
   },
   "protocolMappers": [
@@ -396,7 +397,7 @@ _Default_: `SHA-256`
 | `vc.credential_build_config.token_jws_type`
 | optional
 | JWT type written into the `typ` header of the token. +
-_Default_: `JWS`
+_Default_: format-specific (`dc+sd-jwt` for `dc+sd-jwt`, `vc+jwt` for `jwt_vc_json`)
 
 | `vc.expiry_in_s`
 | optional

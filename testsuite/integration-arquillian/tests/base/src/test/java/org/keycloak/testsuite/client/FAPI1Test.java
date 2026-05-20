@@ -59,14 +59,15 @@ import org.keycloak.testsuite.util.oauth.PkceGenerator;
 
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.ClientPoliciesBuilder;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.ClientPolicyBuilder;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createAnyClientConditionConfig;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createClientUpdateContextConditionConfig;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Test for the FAPI 1 specifications:
@@ -94,27 +95,27 @@ public class FAPI1Test extends AbstractFAPITest {
         // Try to register client with "client-jwt" - should pass
         String clientUUID = createClientByAdmin("client-jwt", (ClientRepresentation clientRep) -> clientRep.setClientAuthenticatorType(JWTClientAuthenticator.PROVIDER_ID));
         ClientRepresentation client = getClientByAdmin(clientUUID);
-        Assert.assertEquals(JWTClientAuthenticator.PROVIDER_ID, client.getClientAuthenticatorType());
+        Assertions.assertEquals(JWTClientAuthenticator.PROVIDER_ID, client.getClientAuthenticatorType());
 
         // Try to register client with "client-secret-jwt" - should pass
         clientUUID = createClientByAdmin("client-secret-jwt", (ClientRepresentation clientRep) -> clientRep.setClientAuthenticatorType(JWTClientSecretAuthenticator.PROVIDER_ID));
         client = getClientByAdmin(clientUUID);
-        Assert.assertEquals(JWTClientSecretAuthenticator.PROVIDER_ID, client.getClientAuthenticatorType());
+        Assertions.assertEquals(JWTClientSecretAuthenticator.PROVIDER_ID, client.getClientAuthenticatorType());
 
         // Try to register client with "client-x509" - should pass
         clientUUID = createClientByAdmin("client-x509", (ClientRepresentation clientRep) -> clientRep.setClientAuthenticatorType(X509ClientAuthenticator.PROVIDER_ID));
         client = getClientByAdmin(clientUUID);
-        Assert.assertEquals(X509ClientAuthenticator.PROVIDER_ID, client.getClientAuthenticatorType());
+        Assertions.assertEquals(X509ClientAuthenticator.PROVIDER_ID, client.getClientAuthenticatorType());
 
         // Try to register client with default authenticator - should pass. Client authenticator should be "client-jwt"
         clientUUID = createClientByAdmin("client-jwt-2", (ClientRepresentation clientRep) -> {
         });
         client = getClientByAdmin(clientUUID);
-        Assert.assertEquals(JWTClientAuthenticator.PROVIDER_ID, client.getClientAuthenticatorType());
+        Assertions.assertEquals(JWTClientAuthenticator.PROVIDER_ID, client.getClientAuthenticatorType());
 
         // Check the Consent is enabled, PKCS set to S256
-        Assert.assertTrue(client.isConsentRequired());
-        Assert.assertEquals(OAuth2Constants.PKCE_METHOD_S256, OIDCAdvancedConfigWrapper.fromClientRepresentation(client).getPkceCodeChallengeMethod());
+        Assertions.assertTrue(client.isConsentRequired());
+        Assertions.assertEquals(OAuth2Constants.PKCE_METHOD_S256, OIDCAdvancedConfigWrapper.fromClientRepresentation(client).getPkceCodeChallengeMethod());
     }
 
 
@@ -128,11 +129,11 @@ public class FAPI1Test extends AbstractFAPITest {
         String clientUUID = createClientByAdmin("client-jwt-3", (ClientRepresentation clientRep) -> {
         });
         ClientRepresentation client = getClientByAdmin(clientUUID);
-        Assert.assertEquals(JWTClientAuthenticator.PROVIDER_ID, client.getClientAuthenticatorType());
+        Assertions.assertEquals(JWTClientAuthenticator.PROVIDER_ID, client.getClientAuthenticatorType());
 
         // Check the Consent is enabled, PKCS set to S256
-        Assert.assertTrue(client.isConsentRequired());
-        Assert.assertEquals(OAuth2Constants.PKCE_METHOD_S256, OIDCAdvancedConfigWrapper.fromClientRepresentation(client).getPkceCodeChallengeMethod());
+        Assertions.assertTrue(client.isConsentRequired());
+        Assertions.assertEquals(OAuth2Constants.PKCE_METHOD_S256, OIDCAdvancedConfigWrapper.fromClientRepresentation(client).getPkceCodeChallengeMethod());
     }
 
 
@@ -154,8 +155,8 @@ public class FAPI1Test extends AbstractFAPITest {
             clientRep.setJwksUri("https://foo");
         });
         ClientRepresentation client = getClientByAdmin(clientUUID);
-        Assert.assertEquals(JWTClientAuthenticator.PROVIDER_ID, client.getClientAuthenticatorType());
-        Assert.assertFalse(client.isFullScopeAllowed());
+        Assertions.assertEquals(JWTClientAuthenticator.PROVIDER_ID, client.getClientAuthenticatorType());
+        Assertions.assertFalse(client.isFullScopeAllowed());
 
         // Set new initialToken for register new clients
         setInitialAccessTokenForDynamicClientRegistration();
@@ -163,7 +164,7 @@ public class FAPI1Test extends AbstractFAPITest {
         // Try to register client with "client-secret-jwt" - should pass
         clientUUID = createClientDynamically("client-secret-jwt", (OIDCClientRepresentation clientRep) -> clientRep.setTokenEndpointAuthMethod(OIDCLoginProtocol.CLIENT_SECRET_JWT));
         client = getClientByAdmin(clientUUID);
-        Assert.assertEquals(JWTClientSecretAuthenticator.PROVIDER_ID, client.getClientAuthenticatorType());
+        Assertions.assertEquals(JWTClientSecretAuthenticator.PROVIDER_ID, client.getClientAuthenticatorType());
 
         // Set new initialToken for register new clients
         setInitialAccessTokenForDynamicClientRegistration();
@@ -171,11 +172,11 @@ public class FAPI1Test extends AbstractFAPITest {
         // Try to register client with "client-x509" - should pass
         clientUUID = createClientDynamically("client-x509", (OIDCClientRepresentation clientRep) -> clientRep.setTokenEndpointAuthMethod(OIDCLoginProtocol.TLS_CLIENT_AUTH));
         client = getClientByAdmin(clientUUID);
-        Assert.assertEquals(X509ClientAuthenticator.PROVIDER_ID, client.getClientAuthenticatorType());
+        Assertions.assertEquals(X509ClientAuthenticator.PROVIDER_ID, client.getClientAuthenticatorType());
 
         // Check the Consent is enabled, PKCS set to S256
-        Assert.assertTrue(client.isConsentRequired());
-        Assert.assertEquals(OAuth2Constants.PKCE_METHOD_S256, OIDCAdvancedConfigWrapper.fromClientRepresentation(client).getPkceCodeChallengeMethod());
+        Assertions.assertTrue(client.isConsentRequired());
+        Assertions.assertEquals(OAuth2Constants.PKCE_METHOD_S256, OIDCAdvancedConfigWrapper.fromClientRepresentation(client).getPkceCodeChallengeMethod());
 
     }
 
@@ -227,9 +228,9 @@ public class FAPI1Test extends AbstractFAPITest {
             clientRep.setSecret("atleast-14chars-password");
         });
         ClientRepresentation client = getClientByAdmin(clientUUID);
-        Assert.assertFalse(client.isPublicClient());
-        Assert.assertEquals(JWTClientSecretAuthenticator.PROVIDER_ID, client.getClientAuthenticatorType());
-        Assert.assertFalse(client.isFullScopeAllowed());
+        Assertions.assertFalse(client.isPublicClient());
+        Assertions.assertEquals(JWTClientSecretAuthenticator.PROVIDER_ID, client.getClientAuthenticatorType());
+        Assertions.assertFalse(client.isFullScopeAllowed());
 
         checkPKCEWithS256RequiredDuringLogin("foo");
 
@@ -254,7 +255,7 @@ public class FAPI1Test extends AbstractFAPITest {
         // Register client as public client
         String clientUUID = createClientByAdmin("foo", (ClientRepresentation clientRep) -> clientRep.setPublicClient(true));
         ClientRepresentation client = getClientByAdmin(clientUUID);
-        Assert.assertTrue(client.isPublicClient());
+        Assertions.assertTrue(client.isPublicClient());
 
         checkPKCEWithS256RequiredDuringLogin("foo");
 
@@ -303,26 +304,26 @@ public class FAPI1Test extends AbstractFAPITest {
         // Try to register client with "client-jwt" - should pass
         String clientUUID = createClientByAdmin("client-jwt", (ClientRepresentation clientRep) -> clientRep.setClientAuthenticatorType(JWTClientAuthenticator.PROVIDER_ID));
         ClientRepresentation client = getClientByAdmin(clientUUID);
-        Assert.assertEquals(JWTClientAuthenticator.PROVIDER_ID, client.getClientAuthenticatorType());
+        Assertions.assertEquals(JWTClientAuthenticator.PROVIDER_ID, client.getClientAuthenticatorType());
 
         // Try to register client with "client-x509" - should pass
         clientUUID = createClientByAdmin("client-x509", (ClientRepresentation clientRep) -> clientRep.setClientAuthenticatorType(X509ClientAuthenticator.PROVIDER_ID));
         client = getClientByAdmin(clientUUID);
-        Assert.assertEquals(X509ClientAuthenticator.PROVIDER_ID, client.getClientAuthenticatorType());
+        Assertions.assertEquals(X509ClientAuthenticator.PROVIDER_ID, client.getClientAuthenticatorType());
 
         // Try to register client with default authenticator - should pass. Client authenticator should be "client-jwt"
         clientUUID = createClientByAdmin("client-jwt-2", (ClientRepresentation clientRep) -> {
         });
         client = getClientByAdmin(clientUUID);
-        Assert.assertEquals(JWTClientAuthenticator.PROVIDER_ID, client.getClientAuthenticatorType());
+        Assertions.assertEquals(JWTClientAuthenticator.PROVIDER_ID, client.getClientAuthenticatorType());
 
         // Check the Consent is enabled, Holder-of-key is enabled, fullScopeAllowed disabled and default signature algorithm.
-        Assert.assertTrue(client.isConsentRequired());
+        Assertions.assertTrue(client.isConsentRequired());
         OIDCAdvancedConfigWrapper clientConfig = OIDCAdvancedConfigWrapper.fromClientRepresentation(client);
-        Assert.assertTrue(clientConfig.isUseMtlsHokToken());
-        Assert.assertEquals(Algorithm.PS256, clientConfig.getIdTokenSignedResponseAlg());
-        Assert.assertEquals(Algorithm.PS256, clientConfig.getRequestObjectSignatureAlg());
-        Assert.assertFalse(client.isFullScopeAllowed());
+        Assertions.assertTrue(clientConfig.isUseMtlsHokToken());
+        Assertions.assertEquals(Algorithm.PS256, clientConfig.getIdTokenSignedResponseAlg());
+        Assertions.assertEquals(Algorithm.PS256, clientConfig.getRequestObjectSignatureAlg());
+        Assertions.assertFalse(client.isFullScopeAllowed());
     }
 
 
@@ -333,7 +334,7 @@ public class FAPI1Test extends AbstractFAPITest {
         // Register client as public client
         String clientUUID = createClientByAdmin("foo", (ClientRepresentation clientRep) -> clientRep.setPublicClient(true));
         ClientRepresentation client = getClientByAdmin(clientUUID);
-        Assert.assertTrue(client.isPublicClient());
+        Assertions.assertTrue(client.isPublicClient());
 
         // Setup PKCE and nonce
         pkceGenerator = PkceGenerator.s256();
@@ -346,7 +347,7 @@ public class FAPI1Test extends AbstractFAPITest {
 
         // Should not be possible to login anymore with public client
         oauth.loginForm().nonce("123456").codeChallenge(pkceGenerator).open();
-        assertRedirectedToClientWithError(OAuthErrorException.INVALID_CLIENT, "invalid client access type");
+        assertRedirectedToClientWithError(OAuthErrorException.INVALID_CLIENT, "invalid client access type: public");
     }
 
     @Test
@@ -374,18 +375,18 @@ public class FAPI1Test extends AbstractFAPITest {
         });
         ClientRepresentation client = getClientByAdmin(clientUUID);
         OIDCAdvancedConfigWrapper clientConfig = OIDCAdvancedConfigWrapper.fromClientRepresentation(client);
-        Assert.assertEquals(Algorithm.ES256, clientConfig.getIdTokenSignedResponseAlg());
-        Assert.assertEquals(Algorithm.PS256, clientConfig.getRequestObjectSignatureAlg());
+        Assertions.assertEquals(Algorithm.ES256, clientConfig.getIdTokenSignedResponseAlg());
+        Assertions.assertEquals(Algorithm.PS256, clientConfig.getRequestObjectSignatureAlg());
 
         // Test default algorithms set everywhere
         clientUUID = createClientByAdmin("client-jwt-default-alg", (ClientRepresentation clientRep) -> clientRep.setClientAuthenticatorType(JWTClientAuthenticator.PROVIDER_ID));
         client = getClientByAdmin(clientUUID);
         clientConfig = OIDCAdvancedConfigWrapper.fromClientRepresentation(client);
-        Assert.assertEquals(Algorithm.PS256, clientConfig.getIdTokenSignedResponseAlg());
-        Assert.assertEquals(Algorithm.PS256, clientConfig.getRequestObjectSignatureAlg());
-        Assert.assertEquals(Algorithm.PS256, clientConfig.getUserInfoSignedResponseAlg());
-        Assert.assertEquals(Algorithm.PS256, clientConfig.getTokenEndpointAuthSigningAlg());
-        Assert.assertEquals(Algorithm.PS256, client.getAttributes().get(OIDCConfigAttributes.ACCESS_TOKEN_SIGNED_RESPONSE_ALG));
+        Assertions.assertEquals(Algorithm.PS256, clientConfig.getIdTokenSignedResponseAlg());
+        Assertions.assertEquals(Algorithm.PS256, clientConfig.getRequestObjectSignatureAlg());
+        Assertions.assertEquals(Algorithm.PS256, clientConfig.getUserInfoSignedResponseAlg());
+        Assertions.assertEquals(Algorithm.PS256, clientConfig.getTokenEndpointAuthSigningAlg());
+        Assertions.assertEquals(Algorithm.PS256, client.getAttributes().get(OIDCConfigAttributes.ACCESS_TOKEN_SIGNED_RESPONSE_ALG));
 
     }
 
@@ -457,20 +458,20 @@ public class FAPI1Test extends AbstractFAPITest {
         AuthorizationEndpointResponse authorizationEndpointResponse = oauth.parseLoginResponse();
 
         // Check token not present in the AuthorizationResponse. Check ID Token present, but used as detached signature
-        Assert.assertNull(authorizationEndpointResponse.getAccessToken());
+        Assertions.assertNull(authorizationEndpointResponse.getAccessToken());
         String idTokenParam = authorizationEndpointResponse.getIdToken();
         assertIDTokenAsDetachedSignature(idTokenParam, code);
 
         // Check HoK required
         String signedJwt = createSignedRequestToken("foo", privateKey, publicKey, org.keycloak.crypto.Algorithm.PS256);
         AccessTokenResponse tokenResponse = doAccessTokenRequestWithClientSignedJWT(code, signedJwt, DefaultHttpClient::new);
-        Assert.assertEquals(OAuthErrorException.INVALID_GRANT,tokenResponse.getError());
-        Assert.assertEquals("Client Certification missing for MTLS HoK Token Binding", tokenResponse.getErrorDescription());
+        Assertions.assertEquals(OAuthErrorException.INVALID_GRANT,tokenResponse.getError());
+        Assertions.assertEquals("Client Certification missing for MTLS HoK Token Binding", tokenResponse.getErrorDescription());
 
         // Login with private-key-jwt client authentication and MTLS added to HttpClient. TokenRequest should be successful now
         oauth.loginForm().requestUri(requestUri).open();
         code = oauth.parseLoginResponse().getCode();
-        Assert.assertNotNull(code);
+        Assertions.assertNotNull(code);
 
         String signedJwt2 = createSignedRequestToken("foo", privateKey, publicKey, org.keycloak.crypto.Algorithm.PS256);
 
@@ -478,7 +479,7 @@ public class FAPI1Test extends AbstractFAPITest {
 
         assertSuccessfulTokenResponse(tokenResponse);
         AccessToken accessToken = oauth.verifyToken(tokenResponse.getAccessToken());
-        Assert.assertNotNull(accessToken.getConfirmation().getCertThumbprint());
+        Assertions.assertNotNull(accessToken.getConfirmation().getCertThumbprint());
 
         // Logout and remove consent of the user for next logins
         logoutUserAndRevokeConsent("foo", TEST_USERNAME);
@@ -525,7 +526,7 @@ public class FAPI1Test extends AbstractFAPITest {
         AuthorizationEndpointResponse authorizationEndpointResponse = oauth.parseLoginResponse();
 
         // Check token not present in the AuthorizationResponse. Check ID Token present, but used as detached signature
-        Assert.assertNull(authorizationEndpointResponse.getAccessToken());
+        Assertions.assertNull(authorizationEndpointResponse.getAccessToken());
         String idTokenParam = authorizationEndpointResponse.getIdToken();
         assertIDTokenAsDetachedSignature(idTokenParam, code);
 
@@ -534,7 +535,7 @@ public class FAPI1Test extends AbstractFAPITest {
 
         assertSuccessfulTokenResponse(tokenResponse);
         AccessToken accessToken = oauth.verifyToken(tokenResponse.getAccessToken());
-        Assert.assertNotNull(accessToken.getConfirmation().getCertThumbprint());
+        Assertions.assertNotNull(accessToken.getConfirmation().getCertThumbprint());
 
         // Logout and remove consent of the user for next logins
         logoutUserAndRevokeConsent("foo", TEST_USERNAME);
@@ -626,18 +627,18 @@ public class FAPI1Test extends AbstractFAPITest {
     }
 
     private void assertIDTokenAsDetachedSignature(String idTokenParam, String code) {
-        Assert.assertNotNull(idTokenParam);
+        Assertions.assertNotNull(idTokenParam);
         IDToken idToken = oauth.verifyIDToken(idTokenParam);
-        Assert.assertNotNull(idToken.getId());
-        Assert.assertEquals("foo", idToken.getIssuedFor());
-        Assert.assertNull(idToken.getPreferredUsername());
-        Assert.assertNull(idToken.getEmail());
-        Assert.assertNull(idToken.getGivenName());
-        Assert.assertNull(idToken.getAccessTokenHash());
-        Assert.assertEquals(idToken.getNonce(), "123456");
+        Assertions.assertNotNull(idToken.getId());
+        Assertions.assertEquals("foo", idToken.getIssuedFor());
+        Assertions.assertNull(idToken.getPreferredUsername());
+        Assertions.assertNull(idToken.getEmail());
+        Assertions.assertNull(idToken.getGivenName());
+        Assertions.assertNull(idToken.getAccessTokenHash());
+        Assertions.assertEquals(idToken.getNonce(), "123456");
         String state = oauth.parseLoginResponse().getState();
-        Assert.assertEquals(idToken.getStateHash(), HashUtils.accessTokenHash(Algorithm.PS256, state));
-        Assert.assertEquals(idToken.getCodeHash(), HashUtils.accessTokenHash(Algorithm.PS256, code));
+        Assertions.assertEquals(idToken.getStateHash(), HashUtils.accessTokenHash(Algorithm.PS256, state));
+        Assertions.assertEquals(idToken.getCodeHash(), HashUtils.accessTokenHash(Algorithm.PS256, code));
     }
 
     private String getClientSecretSignedJWT(String secret, String algorithm) {

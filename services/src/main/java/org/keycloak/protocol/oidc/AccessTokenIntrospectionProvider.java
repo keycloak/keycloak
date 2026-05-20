@@ -24,7 +24,7 @@ import jakarta.ws.rs.core.Response;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.TokenVerifier;
 import org.keycloak.common.VerificationException;
-import org.keycloak.crypto.SignatureProvider;
+import org.keycloak.crypto.CryptoUtils;
 import org.keycloak.crypto.SignatureVerifierContext;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
@@ -147,7 +147,7 @@ public class AccessTokenIntrospectionProvider<T extends AccessToken> implements 
 
         ClientSessionContext clientSessionCtx = DefaultClientSessionContext.fromClientSessionAndScopeParameter(clientSession, token.getScope(), session);
         AccessToken smallToken = getAccessTokenFromStoredData(token);
-        return tokenManager.transformIntrospectionAccessToken(session, smallToken, userSession, clientSessionCtx);
+        return tokenManager.transformIntrospectionAccessToken(session, token, smallToken, userSession, clientSessionCtx);
     }
 
     private AccessToken getAccessTokenFromStoredData(AccessToken token) {
@@ -226,7 +226,7 @@ public class AccessTokenIntrospectionProvider<T extends AccessToken> implements 
             TokenVerifier<T> verifier = TokenVerifier.create(tokenStr, getTokenClass())
                     .realmUrl(Urls.realmIssuer(session.getContext().getUri().getBaseUri(), realm.getName()));
 
-            SignatureVerifierContext verifierContext = session.getProvider(SignatureProvider.class, verifier.getHeader().getAlgorithm().name()).verifier(verifier.getHeader().getKeyId());
+            SignatureVerifierContext verifierContext = CryptoUtils.getSignatureProvider(session, verifier.getHeader().getAlgorithm().name()).verifier(verifier.getHeader().getKeyId());
             verifier.verifierContext(verifierContext);
 
             this.token = verifier.verify().getToken();
@@ -273,7 +273,7 @@ public class AccessTokenIntrospectionProvider<T extends AccessToken> implements 
 
                 try {
                     TokenVerifier.createWithoutSignature(token)
-                            .withChecks(TokenManager.NotBeforeCheck.forModel(client), TokenVerifier.IS_ACTIVE, new TokenManager.TokenRevocationCheck(session))
+                            .withChecks(TokenManager.NotBeforeCheck.forModel(realm), TokenManager.NotBeforeCheck.forModel(client), TokenVerifier.IS_ACTIVE, new TokenManager.TokenRevocationCheck(session))
                             .verify();
                     this.client = client;
                     return true;

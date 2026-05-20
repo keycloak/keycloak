@@ -34,8 +34,9 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.storage.StorageId;
 import org.keycloak.storage.UserStorageProvider;
+import org.keycloak.testframework.realm.FederatedIdentityBuilder;
+import org.keycloak.testframework.remote.providers.runonserver.RunOnServer;
 import org.keycloak.testsuite.AbstractKeycloakTest;
-import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.federation.PassThroughFederatedUserStorageProvider;
 import org.keycloak.testsuite.federation.PassThroughFederatedUserStorageProviderFactory;
@@ -43,23 +44,22 @@ import org.keycloak.testsuite.federation.UserMapStorageFactory;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.UpdateAccountInformationPage;
-import org.keycloak.testsuite.runonserver.RunOnServer;
 import org.keycloak.testsuite.util.AccountHelper;
-import org.keycloak.testsuite.util.FederatedIdentityBuilder;
 
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 import static org.keycloak.storage.UserStorageProviderModel.IMPORT_ENABLED;
-import static org.keycloak.testsuite.admin.ApiUtil.createUserAndResetPasswordWithAdminClient;
-import static org.keycloak.testsuite.admin.ApiUtil.createUserWithAdminClient;
+import static org.keycloak.testsuite.admin.AdminApiUtil.createUserAndResetPasswordWithAdminClient;
+import static org.keycloak.testsuite.admin.AdminApiUtil.createUserWithAdminClient;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -204,7 +204,7 @@ public class AccountLinkTest extends AbstractKeycloakTest {
         userRepresentation.setEnabled(true);
         userRepresentation.setFederationLink(memProviderId);
         String userId = createUserWithAdminClient(realm, userRepresentation);
-        Assert.assertFalse(StorageId.isLocalStorage(userId));
+        Assertions.assertFalse(StorageId.isLocalStorage(userId));
 
         // Link identity provider and federated user
         FederatedIdentityRepresentation identity = FederatedIdentityBuilder.create()
@@ -215,17 +215,17 @@ public class AccountLinkTest extends AbstractKeycloakTest {
 
         UserResource userResource = realm.users().get(userId);
         Response response = userResource.addFederatedIdentity(testIdpToDelete, identity);
-        Assert.assertEquals("status", 204, response.getStatus());
+        Assertions.assertEquals(204, response.getStatus(), "status");
 
         userResource = realm.users().get(userId);
-        Assert.assertFalse(userResource.getFederatedIdentity().isEmpty());
+        Assertions.assertFalse(userResource.getFederatedIdentity().isEmpty());
 
         // Delete the identity provider
         realm.identityProviders().get(testIdpToDelete).remove();
 
         // Check that links to federated identity has been deleted
         userResource = realm.users().get(userId);
-        Assert.assertTrue(userResource.getFederatedIdentity().isEmpty());
+        Assertions.assertTrue(userResource.getFederatedIdentity().isEmpty());
 
         getTestingClient().server(CHILD_IDP).run((RunOnServer) session -> {
             RealmModel realm1 = session.getContext().getRealm();
@@ -251,7 +251,7 @@ public class AccountLinkTest extends AbstractKeycloakTest {
     private void assertFederatedIdentity(String childUsername) {
         //Link the identity provider through Admin REST API
         Response response = AccountHelper.addIdentityProvider(adminClient.realm(CHILD_IDP), childUsername, adminClient.realm(PARENT_IDP), PARENT_USERNAME, PARENT_IDP);
-        Assert.assertEquals("status", 204, response.getStatus());
+        Assertions.assertEquals(204, response.getStatus(), "status");
         assertTrue(AccountHelper.isIdentityProviderLinked(adminClient.realm(CHILD_IDP), childUsername, PARENT_IDP));
 
     }

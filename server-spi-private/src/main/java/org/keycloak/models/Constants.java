@@ -40,7 +40,7 @@ public final class Constants {
     public static final String AUTH_BASE_URL_PROP = "${authBaseUrl}";
     public static final String AUTH_ADMIN_URL_PROP = "${authAdminUrl}";
 
-    public static final Collection<String> defaultClients = Arrays.asList(ACCOUNT_MANAGEMENT_CLIENT_ID, ADMIN_CLI_CLIENT_ID, BROKER_SERVICE_CLIENT_ID, REALM_MANAGEMENT_CLIENT_ID, ADMIN_CONSOLE_CLIENT_ID);
+    public static final Collection<String> defaultClients = Arrays.asList(ACCOUNT_MANAGEMENT_CLIENT_ID, ACCOUNT_CONSOLE_CLIENT_ID, ADMIN_CLI_CLIENT_ID, BROKER_SERVICE_CLIENT_ID, REALM_MANAGEMENT_CLIENT_ID, ADMIN_CONSOLE_CLIENT_ID);
 
     public static final String INSTALLED_APP_URN = "urn:ietf:wg:oauth:2.0:oob";
 
@@ -130,6 +130,10 @@ public final class Constants {
     public static final String GENERATE = "GENERATE";
 
     public static final int DEFAULT_MAX_RESULTS = 100;
+    /**
+    * Used by {@code DefaultValue} annotation for when a REST endpoints max size default is set by {@link #DEFAULT_MAX_RESULTS}.
+    */
+    public static final String DEFAULT_MAX_RESULTS_STR = "" + DEFAULT_MAX_RESULTS;
 
     // Delimiter to be used in the configuration of authenticators (and some other components) in case that we need to save
     // multiple values into single string

@@ -120,4 +120,34 @@
         </addColumn>
     </changeSet>
 
+    <changeSet author="keycloak" id="26.6.0-43829-user-created-timestamp-index">
+        <preConditions onSqlOutput="TEST" onFail="MARK_RAN">
+            <not>
+                <indexExists tableName="USER_ENTITY" indexName="IDX_USER_CREATED_TIMESTAMP" />
+            </not>
+        </preConditions>
+        <createIndex tableName="USER_ENTITY" indexName="IDX_USER_CREATED_TIMESTAMP">
+            <column name="REALM_ID" type="VARCHAR(255)" />
+            <column name="CREATED_TIMESTAMP" type="BIGINT" />
+        </createIndex>
+    </changeSet>
+
+    <changeSet author="keycloak" id="26.6.0-48716-create-mssql-idp-index">
+        <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
+            <and>
+                <dbms type="mssql"/>
+                <not>
+                    <indexExists tableName="IDENTITY_PROVIDER" indexName="IDX_IDP_FOR_LOGIN"/>
+                </not>
+            </and>
+        </preConditions>
+        <createIndex indexName="IDX_IDP_FOR_LOGIN" tableName="IDENTITY_PROVIDER">
+            <column name="REALM_ID"/>
+            <column name="ENABLED"/>
+            <column name="LINK_ONLY"/>
+            <column name="HIDE_ON_LOGIN"/>
+            <column name="ORGANIZATION_ID"/>
+        </createIndex>
+    </changeSet>
+
 </databaseChangeLog>

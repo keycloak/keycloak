@@ -42,7 +42,6 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
-import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.admin.Users;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.forms.LevelOfAssuranceFlowTest;
@@ -66,6 +65,7 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 /**
  *
@@ -757,8 +757,8 @@ public class LevelOfAssuranceFlowSamlTest extends AbstractSamlTest {
             MatcherAssert.assertThat(holder.getSamlObject(), Matchers.isSamlStatusResponse(
                     JBossSAMLURIConstants.STATUS_RESPONDER, JBossSAMLURIConstants.STATUS_NOAUTHN_CTX));
             ResponseType responseType = (ResponseType) holder.getSamlObject();
-            Assert.assertNotNull(responseType.getInResponseTo());
-            Assert.assertNotNull(responseType.getID());
+            Assertions.assertNotNull(responseType.getInResponseTo());
+            Assertions.assertNotNull(responseType.getID());
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -785,8 +785,8 @@ public class LevelOfAssuranceFlowSamlTest extends AbstractSamlTest {
             SAMLDocumentHolder holder = binding.extractResponse(response);
             MatcherAssert.assertThat(holder.getSamlObject(), Matchers.isSamlStatusResponse(JBossSAMLURIConstants.STATUS_SUCCESS));
             ResponseType responseType = (ResponseType) holder.getSamlObject();
-            Assert.assertNotNull(responseType.getInResponseTo());
-            Assert.assertNotNull(responseType.getID());
+            Assertions.assertNotNull(responseType.getInResponseTo());
+            Assertions.assertNotNull(responseType.getID());
             Optional<URI> authContextClassRefOpt = responseType.getAssertions().stream()
                     .map(ResponseType.RTChoiceType::getAssertion)
                     .map(AssertionType::getStatements)
@@ -801,8 +801,8 @@ public class LevelOfAssuranceFlowSamlTest extends AbstractSamlTest {
                     .map(AuthnContextType.AuthnContextTypeSequence::getClassRef)
                     .filter(Objects::nonNull)
                     .map(AuthnContextClassRefType::getValue);
-            Assert.assertTrue(authContextClassRefOpt.isPresent());
-            Assert.assertEquals(classRef, authContextClassRefOpt.get().toString());
+            Assertions.assertTrue(authContextClassRefOpt.isPresent());
+            Assertions.assertEquals(classRef, authContextClassRefOpt.get().toString());
         } catch (IOException e)  {
             throw new RuntimeException(e);
         }
@@ -816,7 +816,7 @@ public class LevelOfAssuranceFlowSamlTest extends AbstractSamlTest {
             String pageContent = EntityUtils.toString(currentResponse.getEntity(), StandardCharsets.UTF_8);
             org.jsoup.nodes.Document page = Jsoup.parse(pageContent);
             Elements forms = page.getElementsByTag("form");
-            Assert.assertEquals(1, forms.size());
+            Assertions.assertEquals(1, forms.size());
             Element form = forms.get(0);
             HttpPost res = new HttpPost(form.attr("action"));
             UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(Collections.emptyList(), StandardCharsets.UTF_8);

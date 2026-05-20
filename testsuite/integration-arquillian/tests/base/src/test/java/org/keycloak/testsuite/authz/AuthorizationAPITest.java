@@ -38,23 +38,22 @@ import org.keycloak.representations.idm.authorization.PermissionRequest;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ResourcePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
-import org.keycloak.testsuite.Assert;
+import org.keycloak.testframework.realm.ClientBuilder;
+import org.keycloak.testframework.realm.RealmBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testsuite.client.resources.TestApplicationResourceUrls;
-import org.keycloak.testsuite.util.ClientBuilder;
-import org.keycloak.testsuite.util.RealmBuilder;
-import org.keycloak.testsuite.util.RoleBuilder;
-import org.keycloak.testsuite.util.RolesBuilder;
-import org.keycloak.testsuite.util.UserBuilder;
+import org.keycloak.testsuite.util.ProtocolMapperUtil;
 import org.keycloak.util.JsonSerialization;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -71,32 +70,32 @@ public class AuthorizationAPITest extends AbstractAuthzTest {
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
         testRealms.add(RealmBuilder.create().name("authz-test")
-                .roles(RolesBuilder.create().realmRole(RoleBuilder.create().name("uma_authorization").build()))
-                .user(UserBuilder.create().username("marta").password("password").addRoles("uma_authorization"))
-                .user(UserBuilder.create().username("kolo").password("password"))
-                .client(ClientBuilder.create().clientId(RESOURCE_SERVER_TEST)
+                .realmRoles("uma_authorization")
+                .users(UserBuilder.create().username("marta").password("password").realmRoles("uma_authorization"))
+                .users(UserBuilder.create().username("kolo").password("password"))
+                .clients(ClientBuilder.create().clientId(RESOURCE_SERVER_TEST)
                     .secret("secret")
                     .authorizationServicesEnabled(true)
                     .redirectUris("http://localhost/resource-server-test")
                     .defaultRoles("uma_protection")
-                    .directAccessGrants())
-                .client(ClientBuilder.create().clientId(PAIRWISE_RESOURCE_SERVER_TEST)
+                    .directAccessGrantsEnabled())
+                .clients(ClientBuilder.create().clientId(PAIRWISE_RESOURCE_SERVER_TEST)
                     .secret("secret")
                     .authorizationServicesEnabled(true)
                     .redirectUris("http://localhost/resource-server-test")
                     .defaultRoles("uma_protection")
-                    .directAccessGrants()
-                    .pairwise(TestApplicationResourceUrls.pairwiseSectorIdentifierUri()))
-                .client(ClientBuilder.create().clientId(TEST_CLIENT)
+                    .directAccessGrantsEnabled()
+                    .protocolMappers(ProtocolMapperUtil.createPairwiseMapper(TestApplicationResourceUrls.pairwiseSectorIdentifierUri(), null)))
+                .clients(ClientBuilder.create().clientId(TEST_CLIENT)
                     .secret("secret")
                     .authorizationServicesEnabled(true)
                     .redirectUris("http://localhost/test-client")
-                    .directAccessGrants())
-                .client(ClientBuilder.create().clientId(PAIRWISE_TEST_CLIENT)
+                    .directAccessGrantsEnabled())
+                .clients(ClientBuilder.create().clientId(PAIRWISE_TEST_CLIENT)
                         .secret("secret")
                         .authorizationServicesEnabled(true)
                         .redirectUris("http://localhost/test-client")
-                        .directAccessGrants())
+                        .directAccessGrantsEnabled())
                 .build());
 
         testingClient.testApp().oidcClientEndpoints().setSectorIdentifierRedirectUris(Collections.singletonList("http://localhost/resource-server-test"));
@@ -210,8 +209,8 @@ public class AuthorizationAPITest extends AbstractAuthzTest {
 
         // Ticket is opaque to client or resourceServer. The audience should be just an authorization server itself
         JsonWebToken ticketDecoded = JsonSerialization.readValue(new JWSInput(ticket).getContent(), JsonWebToken.class);
-        Assert.assertFalse(ticketDecoded.hasAudience(clientId));
-        Assert.assertFalse(ticketDecoded.hasAudience(resourceServerClientId));
+        Assertions.assertFalse(ticketDecoded.hasAudience(clientId));
+        Assertions.assertFalse(ticketDecoded.hasAudience(resourceServerClientId));
 
         AuthorizationResponse response = authzClient.authorization(accessToken).authorize(new AuthorizationRequest(ticket));
 

@@ -13,10 +13,11 @@ import org.keycloak.testframework.oauth.OAuthIdentityProvider;
 import org.keycloak.testframework.oauth.OAuthIdentityProviderConfig;
 import org.keycloak.testframework.oauth.OAuthIdentityProviderConfigBuilder;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthIdentityProvider;
+import org.keycloak.testframework.realm.ClientBuilder;
+import org.keycloak.testframework.realm.IdentityProviderBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
-import org.keycloak.testframework.realm.RealmConfigBuilder;
-import org.keycloak.testsuite.util.IdentityProviderBuilder;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.MethodOrderer;
@@ -101,19 +102,19 @@ public class KubernetesClientAuthTest extends AbstractBaseClientAuthTest {
     public static class ExernalClientAuthRealmConfig implements RealmConfig {
 
         @Override
-        public RealmConfigBuilder configure(RealmConfigBuilder realm) {
-            realm.identityProvider(
+        public RealmBuilder configure(RealmBuilder realm) {
+            realm.identityProviders(
                     IdentityProviderBuilder.create()
                             .providerId(KubernetesIdentityProviderFactory.PROVIDER_ID)
                             .alias(IDP_ALIAS)
-                            .setAttribute(IdentityProviderModel.ISSUER, ISSUER)
+                            .attribute(IdentityProviderModel.ISSUER, ISSUER)
                             .build());
 
-            realm.addClient(INTERNAL_CLIENT_ID)
+            realm.clients(ClientBuilder.create(INTERNAL_CLIENT_ID)
                     .serviceAccountsEnabled(true)
                     .authenticatorType(FederatedJWTClientAuthenticator.PROVIDER_ID)
                     .attribute(FederatedJWTClientAuthenticator.JWT_CREDENTIAL_ISSUER_KEY, IDP_ALIAS)
-                    .attribute(FederatedJWTClientAuthenticator.JWT_CREDENTIAL_SUBJECT_KEY, EXTERNAL_CLIENT_ID);
+                    .attribute(FederatedJWTClientAuthenticator.JWT_CREDENTIAL_SUBJECT_KEY, EXTERNAL_CLIENT_ID));
 
             return realm;
         }

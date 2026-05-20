@@ -27,6 +27,7 @@ import org.keycloak.common.util.MultiSiteUtils;
 import org.keycloak.exportimport.ExportImportManager;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.services.DefaultKeycloakSessionFactory;
 import org.keycloak.services.error.KcUnrecognizedPropertyExceptionHandler;
 import org.keycloak.services.error.KeycloakErrorHandler;
 import org.keycloak.services.error.KeycloakMismatchedInputExceptionHandler;
@@ -41,12 +42,18 @@ import org.keycloak.services.resources.WelcomeResource;
 import org.keycloak.services.resources.admin.AdminRoot;
 import org.keycloak.services.util.ObjectMapperResolver;
 
-public class ResteasyKeycloakApplication extends KeycloakApplication<ResteasyKeycloakSessionFactory> {
+public class ResteasyKeycloakApplication extends KeycloakApplication {
 
     protected Set<Object> singletons = new HashSet<>();
     protected Set<Class<?>> classes = new HashSet<>();
 
     public ResteasyKeycloakApplication() {
+        Config.init(new JsonConfigProviderFactory().create()
+                .orElseThrow(() -> new RuntimeException("Failed to load Keycloak configuration")));
+        Profile.configure(
+                new PropertiesProfileConfigResolver(System.getProperties()),
+                new PropertiesFileProfileConfigResolver()
+        );
         classes.add(RealmsResource.class);
         if (Profile.isFeatureEnabled(Profile.Feature.ADMIN_API)) {
             classes.add(AdminRoot.class);
@@ -67,16 +74,12 @@ public class ResteasyKeycloakApplication extends KeycloakApplication<ResteasyKey
             // an endpoint for the load balancer to gather information whether this site should receive requests or not.
             classes.add(LoadBalancerResource.class);
         }
+        startup();
     }
 
     @Override
     protected String getDataDir() {
-        return System.getProperty("project.build.directory");
-    }
-
-    @Override
-    protected void exit(Throwable cause) {
-        throw new RuntimeException(cause);
+        return System.getProperty("jboss.server.data.dir");
     }
 
     @Override
@@ -90,29 +93,13 @@ public class ResteasyKeycloakApplication extends KeycloakApplication<ResteasyKey
     }
 
     @Override
-    protected ResteasyKeycloakSessionFactory createSessionFactory() {
+    protected DefaultKeycloakSessionFactory createSessionFactory() {
         return new ResteasyKeycloakSessionFactory();
-    }
-
-    @Override
-    protected void initKeycloakSessionFactory(ResteasyKeycloakSessionFactory resteasyKeycloakSessionFactory) {
-        resteasyKeycloakSessionFactory.init();
     }
 
     @Override
     protected void createTemporaryAdmin(KeycloakSession session) {
         // do nothing
-    }
-
-    @Override
-    protected void initAndStart() {
-        Config.init(new JsonConfigProviderFactory().create()
-                .orElseThrow(() -> new RuntimeException("Failed to load Keycloak configuration")));
-        Profile.configure(
-                new PropertiesProfileConfigResolver(System.getProperties()),
-                new PropertiesFileProfileConfigResolver()
-        );
-        startup();
     }
 
     @Override

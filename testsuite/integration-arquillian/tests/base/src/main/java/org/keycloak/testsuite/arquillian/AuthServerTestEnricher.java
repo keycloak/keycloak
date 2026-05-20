@@ -81,7 +81,7 @@ import org.jboss.arquillian.test.spi.event.suite.BeforeClass;
 import org.jboss.arquillian.test.spi.event.suite.BeforeSuite;
 import org.jboss.logging.Logger;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
-import org.junit.Assert;
+import org.junit.jupiter.api.Assertions;
 import org.w3c.dom.Document;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
@@ -664,7 +664,7 @@ public class AuthServerTestEnricher {
         Optional<Matcher> anyUncaughtError = logStream.map(UNEXPECTED_UNCAUGHT_ERROR::matcher).filter(Matcher::find).findAny();
         if (anyUncaughtError.isPresent()) {
             Matcher m = anyUncaughtError.get();
-            Assert.fail("Uncaught server error detected: " + m.group(1));
+            Assertions.fail("Uncaught server error detected: " + m.group(1));
         }
     }
 

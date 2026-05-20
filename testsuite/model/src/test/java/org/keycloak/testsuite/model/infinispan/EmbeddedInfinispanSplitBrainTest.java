@@ -1,6 +1,5 @@
 package org.keycloak.testsuite.model.infinispan;
 
-import java.util.Set;
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.TimeUnit;
@@ -20,8 +19,6 @@ import org.junit.Assume;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.rules.TestRule;
-
-import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.WORK_CACHE_NAME;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
@@ -64,7 +61,7 @@ public class EmbeddedInfinispanSplitBrainTest extends KeycloakModelTest {
    @Test
    public void testLocalCacheClearedOnMergeEvent() throws InterruptedException {
       var numFactories = 2;
-      var partitionManager = new PartitionManager(numFactories, Set.of(WORK_CACHE_NAME));
+      var partitionManager = new PartitionManager(numFactories);
       var factoryIndex = new AtomicInteger(0);
       var barrier = new CyclicBarrier(numFactories);
       closeKeycloakSessionFactory();

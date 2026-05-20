@@ -53,7 +53,7 @@ export default function AddKubernetesConnect() {
           tab: "settings",
         }),
       );
-    } catch (error: any) {
+    } catch (error) {
       addError("createIdentityProviderError", error);
     }
   };

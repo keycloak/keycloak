@@ -65,13 +65,13 @@ import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testframework.events.Events;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
-import org.keycloak.testframework.realm.ClientConfigBuilder;
+import org.keycloak.testframework.realm.ClientBuilder;
 import org.keycloak.testframework.realm.ManagedClient;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.ManagedUser;
+import org.keycloak.testframework.realm.RealmBuilder;
 import org.keycloak.testframework.realm.RealmConfig;
-import org.keycloak.testframework.realm.RealmConfigBuilder;
-import org.keycloak.testframework.realm.UserConfigBuilder;
+import org.keycloak.testframework.realm.UserBuilder;
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testframework.remote.timeoffset.InjectTimeOffSet;
@@ -157,12 +157,12 @@ public class RefreshTokenTest {
     public static class RefreshTokenTestRealmConfig implements RealmConfig {
 
         @Override
-        public RealmConfigBuilder configure(RealmConfigBuilder realm) {
-            realm.addClient("service-account-app")
+        public RealmBuilder configure(RealmBuilder realm) {
+            realm.clients(ClientBuilder.create("service-account-app")
                     .serviceAccountsEnabled(true)
                     .attribute(OIDCConfigAttributes.USE_REFRESH_TOKEN_FOR_CLIENT_CREDENTIALS_GRANT, "true")
-                    .secret("secret");
-            realm.addRole("user");
+                    .secret("secret"));
+            realm.realmRoles("user");
             return realm;
         }
     }
@@ -286,7 +286,7 @@ public class RefreshTokenTest {
         EventAssertion.assertSuccess(tokenEvent)
                 .userId(user.getId())
                 .sessionId(sessionId)
-                .isCodeId()
+                .hasCodeId()
                 .clientId("test-app")
                 .type(EventType.CODE_TO_TOKEN);
 
@@ -478,24 +478,24 @@ public class RefreshTokenTest {
             realm.setAccessTokenLifespan((int) TimeUnit.MINUTES.toSeconds(1));
             realmResource.update(realm);
 
-            realmResource.clients().create(ClientConfigBuilder.create()
+            realmResource.clients().create(ClientBuilder.create()
                     .clientId("public-client")
                     .redirectUris("*")
                     .publicClient(true)
                     .build()).close();
 
             realmResource.users()
-                    .create(UserConfigBuilder.create().username("alice")
+                    .create(UserBuilder.create().username("alice")
                             .firstName("alice")
                             .lastName("alice")
                             .email("alice@keycloak.org")
-                            .password("alice").roles("offline_access").build()).close();
+                            .password("alice").realmRoles("offline_access").build()).close();
             realmResource.users()
-                    .create(UserConfigBuilder.create().username("bob")
+                    .create(UserBuilder.create().username("bob")
                             .firstName("bob")
                             .lastName("bob")
                             .email("bob@keycloak.org")
-                            .password("bob").roles("offline_access").build()).close();
+                            .password("bob").realmRoles("offline_access").build()).close();
 
             oauth.realm(realmName);
             oauth.client("public-client");
@@ -530,7 +530,7 @@ public class RefreshTokenTest {
     public void testTimeoutWhenReUsingPreviousAuthenticationSession() {
         String realmName = KeycloakModelUtils.generateId();
         RealmsResource realmsResource = adminClient.realms();
-        realmsResource.create(RealmConfigBuilder.create().name(realmName).build());
+        realmsResource.create(RealmBuilder.create().name(realmName).build());
         RealmResource realmResource = realmsResource.realm(realmName);
         RealmRepresentation realm = realmResource.toRepresentation();
 
@@ -544,24 +544,24 @@ public class RefreshTokenTest {
             realm.setAccessTokenLifespan((int) TimeUnit.MINUTES.toSeconds(1));
             realmResource.update(realm);
 
-            realmResource.clients().create(ClientConfigBuilder.create()
+            realmResource.clients().create(ClientBuilder.create()
                     .clientId("public-client")
                     .redirectUris("*")
                     .publicClient(true)
                     .build()).close();
 
             realmResource.users()
-                    .create(UserConfigBuilder.create().username("alice")
+                    .create(UserBuilder.create().username("alice")
                             .firstName("alice")
                             .lastName("alice")
                             .email("alice@keycloak.org")
-                            .password("alice").roles("offline_access").build()).close();
+                            .password("alice").realmRoles("offline_access").build()).close();
             realmResource.users()
-                    .create(UserConfigBuilder.create().username("bob")
+                    .create(UserBuilder.create().username("bob")
                             .firstName("bob")
                             .lastName("bob")
                             .email("bob@keycloak.org")
-                            .password("bob").roles("offline_access").build()).close();
+                            .password("bob").realmRoles("offline_access").build()).close();
 
             oauth.realm(realmName);
             oauth.client("public-client");
@@ -582,7 +582,7 @@ public class RefreshTokenTest {
             oauth.openLoginForm();
             driver.cookies().add(authSessionCookie);
             oauth.fillLoginForm("bob", "bob");
-            Assert.assertEquals("Your login attempt timed out. Login will start from the beginning.", loginPage.getError());
+            Assert.assertEquals("Your login attempt timed out. Login will start from the beginning.", loginPage.getErrorMessage().orElse(null));
         } finally {
             realmResource.remove();
             oauth.realm(origRealm);
@@ -933,7 +933,7 @@ public class RefreshTokenTest {
 
     @Test
     public void refreshTokenUserDeleted() {
-        UserConfigBuilder newUser = UserConfigBuilder.create()
+        UserBuilder newUser = UserBuilder.create()
                 .username("temp-user@localhost")
                 .password("password")
                 .name("First", "Last")
@@ -1044,6 +1044,66 @@ public class RefreshTokenTest {
         conductTokenRefreshRequest(Constants.INTERNAL_SIGNATURE_ALGORITHM, Algorithm.PS512, Algorithm.PS256);
     }
 
+    @Test
+    public void refreshTokenWithRealmNotBeforeAndClientNotBefore() {
+        //Test that refresh token respects realm notBefore even when client notBefore is set
+        oauth.doLogin("test-user@localhost", "password");
+
+        EventRepresentation loginEvent = events.poll();
+        EventAssertion.assertSuccess(loginEvent)
+                .userId(user.getId())
+                .clientId("test-app")
+                .hasSessionId()
+                .type(EventType.LOGIN);
+
+        String sessionId = loginEvent.getSessionId();
+
+        String code = oauth.parseLoginResponse().getCode();
+
+        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
+        String refreshToken = tokenResponse.getRefreshToken();
+
+        EventAssertion.assertSuccess(events.poll())
+                .userId(user.getId())
+                .sessionId(sessionId)
+                .clientId("test-app")
+                .type(EventType.CODE_TO_TOKEN);
+
+        int currentTime = (int) (System.currentTimeMillis() / 1000);
+
+        ClientRepresentation clientRep = managedClient.admin().toRepresentation();
+        int originalClientNotBefore = clientRep.getNotBefore() != null ? clientRep.getNotBefore() : 0;
+
+        try {
+            //Test realm notBefore with client notBefore both set
+            // Set client notBefore to past
+            clientRep.setNotBefore(currentTime - 100);
+            managedClient.admin().update(clientRep);
+
+            tokenResponse = oauth.doRefreshTokenRequest(refreshToken);
+            assertEquals(200, tokenResponse.getStatusCode());
+
+            // Set realm notBefore to future
+            RealmRepresentation realmRep = realm.admin().toRepresentation();
+            int originalRealmNotBefore = realmRep.getNotBefore() != null ? realmRep.getNotBefore() : 0;
+            try {
+                realmRep.setNotBefore(currentTime + 100);
+                realm.admin().update(realmRep);
+
+                tokenResponse = oauth.doRefreshTokenRequest(refreshToken);
+                assertEquals(400, tokenResponse.getStatusCode());
+                assertEquals(OAuthErrorException.INVALID_GRANT, tokenResponse.getError());
+            } finally {
+                realmRep.setNotBefore(originalRealmNotBefore);
+                realm.admin().update(realmRep);
+            }
+
+        } finally {
+            clientRep.setNotBefore(originalClientNotBefore);
+            managedClient.admin().update(clientRep);
+        }
+    }
+
     private void conductTokenRefreshRequest(String expectedRefreshAlg, String expectedAccessAlg, String expectedIdTokenAlg) throws Exception {
         try {
             // Realm setting is used for ID Token signature algorithm
@@ -1109,7 +1169,7 @@ public class RefreshTokenTest {
         EventAssertion.assertSuccess(tokenEvent)
                 .userId(user.getId())
                 .sessionId(sessionId)
-                .isCodeId()
+                .hasCodeId()
                 .clientId("test-app")
                 .type(EventType.CODE_TO_TOKEN);
 
