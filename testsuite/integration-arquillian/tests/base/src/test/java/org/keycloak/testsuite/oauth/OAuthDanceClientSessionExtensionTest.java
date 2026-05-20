@@ -19,6 +19,7 @@ package org.keycloak.testsuite.oauth;
 
 import java.util.List;
 
+import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthenticator;
 import org.keycloak.events.Details;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -26,6 +27,7 @@ import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.util.TokenUtil;
 
 import org.junit.Rule;
 import org.junit.Test;
@@ -67,13 +69,19 @@ public class OAuthDanceClientSessionExtensionTest extends AbstractKeycloakTest {
 
         String refreshTokenString = tokenResponse.getRefreshToken();
 
-        EventRepresentation tokenEvent = events.expectCodeToToken(codeId, sessionId)
-                .assertEvent();
+        EventRepresentation tokenEvent = EventAssertion.expectCodeToTokenSuccess(events.poll())
+                .sessionId(sessionId)
+                .details(Details.CODE_ID, codeId)
+                .details(Details.REFRESH_TOKEN_TYPE, TokenUtil.TOKEN_TYPE_REFRESH)
+                .details(Details.CLIENT_AUTH_METHOD, ClientIdAndSecretAuthenticator.PROVIDER_ID)
+                .getEvent();
 
         oauth.doRefreshTokenRequest(refreshTokenString);
 
-        events.expectRefresh(tokenEvent.getDetails().get(Details.REFRESH_TOKEN_ID), sessionId)
-                .assertEvent();
-
+        EventAssertion.expectRefreshTokenSuccess(events.poll())
+                .sessionId(sessionId)
+                .details(Details.REFRESH_TOKEN_ID, tokenEvent.getDetails().get(Details.REFRESH_TOKEN_ID))
+                .details(Details.REFRESH_TOKEN_TYPE, TokenUtil.TOKEN_TYPE_REFRESH)
+                .details(Details.CLIENT_AUTH_METHOD, ClientIdAndSecretAuthenticator.PROVIDER_ID);
     }
 }

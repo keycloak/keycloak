@@ -24,18 +24,12 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.UncheckedIOException;
-import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
-import java.security.KeyManagementException;
-import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
-import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -45,31 +39,24 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.locks.LockSupport;
 import java.util.function.Consumer;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
-import javax.net.ssl.HostnameVerifier;
-import javax.net.ssl.HttpsURLConnection;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLSocketFactory;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.X509TrustManager;
 
 import org.keycloak.common.Version;
 import org.keycloak.it.TestProvider;
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.quarkus.runtime.Environment;
-import org.keycloak.quarkus.runtime.cli.command.Build;
-import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper;
-import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
+import org.keycloak.quarkus.runtime.KeycloakMain;
 
 import io.quarkus.deployment.util.FileUtil;
 import io.quarkus.fs.util.ZipUtils;
-import io.restassured.RestAssured;
 import org.apache.commons.io.FileUtils;
 import org.awaitility.Awaitility;
 import org.jboss.logging.Logger;
@@ -91,31 +78,12 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
     private Process keycloak;
     private int exitCode = -1;
     private Path distPath;
-    private boolean manualStop;
-    private String relativePath;
-    private int httpPort;
-    private int httpsPort;
-    private final boolean debug;
-    private final boolean enableTls;
-    private final boolean reCreate;
-    private final boolean removeBuildOptionsAfterBuild;
-    private final int requestPort;
     private ExecutorService outputExecutor;
     private final Map<String, String> envVars = new HashMap<>();
-    private final OutputConsumer outputConsumer;
-    private long startTimeout = TimeUnit.SECONDS.toMillis(Long.getLong("keycloak.distribution.start.timeout", 120L));
-    private boolean throwErrorIfFailedToStart = false;
-    private boolean threadDump = true;
-    private String launchMode = Environment.LAUNCH_MODE_EXIT_AFTER_START;
+    private final DefaultOutputConsumer outputConsumer;
 
-    public RawKeycloakDistribution(boolean debug, boolean manualStop, boolean enableTls, boolean reCreate, boolean removeBuildOptionsAfterBuild, int requestPort) {
-        this.debug = debug;
-        this.manualStop = manualStop;
-        this.enableTls = enableTls;
-        this.reCreate = reCreate;
-        this.removeBuildOptionsAfterBuild = removeBuildOptionsAfterBuild;
-        this.requestPort = requestPort;
-        this.distPath = prepareDistribution();
+    public RawKeycloakDistribution(boolean reCreate) {
+        this.distPath = prepareDistribution(reCreate);
         if (reCreate) {
             try {
                 preInitH2(distPath);
@@ -125,20 +93,34 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
         }
         this.outputConsumer = new DefaultOutputConsumer();
     }
-
-    public RawKeycloakDistribution withThrowErrorIfFailedToStart(boolean throwErrorIfFailedToStart) {
-        this.throwErrorIfFailedToStart = throwErrorIfFailedToStart;
-        return this;
+    
+    @Override
+    public int getMappedPort(int port) {
+        return port;
+    }
+    
+    @Override
+    public synchronized void waitFor(boolean ready, long timeoutMillis) {
+        if (!isRunning()) {
+            return;
+        }
+        try {
+            if (ready) {
+                this.outputConsumer.running.get(timeoutMillis, TimeUnit.MILLISECONDS);
+            } else {
+                this.keycloak.onExit().get(timeoutMillis, TimeUnit.MILLISECONDS);
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException(e);
+        } catch (ExecutionException|TimeoutException e) {
+            throw new RuntimeException(e);
+        }
     }
 
-    public RawKeycloakDistribution withThreadDump(boolean threadDump) {
-        this.threadDump = threadDump;
-        return this;
-    }
-
-    public RawKeycloakDistribution withStartTimeout(long startTimeout) {
-        this.startTimeout = startTimeout;
-        return this;
+    @Override
+    public boolean supportsDebug() {
+        return true;
     }
 
     public CLIResult kc(String... arguments) throws IOException {
@@ -160,21 +142,12 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
     private CLIResult invoke(String script, List<String> arguments) throws IOException {
         List<String> allArgs = new ArrayList<>();
 
-        invoke(allArgs, script);
-
-        if (this.isDebug()) {
-            allArgs.add("-x");
-        }
+        addPlatformSpecificCommand(allArgs, script);
 
         allArgs.addAll(arguments);
 
         ProcessBuilder pb = new ProcessBuilder(allArgs);
         ProcessBuilder builder = pb.directory(distPath.resolve("bin").toFile());
-
-        // TODO: it is possible to debug kcadm, but it's more involved
-        /*if (debug) {
-            builder.environment().put("DEBUG_SUSPEND", "y");
-        }*/
 
         addAOTEnvVars();
         
@@ -190,30 +163,23 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
         return CLIResult.create(outputConsumer.getStdOut(), outputConsumer.getErrOut(), exitValue);
     }
 
-	private void invoke(List<String> allArgs, String cmd) {
+	private void addPlatformSpecificCommand(List<String> allArgs, String cmd) {
 		if (isWindows()) {
             allArgs.add(distPath.resolve("bin") + File.separator + cmd);
         } else {
             allArgs.add("./" + cmd);
         }
 	}
-
-    @Override
-    public CLIResult run(List<String> arguments) {
-        stop();
-        if (manualStop && isRunning()) {
-            throw new IllegalStateException("Server already running. You should manually stop the server before starting it again.");
+	
+	@Override
+	public void runKc(List<String> arguments) {
+        if (isRunning()) {
+            throw new IllegalStateException("Stop has not been called");
         }
-        reset();
+        resetForNextRun();
         try {
-            configureServer();
             startServer(arguments);
-            if (manualStop) {
-                asyncReadOutput();
-                waitForReadiness();
-            } else {
-                readOutput();
-            }
+            asyncReadOutput();
         } catch (Exception cause) {
             try {
                 stop();
@@ -221,27 +187,6 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
                 cause.addSuppressed(stopException);
             }
             throw new RuntimeException("Failed to start the server", cause);
-        } finally {
-            if (arguments.contains(Build.NAME) && removeBuildOptionsAfterBuild) {
-                for (List<PropertyMapper<?>> mappers : PropertyMappers.getBuildTimeMappers().values()) {
-                    for (PropertyMapper<?> mapper : mappers) {
-                        removeProperty(mapper.getFrom().substring(3));
-                    }
-                }
-            }
-            if (!manualStop) {
-                stop();
-            }
-        }
-
-        setRequestPort();
-
-        return CLIResult.create(getOutputStream(), getErrorStream(), getExitCode());
-    }
-
-    private void configureServer() {
-        if (enableTls) {
-            copyOrReplaceFileFromClasspath("/server.keystore", Path.of("conf", "server.keystore"));
         }
     }
 
@@ -325,167 +270,20 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
         return exitCode;
     }
 
-    @Override
-    public boolean isDebug() { return this.debug; }
-
-    @Override
-    public boolean isManualStop() { return this.manualStop; }
-
-    @Override
-    public String[] getCliArgs(List<String> arguments) {
-        List<String> allArgs = new ArrayList<>();
-
-        invoke(allArgs, SCRIPT_CMD);
-
-        if (this.isDebug()) {
-            allArgs.add("--debug");
-        }
-
-        if (!this.isManualStop()) {
-            allArgs.add("-D" + LAUNCH_MODE + "=" + launchMode);
-        }
-
-        allArgs.add("-Djgroups.join_timeout=50");
-
-        this.relativePath = arguments.stream().filter(arg -> arg.startsWith("--http-relative-path")).map(arg -> arg.substring(arg.indexOf('=') + 1)).findAny().orElse("/");
-        this.httpPort = Integer.parseInt(arguments.stream().filter(arg -> arg.startsWith("--http-port")).map(arg -> arg.substring(arg.indexOf('=') + 1)).findAny().orElse("8080"));
-        this.httpsPort = Integer.parseInt(arguments.stream().filter(arg -> arg.startsWith("--https-port")).map(arg -> arg.substring(arg.indexOf('=') + 1)).findAny().orElse("8443"));
-
-        allArgs.add("-Dkc.home.dir=" + distPath + File.separator);
-        allArgs.addAll(arguments);
-
-        return allArgs.toArray(String[]::new);
-    }
-
-    @Override
-    public void setRequestPort() {
-        setRequestPort(requestPort);
-    }
-
-    @Override
-    public void setRequestPort(int port) {
-        RestAssured.port = port;
-    }
-
-    private void waitForReadiness() throws MalformedURLException {
-        waitForReadiness("http", httpPort);
-
-        if (enableTls) {
-            waitForReadiness("https", httpsPort);
-        }
-    }
-
-    private void waitForReadiness(String scheme, int port) throws MalformedURLException {
-        var myRelativePath = relativePath;
-        if (!myRelativePath.endsWith("/")) {
-            myRelativePath += "/";
-        }
-        URL contextRoot = new URL(scheme + "://localhost:" + port + myRelativePath + "realms/master/");
-        HttpURLConnection connection = null;
-        long startTime = System.currentTimeMillis();
-        Exception ex = null;
-
-        while (true) {
-            if (System.currentTimeMillis() - startTime > getStartTimeout()) {
-                threadDump();
-                throw new IllegalStateException(
-                        "Timeout [" + getStartTimeout() + "] while waiting for Quarkus server", ex);
-            }
-
-            if (!keycloak.isAlive()) {
-                if (throwErrorIfFailedToStart) {
-                    throw new RuntimeException("Keycloak failed to start: process terminated");
-                } else {
-                    return;
-                }
-            }
-
-            try {
-                // wait before checking for opening a new connection
-                if ("https".equals(contextRoot.getProtocol())) {
-                    HttpsURLConnection httpsConnection = (HttpsURLConnection) (connection = (HttpURLConnection) contextRoot.openConnection());
-                    httpsConnection.setSSLSocketFactory(createInsecureSslSocketFactory());
-                    httpsConnection.setHostnameVerifier(createInsecureHostnameVerifier());
-                } else {
-                    connection = (HttpURLConnection) contextRoot.openConnection();
-                }
-
-                connection.setReadTimeout((int) getStartTimeout());
-                connection.setConnectTimeout((int) getStartTimeout());
-                connection.connect();
-
-                if (connection.getResponseCode() == 200) {
-                    break;
-                }
-            } catch (Exception ignore) {
-                ex = ignore;
-            } finally {
-                if (connection != null) {
-                    connection.disconnect();
-                }
-                try {
-                    Thread.sleep(1000);
-                } catch (Exception ignore) {
-                }
-            }
-        }
-    }
-
     private void threadDump() {
-        if (!threadDump) {
-            return;
-        }
-
         if (Environment.isWindows()) {
             return;
         }
         try {
             ProcessBuilder builder = new ProcessBuilder("kill", "-3", String.valueOf(keycloak.pid()));
             Process p = builder.start();
-            p.onExit().get(getStartTimeout(), TimeUnit.MILLISECONDS);
+            p.onExit().get(DEFAULT_SHUTDOWN_TIMEOUT_SECONDS, TimeUnit.SECONDS);
         } catch (Exception e) {
             LOG.warn("A thread dump may not have been successfully triggered", e);
             return;
         }
         Awaitility.await().atMost(1, TimeUnit.MINUTES)
                 .until(() -> getOutputStream().stream().anyMatch(s -> s.contains("JNI global refs")));
-    }
-
-    private long getStartTimeout() {
-        return startTimeout;
-    }
-
-    private HostnameVerifier createInsecureHostnameVerifier() {
-        return (s, sslSession) -> true;
-    }
-
-    private SSLSocketFactory createInsecureSslSocketFactory() throws IOException {
-        TrustManager[] trustAllCerts = new TrustManager[] {new X509TrustManager() {
-            @Override
-            public void checkClientTrusted(final X509Certificate[] chain, final String authType) {
-            }
-
-            @Override
-            public void checkServerTrusted(final X509Certificate[] chain, final String authType) {
-            }
-
-            @Override
-            public X509Certificate[] getAcceptedIssuers() {
-                return null;
-            }
-        }};
-
-        SSLContext sslContext;
-        SSLSocketFactory socketFactory;
-
-        try {
-            sslContext = SSLContext.getInstance("TLS");
-            sslContext.init(null, trustAllCerts, new SecureRandom());
-            socketFactory = sslContext.getSocketFactory();
-        } catch (NoSuchAlgorithmException | KeyManagementException e) {
-            throw new IOException("Can't create unsecure trust manager");
-        }
-        return socketFactory;
     }
 
     public boolean isRunning() {
@@ -511,7 +309,7 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
         }
     }
 
-    private void reset() {
+    private void resetForNextRun() {
         outputConsumer.reset();
         exitCode = -1;
         shutdownOutputExecutor();
@@ -533,7 +331,7 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
         throw new RuntimeException(String.format("ZIP file '%s' doesn't contain any directories", distPath));
     }
 
-    private Path prepareDistribution() {
+    public Path prepareDistribution(boolean reCreate) {
         try {
             Path distRootPath = Paths.get(System.getProperty("java.io.tmpdir")).resolve("kc-tests");
             distRootPath.toFile().mkdirs();
@@ -575,7 +373,6 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
 
     private void preInitH2(Path dPath) throws IOException {
         ProcessHandle.current().info().command().ifPresent(command -> {
-            Runtime.Version runtimeVersion = Runtime.version();
             boolean useAot = false;
             if (Boolean.getBoolean("kc.quarkus.tests.aot")) {
                 if (Runtime.version().feature() < 25) {
@@ -658,18 +455,25 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
      * @throws Exception if something bad happens
      */
     private void startServer(List<String> arguments) throws Exception {
-        ProcessBuilder pb = new ProcessBuilder(getCliArgs(arguments));
+        List<String> allArgs = new ArrayList<>();
+
+        addPlatformSpecificCommand(allArgs, SCRIPT_CMD);
+
+        // used to detect readiness rather than http(s) probing
+        allArgs.add("-D%s=true".formatted(KeycloakMain.KC_SERVER_PRINT_RUNNING));
+        
+        allArgs.addAll(arguments);
+
+        ProcessBuilder pb = new ProcessBuilder(allArgs);
         ProcessBuilder builder = pb.directory(distPath.resolve("bin").toFile());
 
-        if (debug) {
-            builder.environment().put("DEBUG_SUSPEND", "y");
-        }
-        
         addAOTEnvVars();
 
         builder.environment().putAll(envVars);
 
         keycloak = builder.start();
+        var future = outputConsumer.running;
+        keycloak.onExit().whenComplete((p, t) -> future.complete(null));
     }
 
     private void addAOTEnvVars() {
@@ -681,12 +485,6 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
         }
     }
 
-    @Override
-    public void setManualStop(boolean manualStop) {
-        this.manualStop = manualStop;
-    }
-
-    @Override
     public void setProperty(String key, String value) {
         updateProperties(properties -> properties.put(key, value), distPath.resolve("conf").resolve("keycloak.conf").toFile());
     }
@@ -696,21 +494,14 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
         this.envVars.put(name, value);
     }
 
-    public void setLaunchMode(String launchMode) {
-        this.launchMode = launchMode;
-    }
-
-    @Override
     public void removeProperty(String name) {
         updateProperties(properties -> properties.remove(name), distPath.resolve("conf").resolve("keycloak.conf").toFile());
     }
 
-    @Override
     public void setQuarkusProperty(String key, String value) {
         updateProperties(properties -> properties.put(key, value), getQuarkusPropertiesFile());
     }
 
-    @Override
     public void deleteQuarkusProperties() {
         File file = getQuarkusPropertiesFile();
 
@@ -719,7 +510,6 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
         }
     }
 
-    @Override
     public void copyOrReplaceFileFromClasspath(String file, Path targetFile) {
         Path path = distPath.resolve(targetFile);
 
@@ -732,7 +522,6 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
         }
     }
 
-    @Override
     public void copyOrReplaceFile(Path file, Path targetFile) {
         if (!file.toFile().exists()) {
             return;
@@ -749,6 +538,7 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
         }
     }
 
+    @Override
     public void copyProvider(String groupId, String artifactId) {
         copyProvider(getDistPath(), groupId, artifactId);
     }
@@ -766,6 +556,7 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
         }
     }
 
+    @Override
     public void copyConfigFile(Path configFilePath) {
         try {
             Files.copy(configFilePath, distPath.resolve("conf").resolve(configFilePath.getFileName()));
@@ -834,19 +625,6 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
     }
 
     @Override
-    public <D extends KeycloakDistribution> D unwrap(Class<D> type) {
-        if (!KeycloakDistribution.class.isAssignableFrom(type)) {
-            throw new IllegalArgumentException("Not a " + KeycloakDistribution.class + " type");
-        }
-
-        if (type.isInstance(this)) {
-            return type.cast(type);
-        }
-
-        throw new IllegalArgumentException("Not a " + type + " type");
-    }
-
-    @Override
     public void clearEnv() {
         this.envVars.clear();
     }
@@ -855,9 +633,13 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
 
         private final List<String> stdOut = Collections.synchronizedList(new ArrayList<>());
         private final List<String> errOut = Collections.synchronizedList(new ArrayList<>());
-
+        private CompletableFuture<Void> running = new CompletableFuture<Void>();
+        
         @Override
         public void onStdOut(String line) {
+            if (line.equals(KeycloakMain.RUNNING_MESSAGE)) {
+                running.complete(null);
+            }
             System.out.println(line);
             stdOut.add(line);
         }
@@ -872,6 +654,7 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
         public void reset() {
             stdOut.clear();
             errOut.clear();
+            this.running = new CompletableFuture<>();
         }
 
         @Override
@@ -883,6 +666,7 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
         public List<String> getStdOut() {
             return stdOut;
         }
+        
     }
     
     public void resetH2Dir() throws IOException {

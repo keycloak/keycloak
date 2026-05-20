@@ -23,6 +23,7 @@ import java.net.ConnectException;
 
 import org.keycloak.it.junit5.extension.DistributionTest;
 import org.keycloak.it.junit5.extension.RawDistOnly;
+import org.keycloak.it.junit5.extension.StopServer.Mode;
 
 import io.quarkus.test.junit.main.Launch;
 import org.junit.jupiter.api.Test;
@@ -32,7 +33,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-@DistributionTest(keepAlive = true, defaultOptions = { "--db=dev-file", "--http-enabled=true", "--hostname-strict=false"})
+@DistributionTest(stopServer = Mode.MANUAL, defaultOptions = { "--db=dev-file", "--http-enabled=true", "--hostname-strict=false"})
 @RawDistOnly(reason = "Containers are immutable")
 public class IpStackDistTest {
 

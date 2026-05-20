@@ -85,7 +85,7 @@ export const Results = ({ evaluateResult, refresh, back }: ResultProps) => {
   const noFilteredData = filteredResources.length === 0;
 
   return (
-    <PageSection>
+    <PageSection style={{ paddingBottom: "var(--pf-v5-global--spacer--4xl)" }}>
       <Toolbar>
         <ToolbarGroup className="providers-toolbar">
           <ToolbarItem>

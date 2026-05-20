@@ -35,7 +35,6 @@ import org.testcontainers.utility.LazyFuture;
 public class ClusteredKeycloakServer implements KeycloakServer {
 
     private static final String CLUSTER_VIEW_REGEX = ".*ISPN000093.*(?<=\\()(%1$d)(?=\\)).*|.*ISPN000094.*(?<=\\()(%1$d)(?=\\)).*";
-    private static final boolean MANUAL_STOP = true;
     private static final int REQUEST_PORT = 8080;
     private static final int MANAGEMENT_PORT = 9000;
     public static final String SNAPSHOT_IMAGE = "-";
@@ -100,13 +99,13 @@ public class ClusteredKeycloakServer implements KeycloakServer {
             } else {
                 resolvedImage = new RemoteDockerImage(DockerImageName.parse(imagePeServer[i]));
             }
-            var container = new DockerKeycloakDistribution(false, MANUAL_STOP, REQUEST_PORT, exposedPorts, resolvedImage);
+            var container = new DockerKeycloakDistribution(exposedPorts, resolvedImage);
             containers[i] = container;
 
             copyProvidersAndConfigs(container, configBuilder);
 
             configureLogConsumers(container, i, clusterLatch);
-            container.run(configBuilder.toArgs());
+            container.runKc(configBuilder.toArgs());
         }
     }
 
@@ -116,12 +115,12 @@ public class ClusteredKeycloakServer implements KeycloakServer {
                 defaultImage() :
                 new RemoteDockerImage(DockerImageName.parse(image));
         for (int i = 0; i < containers.length; ++i) {
-            var container = new DockerKeycloakDistribution(false, MANUAL_STOP, REQUEST_PORT, exposedPorts, imageFuture);
+            var container = new DockerKeycloakDistribution(exposedPorts, imageFuture);
             containers[i] = container;
 
             copyProvidersAndConfigs(container, configBuilder);
             configureLogConsumers(container, i, clusterLatch);
-            container.run(configBuilder.toArgs());
+            container.runKc(configBuilder.toArgs());
         }
     }
 

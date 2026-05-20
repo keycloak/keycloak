@@ -154,8 +154,9 @@ public class RedirectUtils {
             "(/|%2[fF]|%5[cC]|\\\\)(%2[eE]|\\.){2}(/|%2[fF]|%5[cC]|\\\\|;)|(/|%2[fF]|%5[cC]|\\\\)(%2[eE]|\\.){2}$");
 
     private static boolean areWildcardsAllowed(URI redirectUri) {
-        // wildcars are only allowed if no user-info and no unsafe pattern in path
+        // wildcars are only allowed if no user-info and no unparsed authority and no unsafe pattern in path
         return redirectUri.getRawUserInfo() == null
+                && !(redirectUri.getRawAuthority() != null && redirectUri.getRawUserInfo() == null && redirectUri.getHost() == null && redirectUri.getPort() == -1)
                 && (redirectUri.getRawPath() == null || !UNSAFE_PATH_PATTERN.matcher(redirectUri.getRawPath()).find());
     }
 

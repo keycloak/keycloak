@@ -35,8 +35,10 @@ import org.keycloak.protocol.oid4vc.model.CredentialOfferURI;
 import org.keycloak.protocol.oid4vc.model.CredentialsOffer;
 import org.keycloak.protocol.oid4vc.model.ErrorType;
 import org.keycloak.protocol.oid4vc.model.PreAuthorizedCodeGrant;
+import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.cors.Cors;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.util.TokenUtil;
 import org.keycloak.testsuite.util.oauth.AbstractHttpResponse;
@@ -49,9 +51,9 @@ import org.apache.http.HttpStatus;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpOptions;
-import org.hamcrest.Matchers;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -115,11 +117,10 @@ public class OID4VCCredentialOfferCorsTest extends OID4VCIssuerEndpointTest {
         assertNotNull(offerUri.getNonce(), "Nonce should not be null");
 
         // Verify VERIFIABLE_CREDENTIAL_CREATE_OFFER event was fired
-        events.expect(EventType.VERIFIABLE_CREDENTIAL_CREATE_OFFER)
-                .client(clientId)
-                .user(AssertEvents.isUUID())
-                .session(AssertEvents.isSessionId())
-                .assertEvent();
+        EventAssertion.assertSuccess(events.poll()).type(EventType.VERIFIABLE_CREDENTIAL_CREATE_OFFER)
+                .clientId(clientId)
+                .hasUserId()
+                .hasSessionId();
     }
 
     @Test
@@ -189,12 +190,11 @@ public class OID4VCCredentialOfferCorsTest extends OID4VCIssuerEndpointTest {
         // We already assert that credentialConfigurationIds is not null and not empty above
         String expectedCredentialType = offer.getCredentialConfigurationIds().get(0);
 
-        events.expect(EventType.VERIFIABLE_CREDENTIAL_OFFER_REQUEST)
-                .client(clientId)
-                .user(AssertEvents.isUUID())
-                .session((String) null) // No session for unauthenticated endpoint
-                .detail(Details.CREDENTIAL_TYPE, expectedCredentialType)
-                .assertEvent();
+        EventAssertion.assertSuccess(events.poll()).type(EventType.VERIFIABLE_CREDENTIAL_OFFER_REQUEST)
+                .clientId(clientId)
+                .hasUserId()
+                .sessionId(null) // No session for unauthenticated endpoint
+                .details(Details.CREDENTIAL_TYPE, expectedCredentialType);
     }
 
     @Test
@@ -304,12 +304,11 @@ public class OID4VCCredentialOfferCorsTest extends OID4VCIssuerEndpointTest {
         assertEquals(HttpStatus.SC_BAD_REQUEST, response.getStatusCode());
 
         // Verify VERIFIABLE_CREDENTIAL_CREATE_OFFER_ERROR event was fired
-        events.expect(EventType.VERIFIABLE_CREDENTIAL_CREATE_OFFER_ERROR)
-                .client(clientId)
-                .user(AssertEvents.isUUID())
-                .session(AssertEvents.isSessionId())
-                .error(Errors.INVALID_REQUEST)
-                .assertEvent();
+        EventAssertion.assertError(events.poll()).type(EventType.VERIFIABLE_CREDENTIAL_CREATE_OFFER_ERROR)
+                .clientId(clientId)
+                .hasUserId()
+                .hasSessionId()
+                .error(Errors.INVALID_REQUEST);
     }
 
     @Test
@@ -347,17 +346,14 @@ public class OID4VCCredentialOfferCorsTest extends OID4VCIssuerEndpointTest {
         assertEquals(HttpStatus.SC_BAD_REQUEST, response.getStatusCode());
 
         // Verify VERIFIABLE_CREDENTIAL_OFFER_REQUEST_ERROR event was fired
-        events.expect(EventType.VERIFIABLE_CREDENTIAL_OFFER_REQUEST_ERROR)
-                .client((String) null)
-                .user((String) null)
-                .session((String) null)
+        EventRepresentation eventRep = EventAssertion.assertError(events.poll()).type(EventType.VERIFIABLE_CREDENTIAL_OFFER_REQUEST_ERROR)
+                .clientId(null)
+                .userId(null)
+                .sessionId(null)
                 // Storage prunes expired single-use entries before lookup; lookup failure yields INVALID_REQUEST
                 // The error message indicates the offer was not found (pruned due to expiration) or already consumed
-                .error(ErrorType.INVALID_CREDENTIAL_OFFER_REQUEST.getValue())
-                .detail(Details.REASON, Matchers.anyOf(
-                        Matchers.containsString("not found"),
-                        Matchers.containsString("already consumed")))
-                .assertEvent();
+                .error(ErrorType.INVALID_CREDENTIAL_OFFER_REQUEST.getValue()).getEvent();
+        Assertions.assertTrue(eventRep.getDetails().get(Details.REASON).contains("not found") || eventRep.getDetails().get(Details.REASON).contains("already consumed"));
     }
 
     // Helper methods

@@ -137,9 +137,7 @@ public class Profile {
 
         OPENTELEMETRY("OpenTelemetry support", Type.DEFAULT),
         OPENTELEMETRY_LOGS("OpenTelemetry Logs support", Type.PREVIEW, OPENTELEMETRY),
-        OPENTELEMETRY_METRICS("Micrometer to OpenTelemetry bridge support for metrics", Type.EXPERIMENTAL, 1, false, true,
-                () -> isClassAvailable("io.quarkus.micrometer.opentelemetry.runtime.MicrometerOtelBridgeRecorder"),
-                null, OPENTELEMETRY),
+        OPENTELEMETRY_METRICS("Micrometer to OpenTelemetry bridge support for metrics", Type.EXPERIMENTAL, OPENTELEMETRY),
 
         DECLARATIVE_UI("declarative ui spi", Type.EXPERIMENTAL),
 
@@ -189,7 +187,6 @@ public class Profile {
         private final String unversionedKey;
         private final String key;
         private final BooleanSupplier isAvailable;
-        private final boolean hideWhenUnavailable;
         private final FeatureUpdatePolicy updatePolicy;
         private final Set<Feature> dependencies;
         private final boolean deprecated;
@@ -216,16 +213,11 @@ public class Profile {
         }
 
         Feature(String label, Type type, int version, boolean deprecated, BooleanSupplier isAvailable, FeatureUpdatePolicy updatePolicy, Feature... dependencies) {
-            this(label, type, version, deprecated, false, isAvailable, updatePolicy, dependencies);
-        }
-
-        Feature(String label, Type type, int version, boolean deprecated, boolean hideWhenUnavailable, BooleanSupplier isAvailable, FeatureUpdatePolicy updatePolicy, Feature... dependencies) {
             this.label = label;
             this.type = type;
             this.version = version;
             this.deprecated = type == Type.DEPRECATED || deprecated;
             this.isAvailable = isAvailable;
-            this.hideWhenUnavailable = hideWhenUnavailable;
             this.updatePolicy = updatePolicy == null ? FeatureUpdatePolicy.ROLLING : updatePolicy;
             this.key = name().toLowerCase().replaceAll("_", "-");
             if (this.name().endsWith("_V" + version)) {
@@ -289,10 +281,6 @@ public class Profile {
 
         public FeatureUpdatePolicy getUpdatePolicy() {
             return updatePolicy;
-        }
-
-        private boolean isVisible() {
-            return isAvailable() || !hideWhenUnavailable;
         }
 
         public enum Type {
@@ -471,18 +459,11 @@ public class Profile {
     }
 
     public static Set<String> getAllUnversionedFeatureNames() {
-        return Collections.unmodifiableSet(getOrderedFeatures().entrySet().stream()
-                .filter(e -> e.getValue().stream().anyMatch(Feature::isVisible))
-                .map(Map.Entry::getKey)
-                .collect(Collectors.toSet()));
+        return Collections.unmodifiableSet(getOrderedFeatures().keySet());
     }
 
     public static Set<String> getDisableableUnversionedFeatureNames() {
-        return getOrderedFeatures().entrySet().stream()
-                .filter(e -> !ESSENTIAL_FEATURES.contains(e.getKey()))
-                .filter(e -> e.getValue().stream().anyMatch(Feature::isVisible))
-                .map(Map.Entry::getKey)
-                .collect(Collectors.toSet());
+        return getOrderedFeatures().keySet().stream().filter(f -> !ESSENTIAL_FEATURES.contains(f)).collect(Collectors.toSet());
     }
 
     /**
@@ -598,15 +579,6 @@ public class Profile {
 
         if (!enabledFeaturesOfType.isEmpty()) {
             logger.logv(level, "{0} features enabled: {1}", type.getLabel(), enabledFeaturesOfType);
-        }
-    }
-
-    private static boolean isClassAvailable(String className) {
-        try {
-            Class.forName(className);
-            return true;
-        } catch (ClassNotFoundException e) {
-            return false;
         }
     }
 

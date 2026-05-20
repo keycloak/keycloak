@@ -320,12 +320,11 @@ public class MultiFactorAuthenticationTest extends AbstractChangeImportedUserPas
 
             // Reset login
             selectAuthenticatorPage.clickResetLogin();
-            events.expect(EventType.RESTART_AUTHENTICATION)
-                    .client(oauth.getClientId())
-                    .user(user.getId())
-                    .detail(Details.USERNAME, "user-with-one-configured-otp")
-                    .detail(Details.AUTH_METHOD, OIDCLoginProtocol.LOGIN_PROTOCOL)
-                    .assertEvent();
+            EventAssertion.assertSuccess(events.poll()).type(EventType.RESTART_AUTHENTICATION)
+                    .clientId(oauth.getClientId())
+                    .userId(user.getId())
+                    .details(Details.USERNAME, "user-with-one-configured-otp")
+                    .details(Details.AUTH_METHOD, OIDCLoginProtocol.LOGIN_PROTOCOL);
 
             // Should be back on the login page
             loginUsernameOnlyPage.assertCurrent();

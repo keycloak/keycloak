@@ -16,6 +16,8 @@
  */
 package org.keycloak.testsuite.actions;
 
+import java.net.HttpCookie;
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -42,7 +44,10 @@ import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.services.resources.LoginActionsService;
 import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testframework.realm.UserBuilder;
+import org.keycloak.testsuite.ActionURIUtils;
+import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.AdminApiUtil;
+import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginConfigTotpPage;
 import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
@@ -54,10 +59,18 @@ import org.keycloak.testsuite.util.URLUtils;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
 
+import org.apache.http.Header;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.util.EntityUtils;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.arquillian.graphene.page.Page;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Rule;
@@ -77,6 +90,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * @author Stan Silvert
  */
 public class AppInitiatedActionResetPasswordTest extends AbstractAppInitiatedActionTest {
+
+    @Page
+    ErrorPage errorPage;
 
     @Override
     protected String getAiaAction() {
@@ -162,8 +178,8 @@ public class AppInitiatedActionResetPasswordTest extends AbstractAppInitiatedAct
                 assertNull(session.authenticationSessions().getRootAuthenticationSession(realm, decodedAuthSessionId));
             });
 
-            events.expectRequiredAction(EventType.UPDATE_PASSWORD).assertEvent();
-            events.expectRequiredAction(EventType.UPDATE_CREDENTIAL).detail(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE).assertEvent();
+            EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_PASSWORD);
+            EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_CREDENTIAL).details(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE);
 
             MimeMessage[] receivedMessages = mail.getReceivedMessages();
             Assertions.assertEquals(2, receivedMessages.length);
@@ -213,8 +229,8 @@ public class AppInitiatedActionResetPasswordTest extends AbstractAppInitiatedAct
 
         changePasswordPage.changePassword("new-password", "new-password");
 
-        events.expectRequiredAction(EventType.UPDATE_PASSWORD).assertEvent();
-        events.expectRequiredAction(EventType.UPDATE_CREDENTIAL).detail(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE).assertEvent();
+        EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_PASSWORD);
+        EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_CREDENTIAL).details(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE);
         assertKcActionStatus(SUCCESS);
     }
 
@@ -251,8 +267,8 @@ public class AppInitiatedActionResetPasswordTest extends AbstractAppInitiatedAct
 
         changePasswordPage.changePassword("new-password", "new-password");
 
-        events.expectRequiredAction(EventType.UPDATE_PASSWORD).assertEvent();
-        events.expectRequiredAction(EventType.UPDATE_CREDENTIAL).detail(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE).assertEvent();
+        EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_PASSWORD);
+        EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_CREDENTIAL).details(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE);
         assertKcActionStatus(SUCCESS);
     }
 
@@ -285,8 +301,8 @@ public class AppInitiatedActionResetPasswordTest extends AbstractAppInitiatedAct
 
         changePasswordPage.changePassword("new-password", "new-password");
 
-        events.expectRequiredAction(EventType.UPDATE_PASSWORD).assertEvent();
-        events.expectRequiredAction(EventType.UPDATE_CREDENTIAL).detail(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE).assertEvent();
+        EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_PASSWORD);
+        EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_CREDENTIAL).details(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE);
         assertKcActionStatus(SUCCESS);
     }
 
@@ -329,8 +345,8 @@ public class AppInitiatedActionResetPasswordTest extends AbstractAppInitiatedAct
 
             changePasswordPage.changePassword("new-password", "new-password");
 
-            events.expectRequiredAction(EventType.UPDATE_PASSWORD).assertEvent();
-            events.expectRequiredAction(EventType.UPDATE_CREDENTIAL).detail(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE).assertEvent();
+            EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_PASSWORD);
+            EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_CREDENTIAL).details(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE);
             assertKcActionStatus(SUCCESS);
         } finally {
             // reset password policy to previous state
@@ -350,10 +366,9 @@ public class AppInitiatedActionResetPasswordTest extends AbstractAppInitiatedAct
 
         assertKcActionStatus(CANCELLED);
 
-        events.expect(EventType.CUSTOM_REQUIRED_ACTION_ERROR)
-                .detail(Details.CUSTOM_REQUIRED_ACTION, UserModel.RequiredAction.UPDATE_PASSWORD.name())
-                .error(Errors.REJECTED_BY_USER)
-                .assertEvent();
+        EventAssertion.assertError(events.poll()).type(EventType.CUSTOM_REQUIRED_ACTION_ERROR)
+                .details(Details.CUSTOM_REQUIRED_ACTION, UserModel.RequiredAction.UPDATE_PASSWORD.name())
+                .error(Errors.REJECTED_BY_USER);
         EventAssertion.expectLoginSuccess(events.poll());
     }
 
@@ -403,8 +418,8 @@ public class AppInitiatedActionResetPasswordTest extends AbstractAppInitiatedAct
 
         changePasswordPage.changePassword("new-password", "new-password");
 
-        events.expectRequiredAction(EventType.UPDATE_PASSWORD).assertEvent();
-        events.expectRequiredAction(EventType.UPDATE_CREDENTIAL).detail(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE).assertEvent();
+        EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_PASSWORD);
+        EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_CREDENTIAL).details(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE);
 
         assertKcActionStatus(SUCCESS);
     }
@@ -434,8 +449,8 @@ public class AppInitiatedActionResetPasswordTest extends AbstractAppInitiatedAct
         changePasswordPage.changePassword("All Right Then, Keep Your Secrets", "All Right Then, Keep Your Secrets");
         EventAssertion.expectLogoutSuccess(events.poll()).sessionId(event2.getSessionId())
                 .details(Details.LOGOUT_TRIGGERED_BY_REQUIRED_ACTION, UserModel.RequiredAction.UPDATE_PASSWORD.name());
-        events.expectRequiredAction(EventType.UPDATE_PASSWORD).assertEvent();
-        events.expectRequiredAction(EventType.UPDATE_CREDENTIAL).detail(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE).assertEvent();
+        EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_PASSWORD);
+        EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_CREDENTIAL).details(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE);
         assertKcActionStatus(SUCCESS);
 
         sessions = testUser.getUserSessions();
@@ -462,11 +477,64 @@ public class AppInitiatedActionResetPasswordTest extends AbstractAppInitiatedAct
         changePasswordPage.assertCurrent();
         assertFalse(changePasswordPage.isLogoutSessionsChecked(), "Logout other sessions was ticked");
         changePasswordPage.changePassword("All Right Then, Keep Your Secrets", "All Right Then, Keep Your Secrets");
-        events.expectRequiredAction(EventType.UPDATE_PASSWORD).assertEvent();
-        events.expectRequiredAction(EventType.UPDATE_CREDENTIAL).detail(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE).assertEvent();
+        EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_PASSWORD);
+        EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_CREDENTIAL).details(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE);
         assertKcActionStatus(SUCCESS);
 
         assertEquals(2, testUser.getUserSessions().size());
+    }
+
+    @Test
+    public void updatePasswordDifferentAuthSession() throws Exception {
+        try (CloseableHttpClient client = HttpClientBuilder.create().disableRedirectHandling().build()) {
+            // start a initiated action but outside the browser
+            try (CloseableHttpResponse response = client.execute(
+                    new HttpGet(oauth.loginForm().kcAction(UserModel.RequiredAction.UPDATE_PASSWORD.name()).build()))) {
+                Assert.assertEquals(200, response.getStatusLine().getStatusCode());
+                Document page = Jsoup.parse(EntityUtils.toString(response.getEntity(), StandardCharsets.UTF_8));
+                String actionUrl = page.select("form[id=kc-form-login]").attr("action");
+
+                // retrieve the auth_session_id, tab_id and client_data to trick the user
+                Header[] headers = response.getHeaders("Set-Cookie");
+                String authSessionId = null;
+                for (Header header : headers) {
+                    for (HttpCookie cookie : HttpCookie.parse(header.getValue())) {
+                        if (cookie.getName().equals(CookieType.AUTH_SESSION_ID.getName())) {
+                            authSessionId = cookie.getValue();
+                        }
+                    }
+                }
+                Map<String, String> attrs = ActionURIUtils.parseQueryParamsFromActionURI(actionUrl);
+
+                // clean the auth session using the restart endpoint
+                try (CloseableHttpResponse response2 = client.execute(new HttpGet(oauth.getBaseUrl() + "/realms/" + oauth.getRealm()
+                        + "/login-actions/restart"
+                        + "?tab_id=" + attrs.get("tab_id")
+                        + "&client_id=" + oauth.getClientId()
+                        + "&client_data=" + attrs.get("client_data")
+                        + "auth_session_id=" + authSessionId))) {
+                    Assert.assertEquals(302, response2.getStatusLine().getStatusCode());
+                }
+                events.expect(EventType.RESTART_AUTHENTICATION).user((String) null).assertEvent();
+
+                // authenticate the user in the browser
+                oauth.openLoginForm();
+                loginPage.assertCurrent();
+                loginPage.login("test-user@localhost", "password");
+                appPage.assertCurrent();
+                events.expectLogin().user(AssertEvents.isUUID()).detail(Details.USERNAME, "test-user@localhost").assertEvent();
+
+                // navigate to the authenticate page with the other auth_session_id, tab_id and client_data
+                driver.navigate().to(oauth.getBaseUrl() + "/realms/" + oauth.getRealm()
+                        + "/login-actions/authenticate?auth_session_id=" + authSessionId
+                        + "&client_id=" + oauth.getClientId()
+                        + "&tab_id=" + attrs.get("tab_id")
+                        + "&client_data=" + attrs.get("client_data"));
+                errorPage.assertCurrent();
+                events.expect(EventType.LOGIN_ERROR).error(Errors.INVALID_CODE).user((String) null)
+                        .detail(Details.REASON, "cookie does not match auth_session query parameter").assertEvent();
+            }
+        }
     }
 
 }

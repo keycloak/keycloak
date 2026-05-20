@@ -238,6 +238,8 @@ public class RedirectUtilsTest {
         Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, "https://test.com@other.com", set, false));
         Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, "https://something@keycloak.org/path", set, false));
         Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, "https://some%20thing@test.com/path", set, false));
+        Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, "https://test@something@test.com/path", set, false));
+        Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, "https://test@test.com:-2/path", set, false));
     }
 
     @Test

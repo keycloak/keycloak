@@ -26,10 +26,11 @@ import java.util.concurrent.Executors;
 
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
+import org.keycloak.it.junit5.extension.KeycloakRunner;
 import org.keycloak.it.junit5.extension.RawDistOnly;
+import org.keycloak.it.junit5.extension.StopServer.Mode;
 import org.keycloak.it.junit5.extension.TestProvider;
 import org.keycloak.it.resource.realm.TestRealmResourceTestProvider;
-import org.keycloak.it.utils.KeycloakDistribution;
 import org.keycloak.it.utils.RawKeycloakDistribution;
 
 import io.quarkus.test.junit.main.Launch;
@@ -44,13 +45,13 @@ import static org.hamcrest.MatcherAssert.assertThat;
 /**
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
  */
-@DistributionTest(keepAlive = true, enableTls = true)
+@DistributionTest(stopServer = Mode.MANUAL, enableTls = true)
 @RawDistOnly(reason = "Containers are immutable")
 public class HttpDistTest {
     @Test
     @TestProvider(TestRealmResourceTestProvider.class)
-    public void maxQueuedRequestsTest(KeycloakDistribution dist) {
-        dist.run("start-dev", "--http-max-queued-requests=1", "--http-pool-max-threads=1");
+    public void maxQueuedRequestsTest(KeycloakRunner runner) {
+        runner.run("start-dev", "--http-max-queued-requests=1", "--http-pool-max-threads=1");
 
         ExecutorService executor = Executors.newFixedThreadPool(5);
         try {
@@ -93,24 +94,24 @@ public class HttpDistTest {
     }
 
     @Test
-    public void httpStoreTypeValidation(KeycloakDistribution dist) {
-        CLIResult result = dist.run("start", "--https-key-store-file=not-there.ks", "--hostname-strict=false");
+    public void httpStoreTypeValidation(KeycloakRunner runner) {
+        CLIResult result = runner.run("start", "--https-key-store-file=not-there.ks", "--hostname-strict=false");
         result.assertExitCode(-1);
         result.assertMessage("ERROR: Unable to determine 'https-key-store-type' automatically. Adjust the file extension or specify the property");
 
-        result = dist.run("start", "--https-trust-store-file=not-there.ks", "--hostname-strict=false");
+        result = runner.run("start", "--https-trust-store-file=not-there.ks", "--hostname-strict=false");
         result.assertExitCode(-1);
         result.assertMessage("ERROR: Unable to determine 'https-trust-store-type' automatically. Adjust the file extension or specify the property");
 
-        result = dist.run("start", "--https-key-store-file=not-there.ks", "--hostname-strict=false", "--https-key-store-type=jdk");
+        result = runner.run("start", "--https-key-store-file=not-there.ks", "--hostname-strict=false", "--https-key-store-type=jdk");
         result.assertExitCode(-1);
         result.assertMessage("ERROR: Failed to load 'https-*' material: NoSuchFileException not-there.ks");
 
-        dist.copyOrReplaceFileFromClasspath("/server.keystore.pkcs12", Path.of("conf", "server.p12"));
-        RawKeycloakDistribution rawDist = dist.unwrap(RawKeycloakDistribution.class);
+        RawKeycloakDistribution rawDist = runner.getDistribution(RawKeycloakDistribution.class);
+        rawDist.copyOrReplaceFileFromClasspath("/server.keystore.pkcs12", Path.of("conf", "server.p12"));
         Path truststorePath = rawDist.getDistPath().resolve("conf").resolve("server.p12").toAbsolutePath();
 
-        result = dist.run("start", "--https-trust-store-file=" + truststorePath, "--hostname-strict=false");
+        result = runner.run("start", "--https-trust-store-file=" + truststorePath, "--hostname-strict=false");
         result.assertExitCode(-1);
         result.assertMessage("ERROR: No trust store password provided");
     }
@@ -123,9 +124,9 @@ public class HttpDistTest {
     }
 
     @Test
-    public void testShutdownParametersNegativeValue(KeycloakDistribution dist) {
+    public void testShutdownParametersNegativeValue(KeycloakRunner runner) {
         // Test that negative values are rejected
-        CLIResult result = dist.run("start-dev", "--shutdown-delay=-1s");
+        CLIResult result = runner.run("start-dev", "--shutdown-delay=-1s");
         result.assertError("Invalid duration '-1s'. Duration must be zero or positive");
     }
 }

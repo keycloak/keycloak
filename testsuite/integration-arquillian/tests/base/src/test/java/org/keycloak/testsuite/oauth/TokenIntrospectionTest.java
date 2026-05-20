@@ -50,6 +50,7 @@ import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.oidc.AbstractOIDCScopeTest;
 import org.keycloak.testsuite.oidc.OIDCScopeTest;
 import org.keycloak.testsuite.pages.LoginPage;
+import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.KeycloakModelUtils;
 import org.keycloak.testsuite.util.TokenSignatureUtil;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
@@ -67,7 +68,6 @@ import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.message.BasicNameValuePair;
-import org.hamcrest.Matchers;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Rule;
 import org.junit.Test;
@@ -159,11 +159,10 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
         events.clear();
 
         IntrospectionResponse introspectionResponse = oauth.doIntrospectionAccessTokenRequest(accessTokenResponse.getAccessToken());
-        events.expect(EventType.INTROSPECT_TOKEN)
-                .client("confidential-cli")
-                .session(accessTokenResponse.getSessionState())
-                .assertEvent();
-        events.assertEmpty();
+        EventAssertion.assertSuccess(events.poll()).type(EventType.INTROSPECT_TOKEN)
+                .clientId("confidential-cli")
+                .sessionId(accessTokenResponse.getSessionState());
+        Assertions.assertNull(events.poll());
 
         JsonNode jsonNode = introspectionResponse.asJsonNode();
 
@@ -234,11 +233,10 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
         events.clear();
 
         JsonNode jsonNode = oauth.doIntrospectionRefreshTokenRequest(accessTokenResponse.getRefreshToken()).asJsonNode();
-        events.expect(EventType.INTROSPECT_TOKEN)
-                .client("confidential-cli")
-                .session(sessionId)
-                .assertEvent();
-        events.assertEmpty();
+        EventAssertion.assertSuccess(events.poll()).type(EventType.INTROSPECT_TOKEN)
+                .clientId("confidential-cli")
+                .sessionId(sessionId);
+        Assertions.assertNull(events.poll());
 
         assertEquals(sessionId, jsonNode.get("sid").asText());
         assertEquals("test-app", jsonNode.get("client_id").asText());
@@ -431,13 +429,12 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
 
         oauth.client("confidential-cli", "secret1");
         TokenMetadataRepresentation rep = oauth.doIntrospectionAccessTokenRequest(accessTokenResponse.getAccessToken()).asTokenMetadata();
-        events.expect(EventType.INTROSPECT_TOKEN_ERROR)
-                .client("confidential-cli")
-                .user(Matchers.nullValue(String.class))
-                .session(accessTokenResponse.getSessionState())
-                .error(Errors.USER_SESSION_NOT_FOUND)
-                .assertEvent();
-        events.assertEmpty();
+        EventAssertion.assertError(events.poll()).type(EventType.INTROSPECT_TOKEN_ERROR)
+                .clientId("confidential-cli")
+                .userId(null)
+                .sessionId(accessTokenResponse.getSessionState())
+                .error(Errors.USER_SESSION_NOT_FOUND);
+        Assertions.assertNull(events.poll());
 
         assertFalse(rep.isActive());
         assertNull(rep.getUserName());
@@ -602,12 +599,11 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
         OAuth2ErrorRepresentation errorRep = JsonSerialization.readValue(tokenResponse, OAuth2ErrorRepresentation.class);
         assertEquals("Unsupported token type.", errorRep.getErrorDescription());
         assertEquals(OAuthErrorException.INVALID_REQUEST, errorRep.getError());
-        events.expect(EventType.INTROSPECT_TOKEN)
-                .client("confidential-cli")
-                .user((String) null)
-                .detail(Details.TOKEN_TYPE, "unknown")
-                .error(Errors.INVALID_REQUEST)
-                .assertEvent();
+        EventAssertion.assertError(events.poll()).type(EventType.INTROSPECT_TOKEN_ERROR)
+                .clientId("confidential-cli")
+                .userId(null)
+                .details(Details.TOKEN_TYPE, "unknown")
+                .error(Errors.INVALID_REQUEST);
     }
 
     @Test
@@ -671,6 +667,58 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
             realm.setRevokeRefreshToken(false);
             realm.setRefreshTokenMaxReuse(0);
             adminClient.realm(oauth.getRealm()).update(realm);
+        }
+    }
+
+    @Test
+    public void testIntrospectionRespectsRealmNotBeforeWithClientNotBefore() throws Exception {
+        //Test that introspection respects realm notBefore even when client notBefore is set
+        oauth.doLogin("test-user@localhost", "password");
+        String code = oauth.parseLoginResponse().getCode();
+        AccessTokenResponse accessTokenResponse = oauth.doAccessTokenRequest(code);
+        events.clear();
+
+        int currentTime = (int) (System.currentTimeMillis() / 1000);
+
+        ClientRepresentation clientRep = AdminApiUtil.findClientByClientId(managedRealm.admin(), "test-app").toRepresentation();
+        int originalClientNotBefore = clientRep.getNotBefore() != null ? clientRep.getNotBefore() : 0;
+
+        try {
+            //Test realm notBefore with client notBefore both set
+            // Set client notBefore to past
+            clientRep.setNotBefore(currentTime - 100);
+            AdminApiUtil.findClientByClientId(managedRealm.admin(), "test-app").update(clientRep);
+
+            oauth.client("confidential-cli", "secret1");
+            TokenMetadataRepresentation accessTokenRep = oauth.doIntrospectionAccessTokenRequest(accessTokenResponse.getAccessToken()).asTokenMetadata();
+            org.junit.Assert.assertTrue(accessTokenRep.isActive());
+
+            oauth.client("test-app", "password");
+            JsonNode refreshTokenJson = oauth.doIntrospectionRefreshTokenRequest(accessTokenResponse.getRefreshToken()).asJsonNode();
+            org.junit.Assert.assertTrue(refreshTokenJson.get("active").asBoolean());
+
+            // Set realm notBefore to future
+            try (RealmAttributeUpdater rau = new RealmAttributeUpdater(managedRealm.admin()).setNotBefore(currentTime + 100).update()) {
+                oauth.client("confidential-cli", "secret1");
+                accessTokenRep = oauth.doIntrospectionAccessTokenRequest(accessTokenResponse.getAccessToken()).asTokenMetadata();
+                org.junit.Assert.assertFalse(accessTokenRep.isActive());
+
+                oauth.client("test-app", "password");
+                refreshTokenJson = oauth.doIntrospectionRefreshTokenRequest(accessTokenResponse.getRefreshToken()).asJsonNode();
+                org.junit.Assert.assertFalse(refreshTokenJson.get("active").asBoolean());
+            }
+
+            oauth.client("confidential-cli", "secret1");
+            accessTokenRep = oauth.doIntrospectionAccessTokenRequest(accessTokenResponse.getAccessToken()).asTokenMetadata();
+            org.junit.Assert.assertTrue(accessTokenRep.isActive());
+
+            oauth.client("test-app", "password");
+            refreshTokenJson = oauth.doIntrospectionRefreshTokenRequest(accessTokenResponse.getRefreshToken()).asJsonNode();
+            org.junit.Assert.assertTrue(refreshTokenJson.get("active").asBoolean());
+
+        } finally {
+            clientRep.setNotBefore(originalClientNotBefore);
+            AdminApiUtil.findClientByClientId(managedRealm.admin(), "test-app").update(clientRep);
         }
     }
 

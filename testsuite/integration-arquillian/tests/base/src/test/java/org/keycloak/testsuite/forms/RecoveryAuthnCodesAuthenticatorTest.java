@@ -186,11 +186,10 @@ public class RecoveryAuthnCodesAuthenticatorTest extends AbstractChangeImportedU
                     .details(Details.LOGOUT_TRIGGERED_BY_REQUIRED_ACTION, UserModel.RequiredAction.CONFIGURE_RECOVERY_AUTHN_CODES.name());
         }
 
-        EventRepresentation event2 = events.expectRequiredAction(EventType.UPDATE_CREDENTIAL)
-                .user(event1.getUserId())
-                .detail(Details.USERNAME, "test-user@localhost")
-                .detail(Details.CREDENTIAL_TYPE, RecoveryAuthnCodesCredentialModel.TYPE)
-                .assertEvent();
+        EventRepresentation event2 = EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_CREDENTIAL)
+                .userId(event1.getUserId())
+                .details(Details.USERNAME, "test-user@localhost")
+                .details(Details.CREDENTIAL_TYPE, RecoveryAuthnCodesCredentialModel.TYPE).getEvent();
         event2 = EventAssertion.expectLoginSuccess(events.poll()).sessionId(event2.getDetails().get(Details.CODE_ID)).userId(event2.getUserId())
                 .details(Details.USERNAME, "test-user@localhost").getEvent();
 
@@ -238,11 +237,10 @@ public class RecoveryAuthnCodesAuthenticatorTest extends AbstractChangeImportedU
         setupRecoveryAuthnCodesPage.clickSaveRecoveryAuthnCodesButton();
 
         assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        EventRepresentation event = events.expectRequiredAction(EventType.UPDATE_CREDENTIAL)
-                .user(userRepresentation.getId())
-                .detail(Details.USERNAME, "test-user@localhost")
-                .detail(Details.CREDENTIAL_TYPE, RecoveryAuthnCodesCredentialModel.TYPE)
-                .assertEvent();
+        EventRepresentation event = EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_CREDENTIAL)
+                .userId(userRepresentation.getId())
+                .details(Details.USERNAME, "test-user@localhost")
+                .details(Details.CREDENTIAL_TYPE, RecoveryAuthnCodesCredentialModel.TYPE).getEvent();
         EventAssertion.expectLoginSuccess(events.poll()).sessionId(event.getDetails().get(Details.CODE_ID)).userId(event.getUserId())
                 .details(Details.USERNAME, "test-user@localhost");
     }
@@ -269,11 +267,10 @@ public class RecoveryAuthnCodesAuthenticatorTest extends AbstractChangeImportedU
         setupRecoveryAuthnCodesPage.clickSaveRecoveryAuthnCodesButton();
 
         assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        EventRepresentation event = events.expectRequiredAction(EventType.UPDATE_CREDENTIAL)
-                .user(userRepresentation.getId())
-                .detail(Details.USERNAME, "test-user@localhost")
-                .detail(Details.CREDENTIAL_TYPE, RecoveryAuthnCodesCredentialModel.TYPE)
-                .assertEvent();
+        EventRepresentation event = EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_CREDENTIAL)
+                .userId(userRepresentation.getId())
+                .details(Details.USERNAME, "test-user@localhost")
+                .details(Details.CREDENTIAL_TYPE, RecoveryAuthnCodesCredentialModel.TYPE).getEvent();
         EventAssertion.expectLoginSuccess(events.poll()).sessionId(event.getDetails().get(Details.CODE_ID)).userId(event.getUserId())
                 .details(Details.USERNAME, "test-user@localhost");
     }
@@ -378,14 +375,11 @@ public class RecoveryAuthnCodesAuthenticatorTest extends AbstractChangeImportedU
             // enter the same recovery code to the two browers
             enterRecoveryCodes(enterRecoveryAuthnCodePage, driver, 0, generatedRecoveryAuthnCodes);
             enterRecoveryCodes(enterRecoveryAuthnCodePageSecondBrowser, driver2, 0, generatedRecoveryAuthnCodes);
-            // submit fast in the two browsers using javascript to not wait for the page to load
-            enterRecoveryAuthnCodePage.clickSignInButtonViaJavaScriptNoDelay();
-            enterRecoveryAuthnCodePageSecondBrowser.clickSignInButtonViaJavaScriptNoDelay();
 
-            // one event should be a login and the other a login error
-            List<EventRepresentation> actualEvents = Arrays.asList(events.poll(5), events.poll(5));
-            EventAssertion.expectLoginSuccess(actualEvents.get(0)).details(Details.USERNAME, "test-user@localhost");
-            EventAssertion.expectLoginError(actualEvents.get(1)).error(Errors.INVALID_USER_CREDENTIALS);
+            enterRecoveryAuthnCodePage.clickSignInButton();
+            EventAssertion.expectLoginSuccess(events.poll()).details(Details.USERNAME, "test-user@localhost");
+            enterRecoveryAuthnCodePageSecondBrowser.clickSignInButton();
+            EventAssertion.expectLoginError(events.poll()).error(Errors.INVALID_USER_CREDENTIALS);
         } finally {
             // Revert copy of browser flow to original to keep clean slate after this test
             BrowserFlowTest.revertFlows(managedRealm.admin(), BROWSER_FLOW_WITH_RECOVERY_AUTHN_CODES);

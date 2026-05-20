@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.concurrent.ForkJoinPool;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 import jakarta.enterprise.context.ApplicationScoped;
@@ -58,6 +59,8 @@ import static org.keycloak.quarkus.runtime.Environment.hasEarlyExitLaunchMode;
 @ApplicationScoped
 public class KeycloakMain implements QuarkusApplication {
 
+    public static final String KC_SERVER_PRINT_RUNNING = "kc.server.print_running";
+    public static final String RUNNING_MESSAGE = "The server is running";
     private static AbstractNonServerCommand COMMAND;
     private static Consumer<Throwable> ERROR_HANDLER;
 
@@ -163,8 +166,8 @@ public class KeycloakMain implements QuarkusApplication {
      */
     @Override
     public int run(String... args) throws Exception {
+        QuarkusKeycloakApplication application = Arc.container().instance(QuarkusKeycloakApplication.class).get();
         if (COMMAND != null) {
-            QuarkusKeycloakApplication application = Arc.container().instance(QuarkusKeycloakApplication.class).get();
             QuarkusKeycloakSessionFactory sessionFactory = Arc.container().instance(QuarkusKeycloakSessionFactory.class).get();
             COMMAND.onStart(application, sessionFactory);
         }
@@ -173,6 +176,15 @@ public class KeycloakMain implements QuarkusApplication {
             // we should be managing this behavior more dynamically depending on the tests requirements (short/long lived)
             Quarkus.asyncExit(ApplicationLifecycleManager.getExitCode());
         } else {
+            if (Boolean.getBoolean(KC_SERVER_PRINT_RUNNING)) {
+                BiConsumer<Void, Throwable> started = (v, t) -> {
+                    if (t == null) {
+                        System.out.println("\n" + RUNNING_MESSAGE);
+                    }
+                };
+                application.getBootstrapFuture().ifPresentOrElse(future -> future.whenComplete(started),
+                        () -> started.accept(null, null));
+            }
             Quarkus.waitForExit();
         }
 

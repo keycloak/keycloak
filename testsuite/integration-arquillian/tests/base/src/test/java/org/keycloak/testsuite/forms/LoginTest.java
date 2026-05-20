@@ -552,8 +552,8 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
 
             timeOffSet.set(0);
 
-            events.expectRequiredAction(EventType.UPDATE_PASSWORD).detail(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE).user(userId).detail(Details.USERNAME, "login-test").assertEvent();
-            events.expectRequiredAction(EventType.UPDATE_CREDENTIAL).detail(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE).user(userId).detail(Details.USERNAME, "login-test").assertEvent();
+            EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_PASSWORD).details(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE).userId(userId).details(Details.USERNAME, "login-test");
+            EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_CREDENTIAL).details(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE).userId(userId).details(Details.USERNAME, "login-test");
 
             String currentUrl = driver.getCurrentUrl();
             String pageSource = driver.getPageSource();
@@ -897,10 +897,9 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
         // Cookie has been deleted or disabled, the error shown in the UI should be Errors.COOKIE_NOT_FOUND
         loginPage.login("login@test.com", getPassword("login-test"));
 
-        events.expect(EventType.LOGIN_ERROR)
-                .user(new UserRepresentation())
-                .error(Errors.COOKIE_NOT_FOUND)
-                .assertEvent();
+        EventAssertion.assertError(events.poll()).type(EventType.LOGIN_ERROR)
+                .userId(null)
+                .error(Errors.COOKIE_NOT_FOUND);
 
         errorPage.assertCurrent();
     }
@@ -923,12 +922,11 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
 
             errorPage.assertCurrent();
             assertEquals("Login requester not enabled", errorPage.getError());
-            events.expect(EventType.LOGIN)
-                    .client("test-app")
-                    .user((String) null)
-                    .session((String) null)
-                    .error(Errors.CLIENT_DISABLED)
-                    .assertEvent();
+            EventAssertion.assertError(events.poll()).type(EventType.LOGIN_ERROR)
+                    .clientId("test-app")
+                    .userId(null)
+                    .sessionId(null)
+                    .error(Errors.CLIENT_DISABLED);
         } finally {
             clientRepresentation.setEnabled(wasEnabled);
             clientResource.update(clientRepresentation);

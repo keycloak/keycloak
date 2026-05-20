@@ -104,7 +104,7 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
         loginPage.clickRegister();
         registerPage.register("firstName", "lastName", "email@mail.com", "setupTotp", "password", "password");
 
-        String userId = events.expectRegister("setupTotp", "email@mail.com").assertEvent().getUserId();
+        String userId = EventAssertion.expectRegisterSuccess(events.poll()).clientId(oauth.getClientId()).details(Details.USERNAME, "setupTotp").details(Details.EMAIL, "email@mail.com").getEvent().getUserId();
         getCleanup().addUserId(userId);
 
         doAIA();
@@ -114,15 +114,15 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
         totpPage.configure(totp.generateTOTP(totpPage.getTotpSecret()));
 
         events.poll(); // skip to totp event
-        String authSessionId1 = events.expectRequiredAction(EventType.UPDATE_TOTP)
-                .user(userId)
-                .detail(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE)
-                .detail(Details.USERNAME, "setuptotp").assertEvent()
+        String authSessionId1 = EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_TOTP)
+                .userId(userId)
+                .details(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE)
+                .details(Details.USERNAME, "setuptotp").getEvent()
                 .getDetails().get(Details.CODE_ID);
-        String authSessionId2 = events.expectRequiredAction(EventType.UPDATE_CREDENTIAL)
-                .user(userId)
-                .detail(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE)
-                .detail(Details.USERNAME, "setuptotp").assertEvent()
+        String authSessionId2 = EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_CREDENTIAL)
+                .userId(userId)
+                .details(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE)
+                .details(Details.USERNAME, "setuptotp").getEvent()
                 .getDetails().get(Details.CODE_ID);
 
         assertKcActionStatus(SUCCESS);
@@ -137,7 +137,7 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
         loginPage.clickRegister();
         registerPage.register("firstName", "lastName", "email@mail.com", "setupTotp", "password", "password");
 
-        String userId = events.expectRegister("setupTotp", "email@mail.com").assertEvent().getUserId();
+        String userId = EventAssertion.expectRegisterSuccess(events.poll()).clientId(oauth.getClientId()).details(Details.USERNAME, "setupTotp").details(Details.EMAIL, "email@mail.com").getEvent().getUserId();
         getCleanup().addUserId(userId);
 
         doAIA();
@@ -386,11 +386,11 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
 
         totpPage.configure(totp.generateTOTP(totpSecret));
 
-        String authSessionId1 = events.expectRequiredAction(EventType.UPDATE_TOTP)
-                .detail(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE).assertEvent()
+        String authSessionId1 = EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_TOTP)
+                .details(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE).getEvent()
                 .getDetails().get(Details.CODE_ID);
-        String authSessionId2 = events.expectRequiredAction(EventType.UPDATE_CREDENTIAL)
-                .detail(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE).assertEvent()
+        String authSessionId2 = EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_CREDENTIAL)
+                .details(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE).getEvent()
                 .getDetails().get(Details.CODE_ID);
 
         assertKcActionStatus(SUCCESS);
@@ -420,7 +420,7 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
         loginPage.clickRegister();
         registerPage.register("firstName2", "lastName2", "email2@mail.com", "setupTotp2", "password2", "password2");
 
-        String userId = events.expectRegister("setupTotp2", "email2@mail.com").assertEvent().getUserId();
+        String userId = EventAssertion.expectRegisterSuccess(events.poll()).clientId(oauth.getClientId()).details(Details.USERNAME, "setupTotp2").details(Details.EMAIL, "email2@mail.com").getEvent().getUserId();
         getCleanup().addUserId(userId);
 
         doAIA();
@@ -435,14 +435,14 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
         assertKcActionStatus(SUCCESS);
 
         events.poll();
-        events.expectRequiredAction(EventType.UPDATE_TOTP)
-                .user(userId)
-                .detail(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE)
-                .detail(Details.USERNAME, "setuptotp2").assertEvent();
-        events.expectRequiredAction(EventType.UPDATE_CREDENTIAL)
-                .user(userId)
-                .detail(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE)
-                .detail(Details.USERNAME, "setuptotp2").assertEvent();
+        EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_TOTP)
+                .userId(userId)
+                .details(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE)
+                .details(Details.USERNAME, "setuptotp2");
+        EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_CREDENTIAL)
+                .userId(userId)
+                .details(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE)
+                .details(Details.USERNAME, "setuptotp2");
 
         EventRepresentation loginEvent = EventAssertion.expectLoginSuccess(events.poll()).userId(userId).details(Details.USERNAME, "setuptotp2").getEvent();
 
@@ -501,11 +501,11 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
         TimeBasedOTP timeBased = new TimeBasedOTP(HmacOTP.HMAC_SHA1, 8, 30, 1);
         totpPage.configure(timeBased.generateTOTP(totpSecret));
 
-        String sessionId1 = events.expectRequiredAction(EventType.UPDATE_TOTP)
-                .detail(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE).assertEvent()
+        String sessionId1 = EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_TOTP)
+                .details(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE).getEvent()
                 .getDetails().get(Details.CODE_ID);
-        String sessionId2 = events.expectRequiredAction(EventType.UPDATE_CREDENTIAL)
-                .detail(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE).assertEvent()
+        String sessionId2 = EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_CREDENTIAL)
+                .details(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE).getEvent()
                 .getDetails().get(Details.CODE_ID);
 
         assertKcActionStatus(SUCCESS);
@@ -561,11 +561,11 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
         HmacOTP otpgen = new HmacOTP(6, HmacOTP.HMAC_SHA1, 1);
         totpPage.configure(otpgen.generateHOTP(totpSecret, 0));
 
-        String sessionId1 = events.expectRequiredAction(EventType.UPDATE_TOTP)
-                .detail(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE).assertEvent()
+        String sessionId1 = EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_TOTP)
+                .details(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE).getEvent()
             .getDetails().get(Details.CODE_ID);
-        String sessionId2 = events.expectRequiredAction(EventType.UPDATE_CREDENTIAL)
-                .detail(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE).assertEvent()
+        String sessionId2 = EventAssertion.expectRequiredAction(events.poll()).type(EventType.UPDATE_CREDENTIAL)
+                .details(Details.CREDENTIAL_TYPE, OTPCredentialModel.TYPE).getEvent()
                 .getDetails().get(Details.CODE_ID);
 
         //RequestType reqType = appPage.getRequestType();

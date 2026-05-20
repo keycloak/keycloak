@@ -34,7 +34,6 @@ import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.PropertiesConfiguration;
-import org.hamcrest.Matchers;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.BeforeClass;
 import org.junit.Rule;
@@ -80,7 +79,7 @@ public abstract class AbstractBaseSSSDTest extends AbstractTestRealmKeycloakTest
         loginPage.login(username, password);
         loginPage.assertCurrent();
         Assertions.assertEquals(loginPage.getInputError(), "Invalid username or password.");
-        events.expect(EventType.LOGIN_ERROR).user(Matchers.any(String.class)).error(Errors.INVALID_USER_CREDENTIALS).assertEvent();
+        EventAssertion.assertError(events.poll()).type(EventType.LOGIN_ERROR).hasUserId().error(Errors.INVALID_USER_CREDENTIALS);
     }
 
     protected void testLoginSuccess(String username) {

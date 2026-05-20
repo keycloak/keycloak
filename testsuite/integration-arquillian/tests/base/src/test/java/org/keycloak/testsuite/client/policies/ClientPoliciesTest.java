@@ -107,6 +107,7 @@ import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.keycloak.testsuite.util.oauth.ParResponse;
 import org.keycloak.util.JsonSerialization;
+import org.keycloak.util.TokenUtil;
 
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.TreeNode;
@@ -139,7 +140,6 @@ import static org.keycloak.testsuite.util.ClientPoliciesUtil.createTestRaiseExep
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createTestRaiseExeptionExecutorConfig;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.emptyOrNullString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.is;
@@ -266,8 +266,8 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         });
         OIDCClientRepresentation clientRep = getClientDynamically(clientId);
         assertEquals(OIDCLoginProtocol.CLIENT_SECRET_BASIC, clientRep.getTokenEndpointAuthMethod());
-        events.expect(EventType.CLIENT_REGISTER).client(clientId).user(is(emptyOrNullString())).assertEvent();
-        events.expect(EventType.CLIENT_INFO).client(clientId).user(is(emptyOrNullString())).assertEvent();
+        EventAssertion.assertSuccess(events.poll()).type(EventType.CLIENT_REGISTER).clientId(clientId).userId(null);
+        EventAssertion.assertSuccess(events.poll()).type(EventType.CLIENT_INFO).clientId(clientId).userId(null);
         adminClient.realm(REALM_NAME).clients().get(clientId).roles().create(RoleBuilder.create().name(SAMPLE_CLIENT_ROLE).build());
 
         successfulLoginAndLogout(clientId, clientRep.getClientSecret());
@@ -397,12 +397,12 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         String clientName = generateSuffixedName(CLIENT_NAME);
         String clientId = createClientDynamically(clientName, (OIDCClientRepresentation clientRep) -> {
         });
-        events.expect(EventType.CLIENT_REGISTER).client(clientId).user(is(emptyOrNullString())).assertEvent();
+        EventAssertion.assertSuccess(events.poll()).type(EventType.CLIENT_REGISTER).clientId(clientId).userId(null);
         OIDCClientRepresentation response = getClientDynamically(clientId);
         String clientSecret = response.getClientSecret();
         assertEquals(clientName, response.getClientName());
         assertEquals(OIDCLoginProtocol.CLIENT_SECRET_BASIC, response.getTokenEndpointAuthMethod());
-        events.expect(EventType.CLIENT_INFO).client(clientId).user(is(emptyOrNullString())).assertEvent();
+        EventAssertion.assertSuccess(events.poll()).type(EventType.CLIENT_INFO).clientId(clientId).userId(null);
 
         adminClient.realm(REALM_NAME).clients().get(clientId).roles().create(RoleBuilder.create().name(SAMPLE_CLIENT_ROLE).build());
 
@@ -1048,9 +1048,12 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
             oauth.openLoginForm();
             assertTrue(errorPage.isCurrent());
             assertEquals(ERR_MSG_REQ_NOT_ALLOWED, errorPage.getError());
-            events.expectClientPolicyError(EventType.LOGIN_ERROR, OAuthErrorException.INVALID_REQUEST,
-                            Details.CLIENT_POLICY_ERROR, OAuthErrorException.INVALID_REQUEST,
-                            ERR_MSG_REQ_NOT_ALLOWED).client((String) null).user((String) null).assertEvent();
+            EventAssertion.assertError(events.poll()).type(EventType.LOGIN_ERROR).error(OAuthErrorException.INVALID_REQUEST)
+                    .details(Details.REASON, Details.CLIENT_POLICY_ERROR)
+                    .details(Details.CLIENT_POLICY_ERROR, OAuthErrorException.INVALID_REQUEST)
+                    .details(Details.CLIENT_POLICY_ERROR_DETAIL, ERR_MSG_REQ_NOT_ALLOWED)
+                    .clientId(null)
+                    .userId(null);
 
             revertToBuiltinProfiles();
             successfulLoginAndLogout(clientBetaId, "secretBeta");
@@ -1237,10 +1240,12 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         AuthorizationEndpointResponse authorizationEndpointResponse = oauth.parseLoginResponse();
         assertEquals(OAuthErrorException.INVALID_REQUEST, authorizationEndpointResponse.getError());
         assertEquals("The intent is not bound with the client", authorizationEndpointResponse.getErrorDescription());
-        events.expectClientPolicyError(EventType.LOGIN_ERROR, OAuthErrorException.INVALID_REQUEST,
-                Details.CLIENT_POLICY_ERROR, OAuthErrorException.INVALID_REQUEST,
-                "The intent is not bound with the client").client(clientId).user((String) null)
-                .assertEvent();
+        EventAssertion.assertError(events.poll()).type(EventType.LOGIN_ERROR).error(OAuthErrorException.INVALID_REQUEST)
+                .details(Details.REASON, Details.CLIENT_POLICY_ERROR)
+                .details(Details.CLIENT_POLICY_ERROR, OAuthErrorException.INVALID_REQUEST)
+                .details(Details.CLIENT_POLICY_ERROR_DETAIL, "The intent is not bound with the client")
+                .clientId(clientId)
+                .userId(null);
 
         // register a binding of an intent with a valid client
         r = testingClient.testApp().oidcClientEndpoints().bindIntentWithClient(intentId, clientId);
@@ -1267,7 +1272,12 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
 
         // check a token response
         assertEquals(200, response.getStatusCode());
-        events.expectCodeToToken(codeId, sessionId).client(clientId).assertEvent();
+        EventAssertion.expectCodeToTokenSuccess(events.poll())
+                .sessionId(sessionId)
+                .clientId(clientId)
+                .details(Details.CODE_ID, codeId)
+                .details(Details.REFRESH_TOKEN_TYPE, TokenUtil.TOKEN_TYPE_REFRESH)
+                .details(Details.CLIENT_AUTH_METHOD, ClientIdAndSecretAuthenticator.PROVIDER_ID);
         idToken = new JWSInput(response.getIdToken());
         parser = mapper.getFactory().createParser(idToken.readContentAsString());
         treeNode = mapper.readTree(parser);
@@ -1293,10 +1303,12 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         authorizationEndpointResponse = oauth.parseLoginResponse();
         assertEquals(OAuthErrorException.INVALID_REQUEST, authorizationEndpointResponse.getError());
         assertEquals("no claim for an intent value for ID token" , authorizationEndpointResponse.getErrorDescription());
-        events.expectClientPolicyError(EventType.LOGIN_ERROR, OAuthErrorException.INVALID_REQUEST,
-                        Details.CLIENT_POLICY_ERROR, OAuthErrorException.INVALID_REQUEST,
-                        "no claim for an intent value for ID token").client(clientId)
-                .user((String) null).assertEvent();
+        EventAssertion.assertError(events.poll()).type(EventType.LOGIN_ERROR).error(OAuthErrorException.INVALID_REQUEST)
+                .details(Details.REASON, Details.CLIENT_POLICY_ERROR)
+                .details(Details.CLIENT_POLICY_ERROR, OAuthErrorException.INVALID_REQUEST)
+                .details(Details.CLIENT_POLICY_ERROR_DETAIL, "no claim for an intent value for ID token")
+                .clientId(clientId)
+                .userId(null);
     }
 
     @Test

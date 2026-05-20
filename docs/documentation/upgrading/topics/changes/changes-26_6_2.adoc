@@ -10,3 +10,7 @@ The WebAuthn policy presents the option **Acceptable AAGUIDs** to restrict the a
 Since this release, when this option is set up, the attestation is required to be present and signed with a valid certificate for the {project_name} trust-store. The `None` attestation format is explicitly not permitted. Previously, there were some corner cases in which a self attestation was accepted. The change is expected to be harmless, but maybe there are combinations of authenticators and WebAuthn policies that can present issues.
 
 See chapter link:{adminguide_link}#_webauthn-policy[Managing policy] in the {adminguide_name} for more information.
+
+=== Required actions are one-time actions by default
+
+Since this release, all _Required Actions_ are now one-time actions by default to ensure they cannot be reused once completed. This change impacts the email action tokens created by the `execute-actions-email` endpoint, which is executed via the **Credential reset** button in the Admin console. Any action token generated through this endpoint (with whatever reset actions) is now strictly one-time use, ensuring that once a user completes the required steps, the token is immediately invalidated.

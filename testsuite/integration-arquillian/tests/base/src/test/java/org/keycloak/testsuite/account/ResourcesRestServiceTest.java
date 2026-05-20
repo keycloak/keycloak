@@ -28,13 +28,17 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
 
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response.Status;
 
 import org.keycloak.admin.client.resource.AuthorizationResource;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.authorization.client.AuthzClient;
 import org.keycloak.authorization.client.Configuration;
+import org.keycloak.authorization.client.resource.PermissionResource;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.http.simple.SimpleHttpRequest;
@@ -68,6 +72,7 @@ import static org.keycloak.common.util.Encode.encodePathAsIs;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.empty;
+import static org.junit.Assert.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -676,6 +681,110 @@ public class ResourcesRestServiceTest extends AbstractRestServiceTest {
                 assertEquals(1, scopes.size());
                 assertTrue(scopes.stream().anyMatch(scope -> "Scope D".equals(scope.getName())));
             }
+        }
+    }
+
+    @Test
+    public void testGetUserInfoOwnUser() {
+        Resource resource = getMyResources().get(0);
+
+        UserRepresentation userRep = doGet("/" + encodePathAsIs(resource.getId()) + "/user?value=test-authz-user@localhost",
+                UserRepresentation.class);
+
+        assertNotNull(userRep);
+        assertNotNull(userRep.getId(), "User ID should be returned");
+        assertEquals("test-authz-user@localhost", userRep.getUsername());
+        assertNull(userRep.getCreatedTimestamp(), "Creation timestamp should not be exposed");
+        assertNull(userRep.isEnabled(), "Enabled status should not be exposed");
+        assertNull(userRep.isEmailVerified(), "Email verified should not be exposed");
+    }
+
+    @Test
+    public void testGetUserInfoWithPermissionRequest() {
+        Resource resource = getMyResources().get(0);
+        PermissionResource permissionsApi = authzClient.protection("test-authz-user@localhost", "password").permission();
+        List<PermissionTicketRepresentation> permissions = permissionsApi.find(resource.getId(), null, null, null, null, null, null, null);
+        for (PermissionTicketRepresentation permission : permissions) {
+            permissionsApi.delete(permission.getId());
+        }
+
+        PermissionTicketRepresentation ticket = new PermissionTicketRepresentation();
+        ticket.setGranted(false);
+        ticket.setOwner("test-authz-user@localhost");
+        ticket.setRequesterName("alice");
+        ticket.setResource(resource.getId());
+        ticket.setScopeName("Scope A");
+
+        permissionsApi.create(ticket);
+
+        UserRepresentation userRep = doGet("/" + encodePathAsIs(resource.getId()) + "/user?value=alice",
+                UserRepresentation.class);
+
+        assertNotNull(userRep);
+        assertNotNull(userRep.getId(), "User ID should be returned");
+        assertEquals("alice", userRep.getUsername());
+        assertNull(userRep.getCreatedTimestamp(), "Creation timestamp should not be exposed");
+        assertNull(userRep.isEnabled(), "Enabled status should not be exposed");
+    }
+
+    @Test
+    public void testGetUserInfoUnauthorized() throws IOException {
+        Resource resource = getMyResources().get(0);
+
+        try (SimpleHttpResponse response = SimpleHttpDefault
+                .doGet(getAccountUrl("resources/" + encodePathAsIs(resource.getId()) + "/user?value=bob"), httpClient)
+                .auth(tokenUtil.getToken())
+                .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON)
+                .asResponse()) {
+
+            assertEquals(Response.Status.FORBIDDEN.getStatusCode(), response.getStatus(), "Should return 403 Forbidden when querying unrelated user");
+        }
+    }
+
+    @Test
+    public void testGetUserInfoWithGrantedPermission() {
+        Resource resource = getMyResources().get(0);
+        List<Permission> permissions = doGet("/" + encodePathAsIs(resource.getId()) + "/permissions",
+                new TypeReference<>() {});
+        assertFalse("Should have at least one granted permission", permissions.isEmpty());
+        String grantedUser = permissions.get(0).getUsername();
+        UserRepresentation userRep = doGet("/" + encodePathAsIs(resource.getId()) + "/user?value=" + grantedUser,
+                UserRepresentation.class);
+
+        assertNotNull(userRep);
+        assertNotNull(userRep.getId(), "User ID should be returned");
+        assertEquals(grantedUser, userRep.getUsername());
+        assertNull(userRep.getCreatedTimestamp(), "Creation timestamp should not be exposed");
+        assertNull(userRep.isEnabled(), "Enabled status should not be exposed");
+    }
+
+    @Test
+    public void testGetUserInfoNonExistent() throws IOException {
+        Resource resource = getMyResources().get(0);
+
+        try (SimpleHttpResponse response = SimpleHttpDefault
+                .doGet(getAccountUrl("resources/" + encodePathAsIs(resource.getId()) + "/user?value=nonexistent"), httpClient)
+                .auth(tokenUtil.getToken())
+                .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON)
+                .asResponse()) {
+
+            assertEquals(Response.Status.NO_CONTENT.getStatusCode(), response.getStatus(), "Should return 204 No Content for non-existent user");
+        }
+    }
+
+    @Test
+    public void testGetUserInfoDifferentUserCannotAccessAnotherResource() throws IOException {
+        Resource ownerResource = getMyResources().get(0);
+
+        String aliceToken = authzClient.obtainAccessToken("alice", "password").getToken();
+
+        try (SimpleHttpResponse response = SimpleHttpDefault
+                .doGet(getAccountUrl("resources/" + encodePathAsIs(ownerResource.getId()) + "/user?value=bob"), httpClient)
+                .auth(aliceToken)
+                .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON)
+                .asResponse()) {
+
+            assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus(), "Alice should not be able to access resource owner's endpoint");
         }
     }
 

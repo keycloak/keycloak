@@ -25,8 +25,8 @@ import java.util.function.Consumer;
 import org.keycloak.it.junit5.extension.BeforeStartDistribution;
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
+import org.keycloak.it.junit5.extension.KeycloakRunner;
 import org.keycloak.it.junit5.extension.RawDistOnly;
-import org.keycloak.it.utils.KeycloakDistribution;
 import org.keycloak.it.utils.RawKeycloakDistribution;
 
 import io.quarkus.deployment.util.FileUtil;
@@ -50,15 +50,15 @@ public class ImportAtStartupDistTest {
 
     @Test
     @BeforeStartDistribution(CreateRealmConfigurationFile.class)
-    void testMultipleImport(KeycloakDistribution dist) throws IOException {
-        RawKeycloakDistribution rawDist = dist.unwrap(RawKeycloakDistribution.class);
+    void testMultipleImport(KeycloakRunner runner) throws IOException {
+        RawKeycloakDistribution rawDist = runner.getDistribution(RawKeycloakDistribution.class);
         Path dir = rawDist.getDistPath().resolve("data").resolve("import");
 
         // add another realm
         Files.write(dir.resolve("realm2.json"), Files.readAllLines(dir.resolve("realm.json")).stream()
                 .map(s -> s.replace("quickstart-realm", "other-realm")).toList());
 
-        CLIResult cliResult = dist.run("start-dev", "--import-realm");
+        CLIResult cliResult = runner.run("start-dev", "--import-realm");
         cliResult.assertMessage("Realm 'quickstart-realm' imported");
         cliResult.assertMessage("Realm 'other-realm' imported");
     }
@@ -80,13 +80,13 @@ public class ImportAtStartupDistTest {
 
     @Test
     @BeforeStartDistribution(CreateRealmConfigurationFile.class)
-    void testImportFromFileCreatedByExportAllRealms(KeycloakDistribution dist) throws IOException {
-        dist.run("start-dev", "--import-realm");
-        dist.run("--profile=dev", "export", "--file=../data/import/realm.json", "--verbose");
+    void testImportFromFileCreatedByExportAllRealms(KeycloakRunner runner) throws IOException {
+        runner.run("start-dev", "--import-realm");
+        runner.run("--profile=dev", "export", "--file=../data/import/realm.json", "--verbose");
 
-        dist.unwrap(RawKeycloakDistribution.class).resetH2Dir();
+        runner.getDistribution(RawKeycloakDistribution.class).resetH2Dir();
 
-        CLIResult result = dist.run("start-dev", "--import-realm");
+        CLIResult result = runner.run("start-dev", "--import-realm");
         result.assertMessage("Realm 'quickstart-realm' imported");
         result.assertMessage("Realm 'master' imported");
         result.assertNoMessage("Realm 'master' already exists. Import skipped");
@@ -94,56 +94,53 @@ public class ImportAtStartupDistTest {
 
     @Test
     @BeforeStartDistribution(CreateRealmConfigurationFile.class)
-    void testImportFromFileCreatedByExportSingleRealm(KeycloakDistribution dist) throws IOException {
-        dist.run("start-dev", "--import-realm");
-        dist.run("--profile=dev", "export", "--realm=quickstart-realm", "--file=../data/import/realm.json");
+    void testImportFromFileCreatedByExportSingleRealm(KeycloakRunner runner) throws IOException {
+        runner.run("start-dev", "--import-realm");
+        runner.run("--profile=dev", "export", "--realm=quickstart-realm", "--file=../data/import/realm.json");
 
-        dist.unwrap(RawKeycloakDistribution.class).resetH2Dir();
+        runner.getDistribution(RawKeycloakDistribution.class).resetH2Dir();
 
-        CLIResult result = dist.run("start-dev", "--import-realm");
+        CLIResult result = runner.run("start-dev", "--import-realm");
         result.assertMessage("Realm 'quickstart-realm' imported");
         result.assertNoMessage("Not importing realm master from file");
     }
 
     @Test
     @BeforeStartDistribution(CreateRealmConfigurationFile.class)
-    void testImportFromDirCreatedByExport(KeycloakDistribution dist) throws IOException {
-        dist.run("start-dev", "--import-realm");
-        RawKeycloakDistribution rawDist = dist.unwrap(RawKeycloakDistribution.class);
+    void testImportFromDirCreatedByExport(KeycloakRunner runner) throws IOException {
+        runner.run("start-dev", "--import-realm");
+        RawKeycloakDistribution rawDist = runner.getDistribution(RawKeycloakDistribution.class);
         FileUtil.deleteDirectory(rawDist.getDistPath().resolve("data").resolve("import").toAbsolutePath());
-        dist.run("--profile=dev", "export", "--dir=../data/import");
+        runner.run("--profile=dev", "export", "--dir=../data/import");
 
-        dist.unwrap(RawKeycloakDistribution.class).resetH2Dir();
+        runner.getDistribution(RawKeycloakDistribution.class).resetH2Dir();
 
-        CLIResult result = dist.run("start-dev", "--import-realm");
+        CLIResult result = runner.run("start-dev", "--import-realm");
         result.assertMessage("Realm 'quickstart-realm' imported");
         result.assertNoMessage("Not importing realm master from file");
     }
 
-    public static class CreateRealmConfigurationFile implements Consumer<KeycloakDistribution> {
+    public static class CreateRealmConfigurationFile implements Consumer<RawKeycloakDistribution> {
 
         @Override
-        public void accept(KeycloakDistribution distribution) {
+        public void accept(RawKeycloakDistribution distribution) {
             distribution.copyOrReplaceFileFromClasspath("/quickstart-realm.json", Path.of("data", "import", "realm.json"));
         }
     }
 
-    public static class CreateRealmConfigurationFileAndDir implements Consumer<KeycloakDistribution> {
-
+    public static class CreateRealmConfigurationFileAndDir implements Consumer<RawKeycloakDistribution> {
         @Override
-        public void accept(KeycloakDistribution distribution) {
+        public void accept(RawKeycloakDistribution distribution) {
             distribution.copyOrReplaceFileFromClasspath("/quickstart-realm.json", Path.of("data", "import", "realm.json"));
 
-            RawKeycloakDistribution rawDist = distribution.unwrap(RawKeycloakDistribution.class);
-
-            rawDist.getDistPath().resolve("data").resolve("import").resolve("sub-dir").toFile().mkdirs();
+            distribution.getDistPath().resolve("data").resolve("import").resolve("sub-dir").toFile().mkdirs();
         }
     }
 
-    public static class CreateRealmConfigurationFileWithUnsupportedExtension implements Consumer<KeycloakDistribution> {
+    public static class CreateRealmConfigurationFileWithUnsupportedExtension implements Consumer<RawKeycloakDistribution> {
 
         @Override
-        public void accept(KeycloakDistribution distribution) {
+        public void accept(RawKeycloakDistribution distribution) {
             distribution.copyOrReplaceFileFromClasspath("/quickstart-realm.json", Path.of("data", "import", "realm"));
         }
     }

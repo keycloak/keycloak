@@ -102,17 +102,33 @@ public class ResourceService extends AbstractResourceService {
     @Produces(MediaType.APPLICATION_JSON)
     public Response user(@QueryParam("value") String value) {
         try {
-            final UserModel user = getUser(value);
-            UserRepresentation rep = new UserRepresentation();
-            rep.setId(user.getId());
-            rep.setUsername(user.getUsername());
-            rep.setFirstName(user.getFirstName());
-            rep.setLastName(user.getLastName());
-            rep.setEmail(user.getEmail());
-            return Response.ok(rep).build();
+            final UserModel queriedUser = getUser(value);
+            final UserModel authenticatedUser = auth.getUser();
+
+            if (!queriedUser.getId().equals(authenticatedUser.getId()) && !hasPermissionRequest(queriedUser.getId())) {
+                return Response.status(Response.Status.FORBIDDEN).build();
+            }
+
+            UserRepresentation minimalUserRep = new UserRepresentation();
+            minimalUserRep.setId(queriedUser.getId());
+            minimalUserRep.setUsername(queriedUser.getUsername());
+            minimalUserRep.setFirstName(queriedUser.getFirstName());
+            minimalUserRep.setLastName(queriedUser.getLastName());
+            minimalUserRep.setEmail(queriedUser.getEmail());
+
+            return Response.ok(minimalUserRep).build();
         } catch (NotFoundException e) {
             return Response.noContent().build();
         }
+    }
+
+    private boolean hasPermissionRequest(String userId) {
+        Map<PermissionTicket.FilterOption, String> filters = new EnumMap<>(PermissionTicket.FilterOption.class);
+
+        filters.put(PermissionTicket.FilterOption.RESOURCE_ID, resource.getId());
+        filters.put(PermissionTicket.FilterOption.REQUESTER, userId);
+
+        return !ticketStore.find(resourceServer, filters, null, null).isEmpty();
     }
 
     /**

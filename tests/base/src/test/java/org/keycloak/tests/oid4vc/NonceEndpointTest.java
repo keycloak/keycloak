@@ -46,9 +46,9 @@ public class NonceEndpointTest extends OID4VCIssuerTestBase {
         // Verify CREDENTIAL_NONCE_REQUEST event was fired (unauthenticated endpoint)
         EventAssertion.assertSuccess(events.poll())
                 .type(EventType.VERIFIABLE_CREDENTIAL_NONCE_REQUEST)
-                .clientId((String) null)
-                .userId((String) null)
-                .sessionId((String) null);
+                .clientId(null)
+                .userId(null)
+                .sessionId(null);
 
         String nonceUrl = oauth.getEndpoints().getOid4vcNonce();
 
@@ -90,9 +90,9 @@ public class NonceEndpointTest extends OID4VCIssuerTestBase {
         // Verify CREDENTIAL_NONCE_REQUEST event was fired (unauthenticated endpoint)
         EventAssertion.assertSuccess(events.poll())
                 .type(EventType.VERIFIABLE_CREDENTIAL_NONCE_REQUEST)
-                .clientId((String) null)
-                .userId((String) null)
-                .sessionId((String) null);
+                .clientId(null)
+                .userId(null)
+                .sessionId(null);
 
         // Verify successful response
         Assertions.assertEquals(Response.Status.OK.getStatusCode(), response.getStatusCode(),
