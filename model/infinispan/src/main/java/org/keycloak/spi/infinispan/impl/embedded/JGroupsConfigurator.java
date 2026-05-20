@@ -344,7 +344,12 @@ public final class JGroupsConfigurator {
         );
 
         if (!udp && InfinispanUtils.isVirtualThreadsEnabled())
-            list.add(new ProtocolConfiguration(TCP.class.getSimpleName(), Map.of("bundler_type", "per-destination")));
+            list.add(new ProtocolConfiguration(TCP.class.getSimpleName(),
+                    Map.of(
+                            "bundler_type", "per-destination",
+                            "bundler.use_single_sender_thread", "false"
+                    ))
+            );
 
         if (tracingEnabled) {
             list.add(new ProtocolConfiguration(OPEN_TELEMETRY.class.getName(), Map.of(
