@@ -25,6 +25,7 @@ import java.util.stream.Stream;
 import org.keycloak.OID4VCConstants;
 import org.keycloak.VCFormat;
 import org.keycloak.admin.client.Keycloak;
+import org.keycloak.admin.client.resource.ClientPoliciesPoliciesResource;
 import org.keycloak.admin.client.resource.ClientScopeResource;
 import org.keycloak.admin.client.resource.ClientScopesResource;
 import org.keycloak.admin.client.resource.RealmResource;
@@ -56,6 +57,7 @@ import org.keycloak.protocol.oid4vc.model.CredentialSubject;
 import org.keycloak.protocol.oid4vc.model.DisplayObject;
 import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
+import org.keycloak.representations.idm.ClientPoliciesRepresentation;
 import org.keycloak.representations.idm.ClientPolicyConditionRepresentation;
 import org.keycloak.representations.idm.ClientPolicyExecutorRepresentation;
 import org.keycloak.representations.idm.ClientPolicyRepresentation;
@@ -116,7 +118,6 @@ import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_BINDING_REQUIR
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_BINDING_REQUIRED_PROOF_TYPES;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_CRYPTOGRAPHIC_BINDING_METHODS;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_FORMAT_DEFAULT;
-import static org.keycloak.protocol.oid4vc.clientpolicy.CredentialClientPolicies.VC_POLICY_CREDENTIAL_OFFER_REQUIRED;
 
 /**
  * Abstract base class for OID4VCI Testing
@@ -128,6 +129,7 @@ public abstract class OID4VCIssuerTestBase {
     protected final Logger log = Logger.getLogger(getClass());
 
     public static final String OID4VCI_CLIENT_ID = "oid4vci-client";
+    public static final String OID4VCI_ABCA_CLIENT_ID = "oid4vci-client-abca";
     public static final String OID4VCI_PUBLIC_CLIENT_ID = "oid4vci-client-pub";
 
     public static final String TEST_ISSUER_DID = "did:web:test.org";
@@ -154,11 +156,16 @@ public abstract class OID4VCIssuerTestBase {
             .truncatedTo(ChronoUnit.SECONDS);
     protected static final Instant TEST_ISSUANCE_DATE = Instant.ofEpochSecond(1000);
 
+    public static final String VCI_CLIENT_POLICY_OFFER_REQUIRED = "oid4vci-offer-required";
+
     @InjectRealm(config = VCTestRealmConfig.class)
     protected ManagedRealm testRealm;
 
     @InjectClient(ref = OID4VCI_CLIENT_ID, config = ConfidentialOID4VCIClient.class)
     protected ManagedClient managedClient;
+
+    @InjectClient(ref = OID4VCI_ABCA_CLIENT_ID, config = OID4VCAttestationBasedClient.class)
+    ManagedClient managedAttestationBasedClient;
 
     @InjectClient(ref = OID4VCI_PUBLIC_CLIENT_ID, config = PublicOID4VCIClient.class)
     ManagedClient managedPublicClient;
@@ -191,6 +198,7 @@ public abstract class OID4VCIssuerTestBase {
     protected CredentialScopeRepresentation sdJwtNaturalPersonCredentialScope;
 
     protected ClientRepresentation client;
+    protected ClientRepresentation abcaClient;
     protected ClientRepresentation pubClient;
     protected OID4VCBasicWallet wallet;
 
@@ -220,6 +228,7 @@ public abstract class OID4VCIssuerTestBase {
 
         client = managedClient.admin().toRepresentation();
         pubClient = managedPublicClient.admin().toRepresentation();
+        abcaClient = managedAttestationBasedClient.admin().toRepresentation();
 
         jwtTypeCredentialScope = requireExistingCredentialScope(jwtTypeCredentialScopeName);
         sdJwtTypeCredentialScope = requireExistingCredentialScope(sdJwtTypeCredentialScopeName);
@@ -443,6 +452,25 @@ public abstract class OID4VCIssuerTestBase {
         clientScopeResource.update(clientScope);
     }
 
+    protected ClientPolicyRepresentation getClientPolicy(String policyName) {
+        ClientPoliciesPoliciesResource clientPoliciesResource = testRealm.admin().clientPoliciesPoliciesResource();
+        ClientPoliciesRepresentation policies = clientPoliciesResource.getPolicies();
+        ClientPolicyRepresentation clientPolicy = policies.getPolicies().stream()
+                .filter(cp -> cp.getName().equals(policyName))
+                .findFirst().orElse(null);
+        return clientPolicy;
+    }
+
+    protected void setClientPolicyEnabled(String policyName, boolean enabled) {
+        ClientPoliciesPoliciesResource clientPoliciesResource = testRealm.admin().clientPoliciesPoliciesResource();
+        ClientPoliciesRepresentation policies = clientPoliciesResource.getPolicies();
+        ClientPolicyRepresentation clientPolicy = policies.getPolicies().stream()
+                .filter(cp -> cp.getName().equals(policyName))
+                .findFirst().orElseThrow(() -> new IllegalStateException("No such client policy: " + policyName));
+        clientPolicy.setEnabled(enabled);
+        clientPoliciesResource.updatePolicies(policies);
+    }
+
     // Private ---------------------------------------------------------------------------------------------------------
 
     private ComponentRepresentation createRsaKeyProviderComponent(KeyWrapper keyWrapper, String name, int priority) {
@@ -576,17 +604,19 @@ public abstract class OID4VCIssuerTestBase {
 
             // Add Client Policies
             //
-            ClientProfileRepresentation profile = createClientPolicyProfile();
-            realm.clientPolicy(createClientPolicyOfferRequired(profile));
-            realm.clientProfile(profile);
+            ClientProfileRepresentation credentialIssuanceProfile = createClientProfileCredentialIssuance();
+            realm.clientProfile(credentialIssuanceProfile);
+
+            ClientPolicyRepresentation offerRequiredPolicy = createClientPolicyOfferRequired(credentialIssuanceProfile);
+            realm.clientPolicy(offerRequiredPolicy);
 
             return realm;
         }
 
-        private ClientProfileRepresentation createClientPolicyProfile() {
+        private ClientProfileRepresentation createClientProfileCredentialIssuance() {
 
             ClientProfileRepresentation profile = new ClientProfileRepresentation();
-            profile.setName("oid4vci-client-profile");
+            profile.setName("oid4vc-credential-issuance-profile");
 
             ClientPolicyExecutorRepresentation executor = new ClientPolicyExecutorRepresentation();
             executor.setExecutorProviderId(CredentialClientPolicyExecutorFactory.PROVIDER_ID);
@@ -599,7 +629,7 @@ public abstract class OID4VCIssuerTestBase {
         private ClientPolicyRepresentation createClientPolicyOfferRequired(ClientProfileRepresentation profile) {
 
             ClientPolicyRepresentation policy = new ClientPolicyRepresentation();
-            policy.setName(VC_POLICY_CREDENTIAL_OFFER_REQUIRED.getName());
+            policy.setName(VCI_CLIENT_POLICY_OFFER_REQUIRED);
             policy.setDescription("Client policy to determine whether a credential offers is required");
             policy.setEnabled(false);
 
@@ -713,6 +743,30 @@ public abstract class OID4VCIssuerTestBase {
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
+        }
+    }
+
+    public static class OID4VCAttestationBasedClient implements ClientConfig {
+
+        @Override
+        public ClientBuilder configure(ClientBuilder client) {
+            String[] optionalClientScopes = {
+                    jwtTypeCredentialScopeName,
+                    sdJwtTypeCredentialScopeName,
+                    minimalJwtTypeCredentialScopeName,
+                    jwtTypeNaturalPersonScopeName,
+                    sdJwtTypeNaturalPersonScopeName,
+                    "email"
+            };
+            client.clientId(OID4VCI_ABCA_CLIENT_ID)
+                    .serviceAccountsEnabled(false)
+                    .directAccessGrantsEnabled(false)
+                    .authenticatorType("attestation-based")
+                    .defaultClientScopes("basic", "profile", "roles")
+                    .optionalClientScopes(optionalClientScopes)
+                    .attribute(OID4VCI_ENABLED_ATTRIBUTE_KEY, "true")
+                    .redirectUris("*");
+            return client;
         }
     }
 
